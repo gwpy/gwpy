@@ -1,6 +1,7 @@
 /build
 /gwpy.egg-info
 /dist
+/docs/_build
 *.pyc
 *.so
 *.swp
