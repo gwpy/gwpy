@@ -59,6 +59,8 @@ class TablePlot(BasicPlot):
 
     @auto_refresh
     def set_time_format(self, format_, epoch=None, **kwargs): 
+        locator = ticks.AutoTimeLocator(epoch=epoch)
+        self._ax.xaxis.set_major_locator(locator)
         formatter = ticks.TimeFormatter(format=format_, epoch=epoch, **kwargs)
         self._ax.xaxis.set_major_formatter(formatter)
 
