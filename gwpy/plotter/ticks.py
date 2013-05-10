@@ -19,9 +19,10 @@
 """This module defines a number of tick locators for different data formats
 """
 
+import re 
 from math import modf
 
-from matplotlib import (units as munits, ticker as mticker, pyplot)
+from matplotlib import (units as munits, ticker as mticker, pyplot, transforms as mtransforms)
 from matplotlib.dates import (HOURS_PER_DAY, MINUTES_PER_DAY, SECONDS_PER_DAY,
                               SEC_PER_MIN, SEC_PER_HOUR, SEC_PER_DAY,
                               SEC_PER_WEEK, WEEKDAYS)
@@ -55,6 +56,35 @@ class TimeConverter(munits.ConversionInterface):
 munits.registry[Time] = TimeConverter()
 
 
+class AutoTimeLocator(mticker.AutoLocator):
+    def __init__(self, epoch=None):
+        mticker.AutoLocator.__init__(self)
+        #super(AutoTimeLocator, self).__init__()
+        if epoch and not isinstance(epoch, Time):
+            self._epoch = Time(float(epoch), format='gps')
+        else:
+            self._epoch = epoch
+
+    def __call__(self):
+        vmin, vmax = self.axis.get_view_interval()
+        if self._epoch:
+            vmin -= self._epoch.gps
+            vmax -= self._epoch.gps
+        vmin, vmax = mtransforms.nonsingular(vmin, vmax, expander = 0.05)
+        locs = self.bin_boundaries(vmin, vmax)
+        #print 'locs=', locs
+        prune = self._prune
+        if prune=='lower':
+            locs = locs[1:]
+        elif prune=='upper':
+            locs = locs[:-1]
+        elif prune=='both':
+            locs = locs[1:-1]
+        if self._epoch:
+            locs += self._epoch.gps
+        return self.raise_if_exceeds(locs)
+
+
 class TimeLocator(mticker.Locator):
 
     def __init__(self, *args, **kwargs):
@@ -82,20 +112,21 @@ class TimeFormatter(mticker.Formatter):
         #mticker.Formatter.__init__()
         self._format = format
         self._tex = pyplot.rcParams["text.usetex"]
-        self._epoch = Time(float(epoch), format='gps')
+        if epoch and not isinstance(epoch, Time):
+            self._epoch = Time(float(epoch), format='gps')
+        else:
+            self._epoch = epoch
         self._t_args = kwargs
 
     def __call__(self, x, pos=None):
         t = Time(*modf(x)[::-1], format="gps",
                  **self._t_args).copy(self._format)
-        if self._epoch is not None:
-            t = (t - self._epoch).sec
-        if format != 'iso':
+        if self._format not in ['iso']:
+            if self._epoch is not None:
+                t = (t - self._epoch).sec
             t = round(float(t), 6)
-        if self._tex:
-            return "$%s$" % str(t).replace(":","\\colon")
-        else:
-            return str(t)
+        t = re.sub('.0+\Z', '', str(t))
+        return t
 
 def transform_factory(informat, outformat):
     """Transform data in a collection from one format to another
