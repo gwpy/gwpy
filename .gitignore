@@ -2,6 +2,7 @@
 /gwpy.egg-info
 /dist
 /docs/_build
+/gwpy/version.py
 *.pyc
 *.so
 *.swp
