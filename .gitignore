@@ -1,0 +1,7 @@
+/build
+/gwpy.egg-info
+/dist
+*.pyc
+*.so
+*.swp
+.DS_Store
