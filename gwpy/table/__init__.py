@@ -13,3 +13,4 @@ __version__ = version.version
 from astropy.table import *
 
 from ..io.ligolw import connect
+from ..io.root import omicron
