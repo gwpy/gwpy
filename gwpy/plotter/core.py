@@ -434,6 +434,7 @@ class BasicPlot(object):
             raise AttributeError("No color-mappable layers found in this Plot")
         return layer
 
+    @auto_refresh
     def add_label_unit(self, unit, axis="x"):
         attr = "%slabel" % axis
         label = getattr(self, attr)
@@ -450,8 +451,10 @@ class BasicPlot(object):
         else:
             setattr(self, attr, unitstr)
 
+    @auto_refresh
     def set_xaxis_format(self, format_, **kwargs):
         axis.set_axis_format(self._ax.xaxis, format_, **kwargs)
 
+    @auto_refresh
     def set_yaxis_format(self, format_, **kwargs):
         axis.set_axis_format(self._ax.yaxis, format_, **kwargs)
