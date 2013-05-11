@@ -17,6 +17,18 @@ class TablePlot(BasicPlot):
     def __init__(self, *args, **kwargs):
         # extract plotting keyword arguments
         plotargs = dict()
+        plotargs['facecolor'] = kwargs.pop('facecolor', None)
+        plotargs['edgecolor'] = kwargs.pop('edgecolor', None)
+        plotargs['marker'] = kwargs.pop('marker', None)
+        plotargs['cmap'] = kwargs.pop('cmap', None)
+        plotargs = dict(kvp for kvp in plotargs.iteritems() if
+                        kvp[1] is not None)
+
+        # extract slot-based arguments
+        slotargs = dict()
+        for key,val in kwargs.items():
+            if key in self.__slots__:
+                slotargs[key] = kwargs.pop(key, val)
 
         # extract columns
         tables = []
@@ -41,8 +53,13 @@ class TablePlot(BasicPlot):
 
         # plot figures
         for table in tables:
-            self.add_table(table, columns['x'], columns['y'], columns['color'])
+            self.add_table(table, columns['x'], columns['y'], columns['color'],
+                           **plotargs)
             self._tables.append(table)
+
+        # set slot arguments
+        for key,val in sorted(slotargs.iteritems(), key=lambda x: x[0]):
+            setattr(self, key, val)
 
     def add_table(self, table, x, y, color=None, **kwargs):
         # get xdata
@@ -56,14 +73,6 @@ class TablePlot(BasicPlot):
             self.add_markers(xdata, ydata, c=cdata, **kwargs)
         else:
             self.add_markers(xdata, ydata, **kwargs)
-
-    @auto_refresh
-    def set_time_format(self, format_, epoch=None, **kwargs): 
-        locator = ticks.AutoTimeLocator(epoch=epoch)
-        self._ax.xaxis.set_major_locator(locator)
-        formatter = ticks.TimeFormatter(format=format_, epoch=epoch, **kwargs)
-        self._ax.xaxis.set_major_formatter(formatter)
-
 
 
 def get_column(table, column):
