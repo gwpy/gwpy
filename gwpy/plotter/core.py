@@ -1,25 +1,7 @@
-#!/usr/bin/env python
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-# Copyright (C) 2012 Duncan Macleod
-#
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your
-# option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-# Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-## \addtogroup py_lal_plotcore
-"""Core classes for building plots in LAL
+"""Core classes for building plots in GWpy
 """
-# \author Duncan Macleod <duncan.macleod@ligo.org>
 
 import numpy
 
@@ -28,14 +10,13 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from lal import (git_version, gpstime)
 
-from . import (tex, ticks)
+from . import (tex, ticks, axis)
 from .decorators import auto_refresh
 
+from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Nick Fotopoulos"
-__version__ = git_version.id
-__date__ = git_version.date
-__license__ = "GNU General Public License (GPL), Version 3"
+__version__ = version.version
 
 
 class BasicPlot(object):
@@ -52,6 +33,9 @@ class BasicPlot(object):
         - `ax`: the `matplotlig.axes.AxesSubplot` instance representing
                 the plottable area.
     """
+    __slots__ = ['xlim', 'ylim', 'colorlim', 'logx', 'logy', 'logcolor',
+                 'xlabel', 'ylabel', 'colorlabel']
+
     def __init__(self, figure=None, subplot=False, auto_refresh=False,
                  **kwargs):
         """Initialise a new plot.
@@ -348,7 +332,7 @@ class BasicPlot(object):
         if mpl.rcParams["text.usetex"]:
             kwargs.setdefault('format',
                               ticker.FuncFormatter(lambda x,pos:
-                                               '$%s$' % tex.float_to_latex(x)))
+                                               '$%s$' % tex.float_to_latex(x, '%.3g')))
 
         # set log scale
         if log is None:
@@ -466,3 +450,8 @@ class BasicPlot(object):
         else:
             setattr(self, attr, unitstr)
 
+    def set_xaxis_format(self, format_, **kwargs):
+        axis.set_axis_format(self._ax.xaxis, format_, **kwargs)
+
+    def set_yaxis_format(self, format_, **kwargs):
+        axis.set_axis_format(self._ax.yaxis, format_, **kwargs)
