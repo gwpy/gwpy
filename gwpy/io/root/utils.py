@@ -36,7 +36,7 @@ class ROOTFile(object):
         out = dict()
         for name in self.trees:
             tree = self.get_tree(name)
-            out[tree] = [b.GetName() for b in tree.GetListOfBranches()]
+            out[name] = [b.GetName() for b in tree.GetListOfBranches()]
         return out
 
     def get_branch(self, tree, branch):
