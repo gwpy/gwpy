@@ -4,11 +4,12 @@
 """
 
 import numpy
+from matplotlib import pyplot
 
 from .core import BasicPlot
 from .decorators import auto_refresh
 from ..table import Table
-from . import ticks
+from . import (tex, ticks)
 
 
 class TablePlot(BasicPlot):
@@ -57,6 +58,10 @@ class TablePlot(BasicPlot):
                            **plotargs)
             self._tables.append(table)
 
+        self._xcolumn = columns['x']
+        self._ycolumn = columns['y']
+        self._colorcolumn = columns['color']
+
         # set slot arguments
         for key,val in sorted(slotargs.iteritems(), key=lambda x: x[0]):
             setattr(self, key, val)
@@ -73,6 +78,40 @@ class TablePlot(BasicPlot):
             self.add_markers(xdata, ydata, c=cdata, **kwargs)
         else:
             self.add_markers(xdata, ydata, **kwargs)
+
+    def add_loudest(self, rank=None, columns=None, **kwargs):
+        if rank is None:
+            rank = self._colorcolumn
+        if columns is None:
+            columns = [self._xcolumn, self._ycolumn, self._colorcolumn]
+        if len(self._tables) > 1:
+            raise RuntimeError("Cannot display loudest event for a plot "
+                               "over multiple tables")
+        row = self._tables[0][self._tables[0][rank].argmax()]
+        disp = "Loudest event:"
+        for i,column in enumerate(columns):
+            if i:
+                disp += ','
+            unit = self._tables[0][column].units
+            if pyplot.rcParams['text.usetex']:
+                unit = (unit and tex.unit_to_latex(unit) or '')
+                disp += (r" ${\rm %s} = %s %s$"
+                         % (column, row[column], unit))
+            else:
+                unit = (unit and str(unit) or '')
+                disp += " %s = %.2g %s" % (column, row[column], unit).rstrip()
+        pos = kwargs.pop('position', [0.01, 0.98])
+        kwargs.setdefault('transform', self._ax.transAxes)
+        kwargs.setdefault('verticalalignment', 'top')
+        kwargs.setdefault('backgroundcolor', 'white')
+        kwargs.setdefault('bbox', dict(facecolor='white', alpha=1.0,
+                                       edgecolor='black', pad=6.0))
+        args = pos + [disp]
+        self.add_markers([row[self._xcolumn]], [row[self._ycolumn]],
+                         marker='*', zorder=1000, color='gold',
+                         s=80)
+        #self.add_legend(alpha=0.5, loc='upper left', scatterpoints=1)
+        self._ax.text(*args, **kwargs)
 
 
 def get_column(table, column):
