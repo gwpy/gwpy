@@ -6,7 +6,9 @@ to LIGO data.
 import nds2
 
 from .. import (version, detectors)
+from ..channels import Channel
 from ..time import Time
+from ..data import TimeSeries
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
@@ -22,7 +24,7 @@ class NDSConnection(object):
         self._connection = nds2.connection(host, port)
 
     def fetch(self, start, end, channels):
-        if isinstance(channel, basestring):
+        if isinstance(channels, basestring) or isinstance(channels, Channel):
             channels = [channels]
         channels = map(str, channels)
         gpsstart = isinstance(start, Time) and start.gps or start
