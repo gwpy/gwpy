@@ -16,12 +16,51 @@ __version__ = version.version
 class Channel(object):
     """Representation of a LaserInterferometer data channel
     """
-    def __init__(self, name=None, sample_rate=None, unit=None):
-        self.name = name
+    def __init__(self, ch, sample_rate=None, unit=None, type=None):
+        self.name = None
+        self.sample_rate = None
+        self.unit = None
+        self.type = None
+        if isinstance(ch, Channel):
+            sample_rate = sample_rate or ch.sample_rate
+            unit = unit or ch.unit
+            ch = ch.name
+        self.name = ch
+        if sample_rate:
+            self.sample_rate = sample_rate
+        if unit:
+            self.unit = unit
+        if type:
+            self.type = type
+
+    @property
+    def name(self):
+        return self._name
+    @name.setter
+    def name(self, n):
+        self._name = str(n)
         self.ifo, self.system, self.subsystem, self.signal = (
-            parse_channel_name(name))
-        self.sample_rate = sample_rate
-        self.unit = unit and aunits.Unit(unit) or None
+            parse_channel_name(self.name))
+
+    @property
+    def sample_rate(self):
+        return self._sample_rate
+    @sample_rate.setter
+    def sample_rate(self, rate):
+        if rate is None:
+            self._sample_rate = None
+        else:
+            self._sample_rate = aunits.Quantity(float(rate), unit=aunits.Hertz)
+
+    @property
+    def unit(self):
+        return self._unit
+    @unit.setter
+    def unit(self, u):
+        if u is None:
+            self._unit = None
+        else:
+            self._unit = aunits.Unit(u)
 
     def __str__(self):
         return self.name
@@ -44,8 +83,12 @@ class Channel(object):
 
     @classmethod
     def from_nds(cls, ndschannel):
+        try:
+            type_ = ndschannel.type
+        except AttributeError:
+            type_ = None
         return cls(ndschannel.name, sample_rate=ndschannel.sample_rate,
-                   type=ndschannel.type)
+                   type=type_)
 
     @classmethod
     def from_cis(cls, cisjson):
