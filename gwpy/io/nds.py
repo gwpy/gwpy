@@ -46,5 +46,8 @@ class NDSConnection(object):
     def __enter__(self):
         return self
 
-    def __exit__(self):
-        self.close()
+    def __exit__(self, etype, evalue, etrace):
+        if etype is None:
+            self.close()
+        else:
+            raise
