@@ -8,7 +8,7 @@ from scipy import stats
 
 from astropy import units as aunits, coordinates as acoords
 
-from .. import (time, version, detectors)
+from .. import (time, version, detector)
 from ..utils import lal
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -89,11 +89,11 @@ class GammaRayBurst(object):
         if ifo:
             ifos = [ifo]
         else:
-            ifos = detectors.DETECTOR_BY_PREFIX.keys()
+            ifos = detector.DETECTOR_BY_PREFIX.keys()
         quadsum = lambda r: (r[0]**2 + r[1]**2)**(1/2.)
         response = {}
         for det in ifos:
-            response[det] = quadsum(detectors.DETECTOR_BY_PREFIX[det].response(
+            response[det] = quadsum(detector.DETECTOR_BY_PREFIX[det].response(
                                         self.coordinates))
         if isinstance(ifo, basestring):
             return response[ifo]

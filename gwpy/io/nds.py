@@ -5,7 +5,7 @@ to LIGO data.
 
 import nds2
 
-from .. import (version, detectors)
+from .. import (version, detector)
 from ..channels import Channel
 from ..time import Time
 from ..data import TimeSeries
@@ -14,8 +14,8 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 
-DEFAULT_HOSTS = {detectors.LHO_4k.prefix: ('nds.ligo-wa.caltech.edu', 31200),
-                 detectors.LLO_4k.prefix: ('nds.ligo-la.caltech.edu', 31200)}
+DEFAULT_HOSTS = {detector.LHO_4k.prefix: ('nds.ligo-wa.caltech.edu', 31200),
+                 detector.LLO_4k.prefix: ('nds.ligo-la.caltech.edu', 31200)}
 
 
 class NDSConnection(object):
@@ -33,10 +33,8 @@ class NDSConnection(object):
         series = []
         for i,data in enumerate(out):
             epoch = Time(data.gps_seconds, data.gps_nanoseconds, format='gps')
-            name = data.channel.name
-            rate = 1/float(data.channel.sample_rate)
-            series.append(TimeSeries(data, name=name, epoch=epoch, dt=rate,
-                                     channel=Channel.from_nds(data.channel)))
+            channel = Channel.from_nds(data.channel)
+            series.append(TimeSeries(data.data, channel=channel, epoch=epoch))
         if len(series) == 1:
             return series[0]
         else:
