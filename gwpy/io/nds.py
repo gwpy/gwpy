@@ -6,7 +6,7 @@ to LIGO data.
 import nds2
 
 from .. import (version, detector)
-from ..channels import Channel
+from ..detector import Channel
 from ..time import Time
 from ..data import TimeSeries
 

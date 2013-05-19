@@ -22,6 +22,8 @@
 from .interferometers import LaserInterferometer
 from ..utils import lal
 
+from .channel import Channel
+
 if lal.SWIG_LAL:
     swiglal = lal.swiglal
     __all__ = ([ifo.frDetector.name for ifo in swiglal.lalCachedDetectors] + 

@@ -16,24 +16,21 @@ __version__ = version.version
 class Channel(object):
     """Representation of a LaserInterferometer data channel
     """
-    def __init__(self, ch, sample_rate=None, unit=None, type=None, model=None):
-        self.name = None
-        self.sample_rate = None
-        self.unit = None
-        self.type = None
+    def __init__(self, ch, sample_rate=None, unit=None, dtype=None,
+                 model=None):
+        # test for Channel input
         if isinstance(ch, Channel):
             sample_rate = sample_rate or ch.sample_rate
             unit = unit or ch.unit
+            dtype = dtype or ch.dtype
+            model = model or ch.model
             ch = ch.name
+        # set attributes
         self.name = ch
-        if sample_rate:
-            self.sample_rate = sample_rate
-        if unit:
-            self.unit = unit
-        if type:
-            self.type = type
-        if model:
-            self.model = model
+        self.sample_rate = sample_rate
+        self.unit = unit
+        self.dtype = type
+        self.model = model
 
     @property
     def name(self):
@@ -49,7 +46,9 @@ class Channel(object):
         return self._sample_rate
     @sample_rate.setter
     def sample_rate(self, rate):
-        if rate is None:
+        if isinstance(rate, aunits.Unit):
+            self._sample_rate = rate
+        elif rate is None:
             self._sample_rate = None
         else:
             self._sample_rate = aunits.Quantity(float(rate), unit=aunits.Hertz)
@@ -68,15 +67,18 @@ class Channel(object):
     def model(self):
         return self._model
     @model.setter
-    def model(self, mdl)
-        self._model = mdl.lower()
+    def model(self, mdl):
+        self._model = mdl and mdl.lower() or mdl
 
     @property
-    def url(self):
-        return self._url
-    @url.setter
-    def url(self, u):
-        self._url = u
+    def dtype(self):
+        return self._dtype
+    @dtype.setter
+    def dtype(self, type_):
+        if not isinstance(type_, type):
+            raise TypeError("'dtype' attribute for Channel should be a `type` "
+                            "instance, e.g. float")
+        self._dtype = type_
 
     def __str__(self):
         return self.name
@@ -95,16 +97,7 @@ class Channel(object):
             host = host or dhost
             port = port or dport
         with nds.NDSConnection(host, port) as connection:
-            return connection.fetch(start, end, self)
-
-    @classmethod
-    def from_nds(cls, ndschannel):
-        try:
-            type_ = ndschannel.type
-        except AttributeError:
-            type_ = None
-        return cls(ndschannel.name, sample_rate=ndschannel.sample_rate,
-                   type=type_)
+            return connection.fetch(start, end, self.name)
 
     @classmethod
     def query(cls, name, debug=False):
