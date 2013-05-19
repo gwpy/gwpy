@@ -16,7 +16,7 @@ __version__ = version.version
 class Channel(object):
     """Representation of a LaserInterferometer data channel
     """
-    def __init__(self, ch, sample_rate=None, unit=None, type=None):
+    def __init__(self, ch, sample_rate=None, unit=None, type=None, model=None):
         self.name = None
         self.sample_rate = None
         self.unit = None
@@ -32,6 +32,8 @@ class Channel(object):
             self.unit = unit
         if type:
             self.type = type
+        if model:
+            self.model = model
 
     @property
     def name(self):
@@ -62,6 +64,20 @@ class Channel(object):
         else:
             self._unit = aunits.Unit(u)
 
+    @property
+    def model(self):
+        return self._model
+    @model.setter
+    def model(self, mdl)
+        self._model = mdl.lower()
+
+    @property
+    def url(self):
+        return self._url
+    @url.setter
+    def url(self, u):
+        self._url = u
+
     def __str__(self):
         return self.name
 
@@ -91,9 +107,9 @@ class Channel(object):
                    type=type_)
 
     @classmethod
-    def from_cis(cls, cisjson):
-        raise NotImplementedError("Conversion from CIS JSON out to Channel "
-                                  "has not been implemented yet")
+    def query(cls, name, debug=False):
+        from ..io import cis
+        return cis.query(name, debug=debug)
 
 
 _re_ifo = re.compile("[A-Z]\d:")
