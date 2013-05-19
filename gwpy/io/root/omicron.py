@@ -25,9 +25,10 @@ def read_triggers(filename, tree='triggers', columns=None):
     if not isinstance(filename, basestring):
         filename = filename.name
     f = ROOTFile(filename)
+    treename = tree
     tree = f.get_tree(tree)
     if not columns:
-        columns = f.branches[tree]
+        columns = f.branches[treename]
     size = (int(tree.GetEntries()), len(columns))
     t = Table(data=numpy.empty(size), names=columns)
     for nrow in range(size[0]):
