@@ -3,6 +3,9 @@
 """Query the GRBView web database
 """
 
+import copy
+import itertools
+import numpy
 import HTMLParser
 import urllib2
 import re
@@ -11,7 +14,7 @@ import string
 
 from astropy import units as aunits, coordinates as acoords, time as atime
 
-from .. import version
+from .. import (version, time)
 from ..sources import GammaRayBurst
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -71,9 +74,42 @@ def query(name, detector=None):
         raise ValueError("No records were found matching GRB='%s'" % name)
     grbs = []
     for key, params in records.iteritems():
-        det = key[0]
-        grb = GammaRayBurst.from_grbview(detector=det, **params)
+        grb = GammaRayBurst()
+        grb.name = params.get("grbname", None)
+        grb.detector = key[0]
+        grb.url = params.get("ftext", None)
+        grb.time = params.get("uttime", None)
+        grb.trig_id = params.get('trig', params.get('trig1', None))
+        if grb.time and grb.time != '-':
+            grb.time = time.Time(grb.time, scale="utc")
+        ra = params.get("ra", None)
+        if ra == '-':
+            ra = None
+        dec = params.get("decl", None)
+        if dec == '-':
+            dec = None
+        if ra and dec:
+            grb.coordinates = acoords.ICRSCoordinates(float(ra), float(dec),
+                                                      obstime=grb.time,
+                                                      unit=(aunits.degree,
+                                                            aunits.degree))
+        err = params.get("err", None)
+        if err and err != '-':
+            grb.error = aunits.Quantity(float(err), unit=aunits.degree)
+        t90 = params.get("t90", None)
+        if t90 and t90 != '-':
+            grb.t90 = aunits.Quantity(float(t90), unit=aunits.second)
+        t1 = params.get("t1", None)
+        if t1 and t1 != '-':
+            grb.t1 = float(t1)
+        t2 = params.get("t2", None)
+        if t2 and t2 != '-':
+            grb.t2 = float(t2)
+        fluence = params.get("fluence", None)
+        if fluence and fluence != '-':
+            grb.fluence = aunits.Quantity(float(fluence), "erg / cm**2")
         grbs.append(grb)
+    grbs = parse_grbview(grbs)
     detlist = set([grb.detector for grb in grbs])
     if detector:
         grbs = filter(lambda grb: re.match(detector, grb.detector, re.I), grbs)
@@ -81,6 +117,40 @@ def query(name, detector=None):
         raise KeyError("Records were found matching detectors ('%s'), but "
                        "not '%s'" % ("', '".join(detlist), detector))
     return sorted(grbs, key=lambda b: b.name)
+
+
+def parse_grbview(grbs):
+    """Parse the returns from grbview to get unique triggers
+    """
+    if len(grbs) == 1:
+        return grbs
+    grbs.sort(key=lambda grb: grb.detector)
+    pairs = itertools.combinations(grbs, 2)
+    grb_triggers = []
+    keep = numpy.zeros(len(grbs)).astype(bool)
+    for i,pair in enumerate(pairs):
+        a,b = pair
+        if a.trig_id is not None and a.trig_id == b.trig_id:
+            new = GammaRayBurst()
+            for attr in a.__slots__:
+                if hasattr(a, attr) and getattr(a, attr):
+                    setattr(new, attr, getattr(a, attr))
+            for attr in b.__slots__:
+                if attr == 'time' and b.time.iso.endswith('00:00:00.000'):
+                    continue
+                elif hasattr(b, attr) and getattr(b, attr):
+                    setattr(new, attr, getattr(b, attr))
+            if a in grb_triggers:
+                grb_triggers.pop(grb_triggers.index(a))
+            if b in grb_triggers:
+                grb_triggers.pop(grb_triggers.index(b))
+            grb_triggers.append(new)
+        elif a not in grb_triggers:
+            grb_triggers.append(a)
+        elif b not in grb_triggers:
+            grb_triggers.append(b)
+
+    return grb_triggers
 
 
 def _query(name):
