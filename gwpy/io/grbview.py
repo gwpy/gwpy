@@ -79,7 +79,7 @@ def query(name, detector=None):
         grb.detector = key[0]
         grb.url = params.get("ftext", None)
         grb.time = params.get("uttime", None)
-        grb.trig_id = params.get('trig', params.get('trig1', None))
+        grb.trig_id = int(params.get('trig', params.get('trig1', None)))
         if grb.time and grb.time != '-':
             grb.time = time.Time(grb.time, scale="utc")
         ra = params.get("ra", None)
@@ -91,8 +91,8 @@ def query(name, detector=None):
         if ra and dec:
             grb.coordinates = acoords.ICRSCoordinates(float(ra), float(dec),
                                                       obstime=grb.time,
-                                                      unit=(aunits.degree,
-                                                            aunits.degree))
+                                                      unit=(aunits.radian,
+                                                            aunits.radian))
         err = params.get("err", None)
         if err and err != '-':
             grb.error = aunits.Quantity(float(err), unit=aunits.degree)
@@ -140,6 +140,14 @@ def parse_grbview(grbs):
                     continue
                 elif hasattr(b, attr) and getattr(b, attr):
                     setattr(new, attr, getattr(b, attr))
+            try:
+                new.coordinates = acoords.ICRSCoordinates(float(new.ra),
+                                                          float(new.dec),
+                                                          obstime=new.time,
+                                                          unit=(aunits.degree,
+                                                                aunits.degree))
+            except AttributeError:
+                pass
             if a in grb_triggers:
                 grb_triggers.pop(grb_triggers.index(a))
             if b in grb_triggers:

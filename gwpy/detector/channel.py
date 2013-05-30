@@ -14,7 +14,45 @@ __version__ = version.version
 
 
 class Channel(object):
-    """Representation of a LaserInterferometer data channel
+    """Representation of a LaserInterferometer data channel.
+
+    Parameters
+    ----------
+    ch : `str`, `Channel`
+        name of this Channel (or another  Channel itself).
+        If a `Channel` is given, all other parameters not set explicitly
+        will be copied over.
+    sample_rate : `float`, `~astropy.units.Quantity`, optional
+        number of samples per second
+    unit : `~astropy.units.Unit`, `str`, optional
+        name of the unit for the data of this channel
+    dtype : `type`, optional
+        numeric type of data for this channel, e.g. `float`, or `int`
+    model : `str`, optional
+        name of the SIMULINK front-end model that produces this `Channel`
+
+    Notes
+    -----
+    The `Channel` structure implemented here is designed to match the
+    data recorded in the LIGO Channel Information System
+    (https://cis.ligo.org) for which a query interface is available.
+
+    Attributes
+    ----------
+    name
+    ifo
+    system
+    subsystem
+    signal
+    sample_rate
+    unit
+    dtype
+    model
+
+    Methods
+    -------
+    query
+    fetch_timeseries
     """
     def __init__(self, ch, sample_rate=None, unit=None, dtype=None,
                  model=None):
@@ -34,15 +72,47 @@ class Channel(object):
 
     @property
     def name(self):
+        """Name of this `Channel`. This should follow the naming
+        convention, with the following format: 'IFO:SYSTEM-SUBSYSTEM_SIGNAL'
+        """
         return self._name
     @name.setter
     def name(self, n):
         self._name = str(n)
-        self.ifo, self.system, self.subsystem, self.signal = (
+        self._ifo, self._system, self._subsystem, self._signal = (
             parse_channel_name(self.name))
 
     @property
+    def ifo(self):
+        """Interferometer prefix for this `Channel`, e.g `H1`.
+        """
+        return self._ifo
+
+    @property
+    def system(self):
+        """Instrumental system for this `Channel`, e.g `PSL`
+        (pre-stabilised laser).
+        """
+        return self._system
+
+    @property
+    def subsystem(self):
+        """Instrumental sub-system for this `Channel`, e.g `ISS`
+        (pre-stabiliser laser intensity stabilisation servo).
+        """
+        return self._subsystem
+
+    @property
+    def signal(self):
+        """Instrumental signal for this `Channel`, relative to the
+        system and sub-system, e.g `FIXME`.
+        """
+        return self._signal
+
+    @property
     def sample_rate(self):
+        """Rate of samples (Hertz) for this `Channel`
+        """
         return self._sample_rate
     @sample_rate.setter
     def sample_rate(self, rate):
@@ -55,6 +125,8 @@ class Channel(object):
 
     @property
     def unit(self):
+        """Data unit for this `Channel`
+        """
         return self._unit
     @unit.setter
     def unit(self, u):
@@ -65,6 +137,8 @@ class Channel(object):
 
     @property
     def model(self):
+        """Name of the SIMULINK front-end model that defines this `Channel`
+        """
         return self._model
     @model.setter
     def model(self, mdl):
@@ -72,6 +146,8 @@ class Channel(object):
 
     @property
     def dtype(self):
+        """Numeric type for data in this `Channel`
+        """
         return self._dtype
     @dtype.setter
     def dtype(self, type_):
@@ -88,9 +164,30 @@ class Channel(object):
 
     @property
     def tex_name(self):
+        """Name of this `Channel` in LaTeX printable format
+        """
         return str(self).replace("_", r"\_")
 
-    def fetch(self, start, end, host=None, port=None):
+    def fetch_timeseries(self, start, end, host=None, port=None):
+        """Fetch a data `~gwpy.data.TimeSeries` for this `Channel`.
+
+        Parameters
+        ----------
+        start : `~gwpy.time.Time`, `float`
+            GPS start time for data request
+        end : `~gwpy.time.Time`, float
+            GPS end time for data request
+        host : `str`, optional
+            URL of NDS2 server host, defaults to site server for this
+            channel's observatory
+        port : `int`, optional
+            port number for NDS2 server, required if `host` argument
+            is given
+
+        Returns
+        -------
+        `~gwpy.data.TimeSeries`
+        """
         from ..io import nds
         if not host or port:
             dhost,dport = nds.DEFAULT_HOSTS[self.ifo]
@@ -101,6 +198,21 @@ class Channel(object):
 
     @classmethod
     def query(cls, name, debug=False):
+        """Query the LIGO Channel Information System for the `Channel`
+        matchine the given name
+
+        Parameters
+        ----------
+        name : `str`
+            name of channel
+        debug : `bool`, optional
+            print verbose HTTP connection status for debugging,
+            default: `False`
+
+        Returns
+        -------
+        `Channel`
+        """
         from ..io import cis
         return cis.query(name, debug=debug)
 

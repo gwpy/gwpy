@@ -13,9 +13,13 @@ from ... import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-def read_gwf(filepath, channel, epoch=-1, duration=-1, verbose=False):
+def read_gwf(filepath, channel, epoch=None, duration=None, verbose=False):
     if isinstance(filepath, file):
         filepath = filepath.name
+    if epoch is None:
+        epoch = -1
+    if duration is None:
+        duration = -1
     data, epoch, epoch_offset, dt, x_unit, y_unit = frgetvect1d(
             filepath, channel, start=epoch, span=duration, verbose=verbose)
     epoch += epoch_offset
