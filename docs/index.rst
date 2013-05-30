@@ -14,5 +14,6 @@ User documentation
    overview
    install
    getting_started
+   detector/index
    data/index
    segments/index
