@@ -22,7 +22,7 @@
 from .interferometers import LaserInterferometer
 from ..utils import lal
 
-from .channel import Channel
+from .channel import (Channel, ChannelList)
 
 if lal.SWIG_LAL:
     swiglal = lal.swiglal

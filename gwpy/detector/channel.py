@@ -213,8 +213,14 @@ class Channel(object):
         -------
         `Channel`
         """
-        from ..io import cis
-        return cis.query(name, debug=debug)
+        channellist = ChannelList.query(name, debug=debug)
+        if len(channellist) == 0:
+            raise ValueError("No channels found matching '%s'." % name)
+        if len(channellist) > 1:
+            raise ValueError("%d channels found matching '%s', please refine "
+                             "search, or use `ChannelList.query` to return "
+                             "all results." % (len(channellist), name))
+        return channellist[0]
 
 
 _re_ifo = re.compile("[A-Z]\d:")
@@ -242,3 +248,99 @@ def parse_channel_name(name):
     else:
         signal = None
     return ifo, system, subsystem, signal
+
+from .channel import Channel
+
+
+class ChannelList(list):
+    """A list of Channels, with parsing/sieveing utilities.
+    """
+    def find(self, name):
+        """Find the channel with the given name in this ChannelList.
+
+        Parameters
+        ----------
+        name : `str`
+            name of the `Channel` to find
+
+        Returns
+        -------
+        idx : `int`
+            returns the position of the first `Channel` in self
+            whose name matches the input
+
+        Raises
+        ------
+        ValueError if no such element exists.
+        """
+        for i,chan in enumerate(self):
+            if name == chan.name:
+                return i
+        raise ValueError(name)
+
+    def sieve(self, name=None, sample_rate=None, sample_range=None,
+              exact_match=False):
+        """Find all Channels in this list that match the specified
+        criteria.
+
+        Parameters
+        ----------
+        name : `str`, or regular expression
+            any part of the channel name against which to match
+            (or full name if `exact_match=False` is given)
+        sample_rate : `float`
+            rate (number of samples per second) to match exactly
+        sample_range : 2-`tuple`
+            `[low, high]` closed interval or rates to match within
+        exact_match : `bool`
+            return channels matching `name` exactly, default: `False`
+
+        Returns
+        -------
+        new : `ChannelList`
+            a new `ChannelList` containing the matching channels
+        """
+        # format name regex
+        if isinstance(name, re._pattern_type):
+            flags = name.flags
+            name = name.pattern
+        else:
+            flags = 0
+        if exact_match:
+            name = name.startswith('\\A') and name or r"\A%s" % name
+            name = name.endwith('\\Z') and name or r"%s\Z" % name
+        name_regexp = re.compile(name, flags=flags)
+        c = list(self)
+        if name is not None:
+            c = [entry for entry in c if
+                 name_regexp.search(entry.name) is not None]
+        if sample_rate is not None:
+            c = [entry for entry in c if
+                 float(entry.sample_rate) == sample_rate]
+        if sample_range is not None:
+            c = [entry for entry in c if\
+                 sample_range[0] <= float(entry.sample_rate) <=
+                     sample_range[1]]
+
+        return self.__class__(c)
+
+    @classmethod
+    def query(cls, name, debug=False):
+        """Query the LIGO Channel Information System a `ChannelList`
+        of entries matching the given name regular expression.
+
+        Parameters
+        ----------
+        name : `str`
+            name of channel, or part of it.
+        debug : `bool`, optional
+            print verbose HTTP connection status for debugging,
+            default: `False`
+
+        Returns
+        -------
+        `ChannelList`
+        """
+        from ..io import cis
+        return cis.query(name, debug=debug)
+

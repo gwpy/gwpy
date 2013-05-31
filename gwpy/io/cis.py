@@ -12,14 +12,14 @@ from urllib2 import HTTPError
 from glue.auth.saml import HTTPNegotiateAuthHandler
 
 from .. import version
-from ..detector import Channel
+from ..detector import (Channel, ChannelList)
 
 from . import auth
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-CIS_API_URL = 'https://cis.ligo.org/api/channel/%s'
+CIS_API_URL = 'https://cis.ligo.org/api/channel'
 CIS_DATA_TYPE = {4: numpy.float32}
 
 
@@ -37,19 +37,53 @@ def query(name, debug=False):
     channel : `~gwpy.detector.Channel`
         Channel with all details as acquired from the CIS
     """
-    url = CIS_API_URL % (name)
+    url = '%s/?q=%s' % (CIS_API_URL, name)
+    more = True
+    out = ChannelList()
+    while more:
+        reply = _get(url, debug=debug)
+        try:
+           out.extend(map(parse_json, reply[u'results']))
+        except KeyError:
+           pass
+        more = reply.has_key('next') and reply['next'] is not None
+        if more:
+            url = reply['next']
+        else:
+            break
+    out.sort(key=lambda c: c.name)
+    return out
+
+
+def _get(url, debug=False):
+    """Perform a GET query against the CIS
+    """
     try:
         response = auth.request(url, debug=debug)
     except HTTPError:
         raise ValueError("Channel named '%s' not found in Channel "
                          "Information System. Please double check the "
                          "name and try again." % name)
-    channel_data = json.loads(response.read())
-    name = channel_data['name']
-    sample_rate = channel_data['datarate']
-    unit = channel_data['units']
-    dtype = CIS_DATA_TYPE[channel_data['datatype']]
-    model = channel_data['source']
-    url = channel_data['displayurl']
-    return Channel(channel_data['name'], sample_rate=sample_rate, unit=unit,
+    return json.loads(response.read())
+
+def parse_json(data):
+    """Parse the input data dict into a `Channel`.
+
+    Parameters
+    ----------
+    data : `dict`
+        input data from CIS json query
+
+    Returns
+    -------
+    c : `Channel`
+        a `Channel` built from the data
+    """
+    name = data['name']
+    sample_rate = data['datarate']
+    unit = data['units']
+    dtype = CIS_DATA_TYPE[data['datatype']]
+    model = data['source']
+    url = data['displayurl']
+    return Channel(data['name'], sample_rate=sample_rate, unit=unit,
                    dtype=dtype, model=model)
