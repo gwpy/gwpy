@@ -21,11 +21,25 @@ Below are a small set of simple examples to get going with using GWpy for studyi
 #1: Reading data from a GW frame
 --------------------------------
 
-The `gwpy.io` module provides modules for reading and writing data from a number of formats. If you wanted to read data from a `GWF` file for a given data channel, you can import the `gwf` module and read the data::
+The `gwpy.data` module provides objects that represent the basic data products from a time-domain instrument, namely the `TimeSeries`, `Spectrum`, and `Spectrogram`.
 
-    >>> from gwpy.io import gwf
-    >>> data = gwf.read('myframe.gwf', 'G1:DER_DATA_H')
+All data channels recorded by the instrument are stored in `TimeSeries` within Gravitational Wave Frame (GWF) files.
+If you wanted to read data from a `GWF` file for a given data channel, you can import the `TimeSeris` object and fill it with data::
+
+    >>> from gwpy.data import TimeSeries
+    >>> data = TimeSeries.read('myframe.gwf', 'G1:DER_DATA_H')
 
 where `G1:DER_DATA_H` is the name of the data stream for calibrated gravitational wave strain recorded by the GEO600 instrument.
 
-The returned `data` object is a `~gwpy.types.timeseries.TimeSeries` object.
+The returned `data` object is a `~gwpy.data.TimeSeries` object.
+
+#2: Plotting data from a GW frame
+--------------------------------
+
+Given the above example to read data from a frame, it's a simple step further to get these data into an image for viewing::
+
+    >>> from gwpy.data import TimeSeries
+    >>> from gwpy.plotter import TimeSeriesPlot
+    >>> data = TimeSeries.read('myframe.gwf', 'G1:DER_DATA_H')
+    >>> plot = TimeSeriesPlot(data)
+    >>> plot.show()
