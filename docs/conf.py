@@ -48,7 +48,7 @@ rst_epilog += """
 # This does not *have* to match the package name, but typically does
 project = u'GWpy'
 author = u'The LIGO Scientific Collaboration and the Virgo Collaboration'
-copyright = u'2012, ' + author
+copyright = u'2013, ' + author
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
