@@ -15,6 +15,7 @@ from astropy import units
 from .. import version
 from ..utils import lal
 from ..time import Time
+from ..detector import Channel
 from .nddata import NDData
 
 if lal.SWIG_LAL:
@@ -29,39 +30,77 @@ __all__ = ["TimeSeries", "Spectrum", "Spectrogram"]
 
 
 class TimeSeries(NDData):
-    """A data array holding some metadata to represent a time series.
+    """A data array holding some metadata to represent a time series of
+    instrumental or analysis data.
 
-    The data for the series are held, along with the 'epoch'
-    (series start time) and 'dt' (time between successive samples)
-    The array of times is constructed on request from these attribtutes.
+    Parameters
+    ----------
+    data : `numpy.ndarray`, `list`
+        Data values to initialise TimeSeries
+    epoch : `float` GPS time, or `~gwpy.time.Time`, optional
+        TimeSeries start time
+    channel : `~gwpy.detector.Channel`, or `str`, optional
+        Data channel for this TimeSeries
+    unit : `~astropy.units.Unit`, optional
+        The units of the data
+
+    Returns
+    -------
+    result : `~gwpy.types.TimeSeries`
+        A new TimeSeries
+
+    Notes
+    -----
+    Any regular array, i.e. any iterable collection of data, can be
+    easily converted into a `TimeSeries`.
+
+    >>> data = numpy.asarray([1,2,3])
+    >>> series = TimeSeries(data)
+
+    The necessary metadata to reconstruct timing information are recorded
+    in the `epoch` and `sample_rate` attributes. This array can be
+    calculated via the `get_times` method.
+
+    Attributes
+    ----------
+    name
+    epoch
+    channel
+    unit
+    sample_rate
+
+    Methods
+    -------
+    get_times
+    psd
+    asd
+    spectrogram
+    plot
+    read
+    fetch
     """
-    def __init__(self, data, epoch=None, dt=None, name=None, unit=None,
-                 **kwargs):
+    def __init__(self, data, epoch=None, channel=None, unit=None,
+                 sample_rate=None, name=None, **kwargs):
         """Generate a new TimeSeries.
-
-        Parameters
-        ----------
-        data : numpy.ndarray, list
-            Data values to initialise TimeSeries
-        epoch : GPS time, or `~gwpy.time.Time`, optional
-            TimeSeries start time
-        dt : float, optional
-            Number of samples per second
-        unit : `~astropy.units.Unit`, optional
-            The units of the data
-
-        Returns
-        -------
-        result : `~gwpy.types.TimeSeries`
-            A new TimeSeries
         """
         super(TimeSeries, self).__init__(data, name=name, unit=unit, **kwargs)
+        self.channel = Channel(channel)
         self.epoch = epoch
-        self.dt = dt
-        self.name = name
+        self.unit = unit
+        self.sample_rate = (sample_rate and sample_rate or
+                            channel and channel.sample_rate or None)
+        self.name = name and name or channel and channel.name or None
+        """Test Name for this TimeSeries"""
 
     @property
     def epoch(self):
+        """Starting GPS time epoch for this `TimeSeries`.
+
+        This attribute is recorded as a `~gwpy.time.Time` object in the
+        GPS format, allowing native conversion into other formats.
+
+        See `~astropy.time` for details on the `Time` object.
+        """
         return self._meta['epoch']
     @epoch.setter
     def epoch(self, epoch):
@@ -76,24 +115,111 @@ class TimeSeries(NDData):
         self._meta['epoch'] = epoch
 
     @property
+    def unit(self):
+        """Unit of the data in this `TimeSeries`.
+        """
+        return self._unit
+    @unit.setter
+    def unit(self, u):
+        if u is None:
+            self._unit = None
+        else:
+            self._unit = units.Unit(u)
+
+    @property
     def dt(self):
-        return self._meta['dt']
+        """Time between samples for this `TimeSeries`.
+        """
+        return (1 / self.sample_rate).decompose()
     @dt.setter
     def dt(self, val):
         if val is None:
-            self._meta['dt'] = val
+            self.sample_rate = None
         else:
-            self._meta['dt'] = units.Quantity(val, units.second)
+            self.sample_rate = 1 / float(val)
 
     @property
     def sample_rate(self):
-        return 1 / self._meta['dt']
+        """Data rate for this `TimeSeries` in samples per second (Hertz).
+        """
+        try:
+            return self.channel.sample_rate
+        except:
+            return self._meta['sample_rate']
     @sample_rate.setter
     def sample_rate(self, val):
-        self.dt = 1 / val
+        if val is not None:
+            val = units.Quantity(val, units.Hertz)
+        try:
+            self.channel.sample_rate = val
+        except AttributeError:
+            self._meta['sample_rate'] = val
+
+    @property
+    def channel(self):
+        """Data channel associated with this `TimeSeries`.
+        """
+        return self._channel
+    @channel.setter
+    def channel(self, ch):
+        self._channel = Channel(ch)
+
+    @property
+    def span(self):
+        """Time Segment encompassed by thie `TimeSeries`.
+        """
+        return Segment(epoch.gps, epoch.gps + self.data.size * self.dt)
+
+    def is_contiguous(self, other):
+        """Check whether other is contiguous with self.
+        """
+        seg1 = self.span
+        seg2 = other.span
+        if seg1[1] == seg2[0]:
+            return True
+        else:
+            return False
+
+    def is_compatible(self, other):
+        """Check whether metadata attributes for self and other match.
+        """
+        if not self.sample_rate == other.sample_rate:
+            raise ValueError("TimeSeries sampling rates do not match.")
+        if not self.unit == other.unit:
+            raise ValueError("TimeSeries units do not match")
+        if not self.unit == other.unit:
+            raise ValueError("TimeSeries units do not match")
+        return True
+
+    def __iand__(self, other):
+        """Append the other TimeSeries to self.
+        """
+        if not self.is_contiguous(other):
+            raise ValueError("TimeSeries are not contiguous")
+        self.is_compatible(other)
+        shape = self.data.shape
+        self.data.resize((shape[0], shape[1] + other.data.size))
+        self.data[shape[1]:] = other.data
+        return
+
+    def __and__(self, other):
+        """Return a `TimeSeries` from the combination of self and other
+        """
+        if not self.is_contiguous(other):
+            raise ValueError("TimeSeries are not contiguous")
+        self.is_compatible(other)
+        return self.__class__(numpy.concantenate((self.data, other.data)),
+                              epoch=self.epoch, sample_rate=self.sample_rate,
+                              unit=self.unit, channel=self.channel)
 
     def get_times(self, dtype=LIGOTimeGPS):
         """Get the array of GPS times that accompany the data array
+
+        Parameters
+        ----------
+        dtype : `type`, optional
+            return data type, defaults to `LIGOTimeGPS` if available,
+            otherwise, `~numpy.float64`
 
         Returns
         -------
@@ -105,6 +231,29 @@ class TimeSeries(NDData):
         return NDData(data, unit=units.second)
 
     def psd(self, method='welch', **kwargs):
+        """Calculate the power spectral density (PSD) `Spectrum` for this
+        `TimeSeries`.
+
+        The `method` argument can be one of
+            * 'welch'
+            * 'bartlett'
+        and any keyword arguments will be passed to the relevant method
+        in `gwpy.spectrum`.
+
+        Parameters
+        ----------
+        method : `str`, defaults to `'welch'`
+            name of average spectrum method
+        **kwargs
+            other keyword arguments passed to the average spectrum method,
+            see the documentation for each method in `gwpy.spectrum` for
+            details
+
+        Returns
+        -------
+        psd :  `~gwpy.series.Spectrum`
+            a data series containing the PSD.
+        """
         from ..spectrum import psd
         psd_ = psd(self, method, **kwargs)
         if not hasattr(psd_.unit, "name"):
@@ -112,6 +261,19 @@ class TimeSeries(NDData):
         return psd_
 
     def asd(self, *args, **kwargs):
+        """Calculate the amplitude spectral density (PSD)
+        `Spectrum` for this `TimeSeries`.
+
+        All `*args` and `**kwargs` are passed directly to the
+        `Timeseries.psd` method, with the return converted into
+        an amplitude series.
+
+        Returns
+        -------
+        asd :  `~gwpy.series.Spectrum`
+            a data series containing the ASD.
+        """
+
         asd = self.psd(*args, **kwargs)
         asd.data **= 1/2.
         asd.unit **= 1/2.
@@ -120,6 +282,10 @@ class TimeSeries(NDData):
         return asd
 
     def spectrogram(self, step, method='welch', **kwargs):
+        """Calculate the power `Spectrogram` for this `TimeSeries`.
+
+        This method wraps the `spectrogram` method.
+        """
         from ..spectrum import spectrogram
         spec_ = spectrogram(self, method, step, **kwargs)
         if not hasattr(spec_.unit, 'name'):
@@ -127,6 +293,8 @@ class TimeSeries(NDData):
         return spec_
 
     def plot(self, **kwargs):
+        """Plot the data for this TimeSeries.
+        """
         from ..plotter import TimeSeriesPlot
         return TimeSeriesPlot(self, **kwargs)
 
@@ -147,6 +315,36 @@ class TimeSeries(NDData):
         if item.step:
             new.dt = self.dt * item.step
         return new
+
+    @classmethod
+    def fetch(cls, channel, start, end, host=None, port=None):
+        """Fetch data from NDS into a TimeSeries
+
+        Parameters
+        ----------
+        channel : `~gwpy.detector.Channel`, or `str`
+            required data channel
+        start : `~gwpy.time.Time`, or float
+            GPS start time of data span
+        end : `~gwpy.time.Time`, or float
+            GPS end time of data span
+        host : `str`, optional
+            URL of NDS server to use, defaults to observatory site host
+        port : `int`, optional
+            port number for NDS server query, must be given with `host`
+
+        Returns
+        -------
+        `TimeSeries`
+        """
+        from ..io import nds
+        channel = Channel(channel)
+        if not host or port:
+            dhost,dport = nds.DEFAULT_HOSTS[channel.ifo]
+            host = host or dhost
+            port = port or dport
+        with nds.NDSConnection(host, port) as connection:
+            return connection.fetch(start, end, channel)
 
 class Spectrum(NDData):
     """A data array holding some metadata to represent a spectrum.

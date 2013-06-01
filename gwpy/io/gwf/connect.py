@@ -8,6 +8,7 @@ from astropy import units
 
 from pylal.Fr import *
 from ...data import TimeSeries
+from ...detector import Channel
 from ... import version
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -24,7 +25,8 @@ def read_gwf(filepath, channel, epoch=None, duration=None, verbose=False):
             filepath, channel, start=epoch, span=duration, verbose=verbose)
     epoch += epoch_offset
     unit = units.Unit(y_unit)
-    return TimeSeries(data, epoch=epoch, dt=dt, unit=unit, name=channel)
+    channel = Channel(channel, sample_rate = 1/float(dt))
+    return TimeSeries(data, channel=channel, epoch=epoch, unit=unit)
 
 
 def identify_gwf(*args, **kwargs):

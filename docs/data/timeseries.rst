@@ -43,3 +43,9 @@ Information on the resulting `~gwpy.data.Spectrum` object can be found in (REF).
 
 Reference/API
 =============
+
+.. currentmodule:: gwpy.data.series
+
+.. autoclass:: TimeSeries
+   :show-inheritance:
+   :members: get_times, psd, asd, spectrogram, plot, read, fetch
