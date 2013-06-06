@@ -12,7 +12,7 @@ from .utils import ROOTFile
 from ...table import Table
 from .. import version
 
-if sys.version_info.major < 3:
+if sys.version_info[0] < 3:
     range = xrange
 
 
