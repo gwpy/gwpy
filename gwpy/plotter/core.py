@@ -6,7 +6,10 @@
 import numpy
 
 from matplotlib import (colors, ticker, pyplot as mpl)
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+try:
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+except ImportError:
+    from mpl_toolkits.axes_grid import make_axes_locatable
 
 from lal import (git_version, gpstime)
 

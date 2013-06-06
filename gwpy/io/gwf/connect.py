@@ -33,10 +33,11 @@ def identify_gwf(*args, **kwargs):
     filename = args[1][0]
     if isinstance(filename, file):
         filename = filename.name
-    if filename.endswith("gwf"):
-        return True
-    else:
+    if not isinstance(filename, basestring) or not filename.endswith('gwf'):
         return False
+    else:
+        return True
 
 registry.register_reader("gwf", TimeSeries, read_gwf, force=True)
 registry.register_identifier("gwf", TimeSeries, identify_gwf)
+
