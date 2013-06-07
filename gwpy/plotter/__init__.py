@@ -1,6 +1,10 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-"""Utilities for building plots in LAL.
+"""This module provides plotting utilities for visualising GW data
+
+The standard data types (`TimeSeries`, `Table`, `DataQualityFlag`) can
+all be easily visualised using the relevant plotting objects, with 
+many configurable parameters both interactive, and in saving to disk.
 """
 
 import os
@@ -20,17 +24,18 @@ from .table import *
 from .series import *
 from .gwf import *
 
-LAL_PLOT_PARAMS = {
-    "text.usetex": True,
+USE_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
+
+GWPY_PLOT_PARAMS = {
     "axes.grid": True,
     "axes.axisbelow": False,
     "axes.labelsize": 22,
-    "font.family": "serif",
-    "font.serif": ["Computer Modern"],
     "image.aspect": 'auto',
     "image.interpolation": 'nearest',
     "image.origin": 'lower',
     "xtick.labelsize": 20,
     "ytick.labelsize": 20}
-mpl.rcParams.update(LAL_PLOT_PARAMS)
-
+if USE_TEX:
+    GWPY_PLOT_PARAMS.update({"text.usetex": True, "font.family": "serif",
+                             "font.serif": ["Computer Modern"]})
+mpl.rcParams.update(GWPY_PLOT_PARAMS)

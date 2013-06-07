@@ -4,6 +4,7 @@
 `~gwpy.data`
 """
 
+import re
 import warnings
 from matplotlib import pyplot
 
@@ -127,8 +128,11 @@ class SpectrogramPlot(TimeSeriesPlot):
         self.logy = logy
         if len(spectrograms):
             self.set_time_format("gps", epoch=self.epoch)
+            epoch_str = self.epoch.iso
+            if re.search('.0+\Z', epoch_str):
+                epoch_str = epoch_str.rsplit('.', 1)[0]
             self.xlabel = ("Time from epoch: %s (%s)"
-                           % (self.epoch.iso.rstrip('0.'), self.epoch.gps))
+                           % (epoch_str, self.epoch.gps))
             self._ax.autoscale_view()
 
     @property

@@ -30,7 +30,7 @@ class DataQualityFlag(object):
         - '`valid`' segments: times during which this flag was well defined
         - '`active`' segments: times during which this flag was active
     """
-    def __init__(self, name=None, active=None, valid=None):
+    def __init__(self, name=None, active=[], valid=[]):
         """Define a new DataQualityFlag, with a name, a set of active
         segments, and a set of valid segments
 
@@ -46,10 +46,8 @@ class DataQualityFlag(object):
             A list of valid segments for this flag
         """
         self.ifo, self.name, self.version = parse_flag_name(name)
-        if valid:
-            self.valid = valid
-        if active:
-            self.active = active
+        self.valid = valid
+        self.active = active
 
     @property
     def active(self):
@@ -59,10 +57,12 @@ class DataQualityFlag(object):
         if hasattr(self, "valid"):
             return (self._active & self.valid).coalesce()
         else:
-            return self._active.coalesce()
+            return self._active
     @active.setter
     def active(self, segmentlist):
         self._active = SegmentList(map(Segment, segmentlist)).coalesce()
+        if not self.valid and len(segmentlist):
+            self.valid = [segmentlist.extent()]
 
     @property
     def valid(self):
@@ -107,14 +107,8 @@ class DataQualityFlag(object):
         ifo, name, version = parse_flag_name(flag)
         if not version:
             version = '*'
-        if hasattr(gpsstart, "gps"):
-            gpsstart = int(gpsstart.gps)
-        else:
-            gpsstart = int(float(gpsstart))
-        if hasattr(gpsend, "gps"):
-            gpsend = int(gpsend.gps)
-        else:
-            gpsend = int(math.ceil(gpsend))
+        gpsstart = int(float(gpsstart))
+        gpsend = int(math.ceil(float(gpsend)))
         connection = segdb_utils.setup_database(url)
         engine = segdb_engine.LdbdQueryEngine(connection)
 

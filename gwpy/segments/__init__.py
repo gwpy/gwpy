@@ -9,11 +9,18 @@ The core of this module is adapted from the `Grid LIGO User Environment
 
 from .. import version
 
-__author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-from .core import (Segment, SegmentList, SegmentListDict)
+from glue.segments import (segmentlistdict as SegmentListDict,
+                           segmentlist as SegmentList,
+                           segment as Segment)
+
+#from .core import (Segment, SegmentList, SegmentListDict)
 from .flags import DataQualityFlag
+
 
 from ..io import segwizard
 from ..io.ligolw import segments as ligolw_segments
+
+__all__ = ['Segment', 'SegmentList', 'SegmentListDict', 'DataQualityFlag']

@@ -3,7 +3,6 @@
 """Utilties for reading data from ROOT files
 """
 
-from ROOT import TFile
 
 from .. import version
 
@@ -15,6 +14,7 @@ class ROOTFile(object):
     """Base ROOT data reader.
     """
     def __init__(self, filename):
+        from ROOT import TFile
         self._root = TFile(filename)
 
     @property
