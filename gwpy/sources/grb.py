@@ -11,6 +11,8 @@ from astropy import units as aunits, coordinates as acoords
 from .. import (time, version, detector)
 from ..utils import lal
 
+from .transient import (TransientSource, TransientSourceList)
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
@@ -19,38 +21,19 @@ SHORT_GRB_DIST = stats.norm(scale=0.61, loc=-0.11)
 LONG_GRB_DIST = stats.norm(scale=0.43, loc=1.54)
 
 
-class GammaRayBurst(object):
+class GammaRayBurst(TransientSource):
     __slots__ = ['name', 'detector', 'time', 'coordinates',
                  'error', 'distance', 't90', 't1', 't2', 'fluence', 'url',
                  'trig_id']
 
-    def __init__(self, **args):
-        for key,val in args:
-            setattr(key, val)
-
-    @property
-    def ra(self):
-        return self.coordinates.ra.radians
-
-    @property
-    def dec(self):
-        return self.coordinates.dec.radians
-
-    @property
-    def gps(self):
-        if lal.SWIG_LAL:
-            return lal.swiglal.LIGOTimeGPS(self.time.gps)
-        else:
-            return self.time.gps
-
     @classmethod
     def query(cls, name, detector=None, source='grbview'):
-        if source.lower() == 'grbview':
-            from ..io import grbview
-            return grbview.query(name, detector=detector)
-        else:
-            raise NotImplementedError("Querying from '%s' has not been "
-                                      "implemented." % source)
+        grbs = GammaRayBurstList(name, detector=detector, source=source)
+        if len(grbs) > 1:
+            raise ValueError("Multiple records found for this GRB name."
+                             "Please refine your search, or use "
+                             "GammaRayBurstList.query to return all records.")
+        return grbs[0]
 
     def is_short(self):
         sp = SHORT_GRB_DIST.pdf(log10(self.t90))
@@ -62,23 +45,27 @@ class GammaRayBurst(object):
         lp = LONG_GRB_DIST.pdf(log10(self.t90))
         return lp / (sp + lp)
 
-    def antenna_reponse(self, ifo=None):
-        if ifo:
-            ifos = [ifo]
-        else:
-            ifos = detector.DETECTOR_BY_PREFIX.keys()
-        quadsum = lambda r: (r[0]**2 + r[1]**2)**(1/2.)
-        response = {}
-        for det in ifos:
-            response[det] = quadsum(detector.DETECTOR_BY_PREFIX[det].response(
-                                        self.coordinates))
-        if isinstance(ifo, basestring):
-            return response[ifo]
-        else:
-            return response
-
     def __str__(self):
         return "GRB%s" % self.name
 
     def __repr__(self):
         return "GammaRayBurst(%s, detector='%s')" % (str(self), self.detector)
+
+
+class GammaRayBurstList(TransientSourceList):
+    """Representation of a list of GammaRayBursts.
+
+    This list can represent multiple individual bursts, or individual
+    detections of the same burst by different sattelites
+    """
+    @classmethod
+    def query(cls, name, detector=None, source='grbview'):
+        """Query the given source to find information on the given
+        GammaRayBurst name
+        """
+        if source.lower() == 'grbview':
+            from ..io import grbview
+            return grbview.query(name, detector=detector)
+        else:
+            raise NotImplementedError("Querying from '%s' has not been "
+                                      "implemented." % source)

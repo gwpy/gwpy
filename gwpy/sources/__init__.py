@@ -7,4 +7,6 @@ from .. import version
 __author__ = "Duncan M. Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-from .grb import GammaRayBurst
+from .core import *
+from .transient import *
+from .grb import *

@@ -22,6 +22,8 @@ __version__ = version.version
 
 GRBVIEW_URL = "http://grbweb.icecube.wisc.edu/GRBview.php?GRB=%s"
 
+GRBVIEW_KEY_MAP = {'GBM Public Data':'fermigbm'}
+
 class GRBViewParser(HTMLParser.HTMLParser):
 
     def __init__(self, *args, **kwargs):
@@ -30,37 +32,43 @@ class GRBViewParser(HTMLParser.HTMLParser):
         self._key = None
         self.records = {}
         self._table_pos = 0
+        self._table_open = False
 
     def handle_starttag(self, tag, attrs):
-        if tag == "input":
-            attrs = dict(attrs)
-            name = attrs['name']
-            value = attrs['value']
-            if value.lower().startswith('<a'):
-                value = re.split('[=>]', value.lower())[1]
-            if name == 'table':
-                self.records[value] = {}
-                self._key = value
-            elif name.startswith("colname"):
-                idx = int(name[7:])
-                if self.records[self._key].has_key(idx):
-                    self.records[self._key][idx][0] = value.lower()
-                else:
-                    self.records[self._key][idx] = [value.lower(), None]
-            elif name.startswith("va"):
-                idx = int(name[2:])
-                if self.records[self._key].has_key(idx):
-                    self.records[self._key][idx][1] = value
-                else:
-                    self.records[self._key][idx] = [None, value]
+        self._tag = tag
 
+        # handle tables
+        if tag == 'table':
+            self._table_open = True
+            self._headers = []
+            self._data = []
+
+    def handle_data(self, data):
+        if self._tag == 'font' and data:
+            if data == 'Notice:':
+                self._table_open = False
+                return
+            self._key = data.rstrip(':')
+            if self._key in GRBVIEW_KEY_MAP.keys():
+               self._key = GRBVIEW_KEY_MAP[self._key]
+            self.records[self._key] = {}
+        if self._table_open:
+            if self._tag == 'th':
+                self._headers.append(data.lower())
+            elif self._tag == 'td':
+                self._data.append(data)
+
+    def handle_endtag(self, tag):
+        if tag == 'table' and self._table_open and self._key:
+            self._table_open = False
+            self.records[self._key] = dict(zip(self._headers, self._data))
 
 def query(name, detector=None):
     grb = name.upper()
     if grb.startswith("GRB"):
         grb = grb[3:]
-    records = _query(name)
-    if not re.match('[A-Z]', grb):
+    records = _query(grb)
+    if not re.search('[A-Z]\Z', grb):
         i = 0
         while True:
             grb2 = grb + string.uppercase[i]
@@ -91,8 +99,8 @@ def query(name, detector=None):
         if ra and dec:
             grb.coordinates = acoords.ICRSCoordinates(float(ra), float(dec),
                                                       obstime=grb.time,
-                                                      unit=(aunits.radian,
-                                                            aunits.radian))
+                                                      unit=(aunits.degree,
+                                                            aunits.degree))
         err = params.get("err", None)
         if err and err != '-':
             grb.error = aunits.Quantity(float(err), unit=aunits.degree)
@@ -144,8 +152,8 @@ def parse_grbview(grbs):
                 new.coordinates = acoords.ICRSCoordinates(float(new.ra),
                                                           float(new.dec),
                                                           obstime=new.time,
-                                                          unit=(aunits.degree,
-                                                                aunits.degree))
+                                                          unit=(aunits.radian,
+                                                                aunits.radian))
             except AttributeError:
                 pass
             if a in grb_triggers:
@@ -167,7 +175,8 @@ def _query(name):
     parser.feed(urllib2.urlopen(url).read())
     parser.close()
     records = {}
-    for detector,rec in parser.records.iteritems():
-        record = dict(rec.values())
+    for detector,record in parser.records.iteritems():
+        if detector is None:
+            continue
         records[(detector, record["grbname"])] = record
     return records
