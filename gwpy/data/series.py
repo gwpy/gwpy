@@ -8,7 +8,7 @@ from __future__ import division
 import numbers
 import numpy
 from math import modf
-from scipy import interpolate
+from scipy import (interpolate, signal)
 
 from astropy import units
 
@@ -79,6 +79,7 @@ class TimeSeries(NDData):
     plot
     read
     fetch
+    resample
     """
     def __init__(self, data, epoch=None, channel=None, unit=None,
                  sample_rate=None, name=None, **kwargs):
@@ -144,17 +145,14 @@ class TimeSeries(NDData):
         """Data rate for this `TimeSeries` in samples per second (Hertz).
         """
         try:
-            return self.channel.sample_rate
-        except:
             return self._meta['sample_rate']
+        except:
+            return self.channel.sample_rate
     @sample_rate.setter
     def sample_rate(self, val):
         if val is not None:
             val = units.Quantity(val, units.Hertz)
-        try:
-            self.channel.sample_rate = val
-        except AttributeError:
-            self._meta['sample_rate'] = val
+        self._meta['sample_rate'] = val
 
     @property
     def channel(self):
@@ -346,6 +344,28 @@ class TimeSeries(NDData):
             port = port or dport
         with nds.NDSConnection(host, port) as connection:
             return connection.fetch(start, end, channel)
+
+    def resample(self, rate, window=None):
+        """Resample this TimeSeries to a new rate
+
+        Parameters
+        ----------
+        rate : `float`
+            rate to which to resample this `TimeSeries`
+        window : array_like, callable, string, float, or tuple, optional
+            specifies the window applied to the signal in the Fourier
+            domain.
+
+        Returns
+        -------
+        resampled_timeseries
+            a new TimeSeries with the resampling applied, and the same
+            metadata
+        """
+        N = self.size / self.sample_rate * rate
+        data = signal.resample(self.data, N, window=window)
+        return TimeSeries(data, channel=self.channel, unit=self.unit,
+                          sample_rate=rate, epoch=self.epoch)
 
 class Spectrum(NDData):
     """A data array holding some metadata to represent a spectrum.
