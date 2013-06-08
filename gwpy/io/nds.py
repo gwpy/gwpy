@@ -33,7 +33,7 @@ class NDSConnection(object):
         series = []
         for i,data in enumerate(out):
             epoch = Time(data.gps_seconds, data.gps_nanoseconds, format='gps')
-            channel = Channel.from_nds(data.channel)
+            channel = Channel.query(data.channel.name)
             series.append(TimeSeries(data.data, channel=channel, epoch=epoch))
         if len(series) == 1:
             return series[0]
