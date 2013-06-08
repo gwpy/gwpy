@@ -16,6 +16,7 @@ from .. import version
 from ..utils import lal
 from ..time import Time
 from ..detector import Channel
+from ..segments import Segment
 from .nddata import NDData
 
 if lal.SWIG_LAL:
