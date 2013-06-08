@@ -5,6 +5,9 @@ Time series data (`gwpy.data.TimeSeries`)
 Getting started
 ===============
 
+Reading from GWF files
+----------------------
+
 Each GW detector records the time-streams of thousands of data channels in gravitational wave frame files. Data from one of these files can be read into a `~gwpy.data.TimeSeries` object as follows::
 
     >>> from gwpy.data import TimeSeries
@@ -14,10 +17,10 @@ The first argument, `'G-G1_RDS_C01_L3-1049587200-60.gwf'` is the path to the GWF
 
 Each `~gwpy.data.TimeSeries` records the data for the channel along with the following metadata:
 
+  - `channel`: the `~gwpy.detector.Channel` whose data have been read
   - `epoch`: the `~gwpy.time.Time` (in GPS format) marking the start of the data,
-  - `dt`: the time between successive samples,
+  - `sample_rate`: the number of samples per second
   - `units`: the units of the data,
-  - `name`: the name for this `~gwpy.data.TimeSeries`, normally the data channel name.
 
 Each of these can be accessed, including `data`, as attributes::
 
@@ -26,8 +29,16 @@ Each of these can be accessed, including `data`, as attributes::
             -5.42630392e-12,  -5.42534292e-12,  -5.42453795e-12])
     >>> hoft.epoch
     <Time object: scale='utc' format='gps' vals=1049587200.0>
-    >>> hoft.dt
-    6.103515625e-05
+    >>> hoft.sample_rate
+    <Quantity 16384.0 Hz>
+
+Fetching data via NDS
+---------------------
+
+The LIGO and Virgo scientific collaborations use the Network Data Server (NDS) 2 to serve data, and instrument data can be fetched into a `~gwpy.data.TimeSeries` as follows::
+
+    >>> from gwpy.data import TimeSeries
+    >>> data = TimeSeries.fetch('H1:PSL-ISS_PDA_OUT_DQ', 1054684816, 1054684826)
 
 Calculating spectra
 ===================
