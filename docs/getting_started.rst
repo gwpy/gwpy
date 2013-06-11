@@ -39,7 +39,6 @@ The returned `data` object is a `~gwpy.data.TimeSeries` object.
 Given the above example to read data from a frame, it's a simple step further to get these data into an image for viewing::
 
     >>> from gwpy.data import TimeSeries
-    >>> from gwpy.plotter import TimeSeriesPlot
     >>> data = TimeSeries.read('myframe.gwf', 'G1:DER_DATA_H')
-    >>> plot = TimeSeriesPlot(data)
+    >>> plot = data.plot()
     >>> plot.show()
