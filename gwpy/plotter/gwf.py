@@ -25,12 +25,12 @@ class GWFramePlot(TimeSeriesPlot):
         self.read_frame(self._gwf, channel, start=start, end=end)
         super(GWFramePlot, self).__init__(self._series, **kwargs)
 
-    def read_frame(self, framefile, channel, start=-1, end=None):
+    def read_frame(self, framefile, channel, start=None, end=None):
         """Read the data for the given channel from the frame file
         """
-        if end and start != -1:
+        if end and start:
             duration = end-start
         else:
-            duration = -1
+            duration = None
         self._series = TimeSeries.read(framefile, channel, epoch=start,
                                        duration=duration)
