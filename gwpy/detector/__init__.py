@@ -19,8 +19,9 @@
 """Defines each LaserInterferometer detector in the current network
 """
 
-from .interferometers import LaserInterferometer
+import lal
 
+from .interferometers import LaserInterferometer
 from .channel import (Channel, ChannelList)
 
 __all__ = ([ifo.frDetector.name for ifo in lal.lalCachedDetectors] +
