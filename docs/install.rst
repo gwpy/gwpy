@@ -39,11 +39,22 @@ where ``X.Y`` is the python major and minor version numbers, e.g. ``2.7``. In ei
 Dependencies
 ============
 
-The GWpy package is dependent on `astropy <http://astropy.org>`_ for a number of the core classes, and on the `LIGO Algorithm Library (LAL) <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ for a lot of core functionality associated with the classes.
+**Build dependencies**
 
-Additionally, the `gwpy.io` module is dependent on the `Grid LIGO User Environment (GLUE) <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_ package for connections to the segment database infrastructure, amongst other things.
+The GWpy package has the following build-time dependencies (i.e. required for installation):
 
-`numpy` version 1.4 or greater is required for installation. This is an inherited requirement from astropy.
+* `astropy <http://astropy.org>`_
+* `NumPy <http://www.numpy.org>`_ >= 1.7.1 (inherited dependency from astropy)
+
+GWpy is dependent on the `astropy <http://astropy.org>`_ package for installation
+
+**Runtime dependencies**
+
+Additionally, in order for much of the code to import and run properly, users are required to have the following packages:
+
+* `matplotlib <http://matplotlib.org>`_
+* `glue <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_
+* `lal <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ and `lalframe <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ (same URL)
 
 =======================
 Available installations
