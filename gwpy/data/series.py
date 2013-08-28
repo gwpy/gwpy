@@ -167,7 +167,8 @@ class TimeSeries(NDData):
     def span(self):
         """Time Segment encompassed by thie `TimeSeries`.
         """
-        return Segment(epoch.gps, epoch.gps + self.data.size * self.dt)
+        return Segment(self.epoch.gps,
+                       self.epoch.gps + self.data.size * float(self.dt))
 
     def is_contiguous(self, other):
         """Check whether other is contiguous with self.
