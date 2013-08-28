@@ -9,10 +9,10 @@ import numpy
 from glue.ligolw import (utils as ligolw_utils, table as ligolw_table,
                          lsctables)
 
+from astropy.table import Table
 from astropy.io import registry
 
 from ... import version
-from ...table import Table
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
