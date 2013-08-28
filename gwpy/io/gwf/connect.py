@@ -6,7 +6,8 @@
 from astropy.io import registry
 from astropy import units
 
-from pylal.Fr import *
+from lalframe import frread
+
 from ...data import TimeSeries
 from ...detector import Channel
 from ... import version
@@ -17,16 +18,9 @@ __version__ = version.version
 def read_gwf(filepath, channel, epoch=None, duration=None, verbose=False):
     if isinstance(filepath, file):
         filepath = filepath.name
-    if epoch is None:
-        epoch = -1
-    if duration is None:
-        duration = -1
-    data, epoch, epoch_offset, dt, x_unit, y_unit = frgetvect1d(
-            filepath, channel, start=epoch, span=duration, verbose=verbose)
-    epoch += epoch_offset
-    unit = units.Unit(y_unit)
-    channel = Channel(channel, sample_rate = 1/float(dt))
-    return TimeSeries(data, channel=channel, epoch=epoch, unit=unit)
+    lalts = frread.read_timeseries(filepath, channel, start=epoch,
+                                   duration=duration, verbose=verbose)
+    return TimeSeries.from_lal(lalts)
 
 
 def identify_gwf(*args, **kwargs):
