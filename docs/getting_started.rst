@@ -23,7 +23,7 @@ Below are a small set of simple examples to get going with using GWpy for studyi
 
 The :mod:`gwpy.data` module provides objects that represent the basic data products from a time-domain instrument, namely the :class:`~gwpy.data.series.TimeSeries`, :class:`~gwpy.data.series.Spectrum`, and :class:`~gwpy.data.series.Spectrogram`.
 
-All data channels recorded by the instrument are stored in :class:`~gwpy.data.series.TimeSeries` within Gravitational Wave Frame (GWF) files.
+All data channels recorded by the instrument are stored in :class:`~gwpy.data.series.TimeSeries<test>` within Gravitational Wave Frame (GWF) files.
 If you wanted to read data from a GWF file for a given data channel, you can import the :class:`~gwpy.data.series.TimeSeries` object and fill it with data::
 
     >>> from gwpy.data import TimeSeries
@@ -32,7 +32,7 @@ If you wanted to read data from a GWF file for a given data channel, you can imp
 where ``G1:DER_DATA_H`` is the name of the data stream for calibrated gravitational wave strain recorded by the GEO600 instrument.
 
 #2: Plotting data from a GW frame
---------------------------------
+---------------------------------
 
 Given the above example to read data from a frame, it's a simple step further to get these data into an image for viewing::
 
