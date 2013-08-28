@@ -317,6 +317,14 @@ class TimeSeries(NDData):
         return new
 
     @classmethod
+    def from_lal(cls, lalts):
+        """Generate a new TimeSeries from a LAL TimeSeries of any type
+        """
+        return cls(lalts.data.data, epoch=lalts.epoch, name=lalts.name,
+                   sample_rate=1/lalts.deltaT,
+                   unit=lal.swiglal.UnitToString(lalts.sampleUnits))
+
+    @classmethod
     def fetch(cls, channel, start, end, host=None, port=None):
         """Fetch data from NDS into a TimeSeries
 
