@@ -19,7 +19,7 @@
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-from ..utils import lal
+import lal
 
 
 class LaserInterferometer(object):
@@ -36,12 +36,12 @@ class LaserInterferometer(object):
         """Determine the F+, Fx antenna responses to a signal
         originating at the given coordinates.
         """
-        return lal.swiglal.ComputeDetAMResponse(
+        return lal.ComputeDetAMResponse(
                    self.response_matrix, coord.ra.radians, coord.dec.radians,
                    polarization,
-                   lal.swiglal.GreenwichMeanSiderealTime(coord.obstime.gps))
+                   lal.GreenwichMeanSiderealTime(coord.obstime.gps))
 
     def time_delay(self, other, coord):
-        return lal.swiglal.ArrivalTimeDiff(self.response_matrix, other.response,
-                                           coord.ra.radians, coord.dec.radians,
-                                           coord.obstime.gps)
+        return lal.ArrivalTimeDiff(self.response_matrix, other.response,
+                                   coord.ra.radians, coord.dec.radians,
+                                   coord.obstime.gps)

@@ -12,17 +12,15 @@ from scipy import (interpolate, signal)
 
 from astropy import units
 
+import lal
+
 from .. import version
-from ..utils import lal
 from ..time import Time
 from ..detector import Channel
 from ..segments import Segment
 from .nddata import NDData
 
-if lal.SWIG_LAL:
-    LIGOTimeGPS = lal.swiglal.LIGOTimeGPS
-else:
-    LIGOTimeGPS = numpy.float64
+LIGOTimeGPS = lal.LIGOTimeGPS
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
@@ -322,7 +320,7 @@ class TimeSeries(NDData):
         """
         return cls(lalts.data.data, epoch=lalts.epoch, name=lalts.name,
                    sample_rate=1/lalts.deltaT,
-                   unit=lal.swiglal.UnitToString(lalts.sampleUnits))
+                   unit=lal.UnitToString(lalts.sampleUnits))
 
     @classmethod
     def fetch(cls, channel, start, end, host=None, port=None):

@@ -5,6 +5,8 @@
 
 import re
 
+import lal
+
 from astropy.io import registry
 
 from .. import version
@@ -13,12 +15,7 @@ from ..segments import (Segment, SegmentList, DataQualityFlag)
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-from ..utils import lal
-
-if lal.SWIG_LAL:
-    LIGOTimeGPS = lal.swiglal.LIGOTimeGPS
-else:
-    LIGOTimeGPS = float
+LIGOTimeGPS = lal.LIGOTimeGPS
 
 
 def from_segwizard(fileobj, coltype=LIGOTimeGPS, strict=True):

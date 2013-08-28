@@ -20,22 +20,19 @@
 """
 
 from .interferometers import LaserInterferometer
-from ..utils import lal
 
 from .channel import (Channel, ChannelList)
 
-if lal.SWIG_LAL:
-    swiglal = lal.swiglal
-    __all__ = ([ifo.frDetector.name for ifo in swiglal.lalCachedDetectors] + 
-               ["DETECTOR_BY_PREFIX"])
+__all__ = ([ifo.frDetector.name for ifo in lal.lalCachedDetectors] +
+           ["DETECTOR_BY_PREFIX"])
 
-    DETECTOR_BY_PREFIX = dict()
-    
-    for ifo in swiglal.lalCachedDetectors:
-        detector = LaserInterferometer()
-        detector.prefix = ifo.frDetector.prefix
-        detector.name = ifo.frDetector.name
-        detector.location = ifo.location
-        detector.response_matrix = ifo.response
-        globals()[detector.name] = detector
-        DETECTOR_BY_PREFIX[detector.prefix] = detector
+DETECTOR_BY_PREFIX = dict()
+
+for ifo in lal.lalCachedDetectors:
+    detector = LaserInterferometer()
+    detector.prefix = ifo.frDetector.prefix
+    detector.name = ifo.frDetector.name
+    detector.location = ifo.location
+    detector.response_matrix = ifo.response
+    globals()[detector.name] = detector
+    DETECTOR_BY_PREFIX[detector.prefix] = detector
