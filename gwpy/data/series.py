@@ -13,6 +13,7 @@ from scipy import (interpolate, signal)
 from astropy import units
 
 import lal
+from lalframe import frread
 
 from .. import version
 from ..time import Time
@@ -36,17 +37,17 @@ class TimeSeries(NDData):
     ----------
     data : `numpy.ndarray`, `list`
         Data values to initialise TimeSeries
-    epoch : `float` GPS time, or `~gwpy.time.Time`, optional
+    epoch : `float` GPS time, or :class:`~gwpy.time.Time`, optional
         TimeSeries start time
-    channel : `~gwpy.detector.Channel`, or `str`, optional
+    channel : :class:`~gwpy.detector.Channel`, or `str`, optional
         Data channel for this TimeSeries
-    unit : `~astropy.units.Unit`, optional
+    unit : :class:`~astropy.units.Unit`, optional
         The units of the data
 
     Returns
     -------
-    result : `~gwpy.types.TimeSeries`
-        A new TimeSeries
+    TimeSeries
+        a new `TimeSeries`
 
     Notes
     -----
@@ -57,8 +58,8 @@ class TimeSeries(NDData):
     >>> series = TimeSeries(data)
 
     The necessary metadata to reconstruct timing information are recorded
-    in the `epoch` and `sample_rate` attributes. This array can be
-    calculated via the `get_times` method.
+    in the `epoch` and `sample_rate` attributes. This time-stamps can be
+    calculated via the :meth:`~TimeSeries.get_times` method.
 
     Attributes
     ----------
@@ -318,9 +319,51 @@ class TimeSeries(NDData):
     def from_lal(cls, lalts):
         """Generate a new TimeSeries from a LAL TimeSeries of any type
         """
-        return cls(lalts.data.data, epoch=lalts.epoch, name=lalts.name,
-                   sample_rate=1/lalts.deltaT,
+        # write Channel
+        channel = Channel(lalts.name, 1/lalts.deltaT,
+                          unit=lal.UnitToString(lalts.sampleUnits),
+                          dtype=lalts.data.data.dtype)
+        return cls(lalts.data.data, channel=channel, epoch=lalts.epoch,
                    unit=lal.UnitToString(lalts.sampleUnits))
+
+    @classmethod
+    def read(cls, source, channel, epoch=None, duration=None, datatype=None,
+             verbose=False):
+        """Read data into a `TimeSeries` from files on disk
+
+        Parameters
+        ----------
+        source : `str`, :class:`glue.lal.Cache`, :lalsuite:`LALCache`
+            source for data, one of:
+
+            - a filepath for a GWF-format frame file,
+            - a filepath for a LAL-format Cache file
+            - a Cache object from GLUE or LAL
+
+        channel : `str`, :class:`~gwpy.detector.channel.Channel`
+            channel (name or object) to read
+        epoch : :class:`~gwpy.time.Time`, optional
+            start time of desired data
+        duration : `float`, optional
+            duration of desired data
+        datatype : `type`, `numpy.dtype`, `str`, optional
+            identifier for desired output data type
+        verbose : `bool`, optional
+            print verbose output
+
+        Returns
+        -------
+        TimeSeries
+            a new `TimeSeries` containing the data read from disk
+        """
+        if isinstance(channel, Channel):
+            channel = channel.name
+            if datatype is None:
+                datatype = channel.dtype
+        lalts = frread.read_timeseries(source, channel, start=epoch,
+                                       duration=duration, datatype=datatype,
+                                       verbose=verbose)
+        return cls.from_lal(lalts)
 
     @classmethod
     def fetch(cls, channel, start, end, host=None, port=None):
@@ -328,7 +371,7 @@ class TimeSeries(NDData):
 
         Parameters
         ----------
-        channel : `~gwpy.detector.Channel`, or `str`
+        channel : :class:`~gwpy.detector.channel.Channel`, or `str`
             required data channel
         start : `~gwpy.time.Time`, or float
             GPS start time of data span
@@ -341,7 +384,8 @@ class TimeSeries(NDData):
 
         Returns
         -------
-        `TimeSeries`
+        TimeSeries
+            a new `TimeSeries` containing the data read from NDS
         """
         from ..io import nds
         channel = Channel(channel)

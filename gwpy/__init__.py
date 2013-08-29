@@ -15,3 +15,7 @@ warnings.filterwarnings("ignore", "Module (.*) was already import from")
 from . import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
+
+# register new unit at the top level
+from astropy import units
+units.def_unit(['counts'], represents=units.Unit('count'), register=True)

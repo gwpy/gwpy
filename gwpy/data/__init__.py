@@ -11,8 +11,6 @@ __version__ = version.version
 from .nddata import *
 from .series import *
 
-# import IO routines
-from ..io.gwf import (cache, connect)
 from glue.lal import (Cache, CacheEntry)
 
 __all__ = ['NDData', 'TimeSeries', 'Spectrum', 'Spectrogram',
