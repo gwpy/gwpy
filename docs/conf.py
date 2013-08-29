@@ -7,8 +7,10 @@ import sys, os
 
 import gwpy
 
-from astropy.sphinx.conf import (needs_sphinx, intersphinx_mapping, extensions,
-                                 html_theme_path, html_sidebars)
+from astropy.sphinx.conf import *
+
+#from astropy.sphinx.conf import (needs_sphinx, intersphinx_mapping, extensions,
+#                                 html_theme_path, html_sidebars)
 
 # -- General configuration -----------------------------------------------------
 
@@ -89,7 +91,7 @@ html_theme = 'pydoctheme'
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-#html_favicon = None
+html_favicon = None
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -186,10 +188,6 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    ('index', 'pycbc', u'PyCBC Documentation',
-     [u'Alexander Nitz'], 1)
-]
 
 # If true, show URL addresses after external links.
 #man_show_urls = False
@@ -200,11 +198,6 @@ man_pages = [
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
-texinfo_documents = [
-  ('index', 'PyCBC', u'PyCBC Documentation',
-   u'Alexander Nitz', 'PyCBC', 'One line description of project.',
-   'Miscellaneous'),
-]
 
 # Documents to append as an appendix to all manuals.
 #texinfo_appendices = []
