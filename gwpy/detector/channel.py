@@ -22,9 +22,9 @@ class Channel(object):
         name of this Channel (or another  Channel itself).
         If a `Channel` is given, all other parameters not set explicitly
         will be copied over.
-    sample_rate : `float`, `~astropy.units.Quantity`, optional
+    sample_rate : `float`, |Quantity|, optional
         number of samples per second
-    unit : `~astropy.units.Unit`, `str`, optional
+    unit : |Unit|, `str`, optional
         name of the unit for the data of this channel
     dtype : `type`, optional
         numeric type of data for this channel, e.g. `float`, or `int`
@@ -35,7 +35,7 @@ class Channel(object):
     -----
     The `Channel` structure implemented here is designed to match the
     data recorded in the LIGO Channel Information System
-    (https://cis.ligo.org) for which a query interface is available.
+    (https://cis.ligo.org) for which a query interface is provided.
 
     Attributes
     ----------
@@ -52,7 +52,6 @@ class Channel(object):
     Methods
     -------
     query
-    fetch_timeseries
     """
     def __init__(self, ch, sample_rate=None, unit=None, dtype=None,
                  model=None):
@@ -168,38 +167,10 @@ class Channel(object):
         """
         return str(self).replace("_", r"\_")
 
-    def fetch_timeseries(self, start, end, host=None, port=None):
-        """Fetch a data `~gwpy.data.TimeSeries` for this `Channel`.
-
-        Parameters
-        ----------
-        start : `~gwpy.time.Time`, `float`
-            GPS start time for data request
-        end : `~gwpy.time.Time`, float
-            GPS end time for data request
-        host : `str`, optional
-            URL of NDS2 server host, defaults to site server for this
-            channel's observatory
-        port : `int`, optional
-            port number for NDS2 server, required if `host` argument
-            is given
-
-        Returns
-        -------
-        `~gwpy.data.TimeSeries`
-        """
-        from ..io import nds
-        if not host or port:
-            dhost,dport = nds.DEFAULT_HOSTS[self.ifo]
-            host = host or dhost
-            port = port or dport
-        with nds.NDSConnection(host, port) as connection:
-            return connection.fetch(start, end, self.name)
-
     @classmethod
     def query(cls, name, debug=False):
         """Query the LIGO Channel Information System for the `Channel`
-        matchine the given name
+        matching the given name
 
         Parameters
         ----------
@@ -211,7 +182,9 @@ class Channel(object):
 
         Returns
         -------
-        `Channel`
+        Channel
+             a new `Channel` containing all of the attributes set from
+             its entry in the CIS
         """
         channellist = ChannelList.query(name, debug=debug)
         if len(channellist) == 0:
