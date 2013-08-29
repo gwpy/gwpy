@@ -208,3 +208,16 @@ latex_documents = [
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
 
+# -- Extensions
+
+extensions.append('sphinxcontrib.epydoc')
+
+epydoc_mapping = {
+    'https://www.lsc-group.phys.uwm.edu/daswg/projects/glue/doc/':
+        [r'glue(\.|$)'],
+}
+
+extensions.append('sphinxcontrib.doxylink')
+doxylink = {'lalsuite' : ('/Users/duncan/git/lalsuite/doxygen/lalsuite_dox.tag',
+                          'https://www.lsc-group.phys.uwm.edu/daswg/projects'
+                          '/lal/nightly/docs/html/')}
