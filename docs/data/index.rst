@@ -1,8 +1,8 @@
-###########################
-Data handling (`gwpy.data`)
-###########################
+#####################################
+Accessing detector data (`gwpy.data`)
+#####################################
 
-The `gwpy.data` module provides classes and routines for handling data recorded by gravitational wave detectors.
+The `gwpy.data` module provides representations of the basic data objects recorded from gravitational-wave detectors, and other data that can be generated from those:
 
 .. toctree::
    :maxdepth: 1
@@ -10,8 +10,3 @@ The `gwpy.data` module provides classes and routines for handling data recorded 
    timeseries
    spectrum
    spectrogram
-
-
-
-Reference/API
-=============
