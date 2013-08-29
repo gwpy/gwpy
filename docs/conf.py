@@ -218,6 +218,6 @@ epydoc_mapping = {
 }
 
 extensions.append('sphinxcontrib.doxylink')
-doxylink = {'lalsuite' : ('/Users/duncan/git/lalsuite/doxygen/lalsuite_dox.tag',
+doxylink = {'lalsuite' : ('../../lalsuite/doxygen/lalsuite_dox.tag',
                           'https://www.lsc-group.phys.uwm.edu/daswg/projects'
                           '/lal/nightly/docs/html/')}
