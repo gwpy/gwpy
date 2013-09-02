@@ -12,7 +12,12 @@ PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
 ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
-.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest
+# all examples
+GWPY_EXAMPLES = $(basename $(notdir $(wildcard ../examples/*.ipynb)))
+GWPY_EXAMPLES_RST = 'autoexample.rst'
+
+# set targets
+.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest examples
 
 #This is needed with git because git doesn't create a dir if it's empty
 $(shell [ -d "_static" ] || mkdir -p _static)
@@ -40,7 +45,7 @@ clean:
 	-rm -rf $(BUILDDIR)
 	-rm -rf _generated
 
-html:
+html: examples
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
@@ -132,3 +137,14 @@ doctest:
 	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
 	@echo "Testing of doctests in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/doctest/output.txt."
+
+examples:
+	cd examples; \
+	echo ".. toctree::" > $(GWPY_EXAMPLES_RST) ; \
+	echo "   :maxdepth: 1" >> $(GWPY_EXAMPLES_RST) ; \
+	echo "" >> $(GWPY_EXAMPLES_RST) ; \
+	echo "" >> index.rst ; \
+	for file in $(GWPY_EXAMPLES) ; do \
+		ipython nbconvert --to=rst --template=./rst ../../examples/$$file.ipynb ; \
+		echo "   $$file" >> $(GWPY_EXAMPLES_RST) ; \
+	done

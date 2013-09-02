@@ -4,9 +4,9 @@ GWpy Documentation
 
 GWpy is a collaboration-driven package containing a set of common tools for characterising and analysing data from current gravitational wave detectors and studying the astrophysics associated with gravitational wave emission.
 
-******************
-User documentation
-******************
+*********************
+Package documentation
+*********************
 
 .. toctree::
    :maxdepth: 1
@@ -17,3 +17,5 @@ User documentation
    detector/index
    data/index
    segments/index
+
+.. include:: examples/index.rst
