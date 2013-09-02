@@ -17,3 +17,5 @@ User documentation
    detector/index
    data/index
    segments/index
+
+.. include:: examples/index.rst

@@ -210,14 +210,18 @@ latex_documents = [
 
 # -- Extensions
 
+# epydoc
 extensions.append('sphinxcontrib.epydoc')
-
 epydoc_mapping = {
     'https://www.lsc-group.phys.uwm.edu/daswg/projects/glue/doc/':
         [r'glue(\.|$)'],
 }
 
+# doxylink
 extensions.append('sphinxcontrib.doxylink')
 doxylink = {'lalsuite' : ('../../lalsuite/doxygen/lalsuite_dox.tag',
                           'https://www.lsc-group.phys.uwm.edu/daswg/projects'
                           '/lal/nightly/docs/html/')}
+
+# matplotlib plot directive
+extensions.append('matplotlib.sphinxext.plot_directive')
