@@ -7,7 +7,3 @@
 *.so
 *.swp
 .DS_Store
-/docs/_generated
-/examples/.ipynb_checkpoints
-/docs/examples/gw_ex_*
-/docs/examples/autoexample.rst
