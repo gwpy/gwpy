@@ -143,7 +143,6 @@ examples:
 	echo ".. toctree::" > $(GWPY_EXAMPLES_RST) ; \
 	echo "   :maxdepth: 1" >> $(GWPY_EXAMPLES_RST) ; \
 	echo "" >> $(GWPY_EXAMPLES_RST) ; \
-	echo "" >> index.rst ; \
 	for file in $(GWPY_EXAMPLES) ; do \
 		ipython nbconvert --to=rst --template=./rst ../../examples/$$file.ipynb ; \
 		echo "   $$file" >> $(GWPY_EXAMPLES_RST) ; \
