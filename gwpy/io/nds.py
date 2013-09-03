@@ -33,7 +33,6 @@ class NDSConnection(object):
         channels = map(str, channels)
         gpsstart = int(floor(isinstance(start, Time) and start.gps or start))
         gpsend = int(ceil(isinstance(end, Time) and end.gps or end))
-        print(gpsstart, gpsend, channels)
         out = self._connection.fetch(gpsstart, gpsend, channels)
         series = []
         for i,data in enumerate(out):
