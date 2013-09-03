@@ -9,7 +9,7 @@ from astropy import units
 
 from .nddata import NDData
 from .timeseries import TimeSeries
-from .spectrum import Spectrum
+from ../spectrum import Spectrum
 
 from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
