@@ -1,13 +1,13 @@
-####################################
-Spectral data (`gwpy.data.Spectrum`)
-####################################
+########################################
+Spectral data (`gwpy.spectrum.Spectrum`)
+########################################
 
 Reading spectra from a file
 ===========================
 
 Spectral data can be read directly from GWF files as follows::
 
-    >>> from gwpy.data import Spectrum
+    >>> from gwpy.spectrum import Spectrum
     >>> psd = Spectrum.read('myspectrum.gwf', 'H1:LDAS-STRAIN')
 
 where the two arguments to the `read` function are the path to the GWF file, and the name of the spectrum as written in that file.

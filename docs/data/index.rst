@@ -1,8 +1,8 @@
-#####################################
-Accessing detector data (`gwpy.data`)
-#####################################
+#######################
+Accessing detector data
+#######################
 
-The `gwpy.data` module provides representations of the basic data objects recorded from gravitational-wave detectors, and other data that can be generated from those:
+GWpy provides representations of the basic data objects recorded from gravitational-wave detectors, and other data that can be generated from those:
 
 .. toctree::
    :maxdepth: 1
