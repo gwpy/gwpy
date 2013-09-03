@@ -32,6 +32,18 @@ class NDData(AstroData):
     def name(self):
         del self._meta['name']
 
+    def copy(self):
+        """Make a copy of this series
+
+        Returns
+        -------
+        new
+            A copy of this series
+        """
+        out = self.__class__(self)
+        out.data = numpy.array(out.data, subok=True, copy=True)
+        return out
+
     def min(self, **kwargs):
         return self.data.min(**kwargs)
     min.__doc__ = numpy.ndarray.min.__doc__
