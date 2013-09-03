@@ -26,7 +26,7 @@ The :mod:`gwpy.data` module provides objects that represent the basic data produ
 All data channels recorded by the instrument are stored in :class:`~gwpy.data.timeseries.TimeSeries<test>` within Gravitational Wave Frame (GWF) files.
 If you wanted to read data from a GWF file for a given data channel, you can import the :class:`~gwpy.data.timeseries.TimeSeries` object and fill it with data::
 
-    >>> from gwpy.data import TimeSeries
+    >>> from gwpy.timeseries import TimeSeries
     >>> data = TimeSeries.read('myframe.gwf', 'G1:DER_DATA_H')
 
 where ``G1:DER_DATA_H`` is the name of the data stream for calibrated gravitational wave strain recorded by the GEO600 instrument.
@@ -36,7 +36,7 @@ where ``G1:DER_DATA_H`` is the name of the data stream for calibrated gravitatio
 
 Given the above example to read data from a frame, it's a simple step further to get these data into an image for viewing::
 
-    >>> from gwpy.data import TimeSeries
+    >>> from gwpy.timeseries import TimeSeries
     >>> data = TimeSeries.read('myframe.gwf', 'G1:DER_DATA_H')
     >>> plot = data.plot()
     >>> plot.show()

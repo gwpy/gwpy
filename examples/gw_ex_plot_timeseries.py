@@ -11,7 +11,7 @@ I would like to study the gravitational wave strain time-series around the time 
 from glue import datafind
 
 from gwpy.time import Time
-from gwpy.data import TimeSeries
+from gwpy.timeseries import TimeSeries
 
 from gwpy import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

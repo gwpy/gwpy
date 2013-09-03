@@ -2,7 +2,7 @@
 Time series data (`gwpy.data.TimeSeries`)
 #########################################
 
-.. currentmodule:: gwpy.data.timeseries
+.. currentmodule:: gwpy.timeseries.core
 
 Gravitational-wave detectors are time-domain instruments, attempting to record gravitational wave amplitude as a strain. As a result, the basic data object is the `TimeSeries`.
 
@@ -17,7 +17,7 @@ Generating `TimeSeries`
 From this information, any new `TimeSeries` can be generated as follows::
 
     >>> from gwpy.time import Time
-    >>> from gwpy.data import TimeSeries
+    >>> from gwpy.timeseries import TimeSeries
     >>> mydata = TimeSeries([1,2,3,4,5,6,7,8,9,10], epoch=Time('2013-01-01', scale='utc'), sample_rate=1)
     >>> mydata
     <TimeSeries object: name='None' epoch=2013-01-01 00:00:00.000 dt=1.0 s>
@@ -37,7 +37,7 @@ Each of these frame files contains the amplitude time-series for a given `Channe
 
 Data from one of these files can be read into a `TimeSeries` object as follows::
 
-    >>> from gwpy.data import TimeSeries
+    >>> from gwpy.timeseries import TimeSeries
     >>> hoft = TimeSeries.read('G-G1_RDS_C01_L3-1049587200-60.gwf', 'G1:DER_DATA_H')
 
 The first argument, `'G-G1_RDS_C01_L3-1049587200-60.gwf'` is the path to the GWF file, and the second, `'G1:DER_DATA_H'` is the name of the data channel of interest. A quick examination of the output shows the extracted attributes::
@@ -59,7 +59,7 @@ Network data access
 
 The LIGO and Virgo scientific collaborations use the Network Data Server (NDS) 2 to serve data, and instrument data can be fetched into a `TimeSeries` as follows::
 
-    >>> from gwpy.data import TimeSeries
+    >>> from gwpy.timeseries import TimeSeries
     >>> data = TimeSeries.fetch('H1:PSL-ISS_PDA_OUT_DQ', 1054684816, 1054684826)
 
 =============

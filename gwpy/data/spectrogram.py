@@ -8,7 +8,7 @@ from scipy import interpolate
 from astropy import units
 
 from .nddata import NDData
-from .timeseries import TimeSeries
+from ../timeseries import TimeSeries
 from ../spectrum import Spectrum
 
 from .. import version

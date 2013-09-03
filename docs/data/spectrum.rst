@@ -25,7 +25,7 @@ Calculating a spectrum
 
 The (average) spectrum for any `~gwpy.data.TimeSeries` can be calculated using one of the `~gwpy.data.TimeSeries.psd` (power spectral density) or `~gwpy.data.TimeSeries.asd` (amplitude spectral density) methods, for example::
 
-    >>> from gwpy.data import TimeSeries
+    >>> from gwpy.timeseries import TimeSeries
     >>> hoft = TimeSeries.read('G-G1_RDS_C01_L3-1049587200-60.gwf', 'G1:DER_DATA_H')
     >>> hoff = hoft.asd(method='welch', fft_length=2, overlap=1)
 

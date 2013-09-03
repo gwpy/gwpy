@@ -20,7 +20,7 @@ from .. import version
 from ..time import Time
 from ..detector import Channel
 from ..segments import Segment
-from .nddata import NDData
+from ../data/nddata import NDData
 
 LIGOTimeGPS = lal.LIGOTimeGPS
 
