@@ -3,6 +3,9 @@
 to LIGO data.
 """
 
+
+from math import (floor, ceil)
+
 import nds2
 
 from .. import (version, detector)
@@ -15,7 +18,8 @@ __version__ = version.version
 
 
 DEFAULT_HOSTS = {detector.LHO_4k.prefix: ('nds.ligo-wa.caltech.edu', 31200),
-                 detector.LLO_4k.prefix: ('nds.ligo-la.caltech.edu', 31200)}
+                 detector.LLO_4k.prefix: ('nds.ligo-la.caltech.edu', 31200),
+                 detector.CIT_40.prefix: ('nds40.ligo.caltech.edu', 31200)}
 
 
 class NDSConnection(object):
@@ -27,8 +31,9 @@ class NDSConnection(object):
         if isinstance(channels, basestring) or isinstance(channels, Channel):
             channels = [channels]
         channels = map(str, channels)
-        gpsstart = isinstance(start, Time) and start.gps or start
-        gpsend = isinstance(end, Time) and end.gps or end
+        gpsstart = int(floor(isinstance(start, Time) and start.gps or start))
+        gpsend = int(ceil(isinstance(end, Time) and end.gps or end))
+        print(gpsstart, gpsend, channels)
         out = self._connection.fetch(gpsstart, gpsend, channels)
         series = []
         for i,data in enumerate(out):
