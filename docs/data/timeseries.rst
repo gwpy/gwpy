@@ -1,5 +1,5 @@
 #########################################
-Time series data (`gwpy.data.TimeSeries`)
+Time series data (`gwpy.timeseries.TimeSeries`)
 #########################################
 
 .. currentmodule:: gwpy.timeseries.core
