@@ -40,8 +40,10 @@ class TimeSeriesPlot(BasicPlot):
             self.add_timeseries(timeseries, **plotargs)
         if len(series):
             self.set_time_format("gps", epoch=self.epoch)
-            self.xlabel = ("Time from epoch: %s (%s)"
-                           % (self.epoch.iso.rstrip('0.'), self.epoch.gps))
+            iso = self.epoch.iso
+            if re.search('.0+\Z', iso):
+                iso = iso.rsplit('.', 1)[0]
+            self.xlabel = ("Time from epoch: %s (%s)" % (iso, self.epoch.gps))
             self._ax.autoscale_view()
 
     @property
