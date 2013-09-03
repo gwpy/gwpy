@@ -2,7 +2,7 @@
 GWpy.Ex: plotting a time-series
 ===============================
 
-.. currentmodule:: gwpy.data.series
+.. currentmodule:: gwpy.data.timeseries
 
 
 Problem

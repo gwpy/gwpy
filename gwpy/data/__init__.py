@@ -9,7 +9,9 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 from .nddata import *
-from .series import *
+from .timeseries import *
+from .spectrum import *
+from .spectrogram import *
 
 from glue.lal import (Cache, CacheEntry)
 

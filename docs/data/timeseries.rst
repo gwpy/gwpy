@@ -2,7 +2,7 @@
 Time series data (`gwpy.data.TimeSeries`)
 #########################################
 
-.. currentmodule:: gwpy.data.series
+.. currentmodule:: gwpy.data.timeseries
 
 Gravitational-wave detectors are time-domain instruments, attempting to record gravitational wave amplitude as a strain. As a result, the basic data object is the `TimeSeries`.
 
