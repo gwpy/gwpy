@@ -7,9 +7,9 @@ import numpy
 from scipy import interpolate
 from astropy import units
 
-from .nddata import NDData
-from ../timeseries import TimeSeries
-from ../spectrum import Spectrum
+from ..data import NDData
+from ..timeseries import TimeSeries
+from ..spectrum import Spectrum
 
 from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"

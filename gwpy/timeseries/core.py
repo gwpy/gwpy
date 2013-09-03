@@ -20,7 +20,7 @@ from .. import version
 from ..time import Time
 from ..detector import Channel
 from ..segments import Segment
-from ../data/nddata import NDData
+from ..data import NDData
 
 LIGOTimeGPS = lal.LIGOTimeGPS
 
@@ -286,7 +286,7 @@ class TimeSeries(NDData):
 
         This method wraps the `spectrogram` method.
         """
-        from ..spectrum import spectrogram
+        from ..spectrogram import spectrogram
         spec_ = spectrogram(self, method, step, **kwargs)
         if not hasattr(spec_.unit, 'name'):
             spec_.unit.name = "Power spectral density"
