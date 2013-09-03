@@ -13,6 +13,7 @@ from scipy import (interpolate, signal)
 from astropy import units
 
 import lal
+from lal import utils as lalutils
 from lalframe import frread
 
 from .. import version
@@ -326,6 +327,17 @@ class TimeSeries(NDData):
         return cls(lalts.data.data, channel=channel, epoch=lalts.epoch,
                    unit=lal.UnitToString(lalts.sampleUnits))
 
+    def to_lal(self):
+        """Convert this `TimeSeries` into a LAL TimeSeries
+        """
+        laltype = lalutils.LAL_TYPE_FROM_NUMPY[self.dtype.type]
+        typestr = lalutils.LAL_TYPE_STR[laltype]
+        create = getattr(lal, 'Create%sTimeSeries' % typestr.upper())
+        lalts = create(self.name, lal.LIGOTimeGPS(self.epoch.gps), 0,
+                       float(self.dt), lal.lalDimensionlessUnit, self.size)
+        lalts.data.data = self.data
+        return lalts
+
     @classmethod
     def read(cls, source, channel, epoch=None, duration=None, datatype=None,
              verbose=False):
@@ -360,6 +372,8 @@ class TimeSeries(NDData):
             channel = channel.name
             if datatype is None:
                 datatype = channel.dtype
+        if epoch and isinstance(epoch, Time):
+            epoch = epoch.gps
         lalts = frread.read_timeseries(source, channel, start=epoch,
                                        duration=duration, datatype=datatype,
                                        verbose=verbose)
@@ -417,6 +431,80 @@ class TimeSeries(NDData):
         data = signal.resample(self.data, N, window=window)
         return TimeSeries(data, channel=self.channel, unit=self.unit,
                           sample_rate=rate, epoch=self.epoch)
+
+    def highpass(self, frequency, amplitude=0.9, order=8):
+        """Filter this `TimeSeries` with a Butterworth high-pass filter
+
+        See (for example) :lalsuite:`XLALHighPassREAL8TimeSeries` for more
+        information.
+
+        Parameters
+        ----------
+        frequency : `float`
+            minimum frequency for high-pass
+        amplitude : `float`, optional
+            desired amplitude response of the filter
+        order : `int`, optional
+            desired order of the Butterworth filter
+
+        Returns
+        -------
+        TimeSeries
+        """
+        lalts = self.to_lal()
+        highpass = getattr(lal, 'HighPass%s' % lalts.__class__.__name__)
+        highpass(lalts, float(frequency), amplitude, order)
+        return TimeSeries.from_lal(lalts)
+
+    def lowpass(self, frequency, amplitude=0.9, order=8):
+        """Filter this `TimeSeries` with a Butterworth low-pass filter
+
+        See (for example) :lalsuite:`XLALLowPassREAL8TimeSeries` for more
+        information.
+
+        Parameters
+        ----------
+        frequency : `float`
+            minimum frequency for low-pass
+        amplitude : `float`, optional
+            desired amplitude response of the filter
+        order : `int`, optional
+            desired order of the Butterworth filter
+
+        Returns
+        -------
+        TimeSeries
+        """
+        lalts = self.to_lal()
+        lowpass = getattr(lal, 'LowPass%s' % lalts.__class__.__name__)
+        lowpass(lalts, float(frequency), amplitude, order)
+        return TimeSeries.from_lal(lalts)
+
+    def bandpass(self, flow, fhigh, amplitude=0.9, order=8):
+        """Filter this `TimeSeries` by applying both low- and high-pass
+        filters.
+
+        See (for example) :lalsuite:`XLALLowPassREAL8TimeSeries` for more
+        information.
+
+        Parameters
+        ----------
+        flow : `float`
+            minimum frequency for high-pass
+        fhigh : `float`
+            maximum frequency for low-pass
+        amplitude : `float`, optional
+            desired amplitude response of the filter
+        order : `int`, optional
+            desired order of the Butterworth filter
+
+        Returns
+        -------
+        TimeSeries
+        """
+        high = self.highpass(flow, amplitude=amplitude, order=order)
+        return high.lowpass(fhigh, amplitude=amplitude, order=order)
+
 
 class Spectrum(NDData):
     """A data array holding some metadata to represent a spectrum.
