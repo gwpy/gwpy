@@ -46,3 +46,5 @@ Now we know where the data are, we can read the strain channel ``H1:LDAS-STRAIN`
    :lines: 14,31,34-35
 
 .. plot:: ../examples/gw_ex_plot_timeseries.py
+
+

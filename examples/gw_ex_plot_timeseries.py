@@ -32,4 +32,3 @@ data = TimeSeries.read(framecache, 'H1:LDAS-STRAIN', epoch=start.gps, duration=6
 
 # plot
 plot = data.plot()
-plot.save('hoft.png')

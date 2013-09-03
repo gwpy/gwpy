@@ -224,4 +224,6 @@ doxylink = {'lalsuite' : ('../../lalsuite/doxygen/lalsuite_dox.tag',
                           '/lal/nightly/docs/html/')}
 
 # matplotlib plot directive
-extensions.append('matplotlib.sphinxext.plot_directive')
+extensions.extend(['matplotlib.sphinxext.only_directives',
+                   'matplotlib.sphinxext.plot_directive'])
+plot_basedir = os.getcwd()
