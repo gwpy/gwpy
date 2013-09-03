@@ -7,7 +7,7 @@ import numpy
 from scipy import interpolate
 from astropy import units
 
-from .nddata import NDData
+from ..data import NDData
 
 from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"

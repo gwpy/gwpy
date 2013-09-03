@@ -2,33 +2,41 @@
 Spectral data (`gwpy.spectrum.Spectrum`)
 ########################################
 
-Reading spectra from a file
-===========================
+.. currentmodule:: gwpy.spectrum.core
 
-Spectral data can be read directly from GWF files as follows::
+While gravitational-wave detectors are time-domain instruments, their sensitivity is often measured as a power-spectral-density over the range of interesting GW frequencies (~10-10,000 Hz).
+
+Generating a `Spectrum`
+=======================
+
+A new `Spectrum` can be generated from any data array, as long as you provide two key attributes:
+
+  - `f0`: the starting frequency for this `Spectrum`
+  - `df`: the frequency resolution of the `Spectrum`
+
+From this information, any new `Spectrum` can be generated as follows::
 
     >>> from gwpy.spectrum import Spectrum
-    >>> psd = Spectrum.read('myspectrum.gwf', 'H1:LDAS-STRAIN')
+    >>> mydata = Spectrum([1,2,3,4,5,6,7,8,9,10], f0=0, df=1)
+    >>> mydata
+    <Spectrum object: name='None' f0=0 df=1>
 
-where the two arguments to the `read` function are the path to the GWF file, and the name of the spectrum as written in that file.
+Calculating the `Spectrum` from a :class:`~gwpy.timeseries.core.TimeSeries`
+===========================================================================
 
-Each `~gwpy.data.Spectrum` records the spectral `data` along with the following metadata:
-
-  - `f0`: the starting frequency of the spectrum
-  - `df`: the frequency resolution (in Hertz)
-  - `units`: the units of the data,
-  - `name`: the name for this `~gwpy.data.Spectrum`
-  - `logspace`: a boolean flag indicating whether the frequency array should be in a logarithmic scale (default `False`).
-
-Calculating a spectrum
-======================
-
-The (average) spectrum for any `~gwpy.data.TimeSeries` can be calculated using one of the `~gwpy.data.TimeSeries.psd` (power spectral density) or `~gwpy.data.TimeSeries.asd` (amplitude spectral density) methods, for example::
+The canonical method for generating a `Spectrum` is to calculated either the power-spectral density or amplitude-spectral density of a :class:`~gwpy.timeseries.core.TimeSeries`, using either the :meth:`~gwpy.timeseries.core.TimeSeries.psd` or :meth:`~gwpy.timeseries.core.TimeSeries.asd` methods of that class::
 
     >>> from gwpy.timeseries import TimeSeries
     >>> hoft = TimeSeries.read('G-G1_RDS_C01_L3-1049587200-60.gwf', 'G1:DER_DATA_H')
     >>> hoff = hoft.asd(method='welch', fft_length=2, overlap=1)
 
-where the result is an average spectrum, using one of the `Bartlett`, `Welch` or `median-mean` average spectrum methods.
-Here `fft_length` and `overlap` are the lengths (in seconds) of each Fourier transform and the overlap between successive transforms respectively.
+where the result is an average spectrum, in this examples using the `Welch method <https://en.wikipedia.org/wiki/Welch_method>`_.
+The `fft_length` and `overlap` arguments the lengths (in seconds) of each Fourier transform, and the overlap between successive transforms, respectively.
 
+=============
+Reference/API
+=============
+
+.. autoclass:: Spectrum
+   :show-inheritance:
+   :members: get_frequencies, filter, plot
