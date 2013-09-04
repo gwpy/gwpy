@@ -231,13 +231,15 @@ class TimeSeries(NDData):
                 self.epoch.gps).astype(dtype)
         return NDData(data, unit=units.second)
 
-    def psd(self, method='welch', **kwargs):
+    def psd(self, method, segmentlength, overlap=0, window=None):
         """Calculate the power spectral density (PSD) `Spectrum` for this
         `TimeSeries`.
 
         The `method` argument can be one of
             * 'welch'
             * 'bartlett'
+            * 'medianmean'
+            * 'median'
         and any keyword arguments will be passed to the relevant method
         in `gwpy.spectrum`.
 
@@ -245,37 +247,53 @@ class TimeSeries(NDData):
         ----------
         method : `str`, defaults to `'welch'`
             name of average spectrum method
-        **kwargs
-            other keyword arguments passed to the average spectrum method,
-            see the documentation for each method in `gwpy.spectrum` for
-            details
+        segmentlength : `int`
+            number of samples in single average
+        overlap : `int`, optional
+            number of samples between averages
+        window : `timeseries.Window`, optional
+            window function to apply to timeseries prior to FFT
 
         Returns
         -------
-        psd :  `~gwpy.series.Spectrum`
+        psd :  :class:`~gwpy.spectrum.core.Spectrum`
             a data series containing the PSD.
         """
-        from ..spectrum.psd import psd
-        psd_ = psd(self, method, **kwargs)
+        from ..spectrum import psd
+        psd_ = psd._lal_psd(self, method, segmentlength, overlap, window=window)
         if not hasattr(psd_.unit, "name"):
             psd_.unit.name = "Power spectral density"
         return psd_
 
-    def asd(self, *args, **kwargs):
-        """Calculate the amplitude spectral density (PSD)
-        `Spectrum` for this `TimeSeries`.
+    def asd(self, method, segmentlength, overlap=0, window=None):
+        """Calculate the amplitude spectral density (ASD) `Spectrum` for this
+        `TimeSeries`.
 
-        All `*args` and `**kwargs` are passed directly to the
-        `Timeseries.psd` method, with the return converted into
-        an amplitude series.
+        The `method` argument can be one of
+            * 'welch'
+            * 'bartlett'
+            * 'medianmean'
+            * 'median'
+        and any keyword arguments will be passed to the relevant method
+        in `gwpy.spectrum`.
+
+        Parameters
+        ----------
+        method : `str`, defaults to `'welch'`
+            name of average spectrum method
+        segmentlength : `int`
+            number of samples in single average
+        overlap : `int`, optional
+            number of samples between averages
+        window : `timeseries.Window`, optional
+            window function to apply to timeseries prior to FFT
 
         Returns
         -------
-        asd :  `~gwpy.series.Spectrum`
+        psd :  :class:`~gwpy.spectrum.core.Spectrum`
             a data series containing the ASD.
         """
-
-        asd = self.psd(*args, **kwargs)
+        asd = self.psd(method, segmentlength, overlap, window)
         asd.data **= 1/2.
         asd.unit **= 1/2.
         if not hasattr(asd.unit, "name"):

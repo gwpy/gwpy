@@ -4,10 +4,12 @@
 """
 
 import numpy
-from scipy import interpolate
+from scipy import (interpolate, signal)
 from astropy import units
+import lal
 
 from ..data import NDData
+from ..detector import Channel
 
 from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
@@ -55,10 +57,11 @@ class Spectrum(NDData):
     from_lal
     """
     def __init__(self, data, epoch=None, f0=None, df=None, name=None,
-                 logscale=False, unit=None, **kwargs):
+                 channel=None, logscale=False, unit=None, **kwargs):
         """Generate a new Spectrum.
         """
         super(Spectrum, self).__init__(data, name=name, unit=unit, **kwargs)
+        self.channel = Channel(channel)
         self.epoch = epoch
         self.f0 = f0
         self.df = df
@@ -236,21 +239,16 @@ class Spectrum(NDData):
         """
         # generate filter
         f = self.get_frequencies().data
-        if not zeros or poles:
+        if not zeros and not poles:
             fresp = numpy.ones_like(f) * gain
         else:
             lti = signal.lti(numpy.asarray(zeros), numpy.asarray(poles), gain)
-            try:
-                fresp = map(lambda w: numpy.polyval(lti.num, w*1j)/\
-                                      numpy.polyval(lti.den, w*1j), f)
-            except TypeError:
-                fresp = map(lambda w: numpy.polyval(lti.num, w*1j)/\
-                                      numpy.polyval([lti.den], w*1j), f)
-            fresp = numpy.asarray(fresp)
+            fresp = abs(lti.freqresp(f)[1])
         # filter in-place
         if inplace:
             self.data *= fresp
             return self
+        # otherwise copy and filter
         else:
             out = self.copy()
             out *= fresp
@@ -265,7 +263,7 @@ class Spectrum(NDData):
                           unit=lal.UnitToString(lalfs.sampleUnits),
                           dtype=lalfs.data.data.dtype)
         return cls(lalfs.data.data, channel=channel, f0=lalfs.f0,
-                   df=lalfs.deltaF, unit=lal.UnitToString(lalts.sampleUnits))
+                   df=lalfs.deltaF, unit=lal.UnitToString(lalfs.sampleUnits))
 
     def to_lal(self):
         """Convert this `Spectrum` into a LAL FrequencySeries

@@ -1,12 +1,25 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 """A collection of average power spectral density calculation routines
+
+Average-spectrum calculation routines are available for the following methods
+
+    - :func:`Bartlett <bartlett>`
+    - :func:`Welch <welch>`
+    - :func:`Median-mean <median_mean>`
+    - :func:`Median <median>`
+
+Each of these methods utilises an existing method provided by the
+LIGO Algorithm Library, wrapped into python as part of the `lal.spectrum`
+module.
 """
 
 import numpy
 from matplotlib import mlab
 
 from astropy import units
+
+from lal.spectrum import averagespectrum as lalspectrum
 
 from .core import Spectrum
 from ..timeseries import window as tdwindow
@@ -16,50 +29,144 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-__all__ = ["psd", "bartlett", "welch", "spectrogram"]
+__all__ = ['bartlett', 'welch', 'median_mean', 'median', 'spectrogram']
 
 
-def psd(timeseries, method, *args, **kwargs):
-    if method == 'bartlett':
-        return bartlett(timeseries, *args, **kwargs)
-    elif method == 'welch':
-        return welch(timeseries, *args, **kwargs)
-    else:
-        raise NotImplementedError("Average spectrum method='%s' has not been "
-                                  "implemented.")
-
-
-def bartlett(timeseries, fft_length=None, window=tdwindow.kaiser_factory(24)):
-    """Calculate the power spectral density of the given TimeSeries
+def bartlett(timeseries, segmentlength, window=None):
+    """Calculate the power spectral density of the given `TimeSeries`
     using the Bartlett average method.
 
-    This method divides the data into chunks of length `fft_length`,
+    This method divides the data into chunks of length `segmentlength`,
     a periodogram calculated for each, and the bin-by-bin mean returned.
 
     Parameters
     ---------
-    timeseries: `~gwpy.timeseries.TimeSeries`
-        Input TimeSeries data
+    timeseries: `TimeSeries`
+        input `TimeSeries` data
+    segmentlength : `int`
+        number of samples in each average
+
+    Returns
+    -------
+    Spectrum
+        Bartlett-averaged `Spectrum`
     """
-    fft_length = fft_length or timeseries.size
-    return welch(timeseries, fft_length, 0, window=window)
+    return welch(timeseries, segmentlength, 0, window=window)
 
 
-def welch(timeseries, fft_length=None, overlap=0,
-          window=tdwindow.kaiser_factory(24)):
-    fft_length = fft_length or timeseries.size
-    sampling = 1/float(timeseries.dt)
-    fft_length = int(fft_length * sampling)
-    overlap = int(overlap * sampling)
-    psd,freqs = mlab.psd(timeseries, NFFT=fft_length, Fs=sampling,
-                        noverlap=overlap, window=window)
-    f0 = freqs[0]
-    df = freqs[1]-freqs[0]
-    return Spectrum(psd, f0=f0, df=df, name=timeseries.name,
-                          unit=units.Unit("1/Hz"))
+def welch(timeseries, segmentlength, overlap, window=None):
+    """Calculate the power spectral density of the given `TimeSeries`
+    using the Welch average method.
+
+    For more details see :lalsuite:`XLALREAL8AverageSpectrumWelch`.
+
+    Parameters
+    ----------
+    timeseries : `TimeSeries`
+        input `TimeSeries` data
+    method : `str`
+        average method
+    segmentlength : `int`
+        number of samples in single average
+    overlap : `int`
+        number of samples between averages
+    window : `timeseries.Window`, optional
+        window function to apply to timeseries prior to FFT
+
+    Returns
+    -------
+    Spectrum
+        Welch-averaged `Spectrum`
+    """
+    return _lal_psd(timeseries, 'welch', segmentlength, overlap, window=window)
 
 
-def spectrogram(timeseries, method, step, **kwargs):
+def median_mean(timeseries, segmentlength, overlap, window=None):
+    """Calculate the power spectral density of the given `TimeSeries`
+    using the median-mean average method.
+
+    For more details see :lalsuite:`XLALREAL8AverageSpectrumMedianMean`.
+
+    Parameters
+    ----------
+    timeseries : `TimeSeries`
+        input `TimeSeries` data
+    segmentlength : `int`
+        number of samples in single average
+    overlap : `int`
+        number of samples between averages
+    window : `timeseries.Window`, optional
+        window function to apply to timeseries prior to FFT
+
+    Returns
+    -------
+    Spectrum
+        median-mean-averaged `Spectrum`
+    """
+    return _lal_psd(timeseries, 'medianmean', segmentlength, overlap,
+                    window=window)
+
+
+def median(timeseries, segmentlength, overlap, window=None):
+    """Calculate the power spectral density of the given `TimeSeries`
+    using the median-mean average method.
+
+    For more details see :lalsuite:`XLALREAL8AverageSpectrumMean`.
+
+    Parameters
+    ----------
+    timeseries : `TimeSeries`
+        input `TimeSeries` data
+    segmentlength : `int`
+        number of samples in single average
+    overlap : `int`
+        number of samples between averages
+    window : `timeseries.Window`, optional
+        window function to apply to timeseries prior to FFT
+
+    Returns
+    -------
+    Spectrum
+        median-mean-averaged `Spectrum`
+    """
+    return _lal_psd(timeseries, 'medianmean', segmentlength, overlap,
+                    window=window)
+
+
+
+def _lal_psd(timeseries, method, segmentlength, overlap, window=None):
+    """Internal wrapper to the `lal.spectrum.psd` function
+
+    This function handles the conversion between GWpy `TimeSeries` and
+    XLAL ``TimeSeries``, (e.g. :lalsuite:`XLALREAL8TimeSeries`).
+
+    Parameters
+    ----------
+    timeseries : `TimeSeries`
+        input `TimeSeries` data
+    method : `str`
+        average method
+    segmentlength : `int`
+        number of samples in single average
+    overlap : `int`
+        number of samples between averages
+    window : `timeseries.Window`, optional
+        window function to apply to timeseries prior to FFT
+
+    Returns
+    -------
+    Spectrum
+        average power `Spectrum`
+    """
+    lalts = timeseries.to_lal()
+    lalwin = window and window.to_lal() or None
+    lalfs = lalspectrum._psd(method, lalts, segmentlength, overlap,
+                         window=window)
+    return Spectrum.from_lal(lalfs)
+
+
+def spectrogram(timeseries, method, step, segmentlength, overlap=0,
+                window=None):
     """Calculate the average power spectrogram of the given TimeSeries
     using the specified average spectrum method
 
@@ -68,23 +175,26 @@ def spectrogram(timeseries, method, step, **kwargs):
 
     timeseries : `~gwpy.data.TimeSeries`
         Input TimeSeries data
-    method : str
+    method : `str`
         Average spectrum method
-    step : float
-        Length of single average spectrum (seconds)
+    step : `int`
+        number of samples for single average spectrum
+    segmentlength : `int`
+        number of samples in single average
+    overlap : `int`
+        number of samples between averages
+    window : `timeseries.Window`, optional
+        window function to apply to timeseries prior to FFT
     """
     # get number of time steps
-    step_samp = step // float(timeseries.dt)
-    nsteps = int(timeseries.size // step_samp)
-    mismatch = (timeseries.size - nsteps * step_samp)
+    nsteps = int(timeseries.size // step)
+    mismatch = (timeseries.size - nsteps * step)
     if mismatch:
         warnings.warn("TimeSeries is %d samples too long for use in a "
                       "Spectrogram of step=%d samples, those samples will "
                       "not be used" % (mismatch, step_samp))
     # get number of frequencies
-    fft_length = kwargs.pop('fft_length', step)
-    fft_length_samp = fft_length // float(timeseries.dt)
-    nfreqs = int(fft_length_samp // 2 + 1)
+    nfreqs = int(segmentlength // 2 + 1)
 
     out = Spectrogram(numpy.zeros((nsteps, nfreqs)), name=timeseries.name,
                       epoch=timeseries.epoch, dt=step)
@@ -95,8 +205,8 @@ def spectrogram(timeseries, method, step, **kwargs):
         idx = step_samp * step
         idx_end = idx + step_samp
         stepseries = timeseries[idx:idx_end]
-        stepspectrum = psd(stepseries, method,
-                           fft_length=fft_length, **kwargs)
+        stepspectrum = _lal_psd(stepseries, method, segmentlength, overlap,
+                                window=window)
         out.data[step,:] = stepspectrum.data[:,0]
     out.f0 = stepspectrum.f0
     out.df = stepspectrum.df
