@@ -12,7 +12,7 @@ You can install the package by first cloning the repository
 
 .. code-block:: bash
 
-    git clone https://github.com/duncanmmacleod/gwpy.git
+    git clone https://github.com/gwpy/gwpy.git
 
 and then running the ``setup.py`` script as follows:
 
