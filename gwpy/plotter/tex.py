@@ -93,9 +93,10 @@ def unit_to_latex(unit):
 
 def format_unit_list(unitlist):
     out = []
+    texformatter = ulatex.Latex()
     for base, power in unitlist:
         if power == 1:
-            out.append(self._get_unit_name(base))
+            out.append(texformatter._get_unit_name(base))
         elif power == 0.5:
             out.append('\sqrt{{{0}}}'.format(label_to_latex(base.name)))
         elif 1/power == int(1/power):
