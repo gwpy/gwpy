@@ -4,7 +4,7 @@
 """
 
 from .. import version
-from ..data import TimeSeries
+from ..timeseries import TimeSeries
 from .series import TimeSeriesPlot
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
