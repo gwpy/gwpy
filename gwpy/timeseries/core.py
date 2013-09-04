@@ -255,7 +255,7 @@ class TimeSeries(NDData):
         psd :  `~gwpy.series.Spectrum`
             a data series containing the PSD.
         """
-        from ..spectrum import psd
+        from ..spectrum.psd import psd
         psd_ = psd(self, method, **kwargs)
         if not hasattr(psd_.unit, "name"):
             psd_.unit.name = "Power spectral density"
