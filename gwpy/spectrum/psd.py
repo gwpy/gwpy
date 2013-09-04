@@ -8,9 +8,11 @@ from matplotlib import mlab
 
 from astropy import units
 
-from .. import version
-from ..data import (Spectrum, Spectrogram, window as tdwindow)
+from .core import Spectrum
+from ..timeseries import window as tdwindow
+from ..spectrogram import Spectrogram
 
+from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
