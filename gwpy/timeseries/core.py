@@ -7,6 +7,7 @@ from __future__ import division
 
 import numbers
 import numpy
+import warnings
 from math import modf
 from scipy import signal
 
@@ -380,7 +381,7 @@ class TimeSeries(NDData):
         return cls.from_lal(lalts)
 
     @classmethod
-    def fetch(cls, channel, start, end, host=None, port=None):
+    def fetch(cls, channel, start, end, host=None, port=None, verbose=False):
         """Fetch data from NDS into a TimeSeries
 
         Parameters
@@ -395,6 +396,8 @@ class TimeSeries(NDData):
             URL of NDS server to use, defaults to observatory site host
         port : `int`, optional
             port number for NDS server query, must be given with `host`
+        verbose : `bool`, optional
+            print verbose output about NDS progress
 
         Returns
         -------
@@ -403,12 +406,25 @@ class TimeSeries(NDData):
         """
         from ..io import nds
         channel = Channel(channel)
-        if not host or port:
-            dhost,dport = nds.DEFAULT_HOSTS[channel.ifo]
-            host = host or dhost
-            port = port or dport
-        with nds.NDSConnection(host, port) as connection:
-            return connection.fetch(start, end, channel)
+        # user-defined host
+        if host:
+            with nds.NDSConnection(host, port) as connection:
+                return connection.fetch(start, end, channel)
+        else:
+            hostlist = nds.host_resolution_order(channel.ifo)
+            for host,port in hostlist:
+                if verbose:
+                    print("Connecting to %s:%s" % (host, port))
+                try:
+                    with nds.NDSConnection(host, port) as connection:
+                        print("Downloading data...")
+                        return connection.fetch(start, end, channel)
+                except RuntimeError as e:
+                    warnings.warn(str(e))
+                    print("Failure encountered, moving on...")
+                    continue
+            raise RuntimeError("Cannot connect to, or find relevant data in "
+                               "any known server")
 
     def resample(self, rate, window=None):
         """Resample this TimeSeries to a new rate

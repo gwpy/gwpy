@@ -11,15 +11,22 @@ import nds2
 from .. import (version, detector)
 from ..detector import Channel
 from ..time import Time
-from ..data import TimeSeries
+from ..timeseries import TimeSeries
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 
-DEFAULT_HOSTS = {detector.LHO_4k.prefix: ('nds.ligo-wa.caltech.edu', 31200),
-                 detector.LLO_4k.prefix: ('nds.ligo-la.caltech.edu', 31200),
-                 detector.CIT_40.prefix: ('nds40.ligo.caltech.edu', 31200)}
+try:
+    from collections import OrderedDict
+except ImportError:
+    from astropy.utils import OrderedDict
+finally:
+    DEFAULT_HOSTS = OrderedDict([
+                    (None,('nds.ligo.caltech.edu', 31200)),
+                    (detector.LHO_4k.prefix,('nds.ligo-wa.caltech.edu', 31200)),
+                    (detector.LLO_4k.prefix,('nds.ligo-la.caltech.edu', 31200)),
+                    (detector.CIT_40.prefix,('nds40.ligo.caltech.edu', 31200))])
 
 
 class NDSConnection(object):
@@ -55,3 +62,14 @@ class NDSConnection(object):
             self.close()
         else:
             raise
+
+
+_HOST_RESOLTION_ORDER = ['nds.ligo.caltech.edu'] + DEFAULT_HOSTS.values()
+def host_resolution_order(ifo):
+    hosts = []
+    if ifo in DEFAULT_HOSTS:
+        hosts.append(DEFAULT_HOSTS[ifo])
+    for difo,hp in DEFAULT_HOSTS.iteritems():
+        if difo != ifo:
+            hosts.append(hp)
+    return hosts
