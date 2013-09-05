@@ -423,7 +423,7 @@ class BasicPlot(object):
     def close(self):
         """Close the plot and relase its memory.
         """
-        pyplot.close(self._figure)
+        mpl.close(self._figure)
 
     def _get_color_layer(self):
         # find default layer
