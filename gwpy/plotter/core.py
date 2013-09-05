@@ -211,7 +211,7 @@ class BasicPlot(object):
             matplotlib's `matplotlib.axes.Axes.plot` method.
         """
         kwargs.setdefault("linestyle", "-")
-        kwargs.setdefault("linewidth", 2)
+        kwargs.setdefault("linewidth", 1)
         kwargs.setdefault("markersize", 0)
         l = self._ax.plot(x, y, **kwargs)[0]
         if not layer:
