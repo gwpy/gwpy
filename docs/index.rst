@@ -36,3 +36,4 @@ The examples are provided in the ``examples/`` directory of the git repository, 
    :maxdepth: 1
 
    examples/gw_ex_plot_timeseries
+   examples/gw_ex_compare_spectra
