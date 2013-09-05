@@ -50,9 +50,10 @@ The extra peak at 620 Hz is worrying, so we can zoom in around that frequency ra
 
 .. plot::
 
-   execfile('../../examples/gw_ex_compare_spectra.py')
+   execfile('../examples/gw_ex_compare_spectra.py')
    plot.logx = False
    plot.xlim = [600, 640]
+   plot.ylim = [1e-6, 5e-4]
    plot.refresh()
 
 That needs investigating, better call it in!

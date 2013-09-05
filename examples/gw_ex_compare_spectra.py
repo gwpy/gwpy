@@ -47,9 +47,9 @@ plot.xlim = [10, 8000]
 plot.ylim = [1e-6, 5e-4]
 
 try:
-    plot.auto_refresh = True
+    __IPYTHON__
 except NameError:
-    plot.ylim = [1e-6, 2e-4]
-    plot.save('compare.png')
+    pass
 else:
+    plot.auto_refresh = True
     plot.show()
