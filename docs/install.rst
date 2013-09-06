@@ -77,6 +77,7 @@ Additionally, in order for much of the code to import and run properly, users ar
 * `matplotlib <http://matplotlib.org>`_
 * `glue <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_
 * `lal <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ and `lalframe <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ (same URL)
+* `NDS2 <https://www.lsc-group.phys.uwm.edu/daswg/projects/nds-client.html>`_ (including SWIG-wrappings for python)
 
 =======================
 Available installations
