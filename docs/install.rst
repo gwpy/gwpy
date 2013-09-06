@@ -35,6 +35,28 @@ while on Mac OS this is
 
 where ``X.Y`` is the python major and minor version numbers, e.g. ``2.7``. In either case, python will autmatically know about these directories, so you don't have to fiddle with any environment variables.
 
+.. warning::
+
+   Users have reported an issue with installation on Mac OS using the anaconda python distribution. The GWpy install might raise the following exception:
+
+   .. code::
+
+      ValueError: unknown locale: UTF-8
+
+   In this instance, you can resolve the issue by setting the following environment variables in your bash shell:
+
+   .. code:: bash
+
+      export LANG=en_US.UTF-8
+      export LC_ALL=en_US.UTF-8
+
+   or in csh:
+
+   .. code:: csh
+
+      setenv LANG en_US.UTF-8
+      setenv LC_ALL en_US.UTF-8
+
 ============
 Dependencies
 ============
