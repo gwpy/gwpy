@@ -231,7 +231,7 @@ class TimeSeries(NDData):
                 self.epoch.gps).astype(dtype)
         return NDData(data, unit=units.second)
 
-    def psd(self, method, segmentlength, overlap=0, window=None):
+    def psd(self, method, segmentlength, overlap=None, window=None):
         """Calculate the power spectral density (PSD) `Spectrum` for this
         `TimeSeries`.
 
@@ -250,7 +250,7 @@ class TimeSeries(NDData):
         segmentlength : `int`
             number of samples in single average
         overlap : `int`, optional
-            number of samples between averages
+            stride (in samples) between successive FFTs, default: no overlap
         window : `timeseries.Window`, optional
             window function to apply to timeseries prior to FFT
 
@@ -260,12 +260,14 @@ class TimeSeries(NDData):
             a data series containing the PSD.
         """
         from ..spectrum import psd
+        if overlap == None:
+            overlap = segmentlength
         psd_ = psd._lal_psd(self, method, segmentlength, overlap, window=window)
         if not hasattr(psd_.unit, "name"):
             psd_.unit.name = "Power spectral density"
         return psd_
 
-    def asd(self, method, segmentlength, overlap=0, window=None):
+    def asd(self, method, segmentlength, overlap=None, window=None):
         """Calculate the amplitude spectral density (ASD) `Spectrum` for this
         `TimeSeries`.
 
@@ -284,7 +286,7 @@ class TimeSeries(NDData):
         segmentlength : `int`
             number of samples in single average
         overlap : `int`, optional
-            number of samples between averages
+            stride (in samples) between successive FFTs, default: no overlap
         window : `timeseries.Window`, optional
             window function to apply to timeseries prior to FFT
 
@@ -293,6 +295,8 @@ class TimeSeries(NDData):
         psd :  :class:`~gwpy.spectrum.core.Spectrum`
             a data series containing the ASD.
         """
+        if overlap == None:
+            overlap = segmentlength
         asd = self.psd(method, segmentlength, overlap, window)
         asd.data **= 1/2.
         asd.unit **= 1/2.
