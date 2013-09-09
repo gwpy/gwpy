@@ -68,4 +68,4 @@ Reference/API
 
 .. autoclass:: TimeSeries
    :show-inheritance:
-   :members: read, fetch, get_times, psd, asd, spectrogram, plot, fetch
+   :members: read, fetch, get_times, psd, asd, spectrogram, plot, fetch, highpass, lowpass, bandpass
