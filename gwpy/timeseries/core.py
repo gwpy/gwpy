@@ -81,6 +81,9 @@ class TimeSeries(NDData):
     read
     fetch
     resample
+    highpass
+    lowpass
+    bandpass
     """
     def __init__(self, data, epoch=None, channel=None, unit=None,
                  sample_rate=None, name=None, **kwargs):
