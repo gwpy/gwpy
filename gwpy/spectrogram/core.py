@@ -146,3 +146,42 @@ class Spectrogram(Spectrum, TimeSeries):
         if item.step:
             new.df = self.df * item.step
         return new
+
+    @classmethod
+    def from_spectra(cls, *spectra, **kwargs):
+        """Build a new `Spectrogram` from a list of spectra.
+
+        Parameters
+        ----------
+        *spectra
+            any number of :class:`~gwpy.spectrum.core.Spectrum` series
+        dt : `float`, :class:`~astropy.units.quantity.Quantity`, optional
+            stride between given spectra 
+
+        Returns
+        -------
+        Spectrogram
+            a new `Spectrogram` from a vertical stacking of the spectra
+            The new object takes the metadata from the first given
+            :class:`~gwpy.spectrum.core.Spectrum` if not given explicitly
+
+        Notes
+        -----
+        Each :class:`~gwpy.spectrum.core.Spectrum` passed to this
+        constructor must be the same length.
+        """
+        data = numpy.vstack(spectra)
+        s1 = spectra[0]
+        if not all(s.f0==s1.f0 for s in spectra):
+            raise ValueError("Cannot stack spectra with different f0")
+        if not all(s.df==s1.df for s in spectra):
+            raise ValueError("Cannot stack spectra with different df")
+        if (not all(s.logscale for s in spectra) and
+            any(s.logscale for s in spectra)):
+            raise ValueError("Cannot stack spectra with different log-scaling")
+        kwargs.setdefault('name', s1.name)
+        kwargs.setdefault('epoch', s1.epoch)
+        kwargs.setdefault('f0', s1.f0)
+        kwargs.setdefault('df', s1.df)
+        kwargs.setdefault('unit', s1.unit)
+        return Spectrogram(data, logscale=s1.logscale, **kwargs)
