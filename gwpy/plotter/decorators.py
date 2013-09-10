@@ -49,4 +49,4 @@ def _auto_refresh(f, *args, **kwargs):
         mydata.nesting -= 1
         if hasattr(args[0], '_figure'):
             if refresh and mydata.nesting == 0 and args[0]._auto_refresh:
-                args[0]._figure.canvas.draw()
+                args[0].figure.canvas.draw()

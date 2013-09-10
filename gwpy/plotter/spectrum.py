@@ -37,7 +37,7 @@ class SpectrumPlot(BasicPlot):
             self.add_label_unit(f.unit, axis="x")
             self.add_label_unit(series[0].unit, axis="y")
         self.logx = self.logy = True
-        self._ax.autoscale_view()
+        self.axes.autoscale_view()
 
     def add_label_unit(self, unit, axis="x"):
         attr = "%slabel" % axis

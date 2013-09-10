@@ -48,12 +48,12 @@ class BasicPlot(object):
         """
         # generate figure
         if figure:
-            self._figure = figure
+            self.figure = figure
         else:
-            self._figure = mpl.figure(**kwargs)
+            self.figure = mpl.figure(**kwargs)
 
         # generate the axes
-        self._ax = self._figure.gca()
+        self.axes = self.figure.gca()
 
         # set instance attributes
         self._xformat = None
@@ -77,27 +77,27 @@ class BasicPlot(object):
 
     @property
     def xlabel(self):
-        return self._ax.get_xlabel()
+        return self.axes.get_xlabel()
     @xlabel.setter
     @auto_refresh
     def xlabel(self, text):
-        self._ax.set_xlabel(text)
+        self.axes.set_xlabel(text)
     @xlabel.deleter
     @auto_refresh
     def xlabel(self):
-        self._ax.set_xlabel("")
+        self.axes.set_xlabel("")
 
     @property
     def ylabel(self):
-        return self._ax.get_ylabel()
+        return self.axes.get_ylabel()
     @ylabel.setter
     @auto_refresh
     def ylabel(self, text):
-        self._ax.set_ylabel(text)
+        self.axes.set_ylabel(text)
     @ylabel.deleter
     @auto_refresh
     def ylabel(self):
-        self._ax.set_ylabel("")
+        self.axes.set_ylabel("")
 
     @property
     def colorlabel(self):
@@ -113,28 +113,28 @@ class BasicPlot(object):
 
     @property
     def xlim(self):
-        return self._ax.get_xlim()
+        return self.axes.get_xlim()
     @xlim.setter
     @auto_refresh
     def xlim(self, limits):
-        self._ax.set_xlim(*limits)
+        self.axes.set_xlim(*limits)
     @xlim.deleter
     @auto_refresh
     def xlim(self):
-        self._ax.relim()
-        self._ax.autoscale_view(scalex=True, scaley=False)
+        self.axes.relim()
+        self.axes.autoscale_view(scalex=True, scaley=False)
 
     @property
     def ylim(self):
-        return self._ax.get_ylim()
+        return self.axes.get_ylim()
     @ylim.setter
     @auto_refresh
     def ylim(self, limits):
-        self._ax.set_ylim(*limits)
+        self.axes.set_ylim(*limits)
     @ylim.deleter
     def ylim(self):
-        self._ax.relim()
-        self._ax.autoscale_view(scalex=False, scaley=True)
+        self.axes.relim()
+        self.axes.autoscale_view(scalex=False, scaley=True)
 
     @property
     def colorlim(self):
@@ -155,19 +155,19 @@ class BasicPlot(object):
 
     @property
     def logx(self):
-        return self._ax.get_xscale() == "log"
+        return self.axes.get_xscale() == "log"
     @logx.setter
     @auto_refresh
     def logx(self, log):
-        self._ax.set_xscale(log and "log" or "linear")
+        self.axes.set_xscale(log and "log" or "linear")
 
     @property
     def logy(self):
-        return self._ax.get_yscale() == "log"
+        return self.axes.get_yscale() == "log"
     @logy.setter
     @auto_refresh
     def logy(self, log):
-        self._ax.set_yscale(log and "log" or "linear")
+        self.axes.set_yscale(log and "log" or "linear")
 
     @property
     def logcolor(self):
@@ -179,7 +179,7 @@ class BasicPlot(object):
             return
         if hasattr(self, '_colorbar'):
             clim = self._colorbar.get_clim()
-            self._figure.delaxes(self._colorbar.ax)
+            self.figure.delaxes(self._colorbar.ax)
             del self._colorbar
             self.add_colorbar(log=log, clim=clim)
         else:
@@ -211,7 +211,7 @@ class BasicPlot(object):
         kwargs.setdefault("linestyle", "-")
         kwargs.setdefault("linewidth", 1)
         kwargs.setdefault("markersize", 0)
-        l = self._ax.plot(x, y, **kwargs)[0]
+        l = self.axes.plot(x, y, **kwargs)[0]
         if not layer:
             layer = kwargs.get("label", None)
         if not layer:
@@ -238,7 +238,7 @@ class BasicPlot(object):
             kwargs.setdefault("edgecolor", "black")
             #kwargs.setdefault("facecolor", "none")
         kwargs.setdefault("s", 20)
-        s = self._ax.scatter(x, y, **kwargs)
+        s = self.axes.scatter(x, y, **kwargs)
         if not layer:
             layer = "marker_set_%d" % len(self._scatter_layers)
         self._scatter_layers.append(layer)
@@ -250,7 +250,7 @@ class BasicPlot(object):
                  **kwargs):
         """Add a set of bars to the current plot
         """
-        bar = self._ax.bar(left, height, width=width, bottom=None, **kwargs)
+        bar = self.axes.bar(left, height, width=width, bottom=None, **kwargs)
         if not layer:
             layer = "bars_%d" % self._bar_layers
         self._bar_layers.append(layer)
@@ -269,7 +269,7 @@ class BasicPlot(object):
     def add_patch(self, patch, layer=None, **kwargs):
         """Add a patch to the current plot
         """
-        patch = self._ax.add_patch(patch, **kwargs)
+        patch = self.axes.add_patch(patch, **kwargs)
         if not layer:
             layer = "patch_%d" % self._patch_layers
         self._patch_layers.append(layer)
@@ -278,7 +278,7 @@ class BasicPlot(object):
 
     @auto_refresh
     def add_image(self, image, layer=None, **kwargs):
-        im = self._ax.imshow(image, **kwargs)
+        im = self.axes.imshow(image, **kwargs)
         if not layer:
             layer = 'image_%s' % self._image_layers
         self._image_layers.append(layer)
@@ -290,13 +290,13 @@ class BasicPlot(object):
     def add_legend(self, *args, **kwargs):
         """Add a legend to the figure
         """
-        empty = not len(self._ax.get_legend_handles_labels()[0])
+        empty = not len(self.axes.get_legend_handles_labels()[0])
         if empty:
             self.legend = None
         else:
             alpha = kwargs.pop("alpha", 0.8)
             linewidth = kwargs.pop("linewidth", 8)
-            self.legend = self._ax.legend(*args, **kwargs)
+            self.legend = self.axes.legend(*args, **kwargs)
             self.legend.set_alpha(alpha)
             [l.set_linewidth(linewidth) for l in self.legend.get_lines()]
 
@@ -304,14 +304,14 @@ class BasicPlot(object):
     def add_colorbar(self, layer=None, location='right', width=0.2, pad=0.1,
                      log=None, label="", clim=None, visible=True, **kwargs):
         if hasattr(self, '_colorbar'):
-            self._figure.delaxes(self._colorbar.ax)
+            self.figure.delaxes(self._colorbar.ax)
             del self._colorbar
         # find default layer
         layer = layer or self._get_color_layer()
         mappable = self._layers[layer]
 
         # get new colour axis
-        divider = make_axes_locatable(self._ax)
+        divider = make_axes_locatable(self.axes)
         if location == 'right':
             cax = divider.new_horizontal(size=width, pad=pad)
         elif location == 'top':
@@ -345,7 +345,7 @@ class BasicPlot(object):
         self._logcolor = log
 
         # make colour bar
-        self._colorbar = self._figure.colorbar(mappable, cax=cax, **kwargs)
+        self._colorbar = self.figure.colorbar(mappable, cax=cax, **kwargs)
 
 
         # set label
@@ -390,24 +390,24 @@ class BasicPlot(object):
         for layer in self._layers.values():
             ticks.transform(layer, axis, func)
         if axis == "x":
-            self._ax.set_xlim(map(func, self._ax.get_xlim()))
-            self._ax.xaxis.set_data_interval(
-                *map(func, self._ax.xaxis.get_data_interval()), ignore=True)
+            self.axes.set_xlim(map(func, self.axes.get_xlim()))
+            self.axes.xaxis.set_data_interval(
+                *map(func, self.axes.xaxis.get_data_interval()), ignore=True)
         else:
-            self._ax.set_ylim(map(func, self._ax.get_ylim()))
-            self._ax.yaxis.set_data_interval(
-                *map(func, self._ax.yaxis.get_data_interval()), ignore=True)
+            self.axes.set_ylim(map(func, self.axes.get_ylim()))
+            self.axes.yaxis.set_data_interval(
+                *map(func, self.axes.yaxis.get_data_interval()), ignore=True)
 
     def refresh(self):
         """Refresh the current figure
         """
-        self._figure.canvas.draw()
+        self.figure.canvas.draw()
 
     def show(self):
         """Display the current figure
         """
-        self._figure.patch.set_alpha(0.0)
-        self._figure.show()
+        self.figure.patch.set_alpha(0.0)
+        self.figure.show()
 
     def save(self, *args, **kwargs):
         """Save the figure to disk.
@@ -416,12 +416,12 @@ class BasicPlot(object):
         method of the underlying `matplotlib.figure.Figure`
         self.fig.savefig(*args, **kwargs)
         """
-        self._figure.savefig(*args, **kwargs)
+        self.figure.savefig(*args, **kwargs)
 
     def close(self):
         """Close the plot and relase its memory.
         """
-        mpl.close(self._figure)
+        mpl.close(self.figure)
 
     def _get_color_layer(self):
         # find default layer
@@ -454,8 +454,8 @@ class BasicPlot(object):
 
     @auto_refresh
     def set_xaxis_format(self, format_, **kwargs):
-        axis.set_axis_format(self._ax.xaxis, format_, **kwargs)
+        axis.set_axis_format(self.axes.xaxis, format_, **kwargs)
 
     @auto_refresh
     def set_yaxis_format(self, format_, **kwargs):
-        axis.set_axis_format(self._ax.yaxis, format_, **kwargs)
+        axis.set_axis_format(self.axes.yaxis, format_, **kwargs)

@@ -101,7 +101,7 @@ class TablePlot(BasicPlot):
                 unit = (unit and str(unit) or '')
                 disp += " %s = %.2g %s" % (column, row[column], unit).rstrip()
         pos = kwargs.pop('position', [0.01, 0.98])
-        kwargs.setdefault('transform', self._ax.transAxes)
+        kwargs.setdefault('transform', self.axes.transAxes)
         kwargs.setdefault('verticalalignment', 'top')
         kwargs.setdefault('backgroundcolor', 'white')
         kwargs.setdefault('bbox', dict(facecolor='white', alpha=1.0,
@@ -111,7 +111,7 @@ class TablePlot(BasicPlot):
                          marker='*', zorder=1000, color='gold',
                          s=80)
         #self.add_legend(alpha=0.5, loc='upper left', scatterpoints=1)
-        self._ax.text(*args, **kwargs)
+        self.axes.text(*args, **kwargs)
 
 
 def get_column(table, column):

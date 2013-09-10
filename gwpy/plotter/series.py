@@ -44,7 +44,7 @@ class TimeSeriesPlot(BasicPlot):
             if re.search('.0+\Z', iso):
                 iso = iso.rsplit('.', 1)[0]
             self.xlabel = ("Time from epoch: %s (%s)" % (iso, self.epoch.gps))
-            self._ax.autoscale_view()
+            self.axes.autoscale_view()
 
     @property
     def epoch(self):
@@ -53,14 +53,14 @@ class TimeSeriesPlot(BasicPlot):
     @auto_refresh
     def set_time_format(self, format_, epoch=None, **kwargs): 
         formatter = ticks.TimeFormatter(format=format_, epoch=epoch, **kwargs)
-        self._ax.xaxis.set_major_formatter(formatter)
+        self.axes.xaxis.set_major_formatter(formatter)
 
 
     def set_tick_rotation(self, rotation=0, minor=False):
         if minor:
-            ticks = self._ax.xaxis.get_minor_ticks()
+            ticks = self.axes.xaxis.get_minor_ticks()
         else:
-            ticks = self._ax.xaxis.get_major_ticks()
+            ticks = self.axes.xaxis.get_major_ticks()
         align = (rotation == 0 and 'center' or
                  rotation > 180 and 'left' or
                  'right')
@@ -96,7 +96,7 @@ class SpectrumPlot(BasicPlot):
             self.add_label_unit(series[0].unit, axis="y")
         if len(series):
             self.logx = self.logy = True
-            self._ax.autoscale_view()
+            self.axes.autoscale_view()
 
 
 class SpectrogramPlot(TimeSeriesPlot):
@@ -135,22 +135,22 @@ class SpectrogramPlot(TimeSeriesPlot):
                 epoch_str = epoch_str.rsplit('.', 1)[0]
             self.xlabel = ("Time from epoch: %s (%s)"
                            % (epoch_str, self.epoch.gps))
-            self._ax.autoscale_view()
+            self.axes.autoscale_view()
 
     @property
     def ylim(self):
         if self.logy:
-            return _log_lim(self._ax, self._ax.get_ylim(), 'y')
+            return _log_lim(self.axes, self._ax.get_ylim(), 'y')
         else:
-            return self._ax.get_ylim()
+            return self.axes.get_ylim()
     @ylim.setter
     @auto_refresh
     def ylim(self, ylim):
         if self._logy:
-            self._ax.set_ylim(*_effective_log_lim(self._ax, ylim, 'y'))
+            self.axes.set_ylim(*_effective_log_lim(self._ax, ylim, 'y'))
             self.logy = True
         else:
-            self._ax.set_ylim(*ylim)
+            self.axes.set_ylim(*ylim)
 
     @property
     def logy(self):
@@ -166,11 +166,11 @@ class SpectrogramPlot(TimeSeriesPlot):
                yticks = yminorticks
                ylabels = map(tex.float_to_latex, yticks)
         else:
-            yticks = numpy.linspace(*self._ax.get_ylim(),
-                                    num=len(self._ax.get_yticks()))
+            yticks = numpy.linspace(*self.axes.get_ylim(),
+                                    num=len(self.axes.get_yticks()))
             ylabels = map(tex.float_to_latex, yticks)
-        self._ax.set_yticks(yticks)
-        self._ax.set_yticklabels(ylabels)
+        self.axes.set_yticks(yticks)
+        self.axes.set_yticklabels(ylabels)
         self._logy = bool(log)
 
 
