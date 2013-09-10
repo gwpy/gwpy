@@ -47,22 +47,34 @@ class Spectrum(NDData):
     df
     logscale
     unit
+    frequencies
 
     Methods
     -------
-    get_frequencies
     plot
     filter
     to_lal
     from_lal
     """
-    def __init__(self, data, epoch=None, f0=None, df=None, name=None,
-                 channel=None, logscale=False, unit=None, **kwargs):
+    def __init__(self, data, frequencies=None, epoch=None, f0=None, df=None,
+                 name=None, channel=None, logscale=False, unit=None, **kwargs):
         """Generate a new Spectrum.
         """
         super(Spectrum, self).__init__(data, name=name, unit=unit, **kwargs)
         self.channel = Channel(channel)
         self.epoch = epoch
+        if frequencies is not None:
+            self._frequencies = NDData(frequencies, unit=units.Hertz)
+            if f0 and not frequencies[0] == f0:
+                raise ValueError("If frequencies and f0 are both given, they "
+                                 "must be consistent")
+            else:
+                f0 = frequencies[0]
+            if df and not (frequencies[1]-frequencies[0]) == df:
+                raise ValueError("If frequencies and df are both given, they "
+                                 "must be consistent")
+            else:
+                df = frequencies[1] - frequencies[0]
         self.f0 = f0
         self.df = df
         self.logscale = logscale
@@ -131,7 +143,8 @@ class Spectrum(NDData):
     def logscale(self, val):
         self._meta['logscale'] = bool(val)
 
-    def get_frequencies(self):
+    @property
+    def frequencies(self):
         """Get the array of frequencies that accompany the data array
 
         Returns
@@ -139,14 +152,24 @@ class Spectrum(NDData):
         result : `~gwpy.types.NDData`
             1d array of frequencies in Hertz
         """
-        if self.logscale:
-            logdf = numpy.log10(self.f0 + self.df) - numpy.log10(self.f0)
-            logf1 = numpy.log10(self.f0) + self.shape[-1] * logdf
-            data = numpy.logspace(numpy.log10(self.f0), logf1,
-                                  num=self.shape[-1])
-        else:
-            data = numpy.arange(self.shape[-1]) * self.df + self.f0
-        return NDData(data, unit=units.Hertz)
+        try:
+            return self._frequencies
+        except AttributeError:
+            if self.logscale:
+                logdf = numpy.log10(self.f0 + self.df) - numpy.log10(self.f0)
+                logf1 = numpy.log10(self.f0) + self.shape[-1] * logdf
+                data = numpy.logspace(numpy.log10(self.f0), logf1,
+                                      num=self.shape[-1])
+            else:
+                data = numpy.arange(self.shape[-1]) * self.df + self.f0
+            self._frequencies = NDData(data, unit=units.Hertz)
+            return self.frequencies
+
+    def get_frequencies(self):
+        DeprecationWarning("The Spectrum.get_frequencies() function "
+                                    "is depcrecated, please use the "
+                                    "Spectrum.frequencies property")
+        return self.frequencies
 
     def to_logscale(self, fmin=None, fmax=None, num=None):
         """Convert this Spectrum into logarithmic scale.
@@ -168,7 +191,7 @@ class Spectrum(NDData):
         num = num or self.shape[-1]
         fmin = fmin or float(self.f0) or float(self.f0 + self.df)
         fmax = fmax or float(self.f0 + self.shape[-1] * self.df)
-        linf = self.get_frequencies().data
+        linf = self.frequencies.data
         logf = numpy.logspace(numpy.log10(fmin), numpy.log10(fmax), num=num)
         logf = logf[logf<linf.max()]
         interpolator = interpolate.interp1d(linf, self.data, axis=0)
@@ -238,7 +261,7 @@ class Spectrum(NDData):
             or a new `Spectrum` with the filtered data
         """
         # generate filter
-        f = self.get_frequencies().data
+        f = self.frequencies.data
         if not zeros and not poles:
             fresp = numpy.ones_like(f) * gain
         else:

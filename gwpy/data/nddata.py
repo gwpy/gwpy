@@ -7,6 +7,7 @@ with dynamic access to metadata as class attributes
 import numpy
 
 from astropy.nddata import NDData as AstroData
+from astropy.units import Quantity
 from astropy.io import registry as io_registry
 
 from .. import version
@@ -69,6 +70,11 @@ class NDData(AstroData):
         else:
             return self.__getattribute__(attr)
 
+    def __getitem__(self, item):
+        if isinstance(item, int):
+            return Quantity(self.data[item], unit=self.unit)
+        else:
+            return super(NDData, self).__getitem__(item)
+
     read = classmethod(io_registry.read)
     write = io_registry.write
-
