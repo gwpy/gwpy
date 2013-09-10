@@ -11,8 +11,6 @@ try:
 except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
-from lal import (git_version, gpstime)
-
 from . import (tex, ticks, axis)
 from .decorators import auto_refresh
 
