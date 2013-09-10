@@ -8,9 +8,14 @@ many configurable parameters both interactive, and in saving to disk.
 """
 
 import os
-if not os.getenv('DISPLAY', None):
-    import matplotlib
+import matplotlib
+try:
+    os.environ['DISPLAY']
+except KeyError:
     matplotlib.use('agg', warn=False)
+    IS_INTERACTIVE = False
+else:
+    IS_INTERACTIVE = matplotlib.is_interactive()
 
 from .. import version
 

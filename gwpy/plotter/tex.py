@@ -75,33 +75,37 @@ def unit_to_latex(unit):
         if len(unit.bases):
             positives, negatives = uutils.get_grouped_by_powers(
                 unit.bases, unit.powers)
-            if len(negatives) == 1 and len(positives) == 0:
+            if len(negatives) == 1:
                 negatives = format_unit_list(negatives)
-                s += r'1/{0}'.format(negatives)
+                positives = positives and format_unit_list(positives) or 1
+                s += r'{0}/{1}'.format(positives, negatives)
             elif len(negatives):
                 if len(positives):
                     positives = format_unit_list(positives)
                 else:
-                    positives = '1'
-                negatives = format_unit_list(negatives)
-                s += r'\frac{{{0}}}{{{1}}}'.format(positives, negatives)
+                    positives = ''
+                negatives = format_unit_list(negatives, negative=True)
+                s += r'{0}{1}'.format(positives, negatives)
             else:
                 positives = format_unit_list(positives)
                 s += positives
     return r'$\mathrm{{{0}}}$'.format(s)
 
 
-def format_unit_list(unitlist):
+def format_unit_list(unitlist, negative=False):
     out = []
     texformatter = ulatex.Latex()
     for base, power in unitlist:
         if power == 1:
             out.append(texformatter._get_unit_name(base))
-        elif power == 0.5:
+        elif power == 0.5 and not negative:
             out.append('\sqrt{{{0}}}'.format(label_to_latex(base.name)))
         elif 1/power == int(1/power):
             out.append('{0}^{{1/{1}}}'.format(
                 label_to_latex(base.name), int(1/power)))
+        elif negative:
+            out.append('{0}^{-{{1}}}'.format(
+                label_to_latex(base.name), power))
         else:
             out.append('{0}^{{{1}}}'.format(
                 label_to_latex(base.name), power))

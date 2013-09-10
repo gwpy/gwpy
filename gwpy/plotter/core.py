@@ -11,7 +11,7 @@ try:
 except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
-from . import (tex, ticks, axis)
+from . import (tex, ticks, axis, layer, IS_INTERACTIVE)
 from .decorators import auto_refresh
 
 from .. import version
@@ -31,77 +31,152 @@ class BasicPlot(object):
     Any instance of BasicPlot will have the following attributes
 
         - `fig`: the `matplotlib.figure.Figure` instance
-        - `ax`: the `matplotlig.axes.AxesSubplot` instance representing
+        - `ax`: the `matplotlib.axes.Axes` instance representing
                 the plottable area.
+
+    Parameters
+    ---------
+    figure : :class:`~matplotlib.figure.Figure`, optional, default: `None`
+        the parent figure for this new plot
+    auto_refresh : `bool`, optional, default: `True`
+        update the interactive plot whenever any changes are made to
+        layers, labels, or limits
+    **kwargs
+        other keyword arguments are passed to the generator for a new
+        :class:`~matplotlib.figure.Figure`
+
+    Returns
+    -------
+    plot
+        a new `BasicPlot`
+
+    Attributes
+    ----------
+    xlabel
+    ylabel
+    colorlabel
+    title
+    subtitle
+    xlim
+    ylim
+    colorlim
+    logx
+    logy
+    logcolor
+
+    Methods
+    -------
+    add_bars
+    add_colorbar
+    add_image
+    add_legend
+    add_line
+    add_patch
+    add_rectangle
+    add_scatter
+    add_spectrogram
+    add_spectrum
+    add_timeseries
+    close
+    refresh
+    save
+    show
     """
     __slots__ = ['xlim', 'ylim', 'colorlim', 'logx', 'logy', 'logcolor',
                  'xlabel', 'ylabel', 'colorlabel']
 
-    def __init__(self, figure=None, subplot=False, auto_refresh=False,
-                 **kwargs):
+    def __init__(self, figure=None, auto_refresh=IS_INTERACTIVE, **kwargs):
         """Initialise a new plot.
-
-        All other keyword arguments are passed to
-        `matplotlib.pyplot.figure`.
-
-        @returns a new BasicPlot instance
         """
         # generate figure
         if figure:
-            self.figure = figure
+            self._figure = figure
         else:
-            self.figure = mpl.figure(**kwargs)
+            self._figure = mpl.figure(**kwargs)
 
         # generate the axes
-        self.axes = self.figure.gca()
+        self._axes = self.figure.gca()
 
-        # set instance attributes
-        self._xformat = None
-        self._yformat = None
-        self._logcolor = False
+        # record layers
+        self._layers = layer.LayerCollection()
 
-        # set layers
-        self._layers = dict()
-        self._line_layers = []
-        self._scatter_layers = []
-        self._patch_layers = []
-        self._bar_layers = []
-        self._image_layers = []
-
+        # set auto refresh
         self._auto_refresh = auto_refresh
         if self._auto_refresh:
             self.show()
 
     # -----------------------------------------------
-    # property definitions
+    # basic properties
 
     @property
+    def figure(self):
+        """This plot's underlying :class:`~matplotlib.figure.Figure`
+        """
+        return self._figure
+
+    @property
+    def axes(self):
+        """This plot's :class:`~matplotlib.axes.Axes`
+        """
+        return self._axes
+
+    @property
+    def legend(self):
+        """This plot's :class:`~matplotlib.legend.Legend`
+        """
+        return self.axes.legend_
+
+    # -----------------------------------------------
+    # text properties
+
+    # x-axis label
+    @property
     def xlabel(self):
-        return self.axes.get_xlabel()
+        """Label for the x-axis
+
+        :type: :class:`~matplotlib.text.Text`
+        """
+        return self.axes.xaxis.label
     @xlabel.setter
     @auto_refresh
     def xlabel(self, text):
-        self.axes.set_xlabel(text)
+        if isinstance(text, basestring):
+            self.axes.set_xlabel(text)
+        else:
+            self.axes.xaxis.label = text
     @xlabel.deleter
     @auto_refresh
     def xlabel(self):
         self.axes.set_xlabel("")
 
+    # y-axis label
     @property
     def ylabel(self):
-        return self.axes.get_ylabel()
+        """Label for the y-axis
+
+        :type: :class:`~matplotlib.text.Text`
+        """
+        return self.axes.yaxis.label
     @ylabel.setter
     @auto_refresh
     def ylabel(self, text):
-        self.axes.set_ylabel(text)
+        if isinstance(text, basestring):
+            self.axes.set_ylabel(text)
+        else:
+            self.axes.yaxis.label = text
     @ylabel.deleter
     @auto_refresh
     def ylabel(self):
         self.axes.set_ylabel("")
 
+    # colour-bar label
     @property
     def colorlabel(self):
-        return self._colorbar.ax.get_ylabel()
+        """Label for the colour-axis
+
+        :type: :class:`~matplotlib.text.Text`
+        """
+        return self._colorbar.ax.yaxis.label
     @colorlabel.setter
     @auto_refresh
     def colorlabel(self, text):
@@ -111,8 +186,64 @@ class BasicPlot(object):
     def colorlabel(self):
         self.colorlabel = ""
 
+    # title
+    @property
+    def title(self):
+        """Title for this figure
+
+        :type: :class:`~matplotlib.text.Text`
+
+        Notes
+        -----
+        The :attr:`BasicPlot.title` attribute is set as the title for the
+        enclosing :class:`~matplotlib.figure.Figure` and is centred on that
+        frame, rather than the :class:`~matplotlib.axes.AxesSubPlot`
+        """
+        return self.figure._suptitle
+    @title.setter
+    @auto_refresh
+    def title(self, text):
+        self.figure.suptitle(text)
+    @title.deleter
+    @auto_refresh
+    def title(self):
+        self.title = ""
+
+    # sub-title
+    @property
+    def subtitle(self):
+        """Sub-title for this figure
+
+        :type: :class:`~matplotlib.text.Text`
+
+        Notes
+        -----
+        The :attr:`BasicPlot.subtitle` attribute is set as the title for the
+        enclosing :class:`~matplotlib.axes.AxesSubPlot` and is centred on that
+        frame, rather than the parent :class:`~matplotlib.figure.Figure`
+        """
+        return self.axes.title
+    @subtitle.setter
+    @auto_refresh
+    def subtitle(self, text):
+        if isinstance(text, basestring):
+            self.ax.set_subtitle(text)
+        else:
+            self.ax.subtitle = text
+    @subtitle.deleter
+    @auto_refresh
+    def subtitle(self):
+        self.subtitle = ""
+
+    # -----------------------------------------------
+    # limit properties
+
     @property
     def xlim(self):
+        """Limits for the x-axis
+
+        :type: `tuple`
+        """
         return self.axes.get_xlim()
     @xlim.setter
     @auto_refresh
@@ -126,6 +257,10 @@ class BasicPlot(object):
 
     @property
     def ylim(self):
+        """Limits for the y-axis
+
+        :type: `tuple`
+        """
         return self.axes.get_ylim()
     @ylim.setter
     @auto_refresh
@@ -138,23 +273,26 @@ class BasicPlot(object):
 
     @property
     def colorlim(self):
-        try:
-            return self._colorbar.get_clim()
-        except AttributeError:
-            layer = self._get_color_layer()
-            return self._layers[layer].get_clim()
+        """Limits for the colour-axis
+
+        :type: `tuple`
+        """
+        return self._colorbar.get_clim()
     @colorlim.setter
     @auto_refresh
     def colorlim(self, limits):
-        try:
-            self._colorbar.set_clim(*limits)
-            self._colorbar.draw_all()
-        except AttributeError:
-            layer = self._get_color_layer()
-            self._layers[layer].set_clim(*limits)
+        self._colorbar.set_clim(*limits)
+        self._colorbar.draw_all()
+
+    # -----------------------------------------------
+    # scale properties
 
     @property
     def logx(self):
+        """Display the x-axis with a logarithmic scale
+
+        :type: `bool`
+        """
         return self.axes.get_xscale() == "log"
     @logx.setter
     @auto_refresh
@@ -163,6 +301,10 @@ class BasicPlot(object):
 
     @property
     def logy(self):
+        """Display the y-axis with a logarithmic scale
+
+        :type: `bool`
+        """
         return self.axes.get_yscale() == "log"
     @logy.setter
     @auto_refresh
@@ -171,6 +313,10 @@ class BasicPlot(object):
 
     @property
     def logcolor(self):
+        """Display the colour-axis with a logarithmic scale
+
+        :type: `bool`
+        """
         return self._logcolor
     @logcolor.setter
     @auto_refresh
@@ -193,210 +339,7 @@ class BasicPlot(object):
                             colors.Normalize(*mappable.get_clim()))
 
     # -----------------------------------------------
-
-    @auto_refresh
-    def add_line(self, x, y, layer=None, **kwargs):
-        """Add a line to the current plot
-
-        @param x
-            x positions of the line points (in axis coordinates)
-        @param y
-            y positions of the line points (in axis coordinates)
-        @param layer
-            name for this line
-        @param kwargs
-            additional keyword arguments passed directly on to
-            matplotlib's `matplotlib.axes.Axes.plot` method.
-        """
-        kwargs.setdefault("linestyle", "-")
-        kwargs.setdefault("linewidth", 1)
-        kwargs.setdefault("markersize", 0)
-        l = self.axes.plot(x, y, **kwargs)[0]
-        if not layer:
-            layer = kwargs.get("label", None)
-        if not layer:
-            layer = "line_%d" % len(self._line_layers)
-        self._line_layers.append(layer)
-        self._layers[layer] = l
-        self.add_legend()
-
-    @auto_refresh
-    def add_markers(self, x, y, layer=None, **kwargs):
-        """Add a set or points to the current plot
-
-        @param x
-            x positions of the line points (in axis coordinates)
-        @param y
-            y positions of the line points (in axis coordinates)
-        @param layer
-            name for this marker set
-        @param kwargs
-            additional keyword arguments passed directly on to
-            matplotlib's `matplotlib.axes.Axes.scatter` method.
-        """
-        if not "c" in kwargs:
-            kwargs.setdefault("edgecolor", "black")
-            #kwargs.setdefault("facecolor", "none")
-        kwargs.setdefault("s", 20)
-        s = self.axes.scatter(x, y, **kwargs)
-        if not layer:
-            layer = "marker_set_%d" % len(self._scatter_layers)
-        self._scatter_layers.append(layer)
-        self._layers[layer] = s
-        self.add_legend()
-
-    @auto_refresh
-    def add_bars(self, left, height, width=0.8, bottom=None, layer=None,
-                 **kwargs):
-        """Add a set of bars to the current plot
-        """
-        bar = self.axes.bar(left, height, width=width, bottom=None, **kwargs)
-        if not layer:
-            layer = "bars_%d" % self._bar_layers
-        self._bar_layers.append(layer)
-        self._layers[layer] = bar
-        self.add_legend()
-
-    @auto_refresh
-    def add_rectangle(self, xll, yll, width, height, layer=None, **kwargs):
-        """Add a rectangle to the current plot
-        """
-        p = mpl.Rectangle((xll, yll), width, height, **kwargs)
-        self.add_patch(p, layer=layer, **kwargs)
-        self.add_legend()
-
-    @auto_refresh
-    def add_patch(self, patch, layer=None, **kwargs):
-        """Add a patch to the current plot
-        """
-        patch = self.axes.add_patch(patch, **kwargs)
-        if not layer:
-            layer = "patch_%d" % self._patch_layers
-        self._patch_layers.append(layer)
-        self._layers[layer] = patch
-        self.add_legend()
-
-    @auto_refresh
-    def add_image(self, image, layer=None, **kwargs):
-        im = self.axes.imshow(image, **kwargs)
-        if not layer:
-            layer = 'image_%s' % self._image_layers
-        self._image_layers.append(layer)
-        self._layers[layer] = im
-        self.add_legend()
-        return im
-
-    @auto_refresh
-    def add_legend(self, *args, **kwargs):
-        """Add a legend to the figure
-        """
-        empty = not len(self.axes.get_legend_handles_labels()[0])
-        if empty:
-            self.legend = None
-        else:
-            alpha = kwargs.pop("alpha", 0.8)
-            linewidth = kwargs.pop("linewidth", 8)
-            self.legend = self.axes.legend(*args, **kwargs)
-            self.legend.set_alpha(alpha)
-            [l.set_linewidth(linewidth) for l in self.legend.get_lines()]
-
-    @auto_refresh
-    def add_colorbar(self, layer=None, location='right', width=0.2, pad=0.1,
-                     log=None, label="", clim=None, visible=True, **kwargs):
-        if hasattr(self, '_colorbar'):
-            self.figure.delaxes(self._colorbar.ax)
-            del self._colorbar
-        # find default layer
-        layer = layer or self._get_color_layer()
-        mappable = self._layers[layer]
-
-        # get new colour axis
-        divider = make_axes_locatable(self.axes)
-        if location == 'right':
-            cax = divider.new_horizontal(size=width, pad=pad)
-        elif location == 'top':
-            cax = divider.new_vertical(size=width, pad=pad)
-        else:
-            raise ValueError("'left' and 'bottom' colorbars have not "
-                             "been implemented")
-        if visible:
-            divider._fig.add_axes(cax)
-        else:
-            return
-
-        # set limits
-        if not clim:
-            clim = mappable.get_clim()
-        mappable.set_clim(clim)
-
-        # set tick format
-        if mpl.rcParams["text.usetex"]:
-            kwargs.setdefault('format',
-                              ticker.FuncFormatter(lambda x,pos:
-                                               '$%s$' % tex.float_to_latex(x, '%.3g')))
-
-        # set log scale
-        if log is None:
-            log = self._logcolor
-        if log:
-            mappable.set_norm(colors.LogNorm(*mappable.get_clim()))
-        else:
-            mappable.set_norm(colors.Normalize(*mappable.get_clim()))
-        self._logcolor = log
-
-        # make colour bar
-        self._colorbar = self.figure.colorbar(mappable, cax=cax, **kwargs)
-
-
-        # set label
-        if label:
-            self._colorbar.set_label(label)
-        self._colorbar.draw_all()
-
-        # set ticks
-        if len(self._colorbar.ax.get_yticks()) < 4:
-            limits = self._colorbar.get_clim()
-            if log:
-                cticks = numpy.logspace(numpy.log10(limits[0]),
-                                        numpy.log10(limits[1]), num=5)
-            else:
-                cticks = numpy.linspace(*limits, num=5)
-            self._colorbar.set_ticks(cticks)
-
-    def add_timeseries(self, timeseries, **kwargs):
-        kwargs.setdefault('layer', timeseries.name)
-        x = timeseries.get_times()
-        y = timeseries.data
-        self.add_line(x, y, **kwargs)
-
-    def add_spectrum(self, spectrum, **kwargs):
-        kwargs.setdefault('layer', spectrum.name)
-        x = spectrum.get_frequencies()
-        y = spectrum.data
-        self.add_line(x, y, **kwargs)
-
-    def add_spectrogram(self, spectrogram, **kwargs):
-        kwargs.setdefault('layer', spectrogram.name)
-        im = spectrogram.data.T
-        nf, nt = im.shape
-        freqs = spectrogram.get_frequencies()
-        extent = (kwargs.pop('extent', None) or 
-                  [spectrogram.epoch.gps, (spectrogram.epoch.gps +
-                                           float(nt*spectrogram.dt)),
-                   freqs.data.min(), freqs.data.max()])
-        self.add_image(im, extent=extent, **kwargs)
-
-    def transform_axis(self, axis, func):
-        for layer in self._layers.values():
-            ticks.transform(layer, axis, func)
-        if axis == "x":
-            self.axes.set_xlim(map(func, self.axes.get_xlim()))
-            self.axes.xaxis.set_data_interval(
-                *map(func, self.axes.xaxis.get_data_interval()), ignore=True)
-        else:
-            self.axes.set_ylim(map(func, self.axes.get_ylim()))
-            self.axes.yaxis.set_data_interval(
-                *map(func, self.axes.yaxis.get_data_interval()), ignore=True)
+    # core plot operations
 
     def refresh(self):
         """Refresh the current figure
@@ -419,26 +362,382 @@ class BasicPlot(object):
         self.figure.savefig(*args, **kwargs)
 
     def close(self):
-        """Close the plot and relase its memory.
+        """Close the plot and release its memory.
         """
         mpl.close(self.figure)
 
-    def _get_color_layer(self):
+    # -----------------------------------------------
+    # add layers
+
+    @auto_refresh
+    def add_line(self, x, y, **kwargs):
+        """Add a line to the current plot
+
+        Parameters
+        ----------
+        x : array-like
+            x positions of the line points (in axis coordinates)
+        y : array-like
+            y positions of the line points (in axis coordinates)
+        **kwargs
+            additional keyword arguments passed directly on to
+            the axes :meth:`~matplotlib.axes.Axes.plot` method.
+
+        Returns
+        -------
+        Line2D
+            the :class:`~matplotlib.lines.Line2D` for this line layer
+        """
+        # set kwargs
+        kwargs.setdefault("linestyle", "-")
+        kwargs.setdefault("linewidth", 1)
+        kwargs.setdefault("markersize", 0)
+        # generate layer
+        l = self.axes.plot(x, y, **kwargs)[0]
+        self._layers.add(l)
+        return l
+
+    @auto_refresh
+    def add_scatter(self, x, y, **kwargs):
+        """Add a set or points to the current plot
+
+        Parameters
+        ----------
+        x : array-like
+            x-axis data points
+        y : array-like
+            y-axis data points
+        **kwargs.
+            other keyword arguments passed to the
+            :meth:`matplotlib.axes.Axes.scatter` function
+
+        Returns
+        -------
+        Collection
+            the :class:`~matplotlib.collections.Collection` for this
+            scatter layer
+        """
+        kwargs.setdefault("s", 20)
+        l = self.axes.scatter(x, y, **kwargs)
+        self._layers.add(l)
+        return l
+
+    @auto_refresh
+    def add_bars(self, left, height, width=0.8, bottom=None, **kwargs):
+        """Add a set of bars to the current plot
+
+        Parameters
+        ----------
+        left : array-like
+            left edge points for each bar
+        height : array-like
+            height of each bar
+        width : `float` or array-like, optional, default: 0.8
+            the width(s) of the bars
+        bottom : scalar of array-like, optional, default: `None`
+            the bottom(s) of the bars
+        **kwargs
+            other keyword arguments are passed to the
+            :meth:`matplotlib.axes.Axes.bar` function
+
+        Returns
+        -------
+        Container
+            :class:`~matplotlib.container.BarContainer` containing a
+            sequence of :class:`~matplotlib.patches.Rectange` bars
+        """
+        l = self.axes.bar(left, height, width=width, bottom=None, **kwargs)
+        self._layers.add(l)
+        return l
+
+    @auto_refresh
+    def add_rectangle(self, xll, yll, width, height, **kwargs):
+        """Add a rectangle to the current plot
+
+        Parameters
+        ----------
+        xll : `float`
+            lower-left x-coordinate for the rectangle
+        yll : `float`
+            lower-left y-coordinate for the rectangle
+        width : `float`
+            rectangle width
+        height : `float`
+            rectangle height
+        **kwargs
+            other keyword arguments passed directly to the
+            :class:`matplotlib.patches.Rectangle` constructor
+
+        Returns
+        -------
+        Patch
+            the :class:`~matplotlib.patches.Patch` for this rectangle
+        """
+        p = mpl.Rectangle((xll, yll), width, height, **kwargs)
+        l = self.add_patch(p, layer=layer, **kwargs)
+        self._layers.add(l)
+        return l
+
+    @auto_refresh
+    def add_patch(self, patch, **kwargs):
+        """Add a patch to the current plot
+
+        Parameters
+        ----------
+        patch : :class:`~matplotlib.patches.Patch`
+            patch to add to this figure
+        **kwargs
+            keyword arguments passed directly to the
+            :meth:`~matplotlib.axes.Axes.add_patch` function
+
+        Returns
+        -------
+        Patch
+            the input :class:`~matplotlib.patches.Patch`
+        """
+        l = self.axes.add_patch(patch, **kwargs)
+        self._layers.add(l)
+        return l
+
+    @auto_refresh
+    def add_image(self, image, **kwargs):
+        """Add a 2-D image to this plot
+
+        Parameters
+        ----------
+        image : `numpy.ndarray`
+            2-D array of data for the image
+        **kwargs
+            other keyword arguments are passed to the
+            :meth:`matplotlib.axes.Axes.imshow` function
+
+        Returns
+        -------
+        image : :class:`~matplotlib.image.AxesImage`
+        """
+        im = self.axes.imshow(image, **kwargs)
+        self._layers.add(im)
+        return im
+
+    # -----------------------------------------------
+    # Legend
+
+    @auto_refresh
+    def add_legend(self, *args, **kwargs):
+        """Add a legend to the figure
+
+        All non-keyword `args` and `kwargs` are passed directly to the
+        :meth:`~matplotlib.axes.Axes.legend` generator
+
+        Returns
+        -------
+        Legend
+            the :class:`~matplotlib.legend.Legend` for this plot
+        """
+        alpha = kwargs.pop("alpha", 0.8)
+        linewidth = kwargs.pop("linewidth", 8)
+        legend = self.axes.legend(*args, **kwargs)
+        legend.set_alpha(alpha)
+        [l.set_linewidth(linewidth) for l in legend.get_lines()]
+        return self.legend
+
+    # -----------------------------------------------
+    # colour-bar
+
+    @auto_refresh
+    def add_colorbar(self, layer=None, location='right', width=0.2, pad=0.1,
+                     log=False, label="", clim=None, visible=True, **kwargs):
+        """Add a colorbar to the current plot
+
+        The colorbar will be added to modify an existing layer on the
+        figure.
+
+        Parameters
+        ----------
+        layer : `str`, optional
+            name of layer onto which to attach the colorbar, defaults to
+            the best match
+        location : `str`, optional, default: 'right'
+            position of the colorbar
+        width : `float`, optional default: 0.2
+            width of the colorbar as a fraction of the axes
+        pad : `float`, optional, default: 0.1
+            gap between the axes and the colorbar as a fraction of the axes
+        log : `bool`, optional, default: `False`
+            display the colorbar with a logarithmic scale
+        label : `str`, optional, default: '' (no label)
+            label for the colorbar
+        clim : pair of floats, optional
+            (lower, upper) limits for the colorbar scale, values outside
+            of these limits will be clipped to the edges
+        visible : `bool`, optional, default: `True`
+            make the colobar visible on the figure, this is useful to
+            make two plots, each with and without a colorbar, but
+            guarantee that the axes will be the same size
+        **kwargs
+            other keyword arguments to be passed to the
+            :meth:`~matplotlib.figure.Figure.colorbar` generator
+
+        Returns
+        -------
+        Colorbar
+            the :class:`~matplotlib.colorbar.Colorbar` added to this plot
+        """
+        # remove old colorbar
+        if hasattr(self, 'colorbar'):
+            self.figure.delaxes(self.colorbar.ax)
+            del self.colorbar
+
         # find default layer
-        if len(self._image_layers) > 0:
-            layer = self._image_layers[-1]
-        elif len(self._patch_layers) > 0:
-            layer = self._patch_layers[-1]
-        elif len(self._scatter_layers) > 0:
-            layer = self._scatter_layers[-1]
+        if layer:
+            mappable = self._layers[layer]
         else:
-            raise AttributeError("No color-mappable layers found in this Plot")
-        return layer
+            mappable = self._layers.colorlayer
+
+        # get new colour axis
+        divider = make_axes_locatable(self.axes)
+        if location == 'right':
+            cax = divider.new_horizontal(size=width, pad=pad)
+        elif location == 'top':
+            cax = divider.new_vertical(size=width, pad=pad)
+        else:
+            raise ValueError("'left' and 'bottom' colorbars have not "
+                             "been implemented")
+        if visible:
+            divider._fig.add_axes(cax)
+        else:
+            return
+
+        # set limits
+        if not clim:
+            clim = mappable.get_clim()
+        if log and clim[0] <= 0.0:
+            cdata = mappable.get_array()
+            try:
+                clim = (cdata[cdata>0.0].min(), clim[1])
+            except ValueError:
+                pass
+        mappable.set_clim(clim)
+
+        # set tick format (including sub-ticks for log scales)
+        if pyplot.rcParams["text.usetex"]:
+            if log and abs(float.__sub__(*numpy.log10(clim))) >= 2:
+                func = lambda x,pos: (mticker.is_decade(x) and
+                                  '$%s$' % tex.float_to_latex(x, '%.4g') or ' ')
+            else:
+                func = lambda x,pos: '$%s$' % tex.float_to_latex(x, '% .4g')
+            kwargs.setdefault('format', mticker.FuncFormatter(func))
+
+        # set log scale
+        if log:
+            mappable.set_norm(mcolors.LogNorm(*mappable.get_clim()))
+        else:
+            mappable.set_norm(mcolors.Normalize(*mappable.get_clim()))
+        self.logcolor = log
+
+        # set tick locator
+        if log:
+            kwargs.setdefault('ticks',
+                              mticker.LogLocator(subs=numpy.arange(1,11)))
+
+        # make colour bar
+        self.colorbar = self.figure.colorbar(mappable, cax=cax, **kwargs)
+
+        # set label
+        if label:
+            self.colorbar.set_label(label)
+        self.colorbar.draw_all()
+
+        return self.colorbar
+
+    # -----------------------------------------------
+    # shortcuts for data-types
+
+    def add_timeseries(self, timeseries, **kwargs):
+        """Add a :class:`~gwpy.timeseries.core.TimeSeries` trace to this plot
+
+        Parameters
+        ----------
+        timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
+            the TimeSeries to display
+        **kwargs
+            other keyword arguments for the `BasicPlot.add_line` function
+
+        Returns
+        -------
+        Line2D
+            the :class:`~matplotlib.lines.Line2D` for this line layer
+        """
+        kwargs.setdefault('label', timeseries.name)
+        x = timeseries.get_times()
+        y = timeseries.data
+        return self.add_line(x, y, **kwargs)
+
+    def add_spectrum(self, spectrum, **kwargs):
+        """Add a :class:`~gwpy.spectrum.core.Spectrum` trace to this plot
+
+        Parameters
+        ----------
+        spectum : :class:`~gwpy.spectrum.core.Spectrum`
+            the Spectrum to display
+        **kwargs
+            other keyword arguments for the `BasicPlot.add_line` function
+
+        Returns
+        -------
+        Line2D
+            the :class:`~matplotlib.lines.Line2D` for this line layer
+        """
+        kwargs.setdefault('label', spectrum.name)
+        x = spectrum.frequencies.data
+        y = spectrum.data
+        return self.add_line(x, y, **kwargs)
+
+    def add_spectrogram(self, spectrogram, **kwargs):
+        """Add a :class:`~gwpy.spectrogram.core.Spectrogram` trace
+        to this plot
+
+        Parameters
+        ----------
+        spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
+            the Spectrogram to display
+        **kwargs
+            other keyword arguments for the `BasicPlot.add_image` function
+
+        Returns
+        -------
+        Line2D
+            the :class:`~matplotlib.lines.Line2D` for this line layer
+        """
+        kwargs.setdefault('layer', spectrogram.name)
+        im = spectrogram.data.T
+        nf, nt = im.shape
+        freqs = spectrogram.get_frequencies()
+        extent = (kwargs.pop('extent', None) or 
+                  [spectrogram.epoch.gps, (spectrogram.epoch.gps +
+                                           float(nt*spectrogram.dt)),
+                   freqs.data.min(), freqs.data.max()])
+        self.add_image(im, extent=extent, **kwargs)
+
+    def transform_axis(self, axis, func):
+        for layer in self._layers.values():
+            ticks.transform(layer, axis, func)
+        if axis == "x":
+            self.axes.set_xlim(map(func, self.axes.get_xlim()))
+            self.axes.xaxis.set_data_interval(
+                *map(func, self.axes.xaxis.get_data_interval()), ignore=True)
+        else:
+            self.axes.set_ylim(map(func, self.axes.get_ylim()))
+            self.axes.yaxis.set_data_interval(
+                *map(func, self.axes.yaxis.get_data_interval()), ignore=True)
+
+    # -----------------------------------------------
+    # utilities
 
     @auto_refresh
     def add_label_unit(self, unit, axis="x"):
         attr = "%slabel" % axis
-        label = getattr(self, attr)
+        label = getattr(self, attr).get_text()
         if not label and unit.physical_type != u'unknown':
             label = unit.physical_type.title()
         elif not label and hasattr(unit, "name"):
