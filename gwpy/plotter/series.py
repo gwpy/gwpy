@@ -11,65 +11,12 @@ from matplotlib import pyplot
 from .utils import *
 from . import (tex, ticks)
 from .core import BasicPlot
+from .timeseries import TimeSeriesPlot
 from .decorators import auto_refresh
 from .. import version
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
-
-
-class TimeSeriesPlot(BasicPlot):
-    """Plot data from a LAL TimeSeries object
-    """
-    def __init__(self, *series, **kwargs):
-        # extract plotting keyword arguments
-        plotargs = dict()
-        plotargs["linewidth"] = kwargs.pop("linewidth", 2)
-        plotargs["color"] = kwargs.pop("color", "black")
-        plotargs["linestyle"] = kwargs.pop("linestyle", "-")
-        # set default figure arguments
-        kwargs.setdefault("figsize", [12,6])
-
-        # initialise figure
-        super(TimeSeriesPlot, self).__init__(**kwargs)
-        self._series = []
-
-        # plot time series
-        for timeseries in series:
-            self._series.append(timeseries)
-            self.add_timeseries(timeseries, **plotargs)
-        if len(series):
-            self.set_time_format("gps", epoch=self.epoch)
-            iso = self.epoch.iso
-            if re.search('.0+\Z', iso):
-                iso = iso.rsplit('.', 1)[0]
-            self.xlabel = ("Time from epoch: %s (%s)" % (iso, self.epoch.gps))
-            self.axes.autoscale_view()
-
-    @property
-    def epoch(self):
-        return min(t.epoch for t in self._series)
-
-    @auto_refresh
-    def set_time_format(self, format_, epoch=None, **kwargs): 
-        formatter = ticks.TimeFormatter(format=format_, epoch=epoch, **kwargs)
-        self.axes.xaxis.set_major_formatter(formatter)
-
-
-    def set_tick_rotation(self, rotation=0, minor=False):
-        if minor:
-            ticks = self.axes.xaxis.get_minor_ticks()
-        else:
-            ticks = self.axes.xaxis.get_major_ticks()
-        align = (rotation == 0 and 'center' or
-                 rotation > 180 and 'left' or
-                 'right')
-        kwargs = {"rotation": rotation, "horizontalalignment": align}
-        for i, tick in enumerate(ticks):
-            if tick.label1On:
-                tick.label1.update(kwargs)
-            if tick.label2On:
-                tick.label2.update(kwargs)
 
 
 class SpectrumPlot(BasicPlot):

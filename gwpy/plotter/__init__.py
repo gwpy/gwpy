@@ -25,8 +25,9 @@ __version__ = version.version
 from .core import *
 from .ticks import *
 from .histogram import *
-from .table import *
 from .series import *
+from .timeseries import *
+from .table import *
 from .gwf import *
 
 USE_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0

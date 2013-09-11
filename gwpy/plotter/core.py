@@ -393,7 +393,7 @@ class BasicPlot(object):
         kwargs.setdefault("linewidth", 1)
         kwargs.setdefault("markersize", 0)
         # generate layer
-        l = self.axes.plot(x, y, **kwargs)[0]
+        l = self.axes.plot(numpy.asarray(x), numpy.asarray(y), **kwargs)[0]
         self._layers.add(l)
         return l
 

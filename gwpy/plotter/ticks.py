@@ -19,7 +19,10 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-TIME_FORMATS = atime.TIME_FORMATS.keys()
+GPS_SCALE = {1:('seconds', 's'),
+             0:('minutes', 'mins'),
+             4600:('hours', 'hrs'),
+             86400:('days', 'd')}
 
 
 class TimeConverter(munits.ConversionInterface):
@@ -61,10 +64,7 @@ class AutoTimeLocator(mticker.AutoLocator):
         """
         mticker.AutoLocator.__init__(self)
         #super(AutoTimeLocator, self).__init__()
-        if epoch and not isinstance(epoch, Time):
-            self._epoch = Time(float(epoch), format='gps')
-        else:
-            self._epoch = epoch
+        self.epoch = epoch
         if scale is not None:
             self._scale = float(scale)
         else:
@@ -73,56 +73,93 @@ class AutoTimeLocator(mticker.AutoLocator):
     def __call__(self):
         """Find the locations of ticks given the current view limits
         """
-        vmin, vmax = self.axis.get_view_interval()
-        if self._epoch:
-            vmin -= self._epoch.gps
-            vmax -= self._epoch.gps
-        if self._scale:
-            vmin /= self._scale
-            vmax /= self._scale
-        vmin, vmax = mtransforms.nonsingular(vmin, vmax, expander = 0.05)
-        locs = self.bin_boundaries(vmin, vmax)
-        #print 'locs=', locs
-        prune = self._prune
-        if prune=='lower':
-            locs = locs[1:]
-        elif prune=='upper':
-            locs = locs[:-1]
-        elif prune=='both':
-            locs = locs[1:-1]
+        vmin, vmax = self.get_view_interval()
+        locs = self.tick_values(vmin, vmax)
         if self._scale:
             locs *= self._scale
         if self._epoch:
-            locs += self._epoch.gps
+            locs += float(self._epoch.gps)
         return self.raise_if_exceeds(locs)
+
+    def get_view_interval(self):
+        vmin, vmax = self.axis.get_view_interval()
+        if self._epoch:
+            vmin -= float(self._epoch.gps)
+            vmax -= float(self._epoch.gps)
+        if self._scale:
+            vmin /= self._scale
+            vmax /= self._scale
+        return mtransforms.nonsingular(vmin, vmax, expander = 0.05)
+
+    def refresh(self):
+        """refresh internal information based on current lim
+        """
+        return self()
+
+    @property
+    def epoch(self):
+        """Starting GPS time epoch for this formatter
+        """
+        return self._epoch
+    @epoch.setter
+    def epoch(self, epoch):
+        if epoch is not None and not isinstance(epoch, Time):
+            if hasattr(epoch, "seconds"):
+                epoch = [epoch.seconds, epoch.nanoseconds*1e-9]
+            elif hasattr(epoch, "gpsSeconds"):
+                epoch = [epoch.gpsSeconds, epoch.gpsNanoSeconds*1e-9]
+            else:
+                epoch = modf(epoch)[::-1]
+            epoch = Time(*epoch, format='gps', precision=6)
+        self._epoch = epoch
+
 
 
 class TimeFormatter(mticker.Formatter):
     """Locator for astropy Time objects
     """
-    def __init__(self, format="gps", epoch=None, **kwargs):
-        #super(TimeFormatter, self).__init__()
-        #mticker.Formatter.__init__()
+    def __init__(self, format='gps', epoch=None, scale=1.0):
         self._format = format
         self._tex = pyplot.rcParams["text.usetex"]
         if epoch and not isinstance(epoch, Time):
-            self._epoch = Time(float(epoch), format='gps')
+            self.epoch = Time(float(epoch), format=format)
         else:
-            self._epoch = epoch
-        self._scale = kwargs.pop('scale', 1.)
-        self._t_args = kwargs
+            self.epoch = epoch
+        self._scale = scale
+        try:
+            self.scale_str_long,self.scale_str_short = GPS_SCALE[scale]
+        except KeyError:
+            self.scale_str_long,self.scale_str_short = 'x%ss' % scale
 
-    def __call__(self, x, pos=None):
-        t = Time(*modf(x)[::-1], format="gps",
-                 **self._t_args).copy(self._format)
+    def __call__(self, t, pos=None):
+        if isinstance(t, Time):
+            t = t.gps
         if self._format not in ['iso']:
             if self._epoch is not None:
-                t = (t - self._epoch).sec
+                t = (t - self._epoch.gps)
             if self._scale is not None:
                 t /= float(self._scale)
             t = round(float(t), 6)
         t = re.sub('.0+\Z', '', str(t))
         return t
+
+    @property
+    def epoch(self):
+        """Starting GPS time epoch for this formatter
+        """
+        return self._epoch
+    @epoch.setter
+    def epoch(self, epoch):
+        if epoch is not None and not isinstance(epoch, Time):
+            if hasattr(epoch, "seconds"):
+                epoch = [epoch.seconds, epoch.nanoseconds*1e-9]
+            elif hasattr(epoch, "gpsSeconds"):
+                epoch = [epoch.gpsSeconds, epoch.gpsNanoSeconds*1e-9]
+            else:
+                epoch = modf(epoch)[::-1]
+            epoch = Time(*epoch, format='gps', precision=6)
+        self._epoch = epoch
+
 
 def transform_factory(informat, outformat):
     """Transform data in a collection from one format to another
