@@ -118,7 +118,7 @@ class TimeSeries(NDData):
             else:
                 epoch = modf(epoch)[::-1]
             epoch = Time(*epoch, format='gps', precision=6)
-        self._meta['epoch'] = epoch
+        self._meta['epoch'] = epoch.copy(format='gps')
 
     @property
     def unit(self):
@@ -154,7 +154,7 @@ class TimeSeries(NDData):
             return self.channel.sample_rate
     @sample_rate.setter
     def sample_rate(self, val):
-        if val is not None:
+        if val is not None and not isinstance(val, units.Quantity):
             val = units.Quantity(val, units.Hertz)
         self._meta['sample_rate'] = val
 
@@ -172,7 +172,7 @@ class TimeSeries(NDData):
         """Time Segment encompassed by thie `TimeSeries`.
         """
         return Segment(self.epoch.gps,
-                       self.epoch.gps + self.data.size * float(self.dt))
+                       self.epoch.gps + self.data.size * self.dt.value)
 
     def is_contiguous(self, other):
         """Check whether other is contiguous with self.
@@ -230,7 +230,7 @@ class TimeSeries(NDData):
         result : `~numpy.ndarray`
             1d array of GPS time floats
         """
-        data = (numpy.arange(self.shape[0]) * self.dt +
+        data = (numpy.arange(self.shape[0]) * self.dt.value +
                 self.epoch.gps).astype(dtype)
         return NDData(data, unit=units.second)
 
@@ -339,9 +339,10 @@ class TimeSeries(NDData):
         new.dt = self.dt
         new.name = self.name
         if item.start:
-            new.epoch = LIGOTimeGPS(self.epoch.gps) + float(item.start*self.dt)
+            new.epoch = (LIGOTimeGPS(self.epoch.gps) +
+                         float(item.start*self.dt.value))
         if item.step:
-            new.dt = self.dt * item.step
+            new.dt = self.dt.value * item.step
         return new
 
     @classmethod
@@ -362,7 +363,7 @@ class TimeSeries(NDData):
         typestr = lalutils.LAL_TYPE_STR[laltype]
         create = getattr(lal, 'Create%sTimeSeries' % typestr.upper())
         lalts = create(self.name, lal.LIGOTimeGPS(self.epoch.gps), 0,
-                       float(self.dt), lal.lalDimensionlessUnit, self.size)
+                       self.dt.value, lal.lalDimensionlessUnit, self.size)
         lalts.data.data = self.data
         return lalts
 
