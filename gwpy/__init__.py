@@ -5,8 +5,12 @@
 
 # import core astropy modules
 from astropy import table
-from astropy.units.quantity import WARN_IMPLICIT_NUMERIC_CONVERSION
-WARN_IMPLICIT_NUMERIC_CONVERSION.set(False)
+try:
+    from astropy.units.quantity import WARN_IMPLICIT_NUMERIC_CONVERSION
+except ImportError:
+    pass
+else:
+    WARN_IMPLICIT_NUMERIC_CONVERSION.set(False)
 
 import warnings
 warnings.filterwarnings("ignore", "Module (.*) was already import from")
