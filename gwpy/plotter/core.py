@@ -35,7 +35,7 @@ class BasicPlot(object):
                 the plottable area.
 
     Parameters
-    ---------
+    ----------
     figure : :class:`~matplotlib.figure.Figure`, optional, default: `None`
         the parent figure for this new plot
     auto_refresh : `bool`, optional, default: `True`

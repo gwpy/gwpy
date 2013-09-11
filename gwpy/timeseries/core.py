@@ -275,10 +275,12 @@ class TimeSeries(NDData):
         `TimeSeries`.
 
         The `method` argument can be one of
+
             * 'welch'
             * 'bartlett'
             * 'medianmean'
             * 'median'
+
         and any keyword arguments will be passed to the relevant method
         in `gwpy.spectrum`.
 
