@@ -434,25 +434,43 @@ class TimeSeries(NDData):
         """
         from ..io import nds
         channel = Channel(channel)
+        if verbose:
+            import warnings
+            warnings.filterwarnings('always', '(.*)', nds.NDSWarning)
+        def _nds_connect(host, port):
+            try:
+                connection = nds.NDSConnection(host, port) 
+            except RuntimeError as e:
+                if str(e).startswith('Request SASL authentication'):
+                    print('\nError authenticating against %s' % host)
+                    nds.kinit()
+                    connection = nds.NDSConnection(host, port)
+                else:
+                    raise
+            return connection
+
         # user-defined host
         if host:
-            with nds.NDSConnection(host, port) as connection:
-                return connection.fetch(start, end, channel)
+            connection = _nds_connect(host, port)
+            return connection.fetch(start, end, channel, silent=not verbose)
         else:
             hostlist = nds.host_resolution_order(channel.ifo)
             for host,port in hostlist:
                 if verbose:
                     print("Connecting to %s:%s" % (host, port))
+                connection = _nds_connect(host, port)
                 try:
-                    with nds.NDSConnection(host, port) as connection:
+                    if verbose:
                         print("Downloading data...")
-                        return connection.fetch(start, end, channel)
+                    return connection.fetch(start, end, channel,
+                                            silent=not verbose)
                 except RuntimeError as e:
-                    warnings.warn(str(e))
-                    print("Failure encountered, moving on...")
-                    continue
-            raise RuntimeError("Cannot connect to, or find relevant data in "
-                               "any known server")
+                    if verbose:
+                        warnings.warn(str(e), nds.NDSWarning)
+            raise RuntimeError("Cannot find relevant data on any known server")
+        if verbose:
+            warnings.filterwarnings('warn', '(.*)', nds.NDSWarning)
+
 
     def resample(self, rate, window=None):
         """Resample this TimeSeries to a new rate
