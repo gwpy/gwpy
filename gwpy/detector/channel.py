@@ -4,6 +4,9 @@
 """
 
 import re
+import numpy
+
+from lal import utils as lalutils
 
 from astropy import units as aunits
 
@@ -26,8 +29,8 @@ class Channel(object):
         number of samples per second
     unit : |Unit|, `str`, optional
         name of the unit for the data of this channel
-    dtype : `type`, optional
-        numeric type of data for this channel, e.g. `float`, or `int`
+    dtype : `numpy.dtype`, optional
+        numeric type of data for this channel
     model : `str`, optional
         name of the SIMULINK front-end model that produces this `Channel`
 
@@ -54,11 +57,12 @@ class Channel(object):
     query
     """
     def __init__(self, ch, sample_rate=None, unit=None, dtype=None,
-                 model=None):
+                 type=None, model=None):
         # test for Channel input
         if isinstance(ch, Channel):
             sample_rate = sample_rate or ch.sample_rate
             unit = unit or ch.unit
+            type = type or ch.type
             dtype = dtype or ch.dtype
             model = model or ch.model
             ch = ch.name
@@ -66,7 +70,8 @@ class Channel(object):
         self.name = ch
         self.sample_rate = sample_rate
         self.unit = unit
-        self.dtype = type
+        self.type = type
+        self.dtype = dtype
         self.model = model
 
     @property
@@ -119,6 +124,8 @@ class Channel(object):
             self._sample_rate = rate
         elif rate is None:
             self._sample_rate = None
+        elif isinstance(rate, aunits.Quantity):
+            self._sample_rate = rate
         else:
             self._sample_rate = aunits.Quantity(float(rate), unit=aunits.Hertz)
 
@@ -150,10 +157,7 @@ class Channel(object):
         return self._dtype
     @dtype.setter
     def dtype(self, type_):
-        if not isinstance(type_, type):
-            raise TypeError("'dtype' attribute for Channel should be a `type` "
-                            "instance, e.g. float")
-        self._dtype = type_
+        self._dtype = numpy.dtype(type_)
 
     def __str__(self):
         return self.name
@@ -195,6 +199,21 @@ class Channel(object):
                              "all results." % (len(channellist), name))
         return channellist[0]
 
+    @classmethod
+    def from_nds2(cls, nds2channel):
+        """Generate a new channel using an existing nds2.channel object
+        """
+        name = nds2channel.name
+        sample_rate = nds2channel.sample_rate
+        unit = nds2channel.signal_units
+        if not unit:
+            unit = None
+        ctype = nds2channel.channel_type_to_string(nds2channel.channel_type)
+        dtypestr = nds2channel.data_type_to_string(nds2channel.data_type)
+        laltype = lalutils.LAL_TYPE_FROM_STR[dtypestr.replace('_','').upper()]
+        dtype = lalutils.NUMPY_TYPE_FROM_LAL[laltype]
+        return cls(name, sample_rate=sample_rate, unit=unit, dtype=dtype,
+                   type=ctype)
 
 _re_ifo = re.compile("[A-Z]\d:")
 _re_cchar = re.compile("[-_]")
