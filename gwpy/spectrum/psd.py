@@ -51,7 +51,7 @@ def bartlett(timeseries, segmentlength, window=None):
     Spectrum
         Bartlett-averaged `Spectrum`
     """
-    return welch(timeseries, segmentlength, 0, window=window)
+    return welch(timeseries, segmentlength, segmentlength, window=window)
 
 
 def welch(timeseries, segmentlength, overlap, window=None):
@@ -158,10 +158,14 @@ def _lal_psd(timeseries, method, segmentlength, overlap, window=None):
     Spectrum
         average power `Spectrum`
     """
+    if isinstance(segmentlength, units.Quantity):
+        segmentlength = segmentlength.value
+    if isinstance(overlap, units.Quantity):
+        overlap = overlap.value
     lalts = timeseries.to_lal()
     lalwin = window and window.to_lal() or None
     lalfs = lalspectrum._psd(method, lalts, segmentlength, overlap,
-                         window=window)
+                             window=window)
     return Spectrum.from_lal(lalfs)
 
 
