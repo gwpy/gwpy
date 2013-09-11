@@ -112,7 +112,7 @@ class Spectrum(NDData):
         return self._meta['f0']
     @f0.setter
     def f0(self, val):
-        if val is None:
+        if val is None or isinstance(val, units.Quantity):
             self._meta['f0'] = val
         else:
             self._meta['f0'] = units.Quantity(val, units.Hertz)
@@ -128,7 +128,7 @@ class Spectrum(NDData):
         return self._meta['df']
     @df.setter
     def df(self, val):
-        if val is None:
+        if val is None or isinstance(val, units.Quantity):
             self._meta['df'] = None
         else:
             self._meta['df'] = units.Quantity(val, units.Hertz)
