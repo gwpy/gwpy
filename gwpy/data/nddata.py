@@ -49,16 +49,28 @@ class NDData(AstroData):
 
     def median(self, **kwargs):
         return numpy.median(self.data, **kwargs)
-    median.__doc__ = median.__doc__
+    median.__doc__ = numpy.median.__doc__
+
+    def __pow__(self, y, z=None):
+        out = self.copy()
+        out.data **= y
+        return out
+    __pow__.__doc__ = numpy.ndarray.__pow__.__doc__
+
+    def __mul__(self, other):
+        out = self.copy()
+        out.data *= other
+        return out
+    __mul__.__doc__ = numpy.ndarray.__mul__.__doc__
+
+    def __div__(self, other):
+        out = self.copy()
+        out.data /= other
+        return out
+    __div__.__doc__ = numpy.ndarray.__div__.__doc__
 
     def _getAttributeNames(self):
-        return self._meta.keys()
-
-    def __getattr__(self, attr):
-        if attr in self._meta.keys():
-            return self._meta[attr]
-        else:
-            return self.__getattribute__(attr)
+        return self.meta.keys()
 
     def __getitem__(self, item):
         if isinstance(item, int):
