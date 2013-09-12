@@ -37,11 +37,13 @@ class TimeSeriesPlot(Plot):
         kwargs.setdefault('figsize', [12,6])
         # generate figure
         super(TimeSeriesPlot, self).__init__(**kwargs)
+        self.epoch = None
         # set epoch
         for ts in series:
             self.add_timeseries(ts)
-        self.epoch = (len(series) and min(ts.epoch for ts in series) or None)
-        self.set_time_format('gps', epoch=self.epoch)
+        if len(series):
+            self.epoch = min(ts.epoch for ts in series)
+            self.set_time_format('gps', epoch=self.epoch)
 
     # -----------------------------------------------
     # properties
@@ -82,6 +84,15 @@ class TimeSeriesPlot(Plot):
             if re.search(str(oldepoch.gps), xlabel):
                 self.xlabel = xlabel.replace(str(oldepoch.gps),
                                              str(self.epoch.gps))
+
+    # -----------------------------------------------
+    # extend add_timseries
+
+    def add_timeseries(self, timeseries, **kwargs):
+        super(TimeSeriesPlot, self).add_timeseries(timeseries, **kwargs)
+        if not self.epoch:
+            self.epoch = timeseries.epoch
+            self.set_time_format('gps', self.epoch)
 
     # -----------------------------------------------
     # set time axis as GPS
