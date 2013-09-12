@@ -70,6 +70,23 @@ class AutoTimeLocator(mticker.AutoLocator):
         else:
             self._scale = None
 
+    # HACK: needed for matplotlib 1.1
+    try:
+        mticker.AutoLocator.tick_values
+    except AttributeError:
+        def tick_values(self, vmin, vmax):
+            vmin, vmax = mtransforms.nonsingular(vmin, vmax, expander=1e-13,
+                                                             tiny=1e-14)
+            locs = self.bin_boundaries(vmin, vmax)
+            prune = self._prune
+            if prune == 'lower':
+                locs = locs[1:]
+            elif prune == 'upper':
+                locs = locs[:-1]
+            elif prune == 'both':
+                locs = locs[1:-1]
+            return self.raise_if_exceeds(locs)
+
     def __call__(self):
         """Find the locations of ticks given the current view limits
         """
