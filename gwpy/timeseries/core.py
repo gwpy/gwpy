@@ -312,16 +312,66 @@ class TimeSeries(NDData):
             asd.unit.name = "Amplitude spectral density"
         return asd
 
-    def spectrogram(self, step, method='welch', **kwargs):
-        """Calculate the power `Spectrogram` for this `TimeSeries`.
+    def spectrogram(self, stride, fftlength=None, fftstride=None,
+                    method='welch', window=None, logscale=False):
+        """Calculate the average power spectrogram of this `TimeSeries`
+        using the specified average spectrum method
 
-        This method wraps the `spectrogram` method.
+        Parameters
+        ----------
+        stride : `float`
+            number of seconds in single PSD (column of spectrogram)
+        fftlength : `float`
+            number of seconds in single FFT
+        method : `str`, optional, default: 'welch'
+            average spectrum method
+        fftstride : `int`, optiona, default: fftlength
+            number of seconds between FFTs
+        window : `timeseries.window.Window`, optional, default: `None`
+            window function to apply to timeseries prior to FFT
+        logscale : `bool`, optional, default: `False`
+            make frequency axis logarithmic
         """
-        from ..spectrogram import spectrogram
-        spec_ = spectrogram(self, method, step, **kwargs)
-        if not hasattr(spec_.unit, 'name'):
-            spec_.unit.name = "Power spectral density"
-        return spec_
+        from ..spectrum import psd
+        from ..spectrogram import Spectrogram
+        if fftlength == None:
+            fftlength = stride
+        if fftstride == None:
+            fftstride = fftlength
+        dt = stride
+        df = 1/fftlength
+        stride *= self.sample_rate.value
+        fftlength *= self.sample_rate.value
+        fftstride *= self.sample_rate.value
+
+        # get size of Spectrogram
+        nsteps = int(self.size // stride)
+        # get number of frequencies
+        nfreqs = int(fftlength // 2 + 1)
+
+        # generate output spectrogram
+        out = Spectrogram(numpy.zeros((nsteps, nfreqs)), name=self.name,
+                          epoch=self.epoch, f0=0, df=df, dt=dt,
+                          logscale=logscale)
+        if not nsteps:
+            return out
+
+        # stride through TimeSeries, recording PSDs as columns of spectrogram
+        for step in range(nsteps):
+            # find step TimeSeries
+            idx = stride * step
+            idx_end = idx + stride
+            stepseries = self[idx:idx_end]
+            steppsd = psd._lal_psd(stepseries, method, fftlength, fftstride,
+                                   window=window)
+            if logscale:
+                steppsd = steppsd.to_logscale()
+            out.data[step,:] = steppsd.data
+        if self.unit:
+            out.unit = self.unit / units.Hertz
+        else:
+            out.unit = 1 / units.Hertz
+        return out
 
     def plot(self, **kwargs):
         """Plot the data for this TimeSeries.
