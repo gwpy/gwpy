@@ -110,12 +110,13 @@ class Spectrogram(Spectrum, TimeSeries):
         return SpectrogramPlot(self, **kwargs)
 
     def to_logscale(self, fmin=None, fmax=None, num=None):
-        """Convert this Spectrum into logarithmic scale.
+        """Convert this `Spectrogram`` into logarithmic scale.
         """
         num = num or self.shape[-1]
-        fmin = fmin or float(self.f0) or float(self.f0 + self.df)
-        fmax = fmax or float(self.f0 + self.shape[-1] * self.df)
-        linf = self.get_frequencies().data
+        fmin = (fmin or float(self.f0.value) or
+                float(self.f0.value + self.df.value))
+        fmax = fmax or float(self.f0.value + self.shape[-1] * self.df.value)
+        linf = self.frequencies.data
         logf = numpy.logspace(numpy.log10(fmin), numpy.log10(fmax), num=num)
         logf = logf[logf<linf.max()]
         new = self.__class__(numpy.zeros((self.shape[0], logf.size)),
