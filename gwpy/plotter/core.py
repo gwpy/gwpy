@@ -23,16 +23,17 @@ __version__ = version.version
 class BasicPlot(object):
     """A basic class to describe any plot you might want to make.
 
-    It provides basic initialization, a savefig method, and a close
-    method.
-    It is up to developers to subclass BasicPlot and fill in the
-    add_content() and finalize() methods.
-
     Any instance of BasicPlot will have the following attributes
 
         - `fig`: the `matplotlib.figure.Figure` instance
         - `ax`: the `matplotlib.axes.Axes` instance representing
                 the plottable area.
+
+    A new plot can be geneated as follows::
+
+    >>> plot = BasicPlot()
+    >>> plot.add_line([1,2,3,4,5,6,7,8], [3,4,3,2,3,4,3,2])
+    >>> plot.show()
 
     Parameters
     ----------
@@ -82,9 +83,6 @@ class BasicPlot(object):
     save
     show
     """
-    __slots__ = ['xlim', 'ylim', 'colorlim', 'logx', 'logy', 'logcolor',
-                 'xlabel', 'ylabel', 'colorlabel']
-
     def __init__(self, figure=None, auto_refresh=IS_INTERACTIVE, **kwargs):
         """Initialise a new plot.
         """
