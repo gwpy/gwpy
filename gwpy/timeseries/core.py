@@ -139,7 +139,10 @@ class TimeSeries(NDData):
     def dt(self):
         """Time between samples for this `TimeSeries`.
         """
-        return (1 / self.sample_rate).decompose()
+        if self.sample_rate:
+            return (1 / self.sample_rate).decompose()
+        else:
+            return self.sample_rate
     @dt.setter
     def dt(self, val):
         if val is None:
