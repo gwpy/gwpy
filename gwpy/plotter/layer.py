@@ -10,6 +10,10 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
+from matplotlib.lines import Line2D
+from matplotlib.collections import PathCollection
+from matplotlib.image import AxesImage
+
 try:
     from collections import OrderedDict
 except ImportError:
@@ -19,7 +23,8 @@ except ImportError:
 class LayerCollection(OrderedDict):
     """Object recording the plotting layers on a figure
     """
-    LAYER_TYPES = ['Line2D', 'PathCollection']
+    LAYER_TYPES = [Line2D.__class__.__name__, PathCollection.__class__.__name__,
+                   AxesImage.__class__.__name__]
     def count(self, type_=None):
         if type_:
             if type_ not in self.LAYER_TYPES:
@@ -38,6 +43,7 @@ class LayerCollection(OrderedDict):
         """The first mappable layer available for use in a Colorbar
         """
         for layer in self.viewvalues():
-            if layer.__class__.__name__ in ['PathCollection']:
+            if (isinstance(layer, PathCollection) or
+                isinstance(layer, AxesImage)):
                 return layer
         raise ValueError("No mappable layers in this Collection")
