@@ -107,10 +107,13 @@ class TimeSeries(NDData):
 
         See `~astropy.time` for details on the `Time` object.
         """
-        return self._meta['epoch']
+        return self._epoch
     @epoch.setter
     def epoch(self, epoch):
-        if epoch is not None and not isinstance(epoch, Time):
+        if epoch is None:
+            self._epoch = None
+            return
+        elif not isinstance(epoch, Time):
             if hasattr(epoch, "seconds"):
                 epoch = [epoch.seconds, epoch.nanoseconds*1e-9]
             elif hasattr(epoch, "gpsSeconds"):
@@ -118,7 +121,7 @@ class TimeSeries(NDData):
             else:
                 epoch = modf(epoch)[::-1]
             epoch = Time(*epoch, format='gps', precision=6)
-        self._meta['epoch'] = epoch.copy(format='gps')
+        self._epoch = epoch.copy(format='gps')
 
     @property
     def unit(self):
@@ -149,14 +152,14 @@ class TimeSeries(NDData):
         """Data rate for this `TimeSeries` in samples per second (Hertz).
         """
         try:
-            return self._meta['sample_rate']
+            return self._sample_rate
         except:
             return self.channel.sample_rate
     @sample_rate.setter
     def sample_rate(self, val):
         if val is not None and not isinstance(val, units.Quantity):
             val = units.Quantity(val, units.Hertz)
-        self._meta['sample_rate'] = val
+        self._sample_rate = val
 
     @property
     def channel(self):

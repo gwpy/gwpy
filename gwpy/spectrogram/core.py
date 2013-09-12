@@ -89,8 +89,7 @@ class Spectrogram(Spectrum, TimeSeries):
                              "or one of: 'mean', 'median'")
         return self.__class__(self.data/operand, unit=unit, epoch=self.epoch,
                               f0=self.f0, name=self.name, dt=self.dt,
-                              df=self.df, logscale=self.logscale, wcs=self.wcs,
-                              mask=self.mask, flags=self.flags, meta=self.meta)
+                              df=self.df, logscale=self.logscale)
 
     def __str__(self):
         return "Spectrogram('{0}')".format(self.name)
@@ -114,9 +113,7 @@ class Spectrogram(Spectrum, TimeSeries):
         logf = numpy.logspace(numpy.log10(fmin), numpy.log10(fmax), num=num)
         logf = logf[logf<linf.max()]
         new = self.__class__(numpy.zeros((self.shape[0], logf.size)),
-                             unit=self.unit,
-                             wcs=self.wcs, uncertainty=self.uncertainty,
-                             flags=self.flags, meta=self.meta)
+                             epoch=self.epoch, dt=self.dt, unit=self.unit)
         for i in range(self.shape[0]):
             interpolator = interpolate.interp1d(linf[-logf.size:],
                                                 self.data[i,-logf.size:],
@@ -131,7 +128,7 @@ class Spectrogram(Spectrum, TimeSeries):
 
     def __getitem__(self, item):
         if isinstance(item, int):
-            return Spectrum(self.data[item], wcs=self.wcs, unit=self.unit,
+            return Spectrum(self.data[item], unit=self.unit,
                             name=self.name, f0=self.f0, df=self.df)
         elif isinstance(item, tuple):
             return self[item[0]][item[1]]

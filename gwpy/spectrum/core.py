@@ -88,7 +88,7 @@ class Spectrum(NDData):
 
         See :mod:`~astropy.time` for details on the `Time` object.
         """
-        return self._meta['epoch']
+        return self._epoch
     @epoch.setter
     def epoch(self, epoch):
         if epoch is not None and not isinstance(epoch, Time):
@@ -99,7 +99,7 @@ class Spectrum(NDData):
             else:
                 epoch = modf(epoch)[::-1]
             epoch = Time(*epoch, format='gps', precision=6)
-        self._meta['epoch'] = epoch
+        self._epoch = epoch
 
     @property
     def f0(self):
@@ -109,13 +109,13 @@ class Spectrum(NDData):
         :class:`~astropy.units.quantity.Quantity` object, assuming a
         unit of 'Hertz'.
         """
-        return self._meta['f0']
+        return self._f0
     @f0.setter
     def f0(self, val):
-        if val is None or isinstance(val, units.Quantity):
-            self._meta['f0'] = val
+        if val is None:
+            self._f0 = val
         else:
-            self._meta['f0'] = units.Quantity(val, units.Hertz)
+            self._f0 = units.Quantity(val, units.Hertz)
 
     @property
     def df(self):
@@ -125,23 +125,23 @@ class Spectrum(NDData):
         :class:`~astropy.units.quantity.Quantity` object, assuming a
         unit of 'Hertz'.
         """
-        return self._meta['df']
+        return self._df
     @df.setter
     def df(self, val):
-        if val is None or isinstance(val, units.Quantity):
-            self._meta['df'] = None
+        if val is None:
+            self._df = None
         else:
-            self._meta['df'] = units.Quantity(val, units.Hertz)
+            self._df = units.Quantity(val, units.Hertz)
 
     @property
     def logscale(self):
         """Boolean telling whether this `Spectrum` has a logarithmic
         frequency scale
         """
-        return self._meta['logscale']
+        return self._logscale
     @logscale.setter
     def logscale(self, val):
-        self._meta['logscale'] = bool(val)
+        self._logscale = bool(val)
 
     @property
     def frequencies(self):
@@ -197,7 +197,7 @@ class Spectrum(NDData):
         interpolator = interpolate.interp1d(linf, self.data, axis=0)
         new = self.__class__(interpolator(logf), unit=self.unit,
                              wcs=self.wcs, uncertainty=self.uncertainty,
-                             flags=self.flags, meta=self.meta)
+                             flags=self.flags)
         for attr in self._getAttributeNames():
             setattr(new, attr, getattr(self, attr))
         new.f0 = logf[0]

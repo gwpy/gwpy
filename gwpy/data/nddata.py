@@ -23,16 +23,6 @@ class NDData(AstroData):
         super(NDData, self).__init__(data, **kwargs)
         self.name = name
 
-    @property
-    def name(self):
-        return self._meta['name']
-    @name.setter
-    def name(self, val):
-        self._meta['name'] = val
-    @name.deleter
-    def name(self):
-        del self._meta['name']
-
     def copy(self):
         """Make a copy of this series
 
