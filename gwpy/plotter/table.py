@@ -6,13 +6,13 @@
 import numpy
 from matplotlib import pyplot
 
-from .core import BasicPlot
+from .core import Plot
 from .decorators import auto_refresh
 from ..table import Table
 from . import (tex, ticks)
 
 
-class TablePlot(BasicPlot):
+class TablePlot(Plot):
     """Plot data directly from a Table
     """
     def __init__(self, *args, **kwargs):

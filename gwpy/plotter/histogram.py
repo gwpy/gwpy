@@ -23,7 +23,7 @@ import numpy
 
 from glue import iterutils
 
-from .core import BasicPlot
+from .core import Plot
 
 __author__ = "Duncan M. Macleod <duncan.macleod@ligo.org>"
 __version__ = ""
@@ -32,7 +32,7 @@ __date__ = ""
 __all__ = ["LineHistogram", "BarHistogram", "StepHistogram"]
 
 
-class Histogram(BasicPlot):
+class Histogram(Plot):
     """A plot showing a histogram of data
     """
     def __init__(self, *data, **kwargs):

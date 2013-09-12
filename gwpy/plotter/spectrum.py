@@ -5,7 +5,7 @@
 
 from matplotlib import pyplot
 from . import (tex, ticks)
-from .core import BasicPlot
+from .core import Plot
 from .decorators import auto_refresh
 
 from .. import version
@@ -13,7 +13,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 
-class SpectrumPlot(BasicPlot):
+class SpectrumPlot(Plot):
     """Plot data from a LAL TimeSeries object
     """
     def __init__(self, *series, **kwargs):

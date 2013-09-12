@@ -20,10 +20,10 @@ __credits__ = "Nick Fotopoulos"
 __version__ = version.version
 
 
-class BasicPlot(object):
+class Plot(object):
     """A basic class to describe any plot you might want to make.
 
-    Any instance of BasicPlot will have the following attributes
+    Any instance of Plot will have the following attributes
 
         - `fig`: the `matplotlib.figure.Figure` instance
         - `ax`: the `matplotlib.axes.Axes` instance representing
@@ -31,7 +31,7 @@ class BasicPlot(object):
 
     A new plot can be geneated as follows::
 
-    >>> plot = BasicPlot()
+    >>> plot = Plot()
     >>> plot.add_line([1,2,3,4,5,6,7,8], [3,4,3,2,3,4,3,2])
     >>> plot.show()
 
@@ -49,7 +49,7 @@ class BasicPlot(object):
     Returns
     -------
     plot
-        a new `BasicPlot`
+        a new `Plot`
 
     Attributes
     ----------
@@ -193,7 +193,7 @@ class BasicPlot(object):
 
         Notes
         -----
-        The :attr:`BasicPlot.title` attribute is set as the title for the
+        The :attr:`Plot.title` attribute is set as the title for the
         enclosing :class:`~matplotlib.figure.Figure` and is centred on that
         frame, rather than the :class:`~matplotlib.axes.AxesSubPlot`
         """
@@ -216,7 +216,7 @@ class BasicPlot(object):
 
         Notes
         -----
-        The :attr:`BasicPlot.subtitle` attribute is set as the title for the
+        The :attr:`Plot.subtitle` attribute is set as the title for the
         enclosing :class:`~matplotlib.axes.AxesSubPlot` and is centred on that
         frame, rather than the parent :class:`~matplotlib.figure.Figure`
         """
@@ -659,7 +659,7 @@ class BasicPlot(object):
         timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
             the TimeSeries to display
         **kwargs
-            other keyword arguments for the `BasicPlot.add_line` function
+            other keyword arguments for the `Plot.add_line` function
 
         Returns
         -------
@@ -679,7 +679,7 @@ class BasicPlot(object):
         spectum : :class:`~gwpy.spectrum.core.Spectrum`
             the Spectrum to display
         **kwargs
-            other keyword arguments for the `BasicPlot.add_line` function
+            other keyword arguments for the `Plot.add_line` function
 
         Returns
         -------
@@ -700,7 +700,7 @@ class BasicPlot(object):
         spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
             the Spectrogram to display
         **kwargs
-            other keyword arguments for the `BasicPlot.add_image` function
+            other keyword arguments for the `Plot.add_image` function
 
         Returns
         -------

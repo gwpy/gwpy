@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-"""An extension of the BasicPlot class for handling TimeSeries
+"""An extension of the Plot class for handling TimeSeries
 """
 
 import re
@@ -9,7 +9,7 @@ from lal import LIGOTimeGPS
 
 from ..time import Time
 from ..timeseries import TimeSeries
-from . import (BasicPlot, ticks)
+from . import (Plot, ticks)
 from .decorators import auto_refresh
 
 
@@ -17,8 +17,8 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['TimeSeriesPlot']
 
 
-class TimeSeriesPlot(BasicPlot):
-    """An extension of the :class:`~gwpy.plotter.core.BasicPlot` class for
+class TimeSeriesPlot(Plot):
+    """An extension of the :class:`~gwpy.plotter.core.Plot` class for
     displaying data from :class:`~gwpy.timeseries.core.TimeSeries`
 
     Parameters
@@ -28,7 +28,7 @@ class TimeSeriesPlot(BasicPlot):
         display on the plot
     **kwargs
         other keyword arguments as applicable for the
-        :class:`~gwpy.plotter.core.BasicPlot`
+        :class:`~gwpy.plotter.core.Plot`
     """
     def __init__(self, *series, **kwargs):
         """Initialise a new TimeSeriesPlot
