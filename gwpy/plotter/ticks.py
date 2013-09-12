@@ -94,15 +94,15 @@ class AutoTimeLocator(mticker.AutoLocator):
         locs = self.tick_values(vmin, vmax)
         if self._scale:
             locs *= self._scale
-        if self._epoch:
-            locs += float(self._epoch.gps)
+        if self.epoch:
+            locs += float(self.epoch.gps)
         return self.raise_if_exceeds(locs)
 
     def get_view_interval(self):
         vmin, vmax = self.axis.get_view_interval()
-        if self._epoch:
-            vmin -= float(self._epoch.gps)
-            vmax -= float(self._epoch.gps)
+        if self.epoch:
+            vmin -= float(self.epoch.gps)
+            vmax -= float(self.epoch.gps)
         if self._scale:
             vmin /= self._scale
             vmax /= self._scale
@@ -120,7 +120,10 @@ class AutoTimeLocator(mticker.AutoLocator):
         return self._epoch
     @epoch.setter
     def epoch(self, epoch):
-        if epoch is not None and not isinstance(epoch, Time):
+        if epoch is None:
+           self._epoch = None
+           return
+        elif not isinstance(epoch, Time):
             if hasattr(epoch, "seconds"):
                 epoch = [epoch.seconds, epoch.nanoseconds*1e-9]
             elif hasattr(epoch, "gpsSeconds"):
@@ -128,7 +131,7 @@ class AutoTimeLocator(mticker.AutoLocator):
             else:
                 epoch = modf(epoch)[::-1]
             epoch = Time(*epoch, format='gps', precision=6)
-        self._epoch = epoch
+        self._epoch = epoch.copy(format='gps')
 
 
 
@@ -152,8 +155,8 @@ class TimeFormatter(mticker.Formatter):
         if isinstance(t, Time):
             t = t.gps
         if self._format not in ['iso']:
-            if self._epoch is not None:
-                t = (t - self._epoch.gps)
+            if self.epoch is not None:
+                t = (t - self.epoch.gps)
             if self._scale is not None:
                 t /= float(self._scale)
             t = round(float(t), 6)
@@ -167,7 +170,10 @@ class TimeFormatter(mticker.Formatter):
         return self._epoch
     @epoch.setter
     def epoch(self, epoch):
-        if epoch is not None and not isinstance(epoch, Time):
+        if epoch is None:
+            self._epoch = None
+            return
+        elif not isinstance(epoch, Time):
             if hasattr(epoch, "seconds"):
                 epoch = [epoch.seconds, epoch.nanoseconds*1e-9]
             elif hasattr(epoch, "gpsSeconds"):
@@ -175,7 +181,7 @@ class TimeFormatter(mticker.Formatter):
             else:
                 epoch = modf(epoch)[::-1]
             epoch = Time(*epoch, format='gps', precision=6)
-        self._epoch = epoch
+        self._epoch = epoch.copy(format='gps')
 
 
 def transform_factory(informat, outformat):
