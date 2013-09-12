@@ -27,6 +27,7 @@ from .ticks import *
 from .histogram import *
 from .series import *
 from .timeseries import *
+from .spectrogram import *
 from .table import *
 from .gwf import *
 
