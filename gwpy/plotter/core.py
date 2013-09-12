@@ -5,7 +5,7 @@
 
 import numpy
 
-from matplotlib import (colors, ticker, pyplot as mpl)
+from matplotlib import (colors as mcolors, ticker as mticker, pyplot as mpl)
 try:
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 except ImportError:
@@ -319,7 +319,7 @@ class Plot(object):
     @logcolor.setter
     @auto_refresh
     def logcolor(self, log):
-        if self._logcolor == log:
+        if hasattr(self, '_logcolor') and self._logcolor == log:
             return
         if hasattr(self, '_colorbar'):
             clim = self._colorbar.get_clim()
@@ -331,10 +331,10 @@ class Plot(object):
             for mappable in self._layers.values():
                 if hasattr(mappable, 'norm'):
                     if log:
-                        mappable.set_norm(colors.LogNorm(*mappable.get_clim()))
+                        mappable.set_norm(mcolors.LogNorm(*mappable.get_clim()))
                     else:
                         mappable.set_norm(
-                            colors.Normalize(*mappable.get_clim()))
+                            mcolors.Normalize(*mappable.get_clim()))
 
     # -----------------------------------------------
     # core plot operations
@@ -618,7 +618,7 @@ class Plot(object):
         mappable.set_clim(clim)
 
         # set tick format (including sub-ticks for log scales)
-        if pyplot.rcParams["text.usetex"]:
+        if mpl.rcParams["text.usetex"]:
             if log and abs(float.__sub__(*numpy.log10(clim))) >= 2:
                 func = lambda x,pos: (mticker.is_decade(x) and
                                   '$%s$' % tex.float_to_latex(x, '%.4g') or ' ')
@@ -707,7 +707,7 @@ class Plot(object):
         Line2D
             the :class:`~matplotlib.lines.Line2D` for this line layer
         """
-        kwargs.setdefault('layer', spectrogram.name)
+        kwargs.setdefault('label', spectrogram.name)
         im = spectrogram.data.T
         nf, nt = im.shape
         freqs = spectrogram.get_frequencies()
