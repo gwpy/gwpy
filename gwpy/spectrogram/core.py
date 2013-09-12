@@ -23,7 +23,7 @@ class Spectrogram(Spectrum, TimeSeries):
     amplitude.
     """
     def __init__(self, data, epoch=None, f0=None, dt=None, df=None, name=None,
-                 logscale=False, unit=None, **kwargs):
+                 logscale=None, unit=None, **kwargs):
         """Generate a new Spectrum.
 
         Parameters
@@ -48,10 +48,16 @@ class Spectrogram(Spectrum, TimeSeries):
         result : `~gwpy.types.TimeSeries`
             A new TimeSeries
         """
-        super(Spectrogram, self).__init__(data,  name=name, unit=unit, **kwargs)
+        super(Spectrogram, self).__init__(data, name=name, unit=unit, **kwargs)
+        if isinstance(data, self.__class__):
+            epoch = epoch or data.epoch
+            f0 = f0 is None and data.f0 or f0
+            dt = dt is None and data.dt or dt
+            df = df is None and data.df or df
+            logscale = logscale is None and data.logscale or logscale
         self.epoch = epoch
-        self.dt = dt
         self.f0 = f0
+        self.dt = dt
         self.df = df
         self.logscale = logscale
 
