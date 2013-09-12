@@ -10,6 +10,7 @@ import lal
 
 from ..data import NDData
 from ..detector import Channel
+from ..time import Time
 
 from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
@@ -156,12 +157,14 @@ class Spectrum(NDData):
             return self._frequencies
         except AttributeError:
             if self.logscale:
-                logdf = numpy.log10(self.f0 + self.df) - numpy.log10(self.f0)
-                logf1 = numpy.log10(self.f0) + self.shape[-1] * logdf
-                data = numpy.logspace(numpy.log10(self.f0), logf1,
+                logdf = (numpy.log10(self.f0.value + self.df.value) -
+                         numpy.log10(self.f0.value))
+                logf1 = numpy.log10(self.f0.value) + self.shape[-1] * logdf
+                data = numpy.logspace(numpy.log10(self.f0.value), logf1,
                                       num=self.shape[-1])
             else:
-                data = numpy.arange(self.shape[-1]) * self.df + self.f0
+                data = (numpy.arange(self.shape[-1]) * self.df.value +
+                        self.f0.value)
             self._frequencies = NDData(data, unit=units.Hertz)
             return self.frequencies
 
