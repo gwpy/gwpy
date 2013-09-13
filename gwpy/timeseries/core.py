@@ -514,8 +514,7 @@ class TimeSeries(NDData):
 
         # user-defined host
         if host:
-            connection = _nds_connect(host, port)
-            return connection.fetch(start, end, channel, silent=not verbose)
+            hostlist = [(host, port)]
         else:
             hostlist = nds.host_resolution_order(channel.ifo)
             for host,port in hostlist:
@@ -526,6 +525,7 @@ class TimeSeries(NDData):
                     if verbose:
                         print("Downloading data...")
                     return connection.fetch(start, end, channel,
+                                            nds.nds2.channel.CHANNEL_TYPE_RAW,
                                             silent=not verbose)
                 except RuntimeError as e:
                     if verbose:
