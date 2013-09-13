@@ -10,9 +10,9 @@ The :mod:`~gwpy.plotter` module provides a number of plot classes, each represen
 These classes include
 
 - :class:`~core.Plot` (for quick display of any data)
-- :class:`~series.TimeSeriesPlot` and :class:`~gwf.GWFramePlot`
-- :class:`~series.SpectrumPlot`
-- :class:`~series.SpectrogramPlot`
+- :class:`~timeseries.TimeSeriesPlot` and :class:`~gwf.GWFramePlot`
+- :class:`~spectrum.SpectrumPlot`
+- :class:`~spectrogram.SpectrogramPlot`
 
 Other than the :class:`~core.Plot` (which takes no data arguments), each of the series plots takes an instance of the associated series as the argument when generating a plot, for example with a :class:`~gwpy.timeseries.core.TimeSeries` (called ``timeseries``)::
 
