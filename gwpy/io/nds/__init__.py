@@ -82,7 +82,7 @@ class NDSConnection(object):
             channel = Channel.from_nds2(data.channel)
             try:
                 cisch = Channel.query(channel.name)
-            except ValueError:
+            except:#ValueError:
                 pass
             else:
                 channel.model = cisch.model
@@ -118,11 +118,11 @@ class NDSConnection(object):
                     out.extend(self._connection.find_channels(channel, *args))
         return out
 
-    def iterate(channels, start=None, stop=None, stride=None):
+    def iterate(self, channels, start=None, stop=None, stride=None):
         """Retreive data over NDS in pieces
         """
         # format args for nds module call
-        args = [arg for arg in (start, stop, stride, channel) if
+        args = [arg for arg in (start, stop, stride, channels) if
                 arg is not None]
         # return iterator
         return self._connection.iterate(*args)
