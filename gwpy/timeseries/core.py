@@ -178,6 +178,12 @@ class TimeSeries(NDData):
         return Segment(self.epoch.gps,
                        self.epoch.gps + self.data.size * self.dt.value)
 
+    @property
+    def duration(self):
+        """Duration of this `TimeSeries` in seconds
+        """
+        return self.data.size * self.dt.value
+
     def is_contiguous(self, other):
         """Check whether other is contiguous with self.
         """
