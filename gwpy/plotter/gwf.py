@@ -5,7 +5,7 @@
 
 from .. import version
 from ..timeseries import TimeSeries
-from .series import TimeSeriesPlot
+from .timeseries import TimeSeriesPlot
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
