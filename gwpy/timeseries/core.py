@@ -512,9 +512,11 @@ class TimeSeries(NDData):
                     raise
             return connection
 
-        ndschanneltype = (nds.nds2.channel.CHANNEL_TYPE_MTREND |
-                          nds.nds2.channel.CHANNEL_TYPE_STREND |
-                          nds.nds2.channel.CHANNEL_TYPE_RAW)
+        # get type
+        ndschanneltype = (nds.nds2.channel.CHANNEL_TYPE_RAW |
+                          nds.nds2.channel.CHANNEL_TYPE_RDS |
+                          nds.nds2.channel.CHANNEL_TYPE_STREND|
+                          nds.nds2.channel.CHANNEL_TYPE_MTREND)
 
         # user-defined host
         if host:
