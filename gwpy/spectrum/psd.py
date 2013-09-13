@@ -166,4 +166,9 @@ def _lal_psd(timeseries, method, segmentlength, overlap, window=None):
     lalwin = window and window.to_lal() or None
     lalfs = lalspectrum._psd(method, lalts, segmentlength, overlap,
                              window=window)
-    return Spectrum.from_lal(lalfs)
+    spec = Spectrum.from_lal(lalfs)
+    if timeseries.unit:
+        spec.unit = timeseries.unit / units.Hertz
+    else:
+        spec.unit = 1 / units.Hertz
+    return spec
