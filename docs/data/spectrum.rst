@@ -21,6 +21,7 @@ From this information, any new `Spectrum` can be generated as follows::
     >>> mydata
     <Spectrum object: name='None' f0=0 df=1>
 
+===========================================================================
 Calculating the `Spectrum` from a :class:`~gwpy.timeseries.core.TimeSeries`
 ===========================================================================
 
@@ -28,10 +29,10 @@ The canonical method for generating a `Spectrum` is to calculated either the pow
 
     >>> from gwpy.timeseries import TimeSeries
     >>> hoft = TimeSeries.read('G-G1_RDS_C01_L3-1049587200-60.gwf', 'G1:DER_DATA_H')
-    >>> hoff = hoft.asd(method='welch', fft_length=2, overlap=1)
+    >>> hoff = hoft.asd(2, fftstride=1, method='welch')
 
 where the result is an average spectrum, in this examples using the `Welch method <https://en.wikipedia.org/wiki/Welch_method>`_.
-The `fft_length` and `overlap` arguments the lengths (in seconds) of each Fourier transform, and the overlap between successive transforms, respectively.
+The ``fftlength`` and ``fftstride`` arguments are the length (in seconds) of each Fourier transform, and the stride between successive transforms in the average, respectively.
 
 =============
 Reference/API
