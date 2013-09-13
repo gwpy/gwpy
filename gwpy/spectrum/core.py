@@ -94,6 +94,24 @@ class Spectrum(NDData):
         self.logscale = logscale
 
     @property
+    def name(self):
+        """Name of this Spectrum
+        """
+        try:
+            return self._name
+        except AttributeError:
+            try:
+                return self.channel.name
+            except AttributeError:
+                return None
+
+    @name.setter
+    def name(self, n):
+        if n is None:
+            return
+        self._name = n
+
+    @property
     def epoch(self):
         """Starting GPS time epoch for this `Spectrum`
 
@@ -244,16 +262,15 @@ class Spectrum(NDData):
                    self.name, self.f0, self.df)
 
     def __getitem__(self, item):
-        if isinstance(item, int):
-            return self.data[item]
         new = super(Spectrum, self).__getitem__(item)
-        new.f0 = self.f0
-        new.df = self.df
-        new.name = self.name
-        if item.start:
-            new.f0 = self.f0 + item.start * self.df
-        if item.step:
-            new.df = self.df * item.step
+        if not isinstance(item, int):
+            new.f0 = self.f0
+            new.df = self.df
+            new.name = self.name
+            if item.start:
+                new.f0 = self.f0 + item.start * self.df
+            if item.step:
+                new.df = self.df * item.step
         return new
 
     def filter(self, zeros=[], poles=[], gain=1, inplace=True):
