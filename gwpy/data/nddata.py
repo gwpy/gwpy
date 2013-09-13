@@ -20,7 +20,10 @@ class NDData(AstroData):
     """A subclass of the numpy array with added metadata access
     """
     def __init__(self, data, name=None, **kwargs):
+        kwargs.setdefault('mask', None)
         super(NDData, self).__init__(numpy.asarray(data), **kwargs)
+        if isinstance(data, self.__class__):
+            name = name or data.name
         self.name = name
 
     def copy(self):
@@ -74,9 +77,56 @@ class NDData(AstroData):
     def _getAttributeNames(self):
         return self.meta.keys()
 
+    def __gt__(self, val):
+        return self.data > val
+    __gt__.__doc__ = numpy.ndarray.__gt__.__doc__
+
+    def __lt__(self, val):
+        return self.data < val
+    __lt__.__doc__ = numpy.ndarray.__lt__.__doc__
+
+    def __ge__(self, val):
+        return self.data >= val
+    __ge__.__doc__ = numpy.ndarray.__ge__.__doc__
+
+    def __le__(self, val):
+        return self.data <= val
+    __le__.__doc__ = numpy.ndarray.__le__.__doc__
+
+    def __eq__(self, val):
+        return self.data == val
+    __eq__.__doc__ = numpy.ndarray.__eq__.__doc__
+
+    def __ne__(self, val):
+        return self.data != val
+    __ne__.__doc__ = numpy.ndarray.__ne__.__doc__
+
+    def __neg__(self, val):
+        out = self.copy()
+        out.data = -out.data
+        return out
+    __neg__.__doc__ = numpy.ndarray.__neg__.__doc__
+
+    def __pos__(self, val):
+        out = self.copy()
+        out.data = +out.data
+        return out
+    __pos__.__doc__ = numpy.ndarray.__pos__.__doc__
+
+    def __abs__(self, val):
+        out = self.copy()
+        out.data = out.data.abs()
+        return out
+    __abs__.__doc__ = numpy.ndarray.__abs__.__doc__
+
+    def __len__(self):
+        return len(self.data)
+
     def __getitem__(self, item):
-        if isinstance(item, int):
+        if isinstance(item, int) and self.unit:
             return Quantity(self.data[item], unit=self.unit)
+        elif isinstance(item, int):
+            return self.data[item]
         else:
             return super(NDData, self).__getitem__(item)
 
