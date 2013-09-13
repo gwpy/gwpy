@@ -27,7 +27,7 @@ class Channel(object):
         will be copied over.
     sample_rate : `float`, |Quantity|, optional
         number of samples per second
-    unit : |Unit|, `str`, optional
+    unit : :class:`~astropy.units.core.Unit`, `str`, optional
         name of the unit for the data of this channel
     dtype : `numpy.dtype`, optional
         numeric type of data for this channel
@@ -78,8 +78,11 @@ class Channel(object):
     def name(self):
         """Name of this `Channel`. This should follow the naming
         convention, with the following format: 'IFO:SYSTEM-SUBSYSTEM_SIGNAL'
+
+        :type: `str`
         """
         return self._name
+
     @name.setter
     def name(self, n):
         self._name = str(n)
@@ -89,6 +92,8 @@ class Channel(object):
     @property
     def ifo(self):
         """Interferometer prefix for this `Channel`, e.g `H1`.
+
+        :type: `str`
         """
         return self._ifo
 
@@ -96,6 +101,8 @@ class Channel(object):
     def system(self):
         """Instrumental system for this `Channel`, e.g `PSL`
         (pre-stabilised laser).
+
+        :type: `str`
         """
         return self._system
 
@@ -103,6 +110,8 @@ class Channel(object):
     def subsystem(self):
         """Instrumental sub-system for this `Channel`, e.g `ISS`
         (pre-stabiliser laser intensity stabilisation servo).
+
+        :type: `str`
         """
         return self._subsystem
 
@@ -110,14 +119,19 @@ class Channel(object):
     def signal(self):
         """Instrumental signal for this `Channel`, relative to the
         system and sub-system, e.g `FIXME`.
+
+        :type: `str`
         """
         return self._signal
 
     @property
     def sample_rate(self):
         """Rate of samples (Hertz) for this `Channel`
+
+        :type: |Quantity|
         """
         return self._sample_rate
+
     @sample_rate.setter
     def sample_rate(self, rate):
         if isinstance(rate, aunits.Unit):
@@ -132,8 +146,11 @@ class Channel(object):
     @property
     def unit(self):
         """Data unit for this `Channel`
+
+        :type: |Unit|
         """
         return self._unit
+
     @unit.setter
     def unit(self, u):
         if u is None:
@@ -144,8 +161,11 @@ class Channel(object):
     @property
     def model(self):
         """Name of the SIMULINK front-end model that defines this `Channel`
+
+        :type: `str`
         """
         return self._model
+
     @model.setter
     def model(self, mdl):
         self._model = mdl and mdl.lower() or mdl
@@ -153,8 +173,11 @@ class Channel(object):
     @property
     def dtype(self):
         """Numeric type for data in this `Channel`
+
+        :type: :class:`~numpy.dtype`
         """
         return self._dtype
+
     @dtype.setter
     def dtype(self, type_):
         self._dtype = numpy.dtype(type_)
@@ -210,13 +233,14 @@ class Channel(object):
             unit = None
         ctype = nds2channel.channel_type_to_string(nds2channel.channel_type)
         dtypestr = nds2channel.data_type_to_string(nds2channel.data_type)
-        laltype = lalutils.LAL_TYPE_FROM_STR[dtypestr.replace('_','').upper()]
+        laltype = lalutils.LAL_TYPE_FROM_STR[dtypestr.replace('_', '').upper()]
         dtype = lalutils.NUMPY_TYPE_FROM_LAL[laltype]
         return cls(name, sample_rate=sample_rate, unit=unit, dtype=dtype,
                    type=ctype)
 
 _re_ifo = re.compile("[A-Z]\d:")
 _re_cchar = re.compile("[-_]")
+
 
 def parse_channel_name(name):
     """Decompose a channel name string into its components
@@ -225,7 +249,7 @@ def parse_channel_name(name):
         return None, None, None, None
     # parse ifo
     if _re_ifo.match(name):
-        ifo,name = name.split(":",1)
+        ifo, name = name.split(":", 1)
     else:
         ifo = None
     # parse systems
@@ -265,7 +289,7 @@ class ChannelList(list):
         ------
         ValueError if no such element exists.
         """
-        for i,chan in enumerate(self):
+        for i, chan in enumerate(self):
             if name == chan.name:
                 return i
         raise ValueError(name)
@@ -310,9 +334,9 @@ class ChannelList(list):
             c = [entry for entry in c if
                  float(entry.sample_rate) == sample_rate]
         if sample_range is not None:
-            c = [entry for entry in c if\
+            c = [entry for entry in c if
                  sample_range[0] <= float(entry.sample_rate) <=
-                     sample_range[1]]
+                 sample_range[1]]
 
         return self.__class__(c)
 
@@ -335,4 +359,3 @@ class ChannelList(list):
         """
         from ..io import cis
         return cis.query(name, debug=debug)
-
