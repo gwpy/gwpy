@@ -263,7 +263,7 @@ class TimeSeries(NDData):
         ----------
         fftlength : `float`, default: :attr:`TimeSeries.duration`
             number of seconds in single FFT
-        fftstride : `int`, optiona, default: fftlength
+        fftstride : `float`, optional, default: fftlength
             number of seconds between FFTs, default: no overlap
         method : `str`, optional, default: 'welch'
             average spectrum method
@@ -305,7 +305,7 @@ class TimeSeries(NDData):
         ----------
         fftlength : `float`, default: :attr:`TimeSeries.duration`
             number of seconds in single FFT
-        fftstride : `int`, optiona, default: fftlength
+        fftstride : `float`, optional, default: fftlength
             number of seconds between FFTs, default: no overlap
         method : `str`, optional, default: 'welch'
             average spectrum method
