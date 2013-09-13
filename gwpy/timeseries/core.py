@@ -23,8 +23,6 @@ from ..detector import Channel
 from ..segments import Segment
 from ..data import NDData
 
-LIGOTimeGPS = lal.LIGOTimeGPS
-
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
@@ -222,23 +220,26 @@ class TimeSeries(NDData):
                               epoch=self.epoch, sample_rate=self.sample_rate,
                               unit=self.unit, channel=self.channel)
 
-    def get_times(self, dtype=LIGOTimeGPS):
+    def get_times(self, dtype=lal.LIGOTimeGPS):
         """Get the array of GPS times that accompany the data array
 
         Parameters
         ----------
-        dtype : `type`, optional
-            return data type, defaults to `LIGOTimeGPS` if available,
-            otherwise, `~numpy.float64`
+        dtype : `type`, optional, default: :lalsuite:`LIGOTimeGPS`
+            return data type for times
 
         Returns
         -------
         result : `~numpy.ndarray`
-            1d array of GPS time floats
+            1-dimensional :class:`~numpy.ndarray` of sample times
         """
         data = (numpy.arange(self.shape[0]) * self.dt.value +
                 self.epoch.gps).astype(dtype)
         return NDData(data, unit=units.second)
+
+    times = property(get_times,
+                     doc="""The GPS times of each sample in this series\n
+                         :type: :lalsuite:`LIGOTimeGPS`""")
 
     def psd(self, method, segmentlength, overlap=None, window=None):
         """Calculate the power spectral density (PSD) `Spectrum` for this
@@ -395,7 +396,7 @@ class TimeSeries(NDData):
         new.dt = self.dt
         new.name = self.name
         if item.start:
-            new.epoch = (LIGOTimeGPS(self.epoch.gps) +
+            new.epoch = (lal.LIGOTimeGPS(self.epoch.gps) +
                          float(item.start*self.dt.value))
         if item.step:
             new.dt = self.dt.value * item.step
