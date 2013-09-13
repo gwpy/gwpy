@@ -20,6 +20,7 @@ class NDData(AstroData):
     """A subclass of the numpy array with added metadata access
     """
     def __init__(self, data, name=None, **kwargs):
+        kwargs.setdefault('unit', None)
         super(NDData, self).__init__(data, **kwargs)
         self.name = name
 
@@ -54,6 +55,8 @@ class NDData(AstroData):
     def __pow__(self, y, z=None):
         out = self.copy()
         out.data **= y
+        if out.unit is not None:
+            out.unit **= y
         return out
     __pow__.__doc__ = numpy.ndarray.__pow__.__doc__
 
