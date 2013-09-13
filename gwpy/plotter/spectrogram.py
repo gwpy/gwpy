@@ -5,6 +5,7 @@
 
 import re
 import numpy
+import math
 
 from ..time import Time
 from ..spectrogram import Spectrogram
@@ -76,13 +77,32 @@ class SpectrogramPlot(TimeSeriesPlot):
             if len(yticks) < 2:
                yticks = yminorticks
                ylabels = map(tex.float_to_latex, yticks)
+            self.axes.fmt_ydata = self._fmt_logydata
         else:
             yticks = numpy.linspace(*self.axes.get_ylim(),
                                     num=len(self.axes.get_yticks()))
             ylabels = map(tex.float_to_latex, yticks)
+            try:
+                del self.axes.fmt_ydata
+            except AttributeError:
+                pass
         self.axes.set_yticks(yticks)
         self.axes.set_yticklabels(ylabels)
         self._logy = bool(log)
+
+    def _fmt_logydata(self, value):
+        """Format a data point on the Y-axis into the effective logarithimic
+        scaling.
+
+        This is used for displaying the (x,y) data coordinate when
+        interactive plotting in ipython
+        """
+        loglim = numpy.log10(self.ylim)
+        logscale = loglim[1] - loglim[0]
+        linlim = self.axes.get_ylim()
+        linscale = linlim[1] - linlim[0]
+        pos = (value - linlim[0]) / linscale
+        return 10 ** (loglim[0] + pos * logscale)
 
     # -----------------------------------------------
     # extend add_spectrogram
@@ -109,4 +129,3 @@ def _log_lim(ax, log_lim, axis='y'):
     log_range = numpy.log10(lin_range)
     lin_lim = (log_lim - lin_range[0]) / (lin_range[1]-lin_range[0])
     return 10 ** (lin_lim * (log_range[1] - log_range[0]) + log_range[0])
-
