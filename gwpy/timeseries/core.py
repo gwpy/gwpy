@@ -247,7 +247,7 @@ class TimeSeries(NDData):
                      doc="""The GPS times of each sample in this series\n
                          :type: :lalsuite:`LIGOTimeGPS`""")
 
-    def psd(self, method, segmentlength, overlap=None, window=None):
+    def psd(self, fftlength=None, fftstride=None, method='welch', window=None):
         """Calculate the power spectral density (PSD) `Spectrum` for this
         `TimeSeries`.
 
@@ -261,12 +261,12 @@ class TimeSeries(NDData):
 
         Parameters
         ----------
-        method : `str`, defaults to `'welch'`
-            name of average spectrum method
-        segmentlength : `int`
-            number of samples in single average
-        overlap : `int`, optional
-            stride (in samples) between successive FFTs, default: no overlap
+        fftlength : `float`, default: :attr:`TimeSeries.duration`
+            number of seconds in single FFT
+        fftstride : `int`, optiona, default: fftlength
+            number of seconds between FFTs, default: no overlap
+        method : `str`, optional, default: 'welch'
+            average spectrum method
         window : `timeseries.Window`, optional
             window function to apply to timeseries prior to FFT
 
@@ -276,14 +276,18 @@ class TimeSeries(NDData):
             a data series containing the PSD.
         """
         from ..spectrum import psd
-        if overlap == None:
-            overlap = segmentlength
-        psd_ = psd._lal_psd(self, method, segmentlength, overlap, window=window)
+        if fftlength is None:
+            fftlength = self.duration
+        if fftstride is None:
+            fftstride = fftlength
+        fftlength *= self.sample_rate.value
+        fftstride *= self.sample_rate.value
+        psd_ = psd._lal_psd(self, method, fftlength, fftstride, window=window)
         if not hasattr(psd_.unit, "name"):
             psd_.unit.name = "Power spectral density"
         return psd_
 
-    def asd(self, method, segmentlength, overlap=None, window=None):
+    def asd(self, fftlength=None, fftstride=None, method='welch', window=None):
         """Calculate the amplitude spectral density (ASD) `Spectrum` for this
         `TimeSeries`.
 
@@ -299,12 +303,12 @@ class TimeSeries(NDData):
 
         Parameters
         ----------
-        method : `str`, defaults to `'welch'`
-            name of average spectrum method
-        segmentlength : `int`
-            number of samples in single average
-        overlap : `int`, optional
-            stride (in samples) between successive FFTs, default: no overlap
+        fftlength : `float`, default: :attr:`TimeSeries.duration`
+            number of seconds in single FFT
+        fftstride : `int`, optiona, default: fftlength
+            number of seconds between FFTs, default: no overlap
+        method : `str`, optional, default: 'welch'
+            average spectrum method
         window : `timeseries.Window`, optional
             window function to apply to timeseries prior to FFT
 
@@ -313,11 +317,9 @@ class TimeSeries(NDData):
         psd :  :class:`~gwpy.spectrum.core.Spectrum`
             a data series containing the ASD.
         """
-        if overlap == None:
-            overlap = segmentlength
-        asd = self.psd(method, segmentlength, overlap, window)
-        asd.data **= 1/2.
-        asd.unit **= 1/2.
+        asd = self.psd(fftlength, fftstride=fftstride, method=method,
+                       window=window)
+        asd **= 1/2.
         if not hasattr(asd.unit, "name"):
             asd.unit.name = "Amplitude spectral density"
         return asd
@@ -351,13 +353,11 @@ class TimeSeries(NDData):
         dt = stride
         df = 1/fftlength
         stride *= self.sample_rate.value
-        fftlength *= self.sample_rate.value
-        fftstride *= self.sample_rate.value
 
         # get size of Spectrogram
         nsteps = int(self.size // stride)
         # get number of frequencies
-        nfreqs = int(fftlength // 2 + 1)
+        nfreqs = int(fftlength*self.sample_rate.value // 2 + 1)
 
         # generate output spectrogram
         out = Spectrogram(numpy.zeros((nsteps, nfreqs)), name=self.name,
@@ -372,8 +372,8 @@ class TimeSeries(NDData):
             idx = stride * step
             idx_end = idx + stride
             stepseries = self[idx:idx_end]
-            steppsd = psd._lal_psd(stepseries, method, fftlength, fftstride,
-                                   window=window)
+            steppsd = stepseries.psd(fftlength, fftstride, method,
+                                     window=window)
             if logscale:
                 steppsd = steppsd.to_logscale()
             out.data[step,:] = steppsd.data
