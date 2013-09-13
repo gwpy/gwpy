@@ -517,22 +517,24 @@ class TimeSeries(NDData):
             hostlist = [(host, port)]
         else:
             hostlist = nds.host_resolution_order(channel.ifo)
-            for host,port in hostlist:
+        for host,port in hostlist:
+            if verbose:
+                print("Connecting to %s:%s" % (host, port))
+            connection = _nds_connect(host, port)
+            try:
                 if verbose:
-                    print("Connecting to %s:%s" % (host, port))
-                connection = _nds_connect(host, port)
-                try:
-                    if verbose:
-                        print("Downloading data...")
-                    return connection.fetch(start, end, channel,
-                                            nds.nds2.channel.CHANNEL_TYPE_RAW,
-                                            silent=not verbose)
-                except RuntimeError as e:
-                    if verbose:
-                        warnings.warn(str(e), nds.NDSWarning)
-            raise RuntimeError("Cannot find relevant data on any known server")
-        if verbose:
-            warnings.filterwarnings('warn', '(.*)', nds.NDSWarning)
+                    print("Downloading data...")
+                data = connection.fetch(start, end, channel,
+                                        nds.nds2.channel.CHANNEL_TYPE_RAW,
+                                        silent=not verbose)
+            except RuntimeError as e:
+                if verbose:
+                    warnings.warn(str(e), nds.NDSWarning)
+            else:
+                if verbose:
+                    warnings.filterwarnings('default', '(.*)', nds.NDSWarning)
+                return data
+        raise RuntimeError("Cannot find relevant data on any known server")
 
 
     def resample(self, rate, window=None):
