@@ -61,11 +61,20 @@ class Spectrum(NDData):
                  name=None, channel=None, logscale=False, unit=None, **kwargs):
         """Generate a new Spectrum.
         """
-        super(Spectrum, self).__init__(data, name=name, unit=unit, **kwargs)
-        self.channel = Channel(channel)
-        self.epoch = epoch
+        super(Spectrum, self).__init__(data, **kwargs)
+        if isinstance(data, self.__class__):
+            channel = channel or data.channel
+            name = name or data.name
+            epoch = epoch or data.epoch
+            f0 = f0 is None and data.f0 or f0
+            df = df is None and data.df or df
+            unit = unit or data.unit
+            logscale = logscale is None and data.logscale or logscale
         if frequencies is not None:
-            self._frequencies = NDData(frequencies, unit=units.Hertz)
+            if isinstance(frequencies, NDData):
+                self._frequencies = frequencies
+            else:
+                self._frequencies = NDData(frequencies, unit=units.Hertz)
             if f0 and not frequencies[0] == f0:
                 raise ValueError("If frequencies and f0 are both given, they "
                                  "must be consistent")
@@ -76,6 +85,10 @@ class Spectrum(NDData):
                                  "must be consistent")
             else:
                 df = frequencies[1] - frequencies[0]
+        self.name = name
+        self.channel = Channel(channel)
+        self.epoch = epoch
+        self.unit = unit
         self.f0 = f0
         self.df = df
         self.logscale = logscale
