@@ -25,7 +25,7 @@ Plot types
 
 The following diagram displays the available Plot objects and their inheritance from the `~core.Plot`.
 
-.. inheritance-diagram:: core series gwf
+.. inheritance-diagram:: core timeseries spectrum spectrogram gwf
 
 ========
 Plot API
