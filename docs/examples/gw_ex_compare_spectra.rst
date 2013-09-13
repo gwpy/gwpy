@@ -29,12 +29,12 @@ and how long we want to search each one
 Then we can fetch the :class:`~gwpy.timeseries.core.TimeSeries` data for both times for the in-loop photodiode signal for the intensity stabilisation servo of the pre-stabilised laser:
 
 .. literalinclude:: ../../examples/gw_ex_compare_spectra.py
-   :lines: 28-31
+   :lines: 16,28-31
 
 We can now calculate the amplitude spectral density for each time,
 
 .. literalinclude:: ../../examples/gw_ex_compare_spectra.py
-   :lines: 34-37
+   :lines: 34-35
 
 and make a comparison plot:
 
