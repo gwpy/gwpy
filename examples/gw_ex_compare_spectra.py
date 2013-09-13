@@ -31,10 +31,8 @@ baddata = TimeSeries.fetch('L1:PSL-ISS_PDB_OUT_DQ', badtime,
                            badtime+duration, verbose=True)
 
 # calculate spectrum with 1.8 Hz resolution
-goodasd = gooddata.asd('welch', 8 * gooddata.sample_rate,
-                       4 * gooddata.sample_rate)
-badasd = baddata.asd('welch', 8 * baddata.sample_rate,
-                     4 * baddata.sample_rate)
+goodasd = gooddata.asd(8, 4, 'welch')
+badasd = baddata.asd(8, 4, 'welch')
 
 # manually set units (units in CIS aren't correct)
 goodasd.unit = 'counts/Hz^(1/2)'
