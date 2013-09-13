@@ -38,6 +38,9 @@ We can now calculate the amplitude spectral density for each time,
 
 and make a comparison plot:
 
+.. literalinclude:: ../../examples/gw_ex_compare_spectra.py
+   :lines: 42-45
+
 .. plot:: ../examples/gw_ex_compare_spectra.py
 
 The extra peak at 620 Hz is worrying, so we can zoom in around that frequency range to see what's going on:
