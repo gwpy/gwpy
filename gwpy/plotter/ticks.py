@@ -4,7 +4,8 @@
 """
 
 import re
-from math import modf
+from math import (ceil, floor, modf)
+from numpy import arange
 
 from matplotlib import (units as munits, ticker as mticker, pyplot, transforms as mtransforms)
 from matplotlib.dates import (HOURS_PER_DAY, MINUTES_PER_DAY, SECONDS_PER_DAY,
@@ -16,13 +17,15 @@ from astropy import time as atime
 from ..time import Time
 from .. import version
 
+from astropy.utils import OrderedDict
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-GPS_SCALE = {1:('seconds', 's'),
-             0:('minutes', 'mins'),
-             4600:('hours', 'hrs'),
-             86400:('days', 'd')}
+GPS_SCALE = OrderedDict([(1, ('seconds', 's')),
+                         (60, ('minutes', 'mins')),
+                         (3600, ('hours', 'hrs')),
+                         (86400, ('days', 'd'))])
 
 
 class TimeConverter(munits.ConversionInterface):
@@ -65,27 +68,42 @@ class AutoTimeLocator(mticker.AutoLocator):
         mticker.AutoLocator.__init__(self)
         #super(AutoTimeLocator, self).__init__()
         self.epoch = epoch
+        if scale and not epoch:
+            raise ValueError("The GPS epoch must be stated if data scaling "
+                             "is required")
         if scale is not None:
             self._scale = float(scale)
         else:
             self._scale = None
 
-    # HACK: needed for matplotlib 1.1
-    try:
-        mticker.AutoLocator.tick_values
-    except AttributeError:
-        def tick_values(self, vmin, vmax):
-            vmin, vmax = mtransforms.nonsingular(vmin, vmax, expander=1e-13,
-                                                             tiny=1e-14)
-            locs = self.bin_boundaries(vmin, vmax)
-            prune = self._prune
-            if prune == 'lower':
-                locs = locs[1:]
-            elif prune == 'upper':
-                locs = locs[:-1]
-            elif prune == 'both':
-                locs = locs[1:-1]
-            return self.raise_if_exceeds(locs)
+    def bin_boundaries(self, vmin, vmax):
+        """Returns the boundaries for the ticks for this AutoTimeLocator
+        """
+        print self._scale, vmin, vmax
+        if self._scale == 3600:
+             scale = (vmax-vmin) >= 36 and 4 or (vmax-vmin) > 8 and 2 or 1
+             low = floor(vmin)
+             while low % scale:
+                 low -= 1
+             return arange(low, ceil(vmax)+1, scale)
+        else:
+             return super(AutoTimeLocator, self).bin_boundaries(vmin, vmax)
+
+    def tick_values(self, vmin, vmax):
+        """Return the ticks for this axis
+        """
+        vmin, vmax = mtransforms.nonsingular(vmin, vmax, expander=1e-13,
+                                                         tiny=1e-14)
+        locs = self.bin_boundaries(vmin, vmax)
+        print locs
+        prune = self._prune
+        if prune == 'lower':
+            locs = locs[1:]
+        elif prune == 'upper':
+            locs = locs[:-1]
+        elif prune == 'both':
+            locs = locs[1:-1]
+        return self.raise_if_exceeds(locs)
 
     def __call__(self):
         """Find the locations of ticks given the current view limits
@@ -149,7 +167,7 @@ class TimeFormatter(mticker.Formatter):
         try:
             self.scale_str_long,self.scale_str_short = GPS_SCALE[scale]
         except KeyError:
-            self.scale_str_long,self.scale_str_short = 'x%ss' % scale
+            self.scale_str_long,self.scale_str_short = GPS_SCALE[1]
 
     def __call__(self, t, pos=None):
         if isinstance(t, Time):
