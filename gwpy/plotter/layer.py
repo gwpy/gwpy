@@ -30,7 +30,7 @@ class LayerCollection(OrderedDict):
             if type_ not in self.LAYER_TYPES:
                 raise ValueError("No layer type '%s' defined for this "
                                  "Collection" % type_)
-            return sum(l for l in self.viewvalues() if
+            return sum(l for l in self.itervalues() if
                        l.__class__.__name__ == type_)
         else:
             return len(self)
@@ -42,7 +42,7 @@ class LayerCollection(OrderedDict):
     def colorlayer(self):
         """The first mappable layer available for use in a Colorbar
         """
-        for layer in self.viewvalues():
+        for layer in self.itervalues():
             if (isinstance(layer, Collection) or
                 isinstance(layer, AxesImage)):
                 return layer
