@@ -83,6 +83,9 @@ class Plot(object):
     save
     show
     """
+    __slots__ = ['xlabel', 'ylabel', 'colorlabel', 'title', 'subtitle',
+                 'xlim', 'ylim', 'colorlim', 'logx', 'logy', 'logcolor']
+
     def __init__(self, figure=None, auto_refresh=IS_INTERACTIVE, **kwargs):
         """Initialise a new plot.
         """
