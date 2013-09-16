@@ -512,6 +512,10 @@ class TimeSeries(NDData):
                     raise
             return connection
 
+        ndschanneltype = (nds.nds2.channel.CHANNEL_TYPE_MTREND |
+                          nds.nds2.channel.CHANNEL_TYPE_STREND |
+                          nds.nds2.channel.CHANNEL_TYPE_RAW)
+
         # user-defined host
         if host:
             hostlist = [(host, port)]
@@ -524,10 +528,11 @@ class TimeSeries(NDData):
             try:
                 if verbose:
                     print("Downloading data...")
-                data = connection.fetch(start, end, channel,
-                                        nds.nds2.channel.CHANNEL_TYPE_RAW,
+                data = connection.fetch(start, end, channel, ndschanneltype,
                                         silent=not verbose)
             except RuntimeError as e:
+                if 'start and stop times are not multiples' in str(e):
+                    raise
                 if verbose:
                     warnings.warn(str(e), nds.NDSWarning)
             else:
