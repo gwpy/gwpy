@@ -7,6 +7,7 @@ import re
 
 from lal import LIGOTimeGPS
 
+from ..segments import SegmentList
 from ..time import Time
 from ..timeseries import TimeSeries
 from . import (Plot, ticks)
@@ -42,7 +43,9 @@ class TimeSeriesPlot(Plot):
         for ts in series:
             self.add_timeseries(ts)
         if len(series):
-            self.epoch = min(ts.epoch for ts in series)
+            span = SegmentList([ts.span for ts in series]).extent()
+            self.epoch = span[0]
+            self.xlim = span
             self.set_time_format('gps', epoch=self.epoch)
 
     # -----------------------------------------------
@@ -98,7 +101,7 @@ class TimeSeriesPlot(Plot):
     # set time axis as GPS
 
     @auto_refresh
-    def set_time_format(self, format_, epoch=None, scale=1.0,
+    def set_time_format(self, format_='gps', epoch=None, scale=None,
                         autoscale=True, addlabel=True):
         """Set the time format for this plot.
 
@@ -123,6 +126,11 @@ class TimeSeriesPlot(Plot):
         TimeFormatter
             the :class:`~gwpy.plotter.ticks.TimeFormatter` for this axis
         """
+        if epoch and not scale:
+            duration = self.xlim[1] - self.xlim[0]
+            for scale in ticks.GPS_SCALE.keys()[::-1]:
+               if duration > scale*4:
+                   break
         formatter = ticks.TimeFormatter(format=format_, epoch=epoch,
                                         scale=scale)
         self.axes.xaxis.set_major_formatter(formatter)
