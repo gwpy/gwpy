@@ -15,6 +15,8 @@ from . import (tex, ticks)
 class TablePlot(Plot):
     """Plot data directly from a Table
     """
+    __slots__ = Plot.__slots__ + ['tables', '_xcolumn', '_ycolumn',
+                                  '_colorcolumn']
     def __init__(self, *args, **kwargs):
         # extract plotting keyword arguments
         plotargs = dict()
@@ -50,13 +52,13 @@ class TablePlot(Plot):
 
         # initialise figure
         super(TablePlot, self).__init__(**kwargs)
-        self._tables = []
+        self.tables = []
 
         # plot figures
         for table in tables:
             self.add_table(table, columns['x'], columns['y'], columns['color'],
                            **plotargs)
-            self._tables.append(table)
+            self.tables.append(table)
 
         self._xcolumn = columns['x']
         self._ycolumn = columns['y']
@@ -84,15 +86,15 @@ class TablePlot(Plot):
             rank = self._colorcolumn
         if columns is None:
             columns = [self._xcolumn, self._ycolumn, self._colorcolumn]
-        if len(self._tables) > 1:
+        if len(self.tables) > 1:
             raise RuntimeError("Cannot display loudest event for a plot "
                                "over multiple tables")
-        row = self._tables[0][self._tables[0][rank].argmax()]
+        row = self.tables[0][self.tables[0][rank].argmax()]
         disp = "Loudest event:"
         for i,column in enumerate(columns):
             if i:
                 disp += ','
-            unit = self._tables[0][column].units
+            unit = self.tables[0][column].units
             if pyplot.rcParams['text.usetex']:
                 unit = (unit and tex.unit_to_latex(unit) or '')
                 disp += (r" ${\rm %s} = %s %s$"
