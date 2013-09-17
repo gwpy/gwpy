@@ -84,7 +84,8 @@ class Plot(object):
     show
     """
     __slots__ = ['xlabel', 'ylabel', 'colorlabel', 'title', 'subtitle',
-                 'xlim', 'ylim', 'colorlim', 'logx', 'logy', 'logcolor']
+                 'xlim', 'ylim', 'colorlim', 'logx', 'logy', 'logcolor',
+                 '_figure', '_axes', '_layers', '_auto_refresh']
 
     def __init__(self, figure=None, auto_refresh=IS_INTERACTIVE, **kwargs):
         """Initialise a new plot.
