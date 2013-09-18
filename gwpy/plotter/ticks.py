@@ -79,7 +79,6 @@ class AutoTimeLocator(mticker.AutoLocator):
     def bin_boundaries(self, vmin, vmax):
         """Returns the boundaries for the ticks for this AutoTimeLocator
         """
-        print self._scale, vmin, vmax
         if self._scale == 3600:
              scale = (vmax-vmin) >= 36 and 4 or (vmax-vmin) > 8 and 2 or 1
              low = floor(vmin)
@@ -95,7 +94,6 @@ class AutoTimeLocator(mticker.AutoLocator):
         vmin, vmax = mtransforms.nonsingular(vmin, vmax, expander=1e-13,
                                                          tiny=1e-14)
         locs = self.bin_boundaries(vmin, vmax)
-        print locs
         prune = self._prune
         if prune == 'lower':
             locs = locs[1:]
