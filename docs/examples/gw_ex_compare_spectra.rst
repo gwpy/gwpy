@@ -39,7 +39,7 @@ We can now calculate the amplitude spectral density for each time,
 and make a comparison plot:
 
 .. literalinclude:: ../../examples/gw_ex_compare_spectra.py
-   :lines: 42-45
+   :lines: 38-41
 
 .. plot:: ../examples/gw_ex_compare_spectra.py
 

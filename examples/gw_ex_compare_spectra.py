@@ -26,17 +26,13 @@ duration = TimeDelta(120, format='sec')
 
 # read the data over the network
 gooddata = TimeSeries.fetch('L1:PSL-ISS_PDB_OUT_DQ', goodtime,
-                            goodtime+duration, verbose=True)
+                            goodtime+duration)
 baddata = TimeSeries.fetch('L1:PSL-ISS_PDB_OUT_DQ', badtime,
-                           badtime+duration, verbose=True)
+                           badtime+duration)
 
 # calculate spectrum with 1.8 Hz resolution
 goodasd = gooddata.asd(8, 4, 'welch')
 badasd = baddata.asd(8, 4, 'welch')
-
-# manually set units (units in CIS aren't correct)
-goodasd.unit = 'counts/Hz^(1/2)'
-badasd.unit = 'counts/Hz^(1/2)'
 
 # plot
 plot = badasd.plot()
@@ -44,10 +40,8 @@ plot.add_spectrum(goodasd)
 plot.xlim = [10, 8000]
 plot.ylim = [1e-6, 5e-4]
 
-try:
-    __IPYTHON__
-except NameError:
-    pass
-else:
-    plot.auto_refresh = True
-    plot.show()
+from gwpy.plotter import IS_INTERACTIVE
+if not IS_INTERACTIVE and not '__IPYTHON__' in globals():
+    outfile = __file__.replace('.py', '.png')
+    plot.save(outfile)
+    print("Example output saved as\n%s" % outfile)
