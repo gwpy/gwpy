@@ -77,9 +77,9 @@ class TablePlot(Plot):
             zipped = zip(xdata, ydata, cdata)
             zipped.sort(key=lambda (x,y,c): c)
             xdata, ydata, cdata = map(numpy.asarray, zip(*zipped))
-            self.add_markers(xdata, ydata, c=cdata, **kwargs)
+            self.add_scatter(xdata, ydata, c=cdata, **kwargs)
         else:
-            self.add_markers(xdata, ydata, **kwargs)
+            self.add_scatter(xdata, ydata, **kwargs)
 
     def add_loudest(self, rank=None, columns=None, **kwargs):
         if rank is None:
@@ -109,7 +109,7 @@ class TablePlot(Plot):
         kwargs.setdefault('bbox', dict(facecolor='white', alpha=1.0,
                                        edgecolor='black', pad=6.0))
         args = pos + [disp]
-        self.add_markers([row[self._xcolumn]], [row[self._ycolumn]],
+        self.add_scatter([row[self._xcolumn]], [row[self._ycolumn]],
                          marker='*', zorder=1000, color='gold',
                          s=80)
         #self.add_legend(alpha=0.5, loc='upper left', scatterpoints=1)
