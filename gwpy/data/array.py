@@ -209,7 +209,10 @@ class Array(numpy.ndarray):
 
         :type: `str`
         """
-        return self.metadata['name']
+        try:
+            return self.metadata['name']
+        except KeyError:
+            return None
 
     @name.setter
     def name(self, val):
