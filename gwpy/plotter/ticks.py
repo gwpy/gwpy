@@ -87,7 +87,7 @@ class AutoTimeLocator(mticker.AutoLocator):
                  low -= 1
              return arange(low, ceil(vmax)+1, scale)
         else:
-             return super(AutoTimeLocator, self).bin_boundaries(vmin, vmax)
+             return mticker.AutoLocator.bin_boundaries(self, vmin, vmax)
 
     def tick_values(self, vmin, vmax):
         """Return the ticks for this axis
