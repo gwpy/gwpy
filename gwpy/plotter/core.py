@@ -681,9 +681,7 @@ class Plot(object):
             the :class:`~matplotlib.lines.Line2D` for this line layer
         """
         kwargs.setdefault('label', timeseries.name)
-        x = timeseries.get_times()
-        y = timeseries.data
-        return self.add_line(x, y, **kwargs)
+        return self.add_line(timeseries.times, timeseries, **kwargs)
 
     def add_spectrum(self, spectrum, **kwargs):
         """Add a :class:`~gwpy.spectrum.core.Spectrum` trace to this plot
@@ -701,9 +699,7 @@ class Plot(object):
             the :class:`~matplotlib.lines.Line2D` for this line layer
         """
         kwargs.setdefault('label', spectrum.name)
-        x = spectrum.frequencies.data
-        y = spectrum.data
-        return self.add_line(x, y, **kwargs)
+        return self.add_line(spectrum.frequencies, spectrum, **kwargs)
 
     def add_spectrogram(self, spectrogram, **kwargs):
         """Add a :class:`~gwpy.spectrogram.core.Spectrogram` trace
