@@ -568,7 +568,7 @@ class TimeSeries(Series):
     # -------------------------------------------
     # TimeSeries filtering
 
-    def highpass(self, frequency, amplitude=0.9, order=8):
+    def highpass(self, frequency, amplitude=0.9, order=8, method='scipy'):
         """Filter this `TimeSeries` with a Butterworth high-pass filter
 
         See (for example) :lalsuite:`XLALHighPassREAL8TimeSeries` for more
@@ -582,21 +582,38 @@ class TimeSeries(Series):
             desired amplitude response of the filter
         order : `int`, optional
             desired order of the Butterworth filter
+        method : `str`, optional, default: 'scipy'
+            choose method of high-passing, LAL or SciPy
 
         Returns
         -------
         TimeSeries
+
+        See Also
+        --------
+        See :lalsuite:`XLALHighPassREAL8TimeSeries` for information on
+        the LAL method, otherwise see :mod:`scipy.signal` for the SciPy
+        method.
         """
-        lalts = self.to_lal()
-        highpass = getattr(lal, 'HighPass%s' % lalts.__class__.__name__)
-        highpass(lalts, float(frequency), amplitude, order)
-        return TimeSeries.from_lal(lalts)
+        if method.lower() == 'lal':
+            lalts = self.to_lal()
+            highpass = getattr(lal, 'HighPass%s' % lalts.__class__.__name__)
+            highpass(lalts, float(frequency), amplitude, order)
+            return TimeSeries.from_lal(lalts)
+        elif method.lower() == 'scipy':
+            # build filter
+            B,A = signal.butter(order, numpy.float64(frequency * 2.0 /
+                                                     self.sample_rate),
+                                btype='highpass')
+            new = signal.lfilter(B, A, self, axis=0).view(self.__class__)
+            new.metadata = self.metadata.copy()
+            return new
+        raise NotImplementedError("Highpass filter method '%s' not "
+                                  "recognised, please choose one of "
+                                  "'scipy' or 'lal'")
 
-    def lowpass(self, frequency, amplitude=0.9, order=8):
+    def lowpass(self, frequency, amplitude=0.9, order=4, method='scipy'):
         """Filter this `TimeSeries` with a Butterworth low-pass filter
-
-        See (for example) :lalsuite:`XLALLowPassREAL8TimeSeries` for more
-        information.
 
         Parameters
         ----------
@@ -606,17 +623,38 @@ class TimeSeries(Series):
             desired amplitude response of the filter
         order : `int`, optional
             desired order of the Butterworth filter
+        method : `str`, optional, default: 'scipy'
+            choose method of high-passing, LAL or SciPy
 
         Returns
         -------
         TimeSeries
-        """
-        lalts = self.to_lal()
-        lowpass = getattr(lal, 'LowPass%s' % lalts.__class__.__name__)
-        lowpass(lalts, float(frequency), amplitude, order)
-        return TimeSeries.from_lal(lalts)
 
-    def bandpass(self, flow, fhigh, amplitude=0.9, order=8):
+        See Also
+        --------
+        See :lalsuite:`XLALLowPassREAL8TimeSeries` for information on
+        the LAL method, otherwise see :mod:`scipy.signal` for the SciPy
+        method.
+        """
+        if method.lower() == 'lal':
+            lalts = self.to_lal()
+            lowpass = getattr(lal, 'LowPass%s' % lalts.__class__.__name__)
+            lowpass(lalts, float(frequency), amplitude, order)
+            return TimeSeries.from_lal(lalts)
+        elif method.lower() == 'scipy':
+            # build filter
+            B,A = signal.butter(order, numpy.float64(frequency * 2.0 /
+                                                     self.sample_rate),
+                                btype='lowpass')
+            new = signal.lfilter(B, A, self, axis=0).view(self.__class__)
+            new.metadata = self.metadata.copy()
+            return new
+        raise NotImplementedError("Lowpass filter method '%s' not "
+                                  "recognised, please choose one of "
+                                  "'scipy' or 'lal'")
+
+
+    def bandpass(self, flow, fhigh, amplitude=0.9, order=6, method='scipy'):
         """Filter this `TimeSeries` by applying both low- and high-pass
         filters.
 
@@ -637,9 +675,19 @@ class TimeSeries(Series):
         Returns
         -------
         TimeSeries
+
+        See Also
+        --------
+        See :lalsuite:`XLALLowPassREAL8TimeSeries` for information on
+        the LAL method, otherwise see :mod:`scipy.signal` for the SciPy
+        method.
         """
-        high = self.highpass(flow, amplitude=amplitude, order=order)
-        return high.lowpass(fhigh, amplitude=amplitude, order=order)
+        try:
+            high = self.highpass(flow, amplitude=amplitude, order=order)
+        except NotImplementedError as e:
+            raise NotImplementedError(str(e).replace('Lowpass', 'Bandpass'))
+        else:
+            return high.lowpass(fhigh, amplitude=amplitude, order=order)
 
     # -------------------------------------------
     # Utilities
