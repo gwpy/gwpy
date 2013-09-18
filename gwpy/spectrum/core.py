@@ -8,18 +8,18 @@ from scipy import (interpolate, signal)
 from astropy import units
 import lal
 
-from ..data import NDData
+from ..data import Series
 from ..detector import Channel
 from ..time import Time
+from ..timeseries import TimeSeries
 
-from .. import version
+from ..version import version as __version__
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
-__version__ = version.version
 
 __all__ = ['Spectrum']
 
 
-class Spectrum(NDData):
+class Spectrum(Series):
     """A data array holding some metadata to represent a spectrum.
 
     Parameters
@@ -46,7 +46,7 @@ class Spectrum(NDData):
     epoch
     f0
     df
-    logscale
+    logf
     unit
     frequencies
 
@@ -57,155 +57,60 @@ class Spectrum(NDData):
     to_lal
     from_lal
     """
-    def __init__(self, data, frequencies=None, epoch=None, f0=None, df=None,
-                 name=None, channel=None, logscale=False, unit=None, **kwargs):
+    _metadata_slots = ['name', 'unit', 'epoch', 'channel', 'f0', 'df', 'logf']
+    xunit = units.Unit('Hz')
+
+    def __new__(cls, data, frequencies=None, name=None, unit=None,
+                epoch=None, f0=None, df=None, channel=None, logf=False,
+                **kwargs):
         """Generate a new Spectrum.
         """
-        super(Spectrum, self).__init__(data, **kwargs)
-        if isinstance(data, self.__class__):
-            channel = channel or data.channel
-            name = name or data.name
-            epoch = epoch or data.epoch
-            f0 = f0 is None and data.f0 or f0
-            df = df is None and data.df or df
-            unit = unit or data.unit
-            logscale = logscale is None and data.logscale or logscale
-        if frequencies is not None:
-            if isinstance(frequencies, NDData):
-                self._frequencies = frequencies
-            else:
-                self._frequencies = NDData(frequencies, unit=units.Hertz)
-            if f0 and not frequencies[0] == f0:
-                raise ValueError("If frequencies and f0 are both given, they "
-                                 "must be consistent")
-            else:
-                f0 = frequencies[0]
-            if df and not (frequencies[1]-frequencies[0]) == df:
-                raise ValueError("If frequencies and df are both given, they "
-                                 "must be consistent")
-            else:
-                df = frequencies[1] - frequencies[0]
-        self.name = name
-        self.channel = Channel(channel)
-        self.epoch = epoch
-        self.unit = unit
-        self.f0 = f0
-        self.df = df
-        self.logscale = logscale
+        # parse Channel input
+        if channel:
+            channel = Channel(channel)
+            name = name or channel.name
+            unit = unit or channel.unit
+        # generate Spectrum
+        return super(Spectrum, cls).__new__(cls, data, name=name, unit=unit,
+                                            f0=f0, df=df, channel=channel,
+                                            frequencies=frequencies,
+                                            logf=logf, **kwargs)
 
-    @property
-    def name(self):
-        """Name of this Spectrum
-        """
-        try:
-            return self._name
-        except AttributeError:
-            try:
-                return self.channel.name
-            except AttributeError:
-                return None
+    # -------------------------------------------
+    # Spectrum properties
 
-    @name.setter
-    def name(self, n):
-        if n is None:
-            return
-        self._name = n
+    f0 = property(Series.x0.__get__, Series.x0.__set__, Series.x0.__delete__,
+                  """Starting frequency for this `Spectrum`
 
-    @property
-    def epoch(self):
-        """Starting GPS time epoch for this `Spectrum`
+                  This attributes is recorded as a
+                  :class:`~astropy.units.quantity.Quantity` object, assuming a
+                  unit of 'Hertz'.
+                  """)
 
-        This attribute is recorded as a :class:`~gwpy.time.Time` object in the
-        GPS format, allowing native conversion into other formats.
+    df = property(Series.dx.__get__, Series.dx.__set__, Series.dx.__delete__,
+                  """Frequency spacing of this `Spectrum`
 
-        See :mod:`~astropy.time` for details on the `Time` object.
-        """
-        return self._epoch
-    @epoch.setter
-    def epoch(self, epoch):
-        if epoch is not None and not isinstance(epoch, Time):
-            if hasattr(epoch, "seconds"):
-                epoch = [epoch.seconds, epoch.nanoseconds*1e-9]
-            elif hasattr(epoch, "gpsSeconds"):
-                epoch = [epoch.gpsSeconds, epoch.gpsNanoSeconds*1e-9]
-            else:
-                epoch = modf(epoch)[::-1]
-            epoch = Time(*epoch, format='gps', precision=6)
-        self._epoch = epoch
+                  This attributes is recorded as a
+                  :class:`~astropy.units.quantity.Quantity` object, assuming a
+                  unit of 'Hertz'.
+                  """)
 
-    @property
-    def f0(self):
-        """Starting frequency for this `Spectrum`
 
-        This attributes is recorded as a
-        :class:`~astropy.units.quantity.Quantity` object, assuming a
-        unit of 'Hertz'.
-        """
-        return self._f0
-    @f0.setter
-    def f0(self, val):
-        if val is None:
-            self._f0 = val
-        else:
-            self._f0 = units.Quantity(val, units.Hertz)
+    logf = property(Series.logx.__get__, Series.logx.__set__,
+                    Series.logx.__delete__,
+                    """Boolean telling whether this `Spectrum` has a
+                    logarithmic frequency scale
+                    """)
 
-    @property
-    def df(self):
-        """Frequency spacing of this `Spectrum`
+    frequencies = property(fget=Series.index.__get__,
+                           fset=Series.index.__set__,
+                           fdel=Series.index.__delete__,
+                           doc="""Series of frequencies for each sample""")
 
-        This attributes is recorded as a
-        :class:`~astropy.units.quantity.Quantity` object, assuming a
-        unit of 'Hertz'.
-        """
-        return self._df
-    @df.setter
-    def df(self, val):
-        if val is None:
-            self._df = None
-        else:
-            self._df = units.Quantity(val, units.Hertz)
+    # -------------------------------------------
+    # Spectrum methods
 
-    @property
-    def logscale(self):
-        """Boolean telling whether this `Spectrum` has a logarithmic
-        frequency scale
-        """
-        return self._logscale
-    @logscale.setter
-    def logscale(self, val):
-        self._logscale = bool(val)
-
-    @property
-    def frequencies(self):
-        """Get the array of frequencies that accompany the data array
-
-        Returns
-        -------
-        result : `~gwpy.types.NDData`
-            1d array of frequencies in Hertz
-        """
-        try:
-            return self._frequencies
-        except AttributeError:
-            if self.logscale:
-                logdf = (numpy.log10(self.f0.value + self.df.value) -
-                         numpy.log10(self.f0.value))
-                logf1 = numpy.log10(self.f0.value) + self.shape[-1] * logdf
-                data = numpy.logspace(numpy.log10(self.f0.value), logf1,
-                                      num=self.shape[-1])
-            else:
-                data = (numpy.arange(self.shape[-1]) * self.df.value +
-                        self.f0.value)
-            self._frequencies = NDData(data, unit=units.Hertz)
-            return self.frequencies
-
-    def get_frequencies(self):
-        DeprecationWarning("The Spectrum.get_frequencies() function "
-                                    "is depcrecated, please use the "
-                                    "Spectrum.frequencies property")
-        return self.frequencies
-
-    def to_logscale(self, fmin=None, fmax=None, num=None):
+    def to_logf(self, fmin=None, fmax=None, num=None):
         """Convert this Spectrum into logarithmic scale.
 
         Parameters
@@ -236,7 +141,7 @@ class Spectrum(NDData):
             setattr(new, attr, getattr(self, attr))
         new.f0 = logf[0]
         new.df = logf[1]-logf[0]
-        new.logscale = True
+        new.logf = True
         return new
 
     def plot(self, **kwargs):
@@ -253,25 +158,6 @@ class Spectrum(NDData):
         """
         from ..plotter import SpectrumPlot
         return SpectrumPlot(self, **kwargs)
-
-    def __str__(self):
-        return "Spectrum('{0}')".format(self.name)
-
-    def __repr__(self):
-        return "<Spectrum object: name='{0}' f0={1} df={2}>".format(
-                   self.name, self.f0, self.df)
-
-    def __getitem__(self, item):
-        new = super(Spectrum, self).__getitem__(item)
-        if not isinstance(item, int):
-            new.f0 = self.f0
-            new.df = self.df
-            new.name = self.name
-            if item.start:
-                new.f0 = self.f0 + item.start * self.df
-            if item.step:
-                new.df = self.df * item.step
-        return new
 
     def filter(self, zeros=[], poles=[], gain=1, inplace=True):
         """Apply a filter to this `Spectrum` in zero-pole-gain format.

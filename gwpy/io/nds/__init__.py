@@ -86,7 +86,7 @@ class NDSConnection(object):
                 pass
             else:
                 channel.model = cisch.model
-            series.append(TimeSeries(data.data, channel=channel, epoch=epoch))
+            series.append(data)
         # return
         if len(series) == 1:
             return series[0]

@@ -10,7 +10,7 @@ import math
 from ..time import Time
 from ..spectrogram import Spectrogram
 from .timeseries import TimeSeriesPlot
-from . import ticks
+from . import (tex, ticks)
 from .utils import log_transform
 from .decorators import auto_refresh
 
@@ -40,14 +40,18 @@ class SpectrogramPlot(TimeSeriesPlot):
         logy = None
         for spectrogram in spectrograms:
             self.add_spectrogram(spectrogram, **plotargs)
-            if logy is not None and spectrogram.logscale != logy:
+            if logy is not None and spectrogram.logf != logy:
                 raise ValueError("Plotting linear and logscale Spectrograms "
                                  "on the same plot is not supported")
-            logy = spectrogram.logscale
-        self.logy = logy
+            logy = spectrogram.logf
         if len(spectrograms):
             self.epoch = min(spec.epoch for spec in spectrograms)
             self.set_time_format('gps', epoch=self.epoch)
+        if logy:
+            ymin = min(s.f0.value for s in spectrograms)
+            ymax = max(s.frequencies.max().value for s in spectrograms)
+            self.ylim = (ymin, ymax)
+            self.logy = logy
 
     @property
     def ylim(self):
