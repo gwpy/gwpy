@@ -85,7 +85,7 @@ class Plot(object):
     """
     __slots__ = ['xlabel', 'ylabel', 'colorlabel', 'title', 'subtitle',
                  'xlim', 'ylim', 'colorlim', 'logx', 'logy', 'logcolor',
-                 '_figure', '_axes', '_layers', '_auto_refresh']
+                 '_figure', '_axes', '_layers', '_auto_refresh', 'colorbar']
 
     def __init__(self, figure=None, auto_refresh=IS_INTERACTIVE, **kwargs):
         """Initialise a new plot.
