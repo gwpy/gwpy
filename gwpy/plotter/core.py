@@ -720,11 +720,11 @@ class Plot(object):
         kwargs.setdefault('label', spectrogram.name)
         im = spectrogram.data.T
         nf, nt = im.shape
-        freqs = spectrogram.get_frequencies()
+        freqs = spectrogram.frequencies
         extent = (kwargs.pop('extent', None) or 
                   [spectrogram.epoch.gps, (spectrogram.epoch.gps +
                                            float(nt*spectrogram.dt)),
-                   freqs.data.min(), freqs.data.max()])
+                   numpy.float64(freqs.min()), numpy.float64(freqs.max())])
         self.add_image(im, extent=extent, **kwargs)
 
     def transform_axis(self, axis, func):
