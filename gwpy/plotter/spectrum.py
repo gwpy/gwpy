@@ -32,10 +32,9 @@ class SpectrumPlot(Plot):
         # plot time series
         for spectrum in series:
             self._series.append(spectrum)
-            f = spectrum.get_frequencies()
             self.add_spectrum(spectrum)
         if len(series) == 1:
-            self.add_label_unit(f.unit, axis="x")
+            self.add_label_unit(series[0].frequencies.unit, axis="x")
             self.add_label_unit(series[0].unit, axis="y")
         if len(series):
             self.logx = self.logy = True
