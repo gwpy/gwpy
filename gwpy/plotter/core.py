@@ -189,6 +189,10 @@ class Plot(object):
         self.colorlabel = ""
 
     # title
+    def set_title(self, text, **kwargs):
+        self.figure.suptitle(text, **kwargs)
+    set_title.__doc__ = mpl.Figure.suptitle.__doc__
+
     @property
     def title(self):
         """Title for this figure
@@ -202,16 +206,22 @@ class Plot(object):
         frame, rather than the :class:`~matplotlib.axes.AxesSubPlot`
         """
         return self.figure._suptitle
+
     @title.setter
     @auto_refresh
     def title(self, text):
-        self.figure.suptitle(text)
+        self.set_title(text)
+
     @title.deleter
     @auto_refresh
     def title(self):
         self.title = ""
 
     # sub-title
+    def set_subtitle(self, text, **kwargs):
+        self.axes.set_title(text, **kwargs)
+    set_subtitle.__doc__ = mpl.Axes.set_title.__doc__
+
     @property
     def subtitle(self):
         """Sub-title for this figure
@@ -229,9 +239,9 @@ class Plot(object):
     @auto_refresh
     def subtitle(self, text):
         if isinstance(text, basestring):
-            self.ax.set_subtitle(text)
+            self.set_subtitle(text)
         else:
-            self.ax.subtitle = text
+            self.axes.title = text
     @subtitle.deleter
     @auto_refresh
     def subtitle(self):
@@ -740,10 +750,8 @@ class Plot(object):
     def add_label_unit(self, unit, axis="x"):
         attr = "%slabel" % axis
         label = getattr(self, attr).get_text()
-        if not label and unit.physical_type != u'unknown':
-            label = unit.physical_type.title()
-        elif not label and hasattr(unit, "name"):
-            label = unit.name
+        if not label:
+            label = unit.__doc__
         if mpl.rcParams.get("text.usetex", False):
             unitstr = tex.unit_to_latex(unit)
         else:
