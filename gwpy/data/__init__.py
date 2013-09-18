@@ -9,7 +9,10 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 from .nddata import *
+from .array import *
+from .array2d import *
+from .series import *
 from glue.lal import (Cache, CacheEntry)
 
-__all__ = ['NDData', 'Cache', 'CacheEntry']
+__all__ = ['NDData', 'Array', 'Array2D', 'Series', 'Cache', 'CacheEntry']
 
