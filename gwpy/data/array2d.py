@@ -33,7 +33,7 @@ class Array2D(Array):
         new = super(Array2D, self).__getitem__(item)
         if isinstance(item, int):
             new = Series(new, unit=self.unit, name=name, f0=f0, df=df)
-            new.xunit = self._yunit
+            new.xunit = self.yunit
         elif isinstance(item, tuple):
             new = Quantity(new, unit=self.unit)
         if isinstance(item, slice):
@@ -97,9 +97,9 @@ class Array2D(Array):
     @y0.setter
     def y0(self, value):
         if isinstance(value, Quantity):
-            self.metadata['y0'] = value.to(self._yunit)
+            self.metadata['y0'] = value.to(self.yunit)
         else:
-            self.metadata['y0'] = Quantity(value, self._yunit)
+            self.metadata['y0'] = Quantity(value, self.yunit)
 
     @y0.deleter
     def y0(self):
@@ -114,9 +114,9 @@ class Array2D(Array):
     @dy.setter
     def dy(self, value):
         if isinstance(value, Quantity):
-            self.metadata['dy'] = value.to(self._yunit)
+            self.metadata['dy'] = value.to(self.yunit)
         else:
-            self.metadata['dy'] = Quantity(value, self._yunit)
+            self.metadata['dy'] = Quantity(value, self.yunit)
 
     @dy.deleter
     def dy(self):
@@ -179,7 +179,7 @@ class Array2D(Array):
 
     @yindex.setter
     def yindex(self, samples):
-        self._yindex = Series(samples, unit=self._yunit)
+        self._yindex = Series(samples, unit=self.yunit)
         self.y0 = self.yindex[0]
         try:
             self.dy = self.yindex[1] - self.yindex[0]
