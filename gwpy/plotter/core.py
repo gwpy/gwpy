@@ -723,7 +723,7 @@ class Plot(object):
         freqs = spectrogram.frequencies
         extent = (kwargs.pop('extent', None) or 
                   [spectrogram.epoch.gps, (spectrogram.epoch.gps +
-                                           float(nt*spectrogram.dt)),
+                                           float(nt*spectrogram.dt.value)),
                    numpy.float64(freqs.min()), numpy.float64(freqs.max())])
         self.add_image(im, extent=extent, **kwargs)
 
