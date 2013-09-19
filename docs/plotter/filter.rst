@@ -18,7 +18,7 @@ Any time-domain or Fourier-domain filters can be visualised using the Bode plot,
 `BodePlot` API
 ==============
 
-.. currentmodule:: gwpy.plotter.core
+.. currentmodule:: gwpy.plotter.filter
 
-.. autoclass:: Plot
+.. autoclass:: BodePlot
    :members:
