@@ -18,10 +18,11 @@ from lal import (gpstime, utils as lalutils)
 from lalframe import frread
 
 from .. import version
-from ..time import Time
+from ..data import Series
 from ..detector import Channel
 from ..segments import Segment
-from ..data import Series
+from ..time import Time
+from ..window import get_window
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
@@ -350,6 +351,8 @@ class TimeSeries(Series):
             fftstride = fftlength
         fftlength *= self.sample_rate.value
         fftstride *= self.sample_rate.value
+        if window is not None:
+            window = get_window(window, fftlength)
         psd_ = psd._lal_psd(self, method, fftlength, fftstride, window=window)
         psd_.unit.__doc__ = "Power spectral density"
         return psd_

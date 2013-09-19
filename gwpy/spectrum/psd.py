@@ -133,7 +133,6 @@ def median(timeseries, segmentlength, overlap, window=None):
                     window=window)
 
 
-
 def _lal_psd(timeseries, method, segmentlength, overlap, window=None):
     """Internal wrapper to the `lal.spectrum.psd` function
 
@@ -163,9 +162,9 @@ def _lal_psd(timeseries, method, segmentlength, overlap, window=None):
     if isinstance(overlap, units.Quantity):
         overlap = overlap.value
     lalts = timeseries.to_lal()
-    lalwin = window and window.to_lal() or None
+    lalwin = window is not None and window.to_lal() or None
     lalfs = lalspectrum._psd(method, lalts, segmentlength, overlap,
-                             window=window)
+                             window=lalwin)
     spec = Spectrum.from_lal(lalfs)
     if timeseries.unit:
         spec.unit = timeseries.unit / units.Hertz
