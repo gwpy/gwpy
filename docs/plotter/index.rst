@@ -23,9 +23,14 @@ Other than the :class:`~core.Plot` (which takes no data arguments), each of the 
 Plot types
 ==========
 
-The following diagram displays the available Plot objects and their inheritance from the `~core.Plot`.
+The following diagram displays the available Plot objects and their inheritance from `~core.Plot`.
 
-.. inheritance-diagram:: core timeseries spectrum spectrogram gwf
+.. inheritance-diagram:: core timeseries spectrum spectrogram gwf filter
+
+.. toctree::
+   :maxdepth: 1
+
+   filter
 
 ========
 Plot API

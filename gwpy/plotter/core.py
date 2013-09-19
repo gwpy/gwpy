@@ -118,9 +118,16 @@ class Plot(object):
 
     @property
     def axes(self):
-        """This plot's :class:`~matplotlib.axes.Axes`
+        """This plot's primary :class:`~matplotlib.axes.Axes`
         """
-        return self._axes
+        return self.figure.axes[0]
+
+    @property
+    def axeslist(self):
+        """A list of all axes contained within this
+        :class:`~matplotlib.figure.Figure`
+        """
+        return self.figure.axes
 
     @property
     def legend(self):

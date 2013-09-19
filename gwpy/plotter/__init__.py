@@ -30,6 +30,7 @@ from .spectrum import *
 from .spectrogram import *
 from .table import *
 from .gwf import *
+from .filter import *
 
 USE_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
 
