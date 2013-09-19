@@ -159,6 +159,33 @@ class Spectrum(Series):
         from ..plotter import SpectrumPlot
         return SpectrumPlot(self, **kwargs)
 
+    def filterba(self, b, a, inplace=False):
+        """Apply a filter to this `Spectrum` in numerator-denominator
+        format.
+
+        Parameters
+        ----------
+        b : :class:`~numpy.ndarray`
+            Numerator of a linear filter
+        a : :class:`~numpy.ndarray`
+            Decnominator of a linear filter
+        inplace : `bool`, optional, default: `False`
+            modify this `Spectrum` in-place
+
+        Returns
+        -------
+        Spectrum
+            either a view of the current `Spectrum` with filtered data,
+            or a new `Spectrum` with the filtered data
+        """
+        fresp = abs(signal.freqs(b, a, self.frequencies)[1])
+        if inplace:
+            self *= fresp
+            return self
+        else:
+            new = self * fresp
+            return new
+
     def filter(self, zeros=[], poles=[], gain=1, inplace=False):
         """Apply a filter to this `Spectrum` in zero-pole-gain format.
 
@@ -182,22 +209,14 @@ class Spectrum(Series):
         # generate filter
         f = self.frequencies.data
         if not zeros and not poles:
-            fresp = numpy.ones_like(f) * gain
+            if inplace:
+                self *= gain
+                return self
+            else:
+                return self * gain
         else:
             lti = signal.lti(numpy.asarray(zeros), numpy.asarray(poles), gain)
-            try:
-                fresp = abs(lti.freqresp(f)[1])
-            except AttributeError:
-                fresp = abs(signal.freqs(lti.num, lti.den, f)[1])
-        # filter in-place
-        if inplace:
-            self *= fresp
-            return self
-        # otherwise copy and filter
-        else:
-            out = self.copy()
-            out *= fresp
-            return out
+            return self.filterba(lti.num, lti.den, inplace=inplace)
 
     @classmethod
     def from_lal(cls, lalfs):
