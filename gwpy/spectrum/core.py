@@ -159,7 +159,7 @@ class Spectrum(Series):
         from ..plotter import SpectrumPlot
         return SpectrumPlot(self, **kwargs)
 
-    def filter(self, zeros=[], poles=[], gain=1, inplace=True):
+    def filter(self, zeros=[], poles=[], gain=1, inplace=False):
         """Apply a filter to this `Spectrum` in zero-pole-gain format.
 
         Parameters
@@ -185,10 +185,13 @@ class Spectrum(Series):
             fresp = numpy.ones_like(f) * gain
         else:
             lti = signal.lti(numpy.asarray(zeros), numpy.asarray(poles), gain)
-            fresp = abs(lti.freqresp(f)[1])
+            try:
+                fresp = abs(lti.freqresp(f)[1])
+            except AttributeError:
+                fresp = abs(signal.freqresp(f)[1])
         # filter in-place
         if inplace:
-            self.data *= fresp
+            self *= fresp
             return self
         # otherwise copy and filter
         else:
