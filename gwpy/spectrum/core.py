@@ -188,7 +188,7 @@ class Spectrum(Series):
             try:
                 fresp = abs(lti.freqresp(f)[1])
             except AttributeError:
-                fresp = abs(signal.freqz(lti.num, lti.den, f)[1])
+                fresp = abs(signal.freqs(lti.num, lti.den, f)[1])
         # filter in-place
         if inplace:
             self *= fresp
