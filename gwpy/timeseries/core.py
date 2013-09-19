@@ -9,7 +9,7 @@ import numbers
 import numpy
 import warnings
 from math import modf
-from scipy import signal
+from scipy import (fftpack, signal)
 
 from astropy import units
 
@@ -287,6 +287,33 @@ class TimeSeries(Series):
 
     # -------------------------------------------
     # TimeSeries product methods
+
+    def fft(self, fftlength=None):
+        """Compute the one-dimensional discrete Fourier transform of
+        this `TimeSeries`
+
+        Parameters
+        ----------
+        fftlength : `int`, optional
+            length of the desired Fourier transform.
+            Input will be cropped or padded to match the desired length.
+            If fftlength is not given, the length of the `TimeSeries`
+            will be used
+
+        Returns
+        -------
+        out : complex `Series`
+            the transformed output, with populated frequencies array
+            metadata
+
+        See Also
+        --------
+        :mod:`scipy.fftpack` for the definition of the DFT and conventions
+        used.
+        """
+        new = fftpack.fft(self.data, n=fftlength).view(Series)
+        new.frequencies = fftpack.fftfreq(new.size, d=numpy.float64(self.dx))
+        return new
 
     def psd(self, fftlength=None, fftstride=None, method='welch', window=None):
         """Calculate the power spectral density (PSD) `Spectrum` for this
