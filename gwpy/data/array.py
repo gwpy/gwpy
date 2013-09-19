@@ -114,7 +114,7 @@ class Array(numpy.ndarray):
 
     def __repr__(self):
         indent = ' '*len('<%s(' % self.__class__.__name__)
-        array = repr(self.view(numpy.ndarray))[6:-1].replace(' '*6, indent)
+        array = repr(self.data)[6:-1].replace('\n'+' '*6, '\n'+indent)
         metadata = ('\n%s' % indent).join(
                        ['%s=%s' % (key,self.metadata[key]) for
                         key in self._metadata_slots if
@@ -124,7 +124,7 @@ class Array(numpy.ndarray):
 
     def __str__(self):
         indent = ' '*len('%s(' % self.__class__.__name__)
-        array = repr(self.view(numpy.ndarray))[6:-1].replace(' '*6, indent)
+        array = repr(self.data)[6:-1].replace('\n'+' '*6, '\n'+indent)
         metadata = (',\n%s' % indent).join(
                        ['%s=%s' % (key,val) for
                         key,val in self.metadata.iteritems() if key != 'index'])
