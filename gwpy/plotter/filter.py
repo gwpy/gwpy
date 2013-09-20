@@ -116,7 +116,7 @@ class BodePlot(Plot):
         w, h = signal.freqz(filter_.num, filter_.den, w)
         if sample_rate:
             w *= numpy.float64(sample_rate) / (2.0 * pi)
-        mag = numpy.log10(numpy.absolute(h))
+        mag = 20.0 * numpy.log10(numpy.absolute(h))
         phase = numpy.degrees(numpy.unwrap(numpy.angle(h))) % 360
         lm = self.maxes.plot(w, mag, **kwargs)
         lp = self.paxes.plot(w, phase, **kwargs)
