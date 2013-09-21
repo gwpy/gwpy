@@ -66,9 +66,11 @@ class TimeSeries(Series):
     ----------
     name
     epoch
-    channel
     unit
+    channel
     sample_rate
+    duration
+    span
 
     Methods
     -------
@@ -83,7 +85,7 @@ class TimeSeries(Series):
     lowpass
     bandpass
     """
-    _metadata_slots = ['name', 'unit', 'epoch', 'sample_rate', 'channel']
+    _metadata_slots = ['name', 'unit', 'epoch', 'channel', 'sample_rate']
     xunit = units.Unit('s')
     def __new__(cls, data, times=None, epoch=None, channel=None, unit=None,
                 sample_rate=None, name=None, **kwargs):
