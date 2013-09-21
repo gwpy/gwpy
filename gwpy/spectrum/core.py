@@ -227,7 +227,8 @@ class Spectrum(Series):
                           unit=lal.UnitToString(lalfs.sampleUnits),
                           dtype=lalfs.data.data.dtype)
         return cls(lalfs.data.data, channel=channel, f0=lalfs.f0,
-                   df=lalfs.deltaF, unit=lal.UnitToString(lalfs.sampleUnits))
+                   df=lalfs.deltaF, unit=lal.UnitToString(lalfs.sampleUnits),
+                   epoch=lalfs.epoch)
 
     def to_lal(self):
         """Convert this `Spectrum` into a LAL FrequencySeries
