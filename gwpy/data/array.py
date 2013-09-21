@@ -52,10 +52,12 @@ class Array(numpy.ndarray):
     ----------
     name
     unit
+    epoch
+    channel
     """
     __array_priority_ = 10.1
     _metadata_type = dict
-    _metadata_slots = ['name', 'unit']
+    _metadata_slots = ['name', 'unit', 'epoch', 'channel']
 
     def __new__(cls, data=None, dtype=None, copy=False, subok=True,
                 **metadata):
@@ -236,6 +238,44 @@ class Array(numpy.ndarray):
             self.metadata['unit'] = val
         else:
             self.metadata['unit'] = Unit(val)
+
+    @property
+    def epoch(self):
+        """Starting GPS time epoch for this `Array`.
+
+        This attribute is recorded as a `~gwpy.time.Time` object in the
+        GPS format, allowing native conversion into other formats.
+
+        See `~astropy.time` for details on the `Time` object.
+        """
+        try:
+            return Time(self.metadata['epoch'], format='gps')
+        except KeyError:
+            return None
+
+    @epoch.setter
+    def epoch(self, epoch):
+        if isinstance(epoch, Time):
+            self.metadata['epoch'] = epoch.gps
+        elif isinstance(epoch, units.Quantity):
+            self.metadata['epoch'] = epoch.value
+        else:
+            self.metadata['epoch'] = float(epoch)
+
+    @property
+    def channel(self):
+        """Data channel associated with this `TimeSeries`.
+        """
+        try:
+            return self.metadata['channel']
+        except KeyError:
+            return None
+
+    @channel.setter
+    def channel(self, ch):
+        self.metadata['channel'] = Channel(ch)
+
+
 
     # -------------------------------------------
     # extras
