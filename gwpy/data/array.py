@@ -105,13 +105,6 @@ class Array(numpy.ndarray):
         """
         result = obj.view(self.__class__)
         result.metadata = self.metadata.copy()
-        try:
-            ufunc = context[0]
-            args = [isinstance(arg, self.__class__) and arg.unit or arg for
-                    arg in context[1]]
-            result.unit = ufunc(*args)
-        except TypeError:
-            pass
         return result
 
     def __repr__(self):
@@ -134,6 +127,18 @@ class Array(numpy.ndarray):
 
     # -------------------------------------------
     # array methods
+
+    def __pow__(self, y, z=None):
+        new = super(Array, self).__pow__(y, z)
+        print 'test', y
+        new.unit = self.unit.__pow__(y)
+        return new
+    __pow__.__doc__ = numpy.ndarray.__pow__.__doc__
+
+    def __ipow__(self, y, z=None):
+       super(Array, self).__ipow__(y, z)
+       self.unit **= y
+    __ipow__.__doc__ = numpy.ndarray.__ipow__.__doc__
 
     def median(self, axis=None, out=None, overwrite_input=False):
         return numpy.median(self, axis=axis, out=out,
