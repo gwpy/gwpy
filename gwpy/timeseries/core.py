@@ -145,20 +145,10 @@ class TimeSeries(Series):
         self.dx = (1 / units.Quantity(val, units.Hertz)).to(self.xunit)
 
     @property
-    def channel(self):
-        """Data channel associated with this `TimeSeries`.
-        """
-        return self.metadata['channel']
-
-    @channel.setter
-    def channel(self, ch):
-        self.metadata['channel'] = Channel(ch)
-
-    @property
     def span(self):
         """Time Segment encompassed by thie `TimeSeries`.
         """
-        return Segment(*map(float, super(TimeSeries, self).span))
+        return Segment(*map(numpy.float64, super(TimeSeries, self).span))
 
     @property
     def duration(self):
