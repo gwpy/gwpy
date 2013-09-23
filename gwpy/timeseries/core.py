@@ -346,7 +346,8 @@ class TimeSeries(Series):
         if window is not None:
             window = get_window(window, fftlength)
         psd_ = psd._lal_psd(self, method, fftlength, fftstride, window=window)
-        psd_.unit.__doc__ = "Power spectral density"
+        if psd_.unit:
+            psd_.unit.__doc__ = "Power spectral density"
         return psd_
 
     def asd(self, fftlength=None, fftstride=None, method='welch', window=None):
@@ -382,7 +383,8 @@ class TimeSeries(Series):
         asd = self.psd(fftlength, fftstride=fftstride, method=method,
                        window=window)
         asd **= 1/2.
-        asd.unit.__doc__ = "Amplitude spectral density"
+        if asd.unit:
+            asd.unit.__doc__ = "Amplitude spectral density"
         return asd
 
     def spectrogram(self, stride, fftlength=None, fftstride=None,
