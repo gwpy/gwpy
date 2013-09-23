@@ -135,8 +135,8 @@ class Array(numpy.ndarray):
         return new
     __pow__.__doc__ = numpy.ndarray.__pow__.__doc__
 
-    def __ipow__(self, y, z=None):
-       super(Array, self).__ipow__(y, z)
+    def __ipow__(self, y):
+       super(Array, self).__ipow__(y)
        self.unit **= y
     __ipow__.__doc__ = numpy.ndarray.__ipow__.__doc__
 
