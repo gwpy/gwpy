@@ -138,6 +138,7 @@ class Array(numpy.ndarray):
     def __ipow__(self, y):
        super(Array, self).__ipow__(y)
        self.unit **= y
+       return self
     __ipow__.__doc__ = numpy.ndarray.__ipow__.__doc__
 
     def median(self, axis=None, out=None, overwrite_input=False):
