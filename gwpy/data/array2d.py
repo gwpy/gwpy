@@ -26,13 +26,14 @@ class Array2D(Array):
         if not numpy.asarray(data).ndim == 2:
             raise ValueError("Data must be two-dimensional")
         return super(Array2D, cls).__new__(cls, data, dtype=dtype, copy=copy,
-                                            subok=subok, **metadata)
+                                          subok=subok, **metadata)
 
     # rebuild getitem to handle complex slicing
     def __getitem__(self, item):
         new = super(Array2D, self).__getitem__(item)
         if isinstance(item, int):
-            new = Series(new, unit=self.unit, name=name, f0=f0, df=df)
+            new = Series(new, unit=self.unit, name=self.name, dx=self.dy,
+                         x0=self.y0)
             new.xunit = self.yunit
         elif isinstance(item, tuple):
             new = Quantity(new, unit=self.unit)
