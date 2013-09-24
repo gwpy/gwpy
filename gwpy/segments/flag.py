@@ -13,11 +13,10 @@ import warnings
 
 from astropy.io import registry as io_registry
 
-from .. import version
-from ..segments import Segment, SegmentList
+from .segments import Segment, SegmentList
 
+from ..version import version as __version__
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 __all__ = ["DataQualityFlag"]
 

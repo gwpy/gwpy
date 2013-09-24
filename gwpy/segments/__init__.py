@@ -12,12 +12,8 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-from glue.segments import (segmentlistdict as SegmentListDict,
-                           segmentlist as SegmentList,
-                           segment as Segment)
-
-#from .core import (Segment, SegmentList, SegmentListDict)
-from .flags import DataQualityFlag
+from .segments import (Segment, SegmentList, SegmentListDict)
+from .flag import DataQualityFlag
 
 
 from ..io import segwizard
