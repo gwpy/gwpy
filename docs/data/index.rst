@@ -9,4 +9,3 @@ GWpy provides representations of the basic data objects recorded from gravitatio
 
    timeseries
    spectrum
-   spectrogram
