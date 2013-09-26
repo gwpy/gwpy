@@ -40,4 +40,4 @@ Reference/API
 
 .. autoclass:: Spectrum
    :show-inheritance:
-   :members: get_frequencies, filter, plot
+   :members: filter, plot
