@@ -95,7 +95,6 @@ class Spectrum(Series):
                   unit of 'Hertz'.
                   """)
 
-
     logf = property(Series.logx.__get__, Series.logx.__set__,
                     Series.logx.__delete__,
                     """Boolean telling whether this `Spectrum` has a
@@ -128,17 +127,14 @@ class Spectrum(Series):
         parameters of the existing `Spectrum`
         """
         num = num or self.shape[-1]
-        fmin = fmin or float(self.f0) or float(self.f0 + self.df)
-        fmax = fmax or float(self.f0 + self.shape[-1] * self.df)
+        fmin = fmin or self.f0.value or (self.f0.value + self.df.value)
+        fmax = fmax or (self.f0.value + self.shape[-1] * self.df.value)
         linf = self.frequencies.data
         logf = numpy.logspace(numpy.log10(fmin), numpy.log10(fmax), num=num)
         logf = logf[logf<linf.max()]
         interpolator = interpolate.interp1d(linf, self.data, axis=0)
         new = self.__class__(interpolator(logf), unit=self.unit,
-                             wcs=self.wcs, uncertainty=self.uncertainty,
-                             flags=self.flags)
-        for attr in self._getAttributeNames():
-            setattr(new, attr, getattr(self, attr))
+                             epoch=self.epoch, frequencies=logf)
         new.f0 = logf[0]
         new.df = logf[1]-logf[0]
         new.logf = True
@@ -247,4 +243,3 @@ class Spectrum(Series):
                        lal.lalDimensionlessUnit, self.size)
         lalfs.data.data = self.data
         return lalfs
-
