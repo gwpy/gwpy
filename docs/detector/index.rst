@@ -11,7 +11,6 @@ The ``gwpy.detector`` module provides a number of representations of detector in
 .. toctree::
    :maxdepth: 1
 
-   detector
    channel
 
 .. Reference/API
