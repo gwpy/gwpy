@@ -21,23 +21,29 @@ start = Time('2010-09-16 06:42:00', format='iso', scale='utc')
 end = Time('2010-09-16 06:43:00', format='iso', scale='utc')
 
 # find the data using NDS
-data = TimeSeries.fetch('H1:LDAS-STRAIN', start, end, verbose=True)
+data = TimeSeries.fetch('H1:LDAS-STRAIN', start.gps, end.gps, verbose=True)
 
 # calculate spectrogram
 specgram = data.spectrogram(1)
 specgram **= 1/2.
-
-# calculate median ratio
-medratio = specgram.ratio('median').to_logf()
+speclog = specgram.to_logf()
+medratio = speclog.ratio('median')
 
 # plot
-plot = medratio.plot(vmin=0.1, vmax=10)
-plot.add_colorbar(log=True, label='Ratio to median')
+plot = medratio.plot()
+plot.add_colorbar(log=True, clim=[0.1, 10], label='ASD ratio to median average')
 plot.ylabel = 'Frequency (Hz)'
 plot.ylim = [40, 4000]
 
 from gwpy.plotter import IS_INTERACTIVE
 if not IS_INTERACTIVE and not '__IPYTHON__' in globals():
-    outfile = __file__.replace('.py', '.png')
-    plot.save(outfile)
-    print("Example output saved as\n%s" % outfile)
+    try:
+        outfile = __file__.replace('.py', '.png')
+    except NameError:
+        pass
+    else:
+        plot.save(outfile)
+        print("Example output saved as\n%s" % outfile)
+else:
+    plot.auto_refresh = True
+    plot.show()

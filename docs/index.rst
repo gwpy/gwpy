@@ -44,3 +44,4 @@ The examples are provided in the ``examples/`` directory of the git repository, 
 
    examples/gw_ex_plot_timeseries
    examples/gw_ex_compare_spectra
+   examples/gw_ex_plot_spectrogram
