@@ -25,6 +25,7 @@ except ImportError:
     from astropy.utils import OrderedDict
 finally:
     DEFAULT_HOSTS = OrderedDict([
+                    (None,('ldas-pcdev4.ligo.caltech.edu', 31200)),
                     (None,('nds.ligo.caltech.edu', 31200)),
                     (detector.LHO_4k.prefix,('nds.ligo-wa.caltech.edu', 31200)),
                     (detector.LLO_4k.prefix,('nds.ligo-la.caltech.edu', 31200)),
