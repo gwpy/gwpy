@@ -15,7 +15,7 @@ import numpy
 import sys
 from itertools import izip
 
-if sys.version_info.major < 3:
+if sys.version_info[0] < 3:
     range = xrange
 
 from astropy.units import (Unit, Quantity)
