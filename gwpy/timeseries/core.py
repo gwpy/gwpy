@@ -18,7 +18,7 @@ from lal import (gpstime, utils as lalutils)
 from lalframe import frread
 
 from .. import version
-from ..data import Series
+from ..data import (Series, Array2D)
 from ..detector import Channel
 from ..segments import Segment
 from ..time import Time
@@ -27,7 +27,14 @@ from ..window import get_window
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-__all__ = ["TimeSeries"]
+__all__ = ["TimeSeries", 'ArrayTimeSeries']
+
+_UFUNC_STRING = {'less': '<',
+                 'less_equal': '<=',
+                 'equal': '==',
+                 'greater_equal': '>=',
+                 'greater': '>',
+                 }
 
 
 class TimeSeries(Series):
@@ -61,6 +68,10 @@ class TimeSeries(Series):
     The necessary metadata to reconstruct timing information are recorded
     in the `epoch` and `sample_rate` attributes. This time-stamps can be
     returned via the :attr:`~TimeSeries.times` property.
+
+    All comparison operations performed on a `TimeSeries` will return a
+    :class:`~gwpy.timeseries.statevector.StateTimeSeries` - a boolean array
+    with metadata copied from the starting `TimeSeries`.
 
     Attributes
     ----------
@@ -683,3 +694,47 @@ class TimeSeries(Series):
                     plot.xlim = timeseries.span
             except KeyboardInterrupt:
                 return
+
+    # -------------------------------------------
+    # TimeSeries operations
+
+    def __array_wrap__(self, obj, context=None):
+        """Wrap an array into a TimeSeries, or a StateTimeSeries if
+        dtype == bool
+        """
+        if obj.dtype == numpy.dtype(bool):
+            from .statevector import StateTimeSeries
+            ufunc = context[0]
+            value = context[1][-1]
+            try:
+                op_ = _UFUNC_STRING[ufunc.__name__]
+            except KeyError:
+                op_ = ufunc.__name__
+            result = obj.view(StateTimeSeries)
+            result.metadata = self.metadata.copy()
+            result.unit = ""
+            result.name = '%s %s %s' % (obj.name, op_, value)
+            if hasattr(obj, 'unit') and str(obj.unit):
+                result.name += ' %s' % str(obj.unit)
+        else:
+            result = super(TimeSeries, self).__array_wrap(obj, context=context)
+        return result
+
+
+class ArrayTimeSeries(TimeSeries, Array2D):
+    xunit = TimeSeries.xunit
+    def __new__(cls, data, times=None, epoch=None, channel=None, unit=None,
+                sample_rate=None, name=None, **kwargs):
+        """Generate a new ArrayTimeSeries.
+        """
+        # parse Channel input
+        if channel:
+            channel = Channel(channel)
+            name = name or channel.name
+            unit = unit or channel.unit
+            sample_rate = sample_rate or channel.sample_rate
+        # generate TimeSeries
+        new = Array2D.__new__(cls, data, name=name, unit=unit, epoch=epoch,
+                              channel=channel, sample_rate=sample_rate,
+                              times=times, **kwargs)
+        return new
