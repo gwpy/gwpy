@@ -22,7 +22,9 @@ class Series(Array):
     def __new__(cls, data, dtype=None, copy=False, subok=True, **metadata):
         """Define a new `Series`
         """
-        if not numpy.asarray(data).ndim == 1:
+        if isinstance(data, (list, tuple)):
+           data = numpy.asarray(data)
+        if not data.ndim == 1:
             raise ValueError("Cannot create a %s with more than one "
                              "dimension" % cls.__name__)
         return super(Series, cls).__new__(cls, data, dtype=dtype, copy=copy,
