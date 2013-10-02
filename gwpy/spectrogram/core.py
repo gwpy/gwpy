@@ -12,6 +12,7 @@ from ..timeseries import TimeSeries
 from ..spectrum import Spectrum
 
 from .. import version
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 __version__ = version.version
 
@@ -47,6 +48,7 @@ class Spectrogram(Array2D):
     _metadata_slots = ['name', 'unit', 'epoch', 'dt', 'f0', 'df', 'logf']
     xunit = TimeSeries.xunit
     yunit = Spectrum.xunit
+
     def __new__(cls, data, name=None, unit=None, channel=None, epoch=None,
                 f0=None, dt=None, df=None, logf=None, **kwargs):
         """Generate a new Spectrogram.
@@ -142,12 +144,13 @@ class Spectrogram(Array2D):
         else:
             raise ValueError("operand '%s' unrecognised, please give Spectrum "
                              "or one of: 'mean', 'median'")
-        return self.__class__(self.data/operand, unit=unit, epoch=self.epoch,
+        return self.__class__(self.data / operand, unit=unit, epoch=self.epoch,
                               f0=self.f0, name=self.name, dt=self.dt,
                               df=self.df, logf=self.logf)
 
     def plot(self, **kwargs):
         from ..plotter import SpectrogramPlot
+
         return SpectrogramPlot(self, **kwargs)
 
     def to_logf(self, fmin=None, fmax=None, num=None):
@@ -159,17 +162,17 @@ class Spectrogram(Array2D):
         fmax = fmax or float(self.f0.value + self.shape[-1] * self.df.value)
         linf = self.frequencies.data
         logf = numpy.logspace(numpy.log10(fmin), numpy.log10(fmax), num=num)
-        logf = logf[logf<linf.max()]
+        logf = logf[logf < linf.max()]
         new = self.__class__(numpy.zeros((self.shape[0], logf.size)),
                              epoch=self.epoch, dt=self.dt, unit=self.unit)
         for i in range(self.shape[0]):
             interpolator = interpolate.interp1d(linf[-logf.size:],
-                                                self.data[i,-logf.size:],
+                                                self.data[i, -logf.size:],
                                                 axis=0)
-            new.data[i,:] = interpolator(logf)
+            new.data[i, :] = interpolator(logf)
         new.metadata = self.metadata.copy()
         new.f0 = logf[0]
-        new.df = logf[1]-logf[0]
+        new.df = logf[1] - logf[0]
         new.logf = True
         return new
 
@@ -198,12 +201,12 @@ class Spectrogram(Array2D):
         """
         data = numpy.vstack([s.data for s in spectra])
         s1 = spectra[0]
-        if not all(s.f0==s1.f0 for s in spectra):
+        if not all(s.f0 == s1.f0 for s in spectra):
             raise ValueError("Cannot stack spectra with different f0")
-        if not all(s.df==s1.df for s in spectra):
+        if not all(s.df == s1.df for s in spectra):
             raise ValueError("Cannot stack spectra with different df")
         if (not all(s.logf for s in spectra) and
-            any(s.logf for s in spectra)):
+                any(s.logf for s in spectra)):
             raise ValueError("Cannot stack spectra with different log-scaling")
         kwargs.setdefault('name', s1.name)
         kwargs.setdefault('epoch', s1.epoch)
