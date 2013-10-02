@@ -717,7 +717,8 @@ class TimeSeries(Series):
             if hasattr(obj, 'unit') and str(obj.unit):
                 result.name += ' %s' % str(obj.unit)
         else:
-            result = super(TimeSeries, self).__array_wrap(obj, context=context)
+            result = super(TimeSeries, self).__array_wrap__(obj,
+                                                            context=context)
         return result
 
 
