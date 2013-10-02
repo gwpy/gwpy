@@ -74,7 +74,7 @@ class Spectrum(Series):
         return super(Spectrum, cls).__new__(cls, data, name=name, unit=unit,
                                             f0=f0, df=df, channel=channel,
                                             frequencies=frequencies,
-                                            logf=logf, **kwargs)
+                                            epoch=epoch, logf=logf, **kwargs)
 
     # -------------------------------------------
     # Spectrum properties
