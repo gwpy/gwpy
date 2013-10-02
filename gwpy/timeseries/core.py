@@ -165,7 +165,7 @@ class TimeSeries(Series):
     # TimeSeries accessors
 
     @classmethod
-    def read(cls, source, channel, epoch=None, duration=None, datatype=None,
+    def read(cls, source, channel, start=None, end=None, datatype=None,
              verbose=False):
         """Read data into a `TimeSeries` from files on disk
 
@@ -180,10 +180,10 @@ class TimeSeries(Series):
 
         channel : `str`, :class:`~gwpy.detector.channel.Channel`
             channel (name or object) to read
-        epoch : :class:`~gwpy.time.Time`, optional
-            start time of desired data
-        duration : `float`, optional
-            duration of desired data
+        start : :class:`~gwpy.time.Time`, `float`, optional
+            start GPS time of desired data
+        end : :class:`~gwpy.time.Time`, `float`, optional
+            end GPS time of desired data
         datatype : `type`, `numpy.dtype`, `str`, optional
             identifier for desired output data type
         verbose : `bool`, optional
@@ -198,9 +198,18 @@ class TimeSeries(Series):
             channel = channel.name
             if datatype is None:
                 datatype = channel.dtype
-        if epoch and isinstance(epoch, Time):
-            epoch = epoch.gps
-        lalts = frread.read_timeseries(source, channel, start=epoch,
+        if start and isinstance(start, Time):
+            start = start.gps
+        if end and isinstance(end, Time):
+            end = end.gps
+        if start and end:
+            duration = end-start
+        elif end:
+            raise ValueError("If `end` is given to TimeSeries.read, `start`"
+                             "must also be given")
+        else:
+            duration = None
+        lalts = frread.read_timeseries(source, channel, start=start,
                                        duration=duration, datatype=datatype,
                                        verbose=verbose)
         return cls.from_lal(lalts)
