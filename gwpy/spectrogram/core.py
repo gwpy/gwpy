@@ -196,7 +196,7 @@ class Spectrogram(Array2D):
         Each :class:`~gwpy.spectrum.core.Spectrum` passed to this
         constructor must be the same length.
         """
-        data = numpy.vstack(spectra)
+        data = numpy.vstack([s.data for s in spectra])
         s1 = spectra[0]
         if not all(s.f0==s1.f0 for s in spectra):
             raise ValueError("Cannot stack spectra with different f0")
@@ -210,4 +210,10 @@ class Spectrogram(Array2D):
         kwargs.setdefault('f0', s1.f0)
         kwargs.setdefault('df', s1.df)
         kwargs.setdefault('unit', s1.unit)
+        if not kwargs.has_key('dt') or not kwargs.has_key('times'):
+            try:
+                kwargs.setdefault('dt', spectra[1].epoch.gps - s1.epoch.gps)
+            except AttributeError:
+                raise ValueError("Cannot determine dt (time-spacing) for "
+                                 "Spectrogram from inputs")
         return Spectrogram(data, logf=s1.logf, **kwargs)
