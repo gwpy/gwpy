@@ -8,6 +8,7 @@ with the standard array methods wrapped to return instances of itself.
 """
 
 import numpy
+numpy.set_printoptions(threshold=200)
 
 from astropy.units import (Unit, Quantity)
 from astropy.io import registry
@@ -108,22 +109,44 @@ class Array(numpy.ndarray):
         return result
 
     def __repr__(self):
+        """Return a representation of this object
+
+        This just represents each of the metadata objects appriopriately
+        after the core data array
+        """
         indent = ' '*len('<%s(' % self.__class__.__name__)
         array = repr(self.data)[6:-1].replace('\n'+' '*6, '\n'+indent)
-        metadata = ('\n%s' % indent).join(
-                       ['%s=%s' % (key, repr(getattr(self, key))) for
-                        key in self._metadata_slots])
+        if 'dtype' in array:
+            array += ','
+        metadatarepr = []
+        for key in self._metadata_slots:
+            mindent = ' ' * (len(key) + 1)
+            rval = repr(getattr(self, key)).replace('\n',
+                                                    '\n%s' % (indent+mindent))
+            metadatarepr.append('%s=%s' % (key, rval))
+        metadata = (',\n%s' % indent).join(metadatarepr)
         return "<%s(%s\n%s%s)>" % (self.__class__.__name__, array,
-                                   indent, metadata)
+                                    indent, metadata)
 
     def __str__(self):
+        """Return a printable string format representation of this object
+
+        This just prints each of the metadata objects appriopriately
+        after the core data array
+        """
         indent = ' '*len('%s(' % self.__class__.__name__)
-        array = repr(self.data)[6:-1].replace('\n'+' '*6, '\n'+indent)
-        metadata = (',\n%s' % indent).join(
-                       ['%s=%s' % (key,str(getattr(self, key))) for
-                        key in self._metadata_slots])
-        return "%s(%s,\n%s%s)>" % (self.__class__.__name__, array,
-                                    indent, metadata)
+        array = str(self.data) + ','
+        if 'dtype' in array:
+            array += ','
+        metadatarepr = []
+        for key in self._metadata_slots:
+            mindent = ' ' * (len(key) + 1)
+            rval = str(getattr(self, key)).replace('\n',
+                                                   '\n%s' % (indent+mindent))
+            metadatarepr.append('%s=%s' % (key, rval))
+        metadata = (',\n%s' % indent).join(metadatarepr)
+        return "%s(%s\n%s%s)" % (self.__class__.__name__, array,
+                                 indent, metadata)
 
     # -------------------------------------------
     # array methods
