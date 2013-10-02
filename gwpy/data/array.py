@@ -120,8 +120,8 @@ class Array(numpy.ndarray):
         indent = ' '*len('%s(' % self.__class__.__name__)
         array = repr(self.data)[6:-1].replace('\n'+' '*6, '\n'+indent)
         metadata = (',\n%s' % indent).join(
-                       ['%s=%s' % (key,val) for
-                        key,val in self.metadata.iteritems() if key != 'index'])
+                       ['%s=%s' % (key,str(getattr(self, key))) for
+                        key in self._metadata_slots])
         return "%s(%s,\n%s%s)>" % (self.__class__.__name__, array,
                                     indent, metadata)
 
@@ -261,7 +261,7 @@ class Array(numpy.ndarray):
     def epoch(self, epoch):
         if isinstance(epoch, Time):
             self.metadata['epoch'] = epoch.gps
-        elif isinstance(epoch, units.Quantity):
+        elif isinstance(epoch, Quantity):
             self.metadata['epoch'] = epoch.value
         else:
             self.metadata['epoch'] = float(epoch)
