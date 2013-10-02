@@ -16,6 +16,7 @@ except KeyError:
     IS_INTERACTIVE = False
 else:
     IS_INTERACTIVE = matplotlib.is_interactive()
+rcParams = matplotlib.rcParams
 
 from .. import version
 
@@ -38,6 +39,10 @@ GWPY_PLOT_PARAMS = {
     "axes.grid": True,
     "axes.axisbelow": False,
     "axes.labelsize": 22,
+    'figure.subplot.bottom': 0.12,
+    'figure.subplot.left': 0.13,
+    'figure.subplot.right': 0.88,
+    'figure.subplot.top': 0.88,
     "image.aspect": 'auto',
     "image.interpolation": 'nearest',
     "image.origin": 'lower',
@@ -46,4 +51,4 @@ GWPY_PLOT_PARAMS = {
 if USE_TEX:
     GWPY_PLOT_PARAMS.update({"text.usetex": True, "font.family": "serif",
                              "font.serif": ["Computer Modern"]})
-mpl.rcParams.update(GWPY_PLOT_PARAMS)
+rcParams.update(GWPY_PLOT_PARAMS)
