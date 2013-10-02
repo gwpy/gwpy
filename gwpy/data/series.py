@@ -38,7 +38,7 @@ class Series(Array):
                 new.x0 += (item.start * self.dx)
             if item.step:
                 new.dx *= item.step
-        elif isinstance(item, list):
+        elif isinstance(item, (list, tuple)):
             new.index = self.index[item]
         else:
             new.index = self.index[item.argmax()]
