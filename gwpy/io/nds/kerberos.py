@@ -61,7 +61,8 @@ def kinit(username=None, password=None, realm='LIGO.ORG', exe=None):
         username = raw_input("Please provide username for the %s kerberos "
                              "realm: " % realm)
     if password is None:
-        password = getpass.getpass()
+        password = getpass.getpass(prompt="Password for %s@%s: "
+                                          % (username, realm))
     kget = Popen([exe, '%s@%s' % (username, realm)], stdout=PIPE,
                  stderr=PIPE, stdin=PIPE)
     kget.stdin.write('%s\n' % password)
