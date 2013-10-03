@@ -68,7 +68,7 @@ class AutoTimeLocator(mticker.AutoLocator):
         mticker.AutoLocator.__init__(self)
         #super(AutoTimeLocator, self).__init__()
         self.epoch = epoch
-        if scale and not epoch:
+        if scale and epoch is None:
             raise ValueError("The GPS epoch must be stated if data scaling "
                              "is required")
         if scale is not None:
