@@ -72,5 +72,5 @@ class Plot(figure.Figure):
     def close(self):
         """Close the plot and release its memory.
         """
-        mpl.close(self)
+        pyplot.close(self)
 
