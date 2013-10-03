@@ -4,15 +4,20 @@
 """
 
 import re
+import datetime
+
+from matplotlib import axes
+from matplotlib.projections import register_projection
 
 from lal import LIGOTimeGPS
 
+from .core import Plot
 from ..segments import SegmentList
 from ..time import Time
 from ..timeseries import TimeSeries
-from . import (Plot, ticks)
+from . import ticks
+from .axes import Axes
 from .decorators import auto_refresh
-
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['TimeSeriesPlot']
@@ -146,3 +151,105 @@ class TimeSeriesPlot(Plot):
             self.axes.autoscale_view()
         return formatter
 
+
+class TimeSeriesAxes(Axes):
+    """Extension of the basic matplotlib :class:`~matplotlib.axes.Axes`
+    specialising in time-series display
+    """
+    name = 'timeseries'
+    def __init__(self, *args, **kwargs):
+        """Instantiate a new TimeSeriesAxes suplot
+        """
+        epoch = kwargs.pop('epoch', 0)
+        scale = kwargs.pop('scale', 1)
+        super(TimeSeriesAxes, self).__init__(*args, **kwargs)
+        self.set_epoch(epoch)
+        # set x-axis format
+        formatter = ticks.TimeFormatter(format='gps', epoch=epoch, scale=scale)
+        self.xaxis.set_major_formatter(formatter)
+        locator = ticks.AutoTimeLocator(epoch=epoch, scale=scale)
+        self.xaxis.set_major_locator(locator)
+        self.fmt_xdata = lambda t: LIGOTimeGPS(t)
+        self.set_xlabel("Time (%s) from %s (%s)"
+                        % (formatter.scale_str_long,
+                           re.sub('\.0+', '', self.epoch.utc.iso),
+                           self.epoch.gps))
+        self.autoscale_view()
+
+    # -----------------------------------------------
+    # properties
+
+    @property
+    def epoch(self):
+        """Find the GPS epoch of this plot
+        """
+        return self._epoch
+
+    def set_epoch(self, gps):
+        """Set the GPS epoch of this plot
+        """
+        # set new epoch
+        print gps
+        if gps is None or isinstance(gps, Time):
+            self._epoch = gps
+        else:
+            if isinstance(gps, datetime.datetime):
+                from lal import gpstime
+                self._epoch = float(gpstime.utc_to_gps(gps))
+            elif isinstance(gps, basestring):
+                from lal import gpstime
+                self._epoch = float(gpstime.str_to_gps(gps))
+            self._epoch = Time(float(gps), format='gps')
+        # update x-axis ticks and labels
+        formatter = self.xaxis.get_major_formatter()
+        if isinstance(formatter, ticks.TimeFormatter):
+            locator = self.xaxis.get_major_locator()
+            oldepoch = formatter.epoch
+            formatter.epoch = locator.epoch = self._epoch
+            formatter.set_locs(locator.refresh())
+            # update xlabel
+            oldiso = re.sub('\.0+', '', oldepoch.utc.iso)
+            xlabel = self.xlabel.get_text()
+            if re.search(oldiso, xlabel):
+                self.xlabel = xlabel.replace(
+                                     oldiso, re.sub('\.0+', '',
+                                                    self.epoch.utc.iso))
+            xlabel = self.xlabel.get_text()
+            if re.search(str(oldepoch.gps), xlabel):
+                self.xlabel = xlabel.replace(str(oldepoch.gps),
+                                             str(self.epoch.gps))
+
+    # -------------------------------------------
+    # Axes methods
+
+    def plot(self, *args, **kwargs):
+        """Plot data onto these Axes.
+
+        Parameters
+        ----------
+        args
+            a single :class:`~gwpy.timeseries.core.TimeSeries` (or sub-class)
+            or standard (x, y) data arrays
+        kwargs
+            keyword arguments applicable to :meth:`~matplotib.axes.Axes.plot`
+
+        Returns
+        -------
+        Line2D
+            the :class:`~matplotlib.lines.Line2D` for this line layer
+
+        See Also
+        --------
+        :meth:`~matplotlib.axes.Axes.plot`
+            for a full description of acceptable ``*args` and ``**kwargs``
+        """
+        if len(args) == 1 and isinstance(args[0], TimeSeries):
+            ts = args[0]
+            args = (ts.times, ts.data)
+            kwargs.setdefault('label', ts.name)
+            if not self.epoch.gps:
+                self.set_epoch(ts.epoch)
+        return super(TimeSeriesAxes, self).plot(*args, **kwargs)
+
+
+register_projection(TimeSeriesAxes)
