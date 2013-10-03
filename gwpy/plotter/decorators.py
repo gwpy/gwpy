@@ -20,12 +20,13 @@
 """
 
 import threading
-from lal import git_version
+
+from matplotlib.figure import Figure
+
 from .decorator import decorator
 
+from ..version import version as __version__
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = git_version.id
-__date__ = git_version.date
 
 mydata = threading.local()
 
@@ -47,6 +48,9 @@ def _auto_refresh(f, *args, **kwargs):
         f(*args, **kwargs)
     finally:
         mydata.nesting -= 1
-        if hasattr(args[0], '_figure'):
-            if refresh and mydata.nesting == 0 and args[0]._auto_refresh:
+        if hasattr(args[0], 'figure'):
+            if refresh and mydata.nesting == 0 and args[0].figure._auto_refresh:
                 args[0].figure.canvas.draw()
+        elif isinstance(args[0], Figure):
+            if refresh and mydata.nesting == 0 and args[0]._auto_refresh:
+                args[0].canvas.draw()
