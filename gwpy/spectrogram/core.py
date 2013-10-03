@@ -219,7 +219,7 @@ class Spectrogram(Array2D):
         kwargs.setdefault('f0', s1.f0)
         kwargs.setdefault('df', s1.df)
         kwargs.setdefault('unit', s1.unit)
-        if not kwargs.has_key('dt') or not kwargs.has_key('times'):
+        if not (kwargs.has_key('dt') or kwargs.has_key('times')):
             try:
                 kwargs.setdefault('dt', spectra[1].epoch.gps - s1.epoch.gps)
             except AttributeError:
