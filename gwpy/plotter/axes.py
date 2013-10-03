@@ -4,9 +4,44 @@ user-friendly attributes
 """
 
 from matplotlib.axes import Axes as _Axes
+
 from .decorators import auto_refresh
 
+from ..version import version as __version__
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
 class Axes(_Axes):
+    """An extension of the standard matplotlib
+    :class:`~matplotlib.axes.Axes` object with simpler attribute
+    accessors, and GWpy class plotting methods
+
+    Notes
+    -----
+    A new set of `Axes` should be constructed via::
+
+        >>> plot.add_subplots(111, projection='xxx')
+
+    where plot is a :class:`~gwpy.plotter.fig.Plot` figure, and ``'xxx'``
+    is the name of the `Axes` you want to add.
+
+    Attributes
+    ----------
+    name
+    xlabel
+    ylabel
+    xlim
+    ylim
+    logx
+    logy
+
+    Methods
+    -------
+    plot
+    plot_dqflag
+    plot_segmentlist
+    plot_segmentlistdict
+    plot_timeseries
+    """
     # -----------------------------------------------
     # text properties
 
@@ -130,3 +165,5 @@ class Axes(_Axes):
         second which is the starting point for :meth:`apply_aspect`.
         """
         return super(Axes, self).set_position(pos, which='both')
+
+

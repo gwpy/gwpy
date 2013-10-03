@@ -9,6 +9,9 @@ import datetime
 from matplotlib import axes
 from matplotlib.projections import register_projection
 
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Rectangle
+
 from lal import LIGOTimeGPS
 
 from .core import Plot
@@ -20,7 +23,7 @@ from .axes import Axes
 from .decorators import auto_refresh
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__all__ = ['TimeSeriesPlot']
+__all__ = ['TimeSeriesPlot', 'TimeSeriesAxes']
 
 
 class TimeSeriesPlot(Plot):
@@ -165,16 +168,18 @@ class TimeSeriesAxes(Axes):
         super(TimeSeriesAxes, self).__init__(*args, **kwargs)
         self.set_epoch(epoch)
         # set x-axis format
-        formatter = ticks.TimeFormatter(format='gps', epoch=epoch, scale=scale)
-        self.xaxis.set_major_formatter(formatter)
-        locator = ticks.AutoTimeLocator(epoch=epoch, scale=scale)
-        self.xaxis.set_major_locator(locator)
-        self.fmt_xdata = lambda t: LIGOTimeGPS(t)
-        self.set_xlabel("Time (%s) from %s (%s)"
-                        % (formatter.scale_str_long,
-                           re.sub('\.0+', '', self.epoch.utc.iso),
-                           self.epoch.gps))
-        self.autoscale_view()
+        if not kwargs.has_key('sharex') or kwargs['sharex'] is None:
+            formatter = ticks.TimeFormatter(format='gps', epoch=epoch,
+                                            scale=scale)
+            self.xaxis.set_major_formatter(formatter)
+            locator = ticks.AutoTimeLocator(epoch=epoch, scale=scale)
+            self.xaxis.set_major_locator(locator)
+            self.fmt_xdata = lambda t: LIGOTimeGPS(t)
+            self.set_xlabel("Time (%s) from %s (%s)"
+                            % (formatter.scale_str_long,
+                               re.sub('\.0+', '', self.epoch.utc.iso),
+                               self.epoch.gps))
+            self.autoscale_view()
 
     # -----------------------------------------------
     # properties
@@ -189,7 +194,6 @@ class TimeSeriesAxes(Axes):
         """Set the GPS epoch of this plot
         """
         # set new epoch
-        print gps
         if gps is None or isinstance(gps, Time):
             self._epoch = gps
         else:
@@ -210,17 +214,23 @@ class TimeSeriesAxes(Axes):
             # update xlabel
             oldiso = re.sub('\.0+', '', oldepoch.utc.iso)
             xlabel = self.xlabel.get_text()
-            if re.search(oldiso, xlabel):
-                self.xlabel = xlabel.replace(
-                                     oldiso, re.sub('\.0+', '',
-                                                    self.epoch.utc.iso))
-            xlabel = self.xlabel.get_text()
-            if re.search(str(oldepoch.gps), xlabel):
-                self.xlabel = xlabel.replace(str(oldepoch.gps),
-                                             str(self.epoch.gps))
+            if xlabel:
+                if re.search(oldiso, xlabel):
+                    self.xlabel = xlabel.replace(
+                                         oldiso, re.sub('\.0+', '',
+                                                        self.epoch.utc.iso))
+                xlabel = self.xlabel.get_text()
+                if re.search(str(oldepoch.gps), xlabel):
+                    self.xlabel = xlabel.replace(str(oldepoch.gps),
+                                                 str(self.epoch.gps))
+            else:
+                self.set_xlabel("Time (%s) from %s (%s)"
+                                % (formatter.scale_str_long,
+                                   re.sub('\.0+', '', self.epoch.utc.iso),
+                                   self.epoch.gps))
 
     # -------------------------------------------
-    # Axes methods
+    # GWpy class plotting methods
 
     def plot(self, *args, **kwargs):
         """Plot data onto these Axes.
@@ -244,12 +254,172 @@ class TimeSeriesAxes(Axes):
             for a full description of acceptable ``*args` and ``**kwargs``
         """
         if len(args) == 1 and isinstance(args[0], TimeSeries):
-            ts = args[0]
-            args = (ts.times, ts.data)
-            kwargs.setdefault('label', ts.name)
+            return self.plot_timeseries(*args, **kwargs)
+        else:
+            return super(TimeSeriesAxes, self).plot(*args, **kwargs)
+
+    def plot_timeseries(self, timeseries, **kwargs):
+        """Plot a :class:`~gwpy.timeseries.core.TimeSeries` onto these
+        axes
+
+        Parameters
+        ----------
+        timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
+            data to plot
+        **kwargs
+            any other keyword arguments acceptable for
+            :meth:`~matplotlib.Axes.plot`
+
+        Returns
+        -------
+        Line2D
+            the :class:`~matplotlib.lines.Line2D` for this line layer
+
+        See Also
+        --------
+        :meth:`~matplotlib.axes.Axes.plot`
+            for a full description of acceptable ``*args` and ``**kwargs``
+        """
+        kwargs.setdefault('label', timeseries.name)
+        if not self.epoch.gps:
+            self.set_epoch(timeseries.epoch)
+        line = self.plot(timeseries.times, timeseries.data, **kwargs)
+        if len(self.lines) == 1:
+            self.set_xlim(*timeseries.span)
+        return line
+
+    def plot_dqflag(self, flag, y=None, **kwargs):
+        """Plot a :class:`~gwpy.segments.flag.DataQualityFlag`
+        onto these axes
+
+        Parameters
+        ----------
+        flag : :class:`~gwpy.segments.flag.DataQualityFlag`
+            data-quality flag to display
+        y : `float`, optional
+            y-axis value for new segments
+        height : `float`, optional, default: 0.8
+            height for each segment block
+        **kwargs
+            any other keyword arguments acceptable for
+            :class:`~matplotlib.patches.Rectangle`
+
+        Returns
+        -------
+        collection : :class:`~matplotlib.patches.PatchCollection`
+            list of :class:`~matplotlib.patches.Rectangle` patches
+        """
+        if y is None:
+            y = len(self.collections)
+        name = ':'.join([str(attr) for attr in
+                         (flag.ifo, flag.name, flag.version) if
+                         attr is not None])
+        try:
             if not self.epoch.gps:
-                self.set_epoch(ts.epoch)
-        return super(TimeSeriesAxes, self).plot(*args, **kwargs)
+                self.set_epoch(flag.valid[0][0])
+            else:
+                self.set_epoch(min(self.epoch.gps, flag.valid[0][0]))
+        except IndexError:
+            pass
+        return self.plot_segmentlist(flag.active, y=y, label=name, **kwargs)
+
+    def plot_segmentlist(self, segmentlist, y=None, **kwargs):
+        """Plot a :class:`~gwpy.segments.segments.SegmentList` onto
+        these axes
+
+        Parameters
+        ----------
+        segmentlist : :class:`~gwpy.segments.segments.SegmentList`
+            list of segments to display
+        y : `float`, optional
+            y-axis value for new segments
+        **kwargs
+            any other keyword arguments acceptable for
+            :class:`~matplotlib.patches.Rectangle`
+
+        Returns
+        -------
+        collection : :class:`~matplotlib.patches.PatchCollection`
+            list of :class:`~matplotlib.patches.Rectangle` patches
+        """
+        if y is None:
+            y = len(self.collections)
+        patches = []
+        for seg in segmentlist:
+            patches.append(self.build_segment(seg, y, **kwargs))
+        try:
+            if not self.epoch.gps:
+                self.set_epoch(segmentlist[0][0])
+            else:
+                self.set_epoch(min(self.epoch.gps, segmentlist[0][0]))
+        except IndexError:
+            pass
+        return self.add_collection(PatchCollection(patches, True))
+
+    def plot_segmentlistdict(self, segmentlistdict, y=None, dy=1, **kwargs):
+        """Plot a :class:`~gwpy.segments.segments.SegmentListDict` onto
+        these axes
+
+        Parameters
+        ----------
+        segmentlistdict : :class:`~gwpy.segments.segments.SegmentListDict`
+            (name, :class:`~gwpy.segments.segments.SegmentList`) dict
+        y : `float`, optional
+            starting y-axis value for new segmentlists
+        **kwargs
+            any other keyword arguments acceptable for
+            :class:`~matplotlib.patches.Rectangle`
+
+        Returns
+        -------
+        collections : `list`
+            list of :class:`~matplotlib.patches.PatchCollection` sets for
+            each segmentlist
+        """
+        if y is None:
+            y = len(self.collections)
+        collections = []
+        for name,segmentlist in segmentlistdict.iteritems():
+            collections.append(self.plot_segmentlist(segmentlist, y=y,
+                                                     label=name, **kwargs))
+            y += dy
+        return collections
+
+    @staticmethod
+    def build_segment(segment, y, height=.8, valign='center', **kwargs):
+        """Build a :class:`~matplotlib.patches.Rectangle` to display
+        a single :class:`~gwpy.segments.segments.Segment`
+
+        Parameters
+        ----------
+        segment : :class:`~gwpy.segments.segments.Segment`
+            [start, stop) GPS segment
+        y : `float`
+            y-axis peosition for segment
+        height : `float`, optional, default: 1
+            height (in y-axis units) for segment
+        valign : `str`
+            alignment of segment on y-axis value:
+            `top`, `center`, or `bottom`
+        **kwargs
+            any other keyword arguments acceptable for
+            :class:`~matplotlib.patches.Rectangle`
+
+        Returns
+        -------
+        box : `~matplotlib.patches.Rectangle`
+            rectangle patch for segment display
+        """
+        if valign.lower() == 'center':
+            y0 = y - height/2.
+        elif valign.lower() == 'top':
+            y0 = y - height
+        elif valign.lower() != 'bottom':
+            raise ValueError("valign must be one of 'top', 'center', or "
+                             "'bottom'")
+        return Rectangle((segment[0], y), width=abs(segment), height=height,
+                         **kwargs)
+
 
 
 register_projection(TimeSeriesAxes)
