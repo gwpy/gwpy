@@ -265,7 +265,7 @@ class Array2D(Array):
 
     def min(self, *args, **kwargs):
         out = super(Array2D, self).min(*args, **kwargs)
-        if isinstance(out, Aarray) and out.shape:
+        if isinstance(out, Array) and out.shape:
             return Series(out, name='%s min' % self.name, unit=self.unit)
         else:
             return out * self.unit
