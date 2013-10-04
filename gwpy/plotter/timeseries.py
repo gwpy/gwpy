@@ -191,6 +191,7 @@ class TimeSeriesAxes(Axes):
         """
         return self._epoch
 
+    @auto_refresh
     def set_epoch(self, gps):
         """Set the GPS epoch of this plot
         """
@@ -233,6 +234,7 @@ class TimeSeriesAxes(Axes):
     # -------------------------------------------
     # GWpy class plotting methods
 
+    @auto_refresh
     def plot(self, *args, **kwargs):
         """Plot data onto these Axes.
 
@@ -259,6 +261,7 @@ class TimeSeriesAxes(Axes):
         else:
             return super(TimeSeriesAxes, self).plot(*args, **kwargs)
 
+    @auto_refresh
     def plot_timeseries(self, timeseries, **kwargs):
         """Plot a :class:`~gwpy.timeseries.core.TimeSeries` onto these
         axes
@@ -289,6 +292,7 @@ class TimeSeriesAxes(Axes):
             self.set_xlim(*timeseries.span)
         return line
 
+    @auto_refresh
     def plot_spectrogram(self, spectrogram, **kwargs):
         """Plot a :class:`~gwpy.spectrogram.core.Spectrogram` onto
         these axes
@@ -325,6 +329,7 @@ class TimeSeriesAxes(Axes):
             self.set_ylim(*map(numpy.float64, spectrogram.span_y))
         return mesh
 
+    @auto_refresh
     def plot_dqflag(self, flag, y=None, **kwargs):
         """Plot a :class:`~gwpy.segments.flag.DataQualityFlag`
         onto these axes
@@ -360,6 +365,7 @@ class TimeSeriesAxes(Axes):
             pass
         return self.plot_segmentlist(flag.active, y=y, label=name, **kwargs)
 
+    @auto_refresh
     def plot_segmentlist(self, segmentlist, y=None, **kwargs):
         """Plot a :class:`~gwpy.segments.segments.SegmentList` onto
         these axes
@@ -393,6 +399,7 @@ class TimeSeriesAxes(Axes):
             pass
         return self.add_collection(PatchCollection(patches, True))
 
+    @auto_refresh
     def plot_segmentlistdict(self, segmentlistdict, y=None, dy=1, **kwargs):
         """Plot a :class:`~gwpy.segments.segments.SegmentListDict` onto
         these axes
@@ -456,7 +463,6 @@ class TimeSeriesAxes(Axes):
                              "'bottom'")
         return Rectangle((segment[0], y), width=abs(segment), height=height,
                          **kwargs)
-
 
 
 register_projection(TimeSeriesAxes)
