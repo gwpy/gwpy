@@ -165,5 +165,3 @@ class Axes(_Axes):
         second which is the starting point for :meth:`apply_aspect`.
         """
         return super(Axes, self).set_position(pos, which='both')
-
-
