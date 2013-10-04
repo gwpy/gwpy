@@ -27,6 +27,7 @@ __version__ = version.version
 #from .core import *
 from .fig import Plot
 from . import timeseries
+from . import spectrum
 from . import segments
 
 USE_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
