@@ -358,14 +358,15 @@ class TimeSeries(Series):
         """
         from ..spectrum import psd
         if fftlength is None:
-            fftlength = self.duration
+            fftlength = self.duration.value
         if fftstride is None:
             fftstride = fftlength
         fftlength *= self.sample_rate.value
         fftstride *= self.sample_rate.value
         if window is not None:
             window = get_window(window, fftlength)
-        psd_ = psd._lal_psd(self, method, fftlength, fftstride, window=window)
+        psd_ = psd._lal_psd(self, method, int(fftlength), int(fftstride),
+                            window=window)
         if psd_.unit:
             psd_.unit.__doc__ = "Power spectral density"
         return psd_
