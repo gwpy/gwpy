@@ -5,6 +5,7 @@
 
 import re
 import datetime
+import numpy
 
 from matplotlib import axes
 from matplotlib.projections import register_projection
@@ -287,6 +288,42 @@ class TimeSeriesAxes(Axes):
         if len(self.lines) == 1:
             self.set_xlim(*timeseries.span)
         return line
+
+    def plot_spectrogram(self, spectrogram, **kwargs):
+        """Plot a :class:`~gwpy.spectrogram.core.Spectrogram` onto
+        these axes
+
+        Parameters
+        ----------
+        spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
+            data to plot
+        **kwargs
+            any other keyword arguments acceptable for
+            :meth:`~matplotlib.Axes.plot`
+
+        Returns
+        -------
+        Line2D
+            the :class:`~matplotlib.lines.Line2D` for this line layer
+
+        See Also
+        --------
+        :meth:`~matplotlib.axes.Axes.plot`
+            for a full description of acceptable ``*args` and ``**kwargs``
+        """
+        if not self.epoch.gps:
+            self.set_epoch(spectrogram.epoch)
+        x = numpy.concatenate((spectrogram.times.data,
+                               [spectrogram.span_x[-1].value]))
+        y = numpy.concatenate((spectrogram.frequencies.data,
+                               [spectrogram.y0.value +
+                                spectrogram.dy.value * spectrogram.shape[1]]))
+        X,Y = numpy.meshgrid(x, y)
+        mesh = self.pcolormesh(X, Y, spectrogram.data.T, **kwargs)
+        if len(self.collections) == 1:
+            self.set_xlim(*map(numpy.float64, spectrogram.span_x))
+            self.set_ylim(*map(numpy.float64, spectrogram.span_y))
+        return mesh
 
     def plot_dqflag(self, flag, y=None, **kwargs):
         """Plot a :class:`~gwpy.segments.flag.DataQualityFlag`
