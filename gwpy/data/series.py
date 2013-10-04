@@ -37,7 +37,9 @@ class Series(Array):
             return Quantity(new, unit=self.unit)
         elif isinstance(item, slice):
             if item.start:
-                new.x0 += (item.start * self.dx)
+                x0 = self.x0.copy()
+                new.x0 += (item.start * new.dx)
+                self.x0 = x0
             if item.step:
                 new.dx *= item.step
         elif isinstance(item, (list, tuple)):
