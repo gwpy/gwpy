@@ -45,7 +45,7 @@ def _auto_refresh(f, *args, **kwargs):
     # development server.
     mydata.nesting = getattr(mydata, 'nesting', 0) + 1
     try:
-        f(*args, **kwargs)
+        return f(*args, **kwargs)
     finally:
         mydata.nesting -= 1
         if hasattr(args[0], 'figure'):
