@@ -3,6 +3,7 @@
 """
 
 import numpy
+import inspect
 
 from astropy.units import (Unit, Quantity)
 
@@ -141,17 +142,22 @@ class Array2D(Array):
             if self.logx:
                 logdx = (numpy.log10(self.x0.value + self.dx.value) -
                          numpy.log10(self.x0.value))
-                logx1 = numpy.log10(self.x0.value) + self.shape[-1] * logdx
+                logx1 = numpy.log10(self.x0.value) + self.shape[0] * logdx
                 self.xindex = numpy.logspace(numpy.log10(self.x0.value), logx1,
-                                             num=self.shape[-1])
+                                             num=self.shape[0])
             else:
-                self.xindex = (numpy.arange(self.shape[-1]) * self.dx.value +
+                self.xindex = (numpy.arange(self.shape[0]) * self.dx.value +
                                self.x0.value)
             return self.xindex
 
     @xindex.setter
     def xindex(self, samples):
-        self._xindex = Series(samples, unit=self.xunit)
+        if not isinstance(samples, Array):
+            fname = inspect.stack()[0][3]
+            name = '%s %s' % (self.name, fname)
+            samples = Array(samples, unit=self.xunit, name=name,
+                            epoch=self.epoch, channel=self.channel)
+        self._xindex = samples
         self.x0 = self.xindex[0]
         try:
             self.dx = self.xindex[1] - self.xindex[0]
@@ -180,7 +186,12 @@ class Array2D(Array):
 
     @yindex.setter
     def yindex(self, samples):
-        self._yindex = Series(samples, unit=self.yunit)
+        if not isinstance(samples, Array):
+            fname = inspect.stack()[0][3]
+            name = '%s %s' % (self.name, fname)
+            samples = Array(samples, unit=self.yunit, name=name,
+                            epoch=self.epoch, channel=self.channel)
+        self._yindex = samples
         self.y0 = self.yindex[0]
         try:
             self.dy = self.yindex[1] - self.yindex[0]
