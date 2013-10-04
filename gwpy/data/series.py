@@ -4,6 +4,7 @@
 """
 
 import numpy
+import inspect
 from scipy import signal
 
 from astropy.units import (Unit, Quantity)
@@ -113,7 +114,12 @@ class Series(Array):
 
     @index.setter
     def index(self, samples):
-        self._index = Array(samples, unit=self.xunit)
+        if not isinstance(samples, Array):
+            fname = inspect.stack()[0][3]
+            name = '%s %s' % (self.name, fname)
+            samples = Array(samples, unit=self.yunit, name=name,
+                            epoch=self.epoch, channel=self.channel)
+        self._index = samples
         self.x0 = self.index[0]
         try:
             self.dx = self.index[1] - self.index[0]
