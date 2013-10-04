@@ -12,6 +12,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 from .array import Array
 from .series import Series
+from ..segments import Segment
 
 
 class Array2D(Array):
@@ -88,7 +89,7 @@ class Array2D(Array):
     def span_x(self):
         """Extent of this `Array2D`
         """
-        return (self.x0, self.x0 + self.shape[0] * self.dx)
+        return Segment(self.x0, self.x0 + self.shape[0] * self.dx)
 
     @property
     def y0(self):
@@ -128,7 +129,7 @@ class Array2D(Array):
     def span_y(self):
         """Extent of this `Array2D`
         """
-        return (self.y0, self.y0 + self.shape[0] * self.dy)
+        return Segment(self.y0, self.y0 + self.shape[1] * self.dy)
 
     @property
     def xindex(self):
