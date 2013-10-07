@@ -6,8 +6,9 @@
 import re
 import datetime
 import numpy
+import itertools
 
-from matplotlib import axes
+from matplotlib import (pyplot, axes)
 from matplotlib.projections import register_projection
 
 from matplotlib.collections import PatchCollection
@@ -15,7 +16,7 @@ from matplotlib.patches import Rectangle
 
 from lal import LIGOTimeGPS
 
-from .core import Plot
+from .fig import Plot
 from ..segments import SegmentList
 from ..time import Time
 from ..timeseries import TimeSeries
@@ -40,22 +41,34 @@ class TimeSeriesPlot(Plot):
         other keyword arguments as applicable for the
         :class:`~gwpy.plotter.core.Plot`
     """
-    def __init__(self, *series, **kwargs):
+    def __new__(cls, *series, **kwargs):
         """Initialise a new TimeSeriesPlot
         """
+        sep = kwargs.pop('sep', False)
         # set figure size for x-axis as time
         kwargs.setdefault('figsize', [12,6])
         # generate figure
-        super(TimeSeriesPlot, self).__init__(**kwargs)
-        self.epoch = None
+        kwargs.setdefault('FigureClass', Plot)
+        new = pyplot.figure(**kwargs)
+        # determine one axis, or many
+        if sep and len(series):
+            new.add_subplot(len(series), 1, 1, projection='timeseries')
+            for i in range(len(series[1:])):
+                new.add_subplot(len(series), 1, i+2, projection='timeseries',
+                                sharex=new.axes[0])
+        else:
+            new.add_subplot(1, 1, 1, projection='timeseries')
+
         # set epoch
-        for ts in series:
-            self.add_timeseries(ts)
+        for ts,ax in itertools.izip(series, itertools.cycle(new.axes)):
+            ax.plot_timeseries(ts)
         if len(series):
             span = SegmentList([ts.span for ts in series]).extent()
-            self.epoch = span[0]
-            self.xlim = span
-            self.set_time_format('gps', epoch=self.epoch)
+            new.set_epoch(0)
+            new.set_epoch(span[0])
+            new.set_xlim(*span)
+            for ax in new.axes[:-1]:
+                ax.set_xlabel("")
 
     # -----------------------------------------------
     # properties
