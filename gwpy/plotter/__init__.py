@@ -24,11 +24,10 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-#from .core import *
+from .timeseries import *
+from .spectrum import *
+from .segments import *
 from .fig import Plot
-from . import timeseries
-from . import spectrum
-from . import segments
 
 USE_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
 
@@ -49,6 +48,7 @@ if USE_TEX:
     GWPY_PLOT_PARAMS.update({"text.usetex": True, "font.family": "serif",
                              "font.serif": ["Computer Modern"]})
 rcParams.update(GWPY_PLOT_PARAMS)
+
 
 def figure(*args, **kwargs):
     kwargs.setdefault('FigureClass', Plot)
