@@ -58,8 +58,8 @@ class Plot(figure.Figure):
 
     @auto_refresh
     def add_colorbar(self, mappable=None, ax=None, location='right',
-                     width=0.2, pad=0.1, log=False, label="", clim=None,
-                     visible=True, axes_class=axes.Axes, **kwargs):
+                     width=0.2, pad=0.1, log=None, label="", clim=None,
+                     clip=None, visible=True, axes_class=axes.Axes, **kwargs):
         """Add a colorbar to the current `Axes`
 
         Parameters
@@ -102,6 +102,9 @@ class Plot(figure.Figure):
                 if hasattr(self, 'collections') and len(self.collections):
                     mappable = self.collections[-1]
                     break
+                elif hasattr(self, 'images') and len(self.images):
+                    mappable = self.images[-1]
+                    break
         if not mappable:
             raise ValueError("Cannot determine mappable layer for this "
                              "colorbar")
@@ -129,6 +132,8 @@ class Plot(figure.Figure):
         # set limits
         if not clim:
             clim = mappable.get_clim()
+        if log is None:
+            log = isinstance(mappable, mcolors.LogNorm)
         if log and clim[0] <= 0.0:
             cdata = mappable.get_array()
             try:
@@ -147,10 +152,14 @@ class Plot(figure.Figure):
             kwargs.setdefault('format', mticker.FuncFormatter(func))
 
         # set log scale
-        if log:
+        norm = mappable.norm
+        if clip is None:
+            clip = norm.clip
+        if log and not isinstance(norm, mcolors.LogNorm):
             mappable.set_norm(mcolors.LogNorm(*mappable.get_clim()))
         else:
             mappable.set_norm(mcolors.Normalize(*mappable.get_clim()))
+        mappable.norm.clip = clip
 
         # set tick locator
         if log:
