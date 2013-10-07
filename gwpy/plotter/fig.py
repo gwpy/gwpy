@@ -22,37 +22,8 @@ class Plot(figure.Figure):
     object for GWpy
     """
     def __init__(self, auto_refresh=IS_INTERACTIVE, **kwargs):
-        # call pyplot.figure to get a better object, but protect against
-        # recursion
         super(Plot, self).__init__(**kwargs)
         self._auto_refresh = auto_refresh
-
-    def add_timeseries(self, timeseries, ax=None, **kwargs):
-        """Add a :class:`~gwpy.timeseries.core.TimeSeries` trace to this plot
-
-        Parameters
-        ----------
-        timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
-            the TimeSeries to display
-        **kwargs
-            other keyword arguments for the `Plot.add_line` function
-
-        Returns
-        -------
-        Line2D
-            the :class:`~matplotlib.lines.Line2D` for this line layer
-        """
-        # find relevant axes
-        if ax is None and self.axes:
-            from .timeseries import TimeSeriesAxes
-            tsaxes = [a for a in self.axes if isinstance(a, TimeSeriesAxes)]
-            if tsaxes:
-                ax = tsaxes[0]
-        if ax is None:
-            ax = self.add_subplot(111, projection='timeseries')
-        # plot on axes
-        kwargs.setdefault('label', timeseries.name)
-        return ax.plot(timeseries, **kwargs)
 
     # -----------------------------------------------
     # core plot operations
@@ -196,4 +167,170 @@ class Plot(figure.Figure):
 
         return colorbar
 
+    # -------------------------------------------
+    # GWpy data adding
+    #
+    # These methods try to guess which axes to add to, otherwise generate
+    # a new one
 
+    def _find_axes(self, projection):
+        """Find the most recently added axes for the given projection
+
+        Raises
+        ------
+        IndexError
+            if no axes for the projection are found
+        """
+        axes = list(zip(*self._axstack._elements)[-1])
+        axes.sort(key=lambda x: x[0], reverse=True)
+        for idx,ax in axes:
+            if ax.name == projection.lower():
+                return ax
+        raise IndexError("No '%s' Axes found in this Plot" % projection)
+
+    def _increment_geometry(self):
+        """Try to determine the geometry to use for a new Axes
+
+        Raises
+        ------
+        ValueError
+            if geometry is ambiguous
+        """
+        if not len(self.axes):
+            return (1, 1, 1)
+        current = self.axes[-1].get_geometry()
+        shape = current[:2]
+        pos = current[2]
+        num = shape[0] * shape[1]
+        if sum(shape) > 2 and pos == num:
+            raise ValueError("Cannot determine where to place next Axes in "
+                             "geomerty %s" % current)
+        elif pos < num:
+            return (shape[0], shape[1], pos+1)
+        elif shape[1] == 1:
+            return (shape[0] + 1, 1, pos+1)
+        else:
+            return (1, shape[1] + 1, pos+1)
+
+    def _add_new_axes(self, projection):
+        geometry = self._increment_geometry()
+        ax = self.add_subplot(*geometry, projection=projection)
+        if (geometry[0] == 1 or geometry[1] == 1 and
+            geometry[2] == (geometry[0] * geometry[1])):
+            idx = geometry[0] == 1 and 1 or 0
+            geom = [geometry[0], geometry[1], 1]
+            for i,ax_ in enumerate(self.axes[:-1]):
+                ax_.change_geometry(*geom)
+                geom[idx] += 1
+                geom[2] += 1
+        return ax
+
+    @auto_refresh
+    def add_timeseries(self, timeseries, ax=None, newax=False, **kwargs):
+        """Add a :class:`~gwpy.timeseries.core.TimeSeries` trace to this plot
+
+        Parameters
+        ----------
+        timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
+            the TimeSeries to display
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found
+        newax : :class:`~
+        **kwargs
+            other keyword arguments for the `Plot.add_line` function
+
+        Returns
+        -------
+        Line2D
+            the :class:`~matplotlib.lines.Line2D` for this line layer
+        """
+        return self.add_array(timeseries, 'timeseries',
+                              ax=ax, newax=newax, **kwargs)
+
+    @auto_refresh
+    def add_spectrum(self, spectrum, ax=None, newax=False, **kwargs):
+        """Add a :class:`~gwpy.spectrum.core.Spectrum` trace to this plot
+
+        Parameters
+        ----------
+        spectrum : :class:`~gwpy.spectrum.core.spectrum`
+            the `Spectrum` to display
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found
+        newax : `bool`, optional, default: `False`
+            force this object to be displayed on a new `Axes`
+        **kwargs
+            other keyword arguments for the `Plot.add_line` function
+
+        Returns
+        -------
+        Line2D
+            the :class:`~matplotlib.lines.Line2D` for this line layer
+        """
+        return self.add_array(spectrum, 'spectrum',
+                              ax=ax, newax=newax, **kwargs)
+
+    @auto_refresh
+    def add_spectrogram(self, spectrogram, ax=None, newax=False, **kwargs):
+        """Add a :class:`~gwpy.spectrogram.core.Spectrogram` trace to
+        this plot
+
+        Parameters
+        ----------
+        spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
+            the `Spectrogram` to display
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found
+        newax : `bool`, optional, default: `False`
+            force this object to be displayed on a new `Axes`
+        **kwargs
+            other keyword arguments for the `Plot.add_line` function
+
+        Returns
+        -------
+        Line2D
+            the :class:`~matplotlib.lines.Line2D` for this line layer
+        """
+        return self.add_array(spectrogram, 'timeseries',
+                              ax=ax, newax=newax, **kwargs)
+
+    @auto_refresh
+    def add_array(self, array, projection, ax=None, newax=False, **kwargs):
+        """Add a :class:`~gwpy.data.array.Array` to this plot
+
+        Parameters
+        ----------
+        array : :class:`~gwpy.data.array.Array`
+            the `Array` to display
+        projection : `str`
+            name of `Axes` projection
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found
+        newax : `bool`, optional, default: `False`
+            force this object to be displayed on a new `Axes`
+        **kwargs
+            other keyword arguments for the `Plot.add_line` function
+
+        Returns
+        -------
+        Artist : :class:`~matplotlib.artist.Artist`
+            the layer return from the relevant plotting function
+        """
+        # find relevant axes
+        if ax is None and not newax:
+            try:
+                ax = self._find_axes(projection)
+            except IndexError:
+                newax = True
+        if newax:
+            ax = self._add_new_axes(projection=projection)
+        # plot on axes
+        return ax.plot(array, **kwargs)
