@@ -6,13 +6,16 @@
 
 import re
 import warnings
+import copy
 
 from matplotlib.projections import register_projection
+from matplotlib.projections import register_projection
+from matplotlib import (cm, colors)
 
 from .utils import *
 from .core import Plot
 from .axes import Axes
-from ..spectrum import Spectrum
+from ..spectrum import (Spectrum, SpectralVariance)
 
 from ..version import version as __version__
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -76,6 +79,8 @@ class SpectrumAxes(Axes):
         """
         if len(args) == 1 and isinstance(args[0], Spectrum):
             return self.plot_spectrum(*args, **kwargs)
+        elif len(args) == 1 and isinstance(args[0], SpectralVariance):
+            return self.plot_variance(*args, **kwargs)
         else:
             return super(SpectrumAxes, self).plot(*args, **kwargs)
 
@@ -106,5 +111,52 @@ class SpectrumAxes(Axes):
             self.set_xlim(spectrum.frequencies[0],
                           spectrum.frequencies[-1] + spectrum.df.value)
         return line
+
+    def plot_variance(self, specvar, **kwargs):
+        """Plot a :class:`~gwpy.spectrum.hist.SpectralVariance` onto
+        these axes
+
+        Parameters
+        ----------
+        spectrum : class:`~gwpy.spectrum.hist.SpectralVariance`
+            data to plot
+        **kwargs
+            any other eyword arguments acceptable for
+            :meth:`~matplotlib.Axes.pcolormesh`
+
+        Returns
+        -------
+        MeshGrid
+            the :class:`~matplotlib.collections.MeshGridD` for this layer
+
+        See Also
+        --------
+        :meth:`~matplotlib.axes.Axes.pcolormesh`
+            for a full description of acceptable ``*args` and ``**kwargs``
+        """
+        cmap = kwargs.pop('cmap', None)
+        if cmap is None:
+            cmap = copy.deepcopy(cm.jet)
+            cmap.set_bad(cmap(0.0))
+        kwargs['cmap'] = cmap
+        norm = kwargs.pop('norm', None)
+        if norm is None and specvar.logy:
+            vmin = kwargs.pop('vmin', None)
+            vmax = kwargs.pop('vmax', None)
+            norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+        kwargs['norm'] = norm
+        x = numpy.concatenate((specvar.frequencies.data,
+                               [specvar.x0.value +
+                                specvar.dx.value * specvar.shape[0]]))
+        y = specvar.bins
+        X, Y = numpy.meshgrid(x, y)
+        mesh = self.pcolormesh(X, Y, specvar.data.T, **kwargs)
+        if len(self.collections) == 1:
+            if specvar.logy:
+                self.set_yscale('log', nonposy='mask')
+            self.set_xlim(x[0], x[-1])
+            self.set_ylim(y[0], y[-1])
+        return mesh
+
 
 register_projection(SpectrumAxes)
