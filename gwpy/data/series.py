@@ -117,7 +117,7 @@ class Series(Array):
         if not isinstance(samples, Array):
             fname = inspect.stack()[0][3]
             name = '%s %s' % (self.name, fname)
-            samples = Array(samples, unit=self.yunit, name=name,
+            samples = Array(samples, unit=self.xunit, name=name,
                             epoch=self.epoch, channel=self.channel)
         self._index = samples
         self.x0 = self.index[0]
