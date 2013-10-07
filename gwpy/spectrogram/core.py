@@ -220,3 +220,24 @@ class Spectrogram(Array2D):
                 raise ValueError("Cannot determine dt (time-spacing) for "
                                  "Spectrogram from inputs")
         return Spectrogram(data, logf=s1.logf, **kwargs)
+
+    def percentile(self, percentile):
+        """Calculate a given spectral percentile for this `SpectralVariance`
+
+        Parameters
+        ----------
+        percentile : `float`
+            percentile (0 - 100) of the bins to compute
+
+        Returns
+        -------
+        spectrum : :class:`~gwpy.spectrum.core.Spectrum`
+            the given percentile `Spectrum` calculated from this
+            `SpectralVaraicence`
+        """
+        out = scipy.percentile(self.data, percentile, axis=0)
+        name = '%s %s%% percentile' % (self.name, percentile)
+        return Spectrum(out, epoch=self.epoch, channel=self.channel,
+                        name=name, logf=self.logx, f0=self.f0, df=self.df,
+                        frequencies=(hasattr(self, '_frequencies') and
+                                     self.frequencies or None))
