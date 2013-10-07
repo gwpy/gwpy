@@ -8,4 +8,5 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 from .core import *
+from .hist import *
 from ..io.spectrum import *
