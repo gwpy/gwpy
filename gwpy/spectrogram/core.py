@@ -4,7 +4,7 @@
 """
 
 import numpy
-from scipy import interpolate
+import scipy
 from astropy import units
 
 from ..data import Array2D
@@ -166,9 +166,9 @@ class Spectrogram(Array2D):
         new = self.__class__(numpy.zeros((self.shape[0], logf.size)),
                              epoch=self.epoch, dt=self.dt, unit=self.unit)
         for i in range(self.shape[0]):
-            interpolator = interpolate.interp1d(linf[-logf.size:],
-                                                self.data[i, -logf.size:],
-                                                axis=0)
+            interpolator = scipy.interpolate.interp1d(linf[-logf.size:],
+                                                      self.data[i, -logf.size:],
+                                                      axis=0)
             new.data[i, :] = interpolator(logf)
         new.metadata = self.metadata.copy()
         new.f0 = logf[0]
