@@ -13,6 +13,7 @@ from ..version import version as __version__
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 from .array import Array
+from ..segments import Segment
 
 
 class Series(Array):
@@ -90,7 +91,7 @@ class Series(Array):
     def span(self):
         """Extent of this `Series`
         """
-        return (self.x0, self.x0 + self.size * self.dx)
+        return Segment(self.x0, self.x0 + self.shape[0] * self.dx)
 
     @property
     def index(self):
@@ -166,7 +167,7 @@ class Series(Array):
         """
         if isinstance(rate, Quantity):
             rate = rate.value
-        N = self.size * self.dx * rate
+        N = self.shape[0] * self.dx * rate
         data = signal.resample(self.data, N, window=window)
         new = self.__class__(data)
         new.metadata = self.metadata.copy()
