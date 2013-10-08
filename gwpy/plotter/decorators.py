@@ -36,10 +36,13 @@ def auto_refresh(f, *args, **kwargs):
 def axes_method(f, *args, **kwargs):
     figure = args[0]
     axes = [ax for ax in figure.axes]
+    if len(axes) == 0:
+        raise RuntimeError("No axes found for which '%s' is applicable"
+                           % f.__name__)
     if len(axes) != 1:
-        raise ValueError("{0} only applicable for a Plot with a single set "
-                         "of data axes. With multiple data axes, you should "
-                         "access the {0} method of the relevant Axes (stored "
-                         "in ``Plot.axes``) directly".format(f.__name__))
+        raise RuntimeError("{0} only applicable for a Plot with a single set "
+                           "of data axes. With multiple data axes, you should "
+                           "access the {0} method of the relevant Axes (stored "
+                           "in ``Plot.axes``) directly".format(f.__name__))
     axesf = getattr(axes[0], f.__name__)
     return axesf(*args[1:], **kwargs)
