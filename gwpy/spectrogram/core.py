@@ -72,6 +72,10 @@ class Spectrogram(Array2D):
                      TimeSeries.epoch.__delete__,
                      """Starting GPS epoch for this `Spectrogram`""")
 
+    span = property(TimeSeries.span.__get__, TimeSeries.span.__set__,
+                    TimeSeries.span.__delete__,
+                    """GPS [start, stop) span for this `Spectrogram`""")
+
     dt = property(TimeSeries.dt.__get__, TimeSeries.dt.__set__,
                   TimeSeries.dt.__delete__,
                   """Time-spacing for this `Spectrogram`""")
@@ -149,9 +153,11 @@ class Spectrogram(Array2D):
                               df=self.df, logf=self.logf)
 
     def plot(self, **kwargs):
+        """Plot the data for this `Spectrogram`
+        """
         from ..plotter import SpectrogramPlot
-
         return SpectrogramPlot(self, **kwargs)
+
 
     def to_logf(self, fmin=None, fmax=None, num=None):
         """Convert this `Spectrogram`` into logarithmic scale.
