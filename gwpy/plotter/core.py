@@ -223,7 +223,7 @@ class Plot(figure.Figure):
             if projection:
                 raise IndexError("No '%s' Axes found in this Plot" % projection)
             else:
-                raise IndexError("No Axes found in this Plot" % projection)
+                raise IndexError("No Axes found in this Plot")
 
     def _increment_geometry(self):
         """Try to determine the geometry to use for a new Axes
