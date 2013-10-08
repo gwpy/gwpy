@@ -199,14 +199,17 @@ class Plot(figure.Figure):
     # These methods try to guess which axes to add to, otherwise generate
     # a new one
 
-    def _find_all_axes(self, projection):
+    def _find_all_axes(self, projection=None):
         """Find all sets of axes for the given projection
         """
         allaxes = list(zip(*self._axstack._elements)[-1])
         allaxes.sort(key=lambda x: x[0])
-        return [ax for idx,ax in allaxes if ax.name == projection.lower()]
+        if projection is None:
+            return zip(*allaxes)[1]
+        else:
+            return [ax for idx,ax in allaxes if ax.name == projection.lower()]
 
-    def _find_axes(self, projection):
+    def _find_axes(self, projection=None):
         """Find the most recently added axes for the given projection
 
         Raises
@@ -217,7 +220,10 @@ class Plot(figure.Figure):
         try:
             return self._find_all_axes(projection)[-1]
         except IndexError:
-            raise IndexError("No '%s' Axes found in this Plot" % projection)
+            if projection:
+                raise IndexError("No '%s' Axes found in this Plot" % projection)
+            else:
+                raise IndexError("No Axes found in this Plot" % projection)
 
     def _increment_geometry(self):
         """Try to determine the geometry to use for a new Axes
@@ -257,18 +263,173 @@ class Plot(figure.Figure):
         return ax
 
     @auto_refresh
-    def add_timeseries(self, timeseries, ax=None, newax=False, **kwargs):
+    def _plot(self, x, y, *args, **kwargs):
+        """Add a line to the current plot
+
+        Parameters
+        ----------
+        x : array-like
+            x positions of the line points (in axis coordinates)
+        y : array-like
+            y positions of the line points (in axis coordinates)
+        projection : `str`, optional, default: `'timeseries'`
+            name of the Axes projection on which to plot
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
+        **kwargs
+            additional keyword arguments passed directly on to
+            the axes :meth:`~matplotlib.axes.Axes.plot` method.
+
+        Returns
+        -------
+        Line2D
+            the :class:`~matplotlib.lines.Line2D` for this line layer
+        """
+        # get axes options
+        projection = kwargs.pop('projection', None)
+        ax = kwargs.pop('ax', None)
+        newax = kwargs.pop('newax', False)
+
+        # set kwargs
+        kwargs.setdefault("linestyle", "-")
+        kwargs.setdefault("linewidth", 1)
+        kwargs.setdefault("markersize", 0)
+
+        # find relevant axes
+        if ax is None and not newax:
+            try:
+                ax = self._find_axes(projection)
+            except IndexError:
+                newax = True
+        if newax:
+            ax = self._add_new_axes(projection=projection)
+        # plot on axes
+        return ax.plot(numpy.asarray(x), numpy.asarray(y), **kwargs)[0]
+
+    @auto_refresh
+    def _scatter(self, x, y, projection=None, ax=None, newax=False,
+                 **kwargs):
+        """Internal `Plot` method to scatter onto the most
+        favourable `Axes`
+
+        Parameters
+        ----------
+        x : array-like
+            x positions of the line points (in axis coordinates)
+        y : array-like
+            y positions of the line points (in axis coordinates)
+        projection : `str`, optional, default: `None`
+            name of the Axes projection on which to plot
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
+        **kwargs.
+            other keyword arguments passed to the
+            :meth:`matplotlib.axes.Axes.scatter` function
+
+        Returns
+        -------
+        Collection
+            the :class:`~matplotlib.collections.Collection` for this
+            scatter layer
+        """
+        # set kwargs
+        kwargs.setdefault("s", 20)
+
+        # find relevant axes
+        if ax is None and not newax:
+            try:
+                ax = self._find_axes(projection)
+            except IndexError:
+                newax = True
+        if newax:
+            ax = self._add_new_axes(projection=projection)
+        # plot on axes
+        return ax.scatter(numpy.asarray(x), numpy.asarray(y), **kwargs)
+
+    @auto_refresh
+    def add_line(self, x, y, *args, **kwargs):
+        """Add a line to the current plot
+
+        Parameters
+        ----------
+        x : array-like
+            x positions of the line points (in axis coordinates)
+        y : array-like
+            y positions of the line points (in axis coordinates)
+        projection : `str`, optional, default: `None`
+            name of the Axes projection on which to plot
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
+        **kwargs
+            additional keyword arguments passed directly on to
+            the axes :meth:`~matplotlib.axes.Axes.plot` method.
+
+        Returns
+        -------
+        Line2D
+            the :class:`~matplotlib.lines.Line2D` for this line layer
+        """
+        return self._plot(x, y, *args, **kwargs)
+
+    @auto_refresh
+    def add_scatter(self, x, y, **kwargs):
+        """Add a set or points to the current plot
+
+        Parameters
+        ----------
+        x : array-like
+            x-axis data points
+        y : array-like
+            y-axis data points
+        projection : `str`, optional, default: `None`
+            name of the Axes projection on which to plot
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
+        **kwargs.
+            other keyword arguments passed to the
+            :meth:`matplotlib.axes.Axes.scatter` function
+
+        Returns
+        -------
+        Collection
+            the :class:`~matplotlib.collections.Collection` for this
+            scatter layer
+        """
+        return self._scatter(x, y, **kwargs)
+
+    @auto_refresh
+    def add_timeseries(self, timeseries, projeciton='timeseries',
+                       ax=None, newax=False, **kwargs):
         """Add a :class:`~gwpy.timeseries.core.TimeSeries` trace to this plot
 
         Parameters
         ----------
         timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
             the TimeSeries to display
+        projection : `str`, optional, default: `'timeseries'`
+            name of the Axes projection on which to plot
         ax : :class:`~gwpy.plotter.axes.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
-            appropriate axes are found
-        newax : :class:`~
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
         **kwargs
             other keyword arguments for the `Plot.add_line` function
 
@@ -281,19 +442,22 @@ class Plot(figure.Figure):
                               ax=ax, newax=newax, **kwargs)
 
     @auto_refresh
-    def add_spectrum(self, spectrum, ax=None, newax=False, **kwargs):
+    def add_spectrum(self, spectrum, projection='spectrum', ax=None,
+                     newax=False, **kwargs):
         """Add a :class:`~gwpy.spectrum.core.Spectrum` trace to this plot
 
         Parameters
         ----------
         spectrum : :class:`~gwpy.spectrum.core.spectrum`
             the `Spectrum` to display
+        projection : `str`, optional, default: `'Spectrum'`
+            name of the Axes projection on which to plot
         ax : :class:`~gwpy.plotter.axes.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
-            appropriate axes are found
+            appropriate axes are found, new `Axes` will be created
         newax : `bool`, optional, default: `False`
-            force this object to be displayed on a new `Axes`
+            force data to plot on a fresh set of `Axes`
         **kwargs
             other keyword arguments for the `Plot.add_line` function
 
@@ -306,7 +470,8 @@ class Plot(figure.Figure):
                               ax=ax, newax=newax, **kwargs)
 
     @auto_refresh
-    def add_spectrogram(self, spectrogram, ax=None, newax=False, **kwargs):
+    def add_spectrogram(self, spectrogram, projection='timeseries',
+                        ax=None, newax=False, **kwargs):
         """Add a :class:`~gwpy.spectrogram.core.Spectrogram` trace to
         this plot
 
@@ -314,12 +479,14 @@ class Plot(figure.Figure):
         ----------
         spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
             the `Spectrogram` to display
+        projection : `str`, optional, default: `timeseries`
+            name of the Axes projection on which to plot
         ax : :class:`~gwpy.plotter.axes.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
-            appropriate axes are found
+            appropriate axes are found, new `Axes` will be created
         newax : `bool`, optional, default: `False`
-            force this object to be displayed on a new `Axes`
+            force data to plot on a fresh set of `Axes`
         **kwargs
             other keyword arguments for the `Plot.add_line` function
 
@@ -340,13 +507,12 @@ class Plot(figure.Figure):
         array : :class:`~gwpy.data.array.Array`
             the `Array` to display
         projection : `str`
-            name of `Axes` projection
         ax : :class:`~gwpy.plotter.axes.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
-            appropriate axes are found
+            appropriate axes are found, new `Axes` will be created
         newax : `bool`, optional, default: `False`
-            force this object to be displayed on a new `Axes`
+            force data to plot on a fresh set of `Axes`
         **kwargs
             other keyword arguments for the `Plot.add_line` function
 
@@ -365,6 +531,34 @@ class Plot(figure.Figure):
             ax = self._add_new_axes(projection=projection)
         # plot on axes
         return ax.plot(array, **kwargs)
+
+    # -------------------------------------------
+    # Plot legend
+
+    @auto_refresh
+    def add_legend(self, *args, **kwargs):
+        """Add a legend to this `Plot` on the most favourable `Axes`
+
+        All non-keyword `args` and `kwargs` are passed directly to the
+        :meth:`~matplotlib.axes.Axes.legend` generator
+
+        Returns
+        -------
+        Legend
+            the :class:`~matplotlib.legend.Legend` for this plot
+        """
+        # set kwargs
+        alpha = kwargs.pop("alpha", 0.8)
+        linewidth = kwargs.pop("linewidth", 8)
+
+        # find relevant axes
+        ax = kwargs.pop('ax', None)
+        if ax is None:
+            ax = self._find_axes()
+        legend = ax.legend(*args, **kwargs)
+        legend.set_alpha(alpha)
+        [l.set_linewidth(linewidth) for l in legend.get_lines()]
+        return legend
 
     # -------------------------------------------
     # Convenience methods for single-axes plots
