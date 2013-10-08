@@ -20,7 +20,7 @@ from lal import LIGOTimeGPS
 from .core import Plot
 from ..segments import SegmentList
 from ..time import Time
-from . import ticks
+from . import (ticks, tex)
 from .axes import Axes
 from .decorators import auto_refresh
 
@@ -278,7 +278,10 @@ class TimeSeriesAxes(Axes):
         :meth:`~matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
-        kwargs.setdefault('label', timeseries.name)
+        if tex.USE_TEX:
+            kwargs.setdefault('label', tex.label_to_latex(timeseries.name))
+        else:
+            kwargs.setdefault('label', timeseries.name)
         if not self.epoch.gps:
             self.set_epoch(timeseries.epoch)
         line = self.plot(timeseries.times, timeseries.data, **kwargs)

@@ -12,6 +12,7 @@ from matplotlib.projections import register_projection
 from matplotlib.projections import register_projection
 from matplotlib import (cm, colors)
 
+from . import tex
 from .utils import *
 from .core import Plot
 from .axes import Axes
@@ -113,7 +114,10 @@ class SpectrumAxes(Axes):
         :meth:`~matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
-        kwargs.setdefault('label', spectrum.name)
+        if tex.USE_TEX:
+            kwargs.setdefault('label', tex.label_to_latex(spectrum.name))
+        else:
+            kwargs.setdefault('label', spectrum.name)
         line = self.plot(spectrum.frequencies, spectrum.data, **kwargs)
         if len(self.lines) == 1:
             self.set_xlim(spectrum.frequencies[0],

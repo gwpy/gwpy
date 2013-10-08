@@ -22,13 +22,13 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
+from .tex import USE_TEX
+
 from .timeseries import *
 from .spectrogram import *
 from .spectrum import *
 from .segments import *
 from .core import Plot
-
-USE_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
 
 GWPY_PLOT_PARAMS = {
     "axes.grid": True,
