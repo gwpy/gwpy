@@ -30,21 +30,29 @@ class SpectrumPlot(Plot):
         plotargs["linewidth"] = kwargs.pop("linewidth", 2)
         plotargs["color"] = kwargs.pop("color", "black")
         plotargs["linestyle"] = kwargs.pop("linestyle", "-")
+        sep = kwargs.pop('sep', False)
+        logx = kwargs.pop('logx', True)
+        logy = kwargs.pop('logy', True)
 
         # initialise figure
         super(SpectrumPlot, self).__init__(**kwargs)
         self._series = []
 
         # plot time series
-        for spectrum in series:
-            self._series.append(spectrum)
-            self.add_spectrum(spectrum)
-        if len(series) == 1:
-            self.add_label_unit(series[0].frequencies.unit, axis="x")
-            self.add_label_unit(series[0].unit, axis="y")
-        if len(series):
-            self.logx = self.logy = True
-            self.axes.autoscale_view()
+        for i,spectrum in enumerate(series):
+            self.add_spectrum(spectrum, newax=sep, **plotargs)
+            self.axes[-1].fmt_xdata = lambda f: ('%s [%s]'
+                                                 % (f, spectrum.xunit))
+            self.axes[-1].fmt_ydata = lambda a: ('%s [%s]'
+                                                 % (a, spectrum.unit))
+            if logx:
+                xlim = list(self.axes[-1].get_xlim())
+                if not xlim[0]:
+                   xlim[0] = spectrum.df.value
+                self.axes[-1].set_xscale('log')
+                self.axes[-1].set_xlim(*xlim)
+            if logy:
+                self.axes[-1].set_yscale('log')
 
 
 class SpectrumAxes(Axes):
@@ -110,6 +118,8 @@ class SpectrumAxes(Axes):
         if len(self.lines) == 1:
             self.set_xlim(spectrum.frequencies[0],
                           spectrum.frequencies[-1] + spectrum.df.value)
+            self.add_label_unit(spectrum.xunit, axis="x")
+            self.add_label_unit(spectrum.unit, axis="y")
         return line
 
     def plot_variance(self, specvar, **kwargs):

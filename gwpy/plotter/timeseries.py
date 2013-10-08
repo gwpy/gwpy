@@ -7,8 +7,9 @@ import re
 import datetime
 import numpy
 import itertools
+import copy
 
-from matplotlib import (pyplot, axes)
+from matplotlib import (pyplot, axes, cm, colors)
 from matplotlib.projections import register_projection
 
 from matplotlib.collections import PatchCollection
@@ -16,10 +17,9 @@ from matplotlib.patches import Rectangle
 
 from lal import LIGOTimeGPS
 
-from .fig import Plot
+from .core import Plot
 from ..segments import SegmentList
 from ..time import Time
-from ..timeseries import TimeSeries
 from . import ticks
 from .axes import Axes
 from .decorators import auto_refresh
@@ -42,32 +42,28 @@ class TimeSeriesPlot(Plot):
         :class:`~gwpy.plotter.core.Plot`
     """
     def __new__(cls, *series, **kwargs):
+        kwargs.setdefault('figsize', [12, 6])
+        return super(TimeSeriesPlot, cls).__new__(cls, **kwargs)
+
+    def __init__(self, *series, **kwargs):
         """Initialise a new TimeSeriesPlot
         """
         sep = kwargs.pop('sep', False)
-        # set figure size for x-axis as time
-        kwargs.setdefault('figsize', [12,6])
+
         # generate figure
-        kwargs.setdefault('FigureClass', Plot)
-        new = pyplot.figure(**kwargs)
-        # determine one axis, or many
-        if sep and len(series):
-            new.add_subplot(len(series), 1, 1, projection='timeseries')
-            for i in range(len(series[1:])):
-                new.add_subplot(len(series), 1, i+2, projection='timeseries',
-                                sharex=new.axes[0])
-        else:
-            new.add_subplot(1, 1, 1, projection='timeseries')
+        super(TimeSeriesPlot, self).__init__(**kwargs)
+
+        # plot data
+        for ts in series:
+            self.add_timeseries(ts, newax=sep)
 
         # set epoch
-        for ts,ax in itertools.izip(series, itertools.cycle(new.axes)):
-            ax.plot_timeseries(ts)
         if len(series):
             span = SegmentList([ts.span for ts in series]).extent()
-            new.set_epoch(0)
-            new.set_epoch(span[0])
-            new.set_xlim(*span)
-            for ax in new.axes[:-1]:
+            for ax in self.axes:
+                ax.set_epoch(span[0])
+                ax.set_xlim(*span)
+            for ax in self.axes[:-1]:
                 ax.set_xlabel("")
 
     # -----------------------------------------------
@@ -77,38 +73,20 @@ class TimeSeriesPlot(Plot):
     def epoch(self):
         """Find the GPS epoch of this plot
         """
-        return self._epoch
-    @epoch.setter
+        axes = self._find_axes('timeseries')
+        return axes.epoch
+
+    def get_epoch(self):
+        return self.epoch
+
     @auto_refresh
-    def epoch(self, gps):
+    def set_epoch(self, gps):
         """Set the GPS epoch of this plot
         """
-        # set new epoch
-        if gps is None:
-            self._epoch = gps
-        else:
-            if isinstance(gps, Time):
-                self._epoch = gps
-            else:
-                self._epoch = Time(float(gps), format='gps')
-        # update x-axis ticks and labels
-        formatter = self.axes.xaxis.get_major_formatter()
-        if isinstance(formatter, ticks.TimeFormatter):
-            locator = self.axes.xaxis.get_major_locator()
-            oldepoch = formatter.epoch
-            formatter.epoch = locator.epoch = self._epoch
-            formatter.set_locs(locator.refresh())
-            # update xlabel
-            oldiso = re.sub('\.0+', '', oldepoch.utc.iso)
-            xlabel = self.xlabel.get_text()
-            if re.search(oldiso, xlabel):
-                self.xlabel = xlabel.replace(
-                                     oldiso, re.sub('\.0+', '',
-                                                    self.epoch.utc.iso))
-            xlabel = self.xlabel.get_text()
-            if re.search(str(oldepoch.gps), xlabel):
-                self.xlabel = xlabel.replace(str(oldepoch.gps),
-                                             str(self.epoch.gps))
+        axeslist = self._find_all_axes('timeseries')
+        for axes in axeslist:
+            axes.set_epoch(gps)
+
 
     # -----------------------------------------------
     # extend add_timseries
@@ -116,11 +94,7 @@ class TimeSeriesPlot(Plot):
     def add_timeseries(self, timeseries, **kwargs):
         super(TimeSeriesPlot, self).add_timeseries(timeseries, **kwargs)
         if not self.epoch:
-            self.epoch = timeseries.epoch
-            self.set_time_format('gps', self.epoch)
-
-    # -----------------------------------------------
-    # set time axis as GPS
+            self.set_epoch(timeseries.epoch)
 
     @auto_refresh
     def set_time_format(self, format_='gps', epoch=None, scale=None,
@@ -189,10 +163,7 @@ class TimeSeriesAxes(Axes):
             locator = ticks.AutoTimeLocator(epoch=epoch, scale=scale)
             self.xaxis.set_major_locator(locator)
             self.fmt_xdata = lambda t: LIGOTimeGPS(t)
-            self.set_xlabel("Time (%s) from %s (%s)"
-                            % (formatter.scale_str_long,
-                               re.sub('\.0+', '', self.epoch.utc.iso),
-                               self.epoch.gps))
+            self.add_epoch_label()
             self.autoscale_view()
 
     # -----------------------------------------------
@@ -238,11 +209,17 @@ class TimeSeriesAxes(Axes):
                 if re.search(str(oldepoch.gps), xlabel):
                     self.xlabel = xlabel.replace(str(oldepoch.gps),
                                                  str(self.epoch.gps))
-            else:
-                self.set_xlabel("Time (%s) from %s (%s)"
-                                % (formatter.scale_str_long,
-                                   re.sub('\.0+', '', self.epoch.utc.iso),
-                                   self.epoch.gps))
+
+    @auto_refresh
+    def add_epoch_label(self):
+        formatter = self.xaxis.get_major_formatter()
+        if isinstance(formatter, ticks.TimeFormatter):
+            scale = formatter.scale_str_long
+        else:
+            scale = 'seconds'
+        utc = re.sub('\.0+', '', self.epoch.utc.iso)
+        gps = self.epoch.gps
+        return self.set_xlabel('Time (%s) from %s (%s)' % (scale, utc, gps))
 
     # -------------------------------------------
     # GWpy class plotting methods
@@ -269,8 +246,12 @@ class TimeSeriesAxes(Axes):
         :meth:`~matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
+        from ..timeseries import TimeSeries
+        from ..spectrogram import Spectrogram
         if len(args) == 1 and isinstance(args[0], TimeSeries):
             return self.plot_timeseries(*args, **kwargs)
+        elif len(args) == 1 and isinstance(args[0], Spectrogram):
+            return self.plot_spectrogram(*args, **kwargs)
         else:
             return super(TimeSeriesAxes, self).plot(*args, **kwargs)
 
@@ -328,7 +309,19 @@ class TimeSeriesAxes(Axes):
         :meth:`~matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
+        cmap = kwargs.pop('cmap', None)
+        if cmap is None:
+            cmap = copy.deepcopy(cm.jet)
+            cmap.set_bad(cmap(0.0))
+        kwargs['cmap'] = cmap
+        norm = kwargs.pop('norm', None)
+        if norm == 'log':
+            vmin = kwargs.get('vmin', None)
+            vmax = kwargs.get('vmax', None)
+            norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+        kwargs['norm'] = norm
         if not self.epoch.gps:
+            self.set_epoch(0)
             self.set_epoch(spectrogram.epoch)
         x = numpy.concatenate((spectrogram.times.data,
                                [spectrogram.span_x[-1].value]))
@@ -340,6 +333,8 @@ class TimeSeriesAxes(Axes):
         if len(self.collections) == 1:
             self.set_xlim(*map(numpy.float64, spectrogram.span_x))
             self.set_ylim(*map(numpy.float64, spectrogram.span_y))
+        if not self.get_ylabel():
+            self.add_label_unit(spectrogram.yunit, axis='y')
         return mesh
 
     @auto_refresh

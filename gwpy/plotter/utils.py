@@ -76,22 +76,3 @@ def str_to_latex(input):
     if isinstance(text, Real) or isinstance(text, LIGOTimeGPS):
        return gpstime.gps_to_str(text)
     # otherwise parse word by word into latex format
-
-
-def log_transform(lin_range):
-    """Return the logarithmic ticks and labels corresponding to the
-    input lin_range.
-    """
-    log_range = numpy.log10(lin_range)
-    slope = (lin_range[1] - lin_range[0]) / (log_range[1] - log_range[0])
-    inter = lin_range[0] - slope * log_range[0]
-    tick_range = [tick for tick in range(int(log_range[0] - 1.0),\
-                                         int(log_range[1] + 2.0))\
-                  if tick >= log_range[0] and tick<=log_range[1]]
-    ticks = [inter + slope * tick for tick in tick_range]
-    labels = ["${10^{%d}}$" % tick for tick in tick_range]
-    minorticks = []
-    for i in range(len(ticks[:-1])):
-        minorticks.extend(numpy.logspace(numpy.log10(ticks[i]),\
-                                         numpy.log10(ticks[i+1]), num=10)[1:-1])
-    return ticks, labels, minorticks

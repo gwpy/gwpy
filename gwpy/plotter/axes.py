@@ -6,6 +6,7 @@ user-friendly attributes
 from matplotlib.axes import Axes as _Axes
 
 from .decorators import auto_refresh
+from . import (rcParams, tex)
 
 from ..version import version as __version__
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -42,6 +43,11 @@ class Axes(_Axes):
     plot_segmentlistdict
     plot_timeseries
     """
+    def __init__(self, *args, **kwargs):
+        super(Axes, self).__init__(*args, **kwargs)
+        self.xaxis.labelpad = 10
+    __init__.__doc__ = _Axes.__init__.__doc__
+
     # -----------------------------------------------
     # text properties
 
@@ -165,3 +171,19 @@ class Axes(_Axes):
         second which is the starting point for :meth:`apply_aspect`.
         """
         return super(Axes, self).set_position(pos, which='both')
+
+    @auto_refresh
+    def add_label_unit(self, unit, axis='x'):
+        attr = "%slabel" % axis
+        label = getattr(self, 'get_%slabel' % axis)()
+        if not label:
+            label = unit.__doc__
+        if rcParams.get("text.usetex", False):
+            unitstr = tex.unit_to_latex(unit)
+        else:
+            unitstr = unit.to_string()
+        set_ = getattr(self, 'set_%slabel' % axis)
+        if label:
+            set_("%s (%s)" % (label, unitstr))
+        else:
+            set_(unitstr)

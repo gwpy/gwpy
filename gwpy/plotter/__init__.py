@@ -13,9 +13,7 @@ try:
     os.environ['DISPLAY']
 except KeyError:
     matplotlib.use('agg', warn=False)
-    IS_INTERACTIVE = False
-else:
-    IS_INTERACTIVE = matplotlib.is_interactive()
+
 from matplotlib import pyplot
 rcParams = matplotlib.rcParams
 
@@ -25,9 +23,10 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 from .timeseries import *
+from .spectrogram import *
 from .spectrum import *
 from .segments import *
-from .fig import Plot
+from .core import Plot
 
 USE_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
 
@@ -36,7 +35,7 @@ GWPY_PLOT_PARAMS = {
     "axes.axisbelow": False,
     "axes.labelsize": 22,
     'figure.subplot.bottom': 0.12,
-    'figure.subplot.left': 0.13,
+    'figure.subplot.left': 0.15,
     'figure.subplot.right': 0.88,
     'figure.subplot.top': 0.88,
     "image.aspect": 'auto',
