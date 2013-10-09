@@ -113,7 +113,7 @@ class TimeSeries(Series):
         new = super(TimeSeries, cls).__new__(cls, data, name=name, unit=unit,
                                              epoch=epoch, channel=channel,
                                              sample_rate=sample_rate,
-                                             times=times)
+                                             times=times, **kwargs)
         return new
 
     # -------------------------------------------
