@@ -651,22 +651,41 @@ class TimeSeries(Series):
         coherence : :class:`~gwpy.spectrum.core.Spectrum`
             the coherence `Spectrum` of this `TimeSeries` with the other
 
+        Notes
+        -----
+        If `self` and `other` have difference
+        :attr:`TimeSeries.sample_rate` values, the higher sampled
+        `TimeSeries` will be down-sampled to match the lower.
+
         See Also
         --------
         :func:`matplotlib.mlab.cohere`
             for details of the coherence calculator
         """
         from ..spectrum import Spectrum
+        # check sampling rates
+        if self.sample_rate.to('Hertz') != other.sample_rate.to('Hertz'):
+            sampling = min(self.sample_rate.value, other.sample_rate.value)
+            # resample higher rate series
+            if self.sample_rate.value == sampling:
+                other = other.resample(sampling)
+                self_ = self
+            else:
+                self_ = self.resample(sampling)
+        else:
+            sampling = self.sample_rate.value
+            self_ = self
+        # check fft lengths
         if fftlength is None:
-            fftlength = self.duration.value
+            fftlength = self_.duration.value
         if fftstride is None:
             fftstride = fftlength
-        fftlength = int(numpy.float64(fftlength) * self.sample_rate.value)
-        fftstride = int(numpy.float64(fftstride) * self.sample_rate.value)
+        fftlength = int(numpy.float64(fftlength) * self_.sample_rate.value)
+        fftstride = int(numpy.float64(fftstride) * self_.sample_rate.value)
         if window is None:
             window = HanningWindow(fftlength)
-        coh,f = mlab.cohere(self.data, other.data, NFFT=fftlength,
-                            Fs=self.sample_rate.value, window=window,
+        coh,f = mlab.cohere(self_.data, other.data, NFFT=fftlength,
+                            Fs=sampling, window=window,
                             noverlap=fftlength-fftstride,
                             **kwargs)
         f0 = f[0]
