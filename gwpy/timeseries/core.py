@@ -10,6 +10,7 @@ import numpy
 import warnings
 from math import modf
 from scipy import (fftpack, signal)
+from matplotlib import mlab
 
 from astropy import units
 
@@ -22,7 +23,7 @@ from ..data import (Series, Array2D)
 from ..detector import Channel
 from ..segments import Segment
 from ..time import Time
-from ..window import get_window
+from ..window import *
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
@@ -324,8 +325,12 @@ class TimeSeries(Series):
         :mod:`scipy.fftpack` for the definition of the DFT and conventions
         used.
         """
-        new = fftpack.fft(self.data, n=fftlength).view(Series)
+        from ..spectrum import Spectrum
+        new = fftpack.fft(self.data, n=fftlength).view(Spectrum)
         new.frequencies = fftpack.fftfreq(new.size, d=numpy.float64(self.dx))
+        #new.x0 = new.frequencies[0]
+        #if len(new.frequencies) > 1:
+        #    new.dx = new.frequencies[1] - new.frequencies[0]
         return new
 
     def psd(self, fftlength=None, fftstride=None, method='welch', window=None):
@@ -618,6 +623,60 @@ class TimeSeries(Series):
             raise NotImplementedError(str(e).replace('Lowpass', 'Bandpass'))
         else:
             return high.lowpass(fhigh, amplitude=amplitude, order=order)
+
+    def coherence(self, other, fftlength=None, fftstride=None,
+                  window=None, **kwargs):
+        """Calculate the frequency-coherence between this `TimeSeries`
+        and another
+
+        Parameters
+        ----------
+        other : `TimeSeries`
+            `TimeSeries` signal to calculate coherence with
+        fftlength : `float`, optional, default: `TimeSeries.duration`
+            number of seconds in single FFT, defaults to a single FFT
+        fftstride : `int`, optiona, default: fftlength
+            number of seconds between FFTs, defaults to no overlap
+        window : `timeseries.window.Window`, optional, default: `HanningWindow`
+            window function to apply to timeseries prior to FFT,
+            default HanningWindow of the relevant size
+        **kwargs
+            any other keyword arguments accepted by
+            :func:`matplotlib.mlab.cohere` except ``NFFT``, ``window``,
+            and ``noverlap`` which are superceded by the above keyword
+            arguments
+
+        Returns
+        -------
+        coherence : :class:`~gwpy.spectrum.core.Spectrum`
+            the coherence `Spectrum` of this `TimeSeries` with the other
+
+        See Also
+        --------
+        :func:`matplotlib.mlab.cohere`
+            for details of the coherence calculator
+        """
+        from ..spectrum import Spectrum
+        if fftlength is None:
+            fftlength = self.duration.value
+        if fftstride is None:
+            fftstride = fftlength
+        fftlength = int(numpy.float64(fftlength) * self.sample_rate.value)
+        fftstride = int(numpy.float64(fftstride) * self.sample_rate.value)
+        if window is None:
+            window = HanningWindow(fftlength)
+        coh,f = mlab.cohere(self.data, other.data, NFFT=fftlength,
+                            Fs=self.sample_rate.value, window=window,
+                            noverlap=fftlength-fftstride,
+                            **kwargs)
+        f0 = f[0]
+        df = f[1]-f[0]
+        out = coh.view(Spectrum)
+        out.f0 = f[0]
+        out.df = (f[1] - f[0])
+        out.epoch = self.epoch
+        out.name = 'Coherence between %s and %s' % (self.name, other.name)
+        return out
 
     # -------------------------------------------
     # Utilities
