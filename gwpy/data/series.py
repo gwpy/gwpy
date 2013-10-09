@@ -147,7 +147,7 @@ class Series(Array):
     # -------------------------------------------
     # Series methods
 
-    def resample(self, rate, window=None):
+    def resample(self, rate, window=None, dtype=None):
         """Resample this Series to a new rate
 
         Parameters
@@ -168,7 +168,7 @@ class Series(Array):
             rate = rate.value
         N = self.size * self.dx * rate
         data = signal.resample(self.data, N, window=window)
-        new = self.__class__(data)
+        new = self.__class__(data, dtype=dtype or self.dtype)
         new.metadata = self.metadata.copy()
         new.dx = 1 / float(rate)
         return new
