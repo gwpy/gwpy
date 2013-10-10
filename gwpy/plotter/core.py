@@ -110,7 +110,6 @@ class Plot(figure.Figure):
             the :class:`~matplotlib.colorbar.Colorbar` added to this plot
         """
         # find default layer
-        print mappable, ax
         if mappable is None and ax is not None and len(ax.collections):
             mappable = ax.collections[-1]
         elif mappable is None and ax is None:
