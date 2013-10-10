@@ -28,6 +28,7 @@ from .timeseries import *
 from .spectrogram import *
 from .spectrum import *
 from .segments import *
+from .filter import *
 from .core import Plot
 
 GWPY_PLOT_PARAMS = {
