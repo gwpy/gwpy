@@ -33,11 +33,9 @@ The :meth:`~gwpy.timeseries.core.TimeSeries.spectrogram` method calculated a pow
 .. literalinclude:: ../../examples/gw_ex_plot_spectrogram.py
    :lines: 28
 
-We can now convert the spectrogram to a logarithmic frequency scale:
+Not we can plot it:
 
 .. literalinclude:: ../../examples/gw_ex_plot_spectrogram.py
-   :lines: 29
-
-and plot it:
+   :lines: 31-36
 
 .. plot:: ../examples/gw_ex_plot_spectrogram.py

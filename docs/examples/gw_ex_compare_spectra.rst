@@ -1,9 +1,7 @@
-=========================================================
-GWpy.Ex: comparing a Channel's spectrum between two times
-=========================================================
-
 .. currentmodule:: gwpy.spectrum.core
-.. |ex.py| replace:: ../../examples/gw_ex_compare_spectra.py
+===========================================================
+GWpy.Ex: comparing a Channel's `Spectrum` between two times
+===========================================================
 
 Problem
 -------
@@ -26,12 +24,12 @@ and how long we want to search each one
 .. literalinclude:: ../../examples/gw_ex_compare_spectra.py
    :lines: 25
 
-Then we can fetch the :class:`~gwpy.timeseries.core.TimeSeries` data for both times for the in-loop photodiode signal for the intensity stabilisation servo of the pre-stabilised laser:
+Then we can fetch the :class:`~gwpy.timeseries.core.TimeSeries` data for both times for the in-loop photodiode signal for the intensity stabilisation servo (ISS) of the pre-stabilised laser (PSL):
 
 .. literalinclude:: ../../examples/gw_ex_compare_spectra.py
    :lines: 16,28-31
 
-We can now calculate the amplitude spectral density for each time,
+We can now calculate the amplitude spectral density (ASD) for each time using the :meth:`~gwpy.timeseries.core.TimeSeries.asd` method,
 
 .. literalinclude:: ../../examples/gw_ex_compare_spectra.py
    :lines: 34-35
@@ -51,12 +49,6 @@ The extra peak at 620 Hz is worrying, so we can zoom in around that frequency ra
    plot.xlim = [600, 640]
    plot.refresh()
 
-.. plot::
-
-   execfile('../examples/gw_ex_compare_spectra.py')
-   plot.logx = False
-   plot.xlim = [600, 640]
-   plot.ylim = [1e-6, 5e-4]
-   plot.refresh()
+.. plot:: ../examples/gw_ex_compare_spectra_zoom.py
 
 That needs investigating, better call it in!
