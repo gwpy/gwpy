@@ -224,6 +224,10 @@ doxylink = {'lalsuite' : ('../../lalsuite/doxygen/lalsuite_dox.tag',
                           '/lal/nightly/docs/html/')}
 
 # matplotlib plot directive
-extensions.extend(['matplotlib.sphinxext.only_directives',
-                   'matplotlib.sphinxext.plot_directive'])
+extensions.append('matplotlib.sphinxext.plot_directive')
 plot_basedir = os.getcwd()
+from matplotlib import rcParams
+rcParams['text.usetex'] = True
+from gwpy.plotter import GWPY_PLOT_PARAMS as plot_rcparams
+
+numpydoc_show_class_members = False

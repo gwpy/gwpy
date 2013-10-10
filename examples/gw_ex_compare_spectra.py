@@ -20,15 +20,15 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 # set the times
-goodtime = Time(1061800700, format='gps')
-badtime = Time(1061524816, format='gps')
-duration = TimeDelta(120, format='sec')
+goodtime = 1061800700
+badtime = 1061524816
+duration = 120
 
 # read the data over the network
 gooddata = TimeSeries.fetch('L1:PSL-ISS_PDB_OUT_DQ', goodtime,
-                            goodtime+duration)
+                            goodtime+duration, verbose=True)
 baddata = TimeSeries.fetch('L1:PSL-ISS_PDB_OUT_DQ', badtime,
-                           badtime+duration)
+                           badtime+duration, verbose=True)
 
 # calculate spectrum with 1.8 Hz resolution
 goodasd = gooddata.asd(8, 4, 'welch')
@@ -40,8 +40,11 @@ plot.add_spectrum(goodasd)
 plot.xlim = [10, 8000]
 plot.ylim = [1e-6, 5e-4]
 
-from gwpy.plotter import IS_INTERACTIVE
-if not IS_INTERACTIVE and not '__IPYTHON__' in globals():
-    outfile = __file__.replace('.py', '.png')
-    plot.save(outfile)
-    print("Example output saved as\n%s" % outfile)
+if __name__ == '__main__':
+    try:
+        outfile = __file__.replace('.py', '.png')
+    except NameError:
+        pass
+    else:
+        plot.save(outfile)
+        print("Example output saved as\n%s" % outfile)

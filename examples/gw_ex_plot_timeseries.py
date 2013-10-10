@@ -22,13 +22,17 @@ __version__ = version.version
 start = Time('2010-09-16 06:42:00', format='iso', scale='utc')
 end = Time('2010-09-16 06:43:00', format='iso', scale='utc')
 
-# find the data: uses glue.datafind service
-connection = datafind.GWDataFindHTTPConnection()
-framecache = connection.find_frame_urls('H', 'H1_LDAS_C02_L2',
-                                        start.gps, end.gps, urltype='file')
-
 # make timeseries
-data = TimeSeries.read(framecache, 'H1:LDAS-STRAIN', epoch=start.gps, duration=60)
+data = TimeSeries.fetch('H1:LDAS-STRAIN', start, end)
 
 # plot
 plot = data.plot()
+
+if __name__ == '__main__':
+    try:
+        outfile = __file__.replace('.py', '.png')
+    except NameError:
+        pass
+    else:
+        plot.save(outfile)
+        print("Example output saved as\n%s" % outfile)

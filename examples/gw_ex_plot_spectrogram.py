@@ -26,17 +26,17 @@ data = TimeSeries.fetch('H1:LDAS-STRAIN', start.gps, end.gps, verbose=True)
 # calculate spectrogram
 specgram = data.spectrogram(1)
 specgram **= 1/2.
-speclog = specgram.to_logf()
-medratio = speclog.ratio('median')
+medratio = specgram.ratio('median')
 
 # plot
 plot = medratio.plot()
+plot.logy = True
+plot.ylim = [40, 4096]
 plot.add_colorbar(log=True, clim=[0.1, 10], label='ASD ratio to median average')
 plot.ylabel = 'Frequency (Hz)'
 plot.ylim = [40, 4000]
 
-from gwpy.plotter import IS_INTERACTIVE
-if not IS_INTERACTIVE and not '__IPYTHON__' in globals():
+if __name__ == '__main__':
     try:
         outfile = __file__.replace('.py', '.png')
     except NameError:
@@ -44,6 +44,3 @@ if not IS_INTERACTIVE and not '__IPYTHON__' in globals():
     else:
         plot.save(outfile)
         print("Example output saved as\n%s" % outfile)
-else:
-    plot.auto_refresh = True
-    plot.show()
