@@ -354,6 +354,46 @@ class Plot(figure.Figure):
         return ax.scatter(numpy.asarray(x), numpy.asarray(y), **kwargs)
 
     @auto_refresh
+    def _imshow(self, image, projection=None, ax=None, newax=False,
+                 **kwargs):
+        """Internal `Plot` method to imshow onto the most
+        favourable `Axes`
+
+        Parameters
+        ----------
+        x : array-like
+            x positions of the line points (in axis coordinates)
+        y : array-like
+            y positions of the line points (in axis coordinates)
+        projection : `str`, optional, default: `None`
+            name of the Axes projection on which to plot
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
+        **kwargs.
+            other keyword arguments passed to the
+            :meth:`matplotlib.axes.Axes.imshow` function
+
+        Returns
+        -------
+        Collection
+            the :class:`~matplotlib.image.AxesImage` for this image
+        """
+        # find relevant axes
+        if ax is None and not newax:
+            try:
+                ax = self._find_axes(projection)
+            except IndexError:
+                newax = True
+        if newax:
+            ax = self._add_new_axes(projection=projection)
+        # plot on axes
+        return ax.imshow(image, **kwargs)
+
+    @auto_refresh
     def add_line(self, x, y, *args, **kwargs):
         """Add a line to the current plot
 
@@ -413,7 +453,27 @@ class Plot(figure.Figure):
         return self._scatter(x, y, **kwargs)
 
     @auto_refresh
-    def add_timeseries(self, timeseries, projeciton='timeseries',
+    def add_image(self, image, projection=None, ax=None, newax=False, **kwargs):
+        """Add a 2-D image to this plot
+
+        Parameters
+        ----------
+        image : `numpy.ndarray`
+            2-D array of data for the image
+        **kwargs
+            other keyword arguments are passed to the
+            :meth:`matplotlib.axes.Axes.imshow` function
+
+        Returns
+        -------
+        image : :class:`~matplotlib.image.AxesImage`
+        """
+        return self._imshow(image, projection=projection, ax=ax, newax=newax,
+                            **kwargs)
+
+
+    @auto_refresh
+    def add_timeseries(self, timeseries, projection='timeseries',
                        ax=None, newax=False, **kwargs):
         """Add a :class:`~gwpy.timeseries.core.TimeSeries` trace to this plot
 
