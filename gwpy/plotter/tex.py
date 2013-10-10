@@ -63,6 +63,8 @@ def label_to_latex(text):
     """Convert an abitrary string of text into a latex-passable
     representation.
     """
+    if text is None:
+        return ''
     for ch in LATEX_CONTROL_CHARS:
         text = text.replace(ch, "\\%s" % ch)
     return text
