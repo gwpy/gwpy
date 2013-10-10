@@ -37,7 +37,8 @@ badasd = baddata.asd(8, 4, 'welch')
 # plot
 plot = badasd.plot()
 plot.add_spectrum(goodasd)
-plot.xlim = [10, 8000]
+plot.logx = False
+plot.xlim = [600, 640]
 plot.ylim = [1e-6, 5e-4]
 
 if __name__ == '__main__':

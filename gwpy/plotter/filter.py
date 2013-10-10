@@ -52,9 +52,8 @@ class BodePlot(Plot):
         super(BodePlot, self).__init__(**kwargs)
 
         # delete the axes, and create two more
-        self.figure.delaxes(self.axes)
-        self.figure.add_subplot(2, 1, 1)
-        self.figure.add_subplot(2, 1, 2, sharex=self.maxes)
+        self.add_subplot(2, 1, 1, projection='spectrum')
+        self.add_subplot(2, 1, 2, projection='spectrum', sharex=self.maxes)
 
         # auto set log and frequencies
         if logx is not False and frequencies is None and sample_rate:
@@ -95,13 +94,13 @@ class BodePlot(Plot):
     def maxes(self):
         """:class:`~matplotlib.axes.Axes` for the Bode magnitude
         """
-        return self.axeslist[0]
+        return self.axes[0]
 
     @property
     def paxes(self):
         """:class:`~matplotlib.axes.Axes` for the Bode phase
         """
-        return self.axeslist[1]
+        return self.axes[1]
 
     def add_filter(self, filter_, frequencies=None, sample_rate=None,
                    **kwargs):

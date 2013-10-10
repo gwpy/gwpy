@@ -4,7 +4,7 @@
 """
 
 import numpy
-from scipy import interpolate
+import scipy
 from astropy import units
 
 from ..data import Array2D
@@ -71,6 +71,10 @@ class Spectrogram(Array2D):
     epoch = property(TimeSeries.epoch.__get__, TimeSeries.epoch.__set__,
                      TimeSeries.epoch.__delete__,
                      """Starting GPS epoch for this `Spectrogram`""")
+
+    span = property(TimeSeries.span.__get__, TimeSeries.span.__set__,
+                    TimeSeries.span.__delete__,
+                    """GPS [start, stop) span for this `Spectrogram`""")
 
     dt = property(TimeSeries.dt.__get__, TimeSeries.dt.__set__,
                   TimeSeries.dt.__delete__,
@@ -149,9 +153,11 @@ class Spectrogram(Array2D):
                               df=self.df, logf=self.logf)
 
     def plot(self, **kwargs):
+        """Plot the data for this `Spectrogram`
+        """
         from ..plotter import SpectrogramPlot
-
         return SpectrogramPlot(self, **kwargs)
+
 
     def to_logf(self, fmin=None, fmax=None, num=None):
         """Convert this `Spectrogram`` into logarithmic scale.
@@ -166,9 +172,9 @@ class Spectrogram(Array2D):
         new = self.__class__(numpy.zeros((self.shape[0], logf.size)),
                              epoch=self.epoch, dt=self.dt, unit=self.unit)
         for i in range(self.shape[0]):
-            interpolator = interpolate.interp1d(linf[-logf.size:],
-                                                self.data[i, -logf.size:],
-                                                axis=0)
+            interpolator = scipy.interpolate.interp1d(linf[-logf.size:],
+                                                      self.data[i, -logf.size:],
+                                                      axis=0)
             new.data[i, :] = interpolator(logf)
         new.metadata = self.metadata.copy()
         new.f0 = logf[0]
@@ -220,3 +226,24 @@ class Spectrogram(Array2D):
                 raise ValueError("Cannot determine dt (time-spacing) for "
                                  "Spectrogram from inputs")
         return Spectrogram(data, logf=s1.logf, **kwargs)
+
+    def percentile(self, percentile):
+        """Calculate a given spectral percentile for this `SpectralVariance`
+
+        Parameters
+        ----------
+        percentile : `float`
+            percentile (0 - 100) of the bins to compute
+
+        Returns
+        -------
+        spectrum : :class:`~gwpy.spectrum.core.Spectrum`
+            the given percentile `Spectrum` calculated from this
+            `SpectralVaraicence`
+        """
+        out = scipy.percentile(self.data, percentile, axis=0)
+        name = '%s %s%% percentile' % (self.name, percentile)
+        return Spectrum(out, epoch=self.epoch, channel=self.channel,
+                        name=name, logf=self.logx, f0=self.f0, df=self.df,
+                        frequencies=(hasattr(self, '_frequencies') and
+                                     self.frequencies or None))

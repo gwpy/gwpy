@@ -13,9 +13,8 @@ try:
     os.environ['DISPLAY']
 except KeyError:
     matplotlib.use('agg', warn=False)
-    IS_INTERACTIVE = False
-else:
-    IS_INTERACTIVE = matplotlib.is_interactive()
+
+from matplotlib import pyplot
 rcParams = matplotlib.rcParams
 
 from .. import version
@@ -23,24 +22,21 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-from .core import *
-from .ticks import *
-from .histogram import *
-from .timeseries import *
-from .spectrum import *
-from .spectrogram import *
-from .table import *
-from .gwf import *
-from .filter import *
+from .tex import USE_TEX
 
-USE_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
+from .timeseries import *
+from .spectrogram import *
+from .spectrum import *
+from .segments import *
+from .filter import *
+from .core import Plot
 
 GWPY_PLOT_PARAMS = {
     "axes.grid": True,
     "axes.axisbelow": False,
     "axes.labelsize": 22,
-    'figure.subplot.bottom': 0.12,
-    'figure.subplot.left': 0.13,
+    'figure.subplot.bottom': 0.13,
+    'figure.subplot.left': 0.15,
     'figure.subplot.right': 0.88,
     'figure.subplot.top': 0.88,
     "image.aspect": 'auto',
@@ -48,7 +44,13 @@ GWPY_PLOT_PARAMS = {
     "image.origin": 'lower',
     "xtick.labelsize": 20,
     "ytick.labelsize": 20}
-if USE_TEX:
+if rcParams['text.usetex'] or USE_TEX:
     GWPY_PLOT_PARAMS.update({"text.usetex": True, "font.family": "serif",
                              "font.serif": ["Computer Modern"]})
 rcParams.update(GWPY_PLOT_PARAMS)
+
+
+def figure(*args, **kwargs):
+    kwargs.setdefault('FigureClass', Plot)
+    return pyplot.figure(*args, **kwargs)
+figure.__doc__ = pyplot.figure.__doc__

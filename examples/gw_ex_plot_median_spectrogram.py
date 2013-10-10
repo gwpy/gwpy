@@ -25,15 +25,14 @@ data = TimeSeries.fetch('H1:LDAS-STRAIN', start.gps, end.gps, verbose=True)
 
 # calculate spectrogram
 specgram = data.spectrogram(1)
-specgram **= 1/2.
+asdspecgram = specgram ** (1/2.)
+medratio = asdspecgram.ratio('median')
 
 # plot
-plot = specgram.plot()
+plot = medratio.plot()
 plot.logy = True
 plot.ylim = [40, 4096]
-plot.add_colorbar(log=True, clim=[1e-23, 1e-20],
-                  label='Amplitude spectral density '
-                        '[strain $/\\sqrt{\\mathrm{Hz}}$]')
+plot.add_colorbar(log=True, clim=[0.1, 10], label='ASD ratio to median average')
 plot.ylabel = 'Frequency [Hz]'
 plot.ylim = [40, 4000]
 

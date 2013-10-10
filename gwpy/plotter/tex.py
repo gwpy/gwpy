@@ -19,6 +19,8 @@
 """Handle TeX formatting for matplotlib output
 """
 
+import os
+
 from astropy import units
 from astropy.units.format import (latex as ulatex, utils as uutils)
 
@@ -27,6 +29,8 @@ from lal import git_version
 __author__ = "Duncan M. Macleod <duncan.macleod@ligo.org>"
 __version__ = git_version.id
 __date__ = git_version.date
+
+USE_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
 
 LATEX_CONTROL_CHARS = ["%", "\\", "_", "~"]
 
@@ -59,6 +63,8 @@ def label_to_latex(text):
     """Convert an abitrary string of text into a latex-passable
     representation.
     """
+    if text is None:
+        return ''
     for ch in LATEX_CONTROL_CHARS:
         text = text.replace(ch, "\\%s" % ch)
     return text

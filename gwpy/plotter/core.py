@@ -1,361 +1,44 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-"""Core classes for building plots in GWpy
+"""Extension of the basic matplotlib Figure for GWpy
 """
 
 import numpy
 
-from matplotlib import (colors as mcolors, ticker as mticker, pyplot as mpl)
+from matplotlib import (axes, figure, pyplot, colors as mcolors,
+                        ticker as mticker)
 try:
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
-from . import (tex, ticks, axis, layer, IS_INTERACTIVE)
-from .decorators import auto_refresh
-
-from .. import version
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__credits__ = "Nick Fotopoulos"
-__version__ = version.version
+from . import tex, axes
+from .decorators import (auto_refresh, axes_method)
 
 
-class Plot(object):
-    """A basic class to describe any plot you might want to make.
-
-    Any instance of Plot will have the following attributes
-
-        - `fig`: the `matplotlib.figure.Figure` instance
-        - `ax`: the `matplotlib.axes.Axes` instance representing
-                the plottable area.
-
-    A new plot can be geneated as follows::
-
-    >>> plot = Plot()
-    >>> plot.add_line([1,2,3,4,5,6,7,8], [3,4,3,2,3,4,3,2])
-    >>> plot.show()
-
-    Parameters
-    ----------
-    figure : :class:`~matplotlib.figure.Figure`, optional, default: `None`
-        the parent figure for this new plot
-    auto_refresh : `bool`, optional, default: `True`
-        update the interactive plot whenever any changes are made to
-        layers, labels, or limits
-    **kwargs
-        other keyword arguments are passed to the generator for a new
-        :class:`~matplotlib.figure.Figure`
-
-    Returns
-    -------
-    plot
-        a new `Plot`
-
-    Attributes
-    ----------
-    xlabel
-    ylabel
-    colorlabel
-    title
-    subtitle
-    xlim
-    ylim
-    colorlim
-    logx
-    logy
-    logcolor
-
-    Methods
-    -------
-    add_bars
-    add_colorbar
-    add_image
-    add_legend
-    add_line
-    add_patch
-    add_rectangle
-    add_scatter
-    add_spectrogram
-    add_spectrum
-    add_timeseries
-    close
-    refresh
-    save
-    show
+class Plot(figure.Figure):
+    """An extension of the matplotib :class:`~matplotlib.figure.Figure`
+    object for GWpy
     """
-    __slots__ = ['xlabel', 'ylabel', 'colorlabel', 'title', 'subtitle',
-                 'xlim', 'ylim', 'colorlim', 'logx', 'logy', 'logcolor',
-                 '_figure', '_axes', '_layers', '_auto_refresh', 'colorbar']
+    def __new__(cls, *args, **kwargs):
+        """Construct a new `Plot`
 
-    def __init__(self, figure=None, auto_refresh=IS_INTERACTIVE, **kwargs):
-        """Initialise a new plot.
+        This constructor will use the ``pyplot`` covenience method
+        :meth:`~matplotlib.pyplot.figure` to generate a new figure
         """
-        # generate figure
-        if figure:
-            self._figure = figure
+        called_from_pyplot = kwargs.pop('called_from_pyplot', False)
+        if called_from_pyplot:
+            return super(Plot, cls).__new__(cls)
+            #new.__init__(**kwargs)
         else:
-            self._figure = mpl.figure(**kwargs)
+            kwargs.setdefault('FigureClass', cls)
+            kwargs.setdefault('called_from_pyplot', True)
+            return pyplot.figure(**kwargs)
 
-        # generate the axes
-        self._axes = self.figure.gca()
-
-        # record layers
-        self._layers = layer.LayerCollection()
-
-        # set auto refresh
+    def __init__(self, auto_refresh=False, **kwargs):
+        if kwargs.pop('called_from_pyplot', False):
+            super(Plot, self).__init__(**kwargs)
         self._auto_refresh = auto_refresh
-        if self._auto_refresh:
-            self.show()
-
-    # -----------------------------------------------
-    # basic properties
-
-    @property
-    def figure(self):
-        """This plot's underlying :class:`~matplotlib.figure.Figure`
-        """
-        return self._figure
-
-    @property
-    def axes(self):
-        """This plot's primary :class:`~matplotlib.axes.Axes`
-        """
-        return self.figure.axes[0]
-
-    @property
-    def axeslist(self):
-        """A list of all axes contained within this
-        :class:`~matplotlib.figure.Figure`
-        """
-        return self.figure.axes
-
-    @property
-    def legend(self):
-        """This plot's :class:`~matplotlib.legend.Legend`
-        """
-        return self.axes.legend_
-
-    # -----------------------------------------------
-    # text properties
-
-    # x-axis label
-    @property
-    def xlabel(self):
-        """Label for the x-axis
-
-        :type: :class:`~matplotlib.text.Text`
-        """
-        return self.axes.xaxis.label
-    @xlabel.setter
-    @auto_refresh
-    def xlabel(self, text):
-        if isinstance(text, basestring):
-            self.axes.set_xlabel(text)
-        else:
-            self.axes.xaxis.label = text
-    @xlabel.deleter
-    @auto_refresh
-    def xlabel(self):
-        self.axes.set_xlabel("")
-
-    # y-axis label
-    @property
-    def ylabel(self):
-        """Label for the y-axis
-
-        :type: :class:`~matplotlib.text.Text`
-        """
-        return self.axes.yaxis.label
-    @ylabel.setter
-    @auto_refresh
-    def ylabel(self, text):
-        if isinstance(text, basestring):
-            self.axes.set_ylabel(text)
-        else:
-            self.axes.yaxis.label = text
-    @ylabel.deleter
-    @auto_refresh
-    def ylabel(self):
-        self.axes.set_ylabel("")
-
-    # colour-bar label
-    @property
-    def colorlabel(self):
-        """Label for the colour-axis
-
-        :type: :class:`~matplotlib.text.Text`
-        """
-        return self._colorbar.ax.yaxis.label
-    @colorlabel.setter
-    @auto_refresh
-    def colorlabel(self, text):
-        self._colorbar.ax.set_ylabel(text)
-    @colorlabel.deleter
-    @auto_refresh
-    def colorlabel(self):
-        self.colorlabel = ""
-
-    # title
-    def set_title(self, text, **kwargs):
-        self.figure.suptitle(text, **kwargs)
-    set_title.__doc__ = mpl.Figure.suptitle.__doc__
-
-    @property
-    def title(self):
-        """Title for this figure
-
-        :type: :class:`~matplotlib.text.Text`
-
-        Notes
-        -----
-        The :attr:`Plot.title` attribute is set as the title for the
-        enclosing :class:`~matplotlib.figure.Figure` and is centred on that
-        frame, rather than the :class:`~matplotlib.axes.AxesSubPlot`
-        """
-        return self.figure._suptitle
-
-    @title.setter
-    @auto_refresh
-    def title(self, text):
-        self.set_title(text)
-
-    @title.deleter
-    @auto_refresh
-    def title(self):
-        self.title = ""
-
-    # sub-title
-    def set_subtitle(self, text, **kwargs):
-        self.axes.set_title(text, **kwargs)
-    set_subtitle.__doc__ = mpl.Axes.set_title.__doc__
-
-    @property
-    def subtitle(self):
-        """Sub-title for this figure
-
-        :type: :class:`~matplotlib.text.Text`
-
-        Notes
-        -----
-        The :attr:`Plot.subtitle` attribute is set as the title for the
-        enclosing :class:`~matplotlib.axes.AxesSubPlot` and is centred on that
-        frame, rather than the parent :class:`~matplotlib.figure.Figure`
-        """
-        return self.axes.title
-    @subtitle.setter
-    @auto_refresh
-    def subtitle(self, text):
-        if isinstance(text, basestring):
-            self.set_subtitle(text)
-        else:
-            self.axes.title = text
-    @subtitle.deleter
-    @auto_refresh
-    def subtitle(self):
-        self.subtitle = ""
-
-    # -----------------------------------------------
-    # limit properties
-
-    @property
-    def xlim(self):
-        """Limits for the x-axis
-
-        :type: `tuple`
-        """
-        return self.axes.get_xlim()
-    @xlim.setter
-    @auto_refresh
-    def xlim(self, limits):
-        self.axes.set_xlim(*limits)
-    @xlim.deleter
-    @auto_refresh
-    def xlim(self):
-        self.axes.relim()
-        self.axes.autoscale_view(scalex=True, scaley=False)
-
-    @property
-    def ylim(self):
-        """Limits for the y-axis
-
-        :type: `tuple`
-        """
-        return self.axes.get_ylim()
-    @ylim.setter
-    @auto_refresh
-    def ylim(self, limits):
-        self.axes.set_ylim(*limits)
-    @ylim.deleter
-    def ylim(self):
-        self.axes.relim()
-        self.axes.autoscale_view(scalex=False, scaley=True)
-
-    @property
-    def colorlim(self):
-        """Limits for the colour-axis
-
-        :type: `tuple`
-        """
-        return self._colorbar.get_clim()
-    @colorlim.setter
-    @auto_refresh
-    def colorlim(self, limits):
-        self._colorbar.set_clim(*limits)
-        self._colorbar.draw_all()
-
-    # -----------------------------------------------
-    # scale properties
-
-    @property
-    def logx(self):
-        """Display the x-axis with a logarithmic scale
-
-        :type: `bool`
-        """
-        return self.axes.get_xscale() == "log"
-    @logx.setter
-    @auto_refresh
-    def logx(self, log):
-        self.axes.set_xscale(log and "log" or "linear")
-
-    @property
-    def logy(self):
-        """Display the y-axis with a logarithmic scale
-
-        :type: `bool`
-        """
-        return self.axes.get_yscale() == "log"
-    @logy.setter
-    @auto_refresh
-    def logy(self, log):
-        self.axes.set_yscale(log and "log" or "linear")
-
-    @property
-    def logcolor(self):
-        """Display the colour-axis with a logarithmic scale
-
-        :type: `bool`
-        """
-        return self._logcolor
-    @logcolor.setter
-    @auto_refresh
-    def logcolor(self, log):
-        if hasattr(self, '_logcolor') and self._logcolor == log:
-            return
-        if hasattr(self, '_colorbar'):
-            clim = self._colorbar.get_clim()
-            self.figure.delaxes(self._colorbar.ax)
-            del self._colorbar
-            self.add_colorbar(log=log, clim=clim)
-        else:
-            self._logcolor = log
-            for mappable in self._layers.values():
-                if hasattr(mappable, 'norm'):
-                    if log:
-                        mappable.set_norm(mcolors.LogNorm(*mappable.get_clim()))
-                    else:
-                        mappable.set_norm(
-                            mcolors.Normalize(*mappable.get_clim()))
+        self.coloraxes = []
 
     # -----------------------------------------------
     # core plot operations
@@ -363,13 +46,13 @@ class Plot(object):
     def refresh(self):
         """Refresh the current figure
         """
-        self.figure.canvas.draw()
+        self.canvas.draw()
 
     def show(self):
         """Display the current figure
         """
-        self.figure.patch.set_alpha(0.0)
-        self.figure.show()
+        self.patch.set_alpha(0.0)
+        super(Plot, self).show()
 
     def save(self, *args, **kwargs):
         """Save the figure to disk.
@@ -378,204 +61,28 @@ class Plot(object):
         method of the underlying `matplotlib.figure.Figure`
         self.fig.savefig(*args, **kwargs)
         """
-        self.figure.savefig(*args, **kwargs)
+        self.savefig(*args, **kwargs)
 
     def close(self):
         """Close the plot and release its memory.
         """
-        mpl.close(self.figure)
-
-    # -----------------------------------------------
-    # add layers
-
-    @auto_refresh
-    def add_line(self, x, y, **kwargs):
-        """Add a line to the current plot
-
-        Parameters
-        ----------
-        x : array-like
-            x positions of the line points (in axis coordinates)
-        y : array-like
-            y positions of the line points (in axis coordinates)
-        **kwargs
-            additional keyword arguments passed directly on to
-            the axes :meth:`~matplotlib.axes.Axes.plot` method.
-
-        Returns
-        -------
-        Line2D
-            the :class:`~matplotlib.lines.Line2D` for this line layer
-        """
-        # set kwargs
-        kwargs.setdefault("linestyle", "-")
-        kwargs.setdefault("linewidth", 1)
-        kwargs.setdefault("markersize", 0)
-        # generate layer
-        l = self.axes.plot(numpy.asarray(x), numpy.asarray(y), **kwargs)[0]
-        self._layers.add(l)
-        return l
-
-    @auto_refresh
-    def add_scatter(self, x, y, **kwargs):
-        """Add a set or points to the current plot
-
-        Parameters
-        ----------
-        x : array-like
-            x-axis data points
-        y : array-like
-            y-axis data points
-        **kwargs.
-            other keyword arguments passed to the
-            :meth:`matplotlib.axes.Axes.scatter` function
-
-        Returns
-        -------
-        Collection
-            the :class:`~matplotlib.collections.Collection` for this
-            scatter layer
-        """
-        kwargs.setdefault("s", 20)
-        l = self.axes.scatter(x, y, **kwargs)
-        self._layers.add(l)
-        return l
-
-    @auto_refresh
-    def add_bars(self, left, height, width=0.8, bottom=None, **kwargs):
-        """Add a set of bars to the current plot
-
-        Parameters
-        ----------
-        left : array-like
-            left edge points for each bar
-        height : array-like
-            height of each bar
-        width : `float` or array-like, optional, default: 0.8
-            the width(s) of the bars
-        bottom : scalar of array-like, optional, default: `None`
-            the bottom(s) of the bars
-        **kwargs
-            other keyword arguments are passed to the
-            :meth:`matplotlib.axes.Axes.bar` function
-
-        Returns
-        -------
-        Container
-            :class:`~matplotlib.container.BarContainer` containing a
-            sequence of :class:`~matplotlib.patches.Rectange` bars
-        """
-        l = self.axes.bar(left, height, width=width, bottom=None, **kwargs)
-        self._layers.add(l)
-        return l
-
-    @auto_refresh
-    def add_rectangle(self, xll, yll, width, height, **kwargs):
-        """Add a rectangle to the current plot
-
-        Parameters
-        ----------
-        xll : `float`
-            lower-left x-coordinate for the rectangle
-        yll : `float`
-            lower-left y-coordinate for the rectangle
-        width : `float`
-            rectangle width
-        height : `float`
-            rectangle height
-        **kwargs
-            other keyword arguments passed directly to the
-            :class:`matplotlib.patches.Rectangle` constructor
-
-        Returns
-        -------
-        Patch
-            the :class:`~matplotlib.patches.Patch` for this rectangle
-        """
-        p = mpl.Rectangle((xll, yll), width, height, **kwargs)
-        l = self.add_patch(p, layer=layer, **kwargs)
-        self._layers.add(l)
-        return l
-
-    @auto_refresh
-    def add_patch(self, patch, **kwargs):
-        """Add a patch to the current plot
-
-        Parameters
-        ----------
-        patch : :class:`~matplotlib.patches.Patch`
-            patch to add to this figure
-        **kwargs
-            keyword arguments passed directly to the
-            :meth:`~matplotlib.axes.Axes.add_patch` function
-
-        Returns
-        -------
-        Patch
-            the input :class:`~matplotlib.patches.Patch`
-        """
-        l = self.axes.add_patch(patch, **kwargs)
-        self._layers.add(l)
-        return l
-
-    @auto_refresh
-    def add_image(self, image, **kwargs):
-        """Add a 2-D image to this plot
-
-        Parameters
-        ----------
-        image : `numpy.ndarray`
-            2-D array of data for the image
-        **kwargs
-            other keyword arguments are passed to the
-            :meth:`matplotlib.axes.Axes.imshow` function
-
-        Returns
-        -------
-        image : :class:`~matplotlib.image.AxesImage`
-        """
-        im = self.axes.imshow(image, **kwargs)
-        self._layers.add(im)
-        return im
-
-    # -----------------------------------------------
-    # Legend
-
-    @auto_refresh
-    def add_legend(self, *args, **kwargs):
-        """Add a legend to the figure
-
-        All non-keyword `args` and `kwargs` are passed directly to the
-        :meth:`~matplotlib.axes.Axes.legend` generator
-
-        Returns
-        -------
-        Legend
-            the :class:`~matplotlib.legend.Legend` for this plot
-        """
-        alpha = kwargs.pop("alpha", 0.8)
-        linewidth = kwargs.pop("linewidth", 8)
-        legend = self.axes.legend(*args, **kwargs)
-        legend.set_alpha(alpha)
-        [l.set_linewidth(linewidth) for l in legend.get_lines()]
-        return self.legend
+        pyplot.close(self)
 
     # -----------------------------------------------
     # colour-bar
 
     @auto_refresh
-    def add_colorbar(self, layer=None, location='right', width=0.2, pad=0.1,
-                     log=False, label="", clim=None, visible=True, **kwargs):
-        """Add a colorbar to the current plot
-
-        The colorbar will be added to modify an existing layer on the
-        figure.
+    def add_colorbar(self, mappable=None, ax=None, location='right',
+                     width=0.2, pad=0.1, log=None, label="", clim=None,
+                     clip=None, visible=True, axes_class=axes.Axes, **kwargs):
+        """Add a colorbar to the current `Axes`
 
         Parameters
         ----------
-        layer : `str`, optional
-            name of layer onto which to attach the colorbar, defaults to
-            the best match
+        mappable : matplotlib data collection
+            collection against which to map the colouring
+        ax : :class:`~matplotlib.axes.Axes`
+            axes from which to steal space for the colour-bar
         location : `str`, optional, default: 'right'
             position of the colorbar
         width : `float`, optional default: 0.2
@@ -602,23 +109,33 @@ class Plot(object):
         Colorbar
             the :class:`~matplotlib.colorbar.Colorbar` added to this plot
         """
-        # remove old colorbar
-        if hasattr(self, 'colorbar'):
-            self.figure.delaxes(self.colorbar.ax)
-            del self.colorbar
-
         # find default layer
-        if layer:
-            mappable = self._layers[layer]
-        else:
-            mappable = self._layers.colorlayer
+        if mappable is None and ax is not None and len(ax.collections):
+            mappable = ax.collections[-1]
+        elif mappable is None and ax is None:
+            for ax in self.axes[::-1]:
+                if hasattr(ax, 'collections') and len(ax.collections):
+                    mappable = ax.collections[-1]
+                    break
+                elif hasattr(ax, 'images') and len(ax.images):
+                    mappable = ax.images[-1]
+                    break
+        if not mappable:
+            raise ValueError("Cannot determine mappable layer for this "
+                             "colorbar")
+
+        # find default axes
+        if not ax:
+            ax = mappable.axes
 
         # get new colour axis
-        divider = make_axes_locatable(self.axes)
+        divider = make_axes_locatable(ax)
         if location == 'right':
-            cax = divider.new_horizontal(size=width, pad=pad)
+            cax = divider.new_horizontal(size=width, pad=pad,
+                                         axes_class=axes_class)
         elif location == 'top':
-            cax = divider.new_vertical(size=width, pad=pad)
+            cax = divider.new_vertical(size=width, pad=pad,
+                                       axes_class=axes_class)
         else:
             raise ValueError("'left' and 'bottom' colorbars have not "
                              "been implemented")
@@ -630,6 +147,8 @@ class Plot(object):
         # set limits
         if not clim:
             clim = mappable.get_clim()
+        if log is None:
+            log = isinstance(mappable, mcolors.LogNorm)
         if log and clim[0] <= 0.0:
             cdata = mappable.get_array()
             try:
@@ -639,7 +158,7 @@ class Plot(object):
         mappable.set_clim(clim)
 
         # set tick format (including sub-ticks for log scales)
-        if mpl.rcParams["text.usetex"]:
+        if pyplot.rcParams["text.usetex"]:
             if log and abs(float.__sub__(*numpy.log10(clim))) >= 2:
                 func = lambda x,pos: (mticker.is_decade(x) and
                                   '$%s$' % tex.float_to_latex(x, '%.4g') or ' ')
@@ -648,11 +167,14 @@ class Plot(object):
             kwargs.setdefault('format', mticker.FuncFormatter(func))
 
         # set log scale
-        if log:
+        norm = mappable.norm
+        if clip is None:
+            clip = norm.clip
+        if log and not isinstance(norm, mcolors.LogNorm):
             mappable.set_norm(mcolors.LogNorm(*mappable.get_clim()))
         else:
             mappable.set_norm(mcolors.Normalize(*mappable.get_clim()))
-        self.logcolor = log
+        mappable.norm.clip = clip
 
         # set tick locator
         if log:
@@ -660,25 +182,313 @@ class Plot(object):
                               mticker.LogLocator(subs=numpy.arange(1,11)))
 
         # make colour bar
-        self.colorbar = self.figure.colorbar(mappable, cax=cax, **kwargs)
+        colorbar = self.colorbar(mappable, cax=cax, **kwargs)
+        self.coloraxes.append(cax)
 
         # set label
         if label:
-            self.colorbar.set_label(label)
-        self.colorbar.draw_all()
+            colorbar.set_label(label)
+        colorbar.draw_all()
 
-        return self.colorbar
+        return colorbar
 
-    # -----------------------------------------------
-    # shortcuts for data-types
+    # -------------------------------------------
+    # GWpy data adding
+    #
+    # These methods try to guess which axes to add to, otherwise generate
+    # a new one
 
-    def add_timeseries(self, timeseries, **kwargs):
+    def _find_all_axes(self, projection=None):
+        """Find all sets of axes for the given projection
+        """
+        allaxes = list(zip(*self._axstack._elements)[-1])
+        allaxes.sort(key=lambda x: x[0])
+        if projection is None:
+            return zip(*allaxes)[1]
+        else:
+            return [ax for idx,ax in allaxes if ax.name == projection.lower()]
+
+    def _find_axes(self, projection=None):
+        """Find the most recently added axes for the given projection
+
+        Raises
+        ------
+        IndexError
+            if no axes for the projection are found
+        """
+        try:
+            return self._find_all_axes(projection)[-1]
+        except IndexError:
+            if projection:
+                raise IndexError("No '%s' Axes found in this Plot" % projection)
+            else:
+                raise IndexError("No Axes found in this Plot")
+
+    def _increment_geometry(self):
+        """Try to determine the geometry to use for a new Axes
+
+        Raises
+        ------
+        ValueError
+            if geometry is ambiguous
+        """
+        if not len(self.axes):
+            return (1, 1, 1)
+        current = self.axes[-1].get_geometry()
+        shape = current[:2]
+        pos = current[2]
+        num = shape[0] * shape[1]
+        if sum(shape) > 2 and pos == num:
+            raise ValueError("Cannot determine where to place next Axes in "
+                             "geomerty %s" % current)
+        elif pos < num:
+            return (shape[0], shape[1], pos+1)
+        elif shape[1] == 1:
+            return (shape[0] + 1, 1, pos+1)
+        else:
+            return (1, shape[1] + 1, pos+1)
+
+    def _add_new_axes(self, projection):
+        geometry = self._increment_geometry()
+        ax = self.add_subplot(*geometry, projection=projection)
+        if (geometry[0] == 1 or geometry[1] == 1 and
+            geometry[2] == (geometry[0] * geometry[1])):
+            idx = geometry[0] == 1 and 1 or 0
+            geom = [geometry[0], geometry[1], 1]
+            for i,ax_ in enumerate(self.axes[:-1]):
+                ax_.change_geometry(*geom)
+                geom[idx] += 1
+                geom[2] += 1
+        return ax
+
+    @auto_refresh
+    def _plot(self, x, y, *args, **kwargs):
+        """Add a line to the current plot
+
+        Parameters
+        ----------
+        x : array-like
+            x positions of the line points (in axis coordinates)
+        y : array-like
+            y positions of the line points (in axis coordinates)
+        projection : `str`, optional, default: `'timeseries'`
+            name of the Axes projection on which to plot
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
+        **kwargs
+            additional keyword arguments passed directly on to
+            the axes :meth:`~matplotlib.axes.Axes.plot` method.
+
+        Returns
+        -------
+        Line2D
+            the :class:`~matplotlib.lines.Line2D` for this line layer
+        """
+        # get axes options
+        projection = kwargs.pop('projection', None)
+        ax = kwargs.pop('ax', None)
+        newax = kwargs.pop('newax', False)
+
+        # set kwargs
+        kwargs.setdefault("linestyle", "-")
+        kwargs.setdefault("linewidth", 1)
+        kwargs.setdefault("markersize", 0)
+
+        # find relevant axes
+        if ax is None and not newax:
+            try:
+                ax = self._find_axes(projection)
+            except IndexError:
+                newax = True
+        if newax:
+            ax = self._add_new_axes(projection=projection)
+        # plot on axes
+        return ax.plot(numpy.asarray(x), numpy.asarray(y), **kwargs)[0]
+
+    @auto_refresh
+    def _scatter(self, x, y, projection=None, ax=None, newax=False,
+                 **kwargs):
+        """Internal `Plot` method to scatter onto the most
+        favourable `Axes`
+
+        Parameters
+        ----------
+        x : array-like
+            x positions of the line points (in axis coordinates)
+        y : array-like
+            y positions of the line points (in axis coordinates)
+        projection : `str`, optional, default: `None`
+            name of the Axes projection on which to plot
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
+        **kwargs.
+            other keyword arguments passed to the
+            :meth:`matplotlib.axes.Axes.scatter` function
+
+        Returns
+        -------
+        Collection
+            the :class:`~matplotlib.collections.Collection` for this
+            scatter layer
+        """
+        # set kwargs
+        kwargs.setdefault("s", 20)
+
+        # find relevant axes
+        if ax is None and not newax:
+            try:
+                ax = self._find_axes(projection)
+            except IndexError:
+                newax = True
+        if newax:
+            ax = self._add_new_axes(projection=projection)
+        # plot on axes
+        return ax.scatter(numpy.asarray(x), numpy.asarray(y), **kwargs)
+
+    @auto_refresh
+    def _imshow(self, image, projection=None, ax=None, newax=False,
+                 **kwargs):
+        """Internal `Plot` method to imshow onto the most
+        favourable `Axes`
+
+        Parameters
+        ----------
+        x : array-like
+            x positions of the line points (in axis coordinates)
+        y : array-like
+            y positions of the line points (in axis coordinates)
+        projection : `str`, optional, default: `None`
+            name of the Axes projection on which to plot
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
+        **kwargs.
+            other keyword arguments passed to the
+            :meth:`matplotlib.axes.Axes.imshow` function
+
+        Returns
+        -------
+        Collection
+            the :class:`~matplotlib.image.AxesImage` for this image
+        """
+        # find relevant axes
+        if ax is None and not newax:
+            try:
+                ax = self._find_axes(projection)
+            except IndexError:
+                newax = True
+        if newax:
+            ax = self._add_new_axes(projection=projection)
+        # plot on axes
+        return ax.imshow(image, **kwargs)
+
+    @auto_refresh
+    def add_line(self, x, y, *args, **kwargs):
+        """Add a line to the current plot
+
+        Parameters
+        ----------
+        x : array-like
+            x positions of the line points (in axis coordinates)
+        y : array-like
+            y positions of the line points (in axis coordinates)
+        projection : `str`, optional, default: `None`
+            name of the Axes projection on which to plot
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
+        **kwargs
+            additional keyword arguments passed directly on to
+            the axes :meth:`~matplotlib.axes.Axes.plot` method.
+
+        Returns
+        -------
+        Line2D
+            the :class:`~matplotlib.lines.Line2D` for this line layer
+        """
+        return self._plot(x, y, *args, **kwargs)
+
+    @auto_refresh
+    def add_scatter(self, x, y, **kwargs):
+        """Add a set or points to the current plot
+
+        Parameters
+        ----------
+        x : array-like
+            x-axis data points
+        y : array-like
+            y-axis data points
+        projection : `str`, optional, default: `None`
+            name of the Axes projection on which to plot
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
+        **kwargs.
+            other keyword arguments passed to the
+            :meth:`matplotlib.axes.Axes.scatter` function
+
+        Returns
+        -------
+        Collection
+            the :class:`~matplotlib.collections.Collection` for this
+            scatter layer
+        """
+        return self._scatter(x, y, **kwargs)
+
+    @auto_refresh
+    def add_image(self, image, projection=None, ax=None, newax=False, **kwargs):
+        """Add a 2-D image to this plot
+
+        Parameters
+        ----------
+        image : `numpy.ndarray`
+            2-D array of data for the image
+        **kwargs
+            other keyword arguments are passed to the
+            :meth:`matplotlib.axes.Axes.imshow` function
+
+        Returns
+        -------
+        image : :class:`~matplotlib.image.AxesImage`
+        """
+        return self._imshow(image, projection=projection, ax=ax, newax=newax,
+                            **kwargs)
+
+
+    @auto_refresh
+    def add_timeseries(self, timeseries, projection='timeseries',
+                       ax=None, newax=False, **kwargs):
         """Add a :class:`~gwpy.timeseries.core.TimeSeries` trace to this plot
 
         Parameters
         ----------
         timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
             the TimeSeries to display
+        projection : `str`, optional, default: `'timeseries'`
+            name of the Axes projection on which to plot
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
         **kwargs
             other keyword arguments for the `Plot.add_line` function
 
@@ -687,16 +497,26 @@ class Plot(object):
         Line2D
             the :class:`~matplotlib.lines.Line2D` for this line layer
         """
-        kwargs.setdefault('label', timeseries.name)
-        return self.add_line(timeseries.times, timeseries, **kwargs)
+        return self.add_array(timeseries, 'timeseries',
+                              ax=ax, newax=newax, **kwargs)
 
-    def add_spectrum(self, spectrum, **kwargs):
+    @auto_refresh
+    def add_spectrum(self, spectrum, projection='spectrum', ax=None,
+                     newax=False, **kwargs):
         """Add a :class:`~gwpy.spectrum.core.Spectrum` trace to this plot
 
         Parameters
         ----------
-        spectum : :class:`~gwpy.spectrum.core.Spectrum`
-            the Spectrum to display
+        spectrum : :class:`~gwpy.spectrum.core.spectrum`
+            the `Spectrum` to display
+        projection : `str`, optional, default: `'Spectrum'`
+            name of the Axes projection on which to plot
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
         **kwargs
             other keyword arguments for the `Plot.add_line` function
 
@@ -705,69 +525,204 @@ class Plot(object):
         Line2D
             the :class:`~matplotlib.lines.Line2D` for this line layer
         """
-        kwargs.setdefault('label', spectrum.name)
-        return self.add_line(spectrum.frequencies, spectrum, **kwargs)
+        return self.add_array(spectrum, 'spectrum',
+                              ax=ax, newax=newax, **kwargs)
 
-    def add_spectrogram(self, spectrogram, **kwargs):
-        """Add a :class:`~gwpy.spectrogram.core.Spectrogram` trace
-        to this plot
+    @auto_refresh
+    def add_spectrogram(self, spectrogram, projection='timeseries',
+                        ax=None, newax=False, **kwargs):
+        """Add a :class:`~gwpy.spectrogram.core.Spectrogram` trace to
+        this plot
 
         Parameters
         ----------
         spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
-            the Spectrogram to display
+            the `Spectrogram` to display
+        projection : `str`, optional, default: `timeseries`
+            name of the Axes projection on which to plot
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
         **kwargs
-            other keyword arguments for the `Plot.add_image` function
+            other keyword arguments for the `Plot.add_line` function
 
         Returns
         -------
         Line2D
             the :class:`~matplotlib.lines.Line2D` for this line layer
         """
-        kwargs.setdefault('label', spectrogram.name)
-        im = spectrogram.data.T
-        nf, nt = im.shape
-        freqs = spectrogram.frequencies
-        extent = (kwargs.pop('extent', None) or 
-                  [spectrogram.epoch.gps, (spectrogram.epoch.gps +
-                                           float(nt*spectrogram.dt.value)),
-                   numpy.float64(freqs.min()), numpy.float64(freqs.max())])
-        self.add_image(im, extent=extent, **kwargs)
-
-    def transform_axis(self, axis, func):
-        for layer in self._layers.values():
-            ticks.transform(layer, axis, func)
-        if axis == "x":
-            self.axes.set_xlim(map(func, self.axes.get_xlim()))
-            self.axes.xaxis.set_data_interval(
-                *map(func, self.axes.xaxis.get_data_interval()), ignore=True)
-        else:
-            self.axes.set_ylim(map(func, self.axes.get_ylim()))
-            self.axes.yaxis.set_data_interval(
-                *map(func, self.axes.yaxis.get_data_interval()), ignore=True)
-
-    # -----------------------------------------------
-    # utilities
+        return self.add_array(spectrogram, 'timeseries',
+                              ax=ax, newax=newax, **kwargs)
 
     @auto_refresh
-    def add_label_unit(self, unit, axis="x"):
-        attr = "%slabel" % axis
-        label = getattr(self, attr).get_text()
-        if not label:
-            label = unit.__doc__
-        if mpl.rcParams.get("text.usetex", False):
-            unitstr = tex.unit_to_latex(unit)
-        else:
-            unitstr = unit.to_string()
-        if label:
-            setattr(self, attr, "%s (%s)" % (label, unitstr))
-        else:
-            setattr(self, attr, unitstr)
+    def add_array(self, array, projection, ax=None, newax=False, **kwargs):
+        """Add a :class:`~gwpy.data.array.Array` to this plot
+
+        Parameters
+        ----------
+        array : :class:`~gwpy.data.array.Array`
+            the `Array` to display
+        projection : `str`
+        ax : :class:`~gwpy.plotter.axes.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
+        **kwargs
+            other keyword arguments for the `Plot.add_line` function
+
+        Returns
+        -------
+        Artist : :class:`~matplotlib.artist.Artist`
+            the layer return from the relevant plotting function
+        """
+        # find relevant axes
+        if ax is None and not newax:
+            try:
+                ax = self._find_axes(projection)
+            except IndexError:
+                newax = True
+        if newax:
+            ax = self._add_new_axes(projection=projection)
+        # plot on axes
+        return ax.plot(array, **kwargs)
+
+    # -------------------------------------------
+    # Plot legend
 
     @auto_refresh
-    def set_xaxis_format(self, format_, **kwargs):
-        axis.set_axis_format(self.axes.xaxis, format_, **kwargs)
+    def add_legend(self, *args, **kwargs):
+        """Add a legend to this `Plot` on the most favourable `Axes`
 
+        All non-keyword `args` and `kwargs` are passed directly to the
+        :meth:`~matplotlib.axes.Axes.legend` generator
+
+        Returns
+        -------
+        Legend
+            the :class:`~matplotlib.legend.Legend` for this plot
+        """
+        # set kwargs
+        alpha = kwargs.pop("alpha", 0.8)
+        linewidth = kwargs.pop("linewidth", 8)
+
+        # find relevant axes
+        ax = kwargs.pop('ax', None)
+        if ax is None:
+            ax = self._find_axes()
+        legend = ax.legend(*args, **kwargs)
+        legend.set_alpha(alpha)
+        [l.set_linewidth(linewidth) for l in legend.get_lines()]
+        return legend
+
+    # -------------------------------------------
+    # Convenience methods for single-axes plots
+    #
+    # The majority of methods in this section are decorated to call the
+    # equivalent method of the current Axes, and so contain no actual code
+
+    @axes_method
+    def get_xlim(self):
+        pass
+    get_xlim.__doc__ = axes.Axes.get_xlim.__doc__
+
+    @axes_method
     @auto_refresh
-    def set_yaxis_format(self, format_, **kwargs):
-        axis.set_axis_format(self.axes.yaxis, format_, **kwargs)
+    def set_xlim(self, *args, **kwargs):
+        pass
+    set_xlim.__doc__ = axes.Axes.set_xlim.__doc__
+
+    xlim = property(fget=get_xlim, fset=set_xlim,
+                    doc='x-axis limits for the current axes')
+
+    @axes_method
+    def get_ylim(self):
+        pass
+    get_ylim.__doc__ = axes.Axes.get_ylim.__doc__
+
+    @axes_method
+    @auto_refresh
+    def set_ylim(self, *args, **kwargs):
+        pass
+    set_ylim.__doc__ = axes.Axes.set_ylim.__doc__
+
+    ylim = property(fget=get_ylim, fset=set_ylim,
+                    doc='y-axis limits for the current axes')
+
+    @axes_method
+    def get_xlabel(self):
+        pass
+    get_xlabel.__doc__ = axes.Axes.get_xlabel.__doc__
+
+    @axes_method
+    @auto_refresh
+    def set_xlabel(self, *args, **kwargs):
+        pass
+    set_xlabel.__doc__ = axes.Axes.set_xlabel.__doc__
+
+    xlabel = property(fget=get_xlabel, fset=set_xlabel,
+                    doc='x-axis label for the current axes')
+
+    @axes_method
+    def get_ylabel(self):
+        pass
+    get_ylabel.__doc__ = axes.Axes.get_ylabel.__doc__
+
+    @axes_method
+    @auto_refresh
+    def set_ylabel(self, *args, **kwargs):
+        pass
+    set_ylabel.__doc__ = axes.Axes.set_ylabel.__doc__
+
+    ylabel = property(fget=get_ylabel, fset=set_ylabel,
+                      doc='y-axis label for the current axes')
+
+    @axes_method
+    def get_title(self):
+        pass
+    get_title.__doc__ = axes.Axes.get_title.__doc__
+
+    @axes_method
+    @auto_refresh
+    def set_title(self, *args, **kwargs):
+        pass
+    set_title.__doc__ = axes.Axes.set_title.__doc__
+
+    title = property(fget=get_title, fset=set_title,
+                     doc='title for the current axes')
+
+    @axes_method
+    def get_xscale(self):
+        pass
+    get_xscale.__doc__ = axes.Axes.get_xscale.__doc__
+
+    @axes_method
+    @auto_refresh
+    def set_xscale(self, *args, **kwargs):
+        pass
+    set_xscale.__doc__ = axes.Axes.set_xscale.__doc__
+
+    logx = property(fget=lambda self: self.get_xscale() == 'log',
+                    fset=lambda self, b: self.set_xscale(b and 'log' or
+                                                         'linear'),
+                    doc="view x-axis in logarithmic scale")
+
+    @axes_method
+    def get_yscale(self):
+        pass
+    get_yscale.__doc__ = axes.Axes.get_yscale.__doc__
+
+    @axes_method
+    @auto_refresh
+    def set_yscale(self, *args, **kwargs):
+        pass
+    set_yscale.__doc__ = axes.Axes.set_yscale.__doc__
+
+    logy = property(fget=lambda self: self.get_yscale() == 'log',
+                    fset=lambda self, b: self.set_yscale(b and 'log' or
+                                                         'linear'),
+                    doc="view y-axis in logarithmic scale")
