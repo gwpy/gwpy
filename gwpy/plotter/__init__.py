@@ -34,7 +34,7 @@ GWPY_PLOT_PARAMS = {
     "axes.grid": True,
     "axes.axisbelow": False,
     "axes.labelsize": 22,
-    'figure.subplot.bottom': 0.12,
+    'figure.subplot.bottom': 0.13,
     'figure.subplot.left': 0.15,
     'figure.subplot.right': 0.88,
     'figure.subplot.top': 0.88,
@@ -43,7 +43,7 @@ GWPY_PLOT_PARAMS = {
     "image.origin": 'lower',
     "xtick.labelsize": 20,
     "ytick.labelsize": 20}
-if USE_TEX:
+if rcParams['text.usetex'] or USE_TEX:
     GWPY_PLOT_PARAMS.update({"text.usetex": True, "font.family": "serif",
                              "font.serif": ["Computer Modern"]})
 rcParams.update(GWPY_PLOT_PARAMS)
