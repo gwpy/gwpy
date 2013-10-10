@@ -38,6 +38,7 @@ class Plot(figure.Figure):
         if kwargs.pop('called_from_pyplot', False):
             super(Plot, self).__init__(**kwargs)
         self._auto_refresh = auto_refresh
+        self.coloraxes = []
 
     # -----------------------------------------------
     # core plot operations
@@ -113,14 +114,12 @@ class Plot(figure.Figure):
         if mappable is None and ax is not None and len(ax.collections):
             mappable = ax.collections[-1]
         elif mappable is None and ax is None:
-            print self.axes[::-1]
             for ax in self.axes[::-1]:
-                print len(self.collections)
-                if hasattr(self, 'collections') and len(self.collections):
-                    mappable = self.collections[-1]
+                if hasattr(ax, 'collections') and len(ax.collections):
+                    mappable = ax.collections[-1]
                     break
-                elif hasattr(self, 'images') and len(self.images):
-                    mappable = self.images[-1]
+                elif hasattr(ax, 'images') and len(ax.images):
+                    mappable = ax.images[-1]
                     break
         if not mappable:
             raise ValueError("Cannot determine mappable layer for this "
@@ -185,6 +184,7 @@ class Plot(figure.Figure):
 
         # make colour bar
         colorbar = self.colorbar(mappable, cax=cax, **kwargs)
+        self.coloraxes.append(cax)
 
         # set label
         if label:
