@@ -247,3 +247,143 @@ class Spectrogram(Array2D):
                         name=name, logf=self.logx, f0=self.f0, df=self.df,
                         frequencies=(hasattr(self, '_frequencies') and
                                      self.frequencies or None))
+
+    # -------------------------------------------
+    # connectors
+
+    def is_compatible(self, other):
+        """Check whether metadata attributes for self and other match.
+        """
+        if not self.dt == other.dt:
+            raise ValueError("Spectrogram time resolutions do not match.")
+        if not self.df == other.df:
+            raise ValueError("Spectrogram frequency resolutios do not match.")
+        if not self.f0 == other.f0:
+            raise ValueError("Spectrogram starting frequencies do not match.")
+        if not self.unit == other.unit:
+            raise ValueError("Spectrogram units do not match")
+        return True
+
+    def is_contiguous(self, other):
+        """Check whether other is contiguous with self.
+        """
+        self.is_compatible(other)
+        if self.span[1] == other.span[0]:
+            return 1
+        elif other.span[1] == self.span[0]:
+            return -1
+        else:
+            return 0
+
+    def append(self, other, gap='raise', inplace=True):
+        """Connect another `Spectrogram` onto the end of the current one
+
+        Parameters
+        ----------
+        other : `Spectrogram`
+            the second data set to connect to this one
+        gap : `str`, optional, default: ``'raise'``
+            action to perform if there's a gap between the other series
+            and this one. One of
+
+                - ``'raise'`` - raise an `Exception`
+                - ``'ignore'`` - remove gap and join data
+                - ``'pad'`` - pad gap with zeros
+
+        inplace : `bool`, optional, default: `True`
+            perform operation in-place, modifying current `Spectrogram,
+            otherwise copy data and return new `Spectrogram`
+
+        Returns
+        -------
+        series : `Spectrogram`
+            spectrogram containing joined data sets
+        """
+        # check metadata
+        self.is_compatible(other)
+        # make copy if needed
+        if inplace:
+            new = self
+        else:
+            new = self.copy()
+        # fill gap
+        if new.is_contiguous(other) != 1:
+            if gap == 'pad':
+                ngap = (other.span[0] - new.span[1]) / new.dt.value
+                if ngap < 1:
+                    raise ValueError("Cannot append Spectrogram that starts "
+                                     "before this one.")
+                gapshape = list(new.shape)
+                gapshape[0] = ngap
+                zeros = numpy.zeros(gapshape).view(new.__class__)
+                zeros.epoch = new.span[1]
+                zeros.dt = new.dt
+                new.append(zeros, inplace=True)
+            elif gap == 'ignore':
+                pass
+            else:
+                raise ValueError("Cannot append discontiguous Spectrogram")
+        # resize first
+        N = new.shape[0]
+        s = list(new.shape)
+        s[0] = new.shape[0] + other.shape[0]
+        new.resize(s, refcheck=False)
+        new[-other.shape[0]:] = other.data
+        return new
+
+    def prepend(self, other, gap='raise', inplace=True):
+        """Connect another `Spectrogram` onto the end of the current one
+
+        Parameters
+        ----------
+        other : `Spectrogram`
+            the second data set to connect to this one
+        gap : `str`, optional, default: ``'raise'``
+            action to perform if there's a gap between the other series
+            and this one. One of
+
+                - ``'raise'`` - raise an `Exception`
+                - ``'ignore'`` - remove gap and join data
+                - ``'pad'`` - pad gap with zeros
+
+        inplace : `bool`, optional, default: `True`
+            perform operation in-place, modifying current `Spectrogram,
+            otherwise copy data and return new `Spectrogram`
+
+        Returns
+        -------
+        series : `Spectrogram`
+            spectrogram containing joined data sets
+        """
+        # check metadata
+        self.is_compatible(other)
+        # make copy if needed
+        if inplace:
+            new = self
+        else:
+            new = self.copy()
+        # fill gap
+        if new.is_contiguous(other) != -1:
+            if gap == 'pad':
+                ngap = int((new.span[0]-other.span[1]) / new.dt.value)
+                if ngap < 1:
+                    raise ValueError("Cannot prepend Spectrogram that starts "
+                                     "after this one.")
+                gapshape = list(new.shape)
+                gapshape[0] = ngap
+                zeros = numpy.zeros(gapshape).view(new.__class__)
+                zeros.epoch = other.span[1]
+                zeros.dt = new.dt
+                new.prepend(zeros, inplace=True)
+            elif gap == 'ignore':
+                pass
+            else:
+                raise ValueError("Cannot append discontiguous Spectrogram")
+        # resize first
+        N = new.shape[0]
+        s = list(new.shape)
+        s[0] = new.shape[0] + other.shape[0]
+        new.resize(s, refcheck=False)
+        new[-N:] = new.data[:N]
+        new[:other.shape[0]] = other.data
+        return new
