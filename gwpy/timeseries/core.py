@@ -688,7 +688,7 @@ class TimeSeries(Series):
                           unit=lal.UnitToString(lalts.sampleUnits),
                           dtype=lalts.data.data.dtype)
         return cls(lalts.data.data, channel=channel, epoch=lalts.epoch,
-                   unit=lal.UnitToString(lalts.sampleUnits))
+                   unit=lal.UnitToString(lalts.sampleUnits), copy=True)
 
     def to_lal(self):
         """Convert this `TimeSeries` into a LAL TimeSeries
