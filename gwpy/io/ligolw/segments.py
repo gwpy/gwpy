@@ -16,7 +16,7 @@ from ...segments import (Segment, SegmentList, DataQualityFlag)
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-def read_ligolw_segments(file, flag):
+def read_ligolw_segments(file, flag=None):
     """Read segments for the given flag from the LIGO_LW XML file
     """
     if isinstance(file, basestring):
@@ -32,7 +32,7 @@ def read_ligolw_segments(file, flag):
         name = ':'.join(["".join(row.get_ifos()), row.name])
         if row.version:
             name += ':%d' % row.version
-        if name == flag:
+        if flag is None or name == flag:
             dqflag = DataQualityFlag(name)
             id_ = row.segment_def_id
             break
@@ -64,7 +64,7 @@ def read_ligolw_segments(file, flag):
 _re_xml = re.compile(r'(xml|xml.gz)\Z')
 
 def identify_ligolw(*args, **kwargs):
-    filename = args[1][0]
+    filename = args[1]
     if isinstance(filename, file):
         filename = filename.name
     if _re_xml.search(filename):
