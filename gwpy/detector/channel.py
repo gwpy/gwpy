@@ -6,7 +6,6 @@
 import re
 import numpy
 
-from lal import utils as lalutils
 
 from astropy import units as aunits
 
@@ -233,8 +232,14 @@ class Channel(object):
             unit = None
         ctype = nds2channel.channel_type_to_string(nds2channel.channel_type)
         dtypestr = nds2channel.data_type_to_string(nds2channel.data_type)
-        laltype = lalutils.LAL_TYPE_FROM_STR[dtypestr.replace('_', '').upper()]
-        dtype = lalutils.NUMPY_TYPE_FROM_LAL[laltype]
+        try:
+            from lal import utils as lalutils
+        except ImportError:
+            dtype=None
+        else:
+            laltype = lalutils.LAL_TYPE_FROM_STR[
+                          dtypestr.replace('_', '').upper()]
+            dtype = lalutils.NUMPY_TYPE_FROM_LAL[laltype]
         return cls(name, sample_rate=sample_rate, unit=unit, dtype=dtype,
                    type=ctype)
 
