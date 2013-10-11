@@ -16,7 +16,6 @@ from astropy import units
 
 import lal
 from lal import gpstime
-from lalframe import frread
 
 from .. import version
 from ..data import (Series, Array2D)
@@ -206,6 +205,7 @@ class TimeSeries(Series):
         TimeSeries
             a new `TimeSeries` containing the data read from disk
         """
+        from lalframe import frread
         if isinstance(channel, Channel):
             channel = channel.name
             if datatype is None:
