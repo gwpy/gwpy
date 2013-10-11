@@ -671,6 +671,142 @@ class TimeSeries(Series):
         return out
 
     # -------------------------------------------
+    # connectors
+
+    def is_compatible(self, other):
+        """Check whether metadata attributes for self and other match.
+        """
+        if not self.sample_rate == other.sample_rate:
+            raise ValueError("TimeSeries sampling rates do not match.")
+        if not self.unit == other.unit:
+            raise ValueError("TimeSeries units do not match")
+        return True
+
+    def is_contiguous(self, other):
+        """Check whether other is contiguous with self.
+        """
+        self.is_compatible(other)
+        if self.span[1] == other.span[0]:
+            return 1
+        elif other.span[1] == self.span[0]:
+            return -1
+        else:
+            return 0
+
+    def append(self, other, gap='raise', inplace=True):
+        """Connect another `TimeSeries` onto the end of the current one
+
+        Parameters
+        ----------
+        other : `TimeSeries`
+            the second data set to connect to this one
+        gap : `str`, optional, default: ``'raise'``
+            action to perform if there's a gap between the other series
+            and this one. One of
+
+                - ``'raise'`` - raise an `Exception`
+                - ``'ignore'`` - remove gap and join data
+                - ``'pad'`` - pad gap with zeros
+
+        inplace : `bool`, optional, default: `True`
+            perform operation in-place, modifying current `TimeSeries,
+            otherwise copy data and return new `TimeSeries`
+
+        Returns
+        -------
+        series : `TimeSeries`
+            time-series containing joined data sets
+        """
+        # check metadata
+        self.is_compatible(other)
+        # make copy if needed
+        if inplace:
+            new = self
+        else:
+            new = self.copy()
+        # fill gap
+        if new.is_contiguous(other) != 1:
+            if gap == 'pad':
+                ngap = (other.span[0] - new.span[1]) * new.sample_rate.value
+                if ngap < 1:
+                    raise ValueError("Cannot append TimeSeries that starts "
+                                     "before this one.")
+                gapshape = list(new.shape)
+                gapshape[0] = ngap
+                zeros = numpy.zeros(gapshape).view(new.__class__)
+                zeros.epoch = new.span[1]
+                zeros.sample_rate = new.sample_rate
+                new.append(zeros, inplace=True)
+            elif gap == 'ignore':
+                pass
+            else:
+                raise ValueError("Cannot append discontiguous TimeSeries")
+        # resize first
+        N = new.shape[0]
+        s = list(new.shape)
+        s[0] = new.shape[0] + other.shape[0]
+        new.resize(s, refcheck=False)
+        new[-other.shape[0]:] = other.data
+        return new
+
+    def prepend(self, other, gap='raise', inplace=True):
+        """Connect another `TimeSeries` onto the end of the current one
+
+        Parameters
+        ----------
+        other : `TimeSeries`
+            the second data set to connect to this one
+        gap : `str`, optional, default: ``'raise'``
+            action to perform if there's a gap between the other series
+            and this one. One of
+
+                - ``'raise'`` - raise an `Exception`
+                - ``'ignore'`` - remove gap and join data
+                - ``'pad'`` - pad gap with zeros
+
+        inplace : `bool`, optional, default: `True`
+            perform operation in-place, modifying current `TimeSeries,
+            otherwise copy data and return new `TimeSeries`
+
+        Returns
+        -------
+        series : `TimeSeries`
+            time-series containing joined data sets
+        """
+        # check metadata
+        self.is_compatible(other)
+        # make copy if needed
+        if inplace:
+            new = self
+        else:
+            new = self.copy()
+        # fill gap
+        if new.is_contiguous(other) != -1:
+            if gap == 'pad':
+                ngap = int((new.span[0]-other.span[1]) * new.sample_rate.value)
+                if ngap < 1:
+                    raise ValueError("Cannot prepend TimeSeries that starts "
+                                     "after this one.")
+                gapshape = list(new.shape)
+                gapshape[0] = ngap
+                zeros = numpy.zeros(gapshape).view(new.__class__)
+                zeros.epoch = other.span[1]
+                zeros.sample_rate = new.sample_rate
+                new.prepend(zeros, inplace=True)
+            elif gap == 'ignore':
+                pass
+            else:
+                raise ValueError("Cannot append discontiguous TimeSeries")
+        # resize first
+        N = new.shape[0]
+        s = list(new.shape)
+        s[0] = new.shape[0] + other.shape[0]
+        new.resize(s, refcheck=False)
+        new[-N:] = new.data[:N]
+        new[:other.shape[0]] = other.data
+        return new
+
+    # -------------------------------------------
     # Utilities
 
     def plot(self, **kwargs):
