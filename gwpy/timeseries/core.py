@@ -15,7 +15,7 @@ from matplotlib import mlab
 from astropy import units
 
 import lal
-from lal import (gpstime, utils as lalutils)
+from lal import gpstime
 from lalframe import frread
 
 from .. import version
@@ -829,6 +829,7 @@ class TimeSeries(Series):
     def to_lal(self):
         """Convert this `TimeSeries` into a LAL TimeSeries
         """
+        from lal import utils as lalutils
         laltype = lalutils.LAL_TYPE_FROM_NUMPY[self.dtype.type]
         typestr = lalutils.LAL_TYPE_STR[laltype]
         create = getattr(lal, 'Create%sTimeSeries' % typestr.upper())
