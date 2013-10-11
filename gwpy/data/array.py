@@ -9,6 +9,7 @@ with the standard array methods wrapped to return instances of itself.
 
 import numpy
 numpy.set_printoptions(threshold=200)
+import copy
 
 from astropy.units import (Unit, Quantity)
 from astropy.io import registry
@@ -82,9 +83,13 @@ class Array(numpy.ndarray):
                 return new
         # otherwise define a new Array from the array-like data
         else:
-            new = numpy.array(data, dtype=dtype, copy=copy, subok=True)
-            _baseclass = type(new)
-            new = new.view(cls)
+            _baseclass = type(data)
+            if copy:
+                new = super(Array, cls).__new__(cls, data.shape, dtype=dtype)
+                new[:] = numpy.array(data, dtype=dtype, copy=True)
+            else:
+                new = numpy.array(data, dtype=dtype, copy=copy, subok=True)
+                new = new.view(cls)
             new.metadata = cls._metadata_type()
             for key,val in metadata.iteritems():
                 if val is not None:
@@ -180,6 +185,12 @@ class Array(numpy.ndarray):
     def data(self):
         return self.view(numpy.ndarray)
     A = data
+
+    def copy(self, order='C'):
+        new = super(Array, self).copy(order=order)
+        new.metadata = copy.deepcopy(self.metadata)
+        return new
+    copy.__doc__ = numpy.ndarray.copy.__doc__
 
     # -------------------------------------------
     # Pickle helpers
@@ -301,8 +312,6 @@ class Array(numpy.ndarray):
     @channel.setter
     def channel(self, ch):
         self.metadata['channel'] = Channel(ch)
-
-
 
     # -------------------------------------------
     # extras
