@@ -370,8 +370,14 @@ class TimeSeries(Series):
         fftstride *= self.sample_rate.value
         if window is not None:
             window = get_window(window, fftlength)
-        psd_ = psd._lal_psd(self, method, int(fftlength), int(fftstride),
-                            window=window)
+        try:
+            psd_ = psd.lal_psd(self, method, int(fftlength), int(fftstride),
+                               window=window)
+        except ImportError:
+            if window is None:
+                window = 'hanning'
+            psd_ = psd.scipy_psd(self, method, int(fftlength), int(fftstride),
+                               window=window)
         if psd_.unit:
             psd_.unit.__doc__ = "Power spectral density"
         return psd_

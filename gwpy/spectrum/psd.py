@@ -16,10 +16,9 @@ module.
 
 import numpy
 from matplotlib import mlab
+from scipy import signal
 
 from astropy import units
-
-from lal.spectrum import averagespectrum as lalspectrum
 
 from .core import Spectrum
 from ..timeseries import window as tdwindow
@@ -78,7 +77,12 @@ def welch(timeseries, segmentlength, overlap, window=None):
     Spectrum
         Welch-averaged `Spectrum`
     """
-    return _lal_psd(timeseries, 'welch', segmentlength, overlap, window=window)
+    try:
+        return lal_psd(timeseries, 'welch', segmentlength, overlap,
+                       window=window)
+    except ImportError:
+        return scipy_psd(timeseries, 'welch', segmentlength, overlap,
+                         window=window)
 
 
 def median_mean(timeseries, segmentlength, overlap, window=None):
@@ -103,7 +107,7 @@ def median_mean(timeseries, segmentlength, overlap, window=None):
     Spectrum
         median-mean-averaged `Spectrum`
     """
-    return _lal_psd(timeseries, 'medianmean', segmentlength, overlap,
+    return lal_psd(timeseries, 'medianmean', segmentlength, overlap,
                     window=window)
 
 
@@ -129,11 +133,11 @@ def median(timeseries, segmentlength, overlap, window=None):
     Spectrum
         median-mean-averaged `Spectrum`
     """
-    return _lal_psd(timeseries, 'medianmean', segmentlength, overlap,
+    return lal_psd(timeseries, 'medianmean', segmentlength, overlap,
                     window=window)
 
 
-def _lal_psd(timeseries, method, segmentlength, overlap, window=None):
+def lal_psd(timeseries, method, segmentlength, overlap, window=None):
     """Internal wrapper to the `lal.spectrum.psd` function
 
     This function handles the conversion between GWpy `TimeSeries` and
@@ -157,6 +161,11 @@ def _lal_psd(timeseries, method, segmentlength, overlap, window=None):
     Spectrum
         average power `Spectrum`
     """
+    try:
+        from lal.spectrum import averagespectrum as lalspectrum
+    except ImportError as e:
+        raise ImportError('%s. Try using gwpy.spectrum.scipy_psd instead'
+                          % str(e))
     if isinstance(segmentlength, units.Quantity):
         segmentlength = segmentlength.value
     if isinstance(overlap, units.Quantity):
@@ -166,6 +175,52 @@ def _lal_psd(timeseries, method, segmentlength, overlap, window=None):
     lalfs = lalspectrum._psd(method, lalts, segmentlength, overlap,
                              window=lalwin)
     spec = Spectrum.from_lal(lalfs)
+    if timeseries.unit:
+        spec.unit = timeseries.unit / units.Hertz
+    else:
+        spec.unit = 1 / units.Hertz
+    return spec
+
+def scipy_psd(timeseries, method, segmentlength, overlap, window='hanning'):
+    """Internal wrapper to the `lal.spectrum.psd` function
+
+    This function handles the conversion between GWpy `TimeSeries` and
+    XLAL ``TimeSeries``, (e.g. :lalsuite:`XLALREAL8TimeSeries`).
+
+    Parameters
+    ----------
+    timeseries : `TimeSeries`
+        input `TimeSeries` data
+    method : `str`
+        average method
+    segmentlength : `int`
+        number of samples in single average
+    overlap : `int`
+        number of samples between averages
+    window : `timeseries.Window`, optional
+        window function to apply to timeseries prior to FFT
+
+    Returns
+    -------
+    Spectrum
+        average power `Spectrum`
+    """
+    methods = ['welch', 'bartlett']
+    if method.lower() not in methods:
+        raise ValueError("'method' must be one of: '%s'" % "','".join(methods))
+    if isinstance(segmentlength, units.Quantity):
+        segmentlength = segmentlength.value
+    if isinstance(overlap, units.Quantity):
+        overlap = overlap.value
+    f, psd_ = signal.welch(timeseries.data, fs=timeseries.sample_rate.value,
+                           window=window, nperseg=segmentlength,
+                           noverlap=(segmentlength-overlap))
+    spec = psd_.view(Spectrum)
+    spec.name = timeseries.name
+    spec.epoch = timeseries.epoch
+    spec.channel = timeseries.channel
+    spec.f0 = f[0]
+    spec.df = f[1]-f[0]
     if timeseries.unit:
         spec.unit = timeseries.unit / units.Hertz
     else:
