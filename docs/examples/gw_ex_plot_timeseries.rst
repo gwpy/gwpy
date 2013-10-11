@@ -18,16 +18,16 @@ happened between 06:42 an 06:43 on September 16 2010, and so we can set
 the times from there:
 
 .. literalinclude:: ../../examples/gw_ex_plot_timeseries.py
-   :lines: 13,22,23
+   :lines: 11,20,21
 
 Next, we can read the relevant data using the Network Data Server, via the :meth:`TimeSeries.fetch` method:
 
 .. literalinclude:: ../../examples/gw_ex_plot_timeseries.py
-   :lines: 26
+   :lines: 24
 
 Now we can make a plot:
 
 .. literalinclude:: ../../examples/gw_ex_plot_timeseries.py
-   :lines: 29
+   :lines: 27
 
 .. plot:: ../examples/gw_ex_plot_timeseries.py
