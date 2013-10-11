@@ -473,28 +473,6 @@ class TimeSeries(Series):
         from ..plotter import TimeSeriesPlot
         return TimeSeriesPlot(self, **kwargs)
 
-    @classmethod
-    def from_lal(cls, lalts):
-        """Generate a new TimeSeries from a LAL TimeSeries of any type
-        """
-        # write Channel
-        channel = Channel(lalts.name, 1/lalts.deltaT,
-                          unit=lal.UnitToString(lalts.sampleUnits),
-                          dtype=lalts.data.data.dtype)
-        return cls(lalts.data.data, channel=channel, epoch=lalts.epoch,
-                   unit=lal.UnitToString(lalts.sampleUnits))
-
-    def to_lal(self):
-        """Convert this `TimeSeries` into a LAL TimeSeries
-        """
-        laltype = lalutils.LAL_TYPE_FROM_NUMPY[self.dtype.type]
-        typestr = lalutils.LAL_TYPE_STR[laltype]
-        create = getattr(lal, 'Create%sTimeSeries' % typestr.upper())
-        lalts = create(self.name, lal.LIGOTimeGPS(self.epoch.gps), 0,
-                       self.dt.value, lal.lalDimensionlessUnit, self.size)
-        lalts.data.data = self.data
-        return lalts
-
     # -------------------------------------------
     # TimeSeries filtering
 
