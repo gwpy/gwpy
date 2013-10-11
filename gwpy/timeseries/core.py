@@ -414,7 +414,7 @@ class TimeSeries(Series):
         return asd
 
     def spectrogram(self, stride, fftlength=None, fftstride=None,
-                    method='welch', window=None, logf=False):
+                    method='welch', window=None):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method
 
@@ -430,8 +430,6 @@ class TimeSeries(Series):
             number of seconds between FFTs
         window : `timeseries.window.Window`, optional, default: `None`
             window function to apply to timeseries prior to FFT
-        logf : `bool`, optional, default: `False`
-            make frequency axis logarithmic
         """
         from ..spectrum import psd
         from ..spectrogram import Spectrogram
@@ -450,8 +448,7 @@ class TimeSeries(Series):
 
         # generate output spectrogram
         out = Spectrogram(numpy.zeros((nsteps, nfreqs)), name=self.name,
-                          epoch=self.epoch, f0=0, df=df, dt=dt,
-                          logf=logf)
+                          epoch=self.epoch, f0=0, df=df, dt=dt, copy=True)
         if not nsteps:
             return out
 
@@ -463,9 +460,7 @@ class TimeSeries(Series):
             stepseries = self[idx:idx_end]
             steppsd = stepseries.psd(fftlength, fftstride, method,
                                      window=window)
-            if logf:
-                steppsd = steppsd.to_logf()
-            out.data[step,:] = steppsd.data
+            out[step] = steppsd.data
         try:
             out.unit = self.unit / units.Hertz
         except KeyError:
