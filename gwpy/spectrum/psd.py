@@ -176,7 +176,7 @@ def lal_psd(timeseries, method, segmentlength, overlap, window=None):
                              window=lalwin)
     spec = Spectrum.from_lal(lalfs)
     if timeseries.unit:
-        spec.unit = timeseries.unit / units.Hertz
+        spec.unit = timeseries.unit ** 2 / units.Hertz
     else:
         spec.unit = 1 / units.Hertz
     return spec
@@ -222,7 +222,7 @@ def scipy_psd(timeseries, method, segmentlength, overlap, window='hanning'):
     spec.f0 = f[0]
     spec.df = f[1]-f[0]
     if timeseries.unit:
-        spec.unit = timeseries.unit / units.Hertz
+        spec.unit = timeseries.unit ** 2 / units.Hertz
     else:
         spec.unit = 1 / units.Hertz
     return spec

@@ -23,3 +23,4 @@ __version__ = version.version
 # register new unit at the top level
 from astropy import units
 units.def_unit(['counts'], represents=units.Unit('count'), register=True)
+units.def_unit(['strain'], represents=units.Unit(''), register=True)

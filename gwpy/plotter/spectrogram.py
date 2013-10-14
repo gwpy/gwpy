@@ -37,6 +37,7 @@ class SpectrogramPlot(TimeSeriesPlot):
             self.add_spectrogram(spectrogram, newax=sep, **plotargs)
             self.axes[-1].fmt_ydata = lambda f: ('%s %s'
                                                  % (f, spectrogram.yunit))
+            self.axes[-1].set_ylabel('Frequency [%s]' % spectrogram.yunit)
 
         # set matching epoch for each set of axes
         if len(spectrograms) and not sep:

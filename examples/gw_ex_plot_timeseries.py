@@ -22,6 +22,7 @@ end = Time('2010-09-16 06:43:00', format='iso', scale='utc')
 
 # make timeseries
 data = TimeSeries.fetch('H1:LDAS-STRAIN', start, end)
+data.unit = 'strain'
 
 # plot
 plot = data.plot()

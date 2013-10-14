@@ -184,6 +184,6 @@ class Axes(_Axes):
             unitstr = unit.to_string()
         set_ = getattr(self, 'set_%slabel' % axis)
         if label:
-            set_("%s (%s)" % (label, unitstr))
+            set_("%s [%s]" % (label, unitstr))
         else:
             set_(unitstr)

@@ -22,6 +22,7 @@ end = Time('2010-09-16 06:43:00', format='iso', scale='utc')
 
 # find the data using NDS
 data = TimeSeries.fetch('H1:LDAS-STRAIN', start.gps, end.gps, verbose=True)
+data.unit = 'strain'
 
 # calculate spectrogram
 specgram = data.spectrogram(1)
@@ -33,7 +34,6 @@ plot = medratio.plot()
 plot.logy = True
 plot.ylim = [40, 4096]
 plot.add_colorbar(log=True, clim=[0.1, 10], label='ASD ratio to median average')
-plot.ylabel = 'Frequency [Hz]'
 plot.ylim = [40, 4000]
 
 if __name__ == '__main__':

@@ -31,6 +31,7 @@ class SpectrumPlot(Plot):
         plotargs["linewidth"] = kwargs.pop("linewidth", 2)
         plotargs["color"] = kwargs.pop("color", "black")
         plotargs["linestyle"] = kwargs.pop("linestyle", "-")
+        plotargs["label"] = kwargs.pop("label", None)
         sep = kwargs.pop('sep', False)
         logx = kwargs.pop('logx', True)
         logy = kwargs.pop('logy', True)
@@ -54,6 +55,8 @@ class SpectrumPlot(Plot):
                 self.axes[-1].set_xlim(*xlim)
             if logy:
                 self.axes[-1].set_yscale('log')
+        for ax in self.axes:
+            ax.legend()
 
 
 class SpectrumAxes(Axes):
@@ -124,6 +127,8 @@ class SpectrumAxes(Axes):
                           spectrum.frequencies[-1] + spectrum.df.value)
             self.add_label_unit(spectrum.xunit, axis="x")
             self.add_label_unit(spectrum.unit, axis="y")
+        if kwargs.has_key('label'):
+            self.legend()
         return line
 
     def plot_variance(self, specvar, **kwargs):
