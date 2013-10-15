@@ -82,6 +82,10 @@ class DataQualityFlag(object):
         self._valid = self.ListClass(map(self.EntryClass,
                                          segmentlist)).coalesce()
 
+    @property
+    def extent(self):
+        return self.valid.extent()
+
     def efficiency(self, trigtable):
         raise NotImplementedError("Class-level efficiency calculation has "
                                   "not been implemented yet.")
@@ -221,6 +225,9 @@ class DataQualityFlag(object):
                     repr(self.comment)))
 
     def copy(self):
+        """Build an exact copy of this `DataQualityFlag, with a
+        fresh memory copy of all segments and metadata
+        """
         new = self.__class__()
         new.ifo = self.ifo
         new.name = self.name
@@ -231,6 +238,50 @@ class DataQualityFlag(object):
         new.active = self.ListClass([self.EntryClass(s[0], s[1]) for
                                      s in self.active])
         return new
+
+    def __and__(self, other):
+        """Return a new `DataQualityFlag` that is the intersection of
+        this one and ``other``
+        """
+        return self.copy().__iand__(other)
+
+    def __iand__(self, other):
+        """Replace this `DataQualityFlag` with the intersection of
+        itself and ``other``
+        """
+        self.valid &= other.valid
+        self.active &= other.active
+
+    def __sub__(self, other):
+        """Return a new `DataQualityFlag` that is the union of this
+        one and ``other``
+        """
+        return self.copy().__isub__(other)
+
+    def __isub__(self, other):
+        """Replace this `DataQualityFlag` with the difference between
+        itself and ``other``
+        """
+        self.valid -= other.valid
+        self.active -= other.active
+        return self
+
+    def __or__(self, other):
+        """Return a new `DataQualityFlag` that is the union of this
+        one and ``other``
+        """
+        return self.copy().__ior__(other)
+
+    def __ior__(self, other):
+        """Replace this `DataQualityFlag` with the union of itself
+        and ``other``
+        """
+        self.valid |= other.valid
+        self.active |= other.active
+        return self
+
+    __add__ = __or__
+    __iadd__ = __ior__
 
 class DataQualityList(list):
     EntryClass = DataQualityFlag
