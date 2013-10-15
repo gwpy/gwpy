@@ -91,7 +91,7 @@ def unit_to_latex(unit):
                 else:
                     positives = ''
                 negatives = format_unit_list(negatives, negative=True)
-                s += r'{0}{1}'.format(positives, negatives)
+                s += r'{0}\,{1}'.format(positives, negatives)
             else:
                 positives = format_unit_list(positives)
                 s += positives
@@ -102,7 +102,7 @@ def format_unit_list(unitlist, negative=False):
     out = []
     texformatter = ulatex.Latex()
     for base, power in unitlist:
-        if power == 1:
+        if power == 1 and not negative:
             out.append(texformatter._get_unit_name(base))
         elif power == 0.5 and not negative:
             out.append('\sqrt{{{0}}}'.format(label_to_latex(base.name)))
@@ -115,4 +115,4 @@ def format_unit_list(unitlist, negative=False):
         else:
             out.append('{0}^{{{1}}}'.format(
                 label_to_latex(base.name), power))
-    return r'\ '.join(out)
+    return r'\,'.join(out)
