@@ -11,6 +11,11 @@ import re
 import warnings
 from math import (floor, ceil)
 
+try:
+    from collections import OrderedDict
+except ImportError:
+    from astropy.utils import OrderedDict
+
 from astropy.io import registry as io_registry
 
 from .segments import Segment, SegmentList
@@ -18,7 +23,7 @@ from .segments import Segment, SegmentList
 from ..version import version as __version__
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-__all__ = ["DataQualityFlag"]
+__all__ = ['DataQualityFlag', 'DataQualityList']
 
 
 class DataQualityFlag(object):
@@ -32,7 +37,7 @@ class DataQualityFlag(object):
     EntryClass = Segment
     ListClass = SegmentList
     __slots__ = ('_active', '_valid', 'ifo', 'name', 'version',
-                 'category', 'comment')
+                 'category', 'comment', '_name_is_flag')
     def __init__(self, name=None, active=[], valid=[], category=None,
                  comment=None):
         """Define a new DataQualityFlag, with a name, a set of active
@@ -50,6 +55,10 @@ class DataQualityFlag(object):
             A list of valid segments for this flag
         """
         self.ifo, self.name, self.version = parse_flag_name(name)
+        if self.ifo:
+            self._name_is_flag = True
+        else:
+            self._name_is_flag = False
         self.valid = valid
         self.active = active
         self.category = category
@@ -60,10 +69,12 @@ class DataQualityFlag(object):
         """The set of segments during which this DataQualityFlag was
         active
         """
-        if hasattr(self, "valid"):
-            return (self._active & self.valid).coalesce()
+        if self.valid:
+            self._active &= self.valid
+            return self._active.coalesce()
         else:
             return self._active
+
     @active.setter
     def active(self, segmentlist):
         self._active = self.ListClass(map(self.EntryClass,
@@ -77,6 +88,7 @@ class DataQualityFlag(object):
         valid, and its state was well defined.
         """
         return self._valid
+
     @valid.setter
     def valid(self, segmentlist):
         self._valid = self.ListClass(map(self.EntryClass,
@@ -103,8 +115,7 @@ class DataQualityFlag(object):
             return new
 
     @classmethod
-    def query(cls, flag, gpsstart, gpsend,
-              url="https://segdb.ligo.caltech.edu"):
+    def query(cls, flag, *args, **kwargs):
         """Query the segment database URL as give, returning segments
         during which the given flag was defined and active.
 
@@ -113,11 +124,12 @@ class DataQualityFlag(object):
 
         flag : str
             The name of the flag for which to query
-        gpsstart : [ `float` | `LIGOTimeGPS` | `~gwpy.time.Time` ]
-            GPS start time of the query
-        gpsend : [ `float` | `LIGOTimeGPS` | `~gwpy.time.Time` ]
-            GPS end time of the query
-        url : str
+        *args
+            Either, two `float`-like numbers indicating the
+            GPS [start, stop) interval, or a
+            :class:`~gwpy.segments.segments.SegmentList`
+            defining a number of summary segments
+        url : `str`, optional, default: ``'https://segdb.ligo.caltech.edu'``
             URL of the segment database, defaults to segdb.ligo.caltech.edu
 
         Returns
@@ -126,23 +138,37 @@ class DataQualityFlag(object):
         A new DataQualityFlag, with the `valid` and `active` lists
         filled appropriately.
         """
+        # parse arguments
+        if len(args) == 1:
+            qsegs = args[0]
+        elif len(args) == 2:
+            qsegs = [args]
+        else:
+            raise ValueError("DataQualityFlag.query must be called with a "
+                             "flag name, and either GPS start and stop times, "
+                             "or a SegmentList of query segments")
+        url = kwargs.pop('url', 'https://segdb.ligo.caltech.edu')
+        if kwargs.keys():
+            TypeError("DataQualityFlag.query has no keyword argument '%s'"
+                      % kwargs.keys()[0])
+        # process query
         from glue.segmentdb import (segmentdb_utils as segdb_utils,
                                     query_engine as segdb_engine)
         ifo, name, version = parse_flag_name(flag)
         if not version:
             version = '*'
-        gpsstart = int(float(gpsstart))
-        gpsend = int(ceil(float(gpsend)))
         connection = segdb_utils.setup_database(url)
         engine = segdb_engine.LdbdQueryEngine(connection)
-
-        seg_def = segdb_utils.expand_version_number(engine,
-                                                    (ifo, name, version,
-                                                     gpsstart, gpsend, 0, 0))
-        segs = segdb_utils.query_segments(engine, 'segment', seg_def)
-        seg_sum = segdb_utils.query_segments(engine, 'segment_summary', seg_def)
+        segdefs = []
+        for gpsstart, gpsend in qsegs:
+            gpsstart = int(float(gpsstart))
+            gpsend = int(ceil(float(gpsend)))
+            segdefs += segdb_utils.expand_version_number(
+                          engine, (ifo, name, version, gpsstart, gpsend, 0, 0))
+        segs = segdb_utils.query_segments(engine, 'segment', segdefs)
+        segsum = segdb_utils.query_segments(engine, 'segment_summary', segdefs)
         # build output
-        return cls(flag, valid=reduce(operator.or_, seg_sum).coalesce(),
+        return cls(flag, valid=reduce(operator.or_, segsum).coalesce(),
                    active=reduce(operator.or_, segs).coalesce())
 
     read = classmethod(io_registry.read)
@@ -251,6 +277,7 @@ class DataQualityFlag(object):
         """
         self.valid &= other.valid
         self.active &= other.active
+        return self
 
     def __sub__(self, other):
         """Return a new `DataQualityFlag` that is the union of this
@@ -283,11 +310,8 @@ class DataQualityFlag(object):
     __add__ = __or__
     __iadd__ = __ior__
 
-class DataQualityList(list):
+class DataQualityList(OrderedDict):
     EntryClass = DataQualityFlag
-    def __init__(self, *entries):
-        list.__init__(*entries)
-
     def to_ligolw(self):
         raise NotImplementedError()
 
@@ -296,7 +320,7 @@ _re_inv = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<name>[^/]+):(?P<version>\d+)\Z")
 _re_in = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<name>[^/]+)\Z")
 _re_nv = re.compile(r"\A(?P<name>[^/]+):(?P<ver>\d+)\Z")
 
-def parse_flag_name(name):
+def parse_flag_name(name, warn=True):
     """Internal method to parse a `string` name into constituent
     `ifo, `name` and `version` components.
 
@@ -316,6 +340,7 @@ def parse_flag_name(name):
     elif _re_nv.match(name):
         match = _re_nv.match(name).groupdict()
         return None, match['name'], int(match['version'])
-    warnings.warn("No flag name structure detected in '%s', flags should be "
-                  "named as 'IFO:DQ-FLAG_NAME:VERSION'" % name)
+    if warn:
+        warnings.warn("No flag name structure detected in '%s', flags should "
+                      "be named as 'IFO:DQ-FLAG_NAME:VERSION'" % name)
     return None, name, None

@@ -13,8 +13,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 from .segments import (Segment, SegmentList, SegmentListDict)
-from .flag import DataQualityFlag
-
+from .flag import *
 
 from ..io import segwizard
 from ..io.ligolw import segments as ligolw_segments
