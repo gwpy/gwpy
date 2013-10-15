@@ -364,3 +364,7 @@ class ChannelList(list):
         """
         from ..io import cis
         return cis.query(name, debug=debug)
+
+    @property
+    def ifos(self):
+        return set([c.ifo for c in self.channels])
