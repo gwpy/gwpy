@@ -27,7 +27,7 @@ from ..window import *
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-__all__ = ["TimeSeries", 'ArrayTimeSeries']
+__all__ = ["TimeSeries", 'ArrayTimeSeries', 'TimeSeriesList']
 
 _UFUNC_STRING = {'less': '<',
                  'less_equal': '<=',
@@ -938,3 +938,81 @@ class ArrayTimeSeries(TimeSeries, Array2D):
                               channel=channel, sample_rate=sample_rate,
                               times=times, **kwargs)
         return new
+
+
+class TimeSeriesList(list):
+    """Fancy list representing a list of `TimeSeries`
+
+    The `TimeSeriesList` provides an easy way to collect and organise
+    `TimeSeries` for a single `Channel` over multiple segments.
+
+    Parameters
+    ----------
+    *items
+        any number of `TimeSeries`
+
+    Returns
+    -------
+    list
+        a new `TimeSeriesList`
+
+    Raises
+    ------
+    TypeError
+        if any elements are not `TimeSeries`
+    """
+    def __init__(self, *items):
+        """Initalise a new `TimeSeriesList`
+        """
+        super(TimeSeriesList, self).__init__()
+        for item in items:
+            self.append(item)
+
+    def append(self, item):
+        if not isinstance(item, TimeSeries):
+            raise TypeError("Cannot append type '%s' to %s"
+                            % (item.__class__.__name__,
+                               self.__class__.__name__))
+        super(TimeSeriesList, self).append(item)
+    append.__doc__ = list.append.__doc__
+
+    def extend(self, item):
+        item = TimeSeriesList(item)
+        super(TimeSeriesList, self).extend(item)
+    extend.__doc__ = list.extend.__doc__
+
+    def coalesce(self):
+        """Sort the elements of this `TimeSeriesList` by epoch and merge
+        contiguous `TimeSeries` elements into single objects.
+        """
+        self.sort(key=lambda ts: ts.x0.value)
+        i = j = 0
+        N = len(self)
+        while j < N:
+            this = self[j]
+            j += 1
+            if j < N and this.span[1] >= self[j].span[0]:
+                while j < N and this.span[1] >= self[j].span[0]:
+                    this = self[i] = this.append(self[j])
+                    j += 1
+            else:
+                self[i] = this
+            i += 1
+        del self[i:]
+        return self
+
+    def join(self, pad=0.0):
+        """Concatenate all of the `TimeSeries` in this list into a
+        a single object
+
+        Returns
+        -------
+        `TimeSeries`
+             a single `TimeSeries covering the full span of all entries
+             in this list
+        """
+        self.sort(key=lambda ts: ts.x0.value)
+        out = self[0].copy()
+        for ts in self[1:]:
+            out.append(ts, gap='pad', pad=pad)
+        return out
