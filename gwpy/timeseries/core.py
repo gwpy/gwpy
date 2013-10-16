@@ -699,7 +699,7 @@ class TimeSeries(Series):
         else:
             return 0
 
-    def append(self, other, gap='raise', inplace=True):
+    def append(self, other, gap='raise', inplace=True, pad=0.0):
         """Connect another `TimeSeries` onto the end of the current one
 
         Parameters
@@ -717,6 +717,8 @@ class TimeSeries(Series):
         inplace : `bool`, optional, default: `True`
             perform operation in-place, modifying current `TimeSeries,
             otherwise copy data and return new `TimeSeries`
+        pad : `float`, optional, default: ``0.0``
+            value with which to pad discontiguous `TimeSeries`
 
         Returns
         -------
@@ -739,10 +741,10 @@ class TimeSeries(Series):
                                      "before this one.")
                 gapshape = list(new.shape)
                 gapshape[0] = ngap
-                zeros = numpy.zeros(gapshape).view(new.__class__)
-                zeros.epoch = new.span[1]
-                zeros.sample_rate = new.sample_rate
-                new.append(zeros, inplace=True)
+                padding = numpy.ones(gapshape).view(new.__class__) * pad
+                padding.epoch = new.span[1]
+                padding.sample_rate = new.sample_rate
+                new.append(padding, inplace=True)
             elif gap == 'ignore':
                 pass
             else:
@@ -755,7 +757,7 @@ class TimeSeries(Series):
         new[-other.shape[0]:] = other.data
         return new
 
-    def prepend(self, other, gap='raise', inplace=True):
+    def prepend(self, other, gap='raise', inplace=True, pad=0.0):
         """Connect another `TimeSeries` onto the end of the current one
 
         Parameters
@@ -773,6 +775,8 @@ class TimeSeries(Series):
         inplace : `bool`, optional, default: `True`
             perform operation in-place, modifying current `TimeSeries,
             otherwise copy data and return new `TimeSeries`
+        pad : `float`, optional, default: ``0.0``
+            value with which to pad discontiguous `TimeSeries`
 
         Returns
         -------
@@ -795,10 +799,10 @@ class TimeSeries(Series):
                                      "after this one.")
                 gapshape = list(new.shape)
                 gapshape[0] = ngap
-                zeros = numpy.zeros(gapshape).view(new.__class__)
-                zeros.epoch = other.span[1]
-                zeros.sample_rate = new.sample_rate
-                new.prepend(zeros, inplace=True)
+                padding = numpy.ones(gapshape).view(new.__class__) * pad
+                padding.epoch = other.span[1]
+                padding.sample_rate = new.sample_rate
+                new.prepend(padding, inplace=True)
             elif gap == 'ignore':
                 pass
             else:
