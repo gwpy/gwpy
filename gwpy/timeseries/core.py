@@ -5,10 +5,11 @@
 
 from __future__ import division
 
+import os
 import numbers
 import numpy
 import warnings
-from math import modf
+from math import (ceil, floor, modf)
 from scipy import (fftpack, signal)
 from matplotlib import mlab
 
@@ -19,7 +20,7 @@ from lal import gpstime
 
 from .. import version
 from ..data import (Series, Array2D)
-from ..detector import Channel
+from ..detector import (Channel, ChannelList)
 from ..segments import Segment
 from ..time import Time
 from ..window import *
@@ -227,7 +228,8 @@ class TimeSeries(Series):
         return cls.from_lal(lalts)
 
     @classmethod
-    def fetch(cls, channel, start, end, host=None, port=None, verbose=False):
+    def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
+              connection=None):
         """Fetch data from NDS into a TimeSeries
 
         Parameters
@@ -244,59 +246,71 @@ class TimeSeries(Series):
             port number for NDS server query, must be given with `host`
         verbose : `bool`, optional
             print verbose output about NDS progress
+        connection : :class:`~gwpy.io.nds.NDS2Connection`
+            open NDS connection to use
 
         Returns
         -------
         TimeSeries
             a new `TimeSeries` containing the data read from NDS
         """
+        # import module and type-cast arguments
         from ..io import nds
         channel = Channel(channel)
+        start = int(floor(isinstance(start, Time) and start.gps or start))
+        end = int(ceil(isinstance(end, Time) and end.gps or end))
+        # set context
         if verbose:
-            import warnings
-            warnings.filterwarnings('always', '(.*)', nds.NDSWarning)
-        def _nds_connect(host, port):
-            try:
-                connection = nds.NDSConnection(host, port) 
-            except RuntimeError as e:
-                if str(e).startswith('Request SASL authentication'):
-                    print('\nError authenticating against %s' % host)
-                    nds.kinit()
-                    connection = nds.NDSConnection(host, port)
-                else:
-                    raise
-            return connection
-
+            outputcontext = nds.NDSOutputContext()
+        else:
+            outputcontext = nds.NDSOutputContext(open(os.devnull, 'w'),
+                                                 open(os.devnull, 'w'))
         # get type
         ndschanneltype = (nds.nds2.channel.CHANNEL_TYPE_RAW |
                           nds.nds2.channel.CHANNEL_TYPE_RDS |
                           nds.nds2.channel.CHANNEL_TYPE_STREND|
                           nds.nds2.channel.CHANNEL_TYPE_MTREND)
+        # shortcut connect
+        def _nds_connect(host, port):
+            try:
+                connection = nds.NDS2Connection(host, port)
+            except RuntimeError as e:
+                if str(e).startswith('Request SASL authentication'):
+                    print('\nError authenticating against %s' % host)
+                    nds.kinit()
+                    connection = nds.NDS2Connection(host, port)
+                else:
+                    raise
+            return connection
 
-        # user-defined host
-        if host:
+        # user-defined host or open connection
+        if connection or host:
             hostlist = [(host, port)]
+        # logical host resolution order
         else:
             hostlist = nds.host_resolution_order(channel.ifo)
+
+        # loop hosts, stopping on first success
         for host,port in hostlist:
-            if verbose:
-                print("Connecting to %s:%s" % (host, port))
-            connection = _nds_connect(host, port)
+            if connection is None:
+                if verbose:
+                    print("Connecting to %s:%s" % (host, port))
+                connection = _nds_connect(host, port)
+                channel = connection._find(channel, ndschanneltype)[0].name
             try:
                 if verbose:
                     print("Downloading data...")
-                data = connection.fetch(start, end, channel, ndschanneltype,
-                                        silent=not verbose)
+                buffer_ = connection.fetch(start, end, [str(channel)])[0]
             except RuntimeError as e:
                 if verbose:
                     warnings.warn(str(e), nds.NDSWarning)
             else:
                 if verbose:
                     warnings.filterwarnings('default', '(.*)', nds.NDSWarning)
-                channel = Channel.from_nds2(data.channel)
-                return cls(data.data, channel=channel,
-                           epoch=lal.LIGOTimeGPS(data.gps_seconds,
-                                                 data.gps_nanoseconds))
+                epoch = Time(buffer_.gps_seconds, buffer_.gps_nanoseconds,
+                             format='gps')
+                channel = Channel.from_nds2(buffer_.channel)
+                return cls(buffer_.data, epoch=epoch, channel=channel)
         raise RuntimeError("Cannot find relevant data on any known server")
 
     # -------------------------------------------
@@ -863,7 +877,7 @@ class TimeSeries(Series):
             # connect and find channel
             if verbose:
                 print("Connecting to %s:%s" % (host, port))
-            connection = nds.NDSConnection(host, port)
+            connection = nds.NDS2Connection(host, port)
             try:
                 channel = connection.find(
                           str(channel), nds.nds2.channel.CHANNEL_TYPE_ONLINE)[0]

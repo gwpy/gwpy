@@ -11,7 +11,7 @@ from math import (floor, ceil)
 from ... import (version, detector)
 from ...detector import Channel
 from ...time import Time
-from ...timeseries import TimeSeries
+from ...timeseries import (TimeSeries, TimeSeriesList)
 
 from .kerberos import *
 
@@ -32,7 +32,7 @@ finally:
                     (detector.CIT_40.prefix,('nds40.ligo.caltech.edu', 31200))])
 
 
-class NDSRedirectStdStreams(object):
+class NDSOutputContext(object):
     def __init__(self, stdout=sys.stdout, stderr=sys.stderr):
         self._stdout = stdout or sys.stdout
         self._stderr = stderr or sys.stderr
@@ -52,50 +52,42 @@ class NDSWarning(UserWarning):
     pass
 
 
-class NDSConnection(object):
+class NDS2Connection(nds2.connection):
+    """Thin wrapper of the NDS2 client library `connection` object
 
-    def __init__(self, host, port):
-        self.host = host
-        self.port = port
-        self._connection = nds2.connection(host, port)
+    Provides some trivial niceties to clean up user-code
 
-    def fetch(self, start, end, channels, ndschanneltype=None, silent=False):
-        # find channels
-        if isinstance(channels, basestring) or isinstance(channels, Channel):
-            channels = [channels]
-        channels = map(lambda c: c.name, self.find(channels, ndschanneltype))
-        # format times
-        gpsstart = int(floor(isinstance(start, Time) and start.gps or start))
-        gpsend = int(ceil(isinstance(end, Time) and end.gps or end))
-        # set verbose context
-        if silent:
-            outputcontext = NDSRedirectStdStreams(open(os.devnull, 'w'),
-                                                  open(os.devnull, 'w'))
-        else:
-            outputcontext = NDSRedirectStdStreams()
-        # fetch data
-        with outputcontext:
-            out = self._connection.fetch(gpsstart, gpsend, channels)
-        # convert to TimeSeries
-        series = []
-        for i,data in enumerate(out):
-            epoch = Time(data.gps_seconds, data.gps_nanoseconds, format='gps')
-            channel = Channel.from_nds2(data.channel)
-            try:
-                cisch = Channel.query(channel.name)
-            except:#ValueError:
-                pass
-            else:
-                channel.model = cisch.model
-            series.append(data)
-        # return
-        if len(series) == 1:
-            return series[0]
-        else:
-            return series
+    Parameters
+    ----------
+    host : `str`
+        URL of NDS(2) connection host
+    port : `int`, optional, default: ``31200``
+        port number for NDS(2) connection on host
 
-    def find(self, channels, nds2channeltype=None, nds2datatype=None,
-             minsamp=0, maxsamp=None):
+    Returns
+    -------
+    connection
+        a new (open) `NDS2Connection`
+    """
+    def __init__(self, host, port=31200):
+        """Set up a new connection to a given NDS(2) host
+        """
+        super(NDS2Connection, self).__init__(host, port)
+
+    @property
+    def host(self):
+        """The host URL for this NDS(2) connection
+        """
+        return self.get_host()
+
+    @property
+    def port(self):
+        """The host port number for this NDS(2) connection
+        """
+        return self.get_port()
+
+    def _find(self, channels, nds2channeltype=None, nds2datatype=None,
+              minsamp=0, maxsamp=None):
         """Search for the given channels in the NDS2 database for this host
         """
         # format args for nds module call
@@ -103,7 +95,7 @@ class NDSConnection(object):
                 arg is not None]
         if maxsamp:
             args.extend([minsamp, maxsamp])
-        if isinstance(channels, basestring):
+        if isinstance(channels, basestring) or isinstance(channels, Channel):
             channels = [channels]
         # loop over channels, returning all found
         out = []
@@ -113,23 +105,11 @@ class NDSConnection(object):
             else:
                 channel = str(channel)
                 try:
-                    out.append(self._connection.find_channels(
+                    out.append(self.find_channels(
                                    "%s,*" % channel, *args)[0])
                 except IndexError:
-                    out.extend(self._connection.find_channels(channel, *args))
+                    out.extend(self.find_channels(channel, *args))
         return out
-
-    def iterate(self, channels, start=None, stop=None, stride=None):
-        """Retreive data over NDS in pieces
-        """
-        # format args for nds module call
-        args = [arg for arg in (start, stop, stride, channels) if
-                arg is not None]
-        # return iterator
-        return self._connection.iterate(*args)
-
-    def close(self):
-        del self._connection
 
     def __enter__(self):
         return self
