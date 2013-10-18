@@ -63,6 +63,7 @@ class Channel(object):
     signal
     sample_rate
     unit
+    type
     dtype
     model
 
@@ -100,7 +101,7 @@ class Channel(object):
     @name.setter
     def name(self, n):
         self._name = str(n)
-        self._ifo, self._system, self._subsystem, self._signal = (
+        self._ifo, self._system, self._subsystem, self._signal, self.type = (
             parse_channel_name(self.name))
 
     @property
@@ -266,7 +267,7 @@ def parse_channel_name(name):
     """Decompose a channel name string into its components
     """
     if not name:
-        return None, None, None, None
+        return None, None, None, None, None
     # parse ifo
     if _re_ifo.match(name):
         ifo, name = name.split(":", 1)
@@ -274,6 +275,12 @@ def parse_channel_name(name):
         ifo = None
     # parse systems
     tags = _re_cchar.split(name, maxsplit=3)
+    if ',' in tags[-1]:
+        from ..io import nds as ndsio
+        tags[-1],ndstype = tags[-1].split(',')
+        ndstype = ndsio.NDS2_CHANNEL_TYPE[ndstype]
+    else:
+        ndstype = None
     system = tags[0]
     if len(tags) > 1:
         subsystem = tags[1]
@@ -283,7 +290,7 @@ def parse_channel_name(name):
         signal = tags[2]
     else:
         signal = None
-    return ifo, system, subsystem, signal
+    return ifo, system, subsystem, signal, ndstype
 
 from .channel import Channel
 
