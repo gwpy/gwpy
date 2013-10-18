@@ -17,27 +17,27 @@ Solution
 First, we define what the 'good' and 'bad' times are:
 
 .. literalinclude:: ../../examples/gw_ex_compare_spectra.py
-   :lines: 15,23-24
+   :lines: 32,40-41
 
 and how long we want to search each one
 
 .. literalinclude:: ../../examples/gw_ex_compare_spectra.py
-   :lines: 25
+   :lines: 42
 
 Then we can fetch the :class:`~gwpy.timeseries.core.TimeSeries` data for both times for the in-loop photodiode signal for the intensity stabilisation servo (ISS) of the pre-stabilised laser (PSL):
 
 .. literalinclude:: ../../examples/gw_ex_compare_spectra.py
-   :lines: 16,28-31
+   :lines: 33,45-48
 
 We can now calculate the amplitude spectral density (ASD) for each time using the :meth:`~gwpy.timeseries.core.TimeSeries.asd` method,
 
 .. literalinclude:: ../../examples/gw_ex_compare_spectra.py
-   :lines: 34-35
+   :lines: 51-52
 
 and make a comparison plot:
 
 .. literalinclude:: ../../examples/gw_ex_compare_spectra.py
-   :lines: 38-41
+   :lines: 55-58
 
 .. plot:: ../examples/gw_ex_compare_spectra.py
 
