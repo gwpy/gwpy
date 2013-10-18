@@ -255,63 +255,91 @@ class TimeSeries(Series):
             a new `TimeSeries` containing the data read from NDS
         """
         # import module and type-cast arguments
-        from ..io import nds
-        channel = Channel(channel)
+        from ..io import nds as ndsio
+        import nds2
+        channel = str(channel)
         start = int(floor(isinstance(start, Time) and start.gps or start))
         end = int(ceil(isinstance(end, Time) and end.gps or end))
         # set context
         if verbose:
-            outputcontext = nds.NDSOutputContext()
+            outputcontext = ndsio.NDSOutputContext()
         else:
-            outputcontext = nds.NDSOutputContext(open(os.devnull, 'w'),
-                                                 open(os.devnull, 'w'))
+            outputcontext = ndsio.NDSOutputContext(open(os.devnull, 'w'),
+                                                   open(os.devnull, 'w'))
         # get type
-        ndschanneltype = (nds.nds2.channel.CHANNEL_TYPE_RAW |
-                          nds.nds2.channel.CHANNEL_TYPE_RDS |
-                          nds.nds2.channel.CHANNEL_TYPE_STREND|
-                          nds.nds2.channel.CHANNEL_TYPE_MTREND)
-        # shortcut connect
-        def _nds_connect(host, port):
-            try:
-                connection = nds.NDS2Connection(host, port)
-            except RuntimeError as e:
-                if str(e).startswith('Request SASL authentication'):
-                    print('\nError authenticating against %s' % host)
-                    nds.kinit()
-                    connection = nds.NDS2Connection(host, port)
-                else:
-                    raise
-            return connection
+        ndschanneltype = (nds2.channel.CHANNEL_TYPE_RAW |
+                          nds2.channel.CHANNEL_TYPE_RDS |
+                          nds2.channel.CHANNEL_TYPE_STREND |
+                          nds2.channel.CHANNEL_TYPE_MTREND)
 
         # user-defined host or open connection
         if connection or host:
             hostlist = [(host, port)]
         # logical host resolution order
         else:
-            hostlist = nds.host_resolution_order(channel.ifo)
+            hostlist = ndsio.host_resolution_order(Channel(channel).ifo)
 
         # loop hosts, stopping on first success
-        for host,port in hostlist:
-            if connection is None:
-                if verbose:
-                    print("Connecting to %s:%s" % (host, port))
-                connection = _nds_connect(host, port)
-                channel = connection._find(channel, ndschanneltype)[0].name
-            try:
-                if verbose:
-                    print("Downloading data...")
-                buffer_ = connection.fetch(start, end, [str(channel)])[0]
-            except RuntimeError as e:
-                if verbose:
-                    warnings.warn(str(e), nds.NDSWarning)
-            else:
-                if verbose:
-                    warnings.filterwarnings('default', '(.*)', nds.NDSWarning)
-                epoch = Time(buffer_.gps_seconds, buffer_.gps_nanoseconds,
-                             format='gps')
-                channel = Channel.from_nds2(buffer_.channel)
-                return cls(buffer_.data, epoch=epoch, channel=channel)
-        raise RuntimeError("Cannot find relevant data on any known server")
+        with outputcontext:
+            for host,port in hostlist:
+                if connection:
+                    _conn = connection
+                # open connection if needed - check kerberos ticket
+                if connection is None:
+                    if verbose:
+                        print("Connecting to %s:%s" % (host, port))
+                    try:
+                        _conn = nds2.connection(host, port)
+                    except RuntimeError as e:
+                        if str(e).startswith('Request SASL authentication'):
+                            print('\nError authenticating against %s' % host)
+                            kinit()
+                            _conn = nds2.connection(host, port)
+                        else:
+                            raise
+                # double check channels against server
+                channelok = _conn.find_channels(str(channel), ndschanneltype)
+                if not channelok:
+                    channels = _conn.find_channels(
+                                   '*%s*' % str(channel), ndschanneltype)
+                    # if no channels and user didn't supply their own server
+                    # warn and move one
+                    if len(channels) == 0 and not connection:
+                        if verbose:
+                            warnings.warn("No matching channels found",
+                                          ndsio.NDSWarning)
+                        continue
+                    # if one channel, find
+                    elif len(channels) == 1:
+                        channel = channels[0].name
+                    # if more than one channel and user did supply their own
+                    # server, barf
+                    elif connection:
+                        raise ValueError("No channel '%s' found on server."
+                                         " However, %d others were found, "
+                                         "please restrict your search and "
+                                         "try again:\n    %s"
+                                         % (str(channel), len(channels),
+                                            "    \n".join(map(str, channels))))
+                # fetch data
+                try:
+                    if verbose:
+                        print("Downloading data...")
+                    buffer_ = _conn.fetch(start, end, [str(channel)])[0]
+                except RuntimeError as e:
+                    # if error and user supplied their own server, raise
+                    if connection:
+                        raise
+                    # otherwise warn and move on
+                    elif verbose:
+                        warnings.warn(str(e), ndsio.NDSWarning)
+                else:
+                    # cast as TimeSeries and return
+                    epoch = Time(buffer_.gps_seconds, buffer_.gps_nanoseconds,
+                                 format='gps')
+                    channel = Channel.from_nds2(buffer_.channel)
+                    return cls(buffer_.data, epoch=epoch, channel=channel)
+            raise RuntimeError("Cannot find relevant data on any known server")
 
     # -------------------------------------------
     # TimeSeries product methods
