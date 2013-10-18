@@ -102,6 +102,19 @@ class TimeSeriesPlot(Plot):
         for axes in axeslist:
             axes.set_epoch(gps)
 
+    @property
+    def gps_scale(self):
+        axes = self._find_axes('timeseries')
+        return axes.gps_scale
+
+    def get_gps_scale(self):
+        return self.gps_scale
+
+    def set_gps_scale(self, scale):
+        axeslist = self._find_all_axes('timeseries')
+        for axes in axeslist:
+            axes.set_gps_scale(scale)
+
 
     # -----------------------------------------------
     # extend add_timseries
@@ -110,6 +123,7 @@ class TimeSeriesPlot(Plot):
         super(TimeSeriesPlot, self).add_timeseries(timeseries, **kwargs)
         if not self.epoch:
             self.set_epoch(timeseries.epoch)
+            
 
     @auto_refresh
     def set_time_format(self, format_='gps', epoch=None, scale=None,
@@ -236,6 +250,42 @@ class TimeSeriesAxes(Axes):
         gps = self.epoch.gps
         return self.set_xlabel('Time (%s) from %s (%s)' % (scale, utc, gps))
 
+    @property
+    def gps_scale(self):
+        try:
+            return self.axaxis.get_major_formatter().scale
+        except AttributeError:
+            return 1
+
+    @auto_refresh
+    def set_gps_scale(self, scale):
+        """Set the GPS scale of this plot
+        """
+        formatter = self.xaxis.get_major_formatter()
+        locator = self.xaxis.get_major_locator()
+        if not isinstance(formatter, ticks.TimeFormatter):
+            raise TypeError("Formatter of type '%s' does not have a scale. "
+                            "Please try using a TimeFormatter instead"
+                            % formatter.__class__.__name__)
+        s = formatter.scale_str_long
+        formatter.scale = scale
+        locator.scale = scale
+        xlabel = self.xlabel.get_text()
+        if xlabel:
+            if re.search(s, xlabel):
+                self.xlabel = xlabel.replace(s, formatter.scale_str_long)
+
+    @auto_refresh
+    def auto_gps_scale(self):
+        """Automagically set the GPS scale for the time-axis of this plot
+        based on the current view limits
+        """
+        duration = self.viewLim.x1 - self.viewLim.x0
+        for s in ticks.GPS_SCALE.keys()[::-1]:
+            if duration >= (10 * s):
+                self.set_gps_scale(s)
+                return
+
     # -------------------------------------------
     # GWpy class plotting methods
 
@@ -302,6 +352,7 @@ class TimeSeriesAxes(Axes):
         line = self.plot(timeseries.times, timeseries.data, **kwargs)
         if len(self.lines) == 1:
             self.set_xlim(*timeseries.span)
+            self.auto_gps_scale()
         return line
 
     @auto_refresh

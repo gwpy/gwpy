@@ -164,6 +164,15 @@ class AutoTimeLocator(mticker.AutoLocator):
             epoch = Time(*epoch, format='gps', precision=6)
         self._epoch = epoch.copy(format='gps')
 
+    @property
+    def scale(self):
+        """GPS step scale for this formatter
+        """
+        return self._scale
+
+    @scale.setter
+    def scale(self, scale, short=None, long=None):
+        self._scale = scale
 
 
 class TimeFormatter(mticker.Formatter):
@@ -193,6 +202,24 @@ class TimeFormatter(mticker.Formatter):
             t = round(float(t), 6)
         t = re.sub('.0+\Z', '', str(t))
         return t
+
+    @property
+    def scale(self):
+        """GPS step scale for this formatter
+        """
+        return self._scale
+
+    @scale.setter
+    def scale(self, scale, short=None, long=None):
+        self._scale = scale
+        try:
+            self.scale_str_long,self.scale_str_short = GPS_SCALE[scale]
+        except KeyError:
+            self.scale_str_long,self.scale_str_short = GPS_SCALE[1]
+        if short:
+            self.scale_str_short = short
+        if long:
+            self.scale_str_long = long
 
     @property
     def epoch(self):
