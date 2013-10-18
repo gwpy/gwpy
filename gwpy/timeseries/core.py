@@ -244,7 +244,7 @@ class TimeSeries(Series):
 
     @classmethod
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
-              connection=None):
+              connection=None, ndschanneltype=None):
         """Fetch data from NDS into a TimeSeries
 
         Parameters
@@ -263,6 +263,8 @@ class TimeSeries(Series):
             print verbose output about NDS progress
         connection : :class:`~gwpy.io.nds.NDS2Connection`
             open NDS connection to use
+        ndschanneltype : `int`
+            NDS2 channel type integer
 
         Returns
         -------
@@ -272,7 +274,6 @@ class TimeSeries(Series):
         # import module and type-cast arguments
         from ..io import nds as ndsio
         import nds2
-        channel = str(channel)
         start = int(floor(isinstance(start, Time) and start.gps or start))
         end = int(ceil(isinstance(end, Time) and end.gps or end))
         # set context
@@ -282,11 +283,15 @@ class TimeSeries(Series):
             outputcontext = ndsio.NDSOutputContext(open(os.devnull, 'w'),
                                                    open(os.devnull, 'w'))
         # get type
-        ndschanneltype = (nds2.channel.CHANNEL_TYPE_RAW |
-                          nds2.channel.CHANNEL_TYPE_RDS |
-                          nds2.channel.CHANNEL_TYPE_STREND |
-                          nds2.channel.CHANNEL_TYPE_MTREND)
+        if not ndschanneltype and isinstance(channel, Channel) and channel.type:
+            ndschanneltype = channel.type
+        if not ndschanneltype:
+            ndschanneltype = (nds2.channel.CHANNEL_TYPE_RAW |
+                              nds2.channel.CHANNEL_TYPE_RDS |
+                              nds2.channel.CHANNEL_TYPE_STREND |
+                              nds2.channel.CHANNEL_TYPE_MTREND)
 
+        channel = str(channel)
         # user-defined host or open connection
         if connection or host:
             hostlist = [(host, port)]
@@ -324,6 +329,8 @@ class TimeSeries(Series):
                             warnings.warn("No matching channels found",
                                           ndsio.NDSWarning)
                         continue
+                    elif len(channels) == 0:
+                        pass
                     # if one channel, find
                     elif len(channels) == 1:
                         channel = channels[0].name
@@ -335,7 +342,16 @@ class TimeSeries(Series):
                                          "please restrict your search and "
                                          "try again:\n    %s"
                                          % (str(channel), len(channels),
-                                            "    \n".join(map(str, channels))))
+                                            "\n    ".join(map(str, channels))))
+                if channel.endswith('m-trend') and (start % 60 or end % 60):
+                    warnings.warn("Requested channel is minute trend, but "
+                                  "start and stop GPS times are not modulo "
+                                  "60-seconds (from GPS epoch). Times will be "
+                                  "expanded outwards to compensate")
+                    if start % 60:
+                        start = start // 60 * 60
+                    if end % 60:
+                        end = end // 60 * 60 + 60
                 # fetch data
                 try:
                     if verbose:
