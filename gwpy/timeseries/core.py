@@ -910,7 +910,7 @@ class TimeSeries(Series):
     #            channel = connection.find(
     #                      str(channel), nds.nds2.channel.CHANNEL_TYPE_ONLINE)[0]
     #        except IndexError:
-                continue
+    #            continue
     #        # begin iteration
     #        sampling = channel.sample_rate
     #        timeseries = TimeSeries(numpy.zeros((sampling*duration,)),
