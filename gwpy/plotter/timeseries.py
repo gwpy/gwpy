@@ -366,7 +366,7 @@ class TimeSeriesAxes(Axes):
         return line
 
     @auto_refresh
-    def plot_timeseries_mmm(self, mean_, min_, max_, **kwargs):
+    def plot_timeseries_mmm(self, mean_, min_=None, max_=None, **kwargs):
         """Plot a `TimeSeries` onto these axes, with (min, max) shaded
         regions
 
@@ -404,14 +404,20 @@ class TimeSeriesAxes(Axes):
         kwargs.pop('label', None)
         color = kwargs.pop('color', line1.get_color())
         linewidth = kwargs.pop('linewidth', line1.get_linewidth()) / 2
-        a = self.plot(min_.times, min_.data, color=color, linewidth=linewidth,
-                      **kwargs)
-        b = self.fill_between(min_.times, mean_.data, min_.data, alpha=0.1,
-                              color=color)
-        c = self.plot(max_.times, max_.data, color=color, linewidth=linewidth,
-                      **kwargs)
-        d = self.fill_between(max_.times, mean_.data, max_.data, alpha=0.1,
-                              color=color)
+        if min_ is not None:
+            a = self.plot(min_.times, min_.data, color=color,
+                          linewidth=linewidth, **kwargs)
+            b = self.fill_between(min_.times, mean_.data, min_.data, alpha=0.1,
+                                  color=color)
+        else:
+            a = b = None
+        if max_ is not None:
+            c = self.plot(max_.times, max_.data, color=color,
+                          linewidth=linewidth, **kwargs)
+            d = self.fill_between(max_.times, mean_.data, max_.data, alpha=0.1,
+                                  color=color)
+        else:
+            c = d = None
         return (line1, a, b, c, d)
 
     @auto_refresh
