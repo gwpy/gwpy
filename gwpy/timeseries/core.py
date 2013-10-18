@@ -36,7 +36,7 @@ from lal import gpstime
 from .. import version
 from ..data import (Series, Array2D)
 from ..detector import (Channel, ChannelList)
-from ..segments import Segment
+from ..segments import (Segment, SegmentList)
 from ..time import Time
 from ..window import *
 
@@ -1040,6 +1040,10 @@ class TimeSeriesList(list):
         super(TimeSeriesList, self).__init__()
         for item in items:
             self.append(item)
+
+    @property
+    def segments(self):
+        return SegmentList([item.span for item in self])
 
     def append(self, item):
         if not isinstance(item, TimeSeries):
