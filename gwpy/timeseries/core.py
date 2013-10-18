@@ -1034,6 +1034,7 @@ class TimeSeriesList(list):
     TypeError
         if any elements are not `TimeSeries`
     """
+    EntryClass = TimeSeries
     def __init__(self, *items):
         """Initalise a new `TimeSeriesList`
         """
@@ -1046,7 +1047,7 @@ class TimeSeriesList(list):
         return SegmentList([item.span for item in self])
 
     def append(self, item):
-        if not isinstance(item, TimeSeries):
+        if not isinstance(item, self.EntryClass):
             raise TypeError("Cannot append type '%s' to %s"
                             % (item.__class__.__name__,
                                self.__class__.__name__))
