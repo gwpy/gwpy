@@ -389,4 +389,4 @@ class ChannelList(list):
 
     @property
     def ifos(self):
-        return set([c.ifo for c in self.channels])
+        return set([c.ifo for c in self])
