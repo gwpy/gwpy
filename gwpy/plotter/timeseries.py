@@ -80,6 +80,8 @@ class TimeSeriesPlot(Plot):
                 ax.set_xlim(*span)
             for ax in self.axes[:-1]:
                 ax.set_xlabel("")
+            if hasattr(self, '_auto_gps') or self._auto_gps:
+                self.auto_gps_scale()
 
     # -----------------------------------------------
     # properties
@@ -170,6 +172,12 @@ class TimeSeriesPlot(Plot):
         if autoscale:
             self.axes.autoscale_view()
         return formatter
+
+    def refresh(self):
+        super(TimeSeriesPlot, self).refresh()
+        for ax in self._find_all_axes('timeseries'):
+            if not hasattr(ax, '_auto_gps') or ax._auto_gps == True:
+                ax.auto_gps_scale()
 
 
 class TimeSeriesAxes(Axes):
@@ -274,6 +282,7 @@ class TimeSeriesAxes(Axes):
         if xlabel:
             if re.search(s, xlabel):
                 self.xlabel = xlabel.replace(s, formatter.scale_str_long)
+        self._auto_gps = False
 
     @auto_refresh
     def auto_gps_scale(self):
@@ -284,6 +293,7 @@ class TimeSeriesAxes(Axes):
         for s in ticks.GPS_SCALE.keys()[::-1]:
             if duration >= (10 * s):
                 self.set_gps_scale(s)
+                self._auto_gps = True
                 return
 
     # -------------------------------------------
