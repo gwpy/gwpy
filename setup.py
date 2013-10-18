@@ -41,15 +41,9 @@ if sys.version_info[0] >= 3:
     import builtins
 else:
     import __builtin__ as builtins
-builtins._ASTROPY_SETUP_ = True
 
-import astropy
-from astropy.setup_helpers import (register_commands, adjust_compiler,
-                                   filter_packages, update_package_files,
-                                   get_debug_option)
 from astropy.version_helpers import get_git_devstr, generate_version_py
 
-# Set affiliated package-specific settings
 PACKAGENAME = 'gwpy'
 DESCRIPTION = 'Community package for gravitational wave astronomy in Python'
 LONG_DESCRIPTION = ''
@@ -66,50 +60,17 @@ RELEASE = 'dev' not in VERSION
 if not RELEASE:
     VERSION += get_git_devstr(False)
 
-# Populate the dict of setup command overrides; this should be done before
-# invoking any other functionality from distutils since it can potentially
-# modify distutils' behavior.
-cmdclassd = register_commands(PACKAGENAME, VERSION, RELEASE)
-
-# Adjust the compiler in case the default on this platform is to use a
-# broken one.
-adjust_compiler(PACKAGENAME)
-
 # Freeze build information in version.py
-generate_version_py(PACKAGENAME, VERSION, RELEASE, get_debug_option())
+generate_version_py(PACKAGENAME, VERSION, RELEASE)
 
 # Use the find_packages tool to locate all packages and modules
-packagenames = filter_packages(find_packages())
-
-# Treat everything in scripts except README.rst as a script to be installed
-scripts = [fname for fname in glob.glob(os.path.join('scripts', '*'))
-           if os.path.basename(fname) != 'README.rst']
-
-# Additional C extensions that are not Cython-based should be added here.
-extensions = []
-
-# A dictionary to keep track of all package data to install
-package_data = {PACKAGENAME: ['data/*']}
-
-# A dictionary to keep track of extra packagedir mappings
-package_dirs = {}
-
-# Update extensions, package_data, packagenames and package_dirs from
-# any sub-packages that define their own extension modules and package
-# data.  See the docstring for setup_helpers.update_package_files for
-# more details.
-update_package_files(PACKAGENAME, extensions, package_data, packagenames,
-                     package_dirs)
-
+packagenames = find_packages()
 
 setup(name=PACKAGENAME,
       version=VERSION,
       description=DESCRIPTION,
       packages=packagenames,
-      package_data=package_data,
-      package_dir=package_dirs,
-      ext_modules=extensions,
-      scripts=scripts,
+      ext_modules=[],
       requires=['astropy', 'glue', 'numpy', 'lal', 'lalframe'],
       install_requires=['astropy'],
       provides=[PACKAGENAME],
@@ -117,7 +78,6 @@ setup(name=PACKAGENAME,
       author_email=AUTHOR_EMAIL,
       license=LICENSE,
       long_description=LONG_DESCRIPTION,
-      cmdclass=cmdclassd,
       zip_safe=False,
       use_2to3=True
       )
