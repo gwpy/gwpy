@@ -47,6 +47,19 @@ finally:
                     (detector.LLO_4k.prefix,('nds.ligo-la.caltech.edu', 31200)),
                     (detector.CIT_40.prefix,('nds40.ligo.caltech.edu', 31200))])
 
+# set type dicts
+NDS2_CHANNEL_TYPESTR = {}
+for ctype in (nds2.channel.CHANNEL_TYPE_RAW,
+              nds2.channel.CHANNEL_TYPE_ONLINE,
+              nds2.channel.CHANNEL_TYPE_RDS,
+              nds2.channel.CHANNEL_TYPE_STREND,
+              nds2.channel.CHANNEL_TYPE_MTREND,
+              nds2.channel.CHANNEL_TYPE_STATIC,
+              nds2.channel.CHANNEL_TYPE_TEST_POINT):
+    NDS2_CHANNEL_TYPESTR[ctype] = nds2.channel_channel_type_to_string(ctype)
+NDS2_CHANNEL_TYPE = dict((val, key) for (key, val) in
+                         NDS2_CHANNEL_TYPESTR.iteritems())
+
 
 class NDSOutputContext(object):
     def __init__(self, stdout=sys.stdout, stderr=sys.stderr):
