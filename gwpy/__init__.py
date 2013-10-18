@@ -19,10 +19,9 @@
 """Package to do gravitational wave astrophysics with python
 """
 
-# import core astropy modules
 from astropy import table
 try:
-# from astropy.units.quantity import WARN_IMPLICIT_NUMERIC_CONVERSION
+    from astropy.units.quantity import WARN_IMPLICIT_NUMERIC_CONVERSION
 except ImportError:
     pass
 else:
