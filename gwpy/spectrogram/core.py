@@ -23,7 +23,7 @@ import scipy
 from astropy import units
 
 from ..data import Array2D
-from ..timeseries import TimeSeries
+from ..timeseries import (TimeSeries, TimeSeriesList)
 from ..spectrum import Spectrum
 
 from .. import version
@@ -402,3 +402,27 @@ class Spectrogram(Array2D):
         new[-N:] = new.data[:N]
         new[:other.shape[0]] = other.data
         return new
+
+
+class SpectrogramList(TimeSeriesList):
+    """Fancy list representing a list of `Spectrogram`
+
+    The `SpectrogramList` provides an easy way to collect and organise
+    `Spectrogram` for a single `Channel` over multiple segments.
+
+    Parameters
+    ----------
+    *items
+        any number of `Spectrogram` series
+
+    Returns
+    -------
+    list
+        a new `SpectrogramList`
+
+    Raises
+    ------
+    TypeError
+        if any elements are not of type `Spectrogram`
+    """
+    EntryClass = Spectrogram
