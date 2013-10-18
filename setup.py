@@ -55,8 +55,7 @@ DESCRIPTION = 'Community package for gravitational wave astronomy in Python'
 LONG_DESCRIPTION = ''
 AUTHOR = 'Duncan Macleod'
 AUTHOR_EMAIL = 'duncan.macleod@ligo.org'
-LICENSE = 'BSD'
-URL = 'http://astropy.org'
+LICENSE = 'GPLv3'
 
 # VERSION should be PEP386 compatible (http://www.python.org/dev/peps/pep-0386)
 VERSION = '0.0.dev'
@@ -117,7 +116,6 @@ setup(name=PACKAGENAME,
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
       license=LICENSE,
-      url=URL,
       long_description=LONG_DESCRIPTION,
       cmdclass=cmdclassd,
       zip_safe=False,
