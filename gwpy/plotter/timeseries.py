@@ -366,6 +366,55 @@ class TimeSeriesAxes(Axes):
         return line
 
     @auto_refresh
+    def plot_timeseries_mmm(self, mean_, min_, max_, **kwargs):
+        """Plot a `TimeSeries` onto these axes, with (min, max) shaded
+        regions
+
+        The `mean_` `TimeSeries` is plotted normally, while the `min_`
+        and `max_ `TimeSeries` are plotted lightly below and above,
+        with a fill between them and the mean_.
+
+        Parameters
+        ----------
+        mean_ : :class:`~gwpy.timeseries.core.TimeSeries`
+            data to plot normally
+        min_ : :class:`~gwpy.timeseries.core.TimeSeries`
+            first data set to shade to mean_
+        max_ : :class:`~gwpy.timeseries.core.TimeSeries`
+            second data set to shade to mean_
+        **kwargs
+            any other keyword arguments acceptable for
+            :meth:`~matplotlib.Axes.plot`
+
+        Returns
+        -------
+        artists : `tuple`
+            a 5-tuple containing (Line2d for mean_, `Line2D` for min_,
+            `PolyCollection` for min_ shading, `Line2D` for max_, and
+            `PolyCollection` for max_ shading)
+
+        See Also
+        --------
+        :meth:`~matplotlib.axes.Axes.plot`
+            for a full description of acceptable ``*args` and ``**kwargs``
+        """
+        # plot mean
+        line1 = self.plot_timeseries(mean_, **kwargs)[0]
+        # plot min and max
+        kwargs.pop('label', None)
+        color = kwargs.pop('color', line1.get_color())
+        linewidth = kwargs.pop('linewidth', line1.get_linewidth()) / 2
+        a = self.plot(min_.times, min_.data, color=color, linewidth=linewidth,
+                      **kwargs)
+        b = self.fill_between(min_.times, mean_.data, min_.data, alpha=0.1,
+                              color=color)
+        c = self.plot(max_.times, max_.data, color=color, linewidth=linewidth,
+                      **kwargs)
+        d = self.fill_between(max_.times, mean_.data, max_.data, alpha=0.1,
+                              color=color)
+        return (line1, a, b, c, d)
+
+    @auto_refresh
     def plot_spectrogram(self, spectrogram, **kwargs):
         """Plot a :class:`~gwpy.spectrogram.core.Spectrogram` onto
         these axes
