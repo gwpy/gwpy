@@ -85,7 +85,8 @@ class Channel(object):
         self.name = ch
         self.sample_rate = sample_rate
         self.unit = unit
-        self.type = type
+        if type is not None:
+            self.type = type
         self.dtype = dtype
         self.model = model
 
@@ -100,9 +101,9 @@ class Channel(object):
 
     @name.setter
     def name(self, n):
-        self._name = str(n)
+        self._name = str(n).split(',')[0]
         self._ifo, self._system, self._subsystem, self._signal, self.type = (
-            parse_channel_name(self.name))
+            parse_channel_name(str(n)))
 
     @property
     def ifo(self):
