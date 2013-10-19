@@ -50,6 +50,7 @@ GWPY_PLOT_PARAMS = {
     "axes.grid": True,
     "axes.axisbelow": False,
     "axes.labelsize": 22,
+    'axes.titlesize': 22,
     'figure.subplot.bottom': 0.13,
     'figure.subplot.left': 0.15,
     'figure.subplot.right': 0.88,

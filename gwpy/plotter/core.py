@@ -631,7 +631,8 @@ class Plot(figure.Figure):
         if ax is None:
             ax = self._find_axes()
         legend = ax.legend(*args, **kwargs)
-        legend.set_alpha(alpha)
+        lframe = legend.get_frame()
+        lframe.set_alpha(alpha)
         [l.set_linewidth(linewidth) for l in legend.get_lines()]
         return legend
 
