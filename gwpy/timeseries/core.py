@@ -18,11 +18,12 @@
 """Array with metadata
 """
 
-from __future__ import division
+from __future__ import (division, print_function)
 
 import os
 import numbers
 import numpy
+import sys
 import warnings
 from math import (ceil, floor, modf)
 from scipy import (fftpack, signal)
@@ -300,24 +301,27 @@ class TimeSeries(Series):
             hostlist = ndsio.host_resolution_order(Channel(channel).ifo)
 
         # loop hosts, stopping on first success
-        with outputcontext:
-            for host,port in hostlist:
-                if connection:
-                    _conn = connection
-                # open connection if needed - check kerberos ticket
-                if connection is None:
-                    if verbose:
-                        print("Connecting to %s:%s" % (host, port))
-                    try:
+        for host,port in hostlist:
+            if connection:
+                _conn = connection
+            # open connection if needed - check kerberos ticket
+            if connection is None:
+                if verbose:
+                    print("Connecting to %s:%s" % (host, port))
+                try:
+                    with outputcontext:
                         _conn = nds2.connection(host, port)
-                    except RuntimeError as e:
-                        if str(e).startswith('Request SASL authentication'):
-                            print('\nError authenticating against %s' % host)
-                            ndsio.kinit()
+                except RuntimeError as e:
+                    if str(e).startswith('Request SASL authentication'):
+                        print('\nError authenticating against %s' % host,
+                              file=sys.stderr)
+                        ndsio.kinit()
+                        with outputcontext:
                             _conn = nds2.connection(host, port)
-                        else:
-                            raise
-                # double check channels against server
+                    else:
+                        raise
+            # double check channels against server
+            with outputcontext:
                 channelok = _conn.find_channels(str(channel), ndschanneltype)
                 if not channelok:
                     channels = _conn.find_channels(
@@ -370,7 +374,7 @@ class TimeSeries(Series):
                                  format='gps')
                     channel = Channel.from_nds2(buffer_.channel)
                     return cls(buffer_.data, epoch=epoch, channel=channel)
-            raise RuntimeError("Cannot find relevant data on any known server")
+        raise RuntimeError("Cannot find relevant data on any known server")
 
     # -------------------------------------------
     # TimeSeries product methods
