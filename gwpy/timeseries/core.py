@@ -313,7 +313,7 @@ class TimeSeries(Series):
                     except RuntimeError as e:
                         if str(e).startswith('Request SASL authentication'):
                             print('\nError authenticating against %s' % host)
-                            kinit()
+                            ndsio.kinit()
                             _conn = nds2.connection(host, port)
                         else:
                             raise
