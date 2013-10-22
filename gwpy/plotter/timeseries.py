@@ -78,10 +78,10 @@ class TimeSeriesPlot(Plot):
             for ax in self.axes:
                 ax.set_epoch(span[0])
                 ax.set_xlim(*span)
+                if not hasattr(self, '_auto_gps') or self._auto_gps:
+                    ax.auto_gps_scale()
             for ax in self.axes[:-1]:
                 ax.set_xlabel("")
-            if hasattr(self, '_auto_gps') or self._auto_gps:
-                self.auto_gps_scale()
 
     # -----------------------------------------------
     # properties
