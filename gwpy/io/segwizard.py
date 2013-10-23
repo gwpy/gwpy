@@ -21,6 +21,7 @@
 import re
 
 import lal
+from glue import segmentsUtils
 
 from astropy.io import registry
 
@@ -33,57 +34,93 @@ __version__ = version.version
 LIGOTimeGPS = lal.LIGOTimeGPS
 
 
-def from_segwizard(fileobj, coltype=LIGOTimeGPS, strict=True):
-    commentpat = re.compile(r"\s*([#;].*)?\Z", re.DOTALL)
-    twocolsegpat = re.compile(r"\A\s*([\d.+-eE]+)\s+([\d.+-eE]+)\s*\Z")
-    fourcolsegpat = re.compile(
-        r"\A\s*([\d]+)\s+([\d.+-eE]+)\s+([\d.+-eE]+)\s+([\d.+-eE]+)\s*\Z")
-    format = None
-    out = SegmentList()
-    for line in fileobj:
-        line = commentpat.split(line)[0]
-        if not line:
-            continue
-        try:
-            [tokens] = fourcolsegpat.findall(line)
-            num = int(tokens[0])
-            seg = Segment(map(coltype, tokens[1:3]))
-            duration = coltype(tokens[3])
-            this_line_format = 4
-        except ValueError:
-            try:
-                [tokens] = twocolsegpat.findall(line)
-                seg = Segment(map(coltype, tokens[0:2]))
-                duration = abs(seg)
-                this_line_format = 2
-            except ValueError:
-                break
-        if strict:
-            if abs(seg) != duration:
-                raise ValueError("Segment '%s' has incorrect duration"
-                                 % line)
-            if format is None:
-                format = this_line_format
-            elif format != this_line_format:
-                raise ValueError("Segment '%s' format mismatch" % line)
-        out.append(seg)
-    return out
+def from_segwizard(fobj, coltype=float, strict=True):
+    """Read segments from a segwizard format file into a `SegmentList`
+    """
+    if isinstance(fobj, basestring):
+        fobj = open(fobj, 'r')
+        close = True
+    else:
+        close = False
+    segs = SegmentList(segmentsUtils.fromsegwizard(fobj, coltype=coltype,
+                                                   strict=strict))
+    if close:
+        fobj.close()
+    return segs
 
 
-def _flag_from_segwizard(filename, flag=None, coltype=LIGOTimeGPS, strict=True):
+def flag_from_segwizard(filename, flag=None, coltype=float, strict=True):
     return DataQualityFlag(name=None, active=from_segwizard(filename,
                                                             coltype=coltype,
                                                             strict=strict))
 
 def identify_segwizard(*args, **kwargs):
-    filename = args[1][0]
+    filename = args[1]
     if isinstance(filename, file):
         filename = filename.name
-    if filename.endswith("txt"):
+    if filename.endswith("txt") or filename.endswith('dat'):
         return True
     else:
         return False
 
-registry.register_reader('txt', DataQualityFlag, _flag_from_segwizard,
+
+def to_segwizard(segs, fobj):
+    """Write the given `SegmentList` to the file object fobj
+
+    Parameters
+    ----------
+    segs : :class:`~gwpy.segments.segments.SegmentList`
+        segmentlist to print
+    fobj : `file`, `str`
+        open file object, or file path, to write to
+
+    See Also
+    --------
+    :mod:`glue.segmentsUtils`
+        for definition of the segwizard format, and the to/from functions
+        used in this GWpy module
+    """
+    if isinstance(fobj, basestring):
+        close = True
+        fobj = open(fobj, 'w')
+    else:
+        close = False
+    segmentsUtils.tosegwizard(fobj, segs)
+    if close:
+        fobj.close()
+
+
+def flag_to_segwizard(flag, fobj):
+    """Write the given `DataQualityFlag` to the file object fobj
+
+    Parameters
+    ----------
+    flag : :class:`~gwpy.segments.flag.DataQualityFlag`
+        data quality flag to print
+    fobj : `file`, `str`
+        open file object, or file path, to write to
+
+    Notes
+    -----
+    In this format, only the
+    :attr:`~gwpy.segments.flag.DataQualityFlag.active` segments are
+    printed
+
+    See Also
+    --------
+    :mod:`glue.segmentsUtils`
+        for definition of the segwizard format, and the to/from functions
+        used in this GWpy module
+    """
+    to_segwizard(flag.active, fobj)
+
+
+registry.register_reader('segwizard', DataQualityFlag, flag_from_segwizard,
                          force=True)
-registry.register_identifier('txt', DataQualityFlag, identify_segwizard)
+registry.register_writer('segwizard', DataQualityFlag, flag_to_segwizard,
+                         force=True)
+registry.register_identifier('segwizard', DataQualityFlag, identify_segwizard)
+
+registry.register_reader('segwizard', SegmentList, from_segwizard, force=True)
+registry.register_writer('segwizard', SegmentList, to_segwizard, force=True)
+registry.register_identifier('segwizard', SegmentList, identify_segwizard)
