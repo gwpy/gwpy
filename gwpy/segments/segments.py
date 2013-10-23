@@ -31,6 +31,7 @@ from glue.segments import (segment as _Segment,
                            segmentlist as _SegmentList,
                            segmentlistdict as SegmentListDict)
 
+from astropy.io import registry as io_registry
 
 class Segment(_Segment):
     """A [GPS start, GPS end) semi-open interval, representing
@@ -50,7 +51,9 @@ class Segment(_Segment):
     def __str__(self):
         return "[%s ... %s)" % (self[0], self[1])
 
+
 class SegmentList(_SegmentList):
+
     def __repr__(self):
         return "<SegmentList([%s])>" % "\n              ".join(map(repr, self))
 
@@ -62,6 +65,9 @@ class SegmentList(_SegmentList):
 
     def __str__(self):
         return "[%s]" % "\n ".join(map(str, self))
+
+    read = classmethod(io_registry.read)
+
 
 del _Segment
 del _SegmentList
