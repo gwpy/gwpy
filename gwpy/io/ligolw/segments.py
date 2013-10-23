@@ -19,10 +19,13 @@
 """
 
 import re
+import datetime
 
-from glue.ligolw import (table as ligolw_table, utils as ligolw_utils,
+from glue.lal import LIGOTimeGPS
+from glue.ligolw import (ligolw, table as ligolw_table, utils as ligolw_utils,
                          lsctables)
 
+from astropy.time import Time
 from astropy.io import registry
 
 from ... import version
@@ -87,6 +90,93 @@ def identify_ligolw(*args, **kwargs):
     else:
         return False
 
+
+def write_ligolw(flag, fobj, **kwargs):
+    """Write this `DataQualityFlag` to XML in LIGO_LW format
+    """
+    if isinstance(fobj, ligolw.Document):
+        return write_to_xmldoc(flag, fobj, **kwargs)
+    elif isinstance(fobj, basestring):
+        fobj = open(fobj, 'w')
+        close = True
+    else:
+        close = False
+    xmldoc = ligolw.Document()
+    xmldoc.appendChild(ligolw.LIGO_LW())
+    # TODO: add process information
+    write_to_xmldoc(flag, xmldoc)
+    xmldoc.write(fobj)
+    if close:
+        fobj.close()
+
+
+def write_to_xmldoc(flag, xmldoc, process_id=None):
+    """Write this `DataQualityFlag` to the given LIGO_LW Document
+    """
+    # write SegmentDefTable
+    try:
+        segdeftab = ligolw_table.get_table(xmldoc,
+                                    lsctables.SegmentDefTable.tableName)
+    except ValueError:
+        segdeftab = lsctables.New(lsctables.SegmentDefTable,
+                                  columns=['ifos', 'name', 'version',
+                                           'comment', 'insertion_time',
+                                           'segment_def_id', 'process_id'])
+        xmldoc.childNodes[-1].appendChild(segdeftab)
+    segdef = lsctables.SegmentDef()
+    segdef.set_ifos([flag.ifo])
+    segdef.name = flag.name
+    segdef.version = flag.version
+    segdef.comment = flag.comment
+    segdef.insertion_time = int(Time(datetime.datetime.now(),
+                                    scale='utc').gps)
+    segdef.segment_def_id = lsctables.SegmentDefTable.get_next_id()
+    segdef.process_id = process_id
+    segdeftab.append(segdef)
+
+    # write SegmentSumTable
+    try:
+        segsumtab = ligolw_table.get_table(xmldoc,
+                                    lsctables.SegmentSumTable.tableName)
+    except ValueError:
+        segsumtab = lsctables.New(lsctables.SegmentSumTable,
+                                  columns=['segment_def_id', 'start_time',
+                                           'start_time_ns', 'end_time',
+                                           'end_time_ns', 'comment',
+                                           'segment_sum_id', 'process_id'])
+        xmldoc.childNodes[-1].appendChild(segsumtab)
+    for vseg in flag.valid:
+        segsum = lsctables.SegmentSum()
+        segsum.segment_def_id = segdef.segment_def_id
+        segsum.set(map(LIGOTimeGPS, map(float, vseg)))
+        segsum.comment = None
+        segsum.segment_sum_id = lsctables.SegmentSumTable.get_next_id()
+        segsum.process_id = process_id
+        segsumtab.append(segsum)
+
+    # write SegmentTable
+    try:
+        segtab = ligolw_table.get_table(xmldoc,
+                                        lsctables.SegmentTable.tableName)
+    except ValueError:
+        segtab = lsctables.New(lsctables.SegmentTable,
+                               columns=['process_id', 'segment_id',
+                                        'segment_def_id', 'start_time',
+                                        'start_time_ns', 'end_time',
+                                        'end_time_ns'])
+        xmldoc.childNodes[-1].appendChild(segtab)
+    for aseg in flag.active:
+        seg = lsctables.Segment()
+        seg.segment_def_id = segdef.segment_def_id
+        seg.set(map(LIGOTimeGPS, map(float, aseg)))
+        seg.segment_id = lsctables.SegmentTable.get_next_id()
+        seg.process_id = process_id
+        segtab.append(seg)
+
+    return xmldoc
+
 registry.register_reader("ligolw", DataQualityFlag, read_ligolw_segments,
+                         force=True)
+registry.register_writer("ligolw", DataQualityFlag, write_ligolw,
                          force=True)
 registry.register_identifier("ligolw", DataQualityFlag, identify_ligolw)
