@@ -209,50 +209,6 @@ class DataQualityFlag(object):
         self.valid = self.valid.coalesce()
         return self
 
-    def to_ligolw(self):
-        """Return a formatted LIGO_LW document describing the full
-        content of this `DataQualityFlag`.
-
-        Returns
-        -------
-        xmldoc : :class`~glue.ligolw.ligolw.Document`
-            a formatted LIGO_LW XML document with the following tables:
-
-                - :class:`~glue.ligolw.lsctables.VetoDefTable` -
-                  defining each of the valid segments
-                - :class:`~glue.ligolw.lsctables.SegmentDefTable` -
-                  defining the segments for this flag
-                - :class:`~glue.ligolw.lsctables.SegmentSumTable` -
-                  summarising the valid segments, this should be a
-                  one-to-one mapping with the `VetoDefTable`
-                - :class:`~glue.ligolw.lsctables.SegmentTable` -
-                  listing each of the active segments
-        """
-        raise NotImplementedError()
-
-    def to_ligolw_veto_definer_table(self):
-        """Return a formatted LIGO_LW veto-definer table describing
-        the valid segments for this `DataQualityFlag`
-
-        Returns
-        -------
-        lsctable : :class:`~glue.ligolw.lsctable.VetoDefTable`
-            XML table defining each of the valid segments for this flag
-        """
-        raise NotImplementedError()
-
-
-    def to_ligolw_segment_table(self):
-        """Return a formatted LIGO_LW segment table describing
-        the active segments for this `DataQualityFlag`
-
-        Returns
-        -------
-        lsctable : :class:`~glue.ligolw.lsctable.SegmentTable`
-            XML table listing the active segments for this flag
-        """
-        raise NotImplementedError()
-
     def __repr__(self):
         indent = " " * len("<%s(" % self.__class__.__name__)
         valid = str(self.valid).replace("\n",
@@ -324,6 +280,8 @@ class DataQualityFlag(object):
 
     __add__ = __or__
     __iadd__ = __ior__
+
+    write = io_registry.write
 
 class DataQualityList(OrderedDict):
     EntryClass = DataQualityFlag
