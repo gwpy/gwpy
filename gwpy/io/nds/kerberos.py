@@ -16,6 +16,11 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Utility module to initialise a kerberos ticket for NDS2 connections
+
+This module provides a lazy-mans python version of the 'kinit'
+command-line tool, with internal guesswork using keytabs
+
+See the documentation of the `kinit` function for example usage
 """
 
 import getpass
@@ -26,6 +31,7 @@ try:
 except NameError:
     raw_input = input
 
+import re
 from subprocess import (PIPE, Popen)
 
 from ... import version
@@ -33,6 +39,10 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 __all__ = ['kinit']
+
+
+class KerberosError(RuntimeError):
+    pass
 
 
 def which(program):
@@ -67,20 +77,107 @@ def which(program):
     raise ValueError("No executable '%s' found in PATH" % program)
 
 
-def kinit(username=None, password=None, realm='LIGO.ORG', exe=None):
+def kinit(username=None, password=None, realm=None, exe=None, keytab=None):
     """Initialise a kerboeros ticket to enable authenticated connections
     to the NDS2 server network
+
+    Parameters
+    ----------
+    username : `str`
+        name of user
+    password : `str`
+        cleartext password of user for given realm, only use if you have to
+    realm : `str`
+        name of realm to authenticate against, defaults to 'LIGO.ORG'
+        if not given or parsed from the keytab
+    exe : `str`
+        path to kinit executable
+    keytab : `str`
+        path to keytab file. If not given this will be read from the
+        ``KRB5_KTNAME`` environment variable. See notes for more details
+
+    Notes
+    -----
+    If a keytab is given, or is read from the KRB5_KTNAME environment
+    variable, this will be used to guess the username and realm, if it
+    contains only a single credential
+
+    Example 1: standard user input, with password prompt
+
+    >>> kinit('albert.einstein')
+    Password for albert.einstein@LIGO.ORG:
+    Kerberos ticket generated for albert.einstein@LIGO.ORG
+
+    Example 2: extract username and realm from keytab, and use that
+    in authentication
+
+    >>> kinit(keytab='~/.kerberos/ligo.org.keytab')
+    Kerberos ticket generated for duncan.macleod@LIGO.ORG
     """
+    # get kinit path and user keytab
     if exe is None:
         exe = which('kinit')
+    if keytab is None:
+        keytab = os.environ.get('KRB5_KTNAME', None)
+        if not os.path.isfile(keytab):
+            keytab = None
+    if keytab:
+        try:
+            principals = parse_keytab(keytab)
+        except KerberosError:
+            pass
+        else:
+            # is there's only one entry in the keytab, use that
+            if username is None and len(principals) == 1:
+                username = principals[0][0]
+            # or if the given username is in the keytab, find the realm
+            if username in zip(*principals)[0]:
+                idx = zip(*principals)[0].index(username)
+                realm = principals[idx][1]
+            # otherwise this keytab is useless, so remove it
+            else:
+                keytab = None
+    if realm is None:
+        realm = 'LIGO.ORG'
     if username is None:
         username = raw_input("Please provide username for the %s kerberos "
                              "realm: " % realm)
-    if password is None:
+    if not keytab and password is None:
         password = getpass.getpass(prompt="Password for %s@%s: "
                                           % (username, realm))
-    kget = Popen([exe, '%s@%s' % (username, realm)], stdout=PIPE,
-                 stderr=PIPE, stdin=PIPE)
-    kget.stdin.write('%s\n' % password)
+    if keytab:
+        cmd = [exe, '-k', '-t', keytab, '%s@%s' % (username, realm)]
+    else:
+        cmd = [exe, '%s@%s' % (username, realm)]
+    kget = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+    if not keytab:
+        kget.communicate(password)
     kget.wait()
     print("Kerberos ticket generated for %s@%s" % (username, realm))
+
+
+def parse_keytab(keytab):
+    """Read the contents of a KRB5 keytab file, returning a list of
+    credentials listed within
+
+    Parameters
+    ----------
+    keytab : `str`
+        path to keytab file
+    """
+    cmd = ['klist', '-k', '-K', keytab]
+    klist = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    out, err = klist.communicate()
+    if klist.returncode:
+        raise KerberosError("Cannot read keytab '%s'" % keytab)
+    principals = []
+    for line in out.splitlines():
+        try:
+            n, principal, _ = re.split('\s+', line.strip(' '), 2)
+        except ValueError:
+            continue
+        else:
+            if not n.isdigit():
+                continue
+            principals.append(principal.split('@'))
+    return principals
