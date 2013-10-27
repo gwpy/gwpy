@@ -1,8 +1,9 @@
-##################
-GWpy Documentation
-##################
+################
+Welcome to GWpy!
+################
 
 GWpy is a collaboration-driven package containing a set of common tools for characterising and analysing data from current gravitational wave detectors and studying the astrophysics associated with gravitational wave emission.
+The packge provides representations of all the time-domain and frequency-domain data produced by these instruments, and their analysis, with rich functionality to extract the maximum amount of information from them.
 
 .. image:: examples/hoft.png
    :width: 40%
@@ -10,39 +11,20 @@ GWpy is a collaboration-driven package containing a set of common tools for char
 .. image:: examples/specgram.png
    :width: 59%
 
-******************
-User documentation
-******************
+Contents
+========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
-   overview
    install
+   overview
    getting_started
    detector/index
    data/index
    segments/index
    plotter/index
+   examples/index
 
-***************
-Worked examples
-***************
-
-GWpy is package with a set of worked examples, providing step-by-step tutorials on how to use the GWpy package to study data from gravitational-wave detectors.
-
-The examples are provided in the ``examples/`` directory of the git repository, as ``.py`` files, runnable from your console, e.g.:
-
-.. code:: bash
-
-   python gw_ex_plot_timeseries.py
-
-**List of examples:**
-
-.. toctree::
-   :maxdepth: 1
-
-   examples/gw_ex_plot_timeseries
-   examples/gw_ex_compare_spectra
-   examples/gw_ex_plot_spectrogram
-   examples/gw_ex_plot_median_spectrogram
+Indices and tables
+==================
