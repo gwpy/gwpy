@@ -66,7 +66,3 @@ blockquote p {
 th.field-name {
   background-color: #ccc;
 }
-
-dl.method dd, dl.classmethod dd {
-  border-left: 1px solid #ccc;
-}
