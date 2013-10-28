@@ -53,7 +53,7 @@ release = gwpy_version.version
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ['_build', '_templates']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -220,7 +220,7 @@ intersphinx_mapping = {
 
 # -- Extensions ----------------------------------------------------------------
 
-autosummary_generate = True
+autosummary_generate = False
 
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.intersphinx',
