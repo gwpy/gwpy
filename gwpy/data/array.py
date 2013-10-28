@@ -118,7 +118,7 @@ class Array(numpy.ndarray):
     def __array_finalize__(self, obj):
         """Finalize a Array with metadata
         """
-        self.metadata = getattr(obj, 'metadata', {})
+        self.metadata = getattr(obj, 'metadata', {}).copy()
         self._baseclass = getattr(obj, '_baseclass', type(obj))
 
     def __array_wrap__(self, obj, context=None):
