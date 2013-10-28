@@ -794,6 +794,56 @@ class TimeSeries(Series):
         out.name = 'Coherence between %s and %s' % (self.name, other.name)
         return out
 
+    def auto_coherence(self, dt, fftlength=None, fftstride=None,
+                       window=None, **kwargs):
+        """Calculate the frequency-coherence between this `TimeSeries`
+        and a time-shifted copy of itself
+
+        The standard :meth:`TimeSeries.coherence` is calculated between
+        the input `TimeSeries` and a :meth:`cropped <TimeSeries.crop>`
+        copy of itself. Since the cropped version will be shorter, the
+        input series will be shortened to match.
+
+        Parameters
+        ----------
+        dt : `float`
+            duration (in seconds) of time-shift
+        fftlength : `float`, optional, default: `TimeSeries.duration`
+            number of seconds in single FFT, defaults to a single FFT
+        fftstride : `int`, optiona, default: fftlength
+            number of seconds between FFTs, defaults to no overlap
+        window : `timeseries.window.Window`, optional, default: `HanningWindow`
+            window function to apply to timeseries prior to FFT,
+            default HanningWindow of the relevant size
+        **kwargs
+            any other keyword arguments accepted by
+            :func:`matplotlib.mlab.cohere` except ``NFFT``, ``window``,
+            and ``noverlap`` which are superceded by the above keyword
+            arguments
+
+        Returns
+        -------
+        coherence : :class:`~gwpy.spectrum.core.Spectrum`
+            the coherence `Spectrum` of this `TimeSeries` with the other
+
+        Notes
+        -----
+        The :meth:`TimeSeries.auto_coherence` will perform best when
+        ``dt`` is approximately ``fftlength / 2``.
+
+        See Also
+        --------
+        :func:`matplotlib.mlab.cohere`
+            for details of the coherence calculator
+        """
+        # shifting self backwards is the same as forwards
+        dt = abs(dt)
+        # crop inputs
+        self_ = self.crop(self.span[0], self.span[1] - dt)
+        other = self.crop(self.span[0] + dt, self.span[1])
+        return self_.coherence(other, fftlength=fftlength,
+                               fftstride=fftstride, window=window, **kwargs)
+
     # -------------------------------------------
     # connectors
 
