@@ -379,6 +379,47 @@ class TimeSeries(Series):
     # -------------------------------------------
     # TimeSeries product methods
 
+    def crop(self, gpsstart, gpsend):
+        """Crop this `TimeSeries` to the given GPS ``[start, end)``
+        `Segment`
+
+        Parameters
+        ----------
+        gpsstart : `Time`, `float`
+            GPS start time to crop `TimeSeries` at left
+        gpsend : `Time`, `float`
+            GPS end time to crop `TimeSeries` at right
+
+        Returns
+        -------
+        timeseries : `TimeSeries`
+            A new `TimeSeries` with the same metadata but different GPS
+            span
+
+        Notes
+        -----
+        If either ``gpsstart`` or ``gpsend`` are outside of the original
+        `TimeSeries` span, warnings will be printed and the limits will
+        be restricted to the :attr:`TimeSeries.span`
+        """
+        if isinstance(gpsstart, Time):
+            gpsstart = gpsstart.gps
+        if isinstance(gpsend, Time):
+            gpsend = gpsend.gps
+        if gpsstart < self.span[0]:
+            warnings.warn('TimeSeries.crop given GPS start earlier than '
+                          'start time of the input TimeSeries. Crop will '
+                          'begin when the TimeSeries actually starts.')
+            gpsstart = self.span[0]
+        if gpsend > self.span[1]:
+            warnings.warn('TimeSeries.crop given GPS end later than '
+                          'end time of the input TimeSeries. Crop will '
+                          'end when the TimeSeries actually ends.')
+            gpsend = self.span[1]
+        times = self.times.data
+        croptimes = (times >= gpsstart) & (times < gpsend)
+        return self[croptimes]
+
     def fft(self, fftlength=None):
         """Compute the one-dimensional discrete Fourier transform of
         this `TimeSeries`
