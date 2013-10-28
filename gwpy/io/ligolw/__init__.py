@@ -23,7 +23,4 @@ from ... import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-#from .connect import read_ligolw as read
-#from .segments import read_ligolw_segments as read_segments
-
-__all__ = ['read', 'read_segments']
+from .segments import read_ligolw_segments as read_segments
