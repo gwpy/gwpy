@@ -30,8 +30,6 @@ from . import (tex, ticks)
 class TablePlot(Plot):
     """Plot data directly from a Table
     """
-    __slots__ = Plot.__slots__ + ['tables', '_xcolumn', '_ycolumn',
-                                  '_colorcolumn']
     def __init__(self, *args, **kwargs):
         # extract plotting keyword arguments
         plotargs = dict()
@@ -45,7 +43,7 @@ class TablePlot(Plot):
         # extract slot-based arguments
         slotargs = dict()
         for key,val in kwargs.items():
-            if key in self.__slots__:
+            if key in ['tables', '_xcolumn', '_ycolumn', '_colorcolumn']:
                 slotargs[key] = kwargs.pop(key, val)
 
         # extract columns
