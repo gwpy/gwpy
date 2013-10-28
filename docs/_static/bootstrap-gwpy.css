@@ -52,8 +52,21 @@ a.headerlink:hover {
   text-decoration: none;
 }
 
+blockquote {
+  border: 0;
+  margin: 0;
+}
+
 blockquote p {
   font-size: 100%;
   font-weight: normal;
   line-height: normal;
-};
+}
+
+th.field-name {
+  background-color: #ccc;
+}
+
+dl.method dd, dl.classmethod dd {
+  border-left: 1px solid #ccc;
+}
