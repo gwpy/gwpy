@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module defines the DataQualityFlag object, representing a
+"""This module defines the `DataQualityFlag` object, representing a
 named set of segments used in defining GW instrument state or
 data quality information.
 """
@@ -44,30 +44,42 @@ __all__ = ['DataQualityFlag', 'DataQualityList']
 class DataQualityFlag(object):
     """A representation of a named set of segments.
 
-    Each DataQualityFlag has a name, and two sets of segments:
+    Parameters
+    ----------
+    name : str, optional
+        The name of this data quality flag. This should be of the form
+        IFO:DQ-FLAG_NAME:VERSION, e.g. 'H1:DMT-SCIENCE:1'
+    active : `~segments.SegmentList`, optional
+        A list of active segments for this flag
+    valid : `~segments.SegmentList`, optional
+        A list of valid segments for this flag
 
-        - '`valid`' segments: times during which this flag was well defined
-        - '`active`' segments: times during which this flag was active
+    Attributes
+    ----------
+    active
+    valid
+    ifo
+    name
+    version
+    extent
+
+    Methods
+    -------
+    coalesce
+    copy
+    query
+    read
+    round
+    write
     """
-    EntryClass = Segment
-    ListClass = SegmentList
+    _EntryClass = Segment
+    _ListClass = SegmentList
     __slots__ = ('_active', '_valid', 'ifo', 'name', 'version',
                  'category', 'comment', '_name_is_flag')
     def __init__(self, name=None, active=[], valid=[], category=None,
                  comment=None):
         """Define a new DataQualityFlag, with a name, a set of active
         segments, and a set of valid segments
-
-        Parameters
-        ----------
-
-        name : str, optional
-            The name of this data quality flag. This should be of the form
-            IFO:DQ-FLAG_NAME:VERSION, e.g. 'H1:DMT-SCIENCE:1'
-        active : `~segments.SegmentList`, optional
-            A list of active segments for this flag
-        valid : `~segments.SegmentList`, optional
-            A list of valid segments for this flag
         """
         self.ifo, self.name, self.version = parse_flag_name(name)
         if self.ifo:
@@ -82,17 +94,16 @@ class DataQualityFlag(object):
     @property
     def active(self):
         """The set of segments during which this DataQualityFlag was
-        active
+        active.
         """
         if self.valid:
             self._active &= self.valid
-            return self._active.coalesce()
-        else:
-            return self._active
+            self._active.coalesce()
+        return self._active
 
     @active.setter
     def active(self, segmentlist):
-        self._active = self.ListClass(map(self.EntryClass,
+        self._active = self._ListClass(map(self._EntryClass,
                                           segmentlist)).coalesce()
         if not self.valid and len(segmentlist):
             self.valid = [segmentlist.extent()]
@@ -106,16 +117,15 @@ class DataQualityFlag(object):
 
     @valid.setter
     def valid(self, segmentlist):
-        self._valid = self.ListClass(map(self.EntryClass,
+        self._valid = self._ListClass(map(self._EntryClass,
                                          segmentlist)).coalesce()
 
     @property
     def extent(self):
+        """The single GPS [start, stop) enclosing segment of this
+        `DataQualityFlag`
+        """
         return self.valid.extent()
-
-    def efficiency(self, trigtable):
-        raise NotImplementedError("Class-level efficiency calculation has "
-                                  "not been implemented yet.")
 
     def __getitem__(self, item):
         if isinstance(item, int) or isinstance(item, slice):
@@ -136,7 +146,6 @@ class DataQualityFlag(object):
 
         Parameters
         ----------
-
         flag : str
             The name of the flag for which to query
         *args
@@ -149,9 +158,9 @@ class DataQualityFlag(object):
 
         Returns
         -------
-
-        A new DataQualityFlag, with the `valid` and `active` lists
-        filled appropriately.
+        flag : `DataQualityFlag`
+            A new `DataQualityFlag`, with the `valid` and `active` lists
+            filled appropriately.
         """
         # parse arguments
         if len(args) == 1:
@@ -193,12 +202,12 @@ class DataQualityFlag(object):
         segment protracted to the nearest integer boundaries
         """
         new = self.copy()
-        new.active = self.ListClass([self.EntryClass(int(floor(s[0])),
-                                                     int(ceil(s[1]))) for
+        new.active = self._ListClass([self._EntryClass(int(floor(s[0])),
+                                                       int(ceil(s[1]))) for
                                      s in new.active])
-        new.valid = self.ListClass([self.EntryClass(int(floor(s[0])),
-                                                    int(ceil(s[1]))) for
-                                    s in new.valid])
+        new.valid = self._ListClass([self._EntryClass(int(floor(s[0])),
+                                                      int(ceil(s[1]))) for
+                                     s in new.valid])
         return new.coalesce()
 
     def coalesce(self):
@@ -230,9 +239,9 @@ class DataQualityFlag(object):
         new.name = self.name
         new.version = self.version
         new.comment = self.comment
-        new.valid = self.ListClass([self.EntryClass(s[0], s[1]) for
+        new.valid = self._ListClass([self._EntryClass(s[0], s[1]) for
                                     s in self.valid])
-        new.active = self.ListClass([self.EntryClass(s[0], s[1]) for
+        new.active = self._ListClass([self._EntryClass(s[0], s[1]) for
                                      s in self.active])
         return new
 
@@ -284,7 +293,7 @@ class DataQualityFlag(object):
     write = io_registry.write
 
 class DataQualityList(OrderedDict):
-    EntryClass = DataQualityFlag
+    _EntryClass = DataQualityFlag
     def to_ligolw(self):
         raise NotImplementedError()
 
@@ -297,10 +306,16 @@ def parse_flag_name(name, warn=True):
     """Internal method to parse a `string` name into constituent
     `ifo, `name` and `version` components.
 
+    Parameters
+    ----------
+    name : `str`
+        the full name of a `DataQualityFlag` to parse, e.g.
+        ``'H1:DMT-SCIENCE:1'``
+
     Returns
     -------
-
-    A tuple of (ifo, name, version) component parts
+    (ifo, name, version)
+        A tuple of component string parts
     """
     if name is None:
         return None, None, None
