@@ -18,12 +18,22 @@
 """Defines objects representing the laser interferometer GW detector
 """
 
+import warnings
+import re
+
+from astropy.coordinates import (CartesianPoints, SphericalCoordinatesBase)
+from astropy.units import Unit
+
 from .. import version
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 __all__ = ['LaserInterferometer']
+
+
+class ConventionWarning(UserWarning):
+    pass
 
 
 class LaserInterferometer(object):
@@ -47,14 +57,127 @@ class LaserInterferometer(object):
     time_delay_from_earth_center
     """
     def __init__(self):
-        self.name = None
-        self.prefix = None
-        self.vertex = None
-        self.response_matrix = None
+        self._name = None
+        self._prefix = None
+        self._vertex = None
+        self._xend = None
+        self._yend = None
+        self._response_matrix = None
+
+    # ------------------------------------------------------------------------
+    # LaserInterferometer attributes
+
+    @property
+    def name(self):
+        """Name for this `LaserInterferometer`
+
+        :type: `str`
+        """
+        return self._name
+
+    @name.setter
+    def name(self, n):
+        self._name = n is not None and str(n) or n
+
+    @property
+    def prefix(self):
+        """Identification prefix for this `LaserInterferometer`.
+
+        The `prefix` should follow the convention of single upper-case
+        character followed by a single number, e.g. 'X1'.
+
+        :type: `str`
+        """
+        return self._prefix
+
+    @prefix.setter
+    def prefix(self, ifo):
+        if not re.match('[A-Z][12]', ifo):
+            warnings.warn("Prefix '%s' does not match the 'X1' convention",
+                          ConventionWarning)
+        self._prefix = ifo
+
+    @property
+    def vertex(self):
+        """Position of the vertex for this `LaserInterferometer`.
+
+        This should be the position of the beam-splitter, relative to
+        the Earth centre, in earth-fixed coordinates.
+
+        :type: :class:`~astropy.coordinates.distances.CartesianPoints`
+        """
+        return self._vertex
+
+    @vertex.setter
+    def vertex(self, v):
+        if isinstance(v, CartesianPoints):
+            self._vertex = v
+        elif isinstance(v, SphericalCoordinatesBase):
+            self._vertex = v.cartesian
+        elif hasattr(v, 'unit'):
+            self._vertex = CartesianPoints(*v, unit=v.unit)
+        else:
+            self._vertex = CartesianPoints(*v, unit=Unit('m'))
+
+    @property
+    def xend(self):
+        """Position of the x-arm end mirror for this `LaserInterferometer`.
+
+        This should be the position of the x-end optic, relative to
+        the Earth centre, in earth-fixed coordinates.
+
+        :type: :class:`~astropy.coordinates.distances.CartesianPoints`
+        """
+        return self._xend
+
+    @xend.setter
+    def xend(self, x):
+        if isinstance(x, CartesianPoints):
+            self._xend = x
+        elif isinstance(x, SphericalCoordinatesBase):
+            self._xend = x.cartesian
+        elif hasattr(x, 'unit'):
+            self._xend = CartesianPoints(*x, unit=x.unit)
+        else:
+            self._xend = CartesianPoints(*x, unit=Unit('m'))
+
+    @property
+    def yend(self):
+        """Position of the y-end mirror for this `LaserInterferometer`.
+
+        This should be the position of the x-end optic, relative to
+        the Earth centre, in earth-fixed coordinates.
+
+        :type: :class:`~astropy.coordinates.distances.CartesianPoints`
+        """
+        return self._yend
+
+    @yend.setter
+    def yend(self, y):
+        if isinstance(x, CartesianPoints):
+            self._xend = x
+        elif isinstance(x, SphericalCoordinatesBase):
+            self._xend = x.cartesian
+        elif hasattr(x, 'unit'):
+            self._xend = CartesianPoints(*x, unit=x.unit)
+        else:
+            self._xend = CartesianPoints(*x, unit=Unit('m'))
+
+    @property
+    def response_matrix(self):
+        """The 3x3 Cartesian detector response tensor.
+
+        :type: :class:`numpy.ndarray`
+        """
+        return self._response_matrix
+
+    @response_matrix.setter
+    def response_matrix(self, r):
+        self._response_matrix = r
 
     @property
     def _lal(self):
-        """The LAL representation of this detector
+        """The LAL representation of this detector.
 
         :type: :lalsuite:`LALDetector`
         """
@@ -69,6 +192,9 @@ class LaserInterferometer(object):
                              % self.prefix)
         else:
             return _lal_ifos[0]
+
+    # ------------------------------------------------------------------------
+    # LaserInterferometer methods
 
     def response(self, source, polarization=0.0):
         """Determine the F+, Fx antenna responses to a signal
