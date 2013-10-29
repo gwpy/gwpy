@@ -29,14 +29,37 @@ __credits__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 
 from glue.segments import (segment as _Segment,
                            segmentlist as _SegmentList,
-                           segmentlistdict as SegmentListDict)
+                           segmentlistdict as _SegmentListDict)
 
 from astropy.io import registry as io_registry
 
-class Segment(_Segment):
-    """A [GPS start, GPS end) semi-open interval, representing
-    a period of time.
+def _update_docstring(doc):
+    """Update the docstring of the given class from glue to match
+    the new naming for GWpy matching PEP-8.
+
+    Parameters
+    ----------
+    doc : `str`
+        input docstring to modify
+
+    Returns
+    -------
+    newdoc : `str`
+        the updated docstring with all references to the
+        glue segments.segment* classes modified for GWpy with sphinx
+        scope
     """
+    doc = doc.replace('segmentlistdicts', '`SegmentListDicts <SegmentListDict>`')
+    doc = doc.replace('segmentlistdict', '`SegmentListDict`')
+    doc = doc.replace('Segmentlists', '`SegmentLists <SegmentList>`')
+    doc = doc.replace('segmentlist', '`SegmentList`')
+    doc = doc.replace('segments', '`Segments <Segment>`')
+    doc = doc.replace('segment', '`Segment`')
+    return doc
+
+
+class Segment(_Segment):
+    __doc__ = _update_docstring(_Segment.__doc__)
     @property
     def start(self):
         return self[0]
@@ -53,7 +76,7 @@ class Segment(_Segment):
 
 
 class SegmentList(_SegmentList):
-
+    __doc__ = _SegmentList.__doc__.replace('segmentlist', '`SegmentList`')
     def __repr__(self):
         return "<SegmentList([%s])>" % "\n              ".join(map(repr, self))
 
@@ -69,5 +92,9 @@ class SegmentList(_SegmentList):
     read = classmethod(io_registry.read)
 
 
+class SegmentListDict(_SegmentListDict):
+    __doc__ = _update_docstring(_SegmentListDict.__doc__)
+
 del _Segment
 del _SegmentList
+del _SegmentListDict
