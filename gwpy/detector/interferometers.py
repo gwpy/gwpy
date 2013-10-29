@@ -18,31 +18,164 @@
 """Defines objects representing the laser interferometer GW detector
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+from .. import version
 
-import lal
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__version__ = version.version
+
+__all__ = ['LaserInterferometer']
 
 
 class LaserInterferometer(object):
+    """A model of a ground-based, laser-interferometer gravitational-wave
+    detector.
 
+    Attributes
+    ----------
+    name
+    prefix
+    vertex
+    xend
+    yend
+    response_matrix
+
+    Methods
+    -------
+    light_travel_time
+    response
+    time_delay
+    time_delay_from_earth_center
+    """
     def __init__(self):
         self.name = None
         self.prefix = None
-        self.location = None
-        self.x_end_location = None
-        self.y_end_location = None
+        self.vertex = None
         self.response_matrix = None
 
-    def response(self, coord, polarization=0.0):
-        """Determine the F+, Fx antenna responses to a signal
-        originating at the given coordinates.
-        """
-        return lal.ComputeDetAMResponse(
-                   self.response_matrix, coord.ra.radians, coord.dec.radians,
-                   polarization,
-                   lal.GreenwichMeanSiderealTime(coord.obstime.gps))
+    @property
+    def _lal(self):
+        """The LAL representation of this detector
 
-    def time_delay(self, other, coord):
-        return lal.ArrivalTimeDiff(self.response_matrix, other.response,
-                                   coord.ra.radians, coord.dec.radians,
-                                   coord.obstime.gps)
+        :type: :lalsuite:`LALDetector`
+        """
+        from lal import lalCachedDetectors
+        _lal_ifos = [ifo for ifo in lalCachedDetectors if
+                     ifo.frDetector.prefix == self.prefix]
+        if len(_lal_ifos) == 0:
+            raise ValueError("No LAL representation for detector '%s'"
+                             % self.prefix)
+        elif len(_lal_ifos) > 1:
+            raise ValueError("Multiple LALDetectors with prefix '%s'"
+                             % self.prefix)
+        else:
+            return _lal_ifos[0]
+
+    def response(self, source, polarization=0.0):
+        """Determine the F+, Fx antenna responses to a signal
+        originating at the given source coordinates.
+
+        Parameters
+        ----------
+        source : \
+        :class:`~astropy.coordinates.coordsystems.SphericalCoordinatesBase`
+            signal source position coordinates
+        polarization : `float`, optional, default ``0.0``
+            signal source polarization
+
+        Returns
+        -------
+        response : `tuple`
+            (F+, Fx) detector response values
+
+        See Also
+        --------
+        :lalsuite:`XLALComputeDetAMResponse`
+            for details on the underlying calculation
+        """
+        from lal import ComputeDetAMResponse
+        return ComputeDetAMResponse(
+                   self.response_matrix, source.ra.radians, source.dec.radians,
+                   polarization,
+                   lal.GreenwichMeanSiderealTime(source.obstime.gps))
+
+    def time_delay(self, other, source):
+        """Calculate the difference in signal arrival times between
+        this `LaserInterferometer` and the other, based on the source
+        position.
+
+        Parameters
+        ----------
+        other : `LaserInterferometer`
+            the other instrument against which to compare signal arrival
+        source : \
+        :class:`~astropy.coordinates.coordsystems.SphericalCoordinatesBase`
+            signal source position coordinates
+
+        Returns
+        -------
+        dt : `float`
+            the difference in arrival times at each of the two
+            `LaserInterferometer` detectors for the given signal
+
+        See Also
+        --------
+        :lalsuite:`XLALArrivalTimeDiff`
+            for details on the underlying calculation
+        """
+        from lal import ArrivalTimeDiff
+        return ArrivalTimeDiff(self.response_matrix, other.response,
+                               source.ra.radians, source.dec.radians,
+                               source.obstime.gps)
+
+    def time_delay_from_earth_center(self, source):
+        """Calculate the difference in signal arrival times between
+        this `LaserInterferometer` and the Earth centre, based on the source
+        position.
+
+        Parameters
+        ----------
+        source : \
+        :class:`~astropy.coordinates.coordsystems.SphericalCoordinatesBase`
+            signal source position coordinates
+
+        Returns
+        -------
+        dt : `float`
+            the delay in arrival of a signal from the given source at
+            this `LaserInterferometer` compared to the Earth centre
+
+        See Also
+        --------
+        :lalsuite:`XLALTimeDelayFromEarthCenter`
+            for details on the underlying calculation
+        """
+        from lal import ArrivalTimeDiff
+        return ArrivalTimeDiff(self.response_matrix, other.response,
+                               source.ra.radians, source.dec.radians,
+                               source.obstime.gps)
+
+    def light_travel_time(self, other):
+        """Calculate the line-of-sight light travel time between this
+        `LaserInterferometer` and the other.
+
+        Parameters
+        ----------
+        other : `LaserInterferometer`
+            the other instrument against which to compare signal arrival
+
+        Returns
+        -------
+        dt : `float`
+            the light travel time (in seconds) between the two intstruments
+
+        See Also
+        --------
+        :lalsuite:`XLALLightTravelTime`
+            for details on the underlying calculation
+        """
+        from lal import LightTravelTime
+        try:
+            return LightTravelTime(self._lal, other._lal) * 1e-9
+        except ValueError:
+            raise ValueError("Cannot calculate light travel time without a "
+                             "LAL representation of this detector")

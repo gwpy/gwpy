@@ -18,21 +18,24 @@
 """Defines each LaserInterferometer detector in the current network
 """
 
-import lal
+from .interferometers import *
+from .channel import *
 
-from .interferometers import LaserInterferometer
-from .channel import (Channel, ChannelList)
-
-__all__ = ([ifo.frDetector.name for ifo in lal.lalCachedDetectors] +
-           ["DETECTOR_BY_PREFIX"])
-
-DETECTOR_BY_PREFIX = dict()
-
-for ifo in lal.lalCachedDetectors:
-    detector = LaserInterferometer()
-    detector.prefix = ifo.frDetector.prefix
-    detector.name = ifo.frDetector.name
-    detector.location = ifo.location
-    detector.response_matrix = ifo.response
-    globals()[detector.name] = detector
-    DETECTOR_BY_PREFIX[detector.prefix] = detector
+# build list of known detectors from LAL
+try:
+    from lal import lalCachedDetectors
+except ImportError:
+    pass
+else:
+    __all__ = ([ifo.frDetector.name for ifo in lalCachedDetectors] +
+               ["DETECTOR_BY_PREFIX"])
+    DETECTOR_BY_PREFIX = dict()
+    for ifo in lal.lalCachedDetectors:
+        detector = LaserInterferometer()
+        detector.prefix = ifo.frDetector.prefix
+        detector.name = ifo.frDetector.name
+        detector.vertex = ifo.location
+        detector.response_matrix = ifo.response
+        globals()[detector.name] = detector
+        DETECTOR_BY_PREFIX[detector.prefix] = detector
+    del lalCacheDetectors
