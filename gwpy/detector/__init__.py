@@ -30,7 +30,7 @@ else:
     __all__ = ([ifo.frDetector.name for ifo in lalCachedDetectors] +
                ["DETECTOR_BY_PREFIX"])
     DETECTOR_BY_PREFIX = dict()
-    for ifo in lal.lalCachedDetectors:
+    for ifo in lalCachedDetectors:
         detector = LaserInterferometer()
         detector.prefix = ifo.frDetector.prefix
         detector.name = ifo.frDetector.name
@@ -38,4 +38,4 @@ else:
         detector.response_matrix = ifo.response
         globals()[detector.name] = detector
         DETECTOR_BY_PREFIX[detector.prefix] = detector
-    del lalCacheDetectors
+    del lalCachedDetectors
