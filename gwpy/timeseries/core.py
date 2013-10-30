@@ -189,6 +189,22 @@ class TimeSeries(Series):
                      fdel=Series.index.__delete__,
                      doc="""Series of GPS times for each sample""")
 
+    unit = property(fget=Series.unit.__get__,
+                    fset=Series.unit.__set__,
+                    fdel=Series.unit.__delete__,
+                    doc="""Unit for this `TimeSeries`
+
+                        :type: :class:`~astropy.units.core.Unit`
+                        """)
+
+    channel = property(fget=Series.channel.__get__,
+                       fset=Series.channel.__set__,
+                       fdel=Series.channel.__delete__,
+                       doc="""Source data `Channel` for this `TimeSeries`
+
+                           :type: :class:`~gwpy.detector.channel.Channel`
+                           """)
+
     # -------------------------------------------
     # TimeSeries accessors
 
