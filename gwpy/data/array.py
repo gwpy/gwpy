@@ -317,7 +317,7 @@ class Array(numpy.ndarray):
 
     @property
     def channel(self):
-        """Data channel associated with this `TimeSeries`.
+        """Data channel associated with this `Array`.
         """
         try:
             return self.metadata['channel']
