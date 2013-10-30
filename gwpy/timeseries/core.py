@@ -180,7 +180,7 @@ class TimeSeries(Series):
 
     @property
     def duration(self):
-        """Duration of this `TimeSeries` in seconds
+        """Duration of this `TimeSeries` in seconds.
         """
         return units.Quantity(self.span[1] - self.span[0], self.xunit)
 
@@ -211,7 +211,7 @@ class TimeSeries(Series):
     @classmethod
     def read(cls, source, channel, start=None, end=None, datatype=None,
              verbose=False):
-        """Read data into a `TimeSeries` from files on disk
+        """Read data into a `TimeSeries` from files on disk.
 
         Parameters
         ----------
@@ -262,7 +262,7 @@ class TimeSeries(Series):
     @classmethod
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
               connection=None, ndschanneltype=None):
-        """Fetch data from NDS into a TimeSeries
+        """Fetch data from NDS into a TimeSeries.
 
         Parameters
         ----------
@@ -397,7 +397,7 @@ class TimeSeries(Series):
 
     def crop(self, gpsstart, gpsend):
         """Crop this `TimeSeries` to the given GPS ``[start, end)``
-        `Segment`
+        `Segment`.
 
         Parameters
         ----------
@@ -438,7 +438,7 @@ class TimeSeries(Series):
 
     def fft(self, fftlength=None):
         """Compute the one-dimensional discrete Fourier transform of
-        this `TimeSeries`
+        this `TimeSeries`.
 
         Parameters
         ----------
@@ -556,7 +556,7 @@ class TimeSeries(Series):
     def spectrogram(self, stride, fftlength=None, fftstride=None,
                     method='welch', window=None):
         """Calculate the average power spectrogram of this `TimeSeries`
-        using the specified average spectrum method
+        using the specified average spectrum method.
 
         Parameters
         ----------
@@ -617,7 +617,7 @@ class TimeSeries(Series):
     # TimeSeries filtering
 
     def highpass(self, frequency, amplitude=0.9, order=8, method='scipy'):
-        """Filter this `TimeSeries` with a Butterworth high-pass filter
+        """Filter this `TimeSeries` with a Butterworth high-pass filter.
 
         See (for example) :lalsuite:`XLALHighPassREAL8TimeSeries` for more
         information.
@@ -661,7 +661,7 @@ class TimeSeries(Series):
                                   "'scipy' or 'lal'")
 
     def lowpass(self, frequency, amplitude=0.9, order=4, method='scipy'):
-        """Filter this `TimeSeries` with a Butterworth low-pass filter
+        """Filter this `TimeSeries` with a Butterworth low-pass filter.
 
         Parameters
         ----------
@@ -740,7 +740,7 @@ class TimeSeries(Series):
     def coherence(self, other, fftlength=None, fftstride=None,
                   window=None, **kwargs):
         """Calculate the frequency-coherence between this `TimeSeries`
-        and another
+        and another.
 
         Parameters
         ----------
@@ -813,7 +813,7 @@ class TimeSeries(Series):
     def auto_coherence(self, dt, fftlength=None, fftstride=None,
                        window=None, **kwargs):
         """Calculate the frequency-coherence between this `TimeSeries`
-        and a time-shifted copy of itself
+        and a time-shifted copy of itself.
 
         The standard :meth:`TimeSeries.coherence` is calculated between
         the input `TimeSeries` and a :meth:`cropped <TimeSeries.crop>`
@@ -884,7 +884,7 @@ class TimeSeries(Series):
             return 0
 
     def append(self, other, gap='raise', inplace=True, pad=0.0):
-        """Connect another `TimeSeries` onto the end of the current one
+        """Connect another `TimeSeries` onto the end of the current one.
 
         Parameters
         ----------
@@ -942,7 +942,7 @@ class TimeSeries(Series):
         return new
 
     def prepend(self, other, gap='raise', inplace=True, pad=0.0):
-        """Connect another `TimeSeries` onto the end of the current one
+        """Connect another `TimeSeries` onto the start of the current one.
 
         Parameters
         ----------
@@ -1011,7 +1011,7 @@ class TimeSeries(Series):
 
     @classmethod
     def from_lal(cls, lalts):
-        """Generate a new TimeSeries from a LAL TimeSeries of any type
+        """Generate a new TimeSeries from a LAL TimeSeries of any type.
         """
         # write Channel
         channel = Channel(lalts.name, 1/lalts.deltaT,
@@ -1021,7 +1021,7 @@ class TimeSeries(Series):
                    unit=lal.UnitToString(lalts.sampleUnits), copy=True)
 
     def to_lal(self):
-        """Convert this `TimeSeries` into a LAL TimeSeries
+        """Convert this `TimeSeries` into a LAL TimeSeries.
         """
         from lal import utils as lalutils
         laltype = lalutils.LAL_TYPE_FROM_NUMPY[self.dtype.type]
@@ -1083,7 +1083,7 @@ class TimeSeries(Series):
 
     def __array_wrap__(self, obj, context=None):
         """Wrap an array into a TimeSeries, or a StateTimeSeries if
-        dtype == bool
+        dtype == bool.
         """
         if obj.dtype == numpy.dtype(bool):
             from .statevector import StateTimeSeries
