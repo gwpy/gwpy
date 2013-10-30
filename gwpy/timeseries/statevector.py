@@ -47,7 +47,7 @@ __all__ = ['StateTimeSeries', 'StateVector', 'BitMask']
 
 class StateTimeSeries(TimeSeries):
     """Boolean array representing a good/bad state determination
-    of some data
+    of some data.
 
     Parameters
     ----------
@@ -98,7 +98,7 @@ class StateTimeSeries(TimeSeries):
 
     def to_dqflag(self, name=None, minlen=1, dtype=float, round=False,
                   comment=None):
-        """Convert this `StateTimeSeries` into a `DataQualityFlag`
+        """Convert this `StateTimeSeries` into a `DataQualityFlag`.
 
         Each contiguous set of `True` values are grouped as a `Segment`
         running from the start of the first found `True`, to the end of
@@ -168,7 +168,7 @@ class StateTimeSeries(TimeSeries):
 
 
 class BitMask(list):
-    """Definition of the bits in a `StateVector`
+    """Definition of the bits in a `StateVector`.
 
     Parameters
     ----------
@@ -240,7 +240,7 @@ class BitMask(list):
 
     @property
     def description(self):
-        """(key, value) dictionary of long bit descriptions
+        """(key, value) dictionary of long bit descriptions.
         """
         return self._description
 
@@ -269,7 +269,7 @@ class BitMask(list):
 
 class StateVector(TimeSeries):
     """Binary array representing a set of good/bad state determinations
-    of some data
+    of some data.
 
     Each binary bit represents a single boolean condition, with the
     definitins of all the bits stored in the `StateVector.bitmask`
@@ -328,7 +328,7 @@ class StateVector(TimeSeries):
 
     @property
     def bitmask(self):
-        """The list of bit names for this `StateVector`
+        """The list of bit names for this `StateVector`.
         """
         try:
             return self.metadata['bitmask']
@@ -364,7 +364,7 @@ class StateVector(TimeSeries):
     @property
     def bits(self):
         """A list of `StateTimeSeries` for each of the individual
-        bits in this `StateVector`
+        bits in this `StateVector`.
         """
         try:
             return self._bits
@@ -380,7 +380,7 @@ class StateVector(TimeSeries):
     # StateVector methods
 
     def to_dqflags(self, minlen=1, dtype=float, round=False):
-        """Convert this `StateVector` into a `SegmentListDit`
+        """Convert this `StateVector` into a `SegmentListDict`.
 
         The `StateTimeSeries` for each bit is converted into a `SegmentList`
         with the bits combined into a dict.
@@ -412,7 +412,7 @@ class StateVector(TimeSeries):
     @classmethod
     def read(cls, source, channel, bitmask=[], start=None, end=None,
              datatype=numpy.uint64, verbose=False):
-        """Read a `StateVector` channel from a given source
+        """Read a `StateVector` channel from a given source.
 
         Parameters
         ----------
@@ -449,7 +449,7 @@ class StateVector(TimeSeries):
     @classmethod
     def fetch(cls, channel, start, end, bitmask=[], host=None,
               port=None, verbose=False):
-        """Fetch data from NDS into a `StateVector`
+        """Fetch data from NDS into a `StateVector`.
 
         Parameters
         ----------
