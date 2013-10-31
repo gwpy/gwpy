@@ -1,15 +1,16 @@
-########################################
-Spectral data (`gwpy.spectrum.Spectrum`)
-########################################
+####################################
+Spectral data (:mod:`gwpy.spectrum`)
+####################################
 
 .. currentmodule:: gwpy.spectrum.core
 
 While gravitational-wave detectors are time-domain instruments, their sensitivity is often measured as a power-spectral-density over the range of interesting GW frequencies (~10-10,000 Hz).
 
-Generating a `Spectrum`
-=======================
+==============================
+Generating a :class:`Spectrum`
+==============================
 
-A new `Spectrum` can be generated from any data array, as long as you provide two key attributes:
+A new :class:`Spectrum` can be generated from any data array, as long as you provide two key attributes:
 
   - `f0`: the starting frequency for this `Spectrum`
   - `df`: the frequency resolution of the `Spectrum`
@@ -25,19 +26,20 @@ From this information, any new `Spectrum` can be generated as follows::
 Calculating the `Spectrum` from a :class:`~gwpy.timeseries.core.TimeSeries`
 ===========================================================================
 
-The canonical method for generating a `Spectrum` is to calculated either the power-spectral density or amplitude-spectral density of a :class:`~gwpy.timeseries.core.TimeSeries`, using either the :meth:`~gwpy.timeseries.core.TimeSeries.psd` or :meth:`~gwpy.timeseries.core.TimeSeries.asd` methods of that class::
+.. py:currentmodule:: gwpy.timeseries.core
+The frequency-spectrum of a :class:`TimeSeries` can be calculated using either of the following methods:
+
+.. autosummary::
+   :nosignatures:
+
+   TimeSeries.psd
+   TimeSeries.asd
+
+For example:
 
     >>> from gwpy.timeseries import TimeSeries
-    >>> hoft = TimeSeries.read('G-G1_RDS_C01_L3-1049587200-60.gwf', 'G1:DER_DATA_H')
+    >>> hoft = TimeSeries.fetch('H1:LDAS-STRAIN', 966211215, 966211815)
     >>> hoff = hoft.asd(2, fftstride=1, method='welch')
 
-where the result is an average spectrum, in this examples using the `Welch method <https://en.wikipedia.org/wiki/Welch_method>`_.
+where the result is an average spectrum calculated using the `Welch method <https://en.wikipedia.org/wiki/Welch_method>`_.
 The ``fftlength`` and ``fftstride`` arguments are the length (in seconds) of each Fourier transform, and the stride between successive transforms in the average, respectively.
-
-=============
-Reference/API
-=============
-
-.. autoclass:: Spectrum
-   :show-inheritance:
-   :members: filter, plot

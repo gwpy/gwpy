@@ -8,5 +8,4 @@ GWpy provides representations of the basic data objects recorded from gravitatio
    :maxdepth: 1
 
    timeseries
-   statevector
    spectrum
