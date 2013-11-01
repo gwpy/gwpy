@@ -128,6 +128,11 @@ class Plot(figure.Figure):
         # find default layer
         if mappable is None and ax is not None and len(ax.collections):
             mappable = ax.collections[-1]
+        elif mappable is None and ax is not None and len(ax.images):
+            mappable = ax.images[-1]
+        elif (visible is False and mappable is None and
+              ax is not None and len(ax.lines)):
+            mappable = ax.lines[-1]
         elif mappable is None and ax is None:
             for ax in self.axes[::-1]:
                 if hasattr(ax, 'collections') and len(ax.collections):
@@ -135,6 +140,9 @@ class Plot(figure.Figure):
                     break
                 elif hasattr(ax, 'images') and len(ax.images):
                     mappable = ax.images[-1]
+                    break
+                elif visible is False and len(ax.lines):
+                    mappable = ax.lines[-1]
                     break
         if not mappable:
             raise ValueError("Cannot determine mappable layer for this "
