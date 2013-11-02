@@ -211,49 +211,55 @@ class Array(numpy.ndarray):
     # Pickle helpers
 
     def __getstate__(self):
-        """Return the internal state of the object
+        """Return the internal state of the object.
+
+        Returns
+        -------
+        state : `tuple`
+            A 5-tuple of (shape, dtype, typecode, rawdata, metadata)
+            for pickling
         """
-        state = (1,
-                 self.shape,
+        state = (self.shape,
                  self.dtype,
                  self.flags.fnc,
-                 self.A.tostring(),
-                 self.metadata.todict(),
+                 self.data.tostring(),
+                 self.metadata
                  )
         return state
 
     def __setstate__(self, state):
-        """Restore the internal state of the masked array
+        """Restore the internal state of the `Array`.
 
         This is used for unpickling purposes.
 
         Parameters
         ----------
         state : `tuple`
-            typically the output of the :meth:`Array.__get__state`
-            method, aa 5-tuple containing:
+            typically the output of the :meth:`Array.__getstate__`
+            method, a 5-tuple containing:
 
             - class name
             - a tuple giving the shape of the data
             - a typecode for the data
             - a binary string for the data
-            - a binary string for the mask.
+            - the metadata dict
         """
-        (ver, shp, typ, isf, raw, meta) = state
-        if ver != 1:
-            raise NotImplementedError
-        numpy.ndarray.__setstate__(self, (shp, typ, isf, raw))
+        (shp, typ, isf, raw, meta) = state
+        super(Array, self).__setstate__((shp, typ, isf, raw))
         self.metadata = self._metadata_type(meta)
 
     def __reduce__(self):
-        """Return a 3-tuple for pickling a `Array`:
-            - reconstruction function
-            - tuple to pass reconstruction function
-            - state, which will be passed to __setstate__
+        """Initialise the pickle operation for this `Array`
+
+        Returns
+        -------
+        pickler : `tuple`
+            A 3-tuple of (reconstruct function, reconstruct args, state)
         """
-        return (_mareconstruct,
-                (self.__class__, self._baseclass, (0,), 'b', ),
+        return (_array_reconstruct, (self.__class__, self.dtype),
                 self.__getstate__())
+
+
 
     # -------------------------------------------
     # Array properties
@@ -337,3 +343,16 @@ class Array(numpy.ndarray):
 
     read = classmethod(registry.read)
     write = registry.write
+
+
+def _array_reconstruct(Class, dtype):
+    """Reconstruct an `Array` after unpickling
+
+    Parameters
+    ----------
+    Class : `type`, `Array` or sub-class
+        class object to create
+    dtype : `type`, `numpy.dtype`
+        dtype to set
+    """
+    return Class.__new__(Class, [], dtype=dtype)
