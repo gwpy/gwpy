@@ -38,7 +38,7 @@ from .segments import Segment, SegmentList
 from ..version import version as __version__
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-__all__ = ['DataQualityFlag', 'DataQualityList']
+__all__ = ['DataQualityFlag', 'DataQualityDict']
 
 
 class DataQualityFlag(object):
@@ -171,29 +171,12 @@ class DataQualityFlag(object):
             raise ValueError("DataQualityFlag.query must be called with a "
                              "flag name, and either GPS start and stop times, "
                              "or a SegmentList of query segments")
-        url = kwargs.pop('url', 'https://segdb.ligo.caltech.edu')
-        if kwargs.keys():
-            TypeError("DataQualityFlag.query has no keyword argument '%s'"
-                      % kwargs.keys()[0])
         # process query
-        from glue.segmentdb import (segmentdb_utils as segdb_utils,
-                                    query_engine as segdb_engine)
-        ifo, name, version = parse_flag_name(flag)
-        if not version:
-            version = '*'
-        connection = segdb_utils.setup_database(url)
-        engine = segdb_engine.LdbdQueryEngine(connection)
-        segdefs = []
-        for gpsstart, gpsend in qsegs:
-            gpsstart = int(float(gpsstart))
-            gpsend = int(ceil(float(gpsend)))
-            segdefs += segdb_utils.expand_version_number(
-                          engine, (ifo, name, version, gpsstart, gpsend, 0, 0))
-        segs = segdb_utils.query_segments(engine, 'segment', segdefs)
-        segsum = segdb_utils.query_segments(engine, 'segment_summary', segdefs)
-        # build output
-        return cls(flag, valid=reduce(operator.or_, segsum).coalesce(),
-                   active=reduce(operator.or_, segs).coalesce())
+        flags = DataQualityDict.query([flag], *args, **kwargs)
+        if len(flags) != 1:
+            raise RuntimeError("Multiple flags returned for single query, "
+                               "something went wrong")
+        return flags[flag]
 
     read = classmethod(io_registry.read)
 
@@ -292,10 +275,88 @@ class DataQualityFlag(object):
 
     write = io_registry.write
 
-class DataQualityList(OrderedDict):
+class DataQualityDict(OrderedDict):
+    """List of `DataQualityFlags` with associated methods
+    """
     _EntryClass = DataQualityFlag
-    def to_ligolw(self):
-        raise NotImplementedError()
+
+    @classmethod
+    def query(cls, flags, *args, **kwargs):
+        """Query the segment database URL as given for the listed
+        `DataQualityFlag` names
+
+        Parameters
+        ----------
+        flag : str
+            The name of the flag for which to query
+        *args
+            Either, two `float`-like numbers indicating the
+            GPS [start, stop) interval, or a
+            :class:`~gwpy.segments.segments.SegmentList`
+            defining a number of summary segments
+        url : `str`, optional, default: ``'https://segdb.ligo.caltech.edu'``
+            URL of the segment database, defaults to segdb.ligo.caltech.edu
+
+        Returns
+        -------
+        flag : `DataQualityFlag`
+            A new `DataQualityFlag`, with the `valid` and `active` lists
+            filled appropriately.
+        """
+        # parse arguments
+        if len(args) == 1:
+            qsegs = args[0]
+        elif len(args) == 2:
+            qsegs = [args]
+        else:
+            raise ValueError("DataQualityDict.query must be called with a "
+                             "flag name, and either GPS start and stop times, "
+                             "or a SegmentList of query segments")
+        url = kwargs.pop('url', 'https://segdb.ligo.caltech.edu')
+        if kwargs.keys():
+            TypeError("DataQualityDict.query has no keyword argument '%s'"
+                      % kwargs.keys()[0])
+        # parse flags
+        if isinstance(flags, basestring):
+            flags = flags.split(',')
+        else:
+            flags = flags
+        # process query
+        from glue.segmentdb import (segmentdb_utils as segdb_utils,
+                                    query_engine as segdb_engine)
+        connection = segdb_utils.setup_database(url)
+        engine = segdb_engine.LdbdQueryEngine(connection)
+        segdefs = []
+        for flag in flags:
+            ifo, name, version = parse_flag_name(flag)
+            if not version:
+                version = '*'
+            for gpsstart, gpsend in qsegs:
+                gpsstart = int(float(gpsstart))
+                gpsend = int(ceil(float(gpsend)))
+                segdefs += segdb_utils.expand_version_number(
+                               engine, (ifo, name, version,
+                                        gpsstart, gpsend, 0, 0))
+        segs = segdb_utils.query_segments(engine, 'segment', segdefs)
+        segsum = segdb_utils.query_segments(engine, 'segment_summary', segdefs)
+        segs = [s.coalesce() for s in segs]
+        segsum = [s.coalesce() for s in segsum]
+        # build output
+        out = cls()
+        for definition, segments, summary in zip(segdefs, segs, segsum):
+            # parse flag name
+            flag = ':'.join(map(str, definition[:3]))
+            if flag.endswith('*'):
+                flag = flag.rsplit(':', 1)[0]
+            # define flag
+            if not flag in out:
+                out[flag] = DataQualityFlag(name=flag)
+            # add segments
+            out[flag].valid.extend(summary)
+            out[flag].active.extend(segments)
+        return out
+
+    read = classmethod(io_registry.read)
 
 
 _re_inv = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<name>[^/]+):(?P<version>\d+)\Z")
