@@ -19,7 +19,6 @@
 """
 
 import numpy
-import scipy
 import sys
 
 if sys.version_info[0] < 3:
@@ -236,7 +235,8 @@ class SpectralVariance(Array2D):
             the given percentile `Spectrum` calculated from this
             `SpectralVaraicence`
         """
-        out = percentile(self.data, percentile, axis=1)
+        import scipy
+        out = scipy.percentile(self.data, percentile, axis=1)
         name = '%s %s%% percentile' % (self.name, percentile)
         return Spectrum(out, epoch=self.epoch, frequencies=self.bins[:-1],
                         channel=self.channel, name=name, logf=self.logx)
