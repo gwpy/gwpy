@@ -860,6 +860,35 @@ class TimeSeries(Series):
         return self_.coherence(other, fftlength=fftlength,
                                fftstride=fftstride, window=window, **kwargs)
 
+    def rms(self, stride=1):
+        """Calculate the root-mean-square value of this `TimeSeries`
+        once per stride.
+
+        Parameters
+        ----------
+        stride : `float`
+            stride (seconds) between RMS calculations
+
+        Returns
+        -------
+        rms : `TimeSeries`
+            a new `TimeSeries` containing the RMS value with dt=stride
+        """
+        stridesamp = stride * self.sample_rate.value
+        nsteps = int(self.size // stridesamp)
+        # stride through TimeSeries, recording RMS
+        data = numpy.zeros(nsteps)
+        for step in range(nsteps):
+            # find step TimeSeries
+            idx = stridesamp * step
+            idx_end = idx + stridesamp
+            stepseries = self[idx:idx_end]
+            rms_ = numpy.sqrt(numpy.mean(numpy.absolute(stepseries.data)**2))
+            data[step] = rms_
+        name = '%s %.2f-second RMS' % (self.name, stride)
+        return self.__class__(data, channel=self.channel, epoch=self.epoch,
+                              name=name, sample_rate=(1/float(stride)))
+
     # -------------------------------------------
     # connectors
 
