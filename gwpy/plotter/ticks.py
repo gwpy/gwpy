@@ -181,15 +181,8 @@ class TimeFormatter(mticker.Formatter):
     def __init__(self, format='gps', epoch=None, scale=1.0):
         self._format = format
         self._tex = pyplot.rcParams["text.usetex"]
-        if epoch and not isinstance(epoch, Time):
-            self.epoch = Time(float(epoch), format=format)
-        else:
-            self.epoch = epoch
-        self._scale = scale
-        try:
-            self.scale_str_long,self.scale_str_short = GPS_SCALE[scale]
-        except KeyError:
-            self.scale_str_long,self.scale_str_short = GPS_SCALE[1]
+        self.set_epoch(epoch)
+        self.set_scale(scale)
 
     def __call__(self, t, pos=None):
         if isinstance(t, Time):
@@ -197,21 +190,14 @@ class TimeFormatter(mticker.Formatter):
         if self._format not in ['iso']:
             if self.epoch is not None:
                 t = (t - self.epoch.gps)
-            if self._scale is not None:
-                t /= float(self._scale)
+            if self.scale is not None:
+                t /= float(self.scale)
             t = round(float(t), 6)
         t = re.sub('.0+\Z', '', str(t))
         return t
 
-    @property
-    def scale(self):
-        """GPS step scale for this formatter
-        """
-        return self._scale
-
-    @scale.setter
-    def scale(self, scale, short=None, long=None):
-        self._scale = scale
+    def set_scale(self, scale, short=None, long=None):
+        self.scale = scale
         try:
             self.scale_str_long,self.scale_str_short = GPS_SCALE[scale]
         except KeyError:
@@ -221,15 +207,9 @@ class TimeFormatter(mticker.Formatter):
         if long:
             self.scale_str_long = long
 
-    @property
-    def epoch(self):
-        """Starting GPS time epoch for this formatter
-        """
-        return self._epoch
-    @epoch.setter
-    def epoch(self, epoch):
+    def set_epoch(self, epoch):
         if epoch is None:
-            self._epoch = None
+            self.epoch = None
             return
         elif not isinstance(epoch, Time):
             if hasattr(epoch, "seconds"):
@@ -239,7 +219,7 @@ class TimeFormatter(mticker.Formatter):
             else:
                 epoch = modf(epoch)[::-1]
             epoch = Time(*epoch, format='gps', precision=6)
-        self._epoch = epoch.copy(format='gps')
+        self.epoch = epoch.copy(format='gps')
 
 
 def transform_factory(informat, outformat):

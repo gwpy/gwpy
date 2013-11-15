@@ -30,8 +30,6 @@ from matplotlib.projections import register_projection
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 
-from lal import LIGOTimeGPS
-
 from .core import Plot
 from ..segments import SegmentList
 from ..time import Time
@@ -163,7 +161,12 @@ class TimeSeriesPlot(Plot):
         self.axes.xaxis.set_major_formatter(formatter)
         locator = ticks.AutoTimeLocator(epoch=epoch, scale=scale)
         self.axes.xaxis.set_major_locator(locator)
-        self.axes.fmt_xdata = lambda t: LIGOTimeGPS(t)
+        try:
+            from lal import LIGOTimeGPS
+        except ImportError:
+            self.fmt_xdata = lambda t: t
+        else:
+            self.fmt_xdata = lambda t: LIGOTimeGPS(t)
         if addlabel:
             self.xlabel = ("Time (%s) from %s (%s)"
                            % (formatter.scale_str_long,
@@ -199,7 +202,12 @@ class TimeSeriesAxes(Axes):
             self.xaxis.set_major_formatter(formatter)
             locator = ticks.AutoTimeLocator(epoch=epoch, scale=scale)
             self.xaxis.set_major_locator(locator)
-            self.fmt_xdata = lambda t: LIGOTimeGPS(t)
+            try:
+                from lal import LIGOTimeGPS
+            except ImportError:
+                self.fmt_xdata = lambda t: t
+            else:
+                self.fmt_xdata = lambda t: LIGOTimeGPS(t)
             self.add_epoch_label()
             self.autoscale_view()
 
@@ -232,7 +240,8 @@ class TimeSeriesAxes(Axes):
         if isinstance(formatter, ticks.TimeFormatter):
             locator = self.xaxis.get_major_locator()
             oldepoch = formatter.epoch
-            formatter.epoch = locator.epoch = self._epoch
+            locator.epoch = self._epoch
+            formatter.set_epoch(self._epoch)
             formatter.set_locs(locator.refresh())
             # update xlabel
             oldiso = re.sub('\.0+', '', oldepoch.utc.iso)
@@ -276,7 +285,7 @@ class TimeSeriesAxes(Axes):
                             "Please try using a TimeFormatter instead"
                             % formatter.__class__.__name__)
         s = formatter.scale_str_long
-        formatter.scale = scale
+        formatter.set_scale(scale)
         locator.scale = scale
         xlabel = self.xlabel.get_text()
         if xlabel:
