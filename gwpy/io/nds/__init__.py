@@ -43,9 +43,9 @@ finally:
     DEFAULT_HOSTS = OrderedDict([
                     (None,('ldas-pcdev4.ligo.caltech.edu', 31200)),
                     (None,('nds.ligo.caltech.edu', 31200)),
-                    (detector.LHO_4k.prefix,('nds.ligo-wa.caltech.edu', 31200)),
-                    (detector.LLO_4k.prefix,('nds.ligo-la.caltech.edu', 31200)),
-                    (detector.CIT_40.prefix,('nds40.ligo.caltech.edu', 31200))])
+                    ('H1', ('nds.ligo-wa.caltech.edu', 31200)),
+                    ('L1', ('nds.ligo-la.caltech.edu', 31200)),
+                    ('C1', ('nds40.ligo.caltech.edu', 31200))])
 
 # set type dicts
 NDS2_CHANNEL_TYPESTR = {}

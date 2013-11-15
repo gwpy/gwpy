@@ -21,8 +21,6 @@
 from math import log10
 from scipy import stats
 
-import lal
-
 from astropy import units as aunits, coordinates as acoords
 
 from .. import (time, version, detector)

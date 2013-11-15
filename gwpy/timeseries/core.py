@@ -31,9 +31,6 @@ from matplotlib import mlab
 
 from astropy import units
 
-import lal
-from lal import gpstime
-
 from .. import version
 from ..data import (Series, Array2D)
 from ..detector import (Channel, ChannelList)
@@ -1043,16 +1040,29 @@ class TimeSeries(Series):
         """Generate a new TimeSeries from a LAL TimeSeries of any type.
         """
         # write Channel
+        try:
+            from lal import UnitToString
+        except ImportError:
+            raise ImportError("No module named lal. Please see https://"
+                              "www.lsc-group.phys.uwm.edu/daswg/"
+                              "projects/lalsuite.html for installation "
+                              "instructions")
         channel = Channel(lalts.name, 1/lalts.deltaT,
-                          unit=lal.UnitToString(lalts.sampleUnits),
+                          unit=UnitToString(lalts.sampleUnits),
                           dtype=lalts.data.data.dtype)
         return cls(lalts.data.data, channel=channel, epoch=lalts.epoch,
-                   unit=lal.UnitToString(lalts.sampleUnits), copy=True)
+                   unit=UnitToString(lalts.sampleUnits), copy=True)
 
     def to_lal(self):
         """Convert this `TimeSeries` into a LAL TimeSeries.
         """
-        from lal import utils as lalutils
+        try:
+            import lal
+        except ImportError:
+            raise ImportError("No module named lal. Please see https://"
+                              "www.lsc-group.phys.uwm.edu/daswg/"
+                              "projects/lalsuite.html for installation "
+                              "instructions")
         laltype = lalutils.LAL_TYPE_FROM_NUMPY[self.dtype.type]
         typestr = lalutils.LAL_TYPE_STR[laltype]
         create = getattr(lal, 'Create%sTimeSeries' % typestr.upper())

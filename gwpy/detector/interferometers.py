@@ -218,11 +218,10 @@ class LaserInterferometer(object):
         :lalsuite:`XLALComputeDetAMResponse`
             for details on the underlying calculation
         """
-        from lal import ComputeDetAMResponse
+        from lal import (ComputeDetAMResponse, GreenwichMeanSiderealTime)
         return ComputeDetAMResponse(
                    self.response_matrix, source.ra.radians, source.dec.radians,
-                   polarization,
-                   lal.GreenwichMeanSiderealTime(source.obstime.gps))
+                   polarization, GreenwichMeanSiderealTime(source.obstime.gps))
 
     def time_delay(self, other, source):
         """Calculate the difference in signal arrival times between

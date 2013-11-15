@@ -20,12 +20,10 @@
 
 import numpy
 
-from lal import git_version
-from lal.gpstime import gps_to_str
+from .. import version
 
-__author__ = "Duncan M. Macleod <duncan.macleod@ligo.org>"
-__version__ = git_version.id
-__date__ = git_version.date
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__version__ = version.version
 
 
 def float_to_latex(x, format="%.2g"):
@@ -70,6 +68,7 @@ def str_to_latex(input):
 
     @returns the input text formatted for latex
     """
+    from lal.gpstime import gps_to_str
 
     # if given a GPS time, convert it to UTC
     if isinstance(text, Real) or isinstance(text, LIGOTimeGPS):

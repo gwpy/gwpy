@@ -21,7 +21,6 @@
 import numpy
 from scipy import (interpolate, signal)
 from astropy import units
-import lal
 
 from ..data import Series
 from ..detector import Channel
@@ -233,13 +232,18 @@ class Spectrum(Series):
     def from_lal(cls, lalfs):
         """Generate a new `Spectrum` from a LAL `FrequencySeries` of any type
         """
-        # write Channel
+        try:
+            from lal import UnitToString
+        except ImportError:
+            raise ImportError("No module named lal. Please see https://"
+                              "www.lsc-group.phys.uwm.edu/daswg/"
+                              "projects/lalsuite.html for installation "
+                              "instructions")
         channel = Channel(lalfs.name,
-                          unit=lal.UnitToString(lalfs.sampleUnits),
+                          unit=UnitToString(lalfs.sampleUnits),
                           dtype=lalfs.data.data.dtype)
         return cls(lalfs.data.data, channel=channel, f0=lalfs.f0,
-                   df=lalfs.deltaF, unit=lal.UnitToString(lalfs.sampleUnits),
-                   epoch=lalfs.epoch)
+                   df=lalfs.deltaF, epoch=lalfs.epoch)
 
     def to_lal(self):
         """Convert this `Spectrum` into a LAL FrequencySeries
@@ -249,7 +253,21 @@ class Spectrum(Series):
         FrequencySeries
             an XLAL-format FrequencySeries of a given type, e.g.
             :lalsuite:`XLALREAL8FrequencySeries`
+
+        Notes
+        -----
+        Currently, this function is unable to handle unit string
+        conversion.
         """
+        try:
+            import lal
+        except ImportError:
+            raise ImportError("No module named lal. Please see https://"
+                              "www.lsc-group.phys.uwm.edu/daswg/"
+                              "projects/lalsuite.html for installation "
+                              "instructions")
+        else:
+            from lal import utils as lalutils
         laltype = lalutils.LAL_TYPE_FROM_NUMPY[self.dtype.type]
         typestr = lalutils.LAL_TYPE_STR[laltype]
         create = getattr(lal, 'Create%sFrequencySeries' % typestr.upper())

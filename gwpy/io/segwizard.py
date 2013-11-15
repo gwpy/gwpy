@@ -20,7 +20,6 @@
 
 import re
 
-import lal
 from glue import segmentsUtils
 
 from astropy.io import registry
@@ -30,8 +29,6 @@ from ..segments import (Segment, SegmentList, DataQualityFlag)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
-
-LIGOTimeGPS = lal.LIGOTimeGPS
 
 
 def from_segwizard(fobj, coltype=float, strict=True):
