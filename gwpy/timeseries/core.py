@@ -1063,6 +1063,8 @@ class TimeSeries(Series):
                               "www.lsc-group.phys.uwm.edu/daswg/"
                               "projects/lalsuite.html for installation "
                               "instructions")
+        else:
+            from lal import utils as lalutils
         laltype = lalutils.LAL_TYPE_FROM_NUMPY[self.dtype.type]
         typestr = lalutils.LAL_TYPE_STR[laltype]
         create = getattr(lal, 'Create%sTimeSeries' % typestr.upper())
