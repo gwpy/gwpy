@@ -72,7 +72,7 @@ class SpectralVariance(Array2D):
 
     @property
     def bins(self):
-        return self._bins
+        return self.metadata['bins']
 
     @bins.setter
     def bins(self, bins):
@@ -83,7 +83,7 @@ class SpectralVariance(Array2D):
                ("SpectralVariance.bins must be given as a list of bin edges, "
                 "including the rightmost edge, and have length 1 greater than "
                 "the y-axis of the SpectralVariance data")
-        self._bins = bins
+        self.metadata['bins'] = bins
 
     # over-write yindex to communicate with bins
     @property
