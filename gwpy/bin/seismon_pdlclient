@@ -1,0 +1,134 @@
+#!/usr/bin/python
+
+# Copyright (C) 2013 Michael Coughlin
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""PDL client wrapper.
+
+This script runs and monitors the PDL client.
+
+Comments should be e-mailed to michael.coughlin@ligo.org.
+
+"""
+
+import os, sys, glob, optparse, shutil, warnings
+import datetime, time
+from subprocess import Popen, PIPE, STDOUT
+
+__author__ = "Michael Coughlin <michael.coughlin@ligo.org>"
+__version__ = 1.0
+__date__    = "9/22/2013"
+
+# =============================================================================
+#
+#                               DEFINITIONS
+#
+# =============================================================================
+
+def verboseProcess(process,verbose):
+   """@print PDL output (if requested)
+
+   @param process
+       pdl process
+   @param verbose
+       run verbosely (bool)
+   """
+
+   numLines = 10
+   if verbose:
+       # Poll process for new output until finished
+       #while True:
+       for i in xrange(numLines):
+           nextline = process.stdout.readline()
+           if nextline == '' and process.poll() != None:
+               break
+           sys.stdout.write(nextline)
+           sys.stdout.flush()
+
+def runProcess(process,verbose=False):
+   """@run PDL process
+
+   @param process
+       pdl process
+   @param verbose
+       run verbosely (bool)
+   """
+
+   if not process == []:
+       poll_process = process.poll()
+       if not poll_process == None:
+           process = []
+       else:
+           verboseProcess(process,verbose)
+           return process
+
+
+   runCommand = "rm /home/mcoughlin/Seismon/ProductClient/data/receiver_index.db"
+   process = Popen(runCommand,shell=True,stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+
+   runCommand = "java -jar /home/mcoughlin/Seismon/ProductClient/ProductClient.jar --receive --configFile=/home/mcoughlin/Seismon/ProductClient/config.ini -Xmx1024m"
+   process = Popen(runCommand,shell=True,stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+   verboseProcess(process,verbose)
+   exitCode = process.returncode
+
+   return process
+
+def findProcess():
+    """@find PDL process
+    """
+
+    ps= Popen("ps -ef | grep mcoughlin | grep ProductClient", shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+    output = ps.stdout.read()
+    ps.stdout.close()
+    ps.wait()
+
+    lines = output.split("\n")
+
+    process = []
+    runningProcess = False
+    for line in lines:
+        if "source" in line:
+            runningProcess = True
+    if runningProcess:
+        sys.exit()
+
+    return process
+
+folderDirectory = '/home/mcoughlin/Seismon/ProductClient' 
+dataDirectory = '/home/mcoughlin/Seismon/ProductClient/data'
+dataOldDirectory = '/home/mcoughlin/Seismon/ProductClient/dataOld'
+
+current_date = datetime.date.today()
+
+process = findProcess()
+
+while 1:
+
+   today = datetime.date.today()
+   yesterday = datetime.date.today() - datetime.timedelta(1)
+
+   todayFolder = today.strftime("%Y_%m_%d")
+   yesterdayFolder = yesterday.strftime("%Y_%m_%d")
+
+   todayFolder = os.path.join(folderDirectory,todayFolder)
+   yesterdayFolder = os.path.join(folderDirectory,yesterdayFolder)
+
+   process = runProcess(process,verbose=True) 
+
+   if not current_date == today:
+       mv_command = "mv %s %s/%s"%(dataDirectory,dataOldDirectory,yesterdayFolder)
+       os.system(mv_command)
+       current_date = datetime.date.today()

@@ -1,0 +1,418 @@
+#!/usr/bin/python
+
+# Copyright (C) 2013 Michael Coughlin
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""Earthquake xml file generator.
+
+This script generates earthquake xml files using notices from the
+internet and USGS PDL client.
+
+Comments should be e-mailed to michael.coughlin@ligo.org.
+
+"""
+
+import os, sys, glob, optparse, warnings, time, json
+import numpy as np
+import subprocess
+from subprocess import Popen
+from lxml import etree
+
+import lal.gpstime
+
+import pylal.pylal_seismon_eqmon, pylal.pylal_seismon_utils
+
+__author__ = "Michael Coughlin <michael.coughlin@ligo.org>"
+__version__ = 1.0
+__date__    = "9/22/2013"
+
+# =============================================================================
+#
+#                               DEFINITIONS
+#
+# =============================================================================
+
+def parse_commandline():
+    """@parse the options given on the command-line.
+    """
+    parser = optparse.OptionParser(usage=__doc__,version=__version__)
+
+    parser.add_option("-p", "--paramsFile", help="Seismon params file.",
+                      default ="/home/mcoughlin/Seismon/seismon/input/seismon_params_traveltimes.txt")
+    parser.add_option("-t", "--publicFileType", help="Type of public data.",
+                      default ="hour")
+    parser.add_option("-s", "--gpsStart", help="GPS Start Time.", default=1054028959,type=int)
+    parser.add_option("-e", "--gpsEnd", help="GPS End Time.", default=1054029209,type=int)
+    parser.add_option("-m", "--minMagnitude", help="Minimum earthquake magnitude.", default=5.0,type=float)
+    parser.add_option("-v", "--verbose", action="store_true", default=False,
+                      help="Run verbosely. (Default: False)")
+
+    parser.add_option("--doPublic",  action="store_true", default=False)
+    parser.add_option("--doPrivate",  action="store_true", default=False)
+    parser.add_option("--doDatabase",  action="store_true", default=False)
+    parser.add_option("--doIRIS",  action="store_true", default=False)
+
+    opts, args = parser.parse_args()
+
+    # show parameters
+    if opts.verbose:
+        print >> sys.stderr, ""
+        print >> sys.stderr, "running network_eqmon..."
+        print >> sys.stderr, "version: %s"%__version__
+        print >> sys.stderr, ""
+        print >> sys.stderr, "***************** PARAMETERS ********************"
+        for o in opts.__dict__.items():
+          print >> sys.stderr, o[0]+":"
+          print >> sys.stderr, o[1]
+        print >> sys.stderr, ""
+
+    return opts
+
+def params_struct(opts):
+    """@create params structure
+
+    @param opts
+        command line options
+    """
+
+    params = pylal.pylal_seismon_utils.readParamsFromFile(opts.paramsFile)
+    params["publicFileType"] = opts.publicFileType
+    params["gpsStart"] = opts.gpsStart
+    params["gpsEnd"] = opts.gpsEnd
+    params["minMagnitude"] = opts.minMagnitude
+
+    params["doPublic"] = opts.doPublic
+    params["doPrivate"] = opts.doPrivate
+    params["doDatabase"] = opts.doDatabase
+    params["doIRIS"] = opts.doIRIS
+
+    return params
+
+def write_file(file,tree):
+    """@write eqmon file
+
+    @param file
+        eqmon file
+    @param tree
+        xml tree
+    """
+
+    f = open(file,'w+')
+    f.write('%s'%tree)
+    f.close()
+
+def write_info(file,attributeDic):
+    """@write eqmon file
+
+    @param file
+        eqmon file
+    @param attributeDic
+        eqmon structure
+    """
+
+    root = etree.Element('eqmon')
+    for key, value in attributeDic.items():
+        if not key == "traveltimes":
+            element = etree.SubElement(root,key)
+            element.text = str(value)
+    element = etree.SubElement(root,'traveltimes')
+    for key, value in attributeDic["traveltimes"].items():
+        subelement = etree.SubElement(element,key)
+        for category in value:
+            subsubelement = etree.SubElement(subelement,category)
+            subsubelement.text = write_array(value[category])
+
+    
+    tree = etree.tostring(root, pretty_print=True)
+    write_file(file,tree)
+    #tree = etree.ElementTree(root)
+    #tree.write(file, pretty_print=True, xml_declaration=True)
+
+def write_array(array):
+    """@write array
+
+    @param array
+        write array of value
+    """
+    text = ' '.join([str(x) for x in array])
+    return text
+
+def write_context(path):
+    """@write context file
+
+    @param path
+        path to earthquake directory
+    """
+
+    files = glob.glob(os.path.join(path,"*.xml"))
+
+    f = open(os.path.join(path,"context.txt"),"w")
+    for file in files:
+        fileSplit = file.split("/")
+        fileName = fileSplit[-1]
+        if fileName == "context.txt":
+            continue
+        f.write("%s\n"%fileName)
+    f.close()
+
+def delete_files(path,gps):
+    """@delete eqmon files
+
+    @param path
+        path to eqmon files
+    @param gps
+        gps time before which to delete files
+    """
+
+    files = glob.glob(os.path.join(path,"*.xml"))
+
+    for file in files:
+        fileSplit = file.split("/")
+        fileName = fileSplit[-1]
+        if fileName == "context.txt":
+            continue
+        fileNameSplit = fileName.replace(".xml","").split("-")
+        fileGPS = int(fileNameSplit[-1])
+        
+        if fileGPS < gps:
+            os.system("rm %s"%file)
+
+def rsync_files(path):
+    """@rsync eqmon files
+
+    @param path
+        path to rsync 
+    """
+
+    hostname = "coughlin@muon1.ast.cam.ac.uk"
+    folder = "/home/coughlin/public_html"
+
+    x = subprocess.Popen(["rsync","-avz","--delete",path,"%s:%s"%(hostname,folder)])
+    x.wait()
+    if x.returncode==0:
+        print 'Copying complete'
+    else:
+        print 'Copying failed'
+
+def download_publiceventfiles(params):
+    """@download events from usgs website
+
+    @param params
+        seismon params structure
+    """
+
+    path = params["publicdataLocation"]
+
+    if params["publicFileType"] == "hour":
+        file = "http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson"
+    elif params["publicFileType"] == "month":
+        file = "http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_month.geojson"
+    else:
+        error("Public file type not supported")
+
+    x = subprocess.Popen(["wget",file,"-O","%s/events.txt"%path])
+    x.wait()
+    if x.returncode==0:
+        print 'Copying complete'
+    else:
+        print 'Copying failed'
+
+def private_events(params):
+    """@write pdl events
+
+    @param params
+        seismon params structure
+    """
+
+    numEventsAdded = 0
+
+    folders = glob.glob(os.path.join(params["dataLocation"],"*"))
+    for numFolder in xrange(len(folders)):
+
+        folder = folders[numFolder]
+
+        folderSplit = folder.split("/")
+        eventName = folderSplit[len(folderSplit) - 1]
+
+        dataFolder = os.path.join(params["dataLocation"],eventName,eventName[0:2])
+        timeFolders = glob.glob(os.path.join(dataFolder,"*"))
+
+        if timeFolders == []:
+            continue
+
+        attributeDics = []
+        for timeFolder in timeFolders:
+            attributeDic = []
+            eqxmlfile = os.path.join(timeFolders[0],"eqxml.xml")
+            quakemlfile = os.path.join(timeFolders[0],"quakeml.xml")
+
+            if os.path.isfile(os.path.join(timeFolders[0],"eqxml.txt")):
+                continue
+
+            f = open(os.path.join(timeFolders[0],"eqxml.txt"),"w")
+            f.write("Done")
+            f.close()
+
+            if os.path.isfile(eqxmlfile):
+                attributeDic = pylal.pylal_seismon_eqmon.read_eqxml(eqxmlfile,eventName)
+                attributeDics.append(attributeDic)
+            elif os.path.isfile(quakemlfile):
+                attributeDic = pylal.pylal_seismon_eqmon.read_quakeml(quakemlfile,eventName)
+                attributeDics.append(attributeDic)
+
+            if attributeDic == []:
+                continue
+
+            if (not "GPS" in attributeDic) or (not "Magnitude" in attributeDic):
+                continue
+
+            file = os.path.join(params["eventfilesLocation"],"private/%s-%.0f.xml"%(attributeDic["eventName"],attributeDic["GPS"]))
+            if attributeDic["Magnitude"] >= float(params["minMagnitude"]):
+                write_info(file,attributeDic)
+
+                print "%s added at "%attributeDic["eventName"], time.time(), ". %.3f seconds after event"%(attributeDic["SentGPS"] - attributeDic["GPS"])
+                numEventsAdded = numEventsAdded + 1
+
+    return numEventsAdded
+
+def public_events(params):
+    """@write usgs website events
+
+    @param params
+        seismon params structure
+    """
+
+    numEventsAdded = 0
+
+    download_publiceventfiles(params)
+    events_text = open(os.path.join(params["publicdataLocation"],"events.txt"),"r").read()
+    events = json.loads(events_text)
+
+    for event in events["features"]:
+        attributeDic = pylal.pylal_seismon_eqmon.jsonread(event)
+        if not "GPS" in attributeDic:
+            continue
+        if os.path.isfile(os.path.join(params["eventfilesLocation"],"public/%s-%.0f.xml"%(attributeDic["eventName"],attributeDic["GPS"]))):
+            continue
+
+        file = os.path.join(params["eventfilesLocation"],"public/%s-%.0f.xml"%(attributeDic["eventName"],attributeDic["GPS"]))
+        if attributeDic["Magnitude"] >= float(params["minMagnitude"]):
+            write_info(file,attributeDic)
+
+            print "%s added at "%attributeDic["eventName"], time.time(), ". %.3f seconds after event"%(attributeDic["SentGPS"] - attributeDic["GPS"])
+            numEventsAdded = numEventsAdded + 1
+
+    return numEventsAdded
+
+def database_events(params):
+    """@write usgs database events
+
+    @param params
+        seismon params structure
+    """
+
+    numEventsAdded = 0
+
+    with open(os.path.join(params["databasedataLocation"],"events.txt")) as f:
+
+        for line in f:
+
+            event = line.replace("\n","")
+            attributeDic = pylal.pylal_seismon_eqmon.databaseread(event)
+
+            if not "GPS" in attributeDic:
+                continue
+            if os.path.isfile(os.path.join(params["eventfilesLocation"],"database/%s-%.0f.xml"%(attributeDic["eventName"],attributeDic["GPS"]))):
+                continue
+
+            file = os.path.join(params["eventfilesLocation"],"database/%s-%.0f.xml"%(attributeDic["eventName"],attributeDic["GPS"]))
+            if attributeDic["Magnitude"] >= float(params["minMagnitude"]):
+                write_info(file,attributeDic)
+
+            print "%s added at "%attributeDic["eventName"], time.time(), ". %.3f seconds after event"%(attributeDic["SentGPS"] - attributeDic["GPS"])
+            numEventsAdded = numEventsAdded + 1
+
+    return numEventsAdded
+
+def iris_events(params):
+    """@write usgs database events
+
+    @param params
+        seismon params structure
+    """
+
+    import obspy.iris, obspy.core
+
+    starttime = lal.gpstime.gps_to_utc(params["gpsStart"])
+    endtime = lal.gpstime.gps_to_utc(params["gpsEnd"])
+
+    starttime = obspy.core.UTCDateTime(starttime)
+    endtime = obspy.core.UTCDateTime(endtime)
+
+    client = obspy.iris.Client()
+    events = client.getEvents(minmag=params["minMagnitude"],starttime=starttime,endtime=endtime)
+
+    numEventsAdded = 0
+    for event in events:
+        attributeDic = pylal.pylal_seismon_eqmon.irisread(event)
+        if not "GPS" in attributeDic:
+            continue
+        if os.path.isfile(os.path.join(params["eventfilesLocation"],"iris/%s-%.0f.xml"%(attributeDic["eventName"],attributeDic["GPS"]))):
+            continue
+
+        file = os.path.join(params["eventfilesLocation"],"iris/%s-%.0f.xml"%(attributeDic["eventName"],attributeDic["GPS"]))
+        if attributeDic["Magnitude"] >= float(params["minMagnitude"]):
+            write_info(file,attributeDic)
+
+            print "%s added at "%attributeDic["eventName"], time.time(), ". %.3f seconds after event"%(attributeDic["SentGPS"] - attributeDic["GPS"])
+            numEventsAdded = numEventsAdded + 1
+
+    return numEventsAdded
+
+def run_traveltimes():
+    """@run traveltime calculator
+    """
+
+    warnings.filterwarnings("ignore")
+
+    # Parse command line
+    opts = parse_commandline()
+    # Parse command line
+    params = params_struct(opts)
+
+    if params["doPublic"]:
+        print "Running public events..."
+        numEventsAddedPrivate = public_events(params)
+    if params["doPrivate"]:
+        print "Running private events..."
+        numEventsAddedPublic = private_events(params)
+    if params["doDatabase"]:
+        print "Running database events..."
+        numEventsAddedDatabase = database_events(params)
+    if params["doIRIS"]:
+        print "Running IRIS events..."
+        numEventsIRIS = iris_events(params)
+
+# =============================================================================
+#
+#                                    MAIN
+#
+# =============================================================================
+
+if __name__=="__main__":
+
+    run_traveltimes()
+

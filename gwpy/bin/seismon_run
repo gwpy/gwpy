@@ -1,0 +1,386 @@
+#!/usr/bin/python
+
+# Copyright (C) 2013 Michael Coughlin
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""Seismic summary information generator.
+
+This script generates a nested web page and content for
+reviewing seismicity at the sites and earthquake status.
+
+Comments should be e-mailed to michael.coughlin@ligo.org.
+
+"""
+
+
+import os, sys, glob, optparse, shutil, warnings
+
+if not os.getenv("DISPLAY", None):
+    import matplotlib
+    matplotlib.use("agg", warn=False)
+
+import lal.gpstime
+
+import gwpy.seismon.seismon_psd, gwpy.seismon.seismon_utils
+import gwpy.seismon.seismon_html, gwpy.seismon.seismon_omicron
+import gwpy.seismon.seismon_eqmon, gwpy.seismon.seismon_eqmon_plot
+import gwpy.seismon.seismon_coherence, gwpy.seismon.seismon_hilbert
+
+__author__ = "Michael Coughlin <michael.coughlin@ligo.org>"
+__version__ = 1.0
+__date__    = "9/22/2013"
+
+# =============================================================================
+#
+#                               DEFINITIONS
+#
+# =============================================================================
+
+def parse_commandline():
+    """@Parse the options given on the command-line.
+    """
+    parser = optparse.OptionParser(usage=__doc__,version=__version__)
+
+    parser.add_option("-p", "--paramsFile", help="Seismon params file.", 
+                      default ="/home/mcoughlin/Seismon/seismon/input/seismon_params_HIFOY.txt")
+
+    parser.add_option("-s", "--gpsStart", help="GPS Start Time.", default=1054028959,type=int)
+    parser.add_option("-e", "--gpsEnd", help="GPS End Time.", default=1054029209,type=int)
+    parser.add_option("-f", "--fftDuration", help="FFT duration.", default=64,type=int)
+
+    parser.add_option("-c", "--channel", help="Run on a specific channel.", default=None)
+    parser.add_option("-r", "--referenceChannel", help="Channel for PSD comparison.", default=None)
+
+    parser.add_option("--gpsSpectraStart", help="GPS spectra Start Time.", type=int)
+    parser.add_option("--gpsSpectraEnd", help="GPS spectra End Time.", type=int)
+
+    parser.add_option("--segmentDatabase", help="Segment database", default="https://segdb2.ligo.caltech.edu")
+    parser.add_option("--segmentFlag", help="Segment flag", default="H1:ODC-PSL_SUMMARY:1")
+    parser.add_option("--segmentsTextFile", help="Segments text file.", default=None)
+
+    parser.add_option("--flagsDatabase", help="Flags database", default="https://segdb.ligo.caltech.edu")
+    parser.add_option("--flagsFlag", help="Flags flag", default="H1:DMT-BRMS_SEISMIC_Y_30_100_MHZ_HIGHTHRESH")
+    parser.add_option("--flagsTextFile", help="Flags text file.", 
+                     default="/home/mcoughlin/Seismon/seismon/input/seismon_flags_BLRMS.txt")
+    parser.add_option("--flagsChannelTextFile", help="Flags text file.",
+                     default="/home/mcoughlin/Seismon/seismon/input/seismon_flags_BLRMS.txt")
+
+    parser.add_option("--fmin", help="fmin.", default=1.0/64.0,type=float)
+    parser.add_option("--fmax", help="fmax.", default=64.0,type=float)
+
+    parser.add_option("--eventfilesType", help="Event files type.", default="public")
+    parser.add_option("--userEmail", help="User e-mail.", default="public")
+
+    parser.add_option("--doPlots",  action="store_true", default=False)
+    parser.add_option("--doEarthquakes",  action="store_true", default=False)
+    parser.add_option("--doEarthquakesAnalysis",  action="store_true", default=False)
+    parser.add_option("--doEarthquakesOnline",  action="store_true", default=False)
+    parser.add_option("--doEarthquakesPicks",  action="store_true", default=False)
+    parser.add_option("--doEarthquakesVelocityMap",  action="store_true", default=False)
+    parser.add_option("--doEarthquakesLookUp",  action="store_true", default=False)
+    parser.add_option("--doEarthquakesTraining",  action="store_true", default=False)
+    parser.add_option("--doEarthquakesTesting",  action="store_true", default=False)
+    parser.add_option("--doEarthquakesHilbert",  action="store_true", default=False)
+    parser.add_option("--earthquakesTrainingFile", help="Earthquakes training file.",
+                     default="/home/mcoughlin/Seismon/H1/H1S5-815097613-875145614/earthquakes_training/training.xml")
+
+    parser.add_option("--doOmicron",  action="store_true", default=False)
+    parser.add_option("--doFreqAnalysis",  action="store_true", default=False)
+    parser.add_option("--doAnalysis",  action="store_true", default=False)
+    parser.add_option("--doHTML",  action="store_true", default=False)
+    parser.add_option("--doSegmentsDatabase",  action="store_true", default=False)
+    parser.add_option("--doSegmentsTextFile",  action="store_true", default=False)
+    parser.add_option("--doPSD",  action="store_true", default=False)    
+    parser.add_option("--doSummary",  action="store_true", default=False)
+    parser.add_option("--doCoherence",  action="store_true", default=False)
+    parser.add_option("--doCoherenceSummary",  action="store_true", default=False)
+    parser.add_option("--doBeamForming",  action="store_true", default=False)
+    parser.add_option("--doStrainz",  action="store_true", default=False)
+    parser.add_option("--doWiener",  action="store_true", default=False)
+    parser.add_option("--noFrames",  action="store_true", default=False)
+
+    parser.add_option("--doFlagsDatabase",  action="store_true", default=False)
+    parser.add_option("--doFlagsTextFile",  action="store_true", default=False)
+    parser.add_option("--doFlagsChannel",  action="store_true", default=False)
+    parser.add_option("--doFlagsAnalysis",  action="store_true", default=False)
+
+    parser.add_option("--doKML",  action="store_true", default=False)
+    parser.add_option("--doBokeh",  action="store_true", default=False)
+
+    parser.add_option("-v", "--verbose", action="store_true", default=False,
+                      help="Run verbosely. (Default: False)")
+
+    opts, args = parser.parse_args()
+
+    # show parameters
+    if opts.verbose:
+        print >> sys.stderr, ""
+        print >> sys.stderr, "running pylal_seismon_run..."
+        print >> sys.stderr, "version: %s"%__version__
+        print >> sys.stderr, ""
+        print >> sys.stderr, "***************** PARAMETERS ********************"
+        for o in opts.__dict__.items():
+          print >> sys.stderr, o[0]+":"
+          print >> sys.stderr, o[1]
+        print >> sys.stderr, ""
+
+    return opts
+
+def params_struct(opts):
+    """@Creates seismon params structure
+    @param opts
+        seismon command line options
+    """
+
+    params = gwpy.seismon.seismon_utils.readParamsFromFile(opts.paramsFile)
+    params["gpsStart"] = opts.gpsStart
+    params["gpsEnd"] = opts.gpsEnd
+    params["fftDuration"] = opts.fftDuration
+    if opts.channel == None:
+        params["channel"] = opts.channel
+    else:
+        params["channel"] = [x for x in opts.channel.split(",")]
+    params["referenceChannel"] = opts.referenceChannel
+
+    if opts.gpsSpectraStart == None:
+        params["gpsSpectraStart"] = opts.gpsStart - 24*60*60
+    else:
+        params["gpsSpectraStart"] = opts.gpsSpectraStart
+
+    if opts.gpsSpectraEnd == None:
+        params["gpsSpectraEnd"] = opts.gpsEnd 
+    else:
+        params["gpsSpectraEnd"] = opts.gpsSpectraEnd
+
+    params["segmentDatabase"] = opts.segmentDatabase
+    params["segmentFlag"] = opts.segmentFlag
+    params["segmentsTextFile"] = opts.segmentsTextFile
+    params["flagsDatabase"] = opts.flagsDatabase
+    params["flagsFlag"] = opts.flagsFlag
+    params["flagsTextFile"] = opts.flagsTextFile
+    params["flagsChannelTextFile"] = opts.flagsTextFile
+
+    params["eventfilesType"] = opts.eventfilesType
+
+    params["fmin"] = opts.fmin
+    params["fmax"] = opts.fmax
+    params["doPlots"] = opts.doPlots
+    params["doEarthquakes"] = opts.doEarthquakes
+    params["doEarthquakesAnalysis"] = opts.doEarthquakesAnalysis
+    params["doEarthquakesOnline"] = opts.doEarthquakesOnline
+    params["doEarthquakesPicks"] = opts.doEarthquakesPicks
+    params["doEarthquakesVelocityMap"] = opts.doEarthquakesVelocityMap
+    params["doEarthquakesLookUp"] = opts.doEarthquakesLookUp
+    params["doEarthquakesTraining"] = opts.doEarthquakesTraining
+    params["doEarthquakesTesting"] = opts.doEarthquakesTesting
+    params["doEarthquakesHilbert"] = opts.doEarthquakesHilbert
+
+    params["userEmail"] = opts.userEmail
+    params["earthquakesTrainingFile"] = opts.earthquakesTrainingFile
+
+    params["doOmicron"] = opts.doOmicron
+    params["doAnalysis"] = opts.doAnalysis
+    params["doFreqAnalysis"] = opts.doFreqAnalysis
+    params["doHTML"] = opts.doHTML
+    params["doSegmentsDatabase"] = opts.doSegmentsDatabase
+    params["doSegmentsTextFile"] = opts.doSegmentsTextFile
+    params["doPSD"] = opts.doPSD
+    params["doSummary"] = opts.doSummary
+    params["doCoherence"] = opts.doCoherence
+    params["doCoherenceSummary"] = opts.doCoherenceSummary
+    params["doBeamForming"] = opts.doBeamForming
+    params["doStrainz"] = opts.doStrainz
+    params["doWiener"] = opts.doWiener
+    params["noFrames"] = opts.noFrames
+
+    params["doFlagsDatabase"] = opts.doFlagsDatabase
+    params["doFlagsTextFile"] = opts.doFlagsTextFile
+    params["doFlagsChannel"] = opts.doFlagsChannel
+    params["doFlagsAnalysis"] = opts.doFlagsAnalysis
+
+    params["doKML"] = opts.doKML
+    params["doBokeh"] = opts.doBokeh
+
+    params["date"] = lal.gpstime.gps_to_utc(params["gpsStart"])
+    #params["date"] = XLALGPSToUTC(LIGOTimeGPS(params["gpsStart"]))
+    params["dateString"] = params["date"].strftime("%Y-%m-%d %H:%M:%S")
+    #params["dateString"] = "%d-%d-%d %d:%d:%d"%(params["date"][0],params["date"][1],params["date"][2],params["date"][3],params["date"][4],params["date"][5])
+
+    if params["doEarthquakesAnalysis"]:
+       params["earthquakesMinMag"] = 5
+    else:
+       params["earthquakesMinMag"] = 0
+
+    return params
+
+# =============================================================================
+#
+#                                    MAIN
+#
+# =============================================================================
+
+warnings.filterwarnings("ignore")
+
+# Parse command line
+opts = parse_commandline()
+params = params_struct(opts)
+
+if params["doEarthquakesAnalysis"]:
+    channelList = params["codePath"] + "/seismon/input/seismon-" + params["ifo"] + "-" + params["frameType"] + "-channel_list.txt"
+else:
+    channelList = params["codePath"] + "/seismon/input/seismon-" + params["ifo"] + "-" + params["frameType"] + "-channel_list.txt"
+
+params = gwpy.seismon.seismon_utils.channel_struct(params,channelList)
+params = gwpy.seismon.seismon_utils.segment_struct(params)
+params = gwpy.seismon.seismon_utils.frame_struct(params)
+
+if params["frame"] == [] and not params["noFrames"]:
+    print "No frames found... quitting."
+    sys.exit()
+
+params = gwpy.seismon.seismon_utils.setPath(params,[params["gpsStart"],params["gpsEnd"]])
+print params["path"]
+
+if params["doEarthquakesOnline"]:
+    segmentlist = gwpy.seismon.seismon_eqmon.run_earthquakes(params,[params["gpsStart"],params["gpsEnd"]])
+    sys.exit()
+if params["doEarthquakesAnalysis"]:
+    params["segments"] = gwpy.seismon.seismon_eqmon.run_earthquakes(params,[params["gpsStart"],params["gpsEnd"]])
+
+for segment in params["segments"]:
+    params = gwpy.seismon.seismon_utils.setPath(params,segment)
+    params = gwpy.seismon.seismon_utils.flag_struct(params,segment)
+
+if params["doEarthquakes"]:
+    print "Finding earthquakes"
+    for segment in params["segments"]:
+        params = gwpy.seismon.seismon_utils.setPath(params,segment)
+        segments = gwpy.seismon.seismon_eqmon.run_earthquakes(params,segment)
+
+if params["doOmicron"]:
+    print "Generating Omicron triggers"
+    gwpy.seismon.seismon_omicron.generate_triggers(params)
+
+if params["doBokeh"]:
+
+    import gwpy.seismon.seismon_bokeh
+
+    for channel in params["channels"]:
+        print "Generating bokeh page for %s"%channel.station
+        gwpy.seismon.seismon_bokeh.channel_page(params,channel)
+    sys.exit()
+
+for channel in params["channels"]:
+    if params["doPSD"]:
+        print "Generating PSD for %s"%channel.station
+        for segment in params["segments"]:
+            print "Segment: %d-%d"%(segment[0],segment[1])
+            params = gwpy.seismon.seismon_utils.setPath(params,segment)
+            gwpy.seismon.seismon_psd.spectra(params,channel,segment)
+    if params["doAnalysis"]:
+        print "Analyzing PSD significance for %s"%channel.station
+        gwpy.seismon.seismon_psd.analysis(params,channel)
+    if params["doOmicron"]:
+        for segment in params["segments"]:
+            print "Plotting Omicron triggers for %s"%channel.station
+            params = gwpy.seismon.seismon_utils.setPath(params,segment)
+            gwpy.seismon.seismon_omicron.plot_triggers(params,channel,segment)
+    
+if params["doCoherence"]:
+    for i in xrange(len(params["channels"])):
+        channel1 = params["channels"][i]
+        for j in xrange(len(params["channels"])):
+            channel2 = params["channels"][j]
+            if j >= i:
+                continue
+            print "Generating coherence for %s, %s"%(channel1.station,channel2.station)
+            for segment in params["segments"]:
+                print "Segment: %d-%d"%(segment[0],segment[1])
+                params = gwpy.seismon.seismon_utils.setPath(params,segment)
+                gwpy.seismon.seismon_coherence.coherence(params,channel1,channel2,segment)
+
+if params["doBeamForming"]:
+    import gwpy.seismon.seismon_beamforming
+    print "Running beamforming"
+    for segment in params["segments"]:
+        print "Segment: %d-%d"%(segment[0],segment[1])
+        params = gwpy.seismon.seismon_utils.setPath(params,segment)
+        gwpy.seismon.seismon_beamforming.beamforming(params,segment)
+
+if params["doStrainz"]:
+    import gwpy.seismon.seismon_beamforming
+    print "Running strainz"
+    for segment in params["segments"]:
+        print "Segment: %d-%d"%(segment[0],segment[1])
+        params = gwpy.seismon.seismon_utils.setPath(params,segment)
+        gwpy.seismon.seismon_beamforming.strainz(params,segment)
+
+if params["doEarthquakesHilbert"]:
+    print "Running Hilbert transform"
+    for segment in params["segments"]:
+        print "Segment: %d-%d"%(segment[0],segment[1])
+        params = gwpy.seismon.seismon_utils.setPath(params,segment)
+        gwpy.seismon.seismon_hilbert.hilbert(params,segment)
+
+if params["doSummary"]:
+    for segment in params["segments"]:
+        print "Running summary for Segment: %d-%d"%(segment[0],segment[1])
+        params = gwpy.seismon.seismon_utils.setPath(params,segment)
+        gwpy.seismon.seismon_psd.channel_summary(params, segment)
+    print "Summaries complete!"
+
+if params["doCoherenceSummary"]:
+    for i in xrange(len(params["channels"])):
+        channel = params["channels"][i]
+        print "Generating coherence summary for %s"%(channel.station)
+        for segment in params["segments"]:
+            print "Segment: %d-%d"%(segment[0],segment[1])
+            params = gwpy.seismon.seismon_utils.setPath(params,segment)
+            gwpy.seismon.seismon_coherence.coherence_summary(params,channel,segment)
+
+if params["doWiener"]:
+    import gwpy.seismon.seismon_wiener
+    for channel in params["channels"]:
+        print "Running wiener filter for %s"%(channel.station)
+        for segment in params["segments"]:
+            print "Segment: %d-%d"%(segment[0],segment[1])
+            params = gwpy.seismon.seismon_utils.setPath(params,segment)
+            gwpy.seismon.seismon_wiener.wiener(params,channel,segment)
+
+if params["doEarthquakesAnalysis"]:
+    print "Running earthquake analysis"
+    params = gwpy.seismon.seismon_utils.setPath(params,[params["gpsStart"],params["gpsEnd"]])
+    gwpy.seismon.seismon_eqmon.run_earthquakes_analysis(params,[params["gpsStart"],params["gpsEnd"]])
+
+if params["doFlagsAnalysis"]:
+    print "Running flags analysis"
+    params = gwpy.seismon.seismon_utils.setPath(params,[params["gpsStart"],params["gpsEnd"]])
+    gwpy.seismon.seismon_utils.run_flags_analysis(params,[params["gpsStart"],params["gpsEnd"]])
+
+if params["doHTML"]:
+    htmlPage = gwpy.seismon.seismon_html.summary_page(params)
+    if htmlPage is not None:
+        f = open(os.path.join(params["path"],"summary.html"),"w")
+        f.write(htmlPage)
+        f.close()
+
+    # Public HTML output path
+    params["outputPath"] = os.path.join(params["publicPath"],params["ifo"]);
+    gwpy.seismon.seismon_utils.mkdir(params["outputPath"])
+
+    #os.system("rm -r %s/%s"%(params["outputPath"],params["runName"]))
+    #os.system("cp -r %s %s/%s"%(params["path"],params["outputPath"],params["runName"]))
+

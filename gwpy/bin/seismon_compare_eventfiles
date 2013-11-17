@@ -1,0 +1,249 @@
+#!/usr/bin/python
+
+# Copyright (C) 2013 Michael Coughlin
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""Earthquake xml file generator.
+
+This script generates earthquake xml files using notices from the
+internet and USGS PDL client.
+
+Comments should be e-mailed to michael.coughlin@ligo.org.
+
+"""
+
+import os, sys, glob, optparse, warnings, time, json
+import numpy as np
+from operator import itemgetter
+
+import matplotlib
+matplotlib.use("AGG")
+matplotlib.rcParams.update({'font.size': 18})
+from matplotlib import pyplot as plt
+
+import pylal.pylal_seismon_eqmon, pylal.pylal_seismon_utils
+
+from obspy.taup.taup import getTravelTimes
+from obspy.core.util.geodetics import gps2DistAzimuth
+
+import lal.gpstime
+
+__author__ = "Michael Coughlin <michael.coughlin@ligo.org>"
+__version__ = 1.0
+__date__    = "9/22/2013"
+
+# =============================================================================
+#
+#                               DEFINITIONS
+#
+# =============================================================================
+
+def parse_commandline():
+    """@parse the options given on the command-line.
+    """
+    parser = optparse.OptionParser(usage=__doc__,version=__version__)
+
+    parser.add_option("-p", "--paramsFile", help="Seismon params file.",
+                      default ="/home/mcoughlin/Seismon/seismon/input/seismon_params_traveltimes.txt")
+    parser.add_option("-s", "--gpsStart", help="GPS Start Time.", default=0,type=int)
+    parser.add_option("-e", "--gpsEnd", help="GPS End Time.", default=2000000000,type=int)
+    parser.add_option("-m", "--minMagnitude", help="Minimum earthquake magnitude.", default=5.0,type=float)
+    parser.add_option("-i", "--ifo", help="Ifo.", default="H1")
+    parser.add_option("-v", "--verbose", action="store_true", default=False,
+                      help="Run verbosely. (Default: False)")
+    parser.add_option("-t","--types",  default="private,iris")
+
+    opts, args = parser.parse_args()
+
+    # show parameters
+    if opts.verbose:
+        print >> sys.stderr, ""
+        print >> sys.stderr, "running network_eqmon..."
+        print >> sys.stderr, "version: %s"%__version__
+        print >> sys.stderr, ""
+        print >> sys.stderr, "***************** PARAMETERS ********************"
+        for o in opts.__dict__.items():
+          print >> sys.stderr, o[0]+":"
+          print >> sys.stderr, o[1]
+        print >> sys.stderr, ""
+
+    return opts
+
+def params_struct(opts):
+    """@create params structure
+
+    @param opts
+        command line options
+    """
+
+    params = pylal.pylal_seismon_utils.readParamsFromFile(opts.paramsFile)
+    params["gpsStart"] = opts.gpsStart
+    params["gpsEnd"] = opts.gpsEnd
+    params["minMagnitude"] = opts.minMagnitude
+    params["ifo"] = opts.ifo
+
+    if opts.types == None:
+        params["types"] = opts.types
+    else:
+        params["types"] = [x for x in opts.types.split(",")]
+
+    return params
+
+def histogramPlot(data,type,plotName):
+
+    fig = plt.Figure(figsize=[14,8])
+    ax = plt.subplot(111)
+
+    hist, bins = np.histogram(data, bins=15)
+    width = 0.7 * (bins[1] - bins[0])
+    center = (bins[:-1] + bins[1:]) / 2
+    plt.bar(center, hist, align='center', width=width)
+
+    if type == "Magnitude":
+        xlabel = "$\Delta$ Magnitude"
+    elif type == "Depth":
+        xlabel = "$\Delta$ Depth [km]"
+    elif type == "Distance":
+        xlabel = "$\Delta$ Distance [m]"
+    elif type == "Rfamp":
+        xlabel = "$\Delta$ Amplitude [$\mu$m/s]"
+    elif type == "RfampPerc":
+        xlabel = "log10(Amplitude Relative Difference)"
+    elif type == "latencies":
+        xlabel = "Time [s]"
+
+    plt.xlabel(xlabel)
+    plt.ylabel('Counts')
+
+    plt.show()
+    plt.savefig(plotName,dpi=200)
+    plt.close('all')
+
+
+def comparison(params,type1,type2):
+
+    params["earthquakesMinMag"] = params["minMagnitude"]
+    ifo = pylal.pylal_seismon_utils.getIfo(params)
+
+    params["eventfilesType"] = type1
+    attributeDics1 = pylal.pylal_seismon_eqmon.retrieve_earthquakes(params,params["gpsStart"],params["gpsEnd"])
+    attributeDics1 = sorted(attributeDics1, key=itemgetter("Magnitude"), reverse=True)
+
+    params["eventfilesType"] = type2
+    attributeDics2 = pylal.pylal_seismon_eqmon.retrieve_earthquakes(params,params["gpsStart"],params["gpsEnd"])
+    attributeDics2 = sorted(attributeDics2, key=itemgetter("Magnitude"), reverse=True)
+
+    performanceDirectory = "/home/mcoughlin/Seismon/performance"
+    pylal.pylal_seismon_utils.mkdir(performanceDirectory)
+        
+    performanceFile = os.path.join(performanceDirectory,"%s.txt"%params["ifo"])
+    f = open(performanceFile,"w")
+    
+    timeDifference = 10
+    for attributeDic1 in attributeDics1:
+        for attributeDic2 in attributeDics2:
+            if np.absolute(attributeDic1["GPS"] - attributeDic2["GPS"]) <= timeDifference:
+
+                attributeDic1 = pylal.pylal_seismon_eqmon.calculate_traveltimes(attributeDic1)
+                attributeDic2 = pylal.pylal_seismon_eqmon.calculate_traveltimes(attributeDic2)
+
+                traveltimes1 = attributeDic1["traveltimes"][ifo]
+                traveltimes2 = attributeDic2["traveltimes"][ifo]
+
+                gps1 = attributeDic1["GPS"]
+                gps2 = attributeDic2["GPS"]
+
+                sentgps1 = attributeDic1["SentGPS"]
+                sentgps2 = attributeDic2["SentGPS"]
+
+                writtengps1 = attributeDic1["WrittenGPS"]
+                writtengps2 = attributeDic2["WrittenGPS"]
+
+                if attributeDic1["SentGPS"] > traveltimes1["Ptimes"][-1]:
+                    continue
+
+                magnitude1 = attributeDic1["Magnitude"]
+                magnitude2 = attributeDic2["Magnitude"]
+ 
+                depth1 = attributeDic1["Depth"]
+                depth2 = attributeDic2["Depth"]
+
+                distance1 = max(traveltimes1["Distances"])
+                distance2 = max(traveltimes2["Distances"])
+
+                Rfamp1 = traveltimes1["Rfamp"][0] 
+                Rfamp2 = traveltimes2["Rfamp"][0]
+
+                print Rfamp1, Rfamp2
+
+                f.write("%.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %e %e\n"%(gps1,gps2,sentgps1,sentgps2,magnitude1,magnitude2,depth1,depth2,distance1,distance2,Rfamp1,Rfamp2))
+    f.close()
+
+    data = np.loadtxt(performanceFile)
+
+    magnitudeDiff = data[:,5] - data[:,4]
+    plotName = os.path.join(performanceDirectory,"magnitudeDiff.png")
+    histogramPlot(magnitudeDiff,"Magnitude",plotName)
+    depthDiff = data[:,7] - data[:,6]
+    plotName = os.path.join(performanceDirectory,"depthDiff.png")
+    histogramPlot(depthDiff,"Depth",plotName)
+    distanceDiff = data[:,9] - data[:,8]
+    plotName = os.path.join(performanceDirectory,"distanceDiff.png")
+    histogramPlot(distanceDiff,"Distance",plotName)
+    RfampDiff = 1e6 * (data[:,11] - data[:,10])
+    plotName = os.path.join(performanceDirectory,"RfampDiff.png")
+    histogramPlot(RfampDiff,"Rfamp",plotName)
+    RfampDiffPerc = np.absolute(data[:,11] - data[:,10]) / np.min([data[:,11],data[:,10]])
+
+    RfampDiffPerc = []
+    for Rfamp1,Rfamp2 in zip(data[:,10],data[:,11]):
+        RfampDiffPerc.append(np.absolute(Rfamp1-Rfamp2)/np.min([Rfamp1,Rfamp2]))
+
+    RfampDiffPerc = np.log10(RfampDiffPerc)
+    plotName = os.path.join(performanceDirectory,"RfampDiffPerc.png")
+    histogramPlot(RfampDiffPerc,"RfampPerc",plotName)
+    latencies = np.absolute(data[:,2] - data[:,0])
+    plotName = os.path.join(performanceDirectory,"latencies.png")
+    histogramPlot(latencies,"latencies",plotName)
+
+def run_comparison():
+    """@run traveltime calculator
+    """
+
+    warnings.filterwarnings("ignore")
+
+    # Parse command line
+    opts = parse_commandline()
+    # Parse command line
+    params = params_struct(opts)
+
+    for i in xrange(len(params["types"])):
+        for j in xrange(len(params["types"])):
+            if i < j:
+                type1 = params["types"][i]
+                type2 = params["types"][j]
+                comparison(params,type1,type2)
+   
+# =============================================================================
+#
+#                                    MAIN
+#
+# =============================================================================
+
+if __name__=="__main__":
+
+    run_comparison()
+
