@@ -161,7 +161,7 @@ class Series(Array):
     # -------------------------------------------
     # Series methods
 
-    def resample(self, rate, window=None, dtype=None):
+    def resample(self, rate, window=None, dtype=None, doDecimate=False):
         """Resample this Series to a new rate
 
         Parameters
@@ -171,7 +171,8 @@ class Series(Array):
         window : array_like, callable, string, float, or tuple, optional
             specifies the window applied to the signal in the Fourier
             domain.
-
+        doDecimate: Boolean
+            tell code to use decimate instead of resample
         Returns
         -------
         Series
@@ -181,7 +182,13 @@ class Series(Array):
         if isinstance(rate, Quantity):
             rate = rate.value
         N = self.shape[0] * self.dx * rate
-        data = signal.resample(self.data, N, window=window)
+
+        if doDecimate:
+            r = (1/self.dx) / rate
+            rval = int(r.value)
+            data = decimate(self.data, rval)
+        else:
+            data = signal.resample(self.data, N, window=window)
         new = self.__class__(data, dtype=dtype or self.dtype)
         new.metadata = self.metadata.copy()
         new.dx = 1 / float(rate)
