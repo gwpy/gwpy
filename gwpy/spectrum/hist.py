@@ -252,5 +252,5 @@ class SpectralVariance(Array2D):
             out.append(val)
 
         name = '%s %s%% percentile' % (self.name, percentile)
-        return Spectrum(out, epoch=self.epoch, frequencies=self.bins[:-1],
+        return Spectrum(out, epoch=self.epoch, frequencies=self.frequencies,
                         channel=self.channel, name=name, logf=self.logx)
