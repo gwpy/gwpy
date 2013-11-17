@@ -635,12 +635,13 @@ class TimeSeries(Series):
             idx = stride * step
             idx_end = idx + stride
             stepseries = self[idx:idx_end]
-            steppsd = stepseries.fft()
-            out[step] = steppsd.data
+            stepfft = stepseries.fft()
+            out[step] = stepfft.data
         try:
             out.unit = self.unit / units.Hertz
         except KeyError:
             out.unit = 1 / units.Hertz
+        out.frequencies = stepfft.frequencies
         return out
 
     def plot(self, **kwargs):
