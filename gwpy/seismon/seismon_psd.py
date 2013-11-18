@@ -994,8 +994,8 @@ def channel_summary(params, segment):
         plot.xlabel = "Frequency [Hz]"
         plot.ylabel = "Amplitude Spectrum [(m/s)/rtHz]"
         plot.add_legend(loc=1,prop={'size':10})
-        plot.axes.set_xscale("log")
-        plot.axes.set_yscale("log")
+        plot.axes[0].set_xscale("log")
+        plot.axes[0].set_yscale("log")
 
         plot.save(pngFile,dpi=200)
         plot.close()
@@ -1022,8 +1022,8 @@ def channel_summary(params, segment):
         label_ref = params["referenceChannel"].replace("_","\_")
         plot.ylabel = "Spectrum / Reference [%s]"%(label_ref)
         plot.add_legend(loc=1,prop={'size':10})
-        plot.axes.set_xscale("log")
-        plot.axes.set_yscale("log")
+        plot.axes[0].set_xscale("log")
+        plot.axes[0].set_yscale("log")
 
         plot.save(pngFile,dpi=200)
         plot.close()

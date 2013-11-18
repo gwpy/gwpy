@@ -110,7 +110,11 @@ def parse_commandline():
     parser.add_option("--doBeamForming",  action="store_true", default=False)
     parser.add_option("--doStrainz",  action="store_true", default=False)
     parser.add_option("--doWiener",  action="store_true", default=False)
+    parser.add_option("--doWienerFFT",  action="store_true", default=False)
+    parser.add_option("--doWienerSummary",  action="store_true", default=False)
     parser.add_option("--noFrames",  action="store_true", default=False)
+
+    parser.add_option("-N", "--wienerFilterOrder", help="Wiener filter order.", default=1000,type=int)
 
     parser.add_option("--doFlagsDatabase",  action="store_true", default=False)
     parser.add_option("--doFlagsTextFile",  action="store_true", default=False)
@@ -204,6 +208,9 @@ def params_struct(opts):
     params["doBeamForming"] = opts.doBeamForming
     params["doStrainz"] = opts.doStrainz
     params["doWiener"] = opts.doWiener
+    params["doWienerFFT"] = opts.doWienerFFT
+    params["doWienerSummary"] = opts.doWienerSummary
+    params["wienerFilterOrder"] = opts.wienerFilterOrder
     params["noFrames"] = opts.noFrames
 
     params["doFlagsDatabase"] = opts.doFlagsDatabase
@@ -304,7 +311,7 @@ if params["doCoherence"]:
         channel1 = params["channels"][i]
         for j in xrange(len(params["channels"])):
             channel2 = params["channels"][j]
-            if j >= i:
+            if j <= i:
                 continue
             print "Generating coherence for %s, %s"%(channel1.station,channel2.station)
             for segment in params["segments"]:
@@ -359,6 +366,24 @@ if params["doWiener"]:
             print "Segment: %d-%d"%(segment[0],segment[1])
             params = gwpy.seismon.seismon_utils.setPath(params,segment)
             gwpy.seismon.seismon_wiener.wiener(params,channel,segment)
+
+if params["doWienerFFT"]:
+    import gwpy.seismon.seismon_wiener_fft
+    for channel in params["channels"]:
+        print "Running wiener filter for %s"%(channel.station)
+        for segment in params["segments"]:
+            print "Segment: %d-%d"%(segment[0],segment[1])
+            params = gwpy.seismon.seismon_utils.setPath(params,segment)
+            gwpy.seismon.seismon_wiener_fft.wiener(params,channel,segment)
+
+if params["doWienerSummary"]:
+    import gwpy.seismon.seismon_wiener
+    for channel in params["channels"]:
+        print "Generating wiener summary for %s"%(channel.station)
+        for segment in params["segments"]:
+            print "Segment: %d-%d"%(segment[0],segment[1])
+            params = gwpy.seismon.seismon_utils.setPath(params,segment)
+            gwpy.seismon.seismon_wiener.wiener_summary(params,channel,segment)
 
 if params["doEarthquakesAnalysis"]:
     print "Running earthquake analysis"

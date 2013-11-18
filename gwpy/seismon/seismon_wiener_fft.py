@@ -89,51 +89,48 @@ def wiener(params, target_channel, segment):
     for dataFull in dataAll:
         if dataFull.channel.name == target_channel.station:
             tt = np.array(dataFull.times)
-            y = dataFull.data
+            y = dataFull.fftgram(params["fftDuration"])
         else:
-            if X == []:
-                X = dataFull.data
-            else:
-                try:
-                    X = np.vstack([X,dataFull.data])
-                except:
-                    continue
+            x = dataFull.fftgram(params["fftDuration"]) 
+            X.append(x)
 
     if len(y) == 0:
         print "No data for target channel... continuing"
         return
 
+    gpss = y.times
+
     originalASD = []
     residualASD = []
     FFASD = []
 
-    gpss = np.arange(gpsStart,gpsEnd,params["fftDuration"])
     create_filter = True
-    for i in xrange(len(gpss)-1):
-        tt = np.array(dataFull.times)
-        indexes = np.intersect1d(np.where(tt >= gpss[i])[0],np.where(tt <= gpss[i+1]+5)[0])
+    for i in xrange(len(gpss)):
 
-        if len(indexes) == 0:
-            continue
+        if create_filter:
+            indexes = np.arange(i,i+10)
+        else:
+            indexes = np.arange(i,i+1)
 
-        indexMin = np.min(indexes)
-        indexMax = np.max(indexes)
+        yCut = y[indexes]
+        XCut = []
+        for x in X:
+            XCut.append(x[indexes])
 
-        ttCut = tt[indexMin:indexMax] 
-        yCut = y[indexMin:indexMax]
-        XCut = X[:,indexMin:indexMax]
-
-        XCut = XCut.T
         if create_filter:
             print "Generating filter"
-            W,R,P = miso_firwiener(N,XCut,yCut)
+            W,R,P = miso_firwiener_fft(N,XCut,yCut)
             create_filter = False
             print "finished generating filter"
             continue
-            
-        residual, FF = subtractFF(W,XCut,yCut,samplef)
 
-        thisGPSStart = tt[indexMin]
+        residual, FF = subtractFF(W,XCut,yCut,samplef)
+       
+        yCut = np.fft.ifft(yCut.data[0]).real
+        residual = np.fft.ifft(residual).real
+        FF = np.fft.ifft(FF).real
+
+        thisGPSStart = gpss[i]
         dataOriginal = gwpy.timeseries.TimeSeries(yCut, epoch=thisGPSStart, sample_rate=samplef,name="Original")
         dataResidual = gwpy.timeseries.TimeSeries(residual, epoch=thisGPSStart, sample_rate=samplef,name="Residual")
         dataFF = gwpy.timeseries.TimeSeries(FF, epoch=thisGPSStart, sample_rate=samplef,name="FF")
@@ -187,7 +184,7 @@ def wiener(params, target_channel, segment):
     FFSpecvar = FFSpecvar * 100
     FF_spectral_variation_50per = FFSpecvar.percentile(50)
 
-    psdDirectory = params["dirPath"] + "/Text_Files/Wiener/" + target_channel.station_underscore + "/" + str(params["fftDuration"]) + "/" + str(params["wienerFilterOrder"])
+    psdDirectory = params["dirPath"] + "/Text_Files/WienerFFT/" + target_channel.station_underscore + "/" + str(params["fftDuration"]) + "/" + str(params["wienerFilterOrder"])
     gwpy.seismon.seismon_utils.mkdir(psdDirectory)
 
     freq = np.array(residual_spectral_variation_50per.frequencies)
@@ -200,7 +197,7 @@ def wiener(params, target_channel, segment):
 
     if params["doPlots"]:
 
-        plotDirectory = params["path"] + "/Wiener/" + target_channel.station_underscore + "/" + str(params["fftDuration"]) + "/" + str(params["wienerFilterOrder"])
+        plotDirectory = params["path"] + "/WienerFFT/" + target_channel.station_underscore + "/" + str(params["fftDuration"]) + "/" + str(params["wienerFilterOrder"])
         gwpy.seismon.seismon_utils.mkdir(plotDirectory)
 
         fl, low, fh, high = gwpy.seismon.seismon_NLNM.NLNM(2)
@@ -227,7 +224,7 @@ def wiener(params, target_channel, segment):
         plot.save(pngFile,dpi=200)
         plot.close()
 
-def miso_firwiener(N,X,y):
+def miso_firwiener_fft(N,X,y):
 
     # MISO_FIRWIENER Optimal FIR Wiener filter for multiple inputs.
     # MISO_FIRWIENER(N,X,Y) computes the optimal FIR Wiener filter of order
@@ -240,52 +237,48 @@ def miso_firwiener(N,X,y):
     # Processing, SpringerVerlag, 2006, page 48
 
     # Number of input channels.
-    try:
-        junk, M = X.shape
-    except:
-        M = 1
 
-    # Input covariance matrix.
-    R = np.zeros([M*(N+1),M*(N+1)])
-    for m in xrange(M):
-        for i in xrange(m,M):
-            rmi,lags = gwpy.seismon.seismon_utils.xcorr(X[:,m]-np.mean(X[:,m]),X[:,i]-np.mean(X[:,i]),maxlags=N,normed=False)
-            Rmi = scipy.linalg.toeplitz(np.flipud(rmi[range(N+1)]),r=rmi[range(N,2*N+1)])
-            top = m*(N+1)
-            bottom = (m+1)*(N+1)
-            left = i*(N+1)
-            right = (i+1)*(N+1)
-            #R[range(top,bottom),range(left,right)] = Rmi
+    M = len(X)
 
-            for j in xrange(top,bottom):
-                for k in xrange(left,right):
-                    R[j,k] = Rmi[j-top,k-left]
-         
-            if not i == m:
-                #R[range(left,right),range(top,bottom)] = Rmi  # Take advantage of hermiticity.
+    freqs = np.array(y.frequencies)
 
-                RmiT = Rmi.T
-                for j in xrange(left,right):
-                    for k in xrange(top,bottom):
-                        R[j,k] = RmiT[j-left,k-top]
+    R = np.zeros([M,M,len(freqs)])
+    P = np.zeros([M,len(freqs)])
+    W = np.zeros([M,len(freqs)])
 
-    # Crosscorrelation vector.
-    P = np.zeros([M*(N+1),])
-    for i in xrange(M):
-        top = i*(N+1)
-        bottom = (i+1)*(N+1)
-        p, lags = gwpy.seismon.seismon_utils.xcorr(y-np.mean(y),X[:,i]-np.mean(X[:,i]),maxlags=N,normed=False)
+    for i in xrange(len(freqs)):
+        yCut = y.data[:,i]
+        XCut = []
+        for x in X:
+            XCut.append(x.data[:,i])
 
-        P[range(top,bottom)] = p[range(N,2*N+1)]
+        for j in xrange(M):
+            for k in xrange(M):
 
-    # The following step is very inefficient because it fails to exploit the
-    # block Toeplitz structure of R. Its done the same way in the builtin
-    # function "firwiener".
-    # P / R
+                a1 = XCut[j]
+                psd1 = np.mean(a1 * np.conjugate(a1)).real
+                a2 = XCut[k]
+                psd2 = np.mean(a2 * np.conjugate(a2)).real
+                csd12 = np.mean(a1 * np.conjugate(a2))
+                coh = np.absolute(csd12) / np.sqrt(psd1 * psd2)
 
-    Z = np.linalg.lstsq(R.T, P.T)[0].T
-    W = Z.reshape(M,N+1).T
+                R[j,k,i] = csd12
 
+            a1 = XCut[j]
+            psd1 = np.mean(a1 * np.conjugate(a1)).real
+            a2 = yCut
+            psd2 = np.mean(a2 * np.conjugate(a2)).real
+            csd12 = np.mean(a1 * np.conjugate(a2))
+            coh = np.absolute(csd12) / np.sqrt(psd1 * psd2)
+
+            P[j,i] = csd12
+  
+    for i in xrange(len(freqs)):
+        Rinv = scipy.linalg.inv(R[:,:,i])
+        c = P[:,i]
+
+        W[:,i] = Rinv.dot(c)
+ 
     return W,R,P
 
 def subtractFF(W,SS,S,samplef):
@@ -295,23 +288,21 @@ def subtractFF(W,SS,S,samplef):
     # Modified: August 17, 2012
     # Contact: michael.coughlin@ligo.org
 
-    N = len(W)-1
-    ns = len(S)
+    M = len(SS)
 
-    FF = np.zeros([ns-N,])
+    freqs = np.array(S.frequencies)
 
-    for k in xrange(N,ns):
-        tmp = SS[k-N:k+1,:] * W
-        FF[k-N] = np.sum(tmp)
+    residual = []
+    FF = []
 
-    cutoff = 65.0
-    dataFF = gwpy.timeseries.TimeSeries(FF, sample_rate=samplef)
-    dataFFLowpass = dataFF.lowpass(cutoff, amplitude=0.9, order=12, method='scipy')
-    FF = np.array(dataFFLowpass)
-    #FF = np.array(dataFF)
+    for i in xrange(len(freqs)):
+        Wtemp = W[:,i]
+        Xtemp = []
+        for x in SS:
+            Xtemp.append(x.data[0,i])
+        FF.append(np.sum(Wtemp*Xtemp))
 
-    residual = S[range(ns-N)]-FF
-    residual = residual - np.mean(residual)
+    residual = S.data[0] - np.array(FF)
 
     return residual, FF
 

@@ -42,6 +42,7 @@ def hilbert(params, segment):
     duration = np.ceil(gpsEnd-gpsStart)
 
     dataAll = []
+    print "Loading data..."
 
     for channel in params["channels"]:
         # make timeseries
@@ -80,6 +81,7 @@ def hilbert(params, segment):
     else:
         attributeDics = []
 
+    print "Performing Hilbert transform"
     for attributeDic in attributeDics:
 
         if params["ifo"] == "IRIS":
@@ -118,13 +120,13 @@ def hilbert(params, segment):
         tsz = tsz[indexes]
 
         tszhilbert = scipy.signal.hilbert(tsz).imag
+        tszhilbert = -tszhilbert
 
         N = len(tsz)
         n = np.arange(0,N)
         #print N, len(n)
         coefficients = (1/(2*np.pi*(n-(N-1)/2))) * (1-np.cos(np.pi*(n-(N-1)/2)))
         #coefficients = (2.0/N) * (np.sin(np.pi*n/2.0)**2) * 1.0/np.tan(np.pi*n/N)
-        print coefficients
 
         dataHilbert = tszhilbert.view(tsz.__class__)
         dataHilbert = gwpy.timeseries.TimeSeries(dataHilbert)
@@ -203,13 +205,9 @@ def hilbert(params, segment):
         angleMax = angles[np.argmax(xcorrs)]
         rot = np.array([[np.cos(angleMax), -np.sin(angleMax)],[np.sin(angleMax),np.cos(angleMax)]])
 
-        tsxy = []
-        for x,y in zip(tsx,tsy):
-            vector = np.array([x,y])
-            #z = rot1.dot(rot2.dot(vector))
-            z = rot.dot(vector)
-            tsxy.append(np.sum(z))
-        tsxy = np.array(tsxy)
+        twodarray = np.vstack([tsx,tsy])
+        z = rot.dot(twodarray)
+        tsxy = np.sum(z.T,axis=1)
 
         dataXY = tsxy.view(tsz.__class__)
         dataXY = gwpy.timeseries.TimeSeries(tsxy)
@@ -252,3 +250,28 @@ def hilbert(params, segment):
 
             plot.save(pngFile)
             plot.close()
+
+        dataRatio = dataHilbert / dataXY
+
+        if params["doPlots"]:
+
+            plotDirectory = params["path"] + "/Hilbert"
+            gwpy.seismon.seismon_utils.mkdir(plotDirectory)
+
+            pngFile = os.path.join(plotDirectory,"%s-ratio.png"%(attributeDic["eventName"]))
+            plot = gwpy.plotter.TimeSeriesPlot(figsize=[14,8])
+
+            kwargs = {"linestyle":"-","color":"k"}
+            plot.add_timeseries(np.absolute(dataRatio),label="Hilbert",**kwargs)
+            plot.ylabel = r"Ratio [Hilbert / XY]"
+           
+            meanValue = np.mean(np.absolute(dataRatio))
+            plot.title = "Mean Ratio: %.3f"%(meanValue)
+
+            #plot.ylim = [0,100]
+
+            plot.axes[0].set_yscale("log")
+
+            plot.save(pngFile)
+            plot.close()
+        print penis

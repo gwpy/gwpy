@@ -216,8 +216,10 @@ def coherence_summary(params, channel1, segment):
         plot.xlabel = "Frequency [Hz]"
         plot.ylabel = "Coherence"
         plot.add_legend(loc=1,prop={'size':10})
-        plot.axes.set_xscale("log")
-        plot.axes.set_yscale("log")
+
+        if np.log10(params["fmax"]) - np.log10(params["fmin"]) > 1:
+            plot.axes[0].set_xscale("log")
+            #plot.axes[0].set_yscale("log")
 
         plot.save(pngFile,dpi=200)
         plot.close()
