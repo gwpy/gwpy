@@ -604,6 +604,46 @@ class TimeSeries(Series):
             out.unit = 1 / units.Hertz
         return out
 
+    def fftgram(self, stride):
+        """Calculate the average power spectrogram of this `TimeSeries`
+        using the specified average spectrum method.
+
+        Parameters
+        ----------
+        stride : `float`
+            number of seconds in single PSD (column of spectrogram)
+        """
+        from ..spectrogram import Spectrogram
+
+        fftlength = stride
+
+        dt = stride
+        df = 1/fftlength
+        stride *= self.sample_rate.value
+
+        # get size of Spectrogram
+        nsteps = int(self.size // stride)
+        # get number of frequencies
+        nfreqs = int(fftlength*self.sample_rate.value)
+
+        # generate output spectrogram
+        out = Spectrogram(numpy.zeros((nsteps, nfreqs)), name=self.name,
+                          epoch=self.epoch, f0=0, df=df, dt=dt, copy=True)
+        # stride through TimeSeries, recording PSDs as columns of spectrogram
+        for step in range(nsteps):
+            # find step TimeSeries
+            idx = stride * step
+            idx_end = idx + stride
+            stepseries = self[idx:idx_end]
+            stepfft = stepseries.fft()
+            out[step] = stepfft.data
+        try:
+            out.unit = self.unit / units.Hertz
+        except KeyError:
+            out.unit = 1 / units.Hertz
+        out.frequencies = stepfft.frequencies
+        return out
+
     def plot(self, **kwargs):
         """Plot the data for this TimeSeries.
         """

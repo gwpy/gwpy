@@ -235,8 +235,22 @@ class SpectralVariance(Array2D):
             the given percentile `Spectrum` calculated from this
             `SpectralVaraicence`
         """
-        import scipy
-        out = scipy.percentile(self.data, percentile, axis=1)
+
+        out = []
+        rows, columns = self.data.shape
+
+        # Loop over frequencies
+        for i in xrange(rows):
+            # Calculate cumulative sum for array
+            cumsumvals = numpy.cumsum(self.data[i,:])
+
+            # Find value nearest requested percentile
+            abs_cumsumvals_minus_percentile = abs(cumsumvals - percentile)
+            minindex = abs_cumsumvals_minus_percentile.argmin()
+            val = self.bins[minindex]
+
+            out.append(val)
+
         name = '%s %s%% percentile' % (self.name, percentile)
-        return Spectrum(out, epoch=self.epoch, frequencies=self.bins[:-1],
+        return Spectrum(out, epoch=self.epoch, frequencies=self.frequencies,
                         channel=self.channel, name=name, logf=self.logx)

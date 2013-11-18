@@ -161,7 +161,7 @@ class Series(Array):
     # -------------------------------------------
     # Series methods
 
-    def resample(self, rate, window=None, dtype=None):
+    def resample(self, rate, window=None, dtype=None, doDecimate=False):
         """Resample this Series to a new rate
 
         Parameters
@@ -171,7 +171,8 @@ class Series(Array):
         window : array_like, callable, string, float, or tuple, optional
             specifies the window applied to the signal in the Fourier
             domain.
-
+        doDecimate: Boolean
+            tell code to use decimate instead of resample
         Returns
         -------
         Series
@@ -181,7 +182,13 @@ class Series(Array):
         if isinstance(rate, Quantity):
             rate = rate.value
         N = self.shape[0] * self.dx * rate
-        data = signal.resample(self.data, N, window=window)
+
+        if doDecimate:
+            r = (1/self.dx) / rate
+            rval = int(r.value)
+            data = decimate(self.data, rval)
+        else:
+            data = signal.resample(self.data, N, window=window)
         new = self.__class__(data, dtype=dtype or self.dtype)
         new.metadata = self.metadata.copy()
         new.dx = 1 / float(rate)
@@ -212,3 +219,55 @@ class Series(Array):
         return Quantity(super(Series, self).median(*args, **kwargs),
                         unit=self.unit)
     median.__doc__ = Array.median.__doc__
+
+def decimate(x, q, n=None, ftype='iir', axis=-1):
+    """
+    Downsample the signal by using a filter.
+
+    By default, an order 8 Chebyshev type I filter is used. A 30 point FIR
+    filter with hamming window is used if `ftype` is 'fir'.
+
+    Parameters
+    ----------
+    x : ndarray
+    The signal to be downsampled, as an N-dimensional array.
+    q : int
+    The downsampling factor.
+    n : int, optional
+    The order of the filter (1 less than the length for 'fir').
+    ftype : str {'iir', 'fir'}, optional
+    The type of the lowpass filter.
+    axis : int, optional
+    The axis along which to decimate.
+
+    Returns
+    -------
+    y : ndarray
+    The down-sampled signal.
+
+    See also
+    --------
+    resample
+
+    """
+
+    if not isinstance(q, int):
+        raise TypeError("q must be an integer")
+
+    if n is None:
+        if ftype == 'fir':
+            n = 30
+        else:
+            n = 8
+
+    if ftype == 'fir':
+        b = signal.firwin(n + 1, 1. / q, window='hamming')
+        a = 1.
+    else:
+        b, a = signal.cheby1(n, 0.05, 0.8 / q)
+
+    y = signal.lfilter(b, a, x, axis=axis)
+
+    sl = [slice(None)] * y.ndim
+    sl[axis] = slice(None, None, q)
+    return y[sl]
