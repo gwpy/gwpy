@@ -604,6 +604,50 @@ class TimeSeries(Series):
             out.unit = 1 / units.Hertz
         return out
 
+    def fftgram(self, stride):
+        """Calculate the Fourier-gram of this `TimeSeries`.
+
+        At every ``stride``, a single, complex FFT is calculated.
+
+        Parameters
+        ----------
+        stride : `float`
+            number of seconds in single PSD (column of spectrogram)
+
+        Returns
+        -------
+        fftgram : :class:`~gwpy.spectrogram.core.Spectrogram`
+            a Fourier-gram
+        """
+        from ..spectrogram import Spectrogram
+
+        fftlength = stride
+        dt = stride
+        df = 1/fftlength
+        stride *= self.sample_rate.value
+        # get size of Spectrogram
+        nsteps = int(self.size // stride)
+        # get number of frequencies
+        nfreqs = int(fftlength*self.sample_rate.value)
+
+        # generate output spectrogram
+        dtype = numpy.complex
+        out = Spectrogram(numpy.zeros((nsteps, nfreqs), dtype=dtype),
+                          name=self.name, epoch=self.epoch, f0=0, df=df,
+                          dt=dt, copy=True, unit=self.unit, dtype=dtype)
+        # stride through TimeSeries, recording FFTs as columns of Spectrogram
+        for step in range(nsteps):
+            # find step TimeSeries
+            idx = stride * step
+            idx_end = idx + stride
+            stepseries = self[idx:idx_end]
+            # calculated FFT and stack
+            stepfft = stepseries.fft()
+            out[step] = stepfft.data
+        if nsteps:
+            out.frequencies = stepfft.frequencies
+        return out
+
     def plot(self, **kwargs):
         """Plot the data for this TimeSeries.
         """

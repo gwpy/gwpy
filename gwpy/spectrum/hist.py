@@ -30,7 +30,6 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 from ..data import (Array, Array2D)
 from .core import Spectrum
-from ..spectrogram import Spectrogram
 
 __all__ = ['SpectralVariance']
 
