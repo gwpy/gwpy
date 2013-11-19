@@ -32,7 +32,8 @@ from astropy.io import registry
 from ..detector import Channel
 from ..time import Time
 
-from ..version import version as __version__
+from .. import version
+__version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>"
 

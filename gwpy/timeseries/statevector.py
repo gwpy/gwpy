@@ -39,7 +39,8 @@ from .core import *
 from ..detector import Channel
 from ..time import Time
 from ..segments import *
-from ..version import version as __version__
+from .. import version
+__version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 __all__ = ['StateTimeSeries', 'StateVector', 'BitMask']

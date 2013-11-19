@@ -24,7 +24,8 @@ from matplotlib.axes import Axes as _Axes
 from .decorators import auto_refresh
 from . import (rcParams, tex)
 
-from ..version import version as __version__
+from .. import version
+__version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 class Axes(_Axes):

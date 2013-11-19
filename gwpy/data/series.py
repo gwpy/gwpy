@@ -24,7 +24,8 @@ from scipy import signal
 
 from astropy.units import (Unit, Quantity)
 
-from ..version import version as __version__
+from .. import version
+__version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 from .array import Array

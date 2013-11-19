@@ -24,7 +24,8 @@ from matplotlib.figure import Figure
 
 from .decorator import decorator
 
-from ..version import version as __version__
+from .. import version
+__version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 mydata = threading.local()

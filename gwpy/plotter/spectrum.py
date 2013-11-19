@@ -33,7 +33,8 @@ from .core import Plot
 from .axes import Axes
 from ..spectrum import (Spectrum, SpectralVariance)
 
-from ..version import version as __version__
+from .. import version
+__version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
