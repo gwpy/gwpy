@@ -172,6 +172,8 @@ class Series(Array):
         window : array_like, callable, string, float, or tuple, optional
             specifies the window applied to the signal in the Fourier
             domain.
+        dtype : :class:`numpy.dtype`, default: `None`
+            specific data type for output, defaults to input dtype
 
         Returns
         -------
@@ -187,6 +189,51 @@ class Series(Array):
         new.metadata = self.metadata.copy()
         new.dx = 1 / float(rate)
         return new
+
+    def decimate(self, q, n=None, ftype='iir', axis=-1):
+        """Downsample the signal by using a filter.
+
+        By default, an order 8 Chebyshev type I filter is used.
+        A 30 point FIR filter with hamming window is used if
+        `ftype` is 'fir'.
+
+        Parameters
+        ----------
+        q : `int`
+            the downsampling factor.
+        n : `int`, optional
+            the order of the filter (1 less than the length for 'fir').
+        ftype : `str`: {'iir', 'fir'}, optional
+            the type of the lowpass filter.
+        axis : `int`, optional
+            The axis along which to decimate.
+
+        Returns
+        -------
+        y : ndarray
+        The down-sampled signal.
+
+        See also
+        --------
+        :meth:`~scipy.resample`
+        """
+        if not isinstance(q, int):
+            raise TypeError("q must be an integer")
+        if n is None:
+            if ftype == 'fir':
+                n = 30
+            else:
+                n = 8
+        if ftype == 'fir':
+            b = signal.firwin(n + 1, 1. / q, window='hamming')
+            a = 1.
+        else:
+            b, a = signal.cheby1(n, 0.05, 0.8 / q)
+        y = signal.lfilter(b, a, self.data, axis=axis)
+        out = self.__class__(y, **self.metadata)
+        sl = [slice(None)] * y.ndim
+        sl[axis] = slice(None, None, q)
+        return out[sl]
 
     # -------------------------------------------
     # numpy.ndarray method modifiers
