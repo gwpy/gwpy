@@ -244,7 +244,8 @@ class SpectralVariance(Array2D):
             cumsumvals = numpy.cumsum(self.data[i, :])
 
             # Find value nearest requested percentile
-            abs_cumsumvals_minus_percentile = (cumsumvals - percentile).abs()
+            abs_cumsumvals_minus_percentile = numpy.abs(cumsumvals -
+                                                        percentile)
             minindex = abs_cumsumvals_minus_percentile.argmin()
             val = self.bins[minindex]
             out[i] = val
