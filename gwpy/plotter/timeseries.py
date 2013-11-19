@@ -31,7 +31,7 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 
 from .core import Plot
-from ..segments import SegmentList
+from ..segments import (SegmentList, DataQualityFlag)
 from ..time import Time
 from . import (ticks, tex)
 from .axes import Axes
@@ -39,148 +39,6 @@ from .decorators import auto_refresh
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['TimeSeriesPlot', 'TimeSeriesAxes']
-
-
-class TimeSeriesPlot(Plot):
-    """An extension of the :class:`~gwpy.plotter.core.Plot` class for
-    displaying data from :class:`~gwpy.timeseries.core.TimeSeries`
-
-    Parameters
-    ----------
-    *series : `TimeSeries`
-        any number of :class:`~gwpy.timeseries.core.TimeSeries` to
-        display on the plot
-    **kwargs
-        other keyword arguments as applicable for the
-        :class:`~gwpy.plotter.core.Plot`
-    """
-    def __new__(cls, *series, **kwargs):
-        kwargs.setdefault('figsize', [12, 6])
-        return super(TimeSeriesPlot, cls).__new__(cls, **kwargs)
-
-    def __init__(self, *series, **kwargs):
-        """Initialise a new TimeSeriesPlot
-        """
-        sep = kwargs.pop('sep', False)
-
-        # generate figure
-        super(TimeSeriesPlot, self).__init__(**kwargs)
-
-        # plot data
-        for ts in series:
-            self.add_timeseries(ts, newax=sep)
-
-        # set epoch
-        if len(series):
-            span = SegmentList([ts.span for ts in series]).extent()
-            for ax in self.axes:
-                ax.set_epoch(span[0])
-                ax.set_xlim(*span)
-                if not hasattr(self, '_auto_gps') or self._auto_gps:
-                    ax.auto_gps_scale()
-            for ax in self.axes[:-1]:
-                ax.set_xlabel("")
-
-    # -----------------------------------------------
-    # properties
-
-    @property
-    def epoch(self):
-        """Find the GPS epoch of this plot
-        """
-        axes = self._find_axes('timeseries')
-        return axes.epoch
-
-    def get_epoch(self):
-        return self.epoch
-
-    @auto_refresh
-    def set_epoch(self, gps):
-        """Set the GPS epoch of this plot
-        """
-        axeslist = self._find_all_axes('timeseries')
-        for axes in axeslist:
-            axes.set_epoch(gps)
-
-    @property
-    def gps_scale(self):
-        axes = self._find_axes('timeseries')
-        return axes.gps_scale
-
-    def get_gps_scale(self):
-        return self.gps_scale
-
-    def set_gps_scale(self, scale):
-        axeslist = self._find_all_axes('timeseries')
-        for axes in axeslist:
-            axes.set_gps_scale(scale)
-
-
-    # -----------------------------------------------
-    # extend add_timseries
-
-    def add_timeseries(self, timeseries, **kwargs):
-        super(TimeSeriesPlot, self).add_timeseries(timeseries, **kwargs)
-        if not self.epoch:
-            self.set_epoch(timeseries.epoch)
-            
-
-    @auto_refresh
-    def set_time_format(self, format_='gps', epoch=None, scale=None,
-                        autoscale=True, addlabel=True):
-        """Set the time format for this plot.
-
-        Currently, only the 'gps' format is accepted.
-
-        Parameters
-        ----------
-        format_ : `str`
-            name of the time format
-        epoch : :class:`~astropy.time.core.Time`, optional
-            GPS start epoch for the time axis
-        scale : `float`, optional
-            overall scaling for axis ticks in seconds, e.g. 60 shows
-            minutes from the epoch
-        autoscale : `bool`, optional
-            auto-scale the axes when the format is set
-        addlabel : `bool`, optional
-            auto-set a default label for the x-axis
-
-        Returns
-        -------
-        TimeFormatter
-            the :class:`~gwpy.plotter.ticks.TimeFormatter` for this axis
-        """
-        if epoch and not scale:
-            duration = self.xlim[1] - self.xlim[0]
-            for scale in ticks.GPS_SCALE.keys()[::-1]:
-               if duration > scale*4:
-                   break
-        formatter = ticks.TimeFormatter(format=format_, epoch=epoch,
-                                        scale=scale)
-        self.axes.xaxis.set_major_formatter(formatter)
-        locator = ticks.AutoTimeLocator(epoch=epoch, scale=scale)
-        self.axes.xaxis.set_major_locator(locator)
-        try:
-            from lal import LIGOTimeGPS
-        except ImportError:
-            self.fmt_xdata = lambda t: t
-        else:
-            self.fmt_xdata = lambda t: LIGOTimeGPS(t)
-        if addlabel:
-            self.xlabel = ("Time (%s) from %s (%s)"
-                           % (formatter.scale_str_long,
-                              re.sub('\.0+', '', self.epoch.utc.iso),
-                              self.epoch.gps))
-        if autoscale:
-            self.axes.autoscale_view()
-        return formatter
-
-    def refresh(self):
-        super(TimeSeriesPlot, self).refresh()
-        for ax in self._find_all_axes('timeseries'):
-            if not hasattr(ax, '_auto_gps') or ax._auto_gps == True:
-                ax.auto_gps_scale()
 
 
 class TimeSeriesAxes(Axes):
@@ -293,7 +151,6 @@ class TimeSeriesAxes(Axes):
                 self.xlabel = xlabel.replace(s, formatter.scale_str_long)
         self._auto_gps = False
 
-    @auto_refresh
     def auto_gps_scale(self):
         """Automagically set the GPS scale for the time-axis of this plot
         based on the current view limits
@@ -502,6 +359,7 @@ class TimeSeriesAxes(Axes):
         collection : :class:`~matplotlib.patches.PatchCollection`
             list of :class:`~matplotlib.patches.Rectangle` patches
         """
+        add_label = kwargs.pop('add_label', True)
         if y is None:
             y = len(self.collections)
         name = ':'.join([str(attr) for attr in
@@ -514,7 +372,21 @@ class TimeSeriesAxes(Axes):
                 self.set_epoch(min(self.epoch.gps, flag.valid[0][0]))
         except IndexError:
             pass
-        return self.plot_segmentlist(flag.active, y=y, label=name, **kwargs)
+        collection = self.plot_segmentlist(flag.active, y=y, label=name,
+                                           **kwargs)
+        # add label
+        ylim = self.get_ylim()
+        if add_label:
+            labels = [t.get_text() for t in self.get_yticklabels()]
+            name = ':'.join([str(p) for p in
+                             (flag.ifo, flag.name, flag.version) if p is
+                             not None])
+            labels.append(name.replace('_', r'\_'))
+            ticks_ = self.get_yticks()
+            self.set_yticks(list(ticks_) + [ticks_[-1]+1])
+            self.set_yticklabels(labels)
+        self.set_ylim(ylim[0], ylim[1] + 1)
+        return collection
 
     @auto_refresh
     def plot_segmentlist(self, segmentlist, y=None, **kwargs):
@@ -612,8 +484,178 @@ class TimeSeriesAxes(Axes):
         elif valign.lower() != 'bottom':
             raise ValueError("valign must be one of 'top', 'center', or "
                              "'bottom'")
-        return Rectangle((segment[0], y), width=abs(segment), height=height,
+        return Rectangle((segment[0], y0), width=abs(segment), height=height,
                          **kwargs)
 
-
 register_projection(TimeSeriesAxes)
+
+
+class TimeSeriesPlot(Plot):
+    """An extension of the :class:`~gwpy.plotter.core.Plot` class for
+    displaying data from :class:`~gwpy.timeseries.core.TimeSeries`
+
+    Parameters
+    ----------
+    *series : `TimeSeries`
+        any number of :class:`~gwpy.timeseries.core.TimeSeries` to
+        display on the plot
+    **kwargs
+        other keyword arguments as applicable for the
+        :class:`~gwpy.plotter.core.Plot`
+    """
+    _DefaultAxesClass = TimeSeriesAxes
+
+    def __init__(self, *series, **kwargs):
+        """Initialise a new TimeSeriesPlot
+        """
+        sep = kwargs.pop('sep', False)
+        kwargs.setdefault('figsize', [12, 6])
+
+        # generate figure
+        print kwargs
+        super(TimeSeriesPlot, self).__init__(**kwargs)
+
+        # plot data
+        for ts in series:
+            self.add_timeseries(ts, newax=sep)
+
+        # set epoch
+        if len(series):
+            span = SegmentList([ts.span for ts in series]).extent()
+            for ax in self.axes:
+                ax.set_epoch(span[0])
+                ax.set_xlim(*span)
+                if not hasattr(self, '_auto_gps') or self._auto_gps:
+                    ax.auto_gps_scale()
+            for ax in self.axes[:-1]:
+                ax.set_xlabel("")
+
+    # -----------------------------------------------
+    # properties
+
+    @property
+    def epoch(self):
+        """Find the GPS epoch of this plot
+        """
+        axes = self._find_axes(self._DefaultAxesClass.name)
+        return axes.epoch
+
+    def get_epoch(self):
+        return self.epoch
+
+    @auto_refresh
+    def set_epoch(self, gps):
+        """Set the GPS epoch of this plot
+        """
+        axeslist = self._find_all_axes(self._DefaultAxesClass.name)
+        for axes in axeslist:
+            axes.set_epoch(gps)
+
+    @property
+    def gps_scale(self):
+        axes = self._find_axes(self._DefaultAxesClass.name)
+        return axes.gps_scale
+
+    def get_gps_scale(self):
+        return self.gps_scale
+
+    def set_gps_scale(self, scale):
+        axeslist = self._find_all_axes(self._DefaultAxesClass.name)
+        for axes in axeslist:
+            axes.set_gps_scale(scale)
+
+
+    # -----------------------------------------------
+    # TimeSeriesPlot methods
+
+    def add_timeseries(self, timeseries, **kwargs):
+        super(TimeSeriesPlot, self).add_timeseries(timeseries, **kwargs)
+        if not self.epoch:
+            self.set_epoch(timeseries.epoch)
+
+    def add_state_segments(self, segments, ax=None, **kwargs):
+        """Add a `SegmentList` to this `TimeSeriesPlot` indicating state
+        information about the main Axes data.
+
+        By default, segments are displayed in a thin horizontal Axes set
+        sitting immediately below the x-axis of the main
+        `Axes`
+
+        Parameters
+        ----------
+        segments : :class:`~gwpy.segments.flag.DataQualityFlag`
+            A data-quality flag, or `SegmentList` denoting state segments
+            about this Plot
+        ax : `Axes`
+            specific Axes set against which to anchor new segment Axes
+        **kwargs
+            all other keyword arguments passed to
+            :meth:`~gwpy.plotter.segments.TimeSegmentAxes.plot`
+        """
+        if isinstance(segments, DataQualityFlag):
+            segments = segments.active
+        if not ax:
+            try:
+                ax = self._find_all_axes(self._DefaultAxesClass.name)[-1]
+            except IndexError:
+                raise ValueError("No 'timeseries' Axes found, cannot anchor "
+                                 "new segment Axes.")
+            # FIXME
+        raise NotImplementedError("This function is unfinished, FIXME")
+
+    @auto_refresh
+    def set_time_format(self, format_='gps', epoch=None, scale=None,
+                        autoscale=True, addlabel=True):
+        """Set the time format for this plot.
+
+        Currently, only the 'gps' format is accepted.
+
+        Parameters
+        ----------
+        format_ : `str`
+            name of the time format
+        epoch : :class:`~astropy.time.core.Time`, optional
+            GPS start epoch for the time axis
+        scale : `float`, optional
+            overall scaling for axis ticks in seconds, e.g. 60 shows
+            minutes from the epoch
+        autoscale : `bool`, optional
+            auto-scale the axes when the format is set
+        addlabel : `bool`, optional
+            auto-set a default label for the x-axis
+
+        Returns
+        -------
+        TimeFormatter
+            the :class:`~gwpy.plotter.ticks.TimeFormatter` for this axis
+        """
+        if epoch and not scale:
+            duration = self.xlim[1] - self.xlim[0]
+            for scale in ticks.GPS_SCALE.keys()[::-1]:
+                if duration > scale*4:
+                    break
+        formatter = ticks.TimeFormatter(format=format_, epoch=epoch,
+                                        scale=scale)
+        self.axes.xaxis.set_major_formatter(formatter)
+        locator = ticks.AutoTimeLocator(epoch=epoch, scale=scale)
+        self.axes.xaxis.set_major_locator(locator)
+        try:
+            from lal import LIGOTimeGPS
+        except ImportError:
+            self.fmt_xdata = lambda t: t
+        else:
+            self.fmt_xdata = lambda t: LIGOTimeGPS(t)
+        if addlabel:
+            self.xlabel = ("Time (%s) from %s (%s)"
+                           % (formatter.scale_str_long,
+                              re.sub('\.0+', '', self.epoch.utc.iso),
+                              self.epoch.gps))
+        if autoscale:
+            self.axes.autoscale_view()
+        return formatter
+
+    def refresh(self):
+        super(TimeSeriesPlot, self).refresh()
+        for ax in self._find_all_axes(self._DefaultAxesClass.name):
+            if not hasattr(ax, '_auto_gps') or ax._auto_gps == True:
+                ax.auto_gps_scale()

@@ -20,14 +20,14 @@
 
 import numpy
 
-from matplotlib import (axes, figure, pyplot, colors as mcolors,
-                        ticker as mticker)
+from matplotlib import (axes, backends, figure, pyplot, colors as mcolors,
+                        ticker as mticker, _pylab_helpers)
 try:
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
-from . import tex, axes
+from . import tex
 from .decorators import (auto_refresh, axes_method)
 
 
@@ -35,24 +35,23 @@ class Plot(figure.Figure):
     """An extension of the matplotib :class:`~matplotlib.figure.Figure`
     object for GWpy
     """
-    def __new__(cls, *args, **kwargs):
-        """Construct a new `Plot`
+    def __init__(self, *args, **kwargs):
+        # pull non-standard keyword arguments
+        auto_refresh = kwargs.pop('auto_refresh', False)
 
-        This constructor will use the ``pyplot`` covenience method
-        :meth:`~matplotlib.pyplot.figure` to generate a new figure
-        """
-        called_from_pyplot = kwargs.pop('called_from_pyplot', False)
-        if called_from_pyplot:
-            return super(Plot, cls).__new__(cls)
-            #new.__init__(**kwargs)
-        else:
-            kwargs.setdefault('FigureClass', cls)
-            kwargs.setdefault('called_from_pyplot', True)
-            return pyplot.figure(**kwargs)
+        # generated figure, with associated interactivity from pyplot
+        super(Plot, self).__init__(*args, **kwargs)
+        (backend_mod, new_figure_manager, draw_if_interactive,
+                                          show) = backends.pylab_setup()
+        manager = backend_mod.new_figure_manager_given_figure(1, self)
+        cid = manager.canvas.mpl_connect(
+                  'button_press_event',
+                  lambda ev: _pylab_helpers.Gcf.set_active(manager))
+        manager._cidgcf = cid
+        _pylab_helpers.Gcf.set_active(manager)
+        draw_if_interactive()
 
-    def __init__(self, auto_refresh=False, **kwargs):
-        if kwargs.pop('called_from_pyplot', False):
-            super(Plot, self).__init__(**kwargs)
+        # finalise
         self._auto_refresh = auto_refresh
         self.coloraxes = []
 
@@ -272,9 +271,9 @@ class Plot(figure.Figure):
         else:
             return (1, shape[1] + 1, pos+1)
 
-    def _add_new_axes(self, projection):
+    def _add_new_axes(self, projection, **kwargs):
         geometry = self._increment_geometry()
-        ax = self.add_subplot(*geometry, projection=projection)
+        ax = self.add_subplot(*geometry, projection=projection, **kwargs)
         if (geometry[0] == 1 or geometry[1] == 1 and
             geometry[2] == (geometry[0] * geometry[1])):
             idx = geometry[0] == 1 and 1 or 0
@@ -615,6 +614,27 @@ class Plot(figure.Figure):
         # plot on axes
         return ax.plot(array, **kwargs)
 
+    def add_dataqualityflag(self, flag, projection=None, ax=None, newax=False,
+                            **kwargs):
+        """Add a :class:`~gwpy.segments.flag.DataQualityFlag` to this plot
+
+        Parameters
+        ----------
+        flag : :class:`~gwpy.segments.flag.DataQualityFlag`
+            the `DataQualityFlag` to display
+
+        """
+        # find relevant axes
+        if ax is None and not newax:
+            try:
+                ax = self._find_axes(projection)
+            except IndexError:
+                newax = True
+        if newax:
+            ax = self._add_new_axes(projection=projection)
+        # plot on axes
+        return ax.plot(flag, **kwargs)
+
     # -------------------------------------------
     # Plot legend
 
@@ -655,8 +675,8 @@ class Plot(figure.Figure):
         pass
     get_xlim.__doc__ = axes.Axes.get_xlim.__doc__
 
-    @axes_method
     @auto_refresh
+    @axes_method
     def set_xlim(self, *args, **kwargs):
         pass
     set_xlim.__doc__ = axes.Axes.set_xlim.__doc__
