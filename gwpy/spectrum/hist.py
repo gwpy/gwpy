@@ -30,6 +30,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 from ..data import (Array, Array2D)
 from .core import Spectrum
+from ..detector import Channel
 
 __all__ = ['SpectralVariance']
 
@@ -41,7 +42,7 @@ class SpectralVariance(Array2D):
     _metadata_slots = ['name', 'unit', 'epoch', 'df', 'f0', 'logf',
                        'bins']
     xunit = Spectrum.xunit
-    def __new__(cls, data, name=None, channel=None, epoch=None,
+    def __new__(cls, data, name=None, channel=None, epoch=None, unit=None,
                 f0=None, df=None, logf=None, bins=None, yunit=None, **kwargs):
         """Generate a new SpectralVariance
         """
@@ -235,8 +236,18 @@ class SpectralVariance(Array2D):
             the given percentile `Spectrum` calculated from this
             `SpectralVaraicence`
         """
-        import scipy
-        out = scipy.percentile(self.data, percentile, axis=1)
+        rows, columns = self.data.shape
+        out = numpy.zeros(rows)
+        # Loop over frequencies
+        for i in range(rows):
+            # Calculate cumulative sum for array
+            cumsumvals = numpy.cumsum(self.data[i, :])
+
+            # Find value nearest requested percentile
+            abs_cumsumvals_minus_percentile = (cumsumvals - percentile).abs()
+            minindex = abs_cumsumvals_minus_percentile.argmin()
+            val = self.bins[minindex]
+            out[i] = val
         name = '%s %s%% percentile' % (self.name, percentile)
         return Spectrum(out, epoch=self.epoch, frequencies=self.bins[:-1],
                         channel=self.channel, name=name, logf=self.logx)
