@@ -24,6 +24,7 @@ import operator
 import numpy
 import re
 import warnings
+from copy import copy as shallowcopy
 from math import (floor, ceil)
 
 try:
@@ -357,6 +358,69 @@ class DataQualityDict(OrderedDict):
         return out
 
     read = classmethod(io_registry.read)
+
+    # -----------------------------------------------------------------------
+    # DataQualityDict operators
+
+    def __iand__(self, other):
+        for key, value in other.iteritems():
+            if key in self:
+                self[key] &= value
+            else:
+                self[key] = self._EntryClass()
+        return self
+
+    def __and__(self, other):
+        if sum(len(s) for s in self.values()) <= sum(len(s) for s in
+                                                     other.values()):
+            return self.copy().__iand__(other)
+        return other.copy().__iand__(self)
+
+    def __ior__(self, other):
+        for key, value in other.iteritems():
+            if key in self:
+                self[key] |= value
+            else:
+                self[key] = shallowcopy(value)
+        return self
+
+    def __or__(self, other):
+        if sum(len(s) for s in self.values()) >= sum(len(s) for s in
+                                                     other.values()):
+            return self.copy().__ior__(other)
+        return other.copy().__ior__(self)
+
+    __iadd__ = __ior__
+    __add__ = __or__
+
+    def __isub__(self, other):
+        for key, value in other.iteritems():
+            if key in self:
+                self[key] -= value
+        return self
+
+    def __sub__(self, other):
+        return self.copy().__isub__(other)
+
+    def __ixor__(self, other):
+        for key, value in other.iteritems():
+            if key in self:
+                self[key] ^= value
+            else:
+                self[key] = shallowcopy(value)
+        return self
+
+    def __xor__(self, other):
+        if sum(len(s) for s in self.values()) <= sum(len(s) for s in
+                                                     other.values()):
+            return self.copy().__ixor__(other)
+        return other.copy().__ixor__(self)
+
+    def __invert__(self):
+        new = self.copy()
+        for key, value in new.items():
+            dict.__setitem__(new, key, ~value)
+        return new
 
 
 _re_inv = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<name>[^/]+):(?P<version>\d+)\Z")
