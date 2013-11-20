@@ -20,8 +20,6 @@ named set of segments used in defining GW instrument state or
 data quality information.
 """
 
-import operator
-import numpy
 import re
 import warnings
 from copy import copy as shallowcopy
@@ -274,6 +272,13 @@ class DataQualityFlag(object):
 
     __add__ = __or__
     __iadd__ = __ior__
+
+    def plot(self, **kwargs):
+        """Plot this DataQualityFlag
+        """
+        from ..plotter import SegmentPlot
+        kwargs.setdefault('epoch', self.valid[0][0])
+        return SegmentPlot(self, **kwargs)
 
     write = io_registry.write
 

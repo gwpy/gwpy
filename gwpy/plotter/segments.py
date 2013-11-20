@@ -18,16 +18,20 @@
 """Extension of the simple Plot class for displaying segment objects
 """
 
+import operator
+
+import numpy
 from matplotlib.projections import register_projection
 
-from ..version import version as version
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-from .timeseries import TimeSeriesAxes
+from .. import version
+from .timeseries import (TimeSeriesPlot, TimeSeriesAxes)
 from ..segments import *
 
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__version__ = version.version
 
-class TimeSegmentAxes(TimeSeriesAxes):
+
+class SegmentAxes(TimeSeriesAxes):
     """Axes designed to show `SegmentList`, and `DataQualityFlag`-format
     objects
     """
@@ -71,7 +75,7 @@ class TimeSegmentAxes(TimeSeriesAxes):
                 args.pop(0)
                 continue
             elif isinstance(args[0], SegmentList):
-                out.extend(self.plot_segmentlist(args[0], **kwargs))
+                out.append(self.plot_segmentlist(args[0], **kwargs))
                 args.pop(0)
                 continue
             elif isinstance(args[0], Segment):
@@ -80,9 +84,85 @@ class TimeSegmentAxes(TimeSeriesAxes):
                 continue
             break
         if len(args):
-            out.append(super(TimeSegmentAxes, self).plot(*args, **kwargs))
+            out.append(super(SegmentAxes, self).plot(*args, **kwargs))
         if not lim:
             self.set_ylim(-0.1, len(self.collections) + 0.1)
         return out
 
-register_projection(TimeSegmentAxes)
+register_projection(SegmentAxes)
+
+
+class SegmentPlot(TimeSeriesPlot):
+    """An extension of the
+    :class:`~gwpy.plotter.timeseries.TimeSeriesPlot` class for
+    displaying data from
+    :class:`DataQualityFlags <~gwpy.segments.flagDataQualityFlag>`.
+
+    Parameters
+    ----------
+    *flags : `DataQualityFlag`
+        any number of :class:`~gwpy.segments.flag.DataQualityFlag` to
+        display on the plot
+    **kwargs
+        other keyword arguments as applicable for the
+        :class:`~gwpy.plotter.core.Plot`
+    """
+    _DefaultAxesClass = SegmentAxes
+    def __init__(self, *flags, **kwargs):
+        """Initialise a new SegmentPlot
+        """
+        sep = kwargs.pop('sep', False)
+        epoch = kwargs.pop('epoch', None)
+        labels = kwargs.pop('labels', None)
+        valid = kwargs.pop('valid', 'x')
+
+        # generate figure
+        super(SegmentPlot, self).__init__(**kwargs)
+        # plot data
+        for flag in flags:
+            self.add_dataqualityflag(flag,
+                                     projection=self._DefaultAxesClass.name,
+                                     newax=sep, valid=valid)
+
+        # set epoch
+        if len(flags):
+            span = reduce(operator.or_, [f.valid for f in flags]).extent()
+            if not epoch:
+                epoch = span[0]
+            for ax in self.axes:
+                ax.set_epoch(epoch)
+                ax.set_xlim(*span)
+                if not hasattr(self, '_auto_gps') or self._auto_gps:
+                    ax.auto_gps_scale()
+            for ax in self.axes[:-1]:
+                ax.set_xlabel("")
+
+        # set labels
+        if not labels:
+            labels = []
+            for flag in flags:
+                name = ':'.join([str(p) for p in
+                                 (flag.ifo, flag.name, flag.version) if p is
+                                 not None])
+                labels.append(name.replace('_', r'\_'))
+        if sep:
+            for ax, label in zip(self.axes, labels):
+                ax.set_yticks([0])
+                ax.set_yticklabels([label])
+                ax.set_ylim(-0.5, 0.5)
+        else:
+            ticks = numpy.arange(len(flags))
+            ax = self.axes[0]
+            ax.set_yticks(ticks)
+            ax.set_yticklabels(labels)
+            ax.set_ylim(-0.5, len(flags)-0.5)
+        ax.grid(b=False, which='both', axis='y')
+
+    def add_dataqualityflag(self, flag, **kwargs):
+        super(SegmentPlot, self).add_dataqualityflag(flag, **kwargs)
+        if not self.epoch:
+            try:
+                self.set_epoch(flag.valid[0][0])
+            except IndexError:
+                pass
+    add_dataqualityflag.__doc__ = TimeSeriesPlot.add_dataqualityflag.__doc__

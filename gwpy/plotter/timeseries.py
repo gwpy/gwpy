@@ -338,7 +338,7 @@ class TimeSeriesAxes(Axes):
         return mesh
 
     @auto_refresh
-    def plot_dqflag(self, flag, y=None, **kwargs):
+    def plot_dqflag(self, flag, y=None, valid='x', add_label=True, **kwargs):
         """Plot a :class:`~gwpy.segments.flag.DataQualityFlag`
         onto these axes
 
@@ -350,6 +350,11 @@ class TimeSeriesAxes(Axes):
             y-axis value for new segments
         height : `float`, optional, default: 0.8
             height for each segment block
+        valid : `str`, `None`, default: '/'
+            display `valid` segments with the given hatching, or `None`
+            to hide
+        add_label : `bool`, default: `True`
+            add a label to the y-axis for this `DataQualityFlag`
         **kwargs
             any other keyword arguments acceptable for
             :class:`~matplotlib.patches.Rectangle`
@@ -359,12 +364,14 @@ class TimeSeriesAxes(Axes):
         collection : :class:`~matplotlib.patches.PatchCollection`
             list of :class:`~matplotlib.patches.Rectangle` patches
         """
-        add_label = kwargs.pop('add_label', True)
+        # get y axis position
         if y is None:
             y = len(self.collections)
+        # get flag name
         name = ':'.join([str(attr) for attr in
                          (flag.ifo, flag.name, flag.version) if
                          attr is not None])
+        # get epoch
         try:
             if not self.epoch.gps:
                 self.set_epoch(flag.valid[0][0])
@@ -372,24 +379,41 @@ class TimeSeriesAxes(Axes):
                 self.set_epoch(min(self.epoch.gps, flag.valid[0][0]))
         except IndexError:
             pass
+        # make valid collection
+        if valid is not None:
+            vkwargs = kwargs.copy()
+            vkwargs['fill'] = False
+            vkwargs['hatch'] = valid
+            vkwargs['collection'] = False
+            vkwargs['zorder'] = -1000
+            self.plot_segmentlist(flag.valid, y=y, label=None, **vkwargs)
+        # make active collection
         collection = self.plot_segmentlist(flag.active, y=y, label=name,
                                            **kwargs)
         # add label
         ylim = self.get_ylim()
         if add_label:
-            labels = [t.get_text() for t in self.get_yticklabels()]
             name = ':'.join([str(p) for p in
                              (flag.ifo, flag.name, flag.version) if p is
                              not None])
-            labels.append(name.replace('_', r'\_'))
-            ticks_ = self.get_yticks()
-            self.set_yticks(list(ticks_) + [ticks_[-1]+1])
-            self.set_yticklabels(labels)
-        self.set_ylim(ylim[0], ylim[1] + 1)
+            if len(self.collections) == 1:
+                self.autoscale(axis='y')
+                m = sum(self.get_ylim()) / 2.
+                self.set_yticks([m])
+                self.set_yticklabels([name])
+            else:
+                labels = [t.get_text() for t in self.get_yticklabels()]
+                labels.append(name.replace('_', r'\_'))
+                ticks_ = self.get_yticks()
+                self.set_yticks(list(ticks_) + [ticks_[-1]+1])
+                self.set_yticklabels(labels)
+        if len(self.collections) > 1:
+            self.set_ylim(ylim[0], ylim[1] + 1)
         return collection
 
     @auto_refresh
-    def plot_segmentlist(self, segmentlist, y=None, **kwargs):
+    def plot_segmentlist(self, segmentlist, y=None, collection=True,
+                         **kwargs):
         """Plot a :class:`~gwpy.segments.segments.SegmentList` onto
         these axes
 
@@ -399,6 +423,10 @@ class TimeSeriesAxes(Axes):
             list of segments to display
         y : `float`, optional
             y-axis value for new segments
+        collection : `bool`, default: `True`
+            add all patches as a
+            :class:`~matplotlib.collections.PatchCollection`, doesn't seem
+            to work for hatched rectangles
         **kwargs
             any other keyword arguments acceptable for
             :class:`~matplotlib.patches.Rectangle`
@@ -420,7 +448,13 @@ class TimeSeriesAxes(Axes):
                 self.set_epoch(min(self.epoch.gps, segmentlist[0][0]))
         except IndexError:
             pass
-        return self.add_collection(PatchCollection(patches, True))
+        if collection:
+            return self.add_collection(PatchCollection(patches, True))
+        else:
+            out = []
+            for p in patches:
+                out.append(self.add_patch(p))
+            return out
 
     @auto_refresh
     def plot_segmentlistdict(self, segmentlistdict, y=None, dy=1, **kwargs):
@@ -512,7 +546,6 @@ class TimeSeriesPlot(Plot):
         kwargs.setdefault('figsize', [12, 6])
 
         # generate figure
-        print kwargs
         super(TimeSeriesPlot, self).__init__(**kwargs)
 
         # plot data
@@ -573,13 +606,13 @@ class TimeSeriesPlot(Plot):
         if not self.epoch:
             self.set_epoch(timeseries.epoch)
 
-    def add_state_segments(self, segments, ax=None, **kwargs):
+    def add_state_segments(self, segments, ax=None, height=0.05, pad=0.01,
+                           plotargs={}):
         """Add a `SegmentList` to this `TimeSeriesPlot` indicating state
         information about the main Axes data.
 
-        By default, segments are displayed in a thin horizontal Axes set
+        By default, segments are displayed in a thin horizontal set of Axes
         sitting immediately below the x-axis of the main
-        `Axes`
 
         Parameters
         ----------
@@ -588,20 +621,37 @@ class TimeSeriesPlot(Plot):
             about this Plot
         ax : `Axes`
             specific Axes set against which to anchor new segment Axes
-        **kwargs
-            all other keyword arguments passed to
-            :meth:`~gwpy.plotter.segments.TimeSegmentAxes.plot`
+        plotargs
+            keyword arguments passed to
+            :meth:`~gwpy.plotter.segments.SegmentAxes.plot`
         """
-        if isinstance(segments, DataQualityFlag):
-            segments = segments.active
         if not ax:
             try:
                 ax = self._find_all_axes(self._DefaultAxesClass.name)[-1]
             except IndexError:
                 raise ValueError("No 'timeseries' Axes found, cannot anchor "
                                  "new segment Axes.")
-            # FIXME
-        raise NotImplementedError("This function is unfinished, FIXME")
+        # get current position
+        axbox = ax.get_position()
+        axwidth = axbox.width
+        axheight = axbox.height
+        #ax.get_xaxis().set_visible(False)
+        pyplot.setp(ax.get_xticklabels(), visible=False)
+        # add new axes
+        segax = self._add_new_axes('segments', sharex=ax)
+        # set position and attributes for time-series axes
+        ax.set_position([axbox.x0, axbox.y0 + height + pad,
+                         axwidth, axheight - height + pad])
+        # plot segments and set axes properties
+        segax.set_position([axbox.x0, axbox.y0, axwidth, height])
+        segax.plot(segments, **plotargs)
+        segax.grid(b=False, which='both', axis='y')
+        segax.autoscale(axis='y', tight=True)
+        # set ticks and label
+        segax.set_xlabel(ax.get_xlabel())
+        ax.set_xlabel("")
+        segax.set_xlim(*ax.get_xlim())
+        return segax
 
     @auto_refresh
     def set_time_format(self, format_='gps', epoch=None, scale=None,
