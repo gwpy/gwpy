@@ -9,3 +9,4 @@
 *.swp
 .DS_Store
 /examples/gw_ex_*.png
+/.idea
