@@ -150,13 +150,14 @@ class SegmentPlot(TimeSeriesPlot):
                 ax.set_yticks([0])
                 ax.set_yticklabels([label])
                 ax.set_ylim(-0.5, 0.5)
-        else:
+                ax.grid(b=False, which='both', axis='y')
+        elif len(flags):
             ticks = numpy.arange(len(flags))
             ax = self.axes[0]
             ax.set_yticks(ticks)
             ax.set_yticklabels(labels)
             ax.set_ylim(-0.5, len(flags)-0.5)
-        ax.grid(b=False, which='both', axis='y')
+            ax.grid(b=False, which='both', axis='y')
 
     def add_dataqualityflag(self, flag, **kwargs):
         super(SegmentPlot, self).add_dataqualityflag(flag, **kwargs)
