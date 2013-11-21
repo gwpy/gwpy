@@ -162,6 +162,7 @@ class Plot(figure.Figure):
         else:
             raise ValueError("'left' and 'bottom' colorbars have not "
                              "been implemented")
+        self.coloraxes.append(cax)
         if visible:
             divider._fig.add_axes(cax)
         else:
@@ -206,7 +207,6 @@ class Plot(figure.Figure):
 
         # make colour bar
         colorbar = self.colorbar(mappable, cax=cax, **kwargs)
-        self.coloraxes.append(cax)
 
         # set label
         if label:

@@ -30,6 +30,11 @@ from matplotlib.projections import register_projection
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 
+try:
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+except ImportError:
+    from mpl_toolkits.axes_grid import make_axes_locatable
+
 from .core import Plot
 from ..segments import (SegmentList, DataQualityFlag)
 from ..time import Time
@@ -606,8 +611,8 @@ class TimeSeriesPlot(Plot):
         if not self.epoch:
             self.set_epoch(timeseries.epoch)
 
-    def add_state_segments(self, segments, ax=None, height=0.05, pad=0.01,
-                           plotargs={}):
+    def add_state_segments(self, segments, ax=None, height=0.2, pad=0.1,
+                           location='bottom', plotargs={}):
         """Add a `SegmentList` to this `TimeSeriesPlot` indicating state
         information about the main Axes data.
 
@@ -625,6 +630,7 @@ class TimeSeriesPlot(Plot):
             keyword arguments passed to
             :meth:`~gwpy.plotter.segments.SegmentAxes.plot`
         """
+        from .segments import SegmentAxes
         if not ax:
             try:
                 ax = self._find_all_axes(self._DefaultAxesClass.name)[-1]
@@ -638,12 +644,17 @@ class TimeSeriesPlot(Plot):
         #ax.get_xaxis().set_visible(False)
         pyplot.setp(ax.get_xticklabels(), visible=False)
         # add new axes
-        segax = self._add_new_axes('segments', sharex=ax)
-        # set position and attributes for time-series axes
-        ax.set_position([axbox.x0, axbox.y0 + height + pad,
-                         axwidth, axheight - height + pad])
+        if ax.get_axes_locator():
+            divider = ax.get_axes_locator()._axes_divider
+        else:
+            divider = make_axes_locatable(ax)
+        if not location in ['top', 'bottom']:
+            raise ValueError("Segments can only be positoned at 'top' or "
+                             "'bottom'.")
+        segax = divider.append_axes(location, height, pad=pad,
+                                    axes_class=SegmentAxes, sharex=ax)
+
         # plot segments and set axes properties
-        segax.set_position([axbox.x0, axbox.y0, axwidth, height])
         segax.plot(segments, **plotargs)
         segax.grid(b=False, which='both', axis='y')
         segax.autoscale(axis='y', tight=True)
