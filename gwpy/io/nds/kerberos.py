@@ -153,7 +153,7 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None):
     if not keytab:
         kget.communicate(password)
     kget.wait()
-    print("Kerberos ticket generated for %s@%s" % (username, realm))
+    print("\nKerberos ticket generated for %s@%s" % (username, realm))
 
 
 def parse_keytab(keytab):
