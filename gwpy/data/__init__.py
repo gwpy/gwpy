@@ -29,5 +29,5 @@ from .array2d import *
 from .series import *
 from glue.lal import (Cache, CacheEntry)
 
-__all__ = ['NDData', 'Array', 'Array2D', 'Series', 'Cache', 'CacheEntry']
+__all__ = ['Array', 'Array2D', 'Series', 'Cache', 'CacheEntry']
 

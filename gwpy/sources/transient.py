@@ -22,7 +22,7 @@ from astropy import units as aunits
 
 from .. import (version, detector)
 from ..time import Time
-from ..data import NDData
+from ..data import Series
 
 from .core import (Source, SourceList)
 
@@ -83,18 +83,18 @@ class TransientSourceList(SourceList):
     """
     @property
     def ra(self):
-        return NDData([s.ra for s in self], name='right ascension',
+        return Series([s.ra for s in self], name='right ascension',
                       unit=aunits.radian)
 
     @property
     def dec(self):
-        return NDData([s.dec for s in self], name='declination',
+        return Series([s.dec for s in self], name='declination',
                       unit=aunits.radian)
 
     @property
     def time(self):
-        return NDData([s.time for s in self], name='time')
+        return Series([s.time for s in self], name='time')
 
     @property
     def gps(self):
-       return NDData([s.gps for s in self], name='gps', unit=aunits.second)
+       return Series([s.gps for s in self], name='gps', unit=aunits.second)
