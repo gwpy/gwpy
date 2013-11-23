@@ -1,3 +1,4 @@
+# -*- coding: utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -19,12 +20,18 @@
 """
 
 import operator
+import re
 
 import numpy
+from matplotlib.ticker import (Formatter, MultipleLocator)
 from matplotlib.projections import register_projection
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Rectangle
 
 from .. import version
+from . import rcParams
 from .timeseries import (TimeSeriesPlot, TimeSeriesAxes)
+from .decorators import auto_refresh
 from ..segments import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -36,6 +43,11 @@ class SegmentAxes(TimeSeriesAxes):
     objects
     """
     name = 'segments'
+
+    def __init__(self, *args, **kwargs):
+        super(SegmentAxes, self).__init__(*args, **kwargs)
+        self.yaxis.set_major_locator(MultipleLocator())
+
     def plot(self, *args, **kwargs):
         """Plot data onto these axes
 
@@ -79,15 +91,233 @@ class SegmentAxes(TimeSeriesAxes):
                 args.pop(0)
                 continue
             elif isinstance(args[0], Segment):
-                out.append(self.plot_segment(args[0], **kwargs))
-                args.pop(0)
-                continue
+                raise ValueError("Input must be DataQualityFlag, "
+                                 "SegmentListDict, or SegmentList")
             break
         if len(args):
             out.append(super(SegmentAxes, self).plot(*args, **kwargs))
         if not lim:
             self.set_ylim(-0.1, len(self.collections) + 0.1)
         return out
+
+    @auto_refresh
+    def plot_dqflag(self, flag, y=None, valid='x', add_label=True, **kwargs):
+        """Plot a :class:`~gwpy.segments.flag.DataQualityFlag`
+        onto these axes
+
+        Parameters
+        ----------
+        flag : :class:`~gwpy.segments.flag.DataQualityFlag`
+            data-quality flag to display
+        y : `float`, optional
+            y-axis value for new segments
+        height : `float`, optional, default: 0.8
+            height for each segment block
+        valid : `str`, `None`, default: '/'
+            display `valid` segments with the given hatching, or `None`
+            to hide
+        add_label : `bool`, default: `True`
+            add a label to the y-axis for this `DataQualityFlag`
+        **kwargs
+            any other keyword arguments acceptable for
+            :class:`~matplotlib.patches.Rectangle`
+
+        Returns
+        -------
+        collection : :class:`~matplotlib.patches.PatchCollection`
+            list of :class:`~matplotlib.patches.Rectangle` patches
+        """
+        # get y axis position
+        if y is None:
+            y = len(self.collections)
+        # get flag name
+        name = ':'.join([str(attr) for attr in
+                         (flag.ifo, flag.name, flag.version) if
+                         attr is not None])
+        # get epoch
+        try:
+            if not self.epoch.gps:
+                self.set_epoch(flag.valid[0][0])
+            else:
+                self.set_epoch(min(self.epoch.gps, flag.valid[0][0]))
+        except IndexError:
+            pass
+        # make valid collection
+        if valid is not None:
+            vkwargs = kwargs.copy()
+            vkwargs['fill'] = False
+            vkwargs['hatch'] = valid
+            vkwargs['collection'] = False
+            vkwargs['zorder'] = -1000
+            self.plot_segmentlist(flag.valid, y=y, label=None, **vkwargs)
+        # make active collection
+        collection = self.plot_segmentlist(flag.active, y=y, label=name,
+                                           **kwargs)
+        if len(self.collections) == 1:
+            self.set_xlim(*flag.extent)
+            if self._auto_gps:
+                self.auto_gps_scale()
+            self.autoscale(axis='y')
+        # add label
+        if add_label:
+            name = ':'.join([str(p) for p in
+                             (flag.ifo, flag.name, flag.version) if p is
+                             not None])
+            self.label_segments(y, name, inset=(add_label == 'inset'))
+        return collection
+
+    @auto_refresh
+    def plot_segmentlist(self, segmentlist, y=None, collection=True,
+                         **kwargs):
+        """Plot a :class:`~gwpy.segments.segments.SegmentList` onto
+        these axes
+
+        Parameters
+        ----------
+        segmentlist : :class:`~gwpy.segments.segments.SegmentList`
+            list of segments to display
+        y : `float`, optional
+            y-axis value for new segments
+        collection : `bool`, default: `True`
+            add all patches as a
+            :class:`~matplotlib.collections.PatchCollection`, doesn't seem
+            to work for hatched rectangles
+        **kwargs
+            any other keyword arguments acceptable for
+            :class:`~matplotlib.patches.Rectangle`
+
+        Returns
+        -------
+        collection : :class:`~matplotlib.patches.PatchCollection`
+            list of :class:`~matplotlib.patches.Rectangle` patches
+        """
+        if y is None:
+            y = len(self.collections)
+        patches = []
+        for seg in segmentlist:
+            patches.append(self.build_segment(seg, y, **kwargs))
+        try:
+            if not self.epoch.gps:
+                self.set_epoch(segmentlist[0][0])
+            else:
+                self.set_epoch(min(self.epoch.gps, segmentlist[0][0]))
+        except IndexError:
+            pass
+        if collection:
+            return self.add_collection(PatchCollection(patches, True))
+        else:
+            out = []
+            for p in patches:
+                out.append(self.add_patch(p))
+            return out
+
+    @auto_refresh
+    def plot_segmentlistdict(self, segmentlistdict, y=None, dy=1, **kwargs):
+        """Plot a :class:`~gwpy.segments.segments.SegmentListDict` onto
+        these axes
+
+        Parameters
+        ----------
+        segmentlistdict : :class:`~gwpy.segments.segments.SegmentListDict`
+            (name, :class:`~gwpy.segments.segments.SegmentList`) dict
+        y : `float`, optional
+            starting y-axis value for new segmentlists
+        **kwargs
+            any other keyword arguments acceptable for
+            :class:`~matplotlib.patches.Rectangle`
+
+        Returns
+        -------
+        collections : `list`
+            list of :class:`~matplotlib.patches.PatchCollection` sets for
+            each segmentlist
+        """
+        if y is None:
+            y = len(self.collections)
+        collections = []
+        for name, segmentlist in segmentlistdict.iteritems():
+            collections.append(self.plot_segmentlist(segmentlist, y=y,
+                                                     label=name, **kwargs))
+            y += dy
+        return collections
+
+    @staticmethod
+    def build_segment(segment, y, height=.8, valign='center', **kwargs):
+        """Build a :class:`~matplotlib.patches.Rectangle` to display
+        a single :class:`~gwpy.segments.segments.Segment`
+
+        Parameters
+        ----------
+        segment : :class:`~gwpy.segments.segments.Segment`
+            [start, stop) GPS segment
+        y : `float`
+            y-axis position for segment
+        height : `float`, optional, default: 1
+            height (in y-axis units) for segment
+        valign : `str`
+            alignment of segment on y-axis value:
+            `top`, `center`, or `bottom`
+        **kwargs
+            any other keyword arguments acceptable for
+            :class:`~matplotlib.patches.Rectangle`
+
+        Returns
+        -------
+        box : `~matplotlib.patches.Rectangle`
+            rectangle patch for segment display
+        """
+        if valign.lower() == 'center':
+            y0 = y - height/2.
+        elif valign.lower() == 'top':
+            y0 = y - height
+        else:
+            raise ValueError("valign must be one of 'top', 'center', or "
+                             "'bottom'")
+        return Rectangle((segment[0], y0), width=abs(segment), height=height,
+                         **kwargs)
+
+    @auto_refresh
+    def label_segments(self, y, label, inset=False, **insetparams):
+        """Replace the default Y-axis label with a custom string at a
+        given Y-axis position ``y``.
+
+        Parameters
+        ----------
+        y : `int`
+            Y-axis position to modify
+        label : `str`
+            custom text to insert
+        inset : `bool`, optional, default: `False`
+            place the label inside the axes, rather than outside
+            (default)
+        **insetparams
+            other keyword arguments for the inset box
+        """
+        label = re.sub('r\\+_+', '\_', label)
+        # find existing label
+        # set formatter
+        formatter = self.yaxis.get_major_formatter()
+        if not isinstance(formatter, SegmentFormatter):
+            formatter = SegmentFormatter()
+            self.yaxis.set_major_formatter(formatter)
+
+        # hide existing label and add inset text
+        if inset:
+            xlim = self.get_xlim()
+            x = xlim[0] + (xlim[1]-xlim[0]) * 0.01
+            formatter.flags[y] = ""
+            insetparams.setdefault('fontsize', rcParams['axes.labelsize'])
+            insetparams.setdefault('horizontalalignment', 'left')
+            insetparams.setdefault('verticalalignment', 'center')
+            insetparams.setdefault('backgroundcolor', 'white')
+            insetparams.setdefault('transform', self.transData)
+            insetparams.setdefault('bbox',
+                                   {'alpha': 0.5, 'facecolor': 'white',
+                                    'edgecolor': 'none'})
+            return self.text(x, y, label, **insetparams)
+        else:
+            formatter.flags[y] = label
+            return
 
 register_projection(SegmentAxes)
 
@@ -108,6 +338,7 @@ class SegmentPlot(TimeSeriesPlot):
         :class:`~gwpy.plotter.core.Plot`
     """
     _DefaultAxesClass = SegmentAxes
+
     def __init__(self, *flags, **kwargs):
         """Initialise a new SegmentPlot
         """
@@ -132,7 +363,7 @@ class SegmentPlot(TimeSeriesPlot):
             for ax in self.axes:
                 ax.set_epoch(epoch)
                 ax.set_xlim(*span)
-                if not hasattr(self, '_auto_gps') or self._auto_gps:
+                if self._auto_gps:
                     ax.auto_gps_scale()
             for ax in self.axes[:-1]:
                 ax.set_xlabel("")
@@ -167,3 +398,16 @@ class SegmentPlot(TimeSeriesPlot):
             except IndexError:
                 pass
     add_dataqualityflag.__doc__ = TimeSeriesPlot.add_dataqualityflag.__doc__
+
+
+class SegmentFormatter(Formatter):
+    """Custom tick formatter for y-axis flag names
+    """
+    def __init__(self, flags={}):
+        self.flags = flags
+
+    def __call__(self, t, pos=None):
+        if t in self.flags:
+            return self.flags[t]
+        else:
+            return t
