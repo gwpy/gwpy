@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -19,11 +20,8 @@
 `~gwpy.data`
 """
 
-import re
-import warnings
 import copy
 
-from matplotlib.projections import register_projection
 from matplotlib.projections import register_projection
 from matplotlib import (cm, colors)
 
@@ -31,6 +29,7 @@ from . import tex
 from .utils import *
 from .core import Plot
 from .axes import Axes
+from .decorators import auto_refresh
 from ..spectrum import (Spectrum, SpectralVariance)
 
 from .. import version
@@ -57,7 +56,7 @@ class SpectrumPlot(Plot):
         self._series = []
 
         # plot time series
-        for i,spectrum in enumerate(series):
+        for i, spectrum in enumerate(series):
             self.add_spectrum(spectrum, newax=sep, **plotargs)
             self.axes[-1].fmt_xdata = lambda f: ('%s [%s]'
                                                  % (f, spectrum.xunit))
@@ -66,7 +65,7 @@ class SpectrumPlot(Plot):
             if logx:
                 xlim = list(self.axes[-1].get_xlim())
                 if not xlim[0]:
-                   xlim[0] = spectrum.df.value
+                    xlim[0] = spectrum.df.value
                 self.axes[-1].set_xscale('log')
                 self.axes[-1].set_xlim(*xlim)
             if logy:
@@ -84,6 +83,7 @@ class SpectrumAxes(Axes):
     # -------------------------------------------
     # GWpy class plotting methods
 
+    @auto_refresh
     def plot(self, *args, **kwargs):
         """Plot data onto these Axes.
 
@@ -112,6 +112,7 @@ class SpectrumAxes(Axes):
         else:
             return super(SpectrumAxes, self).plot(*args, **kwargs)
 
+    @auto_refresh
     def plot_spectrum(self, spectrum, **kwargs):
         """Plot a :class:`~gwpy.spectrum.core.Spectrum` onto these axes
 
@@ -143,10 +144,66 @@ class SpectrumAxes(Axes):
                           spectrum.frequencies[-1] + spectrum.df.value)
             self.add_label_unit(spectrum.xunit, axis="x")
             self.add_label_unit(spectrum.unit, axis="y")
-        if kwargs.has_key('label'):
+        if 'label' in kwargs:
             self.legend()
         return line
 
+    @auto_refresh
+    def plot_spectrum_mmm(self, mean_, min_=None, max_=None, **kwargs):
+        """Plot a `Spectrum` onto these axes, with (min, max) shaded
+        regions
+
+        The `mean_` `Spectrum` is plotted normally, while the `min_`
+        and `max_ spectra are plotted lightly below and above,
+        with a fill between them and the mean_.
+
+        Parameters
+        ----------
+        mean_ : :class:`~gwpy.spectrum.core.Spectrum
+            data to plot normally
+        min_ : :class:`~gwpy.spectrum.core.Spectrum
+            first data set to shade to mean_
+        max_ : :class:`~gwpy.spectrum.core.Spectrum
+            second data set to shade to mean_
+        **kwargs
+            any other keyword arguments acceptable for
+            :meth:`~matplotlib.Axes.plot`
+
+        Returns
+        -------
+        artists : `tuple`
+            a 5-tuple containing (Line2d for mean_, `Line2D` for min_,
+            `PolyCollection` for min_ shading, `Line2D` for max_, and
+            `PolyCollection` for max_ shading)
+
+        See Also
+        --------
+        :meth:`~matplotlib.axes.Axes.plot`
+            for a full description of acceptable ``*args` and ``**kwargs``
+        """
+        # plot mean
+        line1 = self.plot_spectrum(mean_, **kwargs)[0]
+        # plot min and max
+        kwargs.pop('label', None)
+        color = kwargs.pop('color', line1.get_color())
+        linewidth = kwargs.pop('linewidth', line1.get_linewidth()) / 2
+        if min_ is not None:
+            a = self.plot(min_.frequencies, min_.data, color=color,
+                          linewidth=linewidth, **kwargs)
+            b = self.fill_between(min_.frequencies, mean_.data, min_.data,
+                                  alpha=0.1, color=color)
+        else:
+            a = b = None
+        if max_ is not None:
+            c = self.plot(max_.frequencies, max_.data, color=color,
+                          linewidth=linewidth, **kwargs)
+            d = self.fill_between(max_.frequencies, mean_.data, max_.data,
+                                  alpha=0.1, color=color)
+        else:
+            c = d = None
+        return line1, a, b, c, d
+
+    @auto_refresh
     def plot_variance(self, specvar, **kwargs):
         """Plot a :class:`~gwpy.spectrum.hist.SpectralVariance` onto
         these axes
