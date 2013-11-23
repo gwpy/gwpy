@@ -689,12 +689,10 @@ class TimeSeries(Series):
             return TimeSeries.from_lal(lalts)
         elif method.lower() == 'scipy':
             # build filter
-            B, A = signal.butter(order, numpy.float64(frequency * 2.0 /
+            b, a = signal.butter(order, numpy.float64(frequency * 2.0 /
                                                       self.sample_rate),
                                  btype='highpass')
-            new = signal.lfilter(B, A, self, axis=0).view(self.__class__)
-            new.metadata = self.metadata.copy()
-            return new
+            return self.filter(b, a)
         raise NotImplementedError("Highpass filter method '%s' not "
                                   "recognised, please choose one of "
                                   "'scipy' or 'lal'")
@@ -731,12 +729,10 @@ class TimeSeries(Series):
             return TimeSeries.from_lal(lalts)
         elif method.lower() == 'scipy':
             # build filter
-            B, A = signal.butter(order, numpy.float64(frequency * 2.0 /
+            b, a = signal.butter(order, numpy.float64(frequency * 2.0 /
                                                       self.sample_rate),
                                  btype='lowpass')
-            new = signal.lfilter(B, A, self, axis=0).view(self.__class__)
-            new.metadata = self.metadata.copy()
-            return new
+            return self.filter(b, a)
         raise NotImplementedError("Lowpass filter method '%s' not "
                                   "recognised, please choose one of "
                                   "'scipy' or 'lal'")
@@ -777,6 +773,48 @@ class TimeSeries(Series):
         else:
             return high.lowpass(fhigh, amplitude=amplitude, order=order,
                                 method=method)
+
+    def filter(self, *filt):
+        """Apply the given `Filter` to this `TimeSeries`
+
+        Parameters
+        ----------
+        *filt
+            one of:
+
+            - a single :class:`scipy.signal.lti` filter
+            - (numerator, denominator) polynomials
+            - (zeros, poles, gain)
+            - (A, B, C, D) 'state-space' representation
+
+        Returns
+        -------
+        ftimeseries : `TimeSeries`
+            the filtered version of the input `TimeSeries`
+
+        See also
+        --------
+        :mod:`scipy.signal`
+            for details on filtering and representations
+        """
+        if len(filt) == 1 and isinstance(filt, signal.lti):
+            filt = filt[0]
+            a = filt.den
+            b = filt.num
+        elif len(filt) == 2:
+            b, a = filt
+        elif len(filt) == 3:
+            b, a = signal.zpk2tf(*filt)
+        elif len(filt) == 4:
+            b, a = signal.ss2tf(*filt)
+        else:
+            raise ValueError("Cannot interpret filter arguments. Please give "
+                             "either a signal.lti object, or a tuple in zpk "
+                             "or ba format. See scipy.signal docs for "
+                             "details.")
+        new = signal.lfilter(b, a, self, axis=0).view(self.__class__)
+        new.metadata = self.metadata.copy()
+        return new
 
     def coherence(self, other, fftlength=None, fftstride=None,
                   window=None, **kwargs):
