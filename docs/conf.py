@@ -48,6 +48,8 @@ copyright = u'2013, Duncan Macleod'
 
 # The short X.Y version.
 version = gwpy_version.version.split('-', 1)[0]
+if version == gwpy_version.git_id:
+    version = version[:6]
 # The full version, including alpha/beta/rc tags.
 release = gwpy_version.version
 
