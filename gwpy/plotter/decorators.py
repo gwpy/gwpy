@@ -21,6 +21,7 @@
 import threading
 
 from matplotlib.figure import Figure
+from matplotlib.axes import Axes
 
 from .decorator import decorator
 
@@ -42,7 +43,7 @@ def auto_refresh(f, *args, **kwargs):
         return f(*args, **kwargs)
     finally:
         mydata.nesting -= 1
-        if hasattr(args[0], 'figure') and args[0].figure is not None:
+        if isinstance(args[0], Axes):
             if refresh and mydata.nesting == 0 and args[0].figure._auto_refresh:
                 args[0].figure.refresh()
         elif isinstance(args[0], Figure):
