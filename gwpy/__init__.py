@@ -19,14 +19,6 @@
 """Package to do gravitational wave astrophysics with python
 """
 
-from astropy import table
-try:
-    from astropy.units.quantity import WARN_IMPLICIT_NUMERIC_CONVERSION
-except ImportError:
-    pass
-else:
-    WARN_IMPLICIT_NUMERIC_CONVERSION.set(False)
-
 import warnings
 warnings.filterwarnings("ignore", "Module (.*) was already import from")
 
@@ -35,7 +27,11 @@ from . import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-# register new unit at the top level
-from astropy import units
-units.def_unit(['counts'], represents=units.Unit('count'), register=True)
-units.def_unit(['strain'], represents=units.Unit(''), register=True)
+# register new units at the top level in astropy
+try:
+    from astropy import units
+except ImportError:
+    pass
+else:
+    units.def_unit(['counts'], represents=units.Unit('count'), register=True)
+    units.def_unit(['strain'], represents=units.Unit(''), register=True)
