@@ -48,6 +48,14 @@ class Series(Array):
         return super(Series, cls).__new__(cls, data, dtype=dtype, copy=copy,
                                           subok=subok, **metadata)
 
+    # simple slice, need to copy x0 away from self
+    def __getslice__(self, i, j):
+        new = super(Series, self).__getslice__(i, j)
+        new = new.copy()
+        new.x0 = float(self.x0.value)
+        new.x0 += (i * new.dx)
+        return new
+
     # rebuild getitem to handle complex slicing
     def __getitem__(self, item):
         new = super(Series, self).__getitem__(item)
