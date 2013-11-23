@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -21,11 +22,12 @@
 from __future__ import (division, print_function)
 
 import os
-import numbers
 import numpy
 import sys
 import warnings
-from math import (ceil, floor, modf)
+import bisect
+from math import (ceil, floor)
+
 from scipy import (fftpack, signal)
 from matplotlib import mlab
 
@@ -33,7 +35,7 @@ from astropy import units
 
 from .. import version
 from ..data import (Series, Array2D)
-from ..detector import (Channel, ChannelList)
+from ..detector import Channel
 from ..segments import (Segment, SegmentList)
 from ..time import Time
 from ..window import *
@@ -112,6 +114,7 @@ class TimeSeries(Series):
     """
     _metadata_slots = ['name', 'unit', 'epoch', 'channel', 'sample_rate']
     xunit = units.Unit('s')
+
     def __new__(cls, data, times=None, epoch=None, channel=None, unit=None,
                 sample_rate=None, name=None, **kwargs):
         """Generate a new TimeSeries.
@@ -166,7 +169,6 @@ class TimeSeries(Series):
 
     @sample_rate.setter
     def sample_rate(self, val):
-        rate = units.Quantity(val, units.Hertz)
         self.dx = (1 / units.Quantity(val, units.Hertz)).to(self.xunit)
 
     @property
@@ -297,7 +299,8 @@ class TimeSeries(Series):
             outputcontext = ndsio.NDSOutputContext(open(os.devnull, 'w'),
                                                    open(os.devnull, 'w'))
         # get type
-        if not ndschanneltype and isinstance(channel, Channel) and channel.type:
+        if (not ndschanneltype and isinstance(channel, Channel) and
+                channel.type):
             ndschanneltype = channel.type
         if not ndschanneltype:
             ndschanneltype = (nds2.channel.CHANNEL_TYPE_RAW |
@@ -314,7 +317,7 @@ class TimeSeries(Series):
             hostlist = ndsio.host_resolution_order(Channel(channel).ifo)
 
         # loop hosts, stopping on first success
-        for host,port in hostlist:
+        for host, port in hostlist:
             if connection:
                 _conn = connection
             # open connection if needed - check kerberos ticket
@@ -337,8 +340,8 @@ class TimeSeries(Series):
             with outputcontext:
                 channelok = _conn.find_channels(str(channel), ndschanneltype)
                 if not channelok:
-                    channels = _conn.find_channels(
-                                   '*%s*' % str(channel), ndschanneltype)
+                    channels = _conn.find_channels('*%s*' % str(channel),
+                                                   ndschanneltype)
                     # if no channels and user didn't supply their own server
                     # warn and move one
                     if len(channels) == 0 and not connection:
@@ -430,8 +433,9 @@ class TimeSeries(Series):
                           'end when the TimeSeries actually ends.')
             gpsend = self.span[1]
         times = self.times.data
-        croptimes = (times >= gpsstart) & (times < gpsend)
-        return self[croptimes]
+        idx0 = bisect.bisect_left(times, gpsstart)
+        idx1 = bisect.bisect_left(times, gpsend)
+        return self[idx0:idx1]
 
     def fft(self, fftlength=None):
         """Compute the one-dimensional discrete Fourier transform of
@@ -458,7 +462,7 @@ class TimeSeries(Series):
         """
         from ..spectrum import Spectrum
         new = fftpack.fft(self.data, n=fftlength).view(Spectrum)
-        new.frequencies = fftpack.fftfreq(new.size, d=numpy.float64(self.dx))
+        new.frequencies = fftpack.fftfreq(new.size, d=self.dx)
         #new.x0 = new.frequencies[0]
         #if len(new.frequencies) > 1:
         #    new.dx = new.frequencies[1] - new.frequencies[0]
@@ -508,7 +512,7 @@ class TimeSeries(Series):
             if window is None:
                 window = 'hanning'
             psd_ = psd.scipy_psd(self, method, int(fftlength), int(fftstride),
-                               window=window)
+                                 window=window)
         if psd_.unit:
             psd_.unit.__doc__ = "Power spectral density"
         return psd_
@@ -568,11 +572,10 @@ class TimeSeries(Series):
         window : `timeseries.window.Window`, optional, default: `None`
             window function to apply to timeseries prior to FFT
         """
-        from ..spectrum import psd
         from ..spectrogram import Spectrogram
-        if fftlength == None:
+        if fftlength is None:
             fftlength = stride
-        if fftstride == None:
+        if fftstride is None:
             fftstride = fftlength
         dt = stride
         df = 1/fftlength
@@ -644,15 +647,9 @@ class TimeSeries(Series):
             # calculated FFT and stack
             stepfft = stepseries.fft()
             out[step] = stepfft.data
-        if nsteps:
-            out.frequencies = stepfft.frequencies
+            if step == 0:
+                out.frequencies = stepfft.frequencies
         return out
-
-    def plot(self, **kwargs):
-        """Plot the data for this TimeSeries.
-        """
-        from ..plotter import TimeSeriesPlot
-        return TimeSeriesPlot(self, **kwargs)
 
     # -------------------------------------------
     # TimeSeries filtering
@@ -685,15 +682,16 @@ class TimeSeries(Series):
         method.
         """
         if method.lower() == 'lal':
+            from lal import lal
             lalts = self.to_lal()
             highpass = getattr(lal, 'HighPass%s' % lalts.__class__.__name__)
             highpass(lalts, float(frequency), amplitude, order)
             return TimeSeries.from_lal(lalts)
         elif method.lower() == 'scipy':
             # build filter
-            B,A = signal.butter(order, numpy.float64(frequency * 2.0 /
-                                                     self.sample_rate),
-                                btype='highpass')
+            B, A = signal.butter(order, numpy.float64(frequency * 2.0 /
+                                                      self.sample_rate),
+                                 btype='highpass')
             new = signal.lfilter(B, A, self, axis=0).view(self.__class__)
             new.metadata = self.metadata.copy()
             return new
@@ -726,22 +724,22 @@ class TimeSeries(Series):
         method.
         """
         if method.lower() == 'lal':
+            from lal import lal
             lalts = self.to_lal()
             lowpass = getattr(lal, 'LowPass%s' % lalts.__class__.__name__)
             lowpass(lalts, float(frequency), amplitude, order)
             return TimeSeries.from_lal(lalts)
         elif method.lower() == 'scipy':
             # build filter
-            B,A = signal.butter(order, numpy.float64(frequency * 2.0 /
-                                                     self.sample_rate),
-                                btype='lowpass')
+            B, A = signal.butter(order, numpy.float64(frequency * 2.0 /
+                                                      self.sample_rate),
+                                 btype='lowpass')
             new = signal.lfilter(B, A, self, axis=0).view(self.__class__)
             new.metadata = self.metadata.copy()
             return new
         raise NotImplementedError("Lowpass filter method '%s' not "
                                   "recognised, please choose one of "
                                   "'scipy' or 'lal'")
-
 
     def bandpass(self, flow, fhigh, amplitude=0.9, order=6, method='scipy'):
         """Filter this `TimeSeries` by applying both low- and high-pass
@@ -772,11 +770,13 @@ class TimeSeries(Series):
         method.
         """
         try:
-            high = self.highpass(flow, amplitude=amplitude, order=order)
+            high = self.highpass(flow, amplitude=amplitude, order=order,
+                                 method=method)
         except NotImplementedError as e:
             raise NotImplementedError(str(e).replace('Lowpass', 'Bandpass'))
         else:
-            return high.lowpass(fhigh, amplitude=amplitude, order=order)
+            return high.lowpass(fhigh, amplitude=amplitude, order=order,
+                                method=method)
 
     def coherence(self, other, fftlength=None, fftstride=None,
                   window=None, **kwargs):
@@ -838,12 +838,9 @@ class TimeSeries(Series):
         fftstride = int(numpy.float64(fftstride) * self_.sample_rate.value)
         if window is None:
             window = HanningWindow(fftlength)
-        coh,f = mlab.cohere(self_.data, other.data, NFFT=fftlength,
-                            Fs=sampling, window=window,
-                            noverlap=fftlength-fftstride,
-                            **kwargs)
-        f0 = f[0]
-        df = f[1]-f[0]
+        coh, f = mlab.cohere(self_.data, other.data, NFFT=fftlength,
+                             Fs=sampling, window=window,
+                             noverlap=fftlength-fftstride, **kwargs)
         out = coh.view(Spectrum)
         out.f0 = f[0]
         out.df = (f[1] - f[0])
@@ -924,7 +921,7 @@ class TimeSeries(Series):
             idx = stridesamp * step
             idx_end = idx + stridesamp
             stepseries = self[idx:idx_end]
-            rms_ = numpy.sqrt(numpy.mean(numpy.absolute(stepseries.data)**2))
+            rms_ = numpy.sqrt(numpy.mean(numpy.abs(stepseries.data)**2))
             data[step] = rms_
         name = '%s %.2f-second RMS' % (self.name, stride)
         return self.__class__(data, channel=self.channel, epoch=self.epoch,
@@ -1004,7 +1001,6 @@ class TimeSeries(Series):
             else:
                 raise ValueError("Cannot append discontiguous TimeSeries")
         # resize first
-        N = new.shape[0]
         s = list(new.shape)
         s[0] = new.shape[0] + other.shape[0]
         new.resize(s, refcheck=False)
@@ -1091,9 +1087,10 @@ class TimeSeries(Series):
                               "www.lsc-group.phys.uwm.edu/daswg/"
                               "projects/lalsuite.html for installation "
                               "instructions")
-        channel = Channel(lalts.name, 1/lalts.deltaT,
-                          unit=UnitToString(lalts.sampleUnits),
-                          dtype=lalts.data.data.dtype)
+        else:
+            channel = Channel(lalts.name, 1/lalts.deltaT,
+                              unit=UnitToString(lalts.sampleUnits),
+                              dtype=lalts.data.data.dtype)
         return cls(lalts.data.data, channel=channel, epoch=lalts.epoch,
                    unit=UnitToString(lalts.sampleUnits), copy=True)
 
@@ -1192,6 +1189,7 @@ class TimeSeries(Series):
 
 class ArrayTimeSeries(TimeSeries, Array2D):
     xunit = TimeSeries.xunit
+
     def __new__(cls, data, times=None, epoch=None, channel=None, unit=None,
                 sample_rate=None, name=None, **kwargs):
         """Generate a new ArrayTimeSeries.
@@ -1231,6 +1229,7 @@ class TimeSeriesList(list):
         if any elements are not `TimeSeries`
     """
     EntryClass = TimeSeries
+
     def __init__(self, *items):
         """Initalise a new `TimeSeriesList`
         """
@@ -1275,7 +1274,7 @@ class TimeSeriesList(list):
         del self[i:]
         return self
 
-    def join(self, pad=0.0):
+    def join(self, pad=0.0, gap='pad'):
         """Concatenate all of the `TimeSeries` in this list into a
         a single object
 
@@ -1285,8 +1284,10 @@ class TimeSeriesList(list):
              a single `TimeSeries covering the full span of all entries
              in this list
         """
-        self.sort(key=lambda ts: ts.x0.value)
+        if len(self) == 0:
+            return self.EntryClass([])
+        self.sort(key=lambda t: t.x0.value)
         out = self[0].copy()
         for ts in self[1:]:
-            out.append(ts, gap='pad', pad=pad)
+            out.append(ts, gap=gap, pad=pad)
         return out
