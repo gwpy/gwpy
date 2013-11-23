@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -18,9 +19,11 @@
 """The `Series` is a one-dimensional array with metadata
 """
 
-import numpy
+import math
 import inspect
 
+import numpy
+from scipy import signal
 from astropy.units import (Unit, Quantity)
 
 from .. import version
@@ -39,13 +42,14 @@ class Array2D(Array):
                        ['x0', 'dx', 'y0', 'dy', 'logx', 'logy'])
     xunit = Unit('')
     yunit = Unit('')
+
     def __new__(cls, data, dtype=None, copy=False, subok=True, **metadata):
         """Define a new `Series`
         """
-        if not numpy.asarray(data).ndim == 2:
+        if len(data) and not numpy.asarray(data).ndim == 2:
             raise ValueError("Data must be two-dimensional")
         return super(Array2D, cls).__new__(cls, data, dtype=dtype, copy=copy,
-                                          subok=subok, **metadata)
+                                           subok=subok, **metadata)
 
     # rebuild getitem to handle complex slicing
     def __getitem__(self, item):
@@ -161,7 +165,7 @@ class Array2D(Array):
                 logdx = (numpy.log10(self.x0.value + self.dx.value) -
                          numpy.log10(self.x0.value))
                 logx1 = numpy.log10(self.x0.value) + self.shape[0] * logdx
-                self.xindex = numpy.logspace(numpy.log10(self.x0.value), logx1,
+                self.xindex = numpy.logspace(math.log10(self.x0.value), logx1,
                                              num=self.shape[0])
             else:
                 self.xindex = (numpy.arange(self.shape[0]) * self.dx.value +
@@ -195,7 +199,7 @@ class Array2D(Array):
                 logdy = (numpy.log10(self.y0.value + self.dy.value) -
                          numpy.log10(self.y0.value))
                 logy1 = numpy.log10(self.y0.value) + self.shape[-1] * logdy
-                self.yindex = numpy.logspace(numpy.log10(self.y0.value), logy1,
+                self.yindex = numpy.logspace(math.log10(self.y0.value), logy1,
                                              num=self.shape[-1])
             else:
                 self.yindex = (numpy.arange(self.shape[-1]) * self.dy.value +
@@ -229,9 +233,9 @@ class Array2D(Array):
 
     @logx.setter
     def logx(self, val):
-        if (val and self.metadata.has_key('logx') and
-            not self.metdata['logx'] and hasattr(self, '_xindex')):
-            del self.xindex
+        if (val and 'logx' in self.metadata and not self.metdata['logx'] and
+                hasattr(self, '_xindex')):
+            del self._xindex
         self.metadata['logx'] = bool(val)
 
     @property
@@ -247,9 +251,9 @@ class Array2D(Array):
 
     @logy.setter
     def logy(self, val):
-        if (val and self.metadata.has_key('logy') and
-           not self.metadata['logy'] and hasattr(self, '_yindex')):
-           del self._index
+        if (val and 'logy' in self.metadata and not self.metadata['logy'] and
+                hasattr(self, '_yindex')):
+            del self._index
         self.metadata['logy'] = bool(val)
 
     # -------------------------------------------
@@ -274,8 +278,8 @@ class Array2D(Array):
         """
         if isinstance(rate, Quantity):
             rate = rate.value
-        N = self.size * self.dx * rate
-        data = signal.resample(self.data, N, window=window)
+        n = self.size * self.dx * rate
+        data = signal.resample(self.data, n, window=window)
         new = self.__class__(data, **self.metadata)
         new.dx = 1 / rate
         return new
@@ -311,7 +315,8 @@ class Array2D(Array):
     def median(self, *args, **kwargs):
         out = super(Array2D, self).median(*args, **kwargs)
         if isinstance(out, Array) and out.ndim == 1:
-            return Series(out.data, name='%s median' % self.name, unit=self.unit)
+            return Series(out.data, name='%s median' % self.name,
+                          unit=self.unit)
         else:
             return out * self.unit
     median.__doc__ = Array.median.__doc__
