@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -18,10 +19,18 @@
 """Spectrogram object
 """
 
+import bisect
+import numbers
+import warnings
+from math import log10
+
 import numpy
 import scipy
+from scipy import interpolate
 from astropy import units
 
+from ..detector import Channel
+from ..time import Time
 from ..data import Array2D
 from ..timeseries import (TimeSeries, TimeSeriesList)
 from ..spectrum import Spectrum
@@ -31,7 +40,7 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 __version__ = version.version
 
-__all__ = ['Spectrogram']
+__all__ = ['Spectrogram', 'SpectrogramList']
 
 
 class Spectrogram(Array2D):
@@ -121,7 +130,7 @@ class Spectrogram(Array2D):
     frequencies = property(fget=Array2D.yindex.__get__,
                            fset=Array2D.yindex.__set__,
                            fdel=Array2D.yindex.__delete__,
-                           doc="""Series of frequencies for this Spectrogram""")
+                           doc="Series of frequencies for this Spectrogram")
 
     logf = property(fget=Array2D.logy.__get__,
                     fset=Array2D.logy.__set__,
@@ -130,6 +139,48 @@ class Spectrogram(Array2D):
 
     # -------------------------------------------
     # Spectrogram methods
+
+    def crop(self, gpsstart, gpsend):
+        """Crop this `Spectrogram` to the given GPS ``[start, end)``
+        `Segment`.
+
+        Parameters
+        ----------
+        gpsstart : `Time`, `float`
+            GPS start time to crop `TimeSeries` at left
+        gpsend : `Time`, `float`
+            GPS end time to crop `TimeSeries` at right
+
+        Returns
+        -------
+        timeseries : `TimeSeries`
+            A new `TimeSeries` with the same metadata but different GPS
+            span
+
+        Notes
+        -----
+        If either ``gpsstart`` or ``gpsend`` are outside of the original
+        `TimeSeries` span, warnings will be printed and the limits will
+        be restricted to the :attr:`TimeSeries.span`
+        """
+        if isinstance(gpsstart, Time):
+            gpsstart = gpsstart.gps
+        if isinstance(gpsend, Time):
+            gpsend = gpsend.gps
+        if gpsstart < self.span[0]:
+            warnings.warn('TimeSeries.crop given GPS start earlier than '
+                          'start time of the input TimeSeries. Crop will '
+                          'begin when the TimeSeries actually starts.')
+            gpsstart = self.span[0]
+        if gpsend > self.span[1]:
+            warnings.warn('TimeSeries.crop given GPS end later than '
+                          'end time of the input TimeSeries. Crop will '
+                          'end when the TimeSeries actually ends.')
+            gpsend = self.span[1]
+        times = self.times.data
+        idx0 = bisect.bisect_left(times, gpsstart)
+        idx1 = bisect.bisect_left(times, gpsend)
+        return self[idx0:idx1]
 
     def ratio(self, operand):
         """Calculate the ratio of this Spectrogram against a
@@ -173,7 +224,6 @@ class Spectrogram(Array2D):
         from ..plotter import SpectrogramPlot
         return SpectrogramPlot(self, **kwargs)
 
-
     def to_logf(self, fmin=None, fmax=None, num=None):
         """Convert this `Spectrogram`` into logarithmic scale.
         """
@@ -182,14 +232,14 @@ class Spectrogram(Array2D):
                 float(self.f0.value + self.df.value))
         fmax = fmax or float(self.f0.value + self.shape[-1] * self.df.value)
         linf = self.frequencies.data
-        logf = numpy.logspace(numpy.log10(fmin), numpy.log10(fmax), num=num)
+        logf = numpy.logspace(log10(fmin), log10(fmax), num=num)
         logf = logf[logf < linf.max()]
         new = self.__class__(numpy.zeros((self.shape[0], logf.size)),
                              epoch=self.epoch, dt=self.dt, unit=self.unit)
         for i in range(self.shape[0]):
-            interpolator = scipy.interpolate.interp1d(linf[-logf.size:],
-                                                      self.data[i, -logf.size:],
-                                                      axis=0)
+            interpolator = interpolate.interp1d(linf[-logf.size:],
+                                                self.data[i, -logf.size:],
+                                                axis=0)
             new.data[i, :] = interpolator(logf)
         new.metadata = self.metadata.copy()
         new.f0 = logf[0]
@@ -234,7 +284,7 @@ class Spectrogram(Array2D):
         kwargs.setdefault('f0', s1.f0)
         kwargs.setdefault('df', s1.df)
         kwargs.setdefault('unit', s1.unit)
-        if not (kwargs.has_key('dt') or kwargs.has_key('times')):
+        if not ('dt' in kwargs or 'times' in kwargs):
             try:
                 kwargs.setdefault('dt', spectra[1].epoch.gps - s1.epoch.gps)
             except AttributeError:
@@ -339,7 +389,6 @@ class Spectrogram(Array2D):
             else:
                 raise ValueError("Cannot append discontiguous Spectrogram")
         # resize first
-        N = new.shape[0]
         s = list(new.shape)
         s[0] = new.shape[0] + other.shape[0]
         new.resize(s, refcheck=False)
