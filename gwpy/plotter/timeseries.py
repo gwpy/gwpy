@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -23,7 +24,7 @@ import datetime
 import numpy
 import copy
 
-from matplotlib import (pyplot, axes, cm, colors)
+from matplotlib import (pyplot, cm, colors)
 from matplotlib.projections import register_projection
 
 try:
@@ -32,7 +33,7 @@ except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
 from .core import Plot
-from ..segments import (SegmentList, DataQualityFlag)
+from ..segments import SegmentList
 from ..time import Time
 from . import (ticks, tex)
 from .axes import Axes
@@ -47,6 +48,7 @@ class TimeSeriesAxes(Axes):
     specialising in time-series display
     """
     name = 'timeseries'
+
     def __init__(self, *args, **kwargs):
         """Instantiate a new TimeSeriesAxes suplot
         """
@@ -56,7 +58,7 @@ class TimeSeriesAxes(Axes):
         self._auto_gps = True
         self.set_epoch(epoch)
         # set x-axis format
-        if not kwargs.has_key('sharex') or kwargs['sharex'] is None:
+        if 'sharex' not in kwargs or kwargs['sharex'] is None:
             formatter = ticks.TimeFormatter(format='gps', epoch=epoch,
                                             scale=scale)
             self.xaxis.set_major_formatter(formatter)
@@ -108,8 +110,8 @@ class TimeSeriesAxes(Axes):
             xlabel = self.xlabel.get_text()
             if xlabel:
                 if re.search(oldiso, xlabel):
-                    self.xlabel = xlabel.replace(
-                                         oldiso, re.sub('\.0+', '',
+                    self.xlabel = xlabel.replace(oldiso,
+                                                 re.sub('\.0+', '',
                                                         self.epoch.utc.iso))
                 xlabel = self.xlabel.get_text()
                 if re.search(str(oldepoch.gps), xlabel):
@@ -286,7 +288,7 @@ class TimeSeriesAxes(Axes):
                                   color=color)
         else:
             c = d = None
-        return (line1, a, b, c, d)
+        return line1, a, b, c, d
 
     @auto_refresh
     def plot_spectrogram(self, spectrogram, **kwargs):
@@ -330,7 +332,7 @@ class TimeSeriesAxes(Axes):
         y = numpy.concatenate((spectrogram.frequencies.data,
                                [spectrogram.y0.value +
                                 spectrogram.dy.value * spectrogram.shape[1]]))
-        X,Y = numpy.meshgrid(x, y)
+        X, Y = numpy.meshgrid(x, y)
         mesh = self.pcolormesh(X, Y, spectrogram.data.T, **kwargs)
         if len(self.collections) == 1:
             self.set_xlim(*map(numpy.float64, spectrogram.span_x))
@@ -378,7 +380,7 @@ class TimeSeriesPlot(Plot):
             for ax in self.axes:
                 ax.set_epoch(span[0])
                 ax.set_xlim(*span)
-                if self._auto_gps:
+                if ax._auto_gps:
                     ax.auto_gps_scale()
             for ax in self.axes[:-1]:
                 ax.set_xlabel("")
@@ -417,7 +419,6 @@ class TimeSeriesPlot(Plot):
         for axes in axeslist:
             axes.set_gps_scale(scale)
 
-
     # -----------------------------------------------
     # TimeSeriesPlot methods
 
@@ -452,11 +453,6 @@ class TimeSeriesPlot(Plot):
             except IndexError:
                 raise ValueError("No 'timeseries' Axes found, cannot anchor "
                                  "new segment Axes.")
-        # get current position
-        axbox = ax.get_position()
-        axwidth = axbox.width
-        axheight = axbox.height
-        #ax.get_xaxis().set_visible(False)
         pyplot.setp(ax.get_xticklabels(), visible=False)
         # add new axes
         if ax.get_axes_locator():
