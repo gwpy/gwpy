@@ -173,7 +173,8 @@ class Array(numpy.ndarray):
     # array methods
 
     def __pow__(self, y, z=None):
-        new = super(Array, self).__pow__(y, z)
+        new = self.copy()
+        numpy.power(self, y, out=new)
         new.unit = self.unit.__pow__(y)
         return new
     __pow__.__doc__ = numpy.ndarray.__pow__.__doc__
