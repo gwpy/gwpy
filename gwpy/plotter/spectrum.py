@@ -186,7 +186,7 @@ class SpectrumAxes(Axes):
         # plot min and max
         kwargs.pop('label', None)
         color = kwargs.pop('color', line1.get_color())
-        linewidth = kwargs.pop('linewidth', line1.get_linewidth()) / 2
+        linewidth = kwargs.pop('linewidth', line1.get_linewidth()) / 10
         if min_ is not None:
             a = self.plot(min_.frequencies, min_.data, color=color,
                           linewidth=linewidth, **kwargs)
