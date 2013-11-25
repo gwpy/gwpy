@@ -151,6 +151,8 @@ class Plot(figure.Figure):
         if not ax:
             ax = mappable.axes
 
+        mappables = ax.collections + ax.images
+
         # get new colour axis
         divider = make_axes_locatable(ax)
         if location == 'right':
@@ -179,7 +181,8 @@ class Plot(figure.Figure):
                 clim = (cdata[cdata>0.0].min(), clim[1])
             except ValueError:
                 pass
-        mappable.set_clim(clim)
+        for m in mappables:
+            mappable.set_clim(clim)
 
         # set tick format (including sub-ticks for log scales)
         if pyplot.rcParams["text.usetex"]:
@@ -194,11 +197,12 @@ class Plot(figure.Figure):
         norm = mappable.norm
         if clip is None:
             clip = norm.clip
-        if log and not isinstance(norm, mcolors.LogNorm):
-            mappable.set_norm(mcolors.LogNorm(*mappable.get_clim()))
-        else:
-            mappable.set_norm(mcolors.Normalize(*mappable.get_clim()))
-        mappable.norm.clip = clip
+        for m in mappables:
+            if log and not isinstance(norm, mcolors.LogNorm):
+                m.set_norm(mcolors.LogNorm(*mappable.get_clim()))
+            else:
+                m.set_norm(mcolors.Normalize(*mappable.get_clim()))
+            m.norm.clip = clip
 
         # set tick locator
         if log:
