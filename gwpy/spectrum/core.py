@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -18,14 +19,15 @@
 """Representation of a frequency-series spectrum
 """
 
+import warnings
+
+from math import log10
 import numpy
 from scipy import (interpolate, signal)
 from astropy import units
 
 from ..data import Series
 from ..detector import Channel
-from ..time import Time
-from ..timeseries import TimeSeries
 
 from .. import version
 __version__ = version.version
@@ -145,7 +147,7 @@ class Spectrum(Series):
         fmin = fmin or self.f0.value or (self.f0.value + self.df.value)
         fmax = fmax or (self.f0.value + self.shape[-1] * self.df.value)
         linf = self.frequencies.data
-        logf = numpy.logspace(numpy.log10(fmin), numpy.log10(fmax), num=num)
+        logf = numpy.logspace(log10(fmin), log10(fmax), num=num)
         logf = logf[logf<linf.max()]
         interpolator = interpolate.interp1d(linf, self.data, axis=0)
         new = self.__class__(interpolator(logf), unit=self.unit,
@@ -170,25 +172,53 @@ class Spectrum(Series):
         from ..plotter import SpectrumPlot
         return SpectrumPlot(self, **kwargs)
 
-    def filterba(self, b, a, inplace=False):
-        """Apply a filter to this `Spectrum` in numerator-denominator
-        format.
+    def filter(self, *filt, **kwargs):
+        """Apply the given `Filter` to this `Spectrum`
 
         Parameters
         ----------
-        b : :class:`~numpy.ndarray`
-            Numerator of a linear filter
-        a : :class:`~numpy.ndarray`
-            Decnominator of a linear filter
+        *filt
+            one of:
+
+            - a single :class:`scipy.signal.lti` filter
+            - (numerator, denominator) polynomials
+            - (zeros, poles, gain)
+            - (A, B, C, D) 'state-space' representation
         inplace : `bool`, optional, default: `False`
-            modify this `Spectrum` in-place
+            apply the filter directly on these data, without making a
+            copy, default: `False`
 
         Returns
         -------
-        Spectrum
-            either a view of the current `Spectrum` with filtered data,
-            or a new `Spectrum` with the filtered data
+        fspectrum : `Spectrum`
+            the filtered version of the input `Spectrum`
+
+        See also
+        --------
+        :mod:`scipy.signal`
+            for details on filtering and representations
         """
+        # parse filter
+        if len(filt) == 1 and isinstance(filt[0], signal.lti):
+            filt = filt[0]
+            a = filt.den
+            b = filt.num
+        elif len(filt) == 2:
+            b, a = filt
+        elif len(filt) == 3:
+            b, a = signal.zpk2tf(*filt)
+        elif len(filt) == 4:
+            b, a = signal.ss2tf(*filt)
+        else:
+            raise ValueError("Cannot interpret filter arguments. Please give "
+                             "either a signal.lti object, or a tuple in zpk "
+                             "or ba format. See scipy.signal docs for "
+                             "details.")
+        # parse keyword args
+        inplace = kwargs.pop('inplace', False)
+        if kwargs:
+            raise TypeError("Spectrum.filter() got an unexpected keyword "
+                            "argument '%s'" % list(kwargs.keys())[0])
         fresp = abs(signal.freqs(b, a, self.frequencies)[1])
         if inplace:
             self *= fresp
@@ -197,37 +227,11 @@ class Spectrum(Series):
             new = self * fresp
             return new
 
-    def filter(self, zeros=[], poles=[], gain=1, inplace=False):
-        """Apply a filter to this `Spectrum` in zero-pole-gain format.
-
-        Parameters
-        ----------
-        zeros : `list`, optional
-            list of zeros for the transfer function
-        poles : `list`, optional
-            list of poles for the transfer function
-        gain : `float`, optional
-            amplitude gain factor
-        inplace : `bool`, optional
-            modify this `Spectrum` in-place, default `True`
-
-        Returns
-        -------
-        Spectrum
-            either a view of the current `Spectrum` with filtered data,
-            or a new `Spectrum` with the filtered data
-        """
-        # generate filter
-        f = self.frequencies.data
-        if not zeros and not poles:
-            if inplace:
-                self *= gain
-                return self
-            else:
-                return self * gain
-        else:
-            lti = signal.lti(numpy.asarray(zeros), numpy.asarray(poles), gain)
-            return self.filterba(lti.num, lti.den, inplace=inplace)
+    def filterba(self, *args, **kwargs):
+        warnings.warn("filterba will be removed soon, please use "
+                      "Spectrum.filter instead, with the same arguments",
+                      DeprecationWarning)
+        return self.filter(*args, **kwargs)
 
     @classmethod
     def from_lal(cls, lalfs):
