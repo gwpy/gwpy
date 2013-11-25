@@ -255,13 +255,11 @@ class Series(Array):
     def min(self, *args, **kwargs):
         return Quantity(super(Series, self).min(*args, **kwargs),
                         unit=self.unit)
-        return super(Series, self).min(*args, **kwargs) * self.unit
     min.__doc__ = Array.min.__doc__
 
     def mean(self, *args, **kwargs):
         return Quantity(super(Series, self).mean(*args, **kwargs),
                         unit=self.unit)
-        return super(Series, self).mean(*args, **kwargs) * self.unit
     mean.__doc__ = Array.mean.__doc__
 
     def median(self, *args, **kwargs):
