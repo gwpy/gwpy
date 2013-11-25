@@ -26,12 +26,12 @@ from math import log10
 
 import numpy
 import scipy
-from scipy import interpolate
+from scipy import (interpolate, signal)
 from astropy import units
 
 from ..detector import Channel
 from ..time import Time
-from ..data import Array2D
+from ..data import (Array2D, Series)
 from ..timeseries import (TimeSeries, TimeSeriesList)
 from ..spectrum import Spectrum
 
@@ -41,6 +41,18 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 __version__ = version.version
 
 __all__ = ['Spectrogram', 'SpectrogramList']
+
+
+def as_spectrum(func):
+    def decorated_func(self, *args, **kwargs):
+        out = func(self, *args, **kwargs)
+        if isinstance(out, Series):
+            out = Spectrum(out.data, name=out.name, unit=out.unit,
+                           epoch=out.epoch, channel=out.channel,
+                           f0=out.x0.value, df=out.dx.value)
+        return out
+    decorated_func.__doc__ = func.__doc__
+    return decorated_func
 
 
 class Spectrogram(Array2D):
@@ -178,8 +190,14 @@ class Spectrogram(Array2D):
                           'end when the TimeSeries actually ends.')
             gpsend = self.span[1]
         times = self.times.data
-        idx0 = bisect.bisect_left(times, gpsstart)
-        idx1 = bisect.bisect_left(times, gpsend)
+        if gpsstart <= self.span[0]:
+            idx0 = 0
+        else:
+            idx0 = bisect.bisect_right(times, gpsstart)
+        if gpsend >= self.span[1]:
+            idx1 = None
+        else:
+            idx1 = bisect.bisect_left(times, gpsend)
         return self[idx0:idx1]
 
     def ratio(self, operand):
@@ -207,8 +225,8 @@ class Spectrogram(Array2D):
             operand = self.median(axis=0).data
             unit = units.dimensionless_unscaled
         elif isinstance(operand, Spectrum):
-            operand = Spectrum.data
-            unit = self.unit / Spectrum.unit
+            unit = self.unit / operand.unit
+            operand = operand.data
         elif isinstance(operand, numbers.Number):
             unit = units.dimensionless_unscaled
         else:
@@ -313,6 +331,64 @@ class Spectrogram(Array2D):
                         frequencies=(hasattr(self, '_frequencies') and
                                      self.frequencies or None))
 
+    def filter(self, *filt, **kwargs):
+        """Apply the given `Filter` to this `Spectrum`
+
+        Parameters
+        ----------
+        *filt
+            one of:
+
+            - a single :class:`scipy.signal.lti` filter
+            - (numerator, denominator) polynomials
+            - (zeros, poles, gain)
+            - (A, B, C, D) 'state-space' representation
+        inplace : `bool`, optional, default: `False`
+            apply the filter directly on these data, without making a
+            copy, default: `False`
+
+        Returns
+        -------
+        fspectrum : `Spectrum`
+            the filtered version of the input `Spectrum`
+
+        See also
+        --------
+        :mod:`scipy.signal`
+            for details on filtering and representations
+        """
+        # parse filter
+        if len(filt) == 1 and isinstance(filt[0], signal.lti):
+            filt = filt[0]
+            a = filt.den
+            b = filt.num
+        elif len(filt) == 2:
+            b, a = filt
+        elif len(filt) == 3:
+            b, a = signal.zpk2tf(*filt)
+        elif len(filt) == 4:
+            b, a = signal.ss2tf(*filt)
+        else:
+            raise ValueError("Cannot interpret filter arguments. Please give "
+                             "either a signal.lti object, or a tuple in zpk "
+                             "or ba format. See scipy.signal docs for "
+                             "details.")
+        # parse keyword args
+        inplace = kwargs.pop('inplace', False)
+        if kwargs:
+            raise TypeError("Spectrogram.filter() got an unexpected keyword "
+                            "argument '%s'" % list(kwargs.keys())[0])
+        f = self.frequencies.data.copy()
+        if f[0] == 0:
+            f[0] = 1e-100
+        fresp = numpy.nan_to_num(abs(signal.freqs(b, a, f)[1]))
+        if inplace:
+            self *= fresp
+            return self
+        else:
+            new = self * fresp
+            return new
+
     # -------------------------------------------
     # connectors
 
@@ -340,13 +416,15 @@ class Spectrogram(Array2D):
         else:
             return 0
 
-    def append(self, other, gap='raise', inplace=True):
+    def append(self, other, pad=0.0, gap='raise', inplace=True):
         """Connect another `Spectrogram` onto the end of the current one
 
         Parameters
         ----------
         other : `Spectrogram`
             the second data set to connect to this one
+        pad : `float`, optional, default: ``0.0``
+            value with which to pad discontiguous `Spectrogram`
         gap : `str`, optional, default: ``'raise'``
             action to perform if there's a gap between the other series
             and this one. One of
@@ -380,10 +458,10 @@ class Spectrogram(Array2D):
                                      "before this one.")
                 gapshape = list(new.shape)
                 gapshape[0] = ngap
-                zeros = numpy.zeros(gapshape).view(new.__class__)
-                zeros.epoch = new.span[1]
-                zeros.dt = new.dt
-                new.append(zeros, inplace=True)
+                padding = numpy.ones(gapshape).view(new.__class__) * pad
+                padding.epoch = new.span[1]
+                padding.sample_rate = new.sample_rate
+                new.append(padding, inplace=True)
             elif gap == 'ignore':
                 pass
             else:
@@ -395,13 +473,15 @@ class Spectrogram(Array2D):
         new[-other.shape[0]:] = other.data
         return new
 
-    def prepend(self, other, gap='raise', inplace=True):
+    def prepend(self, other, pad=0.0, gap='raise', inplace=True):
         """Connect another `Spectrogram` onto the end of the current one
 
         Parameters
         ----------
         other : `Spectrogram`
             the second data set to connect to this one
+        pad : `float`, optional, default: ``0.0``
+            value with which to pad discontiguous `Spectrogram`
         gap : `str`, optional, default: ``'raise'``
             action to perform if there's a gap between the other series
             and this one. One of
@@ -435,10 +515,10 @@ class Spectrogram(Array2D):
                                      "after this one.")
                 gapshape = list(new.shape)
                 gapshape[0] = ngap
-                zeros = numpy.zeros(gapshape).view(new.__class__)
-                zeros.epoch = other.span[1]
-                zeros.dt = new.dt
-                new.prepend(zeros, inplace=True)
+                padding = numpy.ones(gapshape).view(new.__class__) * pad
+                padding.epoch = other.span[1]
+                padding.dt = new.dt
+                new.prepend(padding, inplace=True)
             elif gap == 'ignore':
                 pass
             else:
@@ -451,6 +531,18 @@ class Spectrogram(Array2D):
         new[-N:] = new.data[:N]
         new[:other.shape[0]] = other.data
         return new
+
+    # -------------------------------------------
+    # numpy.ndarray method modifiers
+    # all of these try to return Spectra rather than simple numbers
+
+    min = as_spectrum(Array2D.min)
+
+    max = as_spectrum(Array2D.max)
+
+    mean = as_spectrum(Array2D.mean)
+
+    median = as_spectrum(Array2D.median)
 
 
 class SpectrogramList(TimeSeriesList):
