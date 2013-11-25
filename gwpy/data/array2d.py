@@ -51,23 +51,34 @@ class Array2D(Array):
         return super(Array2D, cls).__new__(cls, data, dtype=dtype, copy=copy,
                                            subok=subok, **metadata)
 
+    # simple slice, need to copy x0 away from self
+    def __getslice__(self, i, j):
+        new = super(Array2D, self).__getslice__(i, j).copy()
+        new.x0 = float(self.x0.value)
+        new.x0 += (i * new.dx)
+        return new
+
     # rebuild getitem to handle complex slicing
     def __getitem__(self, item):
-        new = super(Array2D, self).__getitem__(item)
+        new = super(Array2D, self).__getitem__(item).copy()
+        # if given an int, extract a column
         if isinstance(item, int):
             new = Series(new, unit=self.unit, name=self.name, dx=self.dy,
                          epoch=self.epoch, channel=self.channel, x0=self.y0)
             new.xunit = self.yunit
-        elif isinstance(item, tuple):
-            new = Quantity(new, unit=self.unit)
-        if isinstance(item, slice):
+            return new
+        # if given a tuple, extract an element
+        elif isinstance(item, tuple) and len(item) == 1:
+            return Quantity(new, unit=self.unit)
+        # otherwise perform complex slice
+        elif isinstance(item, slice):
             if item.start:
-                new.x0 += new.x0 + item.start * self.dx
+                new.x0 += item.start * self.dx
             if item.step:
                 new.dx *= item.step
-        #else:
-        #    new.index = self.index[item.argmax()]
-        return new
+            return new
+        else:
+            return new
 
     # -------------------------------------------
     # Series properties
@@ -291,7 +302,8 @@ class Array2D(Array):
     def max(self, *args, **kwargs):
         out = super(Array2D, self).max(*args, **kwargs)
         if isinstance(out, Array) and out.shape:
-            return Series(out, name='%s max' % self.name, unit=self.unit)
+            return Series(out, name='%s max' % self.name, unit=self.unit,
+                          x0=out.y0.value, dx=out.dy.value)
         else:
             return out * self.unit
     max.__doc__ = Array.max.__doc__
@@ -299,7 +311,8 @@ class Array2D(Array):
     def min(self, *args, **kwargs):
         out = super(Array2D, self).min(*args, **kwargs)
         if isinstance(out, Array) and out.shape:
-            return Series(out, name='%s min' % self.name, unit=self.unit)
+            return Series(out, name='%s min' % self.name, unit=self.unit,
+                          x0=out.y0.value, dx=out.dy.value)
         else:
             return out * self.unit
     min.__doc__ = Array.min.__doc__
@@ -307,7 +320,8 @@ class Array2D(Array):
     def mean(self, *args, **kwargs):
         out = super(Array2D, self).mean(*args, **kwargs)
         if isinstance(out, Array) and out.shape:
-            return Series(out, name='%s mean' % self.name, unit=self.unit)
+            return Series(out, name='%s mean' % self.name, unit=self.unit,
+                          x0=out.y0.value, dx=out.dy.value)
         else:
             return out * self.unit
     mean.__doc__ = Array.mean.__doc__
@@ -316,7 +330,7 @@ class Array2D(Array):
         out = super(Array2D, self).median(*args, **kwargs)
         if isinstance(out, Array) and out.ndim == 1:
             return Series(out.data, name='%s median' % self.name,
-                          unit=self.unit)
+                          unit=self.unit, x0=self.y0.value, dx=self.dy.value)
         else:
             return out * self.unit
     median.__doc__ = Array.median.__doc__
