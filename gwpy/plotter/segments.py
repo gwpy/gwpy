@@ -154,7 +154,8 @@ class SegmentAxes(TimeSeriesAxes):
         collection = self.plot_segmentlist(flag.active, y=y, label=name,
                                            **kwargs)
         if len(self.collections) == 1:
-            self.set_xlim(*flag.extent)
+            if len(flag.valid):
+                self.set_xlim(*flag.extent)
             if self._auto_gps:
                 self.auto_gps_scale()
             self.autoscale(axis='y')
