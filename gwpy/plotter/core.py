@@ -30,6 +30,8 @@ except ImportError:
 from . import tex
 from .decorators import (auto_refresh, axes_method)
 
+__all__ = ['Plot']
+
 
 class Plot(figure.Figure):
     """An extension of the matplotib :class:`~matplotlib.figure.Figure`
