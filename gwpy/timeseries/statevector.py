@@ -487,3 +487,33 @@ class StateVector(TimeSeries):
                                   "TimeSeries, cannot be used with the "
                                   "StateTimeSeries because LAL has no "
                                   "BooleanTimeSeries structure")
+
+    def plot(self, format='segments', **kwargs):
+        """Plot the data for this `StateVector`
+
+        Parameters
+        ----------
+        format : `str`, optional, default: ``'segments'``
+            type of plot to make, either 'segments' to plot the
+            SegmentList for each bit, or 'timeseries' to plot the raw
+            data for this `StateVector`.
+        **kwargs
+            other keyword arguments to be passed to either
+            :class:`~gwpy.plotter.segments.SegmentPlot` or
+            :class:`~gwpy.plotter.timeseries.TimeSeriesPlot`, depending
+            on ``format``.
+
+        Returns
+        -------
+        plot : :class:`~gwpy.plotter.segments.SegmentPlot`, or
+               :class:`~gwpy.plotter.timeseries.TimeSeriesPlot`
+            output plot object, subclass of :class:`~gwpy.plotter.core.Plot`
+        """
+        if format == 'timeseries':
+            return super(StateVector, self).plot(**kwargs)
+        elif format == 'segments':
+            from ..plotter import SpectrumPlot
+            return SpectrumPlot(*self.to_dqflags(), **kwargs)
+        raise ValueError("'format' argument must be one of: 'timeseries' or "
+                         "'segments'")
+
