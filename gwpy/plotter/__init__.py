@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -39,12 +40,13 @@ __version__ = version.version
 
 from .tex import USE_TEX
 
+from .core import *
 from .timeseries import *
 from .spectrogram import *
 from .spectrum import *
 from .segments import *
 from .filter import *
-from .core import Plot
+from .table import *
 
 GWPY_PLOT_PARAMS = {
     "axes.grid": True,
