@@ -76,9 +76,9 @@ def _get(url, debug=False):
     try:
         response = auth.request(url, debug=debug)
     except HTTPError:
-        raise ValueError("Channel named '%s' not found in Channel "
+        raise ValueError("Channel not found at URL %s "
                          "Information System. Please double check the "
-                         "name and try again." % name)
+                         "name and try again." % url)
     return json.loads(response.read())
 
 def parse_json(data):
@@ -101,4 +101,4 @@ def parse_json(data):
     model = data['source']
     url = data['displayurl']
     return Channel(data['name'], sample_rate=sample_rate, unit=unit,
-                   dtype=dtype, model=model)
+                   dtype=dtype, model=model, url=url)
