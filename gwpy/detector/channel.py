@@ -72,7 +72,7 @@ class Channel(object):
     query
     """
     def __init__(self, ch, sample_rate=None, unit=None, dtype=None,
-                 type=None, model=None):
+                 type=None, model=None, url=None):
         # test for Channel input
         if isinstance(ch, Channel):
             sample_rate = sample_rate or ch.sample_rate
@@ -80,6 +80,7 @@ class Channel(object):
             type = type or ch.type
             dtype = dtype or ch.dtype
             model = model or ch.model
+            url = url or ch.url
             ch = ch.name
         # set attributes
         self.name = ch
@@ -89,6 +90,7 @@ class Channel(object):
             self.type = type
         self.dtype = dtype
         self.model = model
+        self.url = url
 
     @property
     def name(self):
@@ -197,6 +199,18 @@ class Channel(object):
     @dtype.setter
     def dtype(self, type_):
         self._dtype = numpy.dtype(type_)
+
+    @property
+    def url(self):
+        """CIS browser url for this `Channel`.
+
+        :type: `str`
+        """
+        return self._url
+
+    @url.setter
+    def url(self, href):
+        self._url = href
 
     def __str__(self):
         return self.name
