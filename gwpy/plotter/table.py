@@ -15,22 +15,234 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Plot data from a Table
+"""Plot data from a LIGO_LW-format XML event table.
+
+The :mod:`glue.ligolw` library provides a complete set of tools to read,
+write, and manipulate data tables using the LIGO_LW XML schema, the
+standard for storing transient event triggers generated from many
+gravitational-wave search algorithms.
+
+This modules provides a set of Axes and a Plot wrapper in order to
+display these tables in x-y format, with optional colouring.
 """
+
+import re
 
 import numpy
 from matplotlib import pyplot
+from matplotlib.projections import register_projection
 
 from .core import Plot
-from .decorators import auto_refresh
-from ..table import Table
-from . import (tex, ticks)
+from .timeseries import (TimeSeriesAxes, TimeSeriesPlot)
+from .spectrum import SpectrumPlot
+
+from glue.ligolw.table import Table
+
+__all__ = ['EventTableAxes', 'EventTablePlot']
 
 
-class TablePlot(Plot):
-    """Plot data directly from a Table
+class EventTableAxes(TimeSeriesAxes):
+    """Custom axes for displaying a set of event triggers
+
+    The `EventTableAxes` inherit from
+    :class:`~gwpy.plotter.timeseries.TimeSeriesAxes` as a convenience to
+    optionally displaying a time-column. That choice has no effect on the
+    rest of the `Axes` functionality.
     """
+    name = 'triggers'
+
+    def plot(self, *args, **kwargs):
+        """Plot data onto these axes
+
+        Parameters
+        ----------
+        *args
+            a single :class:`~glue.ligolw.table.Table` (or sub-class)
+            or anything valid for
+            :meth:`~gwpy.plotter.timeseries.TimeSeriesPlot.plot`.
+        **kwargs
+            keyword arguments applicable to
+            :meth:`~matplotlib.axes.Axes.plot`
+        """
+        if isinstance(args[0], Table):
+            return self.plot_table(*args, **kwargs)
+        else:
+            return super(EventTableAxes, self).plot(*args, **kwargs)
+
+    def plot_table(self, table, x, y, color=None, **kwargs):
+        """Plot a LIGO_LW-format event `Table` onto these `Axes`
+
+        Parameters
+        ----------
+        table : :class:`~glue.ligolw.table.Table`
+            LIGO_LW-format XML event `Table` to display
+        x : `str`
+            name of column to display on the X-axis
+        y : `str`
+            name of column to display on the Y-axis
+        c : `str`, optional
+            name of column by which to colour the data
+        **kwargs
+            any other arguments applicable to
+            :meth:`~matplotlib.axes.Axes.scatter`
+
+        Returns
+        -------
+        collection
+        """
+        # get xdata
+        xdata = get_table_column(table, x)
+        ydata = get_table_column(table, y)
+        if color:
+            cdata = get_table_column(table, color)
+            zipped = zip(xdata, ydata, cdata)
+            zipped.sort(key=lambda (x,y,c): c)
+            xdata, ydata, cdata = map(numpy.asarray, zip(*zipped))
+            return self.scatter(xdata, ydata, c=cdata, **kwargs)
+        else:
+            return self.scatter(xdata, ydata, **kwargs)
+
+    def add_loudest(self, table, rank, x, y, color=None, **kwargs):
+        """Display the loudest event according to some rank.
+
+        The loudest event is displayed as a gold star at its
+        position given by the values in columns ``x``, and ``y``,
+        and those values are displayed in a text box.
+
+        Parameters
+        ----------
+        table : `~glue.ligolw.table.Table`
+            LIGO_LW-format XML event table in which to find the loudest
+            event
+        rank : `str`
+            name of column to use for ranking
+        x : `str`
+            name of column to display on the X-axis
+        y : `str`
+            name of column to display on the Y-axis
+        color : `str`, optional
+            name of column by which to colour the data
+        **kwargs
+            any other arguments applicable to
+            :meth:`~matplotlib.axes.Axes.text`
+
+        Returns
+        -------
+        out : `tuple`
+            (`collection`, `text`) tuple of items added to the `Axes`
+        """
+        row = table[get_table_column(table, rank).argmax()]
+        disp = "Loudest event:"
+        columns = [x, y]
+        if color is not None:
+            columns += color
+        scat = []
+        for i, column in enumerate(columns):
+            if i:
+                disp += ','
+            val = get_row_value(row, column)
+            scat.append([val])
+            if pyplot.rcParams['text.usetex']:
+                disp += (r" ${\rm %s} = %s$" % (column, val))
+            else:
+                disp += " %s = %.2g" % (column, val)
+        disp = disp.rstrip(',')
+        pos = kwargs.pop('position', [0.01, 0.98])
+        kwargs.setdefault('transform', self.axes.transAxes)
+        kwargs.setdefault('verticalalignment', 'top')
+        kwargs.setdefault('backgroundcolor', 'white')
+        kwargs.setdefault('bbox', dict(facecolor='white', alpha=1.0,
+                                       edgecolor='black', pad=6.0))
+        args = pos + [disp]
+        self.scatter(*scat, marker='*', zorder=1000, color='gold', s=80)
+        self.axes.text(*args, **kwargs)
+
+register_projection(EventTableAxes)
+
+
+class _EventTableMetaPlot(type):
+    """Meta-class for generating a new :class:`EventTablePlot`.
+
+    This object allows the choice of parent class for the
+    `EventTablePlot` to be made at runtime, dependent on the given
+    x-column of the first displayed Table.
+    """
+    def __call__(cls, *args, **kwargs):
+        """Execute the meta-class, given the arguments for the plot
+
+        All ``*args`` and ``**kwargs`` are those passed to the
+        `EventTablePlot` constructor, used to determine the appropriate
+        parent class the that object at runtime.
+        """
+        # find x-column: copy the arguments and find the strings
+        a2 = list(args)
+        while True:
+            if isinstance(a2[0], basestring):
+                break
+            a2.pop(0)
+        # if at least one string was found, treat it as the x-axis column name
+        if len(a2):
+            xcol = a2[0]
+            # initialise figure as a TimeSeriesPlot
+            if re.search('time\Z', xcol, re.I):
+                plotclass = TimeSeriesPlot
+            # or as a SpectrumPlot
+            elif re.search('frequency\Z', xcol, re.I):
+                plotclass = SpectrumPlot
+            # otherwise as a standard Plot
+            else:
+               plotclass = Plot
+        else:
+            plotclass = Plot
+        cls.__bases__ = (plotclass,)
+        return super(_EventTableMetaPlot, cls).__call__(*args, **kwargs)
+
+
+class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
+    """Plot data directly from a Table
+
+    Parameters
+    ----------
+    table : :class:`~glue.ligolw.table.Table`
+        LIGO_LW-format XML event `Table` to display
+    x : `str`
+        name of column to display on the X-axis
+    y : `str`
+        name of column to display on the Y-axis
+    c : `str`, optional
+        name of column by which to colour the data
+    **kwargs
+        any other arguments applicable to the `Plot` constructor, and
+        the `Table` plotter.
+
+    Returns
+    -------
+    plot : :class:`EventTablePlot`
+        new plot for displaying tabular data.
+
+    Notes
+    -----
+    The form of the returned `EventTablePlot` is decided at run-time,
+    rather than when the module was imported.
+    If tables are passed directly to the constructor, for example::
+
+        >>> plot = EventTablePlot(table1, 'time', 'snr')
+
+    the columns as given are used to determine the appropriate parent
+    class for the output.
+
+    If the input x-column (the first string argument) ends with 'time'
+    the output is a child of the :class:`~gwpy.plotter.timeseries.TimeSeriesPlot`,
+    allowing easy formatting of GPS times, while if the x-column ends with
+    'frequency', the output comes from the
+    :class:`~gwpy.plotter.spectrum.SpectrumPlot`, otherwise the parent is
+    the core :class:`~gwpy.plotter.core.Plot`.
+    """
+    __metaclass__ = _EventTableMetaPlot
+
     def __init__(self, *args, **kwargs):
+        """Generate a new `EventTablePlot`.
+        """
         # extract plotting keyword arguments
         plotargs = dict()
         plotargs['facecolor'] = kwargs.pop('facecolor', None)
@@ -40,110 +252,128 @@ class TablePlot(Plot):
         plotargs = dict(kvp for kvp in plotargs.iteritems() if
                         kvp[1] is not None)
 
-        # extract slot-based arguments
-        slotargs = dict()
-        for key,val in kwargs.items():
-            if key in ['tables', '_xcolumn', '_ycolumn', '_colorcolumn']:
-                slotargs[key] = kwargs.pop(key, val)
-
         # extract columns
+        args = list(args)
         tables = []
         columns = {}
-        columns['x'], columns['y'] = args[-2:]
-        if (not isinstance(columns['x'], basestring) or not
-                isinstance(columns['y'], basestring)):
+        while len(args):
+            arg = args[0]
+            if isinstance(arg, basestring):
+                break
+            tables.append(args.pop(0))
+        if len(args) < 2:
             raise ValueError("columnnames for 'x' and 'y' axes must be given "
                              "after any tables, e.g. "
                              "TablePlot(t1, t2, 'time', 'snr')")
-        tables = args[:-2]
+        if len(args) == 3:
+            kwargs.setdefault('color', args.pop(-1))
+        elif len(args) > 3:
+            raise ValueError("No more than three column names should be given")
+        columns = dict(zip(['x', 'y'], args))
 
         # extract column arguments
-        columns['color'] = kwargs.pop('colorcolumn', None)
-        if columns['color'] and len(tables) > 1:
-            raise ValueError("Plotting multiple Tables with a colorbar is "
-                             "not supported, currently...")
+        sep = kwargs.pop('sep', False)
+        columns['color'] = kwargs.pop('color', None)
+        if columns['color'] and len(tables) > 1 and not sep:
+            raise ValueError("Plotting multiple Tables on a single set of "
+                             "Axes with a colorbar is not supported, "
+                             "currently...")
 
-        # initialise figure
-        super(TablePlot, self).__init__(**kwargs)
-        self.tables = []
+        super(EventTablePlot, self).__init__(**kwargs)
 
-        # plot figures
+        # plot data
         for table in tables:
-            self.add_table(table, columns['x'], columns['y'], columns['color'],
-                           **plotargs)
-            self.tables.append(table)
+            self.add_table(table, columns['x'], columns['y'],
+                           color=columns['color'], newax=sep, **plotargs)
 
-        self._xcolumn = columns['x']
-        self._ycolumn = columns['y']
-        self._colorcolumn = columns['color']
+        if len(tables):
+            epoch = None
+            if isinstance(self, TimeSeriesPlot) and 'epoch' not in kwargs:
+                epoch = 1e100
+                for table in tables:
+                    tcol = numpy.asarray(get_table_column(table, columns['x']))
+                    tcol.min()
+                    epoch = min(epoch, tcol.min())
+                for ax in self.axes:
+                    ax.set_epoch(epoch)
+            # remove labels
+            if sep:
+                for ax in self.axes[:-1]:
+                    ax.set_xlabel("")
 
-        # set slot arguments
-        for key,val in sorted(slotargs.iteritems(), key=lambda x: x[0]):
-            setattr(self, key, val)
+    def add_table(self, table, x, y, color=None, projection='triggers', ax=None,
+                  newax=None, **kwargs):
+        """Add a LIGO_LW Table to this Plot
 
-    def add_table(self, table, x, y, color=None, **kwargs):
-        # get xdata
-        xdata = get_column(table, x)
-        ydata = get_column(table, y)
-        if color:
-            cdata = get_column(table, color)
-            zipped = zip(xdata, ydata, cdata)
-            zipped.sort(key=lambda (x,y,c): c)
-            xdata, ydata, cdata = map(numpy.asarray, zip(*zipped))
-            self.add_scatter(xdata, ydata, c=cdata, **kwargs)
-        else:
-            self.add_scatter(xdata, ydata, **kwargs)
+        Parameters
+        ----------
+        table : :class:`~glue.ligolw.table.Table`
+            LIGO_LW-format XML event `Table` to display
+        x : `str`
+            name of column to display on the X-axis
+        y : `str`
+            name of column to display on the Y-axis
+        c : `str`, optional
+            name of column by which to colour the data
+        projection : `str`, optiona, default: ``'triggers'``
+            name of the Axes projection on which to plot data
+        ax : :class:`~gwpy.plotter.axes.Axes`, optional
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
+        **kwargs.
+            other keyword arguments passed to the
+            :meth:`EventTableAxes.plot_table` method
 
-    def add_loudest(self, rank=None, columns=None, **kwargs):
-        if rank is None:
-            rank = self._colorcolumn
-        if columns is None:
-            columns = [self._xcolumn, self._ycolumn, self._colorcolumn]
-        if len(self.tables) > 1:
-            raise RuntimeError("Cannot display loudest event for a plot "
-                               "over multiple tables")
-        row = self.tables[0][self.tables[0][rank].argmax()]
-        disp = "Loudest event:"
-        for i,column in enumerate(columns):
-            if i:
-                disp += ','
-            unit = self.tables[0][column].units
-            if pyplot.rcParams['text.usetex']:
-                unit = (unit and tex.unit_to_latex(unit) or '')
-                disp += (r" ${\rm %s} = %s %s$"
-                         % (column, row[column], unit))
-            else:
-                unit = (unit and str(unit) or '')
-                disp += " %s = %.2g %s" % (column, row[column], unit).rstrip()
-        pos = kwargs.pop('position', [0.01, 0.98])
-        kwargs.setdefault('transform', self.axes.transAxes)
-        kwargs.setdefault('verticalalignment', 'top')
-        kwargs.setdefault('backgroundcolor', 'white')
-        kwargs.setdefault('bbox', dict(facecolor='white', alpha=1.0,
-                                       edgecolor='black', pad=6.0))
-        args = pos + [disp]
-        self.add_scatter([row[self._xcolumn]], [row[self._ycolumn]],
-                         marker='*', zorder=1000, color='gold',
-                         s=80)
-        #self.add_legend(alpha=0.5, loc='upper left', scatterpoints=1)
-        self.axes.text(*args, **kwargs)
+        Returns
+        -------
+        scatter : :class:`~matplotlib.collections.Collection`
+            the displayed collection for this `Table`
+
+        See Also
+        --------
+        :meth:`EventTableAxes.plot_table`
+            for details on arguments and keyword arguments other than
+            ``ax`` and ``newax`` for this method.
+        """
+        # find relevant axes
+        if ax is None and not newax:
+            try:
+                ax = self._find_axes(projection)
+            except IndexError:
+                newax = True
+        if newax:
+            ax = self._add_new_axes(projection=projection)
+        return ax.plot_table(table, x, y, color=color, **kwargs)
 
 
-def get_column(table, column):
-    """Extract a column from the given table
+def get_table_column(table, column):
+    """Internal method to extract a column from the given table
     """
-    if isinstance(table, Table):
-        return table[column]
+    column = str(column).lower()
+    if hasattr(table, 'get_%s' % column):
+        return numpy.asarray(getattr(table, 'get_%s' % column)())
+    elif column == 'time':
+        if re.match('(sim_inspiral|multi_inspiral)',
+                    table.tableName, re.I):
+            return table.get_end()
+        elif re.match('(sngl_burst|multi_burst)', table.tableName, re.I):
+            return table.get_peak()
+        elif re.match('(sngl_ring|multi_ring)', table.tableName, re.I):
+            return table.get_start()
+    elif hasattr(table, 'get_column'):
+        return numpy.asarray(table.get_column(column))
     else:
-        column = str(column).lower()
-        if hasattr(table, "get_%s" % column):
-            return numpy.asarray(getattr(table, "get_%s" % column)())
-        elif column == "time":
-            if re.match("(sim_inspiral|multi_inspiral)", table.tableName,
-                        re.I):
-                return table.get_end()
-            elif re.match("(sngl_burst|multi_burst)", table.tableName, re.I):
-                return table.get_peak()
-            elif re.match("(sngl_ring|multi_ring)", table.tableName, re.I):
-                return table.get_start()
         return numpy.asarray(table.getColumnByName(column))
+
+
+def get_row_value(row, attr):
+    """Internal method to extract a value from the given row
+    """
+    attr = str(attr).lower()
+    if hasattr(row, 'get_%s' % attr):
+        return getattr(row, 'get_%s' % attr)
+    else:
+        return getattr(row, attr)
