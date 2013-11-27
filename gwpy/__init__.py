@@ -33,5 +33,7 @@ try:
 except ImportError:
     pass
 else:
+    from astropy.units.quantity import WARN_IMPLICIT_NUMERIC_CONVERSION
+    WARN_IMPLICIT_NUMERIC_CONVERSION.set(False)
     units.def_unit(['counts'], represents=units.Unit('count'), register=True)
     units.def_unit(['strain'], represents=units.Unit(''), register=True)
