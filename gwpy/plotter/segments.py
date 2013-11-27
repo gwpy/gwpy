@@ -204,7 +204,8 @@ class SegmentAxes(TimeSeriesAxes):
         except IndexError:
             pass
         if collection:
-            return self.add_collection(PatchCollection(patches, True))
+            return self.add_collection(PatchCollection(patches,
+                                                       len(patches) != 0))
         else:
             out = []
             for p in patches:
