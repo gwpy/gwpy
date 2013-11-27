@@ -63,9 +63,9 @@ class Series(Array):
             return Quantity(new, unit=self.unit)
         elif isinstance(item, slice):
             if item.start:
-                new.x0 += (item.start * new.dx)
+                new.x0 += int(item.start) * new.dx
             if item.step:
-                new.dx *= item.step
+                new.dx *= int(item.step)
         elif isinstance(item, (list, tuple, numpy.ndarray)):
             new.index = self.index[item]
         else:
