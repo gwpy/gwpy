@@ -69,7 +69,8 @@ class EventTableAxes(TimeSeriesAxes):
         else:
             return super(EventTableAxes, self).plot(*args, **kwargs)
 
-    def plot_table(self, table, x, y, color=None, **kwargs):
+    def plot_table(self, table, x, y, color=None, size_by=None,
+                   size_by_log=None, size_range=None, **kwargs):
         """Plot a LIGO_LW-format event `Table` onto these `Axes`
 
         Parameters
@@ -90,14 +91,53 @@ class EventTableAxes(TimeSeriesAxes):
         -------
         collection
         """
-        # get xdata
+        if size_by is not None and size_by_log is not None:
+            raise ValueError("size_by_color and size_by_log_color are "
+                             "mutually exclusive options, please select one")
+        # get x-y data
         xdata = get_table_column(table, x)
         ydata = get_table_column(table, y)
+
+        # rank data by size or colour
+        sizecol = size_by or size_by_log or (size_range and color)
+        print color, sizecol
         if color:
             cdata = get_table_column(table, color)
+        if sizecol:
+            sdata = get_table_column(table, sizecol)
+        if color and sizecol:
+            zipped = zip(xdata, ydata, cdata, sdata)
+            zipped.sort(key=lambda (x, y, c, r): c)
+            xdata, ydata, cdata, sdata = map(numpy.asarray, zip(*zipped))
+        elif sizecol:
+            zipped = zip(xdata, ydata, sdata)
+            zipped.sort(key=lambda (x, y, s): s)
+            xdata, ydata, sdata = map(numpy.asarray, zip(*zipped))
+        elif color:
             zipped = zip(xdata, ydata, cdata)
-            zipped.sort(key=lambda (x,y,c): c)
+            zipped.sort(key=lambda (x, y, c): c)
             xdata, ydata, cdata = map(numpy.asarray, zip(*zipped))
+
+        # work out sizing
+        if sizecol:
+            if size_range is None and sdata.size:
+                size_range = [sdata.min(), sdata.max()]
+            if size_range:
+                # convert color value into a size between the given min and max
+                s = kwargs.pop('s', 20)
+                sizes = [s/10., s]
+                sp = (sdata - size_range[0]) / (size_range[1] - size_range[0])
+                sp[sp < 0] = 0
+                sp[sp > 1] = 1
+                if size_by_log is None:
+                    sarray = sizes[0] + sp * (sizes[1] - sizes[0])
+                else:
+                    logsizes = numpy.log10(sizes)
+                    sarray = 10 ** (logsizes[0] + sp * (
+                                                    logsizes[1] - logsizes[0]))
+                kwargs.setdefault('s', sarray)
+
+        if color:
             return self.scatter(xdata, ydata, c=cdata, **kwargs)
         else:
             return self.scatter(xdata, ydata, **kwargs)
@@ -245,12 +285,12 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
         """
         # extract plotting keyword arguments
         plotargs = dict()
-        plotargs['facecolor'] = kwargs.pop('facecolor', None)
-        plotargs['edgecolor'] = kwargs.pop('edgecolor', None)
-        plotargs['marker'] = kwargs.pop('marker', None)
-        plotargs['cmap'] = kwargs.pop('cmap', None)
-        plotargs = dict(kvp for kvp in plotargs.iteritems() if
-                        kvp[1] is not None)
+        for arg in ['linewidth', 'facecolor', 'edgecolor', 'marker', 'cmap',
+                    's', 'size_by', 'size_by_log', 'size_range']:
+            if arg in kwargs:
+                val = kwargs.pop(arg, None)
+                if val is not None:
+                    plotargs[arg] = val
 
         # extract columns
         args = list(args)
@@ -272,6 +312,7 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
         columns = dict(zip(['x', 'y'], args))
 
         # extract column arguments
+        epoch = kwargs.pop('epoch', None)
         sep = kwargs.pop('sep', False)
         columns['color'] = kwargs.pop('color', None)
         if columns['color'] and len(tables) > 1 and not sep:
@@ -287,15 +328,33 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
                            color=columns['color'], newax=sep, **plotargs)
 
         if len(tables):
-            epoch = None
-            if isinstance(self, TimeSeriesPlot) and 'epoch' not in kwargs:
-                epoch = 1e100
-                for table in tables:
-                    tcol = numpy.asarray(get_table_column(table, columns['x']))
-                    tcol.min()
-                    epoch = min(epoch, tcol.min())
-                for ax in self.axes:
+            # set auto-scale
+            for ax in self.axes:
+                ax.autoscale(axis='both', tight=True)
+            # set individual epoch for TimeSeriesAxes
+            if isinstance(self, TimeSeriesPlot) and sep:
+                for ax,table in zip(self.axes, tables):
+                    axepoch = epoch
+                    if axepoch is None:
+                        axepoch = 1e100
+                        tcol = numpy.asarray(get_table_column(table,
+                                                              columns['x']))
+                        epoch = epoch.min()
                     ax.set_epoch(epoch)
+                    if ax._auto_gps:
+                        ax.auto_gps_scale()
+            # set global epoch for TimeSeriesPlot
+            elif isinstance(self, TimeSeriesPlot):
+                ax = self.axes[0]
+                if epoch is None:
+                    epoch = 1e100
+                    for table in tables:
+                        tcol = numpy.asarray(get_table_column(table,
+                                                              columns['x']))
+                        epoch = min(epoch, tcol.min())
+                ax.set_epoch(epoch)
+                if ax._auto_gps:
+                    ax.auto_gps_scale()
             # remove labels
             if sep:
                 for ax in self.axes[:-1]:
