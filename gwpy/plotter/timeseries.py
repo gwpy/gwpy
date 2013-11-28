@@ -365,6 +365,7 @@ class TimeSeriesPlot(Plot):
         """Initialise a new TimeSeriesPlot
         """
         sep = kwargs.pop('sep', False)
+        epoch = kwargs.pop('epoch', None)
         kwargs.setdefault('figsize', [12, 6])
 
         # generate figure
@@ -378,7 +379,10 @@ class TimeSeriesPlot(Plot):
         if len(series):
             span = SegmentList([ts.span for ts in series]).extent()
             for ax in self.axes:
-                ax.set_epoch(span[0])
+                if epoch is not None:
+                    ax.set_epoch(epoch)
+                else:
+                    ax.set_epoch(span[0])
                 ax.set_xlim(*span)
                 if ax._auto_gps:
                     ax.auto_gps_scale()
