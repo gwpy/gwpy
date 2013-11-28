@@ -337,7 +337,7 @@ class ChannelList(list):
         raise ValueError(name)
 
     def sieve(self, name=None, sample_rate=None, sample_range=None,
-              exact_match=False):
+              exact_match=False, **others):
         """Find all Channels in this list that match the specified
         criteria.
 
@@ -379,6 +379,9 @@ class ChannelList(list):
             c = [entry for entry in c if
                  sample_range[0] <= float(entry.sample_rate) <=
                  sample_range[1]]
+        for attr, val in others.iteritems():
+            c = [entry for entry in c if
+                 (hasattr(entry, attr) and getattr(entry, attr) == val)]
 
         return self.__class__(c)
 
