@@ -239,8 +239,6 @@ class TimeSeries(Series):
         """
         from lalframe import frread
         if isinstance(channel, Channel):
-            if datatype is None:
-                datatype = channel.dtype
             channel = channel.name
         if start and isinstance(start, Time):
             start = start.gps
