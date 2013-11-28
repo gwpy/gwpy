@@ -172,7 +172,7 @@ class GitStatus(object):
         self.get_branch()
         self.get_tag()
         self.get_status()
-        self.version = self.tag or self.id
+        self.version = self.tag or self.id[:6]
         with open(outputfile, 'w') as fobj:
             self.write(fobj, pname, pauthor, pauthoremail)
         with open(outputfile, 'r') as fobj:
