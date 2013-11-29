@@ -245,7 +245,7 @@ class TimeSeries(Series):
         if end and isinstance(end, Time):
             end = end.gps
         if start and end:
-            duration = end-start
+            duration = float(end - start)
         elif end:
             raise ValueError("If `end` is given to TimeSeries.read, `start`"
                              "must also be given")
