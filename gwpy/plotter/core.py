@@ -188,9 +188,15 @@ class Plot(figure.Figure):
 
         # set tick format (including sub-ticks for log scales)
         if pyplot.rcParams["text.usetex"]:
-            if log and abs(float.__sub__(*numpy.log10(clim))) >= 2:
+            if log:
+                loglim = numpy.log10(clim)
+            if log and numpy.arange(*loglim, dtype=int).size > 2:
                 func = lambda x,pos: (mticker.is_decade(x) and
-                                  '$%s$' % tex.float_to_latex(x, '%.4g') or ' ')
+                                '$%s$' % tex.float_to_latex(x, '%.4g') or ' ')
+            elif log and abs(float.__sub__(*loglim)) >= 1:
+                func = lambda x,pos: ((mticker.is_decade(x) or
+                                       mticker.is_decade(x*2)) and
+                                '$%s$' % tex.float_to_latex(x, '%.4g') or ' ')
             else:
                 func = lambda x,pos: '$%s$' % tex.float_to_latex(x, '% .4g')
             kwargs.setdefault('format', mticker.FuncFormatter(func))
