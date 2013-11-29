@@ -100,7 +100,6 @@ class EventTableAxes(TimeSeriesAxes):
 
         # rank data by size or colour
         sizecol = size_by or size_by_log or (size_range and color)
-        print color, sizecol
         if color:
             cdata = get_table_column(table, color)
         if sizecol:
@@ -221,7 +220,9 @@ class _EventTableMetaPlot(type):
                 break
             a2.pop(0)
         # if at least one string was found, treat it as the x-axis column name
-        if len(a2):
+        if 'base' in kwargs:
+            plotclass = kwargs.pop('base')
+        elif len(a2):
             xcol = a2[0]
             # initialise figure as a TimeSeriesPlot
             if re.search('time\Z', xcol, re.I):
@@ -344,6 +345,7 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
                     ax.set_epoch(epoch)
                     if ax._auto_gps:
                         ax.auto_gps_scale()
+                    ax.add_epoch_label()
             # set global epoch for TimeSeriesPlot
             elif isinstance(self, TimeSeriesPlot):
                 ax = self.axes[0]
@@ -356,6 +358,7 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
                 ax.set_epoch(epoch)
                 if ax._auto_gps:
                     ax.auto_gps_scale()
+                ax.add_epoch_label()
             # remove labels
             if sep:
                 for ax in self.axes[:-1]:
