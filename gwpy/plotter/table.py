@@ -216,7 +216,7 @@ class _EventTableMetaPlot(type):
         """
         # find x-column: copy the arguments and find the strings
         a2 = list(args)
-        while True:
+        while len(a2):
             if isinstance(a2[0], basestring):
                 break
             a2.pop(0)
@@ -301,7 +301,7 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
             if isinstance(arg, basestring):
                 break
             tables.append(args.pop(0))
-        if len(args) < 2:
+        if len(tables) != 0 and len(args) < 2:
             raise ValueError("columnnames for 'x' and 'y' axes must be given "
                              "after any tables, e.g. "
                              "TablePlot(t1, t2, 'time', 'snr')")
@@ -309,7 +309,8 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
             kwargs.setdefault('color', args.pop(-1))
         elif len(args) > 3:
             raise ValueError("No more than three column names should be given")
-        columns = dict(zip(['x', 'y'], args))
+        if len(tables):
+            columns = dict(zip(['x', 'y'], args))
 
         # extract column arguments
         epoch = kwargs.pop('epoch', None)
