@@ -107,15 +107,24 @@ class EventTableAxes(TimeSeriesAxes):
         if color and sizecol:
             zipped = zip(xdata, ydata, cdata, sdata)
             zipped.sort(key=lambda (x, y, c, r): c)
-            xdata, ydata, cdata, sdata = map(numpy.asarray, zip(*zipped))
+            try:
+                xdata, ydata, cdata, sdata = map(numpy.asarray, zip(*zipped))
+            except ValueError:
+                pass
         elif sizecol:
             zipped = zip(xdata, ydata, sdata)
             zipped.sort(key=lambda (x, y, s): s)
-            xdata, ydata, sdata = map(numpy.asarray, zip(*zipped))
+            try:
+                xdata, ydata, sdata = map(numpy.asarray, zip(*zipped))
+            except ValueError:
+                pass
         elif color:
             zipped = zip(xdata, ydata, cdata)
             zipped.sort(key=lambda (x, y, c): c)
-            xdata, ydata, cdata = map(numpy.asarray, zip(*zipped))
+            try:
+                xdata, ydata, cdata = map(numpy.asarray, zip(*zipped))
+            except ValueError:
+                pass
 
         # work out sizing
         if sizecol:
