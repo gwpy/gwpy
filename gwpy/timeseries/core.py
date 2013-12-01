@@ -1034,6 +1034,8 @@ class TimeSeries(Series):
                 new.append(padding, inplace=True)
             elif gap == 'ignore':
                 pass
+            elif new.span[0] < other.span[0] < new.span[1]:
+                raise ValueError("Cannot append overlapping TimeSeries")
             else:
                 raise ValueError("Cannot append discontiguous TimeSeries")
         # resize first
@@ -1091,8 +1093,10 @@ class TimeSeries(Series):
                 new.prepend(padding, inplace=True)
             elif gap == 'ignore':
                 pass
+            elif other.span[0] < new.span[0] < other.span[1]:
+                raise ValueError("Cannot prepend overlapping TimeSeries")
             else:
-                raise ValueError("Cannot append discontiguous TimeSeries")
+                raise ValueError("Cannot prepend discontiguous TimeSeries")
         # resize first
         N = new.shape[0]
         s = list(new.shape)
