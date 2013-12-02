@@ -195,7 +195,7 @@ class Array2D(Array):
         try:
             self.dx = self.xindex[1] - self.xindex[0]
         except IndexError:
-            del self.dx
+            pass
 
     @property
     def yindex(self):
@@ -229,7 +229,7 @@ class Array2D(Array):
         try:
             self.dy = self.yindex[1] - self.yindex[0]
         except IndexError:
-            del self.dy
+            pass
 
     @property
     def logx(self):
