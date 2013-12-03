@@ -334,7 +334,10 @@ class Array(numpy.ndarray):
 
     @channel.setter
     def channel(self, ch):
-        self.metadata['channel'] = Channel(ch)
+        if isinstance(ch, Channel):
+            self.metadata['channel'] = ch
+        else:
+            self.metadata['channel'] = Channel(ch)
 
     # -------------------------------------------
     # extras
