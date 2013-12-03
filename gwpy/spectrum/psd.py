@@ -190,6 +190,7 @@ def lal_psd(timeseries, method, segmentlength, overlap, window=None):
     lalfs = lalspectrum._psd(method, lalts, segmentlength, overlap,
                              window=lalwin)
     spec = Spectrum.from_lal(lalfs)
+    spec.channel = timeseries.channel
     if timeseries.unit:
         spec.unit = timeseries.unit ** 2 / units.Hertz
     else:

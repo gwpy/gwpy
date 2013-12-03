@@ -121,7 +121,8 @@ class TimeSeries(Series):
         """
         # parse Channel input
         if channel:
-            channel = Channel(channel)
+            channel = (isinstance(channel, Channel) and channel or
+                       Channel(channel))
             name = name or channel.name
             unit = unit or channel.unit
             sample_rate = sample_rate or channel.sample_rate
@@ -585,7 +586,7 @@ class TimeSeries(Series):
         nfreqs = int(fftlength*self.sample_rate.value // 2 + 1)
 
         # generate output spectrogram
-        out = Spectrogram(numpy.zeros((nsteps, nfreqs)), name=self.name,
+        out = Spectrogram(numpy.zeros((nsteps, nfreqs)), channel=self.channel,
                           epoch=self.epoch, f0=0, df=df, dt=dt, copy=True)
         if not nsteps:
             return out
@@ -1236,7 +1237,8 @@ class ArrayTimeSeries(TimeSeries, Array2D):
         """
         # parse Channel input
         if channel:
-            channel = Channel(channel)
+            channel = (isinstance(channel, Channel) and channel or
+                       Channel(channel))
             name = name or channel.name
             unit = unit or channel.unit
             sample_rate = sample_rate or channel.sample_rate

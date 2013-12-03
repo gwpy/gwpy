@@ -84,7 +84,8 @@ class Spectrum(Series):
         """
         # parse Channel input
         if channel:
-            channel = Channel(channel)
+            channel = (isinstance(channel, Channel) and channel or
+                       Channel(channel))
             name = name or channel.name
             unit = unit or channel.unit
         # generate Spectrum
