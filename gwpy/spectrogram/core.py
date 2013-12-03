@@ -233,9 +233,9 @@ class Spectrogram(Array2D):
         else:
             raise ValueError("operand '%s' unrecognised, please give Spectrum "
                              "or one of: 'mean', 'median'")
-        return self.__class__(self.data / operand, unit=unit, epoch=self.epoch,
-                              f0=self.f0, name=self.name, dt=self.dt,
-                              df=self.df, logf=self.logf)
+        out = self / operand
+        out.unit = unit
+        return out
 
     def plot(self, **kwargs):
         """Plot the data for this `Spectrogram`
