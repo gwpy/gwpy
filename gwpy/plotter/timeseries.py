@@ -155,11 +155,12 @@ class TimeSeriesAxes(Axes):
                 self.xlabel = xlabel.replace(s, formatter.scale_str_long)
         self._auto_gps = False
 
-    def auto_gps_scale(self):
+    def auto_gps_scale(self, duration=None):
         """Automagically set the GPS scale for the time-axis of this plot
         based on the current view limits
         """
-        duration = self.viewLim.x1 - self.viewLim.x0
+        if duration is None:
+            duration = self.viewLim.x1 - self.viewLim.x0
         for s in ticks.GPS_SCALE.keys()[::-1]:
             if duration >= (10 * s):
                 self.set_gps_scale(s)
