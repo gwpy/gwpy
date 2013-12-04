@@ -143,11 +143,14 @@ class Series(Array):
             samples = Array(samples, unit=self.xunit, name=name,
                             epoch=self.epoch, channel=self.channel, copy=True)
         self._index = samples
-        self.x0 = self.index[0]
+        try:
+            self.x0 = self.index[0]
+        except IndexError:
+            pass
         try:
             self.dx = self.index[1] - self.index[0]
         except IndexError:
-            del self.dx
+            pass
 
     @property
     def logx(self):
