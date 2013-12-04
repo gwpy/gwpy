@@ -131,9 +131,10 @@ class SegmentAxes(TimeSeriesAxes):
         if y is None:
             y = len(self.collections)
         # get flag name
-        name = ':'.join([str(attr) for attr in
-                         (flag.ifo, flag.name, flag.version) if
-                         attr is not None])
+        name = kwargs.pop('label',
+                          ':'.join([str(attr) for attr in
+                                    (flag.ifo, flag.name, flag.version) if
+                                    attr is not None]))
         # get epoch
         try:
             if not self.epoch.gps:
@@ -145,6 +146,7 @@ class SegmentAxes(TimeSeriesAxes):
         # make valid collection
         if valid is not None:
             vkwargs = kwargs.copy()
+            vkwargs.pop('label', None)
             vkwargs['fill'] = False
             vkwargs['hatch'] = valid
             vkwargs['collection'] = False
@@ -161,9 +163,6 @@ class SegmentAxes(TimeSeriesAxes):
             self.autoscale(axis='y')
         # add label
         if add_label:
-            name = ':'.join([str(p) for p in
-                             (flag.ifo, flag.name, flag.version) if p is
-                             not None])
             self.label_segments(y, name, inset=(add_label == 'inset'))
         return collection
 
