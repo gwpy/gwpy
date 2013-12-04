@@ -140,8 +140,11 @@ class SpectrumAxes(Axes):
             kwargs.setdefault('label', spectrum.name)
         line = self.plot(spectrum.frequencies, spectrum.data, **kwargs)
         if len(self.lines) == 1:
-            self.set_xlim(spectrum.frequencies[0],
-                          spectrum.frequencies[-1] + spectrum.df.value)
+            try:
+                self.set_xlim(spectrum.frequencies[0],
+                              spectrum.frequencies[-1] + spectrum.df.value)
+            except IndexError:
+                pass
             self.add_label_unit(spectrum.xunit, axis="x")
             self.add_label_unit(spectrum.unit, axis="y")
         if 'label' in kwargs:
