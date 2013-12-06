@@ -27,11 +27,14 @@ import sys
 import warnings
 import bisect
 from math import (ceil, floor)
+from multiprocessing import (cpu_count, Process, Queue)
 
 from scipy import (fftpack, signal)
 from matplotlib import mlab
 
 from astropy import units
+
+from glue.lal import Cache
 
 from .. import version
 from ..data import (Series, Array2D)
@@ -210,7 +213,7 @@ class TimeSeries(Series):
 
     @classmethod
     def read(cls, source, channel, start=None, end=None, datatype=None,
-             verbose=False):
+             verbose=False, multiprocess=False):
         """Read data into a `TimeSeries` from files on disk.
 
         Parameters
@@ -232,30 +235,74 @@ class TimeSeries(Series):
             identifier for desired output data type
         verbose : `bool`, optional
             print verbose output
+        multiprocess : `bool`, `int`, optional, default: `False`
+            spread reading of a :class:`~glue.lal.Cache` over multiple
+            processes. If ``multiprocess`` is `True` one processes is spawned
+            per CPU counted on the host, otherwise ``multiprocess`` should
+            specify the number of processes.
+
+            Each process reads an equal portion of the given `Cache`
+            with the results joined once all parts have been read.
+
+            .. warning::
+
+               The multi-process `TimeSeries.read` is an experimental
+               feature. Please use with care. The GWpy developers accept
+               no responsibility for misuse of this feature.
 
         Returns
         -------
         TimeSeries
             a new `TimeSeries` containing the data read from disk
         """
-        from lalframe import frread
-        if isinstance(channel, Channel):
-            channel = channel.name
-        if start and isinstance(start, Time):
-            start = start.gps
-        if end and isinstance(end, Time):
-            end = end.gps
-        if start and end:
-            duration = float(end - start)
-        elif end:
-            raise ValueError("If `end` is given to TimeSeries.read, `start`"
-                             "must also be given")
+        if multiprocess and isinstance(source, Cache) and len(source) > 0:
+            def _read(cache, queue):
+                qs = float(max(start, cache[0].segment[0]))
+                qe = float(min(end, cache[-1].segment[1]))
+                queue.put(TimeSeries.read(cache, channel, start=qs, end=qe,
+                                          datatype=datatype,
+                                          verbose=verbose, multiprocess=False))
+
+            source.sort(key=lambda e: e.segment[0])
+            cpus = (isinstance(multiprocess, bool) and (cpu_count() -1 ) or
+                    multiprocess)
+            cpus = min(len(source), cpus)
+            N = len(source) // cpus
+            parts = [Cache(source[i:i+N]) for i in xrange(0, len(source), N)]
+            outqueue = Queue()
+            processes = []
+            for i,cache in enumerate(parts):
+                process = Process(target=_read, args=(cache, outqueue))
+                processes.append(process)
+                process.start()
+            out = TimeSeriesList(*(outqueue.get() for p in processes))
+            for i,process in enumerate(processes):
+                process.join()
+            out.sort(key=lambda ts: ts.epoch.gps)
+            return out.join()
+        elif (multiprocess and not
+                  (isinstance(source, Cache) and len(source) == 0)):
+            raise ValueError("Multiprocessing is only enabled for reading "
+                             "from a `glue.lal.Cache` object")
         else:
-            duration = None
-        lalts = frread.read_timeseries(source, channel, start=start,
-                                       duration=duration, datatype=datatype,
-                                       verbose=verbose)
-        return cls.from_lal(lalts)
+            from lalframe import frread
+            if isinstance(channel, Channel):
+                channel = channel.name
+            if start and isinstance(start, Time):
+                start = start.gps
+            if end and isinstance(end, Time):
+                end = end.gps
+            if start and end:
+                duration = float(end - start)
+            elif end:
+                raise ValueError("If `end` is given to TimeSeries.read, `start`"
+                                 "must also be given")
+            else:
+                duration = None
+            lalts = frread.read_timeseries(source, channel, start=start,
+                                           duration=duration, datatype=datatype,
+                                           verbose=verbose)
+            return cls.from_lal(lalts)
 
     @classmethod
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
