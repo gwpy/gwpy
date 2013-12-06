@@ -334,7 +334,7 @@ class StateVector(TimeSeries):
         try:
             return self.metadata['bitmask']
         except:
-            self.bitmask = BitMask()
+            self.bitmask = BitMask([])
             return self.bitmask
 
     @bitmask.setter
