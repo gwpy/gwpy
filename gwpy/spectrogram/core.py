@@ -375,7 +375,7 @@ class Spectrogram(Array2D):
                              "or ba format. See scipy.signal docs for "
                              "details.")
         if isinstance(a, float):
-            a = numpy.ndarray([a])
+            a = numpy.array([a])
         # parse keyword args
         inplace = kwargs.pop('inplace', False)
         if kwargs:
