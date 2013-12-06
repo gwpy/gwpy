@@ -231,7 +231,7 @@ class TimeSeriesAxes(Axes):
         if not self.epoch.gps:
             self.set_epoch(timeseries.epoch)
         line = self.plot(timeseries.times, timeseries.data, **kwargs)
-        if len(self.lines) == 1:
+        if len(self.lines) == 1 and timeseries.size:
             self.set_xlim(*timeseries.span)
             self.auto_gps_scale()
         return line
