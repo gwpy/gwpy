@@ -102,7 +102,10 @@ class Array(numpy.ndarray):
             _baseclass = type(data)
             if copy:
                 new = super(Array, cls).__new__(cls, data.shape, dtype=dtype)
-                new[:] = numpy.array(data, dtype=dtype, copy=True)
+                try:
+                    new[:] = numpy.array(data, dtype=dtype, copy=True)
+                except ValueError:
+                    pass
             else:
                 new = numpy.array(data, dtype=dtype, copy=copy, subok=True)
                 new = new.view(cls)
