@@ -124,7 +124,9 @@ class Series(Array):
         try:
             return self._index
         except AttributeError:
-            if self.logx:
+            if not self.size:
+                self.index = numpy.ndarray(0)
+            elif self.logx:
                 logdx = (numpy.log10(self.x0.value + self.dx.value) -
                          numpy.log10(self.x0.value))
                 logx1 = numpy.log10(self.x0.value) + self.shape[-1] * logdx
