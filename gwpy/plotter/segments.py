@@ -315,10 +315,26 @@ class SegmentAxes(TimeSeriesAxes):
             insetparams.setdefault('bbox',
                                    {'alpha': 0.5, 'facecolor': 'white',
                                     'edgecolor': 'none'})
-            return self.text(x, y, label, **insetparams)
+            t = self.text(x, y, label, **insetparams)
+            t._is_segment_label = True
+            return t
         else:
             formatter.flags[y] = label
             return
+
+    def set_xlim(self, *args, **kwargs):
+        out = super(SegmentAxes, self).set_xlim(*args, **kwargs)
+        _xlim = self.get_xlim()
+        try:
+            texts = self.texts
+        except AttributeError:
+            pass
+        else:
+            for t in texts:
+                if hasattr(t, '_is_segment_label') and t._is_segment_label:
+                    t.set_x(_xlim[0] + (_xlim[1] - _xlim[0]) * 0.01)
+        return out
+    set_xlim.__doc__ = TimeSeriesAxes.set_xlim.__doc__
 
 register_projection(SegmentAxes)
 
