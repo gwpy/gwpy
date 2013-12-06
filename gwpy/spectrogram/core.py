@@ -374,6 +374,8 @@ class Spectrogram(Array2D):
                              "either a signal.lti object, or a tuple in zpk "
                              "or ba format. See scipy.signal docs for "
                              "details.")
+        if isinstance(a, float):
+            a = numpy.ndarray([a])
         # parse keyword args
         inplace = kwargs.pop('inplace', False)
         if kwargs:
