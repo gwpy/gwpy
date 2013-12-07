@@ -354,7 +354,7 @@ class StateVector(TimeSeries):
             nbits = len(self.bitmask)
             boolean = numpy.zeros((self.size, nbits), dtype=bool)
             for i,d in enumerate(self.data):
-                boolean[i,:] = [(False, True)[int(d)>>j & 1] for
+                boolean[i,:] = [int(d)>>j & 1 for
                                 j in xrange(nbits)]
             self._boolean = ArrayTimeSeries(boolean, name=self.name,
                                             epoch=self.epoch,
