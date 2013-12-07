@@ -81,12 +81,14 @@ class Array(numpy.ndarray):
                 **metadata):
         """Define a new `Array`, potentially from an existing one
         """
+        # get dtype out of the front
+        if isinstance(data, numpy.ndarray) and dtype is None:
+            dtype = data.dtype
+        elif isinstance(data, numpy.ndarray):
+            dtype = numpy.dtype(dtype)
+
         # copy from an existing Array
         if isinstance(data, cls):
-            if dtype is None:
-                dtype = data.dtype
-            else:
-                dtype = numpy.dtype(dtype)
             if not copy and dtype == data.dtype and not metadata:
                 return data
             elif metadata:
