@@ -13,12 +13,3 @@ Any time-domain or Fourier-domain filters can be visualised using the Bode plot,
    >>> from gwpy.plotter import BodePlot
    >>> highpass = signal.butter(4, 10 * (2.0 / 256), btype='highpass')
    >>> plot = BodePlot(highpass, sample_rate=256)
-
-==============
-`BodePlot` API
-==============
-
-.. currentmodule:: gwpy.plotter.filter
-
-.. autoclass:: BodePlot
-   :members:

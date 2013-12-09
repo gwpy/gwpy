@@ -1,4 +1,5 @@
 .. currentmodule:: gwpy.spectrum.core
+
 ===========================================================
 GWpy.Ex: comparing a Channel's `Spectrum` between two times
 ===========================================================

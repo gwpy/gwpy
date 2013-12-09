@@ -43,7 +43,7 @@ clean:
 apidoc:
 	sphinx-apidoc -o _generated ../gwpy
 
-html: apidoc
+html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."

@@ -1,4 +1,4 @@
-.. py:currentmodule:: gwpy.segments
+.. currentmodule:: gwpy.segments
 
 ####################################
 Data segments (:mod:`gwpy.segments`)
@@ -8,7 +8,7 @@ Data segments (:mod:`gwpy.segments`)
 Segment representations
 =======================
 
-.. py:currentmodule:: gwpy.segments.segments
+.. currentmodule:: gwpy.segments.segments
 
 It is crucial to instrumental operation, and to analyses of data, that time segments denoting good or bad state of the instrument and its environment are recorded accurately.
 To that end, the international collaboration operates using the GPS time standard (seconds since the GPS epoch of midnight January 6 1980), and records such time segments in GPS ``[start, stop)`` pairs.
@@ -17,6 +17,7 @@ The :mod:`gwpy.segments` module provides classes and routines for handling these
 
 .. autosummary::
    :nosignatures:
+   :toctree: ../_generated
 
    Segment
    SegmentList
@@ -28,7 +29,7 @@ While these objects are key to representing core data segments, they are usually
 Data-quality flags
 ==================
 
-.. py:currentmodule:: gwpy.segments.flag
+.. currentmodule:: gwpy.segments.flag
 
 A data-quality flag is a named set of segments that indicate something about instrumental operation.
 Each flag is defined by applying some algorithm on data and generating a list of times (segments) that indicate some good or bad condition has been met during those times.
@@ -39,6 +40,7 @@ The `DataQualityFlag` object provides a fully-functional representation of these
 Each flag has two key attributes:
 
 .. autosummary::
+   :toctree: ../_generated
 
    ~DataQualityFlag.active
    ~DataQualityFlag.valid

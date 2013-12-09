@@ -1,4 +1,5 @@
 .. currentmodule:: gwpy.timeseries.core
+
 ================================
 GWpy.Ex: plotting a `TimeSeries`
 ================================

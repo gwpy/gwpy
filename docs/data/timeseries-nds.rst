@@ -1,4 +1,4 @@
-.. py:currentmodule:: gwpy.timeseries.core
+.. currentmodule:: gwpy.timeseries.core
 
 #################################
 Fetching a `TimeSeries` using NDS

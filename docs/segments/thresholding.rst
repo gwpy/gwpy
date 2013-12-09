@@ -2,7 +2,7 @@
 Generating data-quality flags by thresholding
 #############################################
 
-.. py:currentmodule:: gwpy.segments.flag
+.. currentmodule:: gwpy.segments.flag
 
 The first- and second-generation ground-based laser interferometer gravitational-wave detectors are subject to a large variety of linear noise sources, in which noise in control signals can couple directly into the gravitational-wave readout.
 If the coupling between an auxiliary signal and the gravitational-wave signal can be detected, noise in the auxiliary signal can be flagged by recording times when the time-series signal exceeded a nominal range.

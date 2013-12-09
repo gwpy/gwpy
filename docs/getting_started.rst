@@ -1,7 +1,6 @@
 ***************
 Getting started
 ***************
-.. replace:: 
 
 ==============
 Importing GWpy
@@ -51,6 +50,7 @@ There are a small number of core objects provided by GWpy, each representing the
 
 .. autosummary::
    :nosignatures:
+   :toctree: _generated
 
    ~gwpy.timeseries.core.TimeSeries
    ~gwpy.spectrum.core.Spectrum

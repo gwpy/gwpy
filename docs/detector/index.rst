@@ -11,6 +11,7 @@ The core of the :mod:`~gwpy.detector` module are the following two classes:
 
 .. autosummary::
    :nosignatures:
+   :toctree: ../_generated
 
    ~interferometers.LaserInterferometer
    ~channel.Channel
@@ -20,8 +21,6 @@ Data channels
 =============
 
 .. currentmodule:: gwpy.detector.channel
-.. |Quantity| replace:: :class:`~astropy.units.quantity.Quantity`
-.. |Unit| replace:: :class:`~astropy.units.core.Unit`
 
 Each of the laser interferometer gravitational-wave detectors record data in thousands of individual 'channels', each of which records the time-series for a single instrumental error or control signal, or an environmental sensor.
 These channels are named according to a convention that describes its source in the instrument, and the signal it records, for example::
@@ -60,5 +59,5 @@ You can query for details on a given :class:`Channel` as follows::
     >>> print(psl_odc.model)
     'l1psliss'
 
-Here, the :class:`~Channel.sample_rate` attribute is recorded as a |Quantity|, recording both the value and the unit of the the sample rate.
+Here, the :class:`~Channel.sample_rate` attribute is recorded as a :class:`~astropy.units.quantity.Quantity`, recording both the value and the unit of the the sample rate.
 The :attr:`~Channel.model` attribute records the specific instrumental code in which the `L1:PSL-ODC_CHANNEL_OUT_DQ` channel was defined and recorded.

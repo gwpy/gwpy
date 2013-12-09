@@ -2,7 +2,7 @@
 Time-series data (:mod:`gwpy.timeseries`)
 #########################################
 
-.. py:currentmodule:: gwpy.timeseries.core
+.. currentmodule:: gwpy.timeseries.core
 
 Gravitational-wave detectors are time-domain instruments, attempting to record gravitational wave amplitude as a strain.
 As discussed under `Detector information <../detector/index>`, alongisde the gravitational-wave readout channel are thousands of auxiliary instrumental control and error signals, and environmental monitors.
@@ -17,6 +17,7 @@ GWpy represents these data through the :class:`TimeSeries` object, containing th
 
 .. autosummary::
    :nosignatures:
+   :toctree: ../_generated
 
    ~TimeSeries.epoch
    ~TimeSeries.sample_rate
@@ -55,7 +56,7 @@ For more details on accessing data via either of these sources, see these pages:
 State information
 =================
 
-.. py:currentmodule:: gwpy.timeseries.statevector
+.. currentmodule:: gwpy.timeseries.statevector
 
 A large quantity of important data from gravitational-wave detectors can be distilled into simple boolean (`True` or `False`) statements informing something about the state of the instrument at a given time.
 These statements can be used to identify times during which a particular control system was active, or when the signal in a seismometer was above an alarming threshold, for example.
@@ -63,6 +64,7 @@ In GWpy, these data are represented by special cases (`sub-classes`) of the `Tim
 
 .. autosummary::
    :nosignatures:
+   :toctree: ../_generated
 
    StateTimeSeries
    StateVector

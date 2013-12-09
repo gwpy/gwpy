@@ -26,7 +26,7 @@ From this information, any new `Spectrum` can be generated as follows::
 Calculating the `Spectrum` from a :class:`~gwpy.timeseries.core.TimeSeries`
 ===========================================================================
 
-.. py:currentmodule:: gwpy.timeseries.core
+.. currentmodule:: gwpy.timeseries.core
 The frequency-spectrum of a :class:`TimeSeries` can be calculated using either of the following methods:
 
 .. autosummary::

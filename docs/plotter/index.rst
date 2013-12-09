@@ -31,12 +31,3 @@ The following diagram displays the available Plot objects and their inheritance 
    :maxdepth: 1
 
    filter
-
-========
-Plot API
-========
-
-.. currentmodule:: gwpy.plotter.core
-
-.. autoclass:: Plot
-   :members:
