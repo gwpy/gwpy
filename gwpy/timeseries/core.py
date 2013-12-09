@@ -273,6 +273,7 @@ class TimeSeries(Series):
             processes = []
             for i,cache in enumerate(parts):
                 process = Process(target=_read, args=(cache, outqueue))
+                process.daemon = True
                 processes.append(process)
                 process.start()
             out = TimeSeriesList(*(outqueue.get() for p in processes))
