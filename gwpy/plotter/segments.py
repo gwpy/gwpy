@@ -315,7 +315,7 @@ class SegmentAxes(TimeSeriesAxes):
             insetparams.setdefault('bbox',
                                    {'alpha': 0.5, 'facecolor': 'white',
                                     'edgecolor': 'none'})
-            t = self.text(x, y, label, **insetparams)
+            t = self.text(x, y - 0.1, label, **insetparams)
             t._is_segment_label = True
             return t
         else:
@@ -359,18 +359,20 @@ class SegmentPlot(TimeSeriesPlot):
     def __init__(self, *flags, **kwargs):
         """Initialise a new SegmentPlot
         """
+        # separate kwargs into figure args and plotting args
+        figargs = {}
+        if 'figsize' in kwargs:
+            figargs['figsize'] = kwargs.pop('figsize')
         sep = kwargs.pop('sep', False)
         epoch = kwargs.pop('epoch', None)
-        labels = kwargs.pop('labels', None)
-        valid = kwargs.pop('valid', 'x')
 
         # generate figure
-        super(SegmentPlot, self).__init__(**kwargs)
+        super(SegmentPlot, self).__init__(**figargs)
         # plot data
         for flag in flags:
             self.add_dataqualityflag(flag,
                                      projection=self._DefaultAxesClass.name,
-                                     newax=sep, valid=valid)
+                                     newax=sep, **kwargs)
 
         # set epoch
         if len(flags):
@@ -380,30 +382,16 @@ class SegmentPlot(TimeSeriesPlot):
             for ax in self.axes:
                 ax.set_epoch(epoch)
                 ax.set_xlim(*span)
-                if self._auto_gps:
+                if ax._auto_gps:
                     ax.auto_gps_scale()
             for ax in self.axes[:-1]:
                 ax.set_xlabel("")
 
-        # set labels
-        if not labels:
-            labels = []
-            for flag in flags:
-                name = ':'.join([str(p) for p in
-                                 (flag.ifo, flag.name, flag.version) if p is
-                                 not None])
-                labels.append(name.replace('_', r'\_'))
         if sep:
-            for ax, label in zip(self.axes, labels):
-                ax.set_yticks([0])
-                ax.set_yticklabels([label])
+            for ax in self.axes:
                 ax.set_ylim(-0.5, 0.5)
                 ax.grid(b=False, which='both', axis='y')
         elif len(flags):
-            ticks = numpy.arange(len(flags))
-            ax = self.axes[0]
-            ax.set_yticks(ticks)
-            ax.set_yticklabels(labels)
             ax.set_ylim(-0.5, len(flags)-0.5)
             ax.grid(b=False, which='both', axis='y')
 
