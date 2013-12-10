@@ -512,8 +512,8 @@ class StateVector(TimeSeries):
         if format == 'timeseries':
             return super(StateVector, self).plot(**kwargs)
         elif format == 'segments':
-            from ..plotter import SpectrumPlot
-            return SpectrumPlot(*self.to_dqflags(), **kwargs)
+            from ..plotter import SegmentPlot
+            return SegmentPlot(*self.to_dqflags(), **kwargs)
         raise ValueError("'format' argument must be one of: 'timeseries' or "
                          "'segments'")
 
