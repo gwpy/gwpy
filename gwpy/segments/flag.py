@@ -53,24 +53,6 @@ class DataQualityFlag(object):
         A list of active segments for this flag
     valid : `~segments.SegmentList`, optional
         A list of valid segments for this flag
-
-    Attributes
-    ----------
-    active
-    valid
-    ifo
-    name
-    version
-    extent
-
-    Methods
-    -------
-    coalesce
-    copy
-    query
-    read
-    round
-    write
     """
     _EntryClass = Segment
     _ListClass = SegmentList
@@ -214,8 +196,8 @@ class DataQualityFlag(object):
                     repr(self.comment)))
 
     def copy(self):
-        """Build an exact copy of this `DataQualityFlag, with a
-        fresh memory copy of all segments and metadata
+        """Build an exact copy of this `DataQualityFlag`, with a
+        fresh memory copy of all segments and metadata.
         """
         new = self.__class__()
         new.ifo = self.ifo

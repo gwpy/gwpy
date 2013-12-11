@@ -39,7 +39,7 @@ class Channel(object):
         name of this Channel (or another  Channel itself).
         If a `Channel` is given, all other parameters not set explicitly
         will be copied over.
-    sample_rate : `float`, |Quantity|, optional
+    sample_rate : `float`, :class:`~astropy.units.quantity.Quantity`, optional
         number of samples per second
     unit : :class:`~astropy.units.core.Unit`, `str`, optional
         name of the unit for the data of this channel
@@ -53,23 +53,6 @@ class Channel(object):
     The `Channel` structure implemented here is designed to match the
     data recorded in the LIGO Channel Information System
     (https://cis.ligo.org) for which a query interface is provided.
-
-    Attributes
-    ----------
-    name
-    ifo
-    system
-    subsystem
-    signal
-    sample_rate
-    unit
-    type
-    dtype
-    model
-
-    Methods
-    -------
-    query
     """
     def __init__(self, ch, sample_rate=None, unit=None, dtype=None,
                  type=None, model=None, url=None):
@@ -146,7 +129,7 @@ class Channel(object):
     def sample_rate(self):
         """Rate of samples (Hertz) for this `Channel`
 
-        :type: |Quantity|
+        :type: :class:`~astropy.units.quantity.Quantity`
         """
         return self._sample_rate
 
@@ -165,7 +148,7 @@ class Channel(object):
     def unit(self):
         """Data unit for this `Channel`
 
-        :type: |Unit|
+        :type: :class:`~astropy.units.core.Unit`
         """
         return self._unit
 

@@ -65,13 +65,6 @@ class Array(numpy.ndarray):
     -------
     array : `Array`
         a new array, with a view of the data, and all associated metadata
-
-    Attributes
-    ----------
-    name
-    unit
-    epoch
-    channel
     """
     __array_priority_ = 10.1
     _metadata_type = dict

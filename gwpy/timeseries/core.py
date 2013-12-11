@@ -91,29 +91,6 @@ class TimeSeries(Series):
     All comparison operations performed on a `TimeSeries` will return a
     :class:`~gwpy.timeseries.statevector.StateTimeSeries` - a boolean array
     with metadata copied from the starting `TimeSeries`.
-
-    Attributes
-    ----------
-    name
-    epoch
-    unit
-    channel
-    sample_rate
-    duration
-    span
-
-    Methods
-    -------
-    psd
-    asd
-    spectrogram
-    plot
-    read
-    fetch
-    resample
-    highpass
-    lowpass
-    bandpass
     """
     _metadata_slots = ['name', 'unit', 'epoch', 'channel', 'sample_rate']
     xunit = units.Unit('s')
@@ -520,10 +497,12 @@ class TimeSeries(Series):
         `TimeSeries`.
 
         The `method` argument can be one of
-            * 'welch'
-            * 'bartlett'
-            * 'medianmean'
-            * 'median'
+
+            - 'welch'
+            - 'bartlett'
+            - 'medianmean'
+            - 'median'
+
         and any keyword arguments will be passed to the relevant method
         in `gwpy.spectrum`.
 

@@ -39,22 +39,6 @@ class ConventionWarning(UserWarning):
 class LaserInterferometer(object):
     """A model of a ground-based, laser-interferometer gravitational-wave
     detector.
-
-    Attributes
-    ----------
-    name
-    prefix
-    vertex
-    xend
-    yend
-    response_matrix
-
-    Methods
-    -------
-    light_travel_time
-    response
-    time_delay
-    time_delay_from_earth_center
     """
     def __init__(self):
         self._name = None

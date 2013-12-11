@@ -54,7 +54,7 @@ def bartlett(timeseries, segmentlength, window=None):
     a periodogram calculated for each, and the bin-by-bin mean returned.
 
     Parameters
-    ---------
+    ----------
     timeseries: `TimeSeries`
         input `TimeSeries` data
     segmentlength : `int`

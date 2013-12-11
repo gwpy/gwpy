@@ -202,21 +202,22 @@ class Spectrogram(Array2D):
         return self[idx0:idx1]
 
     def ratio(self, operand):
-        """Calculate the ratio of this Spectrogram against a
+        """Calculate the ratio of this `Spectrogram` against a
         reference.
 
         Parameters
         ----------
-        operand : str, Spectrum
-            Spectrum against which to weight, or one of
-            - 'mean' : weight against the mean of each spectrum
-                       in this Spectrogram
-            - 'median' : weight against the median of each spectrum
-                       in this Spectrogram
+        operand : `str`, `Spectrum`
+            `Spectrum` against which to weight, or one of
+
+            - ``'mean'`` : weight against the mean of each spectrum
+              in this Spectrogram
+            - ``'median'`` : weight against the median of each spectrum
+              in this Spectrogram
  
         Returns
         -------
-        R : `~gwpy.data.Spectrogram`
+        spec : `~gwpy.data.Spectrogram`
             A new spectrogram
         """
         if operand == 'mean':

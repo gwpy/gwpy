@@ -56,23 +56,6 @@ class Spectrum(Series):
     -------
     Spectrum
         a new Spectrum holding the given data
-
-    Attributes
-    ----------
-    name
-    epoch
-    f0
-    df
-    logf
-    unit
-    frequencies
-
-    Methods
-    -------
-    plot
-    filter
-    to_lal
-    from_lal
     """
     _metadata_slots = ['name', 'unit', 'epoch', 'channel', 'f0', 'df', 'logf']
     xunit = units.Unit('Hz')
@@ -134,7 +117,7 @@ class Spectrum(Series):
         ----------
         fmin : `float`, optional
             minimum frequency for new `Spectrum`
-        fmax : `float, optional
+        fmax : `float`, optional
             maxmimum frequency for new `Spectrum`
         num : `int`, optional
             length of new `Spectrum`
@@ -142,7 +125,7 @@ class Spectrum(Series):
         Notes
         -----
         All arguments to this function default to the corresponding
-        parameters of the existing `Spectrum`
+        parameters of the existing `Spectrum`.
         """
         num = num or self.shape[-1]
         fmin = fmin or self.f0.value or (self.f0.value + self.df.value)
@@ -252,13 +235,13 @@ class Spectrum(Series):
                    df=lalfs.deltaF, epoch=lalfs.epoch)
 
     def to_lal(self):
-        """Convert this `Spectrum` into a LAL FrequencySeries
+        """Convert this `Spectrum` into a LAL FrequencySeries.
 
         Returns
         -------
-        FrequencySeries
+        lalspec : `FrequencySeries`
             an XLAL-format FrequencySeries of a given type, e.g.
-            :lalsuite:`XLALREAL8FrequencySeries`
+            :lalsuite:`REAL8FrequencySeries`
 
         Notes
         -----

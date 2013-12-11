@@ -58,6 +58,7 @@ The segment database is the primary access point for users to study data-quality
 The `DataQualityFlag` object comes with a direct link to the segment database, through the :meth:`DataQualityFlag.query` classmethod:
 
 .. automethod:: DataQualityFlag.query
+   :noindex:
 
 ====================
 Segment applications

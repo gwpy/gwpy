@@ -41,24 +41,6 @@ class Axes(_Axes):
 
     where plot is a :class:`~gwpy.plotter.fig.Plot` figure, and ``'xxx'``
     is the name of the `Axes` you want to add.
-
-    Attributes
-    ----------
-    name
-    xlabel
-    ylabel
-    xlim
-    ylim
-    logx
-    logy
-
-    Methods
-    -------
-    plot
-    plot_dqflag
-    plot_segmentlist
-    plot_segmentlistdict
-    plot_timeseries
     """
     def __init__(self, *args, **kwargs):
         super(Axes, self).__init__(*args, **kwargs)

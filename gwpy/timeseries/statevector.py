@@ -72,17 +72,6 @@ class StateTimeSeries(TimeSeries):
     -------
     statebit : `StateTimeSeries`
         A new `StateTimeSeries`
-
-    Attributes
-    ----------
-    name
-    epoch
-    channel
-    sample_rate
-
-    Methods
-    -------
-    to_dqflag
     """
     def __new__(cls, data, times=None, epoch=None, channel=None,
                 sample_rate=None, name=None, **kwargs):
