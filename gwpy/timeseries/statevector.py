@@ -170,12 +170,6 @@ class BitMask(list):
         defining GPS epoch for this `BitMask`
     description : `dict`, optional
         (bit, desc) `dict` of longer descriptions for each bit
-
-    Attributes
-    ----------
-    channel
-    epoch
-    description
     """
     def __init__(self, bits, channel=None, epoch=None, description={}):
         list.__init__(self, bits)
@@ -282,24 +276,6 @@ class StateVector(TimeSeries):
         data channel associated with this `StateVector`
     sample_rate : `float`, optional
         data rate for this `StateVector` in samples per second (Hertz).
-
-    Attributes
-    ----------
-    name
-    epoch
-    channel
-    sample_rate
-    duration
-    span
-    bitmask
-    boolean
-    bits
-
-    Methods
-    -------
-    to_dqflags
-    read
-    fetch
     """
     _metadata_slots = TimeSeries._metadata_slots + ['bitmask']
     def __new__(cls, data, bitmask=[], times=None, epoch=None, channel=None,
