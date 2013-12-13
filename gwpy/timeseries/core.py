@@ -36,7 +36,7 @@ from astropy import units
 
 from glue.lal import Cache
 
-from .. import version
+from .. import (version, io)
 from ..data import (Series, Array2D)
 from ..detector import Channel
 from ..segments import (Segment, SegmentList)
@@ -188,99 +188,8 @@ class TimeSeries(Series):
     # -------------------------------------------
     # TimeSeries accessors
 
-    @classmethod
-    def read(cls, source, channel, start=None, end=None, datatype=None,
-             verbose=False, multiprocess=False):
-        """Read data into a `TimeSeries` from files on disk.
-
-        Parameters
-        ----------
-        source : `str`, :class:`glue.lal.Cache`, :lalsuite:`LALCache`
-            source for data, one of:
-
-            - a filepath for a GWF-format frame file,
-            - a filepath for a LAL-format Cache file
-            - a Cache object from GLUE or LAL
-
-        channel : `str`, :class:`~gwpy.detector.channel.Channel`
-            channel (name or object) to read
-        start : :class:`~gwpy.time.Time`, `float`, optional
-            start GPS time of desired data
-        end : :class:`~gwpy.time.Time`, `float`, optional
-            end GPS time of desired data
-        datatype : `type`, `numpy.dtype`, `str`, optional
-            identifier for desired output data type
-        verbose : `bool`, optional
-            print verbose output
-        multiprocess : `bool`, `int`, optional, default: `False`
-            spread reading of a :class:`~glue.lal.Cache` over multiple
-            processes. If ``multiprocess`` is `True` one processes is spawned
-            per CPU counted on the host, otherwise ``multiprocess`` should
-            specify the number of processes.
-
-            Each process reads an equal portion of the given `Cache`
-            with the results joined once all parts have been read.
-
-            .. warning::
-
-               The multi-process `TimeSeries.read` is an experimental
-               feature. Please use with care. The GWpy developers accept
-               no responsibility for misuse of this feature.
-
-        Returns
-        -------
-        TimeSeries
-            a new `TimeSeries` containing the data read from disk
-        """
-        if multiprocess and isinstance(source, Cache) and len(source) > 0:
-            def _read(cache, queue):
-                qs = float(max(start, cache[0].segment[0]))
-                qe = float(min(end, cache[-1].segment[1]))
-                queue.put(TimeSeries.read(cache, channel, start=qs, end=qe,
-                                          datatype=datatype,
-                                          verbose=verbose, multiprocess=False))
-
-            source.sort(key=lambda e: e.segment[0])
-            cpus = (isinstance(multiprocess, bool) and (cpu_count() -1 ) or
-                    multiprocess)
-            cpus = min(len(source), cpus)
-            N = len(source) // cpus
-            parts = [Cache(source[i:i+N]) for i in xrange(0, len(source), N)]
-            outqueue = Queue()
-            processes = []
-            for i,cache in enumerate(parts):
-                process = Process(target=_read, args=(cache, outqueue))
-                process.daemon = True
-                processes.append(process)
-                process.start()
-            out = TimeSeriesList(*(outqueue.get() for p in processes))
-            for i,process in enumerate(processes):
-                process.join()
-            out.sort(key=lambda ts: ts.epoch.gps)
-            return out.join()
-        elif (multiprocess and not
-                  (isinstance(source, Cache) and len(source) == 0)):
-            raise ValueError("Multiprocessing is only enabled for reading "
-                             "from a `glue.lal.Cache` object")
-        else:
-            from lalframe import frread
-            if isinstance(channel, Channel):
-                channel = channel.name
-            if start and isinstance(start, Time):
-                start = start.gps
-            if end and isinstance(end, Time):
-                end = end.gps
-            if start and end:
-                duration = float(end - start)
-            elif end:
-                raise ValueError("If `end` is given to TimeSeries.read, `start`"
-                                 "must also be given")
-            else:
-                duration = None
-            lalts = frread.read_timeseries(source, channel, start=start,
-                                           duration=duration, datatype=datatype,
-                                           verbose=verbose)
-            return cls.from_lal(lalts)
+    # use input/output registry to allow multi-format reading
+    read = classmethod(io.read)
 
     @classmethod
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
