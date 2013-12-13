@@ -375,42 +375,6 @@ class StateVector(TimeSeries):
                     comment=self.bitmask.description[bit])
                 for i,bit in enumerate(self.bitmask)]
 
-    @classmethod
-    def read(cls, source, channel, bitmask=[], start=None, end=None,
-             datatype=numpy.uint64, verbose=False):
-        """Read a `StateVector` channel from a given source.
-
-        Parameters
-        ----------
-        source : `str`, :class:`glue.lal.Cache`, :lalsuite:`LALCache`
-            source for data, one of:
-
-            - a filepath for a GWF-format frame file,
-            - a filepath for a LAL-format Cache file
-            - a Cache object from GLUE or LAL
-        channel : `str`, :class:`~gwpy.detector.channel.Channel`
-            channel (name or object) to read
-        bitmask : `BitMask`, `list`, optional
-            definition of bits for this `StateVector`
-        start : :class:`~gwpy.time.Time`, `float`, optional
-            start GPS time of desired data
-        end : :class:`~gwpy.time.Time`, `float`, optional
-            end GPS time of desired data
-        datatype : `type`, `numpy.dtype`, `str`, optional
-            identifier for desired output data type, default: `uint64`
-        verbose : `bool`, optional
-            print verbose output
-
-        Returns
-        -------
-        state : `StateVector`
-            a new `StateVector` read from the given source
-        """
-        new = super(StateVector, cls).read(source, channel, start=start,
-                                           end=end, datatype=datatype,
-                                           verbose=verbose)
-        new.bitmask = bitmask
-        return new
 
     @classmethod
     def fetch(cls, channel, start, end, bitmask=[], host=None,

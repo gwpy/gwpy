@@ -33,10 +33,11 @@ from scipy import (fftpack, signal)
 from matplotlib import mlab
 
 from astropy import units
+from astropy.io import registry as io_registry
 
 from glue.lal import Cache
 
-from .. import (version, io)
+from .. import version
 from ..data import (Series, Array2D)
 from ..detector import Channel
 from ..segments import (Segment, SegmentList)
@@ -189,7 +190,7 @@ class TimeSeries(Series):
     # TimeSeries accessors
 
     # use input/output registry to allow multi-format reading
-    read = classmethod(io.read)
+    read = classmethod(io_registry.read)
 
     @classmethod
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,

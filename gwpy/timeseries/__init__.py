@@ -25,4 +25,4 @@ __version__ = version.version
 from .core import *
 from .statevector import *
 
-from ..io import gwf
+from ..io import (lcf, gwf, losc)

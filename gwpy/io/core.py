@@ -28,27 +28,38 @@ from astropy.io.registry import (_get_valid_format, get_reader)
 
 
 def read(cls, *args, **kwargs):
-    """ Read in data
+    """
+    Read in data
 
     The arguments passed to this method depend on the format
     """
+
     if 'format' in kwargs:
         format = kwargs.pop('format')
     else:
         format = None
 
-    fileobj = None
     ctx = None
-    if format is None:
-        format, args = _get_valid_format('read', cls, fileobj, *args,
-                                         **kwargs)
+    try:
+        if format is None:
+            path = None
+            filename = None
 
-    reader = get_reader(format, cls)
-    if fileobj is not None:
-        fileobj.seek(0)
-    obj = reader(*args, **kwargs)
+            if len(args):
+                path = None
+                filename = args[0]
 
-    if not isinstance(obj, cls):
-        raise TypeError(
-            "reader should return a {0} instance".format(cls.__name__))
+            format = _get_valid_format('read', cls, path, filename,
+                                       args, kwargs)
+
+        reader = get_reader(format, cls)
+        obj = reader(*args, **kwargs)
+
+        if not isinstance(obj, cls):
+            raise TypeError(
+                "reader should return a {0} instance".format(cls.__name__))
+    finally:
+        if ctx is not None:
+            ctx.__exit__(*sys.exc_info())
+
     return obj
