@@ -91,6 +91,7 @@ class SegmentList(_SegmentList):
         return "[%s]" % "\n ".join(map(str, self))
 
     read = classmethod(io_registry.read)
+    write = io_registry.write
 
 
 class SegmentListDict(_SegmentListDict):
