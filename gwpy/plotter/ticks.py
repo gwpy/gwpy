@@ -125,13 +125,13 @@ class AutoTimeLocator(mticker.AutoLocator):
         locs = self.tick_values(vmin, vmax)
         if self._scale:
             locs *= self._scale
-        if self.epoch:
+        if self.epoch is not None:
             locs += float(self.epoch.gps)
         return self.raise_if_exceeds(locs)
 
     def get_view_interval(self):
         vmin, vmax = self.axis.get_view_interval()
-        if self.epoch:
+        if self.epoch is not None:
             vmin -= float(self.epoch.gps)
             vmax -= float(self.epoch.gps)
         if self._scale:
