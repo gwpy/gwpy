@@ -40,13 +40,6 @@ except ImportError:
 else:
     HASGLUE = True
 
-try:
-    from lalframe import frread
-except ImportError:
-    HASLALFRAME = False
-else:
-    HASLALFRAME = True
-
 from ..detector import Channel
 from ..time import Time
 from ..timeseries import (TimeSeries, StateVector)
@@ -84,8 +77,12 @@ def read_gwf(framefile, channel, start=None, end=None, datatype=None,
     data : :class:`~gwpy.timeseries.core.TimeSeries`
         a new `TimeSeries` containing the data read from disk
     """
-    if not HASLALFRAME:
-        raise ImportError("No module named lalframe")
+    try:
+        from lalframe import frread
+    except:
+        raise ImportError("No module named lalframe. LALFrame or frameCPP are "
+                          "required in order to read data from GWF-format "
+                          "frame files.")
     # parse input arguments
     if isinstance(framefile, CacheEntry):
         framefile = framefile.path
