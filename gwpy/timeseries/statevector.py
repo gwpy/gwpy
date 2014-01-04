@@ -257,7 +257,7 @@ class StateVector(TimeSeries):
 
     Each binary bit represents a single boolean condition, with the
     definitins of all the bits stored in the `StateVector.bitmask`
-    attribute
+    attribute.
 
     Parameters
     ----------
@@ -270,7 +270,7 @@ class StateVector(TimeSeries):
         `StateVector` with un-even sampling
     name : `str`, optional
         descriptive title for this StateTimeSeries
-    epoch : `float` GPS time, or :class:`~gwpy.time.Time`, optional
+    epoch : `float` GPS time, or :class:`~astropy.time.core.Time`, optional
         starting GPS epoch for this `StateVector`
     channel : :class:`~gwpy.detector.Channel`, or `str`, optional
         data channel associated with this `StateVector`

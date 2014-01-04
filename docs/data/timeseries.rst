@@ -16,7 +16,6 @@ The `TimeSeries`
 GWpy represents these data through the :class:`TimeSeries` object, containing the data themselves and a full set of metadata:
 
 .. autosummary::
-   :nosignatures:
    :toctree: ../_generated
 
    ~TimeSeries.epoch

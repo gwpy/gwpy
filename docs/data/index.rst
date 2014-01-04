@@ -7,5 +7,6 @@ GWpy provides representations of the basic data objects recorded from gravitatio
 .. toctree::
    :maxdepth: 1
 
+   array
    timeseries
    spectrum

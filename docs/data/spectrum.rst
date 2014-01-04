@@ -27,10 +27,10 @@ Calculating the `Spectrum` from a :class:`~gwpy.timeseries.core.TimeSeries`
 ===========================================================================
 
 .. currentmodule:: gwpy.timeseries.core
+
 The frequency-spectrum of a :class:`TimeSeries` can be calculated using either of the following methods:
 
 .. autosummary::
-   :nosignatures:
 
    TimeSeries.psd
    TimeSeries.asd

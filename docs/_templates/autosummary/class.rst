@@ -9,6 +9,7 @@
 
 .. autoclass:: {{ objname }}
    :show-inheritance:
+   :no-inherited-members:
 
    {% if '__init__' in methods %}
      {{ methods.remove('__init__') }}

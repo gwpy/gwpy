@@ -72,9 +72,9 @@ class TimeSeries(Series):
         Data values to initialise TimeSeries
     epoch : `float` GPS time, or :class:`~gwpy.time.Time`, optional
         TimeSeries start time
-    channel : :class:`~gwpy.detector.Channel`, or `str`, optional
+    channel : :class:`~gwpy.detector.channels.Channel`, `str`, optional
         Data channel for this TimeSeries
-    unit : :class:`~astropy.units.Unit`, optional
+    unit : :class:`~astropy.units.core.Unit`, optional
         The units of the data
 
     Returns
