@@ -22,7 +22,7 @@ Even better is to import the classes you need directly::
 Object-oriented programming
 ===========================
 
-GWpy is designed to be an object-oriented programming package, that is, data objected are the central focus of the package. Each data object is represented as an instance of a class, describing its properties and the data it holds.
+GWpy is designed to be an object-oriented programming package, that is, data objects are the central focus of the package. Each data object is represented as an instance of a class, describing its properties and the data it holds.
 
 In order to generate a new instance of any class, you should use the standard constructor, or any of the `classmethod` functions. For example, a :class:`~gwpy.timeseries.core.TimeSeries` can be generated from an existing data array::
 
