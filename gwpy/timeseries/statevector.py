@@ -339,7 +339,7 @@ class StateVector(TimeSeries):
                               self.boolean.data[:,i], name=bit,
                               epoch=self.x0.value, channel=self.channel,
                               sample_rate=self.sample_rate) for
-                          i,bit in enumerate(self.bitmask)]
+                          i,bit in enumerate(self.bitmask) if bit is not None]
             return self.bits
 
     # -------------------------------------------
