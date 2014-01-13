@@ -294,7 +294,7 @@ class DataQualityDict(OrderedDict):
         """
         # parse arguments
         if len(args) == 1:
-            qsegs = args[0]
+            qsegs = args
         elif len(args) == 2:
             qsegs = [args]
         else:
