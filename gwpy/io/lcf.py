@@ -289,18 +289,26 @@ def open_cache(lcf):
             return Cache.fromfile(f)
 
 
-def identify_cache(*args, **kwargs):
-    """Determine an input object as either a :class:`glue.lal.Cache` or
-    a :lalsuite:`LALCache`.
+def identify_cache_file(*args, **kwargs):
+    """Determine an input object as either a LAL-format cache file.
     """
     cachefile = args[1]
-    cacheobj = args[3]
+    if isinstance(cachefile, file):
+        cachefile = cachefile.name
     # identify string
     if (isinstance(cachefile, (unicode, str)) and
             (cachefile.endswith('.lcf') or cachefile.endswith('.cache'))):
         return True
         # identify cache object
-    elif ((HASGLUE and isinstance(cacheobj, Cache)) or
+    else:
+        return False
+
+def identify_cache(*args, **kwargs):
+    """Determine an input object as a :class:`glue.lal.Cache` or a
+    :lalsuite:`LALCache`.
+    """
+    cacheobj = args[3]
+    if ((HASGLUE and isinstance(cacheobj, Cache)) or
             (HASLAL and isinstance(cacheobj, LALCache))):
         return True
     else:
@@ -311,10 +319,12 @@ registry.register_reader('lcf', TimeSeries, read_cache_mp, force=True)
 registry.register_reader('cache', TimeSeries, read_cache_mp, force=True)
 registry.register_reader('lcfmp', TimeSeries, read_cache_mp, force=True)
 registry.register_reader('lcfth', TimeSeries, read_cache_threaded, force=True)
-registry.register_identifier('lcf', TimeSeries, identify_cache)
+registry.register_identifier('lcf', TimeSeries, identify_cache_file)
+registry.register_identifier('cache', TimeSeries, identify_cache)
 
 # duplicate for state-vector
 registry.register_reader('lcf', StateVector, read_state_cache_mp, force=True)
 registry.register_reader('cache', StateVector, read_state_cache_mp, force=True)
 registry.register_reader('lcfmp', StateVector, read_state_cache_mp, force=True)
-registry.register_identifier('lcf', StateVector, identify_cache)
+registry.register_identifier('lcf', StateVector, identify_cache_file)
+registry.register_identifier('cache', StateVector, identify_cache)
