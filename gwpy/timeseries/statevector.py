@@ -335,11 +335,15 @@ class StateVector(TimeSeries):
         try:
             return self._bits
         except AttributeError:
-            self._bits = [StateTimeSeries(
-                              self.boolean.data[:,i], name=bit,
-                              epoch=self.x0.value, channel=self.channel,
-                              sample_rate=self.sample_rate) for
-                          i,bit in enumerate(self.bitmask) if bit is not None]
+            self._bits = []
+            for i,bit in enumerate(self.bitmask):
+                if bit is None:
+                    self._bits.append(None)
+                else:
+                    self._bits.append(StateTimeSeries(
+                                     self.boolean.data[:,i], name=bit,
+                                     epoch=self.x0.value, channel=self.channel,
+                                     sample_rate=self.sample_rate))
             return self.bits
 
     # -------------------------------------------
@@ -373,8 +377,7 @@ class StateVector(TimeSeries):
         return [self.bits[i].to_dqflag(
                     name=bit, minlen=minlen, round=round, dtype=dtype, 
                     comment=self.bitmask.description[bit])
-                for i,bit in enumerate(self.bitmask)]
-
+                for i,bit in enumerate(self.bitmask) if bit is not None]
 
     @classmethod
     def fetch(cls, channel, start, end, bitmask=[], host=None,
