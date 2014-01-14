@@ -242,11 +242,11 @@ def identify_losc(*args, **kwargs):
         return False
 
 
-registry.register_reader('hdf', TimeSeries, read_losc_data_cache, force=True)
-registry.register_reader('hdf5', TimeSeries, read_losc_data_cache, force=True)
-registry.register_reader('losc', TimeSeries, read_losc_data_cache, force=True)
-registry.register_reader('hdf', StateVector, read_losc_state_cache, force=True)
-registry.register_reader('hdf5', StateVector, read_losc_state_cache, force=True)
-registry.register_reader('losc', StateVector, read_losc_state_cache, force=True)
+registry.register_reader('hdf', TimeSeries, read_losc_data_cache)
+registry.register_reader('hdf5', TimeSeries, read_losc_data_cache)
+registry.register_reader('losc', TimeSeries, read_losc_data_cache)
+registry.register_reader('hdf', StateVector, read_losc_state_cache)
+registry.register_reader('hdf5', StateVector, read_losc_state_cache)
+registry.register_reader('losc', StateVector, read_losc_state_cache)
 registry.register_identifier('losc', TimeSeries, identify_losc)
 registry.register_identifier('losc', StateVector, identify_losc)
