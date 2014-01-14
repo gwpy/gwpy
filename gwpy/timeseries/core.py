@@ -1201,7 +1201,7 @@ class TimeSeriesDict(OrderedDict):
             if key in self:
                 self[key].append(ts, **kwargs)
             else:
-                self[key] = ts
+                self[key] = ts.copy()
 
     def prepend(self, other, **kwargs):
         for key, ts in other.iteritems():
