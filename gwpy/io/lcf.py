@@ -86,7 +86,7 @@ class GWFInputThread(threading.Thread):
 
 
 def read_cache_mp(cache, channel, start=None, end=None,
-                  maxprocesses=1, minprocesssize=1, maxprocessessize=None,
+                  maxprocesses=1, minprocesssize=1, maxprocesssize=None,
                   **kwargs):
     """Read a `TimeSeries` from a cache of data files using
     multiprocessing.
