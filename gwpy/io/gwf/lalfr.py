@@ -16,37 +16,29 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read and write gravitational-wave frame files.
-
-The frame format is defined in LIGO-T970130 available from dcc.ligo.org.
+"""Read gravitational-wave frame (GWF) files using the LALFrame API.
 """
 
 from __future__ import division
 
-import threading
-import time
-from math import ceil
-from multiprocessing import (Process, Queue as ProcessQueue)
-from Queue import Queue
-
 from astropy.io import registry
+
+try:
+    from lalframe import frread
+except ImportError:
+    raise ImportError("No module named lalframe. LALFrame or frameCPP are "
+                      "required in order to read data from GWF-format "
+                      "frame files.")
 
 from glue.lal import (Cache, CacheEntry)
 
-try:
-    from glue.lal import CacheEntry
-except ImportError:
-    HASGLUE = False
-else:
-    HASGLUE = True
-
-from ..detector import Channel
-from ..time import Time
-from ..timeseries import (TimeSeries, StateVector)
+from ...detector import Channel
+from ...time import Time
+from ...timeseries import (TimeSeries, StateVector, TimeSeriesDict)
 
 
-def read_gwf(framefile, channel, start=None, end=None, datatype=None,
-             verbose=False, _target=TimeSeries):
+def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
+                    verbose=False, _target=TimeSeries):
     """Read a `TimeSeries` of data from a gravitational-wave frame file
 
     This method is a thin wrapper around `lalframe.frread.read_timeseries`
@@ -77,12 +69,6 @@ def read_gwf(framefile, channel, start=None, end=None, datatype=None,
     data : :class:`~gwpy.timeseries.core.TimeSeries`
         a new `TimeSeries` containing the data read from disk
     """
-    try:
-        from lalframe import frread
-    except:
-        raise ImportError("No module named lalframe. LALFrame or frameCPP are "
-                          "required in order to read data from GWF-format "
-                          "frame files.")
     # parse input arguments
     if isinstance(framefile, CacheEntry):
         framefile = framefile.path
@@ -106,7 +92,38 @@ def read_gwf(framefile, channel, start=None, end=None, datatype=None,
     return TimeSeries.from_lal(lalts)
 
 
-def read_state_vector(*args, **kwargs):
+def read_timeseriesdict(framefile, channels, **kwargs):
+    """Read data for multiple channels from the given GWF-format
+    ``framefile``
+
+    Parameters
+    ----------
+    framefile : `str`, :class:`glue.lal.Cache`, :lalsuite:`LALCache`
+        data source object, one of:
+
+        - `str` : frame file path
+        - :class:`glue.lal.Cache` : pure python cache object
+        - :lalsuite:`LALCAche` : C-based cache object
+    channels : `list`
+        list of channel names (or `Channel` objects) to read from frame
+
+    See Also
+    --------
+    :func:`~gwpy.io.gwf.lalframe.read_timeseries`
+        for documentation on keyword arguments
+
+    Returns
+    -------
+    dict : :class:`~gwpy.timeseries.core.TimeSeriesDict`
+        dict of (channel, `TimeSeries`) data pairs
+    """
+    out = TimeSeriesDict()
+    for channel in channels:
+        out[channel] = read_timeseries(framefile, channel, **kwargs)
+    return out
+
+
+def read_statevector(*args, **kwargs):
     bitmask = kwargs.pop('bitmask', [])
     if isinstance(args[0], file):
         args = list(args)
@@ -115,21 +132,11 @@ def read_state_vector(*args, **kwargs):
     new.bitmask = bitmask
     return new
 
+registry.register_reader('lalframe', TimeSeries, read_timeseries)
+registry.register_reader('lalframe', StateVector, read_statevector)
+registry.register_reader('lalframe', TimeSeriesDict, read_timeseriesdict)
 
-def identify_gwf(*args, **kwargs):
-    """Determine an input file as written in GWF-format.
-    """
-    filename = args[1]
-    ce = args[3]
-    if isinstance(filename, (str, unicode)) and filename.endswith('gwf'):
-        return True
-    elif HASGLUE and isinstance(ce, CacheEntry):
-        return True
-    else:
-        return False
-
-
-registry.register_reader('gwf', TimeSeries, read_gwf, force=True)
-registry.register_identifier('gwf', TimeSeries, identify_gwf)
-registry.register_reader('gwf', StateVector, read_state_vector, force=True)
-registry.register_identifier('gwf', StateVector, identify_gwf)
+# force this as the 'gwf' reader
+registry.register_reader('gwf', TimeSeries, read_timeseries, force=True)
+registry.register_reader('gwf', StateVector, read_statevector, force=True)
+registry.register_reader('gwf', TimeSeriesDict, read_timeseriesdict, force=True)
