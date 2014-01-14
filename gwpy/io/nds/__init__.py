@@ -27,7 +27,6 @@ from math import (floor, ceil)
 from ... import (version, detector)
 from ...detector import Channel
 from ...time import Time
-from ...timeseries import (TimeSeries, TimeSeriesList)
 
 from .kerberos import *
 
