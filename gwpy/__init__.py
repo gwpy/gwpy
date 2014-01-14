@@ -21,6 +21,8 @@
 
 import warnings
 warnings.filterwarnings("ignore", "Module (.*) was already import from")
+warnings.filterwarnings("ignore", "The oldnumeric module",
+                        DeprecationWarning)
 
 # set metadata
 from . import version
