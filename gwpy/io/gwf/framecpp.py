@@ -114,7 +114,6 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
     return out
 
 
-
 def _read_frame(framefile, channels, start=None, end=None, type=None,
                 verbose=False):
     """Internal function to read data from a single frame.
@@ -172,7 +171,7 @@ def _read_frame(framefile, channels, start=None, end=None, type=None,
                 else:
                     ts.append(arr)
         if ts is not None:
-            out[channel] = ts
+            out[channel] = ts.copy()
 
     return out
 
