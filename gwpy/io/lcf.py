@@ -45,7 +45,8 @@ else:
     HASLAL = True
 
 from ..segments import Segment
-from ..timeseries import (TimeSeries, TimeSeriesList, StateVector)
+from ..timeseries import (TimeSeries, TimeSeriesList, TimeSeriesDict,
+                          StateVector)
 
 
 class GWFInputThread(threading.Thread):
@@ -84,8 +85,9 @@ class GWFInputThread(threading.Thread):
                                   end=self.gpsend, **self.kwargs)
 
 
-def read_cache_mp(cache, channel, start=None, end=None, format=None,
-                  maxprocesses=1, minprocesssize=1, **kwargs):
+def read_cache_mp(cache, channel, start=None, end=None,
+                  maxprocesses=1, minprocesssize=1, maxprocessessize=None,
+                  **kwargs):
     """Read a `TimeSeries` from a cache of data files using
     multiprocessing.
 
@@ -111,6 +113,9 @@ def read_cache_mp(cache, channel, start=None, end=None, format=None,
     minprocesssize : `int`, default: ``1``
         minimum number of frames to pass to a single process, default is
         to maximally separate the cache.
+    maxprocesssize : `int`, default: ``1``
+        maximum number of frames to pass to a single process, default is
+        to use as many proccesses as possible (up to ``maxprocesses``)
 
     Notes
     -----
@@ -134,10 +139,7 @@ def read_cache_mp(cache, channel, start=None, end=None, format=None,
     if len(cache) == 0:
         return cls([], channel=channel, epoch=start)
 
-    if format is None:
-        format_ = os.path.splitext(cache[0].path)[1][1:]
-    else:
-        format_ = format
+    format_ = os.path.splitext(cache[0].path)[1][1:]
 
     # single-process
     if maxprocesses == 1:
@@ -152,12 +154,16 @@ def read_cache_mp(cache, channel, start=None, end=None, format=None,
                        **kwargs))
 
     # separate cache into parts
-    minprocesssize = max(int(ceil(len(cache)/maxprocesses)), minprocesssize)
-    subcaches = [Cache(cache[i:i+minprocesssize]) for
-                 i in range(0, len(cache), minprocesssize)]
+    fperproc = int(ceil(len(cache) / maxprocesses))
+    if fperproc < minprocesssize:
+        fperproc = minprocesssize
+    if maxprocesssize is not None and fperproc > maxprocessize:
+        fperproc = maxprocesssize
+    subcaches = [Cache(cache[i:i+fperproc]) for
+                 i in range(0, len(cache), fperproc)]
 
     # start all processes
-    queue = ProcessQueue()
+    queue = ProcessQueue(maxprocesses)
     proclist = []
     for subcache in subcaches:
         process = Process(target=_read, args=(queue, subcache))
@@ -166,13 +172,26 @@ def read_cache_mp(cache, channel, start=None, end=None, format=None,
         process.start()
 
     # get data and block
-    out = TimeSeriesList(*(queue.get() for p in proclist))
+    data = [queue.get() for p in proclist]
     for process in proclist:
         process.join()
 
     # format and return
-    out.sort(key=lambda ts: ts.epoch.gps)
-    return out.join()
+    if cls in (TimeSeriesDict,):
+        if isinstance(channel, (unicode, str)):
+            channels = channel.split(',')
+        else:
+            channels = channel
+        if len(channels):
+            data.sort(key=lambda tsd: tsd.values()[0].epoch.gps)
+        out = TimeSeriesDict()
+        for tsd in data:
+            out.append(tsd)
+        return out
+    else:
+        out = TimeSeriesList(*data)
+        out.sort(key=lambda ts: ts.epoch.gps)
+        return out.join()
 
 
 def read_cache_threaded(cache, channel, start=None, end=None, format=None,
@@ -276,6 +295,11 @@ def read_state_cache_mp(*args, **kwargs):
     return read_cache_mp(*args, **kwargs)
 
 
+def read_dict_cache_mp(*args, **kwargs):
+    kwargs.setdefault('target', TimeSeriesDict)
+    return read_cache_mp(*args, **kwargs)
+
+
 def open_cache(lcf):
     """Read a LAL-format cache file into memory as a
     :class:`glue.lal.Cache`.
@@ -328,3 +352,9 @@ registry.register_reader('cache', StateVector, read_state_cache_mp, force=True)
 registry.register_reader('lcfmp', StateVector, read_state_cache_mp, force=True)
 registry.register_identifier('lcf', StateVector, identify_cache_file)
 registry.register_identifier('cache', StateVector, identify_cache)
+
+# TimeSeriesDict
+registry.register_reader('lcf', TimeSeriesDict, read_dict_cache_mp)
+registry.register_reader('cache', TimeSeriesDict, read_dict_cache_mp)
+registry.register_reader('lcfmp', TimeSeriesDict, read_dict_cache_mp)
+registry.register_identifier('lcf', TimeSeriesDict, identify_cache)
