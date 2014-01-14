@@ -145,16 +145,18 @@ class DataQualityFlag(object):
             filled appropriately.
         """
         # parse arguments
-        if len(args) == 1:
+        if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
+        elif len(args) == 1 and len(args[0]) == 2:
+            qsegs = SegmentList(Segment(args[0]))
         elif len(args) == 2:
-            qsegs = [args]
+            qsegs = SegmentList([Segment(args)])
         else:
             raise ValueError("DataQualityFlag.query must be called with a "
                              "flag name, and either GPS start and stop times, "
                              "or a SegmentList of query segments")
         # process query
-        flags = DataQualityDict.query([flag], *args, **kwargs)
+        flags = DataQualityDict.query([flag], qsegs, **kwargs)
         if len(flags) != 1:
             raise RuntimeError("Multiple flags returned for single query, "
                                "something went wrong")
@@ -292,11 +294,13 @@ class DataQualityDict(OrderedDict):
             A new `DataQualityFlag`, with the `valid` and `active` lists
             filled appropriately.
         """
-        # parse arguments
-        if len(args) == 1:
-            qsegs = args
+        # given segmentlist
+        if len(args) == 1 and isinstance(args[0], SegmentList):
+            qsegs = args[0]
+        elif len(args) == 1 and len(args[0]) == 2:
+            qsegs = SegmentList(Segment(args[0]))
         elif len(args) == 2:
-            qsegs = [args]
+            qsegs = SegmentList([Segment(args)])
         else:
             raise ValueError("DataQualityDict.query must be called with a "
                              "flag name, and either GPS start and stop times, "
