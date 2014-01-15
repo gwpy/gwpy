@@ -465,6 +465,7 @@ class Spectrogram(Array2D):
                 padding = numpy.ones(gapshape).view(new.__class__) * pad
                 padding.epoch = new.span[1]
                 padding.sample_rate = new.sample_rate
+                padding.unit = new.unit
                 new.append(padding, inplace=True)
             elif gap == 'ignore':
                 pass
@@ -522,6 +523,7 @@ class Spectrogram(Array2D):
                 padding = numpy.ones(gapshape).view(new.__class__) * pad
                 padding.epoch = other.span[1]
                 padding.dt = new.dt
+                padding.unit = new.unit
                 new.prepend(padding, inplace=True)
             elif gap == 'ignore':
                 pass
