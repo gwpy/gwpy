@@ -813,9 +813,12 @@ class TimeSeries(Series):
         """Check whether metadata attributes for self and other match.
         """
         if not self.sample_rate == other.sample_rate:
-            raise ValueError("TimeSeries sampling rates do not match.")
+            raise ValueError("TimeSeries sampling rates do not match: "
+                             "%s vs %s." % (self.sample_rate,
+                                            other.sample_rate))
         if not self.unit == other.unit:
-            raise ValueError("TimeSeries units do not match")
+            raise ValueError("TimeSeries units do not match: %s vs %s."
+                             % (str(self.unit), str(other.unit)))
         return True
 
     def is_contiguous(self, other):
