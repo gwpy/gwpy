@@ -1333,7 +1333,7 @@ class TimeSeriesDict(OrderedDict):
                         print("Downloading data...", end=' ')
                     data = _conn.fetch(start, end, ndschannels)
                 except RuntimeError as e:
-                    print(' Something went wong.')
+                    print(' Something went wrong.')
                     # if error and user supplied their own server, raise
                     if connection:
                         raise
