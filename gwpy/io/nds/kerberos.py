@@ -77,7 +77,8 @@ def which(program):
     raise ValueError("No executable '%s' found in PATH" % program)
 
 
-def kinit(username=None, password=None, realm=None, exe=None, keytab=None):
+def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
+          krb5ccname=None):
     """Initialise a kerboeros ticket to enable authenticated connections
     to the NDS2 server network
 
@@ -149,7 +150,12 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None):
         cmd = [exe, '-k', '-t', keytab, '%s@%s' % (username, realm)]
     else:
         cmd = [exe, '%s@%s' % (username, realm)]
-    kget = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+    if krb5ccname:
+        krbenv = {'KRB5CCNAME': krb5ccname}
+    else:
+        krbenv = None
+
+    kget = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE, env=krbenv)
     if not keytab:
         kget.communicate(password)
     kget.wait()
