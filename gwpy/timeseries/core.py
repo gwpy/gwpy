@@ -873,7 +873,7 @@ class TimeSeries(Series):
                     raise ValueError("Cannot append TimeSeries that starts "
                                      "before this one.")
                 gapshape = list(new.shape)
-                gapshape[0] = ngap
+                gapshape[0] = int(ngap)
                 padding = numpy.ones(gapshape).view(new.__class__) * pad
                 padding.epoch = new.span[1]
                 padding.sample_rate = new.sample_rate
