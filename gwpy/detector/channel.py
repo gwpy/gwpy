@@ -272,7 +272,7 @@ def parse_channel_name(name):
     else:
         ifo = None
     # parse systems
-    tags = _re_cchar.split(name, maxsplit=3)
+    tags = _re_cchar.split(name, maxsplit=2)
     if ',' in tags[-1]:
         from ..io import nds as ndsio
         tags[-1],ndstype = tags[-1].split(',')
@@ -348,8 +348,8 @@ class ChannelList(list):
         else:
             flags = 0
         if exact_match:
-            name = name.startswith('\\A') and name or r"\A%s" % name
-            name = name.endwith('\\Z') and name or r"%s\Z" % name
+            name = name.startswith(r'\A') and name or r"\A%s" % name
+            name = name.endswith(r'\Z') and name or r"%s\Z" % name
         name_regexp = re.compile(name, flags=flags)
         c = list(self)
         if name is not None:
