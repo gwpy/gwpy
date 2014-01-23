@@ -78,7 +78,7 @@ def which(program):
 
 
 def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
-          krb5ccname=None):
+          krb5ccname=None, verbose=False):
     """Initialise a kerboeros ticket to enable authenticated connections
     to the NDS2 server network
 
@@ -159,7 +159,8 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
     if not keytab:
         kget.communicate(password)
     kget.wait()
-    print("\nKerberos ticket generated for %s@%s" % (username, realm))
+    if verbose:
+        print("\nKerberos ticket generated for %s@%s" % (username, realm))
 
 
 def parse_keytab(keytab):
