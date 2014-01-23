@@ -58,6 +58,8 @@ class Series(Array):
 
     # rebuild getitem to handle complex slicing
     def __getitem__(self, item):
+        if isinstance(item, float) and item.is_integer():
+            item = int(item)
         new = super(Series, self).__getitem__(item)
         if isinstance(item, int):
             return Quantity(new, unit=self.unit)
