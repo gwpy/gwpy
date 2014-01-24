@@ -129,36 +129,43 @@ def _read_frame(framefile, channels, start=None, end=None, type=None,
         channels = channels.split(',')
     # open file
     stream = frameCPP.IFrameFStream(framefile)
-    # read table of contents
     toc = stream.GetTOC()
-    nframes = toc.GetNFrame()
     epochs = toc.GTimeS
-    # read channel lists: XXX: this needs optimised, most of time taken is
-    #                          building the channel lists
-    if not type:
+    # work out channel types
+    if type:
+        ctype = dict((str(channel), type) for channel in channels)
+    else:
         try:
             adcs = toc.GetADC().keys()
         except AttributeError:
-            adcs = []
+            adcs = toc.GetADC()
         try:
             procs = toc.GetProc().keys()
         except AttributeError:
-            procs = []
+            procs = toc.GetProc()
+        ctype = {}
+        for channel in channels:
+            name = str(channel)
+            if name in adcs:
+                ctype[name] = 'adc'
+            elif name in procs:
+                ctype[name] = 'proc'
+            else:
+                raise ValueError("Channel %s not found in frame table of "
+                                 "contents" % name)
 
+    # set output
     out = TimeSeriesDict()
     for channel in channels:
         name = str(channel)
-        if type:
-            read_ = getattr(stream, 'ReadFr%sData' % type.title())
-        else:
-            read_ = (name in adcs and stream.ReadFrAdcData or
-                     name in procs and stream.ReadFrProcData or None)
-        if read_ is None:
-            raise ValueError("Channel %s not found in frame table of contents"
-                             % name)
+        read_ = getattr(stream, 'ReadFr%sData' % ctype[name].title())
         ts = None
-        for i in range(nframes):
-            data = read_(i, name)
+        i = 0
+        while True:
+            try:
+                data = read_(i, name)
+            except IndexError:
+                break
             offset = data.GetTimeOffset()
             fs = data.GetSampleRate()
             for vect in data.data:
@@ -170,6 +177,7 @@ def _read_frame(framefile, channels, start=None, end=None, type=None,
                                     unit=unit)
                 else:
                     ts.append(arr)
+            i += 1
         if ts is not None:
             out[channel] = ts.copy()
 
