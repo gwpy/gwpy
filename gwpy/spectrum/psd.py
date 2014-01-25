@@ -45,6 +45,11 @@ __version__ = version.version
 
 __all__ = ['bartlett', 'welch', 'median_mean', 'median', 'spectrogram']
 
+# cache windows internally
+LALWINDOWS = {}
+LAL_FFTPLANS = {}
+LAL_FFTPLAN_LEVEL = 1
+
 
 def bartlett(timeseries, segmentlength, window=None):
     """Calculate the power spectral density of the given `TimeSeries`
@@ -181,14 +186,32 @@ def lal_psd(timeseries, method, segmentlength, overlap, window=None):
     except ImportError as e:
         raise ImportError('%s. Try using gwpy.spectrum.scipy_psd instead'
                           % str(e))
+    else:
+        from lal import (lal, utils as lalutils)
     if isinstance(segmentlength, units.Quantity):
         segmentlength = segmentlength.value
     if isinstance(overlap, units.Quantity):
         overlap = overlap.value
     lalts = timeseries.to_lal()
-    lalwin = window is not None and window.to_lal() or None
+    stype = lalutils.dtype(lalts)
+    # get cached window
+    if window is None:
+        global LALWINDOWS
+        if segmentlength not in LALWINDOWS:
+            LALWINDOWS[segmentlength] = getattr(
+                        lal, 'CreateKaiser%sWindow' % stype)(segmentlength, 24)
+        lalwin = LALWINDOWS[segmentlength]
+    else:
+        lalwin = window.to_lal()
+    # get cached FFT plan
+    global LAL_FFTPLANS
+    if segmentlength not in LAL_FFTPLANS:
+        LAL_FFTPLANS[segmentlength] = getattr(
+                       lal, 'CreateForward%sFFTPlan' % stype)(segmentlength,
+                                                              LAL_FFTPLAN_LEVEL)
+    fftplan = LAL_FFTPLANS[segmentlength]
     lalfs = lalspectrum._psd(method, lalts, segmentlength, overlap,
-                             window=lalwin)
+                             window=lalwin, plan=fftplan)
     spec = Spectrum.from_lal(lalfs)
     spec.channel = timeseries.channel
     if timeseries.unit:
