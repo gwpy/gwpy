@@ -363,8 +363,9 @@ class ChannelList(list):
                  sample_range[0] <= float(entry.sample_rate) <=
                  sample_range[1]]
         for attr, val in others.iteritems():
-            c = [entry for entry in c if
-                 (hasattr(entry, attr) and getattr(entry, attr) == val)]
+            if val is not None:
+                c = [entry for entry in c if
+                     (hasattr(entry, attr) and getattr(entry, attr) == val)]
 
         return self.__class__(c)
 
