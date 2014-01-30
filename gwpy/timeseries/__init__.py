@@ -26,3 +26,4 @@ from .core import *
 from .statevector import *
 
 from ..io import (lcf, losc, gwf)
+from ..io.gwf import identify

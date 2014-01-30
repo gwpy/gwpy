@@ -34,8 +34,6 @@ from ...version import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version
 
-from . import identify
-
 try:
     from . import lalfr
 except ImportError:
