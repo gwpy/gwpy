@@ -162,7 +162,7 @@ class TimeSeries(Series):
     def span(self):
         """Time Segment encompassed by thie `TimeSeries`.
         """
-        return Segment(*map(numpy.float64, Series.span.fget(self)))
+        return Segment(*Series.span.fget(self))
 
     @property
     def duration(self):
