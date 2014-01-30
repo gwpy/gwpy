@@ -49,6 +49,8 @@ from .filter import *
 from .table import *
 
 GWPY_PLOT_PARAMS = {
+    "axes.color_cycle": ['b', 'g', 'r', 'c', 'm', 'y', 'gray', 'gold',
+                         'k', 'orange'],
     "axes.grid": True,
     "axes.axisbelow": False,
     "axes.labelsize": 22,
