@@ -23,6 +23,7 @@ import sys
 import stat
 import urllib2
 import cookielib
+import warnings
 
 from glue.auth.saml import HTTPNegotiateAuthHandler
 
@@ -63,7 +64,10 @@ def request(url, debug=False):
         os.chmod(COOKIE_JAR, stat.S_IRUSR | stat.S_IWUSR)
 
         # set ignore_discard so that session cookies are preserved
-        jar.load(COOKIE_JAR, ignore_discard = True)
+        try:
+            jar.load(COOKIE_JAR, ignore_discard = True)
+        except cookielib.LoadError as e:
+            warnings.warn('cookielib.LoadError caught: %s' % str(e))
 
     # create a cookie handler from the cookier jar
     cookie_handler = urllib2.HTTPCookieProcessor(jar)
