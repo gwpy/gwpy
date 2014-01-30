@@ -398,8 +398,10 @@ class ChannelList(list):
             c = [entry for entry in c if
                  name_regexp.search(entry.name) is not None]
         if sample_rate is not None:
+            sample_rate = (isinstance(sample_rate, units.Quantity) and
+                           sample_rate.value or float(sample_rate))
             c = [entry for entry in c if
-                 float(entry.sample_rate) == sample_rate]
+                 entry.sample_rate.value == sample_rate]
         if sample_range is not None:
             c = [entry for entry in c if
                  sample_range[0] <= float(entry.sample_rate) <=
