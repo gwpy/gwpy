@@ -307,7 +307,8 @@ class TimeSeries(Series):
         #    new.dx = new.frequencies[1] - new.frequencies[0]
         return new
 
-    def psd(self, fftlength=None, fftstride=None, method='welch', window=None):
+    def psd(self, fftlength=None, fftstride=None, method='welch', window=None,
+            plan=None):
         """Calculate the power spectral density (PSD) `Spectrum` for this
         `TimeSeries`.
 
@@ -331,6 +332,9 @@ class TimeSeries(Series):
             average spectrum method
         window : `timeseries.Window`, optional
             window function to apply to timeseries prior to FFT
+        plan : :lalsuite:`XLALREAL8ForwardFFTPlan`, optional
+            LAL FFT plan to use when generating average spectrum,
+            substitute type 'REAL8' as appropriate.
 
         Returns
         -------
@@ -344,11 +348,11 @@ class TimeSeries(Series):
             fftstride = fftlength
         fftlength *= self.sample_rate.value
         fftstride *= self.sample_rate.value
-        if window is not None:
+        if isinstance(window, str):
             window = get_window(window, fftlength)
         try:
             psd_ = psd.lal_psd(self, method, int(fftlength), int(fftstride),
-                               window=window)
+                               window=window, plan=plan)
         except ImportError:
             if window is None:
                 window = 'hanning'
@@ -358,7 +362,8 @@ class TimeSeries(Series):
             psd_.unit.__doc__ = "Power spectral density"
         return psd_
 
-    def asd(self, fftlength=None, fftstride=None, method='welch', window=None):
+    def asd(self, fftlength=None, fftstride=None, method='welch', window=None,
+            plan=None):
         """Calculate the amplitude spectral density (ASD) `Spectrum` for this
         `TimeSeries`.
 
@@ -382,6 +387,9 @@ class TimeSeries(Series):
             average spectrum method
         window : `timeseries.Window`, optional
             window function to apply to timeseries prior to FFT
+        plan : :lalsuite:`XLALREAL8ForwardFFTPlan`, optional
+            LAL FFT plan to use when generating average spectrum,
+            substitute type 'REAL8' as appropriate.
 
         Returns
         -------
@@ -389,7 +397,7 @@ class TimeSeries(Series):
             a data series containing the ASD.
         """
         asd = self.psd(fftlength, fftstride=fftstride, method=method,
-                       window=window)
+                       window=window, plan=plan)
         asd **= 1/2.
         if asd.unit:
             asd.unit.__doc__ = "Amplitude spectral density"
