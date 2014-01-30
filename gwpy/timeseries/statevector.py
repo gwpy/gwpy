@@ -33,6 +33,7 @@ from itertools import izip
 if sys.version_info[0] < 3:
     range = xrange
 
+from glue.segmentsUtils import from_bitstream
 from astropy.units import (Unit, Quantity)
 
 from .core import *
@@ -118,26 +119,7 @@ class StateTimeSeries(TimeSeries):
         active = SegmentList()
         start = self.x0.value
         dt = self.dx.value
-        bitstream = iter(self.data)
-        i = 0
-        while True:
-            try:
-                if bitstream.next():
-                    # found start of True block; find the end
-                    j = i + 1
-                    try:
-                        while bitstream.next():
-                            j += 1
-                    except StopIteration:
-                        pass
-                    finally:  # make sure StopIteration doesn't kill final segment
-                        if j - i >= minlen:
-                           active.append(Segment(start + i * dt,
-                                                 start + j * dt))
-                    i = j  # advance to end of block
-                i += 1
-            except StopIteration:
-                break
+        active = from_bitstream(self.data, start, dt, minlen=int(minlen))
         if dtype is not float:
             active = active.__class__([Segment(dtype(s[0]), dtype(s[1])) for
                                        s in active])
@@ -341,9 +323,10 @@ class StateVector(TimeSeries):
                     self._bits.append(None)
                 else:
                     self._bits.append(StateTimeSeries(
-                                     self.boolean.data[:,i], name=bit,
-                                     epoch=self.x0.value, channel=self.channel,
-                                     sample_rate=self.sample_rate))
+                                          self.data >> i & 1, name=bit,
+                                          epoch=self.x0.value,
+                                          channel=self.channel,
+                                          sample_rate=self.sample_rate))
             return self.bits
 
     # -------------------------------------------
