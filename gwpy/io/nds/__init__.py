@@ -19,20 +19,18 @@
 to LIGO data.
 """
 
-import nds2
 import os
 import sys
 from math import (floor, ceil)
 
-from ... import (version, detector)
-from ...detector import Channel
-from ...time import Time
+import nds2
 
+from ... import version
+from ...time import Time
 from .kerberos import *
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
-
 
 try:
     from collections import OrderedDict
