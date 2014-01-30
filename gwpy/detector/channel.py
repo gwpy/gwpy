@@ -199,7 +199,7 @@ class Channel(object):
         return self.name
 
     def __repr__(self):
-        return 'Channel("%s")' % str(self)
+        return '<Channel("%s") at %s>' % (str(self), hex(id(self)))
 
     @property
     def tex_name(self):
@@ -256,6 +256,16 @@ class Channel(object):
             dtype = lalutils.NUMPY_TYPE_FROM_LAL[laltype]
         return cls(name, sample_rate=sample_rate, unit=unit, dtype=dtype,
                    type=ctype)
+
+    def __eq__(self, other):
+        for attr in ['name', 'sample_rate', 'unit', 'url', 'type', 'dtype']:
+            if getattr(self, attr) != getattr(other, attr):
+                return False
+        return True
+
+    def __hash__(self):
+        return hash((str(self), str(self.sample_rate), str(self.unit),
+                    self.url, self.type, self.dtype))
 
 _re_ifo = re.compile("[A-Z]\d:")
 _re_cchar = re.compile("[-_]")
