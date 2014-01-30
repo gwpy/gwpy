@@ -404,7 +404,8 @@ class TimeSeries(Series):
         return asd
 
     def spectrogram(self, stride, fftlength=None, fftstride=None,
-                    method='welch', window=None):
+                    method='welch', window=None, plan=None,
+                    maxprocesses=1, minprocesssize=1000):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
 
@@ -420,41 +421,29 @@ class TimeSeries(Series):
             number of seconds between FFTs
         window : `timeseries.window.Window`, optional, default: `None`
             window function to apply to timeseries prior to FFT
+        plan : :lalsuite:`XLALREAL8ForwardFFTPlan`, optional
+            LAL FFT plan to use when generating average spectrum,
+            substitute type 'REAL8' as appropriate.
+        maxprocesses : `int`, default: ``1``
+            maximum number of independent frame reading processes, default
+            is set to single-process file reading.
+        minprocesssize : `int`, default: ``1000``
+            number of individual FFTs to squeeze into a single process.
+            large number by default to optimise short-duration FFT relative
+            to overhead of multiprocessing.
+
+        Returns
+        -------
+        spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
+            time-frequency power spectrogram as generated from the
+            input time-series.
         """
-        from ..spectrogram import Spectrogram
-        if fftlength is None:
-            fftlength = stride
-        if fftstride is None:
-            fftstride = fftlength
-        dt = stride
-        df = 1/fftlength
-        stride *= self.sample_rate.value
-
-        # get size of Spectrogram
-        nsteps = int(self.size // stride)
-        # get number of frequencies
-        nfreqs = int(fftlength*self.sample_rate.value // 2 + 1)
-
-        # generate output spectrogram
-        out = Spectrogram(numpy.zeros((nsteps, nfreqs)), channel=self.channel,
-                          epoch=self.epoch, f0=0, df=df, dt=dt, copy=True)
-        if not nsteps:
-            return out
-
-        # stride through TimeSeries, recording PSDs as columns of spectrogram
-        for step in range(nsteps):
-            # find step TimeSeries
-            idx = stride * step
-            idx_end = idx + stride
-            stepseries = self[idx:idx_end]
-            steppsd = stepseries.psd(fftlength, fftstride, method,
-                                     window=window)
-            out[step] = steppsd.data
-        try:
-            out.unit = self.unit / units.Hertz
-        except KeyError:
-            out.unit = 1 / units.Hertz
-        return out
+        from ..spectrogram import from_timeseries
+        return from_timeseries(self, stride, fftlength=fftlength,
+                               fftstride=fftstride, method=method,
+                               window=window, plan=plan,
+                               maxprocesses=maxprocesses,
+                               minprocesssize=minprocesssize)
 
     def fftgram(self, stride):
         """Calculate the Fourier-gram of this `TimeSeries`.
