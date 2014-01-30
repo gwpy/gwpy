@@ -202,7 +202,7 @@ class Channel(object):
         return '<Channel("%s") at %s>' % (str(self), hex(id(self)))
 
     @property
-    def tex_name(self):
+    def texname(self):
         """Name of this `Channel` in LaTeX printable format
         """
         return str(self).replace("_", r"\_")
