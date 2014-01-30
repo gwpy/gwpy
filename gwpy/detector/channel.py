@@ -22,7 +22,7 @@ import re
 import numpy
 
 
-from astropy import units as aunits
+from astropy import units
 
 from .. import version
 
@@ -135,14 +135,14 @@ class Channel(object):
 
     @sample_rate.setter
     def sample_rate(self, rate):
-        if isinstance(rate, aunits.Unit):
+        if isinstance(rate, units.Unit):
             self._sample_rate = rate
         elif rate is None:
             self._sample_rate = None
-        elif isinstance(rate, aunits.Quantity):
+        elif isinstance(rate, units.Quantity):
             self._sample_rate = rate
         else:
-            self._sample_rate = aunits.Quantity(float(rate), unit=aunits.Hertz)
+            self._sample_rate = units.Quantity(float(rate), unit=units.Hertz)
 
     @property
     def unit(self):
@@ -157,7 +157,7 @@ class Channel(object):
         if u is None:
             self._unit = None
         else:
-            self._unit = aunits.Unit(u)
+            self._unit = units.Unit(u)
 
     @property
     def model(self):
