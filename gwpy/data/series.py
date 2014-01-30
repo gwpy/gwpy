@@ -58,21 +58,27 @@ class Series(Array):
 
     # rebuild getitem to handle complex slicing
     def __getitem__(self, item):
-        if isinstance(item, float) and item.is_integer():
-            item = int(item)
-        new = super(Series, self).__getitem__(item)
-        if isinstance(item, int):
-            return Quantity(new, unit=self.unit)
+        if isinstance(item, (float, int)):
+            return Quantity(super(Series, self).__getitem__(item), self.unit)
         elif isinstance(item, slice):
+            item = slice(item.start is not None and int(item.start) or None,
+                         item.stop is not None and int(item.stop) or None,
+                         item.step is not None and int(item.step) or None)
+            new = super(Series, self).__getitem__(item)
             if item.start:
-                new.x0 += int(item.start) * new.dx
+                new.x0 = float(self.x0.value)
+                new.x0 += item.start * new.dx
             if item.step:
-                new.dx *= int(item.step)
-        elif isinstance(item, (list, tuple, numpy.ndarray)):
-            new.index = self.index[item]
+                new.dx = float(self.dx.value)
+                new.dx *= item.step
+            return new
         else:
-            new.index = self.index[item.argmax()]
-        return new
+            new = super(Series, self).__getitem__(item)
+            if isinstance(item, (list, tuple, numpy.ndarray)):
+                new.index = self.index[item]
+            else:
+                new.index = self.index[item.argmax()]
+            return new
 
     # -------------------------------------------
     # Series properties
