@@ -121,7 +121,8 @@ class Series(Array):
     def span(self):
         """Extent of this `Series`
         """
-        return Segment(self.x0, self.x0 + self.shape[0] * self.dx)
+        return Segment(self.x0.value,
+                       self.x0.value + self.shape[0] * self.dx.value)
 
     @property
     def index(self):
