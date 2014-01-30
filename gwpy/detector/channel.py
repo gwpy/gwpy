@@ -25,6 +25,7 @@ import numpy
 from astropy import units
 
 from .. import version
+from ..io import nds as ndsio
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
@@ -172,6 +173,30 @@ class Channel(object):
         self._model = mdl and mdl.lower() or mdl
 
     @property
+    def type(self):
+        """DAQ data type for this channel.
+
+        Valid values for this field are restricted to those understood
+        by the NDS2 client sofware, namely:
+
+        'm-trend', 'online', 'raw', 'reduced', 's-trend', 'static', 'test-pt'
+
+        :type: `str`
+        """
+        return self._type
+
+    @type.setter
+    def type(self, type_):
+        if type_ is None:
+            self._type = None
+        elif isinstance(type_, int):
+            self._type = ndsio.NDS2_CHANNEL_TYPESTR[type_]
+        elif type_.lower() in ndsio.NDS2_CHANNEL_TYPE:
+            self._type = type_.lower()
+        else:
+            raise ValueError("Channel type '%s' not understood." % type_)
+
+    @property
     def dtype(self):
         """Numeric type for data in this `Channel`
 
@@ -206,6 +231,15 @@ class Channel(object):
         """Name of this `Channel` in LaTeX printable format
         """
         return str(self).replace("_", r"\_")
+
+    @property
+    def ndsname(self):
+        """Name of this `Channel` as stored in the NDS database
+        """
+        if self.type is not None:
+            return '%s,%s' % (self.name, self.type)
+        else:
+            return '%s,raw' % self.name
 
     @classmethod
     def query(cls, name, debug=False):
@@ -284,9 +318,7 @@ def parse_channel_name(name):
     # parse systems
     tags = _re_cchar.split(name, maxsplit=2)
     if ',' in tags[-1]:
-        from ..io import nds as ndsio
-        tags[-1],ndstype = tags[-1].split(',')
-        ndstype = ndsio.NDS2_CHANNEL_TYPE[ndstype]
+        tags[-1], ndstype = tags[-1].rsplit(',', 1)
     else:
         ndstype = None
     system = tags[0]

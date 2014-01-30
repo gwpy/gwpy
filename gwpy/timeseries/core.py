@@ -1276,7 +1276,7 @@ class TimeSeriesDict(OrderedDict):
                 all([isinstance(c, Channel) for c in channels])):
             types_ = set([c.type for c in channels])
             if len(types_) == 1:
-                ndschanneltype = list(types_)[0]
+                ndschanneltype = ndsio.NDS2_CHANNEL_TYPE[list(types_)[0]]
         if not ndschanneltype:
             ndschanneltype = (nds2.channel.CHANNEL_TYPE_RAW |
                               nds2.channel.CHANNEL_TYPE_RDS |
@@ -1293,16 +1293,13 @@ class TimeSeriesDict(OrderedDict):
         # build channellist
         ndschannels = []
         for channel in channels:
-            if (isinstance(channel, Channel) and ',' not in str(channel) and
-                    channel.type in [8, 16]):
-                ndschannels.append('%s,%s'
-                              % (str(channel),
-                                 ndsio.NDS2_CHANNEL_TYPESTR[channel.type]))
+            if channel.type:
+                ndschannels.append(channel.ndsname)
             else:
                 ndschannels.append(str(channel))
 
         # test for minute trends
-        if (any([c.endswith('m-trend') for c in channels]) and
+        if (any([c.type == 'm-trend' for c in channels]) and
                 (start % 60 or end % 60)):
             warnings.warn("Requested at least one minute trend, but "
                           "start and stop GPS times are not modulo "
