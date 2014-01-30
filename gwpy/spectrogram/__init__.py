@@ -23,3 +23,4 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 from .core import *
+from .spectrogram import from_timeseries
