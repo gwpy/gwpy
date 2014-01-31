@@ -46,7 +46,7 @@ else:
 
 from ..segments import Segment
 from ..timeseries import (TimeSeries, TimeSeriesList, TimeSeriesDict,
-                          StateVector)
+                          StateVector, StateVectorDict)
 
 
 class GWFInputThread(threading.Thread):
@@ -85,7 +85,7 @@ class GWFInputThread(threading.Thread):
                                   end=self.gpsend, **self.kwargs)
 
 
-def read_cache_mp(cache, channel, start=None, end=None,
+def read_cache_mp(cache, channel, start=None, end=None, resample=None,
                   maxprocesses=1, minprocesssize=1, maxprocesssize=None,
                   **kwargs):
     """Read a `TimeSeries` from a cache of data files using
@@ -105,6 +105,8 @@ def read_cache_mp(cache, channel, start=None, end=None,
         start GPS time of desired data
     end : `Time`, :lalsuite:`LIGOTimeGPS`, optional
         end GPS time of desired data
+    resample : `float`, optional
+        rate (samples per second) to resample
     format : `str`, optional
         name of data file format, e.g. ``gwf`` or ``hdf``.
     maxprocesses : `int`, default: ``1``
@@ -143,15 +145,15 @@ def read_cache_mp(cache, channel, start=None, end=None,
 
     # single-process
     if maxprocesses == 1:
-        return cls.read(cache, channel, format=format_,
-                        start=start, end=end, **kwargs)
+        return cls.read(cache, channel, format=format_, start=start, end=end,
+                        resample=resample, **kwargs)
 
     # define how to read each frame
     def _read(q, subcache):
         qs = float(max(start or -1, float(subcache[0].segment[0])))
         qe = float(min(end or infinity, float(subcache[-1].segment[1])))
         q.put(cls.read(subcache, channel, format=format_, start=qs, end=qe,
-                       **kwargs))
+                       resample=resample, **kwargs))
 
     # separate cache into parts
     fperproc = int(ceil(len(cache) / maxprocesses))
@@ -177,16 +179,18 @@ def read_cache_mp(cache, channel, start=None, end=None,
         process.join()
 
     # format and return
-    if cls in (TimeSeriesDict,):
+    if issubclass(cls, dict):
         if isinstance(channel, (unicode, str)):
             channels = channel.split(',')
         else:
             channels = channel
         if len(channels):
             data.sort(key=lambda tsd: tsd.values()[0].epoch.gps)
-        out = TimeSeriesDict()
-        for tsd in data:
+        out = cls()
+        while len(data):
+            tsd = data.pop(0)
             out.append(tsd)
+            del tsd
         return out
     else:
         out = TimeSeriesList(*data)
@@ -294,9 +298,12 @@ def read_state_cache_mp(*args, **kwargs):
     kwargs.setdefault('target', StateVector)
     return read_cache_mp(*args, **kwargs)
 
-
 def read_dict_cache_mp(*args, **kwargs):
     kwargs.setdefault('target', TimeSeriesDict)
+    return read_cache_mp(*args, **kwargs)
+
+def read_state_dict_cache_mp(*args, **kwargs):
+    kwargs.setdefault('target', StateVectorDict)
     return read_cache_mp(*args, **kwargs)
 
 
@@ -358,3 +365,9 @@ registry.register_reader('lcf', TimeSeriesDict, read_dict_cache_mp)
 registry.register_reader('cache', TimeSeriesDict, read_dict_cache_mp)
 registry.register_reader('lcfmp', TimeSeriesDict, read_dict_cache_mp)
 registry.register_identifier('lcf', TimeSeriesDict, identify_cache)
+
+# StateVectorDict
+registry.register_reader('lcf', StateVectorDict, read_state_dict_cache_mp)
+registry.register_reader('cache', StateVectorDict, read_state_dict_cache_mp)
+registry.register_reader('lcfmp', StateVectorDict, read_state_dict_cache_mp)
+registry.register_identifier('lcf', StateVectorDict, identify_cache)

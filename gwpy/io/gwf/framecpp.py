@@ -37,14 +37,15 @@ from glue.lal import (Cache, CacheEntry)
 
 from ... import version
 from ...utils import gprint
-from ...timeseries import (TimeSeries, TimeSeriesDict, StateVector)
+from ...timeseries import (TimeSeries, TimeSeriesDict,
+                           StateVector, StateVectorDict)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 
 def read_timeseriesdict(source, channels, start=None, end=None, type=None,
-                        verbose=False):
+                        resample=None, verbose=False, _SeriesClass=TimeSeries):
     """Read the data for a list of channels from a GWF data source.
 
     Parameters
@@ -56,15 +57,17 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
         - :class:`glue.lal.Cache`, `list` : contiguous list of frame paths
 
     channels : `list`
-        list of channel names (or `Channel` objects) to read from frame
+        list of channel names (or `Channel` objects) to read from frame.
     start : `Time`, :lalsuite:`LIGOTimeGPS`, optional
-        start GPS time of desired data
+        start GPS time of desired data.
     end : `Time`, :lalsuite:`LIGOTimeGPS`, optional
-        end GPS time of desired data
-    channeltype : `str`
-        type of channel, one of ``adc`` or ``proc``
+        end GPS time of desired data.
+    type : `str`
+        type of channel, one of ``'adc'`` or ``'proc'``.
+    resample : `float`, optional
+        rate of samples per second at which to resample input TimeSeries.
     verbose : `bool`, optional
-        print verbose output
+        print verbose output.
 
     Returns
     -------
@@ -94,6 +97,16 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
         filelist = source.pfnlist()
     else:
         filelist = list(source)
+    # parse resampling
+    if isinstance(resample, int):
+        resample = dict((channel, resample) for channel in channels)
+    elif isinstance(resample, (tuple, list)):
+        resample = dict(zip(channel, resample))
+    elif resample is None:
+        resample = {}
+    elif not isinstance(resample, dict):
+        raise ValueError("Cannot parse resample request, please review "
+                         "documentation for that argument")
     # read each individually and append
     N = len(filelist)
     if verbose:
@@ -103,22 +116,48 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
                % (verbose, len(channels), N), end='')
     out = TimeSeriesDict()
     for i,fp in enumerate(filelist):
-        out.append(_read_frame(fp, channels, start=start, end=end, type=type,
-                               verbose=verbose))
+        # read frame
+        new = _read_frame(fp, channels, type=type, verbose=verbose,
+                          _SeriesClass=_SeriesClass)
+        # resample data
+        for channel, ts in new.iteritems():
+             if resample is not None and channel in resample:
+                 new[channel] = ts.resample(resample[channel])
+        # store
+        out.append(new)
         if verbose is not False:
             gprint("%sReading %d channels from frames... %d/%d (%.1f%%)\r"
                    % (verbose, len(channels), i, N, i/N * 100), end='')
     if verbose is not False:
         gprint("%sReading %d channels from frames... %d/%d (100%%)"
                % (verbose, len(channels), N, N))
+    # crop
+    for channel, ts in out.iteritems():
+        if start is not None or end is not None:
+            out[channel] = out[channel].crop(start=start, end=end)
     return out
 
 
 def _read_frame(framefile, channels, start=None, end=None, type=None,
-                verbose=False):
+                verbose=False, _SeriesClass=TimeSeries):
     """Internal function to read data from a single frame.
 
     All users should be using the wrapper `read_timeseriesdict`.
+
+    Parameters
+    ----------
+    framefile : `str`
+        path to GWF-format frame file on disk.
+    channels : `list`
+        list of channels to read.
+    start : `LIGOTimeGPS`, `float`, optional
+        GPS start time at which to begin reading.
+    end : `LIGOTimeGPS`, `float`, optional
+        GPS end time at which to begin reading.
+    type : `str`, optional
+        channel data type to read, one of: ``'adc'``, ``'proc'``.
+    verbose : `bool`, optional
+        print verbose output, optional, default: `False`
 
     Returns
     -------
@@ -167,19 +206,19 @@ def _read_frame(framefile, channels, start=None, end=None, type=None,
             except IndexError:
                 break
             offset = data.GetTimeOffset()
+            thisepoch = epochs[i] + offset
             fs = data.GetSampleRate()
             for vect in data.data:
                 arr = vect.GetDataArray()
                 if ts is None:
                     unit = vect.GetUnitY()
-                    ts = TimeSeries(arr, epoch=epochs[i] + offset,
-                                    sample_rate=fs, name=name, channel=channel,
-                                    unit=unit)
+                    ts = _SeriesClass(arr, epoch=thisepoch, sample_rate=fs,
+                                      name=name, channel=channel, unit=unit)
                 else:
                     ts.append(arr)
             i += 1
         if ts is not None:
-            out[channel] = ts.copy()
+            out[channel] = ts.crop(start=start, end=end, copy=True)
 
     return out
 
@@ -211,6 +250,17 @@ def read_timeseries(source, channel, **kwargs):
     return read_timeseriesdict(source, [channel], **kwargs)[channel]
 
 
+def read_statevectordict(source, channels, bitmasks=[], **kwargs):
+    """Read a `StateVectorDict` of data from a gravitational-wave
+    frame file.
+    """
+    kwargs.setdefault('_SeriesClass', StateVector)
+    svd = StateVectorDict(read_timeseriesdict(source, channels, **kwargs))
+    for (channel, bitmask) in zip(channels, bitmasks):
+        svd[channel].bitmask = bitmask
+    return svd
+
+
 def read_statevector(source, channel, bitmask=[], **kwargs):
     """Read a `StateVector` of data from a gravitational-wave frame file
 
@@ -237,15 +287,20 @@ def read_statevector(source, channel, bitmask=[], **kwargs):
     data : :class:`~gwpy.timeseries.core.StateVector`
         a new `StateVector` containing the data read from disk
     """
-    sv = read_timeseries(source, channel, **kwargs).view(StateVector)
+    kwargs.setdefault('_SeriesClass', StateVector)
+    sv = read_timeseries(source, channel, **kwargs)
     sv.bitmask = bitmask
     return sv
 
+
 registry.register_reader('framecpp', TimeSeriesDict, read_timeseriesdict)
 registry.register_reader('framecpp', TimeSeries, read_timeseries)
+registry.register_reader('framecpp', StateVectorDict, read_statevectordict)
 registry.register_reader('framecpp', StateVector, read_statevector)
 
 # force this as the 'gwf' reader
 registry.register_reader('gwf', TimeSeriesDict, read_timeseriesdict, force=True)
 registry.register_reader('gwf', TimeSeries, read_timeseries, force=True)
+registry.register_reader('gwf', StateVectorDict, read_statevectordict,
+                         force=True)
 registry.register_reader('gwf', StateVector, read_statevector, force=True)
