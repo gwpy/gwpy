@@ -26,12 +26,14 @@ arrays, representing a bit mask of states that combine to make a detailed
 statement of instrumental operation
 """
 
-import numpy
+from math import (ceil, log)
 import sys
 from itertools import izip
 
 if sys.version_info[0] < 3:
     range = xrange
+
+import numpy
 
 from glue.segmentsUtils import from_bitstream
 from astropy.units import (Unit, Quantity)
@@ -265,7 +267,7 @@ class StateVector(TimeSeries):
         """Generate a new StateTimeSeries
         """
         if not isinstance(data, cls):
-            data = data.astype(numpy.uint64)
+            data = numpy.asarray(data).astype(numpy.uint64)
         return super(StateVector, cls).__new__(cls, data, name=name,
                                                epoch=epoch, channel=channel,
                                                sample_rate=sample_rate,
@@ -287,7 +289,8 @@ class StateVector(TimeSeries):
     @bitmask.setter
     def bitmask(self, mask):
         if not isinstance(mask, BitMask):
-            mask = BitMask(mask, channel=self.channel, epoch=self.epoch)
+            mask = BitMask(mask, channel=self.channel,
+                           epoch=self.metadata.get('epoch', None))
         self.metadata['bitmask'] = mask
 
     @property
