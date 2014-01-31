@@ -146,8 +146,10 @@ def from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
         if plan is None:
             plan = psd.generate_lal_fft_plan(nFFT, dtype=timeseries.dtype)
 
+    nproc = max(1, int(nsteps // minprocesssize))
+
     # single-process return
-    if maxprocesses == 1 or nsteps == 0:
+    if maxprocesses == 1 or nsteps == 0 or nproc == 1:
         return _from_timeseries(timeseries, stride, fftlength=fftlength,
                                 fftstride=fftstride, method=method,
                                 window=window)
@@ -159,10 +161,9 @@ def from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
                                window=window, plan=plan))
 
     # otherwise build process list
-    queue = ProcessQueue(maxprocesses)
-    nproc = max(1, int(nsteps // minprocesssize))
     stepperproc = int(ceil(nsteps / nproc))
     nsamp = stepperproc * timeseries.sample_rate.value * stride
+    queue = ProcessQueue(maxprocesses)
     processlist = []
     for i in range(nproc):
         process = Process(target=_specgram,
