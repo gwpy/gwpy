@@ -205,7 +205,7 @@ class Series(Array):
         """
         if isinstance(rate, Quantity):
             rate = rate.value
-        N = self.shape[0] * self.dx * rate
+        N = int(self.shape[0] * self.dx.value * rate)
         data = signal.resample(self.data, N, window=window)
         new = self.__class__(data, dtype=dtype or self.dtype)
         new.metadata = self.metadata.copy()
