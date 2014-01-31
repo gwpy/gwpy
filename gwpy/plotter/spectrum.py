@@ -37,43 +37,6 @@ __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-class SpectrumPlot(Plot):
-    """Plot data from a LAL TimeSeries object
-    """
-    def __init__(self, *series, **kwargs):
-        # extract plotting keyword arguments
-        plotargs = dict()
-        plotargs["linewidth"] = kwargs.pop("linewidth", 2)
-        plotargs["color"] = kwargs.pop("color", "black")
-        plotargs["linestyle"] = kwargs.pop("linestyle", "-")
-        plotargs["label"] = kwargs.pop("label", None)
-        sep = kwargs.pop('sep', False)
-        logx = kwargs.pop('logx', True)
-        logy = kwargs.pop('logy', True)
-
-        # initialise figure
-        super(SpectrumPlot, self).__init__(**kwargs)
-        self._series = []
-
-        # plot time series
-        for i, spectrum in enumerate(series):
-            self.add_spectrum(spectrum, newax=sep, **plotargs)
-            self.axes[-1].fmt_xdata = lambda f: ('%s [%s]'
-                                                 % (f, spectrum.xunit))
-            self.axes[-1].fmt_ydata = lambda a: ('%s [%s]'
-                                                 % (a, spectrum.unit))
-            if logx:
-                xlim = list(self.axes[-1].get_xlim())
-                if not xlim[0]:
-                    xlim[0] = spectrum.df.value
-                self.axes[-1].set_xscale('log')
-                self.axes[-1].set_xlim(*xlim)
-            if logy:
-                self.axes[-1].set_yscale('log')
-        for ax in self.axes:
-            ax.legend()
-
-
 class SpectrumAxes(Axes):
     """Extension of the basic matplotlib :class:`~matplotlib.axes.Axes`
     specialising in frequency-series display
@@ -255,3 +218,42 @@ class SpectrumAxes(Axes):
 
 
 register_projection(SpectrumAxes)
+
+
+class SpectrumPlot(Plot):
+    """Plot data from a LAL TimeSeries object
+    """
+    _DefaultAxesClass = SpectrumAxes
+
+    def __init__(self, *series, **kwargs):
+        # extract plotting keyword arguments
+        plotargs = dict()
+        plotargs["linewidth"] = kwargs.pop("linewidth", 2)
+        plotargs["color"] = kwargs.pop("color", "black")
+        plotargs["linestyle"] = kwargs.pop("linestyle", "-")
+        plotargs["label"] = kwargs.pop("label", None)
+        sep = kwargs.pop('sep', False)
+        logx = kwargs.pop('logx', True)
+        logy = kwargs.pop('logy', True)
+
+        # initialise figure
+        super(SpectrumPlot, self).__init__(**kwargs)
+        self._series = []
+
+        # plot time series
+        for i, spectrum in enumerate(series):
+            self.add_spectrum(spectrum, newax=sep, **plotargs)
+            self.axes[-1].fmt_xdata = lambda f: ('%s [%s]'
+                                                 % (f, spectrum.xunit))
+            self.axes[-1].fmt_ydata = lambda a: ('%s [%s]'
+                                                 % (a, spectrum.unit))
+            if logx:
+                xlim = list(self.axes[-1].get_xlim())
+                if not xlim[0]:
+                    xlim[0] = spectrum.df.value
+                self.axes[-1].set_xscale('log')
+                self.axes[-1].set_xlim(*xlim)
+            if logy:
+                self.axes[-1].set_yscale('log')
+        for ax in self.axes:
+            ax.legend()
