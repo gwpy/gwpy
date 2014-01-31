@@ -47,7 +47,7 @@ __all__ = ['bartlett', 'welch', 'median_mean', 'median', 'spectrogram']
 # cache windows internally
 LAL_WINDOWS = {}
 LAL_FFTPLANS = {}
-LAL_FFTPLAN_LEVEL = 3
+LAL_FFTPLAN_LEVEL = 1
 
 
 def bartlett(timeseries, segmentlength, window=None, plan=None):
