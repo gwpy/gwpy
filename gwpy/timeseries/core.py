@@ -25,7 +25,6 @@ import os
 import numpy
 import sys
 import warnings
-import bisect
 from math import (ceil, floor)
 from multiprocessing import (cpu_count, Process, Queue)
 
@@ -234,15 +233,15 @@ class TimeSeries(Series):
     # -------------------------------------------
     # TimeSeries product methods
 
-    def crop(self, gpsstart, gpsend):
+    def crop(self, start=None, end=None, copy=False):
         """Crop this `TimeSeries` to the given GPS ``[start, end)``
         `Segment`.
 
         Parameters
         ----------
-        gpsstart : `Time`, `float`
+        start : `Time`, `float`
             GPS start time to crop `TimeSeries` at left
-        gpsend : `Time`, `float`
+        end : `Time`, `float`
             GPS end time to crop `TimeSeries` at right
 
         Returns
@@ -253,28 +252,48 @@ class TimeSeries(Series):
 
         Notes
         -----
-        If either ``gpsstart`` or ``gpsend`` are outside of the original
+        If either ``start`` or ``end`` are outside of the original
         `TimeSeries` span, warnings will be printed and the limits will
         be restricted to the :attr:`TimeSeries.span`
         """
-        if isinstance(gpsstart, Time):
-            gpsstart = gpsstart.gps
-        if isinstance(gpsend, Time):
-            gpsend = gpsend.gps
-        if gpsstart < self.span[0]:
+        # check type
+        if isinstance(start, Time):
+            start = start.gps
+        if isinstance(end, Time):
+            end = end.gps
+        # pin early starts to time-series start
+        if start == self.span[0]:
+            start = None
+        elif start is not None and start < self.span[0]:
             warnings.warn('TimeSeries.crop given GPS start earlier than '
                           'start time of the input TimeSeries. Crop will '
                           'begin when the TimeSeries actually starts.')
-            gpsstart = self.span[0]
-        if gpsend > self.span[1]:
+            start = None
+        # pin late ends to time-series end
+        if end == self.span[1]:
+            end = None
+        if start is not None and end > self.span[1]:
             warnings.warn('TimeSeries.crop given GPS end later than '
                           'end time of the input TimeSeries. Crop will '
                           'end when the TimeSeries actually ends.')
-            gpsend = self.span[1]
-        times = self.times.data
-        idx0 = bisect.bisect_left(times, gpsstart)
-        idx1 = bisect.bisect_left(times, gpsend)
-        return self[idx0:idx1]
+            end = None
+        # find start index
+        if start is None:
+            idx0 = None
+        else:
+            idx0 = floor((start - self.span[0]) * self.sample_rate.value)
+        # find end index
+        if end is None:
+            idx1 = None
+        else:
+            idx1 = floor((end - self.span[0]) * self.sample_rate.value)
+            if idx1 >= self.size:
+                idx1 = None
+        # crop
+        if copy:
+            return self[idx0:idx1].copy()
+        else:
+            return self[idx0:idx1]
 
     def fft(self, fftlength=None):
         """Compute the one-dimensional discrete Fourier transform of
