@@ -233,6 +233,14 @@ class Plot(figure.Figure):
     # These methods try to guess which axes to add to, otherwise generate
     # a new one
 
+    def gca(self, **kwargs):
+        try:
+            kwargs.setdefault('projection', self._DefaultAxesClass.name)
+        except AttributeError:
+            pass
+        return super(Plot, self).gca(**kwargs)
+    gca.__doc__ = figure.Figure.gca.__doc__
+
     def _find_all_axes(self, projection=None):
         """Find all sets of axes for the given projection
         """
