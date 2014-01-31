@@ -225,7 +225,7 @@ def lal_psd(timeseries, method, segmentlength, overlap, window=None, plan=None):
     return spec
 
 
-def scipy_psd(timeseries, method, segmentlength, overlap, window='hamming'):
+def scipy_psd(timeseries, method, segmentlength, overlap, window=('kaiser', 24)):
     """Internal wrapper to the `lal.spectrum.psd` function
 
     This function handles the conversion between GWpy `TimeSeries` and
@@ -304,7 +304,7 @@ def generate_lal_fft_plan(length, level=LAL_FFTPLAN_LEVEL,
     return plan
 
 
-def generate_lal_window(length, type='hamming',
+def generate_lal_window(length, type=('kaiser', 24),
                         dtype=numpy.dtype(numpy.float64)):
     """Generate a time-domain window for use in a Fourier transform using
     the LIGO Algorithm Library routines.
@@ -314,8 +314,9 @@ def generate_lal_window(length, type='hamming',
     length : `int`
         length of window in samples.
     type : `str`, `tuple`
-        name of window to generate, default: ``'hamming'``. Give tuple of
-        ``(name, *args)`` for complicated windows, e.g. ``('kaiser', 24)``
+        name of window to generate, default: ``('kaiser', 24)``. Give
+        `str` for simple windows, or tuple of ``(name, *args)`` for
+         complicated windows
     dtype : :class:`numpy.dtype`
         numeric type of window, default `numpy.dtype(numpy.float64)`
 
