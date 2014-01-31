@@ -46,7 +46,7 @@ from .. import version
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-__all__ = ['StateTimeSeries', 'StateVector', 'BitMask']
+__all__ = ['StateTimeSeries', 'StateVector', 'StateVectorDict', 'BitMask']
 
 
 class StateTimeSeries(TimeSeries):
@@ -435,3 +435,14 @@ class StateVector(TimeSeries):
         raise ValueError("'format' argument must be one of: 'timeseries' or "
                          "'segments'")
 
+
+class StateVectorDict(TimeSeriesDict):
+    """Analog of the :class:`~gwpy.timeseries.core.TimeSeriesDict`
+    for :class:`~gwpy.timeseries.statevector.StateVector` objects.
+
+    See Also
+    --------
+    :class:`~gwpy.timeseries.core.TimeSeriesDict`
+        for more object information.
+    """
+    EntryClass = StateVector
