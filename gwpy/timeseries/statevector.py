@@ -435,6 +435,73 @@ class StateVector(TimeSeries):
         raise ValueError("'format' argument must be one of: 'timeseries' or "
                          "'segments'")
 
+    def resample(self, rate):
+        """Resample this `StateVector` to a new rate
+
+        Because of the nature of a state-vector, downsampling is done
+        by taking the logical 'and' of all original samples in each new
+        sampling interval, while upsampling is achieved by repeating
+        samples.
+
+        Parameters
+        ----------
+        rate : `float`
+            rate to which to resample this `StateVector`, must be a
+            divisor of the original sample rate (when downsampling)
+            or a multiple of the original (when upsampling).
+
+        Returns
+        -------
+        vector : :class:`~gwpy.timeseries.statevector.StateVector`
+            resampled version of the input `StateVector`
+        """
+        rate1 = self.sample_rate.value
+        if isinstance(rate, Quantity):
+            rate2 = rate.value
+        else:
+            rate2 = float(rate)
+        # upsample
+        if (rate2 / rate1).is_integer():
+            raise NotImplementedError("StateVector upsampling has not "
+                                      "been implemented yet, sorry.")
+        # downsample
+        elif (rate1 / rate2).is_integer():
+            factor = int(rate1 / rate2)
+            # reshape incoming data to one column per new sample
+            newsize = self.size / factor
+            old = self.data.reshape((newsize, self.size // newsize))
+            # work out number of bits
+            if len(self.bitmask):
+                nbits = len(self.bitmask)
+            else:
+                nbits = int(ceil(log(self.data.max(), 2)))
+            bits = range(nbits)
+            # construct an iterator over the columns of the old array
+            it = numpy.nditer([old, None],
+                              flags=['external_loop', 'reduce_ok'],
+                              op_axes=[None, [0, -1]],
+                              op_flags=[['readonly'],
+                                        ['readwrite', 'allocate']])
+            dtype = self.dtype
+            type_ = self.dtype.type
+            # for each new sample, each bit is logical AND of old samples
+            # bit is ON,
+            for x, y in it:
+                y[...] = numpy.sum([type_((x >> bit & 1).all() * (2 ** bit)) for
+                                   bit in bits], dtype=self.dtype)
+            new = StateVector(it.operands[1])
+            new.metadata = self.metadata.copy()
+            new.sample_rate = rate2
+            return new
+        # error for non-integer resampling factors
+        elif rate1 < rate2:
+            raise ValueError("New sample rate must be multiple of input "
+                             "series rate if upsampling a StateVector")
+        else:
+            raise ValueError("New sample rate must be divisor of input "
+                             "series rate if downsampling a StateVector")
+
+
 
 class StateVectorDict(TimeSeriesDict):
     """Analog of the :class:`~gwpy.timeseries.core.TimeSeriesDict`
