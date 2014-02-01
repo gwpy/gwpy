@@ -272,7 +272,7 @@ def scipy_psd(timeseries, method, segmentlength, overlap, window=('kaiser', 24))
     return spec
 
 
-def generate_lal_fft_plan(length, level=LAL_FFTPLAN_LEVEL,
+def generate_lal_fft_plan(length, level=None,
                           dtype=numpy.dtype(numpy.float64)):
     """Build a plan to use when performing a Fourier transform using
     the LIGO Algorithm Library routines.
@@ -300,6 +300,8 @@ def generate_lal_fft_plan(length, level=LAL_FFTPLAN_LEVEL,
         plan = LAL_FFTPLANS[(length, laltypestr)]
     except KeyError:
         create = getattr(lal, 'CreateForward%sFFTPlan' % laltypestr)
+        if level is None:
+           level = LAL_FFTPLAN_LEVEL
         plan = LAL_FFTPLANS[(length, laltypestr)] = create(length, level)
     return plan
 
