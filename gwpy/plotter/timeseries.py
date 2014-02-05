@@ -429,7 +429,7 @@ class TimeSeriesPlot(Plot):
 
     def add_timeseries(self, timeseries, **kwargs):
         super(TimeSeriesPlot, self).add_timeseries(timeseries, **kwargs)
-        if not self.epoch:
+        if self.epoch is None:
             self.set_epoch(timeseries.epoch)
 
     def add_state_segments(self, segments, ax=None, height=0.2, pad=0.1,
