@@ -27,12 +27,17 @@ from matplotlib.ticker import (Formatter, MultipleLocator)
 from matplotlib.projections import register_projection
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
+try:
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+except ImportError:
+    from mpl_toolkits.axes_grid import make_axes_locatable
 
 from .. import version
 from . import rcParams
 from .timeseries import (TimeSeriesPlot, TimeSeriesAxes)
 from .decorators import auto_refresh
 from ..segments import *
+from ..timeseries import StateVector
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -404,6 +409,53 @@ class SegmentPlot(TimeSeriesPlot):
                 pass
     add_dataqualityflag.__doc__ = TimeSeriesPlot.add_dataqualityflag.__doc__
 
+    def add_bitmask(self, mask, ax=None, width=0.2, pad=0.1,
+                    visible=True, axes_class=SegmentAxes, topdown=False,
+                    **plotargs):
+        """Display a state-word bitmask on a new set of Axes.
+        """
+        # find default axes
+        if ax is None:
+            ax = self.axes[-1]
+
+        # get new segment axes
+        divider = make_axes_locatable(ax)
+        max = divider.new_horizontal(size=width, pad=pad,
+                                     axes_class=axes_class)
+        if visible:
+            self.add_axes(max)
+        else:
+            return
+
+        # format mask as a binary string and work out how many bits to set
+        if isinstance(mask, int):
+            mask = bin(mask)
+        elif isinstance(mask, (unicode, str)) and 'x' in mask:
+            mask = bin(int(mask, 16))
+        maskint = int(mask, 2)
+        if topdown:
+            bits = list(range(len(mask.split('b', 1)[1])))[::-1]
+        else:
+            bits = list(range(len(mask.split('b', 1)[1])))
+
+        # loop over bits
+        plotargs.setdefault('facecolor', 'green')
+        plotargs.setdefault('edgecolor', 'black')
+        s = Segment(0, 1)
+        for bit in bits:
+            if maskint >> bit & 1:
+                sl = SegmentList([s])
+            else:
+                sl = SegmentList()
+            max.plot(sl, **plotargs)
+        max.set_title('Bitmask')
+        max.set_xlim(0, 1)
+        max.set_xticks([])
+        max.yaxis.set_ticklabels([])
+        max.set_xlabel('')
+        max.set_ylim(*ax.get_ylim())
+
+        return max
 
 class SegmentFormatter(Formatter):
     """Custom tick formatter for y-axis flag names
