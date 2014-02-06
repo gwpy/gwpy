@@ -19,6 +19,19 @@
 """Miscellaneous utilties for GWpy
 """
 
+from __future__ import print_function
+
+from sys import stdout
+
 from .. import version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
+
+
+def gprint(*values, **kwargs):
+    kwargs.setdefault('file', stdout)
+    file_ = kwargs['file']
+    print(*values, **kwargs)
+    file_.flush()
+
+gprint.__doc__ = print.__doc__
