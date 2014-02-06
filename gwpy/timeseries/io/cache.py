@@ -22,11 +22,9 @@
 from __future__ import division
 
 import os
-import threading
 from decimal import _Infinity as infinity
 from math import ceil
 from multiprocessing import (Process, Queue as ProcessQueue)
-from Queue import Queue
 
 from astropy.io import registry
 
@@ -47,42 +45,6 @@ else:
 from ...segments import Segment
 from .. import (TimeSeries, TimeSeriesList, TimeSeriesDict,
                 StateVector, StateVectorDict)
-
-
-class GWFInputThread(threading.Thread):
-    """FIFO queued thread for reading a cache of GWF-format data files.
-    """
-    def __init__(self, source, channel, start=None, end=None, format=None,
-                 target=TimeSeries, **kwargs):
-        """Define a new input thread.
-
-        This constructor does not start the thread. To start the thread
-        run the :meth:`~GWFInputThread.start` method.
-        """
-        super(GWFInputThread, self).__init__()
-
-        # input attributes
-        self.source = source
-        self.channel = channel
-        self.gpsstart = float(start)
-        self.gpsend = float(end)
-        if format is None and isinstance(source, (unicode, str)):
-            self.format = os.path.splitext(source)[1][1:]
-        else:
-            self.format = format
-        self.cls = target
-        self.kwargs = kwargs
-
-        # output attributes
-        self.data = None
-
-    def get_data(self):
-        return self.data
-
-    def run(self):
-        self.data = self.cls.read(self.source, self.channel,
-                                  format=self.format, start=self.gpsstart,
-                                  end=self.gpsend, **self.kwargs)
 
 
 def read_cache_mp(cache, channel, start=None, end=None, resample=None,
@@ -198,102 +160,6 @@ def read_cache_mp(cache, channel, start=None, end=None, resample=None,
         return out.join()
 
 
-def read_cache_threaded(cache, channel, start=None, end=None, format=None,
-                        maxthreads=10, minthreadsize=5, **kwargs):
-    """Read a `TimeSeries` from a cache of GWF files using threading.
-
-    .. warning::
-
-        This function has not been rigorously tested, so the defaults
-        might not be ideal. If you want to use it, and can recommend
-        improvements, please send them along on github.
-
-    Parameters
-    ----------
-    cache : :class:`glue.lal.Cache`, `str`
-        cache of GWF frame files, or path to a LAL-format cache file
-        on disk
-    channel : :class:`~gwpy.detector.channel.Channel`, `str`
-        data channel to read from frames
-    start : `Time`, :lalsuite:`LIGOTimeGPS`, optional
-        start GPS time of desired data
-    end : `Time`, :lalsuite:`LIGOTimeGPS`, optional
-        end GPS time of desired data
-    datatype : `type`, `numpy.dtype`, `str`, optional
-        identifier for desired output data type
-    verbose : `bool`, optional
-        print verbose output
-    maxthreads : `int`, default: ``10``
-        maximum number of independent frame reading processes, default
-        is set to single-process file reading.
-    minprocesssize : `int`, default: ``1``
-        minimum number of frames to pass to a single process, default is
-        to maximally separate the cache.
-
-    Notes
-    -----
-    The number of independent processes spawned by this function can be
-    calculated as ``min(maxprocesses, len(cache)//minprocesssize)``.
-
-    Returns
-    -------
-    data : :class:`~gwpy.timeseries.core.TimeSeries`
-        a new `TimeSeries` containing the data read from disk
-    """
-    # open cache from file if given
-    if isinstance(cache, (unicode, str, file)):
-        cache = open_cache(cache)
-    cache.sort(key=lambda ce: ce.segment[0])
-    if start is not None and end is not None:
-        span = Segment(start, end)
-        cache = cache.sieve(segment=span)
-
-    if format is None and len(cache):
-        format_ = os.path.splitext(cache[0].path)[1][1:]
-    else:
-        format_ = format
-
-    # define how to read each frame
-    def _read(q, lcf):
-        for subcache in lcf:
-            qs = subcache[0].segment[0]
-            qe = subcache[-1].segment[1]
-            qs = start is not None and max(start, qs) or qs
-            qe = end is not None and min(end, qe) or qe
-            inthread = GWFInputThread(subcache, channel, qs, qe,
-                                      format=format_, **kwargs)
-            inthread.start()
-            q.put(inthread, True)
-
-    # define how to collect results
-    complete = TimeSeriesList()
-
-    def _access(q, numthreads):
-        while len(complete) < numthreads:
-            inthread = q.get(True)
-            inthread.join()
-            complete.append(inthread.get_data())
-
-    # optimise threads
-    subcaches = [Cache(cache[i:i+minthreadsize]) for
-                 i in range(0, len(cache), minthreadsize)]
-
-    # set up threads
-    q = Queue(maxthreads)
-    readthread = threading.Thread(target=_read, args=(q, subcaches))
-    accessthread = threading.Thread(target=_access, args=(q, len(subcaches)))
-
-    # read all frames
-    readthread.start()
-    accessthread.start()
-    readthread.join()
-    accessthread.join()
-
-    # join the frames together
-    complete.sort(key=lambda ts: ts.epoch.gps)
-    return complete.join()
-
-
 def read_state_cache_mp(*args, **kwargs):
     kwargs.setdefault('target', StateVector)
     return read_cache_mp(*args, **kwargs)
@@ -349,7 +215,6 @@ def identify_cache(*args, **kwargs):
 registry.register_reader('lcf', TimeSeries, read_cache_mp, force=True)
 registry.register_reader('cache', TimeSeries, read_cache_mp, force=True)
 registry.register_reader('lcfmp', TimeSeries, read_cache_mp, force=True)
-registry.register_reader('lcfth', TimeSeries, read_cache_threaded, force=True)
 registry.register_identifier('lcf', TimeSeries, identify_cache_file)
 registry.register_identifier('cache', TimeSeries, identify_cache)
 
