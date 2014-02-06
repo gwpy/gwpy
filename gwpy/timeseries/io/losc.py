@@ -38,7 +38,7 @@ else:
 from astropy.io import registry
 from astropy.units import (Unit, Quantity)
 
-from ..timeseries import (StateVector, TimeSeries, TimeSeriesList)
+from .. import (StateVector, TimeSeries, TimeSeriesList)
 
 
 def open_hdf5(filename):

@@ -24,23 +24,18 @@ channels from a single frame file in one go.
 
 from __future__ import division
 
-try:
-    import frameCPP
-except ImportError:
-    raise ImportError("No module named frameCPP. lalframe or frameCPP are "
-                      "required in order to read data from GWF-format "
-                      "frame files.")
+import frameCPP
 
 from astropy.io import registry
 
 from glue.lal import (Cache, CacheEntry)
 
-from ... import version
-from ...utils import gprint
-from ...timeseries import (TimeSeries, TimeSeriesDict,
-                           StateVector, StateVectorDict)
+from . import identify
+from .... import version
+from ....utils import gprint
+from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 
@@ -101,7 +96,7 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
     if isinstance(resample, int):
         resample = dict((channel, resample) for channel in channels)
     elif isinstance(resample, (tuple, list)):
-        resample = dict(zip(channel, resample))
+        resample = dict(zip(channels, resample))
     elif resample is None:
         resample = {}
     elif not isinstance(resample, dict):
@@ -299,7 +294,8 @@ registry.register_reader('framecpp', StateVectorDict, read_statevectordict)
 registry.register_reader('framecpp', StateVector, read_statevector)
 
 # force this as the 'gwf' reader
-registry.register_reader('gwf', TimeSeriesDict, read_timeseriesdict, force=True)
+registry.register_reader('gwf', TimeSeriesDict, read_timeseriesdict,
+                         force=True)
 registry.register_reader('gwf', TimeSeries, read_timeseries, force=True)
 registry.register_reader('gwf', StateVectorDict, read_statevectordict,
                          force=True)

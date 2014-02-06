@@ -30,11 +30,12 @@ except ImportError:
                       "required in order to read data from GWF-format "
                       "frame files.")
 
-from glue.lal import (Cache, CacheEntry)
+from glue.lal import CacheEntry
 
-from ...detector import Channel
-from ...time import Time
-from ...timeseries import (TimeSeries, StateVector, TimeSeriesDict)
+from . import identify
+from ....detector import Channel
+from ....time import Time
+from ... import (TimeSeries, StateVector, TimeSeriesDict)
 
 
 def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
@@ -139,4 +140,5 @@ registry.register_reader('lalframe', TimeSeriesDict, read_timeseriesdict)
 # force this as the 'gwf' reader
 registry.register_reader('gwf', TimeSeries, read_timeseries, force=True)
 registry.register_reader('gwf', StateVector, read_statevector, force=True)
-registry.register_reader('gwf', TimeSeriesDict, read_timeseriesdict, force=True)
+registry.register_reader('gwf', TimeSeriesDict, read_timeseriesdict,
+                         force=True)

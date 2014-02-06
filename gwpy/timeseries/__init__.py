@@ -19,11 +19,10 @@
 """
 
 from .. import version
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 from .core import *
 from .statevector import *
-
-from ..io import (lcf, losc, gwf)
-from ..io.gwf import identify
+from .io import (cache, losc, gwf)

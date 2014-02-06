@@ -15,33 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Shared GWF-file identifier
+"""Input/Output routines for the TimeSeries and its sub-classes.
 """
 
-from glue.lal import CacheEntry
-
-from astropy.io import registry
-
-from ...timeseries import (TimeSeries, TimeSeriesDict, StateVector)
-from ...version import version
+from .. import version
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version
-
-
-def identify_gwf(*args, **kwargs):
-    """Determine an input file as written in GWF-format.
-    """
-    filename = args[1]
-    ce = args[3]
-    if isinstance(filename, (str, unicode)) and filename.endswith('gwf'):
-        return True
-    elif isinstance(ce, CacheEntry):
-        return True
-    else:
-        return False
-
-
-registry.register_identifier('gwf', TimeSeries, identify_gwf)
-registry.register_identifier('gwf', TimeSeriesDict, identify_gwf)
-registry.register_identifier('gwf', StateVector, identify_gwf)
+__version__ = version.version

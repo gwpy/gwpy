@@ -44,9 +44,9 @@ except ImportError:
 else:
     HASLAL = True
 
-from ..segments import Segment
-from ..timeseries import (TimeSeries, TimeSeriesList, TimeSeriesDict,
-                          StateVector, StateVectorDict)
+from ...segments import Segment
+from .. import (TimeSeries, TimeSeriesList, TimeSeriesDict,
+                StateVector, StateVectorDict)
 
 
 class GWFInputThread(threading.Thread):
@@ -159,7 +159,7 @@ def read_cache_mp(cache, channel, start=None, end=None, resample=None,
     fperproc = int(ceil(len(cache) / maxprocesses))
     if fperproc < minprocesssize:
         fperproc = minprocesssize
-    if maxprocesssize is not None and fperproc > maxprocessize:
+    if maxprocesssize is not None and fperproc > maxprocesssize:
         fperproc = maxprocesssize
     subcaches = [Cache(cache[i:i+fperproc]) for
                  i in range(0, len(cache), fperproc)]

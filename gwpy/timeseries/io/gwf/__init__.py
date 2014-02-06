@@ -1,3 +1,4 @@
+# coding: utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -30,18 +31,17 @@ preferred, in the instance that both lalframe and frameCPP are available
 on a system.
 """
 
-from ...version import version
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version
+from ....version import version
 
 try:
     from . import lalfr
 except ImportError:
-    # no LALFrame, that API is not available
     pass
 
 try:
     from . import framecpp
 except ImportError:
-    # no FrameCPP, that API is not available
     pass
+
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__version__ = version
