@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -19,14 +20,11 @@
 to LIGO data.
 """
 
-import os
 import sys
-from math import (floor, ceil)
 
 import nds2
 
 from ... import version
-from ...time import Time
 from .kerberos import *
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -38,11 +36,11 @@ except ImportError:
     from astropy.utils import OrderedDict
 finally:
     DEFAULT_HOSTS = OrderedDict([
-                    (None,('ldas-pcdev4.ligo.caltech.edu', 31200)),
-                    (None,('nds.ligo.caltech.edu', 31200)),
-                    ('H1', ('nds.ligo-wa.caltech.edu', 31200)),
-                    ('L1', ('nds.ligo-la.caltech.edu', 31200)),
-                    ('C1', ('nds40.ligo.caltech.edu', 31200))])
+        (None, ('ldas-pcdev4.ligo.caltech.edu', 31200)),
+        (None, ('nds.ligo.caltech.edu', 31200)),
+        ('H1', ('nds.ligo-wa.caltech.edu', 31200)),
+        ('L1', ('nds.ligo-la.caltech.edu', 31200)),
+        ('C1', ('nds40.ligo.caltech.edu', 31200))])
 
 # set type dicts
 NDS2_CHANNEL_TYPESTR = {}
@@ -65,11 +63,13 @@ class NDSOutputContext(object):
 
     def __enter__(self):
         self.old_stdout, self.old_stderr = sys.stdout, sys.stderr
-        self.old_stdout.flush(); self.old_stderr.flush()
+        self.old_stdout.flush()
+        self.old_stderr.flush()
         sys.stdout, sys.stderr = self._stdout, self._stderr
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        self._stdout.flush(); self._stderr.flush()
+    def __exit__(self, *args):
+        self._stdout.flush()
+        self._stderr.flush()
         sys.stdout = self.old_stdout
         sys.stderr = self.old_stderr
 
@@ -79,11 +79,13 @@ class NDSWarning(UserWarning):
 
 
 _HOST_RESOLTION_ORDER = ['nds.ligo.caltech.edu'] + DEFAULT_HOSTS.values()
+
+
 def host_resolution_order(ifo):
     hosts = []
     if ifo in DEFAULT_HOSTS:
         hosts.append(DEFAULT_HOSTS[ifo])
-    for difo,hp in DEFAULT_HOSTS.iteritems():
+    for difo, hp in DEFAULT_HOSTS.iteritems():
         if difo != ifo:
             hosts.append(hp)
     return hosts
