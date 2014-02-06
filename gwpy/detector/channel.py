@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -15,19 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Provides a LIGO data channel class
+"""Provides a LIGO data channel class.
 """
 
 import re
 import numpy
-
 
 from astropy import units
 
 from .. import version
 from ..io import nds as ndsio
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 
@@ -283,10 +283,10 @@ class Channel(object):
         try:
             from lal import utils as lalutils
         except ImportError:
-            dtype=None
+            dtype = None
         else:
             laltype = lalutils.LAL_TYPE_FROM_STR[
-                          dtypestr.replace('_', '').upper()]
+                dtypestr.replace('_', '').upper()]
             dtype = lalutils.NUMPY_TYPE_FROM_LAL[laltype]
         return cls(name, sample_rate=sample_rate, unit=unit, dtype=dtype,
                    type=ctype)
@@ -331,8 +331,6 @@ def parse_channel_name(name):
     else:
         signal = None
     return ifo, system, subsystem, signal, ndstype
-
-from .channel import Channel
 
 
 class ChannelList(list):
@@ -430,7 +428,7 @@ class ChannelList(list):
         -------
         `ChannelList`
         """
-        from ..io import cis
+        from .io import cis
         return cis.query(name, debug=debug)
 
     @property
