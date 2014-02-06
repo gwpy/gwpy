@@ -29,8 +29,6 @@ __version__ = version.version
 
 from .segments import (Segment, SegmentList, SegmentListDict)
 from .flag import *
-
-from ..io import segwizard
-from ..io.ligolw import segments as ligolw_segments
+from .io import *
 
 __all__ = ['Segment', 'SegmentList', 'SegmentListDict', 'DataQualityFlag']

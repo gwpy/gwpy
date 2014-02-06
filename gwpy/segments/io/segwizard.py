@@ -18,14 +18,12 @@
 """Read SegmentLists from seg-wizard format ASCII files
 """
 
-import re
-
 from glue import segmentsUtils
 
 from astropy.io import registry
 
 from .. import version
-from ..segments import (Segment, SegmentList, DataQualityFlag)
+from .. import (SegmentList, DataQualityFlag)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
@@ -50,6 +48,7 @@ def flag_from_segwizard(filename, flag=None, coltype=float, strict=True):
     return DataQualityFlag(name=None, active=from_segwizard(filename,
                                                             coltype=coltype,
                                                             strict=strict))
+
 
 def identify_segwizard(*args, **kwargs):
     filename = args[1]
@@ -112,12 +111,10 @@ def flag_to_segwizard(flag, fobj):
     to_segwizard(flag.active, fobj)
 
 
-registry.register_reader('segwizard', DataQualityFlag, flag_from_segwizard,
-                         force=True)
-registry.register_writer('segwizard', DataQualityFlag, flag_to_segwizard,
-                         force=True)
+registry.register_reader('segwizard', DataQualityFlag, flag_from_segwizard)
+registry.register_writer('segwizard', DataQualityFlag, flag_to_segwizard)
 registry.register_identifier('segwizard', DataQualityFlag, identify_segwizard)
 
-registry.register_reader('segwizard', SegmentList, from_segwizard, force=True)
-registry.register_writer('segwizard', SegmentList, to_segwizard, force=True)
+registry.register_reader('segwizard', SegmentList, from_segwizard)
+registry.register_writer('segwizard', SegmentList, to_segwizard)
 registry.register_identifier('segwizard', SegmentList, identify_segwizard)

@@ -15,10 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read LIGO_LW-format XML into Tables
+"""
 """
 
 from ... import version
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
+
+from . import (segwizard, ligolw)
