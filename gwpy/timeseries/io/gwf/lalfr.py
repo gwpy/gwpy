@@ -39,7 +39,7 @@ from ... import (TimeSeries, StateVector, TimeSeriesDict)
 
 
 def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
-                    verbose=False, _target=TimeSeries):
+                    resample=False, verbose=False, _target=TimeSeries):
     """Read a `TimeSeries` of data from a gravitational-wave frame file
 
     This method is a thin wrapper around `lalframe.frread.read_timeseries`
@@ -62,6 +62,8 @@ def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
         end GPS time of desired data
     datatype : `type`, `numpy.dtype`, `str`, optional
         identifier for desired output data type
+    resample : `float`, optional
+        rate of samples per second at which to resample input TimeSeries.
     verbose : `bool`, optional
         print verbose output
 
@@ -90,7 +92,10 @@ def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
     lalts = frread.read_timeseries(framefile, channel, start=start,
                                    duration=duration, datatype=datatype,
                                    verbose=verbose)
-    return TimeSeries.from_lal(lalts)
+    out = TimeSeries.from_lal(lalts)
+    if resample:
+        out = out.resample(resample)
+    return out
 
 
 def read_timeseriesdict(framefile, channels, **kwargs):
