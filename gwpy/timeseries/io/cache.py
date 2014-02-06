@@ -28,28 +28,16 @@ from multiprocessing import (Process, Queue as ProcessQueue)
 
 from astropy.io import registry
 
-try:
-    from glue.lal import (Cache, CacheEntry)
-except ImportError:
-    HASGLUE = False
-else:
-    HASGLUE = True
-
-try:
-    from lal import Cache as LALCache
-except ImportError:
-    HASLAL = False
-else:
-    HASLAL = True
+from glue.lal import Cache
 
 from ...segments import Segment
 from .. import (TimeSeries, TimeSeriesList, TimeSeriesDict,
                 StateVector, StateVectorDict)
 
 
-def read_cache_mp(cache, channel, start=None, end=None, resample=None,
-                  maxprocesses=1, minprocesssize=1, maxprocesssize=None,
-                  **kwargs):
+def read_cache(cache, channel, start=None, end=None, resample=None,
+               maxprocesses=1, minprocesssize=1, maxprocesssize=None,
+               **kwargs):
     """Read a `TimeSeries` from a cache of data files using
     multiprocessing.
 
@@ -160,25 +148,25 @@ def read_cache_mp(cache, channel, start=None, end=None, resample=None,
         return out.join()
 
 
-def read_state_cache_mp(*args, **kwargs):
+def read_state_cache(*args, **kwargs):
     kwargs.setdefault('target', StateVector)
-    return read_cache_mp(*args, **kwargs)
+    return read_cache(*args, **kwargs)
 
-def read_dict_cache_mp(*args, **kwargs):
+
+def read_dict_cache(*args, **kwargs):
     kwargs.setdefault('target', TimeSeriesDict)
-    return read_cache_mp(*args, **kwargs)
+    return read_cache(*args, **kwargs)
 
-def read_state_dict_cache_mp(*args, **kwargs):
+
+def read_state_dict_cache(*args, **kwargs):
     kwargs.setdefault('target', StateVectorDict)
-    return read_cache_mp(*args, **kwargs)
+    return read_cache(*args, **kwargs)
 
 
 def open_cache(lcf):
     """Read a LAL-format cache file into memory as a
     :class:`glue.lal.Cache`.
     """
-    if not HASGLUE:
-        raise ImportError("No module name glue.lal")
     if isinstance(lcf, file):
         return Cache.fromfile(lcf)
     else:
@@ -200,39 +188,43 @@ def identify_cache_file(*args, **kwargs):
     else:
         return False
 
+
 def identify_cache(*args, **kwargs):
     """Determine an input object as a :class:`glue.lal.Cache` or a
     :lalsuite:`LALCache`.
     """
     cacheobj = args[3]
-    if ((HASGLUE and isinstance(cacheobj, Cache)) or
-            (HASLAL and isinstance(cacheobj, LALCache))):
-        return True
+    if isinstance(cacheobj, Cache):
+            return True
+    try:
+        from lal import Cache as LALCache
+    except ImportError:
+        pass
     else:
-        return False
+        if isinstance(cacheobj, LALCache):
+            return True
+    return False
 
 
-registry.register_reader('lcf', TimeSeries, read_cache_mp, force=True)
-registry.register_reader('cache', TimeSeries, read_cache_mp, force=True)
-registry.register_reader('lcfmp', TimeSeries, read_cache_mp, force=True)
+registry.register_reader('lcf', TimeSeries, read_cache)
+registry.register_reader('cache', TimeSeries, read_cache)
 registry.register_identifier('lcf', TimeSeries, identify_cache_file)
 registry.register_identifier('cache', TimeSeries, identify_cache)
 
 # duplicate for state-vector
-registry.register_reader('lcf', StateVector, read_state_cache_mp, force=True)
-registry.register_reader('cache', StateVector, read_state_cache_mp, force=True)
-registry.register_reader('lcfmp', StateVector, read_state_cache_mp, force=True)
+registry.register_reader('lcf', StateVector, read_state_cache)
+registry.register_reader('cache', StateVector, read_state_cache)
 registry.register_identifier('lcf', StateVector, identify_cache_file)
 registry.register_identifier('cache', StateVector, identify_cache)
 
 # TimeSeriesDict
-registry.register_reader('lcf', TimeSeriesDict, read_dict_cache_mp)
-registry.register_reader('cache', TimeSeriesDict, read_dict_cache_mp)
-registry.register_reader('lcfmp', TimeSeriesDict, read_dict_cache_mp)
+registry.register_reader('lcf', TimeSeriesDict, read_dict_cache)
+registry.register_reader('cache', TimeSeriesDict, read_dict_cache)
+registry.register_reader('lcfmp', TimeSeriesDict, read_dict_cache)
 registry.register_identifier('lcf', TimeSeriesDict, identify_cache)
 
 # StateVectorDict
-registry.register_reader('lcf', StateVectorDict, read_state_dict_cache_mp)
-registry.register_reader('cache', StateVectorDict, read_state_dict_cache_mp)
-registry.register_reader('lcfmp', StateVectorDict, read_state_dict_cache_mp)
+registry.register_reader('lcf', StateVectorDict, read_state_dict_cache)
+registry.register_reader('cache', StateVectorDict, read_state_dict_cache)
+registry.register_reader('lcfmp', StateVectorDict, read_state_dict_cache)
 registry.register_identifier('lcf', StateVectorDict, identify_cache)
