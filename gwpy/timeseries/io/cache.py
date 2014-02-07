@@ -91,7 +91,16 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     if len(cache) == 0:
         return cls([], channel=channel, epoch=start)
 
-    format_ = os.path.splitext(cache[0].path)[1][1:]
+    if isinstance(channel, (list, tuple)) and len(channel) == 1:
+        try:
+            from lalframe import frread
+        except ImportError:
+            format_ = 'gwf'
+        else:
+            kwargs.pop('type', None)
+            format_ = 'lalframe'
+    else:
+        format_ = os.path.splitext(cache[0].path)[1][1:]
 
     # single-process
     if maxprocesses == 1:
