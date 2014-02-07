@@ -35,7 +35,7 @@ from glue.lal import CacheEntry
 from . import identify
 from ....detector import Channel
 from ....time import Time
-from ... import (TimeSeries, StateVector, TimeSeriesDict)
+from ... import (TimeSeries, StateVector, TimeSeriesDict, StateVectorDict)
 
 
 def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
@@ -92,7 +92,7 @@ def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
     lalts = frread.read_timeseries(framefile, channel, start=start,
                                    duration=duration, datatype=datatype,
                                    verbose=verbose)
-    out = TimeSeries.from_lal(lalts)
+    out = _target.from_lal(lalts)
     if resample:
         out = out.resample(resample)
     return out
@@ -129,21 +129,32 @@ def read_timeseriesdict(framefile, channels, **kwargs):
     return out
 
 
-def read_statevector(*args, **kwargs):
-    bitmask = kwargs.pop('bitmask', [])
-    if isinstance(args[0], file):
-        args = list(args)
-        args[0] = args[0].name
-    new = TimeSeries.read(*args, **kwargs).view(StateVector)
-    new.bitmask = bitmask
-    return new
+def read_statevector_dict(source, channels, bitmasks=[], **kwargs):
+    """Read a `StateVectorDict` of data from a gravitational-wave
+    frame file
+    """
+    kwargs.setdefault('_target', StateVector)
+    svd = StateVectorDict(read_timeseriesdict(source, channels, **kwargs))
+    for (channel, bitmask) in zip(channels, bitmasks):
+        svd[channel].bitmask = bitmask
+    return svd
+
+
+def read_statevector(source, channel, bitmask=[], **kwargs):
+    kwargs.setdefault('_target', StateVector)
+    sv = read_timeseries(source, channel, **kwargs).view(StateVector)
+    sv.bitmask = bitmask
+    return sv
 
 registry.register_reader('lalframe', TimeSeries, read_timeseries)
 registry.register_reader('lalframe', StateVector, read_statevector)
 registry.register_reader('lalframe', TimeSeriesDict, read_timeseriesdict)
+registry.register_reader('lalframe', StateVectorDict, read_statevector_dict)
 
 # force this as the 'gwf' reader
 registry.register_reader('gwf', TimeSeries, read_timeseries, force=True)
 registry.register_reader('gwf', StateVector, read_statevector, force=True)
 registry.register_reader('gwf', TimeSeriesDict, read_timeseriesdict,
+                         force=True)
+registry.register_reader('gwf', StateVectorDict, read_statevector_dict,
                          force=True)
