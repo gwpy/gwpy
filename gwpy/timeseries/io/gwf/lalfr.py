@@ -134,7 +134,8 @@ def read_timeseriesdict(framefile, channels, **kwargs):
                          "documentation for that argument")
     for channel in channels:
         out[channel] = read_timeseries(framefile, channel,
-                                       resample=resample[channel], **kwargs)
+                                       resample=resample.get(channel, None),
+                                       **kwargs)
     return out
 
 
