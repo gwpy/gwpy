@@ -124,8 +124,17 @@ def read_timeseriesdict(framefile, channels, **kwargs):
         dict of (channel, `TimeSeries`) data pairs
     """
     out = TimeSeriesDict()
+    resample = kwargs.pop('resample', None)
+    if isinstance(resample, int) or resample is None:
+        resample = dict((channel, resample) for channel in channels)
+    elif isinstance(resample, (tuple, list)):
+        resample = dict(zip(channels, resample))
+    elif not isinstance(resample, dict):
+        raise ValueError("Cannot parse resample request, please review "
+                         "documentation for that argument")
     for channel in channels:
-        out[channel] = read_timeseries(framefile, channel, **kwargs)
+        out[channel] = read_timeseries(framefile, channel,
+                                       resample=resample[channel], **kwargs)
     return out
 
 
