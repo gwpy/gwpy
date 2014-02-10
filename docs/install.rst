@@ -89,6 +89,6 @@ If you use the ``bash`` shell, you can source the following script to set up the
 
 .. code-block:: bash
 
-    source /home/duncan.macleod/etc/gwpy-env.sh
+    source /home/detchar/opt/gwpysoft/etc/gwpy-user-env.sh
 
 If anyone wants to write an equivalent shell script for the ``csh`` shell, please e-mail it to `Duncan <duncan.macleod@ligo.org>`_.
