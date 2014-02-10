@@ -1181,7 +1181,11 @@ class TimeSeriesList(list):
             j += 1
             if j < N and this.span[1] >= self[j].span[0]:
                 while j < N and this.span[1] >= self[j].span[0]:
-                    this = self[i] = this.append(self[j])
+                    try:
+                        this = self[i] = this.append(self[j])
+                    except ValueError:
+                        this = this.copy()
+                        this = self[i] = this.append(self[j])
                     j += 1
             else:
                 self[i] = this
