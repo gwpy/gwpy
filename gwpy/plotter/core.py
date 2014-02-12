@@ -65,11 +65,11 @@ class Plot(figure.Figure):
         """
         self.canvas.draw()
 
-    def show(self):
+    def show(self, *args, **kwargs):
         """Display the current figure
         """
         self.patch.set_alpha(0.0)
-        super(Plot, self).show()
+        super(Plot, self).show(*args, **kwargs)
 
     def save(self, *args, **kwargs):
         """Save the figure to disk.
@@ -176,7 +176,7 @@ class Plot(figure.Figure):
         if not clim:
             clim = mappable.get_clim()
         if log is None:
-            log = isinstance(mappable, mcolors.LogNorm)
+            log = isinstance(mappable.norm, mcolors.LogNorm)
         if log and clim[0] <= 0.0:
             cdata = mappable.get_array()
             try:
@@ -190,7 +190,7 @@ class Plot(figure.Figure):
         if pyplot.rcParams["text.usetex"]:
             if log:
                 loglim = numpy.log10(clim)
-            if log and numpy.arange(*loglim, dtype=int).size > 2:
+            if log and numpy.arange(*loglim, dtype=int).size >= 2:
                 func = lambda x,pos: (mticker.is_decade(x) and
                                 '$%s$' % tex.float_to_latex(x, '%.4g') or ' ')
             elif log and abs(float.__sub__(*loglim)) >= 1:
@@ -208,7 +208,7 @@ class Plot(figure.Figure):
         for m in mappables:
             if log and not isinstance(norm, mcolors.LogNorm):
                 m.set_norm(mcolors.LogNorm(*mappable.get_clim()))
-            else:
+            elif not log:
                 m.set_norm(mcolors.Normalize(*mappable.get_clim()))
             m.norm.clip = clip
 
