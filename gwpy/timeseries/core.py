@@ -22,13 +22,15 @@
 from __future__ import (division, print_function)
 
 import os
-import numpy
 import sys
 import warnings
+import re
 from math import (ceil, floor)
-from multiprocessing import (cpu_count, Process, Queue)
+from dateutil import parser as dateparser
 
-from scipy import (fftpack, signal)
+import numpy
+
+from scipy import (fftpack)
 from matplotlib import mlab
 
 try:
@@ -39,19 +41,19 @@ except ImportError:
 from astropy import units
 from astropy.io import registry as io_registry
 
-from glue.lal import Cache
-
-from .. import version
-from ..data import (Series, Array2D)
+from ..data import Array2D
 from ..detector import Channel
+from ..io import nds as ndsio
 from ..segments import (Segment, SegmentList)
 from ..time import Time
 from ..window import *
+from ..utils import gprint
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-__all__ = ["TimeSeries", 'ArrayTimeSeries', 'TimeSeriesList', 'TimeSeriesDict']
+__all__ = ['TimeSeries', 'ArrayTimeSeries', 'TimeSeriesList',
+           'TimeSeriesDict']
 
 _UFUNC_STRING = {'less': '<',
                  'less_equal': '<=',
@@ -131,7 +133,7 @@ class TimeSeries(Series):
         See `~astropy.time` for details on the `Time` object.
         """
         try:
-            return Time(self.x0, format='gps')
+            return Time(self.x0, format='gps', scale='utc')
         except KeyError:
             raise AttributeError("No epoch has been set for this %s"
                                  % self.__class__.__name__)
@@ -155,6 +157,8 @@ class TimeSeries(Series):
 
     @sample_rate.setter
     def sample_rate(self, val):
+        if isinstance(val, int):
+            val = float(val)
         self.dx = (1 / units.Quantity(val, units.Hertz)).to(self.xunit)
 
     @property
@@ -198,7 +202,7 @@ class TimeSeries(Series):
 
     @classmethod
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
-              connection=None, ndschanneltype=None):
+              connection=None, type=None):
         """Fetch data from NDS into a TimeSeries.
 
         Parameters
@@ -217,7 +221,7 @@ class TimeSeries(Series):
             print verbose output about NDS progress
         connection : :class:`~gwpy.io.nds.NDS2Connection`
             open NDS connection to use
-        ndschanneltype : `int`
+        type : `int`
             NDS2 channel type integer
 
         Returns
@@ -228,7 +232,7 @@ class TimeSeries(Series):
         return TimeSeriesDict.fetch(
                    [channel], start, end, host=host, port=port,
                    verbose=verbose, connection=connection,
-                   ndschanneltype=ndschanneltype)[str(channel)]
+                   type=type)[str(channel)]
 
     # -------------------------------------------
     # TimeSeries product methods
@@ -328,8 +332,10 @@ class TimeSeries(Series):
 
     def psd(self, fftlength=None, fftstride=None, method='welch', window=None,
             plan=None):
-        """Calculate the power spectral density (PSD) `Spectrum` for this
-        `TimeSeries`.
+        """Calculate the PSD `Spectrum` for this `TimeSeries`.
+
+        The power spectral density (PSD) gives the power (in the units of
+        the `TimeSeries`) per unit frequency (Hertz).
 
         The `method` argument can be one of
 
@@ -383,8 +389,10 @@ class TimeSeries(Series):
 
     def asd(self, fftlength=None, fftstride=None, method='welch', window=None,
             plan=None):
-        """Calculate the amplitude spectral density (ASD) `Spectrum` for this
-        `TimeSeries`.
+        """Calculate the ASD `Spectrum` of this `TimeSeries`.
+
+        The amplitude spectral density (ASD) is the square root of the
+        power spectral density (PSD).
 
         The `method` argument can be one of
 
@@ -1237,7 +1245,7 @@ class TimeSeriesDict(OrderedDict):
 
     @classmethod
     def fetch(cls, channels, start, end, host=None, port=None,
-              verbose=False, connection=None, ndschanneltype=None):
+              verbose=False, connection=None, type=None):
         """Fetch data from NDS for a number of channels.
 
         Parameters
@@ -1256,8 +1264,8 @@ class TimeSeriesDict(OrderedDict):
             print verbose output about NDS progress.
         connection : :class:`~gwpy.io.nds.NDS2Connection`
             open NDS connection to use.
-        ndschanneltype : `int`
-            NDS2 channel type integer.
+        type : `int`, `str`,
+            NDS2 channel type integer or string name.
 
         Returns
         -------
@@ -1266,10 +1274,25 @@ class TimeSeriesDict(OrderedDict):
             from NDS.
         """
         # import module and type-cast arguments
-        from ..io import nds as ndsio
         import nds2
-        start = int(floor(isinstance(start, Time) and start.gps or start))
-        end = int(ceil(isinstance(end, Time) and end.gps or end))
+        if isinstance(start, Time):
+            start = start.gps
+        elif isinstance(start, (unicode, str)):
+            try:
+                start = float(start)
+            except ValueError:
+                d = dateparser.parse(start)
+                start = float(str(Time(d, scale='utc').gps))
+        start = int(float(start))
+        if isinstance(end, Time):
+            end = end.gps
+        elif isinstance(end, (unicode, str)):
+            try:
+                end = float(end)
+            except ValueError:
+                d = dateparser.parse(end)
+                end = float(str(Time(d, scale='utc').gps))
+        end = int(ceil(end))
 
         # set context
         if verbose:
@@ -1278,41 +1301,92 @@ class TimeSeriesDict(OrderedDict):
             outputcontext = ndsio.NDSOutputContext(open(os.devnull, 'w'),
                                                    open(os.devnull, 'w'))
 
-        # check consistency of channel attributes
-        ifos = set([Channel(channel).ifo for channel in channels])
-        if len(ifos) == 1:
-            ifo = list(ifos)[0]
-        else:
-            ifo = None
-        if (not ndschanneltype and
-                all([isinstance(c, Channel) for c in channels])):
-            types_ = set([c.type for c in channels])
-            if len(types_) == 1:
-                ndschanneltype = ndsio.NDS2_CHANNEL_TYPE[list(types_)[0]]
-        if not ndschanneltype:
-            ndschanneltype = (nds2.channel.CHANNEL_TYPE_RAW |
-                              nds2.channel.CHANNEL_TYPE_RDS |
-                              nds2.channel.CHANNEL_TYPE_STREND |
-                              nds2.channel.CHANNEL_TYPE_MTREND)
-
-        # user-defined host or open connection
-        if connection or host:
-            hostlist = [(host, port)]
-        # best guess host
-        else:
-            hostlist = ndsio.host_resolution_order(ifo)
-
-        # build channellist
-        ndschannels = []
-        for channel in channels:
-            c = Channel(channel)
-            if c.type:
-                ndschannels.append(c.ndsname)
+        # open connection for specific host
+        if host and not port and re.match('[a-z]1nds0\Z', host):
+            port = 8088
+        elif host and not port:
+            port = 31200
+        if host is not None and port is not None and connection is None:
+            if verbose:
+                gprint("Connecting to %s:%s..." % (host, port), end=' ')
+            try:
+                with outputcontext:
+                    connection = nds2.connection(host, port)
+            except RuntimeError as e:
+                if str(e).startswith('Request SASL authentication'):
+                    gprint('\nError authenticating against %s' % host,
+                          file=sys.stderr)
+                    ndsio.kinit()
+                    with outputcontext:
+                        connection = nds2.connection(host, port)
+                else:
+                    raise
+            if verbose:
+                gprint("Connected.")
+        elif connection is not None and verbose:
+            gprint("Received connection to %s:%d."
+                   % (connection.get_host(), connection.get_port()))
+        # otherwise cycle through connections in logical order
+        if connection is None:
+            ifos = set([Channel(channel).ifo for channel in channels])
+            if len(ifos) == 1:
+                ifo = list(ifos)[0]
             else:
-                ndschannels.append(str(c))
+                ifo = None
+            hostlist = ndsio.host_resolution_order(ifo)
+            for host, port in hostlist:
+                with outputcontext:
+                    try:
+                        return cls.fetch(channels, start, end, host=host, port=port,
+                                         verbose=verbose, type=type)
+                    except (RuntimeError, ValueError) as e:
+                        gprint('Something went wrong:', file=sys.stderr)
+                        # if error and user supplied their own server, raise
+                        warnings.warn(str(e), ndsio.NDSWarning)
+
+            # if we got this far, we can't get all of the channels in one go
+            if len(channels) > 1:
+                return TimeSeriesDict(
+                    (str(c), TimeSeries.fetch(c, start, end, verbose=verbose,
+                                              type=type)) for c in channels)
+            e = "Cannot find all relevant data on any known server."
+            if not verbose:
+                e += (" Try again using the verbose=True keyword argument to "
+                      "see detailed failures.")
+            raise RuntimeError(e)
+
+        # at this point we must have an open connection, so we can proceed
+        # normally
+
+        # get channel type str
+        if isinstance(type, int):
+            typestr = nds2.channel_channel_type_to_string(type)
+
+        # verify channels
+        qchannels = []
+        if verbose:
+            gprint("Checking channels against the NDS database...", end=' ')
+        for channel in channels:
+            if type:
+                c = Channel(channel, type=type)
+            else:
+                c = Channel(channel)
+            if c.ndstype:
+                found = connection.find_channels(c.name, c.ndstype)
+            else:
+                found = connection.find_channels('%s*' % c.name)
+            if len(found) == 0:
+                raise ValueError("Channel '%s' not found" % c.name)
+            elif len(found) > 1:
+                raise ValueError("Multiple matches for channel '%s' in NDS "
+                                 "database, ambiguous request." % c.name)
+            else:
+                qchannels.append(Channel.from_nds2(found[0]))
+        if verbose:
+            gprint("Complete.")
 
         # test for minute trends
-        if (any([Channel(c).type == 'm-trend' for c in channels]) and
+        if (any([c.type == 'm-trend' for c in qchannels]) and
                 (start % 60 or end % 60)):
             warnings.warn("Requested at least one minute trend, but "
                           "start and stop GPS times are not modulo "
@@ -1323,55 +1397,27 @@ class TimeSeriesDict(OrderedDict):
             if end % 60:
                 end = end // 60 * 60 + 60
 
-        # loop hosts, stopping on first success
-        for host_, port_ in hostlist:
-            if connection:
-                _conn = connection
-            # open connection if needed - check kerberos ticket
-            if connection is None:
-                if verbose:
-                    print("Connecting to %s:%s" % (host_, port_))
-                try:
-                    with outputcontext:
-                        _conn = nds2.connection(host_, port_)
-                except RuntimeError as e:
-                    if str(e).startswith('Request SASL authentication'):
-                        print('\nError authenticating against %s' % host_,
-                              file=sys.stderr)
-                        ndsio.kinit()
-                        with outputcontext:
-                            _conn = nds2.connection(host_, port_)
-                    else:
-                        raise
-
-            with outputcontext:
-                # fetch data
-                try:
-                    if verbose:
-                        print("Downloading data...", end=' ')
-                    data = _conn.fetch(start, end, ndschannels)
-                except RuntimeError as e:
-                    print(' Something went wrong.')
-                    # if error and user supplied their own server, raise
-                    if connection:
-                        raise
-                    # otherwise warn and move on
-                    elif verbose:
-                        warnings.warn(str(e), ndsio.NDSWarning)
+        # fetch data
+        if verbose:
+            gprint('Downloading data...', end=' ')
+        out = TimeSeriesDict()
+        with outputcontext:
+            try:
+                data = [connection.fetch(start, end, map(str, qchannels))]
+            except RuntimeError as e:
+                # XXX: hack to fix potential problem with fetch
+                # Can remove once fetch has been patched (DMM, 02/2014)
+                if ('Server sent more data than were expected' in str(e)
+                        and len(qchannels) == 1
+                        and qchannels[0].name.endswith(',rds')):
+                    c2 = nds2.connection(connection.get_host(),
+                                         connection.get_port())
+                    data = c2.iterate(start, end, 60, map(str, qchannels))
                 else:
-                    out = TimeSeriesDict()
-                    for buffer_, c in zip(data, channels):
-                        out[str(c)] = TimeSeries.from_nds2_buffer(buffer_)
-                    print(' Success.')
-                    return out
-
-        # if we got this far, we can't get all of the channels in one go
-        if len(channels) > 1:
-            return TimeSeriesDict(
-                       (str(c), TimeSeries.fetch(c, start, end, host=host,
-                                                 port=port, verbose=verbose,
-                                                 connection=connection,
-                                                 ndschanneltype=ndschanneltype))
-                       for c in channels)
-
-        raise RuntimeError("Cannot find all relevant data on any known server")
+                    raise
+            for buffers in data:
+                for buffer_, c in zip(buffers, channels):
+                    out.append({str(c):TimeSeries.from_nds2_buffer(buffer_)})
+        if verbose:
+            gprint('Success.')
+        return out
