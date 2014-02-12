@@ -78,10 +78,11 @@ doxylink = {'lalsuite' : ('../../lalsuite/doxygen/lalsuite_dox.tag',
                           '/lal/nightly/docs/html/')}
 
 # matplotlib plot directive`
-plot_basedir = os.getcwd()
-from matplotlib import (use, rcParams)
-use('Agg')
-rcParams['text.usetex'] = True
+from matplotlib import use
+use('agg')
+from gwpy.plotter import rcParams
+plot_rcParams = rcParams
+plot_apply_rcparams = True
 
 # fix numpydoc autosummary
 numpydoc_show_class_members = False
@@ -163,11 +164,11 @@ html_theme = 'bootstrap'
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    'navbar_fixed_top': "true",
-    'navbar_class': "navbar navbar-inverse",
-    'navbar_site_name': "Documentation",
-    'source_link_position': "footer",
-    'navbar_links': [("Examples", "examples/index"), ],
+    'source_link_position': None,
+    'navbar_site_name': "Contents",
+    'navbar_links': [("Examples", "examples/index")],
+    'navbar_sidebarrel': False,
+    'navbar_pagenav': False,
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
@@ -182,7 +183,7 @@ html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = 'gwpy_white_24.png'
+#html_logo = 'gwpy_white_24.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -208,7 +209,7 @@ html_static_path = ['_static']
 #html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-#html_sidebars = {}
+html_sidebars = {'**': ['localtoc.html', 'sourcelink.html', 'searchbox.html']}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.

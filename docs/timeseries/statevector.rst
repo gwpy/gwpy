@@ -1,56 +1,3 @@
-#########################################
-Time-series data (:mod:`gwpy.timeseries`)
-#########################################
-
-.. currentmodule:: gwpy.timeseries.core
-
-Gravitational-wave detectors are time-domain instruments, attempting to record gravitational wave amplitude as a strain.
-As discussed under `Detector information <../detector/index>`, alongisde the gravitational-wave readout channel are thousands of auxiliary instrumental control and error signals, and environmental monitors.
-The time-series of these data are all recorded in real-time and recorded to disk as GWF-format 'frame' files.
-To learn more about this particular data format, take a look at the specification document `LIGO-T970130 <https://dcc.ligo.org/LIGO-T970130/public>`_.
-
-================
-The `TimeSeries`
-================
-
-GWpy represents these data through the :class:`TimeSeries` object, containing the data themselves and a full set of metadata:
-
-.. autosummary::
-   :toctree: ../_generated
-
-   ~TimeSeries.epoch
-   ~TimeSeries.sample_rate
-   ~TimeSeries.channel
-   ~TimeSeries.unit
-
-`TimeSeries` can be read from disk using the standard :meth:`~TimeSeries.read` method as follows::
-
-    >>> from gwpy.timeseries import TimeSeries
-    >>> data = TimeSeries.read('/archive/frames/A6/L0/LLO/L-R-10670/L-R-1067042880-32.gwf', 'L1:PSL-ODC_CHANNEL_OUT_DQ')
-
-Also, data are served over the internet using the `Network Data Server <https://www.lsc-group.phys.uwm.edu/daswg/projects/nds-client.html>`_ protocol, providing remote access for authenticated users::
-
-    >>> from gwpy.timeseries import TimeSeries
-    >>> data = TimeSeries.fetch('L1:PSL-ODC_CHANNEL_OUT_DQ', 1067042880, 1067042912)
-
-Both of the above snippets will return identical `TimeSeries`.
-For more details on accessing data via either of these sources, see these pages:
-
-.. toctree::
-   :maxdepth: 1
-
-   timeseries-gwf
-   timeseries-nds
-
-=========================
-`TimeSeries` applications
-=========================
-
-.. toctree::
-   :maxdepth: 1
-
-   timeseries-filtering
-
 =================
 State information
 =================
@@ -164,4 +111,3 @@ The `StateVector` fetched in the above example can then be parsed into a series 
                      name='science',
                      version=None,
                      comment='H1:IFO-SV_STATE_VECTOR bit 0')>
-

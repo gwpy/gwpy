@@ -23,18 +23,18 @@ code {
 }
 
 h1 {
-  padding-bottom:5px;
-  border-bottom: 1px solid #ccc;
+  padding-bottom: 5px;
+  border-bottom: none;
 }
 
 h2 {
-  padding-bottom:1px;
-  border-bottom: 1px solid #ccc;
+  padding-bottom: 1px;
+  border-bottom: 1px solid #eee;
 }
 
 h3 {
   padding-bottom:1px;
-  border-bottom: 1px solid #ccc;
+  border-bottom: none;
 }
 
 .rubric {
@@ -65,4 +65,8 @@ blockquote p {
 
 th.field-name {
   background-color: #ccc;
+}
+
+.bs-sidenav.affix {
+    margin-top: 0px !important;
 }
