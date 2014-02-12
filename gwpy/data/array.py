@@ -159,10 +159,15 @@ class Array(numpy.ndarray):
             array += ','
         metadatarepr = []
         for key in self._metadata_slots:
+            if key == 'epoch':
+                val = self.epoch is None and None or self.epoch.iso
+            else:
+                val = getattr(self, key)
+            if val == '':
+                val = None
             mindent = ' ' * (len(key) + 1)
-            rval = str(getattr(self, key)).replace('\n',
-                                                   '\n%s' % (indent+mindent))
-            metadatarepr.append('%s=%s' % (key, rval))
+            rval = str(val).replace('\n', '\n%s' % (indent+mindent))
+            metadatarepr.append('%s: %s' % (key, rval))
         metadata = (',\n%s' % indent).join(metadatarepr)
         return "%s(%s\n%s%s)" % (self.__class__.__name__, array,
                                  indent, metadata)
