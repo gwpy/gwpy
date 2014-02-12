@@ -78,8 +78,10 @@ class Channel(object):
 
     @property
     def name(self):
-        """Name of this `Channel`. This should follow the naming
-        convention, with the following format: 'IFO:SYSTEM-SUBSYSTEM_SIGNAL'
+        """Name of this `Channel`.
+
+        This should follow the naming convention, with the following
+        format: 'IFO:SYSTEM-SUBSYSTEM_SIGNAL'
 
         :type: `str`
         """
@@ -87,13 +89,18 @@ class Channel(object):
 
     @name.setter
     def name(self, n):
-        self._name = str(n).split(',')[0]
-        self._ifo, self._system, self._subsystem, self._signal, self.type = (
-            parse_channel_name(str(n)))
+        try:
+            self._name, self.type = str(n).rsplit(',', 1)
+        except IndexError:
+            pass
+        except ValueError:
+            self._name = str(n)
+        self._ifo, self._system, self._subsystem, self._signal = (
+            parse_channel_name(self._name))
 
     @property
     def ifo(self):
-        """Interferometer prefix for this `Channel`, e.g `H1`.
+        """Interferometer prefix for this `Channel`.
 
         :type: `str`
         """
@@ -101,8 +108,7 @@ class Channel(object):
 
     @property
     def system(self):
-        """Instrumental system for this `Channel`, e.g `PSL`
-        (pre-stabilised laser).
+        """Instrumental system for this `Channel`.
 
         :type: `str`
         """
@@ -110,8 +116,7 @@ class Channel(object):
 
     @property
     def subsystem(self):
-        """Instrumental sub-system for this `Channel`, e.g `ISS`
-        (pre-stabiliser laser intensity stabilisation servo).
+        """Instrumental sub-system for this `Channel`.
 
         :type: `str`
         """
@@ -119,8 +124,7 @@ class Channel(object):
 
     @property
     def signal(self):
-        """Instrumental signal for this `Channel`, relative to the
-        system and sub-system, e.g `FIXME`.
+        """Instrumental signal for this `Channel`.
 
         :type: `str`
         """
@@ -128,7 +132,7 @@ class Channel(object):
 
     @property
     def sample_rate(self):
-        """Rate of samples (Hertz) for this `Channel`
+        """Rate of samples (Hertz) for this `Channel`.
 
         :type: :class:`~astropy.units.quantity.Quantity`
         """
@@ -147,7 +151,7 @@ class Channel(object):
 
     @property
     def unit(self):
-        """Data unit for this `Channel`
+        """Data unit for this `Channel`.
 
         :type: :class:`~astropy.units.core.Unit`
         """
@@ -162,7 +166,7 @@ class Channel(object):
 
     @property
     def model(self):
-        """Name of the SIMULINK front-end model that defines this `Channel`
+        """Name of the SIMULINK front-end model that defines this `Channel`.
 
         :type: `str`
         """
@@ -183,7 +187,11 @@ class Channel(object):
 
         :type: `str`
         """
-        return self._type
+        try:
+            return self._type
+        except AttributeError:
+            self._type = None
+            return self.type
 
     @type.setter
     def type(self, type_):
@@ -197,8 +205,20 @@ class Channel(object):
             raise ValueError("Channel type '%s' not understood." % type_)
 
     @property
+    def ndstype(self):
+        """NDS type integer for this `Channel`.
+
+        This property is mapped to the `Channel.type` string.
+        """
+        return ndsio.NDS2_CHANNEL_TYPE.get(self.type, None)
+
+    @ndstype.setter
+    def ndstype(self, type_):
+        self.type = type_
+
+    @property
     def dtype(self):
-        """Numeric type for data in this `Channel`
+        """Numeric type for data in this `Channel`.
 
         :type: :class:`~numpy.dtype`
         """
@@ -228,7 +248,7 @@ class Channel(object):
 
     @property
     def texname(self):
-        """Name of this `Channel` in LaTeX printable format
+        """Name of this `Channel` in LaTeX printable format.
         """
         return str(self).replace("_", r"\_")
 
@@ -238,8 +258,7 @@ class Channel(object):
         """
         if self.type is not None:
             return '%s,%s' % (self.name, self.type)
-        else:
-            return '%s,raw' % self.name
+        return self.name
 
     @classmethod
     def query(cls, name, debug=False):
@@ -309,7 +328,7 @@ def parse_channel_name(name):
     """Decompose a channel name string into its components
     """
     if not name:
-        return None, None, None, None, None
+        return None, None, None, None
     # parse ifo
     if _re_ifo.match(name):
         ifo, name = name.split(":", 1)
@@ -317,10 +336,6 @@ def parse_channel_name(name):
         ifo = None
     # parse systems
     tags = _re_cchar.split(name, maxsplit=2)
-    if ',' in tags[-1]:
-        tags[-1], ndstype = tags[-1].rsplit(',', 1)
-    else:
-        ndstype = None
     system = tags[0]
     if len(tags) > 1:
         subsystem = tags[1]
@@ -330,7 +345,7 @@ def parse_channel_name(name):
         signal = tags[2]
     else:
         signal = None
-    return ifo, system, subsystem, signal, ndstype
+    return ifo, system, subsystem, signal
 
 
 class ChannelList(list):
