@@ -25,7 +25,7 @@ import os
 import sys
 import warnings
 import re
-from math import (ceil, floor)
+from math import (ceil, floor, log)
 from dateutil import parser as dateparser
 
 import numpy
@@ -40,6 +40,8 @@ except ImportError:
 
 from astropy import units
 from astropy.io import registry as io_registry
+
+import nds2
 
 from ..data import Array2D
 from ..detector import Channel
@@ -62,6 +64,10 @@ _UFUNC_STRING = {'less': '<',
                  'greater': '>',
                  }
 
+NDS2_FETCH_TYPE_MASK = (nds2.channel.CHANNEL_TYPE_RAW |
+                        nds2.channel.CHANNEL_TYPE_RDS |
+                        nds2.channel.CHANNEL_TYPE_TEST_POINT |
+                        nds2.channel.CHANNEL_TYPE_STATIC)
 
 class TimeSeries(Series):
     """A data array holding some metadata to represent a time series of
@@ -202,7 +208,7 @@ class TimeSeries(Series):
 
     @classmethod
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
-              connection=None, type=None):
+              connection=None, type=NDS2_FETCH_TYPE_MASK):
         """Fetch data from NDS into a TimeSeries.
 
         Parameters
@@ -1245,7 +1251,7 @@ class TimeSeriesDict(OrderedDict):
 
     @classmethod
     def fetch(cls, channels, start, end, host=None, port=None,
-              verbose=False, connection=None, type=None):
+              verbose=False, connection=None, type=NDS2_FETCH_TYPE_MASK):
         """Fetch data from NDS for a number of channels.
 
         Parameters
@@ -1358,28 +1364,27 @@ class TimeSeriesDict(OrderedDict):
         # at this point we must have an open connection, so we can proceed
         # normally
 
-        # get channel type str
-        if isinstance(type, int):
-            typestr = nds2.channel_channel_type_to_string(type)
-
         # verify channels
         qchannels = []
         if verbose:
             gprint("Checking channels against the NDS database...", end=' ')
         for channel in channels:
-            if type:
+            if type and log(type, 2).is_integer():
                 c = Channel(channel, type=type)
             else:
                 c = Channel(channel)
-            if c.ndstype:
+            if c.ndstype is not None:
                 found = connection.find_channels(c.name, c.ndstype)
+            elif type is not None:
+                found = connection.find_channels('%s*' % c.name, type)
             else:
                 found = connection.find_channels('%s*' % c.name)
             if len(found) == 0:
                 raise ValueError("Channel '%s' not found" % c.name)
             elif len(found) > 1:
                 raise ValueError("Multiple matches for channel '%s' in NDS "
-                                 "database, ambiguous request." % c.name)
+                                 "database, ambiguous request:\n    %s"
+                                 % (c.name, '\n    '.join(map(str, found))))
             else:
                 qchannels.append(Channel.from_nds2(found[0]))
         if verbose:
