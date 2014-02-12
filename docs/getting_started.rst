@@ -10,11 +10,7 @@ GWpy is a large package with a number sub-packages, so importing the root packag
 
     >>> import gwpy
 
-isn't going to be very useful. Instead, it is best to import the desired sub-package as::
-
-    >>> from gwpy import subpackage
-
-Even better is to import the classes you need directly::
+isn't going to be very useful. Instead, it is best to import the classes you need directly, for example::
 
    >>> from gwpy.timeseries import TimeSeries
 
