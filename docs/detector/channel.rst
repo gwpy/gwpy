@@ -63,3 +63,8 @@ The :meth:`Channel.query` :class:`classmethod` allows you to query the database 
     >>> print(chan.model)
     l1lsc
 
+===================
+`Channel` reference
+===================
+
+.. autoclass:: Channel

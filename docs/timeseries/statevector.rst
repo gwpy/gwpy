@@ -10,7 +10,6 @@ In GWpy, these data are represented by special cases (`sub-classes`) of the `Tim
 
 .. autosummary::
    :nosignatures:
-   :toctree: ../_generated
 
    StateTimeSeries
    StateVector

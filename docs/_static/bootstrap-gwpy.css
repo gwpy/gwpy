@@ -14,8 +14,9 @@ dd {
   margin-left: 40px;
 }
 
-tt.descname {
-  font-size: 100%;
+tt.descclassname,
+dl.class > tt.descname {
+  font-size: 120% !important;
 }
 
 code {
@@ -52,21 +53,35 @@ a.headerlink:hover {
   text-decoration: none;
 }
 
-blockquote {
-  border: 0;
-  margin: 0;
-}
-
-blockquote p {
-  font-size: 100%;
-  font-weight: normal;
-  line-height: normal;
-}
-
-th.field-name {
-  background-color: #ccc;
-}
-
 .bs-sidenav.affix {
     margin-top: 0px !important;
+}
+
+.field-list blockquote {
+    border-left: 0 !important;
+    padding-left: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.field-list blockquote p {
+    padding-left: 20px;
+    font-size: 100% !important;
+}
+
+blockquote {
+    padding: 0 !important;
+}
+
+.docutils {
+    padding: 0 !important;
+}
+
+tt.docutils,
+span.classifier {
+    font-style: normal !important;
+}
+
+dl.attribute em.property {
+    padding-left: 5px;
 }

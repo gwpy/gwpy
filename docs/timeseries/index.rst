@@ -84,3 +84,11 @@ In this example, which we will use in various places in these pages, we download
    filtering
    spectra
    statevector
+
+======================
+`TimeSeries` reference
+======================
+
+.. autoclass:: TimeSeries
+   :members:
+

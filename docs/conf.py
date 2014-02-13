@@ -58,12 +58,17 @@ extensions = [
     'sphinx.ext.pngmath',
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
-    'sphinx.ext.inheritance_diagram',
+    #'sphinx.ext.inheritance_diagram',
     'numpydoc',
     'sphinxcontrib.epydoc',
     'sphinxcontrib.doxylink',
     'matplotlib.sphinxext.plot_directive',
+    'gwpy.sphinx.autoclassapi',
 ]
+
+# customise autodoc
+autoclass_content = 'class'
+autodoc_default_flags = ['show-inheritance', 'members']
 
 # Epydoc extension config for GLUE
 # Can de-comment when GLUE is actually referenced in the documentation
@@ -88,7 +93,7 @@ plot_apply_rcparams = True
 numpydoc_show_class_members = False
 
 # set autosummary
-autosummary_generate = True
+autosummary_generate = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
