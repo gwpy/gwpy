@@ -28,6 +28,7 @@ from sphinx.ext.autosummary import get_documenter
 from sphinx.jinja2glue import BuiltinTemplateLoader
 from sphinx.util.inspect import safe_getattr
 
+from numpydoc.docscrape_sphinx import SphinxClassDoc
 
 from jinja2 import FileSystemLoader
 from jinja2.sandbox import SandboxedEnvironment
@@ -83,7 +84,11 @@ class GWpyClassDocumenter(ClassDocumenter):
                     return public, items
 
                 ns = {}
-                ns['docstring'] = '\n'.join(self.get_doc()[0])
+                config = self.env.app.config
+                npconfig = dict(
+                    use_plots=config.numpydoc_use_plots,
+                    show_class_members=config.numpydoc_show_class_members)
+                ns['docstring'] = SphinxClassDoc(self.object, config=npconfig)
 
                 ns['members'] = vars(self.object)
                 ns['methods'], ns['all_methods'] = get_members(self.object,

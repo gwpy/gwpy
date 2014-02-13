@@ -68,3 +68,10 @@ Similary to the :class:`~gwpy.timeseries.core.TimeSeries`, the `Spectrum` object
 
 .. plot:: spectrum/spectrum_plot.py
    :include-source:
+
+====================
+`Spectrum` reference
+====================
+
+.. autoclass:: Spectrum
+   :members:

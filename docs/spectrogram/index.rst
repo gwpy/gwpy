@@ -72,3 +72,11 @@ We can extend the above example to include a plot:
 
 .. plot:: spectrogram/spectrogram_plot.py
    :include-source:
+
+=======================
+`Spectrogram` reference
+=======================
+
+.. autoclass:: Spectrogram
+   :members:
+
