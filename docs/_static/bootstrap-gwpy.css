@@ -17,7 +17,7 @@ dd {
 tt.descclassname,
 dl.attribute tt.descname,
 dl.method tt.descname,
-dl.class > tt.descname {
+dl.class tt.descname {
   font-size: 160% !important;
 }
 
