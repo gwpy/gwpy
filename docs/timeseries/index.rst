@@ -1,8 +1,8 @@
-#######################################################################################
-The time-series (:class:`gwpy.timeseries.TimeSeries <gwpy.timeseries.core.TimeSeries>`)
-#######################################################################################
-
 .. currentmodule:: gwpy.timeseries.core
+
+#######################
+The :class:`TimeSeries`
+#######################
 
 .. code-block:: python
 

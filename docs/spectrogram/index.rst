@@ -1,8 +1,8 @@
-###########################################################################################
-The spectrogram (:class:`gwpy.spectrogram.Spectrogram <gwpy.spectrogram.core.Spectrogram>`)
-###########################################################################################
-
 .. currentmodule:: gwpy.spectrogram.core
+
+########################
+The :class:`Spectrogram`
+########################
 
 .. code-block:: python
 

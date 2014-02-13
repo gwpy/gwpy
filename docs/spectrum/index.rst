@@ -1,8 +1,8 @@
-############################################################################
-The spectrum (:class:`gwpy.spectrum.Spectrum <gwpy.spectrum.core.Spectrum>`)
-############################################################################
-
 .. currentmodule:: gwpy.spectrum.core
+
+#####################
+The :class:`Spectrum`
+#####################
 
 .. code-block:: python
 
