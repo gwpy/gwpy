@@ -118,9 +118,10 @@ class SegmentAxes(TimeSeriesAxes):
             y-axis value for new segments
         height : `float`, optional, default: 0.8
             height for each segment block
-        valid : `str`, `None`, default: '/'
-            display `valid` segments with the given hatching, or `None`
-            to hide
+        valid : `str`, `dict`, `None`, default: '/'
+            display `valid` segments with the given hatching, or give a
+            dict of keyword arguments to pass to
+            :meth:`~SegmentAxes.plot_segmentlist`, or `None` to hide.
         add_label : `bool`, default: `True`
             add a label to the y-axis for this `DataQualityFlag`
         **kwargs
@@ -150,10 +151,13 @@ class SegmentAxes(TimeSeriesAxes):
             pass
         # make valid collection
         if valid is not None:
-            vkwargs = kwargs.copy()
-            vkwargs.pop('label', None)
-            vkwargs['fill'] = False
-            vkwargs['hatch'] = valid
+            if isinstance(valid, dict):
+                vkwargs = valid
+            else:
+                vkwargs = kwargs.copy()
+                vkwargs.pop('label', None)
+                vkwargs['fill'] = False
+                vkwargs['hatch'] = valid
             vkwargs['collection'] = False
             vkwargs['zorder'] = -1000
             self.plot_segmentlist(flag.valid, y=y, label=None, **vkwargs)
