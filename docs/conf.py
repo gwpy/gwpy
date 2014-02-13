@@ -68,7 +68,7 @@ extensions = [
 
 # customise autodoc
 autoclass_content = 'class'
-autodoc_default_flags = ['show-inheritance', 'members']
+autodoc_default_flags = ['show-inheritance', 'members', 'inherited-members']
 
 # Epydoc extension config for GLUE
 # Can de-comment when GLUE is actually referenced in the documentation
@@ -132,7 +132,7 @@ release = gwpy_version.version
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', '_templates']
+exclude_patterns = ['_build', '_templates', '_generated']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.

@@ -71,7 +71,7 @@ class GWpyClassDocumenter(ClassDocumenter):
 
                 def get_members(obj, typ, include_public=[]):
                     items = []
-                    for name in vars(obj):
+                    for name in dir(obj):
                         try:
                             documenter = get_documenter(safe_getattr(obj, name),
                                                         obj)
