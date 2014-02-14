@@ -156,7 +156,14 @@ class DataQualityFlag(object):
                              "flag name, and either GPS start and stop times, "
                              "or a SegmentList of query segments")
         # process query
-        flags = DataQualityDict.query([flag], qsegs, **kwargs)
+        try:
+            flags = DataQualityDict.query([flag], qsegs, **kwargs)
+        except TypeError as e:
+            if 'DataQualityDict' in str(e):
+                raise TypeError(str(e).replace('DataQualityDict',
+                                               cls.__name__))
+            else:
+                raise
         if len(flags) != 1:
             raise RuntimeError("Multiple flags returned for single query, "
                                "something went wrong")
@@ -307,8 +314,8 @@ class DataQualityDict(OrderedDict):
                              "or a SegmentList of query segments")
         url = kwargs.pop('url', 'https://segdb.ligo.caltech.edu')
         if kwargs.keys():
-            TypeError("DataQualityDict.query has no keyword argument '%s'"
-                      % kwargs.keys()[0])
+            raise TypeError("DataQualityDict.query has no keyword argument "
+                            "'%s'" % kwargs.keys()[0])
         # parse flags
         if isinstance(flags, basestring):
             flags = flags.split(',')
