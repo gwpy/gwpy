@@ -406,7 +406,7 @@ class SegmentPlot(TimeSeriesPlot):
 
     def add_dataqualityflag(self, flag, **kwargs):
         super(SegmentPlot, self).add_dataqualityflag(flag, **kwargs)
-        if not self.epoch:
+        if self.epoch is None:
             try:
                 self.set_epoch(flag.valid[0][0])
             except IndexError:
