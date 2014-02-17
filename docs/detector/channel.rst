@@ -63,8 +63,24 @@ The :meth:`Channel.query` :class:`classmethod` allows you to query the database 
     >>> print(chan.model)
     l1lsc
 
-===================
-`Channel` reference
-===================
+=================
+The `ChannelList`
+=================
+
+Groups of `Channels <Channel>` may be collected together in a `ChannelList`, a simple extension of the built-in `list` with functionality for `finding <ChannelList.find>` and `sieveing <ChannelList.sieve>` for specific `Channel` names, sample-rates, or types.
+
+===============
+Class reference
+===============
+
+This reference contains the following `Class` entries:
+
+.. autosummary::
+   :nosignatures:
+
+   Channel
+   ChannelList
 
 .. autoclass:: Channel
+
+.. autoclass:: ChannelList
