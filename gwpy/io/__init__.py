@@ -18,7 +18,43 @@
 """Utilities for data input/output in standard GW formats.
 """
 
+from types import FunctionType
+
+from astropy.io.registry import (read, write)
+
 from .. import version
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
+
+
+def reader():
+    """Construct a new unified input/output reader.
+
+    This method is required to create a new copy of the
+    :func:`astropy.io.registry.read` with a dynamic docstring.
+
+    Returns
+    -------
+    read : `function`
+        A copy of the :func:`astropy.io.registry.read` function
+    """
+    return FunctionType(read.func_code, read.func_globals,
+                        read.func_name, read.func_defaults,
+                        read.func_closure)
+
+
+def writer():
+    """Construct a new unified input/output writeer.
+
+    This method is required to create a new copy of the
+    :func:`astropy.io.registry.write` with a dynamic docstring.
+
+    Returns
+    -------
+    write : `function`
+        A copy of the :func:`astropy.io.registry.write` function
+    """
+    return FunctionType(write.func_code, write.func_globals,
+                        write.func_name, write.func_defaults,
+                        write.func_closure)

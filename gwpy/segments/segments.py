@@ -32,7 +32,8 @@ from glue.segments import (segment as _Segment,
                            segmentlist as _SegmentList,
                            segmentlistdict as _SegmentListDict)
 
-from astropy.io import registry as io_registry
+from ..io import (reader, writer)
+
 
 def _update_docstring(doc):
     """Update the docstring of the given class from glue to match
@@ -90,8 +91,8 @@ class SegmentList(_SegmentList):
     def __str__(self):
         return "[%s]" % "\n ".join(map(str, self))
 
-    read = classmethod(io_registry.read)
-    write = io_registry.write
+    read = classmethod(reader())
+    write = writer()
 
 
 class SegmentListDict(_SegmentListDict):

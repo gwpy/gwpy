@@ -27,7 +27,7 @@ numpy.set_printoptions(threshold=200)
 import copy
 
 from astropy.units import (Unit, Quantity)
-from astropy.io import registry
+from ..io import (reader, writer)
 
 from ..detector import Channel
 from ..time import Time
@@ -349,8 +349,9 @@ class Array(numpy.ndarray):
     def _getAttributeNames(cls):
         return cls._metadata_slots
 
-    read = classmethod(registry.read)
-    write = registry.write
+    # use input/output registry to allow multi-format reading
+    read = classmethod(reader())
+    write = writer()
 
 
 def _array_reconstruct(Class, dtype):

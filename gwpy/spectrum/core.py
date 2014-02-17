@@ -28,6 +28,7 @@ from astropy import units
 
 from ..data import Series
 from ..detector import Channel
+from ..utils import update_docstrings
 
 from .. import version
 __version__ = version.version
@@ -36,6 +37,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 __all__ = ['Spectrum']
 
 
+@update_docstrings
 class Spectrum(Series):
     """A data array holding some metadata to represent a spectrum.
 

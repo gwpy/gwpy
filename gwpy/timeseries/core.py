@@ -39,17 +39,16 @@ except ImportError:
     from astropy.utils import OrderedDict
 
 from astropy import units
-from astropy.io import registry as io_registry
 
 import nds2
 
 from ..data import Array2D
 from ..detector import Channel
-from ..io import nds as ndsio
+from ..io import (reader, writer, nds as ndsio)
 from ..segments import (Segment, SegmentList)
 from ..time import Time
 from ..window import *
-from ..utils import gprint
+from ..utils import (gprint, update_docstrings)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -69,6 +68,8 @@ NDS2_FETCH_TYPE_MASK = (nds2.channel.CHANNEL_TYPE_RAW |
                         nds2.channel.CHANNEL_TYPE_TEST_POINT |
                         nds2.channel.CHANNEL_TYPE_STATIC)
 
+
+@update_docstrings
 class TimeSeries(Series):
     """A data array holding some metadata to represent a time series of
     instrumental or analysis data.
@@ -204,7 +205,7 @@ class TimeSeries(Series):
     # TimeSeries accessors
 
     # use input/output registry to allow multi-format reading
-    read = classmethod(io_registry.read)
+    read = classmethod(reader())
 
     @classmethod
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
@@ -1233,7 +1234,8 @@ class TimeSeriesDict(OrderedDict):
     Currently the class doesn't do anything special. FIXME.
     """
     EntryClass = TimeSeries
-    read = classmethod(io_registry.read)
+    # use input/output registry to allow multi-format reading
+    read = classmethod(reader())
 
     def append(self, other, **kwargs):
         for key, ts in other.iteritems():

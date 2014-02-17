@@ -30,7 +30,7 @@ try:
 except ImportError:
     from astropy.utils import OrderedDict
 
-from astropy.io import registry as io_registry
+from ..io import (reader, writer)
 
 from .segments import Segment, SegmentList
 
@@ -169,7 +169,13 @@ class DataQualityFlag(object):
                                "something went wrong")
         return flags[flag]
 
-    read = classmethod(io_registry.read)
+    # use input/output registry to allow multi-format reading
+    read = classmethod(reader())
+
+    # -------------------------------------------------------------------------
+    # instance methods
+
+    write = writer()
 
     def round(self):
         """Expand this `DataQualityFlag` to integer segments, with each
@@ -356,10 +362,11 @@ class DataQualityDict(OrderedDict):
             out[flag].active.extend(segments)
         return out
 
-    read = classmethod(io_registry.read)
+    # use input/output registry to allow multi-format reading
+    read = classmethod(reader())
 
     # -----------------------------------------------------------------------
-    # DataQualityDict operators
+    # instance methods
 
     def __iand__(self, other):
         for key, value in other.iteritems():

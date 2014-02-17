@@ -34,6 +34,7 @@ from ..time import Time
 from ..data import (Array2D, Series)
 from ..timeseries import (TimeSeries, TimeSeriesList)
 from ..spectrum import Spectrum
+from ..utils import update_docstrings
 
 from .. import version
 
@@ -55,6 +56,7 @@ def as_spectrum(func):
     return decorated_func
 
 
+@update_docstrings
 class Spectrogram(Array2D):
     """A 2-dimensional array holding a spectrogram of time-frequency
     amplitude.

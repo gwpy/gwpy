@@ -43,12 +43,14 @@ from ..detector import Channel
 from ..time import Time
 from ..segments import *
 from .. import version
+from ..utils import update_docstrings
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 __all__ = ['StateTimeSeries', 'StateVector', 'StateVectorDict', 'BitMask']
 
 
+@update_docstrings
 class StateTimeSeries(TimeSeries):
     """Boolean array representing a good/bad state determination
     of some data.
@@ -235,6 +237,7 @@ class BitMask(list):
                     mask, str(self.channel), str(self.epoch)))
 
 
+@update_docstrings
 class StateVector(TimeSeries):
     """Binary array representing a set of good/bad state determinations
     of some data.
