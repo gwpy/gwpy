@@ -1,8 +1,12 @@
-=================
-State information
-=================
-
 .. currentmodule:: gwpy.timeseries.statevector
+
+#####################################################
+The :class:`StateTimeSeries` and :class:`StateVector`
+#####################################################
+
+.. code:: python
+
+   >>> from gwpy.timeseries import (StateTimeSeries, StateVector)
 
 A large quantity of important data from gravitational-wave detectors can be distilled into simple boolean (`True` or `False`) statements informing something about the state of the instrument at a given time.
 These statements can be used to identify times during which a particular control system was active, or when the signal in a seismometer was above an alarming threshold, for example.
@@ -14,9 +18,9 @@ In GWpy, these data are represented by special cases (`sub-classes`) of the `Tim
    StateTimeSeries
    StateVector
 
------------------
+=================
 State time-series
------------------
+=================
 
 The example of a threshold on signal time-series is the core of a large amount of low-level data quality information, used in searches for gravitational waves, and detector characterisation, and is described by the `StateTimeSeries` object, a specific type of :class:`~gwpy.timeseries.core.TimeSeries` containing only boolean values.
 
@@ -62,9 +66,9 @@ The `StateTimeSeries` includes a handy :meth:`StateTimeSeries.to_dqflag` method 
                      version=None,
                      comment='L1:HPI-BS_BLRMS_Z_3_10 > 400 nm / s')>
 
------------------------
+=======================
 Multi-bit state-vectors
------------------------
+=======================
 
 Which the `StateTimeSeries` represents a single `True`/`False` statement about the state of a system, the `StateVector` gives a grouping of these, with a binary bitmask mapping bits in a binary word to descriptions of multiple states in a given compound system.
 
@@ -110,3 +114,20 @@ The `StateVector` fetched in the above example can then be parsed into a series 
                      name='science',
                      version=None,
                      comment='H1:IFO-SV_STATE_VECTOR bit 0')>
+
+===============
+Class reference
+===============
+
+This reference contains the following `Class` entries:
+
+.. autosummary::
+   :nosignatures:
+
+   StateVector
+   StateTimeSeries
+
+.. autoclass:: StateVector
+
+.. autoclass:: StateTimeSeries
+
