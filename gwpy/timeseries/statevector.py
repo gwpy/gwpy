@@ -142,6 +142,15 @@ class StateTimeSeries(TimeSeries):
                                   "StateTimeSeries because LAL has no "
                                   "BooleanTimeSeries structure")
 
+    def spectrogram(self, *args, **kwargs):
+        """Bogus function inherited from parent class, do not use.
+        """
+        raise NotImplementedError("The spectrogram method, inherited from the "
+                                  "TimeSeries, cannot be used with the "
+                                  "StateTimeSeries because LAL has no "
+                                  "BooleanTimeSeries structure")
+
+
 
 class BitMask(list):
     """Definition of the bits in a `StateVector`.
@@ -477,7 +486,8 @@ class StateVector(TimeSeries):
             if len(self.bitmask):
                 nbits = len(self.bitmask)
             else:
-                nbits = int(ceil(log(self.data.max(), 2)))
+                max = self.data.max()
+                nbits = max != 0 and int(ceil(log(self.data.max(), 2))) or 1
             bits = range(nbits)
             # construct an iterator over the columns of the old array
             it = numpy.nditer([old, None],
@@ -504,6 +514,13 @@ class StateVector(TimeSeries):
             raise ValueError("New sample rate must be divisor of input "
                              "series rate if downsampling a StateVector")
 
+    def spectrogram(self, *args, **kwargs):
+        """Bogus function inherited from parent class, do not use.
+        """
+        raise NotImplementedError("The spectrogram method, inherited from the "
+                                  "TimeSeries, cannot be used with the "
+                                  "StateTimeSeries because LAL has no "
+                                  "BooleanTimeSeries structure")
 
 
 class StateVectorDict(TimeSeriesDict):
