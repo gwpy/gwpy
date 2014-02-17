@@ -1,4 +1,5 @@
 # Copyright (C) Duncan Macleod (2013)
+# coding=utf-8
 #
 # This file is part of GWpy.
 #
@@ -15,13 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module defines the `DataQualityFlag` object, representing a
-named set of segments used in defining GW instrument state or
-data quality information.
+"""This module defines the `DataQualityFlag` and `DataQualityDict`.
+
+The `DataQualityFlag` represents an annotated set of data-quality segments
+indicating something about the state of a laser-interferometer
+gravitational-wave detector in a given time interval.
+
+The `DataQualityDict` is just a `dict` of flags, provided as a convenience
+for handling multiple flags over the same global time interval.
 """
 
 import re
-import warnings
 from copy import copy as shallowcopy
 from math import (floor, ceil)
 
@@ -40,6 +45,10 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 __all__ = ['DataQualityFlag', 'DataQualityDict']
 
+_re_inv = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+):(?P<version>\d+)\Z")
+_re_in = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+)\Z")
+_re_nv = re.compile(r"\A(?P<tag>[^/]+):(?P<ver>\d+)\Z")
+
 
 class DataQualityFlag(object):
     """A representation of a named set of segments.
@@ -47,35 +56,126 @@ class DataQualityFlag(object):
     Parameters
     ----------
     name : str, optional
-        The name of this data quality flag. This should be of the form
-        IFO:DQ-FLAG_NAME:VERSION, e.g. 'H1:DMT-SCIENCE:1'
-    active : `~segments.SegmentList`, optional
+        The name of this `DataQualityFlag`.
+        This should be of the form {ifo}:{tag}:{version}, e.g.
+        'H1:DMT-SCIENCE:1'. Use `label` for human-readable names.
+    active : :class:`~gwpy.segments.segments.SegmentList`, optional
         A list of active segments for this flag
-    valid : `~segments.SegmentList`, optional
+    valid : :class:`~gwpy.segments.segments.SegmentList`, optional
         A list of valid segments for this flag
+    label : `str`, optional
+        Human-readable name for this flag, e.g. ``'Science-mode'``
+    category : `int`, optional
+        Veto category for this flag.
+    description : `str`, optional
+        Human-readable description of why this flag was created.
+    isgood : `bool`, optional
+        Do active segments mean the IFO was in a good state?
     """
     _EntryClass = Segment
     _ListClass = SegmentList
-    __slots__ = ('_active', '_valid', 'ifo', 'name', 'version',
-                 'category', 'comment', '_name_is_flag')
-    def __init__(self, name=None, active=[], valid=[], category=None,
-                 comment=None):
-        """Define a new DataQualityFlag, with a name, a set of active
-        segments, and a set of valid segments
+
+    def __init__(self, name=None, active=None, valid=None, label=None,
+                 category=None, description=None, isgood=True):
+        """Define a new DataQualityFlag.
         """
-        self.ifo, self.name, self.version = parse_flag_name(name)
-        if self.ifo:
-            self._name_is_flag = True
-        else:
-            self._name_is_flag = False
-        self.valid = valid
-        self.active = active
+        self.name = name
+        self.valid = valid or []
+        self.active = active or []
+        self.label = label
         self.category = category
-        self.comment = comment
+        self.description = description
+        self.isgood = isgood
+
+    # -------------------------------------------------------------------------
+    # read-write properties
+
+    @property
+    def name(self):
+        """The name associated with this `DataQualityFlag`.
+
+        This should take the form {ifo}:{tag}:{version}. Each component
+        is stored separately the associated attributes.
+
+        :type: `str`
+        """
+        out = ':'.join([str(getattr(self, attr)) for attr in
+                        ('ifo', 'tag', 'version') if getattr(self, attr)
+                        is not None])
+        return out or None
+
+    @name.setter
+    def name(self, n):
+        self._parse_name(n)
+
+    @property
+    def ifo(self):
+        """The interferometer associated with this `DataQualityFlag`.
+
+        This should be a single uppercase letter and a single number,
+        e.g. ``'H1'``.
+
+        :type: `str`
+        """
+        return self._ifo
+
+    @ifo.setter
+    def ifo(self, ifoname):
+        self._ifo = ifoname
+
+    @property
+    def tag(self):
+        """The tag (name) associated with this `DataQualityFlag`.
+
+        This should take the form ``'AAA-BBB_CCC_DDD'``, i.e. where
+        each component is an uppercase acronym of alphanumeric
+        characters only, e.g. ``'DCH-IMC_BAD_CALIBRATION'`` or
+        ``'DMT-SCIENCE'``.
+
+        :type: `str`
+        """
+        return self._tag
+
+    @tag.setter
+    def tag(self, n):
+        self._tag = n
+
+    @property
+    def version(self):
+        """The version number of this `DataQualityFlag`.
+
+        Each flag in the segment database is stored with a version
+        integer, with each successive version representing a more
+        accurate dataset for its valid segments than any previous.
+
+        :type: `str`
+        """
+        return self._version
+
+    @version.setter
+    def version(self, v):
+        if v is None:
+            self._version = None
+        else:
+            self._version = int(v)
+
+    @property
+    def label(self):
+        """A human-readable label for this `DataQualityFlag`.
+
+        For example: ``'Science-mode'``.
+
+        :type: `str`
+        """
+        return self._label
+
+    @label.setter
+    def label(self, lab):
+        self._label = lab
 
     @property
     def active(self):
-        """The set of segments during which this DataQualityFlag was
+        """The set of segments during which this `DataQualityFlag` was
         active.
         """
         if self.valid:
@@ -86,13 +186,13 @@ class DataQualityFlag(object):
     @active.setter
     def active(self, segmentlist):
         self._active = self._ListClass(map(self._EntryClass,
-                                          segmentlist)).coalesce()
+                                           segmentlist)).coalesce()
         if not self.valid and len(segmentlist):
             self.valid = [segmentlist.extent()]
 
     @property
     def valid(self):
-        """The set of segments during which this DataQualityFlag was
+        """The set of segments during which this `DataQualityFlag` was
         valid, and its state was well defined.
         """
         return self._valid
@@ -100,31 +200,79 @@ class DataQualityFlag(object):
     @valid.setter
     def valid(self, segmentlist):
         self._valid = self._ListClass(map(self._EntryClass,
-                                         segmentlist)).coalesce()
+                                          segmentlist)).coalesce()
+
+    @property
+    def category(self):
+        """Veto category for this `DataQualityFlag`.
+
+        :type: `int`
+        """
+        return self._category
+
+    @category.setter
+    def category(self, cat):
+        if cat is None:
+            self._category = None
+        else:
+            self._category = int(cat)
+
+    @property
+    def description(self):
+        """Description of why/how this `DataQualityFlag` was generated.
+
+        :type: `str`
+        """
+        return self._description
+
+    @description.setter
+    def description(self, desc):
+        self._description = desc
+
+    @property
+    def isgood(self):
+        """Whether `active` segments mean the instrument was in a good state.
+
+        :type: `bool`
+        """
+        return self._isgood
+
+    @isgood.setter
+    def isgood(self, good):
+        self._isgood = bool(good)
+
+    # -------------------------------------------------------------------------
+    # read-only properties
+
+    @property
+    def texname(self):
+        """Name of this `DataQualityFlag` in LaTeX printable format.
+        """
+        return self.name.replace('_', r'\_')
 
     @property
     def extent(self):
-        """The single GPS [start, stop) enclosing segment of this
-        `DataQualityFlag`
+        """The single GPS ``[start, stop)`` enclosing segment of this
+        `DataQualityFlag`.
+
+        :type: :class:`~gwpy.segments.segment.Segment`
         """
         return self.valid.extent()
 
-    def __getitem__(self, item):
-        if isinstance(item, int) or isinstance(item, slice):
-            return self.active[item]
-        else:
-            new = self.__class__()
-            new.ifo = self.ifo
-            new.name = self.name
-            new.version = self.version
-            new.active = self.active[item]
-            new.valid = self.valid
-            return new
+    @property
+    def livetime(self):
+        """Amount of time this `DataQualityFlag` was `active`.
+
+        :type: `float`
+        """
+        return abs(self.active)
+
+    # -------------------------------------------------------------------------
+    # classmethods
 
     @classmethod
     def query(cls, flag, *args, **kwargs):
-        """Query the segment database URL as give, returning segments
-        during which the given flag was defined and active.
+        """Query the segment database for the given flag.
 
         Parameters
         ----------
@@ -136,7 +284,7 @@ class DataQualityFlag(object):
             :class:`~gwpy.segments.segments.SegmentList`
             defining a number of summary segments
         url : `str`, optional, default: ``'https://segdb.ligo.caltech.edu'``
-            URL of the segment database, defaults to segdb.ligo.caltech.edu
+            URL of the segment database
 
         Returns
         -------
@@ -178,8 +326,13 @@ class DataQualityFlag(object):
     write = writer()
 
     def round(self):
-        """Expand this `DataQualityFlag` to integer segments, with each
-        segment protracted to the nearest integer boundaries
+        """Round this `DataQualityFlag` to integer segments.
+
+        Returns
+        -------
+        roundedflag : `DataQualityFlag`
+            A copy of the original flag with the `active` and `valid` segments
+            padded out to the enclosing integer boundaries.
         """
         new = self.copy()
         new.active = self._ListClass([self._EntryClass(int(floor(s[0])),
@@ -191,8 +344,20 @@ class DataQualityFlag(object):
         return new.coalesce()
 
     def coalesce(self):
-        """Run the coalesce method over both the active and valid
-        SegmentLists
+        """Coalesce the segments for this `DataQualityFlag`.
+
+        This method calls the
+        :meth:`~gwpy.segments.segments.SegmentList.coalesce` method of the
+        underlying `active` and `valid` segment lists.
+
+        .. note::
+
+            this operations is performed in-place.
+
+        Returns
+        -------
+        self
+            a view of this flag, not a copy.
         """
         self.active = self.active.coalesce()
         self.valid = self.valid.coalesce()
@@ -201,67 +366,154 @@ class DataQualityFlag(object):
     def __repr__(self):
         indent = " " * len("<%s(" % self.__class__.__name__)
         valid = str(self.valid).replace("\n",
-                                         "\n%s      " % indent)
+                                        "\n%s      " % indent).split('\n')
+        if len(valid) > 10:
+            valid = valid[:3] + ['%s      ...' % indent] + valid[-3:]
         active = str(self.active).replace("\n",
-                                           "\n%s       " % indent)
-        return ("<{1}(valid={2},\n{0}active={3},\n{0}ifo={4},\n{0}name={5},\n"
-                "{0}version={6},\n{0}comment={7})>".format(
-                    indent, self.__class__.__name__, valid, active,
-                    repr(self.ifo), repr(self.name), repr(self.version),
-                    repr(self.comment)))
+                                          "\n%s       " % indent).split('\n')
+        if len(active) > 10:
+            active = active[:3] + ['%s        ...' % indent] + active[-3:]
+        return ("<{1}({2},\n{0}valid={3},\n{0}active={4},\n"
+                "{0}description={5})>".format(indent, self.__class__.__name__,
+                                              (self.name and repr(self.name) or
+                                               'No name'),
+                                              '\n'.join(valid),
+                                              '\n'.join(active),
+                                              repr(self.description)))
 
     def copy(self):
-        """Build an exact copy of this `DataQualityFlag`, with a
-        fresh memory copy of all segments and metadata.
+        """Build an exact copy of this `DataQualityFlag`.
+
+        Returns
+        -------
+        flag2 : `DataQualityFlag`
+            a copy of the original flag, but with a fresh memory address.
         """
         new = self.__class__()
         new.ifo = self.ifo
         new.name = self.name
         new.version = self.version
-        new.comment = self.comment
+        new.description = self.description
         new.valid = self._ListClass([self._EntryClass(s[0], s[1]) for
                                     s in self.valid])
         new.active = self._ListClass([self._EntryClass(s[0], s[1]) for
                                      s in self.active])
         return new
 
+    def plot(self, **kwargs):
+        """Plot this `DataQualityFlag`.
+
+        Parameters
+        ----------
+        **kwargs
+            all keyword arguments are passed to the
+            :class:`~gwpy.plotter.segments.SegmentPlot` constructor.
+
+        Returns
+        -------
+        plot : `~gwpy.plotter.segments.SegmentPlot`
+            a new `Plot` with this `DataQualityFlag` displayed on a set of
+            :class:`~gwpy.plotter.segments.SegmentAxes`.
+        """
+        from ..plotter import (rcParams, SegmentPlot)
+        kwargs.setdefault('epoch', self.valid[0][0])
+        if self.label:
+            kwargs.setdefault('label', self.label)
+        elif rcParams['text.usetex']:
+            kwargs.setdefault('label', self.texname)
+        else:
+            kwargs.setdefault('label', self.name)
+        return SegmentPlot(self, **kwargs)
+
+    def _parse_name(self, name):
+        """Internal method to parse a `string` name into constituent
+        `ifo, `name` and `version` components.
+
+        Parameters
+        ----------
+        name : `str`
+            the full name of a `DataQualityFlag` to parse, e.g.
+            ``'H1:DMT-SCIENCE:1'``
+
+        Returns
+        -------
+        (ifo, name, version)
+            A tuple of component string parts
+
+        Raises
+        ------
+        `ValueError`
+            If the input ``name`` cannot be parsed into
+            {ifo}:{tag}:{version} format.
+        """
+        if name is None:
+            self.ifo = None
+            self.tag = None
+            self.version = None
+        elif _re_inv.match(name):
+            match = _re_inv.match(name).groupdict()
+            self.ifo = match['ifo']
+            self.tag = match['tag']
+            self.version = int(match['version'])
+        elif _re_in.match(name):
+            match = _re_in.match(name).groupdict()
+            self.ifo = match['ifo']
+            self.tag = match['tag']
+            self.version = None
+        elif _re_nv.match(name):
+            match = _re_nv.match(name).groupdict()
+            self.ifo = None
+            self.tag = match['tag']
+            self.version = None
+        else:
+            raise ValueError("No flag name structure detected in '%s', flags "
+                             "should be named as '{ifo}:{tag}:{version}'. "
+                             "For arbitrary strings, use the "
+                             "`DataQualityFlag.label` attribute" % name)
+        return self.ifo, self.tag, self.version
+
+    def __getslice__(self, slice_):
+        return self.__class__(name=self.name, valid=self.valid,
+                              active=self.active[slice_], label=self.label,
+                              description=self.description, isgood=self.isgood)
+
+    def __getitem__(self, item):
+        if isinstance(item, int) or isinstance(item, slice):
+            return self.active[item]
+        else:
+            self.__getslice__(item)
+
     def __and__(self, other):
-        """Return a new `DataQualityFlag` that is the intersection of
-        this one and ``other``
+        """Find the intersection of this one and ``other``.
         """
         return self.copy().__iand__(other)
 
     def __iand__(self, other):
-        """Replace this `DataQualityFlag` with the intersection of
-        itself and ``other``
+        """Intersect this `DataQualityFlag` with ``other`` in-place.
         """
         self.valid &= other.valid
         self.active &= other.active
         return self
 
     def __sub__(self, other):
-        """Return a new `DataQualityFlag` that is the union of this
-        one and ``other``
+        """Find the difference between this `DataQualityFlag` and another.
         """
         return self.copy().__isub__(other)
 
     def __isub__(self, other):
-        """Replace this `DataQualityFlag` with the difference between
-        itself and ``other``
+        """Subtract the ``other`` `DataQualityFlag` from this one in-place.
         """
         self.valid -= other.valid
         self.active -= other.active
         return self
 
     def __or__(self, other):
-        """Return a new `DataQualityFlag` that is the union of this
-        one and ``other``
+        """Find the union of this `DataQualityFlag` and ``other``.
         """
         return self.copy().__ior__(other)
 
     def __ior__(self, other):
-        """Replace this `DataQualityFlag` with the union of itself
-        and ``other``
+        """Add the ``other`` `DataQualityFlag` to this one in-place.
         """
         self.valid |= other.valid
         self.active |= other.active
@@ -270,42 +522,39 @@ class DataQualityFlag(object):
     __add__ = __or__
     __iadd__ = __ior__
 
-    def plot(self, **kwargs):
-        """Plot this DataQualityFlag
-        """
-        from ..plotter import SegmentPlot
-        kwargs.setdefault('epoch', self.valid[0][0])
-        return SegmentPlot(self, **kwargs)
-
-    write = io_registry.write
 
 class DataQualityDict(OrderedDict):
-    """List of `DataQualityFlags` with associated methods
+    """An `OrderedDict` of (key, `DataQualityFlag`) pairs.
+
+    Since the `DataQualityDict` is an `OrderedDict`, all iterations over
+    its elements retain the order in which they were inserted.
     """
     _EntryClass = DataQualityFlag
 
+    # -----------------------------------------------------------------------
+    # classmethods
+
     @classmethod
     def query(cls, flags, *args, **kwargs):
-        """Query the segment database URL as given for the listed
-        `DataQualityFlag` names
+        """Query the segment database for a set of `DataQualityFlags`.
 
         Parameters
         ----------
-        flag : str
-            The name of the flag for which to query
+        flags : `iterable`
+            A list of flag names for which to query.
         *args
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a
             :class:`~gwpy.segments.segments.SegmentList`
-            defining a number of summary segments
+            defining a number of summary segments.
         url : `str`, optional, default: ``'https://segdb.ligo.caltech.edu'``
-            URL of the segment database, defaults to segdb.ligo.caltech.edu
+            URL of the segment database.
 
         Returns
         -------
-        flag : `DataQualityFlag`
-            A new `DataQualityFlag`, with the `valid` and `active` lists
-            filled appropriately.
+        flagdict : `DataQualityDict
+            An ordered `DataQualityDict` of (name, `DataQualityFlag`)
+            pairs.
         """
         # given segmentlist
         if len(args) == 1 and isinstance(args[0], SegmentList):
@@ -323,7 +572,7 @@ class DataQualityDict(OrderedDict):
             raise TypeError("DataQualityDict.query has no keyword argument "
                             "'%s'" % kwargs.keys()[0])
         # parse flags
-        if isinstance(flags, basestring):
+        if isinstance(flags, (str, unicode)):
             flags = flags.split(',')
         else:
             flags = flags
@@ -334,15 +583,24 @@ class DataQualityDict(OrderedDict):
         engine = segdb_engine.LdbdQueryEngine(connection)
         segdefs = []
         for flag in flags:
-            ifo, name, version = parse_flag_name(flag)
-            if not version:
-                version = '*'
+            dqflag = DataQualityFlag(name=flag)
+            ifo = dqflag.ifo
+            name = dqflag.tag
+            if dqflag.version is None:
+                vers = '*'
+            else:
+                vers = dqflag.version
             for gpsstart, gpsend in qsegs:
-                gpsstart = int(float(gpsstart))
-                gpsend = int(ceil(float(gpsend)))
+                gpsstart = float(gpsstart)
+                if not gpsstart.is_integer():
+                    raise ValueError("Segment database queries can only"
+                                     "operate on integer GPS times")
+                gpsend = float(gpsend)
+                if not gpsend.is_integer():
+                    raise ValueError("Segment database queries can only"
+                                     "operate on integer GPS times")
                 segdefs += segdb_utils.expand_version_number(
-                               engine, (ifo, name, version,
-                                        gpsstart, gpsend, 0, 0))
+                    engine, (ifo, name, vers, gpsstart, gpsend, 0, 0))
         segs = segdb_utils.query_segments(engine, 'segment', segdefs)
         segsum = segdb_utils.query_segments(engine, 'segment_summary', segdefs)
         segs = [s.coalesce() for s in segs]
@@ -427,39 +685,3 @@ class DataQualityDict(OrderedDict):
         for key, value in new.items():
             dict.__setitem__(new, key, ~value)
         return new
-
-
-_re_inv = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<name>[^/]+):(?P<version>\d+)\Z")
-_re_in = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<name>[^/]+)\Z")
-_re_nv = re.compile(r"\A(?P<name>[^/]+):(?P<ver>\d+)\Z")
-
-def parse_flag_name(name, warn=True):
-    """Internal method to parse a `string` name into constituent
-    `ifo, `name` and `version` components.
-
-    Parameters
-    ----------
-    name : `str`
-        the full name of a `DataQualityFlag` to parse, e.g.
-        ``'H1:DMT-SCIENCE:1'``
-
-    Returns
-    -------
-    (ifo, name, version)
-        A tuple of component string parts
-    """
-    if name is None:
-        return None, None, None
-    if _re_inv.match(name):
-        match = _re_inv.match(name).groupdict()
-        return match['ifo'], match['name'], int(match['version'])
-    elif _re_in.match(name):
-        match = _re_in.match(name).groupdict()
-        return match['ifo'], match['name'], None
-    elif _re_nv.match(name):
-        match = _re_nv.match(name).groupdict()
-        return None, match['name'], int(match['version'])
-    if warn:
-        warnings.warn("No flag name structure detected in '%s', flags should "
-                      "be named as 'IFO:DQ-FLAG_NAME:VERSION'" % name)
-    return None, name, None

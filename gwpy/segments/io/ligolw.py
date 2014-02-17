@@ -1,4 +1,5 @@
 # Copyright (C) Duncan Macleod (2013)
+# coding=utf-8
 #
 # This file is part of GWpy.
 #
@@ -155,7 +156,7 @@ def write_to_xmldoc(flag, xmldoc, process_id=None):
         xmldoc.childNodes[-1].appendChild(segdeftab)
     segdef = lsctables.SegmentDef()
     segdef.set_ifos([flag.ifo])
-    segdef.name = flag.name
+    segdef.name = flag.tag
     segdef.version = flag.version
     segdef.comment = flag.comment
     segdef.insertion_time = int(Time(datetime.datetime.now(),
