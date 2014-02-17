@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Provides a LIGO data channel class.
+"""This module defines the `Channel` and `ChannelList` classes.
 """
 
 import re
@@ -57,11 +57,12 @@ class Channel(object):
     """
     def __init__(self, ch, sample_rate=None, unit=None, dtype=None,
                  type=None, model=None, url=None):
+        type_ = type
         # test for Channel input
         if isinstance(ch, Channel):
             sample_rate = sample_rate or ch.sample_rate
             unit = unit or ch.unit
-            type = type or ch.type
+            type_ = type_ or ch.type
             dtype = dtype or ch.dtype
             model = model or ch.model
             url = url or ch.url
@@ -70,11 +71,14 @@ class Channel(object):
         self.name = ch
         self.sample_rate = sample_rate
         self.unit = unit
-        if type is not None:
-            self.type = type
+        if type_ is not None:
+            self.type = type_
         self.dtype = dtype
         self.model = model
         self.url = url
+
+    # -------------------------------------------------------------------------
+    # read-write properties
 
     @property
     def name(self):
@@ -97,38 +101,6 @@ class Channel(object):
             self._name = str(n)
         self._ifo, self._system, self._subsystem, self._signal = (
             parse_channel_name(self._name))
-
-    @property
-    def ifo(self):
-        """Interferometer prefix for this `Channel`.
-
-        :type: `str`
-        """
-        return self._ifo
-
-    @property
-    def system(self):
-        """Instrumental system for this `Channel`.
-
-        :type: `str`
-        """
-        return self._system
-
-    @property
-    def subsystem(self):
-        """Instrumental sub-system for this `Channel`.
-
-        :type: `str`
-        """
-        return self._subsystem
-
-    @property
-    def signal(self):
-        """Instrumental signal for this `Channel`.
-
-        :type: `str`
-        """
-        return self._signal
 
     @property
     def sample_rate(self):
@@ -240,11 +212,40 @@ class Channel(object):
     def url(self, href):
         self._url = href
 
-    def __str__(self):
-        return self.name
+    # -------------------------------------------------------------------------
+    # read-only properties
 
-    def __repr__(self):
-        return '<Channel("%s") at %s>' % (str(self), hex(id(self)))
+    @property
+    def ifo(self):
+        """Interferometer prefix for this `Channel`.
+
+        :type: `str`
+        """
+        return self._ifo
+
+    @property
+    def system(self):
+        """Instrumental system for this `Channel`.
+
+        :type: `str`
+        """
+        return self._system
+
+    @property
+    def subsystem(self):
+        """Instrumental sub-system for this `Channel`.
+
+        :type: `str`
+        """
+        return self._subsystem
+
+    @property
+    def signal(self):
+        """Instrumental signal for this `Channel`.
+
+        :type: `str`
+        """
+        return self._signal
 
     @property
     def texname(self):
@@ -259,6 +260,9 @@ class Channel(object):
         if self.type is not None:
             return '%s,%s' % (self.name, self.type)
         return self.name
+
+    # -------------------------------------------------------------------------
+    # classsmethods
 
     @classmethod
     def query(cls, name, debug=False):
@@ -310,6 +314,15 @@ class Channel(object):
         return cls(name, sample_rate=sample_rate, unit=unit, dtype=dtype,
                    type=ctype)
 
+    # -------------------------------------------------------------------------
+    # methods
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return '<Channel("%s") at %s>' % (str(self), hex(id(self)))
+
     def __eq__(self, other):
         for attr in ['name', 'sample_rate', 'unit', 'url', 'type', 'dtype']:
             if getattr(self, attr) != getattr(other, attr):
@@ -319,6 +332,7 @@ class Channel(object):
     def __hash__(self):
         return hash((str(self), str(self.sample_rate), str(self.unit),
                     self.url, self.type, self.dtype))
+
 
 _re_ifo = re.compile("[A-Z]\d:")
 _re_cchar = re.compile("[-_]")
@@ -349,10 +363,18 @@ def parse_channel_name(name):
 
 
 class ChannelList(list):
-    """A list of Channels, with parsing/sieveing utilities.
+    """A `list` of `channels <Channel>`, with parsing utilities.
     """
+
+    @property
+    def ifos(self):
+        """The `set` of interferometer prefixes used in this
+        `ChannelList`.
+        """
+        return set([c.ifo for c in self])
+
     def find(self, name):
-        """Find the channel with the given name in this ChannelList.
+        """Find the `Channel` with a specific name in this `ChannelList`.
 
         Parameters
         ----------
@@ -361,13 +383,14 @@ class ChannelList(list):
 
         Returns
         -------
-        idx : `int`
-            returns the position of the first `Channel` in self
-            whose name matches the input
+        index : `int`
+            the position of the first `Channel` in this `ChannelList`
+            whose `~Channel.name` matches the search key.
 
         Raises
         ------
-        ValueError if no such element exists.
+        ValueError
+            if no matching `Channel` is found.
         """
         for i, chan in enumerate(self):
             if name == chan.name:
@@ -376,8 +399,8 @@ class ChannelList(list):
 
     def sieve(self, name=None, sample_rate=None, sample_range=None,
               exact_match=False, **others):
-        """Find all Channels in this list that match the specified
-        criteria.
+        """Find all `Channels <Channel>` in this list matching the
+        specified criteria.
 
         Parameters
         ----------
@@ -428,8 +451,7 @@ class ChannelList(list):
 
     @classmethod
     def query(cls, name, debug=False):
-        """Query the LIGO Channel Information System a `ChannelList`
-        of entries matching the given name regular expression.
+        """Query the LIGO Channel Information System a `ChannelList`.
 
         Parameters
         ----------
@@ -442,10 +464,7 @@ class ChannelList(list):
         Returns
         -------
         `ChannelList`
+            a new list containing all `Channels <Channel>` found.
         """
         from .io import cis
         return cis.query(name, debug=debug)
-
-    @property
-    def ifos(self):
-        return set([c.ifo for c in self])
