@@ -55,6 +55,7 @@ There are a small number of core objects provided by GWpy, each representing the
 The following pages in this documentation give full descriptions of how to `read and manipulate data <data/>`_, and `access data segments <segments/>`_, amongst other things.
 The remainder of this page outlines a few more key concepts surrounding these core objects.
 
+------------
 Input/Output
 ------------
 
@@ -66,10 +67,7 @@ For example, you can read a :class:`~gwpy.timeseries.core.TimeSeries` from a GWF
 
 Similary, each `class` has a standard output method ``write()``, again accepting a number of recognised formats.
 
-.. seealso::
-
-   The unified input/output system is defined in the :mod:`gwpy.io` module, extending the core functionality of the :mod:`astropy.io` module
-
+-------------
 Visualisation
 -------------
 
@@ -82,6 +80,3 @@ If you have an interactive `backend <http://matplotlib.org/faq/usage_faq.html#wh
 
     >>> plot.show()
 
-.. seealso::
-
-   The visualisation library is defined in the :mod:`gwpy.plotter` module, providing simple extensions of the core matplotlib :class:`~matplotlib.figure.Figure` and :class:`~matplotlib.axes.Axes` objects to customise display of the GWpy core objects.
