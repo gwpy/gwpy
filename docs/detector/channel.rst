@@ -1,8 +1,8 @@
-##############################################################################
-Data channels (:class:`gwpy.detector.Channel <gwpy.detector.channel.Channel>`)
-##############################################################################
-
 .. currentmodule:: gwpy.detector.channel
+
+####################
+The :class:`Channel`
+####################
 
 .. code-block:: python
 
@@ -18,7 +18,7 @@ These data streams are known as 'channels', and are named according to a convent
 
    L1:PSS-ISS_PDB_OUT_DQ
 
-describes the output signal from photodiode-B inside the Intensity Stabilisation System of the Pre-Stabilised Laser powering the L1 instrument, hosted at the LIGO Livingston Observatory.
+describes the output signal (``OUT``) from photodiode-B (``PDB``) inside the Intensity Stabilisation System (``ISS``) of the Pre-Stabilised Laser (``PSL``) powering the ``L1`` instrument, hosted at the LIGO Livingston Observatory.
 
 A simple representation of this physical signal is provided by the :class:`Channel` object::
 
@@ -47,12 +47,14 @@ Alongside nomnitive attributes, each :class:`Channel` has the following attribut
    ~Channel.url
    ~Channel.model
 
+Each of these can be manually passed to the `Channel` constructor, or downloaded directly from the LIGO Channel Information System.
+
 ==========================================================
 The LIGO Channel Information System (https://cis.ligo.org)
 ==========================================================
 
 All of the LIGO interferometer data channels are recorded in the Channel Information System (https://cis.ligo.org), a queryable database containing the details of each channel recorded to disk from the observatories.
-The :meth:`Channel.query` :class:`classmethod` allows you to query the database as follows::
+The :meth:`Channel.query` `classmethod` allows you to query the database as follows::
 
     >>> from gwpy.detector import Channel
     >>> chan = Channel.query('L1:IMC-F_OUT_DQ')
@@ -63,17 +65,19 @@ The :meth:`Channel.query` :class:`classmethod` allows you to query the database 
     >>> print(chan.model)
     l1lsc
 
+In this example we have accessed the information for the frequency noise output signal (``F_OUT``) from the Input Mode Cleaner (``IMC``) of the ``L1`` instrument.
+
 =================
 The `ChannelList`
 =================
 
-Groups of `Channels <Channel>` may be collected together in a `ChannelList`, a simple extension of the built-in `list` with functionality for `finding <ChannelList.find>` and `sieveing <ChannelList.sieve>` for specific `Channel` names, sample-rates, or types.
+Groups of channels may be collected together in a `ChannelList`, a simple extension of the built-in `list` with functionality for `finding <ChannelList.find>` and `sieveing <ChannelList.sieve>` for specific `Channel` names, sample-rates, or types.
 
 ===============
 Class reference
 ===============
 
-This reference contains the following `Class` entries:
+This reference contains the following `class` entries:
 
 .. autosummary::
    :nosignatures:
