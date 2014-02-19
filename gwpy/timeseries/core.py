@@ -43,7 +43,7 @@ from astropy import units
 import nds2
 
 from ..data import Array2D
-from ..detector import Channel
+from ..detector import (Channel, ChannelList)
 from ..io import (reader, writer, nds as ndsio)
 from ..segments import (Segment, SegmentList)
 from ..time import Time
@@ -1381,14 +1381,27 @@ class TimeSeriesDict(OrderedDict):
                 found = connection.find_channels('%s*' % c.name, type)
             else:
                 found = connection.find_channels('%s*' % c.name)
-            if len(found) == 0:
+            # sieve out multiple channels with same type and different
+            # sample rates
+            funiq = ChannelList()
+            for nds2channel in found:
+                channel = Channel.from_nds2(nds2channel)
+                known = funiq.sieve(name=channel.name, type=channel.type)
+                if len(known) >= 1:
+                    continue
+                else:
+                    funiq.append(channel)
+            if len(funiq) == 0:
                 raise ValueError("Channel '%s' not found" % c.name)
-            elif len(found) > 1:
-                raise ValueError("Multiple matches for channel '%s' in NDS "
-                                 "database, ambiguous request:\n    %s"
-                                 % (c.name, '\n    '.join(map(str, found))))
+            elif len(funiq) > 1:
+                raise ValueError(
+                    "Multiple matches for channel '%s' in NDS database, "
+                    "ambiguous request:\n    %s"
+                    % (c.name, '\n    '.join(['%s (%s, %s)' % (str(c), c.type,
+                                                               c.sample_rate)
+                                              for c in found])))
             else:
-                qchannels.append(Channel.from_nds2(found[0]))
+                qchannels.append(funiq[0])
         if verbose:
             gprint("Complete.")
 
