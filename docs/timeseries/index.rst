@@ -59,8 +59,35 @@ For more details on accessing data via either of these sources, please read:
 .. toctree::
    :maxdepth: 1
 
-   timeseries-gwf
-   timeseries-nds
+   gwf
+   nds
+
+========================
+`TimeSeries` collections
+========================
+
+A single `TimeSeries` is meant to represent one stream of contiguous data from a single source.
+There are two collections provided that allow you to bundle multiple `TimeSeries` from a single source, and multiple `TimeSeries` of the same epoch from a number of sources:
+
+--------------------
+The `TimeSeriesList`
+--------------------
+
+The `TimeSeriesList` is an extension of the builtin `list` type to allow easy collection and manipulation of a number of `TimeSeries` from a single source, say different epochs from a single :class:`~gwpy.detector.channel.Channel`.
+This object comes with a few handy methods that make combining multiple epochs very simple:
+
+.. autosummary::
+
+   ~TimeSeriesList.coalesce
+   ~TimeSeriesList.join
+
+--------------------
+The `TimeSeriesDict`
+--------------------
+
+The `TimeSeriesDict` does for multiple channels what the `TimeSeriesList` does for multiple epochs, allowing easy collection of `TimeSeries` from a single epochs but multiple sources.
+The most immediate itilities of this object are the :meth:`TimeSeriesDict.read` and :meth:`TimeSeriesDict.fetch` methods, allowing users to read and download respectively data for numerous channels in a single command.
+See the full reference for what other functionality is available.
 
 .. _plotting-a-timeseries:
 
