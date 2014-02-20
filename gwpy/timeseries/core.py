@@ -35,7 +35,7 @@ from matplotlib import mlab
 try:
     from collections import OrderedDict
 except ImportError:
-    from astropy.utils import OrderedDict
+    from ordereddict import OrderedDict
 
 from astropy import units
 

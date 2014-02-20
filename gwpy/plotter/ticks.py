@@ -32,7 +32,10 @@ from astropy import time as atime
 from ..time import Time
 from .. import version
 
-from astropy.utils import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version

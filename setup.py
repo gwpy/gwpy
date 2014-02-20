@@ -21,6 +21,14 @@ import glob
 import os.path
 from setuptools import setup, find_packages
 
+# test for OrderedDict
+extra_install_requires = []
+try:
+    from collections import OrderedDict
+except ImportError:
+    extra_install_requires.append('ordereddict>=1.1')
+
+# import version generator
 utils = __import__('utils', fromlist=['version'], level=1)
 
 PACKAGENAME = 'gwpy'
@@ -57,7 +65,7 @@ setup(name=PACKAGENAME,
       ext_modules=[],
       scripts=scripts,
       install_requires=['astropy >= 0.3', 'numpy >= 1.5', 'python-dateutil',
-                        'matplotlib >= 1.3.0'],
+                        'matplotlib >= 1.3.0'] + extra_install_requires,
       requires=['astropy', 'glue', 'numpy', 'lal', 'lalframe', 'matplotlib',
                 'scipy'],
       provides=[PACKAGENAME],

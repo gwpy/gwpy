@@ -33,7 +33,7 @@ __version__ = version.version
 try:
     from collections import OrderedDict
 except ImportError:
-    from astropy.utils import OrderedDict
+    from ordereddict import OrderedDict
 finally:
     DEFAULT_HOSTS = OrderedDict([
         (None, ('ldas-pcdev4.ligo.caltech.edu', 31200)),
