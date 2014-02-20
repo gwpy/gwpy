@@ -28,7 +28,6 @@ import re
 from math import (ceil, floor, log)
 from dateutil import parser as dateparser
 
-import numpy
 
 from scipy import (fftpack)
 from matplotlib import mlab
@@ -44,7 +43,7 @@ import nds2
 
 from ..data import Array2D
 from ..detector import (Channel, ChannelList)
-from ..io import (reader, writer, nds as ndsio)
+from ..io import (reader, nds as ndsio)
 from ..segments import (Segment, SegmentList)
 from ..time import Time
 from ..window import *
@@ -71,8 +70,7 @@ NDS2_FETCH_TYPE_MASK = (nds2.channel.CHANNEL_TYPE_RAW |
 
 @update_docstrings
 class TimeSeries(Series):
-    """A data array holding some metadata to represent a time series of
-    instrumental or analysis data.
+    """An `Array` with time-domain metadata.
 
     Parameters
     ----------
@@ -93,10 +91,10 @@ class TimeSeries(Series):
     Notes
     -----
     Any regular array, i.e. any iterable collection of data, can be
-    easily converted into a `TimeSeries`.
+    easily converted into a `TimeSeries`::
 
-    >>> data = numpy.asarray([1,2,3])
-    >>> series = TimeSeries(data)
+        >>> data = numpy.asarray([1,2,3])
+        >>> series = TimeSeries(data)
 
     The necessary metadata to reconstruct timing information are recorded
     in the `epoch` and `sample_rate` attributes. This time-stamps can be
@@ -205,7 +203,46 @@ class TimeSeries(Series):
     # TimeSeries accessors
 
     # use input/output registry to allow multi-format reading
-    read = classmethod(reader())
+    read = classmethod(reader(doc="""
+        Read data into a `TimeSeries`.
+
+        Parameters
+        ----------
+        source : `str`, `~glue.lal.Cache`
+            a single file path `str`, or a `~glue.lal.Cache` containing
+            a contiguous list of files.
+        channel : `str`, `~gwpy.detector.core.Channel`
+            the name of the channel to read, or a `Channel` object.
+        start : `~gwpy.time.Time`, `float`, optional
+            GPS start time of required data.
+        end : `~gwpy.time.Time`, `float`, optional
+            GPS end time of required data.
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+        nproc : `int`, optional, default: ``1``
+            number of parallel processes to use, serial process by
+            default.
+
+            .. note::
+
+               Parallel frame reading, via the ``nproc`` keyword argument,
+               is only available when giving a :class:`~glue.lal.Cache` of
+               frames, or using the ``format='cache'`` keyword argument.
+
+        Returns
+        -------
+        timeseries : `TimeSeries`
+            a new `TimeSeries` containing data for the given channel.
+
+        Raises
+        ------
+        Exception
+            if no format could be automatically identified.
+
+        Notes
+        -----"""))
 
     @classmethod
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
@@ -1234,8 +1271,48 @@ class TimeSeriesDict(OrderedDict):
     Currently the class doesn't do anything special. FIXME.
     """
     EntryClass = TimeSeries
+
     # use input/output registry to allow multi-format reading
-    read = classmethod(reader())
+    read = classmethod(reader(doc="""
+        Read data into a `TimeSeriesDict`.
+
+        Parameters
+        ----------
+        source : `str`, `~glue.lal.Cache`
+            a single file path `str`, or a `~glue.lal.Cache` containing
+            a contiguous list of files.
+        channels : `~gwpy.detector.channel.ChannelList`, `list`
+            a list of channels to read from the source.
+        start : `~gwpy.time.Time`, `float`, optional
+            GPS start time of required data.
+        end : `~gwpy.time.Time`, `float`, optional
+            GPS end time of required data.
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+        nproc : `int`, optional, default: ``1``
+            number of parallel processes to use, serial process by
+            default.
+
+            .. note::
+
+               Parallel frame reading, via the ``nproc`` keyword argument,
+               is only available when giving a :class:`~glue.lal.Cache` of
+               frames, or using the ``format='cache'`` keyword argument.
+
+        Returns
+        -------
+        dict : `TimeSeriesDict`
+            a new `TimeSeriesDict` containing data for the given channel.
+
+        Raises
+        ------
+        Exception
+            if no format could be automatically identified.
+
+        Notes
+        -----"""))
 
     def append(self, other, **kwargs):
         for key, ts in other.iteritems():
