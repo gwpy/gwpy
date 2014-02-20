@@ -126,8 +126,11 @@ This reference contains the following `Class` entries:
 
    StateVector
    StateTimeSeries
+   StateVectorDict
 
 .. autoclass:: StateVector
 
 .. autoclass:: StateTimeSeries
+
+.. autoclass:: StateVectorDict
 

@@ -9,11 +9,10 @@ The :class:`TimeSeries`
    >>> from gwpy.timeseries import TimeSeries
 
 
-Gravitational-wave detectors are time-domain instruments, attempting to record gravitational wave amplitude as a differential change in the lengths of each of the interferometer arms.
-Alongside these data, thousands of auxiliary instrumental control and error signals and environmental monitors are recorded in real-time and recorded to disk as GWF-format 'frame' files.
-To learn more about this particular data format, take a look at the specification document `LIGO-T970130 <https://dcc.ligo.org/LIGO-T970130/public>`_.
+Gravitational-wave detectors are time-domain instruments, attempting to record gravitational-wave amplitude as a differential change in the lengths of each of the interferometer arms.
+Alongside these data, thousands of auxiliary instrumental control and error signals and environmental monitors are recorded in real-time and recorded to disk and archived for off-line study.
 
-GWpy represents these data through the :class:`TimeSeries` object, a :class:`numpy.ndarray` containing the data themselves and a full set of metadata.
+GWpy represents these data through the :class:`TimeSeries` object, a sub-class of the :class:`numpy.ndarray` containing the data themselves and a full set of metadata.
 
 Any `TimeSeries` can be generated from a standard `~numpy.ndarray` or `list` by providing the data and the minimal :attr:`~TimeSeries.epoch` and :attr:`~TimeSeries.sample_rate` metadata::
 
@@ -40,7 +39,8 @@ The full set of metadata that can be provided is as follows:
 Accessing interferometer data
 =============================
 
-As described above, the data from each instrument are archived in gravitational-wave frame files.
+As described above, the data from each instrument are archived for off-line study in gravitational-wave frame (``.gwf``) files.
+To learn more about this particular data format, take a look at the specification document `LIGO-T970130 <https://dcc.ligo.org/LIGO-T970130/public>`_.
 These files are stored on disk by the LIGO Data Grid and can be either accessed either directly or remotely.
 
 The `TimeSeries` for a given :class:`~gwpy.detector.channel.Channel` can be read from disk using the :meth:`TimeSeries.read` `classmethod` as follows::
@@ -48,7 +48,7 @@ The `TimeSeries` for a given :class:`~gwpy.detector.channel.Channel` can be read
     >>> from gwpy.timeseries import TimeSeries
     >>> data = TimeSeries.read('/archive/frames/A6/L0/LLO/L-R-10670/L-R-1067042880-32.gwf', 'L1:PSL-ODC_CHANNEL_OUT_DQ')
 
-Alternatively, the data can be downloaded on-the-fly `Network Data Server <https://www.lsc-group.phys.uwm.edu/daswg/projects/nds-client.html>`_ via the :meth:`TimeSeries.fetch` `classmethod`::
+Alternatively, the data can be downloaded on-the-fly via the `Network Data Server <https://www.lsc-group.phys.uwm.edu/daswg/projects/nds-client.html>`_ using the :meth:`TimeSeries.fetch` `classmethod`::
 
     >>> from gwpy.timeseries import TimeSeries
     >>> data = TimeSeries.fetch('L1:PSL-ODC_CHANNEL_OUT_DQ', 1067042880, 1067042912)
@@ -112,10 +112,22 @@ In this example, which we will use in various places in these pages, we download
    spectra
    statevector
 
-======================
-`TimeSeries` reference
-======================
+=========================
+`Class <class>` reference
+=========================
+
+This reference contains the following `Class` entries:
+
+.. autosummary::
+   :nosignatures:
+
+   TimeSeries
+   TimeSeriesList
+   TimeSeriesDict
 
 .. autoclass:: TimeSeries
-   :members:
+
+.. autoclass:: TimeSeriesList
+
+.. autoclass:: TimeSeriesDict
 
