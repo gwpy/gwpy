@@ -94,19 +94,20 @@ class DataQualityFlag(object):
     def name(self):
         """The name associated with this `DataQualityFlag`.
 
-        This should take the form {ifo}:{tag}:{version}. Each component
-        is stored separately the associated attributes.
+        This normally takes the form {ifo}:{tag}:{version}. If found,
+        each component is stored separately the associated attributes.
 
         :type: `str`
         """
-        out = ':'.join([str(getattr(self, attr)) for attr in
-                        ('ifo', 'tag', 'version') if getattr(self, attr)
-                        is not None])
-        return out or None
+        return self._name
 
     @name.setter
     def name(self, n):
-        self._parse_name(n)
+        self._name = n
+        try:
+            self._parse_name(n)
+        except ValueError:
+            self._parse_name(None)
 
     @property
     def ifo(self):
@@ -180,13 +181,12 @@ class DataQualityFlag(object):
         """
         if self.valid:
             self._active &= self.valid
-            self._active.coalesce()
         return self._active
 
     @active.setter
     def active(self, segmentlist):
         self._active = self._ListClass(map(self._EntryClass,
-                                           segmentlist)).coalesce()
+                                           segmentlist))
         if not self.valid and len(segmentlist):
             self.valid = [segmentlist.extent()]
 
@@ -200,7 +200,7 @@ class DataQualityFlag(object):
     @valid.setter
     def valid(self, segmentlist):
         self._valid = self._ListClass(map(self._EntryClass,
-                                          segmentlist)).coalesce()
+                                          segmentlist))
 
     @property
     def category(self):
@@ -318,7 +318,39 @@ class DataQualityFlag(object):
         return flags[flag]
 
     # use input/output registry to allow multi-format reading
-    read = classmethod(reader())
+    read = classmethod(reader(doc="""
+    Read segments from file into a `DataQualityFlag`.
+
+    Parameters
+    ----------
+    filename : `str`
+        path of file to read
+    format : `str`, optional
+        source format identifier. If not given, the format will be
+        detected if possible. See below for list of acceptable
+        formats.
+    flag : `str`, optional, default: read all segments
+        name of flag to read from file.
+    coltype : `type`, optional, default: `float`
+        datatype to force for segment times, only valid for
+        ``format='segwizard'``.
+    strict : `bool`, optional, default: `True`
+        require segment start and stop times match printed duration,
+        only valid for ``format='segwizard'``.
+
+
+    Returns
+    -------
+    dqflag : `DataQualityFlag`
+        formatted `DataQualityFlag` containing the active and valid
+        segments read from file.
+
+    Notes
+    -----
+    When reading with ``format='segwizard'`` the
+    :attr:`~DataQualityFlag.valid` `SegmentList` will simply represent
+    the extent of the :attr:`~DataQualityFlag.active` `SegmentList`.
+    """))
 
     # -------------------------------------------------------------------------
     # instance methods
@@ -621,7 +653,32 @@ class DataQualityDict(OrderedDict):
         return out
 
     # use input/output registry to allow multi-format reading
-    read = classmethod(reader())
+    read = classmethod(reader(doc="""
+    Read segments from file into a `DataQualityDict`.
+
+    Parameters
+    ----------
+    filename : `str`
+        path of file to read
+    format : `str`, optional
+        source format identifier. If not given, the format will be
+        detected if possible. See below for list of acceptable
+        formats.
+    flags : `list`, optional, default: read all flags found
+        list of flags to read, by default all flags are read separately.
+    coalesce : `bool`, optional, default: `True`
+        coalesce all `SegmentLists` before returning.
+
+    Returns
+    -------
+    flagdict : :class:`~gwpy.segments.flag.DataQualityDict`
+        a new `DataQualityDict` of `DataQualityFlag` entries with ``active``
+        and ``valid`` segments seeded from the XML tables in the given
+        file.
+
+    Notes
+    -----
+    """))
 
     # -----------------------------------------------------------------------
     # instance methods

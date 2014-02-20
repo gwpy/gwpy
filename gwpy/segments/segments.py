@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -20,8 +21,6 @@ semi-open interval. These typically represent periods when a
 gravitational-wave laser interferometer was operating in a specific
 configuration.
 """
-
-from math import (ceil, floor)
 
 from .. import version
 __version__ = version.version
@@ -51,7 +50,8 @@ def _update_docstring(doc):
         glue segments.segment* classes modified for GWpy with sphinx
         scope
     """
-    doc = doc.replace('segmentlistdicts', '`SegmentListDicts <SegmentListDict>`')
+    doc = doc.replace('segmentlistdicts',
+                      '`SegmentListDicts <SegmentListDict>`')
     doc = doc.replace('segmentlistdict', '`SegmentListDict`')
     doc = doc.replace('Segmentlists', '`SegmentLists <SegmentList>`')
     doc = doc.replace('segmentlist', '`SegmentList`')
@@ -62,6 +62,7 @@ def _update_docstring(doc):
 
 class Segment(_Segment):
     __doc__ = _update_docstring(_Segment.__doc__)
+
     @property
     def start(self):
         return self[0]
@@ -78,7 +79,8 @@ class Segment(_Segment):
 
 
 class SegmentList(_SegmentList):
-    __doc__ = _SegmentList.__doc__.replace('segmentlist', '`SegmentList`')
+    __doc__ = _update_docstring(_SegmentList.__doc__)
+
     def __repr__(self):
         return "<SegmentList([%s])>" % "\n              ".join(map(repr, self))
 
@@ -91,7 +93,39 @@ class SegmentList(_SegmentList):
     def __str__(self):
         return "[%s]" % "\n ".join(map(str, self))
 
-    read = classmethod(reader())
+    read = classmethod(reader(doc="""
+    Read segments from file into a `SegmentList`.
+
+    Parameters
+    ----------
+    filename : `str`
+        path of file to read
+    format : `str`, optional
+        source format identifier. If not given, the format will be
+        detected if possible. See below for list of acceptable
+        formats.
+    flag : `str`, optional, default: read all segments
+        name of flag to read from file.
+    coltype : `type`, optional, default: `float`
+        datatype to force for segment times, only valid for
+        ``format='segwizard'``.
+    strict : `bool`, optional, default: `True`
+        require segment start and stop times match printed duration,
+        only valid for ``format='segwizard'``.
+
+
+    Returns
+    -------
+    dqflag : `DataQualityFlag`
+        formatted `DataQualityFlag` containing the active and valid
+        segments read from file.
+
+    Notes
+    -----
+    When reading with ``format='segwizard'`` the
+    :attr:`~DataQualityFlag.valid` `SegmentList` will simply represent
+    the extent of the :attr:`~DataQualityFlag.active` `SegmentList`.
+    """))
     write = writer()
 
 

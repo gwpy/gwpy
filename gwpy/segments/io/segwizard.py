@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -29,25 +30,29 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 
-def from_segwizard(fobj, coltype=float, strict=True):
+def from_segwizard(fobj, coalesce=True, coltype=float, strict=True):
     """Read segments from a segwizard format file into a `SegmentList`
     """
-    if isinstance(fobj, basestring):
+    if isinstance(fobj, (unicode, str)):
         fobj = open(fobj, 'r')
         close = True
     else:
         close = False
     segs = SegmentList(segmentsUtils.fromsegwizard(fobj, coltype=coltype,
                                                    strict=strict))
+    if coalesce:
+        segs.coalesce()
     if close:
         fobj.close()
     return segs
 
 
-def flag_from_segwizard(filename, flag=None, coltype=float, strict=True):
-    return DataQualityFlag(name=None, active=from_segwizard(filename,
-                                                            coltype=coltype,
-                                                            strict=strict))
+def flag_from_segwizard(filename, flag=None, coalesce=True, coltype=float,
+                        strict=True):
+    return DataQualityFlag(name=flag,
+                           active=from_segwizard(filename, coalesce=coalesce,
+                                                 coltype=coltype,
+                                                 strict=strict))
 
 
 def identify_segwizard(*args, **kwargs):
@@ -76,7 +81,7 @@ def to_segwizard(segs, fobj):
         for definition of the segwizard format, and the to/from functions
         used in this GWpy module
     """
-    if isinstance(fobj, basestring):
+    if isinstance(fobj, (unicode, str)):
         close = True
         fobj = open(fobj, 'w')
     else:
