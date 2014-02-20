@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -28,7 +29,6 @@ statement of instrumental operation
 
 from math import (ceil, log)
 import sys
-from itertools import izip
 
 if sys.version_info[0] < 3:
     range = xrange
@@ -36,14 +36,15 @@ if sys.version_info[0] < 3:
 import numpy
 
 from glue.segmentsUtils import from_bitstream
-from astropy.units import (Unit, Quantity)
+from astropy.units import Quantity
 
 from .core import *
 from ..detector import Channel
 from ..time import Time
 from ..segments import *
-from .. import version
 from ..utils import update_docstrings
+from ..io import reader
+from .. import version
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -83,7 +84,7 @@ class StateTimeSeries(TimeSeries):
         """Generate a new StateTimeSeries
         """
         if isinstance(data, (list, tuple)):
-           data = numpy.asarray(data)
+            data = numpy.asarray(data)
         if not isinstance(data, cls):
             data = data.astype(bool)
         return super(StateTimeSeries, cls).__new__(cls, data, name=name,
@@ -120,7 +121,6 @@ class StateTimeSeries(TimeSeries):
             defines the `valid` segments, while the contiguouse `True`
             sets defined each of the `active` segments
         """
-        active = SegmentList()
         start = self.x0.value
         dt = self.dx.value
         active = from_bitstream(self.data, start, dt, minlen=int(minlen))
@@ -166,7 +166,7 @@ class BitMask(list):
     description : `dict`, optional
         (bit, desc) `dict` of longer descriptions for each bit
     """
-    def __init__(self, bits, channel=None, epoch=None, description={}):
+    def __init__(self, bits, channel=None, epoch=None, description=None):
         list.__init__(self, bits)
         if channel is not None:
             self.channel = channel
@@ -225,7 +225,10 @@ class BitMask(list):
 
     @description.setter
     def description(self, desc):
-        self._description = desc
+        if desc is None:
+            self._description = {}
+        else:
+            self._description = desc
 
     def __repr__(self):
         indent = " " * len('<%s(' % self.__class__.__name__)
@@ -317,10 +320,10 @@ class StateVector(TimeSeries):
             boolean = numpy.zeros((self.size, nbits), dtype=bool)
             for i,d in enumerate(self.data):
                 boolean[i,:] = [int(d)>>j & 1 for
-                                j in xrange(nbits)]
+                                j in range(nbits)]
             self._boolean = ArrayTimeSeries(boolean, name=self.name,
                                             epoch=self.epoch,
-                                            sample_rate=self.sample_rate, 
+                                            sample_rate=self.sample_rate,
                                             y0=0, dy=1)
             return self.boolean
 
@@ -346,6 +349,54 @@ class StateVector(TimeSeries):
 
     # -------------------------------------------
     # StateVector methods
+
+    # use input/output registry to allow multi-format reading
+    read = classmethod(reader(doc="""
+        Read data into a `StateVector`.
+
+        Parameters
+        ----------
+        source : `str`, `~glue.lal.Cache`
+            a single file path `str`, or a `~glue.lal.Cache` containing
+            a contiguous list of files.
+        channel : `str`, `~gwpy.detector.core.Channel`
+            the name of the channel to read, or a `Channel` object.
+        start : `~gwpy.time.Time`, `float`, optional
+            GPS start time of required data.
+        end : `~gwpy.time.Time`, `float`, optional
+            GPS end time of required data.
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable formats.
+        nproc : `int`, optional, default: ``1``
+            number of parallel processes to use, serial process by
+            default.
+
+            .. note::
+
+               Parallel frame reading, via the ``nproc`` keyword argument,
+               is only available when giving a :class:`~glue.lal.Cache` of
+               frames, or using the ``format='cache'`` keyword argument.
+
+        Returns
+        -------
+        statevector : `StateVector`
+            a new `StateVector` containing data for the given channel.
+
+        Raises
+        ------
+        Exception
+            if no format could be automatically identified.
+
+        .. warning::
+
+           The 'built-in' formats below may require third-party
+           libraries in order to function. If the relevant libraries
+           cannot be loaded at run-time, that format will be removed
+           from the list.
+
+        Notes
+        -----"""))
 
     def to_dqflags(self, minlen=1, dtype=float, round=False):
         """Convert this `StateVector` into a `SegmentListDict`.
@@ -373,7 +424,7 @@ class StateVector(TimeSeries):
             `StateVector` bits
         """
         return [self.bits[i].to_dqflag(
-                    name=bit, minlen=minlen, round=round, dtype=dtype, 
+                    name=bit, minlen=minlen, round=round, dtype=dtype,
                     comment=self.bitmask.description[bit])
                 for i,bit in enumerate(self.bitmask) if bit is not None]
 
@@ -523,6 +574,7 @@ class StateVector(TimeSeries):
                                   "BooleanTimeSeries structure")
 
 
+@update_docstrings
 class StateVectorDict(TimeSeriesDict):
     """Analog of the :class:`~gwpy.timeseries.core.TimeSeriesDict`
     for :class:`~gwpy.timeseries.statevector.StateVector` objects.
@@ -533,3 +585,44 @@ class StateVectorDict(TimeSeriesDict):
         for more object information.
     """
     EntryClass = StateVector
+
+    read = classmethod(reader(doc="""
+        Read data into a `StateVectorDict`.
+
+        Parameters
+        ----------
+        source : `str`, `~glue.lal.Cache`
+            a single file path `str`, or a `~glue.lal.Cache` containing
+            a contiguous list of files.
+        channels : `~gwpy.detector.channel.ChannelList`, `list`
+            a list of channels to read from the source.
+        start : `~gwpy.time.Time`, `float`, optional
+            GPS start time of required data.
+        end : `~gwpy.time.Time`, `float`, optional
+            GPS end time of required data.
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+        nproc : `int`, optional, default: ``1``
+            number of parallel processes to use, serial process by
+            default.
+
+            .. note::
+
+               Parallel frame reading, via the ``nproc`` keyword argument,
+               is only available when giving a :class:`~glue.lal.Cache` of
+               frames, or using the ``format='cache'`` keyword argument.
+
+        Returns
+        -------
+        dict : `StateVectorDict`
+            a new `StateVectorDict` containing data for the given channel.
+
+        Raises
+        ------
+        Exception
+            if no format could be automatically identified.
+
+        Notes
+        -----"""))
