@@ -28,7 +28,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 
-def reader():
+def reader(name=None, doc=None):
     """Construct a new unified input/output reader.
 
     This method is required to create a new copy of the
@@ -39,9 +39,12 @@ def reader():
     read : `function`
         A copy of the :func:`astropy.io.registry.read` function
     """
-    return FunctionType(read.func_code, read.func_globals,
-                        read.func_name, read.func_defaults,
+    func = FunctionType(read.func_code, read.func_globals,
+                        name or read.func_name, read.func_defaults,
                         read.func_closure)
+    if doc is not None:
+        func.__doc__ = doc.strip('\n ')
+    return func
 
 
 def writer():
