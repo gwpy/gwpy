@@ -36,8 +36,7 @@ from .. import (TimeSeries, TimeSeriesList, TimeSeriesDict,
 
 
 def read_cache(cache, channel, start=None, end=None, resample=None,
-               maxprocesses=1, minprocesssize=1, maxprocesssize=None,
-               **kwargs):
+               nproc=1, **kwargs):
     """Read a `TimeSeries` from a cache of data files using
     multiprocessing.
 
@@ -59,15 +58,9 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
         rate (samples per second) to resample
     format : `str`, optional
         name of data file format, e.g. ``gwf`` or ``hdf``.
-    maxprocesses : `int`, default: ``1``
+    nproc : `int`, default: ``1``
         maximum number of independent frame reading processes, default
         is set to single-process file reading.
-    minprocesssize : `int`, default: ``1``
-        minimum number of frames to pass to a single process, default is
-        to maximally separate the cache.
-    maxprocesssize : `int`, default: ``1``
-        maximum number of frames to pass to a single process, default is
-        to use as many proccesses as possible (up to ``maxprocesses``)
 
     Notes
     -----
@@ -103,7 +96,7 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
         format_ = os.path.splitext(cache[0].path)[1][1:]
 
     # single-process
-    if maxprocesses == 1:
+    if nproc == 1:
         return cls.read(cache, channel, format=format_, start=start, end=end,
                         resample=resample, **kwargs)
 
@@ -115,16 +108,12 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
                        resample=resample, **kwargs))
 
     # separate cache into parts
-    fperproc = int(ceil(len(cache) / maxprocesses))
-    if fperproc < minprocesssize:
-        fperproc = minprocesssize
-    if maxprocesssize is not None and fperproc > maxprocesssize:
-        fperproc = maxprocesssize
+    fperproc = int(ceil(len(cache) / nproc))
     subcaches = [Cache(cache[i:i+fperproc]) for
                  i in range(0, len(cache), fperproc)]
 
     # start all processes
-    queue = ProcessQueue(maxprocesses)
+    queue = ProcessQueue(nproc)
     proclist = []
     for subcache in subcaches:
         process = Process(target=_read, args=(queue, subcache))
