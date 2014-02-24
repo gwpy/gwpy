@@ -124,7 +124,7 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
             gprint("%sReading %d channels from frames... %d/%d (%.1f%%)\r"
                    % (verbose, len(channels), i+1, N, (i+1)/N * 100), end='')
     if verbose is not False:
-        gprint("%sReading %d channels from frames... %d/%d (100%%)"
+        gprint("%sReading %d channels from frames... %d/%d (100.0%%)"
                % (verbose, len(channels), N, N))
     # crop
     for channel, ts in out.iteritems():
