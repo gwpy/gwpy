@@ -93,7 +93,7 @@ class StateTimeSeries(TimeSeries):
                                                    times=times)
 
     def to_dqflag(self, name=None, minlen=1, dtype=float, round=False,
-                  comment=None):
+                  description=None):
         """Convert this `StateTimeSeries` into a `DataQualityFlag`.
 
         Each contiguous set of `True` values are grouped as a `Segment`
@@ -129,7 +129,8 @@ class StateTimeSeries(TimeSeries):
                                        s in active])
         valid = SegmentList([self.span])
         out = DataQualityFlag(name=name or self.name, active=active,
-                              valid=valid, comment=comment or self.name)
+                              valid=valid,
+                              description=description or self.name)
         if round:
             out = out.round()
         return out.coalesce()
@@ -425,7 +426,7 @@ class StateVector(TimeSeries):
         """
         return [self.bits[i].to_dqflag(
                     name=bit, minlen=minlen, round=round, dtype=dtype,
-                    comment=self.bitmask.description[bit])
+                    description=self.bitmask.description[bit])
                 for i,bit in enumerate(self.bitmask) if bit is not None]
 
     @classmethod
