@@ -137,10 +137,8 @@ class SegmentAxes(TimeSeriesAxes):
         if y is None:
             y = len(self.collections)
         # get flag name
-        name = kwargs.pop('label',
-                          ':'.join([str(attr) for attr in
-                                    (flag.ifo, flag.name, flag.version) if
-                                    attr is not None]))
+        name = kwargs.pop('label', flag.name)
+
         # get epoch
         try:
             if not self.epoch.gps:
