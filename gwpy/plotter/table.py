@@ -288,6 +288,7 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
     :class:`~gwpy.plotter.spectrum.SpectrumPlot`, otherwise the parent is
     the core :class:`~gwpy.plotter.core.Plot`.
     """
+    _DefaultAxesClass = EventTableAxes
     __metaclass__ = _EventTableMetaPlot
 
     def __init__(self, *args, **kwargs):
