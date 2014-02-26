@@ -429,14 +429,13 @@ def get_table_column(table, column):
     if hasattr(table, 'get_%s' % column):
         return numpy.asarray(getattr(table, 'get_%s' % column)())
     elif column == 'time':
-        if re.match('(sim_inspiral|multi_inspiral)',
-                    table.tableName, re.I):
-            return table.get_end()
+        if re.match('(sngl_inspiral|multi_inspiral)', table.tableName, re.I):
+            return numpy.asarray(table.get_end())
         elif re.match('(sngl_burst|multi_burst)', table.tableName, re.I):
-            return table.get_peak()
+            return numpy.asarray(table.get_peak())
         elif re.match('(sngl_ring|multi_ring)', table.tableName, re.I):
-            return table.get_start()
-    elif hasattr(table, 'get_column'):
+            return numpy.asarray(table.get_start())
+    if hasattr(table, 'get_column'):
         return numpy.asarray(table.get_column(column))
     else:
         return numpy.asarray(table.getColumnByName(column))
