@@ -446,7 +446,81 @@ def get_row_value(row, attr):
     """Internal method to extract a value from the given row
     """
     attr = str(attr).lower()
+    cname = row.__class__.__name__
     if hasattr(row, 'get_%s' % attr):
-        return getattr(row, 'get_%s' % attr)
+        return getattr(row, 'get_%s' % attr)()
+    elif attr == 'time':
+        if re.match('(Sngl|Multi)Inspiral', cname, re.I):
+            return row.get_end()
+        elif re.match('(Sngl|Multi)Burst', cname, re.I):
+            return row.get_peak()
+        elif re.match('(Sngl|Multi)Ring', cname, re.I):
+            return row.get_start()
     else:
         return getattr(row, attr)
+
+
+def get_column_string(column):
+    """
+    Format the string columnName (e.g. xml table column) into latex format for.
+    an axis label.
+
+    Examples:
+
+    >>> get_column_string('snr')
+    'SNR'
+
+    >>> get_column_string('bank_chisq_dof')
+    r'Bank $\chi^2$ DOF'
+
+    Arguments:
+
+      columnName : string
+        string to format
+    """
+    acro = ['snr', 'ra', 'dof', 'id', 'ms', 'far']
+    greek = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta',
+             'theta', 'iota', 'kappa', 'lamda', 'mu', 'nu', 'xi', 'omicron',
+             'pi', 'rho', 'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi',
+             'omega']
+    unit = ['ns']
+    sub = ['flow', 'fhigh', 'hrss', 'mtotal', 'mchirp']
+
+    tex = pyplot.rcParams['text.usetex']
+
+    words = []
+    for w in re.split('\s', column):
+        if w.isupper():
+            words.append(w)
+        else:
+            words.extend(re.split('_', w))
+
+    # parse words
+    for i, w in enumerate(words):
+        # get acronym in lower case
+        if w in acro:
+            words[i] = w.upper()
+        # get numerical unit
+        elif w in unit:
+            words[i] = '$(%s)$' % w
+        # get character with subscript text
+        elif w in sub and tex:
+            words[i] = '%s$_{\mbox{\\small %s}}$' % (w[0], w[1:])
+        # get greek word
+        elif w in greek and tex:
+            words[i] = '$\%s$' % w
+        # get starting with greek word
+        elif re.match('(%s)' % '|'.join(greek), w) and tex:
+            if w[-1].isdigit():
+                words[i] = '$\%s_{%s}$''' % tuple(re.findall(r"[a-zA-Z]+|\d+",w))
+            elif w.endswith('sq'):
+                words[i] = '$\%s^2$' % w.rstrip('sq')
+        # get everything else
+        else:
+            if w.isupper():
+                words[i] = w
+            else:
+                words[i] = w.title()
+            # escape underscore
+            words[i] = re.sub(r'(?<!\\)_', r'\_', words[i])
+    return ' '.join(words)
