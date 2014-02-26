@@ -6,7 +6,7 @@ Installing GWpy
 Installing from git
 ===================
 
-The source code for GWpy is under ``git`` version control, hosted by http://github.com.
+The source code for GWpy is under ``git`` version control, hosted by http://github.com. The following instructions require use of the command-line terminal, available for all Unix-based systems. Currently, support for Windows isn't possible.
 
 You can install the package by first cloning the repository
 
@@ -65,16 +65,15 @@ Dependencies
 
 The GWpy package has the following build-time dependencies (i.e. required for installation):
 
-* `astropy <http://astropy.org>`_
-* `NumPy <http://www.numpy.org>`_ >= 1.7.1 (inherited dependency from astropy)
-
-GWpy is dependent on the `astropy <http://astropy.org>`_ package for installation
+* `astropy <http://astropy.org>`_ >= 0.3
+* `NumPy <http://www.numpy.org>`_ >= 1.5
+* `matplotlib <http://matplotlib.org>`_ >= 1.3.0
+* `python-dateutil <https://pypi.python.org/pypi/python-dateutil/>`_
 
 **Runtime dependencies**
 
 Additionally, in order for much of the code to import and run properly, users are required to have the following packages:
 
-* `matplotlib <http://matplotlib.org>`_
 * `glue <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_
 * `lal <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ and `lalframe <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ (same URL)
 * `NDS2 <https://www.lsc-group.phys.uwm.edu/daswg/projects/nds-client.html>`_ (including SWIG-wrappings for python)
