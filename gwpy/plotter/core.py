@@ -184,7 +184,7 @@ class Plot(figure.Figure):
             except ValueError:
                 pass
         for m in mappables:
-            mappable.set_clim(clim)
+            m.set_clim(clim)
 
         # set tick format (including sub-ticks for log scales)
         if pyplot.rcParams["text.usetex"]:
