@@ -181,29 +181,35 @@ class EventTableAxes(TimeSeriesAxes):
         """
         row = table[get_table_column(table, rank).argmax()]
         disp = "Loudest event:"
-        columns = [x, y]
+        columns = [x, y, rank, color]
         if color is not None:
             columns += color
         scat = []
         for i, column in enumerate(columns):
+            if not column:
+                continue
             if i:
                 disp += ','
             val = get_row_value(row, column)
-            scat.append([val])
+            if i < 2:
+                scat.append([float(val)])
+            column = get_column_string(column)
             if pyplot.rcParams['text.usetex']:
-                disp += (r" ${\rm %s} = %s$" % (column, val))
+                disp += (r" %s$= %s$" % (column, val))
             else:
                 disp += " %s = %.2g" % (column, val)
         disp = disp.rstrip(',')
-        pos = kwargs.pop('position', [0.01, 0.98])
+        pos = kwargs.pop('position', [0.5, 1.00])
         kwargs.setdefault('transform', self.axes.transAxes)
-        kwargs.setdefault('verticalalignment', 'top')
-        kwargs.setdefault('backgroundcolor', 'white')
-        kwargs.setdefault('bbox', dict(facecolor='white', alpha=1.0,
-                                       edgecolor='black', pad=6.0))
+        kwargs.setdefault('verticalalignment', 'bottom')
+        kwargs.setdefault('horizontalalignment', 'center')
         args = pos + [disp]
-        self.scatter(*scat, marker='*', zorder=1000, color='gold', s=80)
-        self.axes.text(*args, **kwargs)
+        self.scatter(*scat, marker='*', zorder=1000, facecolor='gold',
+                     edgecolor='black',  s=200)
+        self.text(*args, **kwargs)
+        if self.get_title():
+            pos = self.title.get_position()
+            self.title.set_position((pos[0], pos[1] + 0.05))
 
 register_projection(EventTableAxes)
 
