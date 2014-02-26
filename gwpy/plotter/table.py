@@ -186,7 +186,7 @@ class EventTableAxes(TimeSeriesAxes):
             columns += color
         scat = []
         for i, column in enumerate(columns):
-            if not column:
+            if not column or column in columns[:i]:
                 continue
             if i:
                 disp += ','
