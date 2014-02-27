@@ -303,7 +303,7 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
         # extract plotting keyword arguments
         plotargs = dict()
         for arg in ['linewidth', 'facecolor', 'edgecolor', 'marker', 'cmap',
-                    's', 'size_by', 'size_by_log', 'size_range']:
+                    's', 'size_by', 'size_by_log', 'size_range', 'label']:
             if arg in kwargs:
                 val = kwargs.pop(arg, None)
                 if val is not None:
@@ -354,10 +354,12 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
                 for ax,table in zip(self.axes, tables):
                     axepoch = epoch
                     if axepoch is None:
-                        axepoch = 1e100
                         tcol = numpy.asarray(get_table_column(table,
                                                               columns['x']))
-                        epoch = epoch.min()
+                        if epoch is None:
+                            epoch = tcol.min()
+                        else:
+                            epoch = min(epoch, tcol.min())
                     ax.set_epoch(epoch)
                     if ax._auto_gps:
                         ax.auto_gps_scale()
@@ -366,11 +368,13 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
             elif isinstance(self, TimeSeriesPlot):
                 ax = self.axes[0]
                 if epoch is None:
-                    epoch = 1e100
                     for table in tables:
                         tcol = numpy.asarray(get_table_column(table,
                                                               columns['x']))
-                        epoch = min(epoch, tcol.min())
+                        if epoch is None:
+                            epoch = tcol.min()
+                        else:
+                            epoch = min(epoch, tcol.min())
                 ax.set_epoch(epoch)
                 if ax._auto_gps:
                     ax.auto_gps_scale()
@@ -428,23 +432,23 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
         return ax.plot_table(table, x, y, color=color, **kwargs)
 
 
-def get_table_column(table, column):
+def get_table_column(table, column, dtype=float):
     """Internal method to extract a column from the given table
     """
     column = str(column).lower()
     if hasattr(table, 'get_%s' % column):
-        return numpy.asarray(getattr(table, 'get_%s' % column)())
+        return numpy.asarray(getattr(table, 'get_%s' % column)()).astype(dtype)
     elif column == 'time':
         if re.match('(sngl_inspiral|multi_inspiral)', table.tableName, re.I):
-            return numpy.asarray(table.get_end())
+            return numpy.asarray(table.get_end()).astype(dtype)
         elif re.match('(sngl_burst|multi_burst)', table.tableName, re.I):
-            return numpy.asarray(table.get_peak())
+            return numpy.asarray(table.get_peak()).astype(dtype)
         elif re.match('(sngl_ring|multi_ring)', table.tableName, re.I):
-            return numpy.asarray(table.get_start())
+            return numpy.asarray(table.get_start()).astype(dtype)
     if hasattr(table, 'get_column'):
-        return numpy.asarray(table.get_column(column))
+        return numpy.asarray(table.get_column(column)).astype(dtype)
     else:
-        return numpy.asarray(table.getColumnByName(column))
+        return numpy.asarray(table.getColumnByName(column)).astype(dtype)
 
 
 def get_row_value(row, attr):
