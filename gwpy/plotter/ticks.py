@@ -19,7 +19,7 @@
 """
 
 import re
-from math import (ceil, floor, modf)
+from math import (ceil, floor, log, modf)
 from numpy import arange
 
 from matplotlib import (units as munits, ticker as mticker, pyplot, transforms as mtransforms)
@@ -97,8 +97,9 @@ class AutoTimeLocator(mticker.AutoLocator):
     def bin_boundaries(self, vmin, vmax):
         """Returns the boundaries for the ticks for this AutoTimeLocator
         """
-        if self._scale == 3600:
-             scale = (vmax-vmin) >= 36 and 4 or (vmax-vmin) > 8 and 2 or 1
+        if self._scale:
+             N = (vmax - vmin)
+             scale =  2 ** ceil(log(ceil(N / 12.), 2))
              low = floor(vmin)
              while low % scale:
                  low -= 1
