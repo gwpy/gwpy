@@ -132,8 +132,10 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
             channels = channel.split(',')
         else:
             channels = channel
-        if len(channels):
+        try:
             data.sort(key=lambda tsd: tsd.values()[0].epoch.gps)
+        except IndexError:
+            pass
         out = cls()
         while len(data):
             tsd = data.pop(0)
