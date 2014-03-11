@@ -1465,12 +1465,14 @@ class TimeSeriesDict(OrderedDict):
         if verbose:
             gprint("Checking channels against the NDS database...", end=' ')
         for channel in channels:
-            if type and log(type, 2).is_integer():
+            if (type and
+                    (isinstance(type, (unicode, str)) or
+                    (isinstance(type, int) and log(type, 2).is_integer()))):
                 c = Channel(channel, type=type)
             else:
                 c = Channel(channel)
             if c.ndstype is not None:
-                found = connection.find_channels(c.name, c.ndstype)
+                found = connection.find_channels(c.ndsname, c.ndstype)
             elif type is not None:
                 found = connection.find_channels('%s*' % c.name, type)
             else:
@@ -1517,7 +1519,8 @@ class TimeSeriesDict(OrderedDict):
         out = TimeSeriesDict()
         with outputcontext:
             try:
-                data = [connection.fetch(start, end, map(str, qchannels))]
+                data = [connection.fetch(start, end,
+                                         [c.ndsname for c in qchannels])]
             except RuntimeError as e:
                 # XXX: hack to fix potential problem with fetch
                 # Can remove once fetch has been patched (DMM, 02/2014)
