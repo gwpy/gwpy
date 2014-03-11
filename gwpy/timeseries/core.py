@@ -1249,9 +1249,12 @@ class TimeSeriesList(list):
                 while j < N and this.span[1] >= self[j].span[0]:
                     try:
                         this = self[i] = this.append(self[j])
-                    except ValueError:
-                        this = this.copy()
-                        this = self[i] = this.append(self[j])
+                    except ValueError as e:
+                        if 'cannot resize this array' in str(e):
+                            this = this.copy()
+                            this = self[i] = this.append(self[j])
+                        else:
+                            raise
                     j += 1
             else:
                 self[i] = this
