@@ -886,9 +886,9 @@ class TimeSeries(Series):
         """Check whether other is contiguous with self.
         """
         self.is_compatible(other)
-        if self.span[1] == other.span[0]:
+        if numpy.isclose(self.span[1], other.span[0]):
             return 1
-        elif other.span[1] == self.span[0]:
+        elif numpy.isclose(other.span[1], self.span[0]):
             return -1
         else:
             return 0
