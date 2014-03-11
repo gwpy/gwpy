@@ -893,7 +893,7 @@ class TimeSeries(Series):
         else:
             return 0
 
-    def append(self, other, gap='raise', inplace=True, pad=0.0):
+    def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
         """Connect another `TimeSeries` onto the end of the current one.
 
         Parameters
@@ -939,7 +939,7 @@ class TimeSeries(Series):
                 padding.epoch = new.span[1]
                 padding.sample_rate = new.sample_rate
                 padding.unit = new.unit
-                new.append(padding, inplace=True)
+                new.append(padding, inplace=True, resize=resize)
             elif gap == 'ignore':
                 pass
             elif new.span[0] < other.span[0] < new.span[1]:
@@ -947,10 +947,24 @@ class TimeSeries(Series):
             else:
                 raise ValueError("Cannot append discontiguous TimeSeries")
         # resize first
-        s = list(new.shape)
-        s[0] = new.shape[0] + other.shape[0]
-        new.resize(s, refcheck=False)
+        if resize:
+            s = list(new.shape)
+            s[0] = new.shape[0] + other.shape[0]
+            new.resize(s, refcheck=False)
+        else:
+            new.data[:-other.shape[0]] = new.data[other.shape[0]:]
         new[-other.shape[0]:] = other.data
+        try:
+            times = new._index
+        except AttributeError:
+            new.x0 = new.x0.value + other.shape[0] * new.dx.value
+        else:
+            if resize:
+                new.times.resize(s, refcheck=False)
+            else:
+                new.times[:-other.shape[0]] = new.times[other.shape[0]:]
+            new.times[-other.shape[0]:] = other.times.data
+            new.epoch = new.times[0]
         return new
 
     def prepend(self, other, gap='raise', inplace=True, pad=0.0):
@@ -1014,6 +1028,13 @@ class TimeSeries(Series):
         new[-N:] = new.data[:N]
         new[:other.shape[0]] = other.data
         return new
+
+    def update(self, other, inplace=True):
+        """Update this `TimeSeries` by appending new data from an other
+        and dropping the same amount of data off the start.
+
+        """
+        return self.append(other, inplace=inplace, resize=False)
 
     # -------------------------------------------
     # Utilities
