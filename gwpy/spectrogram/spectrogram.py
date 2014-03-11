@@ -88,8 +88,7 @@ def _from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
 
 
 def from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
-                    method='welch', window=None, plan=None, maxprocesses=1,
-                    minprocesssize=500):
+                    method='welch', window=None, plan=None, nproc=1):
     """Calculate the average power spectrogram of this `TimeSeries`
     using the specified average spectrum method.
 
@@ -110,13 +109,9 @@ def from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
     plan : :lalsuite:`XLALREAL8ForwardFFTPlan`, optional
         LAL FFT plan to use when generating average spectrum,
         substitute type 'REAL8' as appropriate.
-    maxprocesses : `int`, default: ``1``
+    nproc : `int`, default: ``1``
         maximum number of independent frame reading processes, default
         is set to single-process file reading.
-    minprocesssize : `int`, default: ``1000``
-        number of individual FFTs to squeeze into a single process.
-        large number by default to optimise short-duration FFT relative
-        to overhead of multiprocessing.
 
     Returns
     -------
@@ -133,7 +128,6 @@ def from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
     # get size of spectrogram
     nFFT = int(fftlength * timeseries.sample_rate.value)
     nsteps = int(timeseries.size // (stride * timeseries.sample_rate.value))
-    nfreqs = nFFT // 2 + 1
 
     # generate window and plan if needed
     try:
@@ -146,10 +140,8 @@ def from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
         if plan is None:
             plan = psd.generate_lal_fft_plan(nFFT, dtype=timeseries.dtype)
 
-    nproc = max(1, int(nsteps // minprocesssize))
-
     # single-process return
-    if maxprocesses == 1 or nsteps == 0 or nproc == 1:
+    if nsteps == 0 or nproc == 1:
         return _from_timeseries(timeseries, stride, fftlength=fftlength,
                                 fftstride=fftstride, method=method,
                                 window=window)
@@ -163,7 +155,7 @@ def from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
     # otherwise build process list
     stepperproc = int(ceil(nsteps / nproc))
     nsamp = stepperproc * timeseries.sample_rate.value * stride
-    queue = ProcessQueue(maxprocesses)
+    queue = ProcessQueue(nproc)
     processlist = []
     for i in range(nproc):
         process = Process(target=_specgram,

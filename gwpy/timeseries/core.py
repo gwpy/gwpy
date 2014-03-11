@@ -475,8 +475,7 @@ class TimeSeries(Series):
         return asd
 
     def spectrogram(self, stride, fftlength=None, fftstride=None,
-                    method='welch', window=None, plan=None,
-                    maxprocesses=1, minprocesssize=1000):
+                    method='welch', window=None, plan=None, nproc=1):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
 
@@ -495,13 +494,9 @@ class TimeSeries(Series):
         plan : :lalsuite:`XLALREAL8ForwardFFTPlan`, optional
             LAL FFT plan to use when generating average spectrum,
             substitute type 'REAL8' as appropriate.
-        maxprocesses : `int`, default: ``1``
+        nproc : `int`, default: ``1``
             maximum number of independent frame reading processes, default
             is set to single-process file reading.
-        minprocesssize : `int`, default: ``1000``
-            number of individual FFTs to squeeze into a single process.
-            large number by default to optimise short-duration FFT relative
-            to overhead of multiprocessing.
 
         Returns
         -------
@@ -512,9 +507,7 @@ class TimeSeries(Series):
         from ..spectrogram import from_timeseries
         return from_timeseries(self, stride, fftlength=fftlength,
                                fftstride=fftstride, method=method,
-                               window=window, plan=plan,
-                               maxprocesses=maxprocesses,
-                               minprocesssize=minprocesssize)
+                               window=window, plan=plan, nproc=nproc)
 
     def fftgram(self, stride):
         """Calculate the Fourier-gram of this `TimeSeries`.
