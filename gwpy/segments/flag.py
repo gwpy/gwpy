@@ -357,6 +357,41 @@ class DataQualityFlag(object):
 
     write = writer()
 
+    def contract(self, x):
+        """Contract each of the `active` `Segments` by ``x`` seconds.
+
+        This method adds ``x`` to each segment's lower bound, and subtracts
+        ``x`` from the upper bound.
+
+        The :attr:`~DataQualityFlag.active` `SegmentList` is modified
+        in place.
+
+        Parameters
+        ----------
+        x : `float`
+            number of seconds by which to contract each `Segment`.
+        """
+        self.active = self.active.contract(x)
+        return self.active
+
+    def protract(self, x):
+        """Protract each of the `active` `Segments` by ``x`` seconds.
+
+        This method subtracts ``x`` from each segment's lower bound,
+        and adds ``x`` to the upper bound, while maintaining that each
+        `Segment` stays within the `valid` bounds.
+
+        The :attr:`~DataQualityFlag.active` `SegmentList` is modified
+        in place.
+
+        Parameters
+        ----------
+        x : `float`
+            number of seconds by which to protact each `Segment`.
+        """
+        self.active = self.active.protract(x)
+        return self.active
+
     def round(self):
         """Round this `DataQualityFlag` to integer segments.
 
