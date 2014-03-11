@@ -257,7 +257,7 @@ class Channel(object):
     def ndsname(self):
         """Name of this `Channel` as stored in the NDS database
         """
-        if self.type not in [None, 'raw']:
+        if self.type not in [None, 'raw', 'reduced']:
             return '%s,%s' % (self.name, self.type)
         return self.name
 
