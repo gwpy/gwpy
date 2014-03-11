@@ -145,8 +145,11 @@ class Plot(figure.Figure):
                 elif visible is False and len(ax.lines):
                     mappable = ax.lines[-1]
                     break
-        if not mappable:
+        if visible and not mappable:
             raise ValueError("Cannot determine mappable layer for this "
+                             "colorbar")
+        elif not ax:
+            raise ValueError("Cannot determine an anchor Axes for this "
                              "colorbar")
 
         # find default axes
