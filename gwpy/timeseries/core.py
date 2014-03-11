@@ -1449,8 +1449,8 @@ class TimeSeriesDict(OrderedDict):
             # if we got this far, we can't get all of the channels in one go
             if len(channels) > 1:
                 return TimeSeriesDict(
-                    (str(c), TimeSeries.fetch(c, start, end, verbose=verbose,
-                                              type=type)) for c in channels)
+                    (c, TimeSeries.fetch(c, start, end, verbose=verbose,
+                                         type=type)) for c in channels)
             e = "Cannot find all relevant data on any known server."
             if not verbose:
                 e += (" Try again using the verbose=True keyword argument to "
@@ -1526,12 +1526,13 @@ class TimeSeriesDict(OrderedDict):
                         and qchannels[0].name.endswith(',rds')):
                     c2 = nds2.connection(connection.get_host(),
                                          connection.get_port())
-                    data = c2.iterate(start, end, 60, map(str, qchannels))
+                    data = c2.iterate(start, end, 60,
+                                      [c.ndsname for c in qchannels])
                 else:
                     raise
             for buffers in data:
                 for buffer_, c in zip(buffers, channels):
-                    out.append({str(c):TimeSeries.from_nds2_buffer(buffer_)})
+                    out.append({c: TimeSeries.from_nds2_buffer(buffer_)})
         if verbose:
             gprint('Success.')
         return out
