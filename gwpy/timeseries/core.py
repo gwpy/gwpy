@@ -973,7 +973,8 @@ class TimeSeries(Series):
         try:
             times = new._index
         except AttributeError:
-            new.x0 = new.x0.value + other.shape[0] * new.dx.value
+            if not resize:
+                new.x0 = new.x0.value + other.shape[0] * new.dx.value
         else:
             if resize:
                 new.times.resize(s, refcheck=False)
