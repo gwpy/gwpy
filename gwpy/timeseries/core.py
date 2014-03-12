@@ -556,7 +556,7 @@ class TimeSeries(Series):
     # -------------------------------------------
     # TimeSeries filtering
 
-    def highpass(self, frequency, amplitude=0.9, order=8, method='scipy'):
+    def highpass(self, frequency, numtaps=101, window='hamming'):
         """Filter this `TimeSeries` with a Butterworth high-pass filter.
 
         See (for example) :lalsuite:`XLALHighPassREAL8TimeSeries` for more
@@ -583,23 +583,12 @@ class TimeSeries(Series):
         the LAL method, otherwise see :mod:`scipy.signal` for the SciPy
         method.
         """
-        if method.lower() == 'lal':
-            from lal import lal
-            lalts = self.to_lal()
-            highpass = getattr(lal, 'HighPass%s' % lalts.__class__.__name__)
-            highpass(lalts, float(frequency), amplitude, order)
-            return TimeSeries.from_lal(lalts)
-        elif method.lower() == 'scipy':
-            # build filter
-            b, a = signal.butter(order, numpy.float64(frequency * 2.0 /
-                                                      self.sample_rate),
-                                 btype='highpass')
-            return self.filter(b, a)
-        raise NotImplementedError("Highpass filter method '%s' not "
-                                  "recognised, please choose one of "
-                                  "'scipy' or 'lal'")
+        filter_ = signal.firwin(numtaps, frequency, window=window,
+                                nyq=self.sample_rate.value/2.,
+                                pass_zero=False)
+        return self.filter(*filter_)
 
-    def lowpass(self, frequency, amplitude=0.9, order=4, method='scipy'):
+    def lowpass(self, frequency, numtaps=61, window='hamming'):
         """Filter this `TimeSeries` with a Butterworth low-pass filter.
 
         Parameters
@@ -623,23 +612,12 @@ class TimeSeries(Series):
         the LAL method, otherwise see :mod:`scipy.signal` for the SciPy
         method.
         """
-        if method.lower() == 'lal':
-            from lal import lal
-            lalts = self.to_lal()
-            lowpass = getattr(lal, 'LowPass%s' % lalts.__class__.__name__)
-            lowpass(lalts, float(frequency), amplitude, order)
-            return TimeSeries.from_lal(lalts)
-        elif method.lower() == 'scipy':
-            # build filter
-            b, a = signal.butter(order, numpy.float64(frequency * 2.0 /
-                                                      self.sample_rate),
-                                 btype='lowpass')
-            return self.filter(b, a)
-        raise NotImplementedError("Lowpass filter method '%s' not "
-                                  "recognised, please choose one of "
-                                  "'scipy' or 'lal'")
+        filter_ = signal.firwin(numtaps, frequency, window=window,
+                                nyq=self.sample_rate.value/2.)
+        return self.filter(*filter_)
 
-    def bandpass(self, flow, fhigh, amplitude=0.9, order=6, method='scipy'):
+    def bandpass(self, flow, fhigh, lowtaps=61, hightaps=101,
+                 window='hamming'):
         """Filter this `TimeSeries` by applying both low- and high-pass
         filters.
 
@@ -667,14 +645,46 @@ class TimeSeries(Series):
         the LAL method, otherwise see :mod:`scipy.signal` for the SciPy
         method.
         """
-        try:
-            high = self.highpass(flow, amplitude=amplitude, order=order,
-                                 method=method)
-        except NotImplementedError as e:
-            raise NotImplementedError(str(e).replace('Lowpass', 'Bandpass'))
+        high = self.highpass(flow, numtaps=lowtaps, window=window)
+        return high.lowpass(fhigh, numtaps=hightaps, window=window)
+
+    def resample(self, rate, window='hamming', numtaps=61):
+        """Resample this Series to a new rate
+
+        Parameters
+        ----------
+        rate : `float`
+            rate to which to resample this `Series`
+        window : array_like, callable, string, float, or tuple, optional
+            specifies the window applied to the signal in the Fourier
+            domain.
+        numtaps : `int`, default: ``61``
+            length of the filter (number of coefficients, i.e. the filter
+            order + 1). This option is only valid for an integer-scale
+            downsampling.
+
+        Returns
+        -------
+        Series
+            a new Series with the resampling applied, and the same
+            metadata
+        """
+        if isinstance(rate, units.Quantity):
+            rate = rate.value
+        factor = (self.sample_rate.value / rate)
+        # if integer down-sampling, lowpass and decimate
+        if factor.is_integer():
+            factor = int(factor)
+            y = self.lowpass(rate, window=window, numtaps=numtaps)
+            new = y[::factor]
+        # otherwise try to do something fancy that probably won't work
         else:
-            return high.lowpass(fhigh, amplitude=amplitude, order=order,
-                                method=method)
+            nsamp = int(self.shape[0] * self.dx.value * rate)
+            data = signal.resample(self.data, nsamp, window=window)
+            new = self.__class__(data)
+            new.metadata = self.metadata.copy()
+            new.dx = 1 / float(rate)
+        return new
 
     def filter(self, *filt):
         """Apply the given `Filter` to this `TimeSeries`
@@ -710,10 +720,16 @@ class TimeSeries(Series):
         elif len(filt) == 4:
             b, a = signal.ss2tf(*filt)
         else:
-            raise ValueError("Cannot interpret filter arguments. Please give "
-                             "either a signal.lti object, or a tuple in zpk "
-                             "or ba format. See scipy.signal docs for "
-                             "details.")
+            try:
+                b = numpy.asarray(filt)
+                assert b.ndim == 1
+            except (ValueError, AssertionError):
+                raise ValueError("Cannot interpret filter arguments. Please "
+                                 "give either a signal.lti object, or a "
+                                 "tuple in zpk or ba format. See "
+                                 "scipy.signal docs for details.")
+            else:
+                a = 1.0
         new = signal.lfilter(b, a, self, axis=0).view(self.__class__)
         new.metadata = self.metadata.copy()
         return new
