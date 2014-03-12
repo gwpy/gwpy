@@ -408,7 +408,8 @@ class Spectrogram(Array2D):
         if not self.f0 == other.f0:
             raise ValueError("Spectrogram starting frequencies do not match.")
         if not self.unit == other.unit:
-            raise ValueError("Spectrogram units do not match")
+            raise ValueError("Spectrogram units do not match: %s vs %s."
+                             % (self.unit, other.unit))
         return True
 
     def is_contiguous(self, other):
