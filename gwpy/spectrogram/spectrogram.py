@@ -128,6 +128,7 @@ def from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
     # get size of spectrogram
     nFFT = int(fftlength * timeseries.sample_rate.value)
     nsteps = int(timeseries.size // (stride * timeseries.sample_rate.value))
+    nproc = min(nsteps, nproc)
 
     # generate window and plan if needed
     try:
