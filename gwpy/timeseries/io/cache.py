@@ -104,8 +104,12 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     def _read(q, subcache):
         qs = float(max(start or -1, float(subcache[0].segment[0])))
         qe = float(min(end or infinity, float(subcache[-1].segment[1])))
-        q.put(cls.read(subcache, channel, format=format_, start=qs, end=qe,
-                       resample=resample, **kwargs))
+        if cls in (StateVector, StateVectorDict):
+            q.put(cls.read(subcache, channel, format=format_, start=qs, end=qe,
+                           resample=resample, **kwargs))
+        else:
+            q.put(cls.read(subcache, channel, format=format_, start=qs, end=qe,
+                           resample=None, **kwargs))
 
     # separate cache into parts
     fperproc = int(ceil(len(cache) / nproc))
@@ -141,11 +145,16 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
             tsd = data.pop(0)
             out.append(tsd)
             del tsd
+        if not isinstance(out, StateVectorDict) and resample:
+            out.resample(resample)
         return out
     else:
         out = TimeSeriesList(*data)
         out.sort(key=lambda ts: ts.epoch.gps)
-        return out.join()
+        ts = out.join()
+        if not isinstance(ts, StateVector) and resample:
+           ts = ts.resample(resample)
+        return ts
 
 
 def read_state_cache(*args, **kwargs):
