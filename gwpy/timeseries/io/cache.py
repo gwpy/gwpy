@@ -30,7 +30,7 @@ from astropy.io import registry
 
 from glue.lal import Cache
 
-from ...segments import Segment
+from ...segments import (Segment, SegmentList)
 from .. import (TimeSeries, TimeSeriesList, TimeSeriesDict,
                 StateVector, StateVectorDict)
 
@@ -76,14 +76,24 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     # open cache from file if given
     if isinstance(cache, (unicode, str, file)):
         cache = open_cache(cache)
-    cache.sort(key=lambda ce: ce.segment[0])
-    if start is not None and end is not None:
-        span = Segment(start, end)
-        cache = cache.sieve(segment=span)
 
+    # fudge empty cache
     if len(cache) == 0:
         return cls([], channel=channel, epoch=start)
 
+    # use cache to get start end times
+    cache.sort(key=lambda ce: ce.segment[0])
+    if start is None:
+        start = cache[0].segment[0]
+    if end is None:
+        end = cache[-1].segment[1]
+
+    # get span
+    span = Segment(start, end)
+    cache = cache.sieve(segment=span)
+    cspan = Segment(cache[0].segment[0], cache[-1].segment[1])
+
+    # if reading one channel, try to use lalframe, its faster
     if isinstance(channel, (list, tuple)) and len(channel) == 1:
         try:
             from lalframe import frread
@@ -92,8 +102,12 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
         else:
             kwargs.pop('type', None)
             format_ = 'lalframe'
+    # otherwise use the file extension as the format
     else:
         format_ = os.path.splitext(cache[0].path)[1][1:]
+
+    # force one frame per process minimum
+    nproc = min(nproc, len(cache))
 
     # single-process
     if nproc == 1:
@@ -101,26 +115,35 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
                         resample=resample, **kwargs)
 
     # define how to read each frame
-    def _read(q, subcache):
-        qs = float(max(start or -1, float(subcache[0].segment[0])))
-        qe = float(min(end or infinity, float(subcache[-1].segment[1])))
-        if cls in (StateVector, StateVectorDict):
-            q.put(cls.read(subcache, channel, format=format_, start=qs, end=qe,
-                           resample=resample, **kwargs))
+    def _read(q, pstart, pend):
+        # don't go beyond the requested limits
+        pstart = max(start, pstart)
+        pend = min(end, pend)
+        # if resampling TimeSeries, pad by 8 seconds inside cache limits
+        if cls not in (StateVector, StateVectorDict) and resample:
+            cstart = float(max(cspan[0], pstart - 8))
+            subcache = cache.sieve(segment=Segment(cstart, pend))
+            out = cls.read(subcache, channel, format=format_, start=cstart,
+                           end=pend, resample=None, **kwargs)
+            out = out.resample(resample)
+            q.put(out.crop(pstart, pend))
         else:
-            q.put(cls.read(subcache, channel, format=format_, start=qs, end=qe,
-                           resample=None, **kwargs))
+            subcache = cache.sieve(segment=Segment(pstart, pend))
+            q.put(cls.read(subcache, channel, format=format_, start=pstart,
+                           end=pend, resample=resample, **kwargs))
 
     # separate cache into parts
     fperproc = int(ceil(len(cache) / nproc))
     subcaches = [Cache(cache[i:i+fperproc]) for
                  i in range(0, len(cache), fperproc)]
+    subsegments = SegmentList([Segment(c[0].segment[0], c[-1].segment[1])
+                               for c in subcaches])
 
     # start all processes
     queue = ProcessQueue(nproc)
     proclist = []
-    for subcache in subcaches:
-        process = Process(target=_read, args=(queue, subcache))
+    for subseg in subsegments:
+        process = Process(target=_read, args=(queue, subseg[0], subseg[1]))
         process.daemon = True
         proclist.append(process)
         process.start()
@@ -132,10 +155,6 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
 
     # format and return
     if issubclass(cls, dict):
-        if isinstance(channel, (unicode, str)):
-            channels = channel.split(',')
-        else:
-            channels = channel
         try:
             data.sort(key=lambda tsd: tsd.values()[0].epoch.gps)
         except IndexError:
@@ -145,15 +164,11 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
             tsd = data.pop(0)
             out.append(tsd)
             del tsd
-        if not isinstance(out, StateVectorDict) and resample:
-            out.resample(resample)
         return out
     else:
         out = TimeSeriesList(*data)
         out.sort(key=lambda ts: ts.epoch.gps)
         ts = out.join()
-        if not isinstance(ts, StateVector) and resample:
-           ts = ts.resample(resample)
         return ts
 
 
