@@ -114,10 +114,6 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
         # read frame
         new = _read_frame(fp, channels, type=type, verbose=verbose,
                           _SeriesClass=_SeriesClass)
-        # resample data
-        for channel, ts in new.iteritems():
-             if resample is not None and channel in resample:
-                 new[channel] = ts.resample(resample[channel])
         # store
         out.append(new)
         if verbose is not False:
@@ -126,15 +122,19 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
     if verbose is not False:
         gprint("%sReading %d channels from frames... %d/%d (100.0%%)"
                % (verbose, len(channels), N, N))
-    # crop
+    # finalise
     for channel, ts in out.iteritems():
+        # resample data
+        if resample is not None and channel in resample:
+            out[channel] = out[channel].resample(resample[channel])
+        # crop data
         if start is not None or end is not None:
             out[channel] = out[channel].crop(start=start, end=end)
     return out
 
 
-def _read_frame(framefile, channels, start=None, end=None, type=None,
-                verbose=False, _SeriesClass=TimeSeries):
+def _read_frame(framefile, channels, type=None, verbose=False,
+                _SeriesClass=TimeSeries):
     """Internal function to read data from a single frame.
 
     All users should be using the wrapper `read_timeseriesdict`.
@@ -145,10 +145,6 @@ def _read_frame(framefile, channels, start=None, end=None, type=None,
         path to GWF-format frame file on disk.
     channels : `list`
         list of channels to read.
-    start : `LIGOTimeGPS`, `float`, optional
-        GPS start time at which to begin reading.
-    end : `LIGOTimeGPS`, `float`, optional
-        GPS end time at which to begin reading.
     type : `str`, optional
         channel data type to read, one of: ``'adc'``, ``'proc'``.
     verbose : `bool`, optional
@@ -213,8 +209,7 @@ def _read_frame(framefile, channels, start=None, end=None, type=None,
                     ts.append(arr)
             i += 1
         if ts is not None:
-            out[channel] = ts.crop(start=start, end=end, copy=True)
-
+            out[channel] = ts.copy()
     return out
 
 
