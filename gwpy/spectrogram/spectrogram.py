@@ -164,6 +164,8 @@ def from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
         process.daemon = True
         processlist.append(process)
         process.start()
+        if ((i + 1) * nsamp) >= timeseries.size:
+            break
 
     # get data and block
     data = [queue.get() for p in processlist]
