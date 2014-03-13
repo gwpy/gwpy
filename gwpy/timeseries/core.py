@@ -672,18 +672,18 @@ class TimeSeries(Series):
         if isinstance(rate, units.Quantity):
             rate = rate.value
         factor = (self.sample_rate.value / rate)
-        # if integer down-sampling, lowpass and decimate
+        # if integer down-sampling, use decimate
         if factor.is_integer():
             factor = int(factor)
-            y = self.lowpass(rate, window=window, numtaps=numtaps)
-            new = y[::factor]
-        # otherwise try to do something fancy that probably won't work
+            new = signal.decimate(self.data, factor, numtaps-1,
+                                  ftype='fir').view(self.__class__)
+        # otherwise use Fourier filtering
         else:
             nsamp = int(self.shape[0] * self.dx.value * rate)
-            data = signal.resample(self.data, nsamp, window=window)
-            new = self.__class__(data)
-            new.metadata = self.metadata.copy()
-            new.dx = 1 / float(rate)
+            new = signal.resample(self.data, nsamp,
+                                  window=window).view(self.__class__)
+        new.metadata = self.metadata.copy()
+        new.sample_rate = rate
         return new
 
     def filter(self, *filt):
@@ -1361,6 +1361,27 @@ class TimeSeriesDict(OrderedDict):
                 self[key].prepend(ts, **kwargs)
             else:
                 self[key] = ts
+
+    def resample(self, rate, **kwargs):
+        """Resample items in this dict.
+
+        This operation over-writes items inplace.
+
+        Parameters
+        ----------
+        rate : `dict`, `float`
+            either a `dict` of (channel, `float`) pairs for key-wise
+            resampling, or a single float/int to resample all items.
+        kwargs
+             other keyword arguments to pass to each item's resampling
+             method.
+        """
+        print('resampling', rate)
+        if not isinstance(rate, dict):
+            rate = dict((c, rate) for c in self)
+        for key, resamp in rate.iteritems():
+            self[key] = self[key].resample(resamp, **kwargs)
+        return self
 
     @classmethod
     def fetch(cls, channels, start, end, host=None, port=None,
