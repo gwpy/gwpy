@@ -1362,6 +1362,28 @@ class TimeSeriesDict(OrderedDict):
             else:
                 self[key] = ts
 
+    def crop(self, start=None, end=None, copy=False):
+        """Crop each entry of this `TimeSeriesDict`.
+
+        This method calls the :meth:`crop` method of all entries and
+        modifies this dict in place.
+
+        Parameters
+        ----------
+        start : `Time`, `float`
+            GPS start time to crop `TimeSeries` at left
+        end : `Time`, `float`
+            GPS end time to crop `TimeSeries` at right
+
+        See Also
+        --------
+        TimeSeries.crop
+            for more details
+        """
+        for key, val in self.iteritems():
+            self[key] = val.crop(start=start, end=end, copy=copy)
+        return self
+
     def resample(self, rate, **kwargs):
         """Resample items in this dict.
 
