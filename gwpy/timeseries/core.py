@@ -1376,7 +1376,6 @@ class TimeSeriesDict(OrderedDict):
              other keyword arguments to pass to each item's resampling
              method.
         """
-        print('resampling', rate)
         if not isinstance(rate, dict):
             rate = dict((c, rate) for c in self)
         for key, resamp in rate.iteritems():
