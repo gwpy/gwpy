@@ -66,6 +66,11 @@ def _from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
     out = Spectrogram(zeros((nsteps, nfreqs)),
                       channel=timeseries.channel, epoch=timeseries.epoch,
                       f0=0, df=df, dt=dt, copy=True)
+    try:
+        out.unit = timeseries.unit / units.Hertz
+    except KeyError:
+        out.unit = 1 / units.Hertz
+
     if not nsteps:
         return out
 
@@ -79,11 +84,6 @@ def _from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
                                  window=window, plan=plan)
         out[step] = steppsd.data
 
-    # set unit and return
-    try:
-        out.unit = timeseries.unit / units.Hertz
-    except KeyError:
-        out.unit = 1 / units.Hertz
     return out
 
 
