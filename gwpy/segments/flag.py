@@ -76,7 +76,7 @@ class DataQualityFlag(object):
     _ListClass = SegmentList
 
     def __init__(self, name=None, active=None, valid=None, label=None,
-                 category=None, description=None, isgood=True):
+                 category=None, description=None, isgood=True, padding=None):
         """Define a new DataQualityFlag.
         """
         self.name = name
@@ -86,6 +86,7 @@ class DataQualityFlag(object):
         self.category = category
         self.description = description
         self.isgood = isgood
+        self.padding = padding
 
     # -------------------------------------------------------------------------
     # read-write properties
@@ -240,6 +241,24 @@ class DataQualityFlag(object):
     @isgood.setter
     def isgood(self, good):
         self._isgood = bool(good)
+
+    @property
+    def padding(self):
+        """[start, end) padding for this flag's active segments.
+        """
+        try:
+            return self._padding
+        except AttributeError:
+            self._padding = Segment(0, 0)
+            return self.padding
+
+
+    @padding.setter
+    def padding(self, pad):
+        if pad is None:
+            self._padding = Segment(0, 0)
+        else:
+            self._padding = Segment(pad[0], pad[1])
 
     # -------------------------------------------------------------------------
     # read-only properties
