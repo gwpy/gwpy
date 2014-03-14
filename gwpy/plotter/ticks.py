@@ -46,29 +46,6 @@ GPS_SCALE = OrderedDict([(1, ('seconds', 's')),
                          (86400, ('days', 'd'))])
 
 
-class TimeConverter(munits.ConversionInterface):
-    """Define a converter between `~astropy.time.Time` objects and
-    something locatable on an axis
-
-    This converter uses the GPS time value of the given
-    `~astropy.time.Time`.
-    """
-    @staticmethod
-    def convert(value, unit, axis):
-        return round(value.gps, 6)
-
-    def axisinfo(unit, axis):
-        if unit != "time":
-            return None
-        return munits.AxisInfo(majloc=AutoTimeLocator(),
-                               majfmt=AutoTimeFormatter(), label='time')
-
-    def default_units(x, axis):
-        return "time"
-# register the converter with matplotlib
-munits.registry[Time] = TimeConverter()
-
-
 class AutoTimeLocator(mticker.AutoLocator):
     """Find the best position for ticks on a given axis from the data.
 
