@@ -26,7 +26,9 @@ The `DataQualityDict` is just a `dict` of flags, provided as a convenience
 for handling multiple flags over the same global time interval.
 """
 
+import operator
 import re
+from urlparse import urlparse
 from copy import copy as shallowcopy
 from math import (floor, ceil)
 
@@ -392,6 +394,45 @@ class DataQualityFlag(object):
     # instance methods
 
     write = writer()
+
+    def populate(self, source='https://segdb.ligo.caltech.edu', segments=None,
+                 **kwargs):
+        """Query the segment database for this flag's active segments.
+
+        This method assumes all of the metadata for each flag have been
+        filled. Minimally, the following attributes must be filled
+
+        .. autosummary::
+
+           ~DataQualityFlag.name
+           ~DataQualityFlag.valid
+
+        Segments will be fetched from the database, with any
+        :attr:`~DataQualityFlag.padding` added on-the-fly.
+
+        This `DataQualityFlag` will be modified in-place.
+
+        Parameters
+        ----------
+        source : `str`
+            source of segments for this `DataQualityFlag`. This must be
+            either a URL for a segment database or a path to a file on disk.
+        segments : `SegmentList`, optional
+            a list of valid segments during which to query, if not given,
+            existing valid segments for this flag will be used.
+        **kwargs
+            any other keyword arguments to be passed to
+            :meth:`DataQualityFlag.query` or :meth:`DataQualityFlag.read`.
+
+        Returns
+        -------
+        self : `DataQualityFlag`
+            a reference to this flag
+        """
+        tmp = DataQualityDict()
+        tmp[self.name] = self
+        tmp.populate(source=source, segments=segments, **kwargs)
+        return tmp[self.name]
 
     def contract(self, x):
         """Contract each of the `active` `Segments` by ``x`` seconds.
@@ -794,6 +835,58 @@ class DataQualityDict(OrderedDict):
 
     # -----------------------------------------------------------------------
     # instance methods
+
+    def populate(self, source='https://segdb.ligo.caltech.edu',
+                 segments=None, **kwargs):
+        """Query the segment database for each flag's active segments.
+
+        This method assumes all of the metadata for each flag have been
+        filled. Minimally, the following attributes must be filled
+
+        .. autosummary::
+
+           ~DataQualityFlag.name
+           ~DataQualityFlag.valid
+
+        Segments will be fetched from the database, with any
+        :attr:`~DataQualityFlag.padding` added on-the-fly.
+
+        Entries in this `DataQualityDict` will be modified in-place.
+
+        Parameters
+        ----------
+        source : `str`
+            source of segments for this `DataQualityFlag`. This must be
+            either a URL for a segment database or a path to a file on disk.
+        segments : `SegmentList`, optional
+            a list of valid segments during which to query, if not given,
+            existing valid segments for flags will be used.
+        **kwargs
+            any other keyword arguments to be passed to
+            :meth:`DataQualityFlag.query` or :meth:`DataQualityFlag.read`.
+
+        Returns
+        -------
+        self : `DataQualityDict`
+            a reference to the modified DataQualityDict
+        """
+        # format source
+        source = urlparse(source)
+        valid = reduce(operator.or_,
+                       [f.valid for f in self.values()]).coalesce()
+        if segments:
+            valid &= SegmentList(segments)
+        if source.netloc:
+            tmp = type(self).query(self.keys(), valid,
+                                   url=source.geturl(), **kwargs)
+        else:
+            tmp = type(self).read(source.geturl(), self.name, **kwargs)
+        for key, flag in self.iteritems():
+            self[key].valid &= valid
+            self[key].active = [type(seg)(seg[0] - flag.padding[0],
+                                          seg[1] + flag.padding[1])
+                                for seg in tmp[key].active]
+        return self
 
     def __iand__(self, other):
         for key, value in other.iteritems():
