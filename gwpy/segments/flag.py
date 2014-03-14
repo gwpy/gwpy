@@ -35,6 +35,9 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.lsctables import VetoDefTable
+
 from ..io import (reader, writer)
 
 from .segments import Segment, SegmentList
@@ -370,6 +373,20 @@ class DataQualityFlag(object):
     :attr:`~DataQualityFlag.valid` `SegmentList` will simply represent
     the extent of the :attr:`~DataQualityFlag.active` `SegmentList`.
     """))
+
+    @classmethod
+    def from_veto_def(cls, veto):
+        """Define a new `DataQualityFlag` from a :class:`~glue.ligolw.lsctables.VetoDef.`
+        """
+        name = '%s:%s' % (veto.ifo, veto.name)
+        try:
+            name += ':%d' % int(veto.version)
+        except TypeError:
+            pass
+        valid = Segment(veto.start_time, veto.end_time)
+        pad = Segment(veto.start_pad, veto.end_pad)
+        return cls(name=name, valid=[valid], category=veto.category,
+                   description=veto.comment, padding=pad)
 
     # -------------------------------------------------------------------------
     # instance methods
@@ -742,6 +759,38 @@ class DataQualityDict(OrderedDict):
     Notes
     -----
     """))
+
+    @classmethod
+    def from_veto_definer_file(cls, fp, start=None, end=None):
+        """Read a `DataQualityDict` from a LIGO_LW XML VetoDefinerTable.
+        """
+        # open file
+        if isinstance(fp, (str, unicode)):
+            fobj = open(fp, 'r')
+        else:
+            fobj = fp
+        xmldoc = ligolw_utils.load_fileobj(fobj)[0]
+        # read veto definers
+        veto_def_table = VetoDefTable.get_table(xmldoc)
+        out = cls()
+        for row in veto_def_table:
+            if start and row.end_time < start:
+                continue
+            elif start:
+                row.start_time = max(row.start_time, start)
+            if end and row.start_time > end:
+                continue
+            elif end and row.end_time == 0:
+                row.end_time = end
+            elif end:
+                row.end_time = min(row.end_time, end)
+            flag = DataQualityFlag.from_veto_def(row)
+            if flag.name in out:
+                out[flag.name].valid.extend(flag.valid)
+                out[flag.name].valid.coalesce()
+            else:
+                out[flag.name] = flag
+        return out
 
     # -----------------------------------------------------------------------
     # instance methods
