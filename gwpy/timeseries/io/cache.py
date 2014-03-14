@@ -117,8 +117,8 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     # define how to read each frame
     def _read(q, pstart, pend):
         # don't go beyond the requested limits
-        pstart = max(start, pstart)
-        pend = min(end, pend)
+        pstart = float(max(start, pstart))
+        pend = float(min(end, pend))
         # if resampling TimeSeries, pad by 8 seconds inside cache limits
         if cls not in (StateVector, StateVectorDict) and resample:
             cstart = float(max(cspan[0], pstart - 8))
