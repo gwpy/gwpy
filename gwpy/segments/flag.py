@@ -570,7 +570,7 @@ class DataQualityFlag(object):
     def __isub__(self, other):
         """Subtract the ``other`` `DataQualityFlag` from this one in-place.
         """
-        self.valid -= other.valid
+        #self.valid -= other.valid
         self.active -= other.active
         return self
 
