@@ -208,7 +208,10 @@ def _read_frame(framefile, channels, type=None, verbose=False,
                 else:
                     ts.append(arr)
             i += 1
-        if ts is not None:
+        if ts is None:
+            raise ValueError("Channel '%s' not found in frame '%s'"
+                             % (str(channel), framefile))
+        else:
             out[channel] = ts.copy()
     return out
 
