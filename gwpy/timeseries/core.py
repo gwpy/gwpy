@@ -966,7 +966,14 @@ class TimeSeries(Series):
         if resize:
             s = list(new.shape)
             s[0] = new.shape[0] + other.shape[0]
-            new.resize(s, refcheck=False)
+            try:
+                new.resize(s, refcheck=False)
+            except ValueError as e:
+                if 'resize only works on single-segment arrays' in str(e):
+                    new = new.copy()
+                    new.resize(s, refcheck=False)
+                else:
+                    raise
         else:
             new.data[:-other.shape[0]] = new.data[other.shape[0]:]
         new[-other.shape[0]:] = other.data
