@@ -677,14 +677,23 @@ class DataQualityDict(OrderedDict):
         for definition, segments, summary in zip(segdefs, segs, segsum):
             # parse flag name
             flag = ':'.join(map(str, definition[:3]))
+            name = flag.rsplit(':', 1)[0]
+            # if versionless
             if flag.endswith('*'):
-                flag = flag.rsplit(':', 1)[0]
+                flag = name
+                key = name
+            # if asked for versionless, but returned a version
+            elif flag not in flags and name in flags:
+                key = name
+            # other
+            else:
+                key = flag
             # define flag
-            if not flag in out:
-                out[flag] = DataQualityFlag(name=flag)
+            if not key in out:
+                out[key] = DataQualityFlag(name=flag)
             # add segments
-            out[flag].valid.extend(summary)
-            out[flag].active.extend(segments)
+            out[key].valid.extend(summary)
+            out[key].active.extend(segments)
         return out
 
     # use input/output registry to allow multi-format reading
