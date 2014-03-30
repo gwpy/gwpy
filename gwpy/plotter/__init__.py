@@ -19,7 +19,7 @@
 """This module provides plotting utilities for visualising GW data
 
 The standard data types (`TimeSeries`, `Table`, `DataQualityFlag`) can
-all be easily visualised using the relevant plotting objects, with 
+all be easily visualised using the relevant plotting objects, with
 many configurable parameters both interactive, and in saving to disk.
 """
 
@@ -47,6 +47,7 @@ from .spectrum import *
 from .segments import *
 from .filter import *
 from .table import *
+from .histogram import *
 
 GWPY_PLOT_PARAMS = {
     "axes.color_cycle": ['b', 'g', 'r', 'c', 'm', 'y', 'gray', 'gold',

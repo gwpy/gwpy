@@ -18,109 +18,203 @@
 """Docstring
 """
 
+from math import log10
+
 import numpy
 
+from matplotlib.projections import register_projection
+
 from glue import iterutils
+from glue.ligolw.table import Table
 
+from .axes import Axes
 from .core import Plot
+from ..data import Series
+from .. import version
 
-__author__ = "Duncan M. Macleod <duncan.macleod@ligo.org>"
-__version__ = ""
-__date__ = ""
-
-__all__ = ["LineHistogram", "BarHistogram", "StepHistogram"]
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__version__ = version.version
 
 
-class Histogram(Plot):
+class HistogramAxes(Axes):
+    """A set of `Axes` on which to display a histogram.
+    """
+    name = 'histogram'
+
+    def plot(self, *args, **kwargs):
+        """Add a new dataset to these `HistogramAxes`.
+
+        Parameters
+        ----------
+        *args
+            any number of data arrays to histogram individually.
+            If plotting :class:`~glue.ligolw.table.Table` objects, please
+            give two arguments each for the table, and the relevant column::
+
+                histax.plot(table1, 'snr', table2, 'new_snr', ...)
+
+        common : `bool`, optional, default: `False`
+            display all data on histograms with common bins.
+        **kwargs
+            common histogram keyword arguments to pass to
+            :meth:`~HistogramAxes.hist`.
+
+        See Also
+        --------
+        HistogramAxes.hist : for details on keyword arguments
+        """
+        if kwargs.pop('common', False):
+            range = kwargs.pop('range', self.common_limits(args))
+            kwargs.setdefault('bins', self.bin_boundaries(
+                range[0], range[1],  num=30, log=kwargs.get('logbins', False)))
+        args = list(args)
+        while len(args):
+            data = args.pop(0)
+            if isinstance(data, Series):
+                self.plot_series(data, **kwargs)
+            elif isinstance(data, Table):
+                column = args.pop(0)
+                self.plot_table(data, column, **kwargs)
+            else:
+                self.hist(data, **kwargs)
+
+    def plot_series(self, series, **kwargs):
+        """Add a histogram of the given 1-dimensional series to these `Axes`.
+
+        Parameters
+        ----------
+        series : :class:`~gwpy.data.series.Series`
+            1-dimensional `Series` of data.
+        **kwargs
+            common histogram keyword arguments to pass to
+            :meth:`~HistogramAxes.hist`.
+
+        See Also
+        --------
+        HistogramAxes.hist : for details on keyword arguments
+        """
+        return self.hist(series.data, **kwargs)
+
+    def plot_table(self, table, column, **kwargs):
+        """Add a histogram of the given :class:`~glue.ligolw.table.Table`.
+
+        Parameters
+        ----------
+        table : :class:`~glue.ligolw.table.Table`
+            LIGO_LW-format table of data to analyse.
+        column : `str`
+            name of ``table`` column to histogram.
+        **kwargs
+            common histogram keyword arguments to pass to
+            :meth:`~HistogramAxes.hist`.
+
+        See Also
+        --------
+        HistogramAxes.hist : for details on keyword arguments
+        """
+        from .table import get_table_column
+        data = get_table_column(table, column)
+        return self.hist(data, **kwargs)
+
+    def hist(self, *args, **kwargs):
+        logbins = kwargs.pop('logbins', False)
+        bins = kwargs.get('bins', 30)
+        weights = kwargs.get('weights', None)
+        if isinstance(weights, (float, int)):
+            kwargs['weights'] = []
+            for arg in args:
+                kwargs['weights'].append(numpy.ones_like(arg) * weights)
+        if logbins and (bins is None or isinstance(bins, (float, int))):
+            bins = bins or 30
+            range_ = kwargs.pop('range', self.common_limits(args))
+            kwargs['bins'] = self.bin_boundaries(range_[0], range_[1], bins,
+                                                 log=True)
+        if kwargs.get('histtype', None) == 'step':
+            kwargs.setdefault('edgecolor', 'black')
+        return super(HistogramAxes, self).hist(*args, **kwargs)
+    hist.__doc__ = Axes.hist.__doc__
+
+    @staticmethod
+    def common_limits(datasets, default_min=0, default_max=0):
+        """Find the global maxima and minima of a list of datasets.
+
+        Parameters
+        ----------
+        datasets : `iterable`
+            list (or any other iterable) of data arrays to analyse.
+        default_min : `float`, optional
+            fall-back minimum value if datasets are all empty.
+        default_max : `float`, optional
+            fall-back maximum value if datasets are all empty.
+
+        Returns
+        -------
+        (min, max) : `float`
+            2-tuple of common minimum and maximum over all datasets.
+        """
+        max_stat = max(list(iterutils.flatten(datasets)) + [-numpy.inf])
+        min_stat = min(list(iterutils.flatten(datasets)) + [numpy.inf])
+        if numpy.isinf(-max_stat):
+            max_stat = default_max
+        if numpy.isinf(min_stat):
+            min_stat = default_min
+        return min_stat, max_stat
+
+    @staticmethod
+    def bin_boundaries(lower, upper, num, log=False):
+        """Determine the bin boundaries for the given interval.
+
+        The returned array contains the left edge of all bins, as well as
+        the right-most edge of the right-most bin.
+
+        Parameters
+        ----------
+        lower : `float`
+            minimum boundary for bins. This value will be the first
+            element of the returned bins array.
+        upper : `float`
+            maximum boundary for bins. This value will be the last
+            element of the returned bins array.
+        num : `int`
+            number of bins to generate
+        log : `bool`, optional, default: `False`
+            if `True` generate logarithmically-spaced bins, else
+            generate linearly-spaced bins.
+
+        Returns
+        -------
+        bins : :class:`~numpy.ndarray`
+            array of bins (length ``len(num)`` + 1).
+        """
+        if log:
+            return numpy.logspace(log10(lower), log10(upper), num+1,
+                                  endpoint=True)
+        else:
+            return numpy.linspace(lower, upper, num+1, endpoint=True)
+
+register_projection(HistogramAxes)
+
+
+class HistogramPlot(Plot):
     """A plot showing a histogram of data
     """
+    _DefaultAxesClass = HistogramAxes
+
     def __init__(self, *data, **kwargs):
-        bins = kwargs.pop("bins", 30)
-        logspace = kwargs.pop("logspace", False)
-        orientation = kwargs.pop("orientation", "vertical")
-        super(Histogram, self).__init__(**kwargs)
-        self._datasets = []
-        self._kwargsets = []
-        self._logspace = logspace
-
-        for ds in data:
-            self.add_dataset(ds)
-
-        if len(data):
-            self.make(bins=bins, logspace=logspace, orientation=orientation)
-        if orientation == "vertical":
-            self.logx = logspace
-        elif orientation == "horizontal":
-            self.logy = logspace
-
-    def add_dataset(self, data, **kwargs):
-        self._datasets.append(data)
-        self._kwargsets.append(kwargs)
-
-    def _make(self, style, bins=30, logspace=False, **kwargs):
-        # set bins
-        if isinstance(bins, int):
-            binlow, binhigh = common_limits(self._datasets)
-            bins = self.bins(binlow, binhigh, bins, logspace=logspace)
-        width = numpy.diff(bins)
-        orientation = kwargs.pop("orientation", "vertical")
-        # histogram each data set, adding some bars
-        for (dataset, datakwargs) in zip(self._datasets, self._kwargsets):
-            y,x = numpy.histogram(dataset, bins=bins)
-            allargs = dict(list(kwargs.items()) + list(datakwargs.items()))
-            if style == "line":
-                if orientation == "vertical":
-                    self.add_line(x[:-1]+ width/2., y, **allargs)
-                else:
-                    self.add_line(y, x[:-1]+ width/2., **allargs)
-            elif style == "step":
-                step_x = numpy.vstack((x[:-1],
-                                       x[:-1]+width)).reshape((-1), order="F")
-                step_y = numpy.vstack((y, y)).reshape((-1), order="F")
-                if orientation == "vertical":
-                    self.add_line(step_x, step_y, **allargs)
-                else:
-                    self.add_line(step_y, step_x, **allargs)
-            elif style == "bar":
-                self.add_bars(x[:-1], y, width=width, orientation=orientation,
-                              **allargs)
-
-    def bins(self, lower, upper, number, logspace=False):
-        if logspace:
-            bins = numpy.logspace(numpy.log10(lower), numpy.log10(upper),
-                                  number+1, endpoint=True)
-        else:
-            bins = numpy.linspace(lower, upper, number+1, endpoint=True)
-        return bins
-
-
-class LineHistogram(Histogram):
-    """A plot showing a line histogram of data
-    """
-    def make(self, bins=30, logspace=False, **kwargs):
-        self._make("line", bins=bins, logspace=logspace, **kwargs)
-
-class BarHistogram(Histogram):
-    """A plot showing a bar histogram of data
-    """
-    def make(self, bins=30, logspace=False, **kwargs):
-        self._make("bar", bins=bins, logspace=logspace, **kwargs)
-
-
-class StepHistogram(Histogram):
-    """A plot showing a bar histogram of data
-    """
-    def make(self, bins=30, logspace=False, **kwargs):
-        self._make("step", bins=bins, logspace=logspace, **kwargs)
-
-
-def common_limits(data_sets, default_min=0, default_max=0):
-    """Find the global maxima and minima of a list of datasets
-    """
-    max_stat = max(list(iterutils.flatten(data_sets)) + [-numpy.inf])
-    min_stat = min(list(iterutils.flatten(data_sets)) + [numpy.inf])
-    if numpy.isinf(-max_stat):
-        max_stat = default_max
-    if numpy.isinf(min_stat):
-        min_stat = default_min
-    return min_stat, max_stat
+        """Generate a new `HistogramPlot` from some ``data``.
+        """
+        # extract histogram arguments
+        histargs = dict()
+        for key in ['bins', 'range', 'normed', 'weights', 'cumulative',
+                    'bottom', 'histtype', 'align', 'orientation', 'rwidth',
+                    'log', 'color', 'label', 'stacked']:
+            try:
+                histargs[key] = kwargs.pop(key)
+            except KeyError:
+                pass
+        # generate Figure
+        super(HistogramPlot, self).__init__(**kwargs)
+        # plot data
+        if data:
+            ax = self.gca()
+            ax.plot(data, **histargs)
