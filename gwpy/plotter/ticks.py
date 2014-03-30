@@ -128,6 +128,7 @@ class AutoTimeLocator(mticker.MaxNLocator):
         if scale not in GPS_SCALE:
             raise ValueError("Cannot set arbitrary GPS scales, please select "
                              "one of: %s" % GPS_SCALE.keys())
+        self._scale = float(scale)
 
 
 class TimeFormatter(mticker.Formatter):
