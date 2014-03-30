@@ -23,7 +23,8 @@ import re
 from math import modf
 
 from matplotlib import (ticker as mticker, pyplot, transforms as mtransforms)
-from matplotlib.dates import (SEC_PER_MIN, SEC_PER_HOUR, SEC_PER_DAY)
+from matplotlib.dates import (SEC_PER_MIN, SEC_PER_HOUR, SEC_PER_DAY,
+                              SEC_PER_WEEK)
 
 from ..time import Time
 from .. import version
@@ -36,10 +37,11 @@ except ImportError:
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-GPS_SCALE = OrderedDict([(1, ('seconds', 's')),
-                         (SEC_PER_MIN, ('minutes', 'mins')),
-                         (SEC_PER_HOUR, ('hours', 'hrs')),
-                         (SEC_PER_DAY, ('days', 'd'))])
+GPS_SCALE = OrderedDict([(1, ('seconds', 's', 1)),
+                         (SEC_PER_MIN, ('minutes', 'mins', 10)),
+                         (SEC_PER_HOUR, ('hours', 'hrs', 4)),
+                         (SEC_PER_DAY, ('days', 'd', 7)),
+                         (SEC_PER_WEEK, ('weeks', 'w', 4))])
 
 
 class AutoTimeLocator(mticker.MaxNLocator):
@@ -123,7 +125,9 @@ class AutoTimeLocator(mticker.MaxNLocator):
 
     @scale.setter
     def scale(self, scale):
-        self._scale = scale
+        if scale not in GPS_SCALE:
+            raise ValueError("Cannot set arbitrary GPS scales, please select "
+                             "one of: %s" % GPS_SCALE.keys())
 
 
 class TimeFormatter(mticker.Formatter):
@@ -147,16 +151,8 @@ class TimeFormatter(mticker.Formatter):
         t = re.sub('.0+\Z', '', str(t))
         return t
 
-    def set_scale(self, scale, short=None, long=None):
+    def set_scale(self, scale):
         self.scale = scale
-        try:
-            self.scale_str_long, self.scale_str_short = GPS_SCALE[scale]
-        except KeyError:
-            self.scale_str_long, self.scale_str_short = GPS_SCALE[1]
-        if short:
-            self.scale_str_short = short
-        if long:
-            self.scale_str_long = long
 
     def set_epoch(self, epoch):
         if epoch is None:

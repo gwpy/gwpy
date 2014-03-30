@@ -122,7 +122,7 @@ class TimeSeriesAxes(Axes):
     def add_epoch_label(self):
         formatter = self.xaxis.get_major_formatter()
         if isinstance(formatter, ticks.TimeFormatter):
-            scale = formatter.scale_str_long
+            scale = ticks.GPS_SCALE[formatter.scale][0]
         else:
             scale = 'seconds'
         utc = re.sub('\.0+', '', self.epoch.utc.iso)
@@ -146,13 +146,13 @@ class TimeSeriesAxes(Axes):
             raise TypeError("Formatter of type '%s' does not have a scale. "
                             "Please try using a TimeFormatter instead"
                             % formatter.__class__.__name__)
-        s = formatter.scale_str_long
+        s = ticks.GPS_SCALE[formatter.scale][0]
         formatter.set_scale(scale)
         locator.scale = scale
         xlabel = self.xlabel.get_text()
         if xlabel:
             if re.search(s, xlabel):
-                self.xlabel = xlabel.replace(s, formatter.scale_str_long)
+                self.xlabel = xlabel.replace(s, ticks.GPS_SCALE[scale][0])
         self._auto_gps = False
 
     def auto_gps_scale(self, duration=None):
@@ -162,7 +162,8 @@ class TimeSeriesAxes(Axes):
         if duration is None:
             duration = self.viewLim.x1 - self.viewLim.x0
         for s in ticks.GPS_SCALE.keys()[::-1]:
-            if duration >= (10 * s):
+            nbins = ticks.GPS_SCALE[s][2]
+            if duration >= (nbins * s):
                 self.set_gps_scale(s)
                 self._auto_gps = True
                 return
@@ -180,7 +181,7 @@ class TimeSeriesAxes(Axes):
             a single :class:`~gwpy.timeseries.core.TimeSeries` (or sub-class)
             or standard (x, y) data arrays
         kwargs
-            keyword arguments applicable to :meth:`~matplotib.axes.Axes.plot`
+            keyword arguments applicable to :meth:`~matplotib.axens.Axes.plot`
 
         Returns
         -------
@@ -524,7 +525,7 @@ class TimeSeriesPlot(Plot):
             self.fmt_xdata = lambda t: LIGOTimeGPS(t)
         if addlabel:
             self.xlabel = ("Time (%s) from %s (%s)"
-                           % (formatter.scale_str_long,
+                           % (ticks.GPS_SCALE[formatter.scale][0],
                               re.sub('\.0+', '', self.epoch.utc.iso),
                               self.epoch.gps))
         if autoscale:
