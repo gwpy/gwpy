@@ -112,7 +112,7 @@ class HistogramAxes(Axes):
         --------
         HistogramAxes.hist : for details on keyword arguments
         """
-        from .table import get_table_column
+        from ..table.utils import get_table_column
         data = get_table_column(table, column)
         return self.hist(data, **kwargs)
 

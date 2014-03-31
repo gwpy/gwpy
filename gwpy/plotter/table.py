@@ -32,11 +32,12 @@ import numpy
 from matplotlib import pyplot
 from matplotlib.projections import register_projection
 
+from glue.ligolw.table import Table
+
 from .core import Plot
 from .timeseries import (TimeSeriesAxes, TimeSeriesPlot)
 from .spectrum import SpectrumPlot
-
-from glue.ligolw.table import Table
+from ..table.utils import (get_table_column, get_row_value)
 
 __all__ = ['EventTableAxes', 'EventTablePlot']
 
@@ -430,43 +431,6 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
         if newax:
             ax = self._add_new_axes(projection=projection)
         return ax.plot_table(table, x, y, color=color, **kwargs)
-
-
-def get_table_column(table, column, dtype=float):
-    """Internal method to extract a column from the given table
-    """
-    column = str(column).lower()
-    if hasattr(table, 'get_%s' % column):
-        return numpy.asarray(getattr(table, 'get_%s' % column)()).astype(dtype)
-    elif column == 'time':
-        if re.match('(sngl_inspiral|multi_inspiral)', table.tableName, re.I):
-            return numpy.asarray(table.get_end()).astype(dtype)
-        elif re.match('(sngl_burst|multi_burst)', table.tableName, re.I):
-            return numpy.asarray(table.get_peak()).astype(dtype)
-        elif re.match('(sngl_ring|multi_ring)', table.tableName, re.I):
-            return numpy.asarray(table.get_start()).astype(dtype)
-    if hasattr(table, 'get_column'):
-        return numpy.asarray(table.get_column(column)).astype(dtype)
-    else:
-        return numpy.asarray(table.getColumnByName(column)).astype(dtype)
-
-
-def get_row_value(row, attr):
-    """Internal method to extract a value from the given row
-    """
-    attr = str(attr).lower()
-    cname = row.__class__.__name__
-    if hasattr(row, 'get_%s' % attr):
-        return getattr(row, 'get_%s' % attr)()
-    elif attr == 'time':
-        if re.match('(Sngl|Multi)Inspiral', cname, re.I):
-            return row.get_end()
-        elif re.match('(Sngl|Multi)Burst', cname, re.I):
-            return row.get_peak()
-        elif re.match('(Sngl|Multi)Ring', cname, re.I):
-            return row.get_start()
-    else:
-        return getattr(row, attr)
 
 
 def get_column_string(column):
