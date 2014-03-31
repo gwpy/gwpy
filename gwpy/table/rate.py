@@ -68,7 +68,8 @@ def event_rate(self, stride, start=None, end=None, timecolumn='time'):
     timebins = numpy.arange(nsamp + 1) * stride + start
     # histogram data and return
     out = TimeSeries(numpy.histogram(times, bins=timebins)[0] / float(stride),
-                     epoch=start, sample_rate=1/float(stride), unit='Hz')
+                     epoch=start, sample_rate=1/float(stride), unit='Hz',
+                     name='Event rate')
     return out
 
 
@@ -143,5 +144,6 @@ def binned_event_rates(self, stride, column, bins, operator='>=',
             bintimes = times[operator(coldata, bin_)]
         out[bin_] = TimeSeries(
             numpy.histogram(bintimes, bins=timebins)[0] / float(stride),
-            epoch=start, sample_rate=1/float(stride), unit='Hz')
+            epoch=start, sample_rate=1/float(stride), unit='Hz',
+            name='Event rate')
     return out
