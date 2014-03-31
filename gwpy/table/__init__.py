@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -15,17 +16,23 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Extension of the astropy table module to include new I/O
+"""This module extends the functionality of the :mod:`glue.ligolw`
+library for reading/writing/manipulating LIGO_LW format XML tables.
 """
 
 import warnings
 warnings.filterwarnings('ignore', 'column name', UserWarning)
 
+from glue.ligolw.ligolw import (LIGOLWContentHandler, Column, Document)
+from glue.ligolw.table import Table
+from glue.ligolw import lsctables
+
+lsctables.use_in(LIGOLWContentHandler)
+
+from .rate import (event_rate, binned_event_rates)
 from .. import version
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__credits__ = 'Kipp Cannon <kipp.cannon@ligo.org>'
 __version__ = version.version
-
-from astropy.table import *
-
-from ..io.ligolw import connect
-from ..io.root import omicron
+__all__ = ['Column', 'Document', 'Table', 'lsctables']
