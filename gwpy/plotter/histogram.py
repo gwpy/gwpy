@@ -22,11 +22,13 @@ from math import log10
 
 import numpy
 
+from matplotlib.cbook import iterable
 from matplotlib.projections import register_projection
 
 from glue import iterutils
 from glue.ligolw.table import Table
 
+from ..table.utils import get_table_column
 from .axes import Axes
 from .core import Plot
 from ..data import Series
@@ -53,8 +55,6 @@ class HistogramAxes(Axes):
 
                 histax.plot(table1, 'snr', table2, 'new_snr', ...)
 
-        common : `bool`, optional, default: `False`
-            display all data on histograms with common bins.
         **kwargs
             common histogram keyword arguments to pass to
             :meth:`~HistogramAxes.hist`.
@@ -63,20 +63,18 @@ class HistogramAxes(Axes):
         --------
         HistogramAxes.hist : for details on keyword arguments
         """
-        if kwargs.pop('common', False):
-            range = kwargs.pop('range', self.common_limits(args))
-            kwargs.setdefault('bins', self.bin_boundaries(
-                range[0], range[1],  num=30, log=kwargs.get('logbins', False)))
         args = list(args)
+        data = []
         while len(args):
-            data = args.pop(0)
+            datum = args.pop(0)
             if isinstance(data, Series):
-                self.plot_series(data, **kwargs)
-            elif isinstance(data, Table):
+                data.append(data.data)
+            elif isinstance(datum, Table):
                 column = args.pop(0)
-                self.plot_table(data, column, **kwargs)
+                data.append(get_table_column(datum, column))
             else:
-                self.hist(data, **kwargs)
+                data.append(datum)
+        self.hist(data, **kwargs)
 
     def plot_series(self, series, **kwargs):
         """Add a histogram of the given 1-dimensional series to these `Axes`.
@@ -112,26 +110,28 @@ class HistogramAxes(Axes):
         --------
         HistogramAxes.hist : for details on keyword arguments
         """
-        from ..table.utils import get_table_column
         data = get_table_column(table, column)
         return self.hist(data, **kwargs)
 
-    def hist(self, *args, **kwargs):
+    def hist(self, x, **kwargs):
         logbins = kwargs.pop('logbins', False)
         bins = kwargs.get('bins', 30)
         weights = kwargs.get('weights', None)
         if isinstance(weights, (float, int)):
             kwargs['weights'] = []
-            for arg in args:
-                kwargs['weights'].append(numpy.ones_like(arg) * weights)
+            if isinstance(x, numpy.ndarray) or not iterable(x[0]):
+                kwargs['weights'].append(numpy.ones_like(x) * weights)
+            else:
+                for x2 in x:
+                    kwargs['weights'].append(numpy.ones_like(x2) * weights)
         if logbins and (bins is None or isinstance(bins, (float, int))):
             bins = bins or 30
-            range_ = kwargs.pop('range', self.common_limits(args))
+            range_ = kwargs.pop('range', self.common_limits(x))
             kwargs['bins'] = self.bin_boundaries(range_[0], range_[1], bins,
                                                  log=True)
         if kwargs.get('histtype', None) == 'stepfilled':
             kwargs.setdefault('edgecolor', 'black')
-        return super(HistogramAxes, self).hist(*args, **kwargs)
+        return super(HistogramAxes, self).hist(x, **kwargs)
     hist.__doc__ = Axes.hist.__doc__
 
     @staticmethod
