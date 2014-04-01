@@ -902,9 +902,9 @@ class TimeSeries(Series):
         """Check whether other is contiguous with self.
         """
         self.is_compatible(other)
-        if numpy.isclose(self.span[1], other.span[0]):
+        if abs(float(self.span[1] - other.span[0])) < 1e-5:
             return 1
-        elif numpy.isclose(other.span[1], self.span[0]):
+        elif abs(float(other.span[1] - self.span[0])) < 1e-5:
             return -1
         else:
             return 0
