@@ -129,7 +129,7 @@ class HistogramAxes(Axes):
             range_ = kwargs.pop('range', self.common_limits(args))
             kwargs['bins'] = self.bin_boundaries(range_[0], range_[1], bins,
                                                  log=True)
-        if kwargs.get('histtype', None) == 'step':
+        if kwargs.get('histtype', None) == 'stepfilled':
             kwargs.setdefault('edgecolor', 'black')
         return super(HistogramAxes, self).hist(*args, **kwargs)
     hist.__doc__ = Axes.hist.__doc__
