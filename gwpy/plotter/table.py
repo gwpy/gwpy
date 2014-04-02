@@ -244,7 +244,7 @@ class _EventTableMetaPlot(type):
             if re.search('time\Z', xcol, re.I):
                 plotclass = TimeSeriesPlot
             # or as a SpectrumPlot
-            elif re.search('frequency\Z', xcol, re.I):
+            elif re.search('(freq\Z|frequency\Z)', xcol, re.I):
                 plotclass = SpectrumPlot
             # otherwise as a standard Plot
             else:
