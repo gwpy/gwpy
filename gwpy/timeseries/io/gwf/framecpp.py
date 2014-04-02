@@ -86,10 +86,10 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
     elif isinstance(source, (unicode, str)):
         filelist = source.split(',')
     elif isinstance(source, CacheEntry):
-        filelist = [source.path]
+        filelist = [source]
     elif isinstance(source, Cache):
         source.sort(key=lambda e: e.segment[0])
-        filelist = source.pfnlist()
+        filelist = source
     else:
         filelist = list(source)
     # parse resampling
@@ -141,7 +141,7 @@ def _read_frame(framefile, channels, type=None, verbose=False,
 
     Parameters
     ----------
-    framefile : `str`
+    framefile : `str`, :class:`~glue.lal.CacheEntry`
         path to GWF-format frame file on disk.
     channels : `list`
         list of channels to read.
@@ -149,6 +149,9 @@ def _read_frame(framefile, channels, type=None, verbose=False,
         channel data type to read, one of: ``'adc'``, ``'proc'``.
     verbose : `bool`, optional
         print verbose output, optional, default: `False`
+    _SeriesClass : `type`, optional
+        class object to use as the data holder for a single channel,
+        default is :class:`~gwpy.timeseries.core.TimeSeries`
 
     Returns
     -------
@@ -157,10 +160,28 @@ def _read_frame(framefile, channels, type=None, verbose=False,
     """
     if isinstance(channels, (unicode, str)):
         channels = channels.split(',')
+
     # open file
-    stream = frameCPP.IFrameFStream(framefile)
-    toc = stream.GetTOC()
-    epochs = toc.GTimeS
+    if isinstance(framefile, CacheEntry):
+        fp = framefile.path
+    else:
+        fp = framefile
+    stream = frameCPP.IFrameFStream(fp)
+
+    # interpolate frame epochs from CacheEntry
+    # FIXME: update when new frameCPP is released
+    nframe = 0 # int(stream.GetNumberOfFrames())
+    if isinstance(framefile, CacheEntry) and nframe == 1:
+        epochs = [framefile.segment[0]]
+    else:
+        epochs = None
+
+    # load table of contents if needed
+    if epochs is None or not type:
+        toc = stream.GetTOC()
+    # get list of frame epochs
+    if epochs is None:
+        epochs = toc.GTimeS
     # work out channel types
     if type:
         ctype = dict((str(channel), type) for channel in channels)
@@ -210,7 +231,7 @@ def _read_frame(framefile, channels, type=None, verbose=False,
             i += 1
         if ts is None:
             raise ValueError("Channel '%s' not found in frame '%s'"
-                             % (str(channel), framefile))
+                             % (str(channel), fp))
         else:
             out[channel] = ts.copy()
     return out
