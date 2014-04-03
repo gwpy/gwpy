@@ -43,40 +43,7 @@ class HistogramAxes(Axes):
     """
     name = 'histogram'
 
-    def plot(self, *args, **kwargs):
-        """Add a new dataset to these `HistogramAxes`.
-
-        Parameters
-        ----------
-        *args
-            any number of data arrays to histogram individually.
-            If plotting :class:`~glue.ligolw.table.Table` objects, please
-            give two arguments each for the table, and the relevant column::
-
-                histax.plot(table1, 'snr', table2, 'new_snr', ...)
-
-        **kwargs
-            common histogram keyword arguments to pass to
-            :meth:`~HistogramAxes.hist`.
-
-        See Also
-        --------
-        HistogramAxes.hist : for details on keyword arguments
-        """
-        args = list(args)
-        data = []
-        while len(args):
-            datum = args.pop(0)
-            if isinstance(data, Series):
-                data.append(data.data)
-            elif isinstance(datum, Table):
-                column = args.pop(0)
-                data.append(get_table_column(datum, column))
-            else:
-                data.append(datum)
-        self.hist(data, **kwargs)
-
-    def plot_series(self, series, **kwargs):
+    def hist_series(self, series, **kwargs):
         """Add a histogram of the given 1-dimensional series to these `Axes`.
 
         Parameters
@@ -93,7 +60,7 @@ class HistogramAxes(Axes):
         """
         return self.hist(series.data, **kwargs)
 
-    def plot_table(self, table, column, **kwargs):
+    def hist_table(self, table, column, **kwargs):
         """Add a histogram of the given :class:`~glue.ligolw.table.Table`.
 
         Parameters
@@ -152,6 +119,8 @@ class HistogramAxes(Axes):
         (min, max) : `float`
             2-tuple of common minimum and maximum over all datasets.
         """
+        if isinstance(datasets, numpy.ndarray) or not iterable(datasets[0]):
+            datasets = [datasets]
         max_stat = max(list(iterutils.flatten(datasets)) + [-numpy.inf])
         min_stat = min(list(iterutils.flatten(datasets)) + [numpy.inf])
         if numpy.isinf(-max_stat):
