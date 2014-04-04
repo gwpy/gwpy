@@ -283,7 +283,7 @@ class StateVector(TimeSeries):
         """Generate a new StateTimeSeries
         """
         if not isinstance(data, cls):
-            data = numpy.asarray(data).astype(numpy.uint64)
+            data = numpy.asarray(data).astype(numpy.uint32)
         return super(StateVector, cls).__new__(cls, data, name=name,
                                                epoch=epoch, channel=channel,
                                                sample_rate=sample_rate,
