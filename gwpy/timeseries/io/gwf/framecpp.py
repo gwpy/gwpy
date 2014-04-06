@@ -225,7 +225,8 @@ def _read_frame(framefile, channels, type=None, verbose=False,
                 if ts is None:
                     unit = vect.GetUnitY()
                     ts = _SeriesClass(arr, epoch=thisepoch, sample_rate=fs,
-                                      name=name, channel=channel, unit=unit)
+                                      name=name, channel=channel, unit=unit,
+                                      copy=True)
                 else:
                     ts.append(arr)
             i += 1
@@ -233,7 +234,8 @@ def _read_frame(framefile, channels, type=None, verbose=False,
             raise ValueError("Channel '%s' not found in frame '%s'"
                              % (str(channel), fp))
         else:
-            out[channel] = ts.copy()
+            out[channel] = ts
+
     return out
 
 
