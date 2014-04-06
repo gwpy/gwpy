@@ -110,7 +110,7 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     nproc = min(nproc, len(cache))
 
     # single-process
-    if nproc == 1:
+    if nproc <= 1:
         return cls.read(cache, channel, format=format_, start=start, end=end,
                         resample=resample, **kwargs)
 
