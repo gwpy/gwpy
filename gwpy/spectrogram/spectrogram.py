@@ -149,9 +149,12 @@ def from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
 
     # wrap spectrogram generator
     def _specgram(q, ts):
-        q.put(_from_timeseries(ts, stride, fftlength=fftlength,
-                               fftstride=fftstride, method=method,
-                               window=window, plan=plan))
+        try:
+            q.put(_from_timeseries(ts, stride, fftlength=fftlength,
+                                   fftstride=fftstride, method=method,
+                                   window=window, plan=plan))
+        except Exception as e:
+            q.put(e)
 
     # otherwise build process list
     stepperproc = int(ceil(nsteps / nproc))
@@ -167,8 +170,15 @@ def from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
         if ((i + 1) * nsamp) >= timeseries.size:
             break
 
-    # get data and block
-    data = [queue.get() for p in processlist]
+    # get data
+    data = []
+    for process in processlist:
+        result = queue.get()
+        if isinstance(result, Exception):
+            raise result
+        else:
+            data.append(result)
+    # and block
     for process in processlist:
         process.join()
 
