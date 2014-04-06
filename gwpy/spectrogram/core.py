@@ -32,7 +32,7 @@ from astropy import units
 from ..detector import Channel
 from ..time import Time
 from ..data import (Array2D, Series)
-from ..timeseries import (TimeSeries, TimeSeriesList)
+from ..timeseries import (TimeSeries, TimeSeriesList, common)
 from ..spectrum import Spectrum
 from ..utils import update_docstrings
 
@@ -154,54 +154,6 @@ class Spectrogram(Array2D):
 
     # -------------------------------------------
     # Spectrogram methods
-
-    def crop(self, gpsstart, gpsend):
-        """Crop this `Spectrogram` to the given GPS ``[start, end)``
-        `Segment`.
-
-        Parameters
-        ----------
-        gpsstart : `Time`, `float`
-            GPS start time to crop `TimeSeries` at left
-        gpsend : `Time`, `float`
-            GPS end time to crop `TimeSeries` at right
-
-        Returns
-        -------
-        timeseries : `TimeSeries`
-            A new `TimeSeries` with the same metadata but different GPS
-            span
-
-        Notes
-        -----
-        If either ``gpsstart`` or ``gpsend`` are outside of the original
-        `TimeSeries` span, warnings will be printed and the limits will
-        be restricted to the :attr:`TimeSeries.span`
-        """
-        if isinstance(gpsstart, Time):
-            gpsstart = gpsstart.gps
-        if isinstance(gpsend, Time):
-            gpsend = gpsend.gps
-        if gpsstart < self.span[0]:
-            warnings.warn('TimeSeries.crop given GPS start earlier than '
-                          'start time of the input TimeSeries. Crop will '
-                          'begin when the TimeSeries actually starts.')
-            gpsstart = self.span[0]
-        if gpsend > self.span[1]:
-            warnings.warn('TimeSeries.crop given GPS end later than '
-                          'end time of the input TimeSeries. Crop will '
-                          'end when the TimeSeries actually ends.')
-            gpsend = self.span[1]
-        times = self.times.data
-        if gpsstart <= self.span[0]:
-            idx0 = 0
-        else:
-            idx0 = bisect.bisect_right(times, gpsstart)
-        if gpsend >= self.span[1]:
-            idx1 = None
-        else:
-            idx1 = bisect.bisect_left(times, gpsend)
-        return self[idx0:idx1]
 
     def ratio(self, operand):
         """Calculate the ratio of this `Spectrogram` against a
@@ -412,134 +364,11 @@ class Spectrogram(Array2D):
                              % (self.unit, other.unit))
         return True
 
-    def is_contiguous(self, other):
-        """Check whether other is contiguous with self.
-        """
-        self.is_compatible(other)
-        if numpy.isclose(self.span[1], other.span[0]):
-            return 1
-        elif numpy.isclose(other.span[1], self.span[0]):
-            return -1
-        else:
-            return 0
-
-    def append(self, other, pad=0.0, gap='raise', inplace=True):
-        """Connect another `Spectrogram` onto the end of the current one
-
-        Parameters
-        ----------
-        other : `Spectrogram`
-            the second data set to connect to this one
-        pad : `float`, optional, default: ``0.0``
-            value with which to pad discontiguous `Spectrogram`
-        gap : `str`, optional, default: ``'raise'``
-            action to perform if there's a gap between the other series
-            and this one. One of
-
-                - ``'raise'`` - raise an `Exception`
-                - ``'ignore'`` - remove gap and join data
-                - ``'pad'`` - pad gap with zeros
-
-        inplace : `bool`, optional, default: `True`
-            perform operation in-place, modifying current `Spectrogram,
-            otherwise copy data and return new `Spectrogram`
-
-        Returns
-        -------
-        series : `Spectrogram`
-            spectrogram containing joined data sets
-        """
-        # check metadata
-        self.is_compatible(other)
-        # make copy if needed
-        if inplace:
-            new = self
-        else:
-            new = self.copy()
-        # fill gap
-        if new.is_contiguous(other) != 1:
-            if gap == 'pad':
-                ngap = (other.span[0] - new.span[1]) / new.dt.value
-                if ngap < 1:
-                    raise ValueError("Cannot append Spectrogram that starts "
-                                     "before this one.")
-                gapshape = list(new.shape)
-                gapshape[0] = ngap
-                padding = numpy.ones(gapshape).view(new.__class__) * pad
-                padding.epoch = new.span[1]
-                padding.sample_rate = new.sample_rate
-                padding.unit = new.unit
-                new.append(padding, inplace=True)
-            elif gap == 'ignore':
-                pass
-            else:
-                raise ValueError("Cannot append discontiguous Spectrogram")
-        # resize first
-        s = list(new.shape)
-        s[0] = new.shape[0] + other.shape[0]
-        new.resize(s, refcheck=False)
-        new[-other.shape[0]:] = other.data
-        return new
-
-    def prepend(self, other, pad=0.0, gap='raise', inplace=True):
-        """Connect another `Spectrogram` onto the end of the current one
-
-        Parameters
-        ----------
-        other : `Spectrogram`
-            the second data set to connect to this one
-        pad : `float`, optional, default: ``0.0``
-            value with which to pad discontiguous `Spectrogram`
-        gap : `str`, optional, default: ``'raise'``
-            action to perform if there's a gap between the other series
-            and this one. One of
-
-                - ``'raise'`` - raise an `Exception`
-                - ``'ignore'`` - remove gap and join data
-                - ``'pad'`` - pad gap with zeros
-
-        inplace : `bool`, optional, default: `True`
-            perform operation in-place, modifying current `Spectrogram,
-            otherwise copy data and return new `Spectrogram`
-
-        Returns
-        -------
-        series : `Spectrogram`
-            spectrogram containing joined data sets
-        """
-        # check metadata
-        self.is_compatible(other)
-        # make copy if needed
-        if inplace:
-            new = self
-        else:
-            new = self.copy()
-        # fill gap
-        if new.is_contiguous(other) != -1:
-            if gap == 'pad':
-                ngap = int((new.span[0]-other.span[1]) / new.dt.value)
-                if ngap < 1:
-                    raise ValueError("Cannot prepend Spectrogram that starts "
-                                     "after this one.")
-                gapshape = list(new.shape)
-                gapshape[0] = ngap
-                padding = numpy.ones(gapshape).view(new.__class__) * pad
-                padding.epoch = other.span[1]
-                padding.dt = new.dt
-                padding.unit = new.unit
-                new.prepend(padding, inplace=True)
-            elif gap == 'ignore':
-                pass
-            else:
-                raise ValueError("Cannot append discontiguous Spectrogram")
-        # resize first
-        N = new.shape[0]
-        s = list(new.shape)
-        s[0] = new.shape[0] + other.shape[0]
-        new.resize(s, refcheck=False)
-        new[-N:] = new.data[:N]
-        new[:other.shape[0]] = other.data
-        return new
+    is_contiguous = common.is_contiguous
+    append = common.append
+    prepend = common.prepend
+    update = common.update
+    crop = common.crop
 
     # -------------------------------------------
     # numpy.ndarray method modifiers
