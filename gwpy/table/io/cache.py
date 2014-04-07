@@ -84,7 +84,8 @@ def read_cache_single(cache, tablename, columns=None, verbose=False, **kwargs):
     return out
 
 
-def read_cache(cache, tablename, columns=None, nproc=1, **kwargs):
+def read_cache(cache, tablename, columns=None, nproc=1,
+               sort=None, **kwargs):
     """Read a `Table` of data from a `Cache`.
 
     The inner-workings are agnostic of data-type, but can only handle a
@@ -108,6 +109,17 @@ def read_cache(cache, tablename, columns=None, nproc=1, **kwargs):
     nproc : `int`, default: ``1``
         maximum number of independent frame reading processes, default
         is set to single-process file reading.
+
+        .. warning::
+
+           When multiprocessing, the ordering of rows in the output
+           `Table` is effectively random. Users can supply a
+           `lambda`-style ``sort`` key if ordering is important.
+
+    sort : `callable`, optional
+        callable function to pass to the
+        :meth:`~glue.ligolw.table.Table.sort` method in order to sort
+        the output table.
 
     Notes
     -----
@@ -133,8 +145,11 @@ def read_cache(cache, tablename, columns=None, nproc=1, **kwargs):
 
     # single-process
     if nproc <= 1:
-        return read_cache_single(cache, tablename, columns=columns,
-                                 verbose=verbose, **kwargs)
+        out = read_cache_single(cache, tablename, columns=columns,
+                                verbose=verbose, **kwargs)
+        if sort:
+            out.sort(key=sort)
+        return out
 
     # define how to read each sub-cache
     def _read(q, pstart, pend):
@@ -168,6 +183,8 @@ def read_cache(cache, tablename, columns=None, nproc=1, **kwargs):
     extend = out.extend
     for table_ in data[1:]:
         extend(table_)
+    if sort:
+        out.sort(key=sort)
     return out
 
 
