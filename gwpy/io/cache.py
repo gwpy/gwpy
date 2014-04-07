@@ -50,7 +50,7 @@ def identify_cache_file(*args, **kwargs):
         return True
     # identify cache object
     else:
-        False
+        return False
 
 
 def identify_cache(*args, **kwargs):
