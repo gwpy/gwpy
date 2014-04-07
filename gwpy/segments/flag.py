@@ -272,7 +272,10 @@ class DataQualityFlag(object):
     def texname(self):
         """Name of this `DataQualityFlag` in LaTeX printable format.
         """
-        return self.name.replace('_', r'\_')
+        try:
+            return self.name.replace('_', r'\_')
+        except AttributeError:
+            return None
 
     @property
     def extent(self):
