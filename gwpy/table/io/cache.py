@@ -21,7 +21,6 @@
 
 from __future__ import division
 
-import inspect
 from math import ceil
 from multiprocessing import (Process, Queue as ProcessQueue)
 
@@ -29,7 +28,7 @@ from astropy.io import registry
 
 from glue.lal import Cache
 from glue.ligolw import lsctables
-from glue.ligolw.table import (Table, StripTableName as strip_table_name)
+from glue.ligolw.table import (StripTableName as strip_table_name)
 
 from ...io.cache import (open_cache, identify_cache, identify_cache_file)
 from ...utils import gprint
@@ -180,9 +179,7 @@ def _read_factory(table_):
 
 
 # register cache reading for all lsctables
-for name, table in inspect.getmembers(
-        lsctables, lambda t: inspect.isclass(t) and issubclass(t, Table)):
-    # register reader and auto-id for LIGO_LW
+for name, table in _TABLES.iteritems():
     registry.register_reader('lcf', table, _read_factory(table))
     registry.register_reader('cache', table, _read_factory(table))
     registry.register_identifier('lcf', table, identify_cache_file)

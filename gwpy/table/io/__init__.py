@@ -19,10 +19,34 @@
 """Input/output methods for tabular data.
 """
 
+from .. import _TABLES
+
 from ... import version
+from ...io import reader
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
+
+# add the unified input/output system to each of the lsctables.
+for name, table in _TABLES.iteritems():
+    # define the read classmethod with docstring
+    table.read = classmethod(reader(doc="""
+        Read data into a `{0}`.
+
+        Parameters
+        ----------
+        f : `file`, `str`
+            open `file` in memory, or path to file on disk.
+        columns : `list`, optional
+            list of column name strings to read, default all.
+        contenthandler : :class:`~glue.ligolw.ligolw.LIGOLWContentHandler`
+            SAX content handler for parsing LIGO_LW documents.
+
+        Returns
+        -------
+        table : :class:`~glue.ligolw.lsctables.{0}`
+            `{0}` of data with given columns filled
+        """.format(name)))
 
 # import LIGO_LW I/O
 from .ligolw import *
@@ -35,5 +59,3 @@ try:
     from .omicron import *
 except ImportError:
     pass
-
-

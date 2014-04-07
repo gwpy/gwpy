@@ -19,15 +19,10 @@
 """Read LIGO_LW documents into glue.ligolw.table.Table objects.
 """
 
-import inspect
-
-from glue.ligolw.table import Table
-from glue.ligolw import lsctables
-
 from astropy.io import registry
 
+from .. import _TABLES
 from ...io.ligolw import (table_from_file, identify_ligolw_file)
-from ...io import reader
 from ... import version
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -42,29 +37,7 @@ def _read_factory(table_):
         return table_from_file(f, table_.tableName, **kwargs)
     return _read
 
-
-# add the unified input/output system to each of the lsctables.
-for name, table in inspect.getmembers(
-        lsctables, lambda t: inspect.isclass(t) and issubclass(t, Table)):
-    # define the read classmethod with docstring
-    table.read = classmethod(reader(doc="""
-        Read data into a `{0}`.
-
-        Parameters
-        ----------
-        f : `file`, `str`
-            open `file` in memory, or path to file on disk.
-        columns : `list`, optional
-            list of column name strings to read, default all.
-        contenthandler : :class:`~glue.ligolw.ligolw.LIGOLWContentHandler`
-            SAX content handler for parsing LIGO_LW documents.
-
-        Returns
-        -------
-        table : :class:`~glue.ligolw.lsctables.{0}`
-            `{0}` of data with given columns filled
-        """.format(name)))
-
-    # register reader and auto-id for LIGO_LW
+# register reader and auto-id for LIGO_LW
+for name, table in _TABLES.iteritems():
     registry.register_reader('ligolw', table, _read_factory(table))
     registry.register_identifier('ligolw', table, identify_ligolw_file)
