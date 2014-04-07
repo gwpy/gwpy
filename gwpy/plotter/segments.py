@@ -137,7 +137,7 @@ class SegmentAxes(TimeSeriesAxes):
         if y is None:
             y = len(self.collections)
         # get flag name
-        name = kwargs.pop('label', flag.name)
+        name = kwargs.pop('label', flag.texname)
 
         # get epoch
         try:
@@ -301,7 +301,8 @@ class SegmentAxes(TimeSeriesAxes):
         **insetparams
             other keyword arguments for the inset box
         """
-        label = re.sub('r\\+_+', '\_', label)
+        if label is not None:
+            label = re.sub('r\\+_+', '\_', label)
         # find existing label
         # set formatter
         formatter = self.yaxis.get_major_formatter()
@@ -322,11 +323,11 @@ class SegmentAxes(TimeSeriesAxes):
             insetparams.setdefault('bbox',
                                    {'alpha': 0.5, 'facecolor': 'white',
                                     'edgecolor': 'none'})
-            t = self.text(x, y - 0.1, label, **insetparams)
+            t = self.text(x, y - 0.1, label or '', **insetparams)
             t._is_segment_label = True
             return t
         else:
-            formatter.flags[y] = label
+            formatter.flags[y] = label or ''
             return
 
     def set_xlim(self, *args, **kwargs):
