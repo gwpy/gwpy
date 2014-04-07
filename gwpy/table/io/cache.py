@@ -30,6 +30,7 @@ from glue.lal import Cache
 from glue.ligolw import lsctables
 from glue.ligolw.table import (StripTableName as strip_table_name)
 
+from .. import _TABLES
 from ...io.cache import (open_cache, identify_cache, identify_cache_file)
 from ...utils import gprint
 from ...segments import (Segment, SegmentList)
