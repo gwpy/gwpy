@@ -18,6 +18,25 @@
 
 """This module extends the functionality of the :mod:`glue.ligolw`
 library for reading/writing/manipulating LIGO_LW format XML tables.
+
+The :mod:`glue.ligolw.lsctables` library defines a number of specific
+tables used in GW data analysis; this module extends their functionality
+with the unified input/output system (the .read() method).
+
+Additionally, for event tables (burst, inspiral, and ringdown), methods
+to calculate event rate are also attached.
+
+Users can make the extensions available by either importing the
+:mod:`~glue.ligolw.lsctables` module from gwpy as follows::
+
+    >>> from gwpy.table import lsctables
+
+or simply importing the :mod:`gwpy.table` module at any point before
+using the lsctables module (even after importing it from glue)::
+
+    >>> from glue.ligolw import lsctables
+    >>> import gwpy.table
+
 """
 
 import warnings
@@ -29,7 +48,12 @@ from glue.ligolw import lsctables
 
 lsctables.use_in(LIGOLWContentHandler)
 
+# attach unified I/O
+from .io import *
+
+# attach rate methods
 from .rate import (event_rate, binned_event_rates)
+
 from .. import version
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -15,10 +16,24 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read LIGO_LW-format XML into Tables
+"""Input/output methods for tabular data.
 """
 
 from ... import version
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
+
+# import LIGO_LW I/O
+from .ligolw import *
+
+# import cache I/O
+from .cache import *
+
+# try importing ROOT-based I/O
+try:
+    from .omicron import *
+except ImportError:
+    pass
+
+

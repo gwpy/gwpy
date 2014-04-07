@@ -24,6 +24,8 @@ from math import ceil
 
 import numpy
 
+from glue.ligolw import lsctables
+
 from .. import version
 from .utils import (get_table_column)
 from ..timeseries import (TimeSeries, TimeSeriesDict)
@@ -117,6 +119,13 @@ def binned_event_rates(self, stride, column, bins, operator='>=',
     """
     # get time data
     times = get_table_column(self, timecolumn)
+
+    # get channel
+    try:
+        channel = self[0].channel
+    except (IndexError, AttributeError):
+        channel = None
+
     # generate time bins
     if not start:
         start = times.min()
@@ -145,5 +154,13 @@ def binned_event_rates(self, stride, column, bins, operator='>=',
         out[bin_] = TimeSeries(
             numpy.histogram(bintimes, bins=timebins)[0] / float(stride),
             epoch=start, sample_rate=1/float(stride), unit='Hz',
-            name='Event rate')
+            name='Event rate', channel=channel)
     return out
+
+
+# attach methods to lsctables
+for table in [lsctables.SnglBurstTable, lsctables.MultiBurstTable,
+              lsctables.SnglInspiralTable, lsctables.MultiInspiralTable,
+              lsctables.SnglRingdownTable]:
+    table.event_rate = event_rate
+    table.binned_event_rates = binned_event_rates
