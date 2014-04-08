@@ -234,7 +234,8 @@ class TimeSeriesAxes(Axes):
         line = self.plot(timeseries.times, timeseries.data, **kwargs)
         if len(self.lines) == 1 and timeseries.size:
             self.set_xlim(*timeseries.span)
-            self.auto_gps_scale()
+            if self._auto_gps:
+                self.auto_gps_scale()
         return line
 
     @auto_refresh
