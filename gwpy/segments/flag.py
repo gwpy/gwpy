@@ -805,7 +805,7 @@ class DataQualityDict(OrderedDict):
     """))
 
     @classmethod
-    def from_veto_definer_file(cls, fp, start=None, end=None):
+    def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None):
         """Read a `DataQualityDict` from a LIGO_LW XML VetoDefinerTable.
         """
         # open file
@@ -818,13 +818,15 @@ class DataQualityDict(OrderedDict):
         veto_def_table = VetoDefTable.get_table(xmldoc)
         out = cls()
         for row in veto_def_table:
-            if start and row.end_time < start:
+            if ifo and row.ifo != ifo:
+                continue
+            if start and 0 < row.end_time < start:
                 continue
             elif start:
                 row.start_time = max(row.start_time, start)
             if end and row.start_time > end:
                 continue
-            elif end and row.end_time == 0:
+            elif end and not row.end_time:
                 row.end_time = end
             elif end:
                 row.end_time = min(row.end_time, end)
