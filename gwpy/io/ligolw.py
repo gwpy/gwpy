@@ -22,11 +22,13 @@ All specific unified input/output for class objecst should be placed in
 an 'io' subdirectory of the containing directory for that class.
 """
 
-from glue.lal import CacheEntry
-from glue.ligolw.ligolw import LIGOLWContentHandler
-from glue.ligolw import (utils as llwutils, table as llwtable, lsctables)
+from glue.lal import (Cache, CacheEntry)
+from glue.ligolw.ligolw import (Document, LIGOLWContentHandler)
+from glue.ligolw.utils.ligolw_add import ligolw_add
+from glue.ligolw import (table, lsctables)
 
 from .. import version
+from .cache import open_cache
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -37,13 +39,20 @@ class GWpyContentHandler(LIGOLWContentHandler):
 
 
 def table_from_file(f, tablename, columns=None,
-                    contenthandler=GWpyContentHandler):
+                    contenthandler=GWpyContentHandler, nproc=1):
     """Read a :class:`~glue.ligolw.table.Table` from a LIGO_LW file.
 
     Parameters
     ----------
-    f : `file`, `str`
-        open `file` in memory, or path to file on disk.
+    f : `file`, `str`, `CacheEntry`, `list`, `Cache`
+        object representing one or more files. One of
+
+        - an open `file`
+        - a `str` pointing to a file path on disk
+        - a formatted :class:`~glue.lal.CacheEntry` representing one file
+        - a `list` of `str` file paths
+        - a formatted :class:`~glue.lal.Cache` representing many files
+
     tablename : `str`
         name of the table to read.
     columns : `list`, optional
@@ -57,19 +66,30 @@ def table_from_file(f, tablename, columns=None,
         `Table` of data with given columns filled
 
     """
+
     # find table class
-    tableclass = lsctables.TableByName[llwtable.StripTableName(tablename)]
+    tableclass = lsctables.TableByName[table.StripTableName(tablename)]
     # set columns to read
     if columns is not None:
         _oldcols = tableclass.loadcolumns
         tableclass.loadcolumns = columns
-    # load file
+    # format list of files
     if isinstance(f, CacheEntry):
-        f = f.path
-    if isinstance(f, (str, unicode)):
-        xmldoc = llwutils.load_filename(f, contenthandler=contenthandler)
+        files = [f.path]
+    elif isinstance(f, (str, unicode)) and f.endswith(('.cache', '.lcf')):
+        files = open_cache(f).pfnlist()
+    elif isinstance(f, (str, unicode)):
+        files = f.split(',')
+    elif isinstance(f, Cache):
+        files = f.pfnlist()
     else:
-        xmldoc, _ = llwutils.load_fileobj(f, contenthandler=contenthandler)
+        files = list(f)
+    # generate Document
+    xmldoc = Document()
+    # load file(s)
+    ligolw_add(xmldoc, files, non_lsc_tables_ok=True,
+               contenthandler=contenthandler)
+    # extract table
     out = tableclass.get_table(xmldoc)
     if columns is not None:
         tableclass.loadcolumns = _oldcols

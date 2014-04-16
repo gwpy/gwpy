@@ -26,12 +26,23 @@ if sys.version_info[0] < 3:
 
 from astropy.io import registry
 
-from glue.lal import LIGOTimeGPS
+from glue.lal import (Cache, CacheEntry)
+
+try:
+    from lal import LIGOTimeGPS
+except ImportError:
+    from glue.lal import LIGOTimeGPS
+    seconds = lambda t: t.seconds
+    nanoeseconds = lambda t: t.nanoseconds
+else:
+    seconds = lambda t: t.gpsSeconds
+    nanoeseconds = lambda t: t.gpsNanoSeconds
 
 from ROOT import TChain
 
 from .. import lsctables
 from ... import version
+from ...io.cache import open_cache
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -79,19 +90,19 @@ def sngl_burst_from_root(tchain, columns=OMICRON_COLUMNS):
     # parse time data
     peak_time = LIGOTimeGPS(tchain.time)
     if 'time' in columns or 'peak_time' in columns:
-        t.peak_time = peak_time.seconds
+        t.peak_time = seconds(peak_time)
     if 'time' in columns or 'peak_time_ns' in columns:
-        t.peak_time_ns = peak_time.nanoseconds
+        t.peak_time_ns = nanoeseconds(peak_time)
     start_time = LIGOTimeGPS(tchain.tstart)
     if 'start_time' in columns:
-        t.start_time = start_time.seconds
+        t.start_time = seconds(start_time)
     if 'start_time_ns' in columns:
-        t.start_time_ns = start_time.nanoseconds
+        t.start_time_ns = nanoeseconds(start_time)
     stop_time = LIGOTimeGPS(tchain.tend)
     if 'stop_time' in columns:
-        t.stop_time = stop_time.seconds
+        t.stop_time = seconds(stop_time)
     if 'stop_time_ns' in columns:
-        t.stop_time_ns = stop_time.nanoseconds
+        t.stop_time_ns = nanoeseconds(stop_time)
     if 'duration' in columns:
         t.duration = float(stop_time - start_time)
 
@@ -106,12 +117,50 @@ def sngl_burst_from_root(tchain, columns=OMICRON_COLUMNS):
     return t
 
 
-def table_from_root(filename, columns=OMICRON_COLUMNS):
+def table_from_root(f, columns=OMICRON_COLUMNS, nproc=1):
     """Build a `SnglBurstTable` from events in an Omicron ROOT file.
+
+    Parameters
+    ----------
+    f : `file`, `str`, `CacheEntry`, `list`, `Cache`
+        object representing one or more files. One of
+
+        - an open `file`
+        - a `str` pointing to a file path on disk
+        - a formatted :class:`~glue.lal.CacheEntry` representing one file
+        - a `list` of `str` file paths
+        - a formatted :class:`~glue.lal.Cache` representing many files
+
+    columns : `list`, optional
+        list of column name strings to read, default all.
+    nproc : `int`, optional, default: 1
+        number of parallel processes with which to distribute file I/O,
+        default: serial process
     """
-    # read ROOT file
+    # allow multiprocessing
+    if nproc != 1:
+        from .cache import read_cache
+        return read_cache(f, lsctables.SnglBurstTable.tableName,
+                          columns=columns, nproc=nproc, format='omicron')
+
+
+
+    # format list of files
+    if isinstance(f, CacheEntry):
+        files = [f.path]
+    elif isinstance(f, (str, unicode)) and f.endswith(('.cache', '.lcf')):
+        files = open_cache(f).pfnlist()
+    elif isinstance(f, (str, unicode)):
+        files = f.split(',')
+    elif isinstance(f, Cache):
+        files = f.pfnlist()
+    else:
+        files = list(f)
+
+    # read tree chain
     tree = TChain('triggers')
-    tree.Add(filename)
+    for filename in files:
+        tree.Add(filename)
 
     # generate output
     out = lsctables.New(lsctables.SnglBurstTable, columns=columns)
@@ -130,9 +179,11 @@ def table_from_root(filename, columns=OMICRON_COLUMNS):
 def identify_omicron(*args, **kwargs):
     """Determine an input object as an Omicron-format ROOT file.
     """
-    fp = args[1]
+    fp = args[3]
     if isinstance(fp, file):
         fp = fp.name
+    elif isinstance(fp, CacheEntry):
+        fp = fp.path
     # identify string
     if (isinstance(fp, (unicode, str)) and
             fp.endswith('root') and

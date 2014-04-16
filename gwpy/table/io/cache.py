@@ -27,61 +27,22 @@ from multiprocessing import (Process, Queue as ProcessQueue)
 from astropy.io import registry
 
 from glue.lal import Cache
-from glue.ligolw import lsctables
+from glue.ligolw.lsctables import TableByName
 from glue.ligolw.table import (StripTableName as strip_table_name)
 
-from .. import _TABLES
 from ...io.cache import (open_cache, identify_cache, identify_cache_file)
-from ...utils import gprint
-from ...segments import (Segment, SegmentList)
 
 
-def read_cache_single(cache, tablename, columns=None, verbose=False, **kwargs):
+def read_cache_single(cache, tablename, columns=None, **kwargs):
     """Read a `Table` of data from a `Cache` of files.
     """
-    # open cache from file if given
-    if isinstance(cache, (unicode, str, file)):
-        cache = open_cache(cache)
-    nfiles = len(cache)
+    # convert to list of files (basically to fool auto-ID)
+    files = cache.pfnlist()
     tablename = strip_table_name(tablename)
 
-    if verbose:
-        if not isinstance(verbose, (unicode, str)):
-            verbose = ''
+    TableClass = TableByName[tablename]
 
-        def status(pos, percent=None, final=False):
-            if percent is None:
-                percent = pos/nfiles * 100
-            gprint("%sReading %s from files... %d/%d (%.1f%%)"
-                   % (verbose, tablename, pos, nfiles, percent),
-                   end=final and '\n' or '\r')
-
-    # format output object
-    TableClass = lsctables.TableByName[tablename]
-
-    # return no files
-    if nfiles == 0:
-        if verbose is not False:
-            status(0, 100)
-        return lsctables.New(TableClass, columns=columns)
-    elif verbose is not False:
-        status(0)
-
-    # otherwise read first file
-    out = TableClass.read(cache[0], columns=columns, **kwargs)
-    if verbose is not False:
-        status(1)
-    extend = out.extend
-
-    # then read other files
-    for i, entry in enumerate(cache[1:]):
-        extend(TableClass.read(entry, columns=columns, **kwargs))
-        if verbose is not False:
-            status(i+2)
-    if verbose is not False:
-        status(nfiles, final=True)
-
-    return out
+    return TableClass.read(files, columns=columns, **kwargs)
 
 
 def read_cache(cache, tablename, columns=None, nproc=1,
@@ -131,44 +92,50 @@ def read_cache(cache, tablename, columns=None, nproc=1,
     data : :class:`~gwpy.timeseries.core.TimeSeries`
         a new `TimeSeries` containing the data read from disk
     """
-    verbose = kwargs.pop('verbose', False)
-
-    # open cache from file if given
-    if isinstance(cache, (unicode, str, file)):
+    if isinstance(cache, (file, unicode, str)):
         cache = open_cache(cache)
-
-    # use cache to get start end times
-    cache.sort(key=lambda ce: ce.segment[0])
+    if isinstance(cache, Cache):
+        cache.sort(key=lambda ce: ce.segment[0])
 
     # force one file per process minimum
     nproc = min(nproc, len(cache))
 
+    # work out the underlying file type
+    tablename = strip_table_name(tablename)
+    TableClass = TableByName[strip_table_name(tablename)]
+    try:
+        kwargs.setdefault(
+            'format', registry._get_valid_format('read', TableClass, None,
+                                                 None, (cache[0],), {}))
+    except IndexError:
+        kwargs.setdefault('format', 'ligolw')
+    except Exception:
+        if 'format' not in kwargs:
+            raise
+
     # single-process
     if nproc <= 1:
         out = read_cache_single(cache, tablename, columns=columns,
-                                verbose=verbose, **kwargs)
+                                **kwargs)
         if sort:
             out.sort(key=sort)
         return out
 
     # define how to read each sub-cache
-    def _read(q, pstart, pend):
-        subcache = cache.sieve(segment=Segment(pstart, pend))
-        q.put(read_cache_single(subcache, tablename, columns=columns,
+    def _read(q, sc):
+        q.put(read_cache_single(sc, tablename, columns=columns,
                                 **kwargs))
 
     # separate cache into parts
     fperproc = int(ceil(len(cache) / nproc))
-    subcaches = [Cache(cache[i:i+fperproc]) for
+    subcaches = [cache.__class__(cache[i:i+fperproc]) for
                  i in range(0, len(cache), fperproc)]
-    subsegments = SegmentList([Segment(c[0].segment[0], c[-1].segment[1])
-                               for c in subcaches])
 
     # start all processes
     queue = ProcessQueue(nproc)
     proclist = []
-    for subseg in subsegments:
-        process = Process(target=_read, args=(queue, subseg[0], subseg[1]))
+    for subcache in subcaches:
+        process = Process(target=_read, args=(queue, subcache))
         process.daemon = True
         proclist.append(process)
         process.start()
@@ -197,7 +164,7 @@ def _read_factory(table_):
 
 
 # register cache reading for all lsctables
-for name, table in _TABLES.iteritems():
+for table in TableByName.itervalues():
     registry.register_reader('lcf', table, _read_factory(table))
     registry.register_reader('cache', table, _read_factory(table))
     registry.register_identifier('lcf', table, identify_cache_file)

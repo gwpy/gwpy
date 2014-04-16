@@ -21,7 +21,9 @@
 
 from astropy.io import registry
 
-from .. import _TABLES
+from glue.ligolw.table import StripTableName as strip
+from glue.ligolw.lsctables import TableByName
+
 from ...io.ligolw import (table_from_file, identify_ligolw_file)
 from ... import version
 
@@ -33,11 +35,20 @@ __all__ = []
 def _read_factory(table_):
     """Define a custom function to read this table from a LIGO_LW file.
     """
-    def _read(f, **kwargs):
-        return table_from_file(f, table_.tableName, **kwargs)
+    def _read(f, nproc=1, **kwargs):
+        if nproc != 1:
+            kwargs.setdefault('format', strip(table_.tableName))
+            from .cache import read_cache
+            return read_cache(f, table_.tableName, **kwargs)
+        else:
+            return table_from_file(f, table_.tableName, **kwargs)
     return _read
 
 # register reader and auto-id for LIGO_LW
-for name, table in _TABLES.iteritems():
-    registry.register_reader('ligolw', table, _read_factory(table))
+for table in TableByName.itervalues():
+    tablename = strip(table.tableName)
+    func = _read_factory(table)
+    # register generic reader and table-specific reader
+    registry.register_reader('ligolw', table, func)
+    registry.register_reader(tablename, table, func)
     registry.register_identifier('ligolw', table, identify_ligolw_file)

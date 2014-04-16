@@ -48,9 +48,6 @@ from glue.ligolw import lsctables
 
 lsctables.use_in(LIGOLWContentHandler)
 
-_TABLES = dict((c.__name__, c) for c in lsctables.TableByName.values())
-_TABLES.update({'Table': Table})
-
 # attach unified I/O
 from .io import *
 
