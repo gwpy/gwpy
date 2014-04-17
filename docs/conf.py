@@ -32,9 +32,14 @@
 
 import os
 
-from gwpy import version as gwpy_version
+from matplotlib import use
 
 import sphinx_bootstrap_theme
+
+use('agg')
+
+from gwpy import version as gwpy_version
+from gwpy.plotter import (GWPY_PLOT_PARAMS)
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -82,11 +87,9 @@ doxylink = {'lalsuite' : ('../../lalsuite/doxygen/lalsuite_dox.tag',
                           'https://www.lsc-group.phys.uwm.edu/daswg/projects'
                           '/lal/nightly/docs/html/')}
 
-# matplotlib plot directive`
-from matplotlib import use
-use('agg')
-from gwpy.plotter import rcParams
-plot_rcParams = rcParams
+# matplotlib plot directive
+plot_rcparams = GWPY_PLOT_PARAMS
+plot_formats = ['png']
 plot_apply_rcparams = True
 
 # fix numpydoc autosummary
