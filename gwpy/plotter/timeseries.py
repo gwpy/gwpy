@@ -316,6 +316,10 @@ class TimeSeriesAxes(Axes):
         :meth:`~matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
+        # rescue grid settings
+        grid = (self.xaxis._gridOnMajor, self.xaxis._gridOnMinor,
+                self.yaxis._gridOnMajor, self.yaxis._gridOnMinor)
+
         cmap = kwargs.pop('cmap', None)
         if cmap is None:
             cmap = copy.deepcopy(cm.jet)
@@ -342,6 +346,16 @@ class TimeSeriesAxes(Axes):
             self.set_ylim(*map(numpy.float64, spectrogram.span_y))
         if not self.get_ylabel():
             self.add_label_unit(spectrogram.yunit, axis='y')
+
+        # reset grid
+        if grid[0]:
+            self.xaxis.grid(True, 'major')
+        if grid[1]:
+            self.xaxis.grid(True, 'minor')
+        if grid[2]:
+            self.yaxis.grid(True, 'major')
+        if grid[3]:
+            self.yaxis.grid(True, 'minor')
         return mesh
 
 
