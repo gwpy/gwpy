@@ -123,8 +123,11 @@ def read_cache(cache, tablename, columns=None, nproc=1,
 
     # define how to read each sub-cache
     def _read(q, sc):
-        q.put(read_cache_single(sc, tablename, columns=columns,
-                                **kwargs))
+        try:
+            q.put(read_cache_single(sc, tablename, columns=columns,
+                                    **kwargs))
+        except Exception as e:
+            q.put(e)
 
     # separate cache into parts
     fperproc = int(ceil(len(cache) / nproc))
@@ -141,7 +144,12 @@ def read_cache(cache, tablename, columns=None, nproc=1,
         process.start()
 
     # get data and block
-    data = [queue.get() for p in proclist]
+    data = []
+    for i in range(len(proclist)):
+        result = queue.get()
+        if isinstance(result, Exception):
+            raise result
+        data.append(result)
     for process in proclist:
         process.join()
 
