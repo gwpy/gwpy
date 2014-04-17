@@ -340,7 +340,7 @@ class TimeSeries(Series):
             average spectrum method
         window : `timeseries.Window`, optional
             window function to apply to timeseries prior to FFT
-        plan : :lalsuite:`XLALREAL8ForwardFFTPlan`, optional
+        plan : :lalsuite:`REAL8ForwardFFTPlan`, optional
             LAL FFT plan to use when generating average spectrum,
             substitute type 'REAL8' as appropriate.
 
@@ -397,7 +397,7 @@ class TimeSeries(Series):
             average spectrum method
         window : `timeseries.Window`, optional
             window function to apply to timeseries prior to FFT
-        plan : :lalsuite:`XLALREAL8ForwardFFTPlan`, optional
+        plan : :lalsuite:`REAL8ForwardFFTPlan`, optional
             LAL FFT plan to use when generating average spectrum,
             substitute type 'REAL8' as appropriate.
 
@@ -430,7 +430,7 @@ class TimeSeries(Series):
             number of seconds between FFTs
         window : `timeseries.window.Window`, optional, default: `None`
             window function to apply to timeseries prior to FFT
-        plan : :lalsuite:`XLALREAL8ForwardFFTPlan`, optional
+        plan : :lalsuite:`REAL8ForwardFFTPlan`, optional
             LAL FFT plan to use when generating average spectrum,
             substitute type 'REAL8' as appropriate.
         nproc : `int`, default: ``1``

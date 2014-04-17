@@ -63,7 +63,7 @@ def bartlett(timeseries, segmentlength, window=None, plan=None):
         input `TimeSeries` data
     segmentlength : `int`
         number of samples in each average
-    plan : :lalsuite:`XLALREAL8ForwardFFTPlan`, optional
+    plan : :lalsuite:`REAL8ForwardFFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
 
     Returns
@@ -93,7 +93,7 @@ def welch(timeseries, segmentlength, overlap, window=None, plan=None):
         number of samples between averages
     window : `~gwpy.window.Window`, optional
         window function to apply to timeseries prior to FFT
-    plan : :lalsuite:`XLALREAL8ForwardFFTPlan`, optional
+    plan : :lalsuite:`REAL8ForwardFFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
 
     Returns
@@ -125,7 +125,7 @@ def median_mean(timeseries, segmentlength, overlap, window=None, plan=None):
         number of samples between averages
     window : `~gwpy.window.Window`, optional
         window function to apply to timeseries prior to FFT
-    plan : :lalsuite:`XLALREAL8ForwardFFTPlan`, optional
+    plan : :lalsuite:`REAL8ForwardFFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
 
     Returns
@@ -153,7 +153,7 @@ def median(timeseries, segmentlength, overlap, window=None, plan=None):
         number of samples between averages
     window : `~gwpy.window.Window`, optional
         window function to apply to timeseries prior to FFT
-    plan : :lalsuite:`XLALREAL8ForwardFFTPlan`, optional
+    plan : :lalsuite:`REAL8ForwardFFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
 
     Returns
@@ -183,7 +183,7 @@ def lal_psd(timeseries, method, segmentlength, overlap, window=None, plan=None):
         number of samples between averages
     window : `~gwpy.window.Window`, optional
         window function to apply to timeseries prior to FFT
-    plan : :lalsuite:`XLALREAL8ForwardFFTPlan`, optional
+    plan : :lalsuite:`REAL8ForwardFFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
 
     Returns
@@ -289,7 +289,7 @@ def generate_lal_fft_plan(length, level=None,
 
     Returns
     -------
-    :lalsuite:`XLALREAL8ForwardFFTPlan`
+    :lalsuite:`REAL8ForwardFFTPlan`
         FFT plan of the relevant data type
     """
     from lal import (lal, utils as lalutils)
