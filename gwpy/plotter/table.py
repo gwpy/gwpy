@@ -29,7 +29,7 @@ display these tables in x-y format, with optional colouring.
 import re
 
 import numpy
-from matplotlib import pyplot
+from matplotlib import (cm, collections, pyplot)
 from matplotlib.projections import register_projection
 
 from glue.ligolw.table import Table
@@ -150,6 +150,59 @@ class EventTableAxes(TimeSeriesAxes):
             return self.scatter(xdata, ydata, c=cdata, **kwargs)
         else:
             return self.scatter(xdata, ydata, **kwargs)
+
+    def plot_tiles(self, table, x, y, width, height, color=None,
+                   anchor='center', edgecolors='face', linewidth=0.8,
+                   **kwargs):
+        # get x/y data
+        xdata = get_table_column(table, x)
+        ydata = get_table_column(table, y)
+        wdata = get_table_column(table, width)
+        hdata = get_table_column(table, height)
+
+        # get color and sort
+        if color:
+            cdata = get_table_column(table, color)
+            zipped = zip(xdata, ydata, wdata, hdata, cdata)
+            zipped.sort(key=lambda (x, y, w, h, c): c)
+            try:
+                xdata, ydata, wdata, hdata, cdata = map(numpy.asarray,
+                                                        zip(*zipped))
+            except ValueError:
+                pass
+
+        # construct vertices
+        if anchor == 'll':
+            verts = [((x, y), (x, y+height), (x+width, y+height),
+                      (x+width, y)) for (x,y,width,height) in
+                     zip(xdata, ydata, wdata, hdata)]
+        elif anchor == 'lr':
+            verts = [((x-width, y), (x-width, y+height), (x, y+height),
+                      (x, y)) for (x,y,width,height) in
+                     zip(xdata, ydata, wdata, hdata)]
+        elif anchor == 'ul':
+            verts = [((x, y-height), (x, y), (x+width, y),
+                      (x+width, y-height)) for (x,y,width,height) in
+                     zip(xdata, ydata, wdata, hdata)]
+        elif anchor == 'ur':
+            verts = [((x-width, y-height), (x-width, y), (x, y),
+                      (x, y-height)) for (x,y,width,height) in
+                     zip(xdata, ydata, wdata, hdata)]
+        elif anchor == 'center':
+            verts = [((x-width/2., y-height/2.), (x-width/2., y+height/2.),
+                       (x+width/2., y+height/2.), (x+width/2., y-height/2.))
+                     for (x,y,width,height) in zip(xdata, ydata, wdata, hdata)]
+        else:
+            raise ValueError("Unrecognised tile anchor '%s'." % anchor)
+
+        # build collection
+        cmap = kwargs.pop('cmap', cm.jet)
+        coll = collections.PolyCollection(verts, **kwargs)
+        if color:
+            coll.set_array(cdata)
+            coll.set_cmap(cmap)
+
+        return self.add_collection(coll)
 
     def add_loudest(self, table, rank, x, y, color=None, **kwargs):
         """Display the loudest event according to some rank.
@@ -304,7 +357,9 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
         # extract plotting keyword arguments
         plotargs = dict()
         for arg in ['linewidth', 'facecolor', 'edgecolor', 'marker', 'cmap',
-                    's', 'size_by', 'size_by_log', 'size_range', 'label']:
+                    's', 'size_by', 'size_by_log', 'size_range', 'label',
+                    'edgecolors', 'facecolors', 'linewidths', 'antialiaseds',
+                    'offsets', 'transOffset', 'norm']:
             if arg in kwargs:
                 val = kwargs.pop(arg, None)
                 if val is not None:
@@ -314,6 +369,7 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
         args = list(args)
         tables = []
         columns = {}
+        tiles = False
         while len(args):
             arg = args[0]
             if isinstance(arg, basestring):
@@ -323,12 +379,14 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
             raise ValueError("columnnames for 'x' and 'y' axes must be given "
                              "after any tables, e.g. "
                              "TablePlot(t1, t2, 'time', 'snr')")
-        if len(args) == 3:
+        if len(args) in [3, 5]:
             kwargs.setdefault('color', args.pop(-1))
-        elif len(args) > 3:
+        elif len(args) == 4:
+            tiles = True
+        elif len(args) > 5:
             raise ValueError("No more than three column names should be given")
         if len(tables):
-            columns = dict(zip(['x', 'y'], args))
+            columns = dict(zip(['x', 'y', 'width', 'height'], args))
 
         # extract column arguments
         epoch = kwargs.pop('epoch', None)
@@ -343,8 +401,13 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
 
         # plot data
         for table in tables:
-            self.add_table(table, columns['x'], columns['y'],
-                           color=columns['color'], newax=sep, **plotargs)
+            if len(args) == 2:
+                self.add_table(table, columns['x'], columns['y'],
+                               color=columns['color'], newax=sep, **plotargs)
+            elif len(args) == 4:
+                self.add_tiles(table, columns['x'], columns['y'],
+                               columns['width'], columns['height'],
+                               color=columns['color'], newax=sep, **plotargs)
 
         if len(tables):
             # set auto-scale
@@ -431,6 +494,62 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
         if newax:
             ax = self._add_new_axes(projection=projection)
         return ax.plot_table(table, x, y, color=color, **kwargs)
+
+    def add_tiles(self, table, x, y, width, height, color=None,
+                  anchor='center', projection='triggers', ax=None,
+                  newax=None, **kwargs):
+        """Add a LIGO_LW Table to this Plot
+
+        Parameters
+        ----------
+        table : :class:`~glue.ligolw.table.Table`
+            LIGO_LW-format XML event `Table` to display
+        x : `str`
+            name of column for tile x-anchor
+        y : `str`
+            name of column for tile y-anchor
+        width : `str`
+            name of column for tile width
+        height : `str`
+            name of column for tile height
+        color : `str`, optional
+            name of column by which to colour the data
+        anchor : `str`, optional, default: ``'center'``
+            position of (x, y) vertex on tile, default 'center'.
+            Other options: 'll', 'lr', 'ul', 'ur'.
+        projection : `str`, optiona, default: ``'triggers'``
+            name of the Axes projection on which to plot data
+        ax : :class:`~gwpy.plotter.axes.Axes`, optional
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
+        **kwargs.
+            other keyword arguments passed to the
+            :meth:`EventTableAxes.plot_table` method
+
+        Returns
+        -------
+        scatter : :class:`~matplotlib.collections.Collection`
+            the displayed collection for this `Table`
+
+        See Also
+        --------
+        :meth:`EventTableAxes.plot_table`
+            for details on arguments and keyword arguments other than
+            ``ax`` and ``newax`` for this method.
+        """
+        # find relevant axes
+        if ax is None and not newax:
+            try:
+                ax = self._find_axes(projection)
+            except IndexError:
+                newax = True
+        if newax:
+            ax = self._add_new_axes(projection=projection)
+        return ax.plot_tiles(table, x, y, width, height, color=color,
+                             anchor=anchor, **kwargs)
 
 
 def get_column_string(column):
