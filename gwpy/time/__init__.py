@@ -67,7 +67,8 @@ def gps(input, scale='utc', **targs):
     """
     if isinstance(input, (unicode, str)):
         input = dateparser.parse(input)
-    if not isinstance(input, Time):
+        input = Time(input, scale=scale, **targs)
+    elif not isinstance(input, Time):
         targs.setdefault('copy', True)
         input = Time(input, scale=scale, **targs)
     return input.utc.gps
