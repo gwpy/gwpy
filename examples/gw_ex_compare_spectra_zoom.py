@@ -29,7 +29,6 @@ changed appreciably.
 
 """
 
-from gwpy.time import Time, TimeDelta
 from gwpy.timeseries import TimeSeries
 
 from gwpy import version
