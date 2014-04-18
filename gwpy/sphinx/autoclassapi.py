@@ -85,7 +85,6 @@ class GWpyClassDocumenter(ClassDocumenter):
                             continue
                         if documenter.objtype == typ:
                             items.append(name)
-                    print(obj, typ, len(items))
                     public = [x for x in items
                               if x in include_public or not x.startswith('_')]
                     return public, items
