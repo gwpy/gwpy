@@ -229,5 +229,5 @@ def read_cache_factory(target):
     def _read(f, *args, **kwargs):
         nproc = kwargs.pop('nproc', 1)
         post = kwargs.pop('post', None)
-        return read_cache(f, target, nproc, post, **kwargs)
+        return read_cache(f, target, nproc, post, *args, **kwargs)
     return _read
