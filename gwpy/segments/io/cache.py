@@ -21,15 +21,14 @@
 
 from astropy.io import registry
 
-from glue.ligolw.lsctables import TableByName
-
 from ...io.cache import (identify_cache, identify_cache_file,
                          read_cache_factory)
+from .. import (DataQualityFlag, DataQualityDict, SegmentList, SegmentListDict)
 
-
-# register cache reading for all lsctables
-for table in TableByName.itervalues():
-    registry.register_reader('lcf', table, read_cache_factory(table))
-    registry.register_reader('cache', table, read_cache_factory(table))
-    registry.register_identifier('lcf', table, identify_cache_file)
-    registry.register_identifier('cache', table, identify_cache)
+# register cache reading
+for class_ in [DataQualityFlag, DataQualityDict, SegmentList,
+               SegmentListDict]:
+    registry.register_reader('lcf', class_, read_cache_factory(class_))
+    registry.register_reader('cache', class_, read_cache_factory(class_))
+    registry.register_identifier('lcf', class_, identify_cache_file)
+    registry.register_identifier('cache', class_, identify_cache)

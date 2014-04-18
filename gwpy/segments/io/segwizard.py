@@ -19,47 +19,63 @@
 """Read SegmentLists from seg-wizard format ASCII files
 """
 
+from glue.lal import (CacheEntry, Cache, LIGOTimeGPS)
 from glue import segmentsUtils
 
 from astropy.io import registry
 
-from .. import version
-from .. import (SegmentList, DataQualityFlag)
+from ... import version
+from .. import (Segment, SegmentList, DataQualityFlag)
+from ...io.cache import file_list
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 
-def from_segwizard(fobj, coalesce=True, coltype=float, strict=True):
+def from_segwizard(f, coalesce=True, gpstype=LIGOTimeGPS, strict=True,
+                   nproc=1):
     """Read segments from a segwizard format file into a `SegmentList`
     """
-    if isinstance(fobj, (unicode, str)):
-        fobj = open(fobj, 'r')
-        close = True
-    else:
-        close = False
-    segs = SegmentList(segmentsUtils.fromsegwizard(fobj, coltype=coltype,
-                                                   strict=strict))
+    if nproc != 1:
+        from .cache import read_cache
+        return read_cache(f, coalesce=coalesce, gpstype=gpstype,
+                          strict=strict, target=SegmentList)
+
+    # format list of files and read in serial
+    files = file_list(f)
+    segs = SegmentList()
+    for fp in files:
+        with open(fp, 'r') as fobj:
+            segs += SegmentList(map(Segment, segmentsUtils.fromsegwizard(
+                        fobj, coltype=gpstype, strict=strict)))
     if coalesce:
         segs.coalesce()
-    if close:
-        fobj.close()
     return segs
 
 
-def flag_from_segwizard(filename, flag=None, coalesce=True, coltype=float,
-                        strict=True):
-    return DataQualityFlag(name=flag,
-                           active=from_segwizard(filename, coalesce=coalesce,
-                                                 coltype=coltype,
-                                                 strict=strict))
+def flag_from_segwizard(filename, flag=None, coalesce=True, gpstype=float,
+                        strict=True, nproc=1):
+    out = DataQualityFlag(flag)
+    if isinstance(filename, CacheEntry):
+        out.valid = [filename.segment]
+    elif isinstance(filename, Cache):
+        try:
+            out.valid = filename.to_segmentlistdict()[out.ifo]
+        except KeyError:
+            pass
+    out.active = from_segwizard(filename, coalesce=coalesce, gpstype=gpstype,
+                                strict=strict, nproc=nproc)
+    return out
 
 
 def identify_segwizard(*args, **kwargs):
-    filename = args[1]
+    filename = args[3]
     if isinstance(filename, file):
         filename = filename.name
-    if filename.endswith("txt") or filename.endswith('dat'):
+    elif isinstance(filename, CacheEntry):
+        filename = filename.path
+    if (isinstance(filename, (unicode, str)) and
+            filename.endswith(('txt', 'dat'))):
         return True
     else:
         return False

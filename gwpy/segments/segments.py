@@ -106,9 +106,45 @@ class SegmentList(_SegmentList):
         formats.
     flag : `str`, optional, default: read all segments
         name of flag to read from file.
-    coltype : `type`, optional, default: `float`
-        datatype to force for segment times, only valid for
-        ``format='segwizard'``.
+    gpstype : `type`, optional, default: `float`
+        datatype to force for segment GPS times
+    strict : `bool`, optional, default: `True`
+        require segment start and stop times match printed duration,
+        only valid for ``format='segwizard'``.
+
+
+    Returns
+    -------
+    segmentlist : `SegmentList`
+        `SegmentList` active and valid segments read from file.
+
+    Notes
+    -----
+    When reading with ``format='segwizard'`` the
+    :attr:`~DataQualityFlag.valid` `SegmentList` will simply represent
+    the extent of the :attr:`~DataQualityFlag.active` `SegmentList`.
+    """))
+    write = writer()
+
+
+class SegmentListDict(_SegmentListDict):
+    __doc__ = _update_docstring(_SegmentListDict.__doc__)
+
+    read = classmethod(reader(doc="""
+    Read segments from file into a `SegmentListDict`.
+
+    Parameters
+    ----------
+    filename : `str`
+        path of file to read
+    format : `str`, optional
+        source format identifier. If not given, the format will be
+        detected if possible. See below for list of acceptable
+        formats.
+    flags : `list`, optional, default: read all flags
+        name of flag to read from file.
+    gpstype : `type`, optional, default: `float`
+        datatype to force for segment GPS times
     strict : `bool`, optional, default: `True`
         require segment start and stop times match printed duration,
         only valid for ``format='segwizard'``.
@@ -127,10 +163,6 @@ class SegmentList(_SegmentList):
     the extent of the :attr:`~DataQualityFlag.active` `SegmentList`.
     """))
     write = writer()
-
-
-class SegmentListDict(_SegmentListDict):
-    __doc__ = _update_docstring(_SegmentListDict.__doc__)
 
 del _Segment
 del _SegmentList

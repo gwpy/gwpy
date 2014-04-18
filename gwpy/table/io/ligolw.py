@@ -32,22 +32,17 @@ __version__ = version.version
 __all__ = []
 
 
-def _read_factory(table_):
+def read_table_factory(table_):
     """Define a custom function to read this table from a LIGO_LW file.
     """
-    def _read(f, nproc=1, **kwargs):
-        if nproc != 1:
-            kwargs.setdefault('format', strip(table_.tableName))
-            from .cache import read_cache
-            return read_cache(f, table_.tableName, **kwargs)
-        else:
-            return table_from_file(f, table_.tableName, **kwargs)
+    def _read(f, *args, **kwargs):
+        return table_from_file(f, table_.tableName, *args, **kwargs)
     return _read
 
 # register reader and auto-id for LIGO_LW
 for table in TableByName.itervalues():
     tablename = strip(table.tableName)
-    func = _read_factory(table)
+    func = read_table_factory(table)
     # register generic reader and table-specific reader
     registry.register_reader('ligolw', table, func)
     registry.register_reader(tablename, table, func)

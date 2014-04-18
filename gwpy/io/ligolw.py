@@ -28,7 +28,7 @@ from glue.ligolw.utils.ligolw_add import ligolw_add
 from glue.ligolw import (table, lsctables)
 
 from .. import version
-from .cache import open_cache
+from .cache import file_list
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -64,31 +64,26 @@ def table_from_file(f, tablename, columns=None,
     -------
     table : :class:`~glue.ligolw.table.Table`
         `Table` of data with given columns filled
-
     """
-
     # find table class
     tableclass = lsctables.TableByName[table.StripTableName(tablename)]
+
+    # allow cache multiprocessing
+    if nproc != 1:
+        return tableclass.read(f, columns=columns,
+                               contenthandler=contenthandler,
+                               nproc=nproc, format='cache')
+
     # set columns to read
     if columns is not None:
         _oldcols = tableclass.loadcolumns
         tableclass.loadcolumns = columns
-    # format list of files
-    if isinstance(f, CacheEntry):
-        files = [f.path]
-    elif isinstance(f, (str, unicode)) and f.endswith(('.cache', '.lcf')):
-        files = open_cache(f).pfnlist()
-    elif isinstance(f, (str, unicode)):
-        files = f.split(',')
-    elif isinstance(f, Cache):
-        files = f.pfnlist()
-    else:
-        files = list(f)
-    # generate Document
+
+    # generate Document and populate
     xmldoc = Document()
-    # load file(s)
-    ligolw_add(xmldoc, files, non_lsc_tables_ok=True,
+    ligolw_add(xmldoc, file_list(f), non_lsc_tables_ok=True,
                contenthandler=contenthandler)
+
     # extract table
     out = tableclass.get_table(xmldoc)
     if columns is not None:
