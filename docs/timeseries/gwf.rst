@@ -11,6 +11,10 @@ These files are indexed and accessible using the :mod:`~glue.datafind` service:
 Finding data frames
 ===================
 
+.. warning::
+
+   Finding data frames requires the :mod:`glue` python package be installed on your system
+
 The :mod:`glue.datafind` module provides a interface to the indexing service used to record the location on disk of all GWF files.
 This package is complemented by the command-line tool ``gw_data_find``.
 
@@ -40,6 +44,10 @@ and returns a :class:`~glue.lal.Cache` object, a `list` of :class:`~glue.lal.Cac
 =============
 Frame reading
 =============
+
+.. warning::
+
+   Reading data from GWF files requires that either the ``frameCPP`` or ``lalframe`` packages (including SWIG bindings for Python) are installed on your system.
 
 The above :class:`~glue.lal.Cache` can be passed into the :meth:`TimeSeries.read`, to extract data for a specific :class:`~gwpy.detector.channel.Channel`::
 

@@ -16,12 +16,19 @@ The LIGO Data Grid operates the following NDS servers, with authenticated access
 ``nds.ligo.caltech.edu``     General access to the majority of available data
 ``nds.ligo-la.caltech.edu``  Lower-latency access to data from the LIGO Livingston Observatory
 ``nds.ligo-wa.caltech.edu``  Lower-latency access to data from the LIGO Hanford Observatory
-``nds40.ligo.caltech.edu``   Data from the Caltech 40m prototype (open-access)
 ===========================  =================================================================
 
 =====================
 Fetching `TimeSeries`
 =====================
+
+
+.. warning::
+
+   Fetching data via NDS requires the |nds2-client|_ package (including SWIG bindings for Python) to be installed on your system.
+
+.. |nds2-client| replace:: ``nds2-client``
+.. _nds2-client: https://www.lsc-group.phys.uwm.edu/daswg/projects/nds-client.html
 
 Data for a given :class:`~gwpy.detector.channel.Channel` can be fetched from NDS using the :meth:`TimeSeries.fetch` method::
 
