@@ -23,7 +23,7 @@
 import os
 
 from sphinx import package_dir
-from sphinx.ext.autodoc import ClassDocumenter
+from sphinx.ext.autodoc import (ALL, ClassDocumenter)
 from sphinx.ext.autosummary import get_documenter
 from sphinx.jinja2glue import BuiltinTemplateLoader
 from sphinx.util.inspect import safe_getattr
@@ -71,7 +71,13 @@ class GWpyClassDocumenter(ClassDocumenter):
 
                 def get_members(obj, typ, include_public=[]):
                     items = []
-                    for name in dir(obj):
+                    want_all = self.options.inherited_members or \
+                               self.options.members is ALL
+                    members = zip(*self.get_object_members(want_all)[1])[0]
+                    if self.options.exclude_members:
+                        members = [m for m in members if
+                                   m not in self.options.exclude_members]
+                    for name in members:
                         try:
                             documenter = get_documenter(safe_getattr(obj, name),
                                                         obj)
@@ -79,6 +85,7 @@ class GWpyClassDocumenter(ClassDocumenter):
                             continue
                         if documenter.objtype == typ:
                             items.append(name)
+                    print(obj, typ, len(items))
                     public = [x for x in items
                               if x in include_public or not x.startswith('_')]
                     return public, items
