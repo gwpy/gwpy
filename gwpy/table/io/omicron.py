@@ -117,7 +117,7 @@ def sngl_burst_from_root(tchain, columns=OMICRON_COLUMNS):
     return t
 
 
-def table_from_root(f, columns=OMICRON_COLUMNS, nproc=1):
+def table_from_root(f, columns=OMICRON_COLUMNS, filt=None, nproc=1):
     """Build a `SnglBurstTable` from events in an Omicron ROOT file.
 
     Parameters
@@ -133,6 +133,9 @@ def table_from_root(f, columns=OMICRON_COLUMNS, nproc=1):
 
     columns : `list`, optional
         list of column name strings to read, default all.
+    filt : `function`, optional
+        function by which to filt events. The callable must accept as
+        input a `SnglBurst` event and return `True`/`False`.
     nproc : `int`, optional, default: 1
         number of parallel processes with which to distribute file I/O,
         default: serial process
@@ -171,7 +174,8 @@ def table_from_root(f, columns=OMICRON_COLUMNS, nproc=1):
     for i in range(nevents):
         tree.GetEntry()
         burst = sngl_burst_from_root(tree, columns=columns)
-        append(burst)
+        if filt is None or filt(burst):
+            append(burst)
 
     return out
 

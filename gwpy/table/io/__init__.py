@@ -47,6 +47,11 @@ for table in TableByName.itervalues():
         columns : `list`, optional
             list of column name strings to read, default all.
 
+        filt : `function`, optional
+            function by which to `filter` events. The callable must
+            accept as input a row of the table event and return
+            `True`/`False`.
+
         nproc : `int`, optional, default: ``1``
             number of parallel processes with which to distribute file I/O,
             default: serial process.

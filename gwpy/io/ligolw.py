@@ -38,7 +38,7 @@ class GWpyContentHandler(LIGOLWContentHandler):
     pass
 
 
-def table_from_file(f, tablename, columns=None,
+def table_from_file(f, tablename, columns=None, filt=None,
                     contenthandler=GWpyContentHandler, nproc=1):
     """Read a :class:`~glue.ligolw.table.Table` from a LIGO_LW file.
 
@@ -57,6 +57,9 @@ def table_from_file(f, tablename, columns=None,
         name of the table to read.
     columns : `list`, optional
         list of column name strings to read, default all.
+    filt : `function`, optional
+        function by which to `filter` events. The callable must accept as
+        input a row of the table event and return `True`/`False`.
     contenthandler : :class:`~glue.ligolw.ligolw.LIGOLWContentHandler`
         SAX content handler for parsing LIGO_LW documents.
 
@@ -86,6 +89,10 @@ def table_from_file(f, tablename, columns=None,
 
     # extract table
     out = tableclass.get_table(xmldoc)
+    if filt:
+        out_ = lsctables.new_from_template(out)
+        out_.extend(filter(filt, out))
+        out = out_
     if columns is not None:
         tableclass.loadcolumns = _oldcols
     return out
