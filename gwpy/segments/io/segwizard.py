@@ -55,7 +55,10 @@ def from_segwizard(f, coalesce=True, gpstype=LIGOTimeGPS, strict=True,
 
 def flag_from_segwizard(filename, flag=None, coalesce=True, gpstype=float,
                         strict=True, nproc=1):
-    out = DataQualityFlag(flag)
+    if isinstance(flag, DataQualityFlag):
+        out = flag
+    else:
+        out = DataQualityFlag(str(flag))
     if isinstance(filename, CacheEntry):
         out.valid = [filename.segment]
     elif isinstance(filename, Cache):
