@@ -267,7 +267,7 @@ class Spectrogram(Array2D):
         return Spectrogram(data, logf=s1.logf, **kwargs)
 
     def percentile(self, percentile):
-        """Calculate a given spectral percentile for this `SpectralVariance`
+        """Calculate a given spectral percentile for this `Spectrogram`.
 
         Parameters
         ----------
