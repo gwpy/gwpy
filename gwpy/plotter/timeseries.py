@@ -26,6 +26,7 @@ import copy
 
 from matplotlib import (pyplot, cm, colors)
 from matplotlib.projections import register_projection
+from matplotlib.ticker import MultipleLocator
 
 try:
     from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -149,6 +150,7 @@ class TimeSeriesAxes(Axes):
         s = ticks.GPS_SCALE[formatter.scale][0]
         formatter.set_scale(scale)
         locator.scale = scale
+        self.xaxis.set_minor_locator(MultipleLocator(scale))
         xlabel = self.xlabel.get_text()
         if xlabel:
             if re.search(s, xlabel):
