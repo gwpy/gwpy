@@ -1141,12 +1141,14 @@ class TimeSeriesDict(OrderedDict):
         Notes
         -----"""))
 
-    def append(self, other, **kwargs):
+    def append(self, other, copy=True, **kwargs):
         for key, ts in other.iteritems():
             if key in self:
                 self[key].append(ts, **kwargs)
-            else:
+            elif copy:
                 self[key] = ts.copy()
+            else:
+                self[key] = ts
 
     def prepend(self, other, **kwargs):
         for key, ts in other.iteritems():
