@@ -19,7 +19,9 @@
 """
 
 import numpy
+import itertools
 
+from . import rcParams
 from .. import version
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -74,3 +76,19 @@ def str_to_latex(input):
     if isinstance(text, Real) or isinstance(text, LIGOTimeGPS):
        return gpstime.gps_to_str(text)
     # otherwise parse word by word into latex format
+
+
+def color_cycle(colors=None):
+    """An infinite iterator of the given (or default) color cycle.
+    """
+    if colors:
+        return itertools.cycle(colors)
+    else:
+        return itertools.cycle(rcParams['axes.color_cycle'])
+
+
+def marker_cycle(markers=None):
+    if markers:
+        return itertools.cycle(markers)
+    else:
+        return itertools.cycle(('o', 'x', '+', '^', 'D', 'H', '1'))
