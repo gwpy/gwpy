@@ -347,6 +347,46 @@ class Spectrogram(Array2D):
             new = self * fresp
             return new
 
+    def variance(self, bins=None, low=None, high=None, nbins=500,
+                 log=False, norm=False, density=False):
+        """Calculate the `SpectralVariance` of this `Spectrogram`.
+
+        Parameters
+        ----------
+        bins : :class:`~numpy.ndarray`, optional, default `None`
+            array of histogram bin edges, including the rightmost edge
+        low : `float`, optional, default: `None`
+            left edge of lowest amplitude bin, only read
+            if ``bins`` is not given
+        high : `float`, optional, default: `None`
+            right edge of highest amplitude bin, only read
+            if ``bins`` is not given
+        nbins : `int`, optional, default: `500`
+            number of bins to generate, only read if ``bins`` is not
+            given
+        log : `bool`, optional, default: `False`
+            calculate amplitude bins over a logarithmic scale, only
+            read if ``bins`` is not given
+        norm : `bool`, optional, default: `False`
+            normalise bin counts to a unit sum
+        density : `bool`, optional, default: `False`
+            normalise bin counts to a unit integral
+
+        Returns
+        -------
+        specvar : `SpectralVariance`
+            2D-array of spectral frequency-amplitude counts
+
+        See Also
+        --------
+        :func:`numpy.histogram`
+            for details on specifying bins and weights
+        """
+        from ..spectrum import SpectralVariance
+        return SpectralVariance.from_spectrogram(
+                   self, bins=bins, low=low, high=high, nbins=nbins, log=log,
+                   norm=norm, density=density)
+
     # -------------------------------------------
     # connectors
 
