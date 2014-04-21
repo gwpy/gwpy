@@ -228,10 +228,9 @@ class SpectrumPlot(Plot):
     def __init__(self, *series, **kwargs):
         # extract plotting keyword arguments
         plotargs = dict()
-        plotargs["linewidth"] = kwargs.pop("linewidth", 2)
-        plotargs["color"] = kwargs.pop("color", "black")
-        plotargs["linestyle"] = kwargs.pop("linestyle", "-")
-        plotargs["label"] = kwargs.pop("label", None)
+        for key in ['linewidth', 'linestyle', 'label', 'cmap', 'vmin', 'vmax']:
+            if key in kwargs:
+                plotargs[key] = kwargs.pop(key)
         sep = kwargs.pop('sep', False)
         logx = kwargs.pop('logx', True)
         logy = kwargs.pop('logy', True)
@@ -255,5 +254,3 @@ class SpectrumPlot(Plot):
                 self.axes[-1].set_xlim(*xlim)
             if logy:
                 self.axes[-1].set_yscale('log')
-        for ax in self.axes:
-            ax.legend()

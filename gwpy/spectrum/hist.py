@@ -252,3 +252,9 @@ class SpectralVariance(Array2D):
         name = '%s %s%% percentile' % (self.name, percentile)
         return Spectrum(out, epoch=self.epoch, frequencies=self.bins[:-1],
                         channel=self.channel, name=name, logf=self.logx)
+
+    def plot(self, **kwargs):
+        """Plot this `SpectralVariance`.
+        """
+        from ..plotter import SpectrumPlot
+        return SpectrumPlot(self, **kwargs)
