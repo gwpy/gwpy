@@ -21,9 +21,7 @@
 
 import warnings
 
-from math import log10
-import numpy
-from scipy import (interpolate, signal)
+from scipy import signal
 from astropy import units
 
 from ..data import Series
@@ -59,11 +57,11 @@ class Spectrum(Series):
     Spectrum
         a new Spectrum holding the given data
     """
-    _metadata_slots = ['name', 'unit', 'epoch', 'channel', 'f0', 'df', 'logf']
+    _metadata_slots = ['name', 'unit', 'epoch', 'channel', 'f0', 'df']
     xunit = units.Unit('Hz')
 
     def __new__(cls, data, frequencies=None, name=None, unit=None,
-                epoch=None, f0=None, df=None, channel=None, logf=False,
+                epoch=None, f0=None, df=None, channel=None,
                 **kwargs):
         """Generate a new Spectrum.
         """
@@ -77,7 +75,7 @@ class Spectrum(Series):
         return super(Spectrum, cls).__new__(cls, data, name=name, unit=unit,
                                             f0=f0, df=df, channel=channel,
                                             frequencies=frequencies,
-                                            epoch=epoch, logf=logf, **kwargs)
+                                            epoch=epoch, **kwargs)
 
     # -------------------------------------------
     # Spectrum properties
@@ -98,12 +96,6 @@ class Spectrum(Series):
                   unit of 'Hertz'.
                   """)
 
-    logf = property(Series.logx.__get__, Series.logx.__set__,
-                    Series.logx.__delete__,
-                    """Boolean telling whether this `Spectrum` has a
-                    logarithmic frequency scale
-                    """)
-
     frequencies = property(fget=Series.index.__get__,
                            fset=Series.index.__set__,
                            fdel=Series.index.__delete__,
@@ -111,37 +103,6 @@ class Spectrum(Series):
 
     # -------------------------------------------
     # Spectrum methods
-
-    def to_logf(self, fmin=None, fmax=None, num=None):
-        """Convert this Spectrum into logarithmic scale.
-
-        Parameters
-        ----------
-        fmin : `float`, optional
-            minimum frequency for new `Spectrum`
-        fmax : `float`, optional
-            maxmimum frequency for new `Spectrum`
-        num : `int`, optional
-            length of new `Spectrum`
-
-        Notes
-        -----
-        All arguments to this function default to the corresponding
-        parameters of the existing `Spectrum`.
-        """
-        num = num or self.shape[-1]
-        fmin = fmin or self.f0.value or (self.f0.value + self.df.value)
-        fmax = fmax or (self.f0.value + self.shape[-1] * self.df.value)
-        linf = self.frequencies.data
-        logf = numpy.logspace(log10(fmin), log10(fmax), num=num)
-        logf = logf[logf<linf.max()]
-        interpolator = interpolate.interp1d(linf, self.data, axis=0)
-        new = self.__class__(interpolator(logf), unit=self.unit,
-                             epoch=self.epoch, frequencies=logf)
-        new.f0 = logf[0]
-        new.df = logf[1]-logf[0]
-        new.logf = True
-        return new
 
     def plot(self, **kwargs):
         """Display this `Spectrum` in a figure

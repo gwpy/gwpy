@@ -39,11 +39,10 @@ class SpectralVariance(Array2D):
     """A 2-dimensional array containing the variance histogram of a
     frequency-series `Spectrum`
     """
-    _metadata_slots = ['name', 'unit', 'epoch', 'df', 'f0', 'logf',
-                       'bins']
+    _metadata_slots = ['name', 'unit', 'epoch', 'df', 'f0', 'bins']
     xunit = Spectrum.xunit
     def __new__(cls, data, name=None, channel=None, epoch=None, unit=None,
-                f0=None, df=None, logf=None, bins=None, yunit=None, **kwargs):
+                f0=None, df=None, bins=None, yunit=None, **kwargs):
         """Generate a new SpectralVariance
         """
         # parse Channel input
@@ -58,7 +57,7 @@ class SpectralVariance(Array2D):
                                                     epoch=epoch,
                                                     f0=f0, df=df,
                                                     bins=bins,
-                                                    logf=logf, **kwargs)
+                                                    **kwargs)
 
     # -------------------------------------------
     # SpectralVariance properties
@@ -116,11 +115,6 @@ class SpectralVariance(Array2D):
                   :class:`~astropy.units.quantity.Quantity` object, assuming a
                   unit of 'Hertz'.
                   """)
-
-    logf = property(fget=Array2D.logx.__get__,
-                    fset=Array2D.logx.__set__,
-                    fdel=Array2D.logx.__delete__,
-                    doc="""Switch determining a logarithmic frequency scale""")
 
     frequencies = property(fget=Array2D.xindex.__get__,
                            fset=Array2D.xindex.__set__,
@@ -217,7 +211,7 @@ class SpectralVariance(Array2D):
                                yunit=spectrogram.unit, name=name,
                                channel=spectrogram.channel,
                                f0=spectrogram.f0, df=spectrogram.df,
-                               logf=spectrogram.logf, logy=log, bins=bins)
+                               logy=log, bins=bins)
         new._normed = norm
         new._density = density
         return new
@@ -251,7 +245,7 @@ class SpectralVariance(Array2D):
             out[i] = val
         name = '%s %s%% percentile' % (self.name, percentile)
         return Spectrum(out, epoch=self.epoch, frequencies=self.bins[:-1],
-                        channel=self.channel, name=name, logf=self.logx)
+                        channel=self.channel, name=name)
 
     def plot(self, **kwargs):
         """Plot this `SpectralVariance`.

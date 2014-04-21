@@ -19,10 +19,7 @@
 """Spectrogram object
 """
 
-import bisect
 import numbers
-import warnings
-from math import log10
 
 import numpy
 import scipy
@@ -30,7 +27,6 @@ from scipy import (interpolate, signal)
 from astropy import units
 
 from ..detector import Channel
-from ..time import Time
 from ..data import (Array2D, Series)
 from ..timeseries import (TimeSeries, TimeSeriesList, common)
 from ..spectrum import Spectrum
@@ -83,12 +79,12 @@ class Spectrogram(Array2D):
     result : `~gwpy.types.TimeSeries`
         A new TimeSeries
     """
-    _metadata_slots = ['name', 'unit', 'epoch', 'dt', 'f0', 'df', 'logf']
+    _metadata_slots = ['name', 'unit', 'epoch', 'dt', 'f0', 'df']
     xunit = TimeSeries.xunit
     yunit = Spectrum.xunit
 
     def __new__(cls, data, name=None, unit=None, channel=None, epoch=None,
-                f0=None, dt=None, df=None, logf=None, **kwargs):
+                f0=None, dt=None, df=None, **kwargs):
         """Generate a new Spectrogram.
         """
         # parse Channel input
@@ -102,7 +98,7 @@ class Spectrogram(Array2D):
         return super(Spectrogram, cls).__new__(cls, data, name=name, unit=unit,
                                                channel=channel, epoch=epoch,
                                                f0=f0, dt=dt, df=df,
-                                               logf=logf, **kwargs)
+                                               **kwargs)
 
     # -------------------------------------------
     # Spectrogram properties
@@ -147,11 +143,6 @@ class Spectrogram(Array2D):
                            fdel=Array2D.yindex.__delete__,
                            doc="Series of frequencies for this Spectrogram")
 
-    logf = property(fget=Array2D.logy.__get__,
-                    fset=Array2D.logy.__set__,
-                    fdel=Array2D.logy.__delete__,
-                    doc="""Switch determining a logarithmic frequency scale""")
-
     # -------------------------------------------
     # Spectrogram methods
 
@@ -168,7 +159,7 @@ class Spectrogram(Array2D):
               in this Spectrogram
             - ``'median'`` : weight against the median of each spectrum
               in this Spectrogram
- 
+
         Returns
         -------
         spec : `~gwpy.data.Spectrogram`
@@ -198,29 +189,6 @@ class Spectrogram(Array2D):
         from ..plotter import SpectrogramPlot
         return SpectrogramPlot(self, **kwargs)
 
-    def to_logf(self, fmin=None, fmax=None, num=None):
-        """Convert this `Spectrogram`` into logarithmic scale.
-        """
-        num = num or self.shape[-1]
-        fmin = (fmin or float(self.f0.value) or
-                float(self.f0.value + self.df.value))
-        fmax = fmax or float(self.f0.value + self.shape[-1] * self.df.value)
-        linf = self.frequencies.data
-        logf = numpy.logspace(log10(fmin), log10(fmax), num=num)
-        logf = logf[logf < linf.max()]
-        new = self.__class__(numpy.zeros((self.shape[0], logf.size)),
-                             epoch=self.epoch, dt=self.dt, unit=self.unit)
-        for i in range(self.shape[0]):
-            interpolator = interpolate.interp1d(linf[-logf.size:],
-                                                self.data[i, -logf.size:],
-                                                axis=0)
-            new.data[i, :] = interpolator(logf)
-        new.metadata = self.metadata.copy()
-        new.f0 = logf[0]
-        new.df = logf[1] - logf[0]
-        new.logf = True
-        return new
-
     @classmethod
     def from_spectra(cls, *spectra, **kwargs):
         """Build a new `Spectrogram` from a list of spectra.
@@ -230,7 +198,7 @@ class Spectrogram(Array2D):
         *spectra
             any number of :class:`~gwpy.spectrum.core.Spectrum` series
         dt : `float`, :class:`~astropy.units.quantity.Quantity`, optional
-            stride between given spectra 
+            stride between given spectra
 
         Returns
         -------
@@ -250,9 +218,6 @@ class Spectrogram(Array2D):
             raise ValueError("Cannot stack spectra with different f0")
         if not all(s.df == s1.df for s in spectra):
             raise ValueError("Cannot stack spectra with different df")
-        if (not all(s.logf for s in spectra) and
-                any(s.logf for s in spectra)):
-            raise ValueError("Cannot stack spectra with different log-scaling")
         kwargs.setdefault('name', s1.name)
         kwargs.setdefault('epoch', s1.epoch)
         kwargs.setdefault('f0', s1.f0)
@@ -264,7 +229,7 @@ class Spectrogram(Array2D):
             except AttributeError:
                 raise ValueError("Cannot determine dt (time-spacing) for "
                                  "Spectrogram from inputs")
-        return Spectrogram(data, logf=s1.logf, **kwargs)
+        return Spectrogram(data, **kwargs)
 
     def percentile(self, percentile):
         """Calculate a given spectral percentile for this `Spectrogram`.
@@ -283,7 +248,7 @@ class Spectrogram(Array2D):
         out = scipy.percentile(self.data, percentile, axis=0)
         name = '%s %s%% percentile' % (self.name, percentile)
         return Spectrum(out, epoch=self.epoch, channel=self.channel,
-                        name=name, logf=self.logx, f0=self.f0, df=self.df,
+                        name=name, f0=self.f0, df=self.df,
                         frequencies=(hasattr(self, '_frequencies') and
                                      self.frequencies or None))
 
