@@ -492,6 +492,68 @@ class TimeSeries(Series):
                 out.frequencies = stepfft.frequencies
         return out
 
+    def spectral_variance(self, stride, fftlength=None, fftstride=None,
+                          method='welch', window=None, plan=None, nproc=1,
+                          filter=None, bins=None, low=None, high=None,
+                          nbins=500, log=False, norm=False, density=False):
+        """Calculate the `SpectralVariance` of this `TimeSeries`.
+
+        Parameters
+        ----------
+        stride : `float`
+            number of seconds in single PSD (column of spectrogram)
+        fftlength : `float`
+            number of seconds in single FFT
+        method : `str`, optional, default: 'welch'
+            average spectrum method
+        fftstride : `int`, optiona, default: fftlength
+            number of seconds between FFTs
+        window : `timeseries.window.Window`, optional, default: `None`
+            window function to apply to timeseries prior to FFT
+        plan : :lalsuite:`REAL8FFTPlan`, optional
+            LAL FFT plan to use when generating average spectrum,
+            substitute type 'REAL8' as appropriate.
+        nproc : `int`, default: ``1``
+            maximum number of independent frame reading processes, default
+            is set to single-process file reading.
+        bins : :class:`~numpy.ndarray`, optional, default `None`
+            array of histogram bin edges, including the rightmost edge
+        low : `float`, optional, default: `None`
+            left edge of lowest amplitude bin, only read
+            if ``bins`` is not given
+        high : `float`, optional, default: `None`
+            right edge of highest amplitude bin, only read
+            if ``bins`` is not given
+        nbins : `int`, optional, default: `500`
+            number of bins to generate, only read if ``bins`` is not
+            given
+        log : `bool`, optional, default: `False`
+            calculate amplitude bins over a logarithmic scale, only
+            read if ``bins`` is not given
+        norm : `bool`, optional, default: `False`
+            normalise bin counts to a unit sum
+        density : `bool`, optional, default: `False`
+            normalise bin counts to a unit integral
+
+        Returns
+        -------
+        specvar : `SpectralVariance`
+            2D-array of spectral frequency-amplitude counts
+
+        See Also
+        --------
+        :func:`numpy.histogram`
+            for details on specifying bins and weights
+        """
+        specgram = self.spectrogram(stride, fftlength=fftlength,
+                                    fftstride=fftstride, method=method,
+                                    window=window, plan=plan, nproc=nproc)
+        specgram **= 1/2.
+        if filter:
+            specgram = specgram.filter(*filter)
+        return specgram.variance(bins=bins, low=low, high=high, nbins=nbins,
+                                 log=log, norm=norm, density=density)
+
     # -------------------------------------------
     # TimeSeries filtering
 
