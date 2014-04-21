@@ -360,8 +360,6 @@ class TimeSeriesAxes(Axes):
             self.yaxis.grid(True, 'minor')
         return mesh
 
-
-
 register_projection(TimeSeriesAxes)
 
 
