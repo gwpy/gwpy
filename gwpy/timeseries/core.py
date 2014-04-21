@@ -443,7 +443,7 @@ class TimeSeries(Series):
             time-frequency power spectrogram as generated from the
             input time-series.
         """
-        from ..spectrogram import from_timeseries
+        from ..spectrogram.spectrogram import from_timeseries
         return from_timeseries(self, stride, fftlength=fftlength,
                                fftstride=fftstride, method=method,
                                window=window, plan=plan, nproc=nproc)
