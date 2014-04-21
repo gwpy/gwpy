@@ -29,22 +29,6 @@ from . import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-# register new units at the top level in astropy
-try:
-    from astropy import (__version__ as astropyversion, units)
-except ImportError:
-    pass
-else:
-    from distutils.version import LooseVersion
-    if LooseVersion(astropyversion) < LooseVersion('0.3'):
-        units.def_unit(['counts'], represents=units.Unit('count'),
-                       register=True)
-        units.def_unit(['strain'], represents=units.Unit(''), register=True)
-    else:
-        _counts = units.def_unit(['counts'], units.Unit('count'))
-        _strain = units.def_unit(['strain'], units.Unit(''))
-        units.add_enabled_units([_counts, _strain])
-
 # ignore Quantity conversions in astropy 0.2
 try:
     from astropy.units.quantity import WARN_IMPLICIT_NUMERIC_CONVERSION
