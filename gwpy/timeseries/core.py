@@ -855,6 +855,36 @@ class TimeSeries(Series):
         return self_.coherence(other, fftlength=fftlength,
                                fftstride=fftstride, window=window, **kwargs)
 
+    def coherence_spectrogram(self, other, stride, fftlength=None,
+                              fftstride=None, window=None, nproc=1):
+        """Calculate the coherence spectrogram between this `TimeSeries`
+        and other.
+
+        Parameters
+        ----------
+        stride : `float`
+            number of seconds in single PSD (column of spectrogram)
+        fftlength : `float`
+            number of seconds in single FFT
+        fftstride : `int`, optiona, default: fftlength
+            number of seconds between FFTs
+        window : `timeseries.window.Window`, optional, default: `None`
+            window function to apply to timeseries prior to FFT
+        nproc : `int`, default: ``1``
+            number of parallel processes to use when calculating
+            individual coherence spectra.
+
+        Returns
+        -------
+        spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
+            time-frequency coherence spectrogram as generated from the
+            input time-series.
+        """
+        from ..spectrogram.coherence import from_timeseries
+        return from_timeseries(self, other, stride, fftlength=fftlength,
+                               fftstride=fftstride, window=window,
+                               nproc=nproc)
+
     def rms(self, stride=1):
         """Calculate the root-mean-square value of this `TimeSeries`
         once per stride.
