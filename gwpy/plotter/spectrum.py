@@ -228,7 +228,8 @@ class SpectrumPlot(Plot):
     def __init__(self, *series, **kwargs):
         # extract plotting keyword arguments
         plotargs = dict()
-        for key in ['linewidth', 'linestyle', 'label', 'cmap', 'vmin', 'vmax']:
+        for key in ['linewidth', 'linestyle', 'color', 'label', 'cmap',
+                    'vmin', 'vmax']:
             if key in kwargs:
                 plotargs[key] = kwargs.pop(key)
         sep = kwargs.pop('sep', False)
