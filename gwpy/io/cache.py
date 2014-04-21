@@ -87,7 +87,7 @@ def file_list(flist):
     elif isinstance(flist, (list, tuple)):
         return flist
     else:
-        return list(flist)
+        return list([flist])
 
 
 # ----------------------------------------------------------------------------
