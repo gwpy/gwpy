@@ -28,7 +28,6 @@ from glue.ligolw import lsctables
 
 from .. import version
 from .utils import (get_table_column)
-from ..timeseries import (TimeSeries, TimeSeriesDict)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -59,6 +58,7 @@ def event_rate(self, stride, start=None, end=None, timecolumn='time'):
     rate : :class:`~gwpy.timeseries.core.TimeSeries`
         a `TimeSeries` of events per second (Hz)
     """
+    from gwpy.timeseries import TimeSeries
     # get time data
     times = get_table_column(self, timecolumn)
     # generate time bins
@@ -117,6 +117,7 @@ def binned_event_rates(self, stride, column, bins, operator='>=',
         a dict of (bin, `TimeSeries`) pairs describing a rate of events
         per second (Hz) for each of the bins.
     """
+    from gwpy.timeseries import TimeSeriesDict
     # get time data
     times = get_table_column(self, timecolumn)
 
