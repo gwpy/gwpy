@@ -88,7 +88,11 @@ def table_from_file(f, tablename, columns=None, filt=None,
                contenthandler=contenthandler)
 
     # extract table
-    out = tableclass.get_table(xmldoc)
+    try:
+        out = tableclass.get_table(xmldoc)
+    except ValueError:
+        out = lsctables.New(tableclass, columns=columns)
+
     if filt:
         out_ = table.new_from_template(out)
         out_.extend(filter(filt, out))
