@@ -161,7 +161,7 @@ def read_cache(cache, target, nproc, post, *args, **kwargs):
                                         None, (cache[0],), {}))
     # if empty, put anything, since it doesn't matter
     except IndexError:
-        kwargs.setdefault('format', 'foo')
+        kwargs.setdefault('format', 'ligolw')
     except Exception:
         if 'format' not in kwargs:
             raise
