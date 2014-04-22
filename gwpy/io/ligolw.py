@@ -90,7 +90,7 @@ def table_from_file(f, tablename, columns=None, filt=None,
     # extract table
     out = tableclass.get_table(xmldoc)
     if filt:
-        out_ = lsctables.new_from_template(out)
+        out_ = table.new_from_template(out)
         out_.extend(filter(filt, out))
         out = out_
     if columns is not None:
