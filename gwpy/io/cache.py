@@ -202,7 +202,10 @@ def read_cache(cache, target, nproc, post, *args, **kwargs):
 
     # combine and return
     data = zip(*sorted(pout, key=lambda (i, obj): i))[1]
-    out = data[0]
+    try:
+        out = data[0].copy()
+    except AttributeError:
+        out = data[0]
     for datum in data[1:]:
         out += datum
 
