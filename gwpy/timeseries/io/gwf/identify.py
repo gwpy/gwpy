@@ -23,7 +23,7 @@ from glue.lal import CacheEntry
 
 from astropy.io import registry
 
-from ... import (TimeSeries, TimeSeriesDict, StateVector)
+from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
 from .... import version
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -46,3 +46,4 @@ def identify_gwf(*args, **kwargs):
 registry.register_identifier('gwf', TimeSeries, identify_gwf)
 registry.register_identifier('gwf', TimeSeriesDict, identify_gwf)
 registry.register_identifier('gwf', StateVector, identify_gwf)
+registry.register_identifier('gwf', StateVectorDict, identify_gwf)
