@@ -1068,6 +1068,12 @@ class TimeSeries(Series):
                                                             context=context)
         return result
 
+    def __add__(self, item):
+        return self.append(item, inplace=False)
+
+    def __iadd__(self, item):
+        return self.append(item, inplace=True)
+
 
 class ArrayTimeSeries(TimeSeries, Array2D):
     xunit = TimeSeries.xunit
@@ -1233,6 +1239,15 @@ class TimeSeriesDict(OrderedDict):
         Notes
         -----"""))
 
+    def __iadd__(self, other):
+        return self.append(other)
+
+    def copy(self):
+        new = self.__class__()
+        for key, val in self.iteritems():
+            new[key] = val.copy()
+        return new
+
     def append(self, other, copy=True, **kwargs):
         for key, ts in other.iteritems():
             if key in self:
@@ -1241,6 +1256,7 @@ class TimeSeriesDict(OrderedDict):
                 self[key] = ts.copy()
             else:
                 self[key] = ts
+        return self
 
     def prepend(self, other, **kwargs):
         for key, ts in other.iteritems():
@@ -1248,6 +1264,7 @@ class TimeSeriesDict(OrderedDict):
                 self[key].prepend(ts, **kwargs)
             else:
                 self[key] = ts
+        return self
 
     def crop(self, start=None, end=None, copy=False):
         """Crop each entry of this `TimeSeriesDict`.
