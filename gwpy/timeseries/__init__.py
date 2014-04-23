@@ -25,7 +25,6 @@ __version__ = version.version
 
 from .core import *
 from .statevector import *
-from .io import (cache, losc, gwf)
 
 # define custom time-series units
 try:
@@ -47,3 +46,5 @@ else:
             units.def_unit(['coherence'], units.dimensionless_unscaled),
             units.def_unit(['strain'], units.dimensionless_unscaled),
             ])
+
+from .io import *
