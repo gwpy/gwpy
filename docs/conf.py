@@ -63,7 +63,7 @@ extensions = [
     'sphinx.ext.pngmath',
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
-    #'sphinx.ext.inheritance_diagram',
+    'sphinx.ext.inheritance_diagram',
     'numpydoc',
     'sphinxcontrib.epydoc',
     'sphinxcontrib.doxylink',
