@@ -38,8 +38,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 class SpectrumAxes(Axes):
-    """Extension of the basic matplotlib :class:`~matplotlib.axes.Axes`
-    specialising in frequency-series display
+    """Custom `Axes` for a :class:`~gwpy.plotter.spectrum.SpectrumPlot`.
     """
     name = 'spectrum'
 
@@ -221,7 +220,7 @@ register_projection(SpectrumAxes)
 
 
 class SpectrumPlot(Plot):
-    """Plot data from a LAL TimeSeries object
+    """`Figure` for displaying a :class:`~gwpy.spectrum.core.Spectrum`.
     """
     _DefaultAxesClass = SpectrumAxes
 

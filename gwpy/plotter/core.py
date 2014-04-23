@@ -34,8 +34,11 @@ __all__ = ['Plot']
 
 
 class Plot(figure.Figure):
-    """An extension of the matplotib :class:`~matplotlib.figure.Figure`
-    object for GWpy
+    """An extension of the core matplotlib :class:`~matplotlib.figure.Figure`.
+
+    The `Plot` provides a number of methods to simplify generating
+    figures from GWpy data objects, and modifying them on-the-fly in
+    interactive mode.
     """
     def __init__(self, *args, **kwargs):
         # pull non-standard keyword arguments

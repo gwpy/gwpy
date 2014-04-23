@@ -44,8 +44,14 @@ __version__ = version.version
 
 
 class SegmentAxes(TimeSeriesAxes):
-    """Axes designed to show `SegmentList`, and `DataQualityFlag`-format
-    objects
+    """Custom `Axes` for a :class:`~gwpy.plotter.segments.SegmentPlot`.
+
+    This `SegmentAxes` provides custom methods for displaying any of
+
+    - :class:`~gwpy.segments.flag.DataQualityFlag`
+    - :class:`~gwpy.segments.segments.Segment`
+    - :class:`~gwpy.segments.segments.SegmentList`
+    - :class:`~gwpy.segments.segments.SegmentListDict`
     """
     name = 'segments'
 
@@ -348,10 +354,7 @@ register_projection(SegmentAxes)
 
 
 class SegmentPlot(TimeSeriesPlot):
-    """An extension of the
-    :class:`~gwpy.plotter.timeseries.TimeSeriesPlot` class for
-    displaying data from
-    :class:`DataQualityFlags <~gwpy.segments.flagDataQualityFlag>`.
+    """`Figure` for displaying a :class:`~gwpy.segments.flag.DataQualityFlag`.
 
     Parameters
     ----------

@@ -45,8 +45,7 @@ __all__ = ['TimeSeriesPlot', 'TimeSeriesAxes']
 
 
 class TimeSeriesAxes(Axes):
-    """Extension of the basic matplotlib :class:`~matplotlib.axes.Axes`
-    specialising in time-series display
+    """Custom `Axes` for a :class:`~gwpy.plotter.timeseries.TimeSeriesPlot`.
     """
     name = 'timeseries'
 
@@ -364,8 +363,7 @@ register_projection(TimeSeriesAxes)
 
 
 class TimeSeriesPlot(Plot):
-    """An extension of the :class:`~gwpy.plotter.core.Plot` class for
-    displaying data from :class:`~gwpy.timeseries.core.TimeSeries`
+    """`Figure` for displaying a :class:`~gwpy.timeseries.core.TimeSeries`.
 
     Parameters
     ----------

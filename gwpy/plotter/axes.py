@@ -29,9 +29,9 @@ __version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 class Axes(_Axes):
-    """An extension of the standard matplotlib
-    :class:`~matplotlib.axes.Axes` object with simpler attribute
-    accessors, and GWpy class plotting methods
+    """An extension of the core matplotlib :class:`~matplotlib.axes.Axes`.
+
+    These custom `Axes` provide only some simpler attribute accessors.
 
     Notes
     -----

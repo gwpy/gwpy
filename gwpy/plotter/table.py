@@ -43,7 +43,7 @@ __all__ = ['EventTableAxes', 'EventTablePlot']
 
 
 class EventTableAxes(TimeSeriesAxes):
-    """Custom axes for displaying a set of event triggers
+    """Custom `Axes` for an :class:`~gwpy.plotter.table.EventTablePlot`.
 
     The `EventTableAxes` inherit from
     :class:`~gwpy.plotter.timeseries.TimeSeriesAxes` as a convenience to
@@ -309,7 +309,7 @@ class _EventTableMetaPlot(type):
 
 
 class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
-    """Plot data directly from a Table
+    """`Figure` for displaying a :class:`~glue.ligolw.table.Table`.
 
     Parameters
     ----------

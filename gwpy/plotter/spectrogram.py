@@ -31,7 +31,7 @@ __all__ = ['SpectrogramPlot']
 
 
 class SpectrogramPlot(TimeSeriesPlot):
-    """Plot data from a `~gwpy.data.Spectrogram` object
+    """`Figure` for displaying a :class:`~gwpy.spectrogram.core.Spectrogram`.
     """
     def __init__(self, *spectrograms, **kwargs):
         self._logy = False
