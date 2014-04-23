@@ -97,6 +97,9 @@ numpydoc_show_class_members = False
 # set autosummary
 autosummary_generate = False
 
+# configure inheritance diagram
+inheritance_graph_attrs = dict(rankdir='TB')
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
