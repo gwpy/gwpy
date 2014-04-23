@@ -14,11 +14,15 @@ dd {
   margin-left: 40px;
 }
 
-tt.descclassname,
 dl.attribute tt.descname,
 dl.method tt.descname,
 dl.class tt.descname {
-  font-size: 160% !important;
+  font-size: 120% !important;
+}
+
+tt.descclassname,
+tt.descclassname + tt.descname {
+  font-size: 200% !important;
 }
 
 code {
