@@ -117,7 +117,7 @@ def binned_event_rates(self, stride, column, bins, operator='>=',
         a dict of (bin, `TimeSeries`) pairs describing a rate of events
         per second (Hz) for each of the bins.
     """
-    from gwpy.timeseries import TimeSeriesDict
+    from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
     # get time data
     times = get_table_column(self, timecolumn)
 
