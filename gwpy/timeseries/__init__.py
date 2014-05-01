@@ -25,26 +25,4 @@ __version__ = version.version
 
 from .core import *
 from .statevector import *
-
-# define custom time-series units
-try:
-    from astropy import (__version__ as astropyversion, units)
-except ImportError:
-    pass
-else:
-    from distutils.version import LooseVersion
-    if LooseVersion(astropyversion) < LooseVersion('0.3'):
-        units.def_unit(['counts'], represents=units.Unit('count'),
-                       register=True)
-        units.def_unit(['strain'], represents=units.dimensionless_unscaled,
-                       register=True)
-        units.def_unit(['coherence'], represents=units.dimensionless_unscaled,
-                       register=True)
-    else:
-        units.add_enabled_units([
-            units.def_unit(['counts'], units.Unit('count')),
-            units.def_unit(['coherence'], units.dimensionless_unscaled),
-            units.def_unit(['strain'], units.dimensionless_unscaled),
-            ])
-
 from .io import *
