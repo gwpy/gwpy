@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -15,14 +16,23 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Create, manipulate, read, and write spectrum data
+"""This module attaches the HDF5 input output methods to the Spectrum.
+
+While these methods are available as methods of the class itself,
+this module attaches them to the unified I/O registry, making it a bit
+cleaner.
 """
 
-from .. import version
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+from astropy.io.registry import (register_reader, register_writer,
+                                 register_identifier)
+
+from ... import version
+from ...io.hdf5 import identify_hdf5
+from ..core import Spectrum
+
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-from .core import *
-from .hist import *
-from .io import *
-from ..io.spectrum import *
+register_reader('hdf', Spectrum, Spectrum.from_hdf5)
+register_writer('hdf', Spectrum, Spectrum.to_hdf5)
+register_identifier('hdf', Spectrum, identify_hdf5)

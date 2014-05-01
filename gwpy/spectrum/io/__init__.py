@@ -15,14 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Create, manipulate, read, and write spectrum data
+"""Input/Output routines for the Spectrum.
 """
 
 from .. import version
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-from .core import *
-from .hist import *
-from .io import *
-from ..io.spectrum import *
+try:
+    from . import hdf5
+except ImportError:
+    pass
