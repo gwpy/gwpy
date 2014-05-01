@@ -21,42 +21,30 @@
 For more details, see https://losc.ligo.org
 """
 
-try:
-    import h5py
-except ImportError:
-    HASH5PY = False
-else:
-    HASH5PY = True
+import h5py
 
-try:
-    from glue.lal import (Cache, CacheEntry)
-except ImportError:
-    HASGLUE = False
-else:
-    HASGLUE = True
+from glue.lal import (Cache, CacheEntry)
 
 from astropy.io import registry
 from astropy.units import (Unit, Quantity)
 
 from .. import (StateVector, TimeSeries, TimeSeriesList)
+from ...io.cache import file_list
 
 
 def open_hdf5(filename):
     """Wrapper to open a :class:`h5py.File` from disk, gracefully
     handling a few corner cases
     """
-    if not HASH5PY:
-        raise ImportError("No module named h5py")
     if isinstance(filename, h5py.File):
-        h5file = filename
+        return filename
     elif isinstance(filename, file):
-        h5file = h5py.File(filename.name, 'r')
+        return h5py.File(filename.name, 'r')
     else:
-        h5file = h5py.File(filename, 'r')
-    return h5file
+        return h5py.File(filename, 'r')
 
 
-def read_losc_data(filename, channel, group=None, start=None, end=None):
+def read_losc_data(filename, channel, group=None, copy=False):
     """Read a `TimeSeries` from a LOSC-format HDF file.
 
     Parameters
@@ -92,11 +80,11 @@ def read_losc_data(filename, channel, group=None, start=None, end=None):
     unit = Unit(dataset.attrs['Yunits'])
     # build and return
     return TimeSeries(nddata, epoch=epoch, sample_rate=(1/dt).to('Hertz'),
-                      unit=unit, name=channel.rsplit('/', 1)[0])
+                      unit=unit, name=channel.rsplit('/', 1)[0], copy=copy)
 
 
-def read_losc_data_cache(source, channel, group=None, start=None, end=None,
-                         target=TimeSeries):
+def read_losc_data_cache(f, channel, start=None, end=None, resample=None,
+                         group=None, target=TimeSeries):
     """Read a `TimeSeries` from a LOSC-format HDF file.
 
     Parameters
@@ -119,24 +107,29 @@ def read_losc_data_cache(source, channel, group=None, start=None, end=None,
     data : :class`~gwpy.timeseries.core.TimeSeries`
         a new `TimeSeries` containing the data read from disk
     """
-    if isinstance(source, (unicode, str)):
-        filelist = [source]
-    elif HASGLUE and isinstance(source, CacheEntry):
-        filelist = [source.path]
-    elif HASGLUE and isinstance(source, Cache):
-        filelist = source.pfnlist()
-    else:
-        filelist = source
-    out = TimeSeriesList()
-    for fp in filelist:
+    files = file_list(f)
+
+    out = None
+    for fp in files:
         if target is TimeSeries:
-            out.append(read_losc_data(fp, channel, group=group, start=start,
-                                      end=end))
+            new = read_losc_data(fp, channel, group=group, copy=False)
         elif target is StateVector:
-            out.append(read_losc_state(fp, channel, group=group, start=start,
-                                       end=end))
-    out.sort(key=lambda ts: ts.epoch.gps)
-    return out.join()
+            new = read_losc_state(fp, channel, group=group, copy=False)
+        else:
+            raise ValueError("Cannot read %s from LOSC data"
+                             % (target.__name__))
+        if out is None:
+            out = new.copy()
+        else:
+            out.append(new)
+
+    if resample:
+        out = out.resample(resample)
+
+    if start or end:
+        out = out.crop(start=start, end=end)
+
+    return out
 
 
 def read_losc_state(filename, channel, group=None, start=None, end=None):

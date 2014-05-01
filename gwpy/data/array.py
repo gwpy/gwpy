@@ -26,7 +26,7 @@ import numpy
 numpy.set_printoptions(threshold=200)
 import copy
 
-from astropy.units import (Unit, Quantity)
+from astropy.units import (Unit, UnitBase, Quantity)
 from ..io import (reader, writer)
 
 from ..detector import Channel
@@ -352,6 +352,98 @@ class Array(numpy.ndarray):
     # use input/output registry to allow multi-format reading
     read = classmethod(reader())
     write = writer()
+
+    def to_hdf5(self, output, group=None, compression='gzip', **kwargs):
+        """Convert this `Array` to a :class:`h5py.Dataset`.
+
+        This allows writing to an HDF5-format file.
+
+        Parameters
+        ----------
+        parent : :class:`h5py.Group`
+            containing HDF group for this dataset.
+
+        Returns
+        -------
+        dset : :class:`h5py.Dataset`
+            HDF dataset containing these data.
+        """
+        # create output object
+        import h5py
+        if isinstance(output, h5py.Group):
+            h5file = output
+        else:
+            h5file = h5py.File(output, 'w')
+
+        try:
+            # if group
+            if group:
+                try:
+                    h5group = h5file[group]
+                except KeyError:
+                    h5group = h5file.create_group(group)
+            else:
+                h5group = h5file
+
+            # create dataset
+            dset = h5group.create_dataset(self.name, data=self.data,
+                                          compression=compression,
+                                          **kwargs)
+
+            # store metadata
+            for attr, mdval in self.metadata.iteritems():
+                if isinstance(mdval, Quantity):
+                    dset.attrs[attr] = mdval.value
+                elif isinstance(mdval, (Channel, UnitBase)):
+                    dset.attrs[attr] = str(mdval)
+                else:
+                    dset.attrs[attr] = mdval
+
+        finally:
+            if not isinstance(output, h5py.Group):
+                h5file.close()
+
+        return dset
+
+
+    @classmethod
+    def from_hdf5(cls, f, name):
+        """Read a `Array` from the given HDF file.
+
+        Parameters
+        ----------
+        f : `str`, :class:`h5py.File`
+            path to HDF file on disk, or open `File`.
+        type_ : `type`
+            target class to read
+        name : `str`
+            path in HDF hierarchy of dataset.
+        """
+        from h5py import Group
+        from ..io.hdf5 import open_hdf5
+
+        h5file = open_hdf5(f)
+
+        try:
+            # find dataset
+            try:
+                dataset = h5file[name]
+            except KeyError:
+                if name.startswith('/'):
+                    raise
+                name2 = '/%s/%s' % (cls.__name__.lower(), name)
+                if name2 in h5file:
+                    dataset = h5file[name2]
+                else:
+                    raise
+
+            # read array, close file, and return
+            out = cls(dataset[()], **dict(dataset.attrs))
+        finally:
+            if not isinstance(f, Group):
+                h5file.close()
+
+        return out
 
 
 def _array_reconstruct(Class, dtype):

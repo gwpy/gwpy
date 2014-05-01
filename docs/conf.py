@@ -30,13 +30,10 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import os
-
 from matplotlib import use
+use('agg')
 
 import sphinx_bootstrap_theme
-
-use('agg')
 
 from gwpy import version as gwpy_version
 from gwpy.plotter import (GWPY_PLOT_PARAMS)
@@ -79,13 +76,13 @@ autodoc_default_flags = ['show-inheritance', 'members', 'inherited-members']
 # Can de-comment when GLUE is actually referenced in the documentation
 epydoc_mapping = {
     'https://www.lsc-group.phys.uwm.edu/daswg/projects/glue/doc/':
-        [r'glue(\.|$)'],
+    [r'glue(\.|$)'],
 }
 
 # doxylink
-doxylink = {'lalsuite' : ('../../lalsuite/doxygen/lalsuite_dox.tag',
-                          'https://www.lsc-group.phys.uwm.edu/daswg/projects'
-                          '/lal/nightly/docs/html/')}
+doxylink = {'lalsuite': ('../../lalsuite/doxygen/lalsuite_dox.tag',
+                         'https://www.lsc-group.phys.uwm.edu/daswg/projects'
+                         '/lal/nightly/docs/html/')}
 
 # matplotlib plot directive
 plot_rcparams = GWPY_PLOT_PARAMS
