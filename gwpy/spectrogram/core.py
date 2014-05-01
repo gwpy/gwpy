@@ -93,7 +93,8 @@ class Spectrogram(Array2D):
                        Channel(channel))
             name = name or channel.name
             unit = unit or channel.unit
-            dt = dt or 1 / channel.sample_rate
+            if channel.sample_rate:
+                dt = dt or 1 / channel.sample_rate
         # generate Spectrogram
         return super(Spectrogram, cls).__new__(cls, data, name=name, unit=unit,
                                                channel=channel, epoch=epoch,
