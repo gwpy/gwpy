@@ -197,7 +197,8 @@ class EventTableAxes(TimeSeriesAxes):
 
         # build collection
         cmap = kwargs.pop('cmap', cm.jet)
-        coll = collections.PolyCollection(verts, **kwargs)
+        coll = collections.PolyCollection(verts, edgecolors=edgecolors,
+                                          linewidth=linewidth, **kwargs)
         if color:
             coll.set_array(cdata)
             coll.set_cmap(cmap)
