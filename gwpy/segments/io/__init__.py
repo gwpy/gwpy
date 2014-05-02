@@ -26,3 +26,8 @@ __version__ = version.version
 from .ligolw import *
 from .segwizard import *
 from .cache import *
+
+try:
+    from .hdf5 import *
+except ImportError:
+    pass
