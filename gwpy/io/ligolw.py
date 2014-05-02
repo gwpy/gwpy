@@ -83,8 +83,9 @@ def table_from_file(f, tablename, columns=None, filt=None,
         tableclass.loadcolumns = columns
 
     # generate Document and populate
+    files = [fp.name if isinstance(fp, file) else fp for fp in file_list(f)]
     xmldoc = Document()
-    ligolw_add(xmldoc, file_list(f), non_lsc_tables_ok=True,
+    ligolw_add(xmldoc, files, non_lsc_tables_ok=True,
                contenthandler=contenthandler)
 
     # extract table
