@@ -31,7 +31,7 @@ def open_hdf5(filename):
     """Wrapper to open a :class:`h5py.File` from disk, gracefully
     handling a few corner cases
     """
-    if isinstance(filename, h5py.Group):
+    if isinstance(filename, h5py.HLObject):
         return filename
     elif isinstance(filename, file):
         return h5py.File(filename.name, 'r')
@@ -48,7 +48,7 @@ def identify_hdf5(*args, **kwargs):
     if (isinstance(filename, (unicode, str)) and
             filename.endswith(('hdf', 'hdf5'))):
         return True
-    elif isinstance(filename, h5py.Group):
+    elif isinstance(filename, h5py.HLObject):
         return True
     else:
         return False
