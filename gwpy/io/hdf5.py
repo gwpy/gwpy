@@ -45,8 +45,7 @@ def identify_hdf5(*args, **kwargs):
     filename = args[3]
     if isinstance(filename, file):
         filename = filename.name
-    if (isinstance(filename, (unicode, str)) and
-            filename.endswith(('hdf', 'hdf5'))):
+    if isinstance(filename, (unicode, str)) and h5py.is_hdf5(filename):
         return True
     elif isinstance(filename, h5py.HLObject):
         return True
