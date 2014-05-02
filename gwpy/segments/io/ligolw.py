@@ -65,7 +65,8 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=True,
 
     # generate Document and populate
     xmldoc = Document()
-    ligolw_add(xmldoc, file_list(f), non_lsc_tables_ok=True,
+    files = [fp.name if isinstance(fp, file) else fp for fp in file_list(f)]
+    ligolw_add(xmldoc, files, non_lsc_tables_ok=True,
                contenthandler=contenthandler)
 
     # read segment definers and generate DataQualityFlag object
