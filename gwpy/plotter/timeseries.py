@@ -59,11 +59,12 @@ class TimeSeriesAxes(Axes):
         self.set_epoch(epoch)
         # set x-axis format
         if 'sharex' not in kwargs or kwargs['sharex'] is None:
-            formatter = ticks.TimeFormatter(format='gps', epoch=epoch,
-                                            scale=scale)
+            formatter = ticks.GPSFormatter(epoch=epoch, scale=scale)
             self.xaxis.set_major_formatter(formatter)
-            locator = ticks.AutoTimeLocator(epoch=epoch, scale=scale)
+            locator = ticks.GPSMaxNLocator(epoch=epoch, scale=scale)
             self.xaxis.set_major_locator(locator)
+            minlocator = ticks.GPSMultipleLocator(epoch=epoch, scale=scale)
+            self.xaxis.set_minor_locator(minlocator)
             try:
                 from lal import LIGOTimeGPS
             except ImportError:
@@ -86,7 +87,7 @@ class TimeSeriesAxes(Axes):
     def set_epoch(self, gps):
         """Set the GPS epoch of this plot
         """
-        # set new epoch
+        # record new epoch
         if gps is None or isinstance(gps, Time):
             self._epoch = gps
         else:
@@ -97,14 +98,15 @@ class TimeSeriesAxes(Axes):
                 from lal import gpstime
                 self._epoch = float(gpstime.str_to_gps(gps))
             self._epoch = Time(float(gps), format='gps')
-        # update x-axis ticks and labels
+
+        # update major formatter and label
         formatter = self.xaxis.get_major_formatter()
-        if isinstance(formatter, ticks.TimeFormatter):
-            locator = self.xaxis.get_major_locator()
-            oldepoch = formatter.epoch
-            locator.epoch = self._epoch
+        try:
             formatter.set_epoch(self._epoch)
-            formatter.set_locs(locator.refresh())
+        except AttributeError:
+            pass
+        else:
+            oldepoch = formatter.get_epoch()
             # update xlabel
             oldiso = re.sub('\.0+', '', oldepoch.utc.iso)
             xlabel = self.xlabel.get_text()
@@ -118,10 +120,26 @@ class TimeSeriesAxes(Axes):
                     self.xlabel = xlabel.replace(str(oldepoch.gps),
                                                  str(self.epoch.gps))
 
+        # update major locator
+        locator = self.xaxis.get_major_locator()
+        try:
+            locator.set_epoch(gps)
+        except AttributeError:
+            pass
+        #else:
+        #    formatter.set_locs(locator.refresh())
+
+        # update minor locator
+        minlocator = self.xaxis.get_minor_locator()
+        try:
+            minlocator.set_epoch(gps)
+        except AttributeError:
+            pass
+
     @auto_refresh
     def add_epoch_label(self):
         formatter = self.xaxis.get_major_formatter()
-        if isinstance(formatter, ticks.TimeFormatter):
+        if isinstance(formatter, ticks.GPSFormatter):
             scale = ticks.GPS_SCALE[formatter.scale][0]
         else:
             scale = 'seconds'
@@ -140,16 +158,30 @@ class TimeSeriesAxes(Axes):
     def set_gps_scale(self, scale):
         """Set the GPS scale of this plot
         """
+        # modify formatter
         formatter = self.xaxis.get_major_formatter()
-        locator = self.xaxis.get_major_locator()
-        if not isinstance(formatter, ticks.TimeFormatter):
+        if not isinstance(formatter, ticks.GPSFormatter):
             raise TypeError("Formatter of type '%s' does not have a scale. "
-                            "Please try using a TimeFormatter instead"
+                            "Please try using a GPSFormatter instead"
                             % formatter.__class__.__name__)
         s = ticks.GPS_SCALE[formatter.scale][0]
         formatter.set_scale(scale)
-        locator.scale = scale
-        self.xaxis.set_minor_locator(MultipleLocator(scale))
+
+        # modify major locator
+        locator = self.xaxis.get_major_locator()
+        try:
+            locator.set_scale(scale)
+        except AttributeError:
+            pass
+
+        # modify minor locator
+        minlocator = self.xaxis.get_minor_locator()
+        try:
+            minlocator.set_scale(scale)
+        except AttributeError:
+            pass
+
+        # replace label
         xlabel = self.xlabel.get_text()
         if xlabel:
             if re.search(s, xlabel):
@@ -517,15 +549,15 @@ class TimeSeriesPlot(Plot):
 
         Returns
         -------
-        TimeFormatter
-            the :class:`~gwpy.plotter.ticks.TimeFormatter` for this axis
+        GPSFormatter
+            the :class:`~gwpy.plotter.ticks.GPSFormatter` for this axis
         """
         if epoch and not scale:
             duration = self.xlim[1] - self.xlim[0]
             for scale in ticks.GPS_SCALE.keys()[::-1]:
                 if duration > scale*4:
                     break
-        formatter = ticks.TimeFormatter(format=format_, epoch=epoch,
+        formatter = ticks.GPSFormatter(format=format_, epoch=epoch,
                                         scale=scale)
         self.axes.xaxis.set_major_formatter(formatter)
         locator = ticks.AutoTimeLocator(epoch=epoch, scale=scale)

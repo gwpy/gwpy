@@ -44,7 +44,78 @@ GPS_SCALE = OrderedDict([(1, ('seconds', 's', 1)),
                          (SEC_PER_WEEK, ('weeks', 'w', 4))])
 
 
-class AutoTimeLocator(mticker.MaxNLocator):
+class GPSMixin(object):
+    """Mixin adding GPS-related attributes to a `Locator`.
+    """
+    def __init__(self, *args, **kwargs):
+        self.set_scale(kwargs.pop('scale', 1))
+        self.set_epoch(kwargs.pop('epoch', None))
+        # call super for __init__ if this is part of a larger MRO
+        try:
+            super(GPSMixin, self).__init__(*args, **kwargs)
+        # otherwise return
+        except TypeError:
+            pass
+
+    def get_epoch(self):
+        """Starting GPS time epoch for this formatter
+        """
+        return self._epoch
+
+    def set_epoch(self, epoch):
+        if epoch is None:
+            self._epoch = None
+            return
+        elif not isinstance(epoch, Time):
+            if hasattr(epoch, "seconds"):
+                epoch = [epoch.seconds, epoch.nanoseconds*1e-9]
+            elif hasattr(epoch, "gpsSeconds"):
+                epoch = [epoch.gpsSeconds, epoch.gpsNanoSeconds*1e-9]
+            else:
+                epoch = modf(epoch)[::-1]
+            epoch = Time(*epoch, format='gps', precision=6)
+        self._epoch = epoch.copy(format='gps')
+
+    epoch = property(fget=get_epoch, fset=set_epoch, doc=get_epoch.__doc__)
+
+    def get_scale(self):
+        """GPS step scale for this formatter
+        """
+        return self._scale
+
+    def set_scale(self, scale):
+        if scale not in GPS_SCALE:
+            raise ValueError("Cannot set arbitrary GPS scales, please select "
+                             "one of: %s" % GPS_SCALE.keys())
+        self._scale = float(scale)
+
+    scale = property(fget=get_scale, fset=set_scale, doc=get_scale.__doc__)
+
+
+class GPSLocatorMixin(GPSMixin):
+    """Metaclass for GPS-axis locator
+    """
+    def tick_values(self, vmin, vmax):
+        if self.epoch is not None:
+            vmin -= float(self.epoch.gps)
+            vmax -= float(self.epoch.gps)
+        if self.scale:
+            vmin /= self._scale
+            vmax /= self._scale
+        locs = super(GPSLocatorMixin, self).tick_values(vmin, vmax)
+        if self.scale:
+            locs *= self.scale
+        if self.epoch is not None:
+            locs += float(self.epoch.gps)
+        return locs
+
+    def refresh(self):
+        """refresh internal information based on current lim
+        """
+        return self()
+
+
+class GPSMaxNLocator(GPSLocatorMixin, mticker.MaxNLocator):
     """Find the best position for ticks on a given axis from the data.
 
     This auto-locator gives a simple extension to the matplotlib
@@ -59,112 +130,27 @@ class AutoTimeLocator(mticker.MaxNLocator):
         Each of the `epoch` and `scale` keyword arguments should match those
         passed to the `~gwpy.plotter.ticks.TimeFormatter`
         """
-        mticker.MaxNLocator.__init__(self, nbins=nbins, steps=steps, **kwargs)
-        #super(AutoTimeLocator, self).__init__()
-        self.epoch = epoch
-        if scale and epoch is None:
+        super(GPSMaxNLocator, self).__init__(epoch=epoch, scale=scale,
+                                             nbins=nbins, steps=steps, **kwargs)
+        if self.scale and self.epoch is None:
             raise ValueError("The GPS epoch must be stated if data scaling "
                              "is required")
-        if scale is not None:
-            self._scale = float(scale)
-        else:
-            self._scale = None
-
-    def __call__(self):
-        """Find the locations of ticks given the current view limits
-        """
-        vmin, vmax = self.get_view_interval()
-        locs = self.tick_values(vmin, vmax)
-        if self._scale:
-            locs *= self._scale
-        if self.epoch is not None:
-            locs += float(self.epoch.gps)
-        return self.raise_if_exceeds(locs)
-
-    def get_view_interval(self):
-        vmin, vmax = self.axis.get_view_interval()
-        if self.epoch is not None:
-            vmin -= float(self.epoch.gps)
-            vmax -= float(self.epoch.gps)
-        if self._scale:
-            vmin /= self._scale
-            vmax /= self._scale
-        return mtransforms.nonsingular(vmin, vmax, expander=0.05)
-
-    def refresh(self):
-        """refresh internal information based on current lim
-        """
-        return self()
-
-    @property
-    def epoch(self):
-        """Starting GPS time epoch for this formatter
-        """
-        return self._epoch
-
-    @epoch.setter
-    def epoch(self, epoch):
-        if epoch is None:
-            self._epoch = None
-            return
-        elif not isinstance(epoch, Time):
-            if hasattr(epoch, "seconds"):
-                epoch = [epoch.seconds, epoch.nanoseconds*1e-9]
-            elif hasattr(epoch, "gpsSeconds"):
-                epoch = [epoch.gpsSeconds, epoch.gpsNanoSeconds*1e-9]
-            else:
-                epoch = modf(epoch)[::-1]
-            epoch = Time(*epoch, format='gps', precision=6)
-        self._epoch = epoch.copy(format='gps')
-
-    @property
-    def scale(self):
-        """GPS step scale for this formatter
-        """
-        return self._scale
-
-    @scale.setter
-    def scale(self, scale):
-        if scale not in GPS_SCALE:
-            raise ValueError("Cannot set arbitrary GPS scales, please select "
-                             "one of: %s" % GPS_SCALE.keys())
-        self._scale = float(scale)
 
 
-class TimeFormatter(mticker.Formatter):
+class GPSMultipleLocator(GPSLocatorMixin, mticker.MultipleLocator):
+    pass
+
+
+class GPSFormatter(GPSMixin, mticker.Formatter):
     """Locator for astropy Time objects
     """
-    def __init__(self, format='gps', epoch=None, scale=1.0):
-        self._format = format
-        self._tex = pyplot.rcParams["text.usetex"]
-        self.set_epoch(epoch)
-        self.set_scale(scale)
-
     def __call__(self, t, pos=None):
         if isinstance(t, Time):
             t = t.gps
-        if self._format not in ['iso']:
-            if self.epoch is not None:
-                t = (t - self.epoch.gps)
-            if self.scale is not None:
-                t /= float(self.scale)
-            t = round(float(t), 6)
+        if self.epoch is not None:
+            t = (t - self.epoch.gps)
+        if self.scale is not None:
+            t /= float(self.scale)
+        t = round(float(t), 6)
         t = re.sub('.0+\Z', '', str(t))
         return t
-
-    def set_scale(self, scale):
-        self.scale = scale
-
-    def set_epoch(self, epoch):
-        if epoch is None:
-            self.epoch = None
-            return
-        elif not isinstance(epoch, Time):
-            if hasattr(epoch, "seconds"):
-                epoch = [epoch.seconds, epoch.nanoseconds*1e-9]
-            elif hasattr(epoch, "gpsSeconds"):
-                epoch = [epoch.gpsSeconds, epoch.gpsNanoSeconds*1e-9]
-            else:
-                epoch = modf(epoch)[::-1]
-            epoch = Time(*epoch, format='gps', precision=6)
-        self.epoch = epoch.copy(format='gps')
