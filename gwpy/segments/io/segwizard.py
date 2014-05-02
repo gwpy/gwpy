@@ -37,9 +37,8 @@ def from_segwizard(f, coalesce=True, gpstype=LIGOTimeGPS, strict=True,
     """Read segments from a segwizard format file into a `SegmentList`
     """
     if nproc != 1:
-        from .cache import read_cache
-        return read_cache(f, coalesce=coalesce, gpstype=gpstype,
-                          strict=strict, target=SegmentList)
+        return SegmentList.read(f, coalesce=coalesce, gpstype=gpstype,
+                                strict=strict, nproc=nproc, format='cache')
 
     # format list of files and read in serial
     files = file_list(f)
