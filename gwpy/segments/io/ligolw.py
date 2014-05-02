@@ -58,10 +58,10 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=True,
         file ``fp``.
     """
     if nproc != 1:
-        from .cache import read_cache
-        return read_cache(f, flags, coalesce=coalesce,
-                          contenthandler=contenthandler,
-                          target=DataQualityDict)
+        return DataQualityDict.read(f, flags, coalesce=coalesce,
+                                    gpstype=gpstype,
+                                    contenthandler=contenthandler,
+                                    format='cache', nproc=nproc)
 
     # generate Document and populate
     xmldoc = Document()
