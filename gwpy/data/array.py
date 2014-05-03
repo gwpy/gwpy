@@ -438,7 +438,7 @@ class Array(numpy.ndarray):
         name : `str`
             path in HDF hierarchy of dataset.
         """
-        from h5py import (Dataset, Group, HLObject)
+        from h5py import (Dataset, Group)
         from ..io.hdf5 import open_hdf5
 
         h5file = open_hdf5(f)
@@ -462,7 +462,7 @@ class Array(numpy.ndarray):
             # read array, close file, and return
             out = cls(dataset[()], **dict(dataset.attrs))
         finally:
-            if not isinstance(f, HLObject):
+            if not isinstance(f, (Dataset, Group)):
                 h5file.close()
 
         return out

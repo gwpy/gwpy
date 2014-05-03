@@ -66,7 +66,7 @@ def flag_from_hdf5(f, name=None, gpstype=LIGOTimeGPS, coalesce=True, nproc=1):
         out = DataQualityFlag(active=active, valid=valid,
                               **dict(dqfgroup.attrs))
     finally:
-        if not isinstance(f, h5py.HLObject):
+        if not isinstance(f, (h5py.Dataset, h5py.Group)):
             h5file.close()
 
     return out
@@ -144,7 +144,7 @@ def flag_to_hdf5(flag, output, name=None, group=None, compression='gzip',
                 dqfgroup.attrs[attr] = value
 
     finally:
-        if not isinstance(output, h5py.HLObject):
+        if not isinstance(output, (h5py.Dataset, h5py.Group)):
             h5file.close()
 
     return dqfgroup
@@ -181,7 +181,7 @@ def segmentlist_from_hdf5(f, name=None, gpstype=LIGOTimeGPS):
                 end = gpstype(float(end))
             out.append(Segment(start, end))
     finally:
-        if not isinstance(f, h5py.HLObject):
+        if not isinstance(f, (h5py.Dataset, h5py.Group)):
             h5file.close()
 
     return out
