@@ -287,7 +287,8 @@ class StateVector(TimeSeries):
         return super(StateVector, cls).__new__(cls, data, name=name,
                                                epoch=epoch, channel=channel,
                                                sample_rate=sample_rate,
-                                               times=times, bitmask=bitmask)
+                                               times=times, bitmask=bitmask,
+                                               **kwargs)
 
     # -------------------------------------------
     # StateVector properties
