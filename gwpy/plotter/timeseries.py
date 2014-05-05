@@ -102,11 +102,11 @@ class TimeSeriesAxes(Axes):
         # update major formatter and label
         formatter = self.xaxis.get_major_formatter()
         try:
-            formatter.set_epoch(self._epoch)
+            oldepoch = formatter.get_epoch()
         except AttributeError:
             pass
         else:
-            oldepoch = formatter.get_epoch()
+            formatter.set_epoch(self._epoch)
             # update xlabel
             oldiso = re.sub('\.0+', '', oldepoch.utc.iso)
             xlabel = self.xlabel.get_text()
