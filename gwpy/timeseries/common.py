@@ -100,6 +100,9 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
             raise ValueError("Cannot append overlapping TimeSeries")
         else:
             raise ValueError("Cannot append discontiguous TimeSeries")
+    # check empty other
+    if not other.size:
+        return new
     # resize first
     if resize:
         s = list(new.shape)
