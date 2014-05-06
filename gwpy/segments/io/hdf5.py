@@ -25,6 +25,7 @@ cleaner.
 
 import h5py
 import numpy
+from distutils.version import LooseVersion
 
 from astropy.io.registry import (register_reader, register_writer,
                                  register_identifier)
@@ -162,7 +163,10 @@ def segmentlist_from_hdf5(f, name=None, gpstype=LIGOTimeGPS):
         else:
             dataset = h5file[name]
 
-        data = dataset[()]
+        try:
+            data = dataset[()]
+        except ValueError:
+            data = []
 
         out = SegmentList()
         for row in data:
@@ -214,7 +218,10 @@ def segmentlist_to_hdf5(seglist, output, name, group=None,
             start, end = map(LIGOTimeGPS, seg)
             data[i, :] = (start.seconds, start.nanoseconds,
                           end.seconds, end.nanoseconds)
-
+        if (not len(seglist) and
+                LooseVersion(h5py.version.version).version[0] < 2):
+            kwargs.setdefault('maxshape', (None, 4))
+            kwargs.setdefault('chunks', (1, 1))
         dset = h5group.create_dataset(name, data=data,
                                       compression=compression, **kwargs)
     finally:
