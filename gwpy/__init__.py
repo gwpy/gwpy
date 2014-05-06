@@ -36,3 +36,10 @@ except ImportError:
     pass
 else:
     WARN_IMPLICIT_NUMERIC_CONVERSION.set(False)
+
+try:
+    import ROOT
+except ImportError:
+    pass
+else:
+    ROOT.PyConfig.IgnoreCommandLineOptions = True
