@@ -33,10 +33,12 @@ from matplotlib import (cm, collections, pyplot)
 from matplotlib.projections import register_projection
 
 from glue.ligolw.table import Table
+from glue.lal import LIGOTimeGPS
 
 from .core import Plot
 from .timeseries import (TimeSeriesAxes, TimeSeriesPlot)
 from .spectrum import SpectrumPlot
+from .utils import float_to_latex
 from ..table.utils import (get_table_column, get_row_value)
 
 __all__ = ['EventTableAxes', 'EventTablePlot']
@@ -249,8 +251,10 @@ class EventTableAxes(TimeSeriesAxes):
             if i < 2:
                 scat.append([float(val)])
             column = get_column_string(column)
-            if pyplot.rcParams['text.usetex']:
-                disp += (r" %s$= %s$" % (column, val))
+            if pyplot.rcParams['text.usetex'] and column.endswith('Time'):
+                disp += (r" %s$= %s$" % (column, LIGOTimeGPS(val)))
+            elif pyplot.rcParams['text.usetex']:
+                disp += (r" %s$=$ %s" % (column, float_to_latex(val)))
             else:
                 disp += " %s = %.2g" % (column, val)
         disp = disp.rstrip(',')
