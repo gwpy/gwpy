@@ -27,9 +27,8 @@ import warnings
 import re
 from math import (ceil, floor, log)
 from dateutil import parser as dateparser
+from multiprocessing import (Process, Queue as ProcessQueue)
 
-
-from scipy import (fftpack)
 from matplotlib import mlab
 
 try:
@@ -305,6 +304,7 @@ class TimeSeries(Series):
         :mod:`scipy.fftpack` for the definition of the DFT and conventions
         used.
         """
+        from scipy import fftpack
         from ..spectrum import Spectrum
         new = fftpack.fft(self.data, n=fftlength).view(Spectrum)
         new.frequencies = fftpack.fftfreq(new.size, d=self.dx)
@@ -313,31 +313,18 @@ class TimeSeries(Series):
         #    new.dx = new.frequencies[1] - new.frequencies[0]
         return new
 
-    def psd(self, fftlength=None, fftstride=None, method='welch', window=None,
-            plan=None):
+    def psd(self, fftlength=None, overlap=None, method='welch', **kwargs):
         """Calculate the PSD `Spectrum` for this `TimeSeries`.
-
-        The power spectral density (PSD) gives the power (in the units of
-        the `TimeSeries`) per unit frequency (Hertz).
-
-        The `method` argument can be one of
-
-            - 'welch'
-            - 'bartlett'
-            - 'medianmean'
-            - 'median'
-
-        and any keyword arguments will be passed to the relevant method
-        in `gwpy.spectrum`.
 
         Parameters
         ----------
-        fftlength : `float`, default: :attr:`TimeSeries.duration`
-            number of seconds in single FFT
-        fftstride : `float`, optional, default: fftlength
-            number of seconds between FFTs, default: no overlap
         method : `str`, optional, default: 'welch'
             average spectrum method
+        fftlength : `float`, default: :attr:`TimeSeries.duration`
+            number of seconds in single FFT
+        overlap : `float`, optional, default: `None`
+            number of seconds of overlap between FFTs, defaults to that of
+            the relevant method.
         window : `timeseries.Window`, optional
             window function to apply to timeseries prior to FFT
         plan : :lalsuite:`REAL8FFTPlan`, optional
@@ -348,53 +335,40 @@ class TimeSeries(Series):
         -------
         psd :  :class:`~gwpy.spectrum.core.Spectrum`
             a data series containing the PSD.
+
+        Notes
+        -----
+        The available methods are:
+
         """
-        from ..spectrum import psd
+        from ..spectrum.registry import get_method
+        # get method
+        scaling = kwargs.get('scaling', 'density')
+        method_func = get_method(method, scaling=scaling)
+        # type-cast arguments
         if fftlength is None:
-            fftlength = self.duration.value
-        if fftstride is None:
-            fftstride = fftlength
-        fftlength *= self.sample_rate.value
-        fftstride *= self.sample_rate.value
-        if isinstance(window, str):
-            window = get_window(window, fftlength)
-        try:
-            psd_ = psd.lal_psd(self, method, int(fftlength), int(fftstride),
-                               window=window, plan=plan)
-        except ImportError:
-            if window is None:
-                window = 'hanning'
-            psd_ = psd.scipy_psd(self, method, int(fftlength), int(fftstride),
-                                 window=window)
-        if psd_.unit:
-            psd_.unit.__doc__ = "Power spectral density"
+            fftlength = self.duration
+        nfft = int((fftlength * self.sample_rate).decompose().value)
+        if overlap is not None:
+            kwargs['noverlap'] = int(
+                (overlap * self.sample_rate).decompose().value)
+        # calculate and return spectrum
+        psd_ = method_func(self, nfft, **kwargs)
+        psd_.unit.__doc__ = 'Power spectral density'
         return psd_
 
-    def asd(self, fftlength=None, fftstride=None, method='welch', window=None,
-            plan=None):
+    def asd(self, fftlength=None, overlap=None, method='welch', **kwargs):
         """Calculate the ASD `Spectrum` of this `TimeSeries`.
-
-        The amplitude spectral density (ASD) is the square root of the
-        power spectral density (PSD).
-
-        The `method` argument can be one of
-
-            * 'welch'
-            * 'bartlett'
-            * 'medianmean'
-            * 'median'
-
-        and any keyword arguments will be passed to the relevant method
-        in `gwpy.spectrum`.
 
         Parameters
         ----------
-        fftlength : `float`, default: :attr:`TimeSeries.duration`
-            number of seconds in single FFT
-        fftstride : `float`, optional, default: fftlength
-            number of seconds between FFTs, default: no overlap
         method : `str`, optional, default: 'welch'
             average spectrum method
+        fftlength : `float`, default: :attr:`TimeSeries.duration`
+            number of seconds in single FFT
+        overlap : `float`, optional, default: `None`
+            number of seconds of overlap between FFTs, defaults to that of
+            the relevant method.
         window : `timeseries.Window`, optional
             window function to apply to timeseries prior to FFT
         plan : :lalsuite:`REAL8FFTPlan`, optional
@@ -404,32 +378,37 @@ class TimeSeries(Series):
         Returns
         -------
         psd :  :class:`~gwpy.spectrum.core.Spectrum`
-            a data series containing the ASD.
-        """
-        asd = self.psd(fftlength, fftstride=fftstride, method=method,
-                       window=window, plan=plan)
-        asd **= 1/2.
-        if asd.unit:
-            asd.unit.__doc__ = "Amplitude spectral density"
-        return asd
+            a data series containing the PSD.
 
-    def spectrogram(self, stride, fftlength=None, fftstride=None,
-                    method='welch', window=None, plan=None, nproc=1):
+        Notes
+        -----
+        The available methods are:
+
+        """
+        asd_ = self.psd(method=method, fftlength=fftlength,
+                        overlap=overlap, **kwargs) ** (1/2.)
+        asd_.unit.__doc__ = 'Amplitude spectral density'
+        return asd_
+
+    def spectrogram(self, stride, fftlength=None, overlap=None,
+                    method='welch', window=None, nproc=1, **kwargs):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
 
         Parameters
         ----------
+        timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
+            input time-series to process.
         stride : `float`
-            number of seconds in single PSD (column of spectrogram)
+            number of seconds in single PSD (column of spectrogram).
         fftlength : `float`
-            number of seconds in single FFT
+            number of seconds in single FFT.
+        overlap : `int`, optiona, default: fftlength
+            number of seconds between FFTs.
         method : `str`, optional, default: 'welch'
-            average spectrum method
-        fftstride : `int`, optiona, default: fftlength
-            number of seconds between FFTs
+            average spectrum method.
         window : `timeseries.window.Window`, optional, default: `None`
-            window function to apply to timeseries prior to FFT
+            window function to apply to timeseries prior to FFT.
         plan : :lalsuite:`REAL8FFTPlan`, optional
             LAL FFT plan to use when generating average spectrum,
             substitute type 'REAL8' as appropriate.
@@ -443,10 +422,109 @@ class TimeSeries(Series):
             time-frequency power spectrogram as generated from the
             input time-series.
         """
-        from ..spectrogram.spectrogram import from_timeseries
-        return from_timeseries(self, stride, fftlength=fftlength,
-                               fftstride=fftstride, method=method,
-                               window=window, plan=plan, nproc=nproc)
+        from ..spectrum.utils import (safe_import, scale_timeseries_units)
+        from ..spectrum.registry import get_method
+        from ..spectrogram import (Spectrogram, SpectrogramList)
+
+        # format FFT parameters
+        if fftlength is None:
+            fftlength = stride
+
+        # get size of spectrogram
+        nsamp = int((stride * self.sample_rate).decompose().value)
+        nfft = int((fftlength * self.sample_rate).decompose().value)
+        nsteps = int(self.size // nsamp)
+        nproc = min(nsteps, nproc)
+
+        # generate window and plan if needed
+        method_func = get_method(method)
+        if method_func.__module__.endswith('lal_'):
+            safe_import('lal', method)
+            from ..spectrum.lal_ import (generate_lal_fft_plan,
+                                         generate_lal_window)
+            if kwargs.get('window', None) is None:
+                kwargs['window'] = generate_lal_window(nfft, dtype=self.dtype)
+            if kwargs.get('plan', None) is None:
+                kwargs['plan'] = generate_lal_fft_plan(nfft, dtype=self.dtype)
+        elif window is not None:
+            kwargs['window'] = window
+
+        # set up single process Spectrogram generation
+        def _from_timeseries(ts):
+            """Generate a `Spectrogram` from a `TimeSeries`.
+            """
+            # calculate specgram parameters
+            dt = stride
+            df = 1 / fftlength
+
+            # get size of spectrogram
+            nsteps_ = int(ts.size // nsamp)
+            nfreqs = int(fftlength * ts.sample_rate.value // 2 + 1)
+
+            # generate output spectrogram
+            out = Spectrogram(numpy.zeros((nsteps_, nfreqs)),
+                              channel=ts.channel, epoch=ts.epoch, f0=0, df=df,
+                              dt=dt, copy=True)
+            out.unit = scale_timeseries_units(
+                ts.unit, kwargs.get('scaling', 'density'))
+
+            if not nsteps_:
+                return out
+
+            # stride through TimeSeries, calcaulting PSDs
+            for step in range(nsteps_):
+                # find step TimeSeries
+                idx = nsamp * step
+                idx_end = idx + nsamp
+                stepseries = ts[idx:idx_end]
+                steppsd = stepseries.psd(fftlength=fftlength, overlap=overlap,
+                                         method=method, **kwargs)
+                out[step] = steppsd.data
+
+            return out
+
+        # single-process return
+        if nsteps == 0 or nproc == 1:
+            return _from_timeseries(self)
+
+        # wrap spectrogram generator
+        def _specgram(q, ts):
+            try:
+                q.put(_from_timeseries(ts))
+            except Exception as e:
+                q.put(e)
+
+        # otherwise build process list
+        stepperproc = int(ceil(nsteps / nproc))
+        nsampperproc = stepperproc * nsamp
+        queue = ProcessQueue(nproc)
+        processlist = []
+        for i in range(nproc):
+            process = Process(target=_specgram,
+                              args=(queue, self[i * nsampperproc:
+                                                (i + 1) * nsampperproc]))
+            process.daemon = True
+            processlist.append(process)
+            process.start()
+            if ((i + 1) * nsampperproc) >= self.size:
+                break
+
+        # get data
+        data = []
+        for process in processlist:
+            result = queue.get()
+            if isinstance(result, Exception):
+                raise result
+            else:
+                data.append(result)
+        # and block
+        for process in processlist:
+            process.join()
+
+        # format and return
+        out = SpectrogramList(*data)
+        out.sort(key=lambda spec: spec.epoch.gps)
+        return out.join()
 
     def fftgram(self, stride):
         """Calculate the Fourier-gram of this `TimeSeries`.
@@ -492,8 +570,8 @@ class TimeSeries(Series):
                 out.frequencies = stepfft.frequencies
         return out
 
-    def spectral_variance(self, stride, fftlength=None, fftstride=None,
-                          method='welch', window=None, plan=None, nproc=1,
+    def spectral_variance(self, stride, fftlength=None, overlap=None,
+                          method='welch', window=None, nproc=1,
                           filter=None, bins=None, low=None, high=None,
                           nbins=500, log=False, norm=False, density=False):
         """Calculate the `SpectralVariance` of this `TimeSeries`.
@@ -506,13 +584,10 @@ class TimeSeries(Series):
             number of seconds in single FFT
         method : `str`, optional, default: 'welch'
             average spectrum method
-        fftstride : `int`, optiona, default: fftlength
+        overlap : `int`, optiona, default: fftlength
             number of seconds between FFTs
         window : `timeseries.window.Window`, optional, default: `None`
             window function to apply to timeseries prior to FFT
-        plan : :lalsuite:`REAL8FFTPlan`, optional
-            LAL FFT plan to use when generating average spectrum,
-            substitute type 'REAL8' as appropriate.
         nproc : `int`, default: ``1``
             maximum number of independent frame reading processes, default
             is set to single-process file reading.
@@ -546,8 +621,8 @@ class TimeSeries(Series):
             for details on specifying bins and weights
         """
         specgram = self.spectrogram(stride, fftlength=fftlength,
-                                    fftstride=fftstride, method=method,
-                                    window=window, plan=plan, nproc=nproc)
+                                    overlap=overlap, method=method,
+                                    window=window, nproc=nproc)
         specgram **= 1/2.
         if filter:
             specgram = specgram.filter(*filter)
@@ -735,7 +810,7 @@ class TimeSeries(Series):
         new.metadata = self.metadata.copy()
         return new
 
-    def coherence(self, other, fftlength=None, fftstride=None,
+    def coherence(self, other, fftlength=None, overlap=None,
                   window=None, **kwargs):
         """Calculate the frequency-coherence between this `TimeSeries`
         and another.
@@ -746,7 +821,7 @@ class TimeSeries(Series):
             `TimeSeries` signal to calculate coherence with
         fftlength : `float`, optional, default: `TimeSeries.duration`
             number of seconds in single FFT, defaults to a single FFT
-        fftstride : `int`, optiona, default: fftlength
+        overlap : `int`, optiona, default: fftlength
             number of seconds between FFTs, defaults to no overlap
         window : `timeseries.window.Window`, optional, default: `HanningWindow`
             window function to apply to timeseries prior to FFT,
@@ -789,15 +864,15 @@ class TimeSeries(Series):
         # check fft lengths
         if fftlength is None:
             fftlength = self_.duration.value
-        if fftstride is None:
-            fftstride = fftlength
+        if overlap is None:
+            overlap = fftlength
         fftlength = int(numpy.float64(fftlength) * self_.sample_rate.value)
-        fftstride = int(numpy.float64(fftstride) * self_.sample_rate.value)
+        overlap = int(numpy.float64(overlap) * self_.sample_rate.value)
         if window is None:
             window = HanningWindow(fftlength)
         coh, f = mlab.cohere(self_.data, other.data, NFFT=fftlength,
                              Fs=sampling, window=window,
-                             noverlap=fftlength-fftstride, **kwargs)
+                             noverlap=fftlength-overlap, **kwargs)
         out = coh.view(Spectrum)
         out.f0 = f[0]
         out.df = (f[1] - f[0])
@@ -805,7 +880,7 @@ class TimeSeries(Series):
         out.name = 'Coherence between %s and %s' % (self.name, other.name)
         return out
 
-    def auto_coherence(self, dt, fftlength=None, fftstride=None,
+    def auto_coherence(self, dt, fftlength=None, overlap=None,
                        window=None, **kwargs):
         """Calculate the frequency-coherence between this `TimeSeries`
         and a time-shifted copy of itself.
@@ -821,7 +896,7 @@ class TimeSeries(Series):
             duration (in seconds) of time-shift
         fftlength : `float`, optional, default: `TimeSeries.duration`
             number of seconds in single FFT, defaults to a single FFT
-        fftstride : `int`, optiona, default: fftlength
+        overlap : `int`, optiona, default: fftlength
             number of seconds between FFTs, defaults to no overlap
         window : `timeseries.window.Window`, optional, default: `HanningWindow`
             window function to apply to timeseries prior to FFT,
@@ -853,10 +928,10 @@ class TimeSeries(Series):
         self_ = self.crop(self.span[0], self.span[1] - dt)
         other = self.crop(self.span[0] + dt, self.span[1])
         return self_.coherence(other, fftlength=fftlength,
-                               fftstride=fftstride, window=window, **kwargs)
+                               overlap=overlap, window=window, **kwargs)
 
     def coherence_spectrogram(self, other, stride, fftlength=None,
-                              fftstride=None, window=None, nproc=1):
+                              overlap=None, window=None, nproc=1):
         """Calculate the coherence spectrogram between this `TimeSeries`
         and other.
 
@@ -866,7 +941,7 @@ class TimeSeries(Series):
             number of seconds in single PSD (column of spectrogram)
         fftlength : `float`
             number of seconds in single FFT
-        fftstride : `int`, optiona, default: fftlength
+        overlap : `int`, optiona, default: fftlength
             number of seconds between FFTs
         window : `timeseries.window.Window`, optional, default: `None`
             window function to apply to timeseries prior to FFT
@@ -882,7 +957,7 @@ class TimeSeries(Series):
         """
         from ..spectrogram.coherence import from_timeseries
         return from_timeseries(self, other, stride, fftlength=fftlength,
-                               fftstride=fftstride, window=window,
+                               overlap=overlap, window=window,
                                nproc=nproc)
 
     def rms(self, stride=1):

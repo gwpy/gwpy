@@ -26,3 +26,5 @@ __version__ = version.version
 from .core import *
 from .statevector import *
 from .io import *
+
+from ..spectrum.registry import get_method as get_spectrum_method

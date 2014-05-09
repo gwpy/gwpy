@@ -22,7 +22,15 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
+# import objects
 from .core import *
 from .hist import *
+
+# import unified I/O
 from .io import *
 from ..io.spectrum import *
+
+# setup spectrum generation method registrations
+from .scipy_ import *
+from .lal_ import *
+
