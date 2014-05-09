@@ -201,7 +201,7 @@ def read_cache(cache, target, nproc, post, *args, **kwargs):
         process.join()
 
     # combine and return
-    data = zip(*sorted(pout, key=lambda (i, obj): i))[1]
+    data = zip(*sorted(pout, key=lambda out: out[0]))[1]
     try:
         out = data[0].copy()
     except AttributeError:
