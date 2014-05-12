@@ -26,17 +26,19 @@ import copy
 
 from matplotlib import (pyplot, cm, colors)
 from matplotlib.projections import register_projection
-from matplotlib.ticker import MultipleLocator
+from matplotlib.artist import allow_rasterization
 
 try:
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
+
+from ..time import LIGOTimeGPS
+from . import (gps, tex)
 from .core import Plot
 from ..segments import SegmentList
 from ..time import Time
-from . import (ticks, tex)
 from .axes import Axes
 from .decorators import auto_refresh
 
@@ -50,156 +52,65 @@ class TimeSeriesAxes(Axes):
     name = 'timeseries'
 
     def __init__(self, *args, **kwargs):
-        """Instantiate a new TimeSeriesAxes suplot
-        """
-        epoch = kwargs.pop('epoch', 0)
-        scale = kwargs.pop('scale', 1)
+        kwargs.setdefault('xscale', 'auto-gps')
         super(TimeSeriesAxes, self).__init__(*args, **kwargs)
-        self._auto_gps = True
-        self.set_epoch(epoch)
-        # set x-axis format
-        if 'sharex' not in kwargs or kwargs['sharex'] is None:
-            formatter = ticks.GPSFormatter(epoch=epoch, scale=scale)
-            self.xaxis.set_major_formatter(formatter)
-            locator = ticks.GPSMaxNLocator(epoch=epoch, scale=scale)
-            self.xaxis.set_major_locator(locator)
-            minlocator = ticks.GPSMultipleLocator(epoch=epoch, scale=scale)
-            self.xaxis.set_minor_locator(minlocator)
-            try:
-                from lal import LIGOTimeGPS
-            except ImportError:
-                self.fmt_xdata = lambda t: t
-            else:
-                self.fmt_xdata = lambda t: LIGOTimeGPS(t)
-            self.add_epoch_label()
-            self.autoscale_view()
+        self.fmt_xdata = lambda t: LIGOTimeGPS(t)
+        self.set_xlabel('_auto')
+
+    @allow_rasterization
+    def draw(self, *args, **kwargs):
+        # dynamically set scaling
+        if self.get_xscale() == 'auto-gps':
+            self.auto_gps_scale()
+        # dynamically set x-axis label
+        nolabel = self.get_xlabel() == '_auto'
+        if nolabel:
+            self.auto_gps_label()
+        # auto-detect GPS scales
+        super(TimeSeriesAxes, self).draw(*args, **kwargs)
+        # reset label
+        if nolabel:
+            self.set_xlabel('_auto')
+
+    draw.__doc__ = Axes.draw.__doc__
 
     # -----------------------------------------------
-    # properties
+    # GPS scaling
 
-    @property
-    def epoch(self):
-        """Find the GPS epoch of this plot
-        """
-        return self._epoch
+    def set_xscale(self, scale):
+        super(TimeSeriesAxes, self).set_xscale(scale)
+        if scale != 'auto-gps' and self.get_xlabel() == '_auto':
+            self.set_xlabel('')
 
-    @auto_refresh
-    def set_epoch(self, gps):
-        """Set the GPS epoch of this plot
-        """
-        # record new epoch
-        if gps is None or isinstance(gps, Time):
-            self._epoch = gps
+    def auto_gps_label(self):
+        scale = self.xaxis._scale
+        epoch = scale.get_epoch()
+        if not epoch:
+            self.set_xlabel('GPS Time')
         else:
-            if isinstance(gps, datetime.datetime):
-                from lal import gpstime
-                self._epoch = float(gpstime.utc_to_gps(gps))
-            elif isinstance(gps, basestring):
-                from lal import gpstime
-                self._epoch = float(gpstime.str_to_gps(gps))
-            self._epoch = Time(float(gps), format='gps')
+            unit = scale.get_unit_name()
+            utc = re.sub('\.0+', '',
+                         Time(epoch, format='gps', scale='utc').iso)
+            self.set_xlabel('Time [%s] from %s (%s)' % (unit, utc, epoch))
 
-        # update major formatter and label
-        formatter = self.xaxis.get_major_formatter()
-        try:
-            oldepoch = formatter.get_epoch()
-        except AttributeError:
-            pass
-        else:
-            formatter.set_epoch(self._epoch)
-            # update xlabel
-            oldiso = re.sub('\.0+', '', oldepoch.utc.iso)
-            xlabel = self.xlabel.get_text()
-            if xlabel:
-                if re.search(oldiso, xlabel):
-                    self.xlabel = xlabel.replace(oldiso,
-                                                 re.sub('\.0+', '',
-                                                        self.epoch.utc.iso))
-                xlabel = self.xlabel.get_text()
-                if re.search(str(oldepoch.gps), xlabel):
-                    self.xlabel = xlabel.replace(str(oldepoch.gps),
-                                                 str(self.epoch.gps))
-
-        # update major locator
-        locator = self.xaxis.get_major_locator()
-        try:
-            locator.set_epoch(gps)
-        except AttributeError:
-            pass
-        #else:
-        #    formatter.set_locs(locator.refresh())
-
-        # update minor locator
-        minlocator = self.xaxis.get_minor_locator()
-        try:
-            minlocator.set_epoch(gps)
-        except AttributeError:
-            pass
-
-    @auto_refresh
-    def add_epoch_label(self):
-        formatter = self.xaxis.get_major_formatter()
-        if isinstance(formatter, ticks.GPSFormatter):
-            scale = ticks.GPS_SCALE[formatter.scale][0]
-        else:
-            scale = 'seconds'
-        utc = re.sub('\.0+', '', self.epoch.utc.iso)
-        gps = self.epoch.gps
-        return self.set_xlabel('Time (%s) from %s (%s)' % (scale, utc, gps))
-
-    @property
-    def gps_scale(self):
-        try:
-            return self.ax.axis.get_major_formatter().scale
-        except AttributeError:
-            return 1
-
-    @auto_refresh
-    def set_gps_scale(self, scale):
-        """Set the GPS scale of this plot
-        """
-        # modify formatter
-        formatter = self.xaxis.get_major_formatter()
-        if not isinstance(formatter, ticks.GPSFormatter):
-            raise TypeError("Formatter of type '%s' does not have a scale. "
-                            "Please try using a GPSFormatter instead"
-                            % formatter.__class__.__name__)
-        s = ticks.GPS_SCALE[formatter.scale][0]
-        formatter.set_scale(scale)
-
-        # modify major locator
-        locator = self.xaxis.get_major_locator()
-        try:
-            locator.set_scale(scale)
-        except AttributeError:
-            pass
-
-        # modify minor locator
-        minlocator = self.xaxis.get_minor_locator()
-        try:
-            minlocator.set_scale(scale)
-        except AttributeError:
-            pass
-
-        # replace label
-        xlabel = self.xlabel.get_text()
-        if xlabel:
-            if re.search(s, xlabel):
-                self.xlabel = xlabel.replace(s, ticks.GPS_SCALE[scale][0])
-        self._auto_gps = False
-
-    def auto_gps_scale(self, duration=None):
+    def auto_gps_scale(self):
         """Automagically set the GPS scale for the time-axis of this plot
         based on the current view limits
         """
-        if duration is None:
-            duration = self.viewLim.x1 - self.viewLim.x0
-        for s in ticks.GPS_SCALE.keys()[::-1]:
-            nbins = ticks.GPS_SCALE[s][2]
-            if duration >= (nbins * s):
-                self.set_gps_scale(s)
-                self._auto_gps = True
-                return
+        self.xaxis._set_scale('auto-gps', epoch=self.get_epoch())
+
+    def set_epoch(self, epoch):
+        try:
+            xscale = self.get_xscale()
+        except AttributeError:
+            pass
+        else:
+            self.xaxis._set_scale(xscale, epoch=epoch)
+
+    def get_epoch(self):
+        return self.xaxis._scale.get_epoch()
+
+    epoch = property(fget=get_epoch, fset=set_epoch, doc=get_epoch.__doc__)
 
     # -------------------------------------------
     # GWpy class plotting methods
@@ -262,13 +173,11 @@ class TimeSeriesAxes(Axes):
             kwargs.setdefault('label', tex.label_to_latex(timeseries.name))
         else:
             kwargs.setdefault('label', timeseries.name)
-        if not self.epoch.gps:
-            self.set_epoch(timeseries.epoch)
+        if not self.epoch:
+            self.set_epoch(timeseries.x0)
         line = self.plot(timeseries.times, timeseries.data, **kwargs)
         if len(self.lines) == 1 and timeseries.size:
             self.set_xlim(*timeseries.span)
-            if self._auto_gps:
-                self.auto_gps_scale()
         return line
 
     @auto_refresh
@@ -364,9 +273,8 @@ class TimeSeriesAxes(Axes):
             vmax = kwargs.get('vmax', None)
             norm = colors.LogNorm(vmin=vmin, vmax=vmax)
         kwargs['norm'] = norm
-        if not self.epoch.gps:
-            self.set_epoch(0)
-            self.set_epoch(spectrogram.epoch)
+        if not self.epoch:
+            self.set_epoch(spectrogram.x0)
         x = numpy.concatenate((spectrogram.times.data,
                                [spectrogram.span_x[-1].value]))
         y = numpy.concatenate((spectrogram.frequencies.data,
@@ -431,8 +339,6 @@ class TimeSeriesPlot(Plot):
                 else:
                     ax.set_epoch(span[0])
                 ax.set_xlim(*span)
-                if ax._auto_gps:
-                    ax.auto_gps_scale()
             for ax in self.axes[:-1]:
                 ax.set_xlabel("")
 
@@ -456,19 +362,6 @@ class TimeSeriesPlot(Plot):
         axeslist = self._find_all_axes(self._DefaultAxesClass.name)
         for axes in axeslist:
             axes.set_epoch(gps)
-
-    @property
-    def gps_scale(self):
-        axes = self._find_axes(self._DefaultAxesClass.name)
-        return axes.gps_scale
-
-    def get_gps_scale(self):
-        return self.gps_scale
-
-    def set_gps_scale(self, scale):
-        axeslist = self._find_all_axes(self._DefaultAxesClass.name)
-        for axes in axeslist:
-            axes.set_gps_scale(scale)
 
     # -----------------------------------------------
     # TimeSeriesPlot methods
@@ -525,60 +418,3 @@ class TimeSeriesPlot(Plot):
         ax.set_xlabel("")
         segax.set_xlim(*ax.get_xlim())
         return segax
-
-    @auto_refresh
-    def set_time_format(self, format_='gps', epoch=None, scale=None,
-                        autoscale=True, addlabel=True):
-        """Set the time format for this plot.
-
-        Currently, only the 'gps' format is accepted.
-
-        Parameters
-        ----------
-        format_ : `str`
-            name of the time format
-        epoch : :class:`~astropy.time.core.Time`, optional
-            GPS start epoch for the time axis
-        scale : `float`, optional
-            overall scaling for axis ticks in seconds, e.g. 60 shows
-            minutes from the epoch
-        autoscale : `bool`, optional
-            auto-scale the axes when the format is set
-        addlabel : `bool`, optional
-            auto-set a default label for the x-axis
-
-        Returns
-        -------
-        GPSFormatter
-            the :class:`~gwpy.plotter.ticks.GPSFormatter` for this axis
-        """
-        if epoch and not scale:
-            duration = self.xlim[1] - self.xlim[0]
-            for scale in ticks.GPS_SCALE.keys()[::-1]:
-                if duration > scale*4:
-                    break
-        formatter = ticks.GPSFormatter(format=format_, epoch=epoch,
-                                        scale=scale)
-        self.axes.xaxis.set_major_formatter(formatter)
-        locator = ticks.AutoTimeLocator(epoch=epoch, scale=scale)
-        self.axes.xaxis.set_major_locator(locator)
-        try:
-            from lal import LIGOTimeGPS
-        except ImportError:
-            self.fmt_xdata = lambda t: t
-        else:
-            self.fmt_xdata = lambda t: LIGOTimeGPS(t)
-        if addlabel:
-            self.xlabel = ("Time (%s) from %s (%s)"
-                           % (ticks.GPS_SCALE[formatter.scale][0],
-                              re.sub('\.0+', '', self.epoch.utc.iso),
-                              self.epoch.gps))
-        if autoscale:
-            self.axes.autoscale_view()
-        return formatter
-
-    def refresh(self):
-        super(TimeSeriesPlot, self).refresh()
-        for ax in self._find_all_axes(self._DefaultAxesClass.name):
-            if ax._auto_gps:
-                ax.auto_gps_scale()

@@ -28,11 +28,16 @@ object.
 from dateutil import parser as dateparser
 from astropy.time import Time
 
+try:
+    from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+except ImportError:
+    from glue.lal import LIGOTimeGPS
+
 from .. import version
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
-__all__ = ['Time', 'gps']
+__all__ = ['Time', 'gps', 'LIGOTimeGPS']
 
 
 def gps(input, scale='utc', **targs):

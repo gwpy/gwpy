@@ -23,7 +23,8 @@ import operator
 import re
 
 import numpy
-from matplotlib.ticker import (Formatter, MultipleLocator)
+
+from matplotlib.ticker import (Formatter, MultipleLocator, NullLocator)
 from matplotlib.projections import register_projection
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
@@ -147,10 +148,10 @@ class SegmentAxes(TimeSeriesAxes):
 
         # get epoch
         try:
-            if not self.epoch.gps:
+            if not self.epoch:
                 self.set_epoch(flag.valid[0][0])
             else:
-                self.set_epoch(min(self.epoch.gps, flag.valid[0][0]))
+                self.set_epoch(min(self.epoch, flag.valid[0][0]))
         except IndexError:
             pass
         # make valid collection
@@ -171,8 +172,6 @@ class SegmentAxes(TimeSeriesAxes):
         if len(self.collections) == 1:
             if len(flag.valid):
                 self.set_xlim(*flag.extent)
-            if self._auto_gps:
-                self.auto_gps_scale()
             self.autoscale(axis='y')
         # add label
         if add_label:
@@ -210,10 +209,10 @@ class SegmentAxes(TimeSeriesAxes):
         for seg in segmentlist:
             patches.append(self.build_segment(seg, y, **kwargs))
         try:
-            if not self.epoch.gps:
+            if not self.epoch:
                 self.set_epoch(segmentlist[0][0])
             else:
-                self.set_epoch(min(self.epoch.gps, segmentlist[0][0]))
+                self.set_epoch(min(self.epoch, segmentlist[0][0]))
         except IndexError:
             pass
         if collection:
@@ -393,8 +392,6 @@ class SegmentPlot(TimeSeriesPlot):
             for ax in self.axes:
                 ax.set_epoch(epoch)
                 ax.set_xlim(*span)
-                if ax._auto_gps:
-                    ax.auto_gps_scale()
             for ax in self.axes[:-1]:
                 ax.set_xlabel("")
 
@@ -428,6 +425,10 @@ class SegmentPlot(TimeSeriesPlot):
         divider = make_axes_locatable(ax)
         max = divider.new_horizontal(size=width, pad=pad,
                                      axes_class=axes_class)
+        max.set_xscale('gps')
+        max.xaxis.set_major_locator(NullLocator())
+        max.xaxis.set_minor_locator(NullLocator())
+        max.yaxis.set_minor_locator(NullLocator())
         if visible:
             self.add_axes(max)
         else:

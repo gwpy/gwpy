@@ -39,6 +39,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 from .tex import USE_TEX
+from .gps import *
 
 from .core import *
 from .timeseries import *

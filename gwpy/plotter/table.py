@@ -33,8 +33,8 @@ from matplotlib import (cm, collections, pyplot)
 from matplotlib.projections import register_projection
 
 from glue.ligolw.table import Table
-from glue.lal import LIGOTimeGPS
 
+from ..time import LIGOTimeGPS
 from .core import Plot
 from .timeseries import (TimeSeriesAxes, TimeSeriesPlot)
 from .spectrum import SpectrumPlot
@@ -413,7 +413,6 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
                 self.add_tiles(table, columns['x'], columns['y'],
                                columns['width'], columns['height'],
                                color=columns['color'], newax=sep, **plotargs)
-
         if len(tables):
             # set auto-scale
             for ax in self.axes:
@@ -430,9 +429,6 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
                         else:
                             epoch = min(epoch, tcol.min())
                     ax.set_epoch(epoch)
-                    if ax._auto_gps:
-                        ax.auto_gps_scale()
-                    ax.add_epoch_label()
             # set global epoch for TimeSeriesPlot
             elif isinstance(self, TimeSeriesPlot):
                 ax = self.axes[0]
@@ -445,9 +441,6 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
                         else:
                             epoch = min(epoch, tcol.min())
                 ax.set_epoch(epoch)
-                if ax._auto_gps:
-                    ax.auto_gps_scale()
-                ax.add_epoch_label()
             # remove labels
             if sep:
                 for ax in self.axes[:-1]:
