@@ -25,7 +25,6 @@ __version__ = version.version
 
 from . import gwf
 
-from . import losc
 
 from . import cache
 
@@ -33,3 +32,5 @@ try:
     from . import hdf5
 except ImportError:
     pass
+else:
+    from . import losc
