@@ -29,6 +29,8 @@ from math import (ceil, floor, log)
 from dateutil import parser as dateparser
 from multiprocessing import (Process, Queue as ProcessQueue)
 
+import numpy
+
 from matplotlib import mlab
 
 try:
@@ -165,6 +167,8 @@ class TimeSeries(Series):
         if isinstance(val, int):
             val = float(val)
         self.dx = (1 / units.Quantity(val, units.Hertz)).to(self.xunit)
+        if numpy.isclose(self.dx.value, round(self.dx.value)):
+            self.dx = units.Quantity(round(self.dx.value), self.dx.unit)
 
     @property
     def span(self):
