@@ -22,6 +22,8 @@ All specific unified input/output for class objecst should be placed in
 an 'io' subdirectory of the containing directory for that class.
 """
 
+from gzip import GzipFile
+
 from glue.lal import CacheEntry
 from glue.ligolw.ligolw import (Document, LIGOLWContentHandler)
 from glue.ligolw.utils.ligolw_add import ligolw_add
@@ -83,7 +85,8 @@ def table_from_file(f, tablename, columns=None, filt=None,
         tableclass.loadcolumns = columns
 
     # generate Document and populate
-    files = [fp.name if isinstance(fp, file) else fp for fp in file_list(f)]
+    files = [fp.name if isinstance(fp, (file, GzipFile)) else fp for
+             fp in file_list(f)]
     xmldoc = Document()
     ligolw_add(xmldoc, files, non_lsc_tables_ok=True,
                contenthandler=contenthandler)
@@ -106,7 +109,7 @@ def table_from_file(f, tablename, columns=None, filt=None,
 def identify_ligolw_file(*args, **kwargs):
     """Determine an input object as either a LIGO_LW format file.
     """
-    fp = args[3]
+    fp = args[1]
     if isinstance(fp, file):
         fp = fp.name
     elif isinstance(fp, CacheEntry):
