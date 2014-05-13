@@ -144,6 +144,7 @@ class GPSTransformBase(GPSMixin, Transform):
     input_dims = 1
     output_dims = 1
     is_separable = True
+    is_affine = True
     has_inverse = True
 
 
