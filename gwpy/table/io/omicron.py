@@ -28,21 +28,12 @@ from astropy.io import registry
 
 from glue.lal import (Cache, CacheEntry)
 
-try:
-    from lal import LIGOTimeGPS
-except ImportError:
-    from glue.lal import LIGOTimeGPS
-    seconds = lambda t: t.seconds
-    nanoseconds = lambda t: t.nanoseconds
-else:
-    seconds = lambda t: t.gpsSeconds
-    nanoseconds = lambda t: t.gpsNanoSeconds
-
 from ROOT import TChain
 
 from .. import lsctables
 from ... import version
 from ...io.cache import open_cache
+from ...time import LIGOTimeGPS
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -90,19 +81,19 @@ def sngl_burst_from_root(tchain, columns=OMICRON_COLUMNS):
     # parse time data
     peak_time = LIGOTimeGPS(tchain.time)
     if 'time' in columns or 'peak_time' in columns:
-        t.peak_time = seconds(peak_time)
+        t.peak_time = peak_time.seconds
     if 'time' in columns or 'peak_time_ns' in columns:
-        t.peak_time_ns = nanoseconds(peak_time)
+        t.peak_time_ns = peak_time.nanoseconds
     start_time = LIGOTimeGPS(tchain.tstart)
     if 'start_time' in columns:
-        t.start_time = seconds(start_time)
+        t.start_time = start_time.seconds
     if 'start_time_ns' in columns:
-        t.start_time_ns = nanoseconds(start_time)
+        t.start_time_ns = start_time.nanoseconds
     stop_time = LIGOTimeGPS(tchain.tend)
     if 'stop_time' in columns:
-        t.stop_time = seconds(stop_time)
+        t.stop_time = stop_time.seconds
     if 'stop_time_ns' in columns:
-        t.stop_time_ns = nanoseconds(stop_time)
+        t.stop_time_ns = stop_time.nanoseconds
     if 'duration' in columns:
         t.duration = float(stop_time - start_time)
 

@@ -42,11 +42,12 @@ using the lsctables module (even after importing it from glue)::
 import warnings
 warnings.filterwarnings('ignore', 'column name', UserWarning)
 
-from glue.ligolw.ligolw import (LIGOLWContentHandler, Column, Document)
+from glue.ligolw.ligolw import (Column, Document)
 from glue.ligolw.table import Table
-from glue.ligolw import lsctables
 
-lsctables.use_in(LIGOLWContentHandler)
+# import all tables
+from . import lsctables
+
 
 # attach unified I/O
 from .io import *

@@ -19,61 +19,15 @@
 """Input/output methods for tabular data.
 """
 
-from glue.ligolw.lsctables import TableByName
+from glue.ligolw.ligolw import LIGOLWContentHandler
+
+from .. import lsctables
+lsctables.use_in(LIGOLWContentHandler)
 
 from ... import version
-from ...io import reader
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
-
-# add the unified input/output system to each of the lsctables.
-for table in TableByName.itervalues():
-    # define the read classmethod with docstring
-    table.read = classmethod(reader(doc="""
-        Read data into a `{0}`.
-
-        Parameters
-        ----------
-        f : `file`, `str`, `CacheEntry`, `list`, `Cache`
-            object representing one or more files. One of
-
-            - an open `file`
-            - a `str` pointing to a file path on disk
-            - a formatted :class:`~glue.lal.CacheEntry` representing one file
-            - a `list` of `str` file paths
-            - a formatted :class:`~glue.lal.Cache` representing many files
-
-        columns : `list`, optional
-            list of column name strings to read, default all.
-
-        filt : `function`, optional
-            function by which to `filter` events. The callable must
-            accept as input a row of the table event and return
-            `True`/`False`.
-
-        nproc : `int`, optional, default: ``1``
-            number of parallel processes with which to distribute file I/O,
-            default: serial process.
-
-            .. warning::
-
-               This keyword argument is only applicable when reading a
-               `list` (or `Cache`) of files.
-
-        contenthandler : :class:`~glue.ligolw.ligolw.LIGOLWContentHandler`
-            SAX content handler for parsing LIGO_LW documents.
-
-            .. warning::
-
-               This keyword argument is only applicable when reading from
-               LIGO_LW-scheme XML files.
-
-        Returns
-        -------
-        table : :class:`~glue.ligolw.lsctables.{0}`
-            `{0}` of data with given columns filled
-        """.format(table.__name__)))
 
 # import LIGO_LW I/O
 from .ligolw import *

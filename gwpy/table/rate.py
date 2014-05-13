@@ -24,7 +24,7 @@ from math import ceil
 
 import numpy
 
-from glue.ligolw import lsctables
+from . import lsctables
 
 from .. import version
 from .utils import (get_table_column)
