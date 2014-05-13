@@ -94,7 +94,8 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     cspan = Segment(cache[0].segment[0], cache[-1].segment[1])
 
     # if reading one channel, try to use lalframe, its faster
-    if isinstance(channel, (list, tuple)) and len(channel) == 1:
+    if (isinstance(channel, str) or
+           (isinstance(channel, (list, tuple)) and len(channel) == 1)):
         try:
             from lalframe import frread
         except ImportError:
