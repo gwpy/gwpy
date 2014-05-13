@@ -59,7 +59,7 @@ The time-frequency :class:`~gwpy.spectrogram.core.Spectrogram` of a `TimeSeries`
 We can extend the original :ref:`time-series example <timeseries-plot>` with calculation of a :class:`~gwpy.spectrogram.core.Spectrogram` with a 20-second stride:
 
 .. literalinclude:: spectrogram_plot.py
-   :lines: 1-3
+   :lines: 1-4
 
 ========================
 Plotting a `Spectrogram`
