@@ -102,3 +102,7 @@ dl.attribute p.rubric {
     font-weight: bold;
     border-bottom: 0;
 }
+
+img {
+    max-width: 100%;
+}
