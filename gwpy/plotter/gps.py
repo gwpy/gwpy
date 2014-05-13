@@ -270,7 +270,9 @@ class GPSFormatter(GPSMixin, ticker.Formatter):
         if isinstance(t, Time):
             t = t.gps
         f = trans.transform(t)
-        return re.sub('.0+\Z', '', str(f))
+        if numpy.isclose(f, int(f)):
+            f = int(f)
+        return re.sub('\.0+\Z', '', str(f))
 
 
 # ---------------------------------------------------------------------------
