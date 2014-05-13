@@ -30,6 +30,8 @@ except ImportError:
                       "required in order to read data from GWF-format "
                       "frame files.")
 
+from lal import LIGOTimeGPS
+
 from glue.lal import CacheEntry
 
 from . import identify
@@ -80,15 +82,19 @@ def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
     if isinstance(channel, Channel):
         channel = channel.name
     if start and isinstance(start, Time):
-        start = start.gps
+        start = LIGOTimeGPS(start.gps)
     if end and isinstance(end, Time):
-        end = end.gps
+        end = LIGOTimeGPS(end.gps)
     if start and end:
         duration = float(end - start)
     elif end:
         raise ValueError("If `end` is given, `start` must also be given")
     else:
         duration = None
+    try:
+        start = LIGOTimeGPS(start)
+    except TypeError:
+        start = LIGOTimeGPS(float(start))
     lalts = frread.read_timeseries(framefile, channel, start=start,
                                    duration=duration, datatype=datatype,
                                    verbose=verbose)
