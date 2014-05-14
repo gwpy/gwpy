@@ -91,10 +91,11 @@ def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
         raise ValueError("If `end` is given, `start` must also be given")
     else:
         duration = None
-    try:
-        start = LIGOTimeGPS(start)
-    except TypeError:
-        start = LIGOTimeGPS(float(start))
+    if start:
+        try:
+            start = LIGOTimeGPS(start)
+        except TypeError:
+            start = LIGOTimeGPS(float(start))
     lalts = frread.read_timeseries(framefile, channel, start=start,
                                    duration=duration, datatype=datatype,
                                    verbose=verbose)
