@@ -28,18 +28,3 @@ warnings.filterwarnings("ignore", "The oldnumeric module",
 from . import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
-
-# ignore Quantity conversions in astropy 0.2
-try:
-    from astropy.units.quantity import WARN_IMPLICIT_NUMERIC_CONVERSION
-except ImportError:
-    pass
-else:
-    WARN_IMPLICIT_NUMERIC_CONVERSION.set(False)
-
-try:
-    import ROOT
-except ImportError:
-    pass
-else:
-    ROOT.PyConfig.IgnoreCommandLineOptions = True
