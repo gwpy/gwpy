@@ -29,7 +29,7 @@ except ImportError:
     extra_install_requires.append('ordereddict>=1.1')
 
 # import version generator
-utils = __import__('utils', fromlist=['version'], level=1)
+version = __import__('utils.version', fromlist=[''])
 
 PACKAGENAME = 'gwpy'
 DESCRIPTION = 'Community package for gravitational wave astronomy in Python'
@@ -40,7 +40,7 @@ LICENSE = 'GPLv3'
 
 # set version information
 VERSION_PY = '%s/version.py' % PACKAGENAME
-vcinfo = utils.version.GitStatus()
+vcinfo = version.GitStatus()
 vcinfo(VERSION_PY, PACKAGENAME, AUTHOR, AUTHOR_EMAIL)
 
 # VERSION should be PEP386 compatible (http://www.python.org/dev/peps/pep-0386)
@@ -50,7 +50,7 @@ VERSION = vcinfo.version
 RELEASE = vcinfo.version != vcinfo.id and 'dev' not in VERSION
 
 # Use the find_packages tool to locate all packages and modules
-packagenames = find_packages()
+packagenames = find_packages(exclude=['utils', 'utils.*'])
 
 # glob for all scripts
 if os.path.isdir('bin'):
@@ -74,5 +74,5 @@ setup(name=PACKAGENAME,
       license=LICENSE,
       long_description=LONG_DESCRIPTION,
       zip_safe=False,
-      use_2to3=True
+      use_2to3=False,
       )

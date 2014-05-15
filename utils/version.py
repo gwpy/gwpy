@@ -61,12 +61,12 @@ class GitStatus(object):
         p = subprocess.Popen(cmdargs,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
-                             shell=isinstance(args, basestring))
+                             shell=isinstance(args, str))
         out, err = p.communicate()
         if p.returncode != 0:
             raise subprocess.CalledProcessError(p.returncode,
                                                 ' '.join(cmdargs))
-        return out.strip()
+        return out.decode().strip()
 
     # ------------------------------------------------------------------------
     # Git communication methods
@@ -132,7 +132,7 @@ class GitStatus(object):
         file object
         """
         # write file header
-        fobj.write("# -*- coding: utf-8 -*-\n")
+        fobj.write("# coding=utf-8\n")
         if pauthor:
             fobj.write("# Copyright (C) %s (2013)\n\n" % pauthor)
         fobj.write("\"\"\"Versioning record for %s\n\"\"\"\n\n"
