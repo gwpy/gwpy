@@ -8,5 +8,5 @@
 *.so
 *.swp
 .DS_Store
-/examples/gw_ex_*.png
+/examples/*.png
 /.idea
