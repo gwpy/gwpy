@@ -96,10 +96,13 @@ Plotting a `TimeSeries`
 =======================
 
 The `TimeSeries` object comes with its own :meth:`~TimeSeries.plot` method, which will quickly construct a :class:`~gwpy.plotter.timeseries.TimeSeriesPlot`.
-In this example, which we will use in various places in these pages, we download ten minutes of gravitational-wave strain readout data from the LIGO Hanford Observatory, and display it:
+In the following example, we download ten seconds of gravitational-wave strain data from the LIGO Hanford Observatory, and display it:
 
 .. plot:: timeseries/timeseries_plot.py
    :include-source:
+
+|
+These data, and more from other LIGO milestones, are available publicly `here <http://www.ligo.org/science/data-releases.php>`_.
 
 =========================
 `TimeSeries` applications
