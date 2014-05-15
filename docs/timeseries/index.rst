@@ -54,13 +54,14 @@ Alternatively, the data can be downloaded on-the-fly via the `Network Data Serve
     >>> data = TimeSeries.fetch('L1:PSL-ODC_CHANNEL_OUT_DQ', 1067042880, 1067042912)
 
 Both of the above snippets will return identical `TimeSeries`.
-For more details on accessing data via either of these sources, please read:
+For more details on accessing data via either of these sources, or from publicly-released data files, please read the following tutorials:
 
 .. toctree::
    :maxdepth: 1
 
    gwf
    nds
+   public-data
 
 ========================
 `TimeSeries` collections
@@ -102,7 +103,9 @@ In the following example, we download ten seconds of gravitational-wave strain d
    :include-source:
 
 |
-These data, and more from other LIGO milestones, are available publicly `here <http://www.ligo.org/science/data-releases.php>`_.
+As described in the `NDS access documentation <nds>`_, downloading these data requires LIGO.ORG credentials (issued to members of the LIGO-Virgo Collaboration and friends).
+However, these data, and more from other LIGO milestones, are available publicly `here <http://www.ligo.org/science/data-releases.php>`_.
+For instructions on how to download and read those data, please `read this <public-data>`_.
 
 =========================
 `TimeSeries` applications
