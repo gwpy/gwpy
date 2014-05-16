@@ -18,6 +18,8 @@
 """Docstring
 """
 
+from __future__ import division
+
 from math import log10
 
 import numpy
@@ -176,7 +178,7 @@ class HistogramPlot(Plot):
         histargs = dict()
         for key in ['bins', 'range', 'normed', 'weights', 'cumulative',
                     'bottom', 'histtype', 'align', 'orientation', 'rwidth',
-                    'log', 'color', 'label', 'stacked']:
+                    'log', 'color', 'label', 'stacked', 'logbins']:
             try:
                 histargs[key] = kwargs.pop(key)
             except KeyError:
@@ -186,4 +188,13 @@ class HistogramPlot(Plot):
         # plot data
         if data:
             ax = self.gca()
-            ax.plot(data, **histargs)
+            data = list(data)
+        while data:
+            dataset = data.pop(0)
+            if isinstance(dataset, Series):
+                ax.hist_series(dataset, **histargs)
+            elif isinstance(dataset, Table):
+                column = data.pop()
+                ax.hist_table(dataset, column, **histargs)
+            else:
+                ax.hist(dataset, **histargs)
