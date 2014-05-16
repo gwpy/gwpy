@@ -109,8 +109,8 @@ def table_from_file(f, tablename, columns=None, filt=None,
 def identify_ligolw_file(*args, **kwargs):
     """Determine an input object as either a LIGO_LW format file.
     """
-    fp = args[1]
-    if isinstance(fp, file):
+    fp = args[3]
+    if isinstance(fp, (file, GzipFile)):
         fp = fp.name
     elif isinstance(fp, CacheEntry):
         fp = fp.path
