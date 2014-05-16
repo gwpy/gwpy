@@ -40,6 +40,7 @@ __version__ = version.version
 
 from .tex import USE_TEX
 from .gps import *
+from .log import *
 
 from .core import *
 from .timeseries import *

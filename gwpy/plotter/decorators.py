@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -53,7 +54,7 @@ def auto_refresh(f, *args, **kwargs):
 @decorator
 def axes_method(f, *args, **kwargs):
     figure = args[0]
-    axes = [ax for ax in figure.axes if ax not in figure.coloraxes]
+    axes = [ax for ax in figure.axes if ax not in figure._coloraxes]
     if len(axes) == 0:
         raise RuntimeError("No axes found for which '%s' is applicable"
                            % f.__name__)

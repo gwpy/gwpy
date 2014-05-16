@@ -21,13 +21,16 @@
 import numpy
 
 from matplotlib import (axes, backends, figure, pyplot, colors as mcolors,
-                        ticker as mticker, _pylab_helpers)
+                        _pylab_helpers)
+from matplotlib.ticker import LogLocator
+
 try:
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
 from . import tex
+from .log import CombinedLogFormatterMathtext
 from .decorators import (auto_refresh, axes_method)
 
 __all__ = ['Plot']
@@ -58,7 +61,8 @@ class Plot(figure.Figure):
 
         # finalise
         self._auto_refresh = auto_refresh
-        self.coloraxes = []
+        self.colorbars = []
+        self._coloraxes = []
 
     # -----------------------------------------------
     # core plot operations
@@ -66,6 +70,8 @@ class Plot(figure.Figure):
     def refresh(self):
         """Refresh the current figure
         """
+        for cbar in self.colorbars:
+            cbar.draw_all()
         self.canvas.draw()
 
     def show(self, *args, **kwargs):
@@ -172,7 +178,7 @@ class Plot(figure.Figure):
         else:
             raise ValueError("'left' and 'bottom' colorbars have not "
                              "been implemented")
-        self.coloraxes.append(cax)
+        self._coloraxes.append(cax)
         if visible:
             divider._fig.add_axes(cax)
         else:
@@ -192,22 +198,7 @@ class Plot(figure.Figure):
         for m in mappables:
             m.set_clim(clim)
 
-        # set tick format (including sub-ticks for log scales)
-        if pyplot.rcParams["text.usetex"]:
-            if log:
-                loglim = numpy.log10(clim)
-            if log and numpy.unique(numpy.arange(*loglim, dtype=int)).size >= 2:
-                func = lambda x,pos: (mticker.is_decade(x) and
-                                '$%s$' % tex.float_to_latex(x, '%.4g') or ' ')
-            elif log and abs(float.__sub__(*loglim)) >= 1:
-                func = lambda x,pos: ((mticker.is_decade(x) or
-                                       mticker.is_decade(x*2)) and
-                                '$%s$' % tex.float_to_latex(x, '%.4g') or ' ')
-            else:
-                func = lambda x,pos: '$%s$' % tex.float_to_latex(x, '% .4g')
-            kwargs.setdefault('format', mticker.FuncFormatter(func))
-
-        # set log scale
+        # set normalisation
         norm = mappable.norm
         if clip is None:
             clip = norm.clip
@@ -218,10 +209,10 @@ class Plot(figure.Figure):
                 m.set_norm(mcolors.Normalize(*mappable.get_clim()))
             m.norm.clip = clip
 
-        # set tick locator
+        # set log ticks
         if log:
-            kwargs.setdefault('ticks',
-                              mticker.LogLocator(subs=numpy.arange(1,11)))
+             kwargs.setdefault('ticks', LogLocator(subs=numpy.arange(1,11)))
+             kwargs.setdefault('format', CombinedLogFormatterMathtext())
 
         # make colour bar
         colorbar = self.colorbar(mappable, cax=cax, **kwargs)
@@ -231,6 +222,7 @@ class Plot(figure.Figure):
             colorbar.set_label(label)
         colorbar.draw_all()
 
+        self.colorbars.append(colorbar)
         return colorbar
 
     # -------------------------------------------
