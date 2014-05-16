@@ -26,6 +26,8 @@ This modules provides a set of Axes and a Plot wrapper in order to
 display these tables in x-y format, with optional colouring.
 """
 
+from __future__ import division
+
 import re
 
 import numpy
@@ -207,7 +209,7 @@ class EventTableAxes(TimeSeriesAxes):
 
         return self.add_collection(coll)
 
-    def add_loudest(self, table, rank, x, y, color=None, **kwargs):
+    def add_loudest(self, table, rank, x, y, *columns, **kwargs):
         """Display the loudest event according to some rank.
 
         The loudest event is displayed as a gold star at its
@@ -236,11 +238,10 @@ class EventTableAxes(TimeSeriesAxes):
         out : `tuple`
             (`collection`, `text`) tuple of items added to the `Axes`
         """
+        ylim = self.get_ylim()
         row = table[get_table_column(table, rank).argmax()]
         disp = "Loudest event:"
-        columns = [x, y, rank, color]
-        if color is not None:
-            columns += color
+        columns = [x, y, rank] + list(columns)
         scat = []
         for i, column in enumerate(columns):
             if not column or column in columns[:i]:
@@ -254,7 +255,7 @@ class EventTableAxes(TimeSeriesAxes):
             if pyplot.rcParams['text.usetex'] and column.endswith('Time'):
                 disp += (r" %s$= %s$" % (column, LIGOTimeGPS(val)))
             elif pyplot.rcParams['text.usetex']:
-                disp += (r" %s$=$ %s" % (column, float_to_latex(val)))
+                disp += (r" %s$=$ %s" % (column, float_to_latex(val, '%.3g')))
             else:
                 disp += " %s = %.2g" % (column, val)
         disp = disp.rstrip(',')
@@ -269,6 +270,7 @@ class EventTableAxes(TimeSeriesAxes):
         if self.get_title():
             pos = self.title.get_position()
             self.title.set_position((pos[0], pos[1] + 0.05))
+        self.set_ylim(*ylim)
 
 register_projection(EventTableAxes)
 
