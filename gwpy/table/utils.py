@@ -64,6 +64,10 @@ def get_table_column(table, column, dtype=numpy.dtype(float)):
             return numpy.asarray(table.get_peak()).astype(dtype)
         elif re.match('(sngl_ring|multi_ring)', table.tableName, re.I):
             return numpy.asarray(table.get_start()).astype(dtype)
+        elif re.match('sim_burst', table.tableName, re.I):
+            return numpy.asarray(get_table_column(table, 'time_geocent_gps') +
+                                 get_table_column(table, 'time_geocent_gps_ns')
+                                 * 1e-9)
     if hasattr(table, 'get_column'):
         return numpy.asarray(table.get_column(column)).astype(dtype)
     else:

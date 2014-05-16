@@ -23,6 +23,7 @@ an 'io' subdirectory of the containing directory for that class.
 """
 
 from gzip import GzipFile
+from astropy.utils.compat._gzip_py2 import GzipFile as AstroGzipFile
 
 from glue.lal import CacheEntry
 from glue.ligolw.ligolw import (Document, LIGOLWContentHandler)
@@ -85,8 +86,8 @@ def table_from_file(f, tablename, columns=None, filt=None,
         tableclass.loadcolumns = columns
 
     # generate Document and populate
-    files = [fp.name if isinstance(fp, (file, GzipFile)) else fp for
-             fp in file_list(f)]
+    files = [fp.name if isinstance(fp, (file, GzipFile, AstroGzipFile)) else
+             fp for fp in file_list(f)]
     xmldoc = Document()
     ligolw_add(xmldoc, files, non_lsc_tables_ok=True,
                contenthandler=contenthandler)
@@ -110,7 +111,7 @@ def identify_ligolw_file(*args, **kwargs):
     """Determine an input object as either a LIGO_LW format file.
     """
     fp = args[3]
-    if isinstance(fp, (file, GzipFile)):
+    if isinstance(fp, (file, GzipFile, AstroGzipFile)):
         fp = fp.name
     elif isinstance(fp, CacheEntry):
         fp = fp.path
