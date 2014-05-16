@@ -51,10 +51,12 @@ def float_to_latex(x, format="%.2g"):
         return base_str
     mantissa, exponent = base_str.split("e")
     exponent = exponent.lstrip("0+")
+    if exponent.startswith('-0'):
+        exponent = '-' + exponent[2:]
     if mantissa == "1":
         return r"10^{%s}" % exponent
     else:
-        return r"%s\times 10^{%s}" % (mantissa, exponent)
+        return r"%s\!\!\times\!\!10^{%s}" % (mantissa, exponent)
 
 
 def label_to_latex(text):
