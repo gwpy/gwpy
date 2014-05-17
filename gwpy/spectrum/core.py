@@ -21,12 +21,11 @@
 
 import warnings
 
-from scipy import signal
 from astropy import units
 
 from ..data import Series
 from ..detector import Channel
-from ..utils import update_docstrings
+from ..utils import (update_docstrings, import_method_dependency)
 
 from .. import version
 __version__ = version.version
@@ -145,6 +144,7 @@ class Spectrum(Series):
         :mod:`scipy.signal`
             for details on filtering and representations
         """
+        signal = import_method_dependency('scipy.signal')
         # parse filter
         if len(filt) == 1 and isinstance(filt[0], signal.lti):
             filt = filt[0]

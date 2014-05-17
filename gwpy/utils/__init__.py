@@ -27,7 +27,8 @@ from .. import version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-from docstring import update_docstrings
+from .docstring import update_docstrings
+from .deps import *
 
 
 def gprint(*values, **kwargs):

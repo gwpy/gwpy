@@ -48,7 +48,7 @@ from ..io import (reader, nds as ndsio)
 from ..segments import (Segment, SegmentList)
 from ..time import Time
 from ..window import *
-from ..utils import (gprint, update_docstrings)
+from ..utils import (gprint, update_docstrings, import_method_dependency)
 from . import common
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -308,7 +308,7 @@ class TimeSeries(Series):
         :mod:`scipy.fftpack` for the definition of the DFT and conventions
         used.
         """
-        from scipy import fftpack
+        fftpack = import_method_dependency('scipy.fftpack')
         from ..spectrum import Spectrum
         new = fftpack.fft(self.data, n=fftlength).view(Spectrum)
         new.frequencies = fftpack.fftfreq(new.size, d=self.dx)
