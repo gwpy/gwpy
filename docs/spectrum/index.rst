@@ -9,7 +9,7 @@ The :class:`Spectrum`
    >>> from gwpy.spectrum import Spectrum
 
 While gravitational-wave detectors are time-domain instruments, their sensitivity is frequency dependent and so is often measured as a power-spectral-density over the range of interesting gravitational-wave frequencies (~10-10,000 Hz).
-Additionally, the auxiliary `channels <../detector/channel>`_ used to sense and control instrumental operations each have their own frequency-domain characteristics, contributing to the overall sensivitity spectrum.
+Additionally, the auxiliary `channels <../detector/channel>`_ used to sense and control instrumental operations each have their own frequency-domain characteristics, contributing to the overall sensitivity spectrum.
 
 The :class:`Spectrum` object is used to represent any frequency series, including the power-spectral (and amplitude-spectral) density series describing instrument performance.
 
