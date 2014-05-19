@@ -33,6 +33,7 @@ try:
 except ImportError:
     from glue.lal import LIGOTimeGPS
 
+from .tconvert import tconvert
 from .. import version
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
