@@ -20,7 +20,6 @@
 dependencies within GWpy code.
 """
 
-from importlib import import_module
 import inspect
 
 from .. import version
@@ -47,7 +46,7 @@ def import_method_dependency(module, stacklevel=1):
         if the given object cannot be imported
     """
     try:
-        return import_module(module)
+        return __import__(module, fromlist=[''])
     except ImportError as e:
         # get method name
         caller = inspect.stack()[stacklevel][3]
