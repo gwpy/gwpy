@@ -28,12 +28,11 @@ from astropy.io import registry
 
 from glue.lal import (Cache, CacheEntry)
 
-from ROOT import TChain
-
 from .. import lsctables
 from ... import version
 from ...io.cache import open_cache
 from ...time import LIGOTimeGPS
+from ...utils import with_import
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -108,6 +107,7 @@ def sngl_burst_from_root(tchain, columns=OMICRON_COLUMNS):
     return t
 
 
+@with_import('ROOT')
 def table_from_root(f, columns=OMICRON_COLUMNS, filt=None, nproc=1):
     """Build a `SnglBurstTable` from events in an Omicron ROOT file.
 
@@ -137,8 +137,6 @@ def table_from_root(f, columns=OMICRON_COLUMNS, filt=None, nproc=1):
         return read_cache(f, lsctables.SnglBurstTable.tableName,
                           columns=columns, nproc=nproc, format='omicron')
 
-
-
     # format list of files
     if isinstance(f, CacheEntry):
         files = [f.path]
@@ -152,7 +150,7 @@ def table_from_root(f, columns=OMICRON_COLUMNS, filt=None, nproc=1):
         files = list(f)
 
     # read tree chain
-    tree = TChain('triggers')
+    tree = ROOT.TChain('triggers')
     for filename in files:
         tree.Add(filename)
 

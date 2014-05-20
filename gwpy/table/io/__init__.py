@@ -33,10 +33,7 @@ __version__ = version.version
 from .ligolw import *
 
 # try importing ROOT-based I/O
-try:
-    from .omicron import *
-except ImportError:
-    pass
+from .omicron import *
 
 # import cache I/O
 from .cache import *
