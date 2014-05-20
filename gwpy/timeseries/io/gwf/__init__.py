@@ -33,15 +33,8 @@ on a system.
 
 from ....version import version
 
-try:
-    from . import lalfr
-except ImportError:
-    pass
-
-try:
-    from . import framecpp
-except ImportError:
-    pass
+from . import lalfr
+from . import framecpp
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version

@@ -23,23 +23,16 @@ from __future__ import division
 
 from astropy.io import registry
 
-try:
-    from lalframe import frread
-except ImportError:
-    raise ImportError("No module named lalframe. LALFrame or frameCPP are "
-                      "required in order to read data from GWF-format "
-                      "frame files.")
-
-from lal import LIGOTimeGPS
-
 from glue.lal import CacheEntry
 
-from . import identify
+from .identify import register_identifier
 from ....detector import Channel
 from ....time import Time
 from ... import (TimeSeries, StateVector, TimeSeriesDict, StateVectorDict)
+from ....utils import (import_method_dependency, with_import)
 
 
+@with_import('lalframe.frread')
 def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
                     resample=False, verbose=False, _target=TimeSeries):
     """Read a `TimeSeries` of data from a gravitational-wave frame file
@@ -74,6 +67,7 @@ def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
     data : :class:`~gwpy.timeseries.core.TimeSeries`
         a new `TimeSeries` containing the data read from disk
     """
+    lal = import_method_dependency('lal')
     # parse input arguments
     if isinstance(framefile, CacheEntry):
         framefile = framefile.path
@@ -82,9 +76,9 @@ def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
     if isinstance(channel, Channel):
         channel = channel.name
     if start and isinstance(start, Time):
-        start = LIGOTimeGPS(start.gps)
+        start = lal.LIGOTimeGPS(start.gps)
     if end and isinstance(end, Time):
-        end = LIGOTimeGPS(end.gps)
+        end = lal.LIGOTimeGPS(end.gps)
     if start and end:
         duration = float(end - start)
     elif end:
@@ -93,18 +87,19 @@ def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
         duration = None
     if start:
         try:
-            start = LIGOTimeGPS(start)
+            start = lal.LIGOTimeGPS(start)
         except TypeError:
-            start = LIGOTimeGPS(float(start))
+            start = lal.LIGOTimeGPS(float(start))
     lalts = frread.read_timeseries(framefile, channel, start=start,
-                                   duration=duration, datatype=datatype,
-                                   verbose=verbose)
+                                            duration=duration,
+                                            datatype=datatype, verbose=verbose)
     out = _target.from_lal(lalts)
     if resample:
         out = out.resample(resample)
     return out
 
 
+@with_import('lalframe.frread')
 def read_timeseriesdict(framefile, channels, **kwargs):
     """Read data for multiple channels from the given GWF-format
     ``framefile``
@@ -146,6 +141,7 @@ def read_timeseriesdict(framefile, channels, **kwargs):
     return out
 
 
+@with_import('lalframe.frread')
 def read_statevector_dict(source, channels, bitmasks=[], **kwargs):
     """Read a `StateVectorDict` of data from a gravitational-wave
     frame file
@@ -157,21 +153,33 @@ def read_statevector_dict(source, channels, bitmasks=[], **kwargs):
     return svd
 
 
+@with_import('lalframe.frread')
 def read_statevector(source, channel, bitmask=[], **kwargs):
     kwargs.setdefault('_target', StateVector)
     sv = read_timeseries(source, channel, **kwargs).view(StateVector)
     sv.bitmask = bitmask
     return sv
 
+
+# register 'gwf' reader first
+try:
+    import lalframe
+except ImportError:
+    pass
+else:
+    register_identifier('gwf')
+    registry.register_reader('gwf', TimeSeries, read_timeseries, force=True)
+    registry.register_reader('gwf', StateVector, read_statevector, force=True)
+    try:
+        registry.register_reader('gwf', TimeSeriesDict, read_timeseriesdict)
+    except Exception as e:
+        if not str(e).startswith('Reader for format'):
+            raise
+    else:
+        registry.register_reader('gwf', StateVectorDict, read_statevector_dict)
+
+# register lalframe
 registry.register_reader('lalframe', TimeSeries, read_timeseries)
 registry.register_reader('lalframe', StateVector, read_statevector)
 registry.register_reader('lalframe', TimeSeriesDict, read_timeseriesdict)
 registry.register_reader('lalframe', StateVectorDict, read_statevector_dict)
-
-# force this as the 'gwf' reader
-registry.register_reader('gwf', TimeSeries, read_timeseries, force=True)
-registry.register_reader('gwf', StateVector, read_statevector, force=True)
-registry.register_reader('gwf', TimeSeriesDict, read_timeseriesdict,
-                         force=True)
-registry.register_reader('gwf', StateVectorDict, read_statevector_dict,
-                         force=True)

@@ -24,21 +24,20 @@ channels from a single frame file in one go.
 
 from __future__ import division
 
-import frameCPP
-
 from astropy.io import registry
 
 from glue.lal import (Cache, CacheEntry)
 
-from . import identify
+from .identify import register_identifier
 from .... import version
-from ....utils import gprint
+from ....utils import (gprint, with_import)
 from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 
+@with_import('frameCPP')
 def read_timeseriesdict(source, channels, start=None, end=None, type=None,
                         resample=None, verbose=False, _SeriesClass=TimeSeries):
     """Read the data for a list of channels from a GWF data source.
@@ -239,6 +238,7 @@ def _read_frame(framefile, channels, type=None, verbose=False,
     return out
 
 
+@with_import('frameCPP')
 def read_timeseries(source, channel, **kwargs):
     """Read a `TimeSeries` of data from a gravitational-wave frame file
 
@@ -266,6 +266,7 @@ def read_timeseries(source, channel, **kwargs):
     return read_timeseriesdict(source, [channel], **kwargs)[channel]
 
 
+@with_import('frameCPP')
 def read_statevectordict(source, channels, bitmasks=[], **kwargs):
     """Read a `StateVectorDict` of data from a gravitational-wave
     frame file.
@@ -277,6 +278,7 @@ def read_statevectordict(source, channels, bitmasks=[], **kwargs):
     return svd
 
 
+@with_import('frameCPP')
 def read_statevector(source, channel, bitmask=[], **kwargs):
     """Read a `StateVector` of data from a gravitational-wave frame file
 
@@ -309,15 +311,32 @@ def read_statevector(source, channel, bitmask=[], **kwargs):
     return sv
 
 
+# register gwf reader first
+try:
+    import frameCPP
+except ImportError:
+    pass
+else:
+    try:
+        register_identifier('gwf')
+    except Exception as e:
+        if not str(e).startswith('Identifier for format'):
+            raise
+    registry.register_reader('gwf', TimeSeriesDict, read_timeseriesdict,
+                             force=True)
+    registry.register_reader('gwf', StateVectorDict, read_statevectordict,
+                             force=True)
+    try:
+        registry.register_reader('gwf', TimeSeries, read_timeseries, force=True)
+    except:
+        pass
+    else:
+        registry.register_reader('gwf', StateVector, read_statevector,
+                                 force=True)
+
+# register framecpp
 registry.register_reader('framecpp', TimeSeriesDict, read_timeseriesdict)
 registry.register_reader('framecpp', TimeSeries, read_timeseries)
 registry.register_reader('framecpp', StateVectorDict, read_statevectordict)
 registry.register_reader('framecpp', StateVector, read_statevector)
 
-# force this as the 'gwf' reader
-registry.register_reader('gwf', TimeSeriesDict, read_timeseriesdict,
-                         force=True)
-registry.register_reader('gwf', TimeSeries, read_timeseries, force=True)
-registry.register_reader('gwf', StateVectorDict, read_statevectordict,
-                         force=True)
-registry.register_reader('gwf', StateVector, read_statevector, force=True)

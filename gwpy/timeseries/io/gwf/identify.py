@@ -35,15 +35,18 @@ def identify_gwf(*args, **kwargs):
     """
     filename = args[1]
     ce = args[3]
-    if isinstance(filename, (str, unicode)) and filename.endswith('gwf'):
-        return True
-    elif isinstance(ce, CacheEntry):
+    if isinstance(ce, CacheEntry):
+        filename = ce.path
+    if isinstance(filename, str) and filename.endswith('gwf'):
         return True
     else:
         return False
 
 
-registry.register_identifier('gwf', TimeSeries, identify_gwf)
-registry.register_identifier('gwf', TimeSeriesDict, identify_gwf)
-registry.register_identifier('gwf', StateVector, identify_gwf)
-registry.register_identifier('gwf', StateVectorDict, identify_gwf)
+def register_identifier(format='gwf'):
+    """Register a frame-file identifier for the given format.
+    """
+    registry.register_identifier(format, TimeSeries, identify_gwf)
+    registry.register_identifier(format, TimeSeriesDict, identify_gwf)
+    registry.register_identifier(format, StateVector, identify_gwf)
+    registry.register_identifier(format, StateVectorDict, identify_gwf)
