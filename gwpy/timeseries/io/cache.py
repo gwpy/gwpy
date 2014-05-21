@@ -90,7 +90,10 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
 
     # get span
     span = Segment(start, end)
-    cache = cache.sieve(segment=span.protract(8))
+    if cls not in (StateVector, StateVectorDict) and resample:
+        cache = cache.sieve(segment=span.protract(8))
+    else:
+        cache = cache.sieve(segment=span)
     cspan = Segment(cache[0].segment[0], cache[-1].segment[1])
 
     # if reading one channel, try to use lalframe, its faster
