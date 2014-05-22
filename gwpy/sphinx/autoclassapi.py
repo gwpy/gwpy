@@ -103,7 +103,7 @@ class GWpyClassDocumenter(ClassDocumenter):
                 ns['attributes'], ns['all_attributes'] = get_members(
                     self.object, 'attribute')
 
-                parts = name.split('.')
+                parts = self.fullname.split('.')
                 mod_name, obj_name = '.'.join(parts[:-1]), parts[-1]
 
                 ns['fullname'] = name
