@@ -30,6 +30,7 @@ First, let's consider the core objects used to represent instrumental data:
 .. toctree::
    :maxdepth: 2
 
+   time/index
    detector/channel
    timeseries/index
    spectrum/index
