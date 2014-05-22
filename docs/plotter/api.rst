@@ -7,23 +7,23 @@ This document provides a reference for the following :class:`~matplotlib.figure.
 .. autosummary::
    :nosignatures:
 
-   ~gwpy.plotter.core.Plot
-   ~gwpy.plotter.timeseries.TimeSeriesPlot
-   ~gwpy.plotter.spectrum.SpectrumPlot
-   ~gwpy.plotter.spectrogram.SpectrogramPlot
-   ~gwpy.plotter.segments.SegmentPlot
-   ~gwpy.plotter.table.EventTablePlot
+   ~gwpy.plotter.Plot
+   ~gwpy.plotter.TimeSeriesPlot
+   ~gwpy.plotter.SpectrumPlot
+   ~gwpy.plotter.SpectrogramPlot
+   ~gwpy.plotter.SegmentPlot
+   ~gwpy.plotter.EventTablePlot
 
 and the following :class:`~matplotlib.axes.Axes` `class` objects:
 
 .. autosummary::
    :nosignatures:
 
-   ~gwpy.plotter.axes.Axes
-   ~gwpy.plotter.timeseries.TimeSeriesAxes
-   ~gwpy.plotter.spectrum.SpectrumAxes
-   ~gwpy.plotter.segments.SegmentAxes
-   ~gwpy.plotter.table.EventTableAxes
+   ~gwpy.plotter.Axes
+   ~gwpy.plotter.TimeSeriesAxes
+   ~gwpy.plotter.SpectrumAxes
+   ~gwpy.plotter.SegmentAxes
+   ~gwpy.plotter.EventTableAxes
 
 ================
 `Figure` objects
@@ -34,27 +34,27 @@ Each of the below classes represents a figure object; for brevity inherited meth
 .. currentmodule:: gwpy.plotter
 
 
-.. autoclass:: gwpy.plotter.core.Plot
+.. autoclass:: gwpy.plotter.Plot
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.timeseries.TimeSeriesPlot
+.. autoclass:: gwpy.plotter.TimeSeriesPlot
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.spectrum.SpectrumPlot
+.. autoclass:: gwpy.plotter.SpectrumPlot
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.spectrogram.SpectrogramPlot
+.. autoclass:: gwpy.plotter.SpectrogramPlot
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.segments.SegmentPlot
+.. autoclass:: gwpy.plotter.SegmentPlot
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.table.EventTablePlot
+.. autoclass:: gwpy.plotter.EventTablePlot
    :no-inherited-members:
 
 
@@ -64,21 +64,21 @@ Each of the below classes represents a figure object; for brevity inherited meth
 
 Each of the below classes represents a set of axes on which data are displayed; for brevity inherited methods and attributes are not documented here, please follow links to the parent classes for documentation of available methods and attributes.
 
-.. autoclass:: gwpy.plotter.axes.Axes
+.. autoclass:: gwpy.plotter.Axes
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.timeseries.TimeSeriesAxes
+.. autoclass:: gwpy.plotter.TimeSeriesAxes
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.spectrum.SpectrumAxes
+.. autoclass:: gwpy.plotter.SpectrumAxes
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.segments.SegmentAxes
+.. autoclass:: gwpy.plotter.SegmentAxes
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.table.EventTableAxes
+.. autoclass:: gwpy.plotter.EventTableAxes
    :no-inherited-members:

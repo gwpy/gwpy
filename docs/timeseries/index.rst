@@ -1,4 +1,4 @@
-.. currentmodule:: gwpy.timeseries.core
+.. currentmodule:: gwpy.timeseries
 
 #######################
 The :class:`TimeSeries`

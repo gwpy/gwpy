@@ -2,11 +2,7 @@
 Data-quality segments
 #####################
 
-.. code:: python
-
-   >>> from gwpy.segments import DataQualityFlag
-
-.. currentmodule:: gwpy.segments.segments
+.. currentmodule:: gwpy.segments
 
 It is crucial to instrumental operation, and to analyses of data, that time segments denoting good or bad state of the instrument and its environment are recorded accurately.
 To that end, the international collaboration operates using the GPS time standard (seconds since the GPS epoch of midnight on January 6th 1980), and records such times as semi-open GPS ``[start, stop)`` `segments <Segment>`.
@@ -21,7 +17,7 @@ These basic objects are as follows:
    SegmentList
    SegmentListDict
 
-.. currentmodule:: gwpy.segments.flag
+.. currentmodule:: gwpy.segments
 
 While these objects are key to representing core data segments, they are usually applied to analyses of data as a `DataQualityFlag`.
 
@@ -91,13 +87,9 @@ This reference includes the following `class` entries:
    ~gwpy.segments.segments.SegmentList
    ~gwpy.segments.segments.SegmentListDict
 
-.. currentmodule:: gwpy.segments.flag
-
 .. autoclass:: DataQualityFlag
 
 .. autoclass:: DataQualityDict
-
-.. currentmodule:: gwpy.segments.segments
 
 .. autoclass:: Segment
 

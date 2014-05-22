@@ -1,14 +1,10 @@
-.. currentmodule:: gwpy.spectrogram.core
+.. currentmodule:: gwpy.spectrogram
 
 ########################
 The :class:`Spectrogram`
 ########################
 
-.. code-block:: python
-
-   >>> from gwpy.spectrogram import Spectrogram
-
-While the :class:`~gwpy.timeseries.core.TimeSeries` allows us to study how the amplitude of a signal changes over time, and the :class:`~gwpy.spectrum.core.Spectrum` allows us to study how that amplitude changes over frequency, the time-frequency :class:`~gwpy.spectrogram.core.Spectrogram` allows us to track the evolution of the `Spectrum` over time.
+While the :class:`~gwpy.timeseries.TimeSeries` allows us to study how the amplitude of a signal changes over time, and the :class:`~gwpy.spectrum.Spectrum` allows us to study how that amplitude changes over frequency, the time-frequency :class:`~gwpy.spectrogram.Spectrogram` allows us to track the evolution of the `Spectrum` over time.
 
 This object is a 2-dimensional array, essentially a stacked set of spectra, one per unit time.
 
@@ -53,10 +49,8 @@ The full set of metadata that can be provided is as follows:
 Calculating a `Spectrogram` from a :class:`~gwpy.timeseries.core.TimeSeries`
 ============================================================================
 
-.. currentmodule:: gwpy.timeseries.core
-
-The time-frequency :class:`~gwpy.spectrogram.core.Spectrogram` of a `TimeSeries` can be calculated using the :meth:`TimeSeries.spectrogram`.
-We can extend the original :ref:`time-series example <timeseries-plot>` with calculation of a :class:`~gwpy.spectrogram.core.Spectrogram` with a 20-second stride:
+The time-frequency :class:`Spectrogram` of a :class:`~gwpy.timeseries.TimeSeries` can be calculated using the :meth:`~gwpy.timeseries.TimeSeries.spectrogram`.
+We can extend the original :ref:`time-series example <timeseries-plot>` with calculation of a :class:`Spectrogram` with a 20-second stride:
 
 .. literalinclude:: spectrogram_plot.py
    :lines: 1-4
@@ -65,10 +59,8 @@ We can extend the original :ref:`time-series example <timeseries-plot>` with cal
 Plotting a `Spectrogram`
 ========================
 
-.. currentmodule:: gwpy.spectrogram.core
-
-Like the :class:`TimeSeries` and :class:`Spectrum`, the `Spectrogram` has a convenient :meth:`~Spectrogram.plot` method, allowing us to view the data.
-We can extend the above example to include a plot:
+Like the :class:`~gwpy.timeseries.TimeSeries` and :class:`~gwpy.spectrum.Spectrum`, the `Spectrogram` has a convenient :meth:`~Spectrogram.plot` method, allowing us to view the data.
+We can extend the previous time-series example to include a plot:
 
 .. plot:: spectrogram/spectrogram_plot.py
    :include-source:

@@ -1,19 +1,15 @@
-.. currentmodule:: gwpy.spectrum.core
+.. currentmodule:: gwpy.spectrum
 
 #####################
 The :class:`Spectrum`
 #####################
-
-.. code-block:: python
-
-   >>> from gwpy.spectrum import Spectrum
 
 While gravitational-wave detectors are time-domain instruments, their sensitivity is frequency dependent and so is often measured as a power-spectral-density over the range of interesting gravitational-wave frequencies (~10-10,000 Hz).
 Additionally, the auxiliary `channels <../detector/channel>`_ used to sense and control instrumental operations each have their own frequency-domain characteristics, contributing to the overall sensitivity spectrum.
 
 The :class:`Spectrum` object is used to represent any frequency series, including the power-spectral (and amplitude-spectral) density series describing instrument performance.
 
-Analogously to the :class:`~gwpy.timeseries.core.TimeSeries`, a new `Spectrum` can be generated from any data sequence along with the minimal :attr:`~Spectrum.f0` and :attr:`~Spectrum.df` metadata::
+Analogously to the :class:`~gwpy.timeseries.TimeSeries`, a new `Spectrum` can be generated from any data sequence along with the minimal :attr:`~Spectrum.f0` and :attr:`~Spectrum.df` metadata::
 
     >>> from gwpy.spectrum import Spectrum
     >>> spec = Spectrum([1,2,3,4,5,6,7,8,9,10], f0=0, df=1)
@@ -37,11 +33,11 @@ The full set of metadata that can be provided is as follows:
    ~Spectrum.f0
    ~Spectrum.df
 
-===========================================================================
-Generating a `Spectrum` from a :class:`~gwpy.timeseries.core.TimeSeries`
-===========================================================================
+===================================================================
+Generating a `Spectrum` from a :class:`~gwpy.timeseries.TimeSeries`
+===================================================================
 
-.. currentmodule:: gwpy.timeseries.core
+.. currentmodule:: gwpy.timeseries
 
 The frequency-spectrum of a :class:`TimeSeries` can be calculated using either of the following methods:
 
@@ -62,9 +58,9 @@ where the result is an average spectrum calculated using the `Welch method <http
 Plotting a `Spectrum`
 =====================
 
-.. currentmodule:: gwpy.spectrum.core
+.. currentmodule:: gwpy.spectrum
 
-Similary to the :class:`~gwpy.timeseries.core.TimeSeries`, the `Spectrum` object comes with its own :meth:`~Spectrum.plot` method, which will quickly construct a :class:`~gwpy.plotter.timeseries.SpectrumPlot`:
+Similary to the :class:`~gwpy.timeseries.TimeSeries`, the `Spectrum` object comes with its own :meth:`~Spectrum.plot` method, which will quickly construct a :class:`~gwpy.plotter.SpectrumPlot`:
 
 .. plot:: spectrum/spectrum_plot.py
    :include-source:
