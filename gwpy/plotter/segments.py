@@ -171,7 +171,7 @@ class SegmentAxes(TimeSeriesAxes):
                                            **kwargs)
         if len(self.collections) == 1:
             if len(flag.valid):
-                self.set_xlim(*flag.extent)
+                self.set_xlim(*map(float, flag.extent))
             self.autoscale(axis='y')
         # add label
         if add_label:
@@ -391,7 +391,7 @@ class SegmentPlot(TimeSeriesPlot):
                 epoch = span[0]
             for ax in self.axes:
                 ax.set_epoch(epoch)
-                ax.set_xlim(*span)
+                ax.set_xlim(*map(float, span))
             for ax in self.axes[:-1]:
                 ax.set_xlabel("")
 
