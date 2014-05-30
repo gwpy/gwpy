@@ -57,6 +57,9 @@ Each of the below classes represents a figure object; for brevity inherited meth
 .. autoclass:: gwpy.plotter.EventTablePlot
    :no-inherited-members:
 
+.. autoclass:: gwpy.plotter.BodePlot
+   :no-inherited-members:
+
 
 ==============
 `Axes` objects
@@ -66,6 +69,7 @@ Each of the below classes represents a set of axes on which data are displayed; 
 
 .. autoclass:: gwpy.plotter.Axes
    :no-inherited-members:
+   :exclude-members: legend
 
 
 .. autoclass:: gwpy.plotter.TimeSeriesAxes
