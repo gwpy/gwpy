@@ -19,3 +19,5 @@ The examples are provided in the ``examples/`` directory of the git repository, 
    gw_ex_compare_spectra
    gw_ex_plot_spectrogram
    gw_ex_plot_median_spectrogram
+   gw_ex_plot_transfer_function
+
