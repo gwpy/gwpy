@@ -668,19 +668,10 @@ class Plot(figure.Figure):
         Legend
             the :class:`~matplotlib.legend.Legend` for this plot
         """
-        # set kwargs
-        alpha = kwargs.pop("alpha", 0.8)
-        linewidth = kwargs.pop("linewidth", 8)
-
-        # find relevant axes
         ax = kwargs.pop('ax', None)
         if ax is None:
             ax = self._find_axes()
-        legend = ax.legend(*args, **kwargs)
-        lframe = legend.get_frame()
-        lframe.set_alpha(alpha)
-        [l.set_linewidth(linewidth) for l in legend.get_lines()]
-        return legend
+        return ax.legend(*args, **kwargs)
 
     # -------------------------------------------
     # Convenience methods for single-axes plots

@@ -186,3 +186,17 @@ class Axes(_Axes):
             set_("%s [%s]" % (label, unitstr))
         else:
             set_(unitstr)
+
+    def legend(self, *args, **kwargs):
+        # set kwargs
+        alpha = kwargs.pop("alpha", 0.8)
+        linewidth = kwargs.pop("linewidth", 8)
+
+        # make legend
+        legend = super(Axes, self).legend(*args, **kwargs)
+        # find relevant axes
+        lframe = legend.get_frame()
+        lframe.set_alpha(alpha)
+        [l.set_linewidth(linewidth) for l in legend.get_lines()]
+        return legend
+    legend.__doc__ = _Axes.legend.__doc__
