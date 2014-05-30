@@ -20,16 +20,23 @@
 
 from math import pi
 import numpy
-from scipy import signal
 
-from matplotlib import ticker as mticker
+from matplotlib.ticker import MultipleLocator
 
 from .core import Plot
+from ..spectrum import Spectrum
+from ..utils import with_import
 
 from .. import version
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['BodePlot']
+
+
+def to_db(a):
+    """Convert the input array from amplitude into decibels
+    """
+    return 10 * numpy.log10(a)
 
 
 class BodePlot(Plot):
@@ -60,9 +67,9 @@ class BodePlot(Plot):
     def __init__(self, *filters, **kwargs):
         """Initialise a new TimeSeriesPlot
         """
+        dB = kwargs.pop('dB', True)
         frequencies = kwargs.pop('frequencies', None)
         sample_rate = kwargs.pop('sample_rate', None)
-        logx = kwargs.pop('logx', None)
 
         # generate figure
         super(BodePlot, self).__init__(**kwargs)
@@ -71,40 +78,34 @@ class BodePlot(Plot):
         self.add_subplot(2, 1, 1, projection='spectrum')
         self.add_subplot(2, 1, 2, projection='spectrum', sharex=self.maxes)
 
-        # auto set log and frequencies
-        if logx is not False and frequencies is None and sample_rate:
-            logx = True
-            N = 512
-            nyq = numpy.float64(sample_rate) / 2.0
-            frequencies = numpy.logspace(numpy.log10(nyq / N),
-                                         numpy.log10(nyq), N)
-
         # add filters
         for filter_ in filters:
-            self.add_filter(filter_, frequencies=frequencies,
-                            sample_rate=sample_rate)
+            if isinstance(filter_, Spectrum):
+                self.add_spectrum(filter_, dB=dB)
+            else:
+                self.add_filter(filter_, frequencies=frequencies,
+                                sample_rate=sample_rate, dB=dB)
 
-        # set labels
-        self.maxes.set_ylabel('Magnitude [dB]')
+        # format plots
+        if dB:
+            self.maxes.set_ylabel('Magnitude [dB]')
+        else:
+            self.maxes.set_yscale('log')
+            self.maxes.set_ylabel('Amplitude')
         self.paxes.set_xlabel('Frequency [Hz]')
         self.paxes.set_ylabel('Phase [deg]')
+        self.maxes.set_xscale('log')
+        self.paxes.set_xscale('log')
+        self.paxes.yaxis.set_major_locator(MultipleLocator(base=90))
+        self.paxes.set_ylim(-180, 180)
 
-        # set log-scale
-        if logx:
-            self.maxes.set_xscale('log')
-            self.paxes.set_xscale('log')
-            self.maxes.relim()
-            self.paxes.relim()
-            self.maxes.autoscale_view(scalex=False)
-            self.paxes.autoscale_view(scalex=False)
-
-        # set xlim
+        # get xlim
+        if (frequencies is None and len(filters) == 1 and
+                isinstance(filters[0], Spectrum)):
+            frequencies = filters[0].frequencies.data
         if frequencies is not None:
+            frequencies = frequencies[frequencies > 0]
             self.maxes.set_xlim(frequencies.min(), frequencies.max())
-
-        # set ylim
-        self.paxes.yaxis.set_major_locator(mticker.MultipleLocator(base=90))
-        self.paxes.set_ylim(0, 360)
 
     @property
     def maxes(self):
@@ -118,8 +119,9 @@ class BodePlot(Plot):
         """
         return self.axes[1]
 
+    @with_import('scipy.signal')
     def add_filter(self, filter_, frequencies=None, sample_rate=None,
-                   **kwargs):
+                   dB=True, **kwargs):
         """Add a linear time-invariant filter to this BodePlot
         """
         if frequencies is None:
@@ -131,10 +133,25 @@ class BodePlot(Plot):
         w, h = signal.freqz(filter_.num, filter_.den, w)
         if sample_rate:
             w *= numpy.float64(sample_rate) / (2.0 * pi)
-        mag = 20.0 * numpy.log10(numpy.absolute(h))
-        phase = numpy.degrees(numpy.unwrap(numpy.angle(h))) % 360
+        mag = numpy.absolute(h)
+        if dB:
+            mag = 2 * to_db(mag)
+        phase = numpy.degrees(numpy.unwrap(numpy.angle(h)))
         lm = self.maxes.plot(w, mag, **kwargs)
         lp = self.paxes.plot(w, phase, **kwargs)
-        return (lm, lp)
+        return lm, lp
 
+    def add_spectrum(self, spectrum, dB=True, power=False, **kwargs):
+        """Plot the magnitude and phase of a complex-valued Spectrum
+        """
+        mag = numpy.absolute(spectrum.data)
+        if dB:
+            mag = to_db(mag)
+            if not power:
+                mag *= 2.
+        phase = numpy.angle(spectrum.data, deg=True)
+        w = spectrum.frequencies.data
+        lm = self.maxes.plot(w, mag, **kwargs)
+        lp = self.paxes.plot(w, phase, **kwargs)
+        return lm, lp
 
