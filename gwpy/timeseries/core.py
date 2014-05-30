@@ -30,6 +30,7 @@ from dateutil import parser as dateparser
 from multiprocessing import (Process, Queue as ProcessQueue)
 
 import numpy
+from numpy import fft as npfft
 
 from matplotlib import mlab
 
@@ -285,8 +286,7 @@ class TimeSeries(Series):
     # -------------------------------------------
     # TimeSeries product methods
 
-    @with_import('scipy.fftpack')
-    def _fft(self, nfft=None):
+    def fft(self, nfft=None):
         """Compute the one-dimensional discrete Fourier transform of
         this `TimeSeries`.
 
@@ -300,27 +300,37 @@ class TimeSeries(Series):
 
         Returns
         -------
-        out : complex `Series`
-            the transformed output, with populated frequencies array
-            metadata
+        out : :class:`~gwpy.spectrum.Spectrum`
+            the normalised, complex-valued FFT `Spectrum`.
 
         See Also
         --------
         :mod:`scipy.fftpack` for the definition of the DFT and conventions
         used.
+
+        Notes
+        -----
+        This method, in constrast to the :meth:`numpy.fft.rfft` method
+        it calls, applies the necessary normalisation such that the
+        amplitude of the output :class:`~gwpy.spectrum.Spectrum` is
+        correct.
         """
         from ..spectrum import Spectrum
-        new = fftpack.fft(self.data, n=nfft).view(Spectrum)
-        new.frequencies = fftpack.fftfreq(new.size, d=self.dx)
-        new.epoch = self.epoch
-        new.channel = self.channel
-        #new.x0 = new.frequencies[0]
-        #if len(new.frequencies) > 1:
-        #    new.dx = new.frequencies[1] - new.frequencies[0]
+        dft = npfft.rfft(self.data, n=nfft) / nfft
+        dft[1:] *= 2.0
+        new = Spectrum(dft, epoch=self.epoch, channel=self.channel,
+                       unit=self.unit)
+        new.frequencies = npfft.rfftfreq(self.size, d=self.dx.value)
         return new
 
-    def fft(self, fftlength=None, overlap=0):
+    @with_import('scipy.signal')
+    def average_fft(self, fftlength=None, overlap=0, window=None):
         """Compute the averaged one-dimensional DFT of this `TimeSeries`.
+
+        This method computes a number of FFTs of duration ``fftlength``
+        and ``overlap`` (both given in seconds), and returns the mean
+        average. This method is analogous to the Welch average method
+        for power spectra.
 
         Parameters
         ----------
@@ -330,6 +340,9 @@ class TimeSeries(Series):
         overlap : `float`
             numbers of seconds by which to overlap neighbouring FFTs,
             by default, no overlap is used.
+        window : `str`, :class:`numpy.ndarray`
+            name of the window function to use, or an array of length
+            ``fftlength * TimeSeries.sample_rate`` to use as the window.
 
         Returns
         -------
@@ -343,32 +356,54 @@ class TimeSeries(Series):
         used.
         """
         from gwpy.spectrogram import Spectrogram
+        # format lengths
         if fftlength is None:
             fftlength = self.duration
+        if isinstance(fftlength, units.Quantity):
+            fftlength = fftlength.value
         nfft = int((fftlength * self.sample_rate).decompose().value)
         noverlap = int((overlap * self.sample_rate).decompose().value)
 
-        nffts, remainder = divmod(self.size, nfft)
-        nffts *= 2
-        if remainder >= (nfft - noverlap):
-            nffts += 1
+        navg = divmod(self.size-noverlap, (nfft-noverlap))[0]
 
-        nfreqs = nfft // 2 + 1
-        ffts = Spectrogram(numpy.zeros((nffts, nfreqs), dtype=numpy.complex),
+        # format window
+        if window is None:
+            window = 'boxcar'
+        if isinstance(window, str) or type(window) is tuple:
+            win = signal.get_window(window, nfft)
+        else:
+            win = numpy.asarray(window)
+            if len(win.shape) != 1:
+                raise ValueError('window must be 1-D')
+            elif win.shape[0] != nfft:
+                raise ValueError('Window is the wrong size.')
+        scaling = 1. / numpy.absolute(win).mean()
+
+        if nfft % 2:
+            nfreqs = (nfft + 1) // 2
+        else:
+            nfreqs = nfft // 2 + 1
+        ffts = Spectrogram(numpy.zeros((navg, nfreqs), dtype=numpy.complex),
                            channel=self.channel, epoch=self.epoch, f0=0,
-                           df=1 / (nfft * self.dx.value), dt=1, copy=True)
+                           df=1 / fftlength, dt=1, copy=True)
         # stride through TimeSeries, recording FFTs as columns of Spectrogram
         idx = 0
-        for i in range(nffts):
+        for i in range(navg):
             # find step TimeSeries
             idx_end = idx + nfft
+            if idx_end > self.size:
+                continue
             stepseries = self[idx:idx_end]
-            # calculated FFT and stack
-            fft_ = stepseries._fft(nfft=nfft)
-            ffts[i] = fft_.data[:nfreqs]
-            if not i:
-                ffts.frequencies = fft_.frequencies[:nfreqs]
+            # detrend
+            stepseries -= stepseries.data.mean()
+            # window
+            stepseries *= win
+            # calculated FFT, weight, and stack
+            fft_ = stepseries.fft(nfft=nfft) * scaling
+            ffts[i] = fft_.data
+            idx += (nfft - noverlap)
         mean = ffts.mean(0)
+        mean.name = self.name
         mean.epoch = self.epoch
         mean.channel = self.channel
         return mean
