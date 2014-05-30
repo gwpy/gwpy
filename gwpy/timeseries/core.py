@@ -25,7 +25,7 @@ import os
 import sys
 import warnings
 import re
-from math import (ceil, floor, log)
+from math import (ceil, log)
 from dateutil import parser as dateparser
 from multiprocessing import (Process, Queue as ProcessQueue)
 
@@ -48,7 +48,7 @@ from ..io import (reader, nds as ndsio)
 from ..segments import (Segment, SegmentList)
 from ..time import Time
 from ..window import *
-from ..utils import (gprint, update_docstrings, import_method_dependency)
+from ..utils import (gprint, update_docstrings, with_import)
 from . import common
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -285,16 +285,17 @@ class TimeSeries(Series):
     # -------------------------------------------
     # TimeSeries product methods
 
-    def fft(self, fftlength=None):
+    @with_import('scipy.fftpack')
+    def _fft(self, nfft=None):
         """Compute the one-dimensional discrete Fourier transform of
         this `TimeSeries`.
 
         Parameters
         ----------
-        fftlength : `int`, optional
+        nfft : `int`, optional
             length of the desired Fourier transform.
             Input will be cropped or padded to match the desired length.
-            If fftlength is not given, the length of the `TimeSeries`
+            If nfft is not given, the length of the `TimeSeries`
             will be used
 
         Returns
@@ -308,14 +309,69 @@ class TimeSeries(Series):
         :mod:`scipy.fftpack` for the definition of the DFT and conventions
         used.
         """
-        fftpack = import_method_dependency('scipy.fftpack')
         from ..spectrum import Spectrum
-        new = fftpack.fft(self.data, n=fftlength).view(Spectrum)
+        new = fftpack.fft(self.data, n=nfft).view(Spectrum)
         new.frequencies = fftpack.fftfreq(new.size, d=self.dx)
+        new.epoch = self.epoch
+        new.channel = self.channel
         #new.x0 = new.frequencies[0]
         #if len(new.frequencies) > 1:
         #    new.dx = new.frequencies[1] - new.frequencies[0]
         return new
+
+    def fft(self, fftlength=None, overlap=0):
+        """Compute the averaged one-dimensional DFT of this `TimeSeries`.
+
+        Parameters
+        ----------
+        fftlength : `float`
+            number of seconds in single FFT, default, use
+            whole `TimeSeries`
+        overlap : `float`
+            numbers of seconds by which to overlap neighbouring FFTs,
+            by default, no overlap is used.
+
+        Returns
+        -------
+        out : complex-valued :class:`~gwpy.spectrum.Spectrum`
+            the transformed output, with populated frequencies array
+            metadata
+
+        See Also
+        --------
+        :mod:`scipy.fftpack` for the definition of the DFT and conventions
+        used.
+        """
+        from gwpy.spectrogram import Spectrogram
+        if fftlength is None:
+            fftlength = self.duration
+        nfft = int((fftlength * self.sample_rate).decompose().value)
+        noverlap = int((overlap * self.sample_rate).decompose().value)
+
+        nffts, remainder = divmod(self.size, nfft)
+        nffts *= 2
+        if remainder >= (nfft - noverlap):
+            nffts += 1
+
+        nfreqs = nfft // 2 + 1
+        ffts = Spectrogram(numpy.zeros((nffts, nfreqs), dtype=numpy.complex),
+                           channel=self.channel, epoch=self.epoch, f0=0,
+                           df=1 / (nfft * self.dx.value), dt=1, copy=True)
+        # stride through TimeSeries, recording FFTs as columns of Spectrogram
+        idx = 0
+        for i in range(nffts):
+            # find step TimeSeries
+            idx_end = idx + nfft
+            stepseries = self[idx:idx_end]
+            # calculated FFT and stack
+            fft_ = stepseries._fft(nfft=nfft)
+            ffts[i] = fft_.data[:nfreqs]
+            if not i:
+                ffts.frequencies = fft_.frequencies[:nfreqs]
+        mean = ffts.mean(0)
+        mean.epoch = self.epoch
+        mean.channel = self.channel
+        return mean
 
     def psd(self, fftlength=None, overlap=None, method='welch', **kwargs):
         """Calculate the PSD `Spectrum` for this `TimeSeries`.
@@ -636,6 +692,7 @@ class TimeSeries(Series):
     # -------------------------------------------
     # TimeSeries filtering
 
+    @with_import('scipy.signal')
     def highpass(self, frequency, numtaps=101, window='hamming'):
         """Filter this `TimeSeries` with a Butterworth high-pass filter.
 
@@ -668,6 +725,7 @@ class TimeSeries(Series):
                                 pass_zero=False)
         return self.filter(*filter_)
 
+    @with_import('scipy.signal')
     def lowpass(self, frequency, numtaps=61, window='hamming'):
         """Filter this `TimeSeries` with a Butterworth low-pass filter.
 
@@ -696,6 +754,7 @@ class TimeSeries(Series):
                                 nyq=self.sample_rate.value/2.)
         return self.filter(*filter_)
 
+    @with_import('scipy.signal')
     def bandpass(self, flow, fhigh, lowtaps=61, hightaps=101,
                  window='hamming'):
         """Filter this `TimeSeries` by applying both low- and high-pass
@@ -728,6 +787,7 @@ class TimeSeries(Series):
         high = self.highpass(flow, numtaps=lowtaps, window=window)
         return high.lowpass(fhigh, numtaps=hightaps, window=window)
 
+    @with_import('scipy.signal')
     def resample(self, rate, window='hamming', numtaps=61):
         """Resample this Series to a new rate
 
@@ -766,6 +826,7 @@ class TimeSeries(Series):
         new.sample_rate = rate
         return new
 
+    @with_import('scipy.signal')
     def filter(self, *filt):
         """Apply the given `Filter` to this `TimeSeries`
 
@@ -1027,6 +1088,7 @@ class TimeSeries(Series):
         return TimeSeriesPlot(self, **kwargs)
 
     @classmethod
+    @with_import('nds2')
     def from_nds2_buffer(cls, buffer_):
         """Construct a new `TimeSeries` from an `nds2.buffer` object
         """
@@ -1037,38 +1099,22 @@ class TimeSeries(Series):
         return cls(buffer_.data, epoch=epoch, channel=channel)
 
     @classmethod
+    @with_import('lal')
     def from_lal(cls, lalts):
         """Generate a new TimeSeries from a LAL TimeSeries of any type.
         """
-        # write Channel
-        try:
-            from lal import UnitToString
-        except ImportError:
-            raise ImportError("No module named lal. Please see https://"
-                              "www.lsc-group.phys.uwm.edu/daswg/"
-                              "projects/lalsuite.html for installation "
-                              "instructions")
-        else:
-            channel = Channel(lalts.name, 1/lalts.deltaT,
-                              unit=UnitToString(lalts.sampleUnits),
-                              dtype=lalts.data.data.dtype)
+        channel = Channel(lalts.name, 1/lalts.deltaT,
+                          unit=lal.UnitToString(lalts.sampleUnits),
+                          dtype=lalts.data.data.dtype)
         return cls(lalts.data.data, channel=channel, epoch=lalts.epoch,
-                   unit=UnitToString(lalts.sampleUnits), copy=True)
+                   unit=lal.UnitToString(lalts.sampleUnits), copy=True)
 
+    @with_import('lal')
     def to_lal(self):
         """Convert this `TimeSeries` into a LAL TimeSeries.
         """
-        try:
-            import lal
-        except ImportError:
-            raise ImportError("No module named lal. Please see https://"
-                              "www.lsc-group.phys.uwm.edu/daswg/"
-                              "projects/lalsuite.html for installation "
-                              "instructions")
-        else:
-            from lal import utils as lalutils
-        laltype = lalutils.LAL_TYPE_FROM_NUMPY[self.dtype.type]
-        typestr = lalutils.LAL_TYPE_STR[laltype]
+        from ..utils.lal import LAL_TYPE_STR_FROM_NUMPY
+        typestr = LAL_TYPE_STR_FROM_NUMPY[self.dtype.type]
         create = getattr(lal, 'Create%sTimeSeries' % typestr.upper())
         lalts = create(self.name, lal.LIGOTimeGPS(self.epoch.gps), 0,
                        self.dt.value, lal.lalDimensionlessUnit, self.size)
@@ -1535,9 +1581,10 @@ class TimeSeriesDict(OrderedDict):
                 raise ValueError(
                     "Multiple matches for channel '%s' in NDS database, "
                     "ambiguous request:\n    %s"
-                    % (c.name, '\n    '.join(['%s (%s, %s)' % (str(c), c.type,
-                                                               c.sample_rate)
-                                              for c in found])))
+                    % (c.name, '\n    '.join(['%s (%s, %s)'
+                        % (str(c), c.type,
+                           c.channel_type_to_string(c.channel_type))
+                           for c in found])))
             else:
                 qchannels.append(funiq[0])
         if verbose:
