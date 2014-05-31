@@ -30,11 +30,16 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import sys
+import inspect
+import os.path
+
 from matplotlib import use
 use('agg')
 
 import sphinx_bootstrap_theme
 
+import gwpy
 from gwpy import version as gwpy_version
 from gwpy.plotter import (GWPY_PLOT_PARAMS)
 
@@ -61,11 +66,13 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
     'sphinx.ext.inheritance_diagram',
+    'sphinx.ext.linkcode',
     'numpydoc',
     'sphinxcontrib.epydoc',
     'sphinxcontrib.doxylink',
     'matplotlib.sphinxext.plot_directive',
     'gwpy.sphinx.autoclassapi',
+    'gwpy.sphinx.directives',
 ]
 
 # customise autodoc
@@ -260,3 +267,55 @@ intersphinx_mapping = {
     'matplotlib': ('http://matplotlib.sourceforge.net/', None),
     'astropy': ('http://docs.astropy.org/en/stable/', None),
 }
+
+# -----------------------------------------------------------------------------
+# Source code links
+
+def linkcode_resolve(domain, info):
+    """Determine the URL corresponding to Python object
+
+    This code is stolen with thanks from the scipy team.
+    """
+    if domain != 'py':
+        return None
+
+    modname = info['module']
+    fullname = info['fullname']
+
+    submod = sys.modules.get(modname)
+    if submod is None:
+        return None
+
+    obj = submod
+    for part in fullname.split('.'):
+        try:
+            obj = getattr(obj, part)
+        except:
+            return None
+
+    try:
+        fn = inspect.getsourcefile(obj)
+    except:
+        fn = None
+    if not fn:
+        try:
+            fn = inspect.getsourcefile(sys.modules[obj.__module__])
+        except:
+            fn = None
+    if not fn or fn.startswith(os.path.pardir):
+        return None
+
+    try:
+        source, lineno = inspect.findsource(obj)
+    except:
+        lineno = None
+
+    if lineno:
+        linespec = "#L%d" % (lineno + 1)
+    else:
+        linespec = ""
+
+    fn = os.path.relpath(fn, start=os.path.dirname(gwpy.__file__))
+    tag = gwpy_version.git_tag or gwpy_version.git_branch
+    return ("http://github.com/gwpy/gwpy/tree/%s/gwpy/%s%s"
+            % (tag, fn, linespec))
