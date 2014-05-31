@@ -22,35 +22,27 @@
 Problem
 -------
 
-I would like to study the gravitational wave strain spectrogram around the time of an interesting simulated signal during the last science run (S6). I have access to the frame files on the LIGO Data Grid machine `ldas-pcdev2.ligo-wa.caltech.edu` and so can read them directly.
+I would like to study the gravitational wave strain spectrogram around the time of an interesting simulated signal during the last science run (S6).
 """
-
-from gwpy.time import Time
-from gwpy.timeseries import TimeSeries
 
 from gwpy import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-
-# set the times
-start = Time('2010-09-16 06:42:00', format='iso', scale='utc')
-end = Time('2010-09-16 06:43:00', format='iso', scale='utc')
+# import TimeSeries class
+from gwpy.timeseries import TimeSeries
 
 # find the data using NDS
-data = TimeSeries.fetch('H1:LDAS-STRAIN', start.gps, end.gps, verbose=True)
-data.unit = 'strain'
+gwdata = TimeSeries.fetch('H1:LDAS-STRAIN', 'September 16 2010 06:40', 'September 16 2010 06:50')
+gwdata.unit = 'strain'
 
 # calculate spectrogram
-specgram = data.spectrogram(1)
-specgram **= 1/2.
+specgram = gwdata.spectrogram(5, fftlength=2, overlap=1) ** (1/2.)
 
-# plot
-plot = specgram.plot()
-plot.logy = True
-plot.ylim = [40, 4096]
-plot.add_colorbar(log=True, clim=[1e-23, 1e-20]),
-plot.ylim = [40, 4000]
+# make plot and add colour scale
+plot = specgram.plot(norm='log', vmin=1e-23, vmax=1e-19)
+plot.set_ylim(40, 4000)
+plot.add_colorbar(label=r'Gravitational-wave amplitude [strain/$\sqrt{\mathrm{Hz}}$]')
 
 if __name__ == '__main__':
     try:

@@ -22,27 +22,31 @@
 Problem
 -------
 
-I would like to study the gravitational wave strain time-series around the time of an interesting simulated signal during the last science run (S6). I have access to the frame files on the LIGO Data Grid machine `ldas-pcdev2.ligo-wa.caltech.edu` and so can read them directly.
-"""
+I would like to study the gravitational wave strain time-series around the time of an interesting simulated signal during the last science run (S6).
 
-from gwpy.time import gps
-from gwpy.timeseries import TimeSeries
+These data are public, so we can load them directly from the web.
+"""
 
 from gwpy import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
+from urllib2 import urlopen
 
-# set the times
-start = gps('2010-09-16 06:42:00')
-end = gps('2010-09-16 06:43:00')
+from numpy import asarray
 
-# make timeseries
-data = TimeSeries.fetch('H1:LDAS-STRAIN', start, end)
-data.unit = 'strain'
+from gwpy.timeseries import TimeSeries
 
-# plot
-plot = data.plot()
+# download data
+data = urlopen('http://www.ligo.org/science/GW100916/L-strain_hp30-968654552-10.txt').read()
+
+# parse as floats and read as a TimeSeries
+ts = TimeSeries(asarray(data.splitlines(), dtype=float), epoch=968654552, sample_rate=16384, unit='strain')
+
+# make a plot
+plot = ts.plot()
+plot.set_title('LIGO Livingston Observatory data for GW100916')
+plot.set_ylabel('Gravitational-wave strain amplitude')
 
 if __name__ == '__main__':
     try:

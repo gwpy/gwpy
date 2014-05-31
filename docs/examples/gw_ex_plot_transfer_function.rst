@@ -4,10 +4,6 @@ GWpy Example: measuring a transfer function
 
 .. currentmodule:: gwpy.timeseries
 
-.. code-block:: bash
-
-   $ python examples/gw_ex_plot_transfer_function.py
-
 Problem
 -------
 
@@ -60,7 +56,8 @@ their FFTs will have different sizes):
 And now we can plot the result as a :class:`~gwpy.plotter.BodePlot`:
 
 .. literalinclude:: ../../examples/gw_ex_plot_transfer_function.py
-   :lines: 64,65
+   :append: plot.show()
+   :lines: 64-66
 
 .. plot:: ../examples/gw_ex_plot_transfer_function.py
 

@@ -41,20 +41,21 @@ badtime = 1061524816
 duration = 120
 
 # read the data over the network
-gooddata = TimeSeries.fetch('L1:PSL-ISS_PDB_OUT_DQ', goodtime,
-                            goodtime+duration, verbose=True)
-baddata = TimeSeries.fetch('L1:PSL-ISS_PDB_OUT_DQ', badtime,
-                           badtime+duration, verbose=True)
+gooddata = TimeSeries.fetch('L1:PSL-ISS_PDB_OUT_DQ', goodtime, goodtime+duration)
+gooddata.name = 'Clean data'
+baddata = TimeSeries.fetch('L1:PSL-ISS_PDB_OUT_DQ', badtime, badtime+duration)
+baddata.name = 'Noisy data'
 
-# calculate spectrum with 1.8 Hz resolution
-goodasd = gooddata.asd(8, 4, 'welch')
-badasd = baddata.asd(8, 4, 'welch')
+# calculate spectrum with 1/8 Hz resolution
+goodasd = gooddata.asd(4, 2)
+badasd = baddata.asd(4, 2)
 
 # plot
 plot = badasd.plot()
-plot.add_spectrum(goodasd)
-plot.xlim = [10, 8000]
-plot.ylim = [1e-6, 5e-4]
+ax = plot.gca()
+ax.plot(goodasd)
+ax.set_xlim(10, 8000)
+ax.set_ylim(1e-6, 5e-4)
 
 if __name__ == '__main__':
     try:

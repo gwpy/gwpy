@@ -28,31 +28,26 @@ have access to the frame files on disk, so I'll need to use NDS.
 
 """
 
-from gwpy.time import Time
+from gwpy.time import tconvert
 from gwpy.timeseries import TimeSeries
 
 from gwpy import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-
-# set the times
-start = Time('2010-08-01 00:00:00', format='iso', scale='utc')
-end = Time('2010-08-01 00:02:00', format='iso', scale='utc')
-
 # read the data over the network
-lho = TimeSeries.fetch('H1:LDAS-STRAIN', start.gps, end.gps, verbose=True)
+lho = TimeSeries.fetch('H1:LDAS-STRAIN', 'August 1 2010', 'August 1 2010 00:02')
 lho.unit = 'strain'
-llo = TimeSeries.fetch('L1:LDAS-STRAIN', start.gps, end.gps, verbose=True)
-llo.unit = 'strain'
+#llo = TimeSeries.fetch('L1:LDAS-STRAIN', start.gps, end.gps, verbose=True)
+#llo.unit = 'strain'
 
 # calculate spectrum with 0.5Hz resolution
 lhoasd = lho.asd(2, 1)
-lloasd = llo.asd(2, 1)
+#lloasd = llo.asd(2, 1)
 
 # plot
 plot = lhoasd.plot(color='b', label='LHO')
-plot.add_spectrum(lloasd, color='g', label='LLO')
+#plot.add_spectrum(lloasd, color='g', label='LLO')
 plot.xlim = [40, 4096]
 plot.ylim = [1e-23, 7.5e-21]
 

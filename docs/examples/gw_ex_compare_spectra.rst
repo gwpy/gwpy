@@ -1,8 +1,8 @@
-.. currentmodule:: gwpy.spectrum.core
+======================================================================================
+GWpy Example: comparing a channel's :class:`~gwpy.spectrum.Spectrum` between two times
+======================================================================================
 
-===========================================================
-GWpy.Ex: comparing a Channel's `Spectrum` between two times
-===========================================================
+.. currentmodule:: gwpy.spectrum
 
 Problem
 -------
@@ -18,38 +18,37 @@ Solution
 First, we define what the 'good' and 'bad' times are:
 
 .. literalinclude:: ../../examples/gw_ex_compare_spectra.py
-   :lines: 32,40-41
+   :lines: 39,40
 
 and how long we want to search each one
 
 .. literalinclude:: ../../examples/gw_ex_compare_spectra.py
-   :lines: 42
+   :lines: 41
 
-Then we can fetch the :class:`~gwpy.timeseries.core.TimeSeries` data for both times for the in-loop photodiode signal for the intensity stabilisation servo (ISS) of the pre-stabilised laser (PSL):
-
-.. literalinclude:: ../../examples/gw_ex_compare_spectra.py
-   :lines: 33,45-48
-
-We can now calculate the amplitude spectral density (ASD) for each time using the :meth:`~gwpy.timeseries.core.TimeSeries.asd` method,
+Then we can fetch the :class:`~gwpy.timeseries.TimeSeries` data for both times for the in-loop photodiode signal for the intensity stabilisation servo (ISS) of the pre-stabilised laser (PSL):
 
 .. literalinclude:: ../../examples/gw_ex_compare_spectra.py
-   :lines: 51-52
+   :lines: 32,44-47
+
+We can now calculate the amplitude spectral density (ASD) for each time using the :meth:`~gwpy.timeseries.TimeSeries.asd` method,
+
+.. literalinclude:: ../../examples/gw_ex_compare_spectra.py
+   :lines: 50,51
 
 and make a comparison plot:
 
 .. literalinclude:: ../../examples/gw_ex_compare_spectra.py
-   :lines: 55-58
+   :append: plot.show()
+   :lines: 54-58
 
 .. plot:: ../examples/gw_ex_compare_spectra.py
 
 The extra peak at 620 Hz is worrying, so we can zoom in around that frequency range to see what's going on:
 
-.. code:: python
+.. literalinclude:: gw_ex_compare_spectra_zoom.py
+   :append: plot.refresh()
+   :lines: 2-5
 
-   plot.logx = False
-   plot.xlim = [600, 640]
-   plot.refresh()
-
-.. plot:: ../examples/gw_ex_compare_spectra_zoom.py
+.. plot:: examples/gw_ex_compare_spectra_zoom.py
 
 That needs investigating, better call it in!
