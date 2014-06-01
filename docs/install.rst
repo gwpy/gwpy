@@ -2,24 +2,17 @@
 Installing GWpy
 ***************
 
-===================
-Installing from git
-===================
+======================
+Installing from GitHub
+======================
 
-The source code for GWpy is under ``git`` version control, hosted by http://github.com. The following instructions require use of the command-line terminal, available for all Unix-based systems. Currently, support for Windows isn't possible.
+At this time GWpy isn't mature enough to have a released version, but that will come soon, which will make installing it a lot easier.
 
-You can install the package by first cloning the repository
-
-.. code-block:: bash
-
-    git clone https://github.com/gwpy/gwpy.git
-
-and then running the ``setup.py`` script as follows:
+In the mean time, it is easiest to install GWpy using the `pip <https://pip.pypa.io/en/latest/index.html>`_ installer:
 
 .. code-block:: bash
 
-    cd gwpy
-    python setup.py install --user
+   pip install --user git+https://github.com/gwpy/gwpy
 
 The ``--user`` option tells the installer to copy codes into the standard user library paths, on linux machines this is
 
@@ -34,6 +27,24 @@ while on Mac OS this is
     ~/Library/Python/X.Y/lib
 
 where ``X.Y`` is the python major and minor version numbers, e.g. ``2.7``. In either case, python will autmatically know about these directories, so you don't have to fiddle with any environment variables.
+
+======================
+Cloning the repository
+======================
+
+The source code for GWpy is under ``git`` version control, hosted by http://github.com.
+You can clone the repository from the Terminal as follows:
+
+.. code-block:: bash
+
+    git clone https://github.com/gwpy/gwpy.git
+
+You can then, if you wish, install the package by running the ``setup.py`` script as follows:
+
+.. code-block:: bash
+
+    cd gwpy
+    python setup.py install --user
 
 .. warning::
 
@@ -65,16 +76,20 @@ Dependencies
 
 The GWpy package has the following build-time dependencies (i.e. required for installation):
 
-* `astropy <http://astropy.org>`_ >= 0.3
+* `glue <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_
+* `python-dateutil <https://pypi.python.org/pypi/python-dateutil/>`_
 * `NumPy <http://www.numpy.org>`_ >= 1.5
 * `matplotlib <http://matplotlib.org>`_ >= 1.3.0
-* `python-dateutil <https://pypi.python.org/pypi/python-dateutil/>`_
+* `astropy <http://astropy.org>`_ >= 0.3
+
+.. note::
+
+   The `GLUE <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_ package isn't available through PyPI, meaning you will have to install it manually from the link.
 
 **Runtime dependencies**
 
 Additionally, in order for much of the code to import and run properly, users are required to have the following packages:
 
-* `glue <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_
 * `lal <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ and `lalframe <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ (same URL)
 * `NDS2 <https://www.lsc-group.phys.uwm.edu/daswg/projects/nds-client.html>`_ (including SWIG-wrappings for python)
 
