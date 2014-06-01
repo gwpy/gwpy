@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -15,10 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
+"""A package to enable gravitational-wave astrophysics in Python.
 
-"""Package to do gravitational wave astrophysics with python
+GWpy is a collaboration-driven `Python <http://www.python.org>`_ package
+providing tools for studying data from ground-based gravitational-wave
+detectors.
+
+GWpy provides a user-friendly, intuitive interface to the common time-domain
+and frequency-domain data produced by the `LIGO <http://www.ligo.org>`_ and
+`Virgo <http://www.ego-gw.it>`_ instruments and their analysis,
+with easy-to-follow tutorials at each step.
 """
 
+# filter out some annoying, but harmless warnings
 import warnings
 warnings.filterwarnings("ignore", "Module (.*) was already import from")
 warnings.filterwarnings("ignore", "The oldnumeric module",
@@ -28,3 +38,5 @@ warnings.filterwarnings("ignore", "The oldnumeric module",
 from . import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
+__date__ = version.__date__
+__credits__ = "The LIGO Scientific Collaboration and the Virgo Collaboration"

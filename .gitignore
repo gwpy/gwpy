@@ -10,3 +10,4 @@
 .DS_Store
 /examples/*.png
 /.idea
+/[0-9][0-9][0-9][0-9]-*.patch

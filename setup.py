@@ -17,9 +17,19 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Setup the GWpy package
+"""
+
+import sys
+if sys.version < '2.6':
+    raise ImportError("Python versions older than 2.6 are not supported.")
+
 import glob
 import os.path
-from setuptools import setup, find_packages
+import ez_setup
+ez_setup.use_setuptools()
+
+from setuptools import (setup, find_packages)
 
 # test for OrderedDict
 extra_install_requires = []
@@ -28,26 +38,46 @@ try:
 except ImportError:
     extra_install_requires.append('ordereddict>=1.1')
 
-# import version generator
-version = __import__('utils.version', fromlist=[''])
-
+# set basic metadata
 PACKAGENAME = 'gwpy'
-DESCRIPTION = 'Community package for gravitational wave astronomy in Python'
-LONG_DESCRIPTION = ''
 AUTHOR = 'Duncan Macleod'
 AUTHOR_EMAIL = 'duncan.macleod@ligo.org'
 LICENSE = 'GPLv3'
 
-# set version information
-VERSION_PY = '%s/version.py' % PACKAGENAME
-vcinfo = version.GitStatus()
-vcinfo(VERSION_PY, PACKAGENAME, AUTHOR, AUTHOR_EMAIL)
+# -----------------------------------------------------------------------------
+# Process un-PIPped dependencies
 
-# VERSION should be PEP386 compatible (http://www.python.org/dev/peps/pep-0386)
+try:
+    from glue import git_version
+except ImportError as e:
+    e.args = ('GWpy requires the GLUE package, which isn\'t available '
+              'from PyPI. Please visit '
+              'https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html '
+              'to download and install it manually.',)
+    raise
+
+
+# -----------------------------------------------------------------------------
+# Set version information
+
+_version = __import__('utils.version', fromlist=[''])
+vcinfo = _version.GitStatus()
+
+# write version information to gwpy.version
+vcinfo('%s/version.py' % PACKAGENAME, PACKAGENAME, AUTHOR, AUTHOR_EMAIL)
+
+# get version metadata
 VERSION = vcinfo.version
-
-# Indicates if this version is a release version
 RELEASE = vcinfo.version != vcinfo.id and 'dev' not in VERSION
+
+# -----------------------------------------------------------------------------
+# Get more metadata from __init__.py
+
+import gwpy
+DESCRIPTION, LONG_DESCRIPTION = gwpy.__doc__.split('\n', 1)
+
+# -----------------------------------------------------------------------------
+# Find files
 
 # Use the find_packages tool to locate all packages and modules
 packagenames = find_packages(exclude=['utils', 'utils.*'])
@@ -58,21 +88,61 @@ if os.path.isdir('bin'):
 else:
     scripts = []
 
+# -----------------------------------------------------------------------------
+# Define dependencies
+
+requires = dict()
+
+# define core dependencies
+requires['install'] = ['astropy >= 0.3', 'numpy >= 1.5', 'python-dateutil',
+                       'matplotlib >= 1.3.0', 'glue'] + extra_install_requires
+
+extras = dict()
+extras['nds'] = ['nds2']
+
+
+
+# -----------------------------------------------------------------------------
+# run setup
+
 setup(name=PACKAGENAME,
+      provides=[PACKAGENAME],
       version=VERSION,
       description=DESCRIPTION,
-      packages=packagenames,
-      ext_modules=[],
-      scripts=scripts,
-      install_requires=['astropy >= 0.3', 'numpy >= 1.5', 'python-dateutil',
-                        'matplotlib >= 1.3.0'] + extra_install_requires,
-      requires=['astropy', 'glue', 'numpy', 'lal', 'lalframe', 'matplotlib',
-                'scipy'],
-      provides=[PACKAGENAME],
+      long_description=LONG_DESCRIPTION.strip('\n'),
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
       license=LICENSE,
-      long_description=LONG_DESCRIPTION,
-      zip_safe=False,
+      packages=packagenames,
+      scripts=scripts,
+      install_requires=[
+          'glue >= 1.46',
+          'python-dateutil',
+          'numpy >= 1.5',
+          'matplotlib >= 1.3.0',
+          'astropy >= 0.3',
+          ] + extra_install_requires,
+      extras_require={
+          'nds': ['nds2-client'],
+          'gwf': ['frameCPP'],
+          'doc': ['sphinx'],
+          'dsp': ['scipy'],
+          },
+      test_suite='gwpy.tests',
       use_2to3=False,
+      classifiers=[
+          'Programming Language :: Python',
+          'Development Status :: 3 - Alpha',
+          'Intended Audience :: Science/Research',
+          'Intended Audience :: End Users/Desktop',
+          'Intended Audience :: Developers',
+          'Natural Language :: English',
+          'Topic :: Scientific/Engineering',
+          'Topic :: Scientific/Engineering :: Astronomy',
+          'Topic :: Scientific/Engineering :: Physics',
+          'Operating System :: POSIX',
+          'Operating System :: Uniix',
+          'Operating System :: MacOS',
+          'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+          ],
       )
