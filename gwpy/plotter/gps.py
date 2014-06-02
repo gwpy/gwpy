@@ -58,7 +58,7 @@ class GPSMixin(object):
     """
     def __init__(self, *args, **kwargs):
         self.set_unit(kwargs.pop('unit', None))
-        self.set_epoch(kwargs.pop('epoch', 0))
+        self.set_epoch(kwargs.pop('epoch', None))
         # call super for __init__ if this is part of a larger MRO
         try:
             super(GPSMixin, self).__init__(*args, **kwargs)
@@ -155,7 +155,10 @@ class GPSTransform(GPSTransformBase):
     def transform_non_affine(self, a):
         """Transform an array of GPS times.
         """
-        return numpy.round((a - self.epoch) / self.scale, 4)
+        if self.epoch is None:
+             return numpy.round(a / self.scale, 4)
+        else:
+             return numpy.round((a - self.epoch) / self.scale, 4)
 
     def inverted(self):
         return InvertedGPSTransform(unit=self.unit, epoch=self.epoch)
@@ -165,7 +168,10 @@ class InvertedGPSTransform(GPSTransform):
     """Transform time (scaled units) from epoch into GPS time.
     """
     def transform_non_affine(self, a):
-        return numpy.round(a * self.scale + self.epoch, 4)
+        if self.epoch is None:
+            return numpy.round(a * self.scale, 4)
+        else:
+            return numpy.round(a * self.scale + self.epoch, 4)
 
     def inverted(self):
         return GPSTransform(unit=self.unit, epoch=self.epoch)
@@ -197,7 +203,7 @@ class GPSAutoLocator(GPSLocatorMixin, ticker.MaxNLocator):
     `~matplotlib.ticker.AutoLocator` allowing for variations in scale
     and zero-time epoch.
     """
-    def __init__(self, epoch=0, unit=1, nbins=12, steps=None,
+    def __init__(self, epoch=None, unit=1, nbins=12, steps=None,
                  **kwargs):
         """Initialise a new `AutoTimeLocator`, optionally with an `epoch`
         and a `scale` (in seconds).

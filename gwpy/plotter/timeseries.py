@@ -85,7 +85,7 @@ class TimeSeriesAxes(Axes):
     def auto_gps_label(self):
         scale = self.xaxis._scale
         epoch = scale.get_epoch()
-        if not epoch:
+        if epoch is None:
             self.set_xlabel('GPS Time')
         else:
             unit = scale.get_unit_name()
@@ -111,6 +111,13 @@ class TimeSeriesAxes(Axes):
         return self.xaxis._scale.get_epoch()
 
     epoch = property(fget=get_epoch, fset=set_epoch, doc=get_epoch.__doc__)
+
+    def set_xlim(self, *args, **kwargs):
+        if self.epoch is None:
+            xmin = isinstance(args[0], tuple) and args[0][0] or args[0]
+            self.set_epoch(xmin)
+        super(TimeSeriesAxes, self).set_xlim(*args, **kwargs)
+    set_xlim.__doc__ = Axes.set_xlim.__doc__
 
     # -------------------------------------------
     # GWpy class plotting methods
