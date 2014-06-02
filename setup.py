@@ -29,6 +29,7 @@ import os.path
 import ez_setup
 ez_setup.use_setuptools()
 
+from distutils.command.clean import (clean, log, remove_tree)
 from setuptools import (setup, find_packages)
 
 # test for OrderedDict
@@ -55,6 +56,20 @@ except ImportError as e:
               'https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html '
               'to download and install it manually.',)
     raise
+
+
+# -----------------------------------------------------------------------------
+# Clean up after sphinx
+
+class GWpyClean(clean):
+    def run(self):
+        if self.all:
+            sphinx_dir = os.path.join(self.build_base, 'sphinx')
+            if os.path.exists(sphinx_dir):
+                remove_tree(sphinx_dir, dry_run=self.dry_run)
+            else:
+                log.warn("'%s' does not exist -- can't clean it", sphinx_dir)
+        clean.run(self)
 
 
 # -----------------------------------------------------------------------------
@@ -114,6 +129,7 @@ setup(name=PACKAGENAME,
       author_email=AUTHOR_EMAIL,
       license=LICENSE,
       packages=packagenames,
+      cmdclass=dict(clean=GWpyClean),
       scripts=scripts,
       install_requires=[
           'glue >= 1.46',
