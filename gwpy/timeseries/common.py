@@ -99,7 +99,10 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
         elif new.span[0] < other.span[0] < new.span[1]:
             raise ValueError("Cannot append overlapping TimeSeries")
         else:
-            raise ValueError("Cannot append discontiguous TimeSeries")
+            raise ValueError("Cannot append discontiguous TimeSeries\n"
+                             "    TimeSeries 1 span: %s\n"
+                             "    TimeSeries 2 span: %s"
+                             % (self.span, other.span))
     # check empty other
     if not other.size:
         return new
