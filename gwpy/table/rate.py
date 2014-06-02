@@ -39,23 +39,23 @@ OPERATORS = {'<': _operator.lt, '<=': _operator.le, '=': _operator.eq,
 
 
 def event_rate(self, stride, start=None, end=None, timecolumn='time'):
-    """Calculate the rate `TimeSeries` for this `Table`.
+    """Calculate the rate `~gwpy.timeseries.TimeSeries` for this `Table`.
 
     Parameters
     ----------
     stride : `float`
         size (seconds) of each time bin
-    start : `float`, `LIGOTimeGPS`, optional
-        GPS start epoch of rate `TimeSeries`
-    end : `float`, `LIGOTimeGPS`, optional
-        GPS end time of rate `TimeSeries`. This value will be rounded
-        up to the nearest sample if needed.
+    start : `float`, :class:`~gwpy.time.LIGOTimeGPS`, optional
+        GPS start epoch of rate :class:`~gwpy.timeseries.TimeSeries`
+    end : `float`, :class:`~gwpy.time.LIGOTimeGPS`, optional
+        GPS end time of rate :class:`~gwpy.timeseries.TimeSeries`.
+        This value will be rounded up to the nearest sample if needed.
     timecolumn : `str`, optional, default: ``time``
         name of time-column to use when binning events
 
     Returns
     -------
-    rate : :class:`~gwpy.timeseries.core.TimeSeries`
+    rate : :class:`~gwpy.timeseries.TimeSeries`
         a `TimeSeries` of events per second (Hz)
     """
     from gwpy.timeseries import TimeSeries
@@ -77,7 +77,8 @@ def event_rate(self, stride, start=None, end=None, timecolumn='time'):
 
 def binned_event_rates(self, stride, column, bins, operator='>=',
                        start=None, end=None, timecolumn='time'):
-    """Calculate an event rate `TimeSeries` for each of a number of bins.
+    """Calculate an event rate `~gwpy.timeseries.TimeSeriesDict` over
+    a number of bins.
 
     Parameters
     ----------
@@ -92,9 +93,9 @@ def binned_event_rates(self, stride, column, bins, operator='>=',
     operator : `str`, `callable`
         one of:
 
-        - '<', '<=', '>', '>=', '==', '!=', for a standard
-          mathematical operation,
-        - 'in' to use the list of bins as containing bin edges, or
+        - ``'<'``, ``'<='``, ``'>'``, ``'>='``, ``'=='``, ``'!='``,
+          for a standard mathematical operation,
+        - ``'in'`` to use the list of bins as containing bin edges, or
         - a callable function that takes compares an event value
           against the bin value and returns a boolean.
 
@@ -103,19 +104,19 @@ def binned_event_rates(self, stride, column, bins, operator='>=',
            If ``bins`` is given as a list of tuples, this argument
            is ignored.
 
-    start : `float`, `LIGOTimeGPS`, optional
-        GPS start epoch of rate `TimeSeries`.
-    end : `float`, `LIGOTimeGPS`, optional
-        GPS end time of rate `TimeSeries`. This value will be rounded
-        up to the nearest sample if needed.
+    start : `float`, :class:`~gwpy.time.LIGOTimeGPS`, optional
+        GPS start epoch of rate `~gwpy.timeseries.TimeSeries`.
+    end : `float`, `~gwpy.time.LIGOTimeGPS`, optional
+        GPS end time of rate `~gwpy.timeseries.TimeSeries`.
+        This value will be rounded up to the nearest sample if needed.
     timecolumn : `str`, optional, default: ``time``
         name of time-column to use when binning events
 
     Returns
     -------
-    rates : :class:`~gwpy.timeseries.core.TimeSeriesDict`
-        a dict of (bin, `TimeSeries`) pairs describing a rate of events
-        per second (Hz) for each of the bins.
+    rates : :class:`~gwpy.timeseries.TimeSeriesDict`
+        a dict of (bin, `~gwpy.timeseries.TimeSeries`) pairs describing a
+        rate of events per second (Hz) for each of the bins.
     """
     from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
     # get time data

@@ -27,6 +27,7 @@ from ..io import reader
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
+
 def _plot_factory():
     def plot(self, *args, **kwargs):
         """Generate an `EventTablePlot` of this `Table`.
@@ -34,9 +35,23 @@ def _plot_factory():
         Parameters
         ----------
         x : `str`
-            name of column to display on the X-axis
+            name of column defining centre point on the X-axis
         y : `str`
-            name of column to display on the Y-axis
+            name of column defining centre point on the Y-axis
+        width : `str`, optional
+            name of column defining width of tile
+        height : `str`, optional
+            name of column defining height of tile
+
+            .. note::
+
+               The ``width`` and ``height`` positional arguments should
+               either both not given, in which case a scatter plot will
+               be drawn, or both given, in which case a collections of
+               rectangles will be drawn.
+
+        color : `str`, optional, default:`None`
+            name of column by which to color markers
         **kwargs
             any other arguments applicable to the `Plot` constructor, and
             the `Table` plotter.
@@ -48,7 +63,7 @@ def _plot_factory():
 
         See Also
         --------
-        gwpy.plotter.table.EventTablePlot : for more details.
+        gwpy.plotter.EventTablePlot : for more details.
         """
         from gwpy.plotter import EventTablePlot
         return EventTablePlot(self, *args, **kwargs)
@@ -86,23 +101,26 @@ for table in TableByName.itervalues():
 
             .. warning::
 
-               This keyword argument is only applicable when reading a
-               `list` (or `Cache`) of files.
+               The ``nproc ``keyword argument is only applicable when
+               reading a `list` (or :class:`~glue.lal.Cache`) of files.
 
         contenthandler : :class:`~glue.ligolw.ligolw.LIGOLWContentHandler`
-            SAX content handler for parsing LIGO_LW documents.
+            SAX content handler for parsing ``LIGO_LW`` documents.
 
             .. warning::
 
-               This keyword argument is only applicable when reading from
-               LIGO_LW-scheme XML files.
+               The ``contenthandler`` keyword argument is only applicable
+               when reading from ``LIGO_LW``-scheme XML files.
 
         Returns
         -------
-        table : :class:`~glue.ligolw.lsctables.{0}`
+        table : :class:`{0}`
             `{0}` of data with given columns filled
 
         Notes
         -----
         """.format(table.__name__)))
-    table.plot = _plot_factory()
+    if ('start_time' in table.validcolumns or
+            'peak_time' in table.validcolumns or
+            'end_time' in table.validcolumns):
+        table.plot = _plot_factory()
