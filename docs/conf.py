@@ -94,6 +94,7 @@ doxylink = {'lalsuite': ('../../lalsuite/doxygen/lalsuite_dox.tag',
 # matplotlib plot directive
 plot_rcparams = GWPY_PLOT_PARAMS
 plot_apply_rcparams = True
+plot_formats = ['png']
 
 # fix numpydoc autosummary
 numpydoc_show_class_members = False
