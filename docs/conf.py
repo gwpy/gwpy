@@ -269,6 +269,7 @@ intersphinx_mapping = {
     'astropy': ('http://docs.astropy.org/en/stable/', None),
 }
 
+
 # -----------------------------------------------------------------------------
 # Source code links
 
@@ -303,7 +304,7 @@ def linkcode_resolve(domain, info):
             fn = inspect.getsourcefile(sys.modules[obj.__module__])
         except:
             fn = None
-    if not fn or fn.startswith(os.path.pardir):
+    if not fn:
         return None
 
     try:
@@ -317,6 +318,9 @@ def linkcode_resolve(domain, info):
         linespec = ""
 
     fn = os.path.relpath(fn, start=os.path.dirname(gwpy.__file__))
+    if fn.startswith(os.path.pardir):
+        return None
+
     tag = gwpy_version.git_tag or gwpy_version.git_branch
     return ("http://github.com/gwpy/gwpy/tree/%s/gwpy/%s%s"
             % (tag, fn, linespec))
