@@ -57,7 +57,6 @@ except ImportError as e:
               'to download and install it manually.',)
     raise
 
-
 # -----------------------------------------------------------------------------
 # Clean up after sphinx
 
@@ -115,8 +114,6 @@ requires['install'] = ['astropy >= 0.3', 'numpy >= 1.5', 'python-dateutil',
 extras = dict()
 extras['nds'] = ['nds2']
 
-
-
 # -----------------------------------------------------------------------------
 # run setup
 
@@ -157,7 +154,7 @@ setup(name=PACKAGENAME,
           'Topic :: Scientific/Engineering :: Astronomy',
           'Topic :: Scientific/Engineering :: Physics',
           'Operating System :: POSIX',
-          'Operating System :: Uniix',
+          'Operating System :: Unix',
           'Operating System :: MacOS',
           'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
           ],
