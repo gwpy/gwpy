@@ -36,7 +36,7 @@ from ..segments import Segment
 
 
 class Array2D(Array):
-    """A one-dimensional array with metadata
+    """A two-dimensional array with metadata
     """
     _metadata_slots = (Array._metadata_slots +
                        ['x0', 'dx', 'y0', 'dy', 'logx', 'logy'])
@@ -44,7 +44,7 @@ class Array2D(Array):
     yunit = Unit('')
 
     def __new__(cls, data, dtype=None, copy=False, subok=True, **metadata):
-        """Define a new `Series`
+        """Define a new `Array2D`
         """
         if len(data) and not numpy.asarray(data).ndim == 2:
             raise ValueError("Data must be two-dimensional")
@@ -199,7 +199,7 @@ class Array2D(Array):
 
     @property
     def yindex(self):
-        """Positions of the data on the x-axis
+        """Positions of the data on the y-axis
 
         :type: `Series`
         """
@@ -233,7 +233,7 @@ class Array2D(Array):
 
     @property
     def logx(self):
-        """Boolean telling whether this `Series` has a logarithmic
+        """Boolean telling whether this `Array2D` has a logarithmic
         x-axis scale
         """
         try:
@@ -251,7 +251,7 @@ class Array2D(Array):
 
     @property
     def logy(self):
-        """Boolean telling whether this `Series` has a logarithmic
+        """Boolean telling whether this `Array2D` has a logarithmic
         y-ayis scale
         """
         try:
@@ -268,23 +268,23 @@ class Array2D(Array):
         self.metadata['logy'] = bool(val)
 
     # -------------------------------------------
-    # Series methods
+    # Array2D methods
 
     def resample(self, rate, window=None):
-        """Resample this Series to a new rate
+        """Resample this Array2D to a new rate
 
         Parameters
         ----------
         rate : `float`
-            rate to which to resample this `Series`
+            rate to which to resample this `Array2D`
         window : array_like, callable, string, float, or tuple, optional
             specifies the window applied to the signal in the Fourier
             domain.
 
         Returns
         -------
-        Series
-            a new Series with the resampling applied, and the same
+        Array2D
+            a new Array2D with the resampling applied, and the same
             metadata
         """
         if isinstance(rate, Quantity):

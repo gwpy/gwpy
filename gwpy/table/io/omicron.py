@@ -1,4 +1,4 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014)
 #
 # This file is part of GWpy.
