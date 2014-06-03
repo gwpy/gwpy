@@ -1,6 +1,6 @@
-##################################
-Welcome to the GWpy documentation!
-##################################
+.. image:: https://gwpy.github.io/images/gwpy_1200.png
+
+.. title:: GWpy Docs
 
 GWpy is a collaboration-driven `Python <http://www.python.org>`_ package
 providing tools for studying data from ground-based gravitational-wave
@@ -10,7 +10,6 @@ GWpy provides a user-friendly, intuitive interface to the common time-domain
 and frequency-domain data produced by the `LIGO <http://www.ligo.org>`_ and
 `Virgo <http://www.ego-gw.it>`_ instruments and their analysis,
 with easy-to-follow tutorials at each step.
-
 
 First steps
 ~~~~~~~~~~~
@@ -44,6 +43,7 @@ After that, there are a few more advanced objects that extend the functionality 
 
    timeseries/statevector
    spectrum/variance
+   table/index
 
 Visualisation
 ~~~~~~~~~~~~~
