@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWpy.
@@ -22,17 +23,19 @@ The `Array` structure provides the core array-with-metadata environment
 with the standard array methods wrapped to return instances of itself.
 """
 
+from copy import deepcopy
+
 import numpy
-numpy.set_printoptions(threshold=200)
-import copy
+numpy.set_printoptions(threshold=200, linewidth=65)
 
 from astropy.units import (Unit, UnitBase, Quantity)
 from ..io import (reader, writer)
 
+from .. import version
 from ..detector import Channel
 from ..time import Time
+from ..utils import with_import
 
-from .. import version
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>"
@@ -105,7 +108,7 @@ class Array(numpy.ndarray):
                 new = numpy.array(data, dtype=dtype, copy=copy, subok=True)
                 new = new.view(cls)
             new.metadata = cls._metadata_type()
-            for key,val in metadata.iteritems():
+            for key, val in metadata.iteritems():
                 if val is not None:
                     setattr(new, key, val)
             new._baseclass = _baseclass
@@ -139,13 +142,16 @@ class Array(numpy.ndarray):
             array += ','
         metadatarepr = []
         for key in self._metadata_slots:
+            try:
+                val = getattr(self, key)
+            except (AttributeError, KeyError):
+                val = None
             mindent = ' ' * (len(key) + 1)
-            rval = repr(getattr(self, key)).replace('\n',
-                                                    '\n%s' % (indent+mindent))
+            rval = repr(val).replace('\n', '\n%s' % (indent+mindent))
             metadatarepr.append('%s=%s' % (key, rval))
         metadata = (',\n%s' % indent).join(metadatarepr)
         return "<%s(%s\n%s%s)>" % (self.__class__.__name__, array,
-                                    indent, metadata)
+                                   indent, metadata)
 
     def __str__(self):
         """Return a printable string format representation of this object
@@ -154,16 +160,18 @@ class Array(numpy.ndarray):
         after the core data array
         """
         indent = ' '*len('%s(' % self.__class__.__name__)
-        array = str(self.data) + ','
+        array = str(self.data).replace('\n', '\n' + indent) + ','
         if 'dtype' in array:
             array += ','
         metadatarepr = []
         for key in self._metadata_slots:
-            if key == 'epoch':
-                val = self.epoch is None and None or self.epoch.iso
-            else:
+            try:
                 val = getattr(self, key)
-            if val == '':
+            except (AttributeError, KeyError):
+                val = None
+            if key == 'epoch' and val is not None:
+                val = self.epoch.iso
+            elif not val:
                 val = None
             mindent = ' ' * (len(key) + 1)
             rval = str(val).replace('\n', '\n%s' % (indent+mindent))
@@ -183,9 +191,9 @@ class Array(numpy.ndarray):
     __pow__.__doc__ = numpy.ndarray.__pow__.__doc__
 
     def __ipow__(self, y):
-       super(Array, self).__ipow__(y)
-       self.unit **= y
-       return self
+        super(Array, self).__ipow__(y)
+        self.unit **= y
+        return self
     __ipow__.__doc__ = numpy.ndarray.__ipow__.__doc__
 
     def median(self, axis=None, out=None, overwrite_input=False):
@@ -208,7 +216,7 @@ class Array(numpy.ndarray):
 
     def copy(self, order='C'):
         new = super(Array, self).copy(order=order)
-        new.metadata = copy.deepcopy(self.metadata)
+        new.metadata = deepcopy(self.metadata)
         return new
     copy.__doc__ = numpy.ndarray.copy.__doc__
 
@@ -263,8 +271,6 @@ class Array(numpy.ndarray):
         """
         return (_array_reconstruct, (self.__class__, self.dtype),
                 self.__getstate__())
-
-
 
     # -------------------------------------------
     # Array properties
@@ -353,6 +359,7 @@ class Array(numpy.ndarray):
     read = classmethod(reader())
     write = writer()
 
+    @with_import('h5py')
     def to_hdf5(self, output, name=None, group=None, compression='gzip',
                 **kwargs):
         """Convert this `Array` to a :class:`h5py.Dataset`.
@@ -380,7 +387,6 @@ class Array(numpy.ndarray):
             HDF dataset containing these data.
         """
         # create output object
-        import h5py
         if isinstance(output, h5py.Group):
             h5file = output
         else:
@@ -424,8 +430,8 @@ class Array(numpy.ndarray):
 
         return dset
 
-
     @classmethod
+    @with_import('h5py')
     def from_hdf5(cls, f, name=None):
         """Read a `Array` from the given HDF file.
 
@@ -438,14 +444,13 @@ class Array(numpy.ndarray):
         name : `str`
             path in HDF hierarchy of dataset.
         """
-        from h5py import (Dataset, Group)
         from ..io.hdf5 import open_hdf5
 
         h5file = open_hdf5(f)
 
         try:
             # find dataset
-            if isinstance(h5file, Dataset):
+            if isinstance(h5file, h5py.Dataset):
                 dataset = h5file
             else:
                 try:
@@ -462,13 +467,13 @@ class Array(numpy.ndarray):
             # read array, close file, and return
             out = cls(dataset[()], **dict(dataset.attrs))
         finally:
-            if not isinstance(f, (Dataset, Group)):
+            if not isinstance(f, (h5py.Dataset, h5py.Group)):
                 h5file.close()
 
         return out
 
 
-def _array_reconstruct(Class, dtype):
+def _array_reconstruct(class_, dtype):
     """Reconstruct an `Array` after unpickling
 
     Parameters
@@ -478,4 +483,4 @@ def _array_reconstruct(Class, dtype):
     dtype : `type`, `numpy.dtype`
         dtype to set
     """
-    return Class.__new__(Class, [], dtype=dtype)
+    return class_.__new__(class_, [], dtype=dtype)
