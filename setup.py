@@ -20,6 +20,8 @@
 """Setup the GWpy package
 """
 
+from __future__ import print_function
+
 import sys
 if sys.version < '2.6':
     raise ImportError("Python versions older than 2.6 are not supported.")
@@ -46,16 +48,41 @@ AUTHOR_EMAIL = 'duncan.macleod@ligo.org'
 LICENSE = 'GPLv3'
 
 # -----------------------------------------------------------------------------
-# Process un-PIPped dependencies
+# Process complicated dependencies
 
 try:
     from glue import git_version
-except ImportError as e:
-    e.args = ('GWpy requires the GLUE package, which isn\'t available '
-              'from PyPI. Please visit '
-              'https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html '
-              'to download and install it manually.',)
-    raise
+except ImportError:
+    print("GWpy requires the GLUE package, which isn\'t available from PyPI.\n"
+          "Please visit\n" 
+          "https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html\n"
+          "to download and install it manually.", file=sys.stderr)
+    sys.exit(1)
+
+NUMPY_REQUIRED = '1.5'
+
+if 'pip-' in __file__:
+    no_numpy = False
+    numpy_too_old = False
+    try:
+        import numpy
+    except ImportError:
+        no_numpy = True
+    else:
+        if numpy.__version__ < NUMPY_REQUIRED:
+            numpy_too_old = True
+
+    if no_numpy or numpy_too_old:
+        print("BUILD FAILURE ANTICIPATED", file=sys.stderr)
+        print("Pip does not install dependencies in logical order, and so "
+              "will not completely build numpy before moving onto matplotlib, "
+              "meaning the matplotlib build will fail. Please install numpy "
+              "first by running:", file=sys.stderr)
+    if no_numpy:
+        print("pip install numpy", file=sys.stderr)
+    elif numpy_too_old:
+        print("pip install --upgrade numpy", file=sys.stderr)
+        sys.exit(1)
 
 # -----------------------------------------------------------------------------
 # Clean up after sphinx
@@ -125,7 +152,12 @@ setup(name=PACKAGENAME,
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
       license=LICENSE,
+      url='https://gwpy.github.io/',
       packages=packagenames,
+      #package_data={
+      #    PACKAGENAME: ['gwpy/tests/data/*'],
+      #    },
+      include_package_data=True,
       cmdclass=dict(clean=GWpyClean),
       scripts=scripts,
       requires=[
@@ -136,7 +168,7 @@ setup(name=PACKAGENAME,
           'astropy'],
       install_requires=[
           'python-dateutil',
-          'numpy >= 1.5',
+          'numpy >= %s' % NUMPY_REQUIRED,
           'matplotlib >= 1.3.0',
           'astropy >= 0.3',
           ] + extra_install_requires,
