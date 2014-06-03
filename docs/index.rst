@@ -56,5 +56,9 @@ Visualisation
 Indices and tables
 ~~~~~~~~~~~~~~~~~~
 
+.. toctree::
+
 * :ref:`genindex`
 * :ref:`modindex`
+
+|

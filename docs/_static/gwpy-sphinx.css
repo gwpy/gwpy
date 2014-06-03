@@ -1,0 +1,140 @@
+/* Copyright (C) Duncan Macleod (2014)
+ *
+ * This file is part of GWpy.
+ *
+ * GWpy is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GWpy is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * This file contains sphinx-specific extensions to the core GWpy CSS
+ */
+
+dd {
+    margin-left: 0px;
+}
+
+dl.attribute tt.descname,
+dl.method tt.descname,
+dl.class tt.descname {
+    font-size: 140% !important;
+}
+
+.rubric {
+    font-size: 120%;
+    border-bottom: 1px solid #ccc;
+}
+
+p.rubric {
+    padding-top: 0;
+    margin-top: 0;
+}
+
+.bs-sidenav.affix {
+    margin-top: 0px !important;
+}
+
+.field-list blockquote {
+    border-left: 0 !important;
+    padding-left: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.field-list blockquote p {
+    padding-left: 20px;
+    font-size: 100% !important;
+}
+
+blockquote {
+    padding: 0 !important;
+}
+
+.docutils {
+    padding: 0 !important;
+}
+
+tt.docutils,
+span.classifier {
+    font-style: normal !important;
+}
+
+dl.method p.rubric,
+dl.attribute p.rubric {
+    font-size: 100%;
+    font-weight: bold;
+    border-bottom: 0;
+}
+
+.table tr > td:first-child {
+    font-family: monospace;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Attributes                                                                */
+
+dl.attribute dd {
+    padding-left: 40px;
+}
+
+dl.attribute em.property {
+    padding-left: 5px;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Methods                                                                   */
+
+dl.method dd {
+    padding-left: 40px;
+}
+
+dl.method div.admonition {
+    padding-left: 0;
+}
+
+dl.method > dt,
+dl.method > dt > em,
+dl.classmethod > dt,
+dl.classmethod > dt > em {
+    font-family: monospace;
+    font-weight: normal;
+    font-style: normal;
+}
+
+table.field-list th.field-name {
+    padding-left: 0;
+    margin-left: 0;
+}
+
+
+
+/* ------------------------------------------------------------------------- */
+/* Classes                                                                   */
+
+tt.descclassname,
+tt.descclassname + tt.descname {
+    font-size: 200% !important;
+}
+
+dl.class table.field-list td.field-body > p {
+    font-family: monospace !important;
+}
+
+dl.class:after {
+    content: "";
+    display: block;
+    height: 1px;
+    width: 80%;
+    margin: 30px 10% 50px;
+    background: #ccc;
+}
