@@ -24,15 +24,22 @@ import numpy
 
 from astropy import units
 
+try:
+    from ..io.nds import (NDS2_CHANNEL_TYPE, NDS2_CHANNEL_TYPESTR)
+except ImportError:
+    NDS2_CHANNEL_TYPESTR = {}
+    NDS2_CHANNEL_TYPE = {}
+
 from .. import version
-from ..io import nds as ndsio
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
+re_quote = re.compile(r'^[\s\"\']+|[\s\"\']+$')
+
 
 class Channel(object):
-    """Representation of a LaserInterferometer data channel.
+    """Representation of a laser-interferometer data channel.
 
     Parameters
     ----------
@@ -169,9 +176,9 @@ class Channel(object):
     def type(self, type_):
         if type_ is None:
             self._type = None
-        elif isinstance(type_, int):
-            self._type = ndsio.NDS2_CHANNEL_TYPESTR[type_]
-        elif type_.lower() in ndsio.NDS2_CHANNEL_TYPE:
+        elif type_ in NDS2_CHANNEL_TYPESTR:
+            self._type = NDS2_CHANNEL_TYPESTR[type_]
+        elif type_.lower() in NDS2_CHANNEL_TYPE:
             self._type = type_.lower()
         else:
             raise ValueError("Channel type '%s' not understood." % type_)
@@ -182,7 +189,7 @@ class Channel(object):
 
         This property is mapped to the `Channel.type` string.
         """
-        return ndsio.NDS2_CHANNEL_TYPE.get(self.type, None)
+        return NDS2_CHANNEL_TYPE.get(self.type)
 
     @ndstype.setter
     def ndstype(self, type_):
@@ -296,21 +303,21 @@ class Channel(object):
     def from_nds2(cls, nds2channel):
         """Generate a new channel using an existing nds2.channel object
         """
+        # extract metadata
         name = nds2channel.name
         sample_rate = nds2channel.sample_rate
         unit = nds2channel.signal_units
         if not unit:
             unit = None
         ctype = nds2channel.channel_type_to_string(nds2channel.channel_type)
-        dtypestr = nds2channel.data_type_to_string(nds2channel.data_type)
-        try:
-            from lal import utils as lalutils
-        except ImportError:
-            dtype = None
-        else:
-            laltype = lalutils.LAL_TYPE_FROM_STR[
-                dtypestr.replace('_', '').upper()]
-            dtype = lalutils.NUMPY_TYPE_FROM_LAL[laltype]
+        # get dtype
+        dtype = {nds2channel.DATA_TYPE_INT16: numpy.int16,
+                 nds2channel.DATA_TYPE_INT32: numpy.int32,
+                 nds2channel.DATA_TYPE_INT64: numpy.int64,
+                 nds2channel.DATA_TYPE_FLOAT32: numpy.float32,
+                 nds2channel.DATA_TYPE_FLOAT64: numpy.float64,
+                 nds2channel.DATA_TYPE_COMPLEX32: numpy.complex64,
+                }.get(nds2channel.data_type)
         return cls(name, sample_rate=sample_rate, unit=unit, dtype=dtype,
                    type=ctype)
 
@@ -372,6 +379,41 @@ class ChannelList(list):
         `ChannelList`.
         """
         return set([c.ifo for c in self])
+
+    @classmethod
+    def from_names(cls, *names):
+        new = cls()
+        for namestr in names:
+            for name in new._split_names(namestr):
+                new.append(Channel(name))
+        return new
+
+    @staticmethod
+    def _split_names(namestr):
+        """Split a comma-separated list of channel names.
+        """
+        out = []
+        namestr = re_quote.sub('', namestr)
+        while True:
+            namestr = namestr.strip('\' \n')
+            if ',' not in namestr:
+                break
+            for nds2type in NDS2_CHANNEL_TYPE.keys() + ['']:
+                if nds2type and ',%s' % nds2type in namestr:
+                    try:
+                        channel, ctype, namestr = namestr.split(',', 2)
+                    except ValueError:
+                        channel, ctype = namestr.split(',')
+                        namestr = ''
+                    out.append('%s,%s' % (channel, ctype))
+                    break
+                elif nds2type == '' and ',' in namestr:
+                    channel, namestr = namestr.split(',', 1)
+                    out.append(channel)
+                    break
+        if namestr:
+            out.append(namestr)
+        return out
 
     def find(self, name):
         """Find the `Channel` with a specific name in this `ChannelList`.

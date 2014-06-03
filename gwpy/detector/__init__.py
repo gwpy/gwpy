@@ -16,27 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Defines each LaserInterferometer detector in the current network
+"""This module defines the :class:`~gwpy.detector.Channel`.
 """
 
-from .interferometers import *
+# This module used to define the `LaserInterferometer` class, but it was
+# removed # pre-release because it never got used, or implemented properly.
+
+from .. import version
 from .channel import *
 
-# build list of known detectors from LAL
-try:
-    from lal import lalCachedDetectors
-except ImportError:
-    pass
-else:
-    __all__ = ([ifo.frDetector.name for ifo in lalCachedDetectors] +
-               ["DETECTOR_BY_PREFIX"])
-    DETECTOR_BY_PREFIX = dict()
-    for ifo in lalCachedDetectors:
-        detector = LaserInterferometer()
-        detector.prefix = ifo.frDetector.prefix
-        detector.name = ifo.frDetector.name
-        detector.vertex = ifo.location
-        detector.response_matrix = ifo.response
-        globals()[detector.name] = detector
-        DETECTOR_BY_PREFIX[detector.prefix] = detector
-    del lalCachedDetectors
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__version__ = version.version

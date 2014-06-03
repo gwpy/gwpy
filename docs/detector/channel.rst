@@ -18,7 +18,7 @@ These data streams are known as 'channels', and are named according to a convent
 
    L1:PSS-ISS_PDB_OUT_DQ
 
-describes the output signal (``OUT``) from photodiode-B (``PDB``) inside the Intensity Stabilisation System (``ISS``) of the Pre-Stabilised Laser (``PSL``) powering the ``L1`` instrument, hosted at the LIGO Livingston Observatory.
+describes the output signal (``OUT``) from photodiode-B (``PDB``) inside the Intensity Stabilisation System (``ISS``) of the Pre-Stabilised Laser (``PSL``) powering the ``L1`` instrument, hosted at the LIGO Livingston Observatory. The ``DQ`` suffix indicates that this channel was recorded in data files for offline study (many more 'test point' channels are used only in real-time, and are never recorded).
 
 A simple representation of this physical signal is provided by the :class:`Channel` object::
 
