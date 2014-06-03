@@ -38,7 +38,8 @@ import numpy
 from glue.segmentsUtils import from_bitstream
 from astropy.units import Quantity
 
-from .core import *
+from .core import (TimeSeries, TimeSeriesDict, ArrayTimeSeries,
+                   NDS2_FETCH_TYPE_MASK)
 from ..detector import Channel
 from ..time import Time
 from ..segments import *
@@ -431,8 +432,8 @@ class StateVector(TimeSeries):
                 for i,bit in enumerate(self.bitmask) if bit is not None]
 
     @classmethod
-    def fetch(cls, channel, start, end, bitmask=[], host=None,
-              port=None, verbose=False):
+    def fetch(cls, channel, start, end, bitmask=[], host=None, port=None,
+              verbose=False, connection=None, type=NDS2_FETCH_TYPE_MASK):
         """Fetch data from NDS into a `StateVector`.
 
         Parameters
@@ -446,20 +447,24 @@ class StateVector(TimeSeries):
         bitmask : `BitMask`, `list`, optional
             definition of bits for this `StateVector`
         host : `str`, optional
-            URL of NDS server to use, defaults to observatory site host
+            URL of NDS server to use, defaults to observatory site host.
         port : `int`, optional
-            port number for NDS server query, must be given with `host`
+            port number for NDS server query, must be given with `host`.
         verbose : `bool`, optional
-            print verbose output about NDS progress
+            print verbose output about NDS progress.
+        connection : :class:`~gwpy.io.nds.NDS2Connection`
+            open NDS connection to use.
+        type : `int`, `str`,
+            NDS2 channel type integer or string name.
 
         Returns
         -------
-        StateVector
+        data : `StateVector`
             a new `StateVector` containing the data read from NDS
         """
-        new = super(StateVector, cls).fetch(channel, start, end,
-                                            host=host, port=port,
-                                            verbose=verbose)
+        new = StateVectorDict.fetch(
+            [channel], start, end, host=host, port=port,
+            verbose=verbose, connection=connection)[channel]
         new.bitmask = bitmask
         return new
 
@@ -495,6 +500,10 @@ class StateVector(TimeSeries):
         if format == 'timeseries':
             return super(StateVector, self).plot(**kwargs)
         elif format == 'segments':
+            kwargs.setdefault('facecolor', 'green')
+            kwargs.setdefault('edgecolor', 'black')
+            kwargs.setdefault('valid', {'facecolor': 'red',
+                                        'edgecolor': 'black'})
             from ..plotter import SegmentPlot
             return SegmentPlot(*self.to_dqflags(), **kwargs)
         raise ValueError("'format' argument must be one of: 'timeseries' or "

@@ -41,7 +41,16 @@ except ImportError:
 
 from astropy import units
 
-import nds2
+try:
+    import nds2
+except ImportError:
+    NDS2_FETCH_TYPE_MASK = None
+else:
+    NDS2_FETCH_TYPE_MASK = (nds2.channel.CHANNEL_TYPE_RAW |
+                            nds2.channel.CHANNEL_TYPE_RDS |
+                            nds2.channel.CHANNEL_TYPE_TEST_POINT |
+                            nds2.channel.CHANNEL_TYPE_STATIC)
+
 
 from ..data import Array2D
 from ..detector import (Channel, ChannelList)
@@ -64,11 +73,6 @@ _UFUNC_STRING = {'less': '<',
                  'greater_equal': '>=',
                  'greater': '>',
                  }
-
-NDS2_FETCH_TYPE_MASK = (nds2.channel.CHANNEL_TYPE_RAW |
-                        nds2.channel.CHANNEL_TYPE_RDS |
-                        nds2.channel.CHANNEL_TYPE_TEST_POINT |
-                        nds2.channel.CHANNEL_TYPE_STATIC)
 
 
 @update_docstrings
@@ -250,6 +254,7 @@ class TimeSeries(Series):
         -----"""))
 
     @classmethod
+    @with_import('nds2')
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
               connection=None, type=NDS2_FETCH_TYPE_MASK):
         """Fetch data from NDS into a TimeSeries.
@@ -1469,6 +1474,7 @@ class TimeSeriesDict(OrderedDict):
         return self
 
     @classmethod
+    @with_import('nds2')
     def fetch(cls, channels, start, end, host=None, port=None,
               verbose=False, connection=None, type=NDS2_FETCH_TYPE_MASK):
         """Fetch data from NDS for a number of channels.
@@ -1499,7 +1505,6 @@ class TimeSeriesDict(OrderedDict):
             from NDS.
         """
         # import module and type-cast arguments
-        import nds2
         if isinstance(start, Time):
             start = start.gps
         elif isinstance(start, (unicode, str)):
@@ -1562,8 +1567,8 @@ class TimeSeriesDict(OrderedDict):
             for host, port in hostlist:
                 with outputcontext:
                     try:
-                        return cls.fetch(channels, start, end, host=host, port=port,
-                                         verbose=verbose, type=type)
+                        return cls.fetch(channels, start, end, host=host,
+                                         port=port, verbose=verbose, type=type)
                     except (RuntimeError, ValueError) as e:
                         gprint('Something went wrong:', file=sys.stderr)
                         # if error and user supplied their own server, raise
@@ -1571,9 +1576,9 @@ class TimeSeriesDict(OrderedDict):
 
             # if we got this far, we can't get all of the channels in one go
             if len(channels) > 1:
-                return TimeSeriesDict(
-                    (c, TimeSeries.fetch(c, start, end, verbose=verbose,
-                                         type=type)) for c in channels)
+                return cls(
+                    (c, cls.EntryClass.fetch(c, start, end, verbose=verbose,
+                                             type=type)) for c in channels)
             e = "Cannot find all relevant data on any known server."
             if not verbose:
                 e += (" Try again using the verbose=True keyword argument to "
@@ -1640,7 +1645,7 @@ class TimeSeriesDict(OrderedDict):
         # fetch data
         if verbose:
             gprint('Downloading data...', end=' ')
-        out = TimeSeriesDict()
+        out = cls()
         with outputcontext:
             try:
                 data = [connection.fetch(start, end,
@@ -1659,7 +1664,7 @@ class TimeSeriesDict(OrderedDict):
                     raise
             for buffers in data:
                 for buffer_, c in zip(buffers, channels):
-                    out.append({c: TimeSeries.from_nds2_buffer(buffer_)})
+                    out.append({c: cls.EntryClass.from_nds2_buffer(buffer_)})
         if verbose:
             gprint('Success.')
         return out
