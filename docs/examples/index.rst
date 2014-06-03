@@ -13,7 +13,9 @@ The examples are provided in the ``examples/`` directory of the git repository, 
 
 See `the installation instructions <../install>`_ for details on how to clone the repository.
 
-**Time-series examples**
+**Simple examples**
+
+The following examples outline a
 
 .. toctree::
    :maxdepth: 1
@@ -22,6 +24,8 @@ See `the installation instructions <../install>`_ for details on how to clone th
    gw_ex_compare_spectra
    gw_ex_plot_spectrogram
    gw_ex_plot_median_spectrogram
+   gw_ex_plot_statevector
    gw_ex_plot_transfer_function
+   gw_ex_plot_event_triggers
 
 |

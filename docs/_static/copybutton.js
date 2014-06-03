@@ -44,15 +44,15 @@ $(document).ready(function() {
     $('.copybutton').toggle(
         function() {
             var button = $(this);
-            button.parent().find('.go, .gp, .gt').hide();
-            button.next('pre').find('.gt').nextUntil('.gp, .go').css('visibility', 'hidden');
+            button.parent().find('.gp').hide();
+            //button.next('pre').find('.gt').nextUntil('.gp, .go').css('visibility', 'hidden');
             button.css('text-decoration', 'line-through');
             button.attr('title', show_text);
         },
         function() {
             var button = $(this);
-            button.parent().find('.go, .gp, .gt').show();
-            button.next('pre').find('.gt').nextUntil('.gp, .go').css('visibility', 'visible');
+            button.parent().find('.gp').show();
+            //button.next('pre').find('.gt').nextUntil('.gp, .go').css('visibility', 'visible');
             button.css('text-decoration', 'none');
             button.attr('title', hide_text);
         });
