@@ -130,7 +130,7 @@ setup(name=PACKAGENAME,
       scripts=scripts,
       requires=[
           'glue',
-          'python-dateutil',
+          'dateutil',
           'numpy',
           'matplotlib',
           'astropy'],
