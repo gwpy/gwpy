@@ -134,6 +134,8 @@ This reference contains the following `Class` entries:
 .. autoclass:: TimeSeries
 
 .. autoclass:: TimeSeriesList
+   :no-inherited-members:
 
 .. autoclass:: TimeSeriesDict
+   :no-inherited-members:
 
