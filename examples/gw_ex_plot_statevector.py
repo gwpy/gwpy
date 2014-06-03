@@ -42,7 +42,7 @@ bitmask = [
     'Stage 2 isolated',
     'Master switch ON',
     'Stage 1 WatchDog OK',
-    'Stage 2 WatchDog OK'
+    'Stage 2 WatchDog OK',
 ]
 
 # get data
