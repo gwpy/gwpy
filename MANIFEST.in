@@ -1,5 +1,5 @@
-include LICENSE README.rst
+include LICENSE README.rst MANIFEST.in
 recursive-include gwpy/tests/data *
 include examples/*py
-include utils/*py
+include vcs.py
 include ez_setup.py

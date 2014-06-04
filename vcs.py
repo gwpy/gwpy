@@ -135,8 +135,7 @@ class GitStatus(object):
         fobj.write("# coding=utf-8\n")
         if pauthor:
             fobj.write("# Copyright (C) %s (2013)\n\n" % pauthor)
-        fobj.write("\"\"\"Versioning record for %s\n\"\"\"\n\n"
-                   % pname)
+        fobj.write("\"\"\"Versioning record for %s\n\"\"\"\n\n" % pname)
 
         # write standard pythonic metadata
         if pauthor and pauthoremail:
@@ -155,7 +154,7 @@ class GitStatus(object):
             else:
                 fobj.write("git_%s = None\n" % attr)
 
-    def __call__(self, outputfile, pname, pauthor=None, pauthoremail=None):
+    def run(self, outputfile, pname, pauthor=None, pauthoremail=None):
         """Process the version information into a new file
 
         Parameters
@@ -173,6 +172,8 @@ class GitStatus(object):
         self.get_tag()
         self.get_status()
         self.version = self.tag.strip('v') or self.id[:6]
+        if self.status.startswith('UNCLEAN'):
+            self.version += 'dev'
         with open(outputfile, 'w') as fobj:
             self.write(fobj, pname, pauthor, pauthoremail)
         with open(outputfile, 'r') as fobj:

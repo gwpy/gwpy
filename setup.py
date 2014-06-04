@@ -58,7 +58,7 @@ try:
     from glue import git_version
 except ImportError:
     print("GWpy requires the GLUE package, which isn\'t available from PyPI.\n"
-          "Please visit\n" 
+          "Please visit\n"
           "https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html\n"
           "to download and install it manually.", file=sys.stderr)
     sys.exit(1)
@@ -102,19 +102,19 @@ class GWpyClean(clean):
                 log.warn("'%s' does not exist -- can't clean it", sphinx_dir)
         clean.run(self)
 
-
 # -----------------------------------------------------------------------------
 # Custom builders to write version.py
 
 version_py = os.path.join(PACKAGENAME, 'version.py')
 
+
 def write_vcs_info(target):
     """Generate target file with versioning information from git VCS
     """
     log.info("generating %s" % target)
-    _version = __import__('utils.version', fromlist=[''])
-    vcinfo = _version.GitStatus()
-    vcinfo(target, PACKAGENAME, AUTHOR, AUTHOR_EMAIL)
+    import vcs
+    gitstatus = vcs.GitStatus()
+    gitstatus.run(target, PACKAGENAME, AUTHOR, AUTHOR_EMAIL)
 
 
 class GWpyBuildPy(build_py.build_py):
@@ -154,7 +154,7 @@ DESCRIPTION, LONG_DESCRIPTION = gwpy.__doc__.split('\n', 1)
 # Find files
 
 # Use the find_packages tool to locate all packages and modules
-packagenames = find_packages(exclude=['utils', 'utils.*'])
+packagenames = find_packages()
 
 # glob for all scripts
 if os.path.isdir('bin'):
