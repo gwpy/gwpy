@@ -54,7 +54,7 @@ else:
 
 from ..data import Array2D
 from ..detector import (Channel, ChannelList)
-from ..io import (reader, nds as ndsio)
+from ..io import reader
 from ..segments import (Segment, SegmentList)
 from ..time import Time
 from ..window import *
@@ -1504,6 +1504,7 @@ class TimeSeriesDict(OrderedDict):
             a new `TimeSeriesDict` of (`str`, `TimeSeries`) pairs fetched
             from NDS.
         """
+        from ..io import nds as ndsio
         # import module and type-cast arguments
         if isinstance(start, Time):
             start = start.gps
