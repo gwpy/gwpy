@@ -34,13 +34,16 @@ try:
     from collections import OrderedDict
 except ImportError:
     from ordereddict import OrderedDict
-finally:
-    DEFAULT_HOSTS = OrderedDict([
-        (None, ('ldas-pcdev4.ligo.caltech.edu', 31200)),
-        (None, ('nds.ligo.caltech.edu', 31200)),
-        ('H1', ('nds.ligo-wa.caltech.edu', 31200)),
-        ('L1', ('nds.ligo-la.caltech.edu', 31200)),
-        ('C1', ('nds40.ligo.caltech.edu', 31200))])
+
+DEFAULT_HOSTS = OrderedDict([
+    (None, ('ldas-pcdev4.ligo.caltech.edu', 31200)),
+    (None, ('nds.ligo.caltech.edu', 31200)),
+    ('H1', ('nds.ligo-wa.caltech.edu', 31200)),
+    ('H0', ('nds.ligo-wa.caltech.edu', 31200)),
+    ('L1', ('nds.ligo-la.caltech.edu', 31200)),
+    ('L0', ('nds.ligo-la.caltech.edu', 31200)),
+    ('C1', ('nds40.ligo.caltech.edu', 31200)),
+    ('C0', ('nds40.ligo.caltech.edu', 31200))])
 
 # set type dicts
 NDS2_CHANNEL_TYPESTR = {}
@@ -78,14 +81,11 @@ class NDSWarning(UserWarning):
     pass
 
 
-_HOST_RESOLTION_ORDER = ['nds.ligo.caltech.edu'] + DEFAULT_HOSTS.values()
-
-
 def host_resolution_order(ifo):
     hosts = []
     if ifo in DEFAULT_HOSTS:
         hosts.append(DEFAULT_HOSTS[ifo])
     for difo, hp in DEFAULT_HOSTS.iteritems():
-        if difo != ifo:
+        if difo != ifo and hp not in hosts:
             hosts.append(hp)
     return hosts
