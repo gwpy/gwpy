@@ -2,3 +2,4 @@ include LICENSE README.rst
 recursive-include gwpy/tests/data *
 include examples/*py
 include utils/*py
+include ez_setup.py

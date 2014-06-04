@@ -28,11 +28,15 @@ if sys.version < '2.6':
 
 import glob
 import os.path
+import subprocess
+
 import ez_setup
 ez_setup.use_setuptools()
 
+from distutils import log
 from distutils.command.clean import (clean, log, remove_tree)
 from setuptools import (setup, find_packages)
+from setuptools.command import (build_py, sdist)
 
 # test for OrderedDict
 extra_install_requires = []
@@ -80,6 +84,7 @@ if 'pip-' in __file__:
               "first by running:", file=sys.stderr)
     if no_numpy:
         print("pip install numpy", file=sys.stderr)
+        sys.exit(1)
     elif numpy_too_old:
         print("pip install --upgrade numpy", file=sys.stderr)
         sys.exit(1)
@@ -99,17 +104,45 @@ class GWpyClean(clean):
 
 
 # -----------------------------------------------------------------------------
-# Set version information
+# Custom builders to write version.py
 
-_version = __import__('utils.version', fromlist=[''])
-vcinfo = _version.GitStatus()
+version_py = os.path.join(PACKAGENAME, 'version.py')
 
-# write version information to gwpy.version
-vcinfo('%s/version.py' % PACKAGENAME, PACKAGENAME, AUTHOR, AUTHOR_EMAIL)
+def write_vcs_info(target):
+    """Generate target file with versioning information from git VCS
+    """
+    log.info("generating %s" % target)
+    _version = __import__('utils.version', fromlist=[''])
+    vcinfo = _version.GitStatus()
+    vcinfo(target, PACKAGENAME, AUTHOR, AUTHOR_EMAIL)
+
+
+class GWpyBuildPy(build_py.build_py):
+    def run(self):
+        try:
+            write_vcs_info(version_py)
+        except subprocess.CalledProcessError:
+            # failed to generate version.py because git call did'nt work
+            if os.path.exists(version_py):
+                log.info("cannot determine git status, using existing %s"
+                         % version_py)
+        build_py.build_py.run(self)
+
+
+class GWpySDist(sdist.sdist):
+    def run(self):
+        write_vcs_info(version_py)
+        sdist.sdist.run(self)
 
 # get version metadata
-VERSION = vcinfo.version
-RELEASE = vcinfo.version != vcinfo.id and 'dev' not in VERSION
+try:
+    from gwpy import version
+except ImportError:
+    VERSION = None
+    RELEASE = False
+else:
+    VERSION = version.version
+    RELEASE = version.version != version.git_id and 'dev' not in VERSION
 
 # -----------------------------------------------------------------------------
 # Get more metadata from __init__.py
@@ -158,7 +191,11 @@ setup(name=PACKAGENAME,
       #    PACKAGENAME: ['gwpy/tests/data/*'],
       #    },
       include_package_data=True,
-      cmdclass=dict(clean=GWpyClean),
+      cmdclass={
+          'clean': GWpyClean,
+          'build_py': GWpyBuildPy,
+          'sdist': GWpySDist,
+          },
       scripts=scripts,
       requires=[
           'glue',
