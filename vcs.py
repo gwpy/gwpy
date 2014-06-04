@@ -171,7 +171,10 @@ class GitStatus(object):
         self.get_branch()
         self.get_tag()
         self.get_status()
-        self.version = self.tag.strip('v') or self.id[:6]
+        if self.tag:
+            self.version = self.tag.strip('v')
+        else:
+            self.version = self.id[:6]
         if self.status.startswith('UNCLEAN'):
             self.version += 'dev'
         with open(outputfile, 'w') as fobj:
