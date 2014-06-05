@@ -23,7 +23,7 @@
 import os
 
 from sphinx import package_dir
-from sphinx.ext.autodoc import (ALL, ClassDocumenter)
+from sphinx.ext.autodoc import (ALL, Documenter, ClassDocumenter)
 from sphinx.ext.autosummary import get_documenter
 from sphinx.jinja2glue import BuiltinTemplateLoader
 from sphinx.util.inspect import safe_getattr
@@ -45,6 +45,30 @@ class GWpyClassDocumenter(ClassDocumenter):
     ``:members:``.
     """
     objtype = 'class'
+
+    def add_directive_header(self, sig):
+        if self.doc_as_attr:
+            self.directivetype = 'attribute'
+        Documenter.add_directive_header(self, sig)
+
+        # add inheritance info, if wanted
+        if not self.doc_as_attr and self.options.show_inheritance:
+            self.add_line(u'', '<autodoc>')
+            if (hasattr(self.object, '__bases__') and
+                    len(self.object.__bases__)):
+                bases = []
+                for b in self.object.__bases__:
+                    if b.__module__ == '__builtin__':
+                        bases.append(u':class:`%s`' % b.__name__)
+                    elif b.__module__.startswith('gwpy.'):
+                        bases.append(u':class:`%s.%s`'
+                                     % (b.__module__.rsplit('.', 1)[0],
+                                        b.__name__))
+                    else:
+                        bases.append(u':class:`%s.%s`'
+                                     % (b.__module__, b.__name__))
+                self.add_line(u'   Bases: %s' % ', '.join(bases),
+                              '<autodoc>')
 
     def add_content(self, more_content, no_docstring=False):
         if self.doc_as_attr:
