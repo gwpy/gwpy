@@ -21,6 +21,7 @@ dependencies within GWpy code.
 """
 
 import inspect
+from functools import wraps
 
 from .. import version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -73,6 +74,7 @@ def with_import(module):
     """
     modname = module.split('.')[-1]
     def decorate_method(func):
+        @wraps(func)
         def wrapper(*args, **kwargs):
             func.func_globals[modname] = import_method_dependency(module,
                                                                   stacklevel=2)
