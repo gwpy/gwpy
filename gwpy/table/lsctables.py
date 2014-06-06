@@ -78,14 +78,14 @@ for table in TableByName.itervalues():
 
         Parameters
         ----------
-        f : `file`, `str`, `CacheEntry`, `list`, `Cache`
+        f : `file`, `str`, `~glue.lal.CacheEntry`, `list`, `~glue.lal.Cache`
             object representing one or more files. One of
 
-            - an open `file`
-            - a `str` pointing to a file path on disk
-            - a formatted :class:`~glue.lal.CacheEntry` representing one file
-            - a `list` of `str` file paths
-            - a formatted :class:`~glue.lal.Cache` representing many files
+                - an open `file`
+                - a `str` pointing to a file path on disk
+                - a formatted `~glue.lal.CacheEntry` representing one file
+                - a `list` of `str` file paths
+                - a formatted `~glue.lal.Cache` representing many files
 
         columns : `list`, optional
             list of column name strings to read, default all.
@@ -101,16 +101,16 @@ for table in TableByName.itervalues():
 
             .. warning::
 
-               The ``nproc ``keyword argument is only applicable when
-               reading a `list` (or :class:`~glue.lal.Cache`) of files.
+               The ``nproc`` keyword argument is only applicable when
+               reading a `list` (or `~glue.lal.Cache`) of files.
 
-        contenthandler : :class:`~glue.ligolw.ligolw.LIGOLWContentHandler`
+        contenthandler : `~glue.ligolw.ligolw.LIGOLWContentHandler`
             SAX content handler for parsing ``LIGO_LW`` documents.
 
             .. warning::
 
                The ``contenthandler`` keyword argument is only applicable
-               when reading from ``LIGO_LW``-scheme XML files.
+               when reading from ``LIGO_LW`` documents.
 
         Returns
         -------
