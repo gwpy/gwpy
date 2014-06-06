@@ -24,7 +24,7 @@ import sys
 
 import nds2
 
-from ... import version
+from .. import version
 from .kerberos import *
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

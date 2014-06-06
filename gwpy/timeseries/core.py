@@ -55,6 +55,7 @@ else:
 from ..data import Array2D
 from ..detector import (Channel, ChannelList)
 from ..io import reader
+from ..io.kerberos import kinit
 from ..segments import (Segment, SegmentList)
 from ..time import Time
 from ..window import *
@@ -1546,8 +1547,8 @@ class TimeSeriesDict(OrderedDict):
             except RuntimeError as e:
                 if str(e).startswith('Request SASL authentication'):
                     gprint('\nError authenticating against %s' % host,
-                          file=sys.stderr)
-                    ndsio.kinit()
+                           file=sys.stderr)
+                    kinit()
                     with outputcontext:
                         connection = nds2.connection(host, port)
                 else:

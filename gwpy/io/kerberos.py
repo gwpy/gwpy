@@ -26,6 +26,7 @@ See the documentation of the `kinit` function for example usage
 
 import getpass
 import os
+import sys
 
 try:
     raw_input
@@ -35,7 +36,7 @@ except NameError:
 import re
 from subprocess import (PIPE, Popen)
 
-from ... import version
+from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
@@ -80,15 +81,18 @@ def which(program):
 
 def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
           krb5ccname=None, verbose=False):
-    """Initialise a kerboeros ticket to enable authenticated connections
-    to the NDS2 server network
+    """Initialise a kerberos (krb5) ticket.
+
+    This allows authenticated connections to, amongst others, NDS2
+    services.
 
     Parameters
     ----------
-    username : `str`
-        name of user
-    password : `str`
-        cleartext password of user for given realm, only use if you have to
+    username : `str`, optional
+        name of user, will be prompted for if not given
+    password : `str`, optional
+        cleartext password of user for given realm, will be prompted for
+        if not given
     realm : `str`
         name of realm to authenticate against, defaults to 'LIGO.ORG'
         if not given or parsed from the keytab
@@ -104,17 +108,19 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
     variable, this will be used to guess the username and realm, if it
     contains only a single credential
 
-    Example 1: standard user input, with password prompt
+    Examples
+    --------
+    Example 1: standard user input, with password prompt::
 
-    >>> kinit('albert.einstein')
-    Password for albert.einstein@LIGO.ORG:
-    Kerberos ticket generated for albert.einstein@LIGO.ORG
+        >>> kinit('albert.einstein')
+        Password for albert.einstein@LIGO.ORG:
+        Kerberos ticket generated for albert.einstein@LIGO.ORG
 
     Example 2: extract username and realm from keytab, and use that
-    in authentication
+    in authentication::
 
-    >>> kinit(keytab='~/.kerberos/ligo.org.keytab')
-    Kerberos ticket generated for duncan.macleod@LIGO.ORG
+        >>> kinit(keytab='~/.kerberos/ligo.org.keytab')
+        Kerberos ticket generated for albert.einstein@LIGO.ORG
     """
     # get kinit path and user keytab
     if exe is None:
@@ -142,11 +148,14 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
     if realm is None:
         realm = 'LIGO.ORG'
     if username is None:
+        verbose = True
         username = raw_input("Please provide username for the %s kerberos "
                              "realm: " % realm)
     if not keytab and password is None:
+        verbose = True
         password = getpass.getpass(prompt="Password for %s@%s: "
-                                          % (username, realm))
+                                          % (username, realm),
+                                   stream=sys.stdout)
     if keytab:
         cmd = [exe, '-k', '-t', keytab, '%s@%s' % (username, realm)]
     else:
