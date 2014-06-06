@@ -35,35 +35,55 @@ __all__ = ['BodePlot']
 
 
 def to_db(a):
-    """Convert the input array from amplitude into decibels
+    """Convert the input array into decibels
+
+    Parameters
+    ----------
+    a : `float`, `numpy.ndarray`
+        value or array of values to convert to decibels
+
+    Returns
+    -------
+    dB : ``10 * numpy.log10(a)``
     """
     return 10 * numpy.log10(a)
 
 
 class BodePlot(Plot):
-    """An extension of the :class:`~gwpy.plotter.core.Plot` class for
-    visualising filters using the Bode representation
+    """A `Plot` class for visualising transfer functions.
 
     Parameters
     ----------
-    *filters : :class:`~scipy.signal.lti`, `tuple`
-        any number of linear time-invariant filters to
-        display on the plot. If filters are given as tuples, they will
-        be interpreted according to the number of elements:
+    *filters : `~scipy.signal.lti`, `~gwpy.spectrum.Spectrum`, `tuple`
+        any number of the following:
 
-            - 2: (numerator, denominator)
-            - 3: (zeros, poles, gain)
-            - 4: (A, B, C, D)
+        - linear time-invariant filters, either
+          `~scipy.signal.lti` or `tuple` of the following length and form:
+             - 2: (numerator, denominator)
+             - 3: (zeros, poles, gain)
+             - 4: (A, B, C, D)
+
+        - complex-valued `spectra <gwpy.spectrum.Spectrum>` representing
+          a transfer function
 
     frequencies : `numpy.ndarray`, optional
         list of frequencies (in Hertz) at which to plot
     sample_rate : `float`, optional
-        sample_rate (in Hertz) for time-domain filter
-    logx : `bool`, optional, default: False
-        display frequency on a log-scale
+        sample_rate (in Hertz) for time-domain filter. This is not
+        required when displaying a `~gwpy.spectrum.Spectrum`.
+    db : `bool`, optional, default: `True`
+        if `True`, display magnitude in decibels, otherwise display
+        amplitude.
     **kwargs
-        other keyword arguments as applicable for the
-        :class:`~gwpy.plotter.core.Plot`
+        other keyword arguments as applicable for `Plot` or
+        :meth:`~SpectrumAxes.plot`
+
+    Returns
+    -------
+    plot : `BodePlot`
+        a new BodePlot with two `Axes` - :attr:`~BodePlot.maxes` and
+        :attr:`~BodePlot.paxes` - representing the magnitude and
+        phase of the input transfer function(s) respectively.
     """
     def __init__(self, *filters, **kwargs):
         """Initialise a new TimeSeriesPlot
@@ -72,8 +92,15 @@ class BodePlot(Plot):
         frequencies = kwargs.pop('frequencies', None)
         sample_rate = kwargs.pop('sample_rate', None)
 
+        # parse plotting arguments
+        figargs = dict()
+        for key in ['figsize', 'dpi', 'facecolor', 'edgecolor', 'linewidth',
+                    'frameon', 'subplotpars', 'tight_layout']:
+            if key in kwargs:
+                figargs[key] = kwargs.pop(key)
+
         # generate figure
-        super(BodePlot, self).__init__(**kwargs)
+        super(BodePlot, self).__init__(**figargs)
 
         # delete the axes, and create two more
         self.add_subplot(2, 1, 1, projection='spectrum')
@@ -82,10 +109,10 @@ class BodePlot(Plot):
         # add filters
         for filter_ in filters:
             if isinstance(filter_, Spectrum):
-                self.add_spectrum(filter_, dB=dB)
+                self.add_spectrum(filter_, dB=dB, **kwargs)
             else:
                 self.add_filter(filter_, frequencies=frequencies,
-                                sample_rate=sample_rate, dB=dB)
+                                sample_rate=sample_rate, dB=dB, **kwargs)
 
         # format plots
         if dB:
@@ -110,13 +137,13 @@ class BodePlot(Plot):
 
     @property
     def maxes(self):
-        """:class:`~matplotlib.axes.Axes` for the Bode magnitude
+        """`SpectrumAxes` for the Bode magnitude
         """
         return self.axes[0]
 
     @property
     def paxes(self):
-        """:class:`~matplotlib.axes.Axes` for the Bode phase
+        """`SpectrumAxes` for the Bode phase
         """
         return self.axes[1]
 
@@ -124,6 +151,33 @@ class BodePlot(Plot):
     def add_filter(self, filter_, frequencies=None, sample_rate=None,
                    dB=True, **kwargs):
         """Add a linear time-invariant filter to this BodePlot
+
+        Parameters
+        ----------
+        filter_ : `~scipy.signal.lti`, `tuple`
+            the filter to plot, either as a `~scipy.signal.lti`, or a
+            `tuple` with the following number and meaning of elements
+
+                 - 2: (numerator, denominator)
+                 - 3: (zeros, poles, gain)
+                 - 4: (A, B, C, D)
+
+        frequencies : `numpy.ndarray`, optional
+            list of frequencies (in Hertz) at which to plot
+        sample_rate : `float`, optional
+            sample_rate (in Hertz) for time-domain filter. This is not
+            required when displaying a `~gwpy.spectrum.Spectrum`.
+        db : `bool`, optional, default: `True`
+            if `True`, display magnitude in decibels, otherwise display
+            amplitude.
+        **kwargs
+            any other keyword arguments accepted by
+            :meth:`~matplotlib.axes.Axes.plot`
+
+        Returns
+        -------
+        mag, phase : `tuple` of `lines <matplotlib.lines.Line2D>`
+            the lines drawn for the magnitude and phase of the filter.
         """
         if frequencies is None:
             w = None
@@ -144,15 +198,40 @@ class BodePlot(Plot):
 
     def add_spectrum(self, spectrum, dB=True, power=False, **kwargs):
         """Plot the magnitude and phase of a complex-valued Spectrum
+
+        Parameters
+        ----------
+        spectrum : `~gwpy.spectrum.Spectrum`
+            the (complex-valued) `Spectrum` to display
+        db : `bool`, optional, default: `True`
+            if `True`, display magnitude in decibels, otherwise display
+            amplitude.
+        power : `bool`, optional, default: `False`
+            given `True` to incidate that ``spectrum`` holds power values,
+            so ``dB = 10 * log(abs(spectrum))``, otherwise
+            ``db = 20 * log(abs(spectrum))``. This argument is ignored if
+            ``db=False``.
+        **kwargs
+            any other keyword arguments accepted by
+            :meth:`~matplotlib.axes.Axes.plot`
+
+        Returns
+        -------
+        mag, phase : `tuple` of `lines <matplotlib.lines.Line2D>`
+            the lines drawn for the magnitude and phase of the filter.
         """
+        # parse spectrum arguments
+        kwargs.setdefault('label', spectrum.name)
+        # get magnitude
         mag = numpy.absolute(spectrum.data)
         if dB:
             mag = to_db(mag)
             if not power:
                 mag *= 2.
+        # get phase
         phase = numpy.angle(spectrum.data, deg=True)
+        # plot
         w = spectrum.frequencies.data
         lm = self.maxes.plot(w, mag, **kwargs)
         lp = self.paxes.plot(w, phase, **kwargs)
         return lm, lp
-
