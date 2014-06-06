@@ -32,4 +32,5 @@ from .segments import (Segment, SegmentList, SegmentListDict)
 from .flag import *
 from .io import *
 
-__all__ = ['Segment', 'SegmentList', 'SegmentListDict', 'DataQualityFlag']
+__all__ = ['Segment', 'SegmentList', 'SegmentListDict', 'DataQualityFlag',
+           'DataQualityDict']
