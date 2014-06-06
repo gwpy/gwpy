@@ -293,6 +293,11 @@ def linkcode_resolve(domain, info):
             obj = getattr(obj, part)
         except:
             return None
+    # try and sneak past a decorator
+    try:
+        obj = obj.im_func.func_closure[0].cell_contents
+    except (AttributeError, TypeError):
+        pass
 
     try:
         fn = inspect.getsourcefile(obj)
