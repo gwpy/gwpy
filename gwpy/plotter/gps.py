@@ -113,7 +113,7 @@ class GPSMixin(object):
             raise ValueError("Cannot set GPS unit to %s" % unit)
         # check equivalent units
         for other in TIME_UNITS:
-            if other.decompose()._scale == u._scale:
+            if other.decompose().scale == u.scale:
                 self._unit = other
                 return
         raise ValueError("Unrecognised unit: %s" % unit)
@@ -133,7 +133,7 @@ class GPSMixin(object):
     def get_scale(self):
         """The scale (in seconds) of the current GPS unit.
         """
-        return self.unit.decompose()._scale
+        return self.unit.decompose().scale
 
     scale = property(fget=get_scale, doc=get_scale.__doc__)
 
@@ -315,7 +315,7 @@ class GPSScale(GPSMixin, LinearScale):
             duration = viewlim[1] - (min(viewlim[0], epoch))
             unit = units.second
             for u in TIME_UNITS[::-1]:
-                if duration >= u.decompose()._scale * 4:
+                if duration >= u.decompose().scale * 4:
                     unit = u
                     break
         super(GPSScale, self).__init__(unit=unit, epoch=epoch)
