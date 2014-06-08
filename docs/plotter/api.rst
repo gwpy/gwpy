@@ -2,28 +2,31 @@
 Plotting API
 ############
 
+.. currentmodule:: gwpy.plotter
+
 This document provides a reference for the following :class:`~matplotlib.figure.Figure` `class` objects:
 
 .. autosummary::
    :nosignatures:
 
-   ~gwpy.plotter.Plot
-   ~gwpy.plotter.TimeSeriesPlot
-   ~gwpy.plotter.SpectrumPlot
-   ~gwpy.plotter.SpectrogramPlot
-   ~gwpy.plotter.SegmentPlot
-   ~gwpy.plotter.EventTablePlot
+   Plot
+   TimeSeriesPlot
+   SpectrumPlot
+   SpectrogramPlot
+   SegmentPlot
+   EventTablePlot
+   BodePlot
 
 and the following :class:`~matplotlib.axes.Axes` `class` objects:
 
 .. autosummary::
    :nosignatures:
 
-   ~gwpy.plotter.Axes
-   ~gwpy.plotter.TimeSeriesAxes
-   ~gwpy.plotter.SpectrumAxes
-   ~gwpy.plotter.SegmentAxes
-   ~gwpy.plotter.EventTableAxes
+   Axes
+   TimeSeriesAxes
+   SpectrumAxes
+   SegmentAxes
+   EventTableAxes
 
 ================
 `Figure` objects
@@ -31,33 +34,30 @@ and the following :class:`~matplotlib.axes.Axes` `class` objects:
 
 Each of the below classes represents a figure object; for brevity inherited methods and attributes are not documented here, please follow links to the parent classes for documentation of available methods and attributes.
 
-.. currentmodule:: gwpy.plotter
-
-
-.. autoclass:: gwpy.plotter.Plot
+.. autoclass:: Plot
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.TimeSeriesPlot
+.. autoclass:: TimeSeriesPlot
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.SpectrumPlot
+.. autoclass:: SpectrumPlot
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.SpectrogramPlot
+.. autoclass:: SpectrogramPlot
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.SegmentPlot
+.. autoclass:: SegmentPlot
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.EventTablePlot
+.. autoclass:: EventTablePlot
    :no-inherited-members:
 
-.. autoclass:: gwpy.plotter.BodePlot
+.. autoclass:: BodePlot
    :no-inherited-members:
 
 
@@ -67,22 +67,22 @@ Each of the below classes represents a figure object; for brevity inherited meth
 
 Each of the below classes represents a set of axes on which data are displayed; for brevity inherited methods and attributes are not documented here, please follow links to the parent classes for documentation of available methods and attributes.
 
-.. autoclass:: gwpy.plotter.Axes
+.. autoclass:: Axes
    :no-inherited-members:
    :exclude-members: legend
 
 
-.. autoclass:: gwpy.plotter.TimeSeriesAxes
+.. autoclass:: TimeSeriesAxes
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.SpectrumAxes
+.. autoclass:: SpectrumAxes
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.SegmentAxes
+.. autoclass:: SegmentAxes
    :no-inherited-members:
 
 
-.. autoclass:: gwpy.plotter.EventTableAxes
+.. autoclass:: EventTableAxes
    :no-inherited-members:
