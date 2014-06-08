@@ -11,7 +11,7 @@ The examples are provided in the ``examples/`` directory of the git repository, 
    cd examples
    python gw_ex_plot_timeseries.py
 
-See `the installation instructions <../install>`_ for details on how to clone the repository.
+See `the installation instructions <../install.html>`_ for details on how to clone the repository.
 
 **Simple examples**
 
