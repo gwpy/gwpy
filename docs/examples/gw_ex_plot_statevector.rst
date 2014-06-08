@@ -27,7 +27,7 @@ of what each binary bit in the vector represents:
 and can download the data for the relevant GPS interval as follows:
 
 .. literalinclude:: ../../examples/gw_ex_plot_statevector.py
-   :lines: 49
+   :lines: 34,49
 
 At this point it is useful to downsample the `StateVector` from the natural
 sampling frequency of 4096 Hz to 16 Hz, simply for ease of plotting:
