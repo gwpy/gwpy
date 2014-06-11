@@ -4,31 +4,53 @@ Plotting in GWpy (`gwpy.plotter`)
 
 .. currentmodule:: gwpy.plotter
 
-Visualisation of the data produced by gravitational-wave detectors is obviously a key part of understanding their sensitivity, and studying the potential gravitational-wave signals they record.
-The :mod:`gwpy.plotter` module provides a number of plot classes, each representing display of a corresponding data type.
-Other than the :class:`Plot` (which takes no data arguments), each of the series plots takes an instance of the associated series as the argument when generating a plot, for example with a :class:`~gwpy.timeseries.TimeSeries` (called ``timeseries``)::
+Visualisation of the data produced by gravitational-wave detectors is
+obviously a key part of understanding their sensitivity, and studying the
+potential gravitational-wave signals they record.
+The :mod:`gwpy.plotter` module provides a number of plot classes, each
+representing display of a corresponding data type.
 
+=============
+Plotting data
+=============
+
+The majority of core data objects in GWpy come with a built-in :meth:`plot`
+method, allowing quick display of a single data set, for example:
+
+.. plot::
+   :include-source:
+   :context:
+
+    >>> from gwpy.timeseries import TimeSeries
+    >>> data = TimeSeries.fetch('H1:LDAS-STRAIN', 968654552, 968654562)
+    >>> plot = data.plot()
+    >>> plot.show()
+
+|
+
+Users can also import the relevant plotting `class` objects and generate
+more complicated plots manually:
+
+.. plot::
+   :include-source:
+   :context:
+
+    >>> data2 = TimeSeries.fetch('L1:LDAS-STRAIN', 968654552, 968654562)
     >>> from gwpy.plotter import TimeSeriesPlot
-    >>> plot = TimeSeriesPlot(timeseries)
-
-See the :doc:`API <api>` for full documentation of all available :class:`Figure` and :class:`Axes` objects and their associated methods.
+    >>> plot2 = TimeSeriesPlot()
+    >>> ax2 = plot2.gca()
+    >>> ax2.plot(data, color='k', linestyle='--')
+    >>> ax2.plot(data2, color='r', linestyle=':')
+    >>> plot2.show()
 
 ==========
 Plot types
 ==========
 
-The following diagram displays the available Plot objects and their inheritance from :class:`Plot`.
+The following diagram displays the available Plot objects and their
+inheritance from :class:`Plot`.
 
 .. inheritance-diagram:: core timeseries spectrum spectrogram table filter
-
-=================
-Plot applications
-=================
-
-.. toctree::
-   :maxdepth: 1
-
-   filter
 
 ===============
 Class reference
