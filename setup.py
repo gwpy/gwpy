@@ -163,18 +163,6 @@ else:
     scripts = []
 
 # -----------------------------------------------------------------------------
-# Define dependencies
-
-requires = dict()
-
-# define core dependencies
-requires['install'] = ['astropy >= 0.3', 'numpy >= 1.5', 'python-dateutil',
-                       'matplotlib >= 1.3.0', 'glue'] + extra_install_requires
-
-extras = dict()
-extras['nds'] = ['nds2']
-
-# -----------------------------------------------------------------------------
 # run setup
 
 setup(name=PACKAGENAME,
