@@ -315,7 +315,7 @@ class Plot(figure.Figure):
             y positions of the line points (in axis coordinates)
         projection : `str`, optional, default: `'timeseries'`
             name of the Axes projection on which to plot
-        ax : :class:`~gwpy.plotter.axes.Axes`
+        ax : :class:`~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
@@ -365,7 +365,7 @@ class Plot(figure.Figure):
             y positions of the line points (in axis coordinates)
         projection : `str`, optional, default: `None`
             name of the Axes projection on which to plot
-        ax : :class:`~gwpy.plotter.axes.Axes`
+        ax : :class:`~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
@@ -409,7 +409,7 @@ class Plot(figure.Figure):
             y positions of the line points (in axis coordinates)
         projection : `str`, optional, default: `None`
             name of the Axes projection on which to plot
-        ax : :class:`~gwpy.plotter.axes.Axes`
+        ax : :class:`~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
@@ -447,7 +447,7 @@ class Plot(figure.Figure):
             y positions of the line points (in axis coordinates)
         projection : `str`, optional, default: `None`
             name of the Axes projection on which to plot
-        ax : :class:`~gwpy.plotter.axes.Axes`
+        ax : :class:`~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
@@ -476,7 +476,7 @@ class Plot(figure.Figure):
             y-axis data points
         projection : `str`, optional, default: `None`
             name of the Axes projection on which to plot
-        ax : :class:`~gwpy.plotter.axes.Axes`
+        ax : :class:`~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
@@ -525,7 +525,7 @@ class Plot(figure.Figure):
             the TimeSeries to display
         projection : `str`, optional, default: `'timeseries'`
             name of the Axes projection on which to plot
-        ax : :class:`~gwpy.plotter.axes.Axes`
+        ax : :class:`~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
@@ -553,7 +553,7 @@ class Plot(figure.Figure):
             the `Spectrum` to display
         projection : `str`, optional, default: `'Spectrum'`
             name of the Axes projection on which to plot
-        ax : :class:`~gwpy.plotter.axes.Axes`
+        ax : :class:`~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
@@ -582,7 +582,7 @@ class Plot(figure.Figure):
             the `Spectrogram` to display
         projection : `str`, optional, default: `timeseries`
             name of the Axes projection on which to plot
-        ax : :class:`~gwpy.plotter.axes.Axes`
+        ax : :class:`~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
@@ -608,7 +608,7 @@ class Plot(figure.Figure):
         array : :class:`~gwpy.data.array.Array`
             the `Array` to display
         projection : `str`
-        ax : :class:`~gwpy.plotter.axes.Axes`
+        ax : :class:`~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created

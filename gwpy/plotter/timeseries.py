@@ -47,7 +47,7 @@ __all__ = ['TimeSeriesPlot', 'TimeSeriesAxes']
 
 
 class TimeSeriesAxes(Axes):
-    """Custom `Axes` for a :class:`~gwpy.plotter.timeseries.TimeSeriesPlot`.
+    """Custom `Axes` for a :class:`~gwpy.plotter.TimeSeriesPlot`.
     """
     name = 'timeseries'
 
@@ -319,7 +319,7 @@ class TimeSeriesPlot(Plot):
         display on the plot
     **kwargs
         other keyword arguments as applicable for the
-        :class:`~gwpy.plotter.core.Plot`
+        :class:`~gwpy.plotter.Plot`
     """
     _DefaultAxesClass = TimeSeriesAxes
 
@@ -395,7 +395,7 @@ class TimeSeriesPlot(Plot):
             specific Axes set against which to anchor new segment Axes
         plotargs
             keyword arguments passed to
-            :meth:`~gwpy.plotter.segments.SegmentAxes.plot`
+            :meth:`~gwpy.plotter.SegmentAxes.plot`
         """
         from .segments import SegmentAxes
         if not ax:

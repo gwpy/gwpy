@@ -209,7 +209,7 @@ class GPSAutoLocator(GPSLocatorMixin, ticker.MaxNLocator):
         and a `scale` (in seconds).
 
         Each of the `epoch` and `scale` keyword arguments should match those
-        passed to the `~gwpy.plotter.ticks.TimeFormatter`
+        passed to the `~gwpy.plotter.GPSFormatter`
         """
         if not steps and unit == 3600:
             steps = [1, 2, 4, 5, 6, 8, 10, 12, 24]

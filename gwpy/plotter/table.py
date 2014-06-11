@@ -48,10 +48,10 @@ __all__ = ['EventTableAxes', 'EventTablePlot']
 
 
 class EventTableAxes(TimeSeriesAxes):
-    """Custom `Axes` for an :class:`~gwpy.plotter.table.EventTablePlot`.
+    """Custom `Axes` for an :class:`~gwpy.plotter.EventTablePlot`.
 
     The `EventTableAxes` inherit from
-    :class:`~gwpy.plotter.timeseries.TimeSeriesAxes` as a convenience to
+    :class:`~gwpy.plotter.TimeSeriesAxes` as a convenience to
     optionally displaying a time-column. That choice has no effect on the
     rest of the `Axes` functionality.
     """
@@ -65,7 +65,7 @@ class EventTableAxes(TimeSeriesAxes):
         *args
             a single :class:`~glue.ligolw.table.Table` (or sub-class)
             or anything valid for
-            :meth:`~gwpy.plotter.timeseries.TimeSeriesPlot.plot`.
+            :meth:`~gwpy.plotter.TimeSeriesPlot.plot`.
         **kwargs
             keyword arguments applicable to
             :meth:`~matplotlib.axes.Axes.plot`
@@ -350,11 +350,11 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
     class for the output.
 
     If the input x-column (the first string argument) ends with 'time'
-    the output is a child of the :class:`~gwpy.plotter.timeseries.TimeSeriesPlot`,
+    the output is a child of the :class:`~gwpy.plotter.TimeSeriesPlot`,
     allowing easy formatting of GPS times, while if the x-column ends with
     'frequency', the output comes from the
-    :class:`~gwpy.plotter.spectrum.SpectrumPlot`, otherwise the parent is
-    the core :class:`~gwpy.plotter.core.Plot`.
+    :class:`~gwpy.plotter.SpectrumPlot`, otherwise the parent is
+    the core :class:`~gwpy.plotter.Plot`.
     """
     _DefaultAxesClass = EventTableAxes
     __metaclass__ = _EventTableMetaPlot
@@ -465,7 +465,7 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
             name of column by which to colour the data
         projection : `str`, optiona, default: ``'triggers'``
             name of the Axes projection on which to plot data
-        ax : :class:`~gwpy.plotter.axes.Axes`, optional
+        ax : :class:`~gwpy.plotter.Axes`, optional
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
@@ -520,7 +520,7 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
             Other options: 'll', 'lr', 'ul', 'ur'.
         projection : `str`, optiona, default: ``'triggers'``
             name of the Axes projection on which to plot data
-        ax : :class:`~gwpy.plotter.axes.Axes`, optional
+        ax : :class:`~gwpy.plotter.Axes`, optional
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created

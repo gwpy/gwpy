@@ -45,7 +45,7 @@ __version__ = version.version
 
 
 class SegmentAxes(TimeSeriesAxes):
-    """Custom `Axes` for a :class:`~gwpy.plotter.segments.SegmentPlot`.
+    """Custom `Axes` for a :class:`~gwpy.plotter.SegmentPlot`.
 
     This `SegmentAxes` provides custom methods for displaying any of
 
@@ -362,7 +362,7 @@ class SegmentPlot(TimeSeriesPlot):
         display on the plot
     **kwargs
         other keyword arguments as applicable for the
-        :class:`~gwpy.plotter.core.Plot`
+        :class:`~gwpy.plotter.Plot`
     """
     _DefaultAxesClass = SegmentAxes
 

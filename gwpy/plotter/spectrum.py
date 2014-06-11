@@ -38,7 +38,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 class SpectrumAxes(Axes):
-    """Custom `Axes` for a :class:`~gwpy.plotter.spectrum.SpectrumPlot`.
+    """Custom `Axes` for a :class:`~gwpy.plotter.SpectrumPlot`.
     """
     name = 'spectrum'
 

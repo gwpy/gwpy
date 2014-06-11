@@ -40,7 +40,7 @@ class Axes(_Axes):
 
         >>> plot.add_subplots(111, projection='xxx')
 
-    where plot is a :class:`~gwpy.plotter.fig.Plot` figure, and ``'xxx'``
+    where plot is a :class:`~gwpy.plotter.Plot` figure, and ``'xxx'``
     is the name of the `Axes` you want to add.
     """
     def __init__(self, *args, **kwargs):
