@@ -97,6 +97,9 @@ def to_gps(t, **tparams):
     # allow Time conversion to override type-checking
     if tparams:
         return Time(t, **tparams).utc.gps
+    # if lal.LIGOTimeGPS
+    if hasattr(t, 'gpsSeconds'):
+        return LIGOTimeGPS(t.gpsSeconds, t.gpsNanoSeconds)
     # or convert str into datetime.datetime
     if isinstance(t, str):
         t = str_to_datetime(t)
