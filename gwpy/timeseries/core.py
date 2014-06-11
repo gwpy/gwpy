@@ -1526,13 +1526,6 @@ class TimeSeriesDict(OrderedDict):
                 end = float(str(Time(d, scale='utc').gps))
         end = int(ceil(end))
 
-        # set context
-        if verbose:
-            outputcontext = ndsio.NDSOutputContext()
-        else:
-            outputcontext = ndsio.NDSOutputContext(open(os.devnull, 'w'),
-                                                   open(os.devnull, 'w'))
-
         # open connection for specific host
         if host and not port and re.match('[a-z]1nds0\Z', host):
             port = 8088
@@ -1542,15 +1535,13 @@ class TimeSeriesDict(OrderedDict):
             if verbose:
                 gprint("Connecting to %s:%s..." % (host, port), end=' ')
             try:
-                with outputcontext:
-                    connection = nds2.connection(host, port)
+                connection = nds2.connection(host, port)
             except RuntimeError as e:
                 if str(e).startswith('Request SASL authentication'):
                     gprint('\nError authenticating against %s' % host,
                            file=sys.stderr)
                     kinit()
-                    with outputcontext:
-                        connection = nds2.connection(host, port)
+                    connection = nds2.connection(host, port)
                 else:
                     raise
             if verbose:
@@ -1567,14 +1558,13 @@ class TimeSeriesDict(OrderedDict):
                 ifo = None
             hostlist = ndsio.host_resolution_order(ifo)
             for host, port in hostlist:
-                with outputcontext:
-                    try:
-                        return cls.fetch(channels, start, end, host=host,
-                                         port=port, verbose=verbose, type=type)
-                    except (RuntimeError, ValueError) as e:
-                        gprint('Something went wrong:', file=sys.stderr)
-                        # if error and user supplied their own server, raise
-                        warnings.warn(str(e), ndsio.NDSWarning)
+                try:
+                    return cls.fetch(channels, start, end, host=host,
+                                     port=port, verbose=verbose, type=type)
+                except (RuntimeError, ValueError) as e:
+                    gprint('Something went wrong:', file=sys.stderr)
+                    # if error and user supplied their own server, raise
+                    warnings.warn(str(e), ndsio.NDSWarning)
 
             # if we got this far, we can't get all of the channels in one go
             if len(channels) > 1:
@@ -1648,25 +1638,24 @@ class TimeSeriesDict(OrderedDict):
         if verbose:
             gprint('Downloading data...', end=' ')
         out = cls()
-        with outputcontext:
-            try:
-                data = [connection.fetch(start, end,
-                                         [c.ndsname for c in qchannels])]
-            except RuntimeError as e:
-                # XXX: hack to fix potential problem with fetch
-                # Can remove once fetch has been patched (DMM, 02/2014)
-                if ('Server sent more data than were expected' in str(e)
-                        and len(qchannels) == 1
-                        and qchannels[0].name.endswith(',rds')):
-                    c2 = nds2.connection(connection.get_host(),
-                                         connection.get_port())
-                    data = c2.iterate(start, end, 60,
-                                      [c.ndsname for c in qchannels])
-                else:
-                    raise
-            for buffers in data:
-                for buffer_, c in zip(buffers, channels):
-                    out.append({c: cls.EntryClass.from_nds2_buffer(buffer_)})
+        try:
+            data = [connection.fetch(start, end,
+                                     [c.ndsname for c in qchannels])]
+        except RuntimeError as e:
+            # XXX: hack to fix potential problem with fetch
+            # Can remove once fetch has been patched (DMM, 02/2014)
+            if ('Server sent more data than were expected' in str(e)
+                    and len(qchannels) == 1
+                    and qchannels[0].name.endswith(',rds')):
+                c2 = nds2.connection(connection.get_host(),
+                                     connection.get_port())
+                data = c2.iterate(start, end, 60,
+                                  [c.ndsname for c in qchannels])
+            else:
+                raise
+        for buffers in data:
+            for buffer_, c in zip(buffers, channels):
+                out.append({c: cls.EntryClass.from_nds2_buffer(buffer_)})
         if verbose:
             gprint('Success.')
         return out
