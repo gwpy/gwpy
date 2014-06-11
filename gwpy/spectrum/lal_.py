@@ -155,6 +155,9 @@ def lal_psd(timeseries, segmentlength, noverlap=None, method='welch',
     # get cached window
     if window is None:
         window = generate_lal_window(segmentlength, dtype=timeseries.dtype)
+    elif isinstance(window, (tuple, str)):
+        window = generate_lal_window(segmentlength, type_=window,
+                                     dtype=timeseries.dtype)
     elif isinstance(window, Window):
         window = window.to_lal()
     # get cached FFT plan
@@ -166,7 +169,7 @@ def lal_psd(timeseries, segmentlength, noverlap=None, method='welch',
     # check data length
     size = timeseries.size
     numsegs = 1 + int((size - segmentlength) / stride)
-    if method is 'median-mean' and numsegs % 2:
+    if method == 'median-mean' and numsegs % 2:
         numsegs -= 1
         if not numsegs:
             raise ValueError("Cannot calculate median-mean spectrum with "
