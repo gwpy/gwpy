@@ -33,7 +33,7 @@ from ..io import (reader, writer)
 
 from .. import version
 from ..detector import Channel
-from ..time import Time
+from ..time import (Time, to_gps)
 from ..utils import with_import
 
 __version__ = version.version
@@ -55,6 +55,15 @@ class Array(numpy.ndarray):
     ----------
     data : array-like, optional, default: `None`
         input data array
+    name : `str`, optional, default: `None`
+        descriptive title for this `Array`
+    unit : `~astropy.units.core.Unit`
+        physical unit of these data
+    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        starting GPS time of this `Array`, accepts any input for
+        :meth:`~gwpy.time.to_gps`.
+    channel : `~gwpy.detector.Channel`, `str`
+        source data stream for these data
     dtype : :class:`~numpy.dtype`, optional, default: `None`
         input data type
     copy : `bool`, optional, default: `False`
@@ -73,8 +82,7 @@ class Array(numpy.ndarray):
     _metadata_type = dict
     _metadata_slots = ['name', 'unit', 'epoch', 'channel']
 
-    def __new__(cls, data=None, dtype=None, copy=False, subok=True,
-                **metadata):
+    def __new__(cls, data=None, dtype=None, copy=False, subok=True, **metadata):
         """Define a new `Array`, potentially from an existing one
         """
         # get dtype out of the front
@@ -105,8 +113,8 @@ class Array(numpy.ndarray):
                 except ValueError:
                     pass
             else:
-                new = numpy.array(data, dtype=dtype, copy=copy, subok=True)
-                new = new.view(cls)
+                new = numpy.array(data, dtype=dtype, copy=copy,
+                                  subok=True).view(cls)
             new.metadata = cls._metadata_type()
             for key, val in metadata.iteritems():
                 if val is not None:
@@ -156,7 +164,7 @@ class Array(numpy.ndarray):
     def __str__(self):
         """Return a printable string format representation of this object
 
-        This just prints each of the metadata objects appriopriately
+        This just prints each of the metadata objects appropriately
         after the core data array
         """
         indent = ' '*len('%s(' % self.__class__.__name__)
@@ -294,7 +302,7 @@ class Array(numpy.ndarray):
     def unit(self):
         """Unit for this `Array`
 
-        :type: :class:`~astropy.units.Unit`
+        :type: :class:`~astropy.units.core.Unit`
         """
         try:
             return self.metadata['unit']
@@ -319,18 +327,13 @@ class Array(numpy.ndarray):
         See `~astropy.time` for details on the `Time` object.
         """
         try:
-            return Time(self.metadata['epoch'], format='gps')
+            return Time(float(self.metadata['epoch']), format='gps', scale='utc')
         except KeyError:
             return None
 
     @epoch.setter
     def epoch(self, epoch):
-        if isinstance(epoch, Time):
-            self.metadata['epoch'] = epoch.gps
-        elif isinstance(epoch, Quantity):
-            self.metadata['epoch'] = epoch.value
-        else:
-            self.metadata['epoch'] = float(epoch)
+        self.metadata['epoch'] = to_gps(epoch)
 
     @property
     def channel(self):
