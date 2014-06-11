@@ -143,7 +143,7 @@ def read_losc_state(filename, channel, group=None, start=None, end=None):
     maskset = _find_dataset(h5file, '%s/DQDescriptions' % channel)
     # read data
     nddata = dataset.value
-    bitmask = list(maskset.value)
+    bits = list(maskset.value)
     # read metadata
     try:
         epoch = dataset.attrs['Xstart']
@@ -162,7 +162,7 @@ def read_losc_state(filename, channel, group=None, start=None, end=None):
     else:
         xunit = Unit(dataset.attrs['Xunit'])
         dt = Quantity(dt, xunit)
-    return StateVector(nddata, bitmask=bitmask, epoch=epoch,
+    return StateVector(nddata, bits=bits, epoch=epoch,
                        sample_rate=(1/dt).to('Hertz'), name='Data quality')
 
 

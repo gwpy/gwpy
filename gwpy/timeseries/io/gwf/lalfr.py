@@ -142,22 +142,22 @@ def read_timeseriesdict(framefile, channels, **kwargs):
 
 
 @with_import('lalframe.frread')
-def read_statevector_dict(source, channels, bitmasks=[], **kwargs):
+def read_statevector_dict(source, channels, bitss=[], **kwargs):
     """Read a `StateVectorDict` of data from a gravitational-wave
     frame file
     """
     kwargs.setdefault('_target', StateVector)
     svd = StateVectorDict(read_timeseriesdict(source, channels, **kwargs))
-    for (channel, bitmask) in zip(channels, bitmasks):
-        svd[channel].bitmask = bitmask
+    for (channel, bits) in zip(channels, bitss):
+        svd[channel].bits = bits
     return svd
 
 
 @with_import('lalframe.frread')
-def read_statevector(source, channel, bitmask=[], **kwargs):
+def read_statevector(source, channel, bits=[], **kwargs):
     kwargs.setdefault('_target', StateVector)
     sv = read_timeseries(source, channel, **kwargs).view(StateVector)
-    sv.bitmask = bitmask
+    sv.bits = bits
     return sv
 
 

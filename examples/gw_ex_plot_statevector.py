@@ -34,7 +34,7 @@ __version__ = version.version
 from gwpy.timeseries import StateVector
 
 # define bitmask
-bitmask = [
+bits = [
     'Summary state',
     'State 1 damped',
     'Stage 1 isolated',
@@ -46,7 +46,7 @@ bitmask = [
 ]
 
 # get data
-data = StateVector.fetch('L1:ISI-ETMX_ODC_CHANNEL_OUT_DQ', 'May 22 2014 14:00', 'May 22 15:00', bitmask=bitmask)
+data = StateVector.fetch('L1:ISI-ETMX_ODC_CHANNEL_OUT_DQ', 'May 22 2014 14:00', 'May 22 15:00', bits=bits)
 data = data.resample(16)
 
 # make a plot

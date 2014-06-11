@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Boolean array representing the state of some data
+"""This module defines the Boolean array representing the state of some data
 
 Such states are typically the comparison of a `TimeSeries` against some
 threshold, where sub-threshold is good and sup-threshold is bad,
@@ -49,7 +49,7 @@ from .. import version
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-__all__ = ['StateTimeSeries', 'StateVector', 'StateVectorDict', 'BitMask']
+__all__ = ['StateTimeSeries', 'StateVector', 'StateVectorDict', 'Bits']
 
 
 @update_docstrings
@@ -63,17 +63,18 @@ class StateTimeSeries(TimeSeries):
         Data values to initialise TimeSeries
     times : `numpy.ndarray`, optional
         array of time values to accompany data, these are required for
-        StateTimeSeries with un-even sampling
-    epoch : `float` GPS time, or :class:`~gwpy.time.Time`, optional
-        StateTimeSeries start time
-    channel : :class:`~gwpy.detector.Channel`, or `str`, optional
-        Data channel for this TimeSeries
-    unit : :class:`~astropy.units.Unit`, optional
-        The units of the data
+        `StateTimeSeries` with un-even sampling
+    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        start time for `StateTimeSeries`, can be given in any form accepted
+        by :meth:`~gwpy.time.to_gps`.
+    channel : `~gwpy.detector.Channel`, `str`, optional
+        source data channel
+    unit : `~astropy.units.Unit`, optional
+        the units of the data
     sample_rate : `float`, optional
-        number of samples per second for this StateTimeSeries
+        number of samples per second
     name : `str`, optional
-        descriptive title for this StateTimeSeries
+        descriptive title for these data
 
     Returns
     -------
@@ -89,37 +90,39 @@ class StateTimeSeries(TimeSeries):
         if not isinstance(data, cls):
             data = data.astype(bool)
         return super(StateTimeSeries, cls).__new__(cls, data, name=name,
-                                                   epoch=epoch, channel=channel,
+                                                   epoch=epoch,
+                                                   channel=channel,
                                                    sample_rate=sample_rate,
                                                    times=times)
 
     def to_dqflag(self, name=None, minlen=1, dtype=float, round=False,
                   label=None, description=None):
-        """Convert this `StateTimeSeries` into a `DataQualityFlag`.
+        """Convert this `StateTimeSeries` into a
+        `~gwpy.segments.DataQualityFlag`.
 
-        Each contiguous set of `True` values are grouped as a `Segment`
-        running from the start of the first found `True`, to the end of
-        the last.
+        Each contiguous set of `True` values are grouped as a
+        `~gwpy.segments.Segment` running from the start of the first
+        found `True`, to the end of the last.
 
         Parameters
         ----------
         minlen : `int`, optional, default: 1
             minimum number of consecutive `True` values to identify as a
-            `Segment`. This is useful to ignore single bit flips,
-            for example.
+            `~gwpy.segments.Segment`. This is useful to ignore single
+            bit flips, for example.
         dtype : `type`, `callable`, default: `float`
             output segment entry type, can pass either a type for simple
             casting, or a callable function that accepts a float and returns
             another numeric type
         round : `bool`, optional, default: False
-            choose to round each `Segment` to its inclusive integer
-            boundaries
+            choose to round each `~gwpy.segments.Segment` to its
+            inclusive integer boundaries
 
         Returns
         -------
-        dqflag : :class:`~gwpy.segments.flag.DataQualityFlag`
+        dqflag : `~gwpy.segments.DataQualityFlag`
             a segment representation of this `StateTimeSeries`, the span
-            defines the `valid` segments, while the contiguouse `True`
+            defines the `valid` segments, while the contiguous `True`
             sets defined each of the `active` segments
         """
         start = self.x0.value
@@ -153,8 +156,7 @@ class StateTimeSeries(TimeSeries):
                                   "BooleanTimeSeries structure")
 
 
-
-class BitMask(list):
+class Bits(list):
     """Definition of the bits in a `StateVector`.
 
     Parameters
@@ -162,9 +164,9 @@ class BitMask(list):
     bits : `list`
         list of bit names
     channel : `Channel`, `str`, optional
-        data channel associated with this BitMask
+        data channel associated with this Bits
     epoch : `float`, optional
-        defining GPS epoch for this `BitMask`
+        defining GPS epoch for this `Bits`
     description : `dict`, optional
         (bit, desc) `dict` of longer descriptions for each bit
     """
@@ -175,7 +177,7 @@ class BitMask(list):
         if epoch is not None:
             self.epoch = epoch
         self.description = description
-        for i,bit in enumerate(bits):
+        for i, bit in enumerate(bits):
             if bit is None or bit in self.description:
                 continue
             elif channel:
@@ -185,12 +187,12 @@ class BitMask(list):
 
     @property
     def epoch(self):
-        """Starting GPS time epoch for this `Array`.
+        """Starting GPS time epoch for these `Bits`.
 
-        This attribute is recorded as a `~gwpy.time.Time` object in the
+        This attribute is recorded as a `~astropy.time.Time` object in the
         GPS format, allowing native conversion into other formats.
 
-        See `~astropy.time` for details on the `Time` object.
+        See :mod:`~astropy.time` for details on the `Time` object.
         """
         try:
             return Time(self._epoch, format='gps')
@@ -208,7 +210,7 @@ class BitMask(list):
 
     @property
     def channel(self):
-        """Data channel associated with this `TimeSeries`.
+        """Data channel associated with these `Bits`.
         """
         try:
             return self._channel
@@ -234,82 +236,75 @@ class BitMask(list):
 
     def __repr__(self):
         indent = " " * len('<%s(' % self.__class__.__name__)
-        mask = ('\n%s' % indent).join(['%d: %s' % (idx, repr(bit)) for
-                                       idx,bit in enumerate(self)
+        mask = ('\n%s' % indent).join(['%d: %r' % (idx, bit) for
+                                       idx, bit in enumerate(self)
                                        if bit])
         return ("<{1}({2},\n{0}channel={3},\n{0}epoch={4})>".format(
-                    indent, self.__class__.__name__,
-                    mask, repr(self.channel), repr(self.epoch)))
+                indent, self.__class__.__name__,
+                mask, repr(self.channel), repr(self.epoch)))
 
     def __str__(self):
         indent = " " * len('%s(' % self.__class__.__name__)
-        mask = ('\n%s' % indent).join(['%d: %s' % (idx, str(bit)) for
-                                       idx,bit in enumerate(self)
+        mask = ('\n%s' % indent).join(['%d: %s' % (idx, bit) for
+                                       idx, bit in enumerate(self)
                                        if bit])
         return ("{1}({2},\n{0}channel={3},\n{0}epoch={4})".format(
-                    indent, self.__class__.__name__,
-                    mask, str(self.channel), str(self.epoch)))
+                indent, self.__class__.__name__,
+                mask, str(self.channel), str(self.epoch)))
 
 
 @update_docstrings
 class StateVector(TimeSeries):
-    """Binary array representing a set of good/bad state determinations
-    of some data.
+    """Binary array representing good/bad state determinations of some data.
 
     Each binary bit represents a single boolean condition, with the
-    definitins of all the bits stored in the `StateVector.bitmask`
+    definitions of all the bits stored in the `StateVector.bits`
     attribute.
 
     Parameters
     ----------
     data : `numpy.ndarray`, `list`
-        Binary data values to initialise `StateVector`
-    bitmask : `BitMask`, `list`, optional
+        binary data values to initialise `StateVector`
+    bits : `Bits`, `list`, optional
         list of bits defining this `StateVector`
     times : `numpy.ndarray`, optional
         array of time values to accompany data, these are required for
         `StateVector` with un-even sampling
-    name : `str`, optional
-        descriptive title for this StateTimeSeries
-    epoch : `float` GPS time, or :class:`~astropy.time.core.Time`, optional
-        starting GPS epoch for this `StateVector`
-    channel : :class:`~gwpy.detector.Channel`, or `str`, optional
-        data channel associated with this `StateVector`
-    sample_rate : `float`, optional
-        data rate for this `StateVector` in samples per second (Hertz).
+
     """
-    _metadata_slots = TimeSeries._metadata_slots + ['bitmask']
-    def __new__(cls, data, bitmask=[], times=None, epoch=None, channel=None,
-                sample_rate=None, name=None, **kwargs):
-        """Generate a new StateTimeSeries
+    _metadata_slots = TimeSeries._metadata_slots + ['bits']
+
+    def __new__(cls, data, bits=[], times=None, epoch=None, channel=None,
+                sample_rate=None, name=None, dtype=numpy.uint32, **kwargs):
+        """Generate a new `StateVector`.
         """
-        if not isinstance(data, cls):
-            data = numpy.asarray(data).astype(numpy.uint32)
         return super(StateVector, cls).__new__(cls, data, name=name,
                                                epoch=epoch, channel=channel,
                                                sample_rate=sample_rate,
-                                               times=times, bitmask=bitmask,
-                                               **kwargs)
+                                               times=times, bits=bits,
+                                               dtype=dtype, **kwargs)
 
     # -------------------------------------------
     # StateVector properties
 
     @property
-    def bitmask(self):
+    def bits(self):
         """The list of bit names for this `StateVector`.
+
+        :type: `Bits`
         """
         try:
-            return self.metadata['bitmask']
-        except:
-            self.bitmask = BitMask([])
-            return self.bitmask
+            return self.metadata['bits']
+        except KeyError:
+            self.bits = Bits([])
+            return self.bits
 
-    @bitmask.setter
-    def bitmask(self, mask):
-        if not isinstance(mask, BitMask):
-            mask = BitMask(mask, channel=self.channel,
-                           epoch=self.metadata.get('epoch', None))
-        self.metadata['bitmask'] = mask
+    @bits.setter
+    def bits(self, mask):
+        if not isinstance(mask, Bits):
+            mask = Bits(mask, channel=self.channel,
+                        epoch=self.metadata.get('epoch', None))
+        self.metadata['bits'] = mask
 
     @property
     def boolean(self):
@@ -319,36 +314,46 @@ class StateVector(TimeSeries):
         try:
             return self._boolean
         except AttributeError:
-            nbits = len(self.bitmask)
+            nbits = len(self.bits)
             boolean = numpy.zeros((self.size, nbits), dtype=bool)
-            for i,d in enumerate(self.data):
-                boolean[i,:] = [int(d)>>j & 1 for
-                                j in range(nbits)]
+            for i, d in enumerate(self.data):
+                boolean[i, :] = [int(d) >> j & 1 for
+                                 j in range(nbits)]
             self._boolean = ArrayTimeSeries(boolean, name=self.name,
                                             epoch=self.epoch,
                                             sample_rate=self.sample_rate,
                                             y0=0, dy=1)
             return self.boolean
 
-    @property
-    def bits(self):
-        """A list of `StateTimeSeries` for each of the individual
-        bits in this `StateVector`.
+    def get_bit_series(self, bits=None):
+        """Get the `StateTimeSeries` for each bit of this `StateVector`.
+
+        Parameters
+        ----------
+        bits : `list`, optional
+            a list of bit indices or bit names, defaults to
+            `~StateVector.bits`
+
+        Returns
+        -------
+        bitseries : `TimeSeriesDict`
+            a `TimeSeriesDict` of `StateTimeSeries`, one for each given
+            bit
         """
+        if bits is None:
+            bits = [b for b in self.bits if b is not None]
+        for i, b in enumerate(bits):
+            if not b in self.bits and isinstance(b):
+                bits[i] = self.bits[b]
         try:
-            return self._bits
+            return self._bitseries.fromkeys(bits)
         except AttributeError:
-            self._bits = []
-            for i,bit in enumerate(self.bitmask):
-                if bit is None:
-                    self._bits.append(None)
-                else:
-                    self._bits.append(StateTimeSeries(
-                                          self.data >> i & 1, name=bit,
-                                          epoch=self.x0.value,
-                                          channel=self.channel,
-                                          sample_rate=self.sample_rate))
-            return self.bits
+            self._bitseries = TimeSeriesDict()
+            for i, bit in enumerate(self.bits):
+                self._bitseries[bit] = StateTimeSeries(
+                    self.data >> i & 1, name=bit, epoch=self.x0.value,
+                    channel=self.channel, sample_rate=self.sample_rate)
+            return self._bitseries
 
     # -------------------------------------------
     # StateVector methods
@@ -401,7 +406,7 @@ class StateVector(TimeSeries):
         Notes
         -----"""))
 
-    def to_dqflags(self, minlen=1, dtype=float, round=False):
+    def to_dqflags(self, bits=None, minlen=1, dtype=float, round=False):
         """Convert this `StateVector` into a `SegmentListDict`.
 
         The `StateTimeSeries` for each bit is converted into a `SegmentList`
@@ -413,6 +418,9 @@ class StateVector(TimeSeries):
            minimum number of consecutive `True` values to identify as a
            `Segment`. This is useful to ignore single bit flips,
            for example.
+        bits : `list`, optional
+            a list of bit indices or bit names to select, defaults to
+            `~StateVector.bits`
 
         Returns
         -------
@@ -426,13 +434,16 @@ class StateVector(TimeSeries):
             for details on the segment representation method for
             `StateVector` bits
         """
-        return [self.bits[i].to_dqflag(
-                    name=bit, minlen=minlen, round=round, dtype=dtype,
-                    description=self.bitmask.description[bit])
-                for i,bit in enumerate(self.bitmask) if bit is not None]
+        out = DataQualityDict()
+        bitseries = self.get_bit_series(bits=bits)
+        for bit, sts in bitseries.iteritems():
+            out[bit] = sts.to_dqflag(name=bit, minlen=minlen, round=round,
+                                     dtype=dtype,
+                                     description=self.bits.description[bit])
+        return out
 
     @classmethod
-    def fetch(cls, channel, start, end, bitmask=[], host=None, port=None,
+    def fetch(cls, channel, start, end, bits=[], host=None, port=None,
               verbose=False, connection=None, type=NDS2_FETCH_TYPE_MASK):
         """Fetch data from NDS into a `StateVector`.
 
@@ -444,7 +455,7 @@ class StateVector(TimeSeries):
             GPS start time of data span
         end : `~gwpy.time.Time`, or float
             GPS end time of data span
-        bitmask : `BitMask`, `list`, optional
+        bits : `Bits`, `list`, optional
             definition of bits for this `StateVector`
         host : `str`, optional
             URL of NDS server to use, defaults to observatory site host.
@@ -465,7 +476,7 @@ class StateVector(TimeSeries):
         new = StateVectorDict.fetch(
             [channel], start, end, host=host, port=port,
             verbose=verbose, connection=connection)[channel]
-        new.bitmask = bitmask
+        new.bits = bits
         return new
 
     def to_lal(self, *args, **kwargs):
@@ -476,7 +487,7 @@ class StateVector(TimeSeries):
                                   "StateTimeSeries because LAL has no "
                                   "BooleanTimeSeries structure")
 
-    def plot(self, format='segments', **kwargs):
+    def plot(self, format='segments', bits=None, **kwargs):
         """Plot the data for this `StateVector`
 
         Parameters
@@ -484,7 +495,11 @@ class StateVector(TimeSeries):
         format : `str`, optional, default: ``'segments'``
             type of plot to make, either 'segments' to plot the
             SegmentList for each bit, or 'timeseries' to plot the raw
-            data for this `StateVector`.
+            data for this `StateVector`
+        bits : `list`, optional
+            a list of bit indices or bit names, defaults to
+            `~StateVector.bits`. This argument is ignored if ``format`` is
+            not ``'segments'``
         **kwargs
             other keyword arguments to be passed to either
             :class:`~gwpy.plotter.segments.SegmentPlot` or
@@ -505,7 +520,7 @@ class StateVector(TimeSeries):
             kwargs.setdefault('valid', {'facecolor': 'red',
                                         'edgecolor': 'black'})
             from ..plotter import SegmentPlot
-            return SegmentPlot(*self.to_dqflags(), **kwargs)
+            return SegmentPlot(*self.to_dqflags(bits=bits).values(), **kwargs)
         raise ValueError("'format' argument must be one of: 'timeseries' or "
                          "'segments'")
 
@@ -545,8 +560,8 @@ class StateVector(TimeSeries):
             newsize = self.size / factor
             old = self.data.reshape((newsize, self.size // newsize))
             # work out number of bits
-            if len(self.bitmask):
-                nbits = len(self.bitmask)
+            if len(self.bits):
+                nbits = len(self.bits)
             else:
                 max = self.data.max()
                 nbits = max != 0 and int(ceil(log(self.data.max(), 2))) or 1

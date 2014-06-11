@@ -267,19 +267,19 @@ def read_timeseries(source, channel, **kwargs):
 
 
 @with_import('frameCPP')
-def read_statevectordict(source, channels, bitmasks=[], **kwargs):
+def read_statevectordict(source, channels, bitss=[], **kwargs):
     """Read a `StateVectorDict` of data from a gravitational-wave
     frame file.
     """
     kwargs.setdefault('_SeriesClass', StateVector)
     svd = StateVectorDict(read_timeseriesdict(source, channels, **kwargs))
-    for (channel, bitmask) in zip(channels, bitmasks):
-        svd[channel].bitmask = bitmask
+    for (channel, bits) in zip(channels, bitss):
+        svd[channel].bits = bits
     return svd
 
 
 @with_import('frameCPP')
-def read_statevector(source, channel, bitmask=[], **kwargs):
+def read_statevector(source, channel, bits=[], **kwargs):
     """Read a `StateVector` of data from a gravitational-wave frame file
 
     Parameters
@@ -292,7 +292,7 @@ def read_statevector(source, channel, bitmask=[], **kwargs):
 
     channel : :class:`~gwpy.detector.channel.Channel`, `str`
         data channel to read from frames
-    bitmask : `list`
+    bits : `list`
         ordered list of bit identifiers (names)
 
     See Also
@@ -307,7 +307,7 @@ def read_statevector(source, channel, bitmask=[], **kwargs):
     """
     kwargs.setdefault('_SeriesClass', StateVector)
     sv = read_timeseries(source, channel, **kwargs)
-    sv.bitmask = bitmask
+    sv.bits = bits
     return sv
 
 
