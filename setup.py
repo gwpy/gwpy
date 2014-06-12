@@ -36,7 +36,7 @@ ez_setup.use_setuptools()
 from distutils import log
 from distutils.command.clean import (clean, log, remove_tree)
 from setuptools import (setup, find_packages)
-from setuptools.command import (build_py, sdist)
+from setuptools.command import (build_py, egg_info)
 
 # test for OrderedDict
 extra_install_requires = []
@@ -89,6 +89,8 @@ if 'pip-' in __file__:
         print("pip install --upgrade numpy", file=sys.stderr)
         sys.exit(1)
 
+version_py = os.path.join(PACKAGENAME, 'version.py')
+
 # -----------------------------------------------------------------------------
 # Clean up after sphinx
 
@@ -99,56 +101,60 @@ class GWpyClean(clean):
             if os.path.exists(sphinx_dir):
                 remove_tree(sphinx_dir, dry_run=self.dry_run)
             else:
-                log.warn("'%s' does not exist -- can't clean it", sphinx_dir)
+                log.warn("%r does not exist -- can't clean it", sphinx_dir)
+            for vpy in [version_py, version_py + 'c']:
+                if os.path.exists(vpy) and not self.dry_run:
+                    log.info('removing %r' % vpy)
+                    os.unlink(vpy)
+                elif not os.path.exists(vpy):
+                    log.warn("%r does not exist -- can't clean it", vpy)
         clean.run(self)
+
 
 # -----------------------------------------------------------------------------
 # Custom builders to write version.py
 
-version_py = os.path.join(PACKAGENAME, 'version.py')
+class GitVersionMixin(object):
 
+    def write_version_py(self, pyfile):
+        """Generate target file with versioning information from git VCS
+        """
+        log.info("generating %s" % pyfile)
+        import vcs
+        gitstatus = vcs.GitStatus()
+        gitstatus.run(pyfile, PACKAGENAME, AUTHOR, AUTHOR_EMAIL)
+        return gitstatus
 
-def write_vcs_info(target):
-    """Generate target file with versioning information from git VCS
-    """
-    log.info("generating %s" % target)
-    import vcs
-    gitstatus = vcs.GitStatus()
-    gitstatus.run(target, PACKAGENAME, AUTHOR, AUTHOR_EMAIL)
-
-
-class GWpyBuildPy(build_py.build_py):
-    def run(self):
+    def generate_version_metadata(self, pyfile):
         try:
-            write_vcs_info(version_py)
+            gitstatus = self.write_version_py(pyfile)
         except subprocess.CalledProcessError:
             # failed to generate version.py because git call did'nt work
-            if os.path.exists(version_py):
+            if os.path.exists(pyfile):
                 log.info("cannot determine git status, using existing %s"
-                         % version_py)
+                         % pyfile)
+            else:
+                raise
+        import gwpy
+        self.distribution.metadata.version = gwpy.__version__
+        desc, longdesc = gwpy.__doc__.split('\n', 1)
+        self.distribution.metadata.description = desc
+        self.distribution.metadata.long_description = longdesc.strip('\n')
+
+
+class GWpyBuildPy(build_py.build_py, GitVersionMixin):
+    def run(self):
+        self.generate_version_metadata(version_py)
         build_py.build_py.run(self)
 
 
-class GWpySDist(sdist.sdist):
-    def run(self):
-        write_vcs_info(version_py)
-        sdist.sdist.run(self)
+class GWpyEggInfo(egg_info.egg_info, GitVersionMixin):
 
-# get version metadata
-try:
-    from gwpy import version
-except ImportError:
-    VERSION = None
-    RELEASE = False
-else:
-    VERSION = version.version
-    RELEASE = version.version != version.git_id and 'dev' not in VERSION
+    def finalize_options(self):
+        if not self.distribution.metadata.version:
+            self.generate_version_metadata(version_py)
+        egg_info.egg_info.finalize_options(self)
 
-# -----------------------------------------------------------------------------
-# Get more metadata from __init__.py
-
-import gwpy
-DESCRIPTION, LONG_DESCRIPTION = gwpy.__doc__.split('\n', 1)
 
 # -----------------------------------------------------------------------------
 # Find files
@@ -167,9 +173,9 @@ else:
 
 setup(name=PACKAGENAME,
       provides=[PACKAGENAME],
-      version=VERSION,
-      description=DESCRIPTION,
-      long_description=LONG_DESCRIPTION.strip('\n'),
+      version=None,
+      description=None,
+      long_description=None,
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
       license=LICENSE,
@@ -182,7 +188,7 @@ setup(name=PACKAGENAME,
       cmdclass={
           'clean': GWpyClean,
           'build_py': GWpyBuildPy,
-          'sdist': GWpySDist,
+          'egg_info': GWpyEggInfo,
           },
       scripts=scripts,
       requires=[
