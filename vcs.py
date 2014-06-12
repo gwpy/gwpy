@@ -104,7 +104,7 @@ class GitStatus(object):
             self.status = 'UNCLEAN: Modified working tree'
         else:
             try:
-                self.git('diff-index', '--cache', '--quiet', 'HEAD')
+                self.git('diff-index', '--cached', '--quiet', 'HEAD')
             except subprocess.CalledProcessError:
                 self.status = 'UNCLEAN: Modified working tree'
             else:
