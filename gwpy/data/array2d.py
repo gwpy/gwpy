@@ -23,7 +23,6 @@ import math
 import inspect
 
 import numpy
-from scipy import signal
 from astropy.units import (Unit, Quantity)
 
 from .. import version
@@ -33,6 +32,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 from .array import Array
 from .series import Series
 from ..segments import Segment
+from ..utils import with_import
 
 
 class Array2D(Array):
@@ -270,6 +270,7 @@ class Array2D(Array):
     # -------------------------------------------
     # Array2D methods
 
+    @with_import('scipy.signal')
     def resample(self, rate, window=None):
         """Resample this Array2D to a new rate
 
