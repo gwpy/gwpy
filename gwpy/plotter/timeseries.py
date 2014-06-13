@@ -113,7 +113,7 @@ class TimeSeriesAxes(Axes):
     epoch = property(fget=get_epoch, fset=set_epoch, doc=get_epoch.__doc__)
 
     def set_xlim(self, *args, **kwargs):
-        if self.epoch is None:
+        if 'gps' in self.get_xscale() and self.epoch is None:
             xmin = isinstance(args[0], tuple) and args[0][0] or args[0]
             self.set_epoch(xmin)
         super(TimeSeriesAxes, self).set_xlim(*args, **kwargs)
@@ -415,6 +415,7 @@ class TimeSeriesPlot(Plot):
                              "'bottom'.")
         segax = divider.append_axes(location, height, pad=pad,
                                     axes_class=SegmentAxes, sharex=ax)
+        segax.set_xscale(ax.get_xscale())
 
         # plot segments and set axes properties
         segax.plot(segments, **plotargs)
