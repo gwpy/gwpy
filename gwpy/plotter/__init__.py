@@ -18,20 +18,12 @@
 
 """This module provides plotting utilities for visualising GW data
 
-The standard data types (`TimeSeries`, `Table`, `DataQualityFlag`) can
+The standard data types (`TimeSeries`, `Table`, `DataQualityFlag`, ...) can
 all be easily visualised using the relevant plotting objects, with
 many configurable parameters both interactive, and in saving to disk.
 """
 
-import os
-import matplotlib
-try:
-    os.environ['DISPLAY']
-except KeyError:
-    matplotlib.use('agg', warn=False)
-
-from matplotlib import pyplot
-rcParams = matplotlib.rcParams
+from matplotlib import (rcParams, pyplot)
 
 from .. import version
 
