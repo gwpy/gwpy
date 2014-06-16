@@ -1,13 +1,45 @@
-/build
-/gwpy.egg-info
-/dist
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+bin/
+build/
+develop-eggs/
+dist/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Sphinx documentation
 /docs/_build
 /docs/_generated
+
+# Version information
 /gwpy/version.py
-*.pyc
-*.so
+
+# OS/editor files
 *.swp
 .DS_Store
+.idea
+
+# Examples output
 /examples/*.png
-/.idea
+
+# Patches
 /[0-9][0-9][0-9][0-9]-*.patch
