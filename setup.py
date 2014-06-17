@@ -30,13 +30,19 @@ import glob
 import os.path
 import subprocess
 
-import ez_setup
-ez_setup.use_setuptools()
 
 from distutils import log
+from distutils.dist import Distribution
 from distutils.command.clean import (clean, log, remove_tree)
-from setuptools import (setup, find_packages)
-from setuptools.command import (build_py, egg_info)
+
+try:
+    import setuptools
+except ImportError:
+    import ez_setup
+    ez_setup.use_setuptools()
+finally:
+    from setuptools import (setup, find_packages)
+    from setuptools.command import (build_py, egg_info)
 
 # test for OrderedDict
 extra_install_requires = []
@@ -45,96 +51,73 @@ try:
 except ImportError:
     extra_install_requires.append('ordereddict>=1.1')
 
+# import sphinx commands
+try:
+    from sphinx.setup_command import BuildDoc
+except ImportError:
+    cmdclass = {}
+else:
+    cmdclass = {'build_sphinx': BuildDoc}
+
 # set basic metadata
 PACKAGENAME = 'gwpy'
 AUTHOR = 'Duncan Macleod'
 AUTHOR_EMAIL = 'duncan.macleod@ligo.org'
 LICENSE = 'GPLv3'
 
-# -----------------------------------------------------------------------------
-# Process complicated dependencies
+VERSION_PY = os.path.join(PACKAGENAME, 'version.py')
 
-try:
-    from glue import git_version
-except ImportError:
-    print("GWpy requires the GLUE package, which isn\'t available from PyPI.\n"
-          "Please visit\n"
-          "https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html\n"
-          "to download and install it manually.", file=sys.stderr)
-    sys.exit(1)
-
-NUMPY_REQUIRED = '1.5'
-
-if 'pip-' in __file__:
-    no_numpy = False
-    numpy_too_old = False
-    try:
-        import numpy
-    except ImportError:
-        no_numpy = True
-    else:
-        if numpy.__version__ < NUMPY_REQUIRED:
-            numpy_too_old = True
-
-    if no_numpy or numpy_too_old:
-        print("BUILD FAILURE ANTICIPATED", file=sys.stderr)
-        print("Pip does not install dependencies in logical order, and so "
-              "will not completely build numpy before moving onto matplotlib, "
-              "meaning the matplotlib build will fail. Please install numpy "
-              "first by running:", file=sys.stderr)
-    if no_numpy:
-        print("pip install numpy", file=sys.stderr)
-        sys.exit(1)
-    elif numpy_too_old:
-        print("pip install --upgrade numpy", file=sys.stderr)
-        sys.exit(1)
-
-version_py = os.path.join(PACKAGENAME, 'version.py')
 
 # -----------------------------------------------------------------------------
-# Clean up after sphinx
+# Clean up, including Sphinx, and setup_requires eggs
 
 class GWpyClean(clean):
     def run(self):
         if self.all:
+            # remove docs
             sphinx_dir = os.path.join(self.build_base, 'sphinx')
             if os.path.exists(sphinx_dir):
                 remove_tree(sphinx_dir, dry_run=self.dry_run)
             else:
                 log.warn("%r does not exist -- can't clean it", sphinx_dir)
-            for vpy in [version_py, version_py + 'c']:
+            # remove version.py
+            for vpy in [VERSION_PY, VERSION_PY + 'c']:
                 if os.path.exists(vpy) and not self.dry_run:
                     log.info('removing %r' % vpy)
                     os.unlink(vpy)
                 elif not os.path.exists(vpy):
                     log.warn("%r does not exist -- can't clean it", vpy)
+            # remove setup eggs
+            for egg in glob.glob('*.egg'):
+                if os.path.isdir(egg):
+                    remove_tree(egg, dry_run=self.dry_run)
+                else:
+                    log.info('removing %r' % egg)
+                    os.unlink(egg)
         clean.run(self)
+
+cmdclass['clean'] = GWpyClean
 
 
 # -----------------------------------------------------------------------------
 # Custom builders to write version.py
 
 class GitVersionMixin(object):
-
+    """Mixin class to add methods to generate version information from git.
+    """
     def write_version_py(self, pyfile):
         """Generate target file with versioning information from git VCS
         """
         log.info("generating %s" % pyfile)
         import vcs
         gitstatus = vcs.GitStatus()
-        gitstatus.run(pyfile, PACKAGENAME, AUTHOR, AUTHOR_EMAIL)
+        with open(pyfile, 'w') as fobj:
+            gitstatus.write(fobj, author=AUTHOR, email=AUTHOR_EMAIL)
         return gitstatus
 
-    def generate_version_metadata(self, pyfile):
-        try:
-            gitstatus = self.write_version_py(pyfile)
-        except subprocess.CalledProcessError:
-            # failed to generate version.py because git call did'nt work
-            if os.path.exists(pyfile):
-                log.info("cannot determine git status, using existing %s"
-                         % pyfile)
-            else:
-                raise
+    def update_metadata(self):
+        """Import package base and update distribution metadata
+        """
         import gwpy
         self.distribution.metadata.version = gwpy.__version__
         desc, longdesc = gwpy.__doc__.split('\n', 1)
@@ -143,18 +126,68 @@ class GitVersionMixin(object):
 
 
 class GWpyBuildPy(build_py.build_py, GitVersionMixin):
+    """Custom build_py command to deal with version generation
+    """
+    def __init__(self, *args, **kwargs):
+        build_py.build_py.__init__(self, *args, **kwargs)
+
     def run(self):
-        self.generate_version_metadata(version_py)
+        try:
+            self.write_version_py(VERSION_PY)
+        except ImportError:
+            raise
+        except:
+            if not os.path.isfile(VERSION_PY):
+                raise
+        self.update_metadata()
         build_py.build_py.run(self)
+
+cmdclass['build_py'] = GWpyBuildPy
 
 
 class GWpyEggInfo(egg_info.egg_info, GitVersionMixin):
-
+    """Custom egg_info command to deal with version generation
+    """
     def finalize_options(self):
+        try:
+            self.write_version_py(VERSION_PY)
+        except ImportError:
+            raise
+        except:
+            if not os.path.isfile(VERSION_PY):
+                raise
         if not self.distribution.metadata.version:
-            self.generate_version_metadata(version_py)
+            self.update_metadata()
         egg_info.egg_info.finalize_options(self)
 
+cmdclass['egg_info'] = GWpyEggInfo
+
+
+# -----------------------------------------------------------------------------
+# Process complicated dependencies
+
+# XXX: this can be removed as soon as a stable release of glue can
+#      handle pip/--user
+try:
+    from glue import git_version
+except ImportError as e:
+    e.args = ("GWpy requires the GLUE package, which isn\'t available from "
+              "PyPI.\nPlease visit\n"
+              "https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html\n"
+              "to download and install it manually.",)
+    raise
+
+# don't use setup_requires if just checking for information
+# (credit: matplotlib/setup.py)
+dist_ = Distribution({'cmdclass': cmdclass})
+dist_.parse_config_files()
+dist_.parse_command_line()
+if (any('--' + opt in sys.argv for opt in
+        Distribution.display_option_names + ['help']) or 
+        dist_.commands == ['clean']):
+    setup_requires = []
+else:
+    setup_requires = ['tornado', 'numpy >= 1.5', 'jinja2', 'gitpython']
 
 # -----------------------------------------------------------------------------
 # Find files
@@ -181,34 +214,34 @@ setup(name=PACKAGENAME,
       license=LICENSE,
       url='https://gwpy.github.io/',
       packages=packagenames,
-      #package_data={
-      #    PACKAGENAME: ['gwpy/tests/data/*'],
-      #    },
       include_package_data=True,
-      cmdclass={
-          'clean': GWpyClean,
-          'build_py': GWpyBuildPy,
-          'egg_info': GWpyEggInfo,
-          },
+      cmdclass=cmdclass,
       scripts=scripts,
+      setup_requires=setup_requires,
       requires=[
           'glue',
           'dateutil',
           'numpy',
           'matplotlib',
-          'astropy'],
+          'astropy',
+      ],
       install_requires=[
           'python-dateutil',
-          'numpy >= %s' % NUMPY_REQUIRED,
+          'numpy >= 1.5',
           'matplotlib >= 1.3.0',
           'astropy >= 0.3',
-          ] + extra_install_requires,
+          'glue >= 1.46',
+      ] + extra_install_requires,
       extras_require={
           'nds': ['nds2-client'],
           'gwf': ['frameCPP'],
           'doc': ['sphinx'],
           'dsp': ['scipy'],
-          },
+      },
+      dependency_links=[
+          'https://www.lsc-group.phys.uwm.edu/daswg/download/'
+              'software/source/glue-1.46.tar.gz#egg=glue-1.46',
+      ],
       test_suite='gwpy.tests',
       use_2to3=False,
       classifiers=[
@@ -225,5 +258,5 @@ setup(name=PACKAGENAME,
           'Operating System :: Unix',
           'Operating System :: MacOS',
           'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-          ],
+      ],
       )

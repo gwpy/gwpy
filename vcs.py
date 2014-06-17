@@ -23,161 +23,119 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Adam Mercer <adam.mercer@ligo.org>'
 
 import os
-import subprocess
 import time
+from distutils.version import LooseVersion
+
+from git import Repo
+from jinja2 import Template
+
+
+VERSION_PY_TEMPLATE = Template(
+"""# -*- coding: utf-8 -*-
+{% if 'author' in package %}\
+# Copyright (C) {{ package['author'] }} ({{ package['year'] }})
+
+# package metadata
+__author__ = "{{ package['author'] }} <{{ package['email'] }}>"\
+{% endif %}
+__version__ = '{{ version.vstring }}'
+__date__ = '{{ status.datestr }}'
+
+# package version
+version = '{{ version }}'
+major = {{ version.version[0] }}
+minor = {{ version.version[1] }}
+micro = {{ version.version[2].isdigit() and version.version[2] or None }}
+debug = {{ not version.vstring.replace('.', '').isdigit() }}
+release = {{ version.version[0] > 0 and \
+             version.vstring.replace('.', '').isdigit() }}
+
+# repository version information
+git_hash = '{{ status.commit.hexsha }}'
+git_tag = '{{ status.tag and status.tag.name or None }}'
+git_author = "{{ status.author }}"
+git_committer = "{{ status.committer }}"
+git_is_dirty = {{ status.is_dirty() }}
+""")
 
 
 class GitStatus(object):
-    """Git repository version information
-    """
-    def __init__(self):
-        self._bin = self._find_git()
-        self.id = None
-        self.date = None
-        self.branch = None
-        self.tag = None
-        self.author = None
-        self.committer = None
-        self.status = None
+    def __init__(self, path=os.curdir):
+        self.repo = Repo(path=path)
 
-    # ------------------------------------------------------------------------
-    # Core methods
+    def is_dirty(self):
+        return self.repo.is_dirty()
+    is_dirty.__doc__ = Repo.is_dirty.__doc__
 
-    @staticmethod
-    def _find_git():
-        """Determine the full path of the git binary on this
-        host
-        """
-        for path in os.environ['PATH'].split(os.pathsep):
-            gitbin = os.path.join(path, 'git')
-            if os.path.isfile(gitbin) and os.access(gitbin, os.X_OK):
-                return gitbin
-        raise ValueError("Git binary not found on this host")
+    @property
+    def commit(self):
+        return self.repo.head.commit
 
-    def git(self, *args):
-        """Executable a command with arguments in a sub-process
-        """
-        cmdargs = [self._bin] + list(args)
-        p = subprocess.Popen(cmdargs,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                             shell=isinstance(args, str))
-        out, err = p.communicate()
-        if p.returncode != 0:
-            raise subprocess.CalledProcessError(p.returncode,
-                                                ' '.join(cmdargs))
-        return out.decode().strip()
+    @property
+    def branch(self):
+        return self.repo.active_branch
 
-    # ------------------------------------------------------------------------
-    # Git communication methods
+    @property
+    def tag(self):
+        for tag in self.repo.tags:
+            if tag.commit == self.commit:
+                return tag
+        return None
 
-    def get_commit_info(self):
-        """Determine basic info about the latest commit
-        """
-        a, b, c, d, e, f = self.git(
-            'log', '-1', '--pretty=format:%H,%ct,%an,%ae,%cn,%ce').split(',')
-        self.id = a
-        self.udate = b
-        author = c
-        author_email = d
-        committer = e
-        committer_email = f
-        self.date = time.strftime('%Y-%m-%d %H:%M:%S +0000',
-                                  time.gmtime(float(self.udate)))
-        self.author = '%s <%s>' % (author, author_email)
-        self.committer = '%s <%s>' % (committer, committer_email)
-
-    def get_branch(self):
-        branch = self.git('rev-parse', '--symbolic-full-name', 'HEAD')
-        if branch == 'HEAD':
-            self.branch = None
-        else:
-            self.branch = os.path.basename(branch)
-        return self.branch
-
-    def get_status(self):
-        """Determine modification status of working tree
+    @property
+    def revision(self):
+        """The number of commits between the HEAD and the last tag.
         """
         try:
-            self.git('diff-files', '--quiet')
-        except subprocess.CalledProcessError:
-            self.status = 'UNCLEAN: Modified working tree'
+            tag = self.repo.tags[-1]
+        except IndexError:
+            start = ''
+        else:
+            start = '%s..' % tag.name
+        return self.repo.git.rev_list('%sHEAD' % start).count('\n') + 1
+
+    @property
+    def version(self):
+        if self.tag and not self.is_dirty():
+            v = self.tag.name.strip('v')
         else:
             try:
-                self.git('diff-index', '--cached', '--quiet', 'HEAD')
-            except subprocess.CalledProcessError:
-                self.status = 'UNCLEAN: Modified working tree'
-            else:
-                self.status = 'CLEAN: All modifications committed'
-        return self.status
+                v = self.repo.tags[-1].name.strip('v')
+            except IndexError:
+                v = '0.0.0'
+            nrev = self.revision
+            if nrev:
+                v += '.dev%d' % nrev
+            elif self.is_dirty():
+                v += '.dev'
+        return LooseVersion(v)
 
-    def get_tag(self):
-        """Determine name of the current tag
-        """
-        if not self.id:
-            self.get_commit_info()
-        try:
-            self.tag = self.git('describe', '--exact-match', '--tags',
-                                self.id)
-        except subprocess.CalledProcessError:
-            self.tag = None
-        return self.tag
+    @property
+    def date(self):
+        return time.gmtime(self.commit.committed_date)
+
+    @property
+    def datestr(self):
+        return time.strftime('%Y-%m-%d %H:%M:%S +0000', self.date)
+
+    @property
+    def author(self):
+        return "%s <%s>" % (self.commit.author.name, self.commit.author.email)
+
+    @property
+    def committer(self):
+        return "%s <%s>" % (self.commit.committer.name,
+                            self.commit.committer.email)
 
     # ------------------------------------------------------------------------
     # Write
 
-    def write(self, fobj, pname, pauthor=None,
-              pauthoremail=None):
-        """Write the contents of this `GitStatus` to a version.py format
-        file object
+    def write(self, fobj, version=None, **package_metadata):
+        """Write the contents of this `GitStatus` to a file object.
         """
-        # write file header
-        fobj.write("# coding=utf-8\n")
-        if pauthor:
-            fobj.write("# Copyright (C) %s (2013)\n\n" % pauthor)
-        fobj.write("\"\"\"Versioning record for %s\n\"\"\"\n\n" % pname)
+        if version is None:
+            version = self.version
+        package_metadata.setdefault('year', time.gmtime().tm_year)
+        fobj.write(VERSION_PY_TEMPLATE.render(status=self, version=version,
+                                              package=package_metadata))
 
-        # write standard pythonic metadata
-        if pauthor and pauthoremail:
-            pauthor = '%s <%s>' % (pauthor, pauthoremail)
-        if pauthor:
-            fobj.write("__author__ = '%s'\n" % pauthor)
-        fobj.write("__version__ = '%s'\n"
-                   "__date__ = '%s'\n\n" % (self.version, self.date))
-
-        # write git information
-        fobj.write("version = '%s'\n" % self.version)
-        for attr in ['id', 'branch', 'tag', 'author', 'committer', 'status']:
-            val = getattr(self, attr)
-            if val:
-                fobj.write("git_%s = '%s'\n" % (attr, val))
-            else:
-                fobj.write("git_%s = None\n" % attr)
-
-    def run(self, outputfile, pname, pauthor=None, pauthoremail=None):
-        """Process the version information into a new file
-
-        Parameters
-        ----------
-        outputfile : `str`
-            path to output python file in which to write version info
-
-        Returns
-        -------
-        info : `str`
-            returns a string dump of the contents of the outputfile
-        """
-        self.get_commit_info()
-        self.get_branch()
-        self.get_tag()
-        self.get_status()
-        if self.tag:
-            self.version = self.tag.strip('v')
-        else:
-            self.version = self.id[:6]
-        if self.status.startswith('UNCLEAN'):
-            self.version += 'dev'
-        with open(outputfile, 'w') as fobj:
-            self.write(fobj, pname, pauthor, pauthoremail)
-        with open(outputfile, 'r') as fobj:
-            return fobj.read()
