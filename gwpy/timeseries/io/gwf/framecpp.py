@@ -218,14 +218,13 @@ def _read_frame(framefile, channels, type=None, verbose=False,
                 break
             offset = data.GetTimeOffset()
             thisepoch = epochs[i] + offset
-            fs = data.GetSampleRate()
             for vect in data.data:
                 arr = vect.GetDataArray()
+                dx = vect.GetDim(0).dx
                 if ts is None:
                     unit = vect.GetUnitY()
-                    ts = _SeriesClass(arr, epoch=thisepoch, sample_rate=fs,
-                                      name=name, channel=channel, unit=unit,
-                                      copy=True)
+                    ts = _SeriesClass(arr, epoch=thisepoch, dx=dx, name=name,
+                                      channel=channel, unit=unit, copy=True)
                 else:
                     ts.append(arr)
             i += 1
