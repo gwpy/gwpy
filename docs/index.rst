@@ -1,6 +1,6 @@
 .. image:: https://gwpy.github.io/images/gwpy_docs_1200.png
 
-.. title:: GWpy Docs
+.. title:: Docs
 
 GWpy is a collaboration-driven `Python <http://www.python.org>`_ package
 providing tools for studying data from ground-based gravitational-wave
