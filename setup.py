@@ -230,7 +230,6 @@ setup(name=PACKAGENAME,
           'numpy >= 1.5',
           'matplotlib >= 1.3.0',
           'astropy >= 0.3',
-          'glue >= 1.46',
       ] + extra_install_requires,
       extras_require={
           'nds': ['nds2-client'],
