@@ -699,8 +699,8 @@ class Plot(figure.Figure):
         pass
     get_ylim.__doc__ = axes.Axes.get_ylim.__doc__
 
-    @axes_method
     @auto_refresh
+    @axes_method
     def set_ylim(self, *args, **kwargs):
         pass
     set_ylim.__doc__ = axes.Axes.set_ylim.__doc__
@@ -727,8 +727,8 @@ class Plot(figure.Figure):
         pass
     get_ylabel.__doc__ = axes.Axes.get_ylabel.__doc__
 
-    @axes_method
     @auto_refresh
+    @axes_method
     def set_ylabel(self, *args, **kwargs):
         pass
     set_ylabel.__doc__ = axes.Axes.set_ylabel.__doc__
@@ -741,8 +741,8 @@ class Plot(figure.Figure):
         pass
     get_title.__doc__ = axes.Axes.get_title.__doc__
 
-    @axes_method
     @auto_refresh
+    @axes_method
     def set_title(self, *args, **kwargs):
         pass
     set_title.__doc__ = axes.Axes.set_title.__doc__
@@ -755,8 +755,8 @@ class Plot(figure.Figure):
         pass
     get_xscale.__doc__ = axes.Axes.get_xscale.__doc__
 
-    @axes_method
     @auto_refresh
+    @axes_method
     def set_xscale(self, *args, **kwargs):
         pass
     set_xscale.__doc__ = axes.Axes.set_xscale.__doc__
@@ -771,8 +771,8 @@ class Plot(figure.Figure):
         pass
     get_yscale.__doc__ = axes.Axes.get_yscale.__doc__
 
-    @axes_method
     @auto_refresh
+    @axes_method
     def set_yscale(self, *args, **kwargs):
         pass
     set_yscale.__doc__ = axes.Axes.set_yscale.__doc__
