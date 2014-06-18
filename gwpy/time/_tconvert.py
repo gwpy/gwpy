@@ -188,7 +188,7 @@ def str_to_datetime(datestr):
     """
     datestr = str(datestr).lower()
     if datestr == 'now':
-        date = datetime.datetime.now().replace(microsecond=0)
+        date = datetime.datetime.utcnow().replace(microsecond=0)
     elif datestr == 'today':
         date = datetime.date.today()
     elif datestr == 'tomorrow':
