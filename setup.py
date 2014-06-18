@@ -30,11 +30,6 @@ import glob
 import os.path
 import subprocess
 
-
-from distutils import log
-from distutils.dist import Distribution
-from distutils.command.clean import (clean, log, remove_tree)
-
 try:
     import setuptools
 except ImportError:
@@ -43,6 +38,10 @@ except ImportError:
 finally:
     from setuptools import (setup, find_packages)
     from setuptools.command import (build_py, egg_info)
+
+from distutils import log
+from distutils.dist import Distribution
+from distutils.command.clean import (clean, log, remove_tree)
 
 # test for OrderedDict
 extra_install_requires = []
