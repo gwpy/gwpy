@@ -238,7 +238,7 @@ class Series(Array):
 
         See also
         --------
-        :meth:`~scipy.resample`
+        :meth:`scipy.resample`
         """
         if not isinstance(q, int):
             raise TypeError("q must be an integer")

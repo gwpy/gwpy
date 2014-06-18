@@ -607,7 +607,7 @@ class StateVectorDict(TimeSeriesDict):
 
     See Also
     --------
-    :class:`~gwpy.timeseries.core.TimeSeriesDict`
+    :class:`gwpy.timeseries.core.TimeSeriesDict`
         for more object information.
     """
     EntryClass = StateVector

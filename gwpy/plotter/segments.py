@@ -83,7 +83,7 @@ class SegmentAxes(TimeSeriesAxes):
 
         See Also
         --------
-        :meth:`~matplotlib.axes.Axes.plot`
+        :meth:`matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
         lim = len(self.collections)

@@ -64,7 +64,7 @@ class SpectrumAxes(Axes):
 
         See Also
         --------
-        :meth:`~matplotlib.axes.Axes.plot`
+        :meth:`matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
         if len(args) == 1 and isinstance(args[0], Spectrum):
@@ -93,7 +93,7 @@ class SpectrumAxes(Axes):
 
         See Also
         --------
-        :meth:`~matplotlib.axes.Axes.plot`
+        :meth:`matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
         if tex.USE_TEX:
@@ -143,7 +143,7 @@ class SpectrumAxes(Axes):
 
         See Also
         --------
-        :meth:`~matplotlib.axes.Axes.plot`
+        :meth:`matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
         # plot mean
@@ -188,7 +188,7 @@ class SpectrumAxes(Axes):
 
         See Also
         --------
-        :meth:`~matplotlib.axes.Axes.pcolormesh`
+        :meth:`matplotlib.axes.Axes.pcolormesh`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
         cmap = kwargs.pop('cmap', None)

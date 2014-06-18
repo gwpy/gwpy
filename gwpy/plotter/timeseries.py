@@ -141,7 +141,7 @@ class TimeSeriesAxes(Axes):
 
         See Also
         --------
-        :meth:`~matplotlib.axes.Axes.plot`
+        :meth:`matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
         from ..timeseries import TimeSeries
@@ -173,7 +173,7 @@ class TimeSeriesAxes(Axes):
 
         See Also
         --------
-        :meth:`~matplotlib.axes.Axes.plot`
+        :meth:`matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
         if tex.USE_TEX:
@@ -217,7 +217,7 @@ class TimeSeriesAxes(Axes):
 
         See Also
         --------
-        :meth:`~matplotlib.axes.Axes.plot`
+        :meth:`matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
         # plot mean
@@ -262,7 +262,7 @@ class TimeSeriesAxes(Axes):
 
         See Also
         --------
-        :meth:`~matplotlib.axes.Axes.plot`
+        :meth:`matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
         # rescue grid settings
