@@ -27,6 +27,7 @@ if sys.version < '2.6':
     raise ImportError("Python versions older than 2.6 are not supported.")
 
 import glob
+import hashlib
 import os.path
 import subprocess
 
@@ -41,6 +42,7 @@ finally:
 
 from distutils import log
 from distutils.dist import Distribution
+from distutils.cmd import Command
 from distutils.command.clean import (clean, log, remove_tree)
 
 # test for OrderedDict
@@ -93,6 +95,11 @@ class GWpyClean(clean):
                 else:
                     log.info('removing %r' % egg)
                     os.unlink(egg)
+            # remove Portfile
+            portilfe = 'Portfile'
+            if os.path.exists(portfile) and not self.dry_run:
+                log.info('removing %r' % portfile)
+                os.unlink(portfile)
         clean.run(self)
 
 cmdclass['clean'] = GWpyClean
@@ -163,6 +170,82 @@ cmdclass['egg_info'] = GWpyEggInfo
 
 
 # -----------------------------------------------------------------------------
+# Build Portfile
+
+class BuildPortfile(Command, GitVersionMixin):
+    """Generate a Macports Portfile for this project from the current build
+    """
+    description = 'Generate Macports Portfile'
+    user_options = [
+       ('version=', None, 'the X.Y.Z package version'),
+       ('portfile=', None, 'target output file, default: \'Portfile\''),
+       ('template=', None, 'Portfile template, default: \'Portfile.template\''),
+    ]
+
+    def initialize_options(self):
+        self.version = None
+        self.portfile = 'Portfile'
+        self.template = 'Portfile.template'
+        self._template = None
+
+    def finalize_options(self):
+        from jinja2 import Template
+        with open(self.template, 'r') as t:
+            self._template = Template(t.read())
+
+    def run(self):
+        # get version from distribution
+        if self.version is None:
+            try:
+                self.update_metadata()
+            except ImportError:
+                self.run_command('sdist')
+                self.update_metadata()
+        # find dist file
+        dist = os.path.join(
+            'dist',
+            '%s-%s.tar.gz' % (self.distribution.get_name(),
+                              self.distribution.get_version()))
+        # run sdist if needed
+        if not os.path.isfile(dist):
+            self.run_command('sdist')
+            self.update_metadata()
+        # get checksum digests
+        log.info('reading distribution tarball %r' % dist)
+        with open(dist, 'rb') as fobj:
+            data = fobj.read()
+        log.info('recovered digests:')
+        digest = dict()
+        digest['rmd160'] = self._get_rmd160(dist)
+        for algo in [1, 256]:
+            digest['sha%d' % algo] = self._get_sha(data, algo)
+        for key, val in digest.iteritems():
+            log.info('    %s: %s' % (key, val))
+        # write finished portfile to file
+        with open(self.portfile, 'w') as fport:
+            fport.write(self._template.render(
+                version=self.distribution.get_version(), **digest))
+        log.info('portfile written to %r' % self.portfile)
+
+    @staticmethod
+    def _get_sha(data, algorithm=256):
+        hash_ = getattr(hashlib, 'sha%d' % algorithm)
+        return hash_(data).hexdigest()
+
+    @staticmethod
+    def _get_rmd160(filename):
+        p = subprocess.Popen(['openssl', 'rmd160', filename],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            raise subprocess.CalledProcessError(err)
+        else:
+            return out.splitlines()[0].rsplit(' ', 1)[-1]
+
+cmdclass['port'] = BuildPortfile
+
+
+# -----------------------------------------------------------------------------
 # Process complicated dependencies
 
 # XXX: this can be removed as soon as a stable release of glue can
@@ -178,15 +261,15 @@ except ImportError as e:
 
 # don't use setup_requires if just checking for information
 # (credit: matplotlib/setup.py)
-dist_ = Distribution({'cmdclass': cmdclass})
-dist_.parse_config_files()
-dist_.parse_command_line()
-if (any('--' + opt in sys.argv for opt in
-        Distribution.display_option_names + ['help']) or 
-        dist_.commands == ['clean']):
-    setup_requires = []
-else:
-    setup_requires = ['tornado', 'numpy >= 1.5', 'jinja2', 'gitpython']
+setup_requires = []
+if not '--help' in sys.argv:
+    dist_ = Distribution({'cmdclass': cmdclass})
+    dist_.parse_config_files()
+    dist_.parse_command_line()
+    if not (any('--' + opt in sys.argv for opt in
+            Distribution.display_option_names + ['help']) or
+            dist_.commands == ['clean']):
+        setup_requires = ['tornado', 'numpy >= 1.5', 'jinja2', 'gitpython']
 
 # -----------------------------------------------------------------------------
 # Find files
