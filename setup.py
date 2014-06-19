@@ -117,8 +117,13 @@ class GitVersionMixin(object):
         log.info("generating %s" % pyfile)
         import vcs
         gitstatus = vcs.GitStatus()
-        with open(pyfile, 'w') as fobj:
-            gitstatus.write(fobj, author=AUTHOR, email=AUTHOR_EMAIL)
+        try:
+            with open(pyfile, 'w') as fobj:
+                gitstatus.write(fobj, author=AUTHOR, email=AUTHOR_EMAIL)
+        except:
+            if os.path.exists(pyfile):
+                os.unlink(pyfile)
+            raise
         return gitstatus
 
     def update_metadata(self):
