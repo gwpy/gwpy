@@ -39,7 +39,7 @@ checksums   rmd160  {{ rmd160 }} \
 # ----------------------------------------------------------------------------
 # Python version subports
 
-python.versions     26 27
+python.versions     27
 
 if {${name} ne ${subport}} {
 
