@@ -13,6 +13,7 @@ The GWpy package has the following build-time dependencies (i.e. required for in
 * `glue <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_
 * `python-dateutil <https://pypi.python.org/pypi/python-dateutil/>`_
 * `NumPy <http://www.numpy.org>`_ >= 1.5
+* `SciPy <http://www.scipy.org>`_
 * `Matplotlib <http://matplotlib.org>`_ >= 1.3.0
 * `Astropy <http://astropy.org>`_ >= 0.3
 

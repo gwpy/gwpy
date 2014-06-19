@@ -31,6 +31,7 @@ from multiprocessing import (Process, Queue as ProcessQueue)
 
 import numpy
 from numpy import fft as npfft
+from scipy import signal
 
 from matplotlib import mlab
 
@@ -329,7 +330,6 @@ class TimeSeries(Series):
         new.frequencies = npfft.rfftfreq(self.size, d=self.dx.value)
         return new
 
-    @with_import('scipy.signal')
     def average_fft(self, fftlength=None, overlap=0, window=None):
         """Compute the averaged one-dimensional DFT of this `TimeSeries`.
 
@@ -733,7 +733,6 @@ class TimeSeries(Series):
     # -------------------------------------------
     # TimeSeries filtering
 
-    @with_import('scipy.signal')
     def highpass(self, frequency, numtaps=101, window='hamming'):
         """Filter this `TimeSeries` with a Butterworth high-pass filter.
 
@@ -766,7 +765,6 @@ class TimeSeries(Series):
                                 pass_zero=False)
         return self.filter(*filter_)
 
-    @with_import('scipy.signal')
     def lowpass(self, frequency, numtaps=61, window='hamming'):
         """Filter this `TimeSeries` with a Butterworth low-pass filter.
 
@@ -795,7 +793,6 @@ class TimeSeries(Series):
                                 nyq=self.sample_rate.value/2.)
         return self.filter(*filter_)
 
-    @with_import('scipy.signal')
     def bandpass(self, flow, fhigh, lowtaps=61, hightaps=101,
                  window='hamming'):
         """Filter this `TimeSeries` by applying both low- and high-pass
@@ -828,7 +825,6 @@ class TimeSeries(Series):
         high = self.highpass(flow, numtaps=lowtaps, window=window)
         return high.lowpass(fhigh, numtaps=hightaps, window=window)
 
-    @with_import('scipy.signal')
     def resample(self, rate, window='hamming', numtaps=61):
         """Resample this Series to a new rate
 
@@ -867,7 +863,6 @@ class TimeSeries(Series):
         new.sample_rate = rate
         return new
 
-    @with_import('scipy.signal')
     def filter(self, *filt):
         """Apply the given `Filter` to this `TimeSeries`
 

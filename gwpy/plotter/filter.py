@@ -22,11 +22,11 @@
 from math import pi
 import numpy
 
+from scipy import signal
 from matplotlib.ticker import MultipleLocator
 
 from .core import Plot
 from ..spectrum import Spectrum
-from ..utils import with_import
 
 from .. import version
 __version__ = version.version
@@ -147,7 +147,6 @@ class BodePlot(Plot):
         """
         return self.axes[1]
 
-    @with_import('scipy.signal')
     def add_filter(self, filter_, frequencies=None, sample_rate=None,
                    dB=True, **kwargs):
         """Add a linear time-invariant filter to this BodePlot
