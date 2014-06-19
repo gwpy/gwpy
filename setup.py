@@ -96,7 +96,7 @@ class GWpyClean(clean):
                     log.info('removing %r' % egg)
                     os.unlink(egg)
             # remove Portfile
-            portilfe = 'Portfile'
+            portfile = 'Portfile'
             if os.path.exists(portfile) and not self.dry_run:
                 log.info('removing %r' % portfile)
                 os.unlink(portfile)
