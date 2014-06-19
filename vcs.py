@@ -64,16 +64,25 @@ class GitStatus(object):
         self.repo = Repo(path=path)
 
     def is_dirty(self):
-        return self.repo.is_dirty()
+        if isinstance(self.repo.is_dirty, bool):
+            return self.repo.is_dirty
+        else:
+            return self.repo.is_dirty()
     is_dirty.__doc__ = Repo.is_dirty.__doc__
 
     @property
     def commit(self):
-        return self.repo.head.commit
+        return self.branch.commit
 
     @property
     def branch(self):
-        return self.repo.active_branch
+        if isinstance(self.repo.active_branch, str):
+            for branch in self.repo.branches:
+                if branch.name == self.repo.active_branch:
+                    return branch
+            raise RuntimeError("Cannot resolve active branch.")
+        else:
+            return self.repo.active_branch
 
     @property
     def tag(self):
@@ -112,7 +121,11 @@ class GitStatus(object):
 
     @property
     def date(self):
-        return time.gmtime(self.commit.committed_date)
+        t = self.commit.committed_date
+        if isinstance(t, time.struct_time):
+            return t
+        else:
+            return time.gmtime(t)
 
     @property
     def datestr(self):
