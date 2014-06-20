@@ -24,7 +24,7 @@ __credits__ = 'Adam Mercer <adam.mercer@ligo.org>'
 
 import os
 import time
-from distutils.version import LooseVersion
+from distutils.version import (Version, LooseVersion, StrictVersion)
 
 from git import Repo
 from jinja2 import Template
@@ -42,10 +42,10 @@ __version__ = '{{ version.vstring }}'
 __date__ = '{{ status.datestr }}'
 
 # package version
-version = '{{ version }}'
+version = '{{ version.vstring }}'
 major = {{ version.version[0] }}
 minor = {{ version.version[1] }}
-micro = {{ version.version[2].isdigit() and version.version[2] or None }}
+micro = {{ version.version[2] }}
 debug = {{ not version.vstring.replace('.', '').isdigit() }}
 release = {{ version.version[0] > 0 and \
              version.vstring.replace('.', '').isdigit() }}
@@ -148,6 +148,10 @@ class GitStatus(object):
         """
         if version is None:
             version = self.version
+        if not isinstance(version, Version):
+            version = LooseVersion(str(version))
+        if len(version.version) < 3 or not isinstance(version.version[2], int):
+            version.version.insert(2, 'None')
         package_metadata.setdefault('year', time.gmtime().tm_year)
         fobj.write(VERSION_PY_TEMPLATE.render(status=self, version=version,
                                               package=package_metadata))
