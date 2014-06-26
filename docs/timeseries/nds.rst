@@ -60,7 +60,7 @@ where the user has been prompted for both their LIGO.ORG username and password, 
 Kerberos keytabs
 -----------------
 
-Users can generate a kerberos keytab file to enable password-less tickets using the `ktutil` tool::
+Users can generate a kerberos keytab file to enable password-less tickets using the `ktutil` tool:
 
 Run `ktutil`::
 
