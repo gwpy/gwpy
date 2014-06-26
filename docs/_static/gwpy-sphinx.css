@@ -94,7 +94,8 @@ dl.attribute em.property {
 /* ------------------------------------------------------------------------- */
 /* Methods                                                                   */
 
-dl.method dd {
+dl.method dd, 
+dl.classmethod dd {
     padding-left: 40px;
 }
 
