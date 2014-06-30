@@ -31,6 +31,7 @@ from glue.ligolw.utils.ligolw_add import ligolw_add
 from glue.ligolw import (table, lsctables)
 
 from .. import version
+from ..utils import gprint
 from .cache import file_list
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -42,7 +43,7 @@ class GWpyContentHandler(LIGOLWContentHandler):
 
 
 def table_from_file(f, tablename, columns=None, filt=None,
-                    contenthandler=GWpyContentHandler, nproc=1):
+                    contenthandler=GWpyContentHandler, nproc=1, verbose=False):
     """Read a :class:`~glue.ligolw.table.Table` from a LIGO_LW file.
 
     Parameters
@@ -90,18 +91,24 @@ def table_from_file(f, tablename, columns=None, filt=None,
              fp for fp in file_list(f)]
     xmldoc = Document()
     ligolw_add(xmldoc, files, non_lsc_tables_ok=True,
-               contenthandler=contenthandler)
+               contenthandler=contenthandler, verbose=verbose)
 
     # extract table
     try:
         out = tableclass.get_table(xmldoc)
     except ValueError:
         out = lsctables.New(tableclass, columns=columns)
+    if verbose:
+        gprint('%d rows found in %s table' % (len(out), out.tableName))
 
     if filt:
+        if verbose:
+            gprint('filtering rows ...', end=' ')
         out_ = table.new_from_template(out)
         out_.extend(filter(filt, out))
         out = out_
+        if verbose:
+            gprint('%d rows remaining\n' % len(out))
     if columns is not None:
         tableclass.loadcolumns = _oldcols
     return out
