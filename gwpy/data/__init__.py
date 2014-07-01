@@ -24,11 +24,11 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
+from glue.lal import (Cache, CacheEntry)
+
 from .array import *
 from .array2d import *
 from .series import *
-from glue.lal import (Cache, CacheEntry)
-
 
 # define custom time-series units
 try:
