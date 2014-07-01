@@ -21,6 +21,8 @@
 These files must be in two-colum (frequency, amplitude) format
 """
 
+from six import string_types
+
 import numpy
 from astropy.io import registry
 
@@ -49,7 +51,7 @@ def identify_dat(*args, **kwargs):
         otherwise
     """
     filename = args[1][0]
-    if not isinstance(filename, basestring):
+    if not isinstance(filename, string_types):
         filename = filename.name
     if filename.endswith('txt') or filename.endswith('dat'):
         return True

@@ -20,6 +20,8 @@
 user-friendly attributes
 """
 
+from six import string_types
+
 from matplotlib.axes import Axes as _Axes
 
 from .decorators import auto_refresh
@@ -62,7 +64,7 @@ class Axes(_Axes):
     @xlabel.setter
     @auto_refresh
     def xlabel(self, text):
-        if isinstance(text, basestring):
+        if isinstance(text, string_types):
             self.set_xlabel(text)
         else:
             self.xaxis.label = text
@@ -82,7 +84,7 @@ class Axes(_Axes):
     @ylabel.setter
     @auto_refresh
     def ylabel(self, text):
-        if isinstance(text, basestring):
+        if isinstance(text, string_types):
             self.set_ylabel(text)
         else:
             self.yaxis.label = text

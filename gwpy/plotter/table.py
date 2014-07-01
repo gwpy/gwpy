@@ -30,6 +30,7 @@ display these tables in x-y format, with optional colouring.
 from __future__ import division
 
 import re
+from six import string_types
 
 import numpy
 from matplotlib import (cm, collections, pyplot)
@@ -293,7 +294,7 @@ class _EventTableMetaPlot(type):
         # find x-column: copy the arguments and find the strings
         a2 = list(args)
         while len(a2):
-            if isinstance(a2[0], basestring):
+            if isinstance(a2[0], string_types):
                 break
             a2.pop(0)
         # if at least one string was found, treat it as the x-axis column name
@@ -380,7 +381,7 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
         tiles = False
         while len(args):
             arg = args[0]
-            if isinstance(arg, basestring):
+            if isinstance(arg, string_types):
                 break
             tables.append(args.pop(0))
         if len(tables) != 0 and len(args) < 2:
