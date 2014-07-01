@@ -177,8 +177,8 @@ class Series(Array):
 
     @logx.setter
     def logx(self, val):
-        if (val and self.metadata.has_key('logx') and
-            not self.metadata['logx'] and self.metadata.has_key('index')):
+        if (val and 'logx' in self.metadata and not self.metadata['logx'] and
+                'index' in self.metadata):
             del self.index
         self.metadata['logx'] = bool(val)
 
