@@ -19,6 +19,8 @@
 """Read SegmentLists from seg-wizard format ASCII files
 """
 
+from six import string_types
+
 from glue.lal import (CacheEntry, Cache, LIGOTimeGPS)
 from glue import segmentsUtils
 
@@ -76,7 +78,7 @@ def identify_segwizard(*args, **kwargs):
         filename = filename.name
     elif isinstance(filename, CacheEntry):
         filename = filename.path
-    if (isinstance(filename, (unicode, str)) and
+    if (isinstance(filename, string_types) and
             filename.endswith(('txt', 'dat'))):
         return True
     else:
@@ -99,7 +101,7 @@ def to_segwizard(segs, fobj):
         for definition of the segwizard format, and the to/from functions
         used in this GWpy module
     """
-    if isinstance(fobj, (unicode, str)):
+    if isinstance(fobj, string_types):
         close = True
         fobj = open(fobj, 'w')
     else:

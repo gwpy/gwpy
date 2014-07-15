@@ -22,6 +22,7 @@
 from __future__ import division
 from math import ceil
 from multiprocessing import (cpu_count, Process, Queue as ProcessQueue)
+from six import string_types
 import warnings
 
 from glue.lal import (Cache, CacheEntry)
@@ -52,7 +53,7 @@ def identify_cache_file(*args, **kwargs):
     if isinstance(cachefile, file):
         cachefile = cachefile.name
     # identify string
-    if (isinstance(cachefile, (unicode, str)) and
+    if (isinstance(cachefile, string_types) and
             cachefile.endswith(('.lcf', '.cache'))):
         return True
     # identify cache object
@@ -77,10 +78,10 @@ def file_list(flist):
     # format list of files
     if isinstance(flist, CacheEntry):
         return [flist.path]
-    elif (isinstance(flist, (str, unicode)) and
+    elif (isinstance(flist, string_types) and
               flist.endswith(('.cache', '.lcf'))):
         return open_cache(flist).pfnlist()
-    elif isinstance(flist, (str, unicode)):
+    elif isinstance(flist, string_types):
         return flist.split(',')
     elif isinstance(flist, Cache):
         return flist.pfnlist()
