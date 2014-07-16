@@ -131,6 +131,9 @@ class SpectrumAxes(Axes):
             first data set to shade to mean_
         max_ : :class:`~gwpy.spectrum.core.Spectrum
             second data set to shade to mean_
+        alpha : `float`, optional
+            weight of filled region, ``0.0`` for transparent through ``1.0``
+            opaque
         **kwargs
             any other keyword arguments acceptable for
             :meth:`~matplotlib.Axes.plot`
