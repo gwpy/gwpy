@@ -114,7 +114,8 @@ class SpectrumAxes(Axes):
         return line
 
     @auto_refresh
-    def plot_spectrum_mmm(self, mean_, min_=None, max_=None, **kwargs):
+    def plot_spectrum_mmm(self, mean_, min_=None, max_=None, alpha=0.1,
+                          **kwargs):
         """Plot a `Spectrum` onto these axes, with (min, max) shaded
         regions
 
@@ -155,15 +156,21 @@ class SpectrumAxes(Axes):
         if min_ is not None:
             a = self.plot(min_.frequencies, min_.data, color=color,
                           linewidth=linewidth, **kwargs)
-            b = self.fill_between(min_.frequencies, mean_.data, min_.data,
-                                  alpha=0.1, color=color)
+            if alpha:
+                b = self.fill_between(min_.frequencies, mean_.data, min_.data,
+                                      alpha=alpha, color=color)
+            else:
+                b = None
         else:
             a = b = None
         if max_ is not None:
             c = self.plot(max_.frequencies, max_.data, color=color,
                           linewidth=linewidth, **kwargs)
-            d = self.fill_between(max_.frequencies, mean_.data, max_.data,
-                                  alpha=0.1, color=color)
+            if alpha:
+                d = self.fill_between(max_.frequencies, mean_.data, max_.data,
+                                      alpha=alpha, color=color)
+            else:
+                d = None
         else:
             c = d = None
         return line1, a, b, c, d
