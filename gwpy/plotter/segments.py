@@ -180,7 +180,7 @@ class SegmentAxes(TimeSeriesAxes):
 
     @auto_refresh
     def plot_segmentlist(self, segmentlist, y=None, collection=True,
-                         **kwargs):
+                         label=None, add_label=True, **kwargs):
         """Plot a :class:`~gwpy.segments.segments.SegmentList` onto
         these axes
 
@@ -194,6 +194,11 @@ class SegmentAxes(TimeSeriesAxes):
             add all patches as a
             :class:`~matplotlib.collections.PatchCollection`, doesn't seem
             to work for hatched rectangles
+        label : `str`, optional
+            custom descriptive name to print as y-axis tick label
+        add_label : `bool`, `str`, optional
+            if `True` print label on y-axis, if ``'inset'`` print inside
+            axes, otherwise ignore.
         **kwargs
             any other keyword arguments acceptable for
             :class:`~matplotlib.patches.Rectangle`
@@ -215,6 +220,8 @@ class SegmentAxes(TimeSeriesAxes):
                 self.set_epoch(min(self.epoch, segmentlist[0][0]))
         except IndexError:
             pass
+        if label and add_label:
+            self.label_segments(y, label, inset=(add_label == 'inset'))
         if collection:
             return self.add_collection(PatchCollection(patches,
                                                        len(patches) != 0))
