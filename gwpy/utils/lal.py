@@ -21,11 +21,16 @@
 
 from __future__ import absolute_import
 
+from six import string_types
+
 import numpy
+
+from astropy import units
 
 import lal
 
 from .. import version
+from .. import timeseries
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -82,3 +87,97 @@ except AttributeError:
 
 LAL_TYPE_STR_FROM_NUMPY = dict((key, LAL_TYPE_STR[value]) for (key, value) in
                                LAL_TYPE_FROM_NUMPY.iteritems())
+
+try:
+    LAL_UNIT_INDEX = [lal.lalMeterUnit,
+                      lal.lalKiloGramUnit,
+                      lal.lalSecondUnit,
+                      lal.lalAmpereUnit,
+                      lal.lalKelvinUnit,
+                      lal.lalStrainUnit,
+                      lal.lalADCCountUnit]
+    LAL_UNIT_FROM_ASTROPY = dict((units.Unit(lal.UnitToString(u)), u) for
+                                 u in LAL_UNIT_INDEX)
+except AttributeError:
+    LAL_UNIT_INDEX = [lal.MeterUnit,
+                      lal.KiloGramUnit,
+                      lal.SecondUnit,
+                      lal.AmpereUnit,
+                      lal.KelvinUnit,
+                      lal.StrainUnit,
+                      lal.ADCCountUnit]
+    LAL_UNIT_FROM_ASTROPY = dict((units.Unit(str(u)), u) for
+                                 u in LAL_UNIT_INDEX)
+
+
+def to_lal_unit(aunit):
+    """Convert the input unit into a :lalsuite:`LALUnit`
+
+    For example::
+
+       >>> u = to_lal_unit('m**2 / kg ** 4')
+       >>> print(u)
+       m^2 kg^-4
+
+    Parameters
+    ----------
+    aunit : `~astropy.units.Unit`, `str`
+        the input unit
+
+    Returns
+    -------
+    unit : :lalsuite:`LALUnit`
+        the LALUnit representation of the input
+
+    Raises
+    ------
+    ValueError
+        if LAL doesn't understand the base units for the input
+    """
+    if isinstance(aunit, string_types):
+        aunit = units.Unit(aunit)
+    lunit = lal.Unit()
+    for base, power in zip(aunit.bases, aunit.powers):
+        lalbase = None
+        for eqbase in base.find_equivalent_units():
+            try:
+                lalbase = LAL_UNIT_FROM_ASTROPY[eqbase]
+            except KeyError:
+                continue
+            else:
+                lunit *= lalbase ** power
+                break
+        if lalbase is None:
+            raise ValueError("LAL has no unit corresponding to %r" % base)
+    return lunit
+
+
+def from_lal_unit(lunit):
+    """Convert a :lalsuite`LALUnit` into a `~astropy.units.Unit`
+
+    Parameters
+    ----------
+    aunit : :lalsuite:`LALUnit`
+        the input unit
+
+    Returns
+    -------
+    unit : `~astropy.units.Unit`
+        the Astropy representation of the input
+
+    Raises
+    ------
+    ValueError
+        if Astropy doesn't understand the base units for the input
+    """
+    aunit = units.Unit('')
+    for power, lalbase in zip(lunit.unitNumerator, LAL_UNIT_INDEX):
+        astrobase = None
+        for key, val in LAL_UNIT_FROM_ASTROPY:
+            if val == lalbase:
+                astrobase = key
+        if astrobase is None:
+            raise ValueError("Astropy has no unit corresponding to %r"
+                             % lalbase)
+        aunit *= astrobase ** power
+    return aunit

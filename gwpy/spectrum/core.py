@@ -21,11 +21,14 @@
 
 import warnings
 
+from scipy import signal
+
 from astropy import units
 
 from ..data import Series
 from ..detector import Channel
-from ..utils import (update_docstrings, import_method_dependency)
+from ..utils import (update_docstrings, with_import)
+
 
 from .. import version
 __version__ = version.version
@@ -144,7 +147,6 @@ class Spectrum(Series):
         :mod:`scipy.signal`
             for details on filtering and representations
         """
-        signal = import_method_dependency('scipy.signal')
         # parse filter
         if len(filt) == 1 and isinstance(filt[0], signal.lti):
             filt = filt[0]
@@ -181,22 +183,21 @@ class Spectrum(Series):
         return self.filter(*args, **kwargs)
 
     @classmethod
+    @with_import('lal')
     def from_lal(cls, lalfs):
         """Generate a new `Spectrum` from a LAL `FrequencySeries` of any type
         """
+        from ..utils.lal import from_lal_unit
         try:
-            from lal import UnitToString
-        except ImportError:
-            raise ImportError("No module named lal. Please see https://"
-                              "www.lsc-group.phys.uwm.edu/daswg/"
-                              "projects/lalsuite.html for installation "
-                              "instructions")
-        channel = Channel(lalfs.name,
-                          unit=UnitToString(lalfs.sampleUnits),
+            unit = from_lal_unit(lalfs.sampleUnits)
+        except TypeError:
+            unit = None
+        channel = Channel(lalfs.name, unit=unit,
                           dtype=lalfs.data.data.dtype)
         return cls(lalfs.data.data, channel=channel, f0=lalfs.f0,
                    df=lalfs.deltaF, epoch=lalfs.epoch)
 
+    @with_import('lal')
     def to_lal(self):
         """Convert this `Spectrum` into a LAL FrequencySeries.
 
@@ -211,20 +212,14 @@ class Spectrum(Series):
         Currently, this function is unable to handle unit string
         conversion.
         """
+        from ..utils.lal import (LAL_TYPE_STR_FROM_NUMPY, to_lal_unit)
+        typestr = LAL_TYPE_STR_FROM_NUMPY[self.dtype.type]
         try:
-            import lal
-        except ImportError:
-            raise ImportError("No module named lal. Please see https://"
-                              "www.lsc-group.phys.uwm.edu/daswg/"
-                              "projects/lalsuite.html for installation "
-                              "instructions")
-        else:
-            from lal import utils as lalutils
-        laltype = lalutils.LAL_TYPE_FROM_NUMPY[self.dtype.type]
-        typestr = lalutils.LAL_TYPE_STR[laltype]
+            unit = to_lal_unit(self.unit)
+        except TypeError:
+            unit = lal.lalDimensionlessUnit
         create = getattr(lal, 'Create%sFrequencySeries' % typestr.upper())
         lalfs = create(self.name, lal.LIGOTimeGPS(self.epoch.gps),
-                       float(self.f0), float(self.dt),
-                       lal.lalDimensionlessUnit, self.size)
+                       self.f0.value, self.df.value, unit, self.size)
         lalfs.data.data = self.data
         return lalfs

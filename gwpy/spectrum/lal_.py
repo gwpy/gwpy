@@ -186,10 +186,13 @@ def lal_psd(timeseries, segmentlength, noverlap=None, method='welch',
     laltypestr = LAL_TYPE_STR_FROM_NUMPY[timeseries.dtype.type]
 
     # generate output spectrum
+    try:
+        unit = lal.lalStrainUnit
+    except AttributeError:
+        unit = lal.StrainUnit
     create = getattr(lal, 'Create%sFrequencySeries' % laltypestr)
     lalfs = create(timeseries.name, lal.LIGOTimeGPS(timeseries.epoch.gps), 0,
-                   1 / segmentlength, lal.lalStrainUnit,
-                   int(segmentlength // 2 + 1))
+                   1 / segmentlength, unit, int(segmentlength // 2 + 1))
 
     # calculate medianmean spectrum
     if re.match('median-mean\Z', method, re.I):

@@ -1139,21 +1139,29 @@ class TimeSeries(Series):
     def from_lal(cls, lalts):
         """Generate a new TimeSeries from a LAL TimeSeries of any type.
         """
-        channel = Channel(lalts.name, 1/lalts.deltaT,
-                          unit=lal.UnitToString(lalts.sampleUnits),
+        from ..utils.lal import from_lal_unit
+        try:
+            unit = from_lal_unit(lalts.sampleUnits)
+        except TypeError:
+            unit = None
+        channel = Channel(lalts.name, 1/lalts.deltaT, unit=unit,
                           dtype=lalts.data.data.dtype)
         return cls(lalts.data.data, channel=channel, epoch=lalts.epoch,
-                   unit=lal.UnitToString(lalts.sampleUnits), copy=True)
+                   copy=True)
 
     @with_import('lal')
     def to_lal(self):
         """Convert this `TimeSeries` into a LAL TimeSeries.
         """
-        from ..utils.lal import LAL_TYPE_STR_FROM_NUMPY
+        from ..utils.lal import (LAL_TYPE_STR_FROM_NUMPY, to_lal_unit)
         typestr = LAL_TYPE_STR_FROM_NUMPY[self.dtype.type]
+        try:
+            unit = to_lal_unit(self.unit)
+        except TypeError:
+            unit = lal.lalDimensionlessUnit
         create = getattr(lal, 'Create%sTimeSeries' % typestr.upper())
         lalts = create(self.name, lal.LIGOTimeGPS(self.epoch.gps), 0,
-                       self.dt.value, lal.lalDimensionlessUnit, self.size)
+                       self.dt.value, unit, self.size)
         lalts.data.data = self.data
         return lalts
 
