@@ -23,10 +23,17 @@ import re
 
 import numpy
 
+from . import lsctables
 from .. import version
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
+
+EVENT_TABLES = (lsctables.SnglBurstTable,
+                lsctables.MultiBurstTable,
+                lsctables.SnglInspiralTable,
+                lsctables.MultiInspiralTable,
+                lsctables.SnglRingdownTable)
 
 
 def get_table_column(table, column, dtype=numpy.dtype(float)):

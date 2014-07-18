@@ -24,10 +24,8 @@ from math import ceil
 
 import numpy
 
-from . import lsctables
-
 from .. import version
-from .utils import (get_table_column)
+from .utils import (EVENT_TABLES, get_table_column)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -161,8 +159,6 @@ def binned_event_rates(self, stride, column, bins, operator='>=',
 
 
 # attach methods to lsctables
-for table in [lsctables.SnglBurstTable, lsctables.MultiBurstTable,
-              lsctables.SnglInspiralTable, lsctables.MultiInspiralTable,
-              lsctables.SnglRingdownTable]:
+for table in EVENT_TABLES:
     table.event_rate = event_rate
     table.binned_event_rates = binned_event_rates
