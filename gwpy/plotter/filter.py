@@ -181,12 +181,12 @@ class BodePlot(Plot):
         if frequencies is None:
             w = None
         else:
-            w = frequencies * 2 * pi / numpy.float64(sample_rate)
+            w = frequencies * 2. * pi
         if not isinstance(filter_, signal.lti):
             filter_ = signal.lti(*filter_)
-        w, h = signal.freqz(filter_.num, filter_.den, w)
+        w, h = signal.freqs(filter_.num, filter_.den, w)
         if sample_rate:
-            w *= numpy.float64(sample_rate) / (2.0 * pi)
+            w /= (2. * pi)
         mag = numpy.absolute(h)
         if dB:
             mag = 2 * to_db(mag)
