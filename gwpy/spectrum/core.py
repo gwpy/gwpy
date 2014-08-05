@@ -20,6 +20,7 @@
 """
 
 import warnings
+from math import pi
 
 from scipy import signal
 
@@ -168,7 +169,7 @@ class Spectrum(Series):
         if kwargs:
             raise TypeError("Spectrum.filter() got an unexpected keyword "
                             "argument '%s'" % list(kwargs.keys())[0])
-        fresp = abs(signal.freqs(b, a, self.frequencies)[1])
+        fresp = abs(signal.freqs(b, a, self.frequencies * 2 * pi)[1])
         if inplace:
             self *= fresp
             return self
