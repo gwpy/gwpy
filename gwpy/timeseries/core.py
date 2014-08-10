@@ -864,27 +864,48 @@ class TimeSeries(Series):
         return new
 
     def filter(self, *filt):
-        """Apply the given `Filter` to this `TimeSeries`
+        """Apply the given filter to this `TimeSeries`.
+
+        Recognised filter arguments are converted into the standard
+        ``(numerator, denominator)`` representation before being applied
+        to this `TimeSeries`.
 
         Parameters
         ----------
         *filt
             one of:
 
-            - a single :class:`scipy.signal.lti` filter
-            - (numerator, denominator) polynomials
-            - (zeros, poles, gain)
-            - (A, B, C, D) 'state-space' representation
+            - :class:`scipy.signal.lti`
+            - ``(numerator, denominator)`` polynomials
+            - ``(zeros, poles, gain)``
+            - ``(A, B, C, D)`` 'state-space' representation
 
         Returns
         -------
-        ftimeseries : `TimeSeries`
+        result : `TimeSeries`
             the filtered version of the input `TimeSeries`
 
         See also
         --------
-        :mod:`scipy.signal`
-            for details on filtering and representations
+        scipy.signal.zpk2tf
+            for details on converting ``(zeros, poles, gain)`` into
+            transfer function format
+        scipy.signal.ss2tf
+            for details on converting ``(A, B, C, D)`` to transfer function
+            format
+        scipy.signal.lfilter
+            for details on the filtering method
+
+        Examples
+        --------
+        To apply a zpk filter to a timeseries::
+
+            >>> data2 = data.filter([100], [0], 25)
+
+        Raises
+        ------
+        ValueError
+            If ``filt`` arguments cannot be interpreted properly
         """
         if len(filt) == 1 and isinstance(filt, signal.lti):
             filt = filt[0]
