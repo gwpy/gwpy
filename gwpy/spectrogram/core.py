@@ -290,7 +290,7 @@ class Spectrogram(Array2D):
         --------
         To apply a zpk filter to a spectrogram::
 
-            >>> asd2 = asd.filter([100], [0], 25)
+            >>> spec2 = spec.filter([100], [0], 25)
 
         Raises
         ------
