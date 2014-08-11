@@ -58,7 +58,7 @@ def _plot_factory():
 
         Returns
         -------
-        plot : :class:`EventTablePlot`
+        plot : :class:`~gwpy.plotter.EventTablePlot`
             new plot for displaying tabular data.
 
         See Also
@@ -67,7 +67,26 @@ def _plot_factory():
         """
         from gwpy.plotter import EventTablePlot
         return EventTablePlot(self, *args, **kwargs)
-    return plot
+
+    def hist(self, column, **kwargs):
+        """Generate a `HistogrmaPlot` of this `Table`.
+
+        Parameters
+        ----------
+        column : `str`
+            name of the column over which to histogram data
+        **kwargs
+            any other arguments applicable to the `HistogramPlot`
+
+        Returns
+        -------
+        plot : :class:`~gwpy.plotter.HistogramPlot`
+            new plot displaying a histogram of this `Table`.
+        """
+        from gwpy.plotter import HistogramPlot
+        return HistogramPlot(self, column, **kwargs)
+
+    return (plot, hist)
 
 
 # annotate lsctables with new methods
@@ -123,4 +142,4 @@ for table in TableByName.itervalues():
     if ('start_time' in table.validcolumns or
             'peak_time' in table.validcolumns or
             'end_time' in table.validcolumns):
-        table.plot = _plot_factory()
+        table.plot, table.hist = _plot_factory()
