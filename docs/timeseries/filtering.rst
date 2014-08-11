@@ -1,4 +1,4 @@
-.. currentmodule:: gwpy.timeseries.core
+.. currentmodule:: gwpy.timeseries
 
 ########################
 Filtering a `TimeSeries`
@@ -19,3 +19,14 @@ The following methods of the `TimeSeries` provide functionality for band-passing
    TimeSeries.lowpass
    TimeSeries.highpass
    TimeSeries.bandpass
+
+=================
+General filtering
+=================
+
+While the above methods provide an easy way to remove unwanted frequency information, the :meth:`~TimeSeries.filter` method provides a way to apply a generic filter to any `TimeSeries` data:
+
+.. autosummary::
+
+   TimeSeries.filter
+

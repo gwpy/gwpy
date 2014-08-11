@@ -65,6 +65,15 @@ We can extend the previous time-series example to include a plot:
 .. plot:: spectrogram/spectrogram_plot.py
    :include-source:
 
+==========================
+`Spectrogram` applications
+==========================
+
+.. toctree::
+   :titlesonly:
+
+   ../spectrum/filtering
+
 =======================
 `Spectrogram` reference
 =======================

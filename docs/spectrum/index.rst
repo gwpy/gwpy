@@ -65,6 +65,15 @@ Similary to the :class:`~gwpy.timeseries.TimeSeries`, the `Spectrum` object come
 .. plot:: spectrum/spectrum_plot.py
    :include-source:
 
+=======================
+`Spectrum` applications
+=======================
+
+.. toctree::
+   :titlesonly:
+
+   filtering
+
 ====================
 `Spectrum` reference
 ====================
