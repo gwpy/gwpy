@@ -1684,3 +1684,36 @@ class TimeSeriesDict(OrderedDict):
         if verbose:
             gprint('Success.')
         return out
+
+    def plot(self, label='key', **kwargs):
+        """Plot the data for this `TimeSeriesDict`.
+
+        Parameters
+        ----------
+        label : `str`, optional
+            labelling system to use, or fixed label for all `TimeSeries`.
+            Special values include
+
+            - ``'key'``: use the key of the `TimeSeriesDict`,
+            - ``'name'``: use the :attr:`~TimeSeries.name` of the `TimeSeries`
+
+            If anything else, that fixed label will be used for all lines.
+
+        **kwargs
+            all other keyword arguments are passed to the plotter as
+            appropriate
+        """
+        from ..plotter import TimeSeriesPlot
+        figargs = dict()
+        for key in ['figsize', 'dpi']:
+            if key in kwargs:
+                figargs[key] = kwargs.pop(key)
+        plot_ = TimeSeriesPlot(**figargs)
+        ax = plot_.gca()
+        for lab, ts in self.iteritems():
+            if label.lower() == 'name':
+                lab = ts.name
+            elif label.lower() != 'key':
+                lab = label
+            ax.plot(ts, label=lab, **kwargs)
+        return plot_
