@@ -32,7 +32,7 @@ plot of events in frequency versus time
 
 .. literalinclude:: ../../examples/gw_ex_plot_event_triggers.py
    :append: plot.show()
-   :lines: 48-53
+   :lines: 49-54
 
 .. plot:: ../examples/gw_ex_plot_event_triggers.py
 
@@ -51,7 +51,7 @@ tile:
 
 .. literalinclude:: ../../examples/gw_ex_plot_event_tiles.py
    :append: plot2.show()
-   :lines: 48-53
+   :lines: 49-54
 
 .. plot:: ../examples/gw_ex_plot_event_tiles.py
 
