@@ -41,7 +41,7 @@ For example, you can read a table of single-interferometer burst events as
 follows:
 
 .. literalinclude:: ../../examples/gw_ex_plot_event_triggers.py
-   :lines: 42,45
+   :lines: 42,45-46
 
 For full details, check out the :meth:`~SnglBurstTable.read` documentation.
 
@@ -56,14 +56,29 @@ We can extend the above example to include plotting:
 
 .. literalinclude:: ../../examples/gw_ex_plot_event_triggers.py
    :append: plot.show()
-   :lines: 48-53
+   :lines: 49-54
 
 .. plot:: ../examples/gw_ex_plot_event_triggers.py
 
 |
 
 These code snippets are part of the GWpy example on
-`plotting event triggers <../examples/gw_ex_plot_event_triggers>`_.
+:doc:`plotting event triggers <../examples/gw_ex_plot_event_triggers>`.
+
+====================
+Plotting event tiles
+====================
+
+Many types of event triggers define a 2-dimensional tile, for example in time and frequency.
+These tiles can be plotted in a similar manner to simple triggers.
+
+.. literalinclude:: ../../examples/gw_ex_plot_event_tiles.py
+   :append: plot.show()
+   :lines: 49-54
+
+.. plot:: ../examples/gw_ex_plot_event_tiles.py
+
+|
 
 ===============
 Class reference
