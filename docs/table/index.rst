@@ -80,6 +80,15 @@ These tiles can be plotted in a similar manner to simple triggers.
 
 |
 
+==================
+Table applications
+==================
+
+.. toctree::
+   :titlesonly:
+
+   rate
+
 ===============
 Class reference
 ===============
