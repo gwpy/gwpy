@@ -123,30 +123,49 @@ class Spectrum(Series):
         return SpectrumPlot(self, **kwargs)
 
     def filter(self, *filt, **kwargs):
-        """Apply the given `Filter` to this `Spectrum`
+        """Apply the given filter to this `Spectrum`.
+
+        Recognised filter arguments are converted into the standard
+        ``(numerator, denominator)`` representation before being applied
+        to this `Spectrum`.
 
         Parameters
         ----------
         *filt
             one of:
 
-            - a single :class:`scipy.signal.lti` filter
-            - (numerator, denominator) polynomials
-            - (zeros, poles, gain)
-            - (A, B, C, D) 'state-space' representation
-        inplace : `bool`, optional, default: `False`
-            apply the filter directly on these data, without making a
-            copy, default: `False`
+            - :class:`scipy.signal.lti`
+            - ``(numerator, denominator)`` polynomials
+            - ``(zeros, poles, gain)``
+            - ``(A, B, C, D)`` 'state-space' representation
 
         Returns
         -------
-        fspectrum : `Spectrum`
+        result : `Spectrum`
             the filtered version of the input `Spectrum`
 
         See also
         --------
-        :mod:`scipy.signal`
-            for details on filtering and representations
+        scipy.signal.zpk2tf
+            for details on converting ``(zeros, poles, gain)`` into
+            transfer function format
+        scipy.signal.ss2tf
+            for details on converting ``(A, B, C, D)`` to transfer function
+            format
+        scipy.signal.freqs
+            for details on the filtering calculation
+
+        Examples
+        --------
+        To apply a zpk filter with a pole at 0 Hz, a zero at 100 Hz and
+        a gain of 25::
+
+            >>> data2 = data.filter([100], [0], 25)
+
+        Raises
+        ------
+        ValueError
+            If ``filt`` arguments cannot be interpreted properly
         """
         # parse filter
         if len(filt) == 1 and isinstance(filt[0], signal.lti):

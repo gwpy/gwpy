@@ -57,6 +57,8 @@ def register_method(func, name=None, force=False, scaling='density'):
         lines = obj.__doc__.splitlines()
         if not lines[-1].strip(' '):
             suffix = lines.pop(-1)
+        else:
+            suffix = ''
         obj.__func__.__doc__ = '\n'.join(lines + [newdoc, suffix])
 
     # determine spectrum method type, and append doc

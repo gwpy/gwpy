@@ -103,6 +103,7 @@ In the following example, we download ten seconds of gravitational-wave strain d
    :include-source:
 
 |
+
 As described in the `NDS access documentation <nds>`_, downloading these data requires LIGO.ORG credentials (issued to members of the LIGO-Virgo Collaboration and friends).
 However, these data, and more from other LIGO milestones, are available publicly `here <http://www.ligo.org/science/data-releases.php>`_.
 For instructions on how to download and read those data, please `read this <public-data>`_.
@@ -112,10 +113,9 @@ For instructions on how to download and read those data, please `read this <publ
 =========================
 
 .. toctree::
-   :maxdepth: 1
+   :titlesonly:
 
    filtering
-   spectra
    statevector
 
 =========================
