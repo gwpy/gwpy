@@ -88,6 +88,7 @@ Table applications
    :titlesonly:
 
    rate
+   histogram
 
 ===============
 Class reference
