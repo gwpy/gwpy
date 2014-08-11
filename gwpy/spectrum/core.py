@@ -157,9 +157,10 @@ class Spectrum(Series):
 
         Examples
         --------
-        To apply a zpk filter to a spectrum::
+        To apply a zpk filter with a pole at 0 Hz, a zero at 100 Hz and
+        a gain of 25::
 
-            >>> asd2 = asd.filter([100], [0], 25)
+            >>> data2 = data.filter([100], [0], 25)
 
         Raises
         ------
