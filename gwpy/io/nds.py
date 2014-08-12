@@ -21,6 +21,7 @@ to LIGO data.
 """
 
 import sys
+import warnings
 
 import nds2
 
@@ -80,6 +81,8 @@ class NDSOutputContext(object):
 class NDSWarning(UserWarning):
     pass
 
+
+warnings.simplefilter('always', NDSWarning)
 
 def host_resolution_order(ifo):
     hosts = []
