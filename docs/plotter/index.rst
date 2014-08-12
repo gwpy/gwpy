@@ -52,6 +52,13 @@ inheritance from :class:`Plot`.
 
 .. inheritance-diagram:: core timeseries spectrum spectrogram table filter
 
+The following pages outline specific applications of some of the specialist plot types
+
+.. toctree::
+   :titlesonly:
+
+   filter
+
 ===============
 Class reference
 ===============

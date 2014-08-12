@@ -68,9 +68,6 @@ class BodePlot(Plot):
 
     frequencies : `numpy.ndarray`, optional
         list of frequencies (in Hertz) at which to plot
-    sample_rate : `float`, optional
-        sample_rate (in Hertz) for time-domain filter. This is not
-        required when displaying a `~gwpy.spectrum.Spectrum`.
     db : `bool`, optional, default: `True`
         if `True`, display magnitude in decibels, otherwise display
         amplitude.
@@ -90,7 +87,6 @@ class BodePlot(Plot):
         """
         dB = kwargs.pop('dB', True)
         frequencies = kwargs.pop('frequencies', None)
-        sample_rate = kwargs.pop('sample_rate', None)
 
         # parse plotting arguments
         figargs = dict()
@@ -112,7 +108,7 @@ class BodePlot(Plot):
                 self.add_spectrum(filter_, dB=dB, **kwargs)
             else:
                 self.add_filter(filter_, frequencies=frequencies,
-                                sample_rate=sample_rate, dB=dB, **kwargs)
+                                dB=dB, **kwargs)
 
         # format plots
         if dB:
@@ -147,8 +143,7 @@ class BodePlot(Plot):
         """
         return self.axes[1]
 
-    def add_filter(self, filter_, frequencies=None, sample_rate=None,
-                   dB=True, **kwargs):
+    def add_filter(self, filter_, frequencies=None, dB=True, **kwargs):
         """Add a linear time-invariant filter to this BodePlot
 
         Parameters
@@ -163,9 +158,6 @@ class BodePlot(Plot):
 
         frequencies : `numpy.ndarray`, optional
             list of frequencies (in Hertz) at which to plot
-        sample_rate : `float`, optional
-            sample_rate (in Hertz) for time-domain filter. This is not
-            required when displaying a `~gwpy.spectrum.Spectrum`.
         db : `bool`, optional, default: `True`
             if `True`, display magnitude in decibels, otherwise display
             amplitude.
@@ -185,8 +177,7 @@ class BodePlot(Plot):
         if not isinstance(filter_, signal.lti):
             filter_ = signal.lti(*filter_)
         w, h = signal.freqs(filter_.num, filter_.den, w)
-        if sample_rate:
-            w /= (2. * pi)
+        w /= (2. * pi)
         mag = numpy.absolute(h)
         if dB:
             mag = 2 * to_db(mag)
