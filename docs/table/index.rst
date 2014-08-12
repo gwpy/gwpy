@@ -73,12 +73,20 @@ Many types of event triggers define a 2-dimensional tile, for example in time an
 These tiles can be plotted in a similar manner to simple triggers.
 
 .. literalinclude:: ../../examples/gw_ex_plot_event_tiles.py
-   :append: plot.show()
+   :append: plot2.show()
    :lines: 49-54
 
 .. plot:: ../examples/gw_ex_plot_event_tiles.py
 
-|
+==================
+Table applications
+==================
+
+.. toctree::
+   :titlesonly:
+
+   rate
+   histogram
 
 ===============
 Class reference

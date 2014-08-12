@@ -117,6 +117,7 @@ def binned_event_rates(self, stride, column, bins, operator='>=',
         rate of events per second (Hz) for each of the bins.
     """
     from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
+    from gwpy.plotter.table import get_column_string
     # get time data
     times = get_table_column(self, timecolumn)
 
@@ -142,19 +143,22 @@ def binned_event_rates(self, stride, column, bins, operator='>=',
             bins2.append((bin_, bins[i+1]))
         bins = bins2
     elif isinstance(operator, (unicode, str)):
-        operator = OPERATORS[operator]
+        op = OPERATORS[operator]
+    else:
+        op = operator
     coldata = get_table_column(self, column)
+    colstr = get_column_string(column)
     # generate one TimeSeries per bin
     out = TimeSeriesDict()
     for bin_ in bins:
         if isinstance(bin_, tuple):
             bintimes = times[(coldata >= bin_[0]) & (coldata < bin_[1])]
         else:
-            bintimes = times[operator(coldata, bin_)]
+            bintimes = times[op(coldata, bin_)]
         out[bin_] = TimeSeries(
             numpy.histogram(bintimes, bins=timebins)[0] / float(stride),
             epoch=start, sample_rate=1/float(stride), unit='Hz',
-            name='Event rate', channel=channel)
+            name='%s $%s$ %s' % (colstr, operator, bin_), channel=channel)
     return out
 
 

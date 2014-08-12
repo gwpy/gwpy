@@ -190,6 +190,8 @@ class HistogramPlot(Plot):
         if data:
             ax = self.gca()
             data = list(data)
+        else:
+            ax = None
         while data:
             dataset = data.pop(0)
             if isinstance(dataset, Series):
@@ -199,3 +201,8 @@ class HistogramPlot(Plot):
                 ax.hist_table(dataset, column, **histargs)
             else:
                 ax.hist(dataset, **histargs)
+        if ax and histargs.get('logbins', True):
+            if histargs.get('orientation', 'vertical') == 'vertical':
+                ax.set_xscale('log')
+            else:
+                ax.set_yscale('log')
