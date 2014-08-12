@@ -23,7 +23,7 @@ an 'io' subdirectory of the containing directory for that class.
 """
 
 from gzip import GzipFile
-from astropy.utils.compat._gzip_py2 import GzipFile as AstroGzipFile
+from astropy.utils.compat.gzip import GzipFile as AstroGzipFile
 
 from glue.lal import CacheEntry
 from glue.ligolw.ligolw import (Document, LIGOLWContentHandler)
