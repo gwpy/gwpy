@@ -45,10 +45,16 @@ def update_docstrings(cls):
                 doc_ = func.__doc__.replace(parent.__name__, cls.__name__, 1)
                 if ismethod(func):
                     # docstring replacement requires a new copy of the method
-                    setattr(cls, name,
-                            FunctionType(func.func_code, func.func_globals,
-                                         name, func.func_defaults,
-                                         func.func_closure))
+                    if func.im_self:
+                        setattr(cls, name, classmethod(
+                                FunctionType(func.func_code, func.func_globals,
+                                             name, func.func_defaults,
+                                             func.func_closure)))
+                    else:
+                        setattr(cls, name,
+                                FunctionType(func.func_code, func.func_globals,
+                                             name, func.func_defaults,
+                                             func.func_closure))
                     func = getattr(cls, name)
                     func.__func__.__doc__ = doc_
                 elif isinstance(func, property):
