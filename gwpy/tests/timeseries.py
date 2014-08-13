@@ -22,6 +22,7 @@
 import os
 import os.path
 import unittest
+import tempfile
 
 from numpy import random
 
@@ -80,6 +81,31 @@ class TimeSeriesTests(unittest.TestCase):
             self.frame_read(format='framecpp')
         except ImportError as e:
             raise unittest.SkipTest(str(e))
+
+    def test_hdf5_write(self, delete=True):
+        self.ts = TimeSeries(self.data, sample_rate=1, name='TEST CASE',
+                             epoch=0, channel='TEST CASE')
+        hdfout = tempfile.mktemp(prefix='gwpy_test_')
+        try:
+            self.ts.write(hdfout, format='hdf')
+        except ImportError as e:
+            raise unittest.SkipTest(str(e))
+        finally:
+            if delete and os.path.isfile(hdfout):
+                os.remove(hdfout)
+        return hdfout
+
+    def test_hdf5_read(self):
+        try:
+            hdfout = self.test_hdf5_write(delete=False)
+        except ImportError as e:
+            raise unittest.SkipTest(str(e))
+        else:
+            try:
+                ts = TimeSeries.read(hdfout, 'TEST CASE', format='hdf')
+            finally:
+                if os.path.isfile(hdfout):
+                    os.remove(hdfout)
 
 
 if __name__ == '__main__':
