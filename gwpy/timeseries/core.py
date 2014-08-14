@@ -1658,29 +1658,33 @@ class TimeSeriesDict(OrderedDict):
                 start = start // 60 * 60
             if end % 60:
                 end = end // 60 * 60 + 60
+            have_minute_trends = True
+        else:
+            have_minute_trends = False
 
         # fetch data
         if verbose:
-            gprint('Downloading data...', end=' ')
+            gprint('Downloading data... ', end='\r')
         out = cls()
-        try:
-            data = [connection.fetch(start, end,
-                                     [c.ndsname for c in qchannels])]
-        except RuntimeError as e:
-            # XXX: hack to fix potential problem with fetch
-            # Can remove once fetch has been patched (DMM, 02/2014)
-            if ('Server sent more data than were expected' in str(e)
-                    and len(qchannels) == 1
-                    and qchannels[0].name.endswith(',rds')):
-                c2 = nds2.connection(connection.get_host(),
-                                     connection.get_port())
-                data = c2.iterate(start, end, 60,
-                                  [c.ndsname for c in qchannels])
-            else:
-                raise
+
+        # determine buffer duration
+        data = connection.iterate(start, end, [c.ndsname for c in qchannels])
+        nsteps = 0
+        i = 0
         for buffers in data:
             for buffer_, c in zip(buffers, channels):
                 out.append({c: cls.EntryClass.from_nds2_buffer(buffer_)})
+            if not nsteps:
+                if have_minute_trends:
+                    dur = buffer_.length * 60
+                else:
+                    dur = buffer_.length / buffer_.channel.sample_rate
+                nsteps = ceil((end - start) / dur)
+            i += 1
+            if verbose:
+                gprint('Downloading data... %d%%' % (100 * i // nsteps), end='\r')
+                if i == nsteps:
+                    gprint('')
         if verbose:
             gprint('Success.')
         return out
