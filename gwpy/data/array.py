@@ -296,7 +296,10 @@ class Array(numpy.ndarray):
 
     @name.setter
     def name(self, val):
-        self.metadata['name'] = str(val)
+        if val is None:
+            self.metadata['name'] = None
+        else:
+            self.metadata['name'] = str(val)
 
     @property
     def unit(self):
