@@ -72,7 +72,7 @@ class GitStatus(object):
 
     @property
     def commit(self):
-        return self.branch.commit
+        return self.repo.head.commit
 
     @property
     def branch(self):
@@ -110,18 +110,17 @@ class GitStatus(object):
 
     @property
     def version(self):
-        if self.tag and not self.is_dirty():
+        if self.tag:
             v = self.tag.name.strip('v')
         else:
             try:
                 v = self.tags[-1].name.strip('v')
             except IndexError:
                 v = '0.0.0'
-            nrev = self.revision
-            if nrev:
-                v += '.dev%d' % nrev
-            elif self.is_dirty():
-                v += '.dev'
+        if self.is_dirty():
+            v += '.dev'
+        elif self.revision:
+            v += '.dev%d' % self.revision
         return LooseVersion(v)
 
     @property
