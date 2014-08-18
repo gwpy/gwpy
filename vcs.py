@@ -86,17 +86,22 @@ class GitStatus(object):
 
     @property
     def tag(self):
-        for tag in self.repo.tags:
+        for tag in self.tags:
             if tag.commit == self.commit:
                 return tag
         return None
+
+    @property
+    def tags(self):
+        return sorted(self.repo.tags,
+                      key=lambda t: t.commit.committed_date)
 
     @property
     def revision(self):
         """The number of commits between the HEAD and the last tag.
         """
         try:
-            tag = self.repo.tags[-1]
+            tag = self.tags[-1]
         except IndexError:
             start = ''
         else:
@@ -109,7 +114,7 @@ class GitStatus(object):
             v = self.tag.name.strip('v')
         else:
             try:
-                v = self.repo.tags[-1].name.strip('v')
+                v = self.tags[-1].name.strip('v')
             except IndexError:
                 v = '0.0.0'
             nrev = self.revision
