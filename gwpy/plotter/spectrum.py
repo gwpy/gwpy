@@ -100,6 +100,8 @@ class SpectrumAxes(Axes):
             kwargs.setdefault('label', tex.label_to_latex(spectrum.name))
         else:
             kwargs.setdefault('label', spectrum.name)
+        if not kwargs.get('label', True):
+            kwargs.pop('label')
         line = self.plot(spectrum.frequencies, spectrum.data, **kwargs)
         if len(self.lines) == 1:
             try:
