@@ -274,7 +274,7 @@ if not '--help' in sys.argv:
     if not (any('--' + opt in sys.argv for opt in
             Distribution.display_option_names + ['help']) or
             dist_.commands == ['clean']):
-        setup_requires = ['tornado', 'numpy >= 1.5', 'jinja2', 'gitpython']
+        setup_requires = ['tornado', 'numpy >= 1.7', 'jinja2', 'gitpython']
 
 # -----------------------------------------------------------------------------
 # Find files
@@ -316,8 +316,8 @@ setup(name=PACKAGENAME,
       ],
       install_requires=[
           'python-dateutil',
-          'numpy >= 1.5',
-          'scipy',
+          'numpy >= 1.7',
+          'scipy >= 0.11',
           'matplotlib >= 1.3.0',
           'astropy >= 0.3',
           'six >= 1.5',
