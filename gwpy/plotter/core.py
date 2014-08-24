@@ -21,7 +21,7 @@
 
 import numpy
 
-from matplotlib import (axes, backends, figure, pyplot, colors as mcolors,
+from matplotlib import (backends, figure, pyplot, colors as mcolors,
                         _pylab_helpers)
 from matplotlib.ticker import LogLocator
 
@@ -30,7 +30,7 @@ try:
 except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
-from . import tex
+from . import (tex, axes)
 from .log import CombinedLogFormatterMathtext
 from .decorators import (auto_refresh, axes_method)
 
@@ -781,3 +781,8 @@ class Plot(figure.Figure):
                     fset=lambda self, b: self.set_yscale(b and 'log' or
                                                          'linear'),
                     doc="view y-axis in logarithmic scale")
+
+    @axes_method
+    def html_map(self, filename, data=None, **kwargs):
+        pass
+    html_map.__doc__ = axes.Axes.html_map.__doc__
