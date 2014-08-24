@@ -258,6 +258,33 @@ class Series(Array):
         sl[axis] = slice(None, None, q)
         return out[sl]
 
+    def find_peaks(self, widths, min_snr=5, min_length=1, **kwargs):
+        """Find peaks in this `Series`
+
+        Parameters
+        ----------
+        widths : sequence
+            1-D array of widths of interest (in samples)
+        **kwargs
+            other keyword arguments used by the underlying method
+            :meth:`~scipy.signal.find_peaks_cwt`
+
+        Returns
+        -------
+        peakseries : `Series`
+            new `Series` containing only the recovered peaks
+
+        See also
+        --------
+        scipy.signal.find_peaks_cwt
+            for details on the peak-finding algorithm
+        """
+        peaks = signal.find_peaks_cwt(self.data, widths, min_snr=min_snr,
+                                      min_length=min_length, **kwargs)
+        new = self[peaks]
+        new.index = self.index[peaks]
+        return new
+
     # -------------------------------------------
     # numpy.ndarray method modifiers
     # all of these try to return Quantities rather than simple numbers
