@@ -23,9 +23,10 @@ user-friendly attributes
 from six import string_types
 
 from matplotlib.axes import Axes as _Axes
+from matplotlib.artist import Artist
 
 from .decorators import auto_refresh
-from . import (rcParams, tex)
+from . import (rcParams, tex, html)
 
 from .. import version
 __version__ = version.version
@@ -203,3 +204,43 @@ class Axes(_Axes):
         [l.set_linewidth(linewidth) for l in legend.get_lines()]
         return legend
     legend.__doc__ = _Axes.legend.__doc__
+
+    def html_map(self, imagefile, data=None, **kwargs):
+        """Create an HTML map for some data contained in these `Axes`
+
+        Parameters
+        ----------
+        data : `~matplotlib.artist.Artist`, `~gwpy.data.Series`, `numpy.ndarray`
+            data to map, one of an `Artist` already drawn on these axes (
+            via :meth:`plot` or :meth:`scatter`, for example) or a data set
+        imagefile : `str`
+            path to image file on disk for the containing `Figure`
+        mapname : `str`, optional
+            ID to connect <img> tag and <map> tags, default: ``'points'``. This
+            should be unique if multiple maps are to be written to a single HTML
+            file.
+        shape : `str`, optional
+            shape for <area> tag, default: ``'circle'``
+        standalone : `bool`, optional
+            wrap map HTML with required HTML5 header and footer tags,
+            default: `True`
+        title : `str`, optional
+            title name for standalone HTML page
+        jquery : `str`, optional
+            URL of jquery script, defaults to googleapis.com URL
+
+        Returns
+        -------
+        HTML : `str`
+            string of HTML markup that defines the <img> and <map>
+        """
+        if data is None:
+            artists = self.lines + self.collections + self.images
+            if len(artists) != 1:
+                raise ValueError("Cannot determine artist to map, %d found."
+                                 % len(artists))
+            data = artists[0]
+        if isinstance(data, Artist):
+            return html.map_artist(data, imagefile, **kwargs)
+        else:
+            return html.map_data(data, self, imagefile, **kwargs)
