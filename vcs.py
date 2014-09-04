@@ -52,7 +52,11 @@ release = {{ version.version[0] > 0 and \
 
 # repository version information
 git_hash = '{{ status.commit.hexsha }}'
-git_tag = '{{ status.tag and status.tag.name or None }}'
+{% if status.tag %}\
+git_tag = '{{ status.tag.name }}'\
+{% else %}\
+git_tag = None\
+{% endif %}
 git_author = "{{ status.author }}"
 git_committer = "{{ status.committer }}"
 git_is_dirty = {{ status.is_dirty() }}
