@@ -57,6 +57,7 @@ git_tag = '{{ status.tag.name }}'\
 {% else %}\
 git_tag = None\
 {% endif %}
+git_branch = '{{ status.branch.name }}'
 git_author = "{{ status.author }}"
 git_committer = "{{ status.committer }}"
 git_is_dirty = {{ status.is_dirty() }}
