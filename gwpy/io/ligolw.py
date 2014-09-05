@@ -104,7 +104,10 @@ def table_from_file(f, tablename, columns=None, filt=None,
     if filt:
         if verbose:
             gprint('filtering rows ...', end=' ')
-        out_ = table.new_from_template(out)
+        try:
+            out_ = out.copy()
+        except AttributeError:
+            out_ = table.new_from_template(out)
         out_.extend(filter(filt, out))
         out = out_
         if verbose:
