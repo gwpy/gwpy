@@ -77,7 +77,7 @@ class GitStatus(object):
 
     @property
     def commit(self):
-        return self.repo.head.commit
+        return self.branch.commit
 
     @property
     def branch(self):
