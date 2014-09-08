@@ -23,9 +23,11 @@ from glue.ligolw.lsctables import *
 
 from .. import version
 from ..io import reader
+from ..time import to_gps
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
+__all__ = TableByName.keys()
 
 
 def _plot_factory():
@@ -69,7 +71,7 @@ def _plot_factory():
         return EventTablePlot(self, *args, **kwargs)
 
     def hist(self, column, **kwargs):
-        """Generate a `HistogrmaPlot` of this `Table`.
+        """Generate a `HistogramPlot` of this `Table`.
 
         Parameters
         ----------
@@ -88,6 +90,56 @@ def _plot_factory():
 
     return (plot, hist)
 
+
+def _fetch_factory(table):
+    def fetch(cls, channel, etg, start, end, verbose=False, **kwargs):
+        """Find and read events into a `{0}`.
+
+        Event XML files are searched for only on the LIGO Data Grid
+        using the conventions set out in LIGO-T1300468.
+
+        .. warning::
+
+            This method will not work on machines outside of the LIGO Lab
+            computing centres at Caltech, LHO, and LHO.
+
+        Parameters
+        ----------
+        channel : `str`
+            the name of the data channel to search for
+        etg : `str`
+            the name of the event trigger generator (ETG)
+        start : `float`, `~gwpy.time.LIGOTimeGPS`
+            the GPS start time of the search
+        end : `float`, `~gwpy.time.LIGOTimeGPS`
+            the GPS end time of the search
+        verbose : `bool`, optional
+            print verbose output, default: `False`
+        **kwargs
+            other keyword arguments to pass to :meth:`{0}.read`
+
+        Returns
+        -------
+        table : :class:`{0}`
+            a new `{0}` containing triggers read from the standard
+            paths
+
+        See also
+        --------
+        ~gwpy.table.lsctables.{0} :
+            for documentation of the available keyword arguments
+        """
+        from .io.trigfind import find_trigger_urls
+        # check times
+        start = to_gps(start)
+        end = to_gps(end)
+        # find files
+        cache = find_trigger_urls(channel, etg, start, end, verbose=verbose)
+        # read and return
+        return cls.read(cache, format='ligolw', **kwargs)
+    fetch.__doc__ = fetch.__doc__.format(table.__name__)
+
+    return classmethod(fetch)
 
 # annotate lsctables with new methods
 for table in TableByName.itervalues():
@@ -143,3 +195,6 @@ for table in TableByName.itervalues():
             'peak_time' in table.validcolumns or
             'end_time' in table.validcolumns):
         table.plot, table.hist = _plot_factory()
+
+    if table == SnglBurstTable:
+        table.fetch = _fetch_factory(table)
