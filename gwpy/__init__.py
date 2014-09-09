@@ -40,3 +40,5 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 __date__ = version.__date__
 __credits__ = "The LIGO Scientific Collaboration and the Virgo Collaboration"
+
+__import__('pkg_resources').declare_namespace(__name__)

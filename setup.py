@@ -332,6 +332,9 @@ setup(name=PACKAGENAME,
               'software/source/glue-1.46.tar.gz#egg=glue-1.46',
       ],
       test_suite='gwpy.tests',
+      namespace_packages=[
+          'gwpy.toolkits',
+      ],
       use_2to3=False,
       classifiers=[
           'Programming Language :: Python',
