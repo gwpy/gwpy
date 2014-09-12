@@ -366,7 +366,7 @@ class TimeSeriesPlot(Plot):
     def set_epoch(self, gps):
         """Set the GPS epoch of this plot
         """
-        axeslist = self._find_all_axes(self._DefaultAxesClass.name)
+        axeslist = self.get_axes(self._DefaultAxesClass.name)
         for axes in axeslist:
             axes.set_epoch(gps)
 
@@ -400,7 +400,7 @@ class TimeSeriesPlot(Plot):
         from .segments import SegmentAxes
         if not ax:
             try:
-                ax = self._find_all_axes(self._DefaultAxesClass.name)[-1]
+                ax = self.get_axes(self._DefaultAxesClass.name)[-1]
             except IndexError:
                 raise ValueError("No 'timeseries' Axes found, cannot anchor "
                                  "new segment Axes.")

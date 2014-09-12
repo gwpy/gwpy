@@ -240,15 +240,18 @@ class Plot(figure.Figure):
         return super(Plot, self).gca(**kwargs)
     gca.__doc__ = figure.Figure.gca.__doc__
 
-    def _find_all_axes(self, projection=None):
-        """Find all sets of axes for the given projection
+    def get_axes(self, projection=None):
+        """Find all `Axes`, optionally matching the given projection
+
+        Parameters
+        ----------
+        projection : `str`
+            name of axes types to return
         """
-        allaxes = list(zip(*self._axstack._elements)[-1])
-        allaxes.sort(key=lambda x: x[0])
         if projection is None:
-            return zip(*allaxes)[1]
+            return self.axes
         else:
-            return [ax for idx,ax in allaxes if ax.name == projection.lower()]
+            return [ax for ax in self.axes if ax.name == projection.lower()]
 
     def _find_axes(self, projection=None):
         """Find the most recently added axes for the given projection
@@ -259,7 +262,7 @@ class Plot(figure.Figure):
             if no axes for the projection are found
         """
         try:
-            return self._find_all_axes(projection)[-1]
+            return self.get_axes(projection)[-1]
         except IndexError:
             if projection:
                 raise IndexError("No '%s' Axes found in this Plot" % projection)
