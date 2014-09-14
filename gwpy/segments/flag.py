@@ -40,14 +40,13 @@ except ImportError:
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.lsctables import VetoDefTable
 
+from .. import version
+from ..utils.deps import with_import
 from ..io import (reader, writer)
-
 from .segments import Segment, SegmentList
 
-from .. import version
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
 __all__ = ['DataQualityFlag', 'DataQualityDict']
 
 _re_inv = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+):(?P<version>\d+)\Z")
@@ -343,6 +342,71 @@ class DataQualityFlag(object):
             raise RuntimeError("Multiple flags returned for single query, "
                                "something went wrong")
         return flags[flag]
+
+    @classmethod
+    @with_import('dqsegdb.apicalls')
+    def query_dqsegdb(cls, flag, *args, **kwargs):
+        """Query the DQSegDB for the given flag.
+
+        Parameters
+        ----------
+        flag : str
+            The name of the flag for which to query
+        *args
+            Either, two `float`-like numbers indicating the
+            GPS [start, stop) interval, or a
+            :class:`~gwpy.segments.segments.SegmentList`
+            defining a number of summary segments
+        url : `str`, optional, default: ``'https://dqsegdb.ligo.org'``
+            URL of the segment database
+
+        Returns
+        -------
+        flag : `DataQualityFlag`
+            A new `DataQualityFlag`, with the `valid` and `active` lists
+            filled appropriately.
+        """
+        # parse arguments
+        if len(args) == 1 and isinstance(args[0], SegmentList):
+            qsegs = args[0]
+        elif len(args) == 1 and len(args[0]) == 2:
+            qsegs = SegmentList(Segment(args[0]))
+        elif len(args) == 2:
+            qsegs = SegmentList([Segment(args)])
+        else:
+            raise ValueError("DataQualityFlag.query must be called with a "
+                             "flag name, and either GPS start and stop times, "
+                             "or a SegmentList of query segments")
+        # get server
+        protocol, server = kwargs.pop(
+            'url', 'https://dqsegdb.ligo.org').split('://', 1)
+
+        # parse flag
+        try:
+            ifo, name, version = flag.split(':', 2)
+        except ValueError as e:
+            e.args = ('Flag must be of the form \'IFO:FLAG-NAME:VERSION\'',)
+            raise
+        else:
+            version = int(version)
+
+        # other keyword arguments
+        request = kwargs.pop('request', 'metadata,active,known')
+
+        # process query
+        new = cls(name=flag)
+        for seg in qsegs:
+            data, uri = apicalls.dqsegdbQueryTimes(protocol, server, ifo,
+                                                   name, version, request,
+                                                   seg[0], seg[1])
+            for seg in data['active']:
+                new.active.append(Segment(*seg))
+            for seg in data['known']:
+                new.valid.append(Segment(*seg))
+            new.description = data['metadata']['comment']
+            new.isgood = not data['metadata']['active_indicates_ifo_badness']
+
+        return new
 
     # use input/output registry to allow multi-format reading
     read = classmethod(reader(doc="""
@@ -775,6 +839,32 @@ class DataQualityDict(OrderedDict):
             out[key].valid.extend(summary)
             out[key].active.extend(segments)
         return out
+
+    def query_dqsegdb(cls, flags, *args, **kwargs):
+        """Query the DQSegDB for a set of `DataQualityFlags`.
+
+        Parameters
+        ----------
+        flags : `iterable`
+            A list of flag names for which to query.
+        *args
+            Either, two `float`-like numbers indicating the
+            GPS [start, stop) interval, or a
+            :class:`~gwpy.segments.segments.SegmentList`
+            defining a number of summary segments.
+        url : `str`, optional, default: ``'https://dqsegdb.ligo.org'``
+            URL of the segment database.
+
+        Returns
+        -------
+        flagdict : `DataQualityDict
+            An ordered `DataQualityDict` of (name, `DataQualityFlag`)
+            pairs.
+        """
+        new = cls()
+        for flag in flags:
+            new[flag] = _EntryClass.query_dqsegdb(flag, *args, **kwargs)
+        return new
 
     # use input/output registry to allow multi-format reading
     read = classmethod(reader(doc="""
