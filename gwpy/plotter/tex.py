@@ -54,7 +54,7 @@ def float_to_latex(x, format="%.2g"):
     exponent = exponent.lstrip("0+")
     if exponent.startswith('-0'):
         exponent = '-' + exponent[2:]
-    if mantissa == "1":
+    if float(mantissa) == 1.0:
         return r"10^{%s}" % exponent
     else:
         return r"%s\!\!\times\!\!10^{%s}" % (mantissa, exponent)
