@@ -109,8 +109,6 @@ class SpectrumAxes(Axes):
                               spectrum.frequencies[-1] + spectrum.df.value)
             except IndexError:
                 pass
-            self.add_label_unit(spectrum.xunit, axis="x")
-            self.add_label_unit(spectrum.unit, axis="y")
         if 'label' in kwargs:
             self.legend()
         return line
