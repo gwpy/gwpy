@@ -22,7 +22,7 @@ helpful set of major and minor ticks.
 
 from __future__ import division
 
-from math import (ceil, floor, modf)
+from math import (ceil, floor, modf, log10)
 
 import numpy
 
@@ -55,6 +55,8 @@ class GWpyLogFormatterMathtext(LogFormatterMathtext):
                 return '$%s$' % x
             else:
                 return '$\mathdefault{%s}$' % x
+        elif usetex and abs(log10(x)) > 2:
+            return '$%s$' % float_to_latex(x, '%.2e')
         elif usetex:
             return '$%s$' % float_to_latex(x, '%.2g')
         else:
