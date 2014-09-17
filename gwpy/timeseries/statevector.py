@@ -358,15 +358,12 @@ class StateVector(TimeSeries):
         for i, b in enumerate(bits):
             if not b in self.bits and isinstance(b):
                 bits[i] = self.bits[b]
-        try:
-            return self._bitseries.fromkeys(bits)
-        except AttributeError:
-            self._bitseries = TimeSeriesDict()
-            for i, bit in enumerate(self.bits):
-                self._bitseries[bit] = StateTimeSeries(
-                    self.data >> i & 1, name=bit, epoch=self.x0.value,
-                    channel=self.channel, sample_rate=self.sample_rate)
-            return self._bitseries
+        self._bitseries = TimeSeriesDict()
+        for i, bit in enumerate(self.bits):
+            self._bitseries[bit] = StateTimeSeries(
+                self.data >> i & 1, name=bit, epoch=self.x0.value,
+                channel=self.channel, sample_rate=self.sample_rate)
+        return self._bitseries
 
     # -------------------------------------------
     # StateVector methods
