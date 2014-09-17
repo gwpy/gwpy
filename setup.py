@@ -333,6 +333,7 @@ setup(name=PACKAGENAME,
       ],
       test_suite='gwpy.tests',
       namespace_packages=[
+          'gwpy',
           'gwpy.toolkits',
       ],
       use_2to3=False,
