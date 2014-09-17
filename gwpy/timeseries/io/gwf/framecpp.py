@@ -278,7 +278,7 @@ def read_statevectordict(source, channels, bitss=[], **kwargs):
 
 
 @with_import('frameCPP')
-def read_statevector(source, channel, bits=[], **kwargs):
+def read_statevector(source, channel, bits=None, **kwargs):
     """Read a `StateVector` of data from a gravitational-wave frame file
 
     Parameters

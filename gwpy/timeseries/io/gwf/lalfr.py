@@ -154,7 +154,7 @@ def read_statevector_dict(source, channels, bitss=[], **kwargs):
 
 
 @with_import('lalframe.frread')
-def read_statevector(source, channel, bits=[], **kwargs):
+def read_statevector(source, channel, bits=None, **kwargs):
     kwargs.setdefault('_target', StateVector)
     sv = read_timeseries(source, channel, **kwargs).view(StateVector)
     sv.bits = bits
