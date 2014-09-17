@@ -82,8 +82,11 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
         new = self.copy()
     # fill gap
     if new.is_contiguous(other) != 1:
-        if gap == 'pad':
-            ngap = (other.span[0] - new.span[1]) // new.dt.value
+        ngap = (other.span[0] - new.span[1]) // new.dt.value
+        if nap == 0:
+            # actually contiguous
+            pass
+        elif gap == 'pad':
             if ngap < 1:
                 raise ValueError("Cannot append TimeSeries that starts "
                                  "before this one.")
