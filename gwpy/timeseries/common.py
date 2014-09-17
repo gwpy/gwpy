@@ -35,13 +35,13 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 
-def is_contiguous(self, other):
+def is_contiguous(self, other, tol=1/2.**18):
     """Check whether other is contiguous with self.
     """
     self.is_compatible(other)
-    if abs(float(self.span[1] - other.span[0])) < 1e-5:
+    if abs(float(self.span[1] - other.span[0])) < tol:
         return 1
-    elif abs(float(other.span[1] - self.span[0])) < 1e-5:
+    elif abs(float(other.span[1] - self.span[0])) < tol:
         return -1
     else:
         return 0
