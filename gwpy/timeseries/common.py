@@ -83,7 +83,7 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
     # fill gap
     if new.is_contiguous(other) != 1:
         ngap = (other.span[0] - new.span[1]) // new.dt.value
-        if nap == 0:
+        if ngap == 0:
             # actually contiguous
             pass
         elif gap == 'pad':
