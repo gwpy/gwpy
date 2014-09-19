@@ -93,7 +93,7 @@ class TimeSeriesTests(unittest.TestCase):
         return asciiout
 
     def test_ascii_read(self):
-        fp = self.test_ascii5_write(delete=False)
+        fp = self.test_ascii_write(delete=False)
         try:
             ts = TimeSeries.read(fp)
         finally:
