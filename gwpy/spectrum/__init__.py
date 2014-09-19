@@ -29,7 +29,6 @@ from .hist import *
 
 # import unified I/O
 from .io import *
-from ..io.spectrum import *
 
 # setup spectrum generation method registrations
 from .scipy_ import *
