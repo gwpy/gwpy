@@ -77,7 +77,7 @@ def ascii_io_factory(obj, delimiter=None):
         kwargs.setdefault('delimiter', delimiter)
         return read_ascii(filepath, _obj=obj,**kwargs)
     def _write(series, filepath, **kwargs):
-        kwargs.setdefault('delimiter', delimiter)
+        kwargs.setdefault('delimiter', delimiter or ' ')
         return write_ascii(series, filepath, **kwargs)
     return _read, _write
 
