@@ -21,7 +21,7 @@
 These files should be in two-column x,y format
 """
 
-from numpy import loadtxt
+from numpy import (savetxt, loadtxt)
 
 from astropy.io.registry import (register_reader,
                                  register_writer,
