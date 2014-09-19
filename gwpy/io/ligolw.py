@@ -33,6 +33,7 @@ from glue.ligolw import (table, lsctables)
 from .. import version
 from ..utils import gprint
 from .cache import file_list
+from .utils import identify_factory
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -117,16 +118,4 @@ def table_from_file(f, tablename, columns=None, filt=None,
     return out
 
 
-def identify_ligolw_file(*args, **kwargs):
-    """Determine an input object as either a LIGO_LW format file.
-    """
-    fp = args[3]
-    if isinstance(fp, (file, GzipFile, AstroGzipFile)):
-        fp = fp.name
-    elif isinstance(fp, CacheEntry):
-        fp = fp.path
-    # identify string
-    if isinstance(fp, (unicode, str)) and fp.endswith(('xml', 'xml.gz')):
-        return True
-    else:
-        return False
+identify_ligolw = identify_factory('xml', 'xml.gz')

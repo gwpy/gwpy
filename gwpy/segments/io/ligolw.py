@@ -29,7 +29,7 @@ from astropy.time import Time
 from astropy.io import registry
 
 from ... import version
-from ...io.ligolw import (identify_ligolw_file, GWpyContentHandler)
+from ...io.ligolw import (identify_ligolw, GWpyContentHandler)
 from ...io.cache import file_list
 from ...segments import (Segment, DataQualityFlag, DataQualityDict)
 from ...table import lsctables
@@ -222,7 +222,7 @@ def write_to_xmldoc(flags, xmldoc, process_id=None):
 
 registry.register_reader('ligolw', DataQualityFlag, read_flag)
 registry.register_writer('ligolw', DataQualityFlag, write_ligolw)
-registry.register_identifier('ligolw', DataQualityFlag, identify_ligolw_file)
+registry.register_identifier('ligolw', DataQualityFlag, identify_ligolw)
 
 registry.register_reader('ligolw', DataQualityDict, read_flag_dict)
-registry.register_identifier('ligolw', DataQualityDict, identify_ligolw_file)
+registry.register_identifier('ligolw', DataQualityDict, identify_ligolw)

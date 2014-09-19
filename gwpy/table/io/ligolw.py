@@ -24,7 +24,7 @@ from astropy.io import registry
 from glue.ligolw.table import StripTableName as strip
 from glue.ligolw.lsctables import TableByName
 
-from ...io.ligolw import (table_from_file, identify_ligolw_file)
+from ...io.ligolw import (table_from_file, identify_ligolw)
 from ... import version
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -46,4 +46,4 @@ for table in TableByName.itervalues():
     # register generic reader and table-specific reader
     registry.register_reader('ligolw', table, func)
     registry.register_reader(tablename, table, func)
-    registry.register_identifier('ligolw', table, identify_ligolw_file)
+    registry.register_identifier('ligolw', table, identify_ligolw)
