@@ -83,6 +83,23 @@ class TimeSeriesTests(unittest.TestCase):
         except ImportError as e:
             raise unittest.SkipTest(str(e))
 
+    def test_ascii_write(self, delete=True):
+        self.ts = TimeSeries(self.data, sample_rate=1, name='TEST CASE',
+                             epoch=0, channel='TEST CASE')
+        asciiout = self.tmpfile % 'txt'
+        self.ts.write(asciiout)
+        if delete and os.path.isfile(asciiout):
+            os.remove(asciiout)
+        return asciiout
+
+    def test_ascii_read(self):
+        fp = self.test_ascii5_write(delete=False)
+        try:
+            ts = TimeSeries.read(fp)
+        finally:
+            if os.path.isfile(fp):
+                os.remove(fp)
+
     def test_hdf5_write(self, delete=True):
         self.ts = TimeSeries(self.data, sample_rate=1, name='TEST CASE',
                              epoch=0, channel='TEST CASE')
