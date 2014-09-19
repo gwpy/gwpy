@@ -16,19 +16,33 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Input/Output routines for the Spectrum.
+"""Utilities for unified input/output
 """
+
+from gzip import GzipFile
+
+from astropy.utils.compat.gzip import GzipFile as AstroGzipFile
+
+from glue.lal import CacheEntry
 
 from .. import version
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-from ..core import Spectrum
 
-# register ASCII
-from ...io.ascii import register_ascii
-register_ascii(Spectrum)
-
-# register HDF5
-from . import hdf5
+def identify_factory(*extensions):
+    def identify(*args, **kwargs):
+        """Identify the given extensions in a file object/path
+        """
+        fp = args[3]
+        if isinstance(fp, (file, GzipFile, AstroGzipFile)):
+            fp = fp.name
+        elif isinstance(fp, CacheEntry):
+            fp = fp.path
+        # identify string
+        if isinstance(fp, (unicode, str)) and fp.endswith(extensions):
+            return True
+        else:
+            return False
+    return identify

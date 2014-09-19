@@ -24,9 +24,16 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
+from ..core import TimeSeries
+
+# register ASCII
+from ...io.ascii import register_ascii
+register_ascii(TimeSeries)
+
+# register GWF
 from . import gwf
 
-
+# register generic Cache
 from . import cache
 
 # register HDF5

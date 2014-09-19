@@ -16,48 +16,80 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read a Spectrum from a dat file
+"""Read a `Series` from AN ASCII file
 
-These files must be in two-colum (frequency, amplitude) format
+These files should be in two-column x,y format
 """
 
-from six import string_types
+from numpy import loadtxt
 
-import numpy
-from astropy.io import registry
+from astropy.io.registry import (register_reader,
+                                 register_writer,
+                                 register_identifier)
 
-from ...spectrum.core import Spectrum
-from ... import version
+from ..data import Series
+from .. import version
+from .utils import identify_factory
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-def read_dat(filepath, fcol=0, ampcol=1, **kwargs):
-    """Read a `Spectrum` from a txt file
+def read_ascii(filepath, _obj=Series, xcol=0, ycol=1, delimiter=None, **kwargs):
+    """Read a `Series` from an ASCII file
     """
-    frequency, amplitude = numpy.loadtxt(filepath, usecols=[fcol, ampcol],
-                                         unpack=True)
-    return Spectrum(amplitude, frequencies=frequency, **kwargs)
+    # get specific args for loadtxt
+    loadargs = {'unpack': True, 'usecols': [xcol, ycol]}
+    for kwarg in ['dtype', 'comments', 'delimiter', 'converters', 'skiprows']:
+        if kwarg in kwargs:
+            loadargs[kwarg] = kwargs.pop(kwarg)
+    # read data, format and return
+    x, y = loadtxt(filepath, **loadargs)
+    return _obj(y, index=x, **kwargs)
 
 
-def identify_dat(*args, **kwargs):
-    """Identify the given file as a dat file, rather than anything else
+def write_ascii(series, fobj, fmt='%.18e', delimiter=' ', newline='\n',
+                header='', footer='', comments='# '):
+    """Write a `Series` to a file in ASCII format
 
-    Returns
-    -------
-    True
-        if the filename endswith .txt or .dat
-    False
-        otherwise
+    Parameters
+    ----------
+    series : :class:`~gwpy.data.Series`
+        data series to write
+    fobj : `str`, `file`
+        file object, or path to file, to write to
+
+    See also
+    --------
+    numpy.savetxt : for documentation of keyword arguments
     """
-    filename = args[1][0]
-    if not isinstance(filename, string_types):
-        filename = filename.name
-    if filename.endswith('txt') or filename.endswith('dat'):
-        return True
-    return False
+    x = series.index.data
+    y = series.data
+    return savetxt(fobj, zip(x, y), fmt=fmt, delimiter=delimiter,
+                   newline=newline, header=header, footer=footer,
+                   comments=comments)
 
 
-# register this file-reader with the Spectrum class
-registry.register_reader('dat', Spectrum, read_dat, force=True)
-registry.register_identifier('dat', Spectrum, identify_dat)
+formats = {'txt': None,
+           'csv': ','}
+
+def ascii_io_factory(obj, delimiter=None):
+    def _read(filepath, **kwargs):
+        kwargs.setdefault('delimiter', delimiter)
+        return read_ascii(filepath, _obj=obj,**kwargs)
+    def _write(series, filepath, **kwargs):
+        kwargs.setdefault('delimiter', delimiter)
+        return write_ascii(series, filepath, **kwargs)
+    return _read, _write
+
+
+def register_ascii(obj):
+    """Register ASCII I/O methods for given type obj
+
+    This factory method registers 'txt' and 'csv' I/O formats with
+    a reader, writer, and auto-identifier
+    """
+    for form, delim in formats.iteritems():
+        read_, write_ = ascii_io_factory(obj, delim)
+        register_identifier(form, obj, identify_factory(form))
+        register_writer(form, obj, write_)
+        register_reader(form, obj, read_)
