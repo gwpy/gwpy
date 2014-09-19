@@ -150,8 +150,15 @@ class Series(Array):
     @index.setter
     def index(self, samples):
         if not isinstance(samples, Array):
+            try:
+                self.epoch
+            except AttributeError:
+                self.x0 = samples[0]
             fname = inspect.stack()[0][3]
-            name = '%s %s' % (self.name, fname)
+            if self.name:
+                name = '%s %s' % (self.name, fname)
+            else:
+                name = None
             samples = Array(samples, unit=self.xunit, name=name,
                             epoch=self.epoch, channel=self.channel, copy=True)
         self._index = samples
