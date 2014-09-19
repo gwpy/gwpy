@@ -21,27 +21,15 @@
 For more details, see https://losc.ligo.org
 """
 
-import h5py
-
 from glue.lal import (Cache, CacheEntry)
 
 from astropy.io import registry
 from astropy.units import (Unit, Quantity)
 
 from .. import (StateVector, TimeSeries, TimeSeriesList)
+from ...utils.deps import with_import
 from ...io.cache import file_list
-
-
-def open_hdf5(filename):
-    """Wrapper to open a :class:`h5py.File` from disk, gracefully
-    handling a few corner cases
-    """
-    if isinstance(filename, h5py.File):
-        return filename
-    elif isinstance(filename, file):
-        return h5py.File(filename.name, 'r')
-    else:
-        return h5py.File(filename, 'r')
+from ...io.hdf5 import open_hdf5
 
 
 def read_losc_data(filename, channel, group=None, copy=False):
@@ -194,6 +182,7 @@ def read_losc_state_cache(*args, **kwargs):
     return read_losc_data_cache(*args, **kwargs)
 
 
+@with_import('h5py')
 def _find_dataset(h5group, name):
     """Find the named :class:`h5py.Dataset` in an HDF file.
 
@@ -222,17 +211,6 @@ def _find_dataset(h5group, name):
         except ValueError:
             continue
     raise ValueError("Cannot find channel '%s' in file HDF object" % name)
-
-
-def identify_losc(*args, **kwargs):
-    """Identify an input file as LOSC HDF based on its filename
-    """
-    filename = args[1]
-    if (isinstance(filename, (unicode, str)) and
-            (filename.endswith('hdf') or filename.endswith('hdf5'))):
-        return True
-    else:
-        return False
 
 
 registry.register_reader('losc', TimeSeries, read_losc_data_cache)

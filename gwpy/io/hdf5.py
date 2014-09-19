@@ -19,14 +19,20 @@
 """Write GWpy objects to HDF5 files
 """
 
-import h5py
+try:
+    import h5py
+    HAVE_H5PY = True
+except ImportError:
+    HAVE_H5PY = False
 
-from gwpy import version
+from .. import version
+from ..utils.deps import with_import
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 
+@with_import('h5py')
 def open_hdf5(filename):
     """Wrapper to open a :class:`h5py.File` from disk, gracefully
     handling a few corner cases
@@ -48,7 +54,7 @@ def identify_hdf5(*args, **kwargs):
     if (isinstance(filename, (unicode, str)) and
             filename.endswith(('hdf', 'hdf5'))):
         return True
-    elif isinstance(filename, (h5py.Group, h5py.Dataset)):
+    elif HAVE_H5PY and isinstance(filename, (h5py.Group, h5py.Dataset)):
         return True
     else:
         return False

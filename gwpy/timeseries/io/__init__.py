@@ -29,9 +29,8 @@ from . import gwf
 
 from . import cache
 
-try:
-    from . import hdf5
-except ImportError:
-    pass
-else:
-    from . import losc
+# register HDF5
+from . import hdf5
+
+# register LOSC
+from . import losc

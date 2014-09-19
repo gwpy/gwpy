@@ -24,7 +24,5 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-try:
-    from . import hdf5
-except ImportError:
-    pass
+# register HDF5
+from . import hdf5
