@@ -64,6 +64,11 @@ if rcParams['text.usetex'] or USE_TEX:
                              "font.serif": ["Computer Modern"]})
 rcParams.update(GWPY_PLOT_PARAMS)
 
+# fix matplotlib issue #3470
+if rcParams['font.family'] == 'serif':
+    rcParams['font.family'] = u'serif'
+
+
 
 def figure(*args, **kwargs):
     kwargs.setdefault('FigureClass', Plot)
