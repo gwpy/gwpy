@@ -109,6 +109,7 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
     # check empty other
     if not other.size:
         return new
+    N = min(new.shape[0], other.shape[0])
     # resize first
     if resize:
         s = list(new.shape)
@@ -121,9 +122,10 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
                 new.resize(s, refcheck=False)
             else:
                 raise
-    else:
-        new.data[:-other.shape[0]] = new.data[other.shape[0]:]
-    new[-other.shape[0]:] = other.data
+    elif other.shape[0] < new.shape[0]:
+        new.data[:-N] = new.data[N:]
+
+    new[-N:] = other.data[-N:]
     try:
         if isinstance(self, Series):
             times = new._index
