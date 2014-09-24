@@ -83,10 +83,13 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
     # fill gap
     if new.is_contiguous(other) != 1:
         if gap == 'pad':
-            ngap = (other.span[0] - new.span[1]) // new.dt.value
+            ngap = floor((other.span[0] - new.span[1]) / new.dt.value + 0.5)
             if ngap < 1:
                 raise ValueError("Cannot append TimeSeries that starts "
-                                 "before this one.")
+                                 "before this one:\n"
+                                 "    TimeSeries 1 span: %s\n"
+                                 "    TimeSeries 2 span: %s"
+                                 % (self.span, other.span))
             gapshape = list(new.shape)
             gapshape[0] = int(ngap)
             padding = numpy.ones(gapshape).view(new.__class__) * pad
