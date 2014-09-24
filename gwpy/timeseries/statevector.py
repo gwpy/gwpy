@@ -82,7 +82,7 @@ class StateTimeSeries(TimeSeries):
         A new `StateTimeSeries`
     """
     def __new__(cls, data, times=None, epoch=None, channel=None,
-                sample_rate=None, name=None, **kwargs):
+                unit='dimensionless', sample_rate=None, name=None, **kwargs):
         """Generate a new StateTimeSeries
         """
         if isinstance(data, (list, tuple)):
