@@ -332,7 +332,10 @@ class Channel(object):
 
     def __eq__(self, other):
         for attr in ['name', 'sample_rate', 'unit', 'url', 'type', 'dtype']:
-            if getattr(self, attr) != getattr(other, attr):
+            try:
+                if getattr(self, attr) != getattr(other, attr):
+                    return False
+            except TypeError:
                 return False
         return True
 
