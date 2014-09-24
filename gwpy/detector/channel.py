@@ -481,7 +481,7 @@ class ChannelList(list):
         if sample_rate is not None:
             sample_rate = (isinstance(sample_rate, units.Quantity) and
                            sample_rate.value or float(sample_rate))
-            c = [entry for entry in c if
+            c = [entry for entry in c if entry.sample_rate and
                  entry.sample_rate.value == sample_rate]
         if sample_range is not None:
             c = [entry for entry in c if
