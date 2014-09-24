@@ -38,7 +38,6 @@ except ImportError:
     from ordereddict import OrderedDict
 
 DEFAULT_HOSTS = OrderedDict([
-    (None, ('ldas-pcdev4.ligo.caltech.edu', 31200)),
     (None, ('nds.ligo.caltech.edu', 31200)),
     ('H1', ('nds.ligo-wa.caltech.edu', 31200)),
     ('H0', ('nds.ligo-wa.caltech.edu', 31200)),
