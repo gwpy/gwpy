@@ -296,7 +296,6 @@ class StateVector(TimeSeries):
         try:
             return self.metadata['bits']
         except KeyError as e:
-            print(self.dtype.name)
             if self.dtype.name.startswith(('uint', 'int')):
                 nbits = self.itemsize * 8
                 self.bits = Bits(['Bit %d' % b for b in range(nbits)],
