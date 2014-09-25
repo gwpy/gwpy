@@ -90,6 +90,6 @@ def register_ascii(obj):
     """
     for form, delim in formats.iteritems():
         read_, write_ = ascii_io_factory(obj, delim)
-        register_identifier(form, obj, identify_factory(form))
+        register_identifier(form, obj, identify_factory(form, '%s.gz' % form))
         register_writer(form, obj, write_)
         register_reader(form, obj, read_)
