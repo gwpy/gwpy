@@ -334,3 +334,18 @@ class Array2D(Array):
         else:
             return out * self.unit
     median.__doc__ = Array.median.__doc__
+
+    def __array_wrap__(self, obj, context=None):
+        """Wrap an array as an `Array2D` with metadata
+        """
+        result = obj.view(self.__class__)
+        result.metadata = self.metadata.copy()
+        try:
+            result._xindex = self._xindex
+        except AttributeError:
+            pass
+        try:
+            result._yindex = self._yindex
+        except AttributeError:
+            pass
+        return result

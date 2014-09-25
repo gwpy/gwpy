@@ -315,3 +315,14 @@ class Series(Array):
         return Quantity(super(Series, self).median(*args, **kwargs),
                         unit=self.unit)
     median.__doc__ = Array.median.__doc__
+
+    def __array_wrap__(self, obj, context=None):
+        """Wrap an array as a Array with metadata
+        """
+        result = obj.view(self.__class__)
+        result.metadata = self.metadata.copy()
+        try:
+            result._index = self._index
+        except AttributeError:
+            pass
+        return result
