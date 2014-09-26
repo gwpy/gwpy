@@ -580,7 +580,7 @@ class TimeSeries(Series):
                 stepseries = ts[idx:idx_end]
                 steppsd = stepseries.psd(fftlength=fftlength, overlap=overlap,
                                          method=method, **kwargs)
-                out[step] = steppsd.data
+                out.data[step,:] = steppsd.data
 
             return out
 
