@@ -39,12 +39,15 @@ def is_contiguous(self, other, tol=1/2.**18):
     """Check whether other is contiguous with self.
     """
     self.is_compatible(other)
-    if abs(float(self.span[1] - other.span[0])) < tol:
+    if isinstance(other, type(self)):
+        if abs(float(self.span[1] - other.span[0])) < tol:
+            return 1
+        elif abs(float(other.span[1] - self.span[0])) < tol:
+            return -1
+        else:
+            return 0
+    elif type(other) in [list, tuple, numpy.ndarray]:
         return 1
-    elif abs(float(other.span[1] - self.span[0])) < tol:
-        return -1
-    else:
-        return 0
 
 
 def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
@@ -125,7 +128,7 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
     elif other.shape[0] < new.shape[0]:
         new.data[:-N] = new.data[N:]
 
-    new[-N:] = other.data[-N:]
+    new[-N:] = other[-N:]
     try:
         if isinstance(self, Series):
             times = new._index

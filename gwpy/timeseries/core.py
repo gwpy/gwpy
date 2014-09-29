@@ -1118,13 +1118,21 @@ class TimeSeries(Series):
     def is_compatible(self, other):
         """Check whether metadata attributes for self and other match.
         """
-        if not self.sample_rate == other.sample_rate:
-            raise ValueError("TimeSeries sampling rates do not match: "
-                             "%s vs %s." % (self.sample_rate,
-                                            other.sample_rate))
-        if not self.unit == other.unit:
-            raise ValueError("TimeSeries units do not match: %s vs %s."
-                             % (str(self.unit), str(other.unit)))
+        if isinstance(other, type(self)):
+            if not self.sample_rate == other.sample_rate:
+                raise ValueError("TimeSeries sampling rates do not match: "
+                                 "%s vs %s." % (self.sample_rate,
+                                                other.sample_rate))
+            if not self.unit == other.unit:
+                raise ValueError("TimeSeries units do not match: %s vs %s."
+                                 % (str(self.unit), str(other.unit)))
+        else:
+            arr = numpy.asarray(other)
+            if arr.ndim != self.ndim:
+                raise ValueError("Dimensionality does not match")
+            if arr.dtype != self.dtype:
+                warnings.warn("dtype mismatch: %s vs %s"
+                              % (self.dtype, other.dtpe))
         return True
 
     # -------------------------------------------
