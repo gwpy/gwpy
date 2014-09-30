@@ -87,7 +87,7 @@ def identify_segwizard(*args, **kwargs):
         return False
 
 
-def to_segwizard(segs, fobj):
+def to_segwizard(segs, fobj, header=True, coltype=int):
     """Write the given `SegmentList` to the file object fobj
 
     Parameters
@@ -96,6 +96,10 @@ def to_segwizard(segs, fobj):
         segmentlist to print
     fobj : `file`, `str`
         open file object, or file path, to write to
+    header : `bool`, optional
+        print header into the file, default: `True`
+    coltype : `type`, optional
+        numerical type in which to cast times before printing
 
     See Also
     --------
@@ -108,12 +112,12 @@ def to_segwizard(segs, fobj):
         fobj = open(fobj, 'w')
     else:
         close = False
-    segmentsUtils.tosegwizard(fobj, segs)
+    segmentsUtils.tosegwizard(fobj, segs, header=header, coltype=coltype)
     if close:
         fobj.close()
 
 
-def flag_to_segwizard(flag, fobj):
+def flag_to_segwizard(flag, fobj, header=True, coltype=int):
     """Write the given `DataQualityFlag` to the file object fobj
 
     Parameters
@@ -122,6 +126,10 @@ def flag_to_segwizard(flag, fobj):
         data quality flag to print
     fobj : `file`, `str`
         open file object, or file path, to write to
+    header : `bool`, optional
+        print header into the file, default: `True`
+    coltype : `type`, optional
+        numerical type in which to cast times before printing
 
     Notes
     -----
@@ -135,7 +143,7 @@ def flag_to_segwizard(flag, fobj):
         for definition of the segwizard format, and the to/from functions
         used in this GWpy module
     """
-    to_segwizard(flag.active, fobj)
+    to_segwizard(flag.active, fobj, header=header, coltype=coltype)
 
 
 registry.register_reader('segwizard', DataQualityFlag, flag_from_segwizard)
