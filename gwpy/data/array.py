@@ -454,6 +454,13 @@ class Array(numpy.ndarray):
 
         h5file = open_hdf5(f)
 
+        if name is None and not isinstance(h5file, h5py.Dataset):
+            if len(h5file) == 1:
+                name = h5file.keys()[0]
+            else:
+                raise ValueError("Multiple data sets found in HDF structure, "
+                                 "please give name='...' to specify")
+
         try:
             # find dataset
             if isinstance(h5file, h5py.Dataset):
