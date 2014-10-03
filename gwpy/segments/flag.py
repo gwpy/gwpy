@@ -1006,8 +1006,8 @@ class DataQualityDict(OrderedDict):
         return self
 
     def __or__(self, other):
-        if sum(len(s) for s in self.values()) >= sum(len(s) for s in
-                                                     other.values()):
+        if (sum(len(s.active) for s in self.values()) >=
+            sum(len(s.active) for s in other.values())):
             return self.copy().__ior__(other)
         return other.copy().__ior__(self)
 
