@@ -112,11 +112,15 @@ class TimeSeriesAxes(Axes):
 
     epoch = property(fget=get_epoch, fset=set_epoch, doc=get_epoch.__doc__)
 
-    def set_xlim(self, *args, **kwargs):
+    def set_xlim(self, left=None, right=None, emit=True, auto=False, **kw):
+        if right is None and iterable(left):
+            left, right = left
+        left = float(left)
+        right = float(right)
         if 'gps' in self.get_xscale() and self.epoch is None:
-            xmin = isinstance(args[0], tuple) and args[0][0] or args[0]
-            self.set_epoch(xmin)
-        super(TimeSeriesAxes, self).set_xlim(*args, **kwargs)
+            self.set_epoch(left)
+        super(TimeSeriesAxes, self).set_xlim(left=left, right=right, emit=emit,
+                                             auto=auto, **kw)
     set_xlim.__doc__ = Axes.set_xlim.__doc__
 
     # -------------------------------------------
