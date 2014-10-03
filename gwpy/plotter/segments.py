@@ -335,7 +335,7 @@ class SegmentAxes(TimeSeriesAxes):
             insetparams.setdefault('bbox',
                                    {'alpha': 0.5, 'facecolor': 'white',
                                     'edgecolor': 'none'})
-            t = self.text(x, y - 0.1, label or '', **insetparams)
+            t = self.text(x, y, label or '', **insetparams)
             t._is_segment_label = True
             return t
         else:
