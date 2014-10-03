@@ -110,11 +110,13 @@ class SegmentAxes(TimeSeriesAxes):
         :meth:`matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
-        lim = len(self.collections)
         out = []
         args = list(args)
         while len(args):
-            if isinstance(args[0], DataQualityFlag):
+            if isinstance(args[0], DataQualityDict):
+                out.append(self.plot_dqdict(args.pop(0), **kwargs))
+                continue
+            elif isinstance(args[0], DataQualityFlag):
                 out.append(self.plot_dqflag(args[0], **kwargs))
                 args.pop(0)
                 continue
@@ -132,18 +134,57 @@ class SegmentAxes(TimeSeriesAxes):
             break
         if len(args):
             out.append(super(SegmentAxes, self).plot(*args, **kwargs))
-        if not lim:
-            self.set_ylim(-0.1, len(self.collections) + 0.1)
+        self.autoscale(axis='y')
         return out
 
     @auto_refresh
-    def plot_dqflag(self, flag, y=None, valid='x', add_label=True, **kwargs):
-        """Plot a :class:`~gwpy.segments.flag.DataQualityFlag`
+    def plot_dqdict(self, flags, label='key', valid='x', **kwargs):
+        """Plot a :class:`~gwpy.segments.DataQualityDict` onto these axes
+
+        Parameters
+        ----------
+        flags : :class:`~gwpy.segments.DataQualityDict`
+            data-quality dict to display
+        label : `str`, optional
+            labelling system to use, or fixed label for all `DataQualityFlags`.
+            Special values include
+
+            - ``'key'``: use the key of the `DataQualityDict`,
+            - ``'name'``: use the :attr:`~DataQualityFlag.name` of the
+              `DataQualityFlag`
+
+            If anything else, that fixed label will be used for all lines.
+        valid : `str`, `dict`, `None`, default: '/'
+            display `valid` segments with the given hatching, or give a
+            dict of keyword arguments to pass to
+            :meth:`~SegmentAxes.plot_segmentlist`, or `None` to hide.
+        **kwargs
+            any other keyword arguments acceptable for
+            :class:`~matplotlib.patches.Rectangle`
+
+        Returns
+        -------
+        collection : :class:`~matplotlib.patches.PatchCollection`
+            list of :class:`~matplotlib.patches.Rectangle` patches
+        """
+        out = []
+        for lab, flag in flags.iteritems():
+            if label.lower() == 'name':
+                lab = ts.name
+            elif label.lower() != 'key':
+                lab = label
+            out.append(self.plot(flag, label=rUNDERSCORE.sub(r'\_', lab),
+                       **kwargs))
+        return out
+
+    @auto_refresh
+    def plot_dqflag(self, flag, y=None, valid='x', **kwargs):
+        """Plot a :class:`~gwpy.segments.DataQualityFlag`
         onto these axes
 
         Parameters
         ----------
-        flag : :class:`~gwpy.segments.flag.DataQualityFlag`
+        flag : :class:`~gwpy.segments.DataQualityFlag`
             data-quality flag to display
         y : `float`, optional
             y-axis value for new segments
@@ -384,7 +425,10 @@ class SegmentPlot(TimeSeriesPlot):
 
         # generate figure
         super(SegmentPlot, self).__init__(**figargs)
+
         # plot data
+        if len(flags) == 1 and isinstance(flags[0], DataQualityDict):
+            flags = flags[0].keys()
         for flag in flags:
             self.add_dataqualityflag(flag,
                                      projection=self._DefaultAxesClass.name,
