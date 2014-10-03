@@ -1042,3 +1042,30 @@ class DataQualityDict(OrderedDict):
         for key, value in new.items():
             dict.__setitem__(new, key, ~value)
         return new
+
+    def union(self):
+        """Return the union of all flags in this `DataQualityDict`
+
+        Returns
+        -------
+        union : `DataQualityFlag`
+            a new `DataQualityFlag` who's active and valid segments
+            are the union of those of the values of this `DataQualityDict`.
+        """
+        usegs = reduce(operator.or_, self.itervalues())
+        usegs.name = ' | '.join(self.iterkeys())
+        return usegs
+
+    def intersection(self):
+        """Return the intersection of all flags in this `DataQualityDict`
+
+        Returns
+        -------
+        intersection : `DataQualityFlag`
+            a new `DataQualityFlag` who's active and valid segments
+            are the intersection of those of the values of this
+            `DataQualityDict`.
+        """
+        isegs = reduce(operator.and_, self.itervalues())
+        isegs.name = ' & '.join(self.iterkeys())
+        return isegs
