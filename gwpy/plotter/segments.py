@@ -471,6 +471,7 @@ class SegmentPlot(TimeSeriesPlot):
 
         return max
 
+
 class SegmentFormatter(Formatter):
     """Custom tick formatter for y-axis flag names
     """
@@ -478,7 +479,20 @@ class SegmentFormatter(Formatter):
         self.flags = flags
 
     def __call__(self, t, pos=None):
-        if t in self.flags:
-            return self.flags[t]
+        # if segments have been plotted at this y-axis value, continue
+        if self.has_segments(t):
+            return self.flags.get(t, t)
+        # otherwise there shouldn't be a tick
         else:
-            return t
+            return ''
+
+    def has_segments(self, y):
+        """Determine if these `SegmentAxes` have data at y-axis value ``y``
+
+        Returns `True` if any collection on the containing `SegmentAxes`
+        has a dataLim that overlaps the given y-axis value ``y``.
+        """
+        for coll in self.axis.axes.collections:
+            if y in Segment(*coll.get_datalim(coll.axes.transData).intervaly):
+                return True
+        return False
