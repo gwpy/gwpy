@@ -32,11 +32,11 @@ __all__ = ['SpectrogramPlot']
 
 
 class SpectrogramPlot(TimeSeriesPlot):
-    """`Figure` for displaying a :class:`~gwpy.spectrogram.core.Spectrogram`.
+    """`Figure` for displaying a :class:`~gwpy.spectrogram.Spectrogram`.
     """
     def __init__(self, *spectrograms, **kwargs):
-        self._logy = False
-
+        """Generate a new `SpectrogramPlot`
+        """
         # extract plotting keyword arguments
         plotargs = dict()
         plotargs['vmin'] = kwargs.pop('vmin', None)
