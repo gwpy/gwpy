@@ -21,12 +21,15 @@
 
 import numpy
 import itertools
+import re
 
 from . import rcParams
 from .. import version
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
+
+rUNDERSCORE = re.compile(r'(?<!\\)_')
 
 
 def float_to_latex(x, format="%.2g"):
