@@ -51,7 +51,6 @@ class SpectrogramPlot(TimeSeriesPlot):
         # plot data
         for i,spectrogram in enumerate(spectrograms):
             self.add_spectrogram(spectrogram, newax=sep, **plotargs)
-            self.axes[-1].set_yscale('log')
             self.axes[-1].fmt_ydata = lambda f: ('%s %s'
                                                  % (f, spectrogram.yunit))
             self.axes[-1].set_ylabel('Frequency [%s]' % spectrogram.yunit)
