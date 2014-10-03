@@ -1069,3 +1069,43 @@ class DataQualityDict(OrderedDict):
         isegs = reduce(operator.and_, self.itervalues())
         isegs.name = ' & '.join(self.iterkeys())
         return isegs
+
+    def plot(self, label='key', **kwargs):
+        """Plot the data for this `DataQualityDict`.
+
+        Parameters
+        ----------
+        label : `str`, optional
+            labelling system to use, or fixed label for all `DataQualityFlags`.
+            Special values include
+
+            - ``'key'``: use the key of the `DataQualityDict`,
+            - ``'name'``: use the :attr:`~DataQualityFlag.name` of the
+              `DataQualityFlag`
+
+            If anything else, that fixed label will be used for all lines.
+
+        **kwargs
+            all other keyword arguments are passed to the plotter as
+            appropriate
+
+        See Also
+        --------
+        gwpy.plotter.SegmentPlot
+        gwpy.plotter.SegmentAxes
+        gwpy.plotter.SegmentAxes.plot_dqdict
+        """
+        from ..plotter import SegmentPlot
+        figargs = dict()
+        for key in ['figsize', 'dpi']:
+            if key in kwargs:
+                figargs[key] = kwargs.pop(key)
+        axargs = dict()
+        for key in ['insetlabels']:
+            if key in kwargs:
+                axargs[key] = kwargs.pop(key)
+        plot_ = SegmentPlot(**figargs)
+        ax = plot_.gca(**axargs)
+        ax.plot(self, label=label, **kwargs)
+        ax.autoscale(axis='y')
+        return plot_
