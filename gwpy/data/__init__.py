@@ -16,8 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Module providing classes for reading, writing and manipulating
-time-series and spectrum data.
+"""This module provides the core `Array` object and direct subclasses.
+
+These objects form the basic 1-D and 2-D arrays with metadata from which
+we can build specific data representations like the `TimeSeries`.
 """
 
 from .. import version
