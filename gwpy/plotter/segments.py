@@ -24,6 +24,7 @@ import re
 
 import numpy
 
+from matplotlib.artist import allow_rasterization
 from matplotlib.ticker import (Formatter, MultipleLocator, NullLocator)
 from matplotlib.projections import register_projection
 from matplotlib.collections import PatchCollection
@@ -35,10 +36,11 @@ except ImportError:
 
 from .. import version
 from . import rcParams
-from .timeseries import (TimeSeriesPlot, TimeSeriesAxes)
-from .decorators import auto_refresh
 from ..segments import *
 from ..timeseries import StateVector
+from .timeseries import (TimeSeriesPlot, TimeSeriesAxes)
+from .decorators import auto_refresh
+from .utils import rUNDERSCORE
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -49,16 +51,38 @@ class SegmentAxes(TimeSeriesAxes):
 
     This `SegmentAxes` provides custom methods for displaying any of
 
-    - :class:`~gwpy.segments.flag.DataQualityFlag`
-    - :class:`~gwpy.segments.segments.Segment`
-    - :class:`~gwpy.segments.segments.SegmentList`
-    - :class:`~gwpy.segments.segments.SegmentListDict`
+    - :class:`~gwpy.segments.DataQualityFlag`
+    - :class:`~gwpy.segments.Segment`
+    - :class:`~gwpy.segments.SegmentList`
+    - :class:`~gwpy.segments.SegmentListDict`
+
+    Parameters
+    ----------
+    insetlabels : `bool`, default: `False`
+        display segment labels inside the axes. Prevents very long segment
+        names from getting squeezed off the end of a standard figure
+
+    See also
+    --------
+    gwpy.plotter.TimeSeriesAxes
+        for documentation of other args and kwargs
     """
     name = 'segments'
 
     def __init__(self, *args, **kwargs):
+        # set labelling format
+        kwargs.setdefault('insetlabels', False)
+
+        # make axes
         super(SegmentAxes, self).__init__(*args, **kwargs)
+
+        # set y-axis labels
         self.yaxis.set_major_locator(MultipleLocator())
+        formatter = SegmentFormatter()
+        self.yaxis.set_major_formatter(formatter)
+
+    # -------------------------------------------------------------------------
+    # plotting methods
 
     def plot(self, *args, **kwargs):
         """Plot data onto these axes
@@ -68,10 +92,10 @@ class SegmentAxes(TimeSeriesAxes):
         args
             a single instance of
 
-                - :class:`~gwpy.segments.flag.DataQualityFlag`
-                - :class:`~gwpy.segments.segments.Segment`
-                - :class:`~gwpy.segments.segments.SegmentList`
-                - :class:`~gwpy.segments.segments.SegmentListDict`
+                - :class:`~gwpy.segments.DataQualityFlag`
+                - :class:`~gwpy.segments.Segment`
+                - :class:`~gwpy.segments.SegmentList`
+                - :class:`~gwpy.segments.SegmentListDict`
 
         kwargs
             keyword arguments applicable to :meth:`~matplotib.axes.Axes.plot`
@@ -129,8 +153,6 @@ class SegmentAxes(TimeSeriesAxes):
             display `valid` segments with the given hatching, or give a
             dict of keyword arguments to pass to
             :meth:`~SegmentAxes.plot_segmentlist`, or `None` to hide.
-        add_label : `bool`, default: `True`
-            add a label to the y-axis for this `DataQualityFlag`
         **kwargs
             any other keyword arguments acceptable for
             :class:`~matplotlib.patches.Rectangle`
@@ -173,20 +195,16 @@ class SegmentAxes(TimeSeriesAxes):
             if len(flag.valid):
                 self.set_xlim(*map(float, flag.extent))
             self.autoscale(axis='y')
-        # add label
-        if add_label:
-            self.label_segments(y, name, inset=(add_label == 'inset'))
         return collection
 
     @auto_refresh
     def plot_segmentlist(self, segmentlist, y=None, collection=True,
-                         label=None, add_label=True, **kwargs):
-        """Plot a :class:`~gwpy.segments.segments.SegmentList` onto
-        these axes
+                         label=None, **kwargs):
+        """Plot a :class:`~gwpy.segments.SegmentList` onto these axes
 
         Parameters
         ----------
-        segmentlist : :class:`~gwpy.segments.segments.SegmentList`
+        segmentlist : :class:`~gwpy.segments.SegmentList`
             list of segments to display
         y : `float`, optional
             y-axis value for new segments
@@ -196,9 +214,6 @@ class SegmentAxes(TimeSeriesAxes):
             to work for hatched rectangles
         label : `str`, optional
             custom descriptive name to print as y-axis tick label
-        add_label : `bool`, `str`, optional
-            if `True` print label on y-axis, if ``'inset'`` print inside
-            axes, otherwise ignore.
         **kwargs
             any other keyword arguments acceptable for
             :class:`~matplotlib.patches.Rectangle`
@@ -220,11 +235,10 @@ class SegmentAxes(TimeSeriesAxes):
                 self.set_epoch(min(self.epoch, segmentlist[0][0]))
         except IndexError:
             pass
-        if label and add_label:
-            self.label_segments(y, label, inset=(add_label == 'inset'))
         if collection:
-            return self.add_collection(PatchCollection(patches,
-                                                       len(patches) != 0))
+            coll = PatchCollection(patches, len(patches) != 0)
+            coll.set_label(rUNDERSCORE.sub(r'\_', label))
+            self.add_collection(coll)
         else:
             out = []
             for p in patches:
@@ -233,13 +247,13 @@ class SegmentAxes(TimeSeriesAxes):
 
     @auto_refresh
     def plot_segmentlistdict(self, segmentlistdict, y=None, dy=1, **kwargs):
-        """Plot a :class:`~gwpy.segments.segments.SegmentListDict` onto
+        """Plot a :class:`~gwpy.segments.SegmentListDict` onto
         these axes
 
         Parameters
         ----------
-        segmentlistdict : :class:`~gwpy.segments.segments.SegmentListDict`
-            (name, :class:`~gwpy.segments.segments.SegmentList`) dict
+        segmentlistdict : :class:`~gwpy.segments.SegmentListDict`
+            (name, :class:`~gwpy.segments.SegmentList`) dict
         y : `float`, optional
             starting y-axis value for new segmentlists
         **kwargs
@@ -264,11 +278,11 @@ class SegmentAxes(TimeSeriesAxes):
     @staticmethod
     def build_segment(segment, y, height=.8, valign='center', **kwargs):
         """Build a :class:`~matplotlib.patches.Rectangle` to display
-        a single :class:`~gwpy.segments.segments.Segment`
+        a single :class:`~gwpy.segments.Segment`
 
         Parameters
         ----------
-        segment : :class:`~gwpy.segments.segments.Segment`
+        segment : :class:`~gwpy.segments.Segment`
             [start, stop) GPS segment
         y : `float`
             y-axis position for segment
@@ -296,52 +310,6 @@ class SegmentAxes(TimeSeriesAxes):
         return Rectangle((segment[0], y0), width=abs(segment), height=height,
                          **kwargs)
 
-    @auto_refresh
-    def label_segments(self, y, label, inset=False, **insetparams):
-        """Replace the default Y-axis label with a custom string at a
-        given Y-axis position ``y``.
-
-        Parameters
-        ----------
-        y : `int`
-            Y-axis position to modify
-        label : `str`
-            custom text to insert
-        inset : `bool`, optional, default: `False`
-            place the label inside the axes, rather than outside
-            (default)
-        **insetparams
-            other keyword arguments for the inset box
-        """
-        if label is not None:
-            label = re.sub('r\\+_+', '\_', label)
-        # find existing label
-        # set formatter
-        formatter = self.yaxis.get_major_formatter()
-        if not isinstance(formatter, SegmentFormatter):
-            formatter = SegmentFormatter()
-            self.yaxis.set_major_formatter(formatter)
-
-        # hide existing label and add inset text
-        if inset:
-            xlim = self.get_xlim()
-            x = xlim[0] + (xlim[1]-xlim[0]) * 0.01
-            formatter.flags[y] = ""
-            insetparams.setdefault('fontsize', rcParams['axes.labelsize'])
-            insetparams.setdefault('horizontalalignment', 'left')
-            insetparams.setdefault('verticalalignment', 'center')
-            insetparams.setdefault('backgroundcolor', 'white')
-            insetparams.setdefault('transform', self.transData)
-            insetparams.setdefault('bbox',
-                                   {'alpha': 0.5, 'facecolor': 'white',
-                                    'edgecolor': 'none'})
-            t = self.text(x, y, label or '', **insetparams)
-            t._is_segment_label = True
-            return t
-        else:
-            formatter.flags[y] = label or ''
-            return
-
     def set_xlim(self, *args, **kwargs):
         out = super(SegmentAxes, self).set_xlim(*args, **kwargs)
         _xlim = self.get_xlim()
@@ -356,17 +324,48 @@ class SegmentAxes(TimeSeriesAxes):
         return out
     set_xlim.__doc__ = TimeSeriesAxes.set_xlim.__doc__
 
+    def set_insetlabels(self, inset=None):
+        self._insetlabels = (inset is None and not self._insetlabels) or inset
+
+    def get_insetlabels(self):
+        """Move the y-axis tick labels inside the axes
+        """
+        return self._insetlabels
+
+    insetlabels = property(fget=get_insetlabels, fset=set_insetlabels,
+                            doc=get_insetlabels.__doc__)
+
+    @allow_rasterization
+    def draw(self, *args, **kwargs):
+        # inset the labels if requested
+        for tick in self.get_yaxis().get_ticklabels():
+            if self._insetlabels:
+                tick.set_horizontalalignment('left')
+                tick.set_position((0.01, tick.get_position()[1]))
+                tick.set_bbox({'alpha': 0.5, 'facecolor': 'white',
+                               'edgecolor': 'none'})
+            else:
+                tick.set_horizontalalignment('right')
+                tick.set_position((0, tick.get_position()[1]))
+                tick.set_bbox({})
+        return super(SegmentAxes, self).draw(*args, **kwargs)
+
+    draw.__doc__ = TimeSeriesAxes.draw.__doc__
+
 register_projection(SegmentAxes)
 
 
 class SegmentPlot(TimeSeriesPlot):
-    """`Figure` for displaying a :class:`~gwpy.segments.flag.DataQualityFlag`.
+    """`Figure` for displaying a :class:`~gwpy.segments.DataQualityFlag`.
 
     Parameters
     ----------
     *flags : `DataQualityFlag`
-        any number of :class:`~gwpy.segments.flag.DataQualityFlag` to
+        any number of :class:`~gwpy.segments.DataQualityFlag` to
         display on the plot
+    insetlabels : `bool`, default: `False`
+        display segment labels inside the axes. Prevents very long segment
+        names from getting squeezed off the end of a standard figure
     **kwargs
         other keyword arguments as applicable for the
         :class:`~gwpy.plotter.Plot`
@@ -480,19 +479,7 @@ class SegmentFormatter(Formatter):
 
     def __call__(self, t, pos=None):
         # if segments have been plotted at this y-axis value, continue
-        if self.has_segments(t):
-            return self.flags.get(t, t)
-        # otherwise there shouldn't be a tick
-        else:
-            return ''
-
-    def has_segments(self, y):
-        """Determine if these `SegmentAxes` have data at y-axis value ``y``
-
-        Returns `True` if any collection on the containing `SegmentAxes`
-        has a dataLim that overlaps the given y-axis value ``y``.
-        """
         for coll in self.axis.axes.collections:
-            if y in Segment(*coll.get_datalim(coll.axes.transData).intervaly):
-                return True
-        return False
+            if t in Segment(*coll.get_datalim(coll.axes.transData).intervaly):
+                return coll.get_label()
+        return ''
