@@ -429,6 +429,7 @@ class SegmentPlot(TimeSeriesPlot):
             figargs['figsize'] = kwargs.pop('figsize')
         sep = kwargs.pop('sep', False)
         epoch = kwargs.pop('epoch', None)
+        inset = kwargs.pop('insetlabels', False)
 
         # generate figure
         super(SegmentPlot, self).__init__(**figargs)
@@ -449,6 +450,7 @@ class SegmentPlot(TimeSeriesPlot):
             for ax in self.axes:
                 ax.set_epoch(epoch)
                 ax.set_xlim(*map(float, span))
+                ax.set_insetlabels(inset)
             for ax in self.axes[:-1]:
                 ax.set_xlabel("")
 
