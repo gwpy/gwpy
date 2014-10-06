@@ -258,7 +258,7 @@ class TimeSeries(Series):
     @classmethod
     @with_import('nds2')
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
-              connection=None, type=NDS2_FETCH_TYPE_MASK):
+              connection=None, verify=True, type=NDS2_FETCH_TYPE_MASK):
         """Fetch data from NDS into a TimeSeries.
 
         Parameters
@@ -273,10 +273,12 @@ class TimeSeries(Series):
             URL of NDS server to use, defaults to observatory site host
         port : `int`, optional
             port number for NDS server query, must be given with `host`
-        verbose : `bool`, optional
-            print verbose output about NDS progress
+        verify : `bool`, optional, default: `True`
+            check channels exist in database before asking for data
         connection : :class:`~gwpy.io.nds.NDS2Connection`
             open NDS connection to use
+        verbose : `bool`, optional
+            print verbose output about NDS progress
         type : `int`
             NDS2 channel type integer
 
@@ -287,7 +289,7 @@ class TimeSeries(Series):
         """
         return TimeSeriesDict.fetch(
                    [channel], start, end, host=host, port=port,
-                   verbose=verbose, connection=connection,
+                   verbose=verbose, connection=connection, verify=verify,
                    type=type)[str(channel)]
 
     # -------------------------------------------
@@ -1511,7 +1513,8 @@ class TimeSeriesDict(OrderedDict):
     @classmethod
     @with_import('nds2')
     def fetch(cls, channels, start, end, host=None, port=None,
-              verbose=False, connection=None, type=NDS2_FETCH_TYPE_MASK):
+              verify=True, verbose=False, connection=None,
+              type=NDS2_FETCH_TYPE_MASK):
         """Fetch data from NDS for a number of channels.
 
         Parameters
@@ -1526,6 +1529,8 @@ class TimeSeriesDict(OrderedDict):
             URL of NDS server to use, defaults to observatory site host.
         port : `int`, optional
             port number for NDS server query, must be given with `host`.
+        verify : `bool`, optional, default: `True`
+            check channels exist in database before asking for data
         verbose : `bool`, optional
             print verbose output about NDS progress.
         connection : :class:`~gwpy.io.nds.NDS2Connection`
@@ -1561,7 +1566,7 @@ class TimeSeriesDict(OrderedDict):
         end = int(ceil(end))
 
         # open connection for specific host
-        if host and not port and re.match('[a-z]1nds0\Z', host):
+        if host and not port and re.match('[a-z]1nds[0-9]\Z', host):
             port = 8088
         elif host and not port:
             port = 31200
@@ -1587,9 +1592,10 @@ class TimeSeriesDict(OrderedDict):
                     return cls.fetch(channels, start, end, host=host,
                                      port=port, verbose=verbose, type=type)
                 except (RuntimeError, ValueError) as e:
-                    gprint('Something went wrong:', file=sys.stderr)
-                    # if error and user supplied their own server, raise
-                    warnings.warn(str(e), ndsio.NDSWarning)
+                    if verbose:
+                        gprint('Something went wrong:', file=sys.stderr)
+                        # if error and user supplied their own server, raise
+                        warnings.warn(str(e), ndsio.NDSWarning)
 
             # if we got this far, we can't get all of the channels in one go
             if len(channels) > 1:
@@ -1606,46 +1612,30 @@ class TimeSeriesDict(OrderedDict):
         # normally
 
         # verify channels
-        qchannels = []
-        if verbose:
-            gprint("Checking channels against the NDS database...", end=' ')
-        for channel in channels:
-            if (type and
-                    (isinstance(type, (unicode, str)) or
-                    (isinstance(type, int) and log(type, 2).is_integer()))):
-                c = Channel(channel, type=type)
+        if verify:
+            if verbose:
+                gprint("Checking channels against the NDS database...", end=' ')
             else:
-                c = Channel(channel)
-            if c.ndstype is not None:
-                found = connection.find_channels(c.ndsname, c.ndstype)
-            elif type is not None:
-                found = connection.find_channels('%s*' % c.name, type)
+                warnings.filterwarnings('ignore', category=ndsio.NDSWarning,
+                                        append=False)
+            try:
+                qchannels = ChannelList.query_nds2(channels,
+                                                   connection=connection,
+                                                   type=type, unique=True)
+            except ValueError as e:
+                try:
+                    channels2 = ['%s*' % c for c in map(str, channels)]
+                    qchannels = ChannelList.query_nds2(channels2,
+                                                       connection=connection,
+                                                       type=type, unique=True)
+                except ValueError:
+                    raise e
+            if verbose:
+                gprint("Complete.")
             else:
-                found = connection.find_channels('%s*' % c.name)
-            # sieve out multiple channels with same type and different
-            # sample rates
-            funiq = ChannelList()
-            for nds2channel in found:
-                channel = Channel.from_nds2(nds2channel)
-                known = funiq.sieve(name=channel.name, type=channel.type)
-                if len(known) >= 1:
-                    continue
-                else:
-                    funiq.append(channel)
-            if len(funiq) == 0:
-                raise ValueError("Channel '%s' not found" % c.name)
-            elif len(funiq) > 1:
-                raise ValueError(
-                    "Multiple matches for channel '%s' in NDS database, "
-                    "ambiguous request:\n    %s"
-                    % (c.name, '\n    '.join(['%s (%s, %s)'
-                        % (str(c), c.type,
-                           c.channel_type_to_string(c.channel_type))
-                           for c in found])))
-            else:
-                qchannels.append(funiq[0])
-        if verbose:
-            gprint("Complete.")
+                warnings.filters.pop(0)
+        else:
+            qchannels = ChannelList(map(Channel, channels))
 
         # test for minute trends
         if (any([c.type == 'm-trend' for c in qchannels]) and
