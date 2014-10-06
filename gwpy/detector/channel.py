@@ -370,7 +370,11 @@ class Channel(object):
         return self.name
 
     def __repr__(self):
-        return '<Channel("%s") at %s>' % (str(self), hex(id(self)))
+        repr_ = '<Channel("%s"' % (str(self))
+        if self.type:
+            repr_ += ' [%s]' % self.type
+        repr_ += ', %s' % self.sample_rate
+        return repr_ + ') at %s>' % hex(id(self))
 
     def __eq__(self, other):
         for attr in ['name', 'sample_rate', 'unit', 'url', 'type', 'dtype']:
