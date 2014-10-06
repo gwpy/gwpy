@@ -20,6 +20,8 @@
 to LIGO data.
 """
 
+from __future__ import print_function
+
 import os
 import sys
 import warnings
@@ -119,3 +121,35 @@ def host_resolution_order(ifo, env='NDSSERVER'):
             if difo in DEFAULT_HOSTS:
                 hosts.append(DEFAULT_HOSTS[difo])
     return hosts
+
+
+def auth_connect(host, port=None):
+    """Open a connection to the given host and port
+
+    This method will catch exceptions related to kerberos authentication,
+    and execute a kinit() for the user before connecting again
+
+    Parameters
+    ----------
+    host : `str`
+        name of server with which to connect
+    port : `int`, optional
+        connection port
+    """
+    if port is None:
+        def _connect():
+            return nds2.connection(host)
+    else:
+        def _connect():
+            return nds2.connection(host, port)
+    try:
+        connection = _connect()
+    except RuntimeError as e:
+        if str(e).startswith('Request SASL authentication'):
+            print('\nError authenticating against %s' % host,
+                  file=sys.stderr)
+            kinit()
+            connection = _connect()
+        else:
+            raise
+    return connection

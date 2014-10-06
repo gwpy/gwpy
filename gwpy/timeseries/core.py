@@ -1568,16 +1568,7 @@ class TimeSeriesDict(OrderedDict):
         if host is not None and port is not None and connection is None:
             if verbose:
                 gprint("Connecting to %s:%s..." % (host, port), end=' ')
-            try:
-                connection = nds2.connection(host, port)
-            except RuntimeError as e:
-                if str(e).startswith('Request SASL authentication'):
-                    gprint('\nError authenticating against %s' % host,
-                           file=sys.stderr)
-                    kinit()
-                    connection = nds2.connection(host, port)
-                else:
-                    raise
+            connection = ndsio.auth_connect(host, port)
             if verbose:
                 gprint("Connected.")
         elif connection is not None and verbose:
