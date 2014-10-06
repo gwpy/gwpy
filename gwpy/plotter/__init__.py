@@ -58,7 +58,8 @@ GWPY_PLOT_PARAMS = {
     "image.interpolation": 'nearest',
     "image.origin": 'lower',
     "xtick.labelsize": 20,
-    "ytick.labelsize": 20}
+    "ytick.labelsize": 20,
+}
 if rcParams['text.usetex'] or USE_TEX:
     GWPY_PLOT_PARAMS.update({"text.usetex": True, "font.family": "serif",
                              "font.serif": ["Computer Modern"]})
@@ -67,7 +68,6 @@ rcParams.update(GWPY_PLOT_PARAMS)
 # fix matplotlib issue #3470
 if rcParams['font.family'] == 'serif':
     rcParams['font.family'] = u'serif'
-
 
 
 def figure(*args, **kwargs):
