@@ -21,6 +21,8 @@
 
 import re
 import numpy
+import warnings
+from math import log
 
 from astropy import units
 
@@ -31,6 +33,7 @@ except ImportError:
     NDS2_CHANNEL_TYPE = {}
 
 from .. import version
+from ..utils.deps import with_import
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -300,6 +303,45 @@ class Channel(object):
         return channellist[0]
 
     @classmethod
+    @with_import('nds2')
+    def query_nds2(cls, name, host=None, port=None, connection=None,
+                   type=None):
+        """Query an NDS server for channel information
+
+        Parameters
+        ----------
+        name : `str`
+            name of requested channel
+        host : `str`, optional
+            name of NDS2 server.
+        port : `int`, optional
+            port number for NDS2 connection
+        connection : `nds2.connection`
+            open connection to use for query
+        type : `str`, `int`
+            NDS2 channel type with which to restrict query
+
+        Returns
+        -------
+        channel : `Channel`
+            channel with metadata retrieved from NDS2 server
+
+        Raises
+        ------
+        ValueError
+            if multiple channels are found for a given name
+
+        Notes
+        -----
+        .. warning::
+
+           A `host` is required if an open `connection` is not given
+        """
+        return ChannelList.query_nds2([name], host=host, port=port,
+                                      connection=connection, type=type,
+                                      unique=True)[0]
+
+    @classmethod
     def from_nds2(cls, nds2channel):
         """Generate a new channel using an existing nds2.channel object
         """
@@ -513,3 +555,86 @@ class ChannelList(list):
         """
         from .io import cis
         return cis.query(name, debug=debug)
+
+    @classmethod
+    @with_import('nds2')
+    def query_nds2(cls, names, host=None, port=None, connection=None,
+                   type=None, unique=False):
+        """Query an NDS server for channel information
+
+        Parameters
+        ----------
+        name : `str`
+            name of requested channel
+        host : `str`, optional
+            name of NDS2 server.
+        port : `int`, optional
+            port number for NDS2 connection
+        connection : `nds2.connection`
+            open connection to use for query
+        type : `str`, `int`
+            NDS2 channel type with which to restrict query
+        unique : `bool`, optional
+            require a unique query result for each name given, default `False`
+
+        Returns
+        -------
+        channellist : `ChannelList`
+            list of `Channels <Channel>` with metadata retrieved from
+            NDS2 server
+
+        Raises
+        ------
+        ValueError
+            if multiple channels are found for a given name and `unique=True`
+            is given
+
+        Notes
+        -----
+        .. warning::
+
+           A `host` is required if an open `connection` is not given
+        """
+        from ..io.nds import (auth_connect, NDSWarning)
+        out = cls()
+        # connect
+        if connection is None:
+            if host is None:
+                raise ValueError("Please given either an open nds2.connection,"
+                                 " or the name of the host to connect to")
+            from ..io.nds import auth_connect
+            connection = auth_connect(host, port)
+        if isinstance(names, str):
+            names = [names]
+        for name in names:
+            # format channel query
+            if (type and (isinstance(type, (unicode, str)) or
+                         (isinstance(type, int) and log(type, 2).is_integer()))):
+                c = Channel(name, type=type)
+            else:
+                c = Channel(name)
+            if c.ndstype is not None:
+                found = connection.find_channels(c.ndsname, c.ndstype)
+            elif type is not None:
+                found = connection.find_channels(c.name, type)
+            else:
+                found = connection.find_channels(c.name)
+            found = ChannelList(map(Channel.from_nds2, found))
+            _names = set([c.ndsname for c in found])
+            if unique and len(_names) == 0:
+                raise ValueError("No match for channel %r in NDS database"
+                                 % name)
+            if unique and len(_names) > 1:
+                raise ValueError(
+                    "Multiple matches for channel '%s' in NDS database, "
+                    "ambiguous request:\n    %s"
+                     % (name, '\n    '.join(['%s (%s, %s)'
+                        % (str(c), c.type, c.sample_rate) for c in found])))
+            elif unique and len(found) > 1:
+                warnings.warn('Multiple instances of %r found with different '
+                              'sample rates, returning first.' % (name),
+                              NDSWarning)
+                out.append(found[0])
+            else:
+                out.extend(found)
+        return out
