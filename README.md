@@ -1,7 +1,8 @@
 # GWpy
 
-[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/gwpy/gwpy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge).. image:: https://gwpy.github.io/images/gwpy_1200.png
-   :scale: 60%
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/gwpy/gwpy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+<img src="https://gwpy.github.io/images/gwpy_1200.png" alt="GWpy logo" style="width: 400px;" />
 
 ## GWpy's new home: [https://gwpy.github.io](https://gwpy.github.io)
 
