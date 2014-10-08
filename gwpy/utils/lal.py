@@ -27,7 +27,7 @@ import numpy
 
 from astropy import units
 
-import lal
+from lal import lal
 
 from .. import version
 from .. import timeseries
