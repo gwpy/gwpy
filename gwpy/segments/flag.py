@@ -92,8 +92,8 @@ class DataQualityFlag(object):
                                  "'known' and 'valid'")
             self.valid = valid
         else:
-            self.known = known or []
-        self.active = active or []
+            self.known = known
+        self.active = active
         self.label = label
         self.category = category
         self.description = description
@@ -198,10 +198,16 @@ class DataQualityFlag(object):
 
     @active.setter
     def active(self, segmentlist):
-        self._active = self._ListClass(map(self._EntryClass,
-                                           segmentlist))
         if not self.known and len(segmentlist):
             self.known = [segmentlist.extent()]
+        if segmentlist is None:
+            del self.active
+        else:
+            self._active = self._ListClass(map(self._EntryClass, segmentlist))
+
+    @active.deleter
+    def active(self):
+        self._active = self._ListClass()
 
     @property
     def known(self):
@@ -212,7 +218,14 @@ class DataQualityFlag(object):
 
     @known.setter
     def known(self, segmentlist):
-        self._known = self._ListClass(map(self._EntryClass, segmentlist))
+        if segmentlist is None:
+            del self.known
+        else:
+            self._known = self._ListClass(map(self._EntryClass, segmentlist))
+
+    @known.deleter
+    def known(self):
+        self._known = self._ListClass()
 
     @property
     def valid(self):
@@ -223,7 +236,7 @@ class DataQualityFlag(object):
                       "has been renamed 'known' and will be removed in "
                       "the near future, please move to using 'known'.",
                       DeprecationWarning)
-        return self._known
+        return self.known
 
     @valid.setter
     def valid(self, segmentlist):
@@ -231,7 +244,15 @@ class DataQualityFlag(object):
                       "has been renamed 'known' and will be removed in "
                       "the near future, please move to using 'known'.",
                       DeprecationWarning)
-        self._known = self._ListClass(map(self._EntryClass, segmentlist))
+        self.known = segmentlist
+
+    @valid.deleter
+    def valid(self):
+        warnings.warn("The 'valid' property of the DataQualityFlag "
+                      "has been renamed 'known' and will be removed in "
+                      "the near future, please move to using 'known'.",
+                      DeprecationWarning)
+        self._known = self._ListClass()
 
     @property
     def category(self):
