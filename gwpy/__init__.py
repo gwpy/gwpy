@@ -28,8 +28,12 @@ and frequency-domain data produced by the `LIGO <http://www.ligo.org>`_ and
 with easy-to-follow tutorials at each step.
 """
 
-# filter out some annoying, but harmless warnings
 import warnings
+
+# enable DeprecationWarning by default (required for >= py27)
+warnings.simplefilter("default", DeprecationWarning)
+
+# filter out some annoying, but harmless warnings
 warnings.filterwarnings("ignore", "Module (.*) was already import from")
 warnings.filterwarnings("ignore", "The oldnumeric module",
                         DeprecationWarning)
