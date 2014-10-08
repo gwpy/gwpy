@@ -62,15 +62,9 @@ def flag_from_segwizard(filename, flag=None, coalesce=True, gpstype=float,
         out = flag
     else:
         out = DataQualityFlag(str(flag))
-    if isinstance(filename, CacheEntry):
-        out.known = [filename.segment]
-    elif isinstance(filename, Cache):
-        try:
-            out.known = filename.to_segmentlistdict()[out.ifo]
-        except KeyError:
-            pass
     out.active = from_segwizard(filename, coalesce=coalesce, gpstype=gpstype,
                                 strict=strict, nproc=nproc)
+    out.known = out.active
     return out
 
 
@@ -131,6 +125,13 @@ def flag_to_segwizard(flag, fobj, header=True, coltype=int):
     coltype : `type`, optional
         numerical type in which to cast times before printing
 
+    Raises
+    ------
+    ValueError
+        if the `~DataQualityFlag.known` segments for `flag` do not mirror
+        the `~DataQualityFlag.active` segments. In other words, if recording
+        only the `active` segments would discard information.
+
     Notes
     -----
     In this format, only the
@@ -143,6 +144,13 @@ def flag_to_segwizard(flag, fobj, header=True, coltype=int):
         for definition of the segwizard format, and the to/from functions
         used in this GWpy module
     """
+    if flag.known and flag.known != flag.active:
+        raise ValueError("This DataQualityFlag has known segments that do not "
+                         "simply match the active ones, meaning the SegWizard "
+                         "format cannot preserve these data completely. "
+                         "Consider using HDF5 or LIGO_LW XML, otherwise call "
+                         "the write() method of the active SegmentList "
+                         "directly to write just those segments.")
     to_segwizard(flag.active, fobj, header=header, coltype=coltype)
 
 
