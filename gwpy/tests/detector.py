@@ -78,6 +78,19 @@ class ChannelTests(unittest.TestCase):
         #self.assertTrue(new.unit == units.meter)
         self.assertTrue(new.texname == self.channel.replace('_', r'\_'))
 
+    def test_query_nds2(self):
+        try:
+            import nds2
+        except ImportError as e:
+            return unittest.SkipTest(str(e))
+        new = Channel.query_nds2(self.channel, host=NDSHOST,
+                                 type=nds2.channel.CHANNEL_TYPE_RAW)
+        self.assertTrue(str(new) == self.channel)
+        self.assertTrue(new.ifo == self.channel.split(':', 1)[0])
+        self.assertTrue(new.sample_rate == units.Quantity(32768, 'Hz'))
+        self.assertTrue(new.type == 'raw')
+        self.assertTrue(new.texname == self.channel.replace('_', r'\_'))
+
     def test_nds2_conversion(self):
         try:
             import nds2
