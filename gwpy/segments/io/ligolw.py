@@ -42,7 +42,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
 
-def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=True,
+def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
                    contenthandler=GWpyContentHandler, nproc=1):
     """Read segments for the given flag from the LIGO_LW XML file.
 
