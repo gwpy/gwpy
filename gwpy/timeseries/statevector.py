@@ -122,7 +122,7 @@ class StateTimeSeries(TimeSeries):
         -------
         dqflag : `~gwpy.segments.DataQualityFlag`
             a segment representation of this `StateTimeSeries`, the span
-            defines the `valid` segments, while the contiguous `True`
+            defines the `known` segments, while the contiguous `True`
             sets defined each of the `active` segments
         """
         start = self.x0.value
@@ -131,9 +131,9 @@ class StateTimeSeries(TimeSeries):
         if dtype is not float:
             active = active.__class__([Segment(dtype(s[0]), dtype(s[1])) for
                                        s in active])
-        valid = SegmentList([self.span])
+        known = SegmentList([self.span])
         out = DataQualityFlag(name=name or self.name, active=active,
-                              valid=valid, label=label or self.name,
+                              known=known, label=label or self.name,
                               description=description)
         if round:
             out = out.round()
@@ -527,7 +527,7 @@ class StateVector(TimeSeries):
         elif format == 'segments':
             kwargs.setdefault('facecolor', 'green')
             kwargs.setdefault('edgecolor', 'black')
-            kwargs.setdefault('valid', {'facecolor': 'red',
+            kwargs.setdefault('known', {'facecolor': 'red',
                                         'edgecolor': 'black'})
             from ..plotter import SegmentPlot
             return SegmentPlot(*self.to_dqflags(bits=bits).values(), **kwargs)
