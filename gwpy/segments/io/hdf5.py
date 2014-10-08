@@ -57,6 +57,8 @@ def flag_from_hdf5(f, name=None, gpstype=LIGOTimeGPS, coalesce=True, nproc=1):
         # find dataset
         if name:
             dqfgroup = h5file[name]
+        elif isinstance(h5file, h5py.File) and len(h5file) == 1:
+            dqfgroup = h5file.values()[0]
         else:
             dqfgroup = h5file
 
