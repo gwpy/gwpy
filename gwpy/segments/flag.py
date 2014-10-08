@@ -28,6 +28,7 @@ for handling multiple flags over the same global time interval.
 
 import operator
 import re
+import warnings
 from urlparse import urlparse
 from copy import copy as shallowcopy
 from math import (floor, ceil)
@@ -65,8 +66,8 @@ class DataQualityFlag(object):
         'H1:DMT-SCIENCE:1'. Use `label` for human-readable names.
     active : :class:`~gwpy.segments.segments.SegmentList`, optional
         A list of active segments for this flag
-    valid : :class:`~gwpy.segments.segments.SegmentList`, optional
-        A list of valid segments for this flag
+    known : :class:`~gwpy.segments.segments.SegmentList`, optional
+        A list of known segments for this flag
     label : `str`, optional
         Human-readable name for this flag, e.g. ``'Science-mode'``
     category : `int`, optional
@@ -79,12 +80,19 @@ class DataQualityFlag(object):
     _EntryClass = Segment
     _ListClass = SegmentList
 
-    def __init__(self, name=None, active=None, valid=None, label=None,
-                 category=None, description=None, isgood=True, padding=None):
+    def __init__(self, name=None, active=None, known=None, label=None,
+                 category=None, description=None, isgood=True, padding=None,
+                 valid=None):
         """Define a new DataQualityFlag.
         """
         self.name = name
-        self.valid = valid or []
+        if valid is not None:
+            if known is not None:
+                raise ValueError("Please give only 'known', and not both "
+                                 "'known' and 'valid'")
+            self.valid = valid
+        else:
+            self.known = known or []
         self.active = active or []
         self.label = label
         self.category = category
@@ -152,7 +160,7 @@ class DataQualityFlag(object):
 
         Each flag in the segment database is stored with a version
         integer, with each successive version representing a more
-        accurate dataset for its valid segments than any previous.
+        accurate dataset for its known segments than any previous.
 
         :type: `str`
         """
@@ -184,28 +192,46 @@ class DataQualityFlag(object):
         """The set of segments during which this `DataQualityFlag` was
         active.
         """
-        if self.valid:
-            self._active &= self.valid
+        if self.known:
+            self._active &= self.known
         return self._active
 
     @active.setter
     def active(self, segmentlist):
         self._active = self._ListClass(map(self._EntryClass,
                                            segmentlist))
-        if not self.valid and len(segmentlist):
-            self.valid = [segmentlist.extent()]
+        if not self.known and len(segmentlist):
+            self.known = [segmentlist.extent()]
+
+    @property
+    def known(self):
+        """The set of segments during which this `DataQualityFlag` was
+        known, and its state was well defined.
+        """
+        return self._known
+
+    @known.setter
+    def known(self, segmentlist):
+        self._known = self._ListClass(map(self._EntryClass, segmentlist))
 
     @property
     def valid(self):
         """The set of segments during which this `DataQualityFlag` was
-        valid, and its state was well defined.
+        known, and its state was well defined.
         """
-        return self._valid
+        warnings.warn("The 'valid' property of the DataQualityFlag "
+                      "has been renamed 'known' and will be removed in "
+                      "the near future, please move to using 'known'.",
+                      DeprecationWarning)
+        return self._known
 
     @valid.setter
     def valid(self, segmentlist):
-        self._valid = self._ListClass(map(self._EntryClass,
-                                          segmentlist))
+        warnings.warn("The 'valid' property of the DataQualityFlag "
+                      "has been renamed 'known' and will be removed in "
+                      "the near future, please move to using 'known'.",
+                      DeprecationWarning)
+        self._known = self._ListClass(map(self._EntryClass, segmentlist))
 
     @property
     def category(self):
@@ -283,7 +309,7 @@ class DataQualityFlag(object):
 
         :type: :class:`~gwpy.segments.segment.Segment`
         """
-        return self.valid.extent()
+        return self.known.extent()
 
     @property
     def livetime(self):
@@ -315,7 +341,7 @@ class DataQualityFlag(object):
         Returns
         -------
         flag : `DataQualityFlag`
-            A new `DataQualityFlag`, with the `valid` and `active` lists
+            A new `DataQualityFlag`, with the `known` and `active` lists
             filled appropriately.
         """
         # parse arguments
@@ -363,7 +389,7 @@ class DataQualityFlag(object):
         Returns
         -------
         flag : `DataQualityFlag`
-            A new `DataQualityFlag`, with the `valid` and `active` lists
+            A new `DataQualityFlag`, with the `known` and `active` lists
             filled appropriately.
         """
         # parse arguments
@@ -402,7 +428,7 @@ class DataQualityFlag(object):
             for seg in data['active']:
                 new.active.append(Segment(*seg))
             for seg in data['known']:
-                new.valid.append(Segment(*seg))
+                new.known.append(Segment(*seg))
             new.description = data['metadata']['comment']
             new.isgood = not data['metadata']['active_indicates_ifo_badness']
 
@@ -433,13 +459,13 @@ class DataQualityFlag(object):
     Returns
     -------
     dqflag : `DataQualityFlag`
-        formatted `DataQualityFlag` containing the active and valid
+        formatted `DataQualityFlag` containing the active and known
         segments read from file.
 
     Notes
     -----
     When reading with ``format='segwizard'`` the
-    :attr:`~DataQualityFlag.valid` `SegmentList` will simply represent
+    :attr:`~DataQualityFlag.known` `SegmentList` will simply represent
     the extent of the :attr:`~DataQualityFlag.active` `SegmentList`.
     """))
 
@@ -452,9 +478,9 @@ class DataQualityFlag(object):
             name += ':%d' % int(veto.version)
         except TypeError:
             pass
-        valid = Segment(veto.start_time, veto.end_time)
+        known = Segment(veto.start_time, veto.end_time)
         pad = Segment(veto.start_pad, veto.end_pad)
-        return cls(name=name, valid=[valid], category=veto.category,
+        return cls(name=name, known=[known], category=veto.category,
                    description=veto.comment, padding=pad)
 
     # -------------------------------------------------------------------------
@@ -472,7 +498,7 @@ class DataQualityFlag(object):
         .. autosummary::
 
            ~DataQualityFlag.name
-           ~DataQualityFlag.valid
+           ~DataQualityFlag.known
 
         Segments will be fetched from the database, with any
         :attr:`~DataQualityFlag.padding` added on-the-fly.
@@ -486,7 +512,7 @@ class DataQualityFlag(object):
             either a URL for a segment database or a path to a file on disk.
         segments : `SegmentList`, optional
             a list of valid segments during which to query, if not given,
-            existing valid segments for this flag will be used.
+            existing known segments for this flag will be used.
         **kwargs
             any other keyword arguments to be passed to
             :meth:`DataQualityFlag.query` or :meth:`DataQualityFlag.read`.
@@ -523,7 +549,7 @@ class DataQualityFlag(object):
 
         This method subtracts ``x`` from each segment's lower bound,
         and adds ``x`` to the upper bound, while maintaining that each
-        `Segment` stays within the `valid` bounds.
+        `Segment` stays within the `known` bounds.
 
         The :attr:`~DataQualityFlag.active` `SegmentList` is modified
         in place.
@@ -542,16 +568,16 @@ class DataQualityFlag(object):
         Returns
         -------
         roundedflag : `DataQualityFlag`
-            A copy of the original flag with the `active` and `valid` segments
+            A copy of the original flag with the `active` and `known` segments
             padded out to the enclosing integer boundaries.
         """
         new = self.copy()
         new.active = self._ListClass([self._EntryClass(int(floor(s[0])),
                                                        int(ceil(s[1]))) for
                                      s in new.active])
-        new.valid = self._ListClass([self._EntryClass(int(floor(s[0])),
+        new.known = self._ListClass([self._EntryClass(int(floor(s[0])),
                                                       int(ceil(s[1]))) for
-                                     s in new.valid])
+                                     s in new.known])
         return new.coalesce()
 
     def coalesce(self):
@@ -559,7 +585,7 @@ class DataQualityFlag(object):
 
         This method calls the
         :meth:`~gwpy.segments.segments.SegmentList.coalesce` method of the
-        underlying `active` and `valid` segment lists.
+        underlying `active` and `known` segment lists.
 
         .. note::
 
@@ -571,24 +597,24 @@ class DataQualityFlag(object):
             a view of this flag, not a copy.
         """
         self.active = self.active.coalesce()
-        self.valid = self.valid.coalesce()
+        self.known = self.known.coalesce()
         return self
 
     def __repr__(self):
         indent = " " * len("<%s(" % self.__class__.__name__)
-        valid = str(self.valid).replace("\n",
+        known = str(self.known).replace("\n",
                                         "\n%s      " % indent).split('\n')
-        if len(valid) > 10:
-            valid = valid[:3] + ['%s      ...' % indent] + valid[-3:]
+        if len(known) > 10:
+            known = known[:3] + ['%s      ...' % indent] + known[-3:]
         active = str(self.active).replace("\n",
                                           "\n%s       " % indent).split('\n')
         if len(active) > 10:
             active = active[:3] + ['%s        ...' % indent] + active[-3:]
-        return ("<{1}({2},\n{0}valid={3},\n{0}active={4},\n"
+        return ("<{1}({2},\n{0}known={3},\n{0}active={4},\n"
                 "{0}description={5})>".format(indent, self.__class__.__name__,
                                               (self.name and repr(self.name) or
                                                'No name'),
-                                              '\n'.join(valid),
+                                              '\n'.join(known),
                                               '\n'.join(active),
                                               repr(self.description)))
 
@@ -605,8 +631,8 @@ class DataQualityFlag(object):
         new.name = self.name
         new.version = self.version
         new.description = self.description
-        new.valid = self._ListClass([self._EntryClass(s[0], s[1]) for
-                                    s in self.valid])
+        new.known = self._ListClass([self._EntryClass(s[0], s[1]) for
+                                    s in self.known])
         new.active = self._ListClass([self._EntryClass(s[0], s[1]) for
                                      s in self.active])
         return new
@@ -627,7 +653,7 @@ class DataQualityFlag(object):
             :class:`~gwpy.plotter.segments.SegmentAxes`.
         """
         from ..plotter import (rcParams, SegmentPlot)
-        kwargs.setdefault('epoch', self.valid[0][0])
+        kwargs.setdefault('epoch', self.known[0][0])
         if self.label:
             kwargs.setdefault('label', self.label)
         elif rcParams['text.usetex']:
@@ -684,7 +710,7 @@ class DataQualityFlag(object):
         return self.ifo, self.tag, self.version
 
     def __getslice__(self, slice_):
-        return self.__class__(name=self.name, valid=self.valid,
+        return self.__class__(name=self.name, known=self.known,
                               active=self.active[slice_], label=self.label,
                               description=self.description, isgood=self.isgood)
 
@@ -702,7 +728,7 @@ class DataQualityFlag(object):
     def __iand__(self, other):
         """Intersect this `DataQualityFlag` with ``other`` in-place.
         """
-        self.valid &= other.valid
+        self.known &= other.known
         self.active &= other.active
         return self
 
@@ -714,7 +740,7 @@ class DataQualityFlag(object):
     def __isub__(self, other):
         """Subtract the ``other`` `DataQualityFlag` from this one in-place.
         """
-        #self.valid -= other.valid
+        #self.known -= other.known
         self.active -= other.active
         return self
 
@@ -726,7 +752,7 @@ class DataQualityFlag(object):
     def __ior__(self, other):
         """Add the ``other`` `DataQualityFlag` to this one in-place.
         """
-        self.valid |= other.valid
+        self.known |= other.known
         self.active |= other.active
         return self
 
@@ -836,7 +862,7 @@ class DataQualityDict(OrderedDict):
             if not key in out:
                 out[key] = DataQualityFlag(name=flag)
             # add segments
-            out[key].valid.extend(summary)
+            out[key].known.extend(summary)
             out[key].active.extend(segments)
         return out
 
@@ -887,7 +913,7 @@ class DataQualityDict(OrderedDict):
     -------
     flagdict : :class:`~gwpy.segments.flag.DataQualityDict`
         a new `DataQualityDict` of `DataQualityFlag` entries with ``active``
-        and ``valid`` segments seeded from the XML tables in the given
+        and ``known`` segments seeded from the XML tables in the given
         file.
 
     Notes
@@ -922,8 +948,8 @@ class DataQualityDict(OrderedDict):
                 row.end_time = min(row.end_time, end)
             flag = DataQualityFlag.from_veto_def(row)
             if flag.name in out:
-                out[flag.name].valid.extend(flag.valid)
-                out[flag.name].valid.coalesce()
+                out[flag.name].known.extend(flag.known)
+                out[flag.name].known.coalesce()
             else:
                 out[flag.name] = flag
         return out
@@ -941,7 +967,7 @@ class DataQualityDict(OrderedDict):
         .. autosummary::
 
            ~DataQualityFlag.name
-           ~DataQualityFlag.valid
+           ~DataQualityFlag.known
 
         Segments will be fetched from the database, with any
         :attr:`~DataQualityFlag.padding` added on-the-fly.
@@ -954,8 +980,8 @@ class DataQualityDict(OrderedDict):
             source of segments for this `DataQualityFlag`. This must be
             either a URL for a segment database or a path to a file on disk.
         segments : `SegmentList`, optional
-            a list of valid segments during which to query, if not given,
-            existing valid segments for flags will be used.
+            a list of known segments during which to query, if not given,
+            existing known segments for flags will be used.
         **kwargs
             any other keyword arguments to be passed to
             :meth:`DataQualityFlag.query` or :meth:`DataQualityFlag.read`.
@@ -967,17 +993,17 @@ class DataQualityDict(OrderedDict):
         """
         # format source
         source = urlparse(source)
-        valid = reduce(operator.or_,
-                       [f.valid for f in self.values()]).coalesce()
+        known = reduce(operator.or_,
+                       [f.known for f in self.values()]).coalesce()
         if segments:
-            valid &= SegmentList(segments)
+            known &= SegmentList(segments)
         if source.netloc:
-            tmp = type(self).query(self.keys(), valid,
+            tmp = type(self).query(self.keys(), known,
                                    url=source.geturl(), **kwargs)
         else:
             tmp = type(self).read(source.geturl(), self.name, **kwargs)
         for key, flag in self.iteritems():
-            self[key].valid &= valid
+            self[key].known &= known
             self[key].active = [type(seg)(seg[0] - flag.padding[0],
                                           seg[1] + flag.padding[1])
                                 for seg in tmp[key].active]
@@ -1049,7 +1075,7 @@ class DataQualityDict(OrderedDict):
         Returns
         -------
         union : `DataQualityFlag`
-            a new `DataQualityFlag` who's active and valid segments
+            a new `DataQualityFlag` who's active and known segments
             are the union of those of the values of this `DataQualityDict`.
         """
         usegs = reduce(operator.or_, self.itervalues())
@@ -1062,7 +1088,7 @@ class DataQualityDict(OrderedDict):
         Returns
         -------
         intersection : `DataQualityFlag`
-            a new `DataQualityFlag` who's active and valid segments
+            a new `DataQualityFlag` who's active and known segments
             are the intersection of those of the values of this
             `DataQualityDict`.
         """

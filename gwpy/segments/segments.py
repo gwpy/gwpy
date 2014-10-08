@@ -116,12 +116,12 @@ class SegmentList(_SegmentList):
     Returns
     -------
     segmentlist : `SegmentList`
-        `SegmentList` active and valid segments read from file.
+        `SegmentList` active and known segments read from file.
 
     Notes
     -----
     When reading with ``format='segwizard'`` the
-    :attr:`~DataQualityFlag.valid` `SegmentList` will simply represent
+    :attr:`~DataQualityFlag.known` `SegmentList` will simply represent
     the extent of the :attr:`~DataQualityFlag.active` `SegmentList`.
     """))
     write = writer()
@@ -153,13 +153,13 @@ class SegmentListDict(_SegmentListDict):
     Returns
     -------
     dqflag : `DataQualityFlag`
-        formatted `DataQualityFlag` containing the active and valid
+        formatted `DataQualityFlag` containing the active and known
         segments read from file.
 
     Notes
     -----
     When reading with ``format='segwizard'`` the
-    :attr:`~DataQualityFlag.valid` `SegmentList` will simply represent
+    :attr:`~DataQualityFlag.known` `SegmentList` will simply represent
     the extent of the :attr:`~DataQualityFlag.active` `SegmentList`.
     """))
     write = writer()

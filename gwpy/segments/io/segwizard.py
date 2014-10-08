@@ -63,10 +63,10 @@ def flag_from_segwizard(filename, flag=None, coalesce=True, gpstype=float,
     else:
         out = DataQualityFlag(str(flag))
     if isinstance(filename, CacheEntry):
-        out.valid = [filename.segment]
+        out.known = [filename.segment]
     elif isinstance(filename, Cache):
         try:
-            out.valid = filename.to_segmentlistdict()[out.ifo]
+            out.known = filename.to_segmentlistdict()[out.ifo]
         except KeyError:
             pass
     out.active = from_segwizard(filename, coalesce=coalesce, gpstype=gpstype,

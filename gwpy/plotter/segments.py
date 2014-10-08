@@ -138,7 +138,7 @@ class SegmentAxes(TimeSeriesAxes):
         return out
 
     @auto_refresh
-    def plot_dqdict(self, flags, label='key', valid='x', **kwargs):
+    def plot_dqdict(self, flags, label='key', known='x', **kwargs):
         """Plot a :class:`~gwpy.segments.DataQualityDict` onto these axes
 
         Parameters
@@ -154,8 +154,8 @@ class SegmentAxes(TimeSeriesAxes):
               `DataQualityFlag`
 
             If anything else, that fixed label will be used for all lines.
-        valid : `str`, `dict`, `None`, default: '/'
-            display `valid` segments with the given hatching, or give a
+        known : `str`, `dict`, `None`, default: '/'
+            display `known` segments with the given hatching, or give a
             dict of keyword arguments to pass to
             :meth:`~SegmentAxes.plot_segmentlist`, or `None` to hide.
         **kwargs
@@ -178,7 +178,7 @@ class SegmentAxes(TimeSeriesAxes):
         return out
 
     @auto_refresh
-    def plot_dqflag(self, flag, y=None, valid='x', **kwargs):
+    def plot_dqflag(self, flag, y=None, known='x', facecolor='green', **kwargs):
         """Plot a :class:`~gwpy.segments.DataQualityFlag`
         onto these axes
 
@@ -190,8 +190,8 @@ class SegmentAxes(TimeSeriesAxes):
             y-axis value for new segments
         height : `float`, optional, default: 0.8
             height for each segment block
-        valid : `str`, `dict`, `None`, default: '/'
-            display `valid` segments with the given hatching, or give a
+        known : `str`, `dict`, `None`, default: '/'
+            display `known` segments with the given hatching, or give a
             dict of keyword arguments to pass to
             :meth:`~SegmentAxes.plot_segmentlist`, or `None` to hide.
         **kwargs
@@ -212,28 +212,35 @@ class SegmentAxes(TimeSeriesAxes):
         # get epoch
         try:
             if not self.epoch:
-                self.set_epoch(flag.valid[0][0])
+                self.set_epoch(flag.known[0][0])
             else:
-                self.set_epoch(min(self.epoch, flag.valid[0][0]))
+                self.set_epoch(min(self.epoch, flag.known[0][0]))
         except IndexError:
             pass
-        # make valid collection
-        if valid is not None:
-            if isinstance(valid, dict):
-                vkwargs = valid
+        # make known collection
+        if known == 'x' and 'valid' in kwargs:
+            known = kwargs.pop('valid')
+        if known is not None:
+            if isinstance(known, dict):
+                vkwargs = known
             else:
                 vkwargs = kwargs.copy()
                 vkwargs.pop('label', None)
-                vkwargs['fill'] = False
-                vkwargs['hatch'] = valid
+                if known in ['-', '+', 'x', '\\', '*', 'o', 'O', '.']:
+                    vkwargs['fill'] = False
+                    vkwargs['hatch'] = known
+                else:
+                    vkwargs['fill'] = True
+                    vkwargs['facecolor'] = known
+                    vkwargs['edgecolor'] = 'black'
             vkwargs['collection'] = False
             vkwargs['zorder'] = -1000
-            self.plot_segmentlist(flag.valid, y=y, label=None, **vkwargs)
+            self.plot_segmentlist(flag.known, y=y, label=None, **vkwargs)
         # make active collection
         collection = self.plot_segmentlist(flag.active, y=y, label=name,
-                                           **kwargs)
+                                           facecolor=facecolor, **kwargs)
         if len(self.collections) == 1:
-            if len(flag.valid):
+            if len(flag.known):
                 self.set_xlim(*map(float, flag.extent))
             self.autoscale(axis='y')
         return collection
@@ -436,7 +443,7 @@ class SegmentPlot(TimeSeriesPlot):
 
         # set epoch
         if len(flags):
-            span = reduce(operator.or_, [f.valid for f in flags]).extent()
+            span = reduce(operator.or_, [f.known for f in flags]).extent()
             if not epoch:
                 epoch = span[0]
             for ax in self.axes:
@@ -457,7 +464,7 @@ class SegmentPlot(TimeSeriesPlot):
         super(SegmentPlot, self).add_dataqualityflag(flag, **kwargs)
         if self.epoch is None:
             try:
-                self.set_epoch(flag.valid[0][0])
+                self.set_epoch(flag.known[0][0])
             except IndexError:
                 pass
     add_dataqualityflag.__doc__ = TimeSeriesPlot.add_dataqualityflag.__doc__

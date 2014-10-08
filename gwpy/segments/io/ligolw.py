@@ -54,7 +54,7 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=True,
     -------
     flagdict : :class:`~gwpy.segments.flag.DataQualityDict`
         a new `DataQualityDict` of `DataQualityFlag` entries with ``active``
-        and ``valid`` segments seeded from the XML tables in the given
+        and ``known`` segments seeded from the XML tables in the given
         file ``fp``.
     """
     if nproc != 1:
@@ -106,7 +106,7 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=True,
                     s = row.get()
                 except AttributeError:
                     s = row.start_time, row.end_time
-                out[flag].valid.append(Segment(gpstype(s[0]), gpstype(s[1])))
+                out[flag].known.append(Segment(gpstype(s[0]), gpstype(s[1])))
     for dqf in out:
         if coalesce or dqf is None:
             out[dqf].coalesce()

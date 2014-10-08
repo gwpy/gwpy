@@ -61,10 +61,16 @@ def flag_from_hdf5(f, name=None, gpstype=LIGOTimeGPS, coalesce=True, nproc=1):
             dqfgroup = h5file
 
         active = SegmentList.read(dqfgroup['active'])
-        valid = SegmentList.read(dqfgroup['valid'])
+        try:
+            known = SegmentList.read(dqfgroup['known'])
+        except KeyError as e:
+            try:
+                known = SegmentList.read(dqfgroup['valid'])
+            except KeyError:
+                raise e
 
         # read array, close file, and return
-        out = DataQualityFlag(active=active, valid=valid,
+        out = DataQualityFlag(active=active, known=known,
                               **dict(dqfgroup.attrs))
     finally:
         if not isinstance(f, (h5py.Dataset, h5py.Group)):
@@ -98,7 +104,7 @@ def flag_to_hdf5(flag, output, name=None, group=None, compression='gzip',
     -------
     dqfgroup : :class:`h5py.Group`
         HDF group containing these data. This group contains 'active'
-        and 'valid' datasets, and metadata attrs.
+        and 'known' datasets, and metadata attrs.
     """
     # create output object
     import h5py
@@ -128,7 +134,7 @@ def flag_to_hdf5(flag, output, name=None, group=None, compression='gzip',
 
         flag.active.write(dqfgroup, 'active', compression=compression,
                           **kwargs)
-        flag.valid.write(dqfgroup, 'valid', compression=compression,
+        flag.known.write(dqfgroup, 'known', compression=compression,
                          **kwargs)
 
         # store metadata
