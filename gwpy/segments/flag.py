@@ -336,6 +336,14 @@ class DataQualityFlag(object):
         """
         return abs(self.active)
 
+    @property
+    def regular(self):
+        """`True` if the `active` segments are a proper subset of the `known`.
+
+        :type: `bool`
+        """
+        return abs(self.active - self.known) == 0
+
     # -------------------------------------------------------------------------
     # classmethods
 
