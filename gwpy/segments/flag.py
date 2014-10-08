@@ -64,9 +64,9 @@ class DataQualityFlag(object):
         The name of this `DataQualityFlag`.
         This should be of the form {ifo}:{tag}:{version}, e.g.
         'H1:DMT-SCIENCE:1'. Use `label` for human-readable names.
-    active : :class:`~gwpy.segments.segments.SegmentList`, optional
+    active : `SegmentList`, optional
         A list of active segments for this flag
-    known : :class:`~gwpy.segments.segments.SegmentList`, optional
+    known : `SegmentList`, optional
         A list of known segments for this flag
     label : `str`, optional
         Human-readable name for this flag, e.g. ``'Science-mode'``
@@ -324,7 +324,7 @@ class DataQualityFlag(object):
         """The single GPS ``[start, stop)`` enclosing segment of this
         `DataQualityFlag`.
 
-        :type: :class:`~gwpy.segments.segment.Segment`
+        :type: `Segment`
         """
         return self.known.extent()
 
@@ -357,8 +357,7 @@ class DataQualityFlag(object):
             The name of the flag for which to query
         *args
             Either, two `float`-like numbers indicating the
-            GPS [start, stop) interval, or a
-            :class:`~gwpy.segments.segments.SegmentList`
+            GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
         url : `str`, optional, default: ``'https://segdb.ligo.caltech.edu'``
             URL of the segment database
@@ -405,8 +404,7 @@ class DataQualityFlag(object):
             The name of the flag for which to query
         *args
             Either, two `float`-like numbers indicating the
-            GPS [start, stop) interval, or a
-            :class:`~gwpy.segments.segments.SegmentList`
+            GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
         url : `str`, optional, default: ``'https://dqsegdb.ligo.org'``
             URL of the segment database
@@ -809,8 +807,7 @@ class DataQualityDict(OrderedDict):
             A list of flag names for which to query.
         *args
             Either, two `float`-like numbers indicating the
-            GPS [start, stop) interval, or a
-            :class:`~gwpy.segments.segments.SegmentList`
+            GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments.
         url : `str`, optional, default: ``'https://segdb.ligo.caltech.edu'``
             URL of the segment database.
@@ -903,8 +900,7 @@ class DataQualityDict(OrderedDict):
             A list of flag names for which to query.
         *args
             Either, two `float`-like numbers indicating the
-            GPS [start, stop) interval, or a
-            :class:`~gwpy.segments.segments.SegmentList`
+            GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments.
         url : `str`, optional, default: ``'https://dqsegdb.ligo.org'``
             URL of the segment database.
@@ -939,7 +935,7 @@ class DataQualityDict(OrderedDict):
 
     Returns
     -------
-    flagdict : :class:`~gwpy.segments.flag.DataQualityDict`
+    flagdict : `DataQualityDict`
         a new `DataQualityDict` of `DataQualityFlag` entries with ``active``
         and ``known`` segments seeded from the XML tables in the given
         file.
