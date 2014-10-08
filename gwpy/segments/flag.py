@@ -192,14 +192,10 @@ class DataQualityFlag(object):
         """The set of segments during which this `DataQualityFlag` was
         active.
         """
-        if self.known:
-            self._active &= self.known
         return self._active
 
     @active.setter
     def active(self, segmentlist):
-        if not self.known and len(segmentlist):
-            self.known = [segmentlist.extent()]
         if segmentlist is None:
             del self.active
         else:
