@@ -227,9 +227,12 @@ def write_to_xmldoc(flags, xmldoc, process_id=None):
     return xmldoc
 
 
+# register methods for DataQualityDict
 registry.register_reader('ligolw', DataQualityFlag, read_flag)
 registry.register_writer('ligolw', DataQualityFlag, write_ligolw)
 registry.register_identifier('ligolw', DataQualityFlag, identify_ligolw)
 
+# register methods for DataQualityDict
 registry.register_reader('ligolw', DataQualityDict, read_flag_dict)
+registry.register_writer('ligolw', DataQualityDict, write_ligolw)
 registry.register_identifier('ligolw', DataQualityDict, identify_ligolw)

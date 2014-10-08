@@ -957,6 +957,8 @@ class DataQualityDict(OrderedDict):
     # -----------------------------------------------------------------------
     # instance methods
 
+    write = writer()
+
     def populate(self, source='https://segdb.ligo.caltech.edu',
                  segments=None, **kwargs):
         """Query the segment database for each flag's active segments.
