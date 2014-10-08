@@ -608,9 +608,12 @@ class DataQualityFlag(object):
     def coalesce(self):
         """Coalesce the segments for this `DataQualityFlag`.
 
-        This method calls the
-        :meth:`~gwpy.segments.segments.SegmentList.coalesce` method of the
-        underlying `active` and `known` segment lists.
+        This method does two things:
+
+        - `coalesces <SegmentList.coalesce>` the `~DataQualityFlag.known` and
+          `~DataQualityFlag.active` segment lists
+        - forces the `active` segments to be a proper subset of the `known`
+          segments
 
         .. note::
 
@@ -621,8 +624,8 @@ class DataQualityFlag(object):
         self
             a view of this flag, not a copy.
         """
-        self.active = self.active.coalesce()
         self.known = self.known.coalesce()
+        self.active = (self.known & self.active).coalesce()
         return self
 
     def __repr__(self):
