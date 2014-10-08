@@ -27,6 +27,7 @@ import copy
 from matplotlib import (pyplot, cm, colors)
 from matplotlib.projections import register_projection
 from matplotlib.artist import allow_rasterization
+from matplotlib.cbook import iterable
 
 try:
     from mpl_toolkits.axes_grid1 import make_axes_locatable
