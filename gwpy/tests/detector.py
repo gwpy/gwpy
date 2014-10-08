@@ -32,6 +32,8 @@ from ..utils import with_import
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
+NDSHOST = 'nds.ligo-la.caltech.edu'
+
 
 class ChannelTests(unittest.TestCase):
     """`TestCase` for the timeseries module
@@ -83,7 +85,7 @@ class ChannelTests(unittest.TestCase):
             return unittest.SkipTest(str(e))
         else:
             try:
-                conn = nds2.connection('nds2.ligo-la.caltech.edu')
+                conn = nds2.connection(NDSHOST)
             except Exception as f:
                 return unittest.SkipTest(str(f))
             else:
