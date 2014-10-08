@@ -23,7 +23,11 @@ import datetime
 
 from glue.lal import LIGOTimeGPS
 from glue.ligolw.ligolw import (Document, LIGO_LW)
+from glue.ligolw.utils import write_filename
 from glue.ligolw.utils.ligolw_add import ligolw_add
+
+from gzip import GzipFile
+from astropy.utils.compat.gzip import GzipFile as AstroGzipFile
 
 from astropy.time import Time
 from astropy.io import registry
@@ -65,7 +69,8 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=True,
 
     # generate Document and populate
     xmldoc = Document()
-    files = [fp.name if isinstance(fp, file) else fp for fp in file_list(f)]
+    files = [fp.name if isinstance(fp, (file, GzipFile, AstroGzipFile))
+             else fp for fp in file_list(f)]
     ligolw_add(xmldoc, files, non_lsc_tables_ok=True,
                contenthandler=contenthandler)
 
@@ -85,7 +90,7 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=True,
         if row.version:
             name += ':%d' % row.version
         if flags is None:
-            out[name] = DataQualityFlag()
+            out[name] = DataQualityFlag(name)
             id_[name] = row.segment_def_id
         elif name in flags:
             out[name] = DataQualityFlag(name)
@@ -95,9 +100,9 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=True,
     elif flags is not None and len(out.keys()) != len(flags):
         for flag in flags:
             if flag not in out:
-                raise ValueError("No segment definition found for flag='%s' "
-                                 " in file.")
-    # read segment summary table as 'valid'
+                raise ValueError("No segment definition found for flag=%r "
+                                 "in file." % flag)
+    # read segment summary table as 'known'
     seg_sum_table = lsctables.SegmentSumTable.get_table(xmldoc)
     for row in seg_sum_table:
         for flag in out:
@@ -129,33 +134,32 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=True,
 def read_flag(fp, flag=None, **kwargs):
     """Read a single `DataQualityFlag` from a LIGO_LW XML file
     """
-    return read_flag_dict(fp, flags=[flag], **kwargs)[flag]
+    return read_flag_dict(fp, flags=flag, **kwargs).values()[0]
 
 
 def write_ligolw(flag, fobj, **kwargs):
     """Write this `DataQualityFlag` to XML in LIGO_LW format
     """
+    # if given a Document, just add data
     if isinstance(fobj, Document):
         return write_to_xmldoc(flag, fobj, **kwargs)
-    elif isinstance(fobj, (str, unicode)):
-        fobj = open(fobj, 'w')
-        close = True
-    else:
-        close = False
+    # otherwise build a new Document
     xmldoc = Document()
     xmldoc.appendChild(LIGO_LW())
     # TODO: add process information
     write_to_xmldoc(flag, xmldoc)
-    xmldoc.write(fobj)
-    if close:
-        fobj.close()
+    # and write
+    if isinstance(fobj, str):
+        return write_filename(xmldoc, fobj, gz=fobj.endswith('.gz'))
+    else:
+        return write_fileobj(xmldoc, fobj, gz=fobj.name.endswith('.gz'))
 
 
 def write_to_xmldoc(flags, xmldoc, process_id=None):
     """Write this `DataQualityFlag` to the given LIGO_LW Document
     """
     if isinstance(flags, DataQualityFlag):
-        flags = {str(flags): flags}
+        flags = {flags.name: flags}
 
     # write SegmentDefTable
     try:
@@ -166,20 +170,7 @@ def write_to_xmldoc(flags, xmldoc, process_id=None):
                                            'comment', 'insertion_time',
                                            'segment_def_id', 'process_id'])
         xmldoc.childNodes[-1].appendChild(segdeftab)
-
-    for flag in flags:
-        segdef = lsctables.SegmentDef()
-        segdef.set_ifos([flag.ifo])
-        segdef.name = flag.tag
-        segdef.version = flag.version
-        segdef.comment = flag.comment
-        segdef.insertion_time = int(Time(datetime.datetime.now(),
-                                         scale='utc').gps)
-        segdef.segment_def_id = lsctables.SegmentDefTable.get_next_id()
-        segdef.process_id = process_id
-        segdeftab.append(segdef)
-
-    # write SegmentSumTable
+    # make SegmentSumTable
     try:
         segsumtab = lsctables.SegmentSumTable.get_table(xmldoc)
     except ValueError:
@@ -189,16 +180,6 @@ def write_to_xmldoc(flags, xmldoc, process_id=None):
                                            'end_time_ns', 'comment',
                                            'segment_sum_id', 'process_id'])
         xmldoc.childNodes[-1].appendChild(segsumtab)
-    for flag in flags.iterkeys():
-        for vseg in flag.valid:
-            segsum = lsctables.SegmentSum()
-            segsum.segment_def_id = segdef.segment_def_id
-            segsum.set(map(LIGOTimeGPS, map(float, vseg)))
-            segsum.comment = None
-            segsum.segment_sum_id = lsctables.SegmentSumTable.get_next_id()
-            segsum.process_id = process_id
-            segsumtab.append(segsum)
-
     # write SegmentTable
     try:
         segtab = lsctables.SegmentTable.get_table(xmldoc)
@@ -209,7 +190,32 @@ def write_to_xmldoc(flags, xmldoc, process_id=None):
                                         'start_time_ns', 'end_time',
                                         'end_time_ns'])
         xmldoc.childNodes[-1].appendChild(segtab)
-    for flag in flags.iterkeys():
+
+    # write flags to tables
+    for flag in flags.itervalues():
+        # segment definer
+        segdef = lsctables.SegmentDef()
+        segdef.set_ifos([flag.ifo])
+        segdef.name = flag.tag
+        segdef.version = flag.version
+        segdef.comment = flag.description
+        segdef.insertion_time = int(Time(datetime.datetime.now(),
+                                         scale='utc').gps)
+        segdef.segment_def_id = lsctables.SegmentDefTable.get_next_id()
+        segdef.process_id = process_id
+        segdeftab.append(segdef)
+
+        # write segment summary (known segments)
+        for vseg in flag.known:
+            segsum = lsctables.SegmentSum()
+            segsum.segment_def_id = segdef.segment_def_id
+            segsum.set(map(LIGOTimeGPS, map(float, vseg)))
+            segsum.comment = None
+            segsum.segment_sum_id = lsctables.SegmentSumTable.get_next_id()
+            segsum.process_id = process_id
+            segsumtab.append(segsum)
+
+        # write segment table (active segments)
         for aseg in flag.active:
             seg = lsctables.Segment()
             seg.segment_def_id = segdef.segment_def_id
@@ -217,6 +223,7 @@ def write_to_xmldoc(flags, xmldoc, process_id=None):
             seg.segment_id = lsctables.SegmentTable.get_next_id()
             seg.process_id = process_id
             segtab.append(seg)
+
     return xmldoc
 
 
