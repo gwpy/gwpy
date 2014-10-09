@@ -201,7 +201,7 @@ class HistogramPlot(Plot):
                 ax.hist_table(dataset, column, **histargs)
             else:
                 ax.hist(dataset, **histargs)
-        if ax and histargs.get('logbins', True):
+        if ax and histargs.get('logbins', False):
             if histargs.get('orientation', 'vertical') == 'vertical':
                 ax.set_xscale('log')
             else:
