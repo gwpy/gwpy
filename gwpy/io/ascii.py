@@ -43,7 +43,7 @@ def read_ascii(filepath, _obj=Series, xcol=0, ycol=1, delimiter=None, **kwargs):
         if kwarg in kwargs:
             loadargs[kwarg] = kwargs.pop(kwarg)
     # read data, format and return
-    x, y = loadtxt(filepath, **loadargs)
+    x, y = loadtxt(filepath, delimiter=delimiter, **loadargs)
     return _obj(y, index=x, **kwargs)
 
 
