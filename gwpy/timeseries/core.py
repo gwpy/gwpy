@@ -1372,7 +1372,7 @@ class TimeSeriesList(list):
         del self[i:]
         return self
 
-    def join(self, pad=0.0, gap='pad'):
+    def join(self, pad=0.0, gap='raise'):
         """Concatenate all of the `TimeSeries` in this list into a
         a single object
 

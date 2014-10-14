@@ -22,6 +22,7 @@
 from __future__ import division
 
 import os
+import warnings
 from decimal import _Infinity as infinity
 from math import ceil
 from multiprocessing import (Process, Queue as ProcessQueue)
@@ -31,12 +32,13 @@ from astropy.io import registry
 from glue.lal import Cache
 
 from ...segments import (Segment, SegmentList)
+from ...io.cache import cache_segments
 from .. import (TimeSeries, TimeSeriesList, TimeSeriesDict,
                 StateVector, StateVectorDict)
 
 
 def read_cache(cache, channel, start=None, end=None, resample=None,
-               nproc=1, **kwargs):
+               gap='raise', nproc=1, **kwargs):
     """Read a `TimeSeries` from a cache of data files using
     multiprocessing.
 
@@ -95,6 +97,21 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     else:
         cache = cache.sieve(segment=span)
     cspan = Segment(cache[0].segment[0], cache[-1].segment[1])
+
+    # check for gaps
+    segs = cache_segments(cache, on_missing='ignore')
+    if len(segs) != 1:
+        gaps = SegmentList([cspan]) - segs
+        if gap.lower() == 'ignore':
+            pass
+        else:
+            msg = ("The cache given to %s.read has gaps in it in the "
+                   "following segments:\n    %s"
+                   % (cls.__name__, '\n    '.join(map(str, gaps))))
+            if gap.lower() == 'warn':
+                warnings.warn(msg)
+            else:
+                raise ValueError(msg)
 
     # if reading one channel, try to use lalframe, its faster
     if (isinstance(channel, str) or
@@ -172,7 +189,7 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     else:
         out = TimeSeriesList(*data)
         out.sort(key=lambda ts: ts.epoch.gps)
-        ts = out.join()
+        ts = out.join(gap=gap)
         return ts
 
 
