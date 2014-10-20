@@ -19,9 +19,13 @@
 """This module defines the `Channel` and `ChannelList` classes.
 """
 
+from __future__ import print_function
+
 import re
 import numpy
 import warnings
+import subprocess
+import sys
 from math import log
 
 from astropy import units
@@ -33,6 +37,8 @@ except ImportError:
     NDS2_CHANNEL_TYPE = {}
 
 from .. import version
+from ..segments import (Segment, SegmentList, SegmentListDict)
+from ..time import to_gps
 from ..utils.deps import with_import
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -642,3 +648,78 @@ class ChannelList(list):
             else:
                 out.extend(found)
         return out
+
+    @classmethod
+    @with_import('nds2')
+    def query_nds2_availability(cls, channels, start, end,
+                                host, port=None):
+        """Query for when data are available for these channels in NDS2
+
+        Parameters
+        ----------
+        channels : `list`
+            list of `Channel` or `str` for which to search
+        start : `int`
+            GPS start time of search, or any acceptable input to
+            :meth:`~gwpy.time.to_gps`
+        end : `int`
+            GPS end time of search, or any acceptable input to
+            :meth:`~gwpy.time.to_gps`
+        host : `str`
+            name of NDS server
+        port : `int`, optional
+            port number for NDS connection
+
+        Returns
+        -------
+        nested dict
+            a `dict` of (channel, `dict`) pairs where the nested `dict`
+            is over (frametype, SegmentList) segment-availability pairs
+        """
+        names = []
+        for c in channels:
+            name = str(c)
+            if isinstance(c, Channel) and c.sample_rate:
+                name += '%%%d' % c.sample_rate.value
+            names.append(name)
+
+        span = Segment(int(to_gps(start)), int(to_gps(end)))
+        # build nds2_channel_source call
+        cmd = ['nds2_channel_source', '-a',
+               '-s', str(span[0]),
+               '-n', host]
+        if port is not None:
+            cmd.extend(['-p', str(port)])
+        cmd.extend(names)
+        # call
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        out, err = proc.communicate()
+        retcode = proc.poll()
+        if retcode:
+            print(err, file=sys.stderr)
+            raise subprocess.CalledProcessError(retcode, ' '.join(cmd),
+                                                output=out)
+
+        # parse output
+        re_seg = re.compile('\A(?P<obs>[A-Z])-(?P<type>\w+):'
+                            '(?P<start>\d+)-(?P<end>\d+)\Z')
+        segs = {}
+        for i, line in enumerate(out.splitlines()[1:]):
+            chan = channels[i]
+            if not line.startswith(names[i].split('%')[0]):
+                raise RuntimeError("Error parsing nds2_channel_source output")
+            segs[chan] = SegmentListDict()
+            for seg in line.split(' ', 1)[1].strip('{').rstrip('}').split(' '):
+                m = re_seg.search(seg).groupdict()
+                ftype = m['type']
+                try:
+                    seg = Segment(int(m['start']), int(m['end'])) & span
+                except ValueError:
+                    continue
+                if ftype in segs[chan]:
+                    segs[chan][ftype].append(seg)
+                else:
+                    segs[chan][ftype] = SegmentList([seg])
+            segs[chan].coalesce()
+        return segs
