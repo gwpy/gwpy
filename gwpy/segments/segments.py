@@ -86,7 +86,8 @@ class SegmentList(_SegmentList):
 
     def coalesce(self):
         self = super(SegmentList, self).coalesce()
-        self = self.__class__([Segment(s[0], s[1]) for s in self])
+        for i, s in enumerate(self):
+            self[i] = Segment(s[0], s[1])
         return self
     coalesce.__doc__ = _SegmentList.coalesce.__doc__
 
