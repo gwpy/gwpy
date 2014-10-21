@@ -22,8 +22,35 @@
 # This module used to define the `LaserInterferometer` class, but it was
 # removed # pre-release because it never got used, or implemented properly.
 
+import datetime
+
 from .. import version
+from ..utils.deps import with_import
 from .channel import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
+
+# local time-zone for ground-based laser interferometers
+TIMEZONE = {
+    'C1': 'US/Pacific',
+    'G1': 'Europe/Berlin',
+    'H1': 'US/Pacific',
+    'L1': 'US/Central',
+    'V1': 'Europe/Rome',
+}
+
+
+def get_timezone(ifo):
+    try:
+        return TIMEZONE[ifo]
+    except KeyError as e:
+        e.args = ('No time-zone information for %r detector' % ifo,)
+        raise
+
+
+@with_import('pytz')
+def get_timezone_offset(ifo, dt=None):
+    dt = dt or datetime.datetime.now()
+    offset = pytz.timezone(get_timezone(ifo)).utcoffset(dt)
+    return offset.days * 86400 + offset.seconds + offset.microseconds * 1e-6
