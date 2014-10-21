@@ -23,6 +23,7 @@ This module is based on the
 
 import json
 import numpy
+
 from urllib2 import HTTPError
 
 from ... import version
@@ -36,7 +37,7 @@ CIS_API_URL = 'https://cis.ligo.org/api/channel'
 CIS_DATA_TYPE = {4: numpy.float32}
 
 
-def query(name, debug=False):
+def query(name, debug=False, timeout=None):
     """Query the Channel Information System for details on the given
     channel name
 
@@ -54,7 +55,7 @@ def query(name, debug=False):
     more = True
     out = ChannelList()
     while more:
-        reply = _get(url, debug=debug)
+        reply = _get(url, debug=debug, timeout=timeout)
         try:
            out.extend(map(parse_json, reply[u'results']))
         except KeyError:
@@ -68,11 +69,11 @@ def query(name, debug=False):
     return out
 
 
-def _get(url, debug=False):
+def _get(url, debug=False, timeout=None):
     """Perform a GET query against the CIS
     """
     try:
-        response = auth.request(url, debug=debug)
+        response = auth.request(url, debug=debug, timeout=timeout)
     except HTTPError:
         raise ValueError("Channel not found at URL %s "
                          "Information System. Please double check the "

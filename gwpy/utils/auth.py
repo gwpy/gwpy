@@ -26,6 +26,7 @@ import cookielib
 import warnings
 import tempfile
 import getpass
+import socket
 
 from glue.auth.saml import HTTPNegotiateAuthHandler
 
@@ -38,7 +39,7 @@ COOKIE_JAR = os.path.join(tempfile.gettempdir(), getpass.getuser())
 LIGO_LOGIN_URL = 'login.ligo.org'
 
 
-def request(url, debug=False):
+def request(url, debug=False, timeout=None):
     """Request the given URL using LIGO.ORG SAML authentication.
 
     This requires an active Kerberos ticket for the user, to get one:
@@ -91,7 +92,9 @@ def request(url, debug=False):
     req = urllib2.Request(url)
 
     # use the opener and the request object to make the request.
-    response = opener.open(req)
+    if timeout is None:
+        timeout = socket._GLOBAL_DEFAULT_TIMEOUT
+    response = opener.open(req, timeout=timeout)
 
     # save the session cookies to a file so that they can
     # be used again without having to authenticate
