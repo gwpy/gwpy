@@ -112,9 +112,10 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
     # check empty other
     if not other.size:
         return new
-    N = min(new.shape[0], other.shape[0])
+
     # resize first
     if resize:
+        N = other.shape[0]
         s = list(new.shape)
         s[0] = new.shape[0] + other.shape[0]
         try:
@@ -126,7 +127,10 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
             else:
                 raise
     elif other.shape[0] < new.shape[0]:
+        N = other.shape[0]
         new.data[:-N] = new.data[N:]
+    else:
+        N = min(new.shape[0], other.shape[0])
 
     new[-N:] = other[-N:]
     try:
