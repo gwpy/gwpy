@@ -285,7 +285,8 @@ class SegmentAxes(TimeSeriesAxes):
             pass
         if collection:
             coll = PatchCollection(patches, len(patches) != 0)
-            coll.set_label(rUNDERSCORE.sub(r'\_', str(label)))
+            if label is not None:
+                coll.set_label(rUNDERSCORE.sub(r'\_', str(label)))
             self.add_collection(coll)
         else:
             out = []
