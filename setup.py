@@ -324,8 +324,9 @@ setup(name=PACKAGENAME,
       ] + extra_install_requires,
       extras_require={
           'nds': ['nds2-client'],
-          'gwf': ['frameCPP'],
+          'gwf': ['ldas-tools'],
           'doc': ['sphinx'],
+          'hdf5': ['h5py'],
       },
       dependency_links=[
           'https://www.lsc-group.phys.uwm.edu/daswg/download/'
