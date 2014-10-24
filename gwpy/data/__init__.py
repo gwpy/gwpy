@@ -46,11 +46,16 @@ else:
                        register=True)
         units.def_unit(['coherence'], represents=units.dimensionless_unscaled,
                        register=True)
+        units.def_unit(['undef', 'undefined'],
+                       doc='No unit has been defined for these data',
+                       represents=units.dimensionless_unscaled, register=True)
     else:
         units.add_enabled_units([
             units.def_unit(['counts'], units.Unit('count')),
             units.def_unit(['coherence'], units.dimensionless_unscaled),
             units.def_unit(['strain'], units.dimensionless_unscaled),
+            units.def_unit(['undef'],
+                           doc='No unit has been defined for these data'),
             ])
 
 __all__ = ['Array', 'Array2D', 'Series', 'Cache', 'CacheEntry']
