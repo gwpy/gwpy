@@ -101,7 +101,8 @@ class Plot(figure.Figure):
     @auto_refresh
     def add_colorbar(self, mappable=None, ax=None, location='right',
                      width=0.2, pad=0.1, log=None, label="", clim=None,
-                     clip=None, visible=True, axes_class=axes.Axes, **kwargs):
+                     cmap=None, clip=None, visible=True, axes_class=axes.Axes,
+                     **kwargs):
         """Add a colorbar to the current `Axes`
 
         Parameters
@@ -198,6 +199,10 @@ class Plot(figure.Figure):
                 pass
         for m in mappables:
             m.set_clim(clim)
+
+        # set map
+        if cmap is not None:
+            mappable.set_cmap(cmap)
 
         # set normalisation
         norm = mappable.norm
