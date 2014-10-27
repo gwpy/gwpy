@@ -408,7 +408,7 @@ class TimeSeries(Series):
             stepseries *= win
             # calculated FFT, weight, and stack
             fft_ = stepseries.fft(nfft=nfft) * scaling
-            ffts[i] = fft_.data
+            ffts.data[i,:] = fft_.data
             idx += (nfft - noverlap)
         mean = ffts.mean(0)
         mean.name = self.name
