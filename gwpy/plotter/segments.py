@@ -208,6 +208,7 @@ class SegmentAxes(TimeSeriesAxes):
             y = len(self.collections)
         # get flag name
         name = kwargs.pop('label', flag.texname)
+        print(name)
 
         # get epoch
         try:
@@ -535,10 +536,11 @@ class SegmentFormatter(Formatter):
 
     def __call__(self, t, pos=None):
         # if segments have been plotted at this y-axis value, continue
-        for coll in self.axis.axes.collections:
-            if not coll.get_label():
-                continue
-            if t in Segment(*coll.get_datalim(coll.axes.transData).intervaly):
+        for i, coll in enumerate(self.axis.axes.collections):
+            y = coll.get_datalim(coll.axes.transData).intervaly
+            if y[0] == numpy.inf and not t == i:
+                pass
+            elif t in Segment(*y) or t == i:
                 return coll.get_label()
         for patch in self.axis.axes.patches:
             if not patch.get_label():
