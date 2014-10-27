@@ -208,7 +208,6 @@ class SegmentAxes(TimeSeriesAxes):
             y = len(self.collections)
         # get flag name
         name = kwargs.pop('label', flag.texname)
-        print(name)
 
         # get epoch
         try:
