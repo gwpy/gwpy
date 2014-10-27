@@ -36,6 +36,17 @@ from .decorators import (auto_refresh, axes_method)
 
 __all__ = ['Plot']
 
+try:
+    __IPYTHON__
+except NameError:
+    IPYTHON = False
+else:
+    IPYTHON = True
+
+
+def interactive_backend():
+    return pyplot.get_backend() in backends.interactive_bk
+
 
 class Plot(figure.Figure):
     """An extension of the core matplotlib :class:`~matplotlib.figure.Figure`.
@@ -75,11 +86,35 @@ class Plot(figure.Figure):
             cbar.draw_all()
         self.canvas.draw()
 
-    def show(self, *args, **kwargs):
-        """Display the current figure
+    def show(self, block=None, warn=True):
+        """Display the current figure (if possible)
+
+        Parameters
+        ----------
+        block : `bool`, default: `None`
+            open the figure and block until the figure is closed, otherwise
+            open the figure as a detached window. If `block=None`, GWpy
+            will block if using an interactive backend and not in an
+            ipython session.
+        warn : `bool`, default: `True`
+            if `block=False` is given, print a warning if matplotlib is
+            not running in an interactive backend and cannot display the
+            figure.
+
+        Notes
+        -----
+        If blocking is employed, this method calls the
+        :meth:`pyplot.show <matplotlib.pyplot.show>` function, otherwise
+        the :meth:`~matplotlib.figure.Figure.show` method of this
+        `~matplotlib.figure.Figure` is used.
         """
-        self.patch.set_alpha(0.0)
-        super(Plot, self).show(*args, **kwargs)
+        # if told to block, or using an interactive backend,
+        # but not using ipython
+        if block or (block is None and interactive_backend() and not IPYTHON):
+            return pyplot.show(block=True)
+        # otherwise, don't block and just show normally
+        else:
+            return super(Plot, self).show(warn=warn)
 
     def save(self, *args, **kwargs):
         """Save the figure to disk.
