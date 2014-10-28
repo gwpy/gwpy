@@ -126,7 +126,7 @@ def _fetch_factory(table):
 
         See also
         --------
-        ~gwpy.table.lsctables.{0} :
+        {0}.read :
             for documentation of the available keyword arguments
         """
         from .io.trigfind import find_trigger_urls
