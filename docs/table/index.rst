@@ -40,8 +40,8 @@ the other core data classes.
 For example, you can read a table of single-interferometer burst events as
 follows:
 
-.. literalinclude:: ../../examples/gw_ex_plot_event_triggers.py
-   :lines: 42,45-46
+.. literalinclude:: ../../examples/table/scatter.py
+   :lines: 35,38
 
 For full details, check out the :meth:`~SnglBurstTable.read` documentation.
 
@@ -54,16 +54,16 @@ number of classes.
 
 We can extend the above example to include plotting:
 
-.. literalinclude:: ../../examples/gw_ex_plot_event_triggers.py
+.. literalinclude:: ../../examples/table/scatter.py
    :append: plot.show()
-   :lines: 49-54
+   :lines: 41-46
 
-.. plot:: ../examples/gw_ex_plot_event_triggers.py
+.. plot:: ../examples/table/scatter.py
 
 |
 
 These code snippets are part of the GWpy example on
-:doc:`plotting event triggers <../examples/gw_ex_plot_event_triggers>`.
+:doc:`plotting event triggers <../examples/table/scatter>`.
 
 ====================
 Plotting event tiles
@@ -72,11 +72,16 @@ Plotting event tiles
 Many types of event triggers define a 2-dimensional tile, for example in time and frequency.
 These tiles can be plotted in a similar manner to simple triggers.
 
-.. literalinclude:: ../../examples/gw_ex_plot_event_tiles.py
-   :append: plot2.show()
-   :lines: 49-54
+.. literalinclude:: ../../examples/table/tiles.py
+   :append: plot.show()
+   :lines: 42-47
 
-.. plot:: ../examples/gw_ex_plot_event_tiles.py
+.. plot:: ../examples/table/tiles.py
+
+|
+
+These code snippets are part of the GWpy example on
+:doc:`plotting events as 2-d tiles <../examples/table/tiles>`.
 
 ==================
 Table applications

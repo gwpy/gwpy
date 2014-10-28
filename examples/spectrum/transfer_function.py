@@ -17,9 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>"""GWpy Example: plotting a time-series
 
-"""
-GWpy Example: plotting a transfer function
-------------------------------------------
+"""Plotting a transfer function
 
 I would like to study how a signal transfers from one part of the
 interferometer to another.
@@ -28,50 +26,46 @@ Specifically, it is interesting to measure the amplitude transfer of
 ground motion through the HEPI system.
 """
 
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__currentmodule__ = 'gwpy.timeseries'
+
+if __name__ == '__main__':
+    from matplotlib import pyplot
+    pyplot.ion()
+
+# Before anything else, we import the objects we will need:
 from gwpy.time import tconvert
 from gwpy.timeseries import TimeSeriesDict
 from gwpy.plotter import BodePlot
 
-from gwpy import version
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
-
-# set the times
+# and set the times of our query, and the channels we want:
 start = tconvert('May 27 2014 04:00')
 end = start + 1800
-
 gndchannel = 'L1:ISI-GND_STS_ITMY_Z_DQ'
 hpichannel = 'L1:HPI-ITMY_BLND_L4C_Z_IN1_DQ'
 
-# get data
+# We can call the :meth:`~TimeSeriesDict.fetch` method of the `TimeSeriesDict`
+# to retrieve all data in a single operation:
 data = TimeSeriesDict.fetch([gndchannel, hpichannel], start, end, verbose=True)
 gnd = data[gndchannel]
-gnd.name = 'Before HEPI (ground)'
 hpi = data[hpichannel]
-hpi.name = 'After HEPI'
 
-gnd.unit = 'nm/s'
-hpi.unit = 'nm/s'
-
-# get FFTs
+# Next, we can call the :meth:`~TimeSeries.average_fft` method to calculate
+# an averages, complex-valued FFT for each `TimeSeries`:
 gndfft = gnd.average_fft(100, 50, window='hamming')
 hpifft = hpi.average_fft(100, 50, window='hamming')
 
-# get transfer function (up to lower Nyquist)
+# Finally, we can divide one by the other to get the transfer function
+# (up to the lower Nyquist)
 size = min(gndfft.size, hpifft.size)
+print(hpifft)
+print(gndfft)
 tf = hpifft[:size] / gndfft[:size]
 
+# The `~gwpy.plotter.BodePlot` knows how to separate a complex-valued
+# `~gwpy.spectrum.Spectrum` into magnitude and phase:
 plot = BodePlot(tf)
-magax = plot.axes[0]
-magax.set_title(r'L1 ITMY ground $\rightarrow$ HPI transfer function')
-magax.set_ylim(-55, 50)
-
-
-if __name__ == '__main__':
-    try:
-        outfile = __file__.replace('.py', '.png')
-    except NameError:
-        pass
-    else:
-        plot.save(outfile)
-        print("Example output saved as\n%s" % outfile)
+plot.maxes.set_title(
+    r'L1 ITMY ground $\rightarrow$ HPI transfer function')
+plot.maxes.set_ylim(-55, 50)
+plot.show()

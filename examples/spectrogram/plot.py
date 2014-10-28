@@ -17,38 +17,28 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""GWpy Example: plotting a spectrogram
-
-Problem
--------
+"""Plotting a `Spectrogram`
 
 I would like to study the gravitational wave strain spectrogram around the time of an interesting simulated signal during the last science run (S6).
 """
 
-from gwpy import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
+__currentmodule__ = 'gwpy.spectrogram'
 
-# import TimeSeries class
+# First, we import the :class:`~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.fetch` the data:
 from gwpy.timeseries import TimeSeries
+gwdata = TimeSeries.fetch(
+    'H1:LDAS-STRAIN', 'September 16 2010 06:40', 'September 16 2010 06:50')
 
-# find the data using NDS
-gwdata = TimeSeries.fetch('H1:LDAS-STRAIN', 'September 16 2010 06:40', 'September 16 2010 06:50')
-gwdata.unit = 'strain'
-
-# calculate spectrogram
+# Next, we can calculate a `Spectrogram` using the 
+# :meth:`~gwpy.timeseries.TimeSeries.spectrogram` method of the #
+# `~gwpy.timeseries.TimeSeries` and a 5-second stride with a 2-second FFT and 
+# 1-second overlap (50%):
 specgram = gwdata.spectrogram(5, fftlength=2, overlap=1) ** (1/2.)
 
-# make plot and add colour scale
+# and can make a plot using the :meth:`~Spectrogram.plot` method
 plot = specgram.plot(norm='log', vmin=1e-23, vmax=1e-19)
 plot.set_ylim(40, 4000)
-plot.add_colorbar(label=r'Gravitational-wave amplitude [strain/$\sqrt{\mathrm{Hz}}$]')
-
-if __name__ == '__main__':
-    try:
-        outfile = __file__.replace('.py', '.png')
-    except NameError:
-        pass
-    else:
-        plot.save(outfile)
-        print("Example output saved as\n%s" % outfile)
+plot.add_colorbar(
+    label=r'Gravitational-wave amplitude [strain/$\sqrt{\mathrm{Hz}}$]')
+plot.show()

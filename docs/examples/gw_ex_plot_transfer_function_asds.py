@@ -1,8 +1,0 @@
-execfile('../../examples/gw_ex_plot_transfer_function.py')
-gndasd = gnd.asd(100, 50)
-hpiasd = hpi.asd(100, 50)
-asdplot = gndasd.plot()
-ax = asdplot.gca()
-ax.plot(hpiasd)
-ax.set_ylabel(r'Seismic motion [nm/s/$\sqrt{\mathrm{Hz}}$]')
-ax.set_ylim(1e-1, 3e3)

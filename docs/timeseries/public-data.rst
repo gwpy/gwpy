@@ -20,10 +20,11 @@ The data for candidate event GW100916 are available `here <http://www.ligo.org/s
 The strain time-series can be downloaded by selecting links under the 'STRAIN DATA H(T)' section, as txt files containing 10 seconds of data for each instrument.
 Anybody can download, read, and plot the data entirely in python as follows:
 
-.. literalinclude:: ../../examples/gw_ex_plot_timeseries.py
-   :append: plot.show()
-   :lines: 34,36,38,41,44,47-49
+.. literalinclude:: ../../examples/timeseries/public.py
+   :lines: 31-33,36,40-41,44-47
 
-.. plot:: ../examples/gw_ex_plot_timeseries.py
+.. plot:: ../examples/timeseries/public.py
 
 |
+
+This code is an extract from the full example on :doc:`plotting public LIGO data <../examples/timeseries/public>`.

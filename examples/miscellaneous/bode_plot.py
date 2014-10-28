@@ -17,26 +17,25 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>"""GWpy Example: plotting a time-series
 
-"""
-GWpy Example: plotting a filter
--------------------------------
+"""Plotting a filter
 
 I would like to look at the Bode representation of a linear filter.
 """
 
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__currentmodule__ = 'gwpy.plotter'
+
+# First, we import the objects we need
+from math import pi
 from scipy import signal
 from gwpy.plotter import BodePlot
 
-highpass = signal.butter(4, 10 * (2. * signal.np.pi), btype='highpass',
+# Now, we can calculate a fourth-order butterworth filter using the
+# :meth:`~scipy.signal.butter` function
+highpass = signal.butter(4, 10 * (2. * pi), btype='highpass',
                          analog=True)
-plot = BodePlot(highpass)
-plot.maxes.set_title('10\,Hz high-pass filter')
 
-if __name__ == '__main__':
-    try:
-        outfile = __file__.replace('.py', '.png')
-    except NameError:
-        pass
-    else:
-        plot.save(outfile)
-        print("Example output saved as\n%s" % outfile)
+# The `BodePlot` knows how to plot filters:
+plot = BodePlot(highpass)
+plot.maxes.set_title('10\,Hz high-pass filter (4th order Butterworth)')
+plot.show()

@@ -53,6 +53,14 @@ Visualisation
 
    plotter/index
 
+.. examples
+.. ~~~~~~~~
+
+.. toctree::
+   :hidden:
+
+   examples/index
+
 Indices and tables
 ~~~~~~~~~~~~~~~~~~
 

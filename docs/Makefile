@@ -12,7 +12,10 @@ PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
 ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
-.PHONY: help clean apidoc html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest
+EXAMPLES := $(shell cd ../examples/ && ls */*py)
+EXAMPLEDIRS := $(shell cd ../examples/ && ls -d */)
+
+.PHONY: help clean apidoc html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest examples
 
 #This is needed with git because git doesn't create a dir if it's empty
 $(shell [ -d "_static" ] || mkdir -p _static)
@@ -37,13 +40,14 @@ help:
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 
 clean:
+	-rm -rf examples/*/
 	-rm -rf $(BUILDDIR)
 	-rm -rf _generated
 
 apidoc:
 	sphinx-apidoc -o _generated ../gwpy
 
-html:
+html: examples
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
@@ -135,3 +139,41 @@ doctest:
 	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
 	@echo "Testing of doctests in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/doctest/output.txt."
+
+examples: $(addprefix examples/,$(EXAMPLES:py=rst))
+
+../examples/%/index.rst:
+	@echo "##############################" > $@
+	@echo "$* examples" >> $@
+	@echo "##############################" >> $@
+	@echo >> $@
+	@echo ".. toctree::" >> $@
+	@echo "   :maxdepth: 1" >> $@
+	@echo >> $@
+
+examples/%/index.rst: ../examples/%/index.rst
+	@mkdir -p examples/$*
+	@cp ../examples/$*/index.rst $@; \
+	for EX in $(shell cd ../examples/$* && ls *py); do \
+		echo "   $${EX%.py}" >> $@; \
+	done
+
+examples/index.rst:
+	@mkdir -p examples/
+	@echo 'making top-level index.rst for examples'
+	@echo "#############" > $@
+	@echo "GWpy examples" >> $@
+	@echo "#############" >> $@
+	@echo >> $@
+	@echo ".. toctree::" >> $@
+	@echo "   :maxdepth: 2" >> $@
+	@echo >> $@
+	for EXD in $(EXAMPLEDIRS); do \
+		echo "   $${EXD}index" >> $@; \
+		echo >> $@; \
+	done
+
+examples/%.rst: export INDEX=$(addprefix examples/,$(dir $*))index.rst
+examples/%.rst: ex2rst.py ../examples/%.py examples/index.rst
+	@$(MAKE) $(INDEX)
+	python ex2rst.py ../examples/$*.py $@

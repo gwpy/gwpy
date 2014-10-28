@@ -17,51 +17,37 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>
 
-"""GWpy Example: plotting a spectrum
-
-Problem
--------
+"""Calculating and plotting a `Spectrum`
 
 I'm interested in the level of ground motion surrounding a particular time
 during commissioning of the Advanced LIGO Livingston Observatory. I don't
 have access to the frame files on disk, so I'll need to use NDS.
-
 """
 
-from gwpy.time import tconvert
-from gwpy.timeseries import TimeSeries
-
-from gwpy import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
+__currentmodule__ = 'gwpy.spectrum'
 
-# read the data over the network
+# In order to generate a `Spectrum` we need to import the
+# `~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.fetch()`
+# the data:
+from gwpy.timeseries import TimeSeries
 lho = TimeSeries.fetch('H1:LDAS-STRAIN', 'August 1 2010', 'August 1 2010 00:02')
-lho.unit = 'strain'
-#llo = TimeSeries.fetch('L1:LDAS-STRAIN', start.gps, end.gps, verbose=True)
-#llo.unit = 'strain'
+llo = TimeSeries.fetch('L1:LDAS-STRAIN', 'August 1 2010', 'August 1 2010 00:02')
 
-# calculate spectrum with 0.5Hz resolution
+# We can then call the :meth:`~gwpy.timeseries.TimeSeries.asd` method to
+# calculated the amplitude spectral density for each
+# `~gwpy.timeseries.TimeSeries`:
 lhoasd = lho.asd(2, 1)
-#lloasd = llo.asd(2, 1)
+lloasd = llo.asd(2, 1)
 
-# plot
+# We can then :meth:`~Spectrum.plot` the spectra
 plot = lhoasd.plot(color='b', label='LHO')
-#plot.add_spectrum(lloasd, color='g', label='LLO')
-plot.xlim = [40, 4096]
-plot.ylim = [1e-23, 7.5e-21]
-
-# hide some axes
-plot.axes[0].spines['right'].set_visible(False)
-plot.axes[0].spines['top'].set_visible(False)
-plot.axes[0].get_xaxis().tick_bottom()
-plot.axes[0].get_yaxis().tick_right()
-
-if __name__ == '__main__':
-    try:
-        outfile = __file__.replace('.py', '.png')
-    except NameError:
-        pass
-    else:
-        plot.save(outfile)
-        print("Example output saved as\n%s" % outfile)
+ax = plot.gca()
+ax.plot(lloasd, color='g', label='LLO')
+ax.set_xlim(40, 4096)
+ax.set_ylim(1e-23, 7.5e-21)
+ax.spines['right'].set_visible(False)
+ax.spines['top'].set_visible(False)
+ax.get_xaxis().tick_bottom()
+ax.get_yaxis().tick_right()
+plot.show()

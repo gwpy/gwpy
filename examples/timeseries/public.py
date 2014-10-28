@@ -17,42 +17,31 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""GWpy Example: plotting a time-series
-
-Problem
--------
+"""Plotting public LIGO data
 
 I would like to study the gravitational wave strain time-series around the time of an interesting simulated signal during the last science run (S6).
 
 These data are public, so we can load them directly from the web.
 """
 
-from gwpy import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
+__currentmodule__ = 'gwpy.timeseries'
 
+# First: import everything we need (and nothing we don't need)
 from urllib2 import urlopen
-
 from numpy import asarray
-
 from gwpy.timeseries import TimeSeries
 
-# download data
+# Next, download the data as a string of text
 data = urlopen('http://www.ligo.org/science/GW100916/L-strain_hp30-968654552-10.txt').read()
 
-# parse as floats and read as a TimeSeries
-ts = TimeSeries(asarray(data.splitlines(), dtype=float), epoch=968654552, sample_rate=16384, unit='strain')
+# We can now parse the text as a list of floats, and generate a `TimeSeries`
+# by supplying the necessary metadata
+ts = TimeSeries(asarray(data.splitlines(), dtype=float),
+                epoch=968654552, sample_rate=16384, unit='strain')
 
-# make a plot
+# Finally, we can make a plot:
 plot = ts.plot()
 plot.set_title('LIGO Livingston Observatory data for GW100916')
 plot.set_ylabel('Gravitational-wave strain amplitude')
-
-if __name__ == '__main__':
-    try:
-        outfile = __file__.replace('.py', '.png')
-    except NameError:
-        pass
-    else:
-        plot.save(outfile)
-        print("Example output saved as\n%s" % outfile)
+plot.show()

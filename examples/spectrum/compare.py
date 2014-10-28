@@ -17,51 +17,39 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""GWpy Example: comparing a the Spectrum of a channel at different times
-
-Problem
--------
+"""Comparing the same `Channel` at different times
 
 I'm interested in comparing the amplitude spectrum of a channel between a
 known 'good' time - where the spectrum is what we expect it to be - and a
 known 'bad' time - where some excess noise appeared and the spectrum
 changed appreciably.
-
 """
 
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__currentmodule__ = 'gwpy.timeseries'
+
+# First, we import the `TimeSeries`
 from gwpy.timeseries import TimeSeries
 
-from gwpy import version
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
-
-# set the times
+# And we set the times of our investigation:
 goodtime = 1061800700
 badtime = 1061524816
 duration = 120
 
-# read the data over the network
+# Next we get :meth:`~TimeSeries.fetch` the data:
 gooddata = TimeSeries.fetch('L1:PSL-ISS_PDB_OUT_DQ', goodtime, goodtime+duration)
-gooddata.name = 'Clean data'
 baddata = TimeSeries.fetch('L1:PSL-ISS_PDB_OUT_DQ', badtime, badtime+duration)
-baddata.name = 'Noisy data'
 
-# calculate spectrum with 1/8 Hz resolution
+# and calculate an `amplitude spectral density (ASD) <TimeSeries.asd>` using a 4-second Fourier transform with a 2-second overlap:
 goodasd = gooddata.asd(4, 2)
 badasd = baddata.asd(4, 2)
 
-# plot
-plot = badasd.plot()
+# Lastly, we make a plot of the data by `plotting <TimeSeries.plot>` one `TimeSeries`, and then adding the second:
+plot = badasd.plot(label='Noisy data')
 ax = plot.gca()
-ax.plot(goodasd)
+ax.plot(goodasd, label='Clean data')
+ax.set_xlabel('Frequency [Hz]')
 ax.set_xlim(10, 8000)
+ax.set_ylabel(r'Noise ASD [1/$\sqrt{\mathrm{Hz}}$]')
 ax.set_ylim(1e-6, 5e-4)
-
-if __name__ == '__main__':
-    try:
-        outfile = __file__.replace('.py', '.png')
-    except NameError:
-        pass
-    else:
-        plot.save(outfile)
-        print("Example output saved as\n%s" % outfile)
+plot.show()
