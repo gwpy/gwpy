@@ -1269,12 +1269,6 @@ class TimeSeries(Series):
                                                             context=context)
         return result
 
-    def __add__(self, item):
-        return self.append(item, inplace=False)
-
-    def __iadd__(self, item):
-        return self.append(item, inplace=True)
-
 
 class ArrayTimeSeries(TimeSeries, Array2D):
     xunit = TimeSeries.xunit
