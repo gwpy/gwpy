@@ -319,8 +319,7 @@ class Series(Array):
     def __array_wrap__(self, obj, context=None):
         """Wrap an array as a Array with metadata
         """
-        result = obj.view(self.__class__)
-        result.metadata = self.metadata.copy()
+        result = super(Series, self).__array_wrap__(obj, context=context)
         try:
             result._index = self._index
         except AttributeError:
