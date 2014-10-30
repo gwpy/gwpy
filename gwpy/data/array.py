@@ -139,20 +139,24 @@ class Array(numpy.ndarray):
         # use the context to apply the same operation to the units
         if context is not None:
             func, args, _ = context
-            a, b = args[:2]
-            if isinstance(a, Array):
-                a = a.unit
-            if isinstance(b, Array):
-                b = b.unit
             try:
-                newunit = func(a, b)
-            except TypeError:
+                a, b = args[:2]
+            except ValueError:
                 pass
             else:
-                if isinstance(newunit, Quantity):
-                    result.unit = newunit.unit
+                if isinstance(a, Array):
+                    a = a.unit
+                if isinstance(b, Array):
+                    b = b.unit
+                try:
+                    newunit = func(a, b)
+                except TypeError:
+                    pass
                 else:
-                    result.unit = newunit
+                    if isinstance(newunit, Quantity):
+                        result.unit = newunit.unit
+                    else:
+                        result.unit = newunit
         return result
 
     def __repr__(self):
