@@ -1590,7 +1590,8 @@ class TimeSeriesDict(OrderedDict):
             for host, port in hostlist:
                 try:
                     return cls.fetch(channels, start, end, host=host,
-                                     port=port, verbose=verbose, type=type)
+                                     port=port, verbose=verbose, type=type,
+                                     verify=verify)
                 except (RuntimeError, ValueError) as e:
                     if verbose:
                         gprint('Something went wrong:', file=sys.stderr)
@@ -1601,7 +1602,8 @@ class TimeSeriesDict(OrderedDict):
             if len(channels) > 1:
                 return cls(
                     (c, cls.EntryClass.fetch(c, start, end, verbose=verbose,
-                                             type=type)) for c in channels)
+                                             type=type, verify=verify))
+                    for c in channels)
             e = "Cannot find all relevant data on any known server."
             if not verbose:
                 e += (" Try again using the verbose=True keyword argument to "
