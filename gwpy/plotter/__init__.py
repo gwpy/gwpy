@@ -50,11 +50,11 @@ GWPY_PLOT_PARAMS = {
         (0.2, 0.8, 0.2),  # green
         (1.0, 0.7, 0.0),  # yellow(ish)
         (0.5, 0., 0.75),  # magenta
+        'gray',
         (0.3, 0.7, 1.0),  # light blue
         'pink',
         (0.13671875, 0.171875, 0.0859375),  # dark green
         (1.0, 0.4, 0.0),  # orange
-        'gray',
         'brown',
     ],
     "axes.grid": True,
