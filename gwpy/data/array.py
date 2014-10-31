@@ -209,6 +209,13 @@ class Array(numpy.ndarray):
         return "%s(%s\n%s%s)" % (self.__class__.__name__, array,
                                  indent, metadata)
 
+    def astype(self, dtype, order='K', casting='unsafe', subok=True, copy=True):
+        new = super(Array, self).astype(dtype, order=order, casting=casting,
+                                        subok=subok, copy=copy)
+        new.metadata = self.metadata.copy()
+        return new
+    astype.__doc__ = numpy.ndarray.__doc__
+
     # -------------------------------------------
     # array methods
 
