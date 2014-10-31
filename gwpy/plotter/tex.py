@@ -33,6 +33,10 @@ USE_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
 
 LATEX_CONTROL_CHARS = ["%", "\\", "_", "~"]
 
+MACROS = [
+    r'\def\rtHz{\ensuremath{\sqrt{\mathrm{Hz}}}}',  # \sqrt{Hz} label
+]
+
 
 def float_to_latex(x, format="%.2g"):
     """Convert a floating point number to a latex representation. 

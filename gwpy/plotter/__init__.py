@@ -30,7 +30,7 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-from .tex import USE_TEX
+from .tex import (USE_TEX, MACROS)
 from .gps import *
 from .log import *
 
@@ -72,8 +72,12 @@ GWPY_PLOT_PARAMS = {
     "ytick.labelsize": 20,
 }
 if rcParams['text.usetex'] or USE_TEX:
-    GWPY_PLOT_PARAMS.update({"text.usetex": True, "font.family": "serif",
-                             "font.serif": ["Computer Modern"]})
+    GWPY_PLOT_PARAMS.update({
+        "text.usetex": True,
+        "font.family": "serif",
+        "font.serif": ["Computer Modern"],
+        "text.latex.preamble": MACROS,
+    })
 rcParams.update(GWPY_PLOT_PARAMS)
 
 # fix matplotlib issue #3470
