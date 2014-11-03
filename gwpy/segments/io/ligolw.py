@@ -113,7 +113,7 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
                     s = row.start_time, row.end_time
                 out[flag].known.append(Segment(gpstype(s[0]), gpstype(s[1])))
     for dqf in out:
-        if coalesce or dqf is None:
+        if coalesce:
             out[dqf].coalesce()
     # read segment table as 'active'
     seg_table = lsctables.SegmentTable.get_table(xmldoc)
@@ -126,7 +126,7 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
                     s = row.start_time, row.end_time
                 out[flag].active.append(Segment(gpstype(s[0]), gpstype(s[1])))
     for dqf in out:
-        if coalesce or dqf is None:
+        if coalesce:
             out[dqf].coalesce()
     return out
 
