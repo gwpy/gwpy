@@ -86,9 +86,14 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
         out[None] = DataQualityFlag()
         id_[None] = None
     for row in seg_def_table:
-        name = ':'.join([''.join(row.get_ifos()), row.name])
-        if row.version:
-            name += ':%d' % row.version
+        ifos = row.get_ifos()
+        name = row.name
+        if ifos and name:
+            name = ':'.join([''.join(row.get_ifos()), row.name])
+            if row.version:
+                name += ':%d' % row.version
+        else:
+            name = None
         if flags is None:
             out[name] = DataQualityFlag(name)
             id_[name] = row.segment_def_id
