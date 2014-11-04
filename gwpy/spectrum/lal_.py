@@ -28,7 +28,7 @@ from ..window import Window
 from .core import Spectrum
 from .registry import register_method
 from .utils import scale_timeseries_units
-from ..utils import import_method_dependency
+from ..utils import with_import
 from .. import version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -121,6 +121,7 @@ def generate_lal_window(length, type_=('kaiser', 24),
 # ---------------------------------------------------------------------------
 # LAL spectrum methods
 
+@with_import('lal.lal')
 def lal_psd(timeseries, segmentlength, noverlap=None, method='welch',
             window=None, plan=None):
     """Generate a PSD `Spectrum` using XLAL.
@@ -146,7 +147,6 @@ def lal_psd(timeseries, segmentlength, noverlap=None, method='welch',
         average power `Spectrum`
     """
     # get LAL
-    lal = import_method_dependency('lal')
     from ..utils.lal import LAL_TYPE_STR_FROM_NUMPY
     # default to 50% overlap
     if noverlap is None:

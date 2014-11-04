@@ -1180,7 +1180,7 @@ class TimeSeries(Series):
         return cls(lalts.data.data, channel=channel, epoch=lalts.epoch,
                    copy=True)
 
-    @with_import('lal')
+    @with_import('lal.lal')
     def to_lal(self):
         """Convert this `TimeSeries` into a LAL TimeSeries.
         """
