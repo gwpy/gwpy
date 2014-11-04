@@ -19,13 +19,13 @@
 
 """Plotting a whitened `Spectrogram`
 
-I would like to study the gravitational wave strain spectrogram around the time of an interesting simulated signal during the last science run (S6). I have access to the frame files on the LIGO Data Grid machine `ldas-pcdev2.ligo-wa.caltech.edu` and so can read them directly.
+I would like to study the gravitational wave strain spectrogram around the time of an interesting simulated signal during the last science run (S6).
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.spectrogram'
 
-# As with :doc:`previous example <spectrogram>`, we import the
+# As with :doc:`previous example <plot>`, we import the
 # `~gwpy.timeseries.TimeSeries` class,
 # :meth:`~gwpy.timeseries.TimeSeries.fetch` the data, and calculate a 
 # `Spectrogram`
