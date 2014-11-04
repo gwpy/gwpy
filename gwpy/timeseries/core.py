@@ -56,7 +56,6 @@ else:
 from ..data import Array2D
 from ..detector import (Channel, ChannelList)
 from ..io import reader
-from ..io.kerberos import kinit
 from ..segments import (Segment, SegmentList)
 from ..time import Time
 from ..window import *
