@@ -53,12 +53,12 @@ else:
                             nds2.channel.CHANNEL_TYPE_STATIC)
 
 
-from ..data import Array2D
+from .. import version
+from ..data import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
 from ..io import reader
 from ..segments import (Segment, SegmentList)
 from ..time import Time
-from ..window import *
 from ..utils import (gprint, update_docstrings, with_import)
 from . import common
 
@@ -993,7 +993,7 @@ class TimeSeries(Series):
         fftlength = int(numpy.float64(fftlength) * self_.sample_rate.value)
         overlap = int(numpy.float64(overlap) * self_.sample_rate.value)
         if window is None:
-            window = HanningWindow(fftlength)
+            window = signal.hanning(fftlength)
         coh, f = mlab.cohere(self_.data, other.data, NFFT=fftlength,
                              Fs=sampling, window=window,
                              noverlap=fftlength-overlap, **kwargs)

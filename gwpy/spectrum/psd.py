@@ -37,7 +37,6 @@ from scipy import signal
 from astropy import units
 
 from .core import Spectrum
-from ..window import Window
 
 from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -92,7 +91,7 @@ def welch(timeseries, segmentlength, overlap, window=None, plan=None):
         number of samples in single average
     overlap : `int`
         number of samples between averages
-    window : `~gwpy.window.Window`, optional
+    window : optional
         window function to apply to timeseries prior to FFT
     plan : :lalsuite:`REAL8FFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
@@ -124,7 +123,7 @@ def median_mean(timeseries, segmentlength, overlap, window=None, plan=None):
         number of samples in single average
     overlap : `int`
         number of samples between averages
-    window : `~gwpy.window.Window`, optional
+    window : optional
         window function to apply to timeseries prior to FFT
     plan : :lalsuite:`REAL8FFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
@@ -152,7 +151,7 @@ def median(timeseries, segmentlength, overlap, window=None, plan=None):
         number of samples in single average
     overlap : `int`
         number of samples between averages
-    window : `~gwpy.window.Window`, optional
+    window : optional
         window function to apply to timeseries prior to FFT
     plan : :lalsuite:`REAL8FFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
@@ -182,7 +181,7 @@ def lal_psd(timeseries, method, segmentlength, overlap, window=None, plan=None):
         number of samples in single average
     overlap : `int`
         number of samples between averages
-    window : `~gwpy.window.Window`, optional
+    window : optional
         window function to apply to timeseries prior to FFT
     plan : :lalsuite:`REAL8FFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
@@ -208,8 +207,6 @@ def lal_psd(timeseries, method, segmentlength, overlap, window=None, plan=None):
     # get cached window
     if window is None:
         window = generate_lal_window(segmentlength, dtype=timeseries.dtype)
-    elif isinstance(window, Window):
-        window = window.to_lal()
     # get cached FFT plan
     if plan is None:
         plan = generate_lal_fft_plan(segmentlength, dtype=timeseries.dtype)
@@ -242,7 +239,7 @@ def scipy_psd(timeseries, method, segmentlength, overlap, window=('kaiser', 24))
         number of samples in single average
     overlap : `int`
         number of samples between averages
-    window : `~gwpy.window.Window`, optional
+    window : optional
         window function to apply to timeseries prior to FFT
 
     Returns

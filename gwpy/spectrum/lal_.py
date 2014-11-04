@@ -24,7 +24,6 @@ import warnings
 
 import numpy
 
-from ..window import Window
 from .core import Spectrum
 from .registry import register_method
 from .utils import scale_timeseries_units
@@ -136,8 +135,8 @@ def lal_psd(timeseries, segmentlength, noverlap=None, method='welch',
         number of samples in single average.
     noverlap : `int`
         number of samples to overlap between segments, defaults to 50%.
-    window : `~gwpy.window.Window`, optional
-        window function to apply to timeseries prior to FFT
+    window : `tuple`, `str`, optional
+        window parameters to apply to timeseries prior to FFT
     plan : :lalsuite:`REAL8FFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
 
@@ -158,8 +157,6 @@ def lal_psd(timeseries, segmentlength, noverlap=None, method='welch',
     elif isinstance(window, (tuple, str)):
         window = generate_lal_window(segmentlength, type_=window,
                                      dtype=timeseries.dtype)
-    elif isinstance(window, Window):
-        window = window.to_lal()
     # get cached FFT plan
     if plan is None:
         plan = generate_lal_fft_plan(segmentlength, dtype=timeseries.dtype)
