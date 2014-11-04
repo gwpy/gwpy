@@ -1196,52 +1196,6 @@ class TimeSeries(Series):
         lalts.data.data = self.data
         return lalts
 
-    #@staticmethod
-    #def watch(channel, duration, stride=1, host=None, port=None,
-    #          outputfile=None, verbose=False):
-    #    """Stream data over NDS2, with an updating display
-    #    """
-    #    from ..io import nds
-    #    # user-defined host
-    #    if host:
-    #        hostlist = [(host, port)]
-    #    else:
-    #        hostlist = nds.host_resolution_order(channel.ifo)
-    #    for host,port in hostlist:
-    #        # connect and find channel
-    #        if verbose:
-    #            print("Connecting to %s:%s" % (host, port))
-    #        connection = nds.NDS2Connection(host, port)
-    #        try:
-    #            channel = connection.find(
-    #                      str(channel), nds.nds2.channel.CHANNEL_TYPE_ONLINE)[0]
-    #        except IndexError:
-    #            continue
-    #        # begin iteration
-    #        sampling = channel.sample_rate
-    #        timeseries = TimeSeries(numpy.zeros((sampling*duration,)),
-    #                                channel=Channel.from_nds2(channel))
-    #        timeseries.epoch = gpstime.gps_time_now()-duration
-    #        plot = timeseries.plot(auto_refresh=True)
-    #        trace = plot._layers[timeseries.name]
-    #        try:
-    #            for buf in connection.iterate([channel.name]):
-    #                newdata = buf[0]
-    #                epoch = lal.LIGOTimeGPS(newdata.gps_seconds,
-    #                                        newdata.gps_nanoseconds)
-    #                # shift
-    #                timeseries.epoch = epoch + stride - duration
-    #                timeseries.data[:-newdata.length] = (
-    #                    timeseries.data[newdata.length:])
-    #                timeseries.data[-newdata.length:] = newdata.data
-    #                trace.set_xdata(timeseries.times.data)
-    #                trace.set_ydata(timeseries.data)
-    #                plot.epoch = epoch
-    #                del plot.ylim
-    #                plot.xlim = timeseries.span
-    #        except KeyboardInterrupt:
-    #            return
-
     # -------------------------------------------
     # TimeSeries operations
 
