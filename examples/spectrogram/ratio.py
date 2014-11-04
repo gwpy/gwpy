@@ -39,6 +39,7 @@ medratio = specgram.ratio('median')
 
 # Finally, we make a plot:
 plot = medratio.plot(norm='log', vmin=0.1, vmax=10)
+plot.set_yscale('log')
 plot.set_ylim(40, 4096)
 plot.add_colorbar(label='Amplitude relative to median')
 plot.show()
