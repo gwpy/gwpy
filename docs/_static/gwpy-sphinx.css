@@ -139,3 +139,14 @@ dl.class:after {
     margin: 30px 10% 50px;
     background: #ccc;
 }
+
+/* ------------------------------------------------------------------------- */
+/* Sidebar                                                                   */
+
+.bs-sidenav {
+    background-color: transparent;
+    border: 0;
+    border-radius: 0;
+    border-right: 1px solid #eee;
+}
+
