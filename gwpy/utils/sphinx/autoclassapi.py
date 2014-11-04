@@ -33,7 +33,10 @@ from numpydoc.docscrape_sphinx import SphinxClassDoc
 from jinja2 import FileSystemLoader
 from jinja2.sandbox import SandboxedEnvironment
 
+from ... import version
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__version__ = version.version
 
 
 class GWpyClassDocumenter(ClassDocumenter):

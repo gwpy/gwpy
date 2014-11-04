@@ -23,7 +23,7 @@
 from docutils.parsers.rst import directives
 from sphinx.directives.code import LiteralInclude
 
-from .. import version
+from ... import version
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version

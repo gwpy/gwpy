@@ -70,8 +70,8 @@ extensions = [
     'sphinxcontrib.epydoc',
     'sphinxcontrib.doxylink',
     'matplotlib.sphinxext.plot_directive',
-    'gwpy.sphinx.autoclassapi',
-    'gwpy.sphinx.directives',
+    'gwpy.utils.sphinx.autoclassapi',
+    'gwpy.utils.sphinx.directives',
 ]
 
 # customise autodoc
