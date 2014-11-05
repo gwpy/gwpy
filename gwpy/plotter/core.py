@@ -804,10 +804,19 @@ class Plot(figure.Figure):
         pass
     set_xscale.__doc__ = axes.Axes.set_xscale.__doc__
 
-    logx = property(fget=lambda self: self.get_xscale() == 'log',
-                    fset=lambda self, b: self.set_xscale(b and 'log' or
-                                                         'linear'),
-                    doc="view x-axis in logarithmic scale")
+    @property
+    def logx(self):
+        """View x-axis in logarithmic scale
+        """
+        return self.get_xscale() == 'log'
+
+    @logx.setter
+    @auto_refresh
+    def logx(self, log):
+        if not self.logx and bool(log):
+            self.set_xscale('log')
+        elif not self.logx and bool(log):
+            self.set_xscale('linear')
 
     @axes_method
     def get_yscale(self):
@@ -820,10 +829,19 @@ class Plot(figure.Figure):
         pass
     set_yscale.__doc__ = axes.Axes.set_yscale.__doc__
 
-    logy = property(fget=lambda self: self.get_yscale() == 'log',
-                    fset=lambda self, b: self.set_yscale(b and 'log' or
-                                                         'linear'),
-                    doc="view y-axis in logarithmic scale")
+    @property
+    def logy(self):
+        """View y-axis in logarithmic scale
+        """
+        return self.get_yscale() == 'log'
+
+    @logy.setter
+    @auto_refresh
+    def logy(self, log):
+        if not self.logy and bool(log):
+            self.set_yscale('log')
+        elif not self.logy and bool(log):
+            self.set_yscale('linear')
 
     @axes_method
     def html_map(self, filename, data=None, **kwargs):

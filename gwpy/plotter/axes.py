@@ -139,11 +139,15 @@ class Axes(_Axes):
 
         :type: `bool`
         """
-        return self.axes.get_xscale() == "log"
+        return self.get_xscale() == "log"
+
     @logx.setter
     @auto_refresh
     def logx(self, log):
-        self.axes.set_xscale(log and "log" or "linear")
+        if log and not self.logx:
+            self.set_xscale('log')
+        elif self.logx and not log:
+            self.set_xscale('linear')
 
     @property
     def logy(self):
@@ -151,11 +155,15 @@ class Axes(_Axes):
 
         :type: `bool`
         """
-        return self.axes.get_yscale() == "log"
+        return self.get_yscale() == "log"
+
     @logy.setter
     @auto_refresh
     def logy(self, log):
-        self.axes.set_yscale(log and "log" or "linear")
+        if log and not self.logy:
+            self.set_yscale('log')
+        elif self.logy and not log:
+            self.set_yscale('linear')
 
     # -------------------------------------------
     # Axes methods
