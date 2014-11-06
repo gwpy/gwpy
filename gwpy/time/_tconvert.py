@@ -55,10 +55,15 @@ def tconvert(gpsordate='now'):
     into :class:`~gwpy.time.LIGOTimeGPS`.
     """
     # convert from GPS into datetime
-    if isinstance(gpsordate, (float, LIGOTimeGPS)):
-        return from_gps(gpsordate)
+    try:
+        gps = LIGOTimeGPS(gpsordate)
+    except (ValueError, TypeError):
+        if hasattr(gpsordate, 'gpsSeconds'):
+            return from_gps(gpsordate)
+        else:
+            return to_gps(gpsordate)
     else:
-        return to_gps(gpsordate)
+        return from_gps(gps)
 
 
 def to_gps(t, **tparams):
@@ -103,6 +108,9 @@ def to_gps(t, **tparams):
     # or convert str into datetime.datetime
     if isinstance(t, str):
         t = str_to_datetime(t)
+    # or convert tuple into datetime.datetime
+    elif isinstance(t, (tuple, list)):
+        t = datetime.datetime(*t)
     # and then into Time
     if isinstance(t, datetime.date):
         if not isinstance(t, datetime.datetime):
