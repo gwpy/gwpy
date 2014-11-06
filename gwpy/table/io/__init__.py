@@ -35,6 +35,8 @@ from .ligolw import *
 # try importing ROOT-based I/O
 from .omicron import *
 
+# import omega I/O
+from .omega import *
+
 # import cache I/O
 from .cache import *
-
