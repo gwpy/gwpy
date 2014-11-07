@@ -257,7 +257,7 @@ class TimeSeries(Series):
     @classmethod
     @with_import('nds2')
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
-              connection=None, verify=True, type=NDS2_FETCH_TYPE_MASK):
+              connection=None, verify=False, type=NDS2_FETCH_TYPE_MASK):
         """Fetch data from NDS into a TimeSeries.
 
         Parameters
@@ -1460,7 +1460,7 @@ class TimeSeriesDict(OrderedDict):
     @classmethod
     @with_import('nds2')
     def fetch(cls, channels, start, end, host=None, port=None,
-              verify=True, verbose=False, connection=None,
+              verify=False, verbose=False, connection=None,
               type=NDS2_FETCH_TYPE_MASK):
         """Fetch data from NDS for a number of channels.
 
