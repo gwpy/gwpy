@@ -2,11 +2,40 @@
 Installing GWpy
 ***************
 
-============
-Dependencies
-============
+GWpy can be installed on the following platforms
 
-**Build dependencies**
+- :ref:`mac-os-x`
+- :ref:`linux`
+
+
+.. _mac-os-x:
+
+========
+Mac OS X
+========
+
+The recommended way to install GWpy on Mac OS X is to install the dependencies via `MacPorts <https://www.macports.org>`_.
+
+`Follow these instructions <https://www.macports.org/install.php>`_ to install the MacPorts package on your Mac, then execute the following command to install the required dependencies for GWpy:
+
+.. code-block:: bash
+
+   sudo port install python27 python_select py27-numpy py27-scipy py27-matplotlib +latex +dvipng texlive-latex-extra py27-astropy glue
+   sudo port select --set python python27
+
+You can also run the following to install a number of optional dependencies - packages that, when present, enhance the functionality of GWpy:
+
+.. code-block:: bash
+
+   sudo port install py27-ipython nds2-client kerberos5 py27-pykerberos py27-h5py lal lalframe
+
+Once you have at least the required dependencies installed, you can :ref:`install GWpy using pip <install-pip>`.
+
+.. _linux:
+
+=====
+Linux
+=====
 
 The GWpy package has the following build-time dependencies (i.e. required for installation):
 
@@ -17,22 +46,24 @@ The GWpy package has the following build-time dependencies (i.e. required for in
 * `Matplotlib <http://matplotlib.org>`_ >= 1.3.0
 * `Astropy <http://astropy.org>`_ >= 0.3
 
-.. note::
+You should install these packages on your system using the instructions provided by their authors.
 
-   The `GLUE <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_ package isn't available through PyPI, meaning you will have to install it manually from the link.
-
-**Runtime dependencies**
-
-Additionally, in order for much of the code to import and run properly, users are required to have the following packages:
+You can also install the following optional dependencies - packages that, when present, enhance the functionality of GWpy:
 
 * `lal <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ and `lalframe <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ (same URL)
 * `NDS2 <https://www.lsc-group.phys.uwm.edu/daswg/projects/nds-client.html>`_ (including SWIG-wrappings for python)
 
-===================
-Installing with pip
-===================
+Once you have at least the required dependencies installed, you can :ref:`install GWpy using pip <install-pip>`.
 
-The easiest way to install GWpy is to use `pip <https://pip.pypa.io/en/latest/index.html>`_:
+.. _install-pip:
+
+===
+Pip
+===
+
+The easiest way to install GWpy is to use `pip <https://pip.pypa.io/en/latest/index.html>`_. You can install pip very easily with MacPorts and most linux-based package managers.
+
+Once you have pip installed:
 
 .. code-block:: bash
 
@@ -58,9 +89,9 @@ For either operating system, python will automatically know about these director
 
    GWpy is still under major version ``0``, meaning a completely stable state has no been reached. Until that time, backwards-incompatible changes may be made without much warning, but developers will strive to keep these events to a minimum.
 
-=========================================
-Installing the latest development version
-=========================================
+======
+GitHub
+======
 
 Any user can install the latest development version of GWpy by directing ``pip`` to the GWpy GitHub repository:
 
@@ -72,9 +103,9 @@ Any user can install the latest development version of GWpy by directing ``pip``
 
    The latest developments are not guaranteed to be free of bugs, and so you should only install from GitHub if you really need to.
 
-======================
-Cloning the repository
-======================
+======
+Source
+======
 
 The source code for GWpy is under ``git`` version control, hosted by http://github.com.
 You can clone the repository from the Terminal as follows:
@@ -112,9 +143,9 @@ You can then, if you wish, install the package by running the ``setup.py`` scrip
       setenv LANG en_US.UTF-8
       setenv LC_ALL en_US.UTF-8
 
-=======================
+***********************
 Available installations
-=======================
+***********************
 
 If you are a member of the LIGO Scientific Collaboration, both the GWpy and astropy packages are installed on all shared computing centres.
 
