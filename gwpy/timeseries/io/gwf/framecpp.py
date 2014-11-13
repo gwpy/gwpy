@@ -36,8 +36,16 @@ from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
+# get frameCPP path
+try:
+    from LDAStools import frameCPP
+except ImportError:
+    frameCPP = 'frameCPP'
+else:
+    frameCPP = 'LDAStools.frameCPP'
 
-@with_import('frameCPP')
+
+@with_import(frameCPP)
 def read_timeseriesdict(source, channels, start=None, end=None, type=None,
                         resample=None, verbose=False, _SeriesClass=TimeSeries):
     """Read the data for a list of channels from a GWF data source.
@@ -237,7 +245,7 @@ def _read_frame(framefile, channels, type=None, verbose=False,
     return out
 
 
-@with_import('frameCPP')
+@with_import(frameCPP)
 def read_timeseries(source, channel, **kwargs):
     """Read a `TimeSeries` of data from a gravitational-wave frame file
 
@@ -265,7 +273,7 @@ def read_timeseries(source, channel, **kwargs):
     return read_timeseriesdict(source, [channel], **kwargs)[channel]
 
 
-@with_import('frameCPP')
+@with_import(frameCPP)
 def read_statevectordict(source, channels, bitss=[], **kwargs):
     """Read a `StateVectorDict` of data from a gravitational-wave
     frame file.
@@ -277,7 +285,7 @@ def read_statevectordict(source, channels, bitss=[], **kwargs):
     return svd
 
 
-@with_import('frameCPP')
+@with_import(frameCPP)
 def read_statevector(source, channel, bits=None, **kwargs):
     """Read a `StateVector` of data from a gravitational-wave frame file
 
