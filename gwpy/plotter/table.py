@@ -368,7 +368,7 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
         for arg in ['linewidth', 'facecolor', 'edgecolor', 'marker', 'cmap',
                     's', 'size_by', 'size_by_log', 'size_range', 'label',
                     'edgecolors', 'facecolors', 'linewidths', 'antialiaseds',
-                    'offsets', 'transOffset', 'norm']:
+                    'offsets', 'transOffset', 'norm', 'rasterized']:
             if arg in kwargs:
                 val = kwargs.pop(arg, None)
                 if val is not None:
