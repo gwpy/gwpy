@@ -67,7 +67,7 @@ def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
     data : :class:`~gwpy.timeseries.core.TimeSeries`
         a new `TimeSeries` containing the data read from disk
     """
-    lal = import_method_dependency('lal')
+    lal = import_method_dependency('lal.lal')
     # parse input arguments
     if isinstance(framefile, CacheEntry):
         framefile = framefile.path
