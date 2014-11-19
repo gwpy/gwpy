@@ -388,9 +388,13 @@ class DataQualityFlag(object):
                                                cls.__name__))
             else:
                 raise
-        if len(flags) != 1:
+        if len(flags) > 1:
             raise RuntimeError("Multiple flags returned for single query, "
-                               "something went wrong")
+                               "something went wrong:\n    %s"
+                               % '\n    '.join(flags.keys()))
+        elif len(flags) == 0:
+            raise RuntimeError("No flags returned for single query, "
+                               "something went wrong.")
         return flags[flag]
 
     @classmethod
