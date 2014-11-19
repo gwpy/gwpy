@@ -320,7 +320,7 @@ def read_statevector(source, channel, bits=None, **kwargs):
 
 # register gwf reader first
 try:
-    import frameCPP
+    __import__(frameCPP, fromlist=[''])
 except ImportError:
     pass
 else:
