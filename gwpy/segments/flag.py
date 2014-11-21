@@ -452,12 +452,13 @@ class DataQualityFlag(object):
             data, uri = apicalls.dqsegdbQueryTimes(protocol, server, ifo,
                                                    name, version, request,
                                                    seg[0], seg[1])
-            for seg in data['active']:
-                new.active.append(Segment(*seg))
-            for seg in data['known']:
-                new.known.append(Segment(*seg))
+            for s2 in data['active']:
+                new.active.append(Segment(*s2) & seg)
+            for s2 in data['known']:
+                new.known.append(Segment(*s2) & seg)
             new.description = data['metadata']['comment']
             new.isgood = not data['metadata']['active_indicates_ifo_badness']
+        new.coalesce()
 
         return new
 
