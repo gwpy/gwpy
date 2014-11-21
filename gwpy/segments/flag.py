@@ -895,6 +895,7 @@ class DataQualityDict(OrderedDict):
             out[key].active.extend(segments)
         return out
 
+    @classmethod
     def query_dqsegdb(cls, flags, *args, **kwargs):
         """Query the DQSegDB for a set of `DataQualityFlags`.
 
@@ -917,7 +918,7 @@ class DataQualityDict(OrderedDict):
         """
         new = cls()
         for flag in flags:
-            new[flag] = _EntryClass.query_dqsegdb(flag, *args, **kwargs)
+            new[flag] = cls._EntryClass.query_dqsegdb(flag, *args, **kwargs)
         return new
 
     # use input/output registry to allow multi-format reading
