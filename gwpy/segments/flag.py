@@ -453,9 +453,12 @@ class DataQualityFlag(object):
                                                    name, version, request,
                                                    seg[0], seg[1])
             for s2 in data['active']:
-                new.active.append(Segment(*s2) & seg)
+                new.active.append(Segment(*s2))
             for s2 in data['known']:
-                new.known.append(Segment(*s2) & seg)
+                new.known.append(Segment(*s2))
+            segl = SegmentList([seg])
+            new.known &= segl
+            new.active &= segl
             new.description = data['metadata']['comment']
             new.isgood = not data['metadata']['active_indicates_ifo_badness']
         new.coalesce()
