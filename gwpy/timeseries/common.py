@@ -88,11 +88,11 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
         if gap == 'pad':
             ngap = floor((other.span[0] - new.span[1]) / new.dt.value + 0.5)
             if ngap < 1:
-                raise ValueError("Cannot append TimeSeries that starts "
+                raise ValueError("Cannot append {0} that starts "
                                  "before this one:\n"
-                                 "    TimeSeries 1 span: %s\n"
-                                 "    TimeSeries 2 span: %s"
-                                 % (self.span, other.span))
+                                 "    {0} 1 span: {1}\n"
+                                 "    {0} 2 span: {2}".format(
+                                 type(self).__name__, self.span, other.span))
             gapshape = list(new.shape)
             gapshape[0] = int(ngap)
             padding = numpy.ones(gapshape).view(new.__class__) * pad
@@ -103,12 +103,13 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
         elif gap == 'ignore':
             pass
         elif new.span[0] < other.span[0] < new.span[1]:
-            raise ValueError("Cannot append overlapping TimeSeries")
+            raise ValueError("Cannot append overlapping %s"
+                             % type(self).__name__)
         else:
-            raise ValueError("Cannot append discontiguous TimeSeries\n"
-                             "    TimeSeries 1 span: %s\n"
-                             "    TimeSeries 2 span: %s"
-                             % (self.span, other.span))
+            raise ValueError("Cannot append discontiguous {0}\n"
+                             "    {0} 1 span: {1}\n"
+                             "    {0} 2 span: {2}".format(
+                             type(self).__name__, self.span, other.span))
     # check empty other
     if not other.size:
         return new
