@@ -155,6 +155,12 @@ class StateTimeSeries(TimeSeries):
                                   "StateTimeSeries because LAL has no "
                                   "BooleanTimeSeries structure")
 
+    def __getitem__(self, item):
+        if isinstance(item, (float, int)):
+            return numpy.ndarray.__getitem__(self, item)
+        else:
+            return super(StateTimeSeries, self).__getitem__(item)
+
 
 class Bits(list):
     """Definition of the bits in a `StateVector`.
