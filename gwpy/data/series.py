@@ -54,7 +54,7 @@ class Series(Array):
         new = super(Series, self).__getslice__(i, j).copy()
         new.metadata = self.metadata.copy()
         if 'x0' in new.metadata and 'dx' in self.metadata:
-            new.x0 += (i * new.dx)
+            new.x0 = self.x0 + (i * self.dx)
         return new
 
     # rebuild getitem to handle complex slicing
