@@ -712,13 +712,25 @@ class ChannelList(list):
         re_seg = re.compile('\A(?P<obs>[A-Z])-(?P<type>\w+):'
                             '(?P<start>\d+)-(?P<end>\d+)\Z')
         segs = {}
-        for i, line in enumerate(out.splitlines()[1:]):
-            chan = channels[i]
-            if not line.startswith(names[i].split('%')[0]):
+        i = 0
+        for line in out.splitlines():
+            if line.startswith('Requested source list:'):
+                continue
+            elif line.startswith('Error in daq'):
+                raise RuntimeError(line)
+            elif not line.startswith(names[i].split('%')[0]):
                 raise RuntimeError("Error parsing nds2_channel_source output")
+            chan = channels[i]
+            i += 1
             segs[chan] = SegmentListDict()
             for seg in line.split(' ', 1)[1].strip('{').rstrip('}').split(' '):
-                m = re_seg.search(seg).groupdict()
+                try:
+                    m = re_seg.search(seg).groupdict()
+                except AttributeError:
+                    if not seg:
+                        continue
+                    raise RuntimeError("Error parsing nds2_channel_source "
+                                       "output:\n%s" % line)
                 ftype = m['type']
                 try:
                     seg = Segment(int(m['start']), int(m['end'])) & span
