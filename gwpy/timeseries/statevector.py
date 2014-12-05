@@ -310,6 +310,9 @@ class StateVector(TimeSeries):
                 self.bits = Bits(['Bit %d' % b for b in range(nbits)],
                                  channel=self.channel, epoch=self.epoch)
                 return self.bits
+            elif hasattr(self.channel, 'bits'):
+                self.bits = self.channel.bits
+                return self.bits
             else:
                 e.args = ("No bit listing given for StateVector, and data "
                           "type doesn't determine how many bits there should "
