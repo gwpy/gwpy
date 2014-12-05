@@ -73,8 +73,6 @@ def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
         framefile = framefile.path
     elif isinstance(framefile, file):
         framefile = framefile.name
-    if isinstance(channel, Channel):
-        channel = channel.name
     if start and isinstance(start, Time):
         start = lal.LIGOTimeGPS(start.gps)
     if end and isinstance(end, Time):
@@ -90,10 +88,11 @@ def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
             start = lal.LIGOTimeGPS(start)
         except TypeError:
             start = lal.LIGOTimeGPS(float(start))
-    lalts = frread.read_timeseries(framefile, channel, start=start,
-                                            duration=duration,
-                                            datatype=datatype, verbose=verbose)
+    lalts = frread.read_timeseries(framefile, str(channel), start=start,
+                                   duration=duration,
+                                   datatype=datatype, verbose=verbose)
     out = _target.from_lal(lalts)
+    out.channel = channel
     if resample:
         out = out.resample(resample)
     return out
