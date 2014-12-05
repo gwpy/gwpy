@@ -33,7 +33,7 @@ from ....utils import (import_method_dependency, with_import)
 
 
 @with_import('lalframe.frread')
-def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
+def read_timeseries(framefile, channel, start=None, end=None, dtype=None,
                     resample=False, verbose=False, _target=TimeSeries):
     """Read a `TimeSeries` of data from a gravitational-wave frame file
 
@@ -55,7 +55,7 @@ def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
         start GPS time of desired data
     end : `Time`, :lalsuite:`LIGOTimeGPS`, optional
         end GPS time of desired data
-    datatype : `type`, `numpy.dtype`, `str`, optional
+    dtype : `type`, `numpy.dtype`, `str`, optional
         identifier for desired output data type
     resample : `float`, optional
         rate of samples per second at which to resample input TimeSeries.
@@ -88,9 +88,11 @@ def read_timeseries(framefile, channel, start=None, end=None, datatype=None,
             start = lal.LIGOTimeGPS(start)
         except TypeError:
             start = lal.LIGOTimeGPS(float(start))
+    if dtype is None and isinstance(channel, Channel):
+        dtype = channel.dtype.type
     lalts = frread.read_timeseries(framefile, str(channel), start=start,
-                                   duration=duration,
-                                   datatype=datatype, verbose=verbose)
+                                   duration=duration, datatype=dtype,
+                                   verbose=verbose)
     out = _target.from_lal(lalts)
     out.channel = channel
     if resample:
