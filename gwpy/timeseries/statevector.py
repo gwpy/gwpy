@@ -225,7 +225,10 @@ class Bits(list):
 
     @channel.setter
     def channel(self, ch):
-        self._channel = Channel(ch)
+        if isinstance(ch, Channel):
+            self._channel = ch
+        else:
+            self._channel = Channel(ch)
 
     @property
     def description(self):
