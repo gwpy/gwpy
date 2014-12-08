@@ -84,6 +84,8 @@ class HistogramAxes(Axes):
         return self.hist(data, **kwargs)
 
     def hist(self, x, **kwargs):
+        if iterable(x) and len(x) == 0:
+            x = numpy.ndarray((0,))
         logbins = kwargs.pop('logbins', False)
         bins = kwargs.get('bins', 30)
         weights = kwargs.get('weights', None)
