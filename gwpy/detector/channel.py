@@ -214,7 +214,10 @@ class Channel(object):
 
     @dtype.setter
     def dtype(self, type_):
-        self._dtype = numpy.dtype(type_)
+        if type_ is None:
+            self._dtype = None
+        else:
+            self._dtype = numpy.dtype(type_)
 
     @property
     def url(self):
