@@ -21,6 +21,8 @@
 
 from __future__ import division
 
+import numpy
+
 from astropy.io import registry
 
 from glue.lal import CacheEntry
@@ -90,6 +92,8 @@ def read_timeseries(framefile, channel, start=None, end=None, dtype=None,
             start = lal.LIGOTimeGPS(float(start))
     if dtype is None and isinstance(channel, Channel):
         dtype = channel.dtype.type
+    elif dtype:
+        dtype = numpy.dtype(dtype).type
     lalts = frread.read_timeseries(framefile, str(channel), start=start,
                                    duration=duration, datatype=dtype,
                                    verbose=verbose)

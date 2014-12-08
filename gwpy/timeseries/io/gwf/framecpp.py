@@ -24,6 +24,8 @@ channels from a single frame file in one go.
 
 from __future__ import division
 
+import numpy
+
 from astropy.io import registry
 
 from glue.lal import (Cache, CacheEntry)
@@ -47,7 +49,8 @@ else:
 
 @with_import(frameCPP)
 def read_timeseriesdict(source, channels, start=None, end=None, type=None,
-                        resample=None, verbose=False, _SeriesClass=TimeSeries):
+                        dtype=None, resample=None, verbose=False,
+                        _SeriesClass=TimeSeries):
     """Read the data for a list of channels from a GWF data source.
 
     Parameters
@@ -66,6 +69,9 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
         end GPS time of desired data.
     type : `str`
         type of channel, one of ``'adc'`` or ``'proc'``.
+    dtype : `numpy.dtype`, `str`, `type`, or `dict`
+        numeric data type for returned data, e.g. `numpy.float`, or
+        `dict` of (`channel`, `dtype`) pairs
     resample : `float`, optional
         rate of samples per second at which to resample input TimeSeries.
     verbose : `bool`, optional
@@ -119,7 +125,7 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
     out = TimeSeriesDict()
     for i,fp in enumerate(filelist):
         # read frame
-        new = _read_frame(fp, channels, type=type, verbose=verbose,
+        new = _read_frame(fp, channels, type=type, dtype=dtype, verbose=verbose,
                           _SeriesClass=_SeriesClass)
         # store
         out.append(new)
@@ -140,7 +146,7 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
     return out
 
 
-def _read_frame(framefile, channels, type=None, verbose=False,
+def _read_frame(framefile, channels, type=None, dtype=None, verbose=False,
                 _SeriesClass=TimeSeries):
     """Internal function to read data from a single frame.
 
@@ -154,6 +160,7 @@ def _read_frame(framefile, channels, type=None, verbose=False,
         list of channels to read.
     type : `str`, optional
         channel data type to read, one of: ``'adc'``, ``'proc'``.
+    dtype : `numpy.dtype`, `str`, `type`, `dict`
     verbose : `bool`, optional
         print verbose output, optional, default: `False`
     _SeriesClass : `type`, optional
@@ -167,6 +174,15 @@ def _read_frame(framefile, channels, type=None, verbose=False,
     """
     if isinstance(channels, (unicode, str)):
         channels = channels.split(',')
+
+    # parse dtype
+    if isinstance(dtype, (tuple, list)):
+        dtype = [numpy.dtype(r) if r is not None else None for r in dtype]
+        dtype = dict(zip(channels, dtype))
+    elif not isinstance(dtype, dict):
+        if dtype is not None:
+            dtype = numpy.dtype(dtype)
+        dtype = dict((channel, dtype) for channel in channels)
 
     # open file
     if isinstance(framefile, CacheEntry):
@@ -219,6 +235,7 @@ def _read_frame(framefile, channels, type=None, verbose=False,
         read_ = getattr(stream, 'ReadFr%sData' % ctype[name].title())
         ts = None
         i = 0
+        dtype_ = dtype.get(channel, None)
         while True:
             try:
                 data = read_(i, name)
@@ -232,7 +249,12 @@ def _read_frame(framefile, channels, type=None, verbose=False,
                 if ts is None:
                     unit = vect.GetUnitY()
                     ts = _SeriesClass(arr, epoch=thisepoch, dx=dx, name=name,
-                                      channel=channel, unit=unit, copy=True)
+                                      channel=channel, unit=unit, dtype=dtype_,
+                                      copy=True)
+                    if not ts.channel.dtype:
+                        ts.channel.dtype = arr.dtype
+                elif dtype:
+                    ts.append(arr.astype(dtype))
                 else:
                     ts.append(arr)
             i += 1
