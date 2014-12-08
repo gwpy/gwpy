@@ -90,8 +90,6 @@ def read_timeseries(framefile, channel, start=None, end=None, dtype=None,
             start = lal.LIGOTimeGPS(start)
         except TypeError:
             start = lal.LIGOTimeGPS(float(start))
-    if dtype is None and isinstance(channel, Channel):
-        dtype = channel.dtype
     if dtype:
         dtype = numpy.dtype(dtype).type
     lalts = frread.read_timeseries(framefile, str(channel), start=start,
