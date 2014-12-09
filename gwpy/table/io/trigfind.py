@@ -43,8 +43,8 @@ def find_trigger_urls(channel, etg, gpsstart, gpsend, verbose=False):
     observatory, channel, and ETG (event trigger generator) for a given
     GPS [start, end) segment.
     """
-    if etg.lower() == 'omicron':
-        etg = '?micron'
+    if etg.lower().startswith('omicron'):
+        etg = '?'+ etg[1:]
 
     # construct search
     span = Segment(gpsstart, gpsend)
