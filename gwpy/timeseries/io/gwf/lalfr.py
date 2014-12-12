@@ -90,7 +90,7 @@ def read_timeseries(framefile, channel, start=None, end=None, dtype=None,
             start = lal.LIGOTimeGPS(start)
         except TypeError:
             start = lal.LIGOTimeGPS(float(start))
-    if dtype:
+    if dtype is not None:
         dtype = numpy.dtype(dtype).type
     lalts = frread.read_timeseries(framefile, str(channel), start=start,
                                    duration=duration, datatype=dtype,
@@ -137,9 +137,18 @@ def read_timeseriesdict(framefile, channels, **kwargs):
     elif not isinstance(resample, dict):
         raise ValueError("Cannot parse resample request, please review "
                          "documentation for that argument")
+    dtype = kwargs.pop('dtype', None)
+    if isinstance(dtype, type) or dtype is None:
+        dtype = dict((channel, dtype) for channel in channels)
+    elif isinstance(dtype, (tuple, list)):
+        dtype = dict(zip(channels, dtype))
+    elif not isinstance(dtype, dict):
+        raise ValueError("Cannot parse dtype request, please review "
+                         "documentation for that argument")
     for channel in channels:
         out[channel] = read_timeseries(framefile, channel,
                                        resample=resample.get(channel, None),
+                                       dtype=dtype.get(channel, None),
                                        **kwargs)
     return out
 
