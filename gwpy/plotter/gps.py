@@ -312,7 +312,7 @@ class GPSScale(GPSMixin, LinearScale):
         if unit is None and type(axis._scale) is GPSScale:
             unit = axis._scale.get_unit()
         if unit is None:
-            duration = viewlim[1] - (min(viewlim[0], epoch))
+            duration = float(viewlim[1] - (min(viewlim[0], epoch)))
             unit = units.second
             for u in TIME_UNITS[::-1]:
                 if duration >= u.decompose().scale * 4:
