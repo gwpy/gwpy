@@ -188,12 +188,13 @@ class Spectrum(Series):
         if kwargs:
             raise TypeError("Spectrum.filter() got an unexpected keyword "
                             "argument '%s'" % list(kwargs.keys())[0])
-        fresp = abs(signal.freqs(b, a, self.frequencies * 2 * pi)[1])
+        fresp = abs(signal.freqs(b, a, self.frequencies.data * 2 * pi)[1])
         if inplace:
-            self *= fresp
+            self.data *= fresp
             return self
         else:
-            new = self * fresp
+            new = (self.data * fresp).view(type(self))
+            new.metadata = self.metadata.copy()
             return new
 
     def filterba(self, *args, **kwargs):
