@@ -57,7 +57,7 @@ HTML_MAP = """
         y = +position[1];
         var $popup = $('<div />').appendTo('body');
         $popup.attr('id', id_);
-        $popup.addClass('tooltip');
+        $popup.addClass('gwpy-tooltip');
         $popup.html('<p>'+$(this).attr('alt')+'</p>');
         $popup.css({{position: 'absolute', top: y, left: x+20}});
     }});
