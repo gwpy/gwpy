@@ -258,8 +258,3 @@ def _map(data, axes, filename, href='#', mapname='points', popup=None,
                 HTML_FOOTER)
     else:
         return hmap
-
-
-def info_box(*data):
-    """Get the javascript for a mouseover popup box
-    """
