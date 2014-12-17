@@ -118,6 +118,10 @@ def map_artist(artist, filename, mapname='points', shape='circle',
         file.
     shape : `str`, optional
         shape for <area> tag, default: ``'circle'``
+    popup : `function`, `iterable`, optional
+        content for alt tooltip popup, either a function that can be
+        called with the (x, y) pixel coords of each data point, or an
+        iterable with one `str` text per data point
     standalone : `bool`, optional
         wrap map HTML with required HTML5 header and footer tags,
         default: `True`
@@ -169,6 +173,10 @@ def map_data(data, axes, filename, mapname='points', shape='circle', popup=None,
         file.
     shape : `str`, optional
         shape for <area> tag, default: ``'circle'``
+    popup : `function`, `iterable`, optional
+        content for alt tooltip popup, either a function that can be
+        called with the (x, y) pixel coords of each data point, or an
+        iterable with one `str` text per data point
     standalone : `bool`, optional
         wrap map HTML with required HTML5 header and footer tags,
         default: `True`
