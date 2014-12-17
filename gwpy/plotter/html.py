@@ -68,7 +68,7 @@ HTML_MAP = """
 """
 
 
-def html_area(x, y, href='#', info=None, shape='circle', **kwargs):
+def html_area(x, y, href='#', alt=None, shape='circle', **kwargs):
     """Format the HTML <area /> tag for this (x, y) <map> element
 
     Parameters
@@ -79,7 +79,7 @@ def html_area(x, y, href='#', info=None, shape='circle', **kwargs):
         y pixel coordinate
     href : `str`, optional
         URL for onclick
-    info : `str`, optional
+    alt : `str`, optional
         hover popup information, defaults to '(x, y)'
     shape : `str`, optional
         shape of <area />
@@ -91,10 +91,10 @@ def html_area(x, y, href='#', info=None, shape='circle', **kwargs):
     area : `str`
         formatted line of HTML defining <area />
     """
-    if info is None:
-        info = '(%s, %s)' % (x, y)
+    if alt is None:
+        alt = '(%s, %s)' % (x, y)
     out = ('<area shape="{shape}" coords="{x:d},{y:d},5" href="{href}" '
-           'alt="{info}" '.format(shape=shape, x=x, y=y, href=href, info=info))
+           'alt="{alt}" '.format(shape=shape, x=x, y=y, href=href, alt=alt))
     for attr, value in kwargs.iteritems():
         out += '%s="%s" ' % (attr, value)
     out += '/>'
