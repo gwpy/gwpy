@@ -24,6 +24,7 @@ from six import string_types
 
 from matplotlib.axes import Axes as _Axes
 from matplotlib.artist import Artist
+from matplotlib.projections import register_projection
 
 from .decorators import auto_refresh
 from . import (rcParams, tex, html)
@@ -31,6 +32,7 @@ from . import (rcParams, tex, html)
 from .. import version
 __version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
 
 class Axes(_Axes):
     """An extension of the core matplotlib :class:`~matplotlib.axes.Axes`.
@@ -46,6 +48,8 @@ class Axes(_Axes):
     where plot is a :class:`~gwpy.plotter.Plot` figure, and ``'xxx'``
     is the name of the `Axes` you want to add.
     """
+    projection = 'rectilinear'
+
     def __init__(self, *args, **kwargs):
         super(Axes, self).__init__(*args, **kwargs)
         self.xaxis.labelpad = 10
@@ -252,3 +256,5 @@ class Axes(_Axes):
             return html.map_artist(data, imagefile, **kwargs)
         else:
             return html.map_data(data, self, imagefile, **kwargs)
+
+register_projection(Axes)
