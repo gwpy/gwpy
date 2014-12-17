@@ -102,7 +102,7 @@ def html_area(x, y, href='#', alt=None, shape='circle', **kwargs):
 
 
 def map_artist(artist, filename, mapname='points', shape='circle',
-               title=None, standalone=True, jquery=JQUERY_URL):
+               popup=None, title=None, standalone=True, jquery=JQUERY_URL):
     """Construct an HTML <map> to annotate the given `artist`
 
     Parameters
@@ -148,10 +148,10 @@ def map_artist(artist, filename, mapname='points', shape='circle',
         data = artist.get_data()
 
     return _map(data, axes, filename, mapname=mapname, shape=shape,
-                title=title, standalone=standalone, jquery=jquery)
+                popup=popup, title=title, standalone=standalone, jquery=jquery)
 
 
-def map_data(data, axes, filename, mapname='points', shape='circle',
+def map_data(data, axes, filename, mapname='points', shape='circle', popup=None,
              title=None, standalone=True, jquery=JQUERY_URL):
     """Construct an HTML <map> to annotate the given `artist`
 
@@ -202,7 +202,7 @@ def map_data(data, axes, filename, mapname='points', shape='circle',
                 shape=shape, standalone=standalone, jquery=jquery)
 
 
-def _map(data, axes, filename, href='#', mapname='points',
+def _map(data, axes, filename, href='#', mapname='points', popup=None,
          title='', shape='circle', standalone=True, jquery=JQUERY_URL):
     """Build an HTML <map> for a data set on some axes.
     """
@@ -231,8 +231,14 @@ def _map(data, axes, filename, href='#', mapname='points',
 
     # build map
     areas = []
-    for datum, pixel, href in izip(data[::-1], pixels[::-1], hrefs[::-1]):
-        alt = '(%s)' % (', '.join(map(str, datum)))
+    for i, (datum, pixel, href) in enumerate(
+            izip(data[::-1], pixels[::-1], hrefs[::-1])):
+        if callable(popup):
+            alt = popup(*datum)
+        elif popup is None:
+            alt = '(%s)' % (', '.join(map(str, datum)))
+        else:
+            alt = popup[-i-1]
         x = pixel[0]
         y = height - pixel[1]
         areas.append(html_area(x, y, href=href, alt=alt, shape=shape))
