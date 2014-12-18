@@ -1148,6 +1148,36 @@ class TimeSeries(Series):
     # -------------------------------------------
     # Utilities
 
+    def pad(self, pad_width, **kwargs):
+        """Pad this `TimeSeries`.
+
+        Parameters
+        ----------
+        pad_width : `int`, pair of `ints`
+            number of samples by which to pad each end of the array.
+            Single int to pad both ends by the same amount, or
+            (before, after) `tuple` to give uneven padding
+        **kwargs
+            see :meth:`numpy.pad` for kwarg documentation
+
+        Returns
+        -------
+        t2 : `TimeSeries`
+            the padded version of the input
+
+        See also
+        --------
+        numpy.pad
+            for details on the underlying functionality
+        """
+        kwargs.setdefault('mode', 'constant')
+        if isinstance(pad_width, int):
+            pad_width = (pad_width,)
+        new = numpy.pad(self.data, pad_width, **kwargs).view(self.__class__)
+        new.metadata = self.metadata.copy()
+        new.epoch = self.epoch.gps - self.dt.value * pad_width[0]
+        return new
+
     def plot(self, **kwargs):
         """Plot the data for this TimeSeries.
         """
