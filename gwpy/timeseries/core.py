@@ -58,7 +58,7 @@ from ..data import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
 from ..io import reader
 from ..segments import (Segment, SegmentList)
-from ..time import Time
+from ..time import (Time, to_gps)
 from ..utils import (gprint, update_docstrings, with_import)
 from . import common
 
@@ -257,7 +257,8 @@ class TimeSeries(Series):
     @classmethod
     @with_import('nds2')
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
-              connection=None, verify=False, type=NDS2_FETCH_TYPE_MASK):
+              connection=None, verify=False, pad=None,
+              type=NDS2_FETCH_TYPE_MASK):
         """Fetch data from NDS into a TimeSeries.
 
         Parameters
@@ -289,7 +290,7 @@ class TimeSeries(Series):
         return TimeSeriesDict.fetch(
                    [channel], start, end, host=host, port=port,
                    verbose=verbose, connection=connection, verify=verify,
-                   type=type)[str(channel)]
+                   pad=pad, type=type)[str(channel)]
 
     # -------------------------------------------
     # TimeSeries product methods
@@ -1491,7 +1492,7 @@ class TimeSeriesDict(OrderedDict):
     @with_import('nds2')
     def fetch(cls, channels, start, end, host=None, port=None,
               verify=False, verbose=False, connection=None,
-              type=NDS2_FETCH_TYPE_MASK):
+              pad=None, type=NDS2_FETCH_TYPE_MASK):
         """Fetch data from NDS for a number of channels.
 
         Parameters
@@ -1522,25 +1523,11 @@ class TimeSeriesDict(OrderedDict):
             from NDS.
         """
         from ..io import nds as ndsio
-        # import module and type-cast arguments
-        if isinstance(start, Time):
-            start = start.gps
-        elif isinstance(start, (unicode, str)):
-            try:
-                start = float(start)
-            except ValueError:
-                d = dateparser.parse(start)
-                start = float(str(Time(d, scale='utc').gps))
-        start = int(float(start))
-        if isinstance(end, Time):
-            end = end.gps
-        elif isinstance(end, (unicode, str)):
-            try:
-                end = float(end)
-            except ValueError:
-                d = dateparser.parse(end)
-                end = float(str(Time(d, scale='utc').gps))
-        end = int(ceil(end))
+        # parse times
+        start = to_gps(start)
+        end = to_gps(end)
+        istart = start.seconds
+        iend = ceil(end)
 
         # open connection for specific host
         if host and not port and re.match('[a-z]1nds[0-9]\Z', host):
@@ -1568,7 +1555,7 @@ class TimeSeriesDict(OrderedDict):
                 try:
                     return cls.fetch(channels, start, end, host=host,
                                      port=port, verbose=verbose, type=type,
-                                     verify=verify)
+                                     verify=verify, pad=pad)
                 except (RuntimeError, ValueError) as e:
                     if verbose:
                         gprint('Something went wrong:', file=sys.stderr)
@@ -1579,7 +1566,7 @@ class TimeSeriesDict(OrderedDict):
             if len(channels) > 1:
                 return cls(
                     (c, cls.EntryClass.fetch(c, start, end, verbose=verbose,
-                                             type=type, verify=verify))
+                                             type=type, verify=verify, pad=pad))
                     for c in channels)
             e = "Cannot find all relevant data on any known server."
             if not verbose:
@@ -1624,36 +1611,76 @@ class TimeSeriesDict(OrderedDict):
                           "60-seconds (from GPS epoch). Times will be "
                           "expanded outwards to compensate")
             if start % 60:
-                start = start // 60 * 60
+                start = int(start) // 60 * 60
             if end % 60:
-                end = end // 60 * 60 + 60
+                end = int(end) // 60 * 60 + 60
             have_minute_trends = True
         else:
             have_minute_trends = False
 
-        # fetch data
-        if verbose:
-            gprint('Downloading data... ', end='\r')
-        out = cls()
+        # get segments for data
+        allsegs = SegmentList([Segment(istart, iend)])
+        qsegs = SegmentList([Segment(istart, iend)])
+        if pad is not None:
+            try:
+                segs = ChannelList.query_nds2_availability(
+                    channels, istart, iend, host=connection.get_host())
+            except RuntimeError:
+                print('test')
+                pass
+            else:
+                for channel in segs:
+                    try:
+                        csegs = sorted(segs[channel].values(),
+                                       key=lambda x: abs(x))[-1]
+                    except IndexError:
+                        csegs = SegmentList([])
+                    qsegs &= csegs
 
-        # determine buffer duration
-        data = connection.iterate(start, end, [c.ndsname for c in qchannels])
-        nsteps = 0
-        i = 0
-        for buffers in data:
-            for buffer_, c in zip(buffers, channels):
-                out.append({c: cls.EntryClass.from_nds2_buffer(buffer_)})
-            if not nsteps:
-                if have_minute_trends:
-                    dur = buffer_.length * 60
-                else:
-                    dur = buffer_.length / buffer_.channel.sample_rate
-                nsteps = ceil((end - start) / dur)
-            i += 1
+        if verbose and len(qsegs) > 1 or abs(allsegs - qsegs):
+            gprint('Found %d viable segments of data with %.2f%% coverage'
+                   % (len(qsegs), abs(qsegs) / abs(allsegs) * 100))
+
+        out = cls()
+        for (istart, iend) in qsegs:
+            istart = int(istart)
+            iend = int(iend)
+            # fetch data
             if verbose:
-                gprint('Downloading data... %d%%' % (100 * i // nsteps), end='\r')
-                if i == nsteps:
-                    gprint('')
+                gprint('Downloading data... ', end='\r')
+
+            # determine buffer duration
+            data = connection.iterate(istart, iend, [c.ndsname for c in qchannels])
+            nsteps = 0
+            i = 0
+            for buffers in data:
+                for buffer_, c in zip(buffers, channels):
+                    out.append({c: cls.EntryClass.from_nds2_buffer(buffer_)},
+                               pad=pad)
+                if not nsteps:
+                    if have_minute_trends:
+                        dur = buffer_.length * 60
+                    else:
+                        dur = buffer_.length / buffer_.channel.sample_rate
+                    nsteps = ceil((iend - istart) / dur)
+                i += 1
+                if verbose:
+                    gprint('Downloading data... %d%%' % (100 * i // nsteps), end='\r')
+                    if i == nsteps:
+                        gprint('')
+            # pad to end of request if required
+            if iend < float(end):
+                dt = float(end) - float(iend)
+                for channel in out:
+                    nsamp = dt * out[channel].sample_rate.value
+                    out[channel].append(
+                        numpy.ones(nsamp, dtype=out[channel].dtype) * pad)
+            # match request exactly
+            for channel in out:
+                if istart > start or iend < end:
+                    out[channel] = out[channel].crop(start, end)
+
+
         if verbose:
             gprint('Success.')
         return out
