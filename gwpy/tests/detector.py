@@ -44,7 +44,7 @@ class ChannelTests(unittest.TestCase):
         new = Channel('')
         self.assertTrue(str(new) == '')
         self.assertTrue(new.sample_rate is None)
-        self.assertTrue(new.dtype == numpy.float64)
+        self.assertTrue(new.dtype is None)
 
     def test_create(self):
         new = Channel('L1:LSC-DARM_ERR', sample_rate=16384, unit='m')
