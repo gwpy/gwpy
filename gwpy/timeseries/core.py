@@ -1323,7 +1323,7 @@ class TimeSeriesList(list):
         super(TimeSeriesList, self).extend(item)
     extend.__doc__ = list.extend.__doc__
 
-    def coalesce(self, **kwargs):
+    def coalesce(self):
         """Sort the elements of this `TimeSeriesList` by epoch and merge
         contiguous `TimeSeries` elements into single objects.
         """
@@ -1336,11 +1336,11 @@ class TimeSeriesList(list):
             if j < N and this.is_contiguous(self[j]) == 1:
                 while j < N and this.is_contiguous(self[j]):
                     try:
-                        this = self[i] = this.append(self[j], **kwargs)
+                        this = self[i] = this.append(self[j])
                     except ValueError as e:
                         if 'cannot resize this array' in str(e):
                             this = this.copy()
-                            this = self[i] = this.append(self[j], **kwargs)
+                            this = self[i] = this.append(self[j])
                         else:
                             raise
                     j += 1
