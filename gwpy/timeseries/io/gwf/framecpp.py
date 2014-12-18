@@ -253,8 +253,8 @@ def _read_frame(framefile, channels, type=None, dtype=None, verbose=False,
                                       copy=True)
                     if not ts.channel.dtype:
                         ts.channel.dtype = arr.dtype
-                elif dtype:
-                    ts.append(arr.astype(dtype))
+                elif dtype_:
+                    ts.append(arr.astype(dtype_))
                 else:
                     ts.append(arr)
             i += 1
