@@ -95,10 +95,7 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
                                  type(self).__name__, self.span, other.span))
             gapshape = list(new.shape)
             gapshape[0] = int(ngap)
-            padding = numpy.ones(gapshape).view(new.__class__) * pad
-            padding.epoch = new.span[1]
-            padding.dt = new.dt
-            padding.unit = new.unit
+            padding = numpy.ones(gapshape, dtype=self.dtype)
             new.append(padding, inplace=True, resize=resize)
         elif gap == 'ignore':
             pass
@@ -144,10 +141,23 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
             new.x0 = new.x0.value + other.shape[0] * new.dx.value
     else:
         if resize:
-            new.times.resize(s, refcheck=False)
+            try:
+                new.times.resize((s[0],), refcheck=False)
+            except ValueError as e:
+                if 'cannot resize' in str(e):
+                    new.times = numpy.resize(new.times, (s[0],))
+                else:
+                    raise
         else:
             new.times[:-other.shape[0]] = new.times[other.shape[0]:]
-        new.times[-other.shape[0]:] = other.times.data
+        try:
+            new.times[-other.shape[0]:] = other.times.data
+        except AttributeError:
+            del new.times
+        try:
+            new.dx = new.times[1] - new.times[0]
+        except IndexError:
+            pass
         new.epoch = new.times[0]
     return new
 
