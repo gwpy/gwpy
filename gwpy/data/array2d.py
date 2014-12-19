@@ -357,3 +357,15 @@ class Array2D(Array):
         except AttributeError:
             pass
         return result
+
+    def copy(self, order='C'):
+        new = super(Array2D, self).copy(order=order)
+        try:
+            new._xindex = self._xindex.copy()
+        except AttributeError:
+            pass
+        try:
+            new._yindex = self._yindex.copy()
+        except AttributeError:
+            pass
+        return new

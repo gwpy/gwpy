@@ -329,3 +329,11 @@ class Series(Array):
         except AttributeError:
             pass
         return result
+
+    def copy(self, order='C'):
+        new = super(Series, self).copy(order=order)
+        try:
+            new._index = self._index.copy()
+        except AttributeError:
+            pass
+        return new
