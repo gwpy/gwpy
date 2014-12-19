@@ -21,7 +21,8 @@
 
 import numbers
 
-import numpy
+from numpy import (vstack, array, nan_to_num, isclose, ndarray)
+
 import scipy
 from scipy import (interpolate, signal)
 from astropy import units
@@ -213,7 +214,7 @@ class Spectrogram(Array2D):
         Each :class:`~gwpy.spectrum.core.Spectrum` passed to this
         constructor must be the same length.
         """
-        data = numpy.vstack([s.data for s in spectra])
+        data = vstack([s.data for s in spectra])
         s1 = spectra[0]
         if not all(s.f0 == s1.f0 for s in spectra):
             raise ValueError("Cannot stack spectra with different f0")
@@ -315,7 +316,7 @@ class Spectrogram(Array2D):
                              "or ba format. See scipy.signal docs for "
                              "details.")
         if isinstance(a, float):
-            a = numpy.array([a])
+            a = array([a])
         # parse keyword args
         inplace = kwargs.pop('inplace', False)
         if kwargs:
@@ -324,7 +325,7 @@ class Spectrogram(Array2D):
         f = self.frequencies.data.copy()
         if f[0] == 0:
             f[0] = 1e-100
-        fresp = numpy.nan_to_num(abs(signal.freqs(b, a, f)[1]))
+        fresp = nan_to_num(abs(signal.freqs(b, a, f)[1]))
         if inplace:
             self *= fresp
             return self
@@ -378,12 +379,20 @@ class Spectrogram(Array2D):
     def is_compatible(self, other):
         """Check whether metadata attributes for self and other match.
         """
-        if not self.dt == other.dt:
-            raise ValueError("Spectrogram time resolutions do not match.")
-        if not self.df == other.df:
-            raise ValueError("Spectrogram frequency resolutios do not match.")
-        if not self.f0 == other.f0:
-            raise ValueError("Spectrogram starting frequencies do not match.")
+        if type(other) in [list, tuple, ndarray]:
+            return True
+        if not isclose(
+                self.dt.decompose().value, other.dt.decompose().value):
+            raise ValueError("Spectrogram time resolutions do not match: "
+                             "%s vs %s." % (self.dt, other.dt))
+        if not isclose(
+                self.df.decompose().value, other.df.decompose().value):
+            raise ValueError("Spectrogram frequency resolutions do not match:"
+                             "%s vs %s." % (self.df, other.df))
+        if not isclose(
+                self.f0.decompose().value, other.f0.decompose().value):
+            raise ValueError("Spectrogram starting frequencies do not match:"
+                             "%s vs %s." % (self.f0, other.f0))
         if not self.unit == other.unit:
             raise ValueError("Spectrogram units do not match: %s vs %s."
                              % (self.unit, other.unit))
