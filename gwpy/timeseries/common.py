@@ -136,9 +136,9 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
     new[-N:] = other[-N:]
     try:
         if isinstance(self, Series):
-            times = new._index
+            self._index
         else:
-            timees = new._xindex
+            self._xindex
     except AttributeError:
         if not resize:
             new.x0 = new.x0.value + other.shape[0] * new.dx.value
