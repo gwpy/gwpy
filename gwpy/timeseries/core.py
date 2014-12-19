@@ -1134,7 +1134,7 @@ class TimeSeries(Series):
                 raise ValueError("Dimensionality does not match")
             if arr.dtype != self.dtype:
                 warnings.warn("dtype mismatch: %s vs %s"
-                              % (self.dtype, other.dtpe))
+                              % (self.dtype, other.dtype))
         return True
 
     # -------------------------------------------
