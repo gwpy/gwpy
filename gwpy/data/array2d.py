@@ -197,6 +197,10 @@ class Array2D(Array):
         except IndexError:
             pass
 
+    @xindex.deleter
+    def xindex(self):
+        del self._xindex
+
     @property
     def yindex(self):
         """Positions of the data on the y-axis
@@ -230,6 +234,10 @@ class Array2D(Array):
             self.dy = self.yindex[1] - self.yindex[0]
         except IndexError:
             pass
+
+    @yindex.deleter
+    def yindex(self):
+        del self._yindex
 
     @property
     def logx(self):

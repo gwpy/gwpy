@@ -171,6 +171,10 @@ class Series(Array):
         except IndexError:
             pass
 
+    @index.deleter
+    def index(self):
+        del self._index
+
     @property
     def logx(self):
         """Boolean telling whether this `Series` has a logarithmic
