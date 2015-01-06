@@ -34,7 +34,7 @@ __version__ = version.version
 
 
 class AstroTests(unittest.TestCase):
-    """`TestCase` for the timeseries module
+    """`TestCase` for the astro module
     """
     framefile = os.path.join(os.path.split(__file__)[0], 'data',
                              'HLV-GW100916-968654552-1.gwf')
