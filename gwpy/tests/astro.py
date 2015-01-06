@@ -24,11 +24,7 @@ import os.path
 import unittest
 import tempfile
 
-from numpy import random
-
 from astropy import units
-
-from gwpy.time import Time
 
 from gwpy import (astro, version)
 from gwpy.timeseries import TimeSeries
