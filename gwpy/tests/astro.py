@@ -37,7 +37,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 
-class TimeSeriesTests(unittest.TestCase):
+class AstroTests(unittest.TestCase):
     """`TestCase` for the timeseries module
     """
     framefile = os.path.join(os.path.split(__file__)[0], 'data',
@@ -56,8 +56,8 @@ class TimeSeriesTests(unittest.TestCase):
         self.assertAlmostEqual(r.value, 19.63704209223392)
         return r
 
-    def test_inspiral_range_spectrum(self):
-        r = astro.inspiral_range_spectrum(self.psd)
+    def test_inspiral_range_psd(self):
+        r = astro.inspiral_range_psd(self.psd)
         self.assertEqual(r.unit, units.Mpc ** 2 / units.Hertz)
         self.assertAlmostEqual(r.max().value, 7.915847068684727)
         return r
