@@ -63,8 +63,9 @@ class Array2D(Array):
         new = super(Array2D, self).__getitem__(item).copy()
         # if given an int, extract a column
         if isinstance(item, int):
-            new = Series(new, unit=self.unit, name=self.name, dx=self.dy,
-                         epoch=self.epoch, channel=self.channel, x0=self.y0)
+            new = Series(new, unit=self.unit, name=self.name, dx=self.dy.value,
+                         epoch=self.epoch, channel=self.channel,
+                         x0=self.y0.value)
             new.xunit = self.yunit
             return new
         # if given a tuple, extract an element
