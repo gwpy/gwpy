@@ -988,12 +988,14 @@ class TimeSeries(Series):
             sampling = self.sample_rate.value
             self_ = self
         # check fft lengths
-        if fftlength is None:
-            fftlength = self_.duration.value
         if overlap is None:
             overlap = 0
-        fftlength = int((fftlength * self_.sample_rate).decompose().value)
-        overlap = int((overlap * self_.sample_rate).decompose().value)
+        else:
+            overlap = int((overlap * self_.sample_rate).decompose().value)
+        if fftlength is None:
+            fftlength = int(self_.size/2. + overlap/2.)
+        else:
+            fftlength = int((fftlength * self_.sample_rate).decompose().value)
         if window is not None:
             kwargs['window'] = window
         coh, f = mlab.cohere(self_.data, other.data, NFFT=fftlength,
