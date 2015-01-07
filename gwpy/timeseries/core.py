@@ -946,8 +946,9 @@ class TimeSeries(Series):
             `TimeSeries` signal to calculate coherence with
         fftlength : `float`, optional, default: `TimeSeries.duration`
             number of seconds in single FFT, defaults to a single FFT
-        overlap : `int`, optiona, default: fftlength
-            number of seconds between FFTs, defaults to no overlap
+        overlap : `float`, optional, default: `None`
+            number of seconds of overlap between FFTs, defaults to no
+            overlap
         window : `timeseries.window.Window`, optional, default: `HanningWindow`
             window function to apply to timeseries prior to FFT,
             default HanningWindow of the relevant size
@@ -990,14 +991,13 @@ class TimeSeries(Series):
         if fftlength is None:
             fftlength = self_.duration.value
         if overlap is None:
-            overlap = fftlength
-        fftlength = int(numpy.float64(fftlength) * self_.sample_rate.value)
-        overlap = int(numpy.float64(overlap) * self_.sample_rate.value)
-        if window is None:
-            window = signal.hanning(fftlength)
+            overlap = 0
+        fftlength = int((fftlength * self_.sample_rate).decompose().value)
+        overlap = int((overlap * self_.sample_rate).decompose().value)
+        if window is not None:
+            kwargs['window'] = window
         coh, f = mlab.cohere(self_.data, other.data, NFFT=fftlength,
-                             Fs=sampling, window=window,
-                             noverlap=fftlength-overlap, **kwargs)
+                             Fs=sampling, noverlap=overlap, **kwargs)
         out = coh.view(Spectrum)
         out.f0 = f[0]
         out.df = (f[1] - f[0])
@@ -1022,7 +1022,8 @@ class TimeSeries(Series):
         fftlength : `float`, optional, default: `TimeSeries.duration`
             number of seconds in single FFT, defaults to a single FFT
         overlap : `int`, optiona, default: fftlength
-            number of seconds between FFTs, defaults to no overlap
+            number of seconds of overlap between FFTs, defaults to no
+            overlap
         window : `timeseries.window.Window`, optional, default: `HanningWindow`
             window function to apply to timeseries prior to FFT,
             default HanningWindow of the relevant size
@@ -1067,7 +1068,8 @@ class TimeSeries(Series):
         fftlength : `float`
             number of seconds in single FFT
         overlap : `int`, optiona, default: fftlength
-            number of seconds between FFTs
+            number of seconds of overlap between FFTs, defaults to no
+            overlap
         window : `timeseries.window.Window`, optional, default: `None`
             window function to apply to timeseries prior to FFT
         nproc : `int`, default: ``1``

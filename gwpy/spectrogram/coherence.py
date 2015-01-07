@@ -38,7 +38,7 @@ __version__ = version.version
 __date__ = ""
 
 
-def _from_timeseries(ts1, ts2, stride, fftlength=None, fftstride=None,
+def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
                      window=None, **kwargs):
     """Generate a time-frequency coherence
     :class:`~gwpy.spectrogram.core.Spectrogram` from a pair of
@@ -61,8 +61,8 @@ def _from_timeseries(ts1, ts2, stride, fftlength=None, fftstride=None,
     # format FFT parameters
     if fftlength is None:
         fftlength = stride
-    if fftstride is None:
-        fftstride = fftlength
+    if overlap is None:
+        overlap = 0
     dt = stride
     df = 1 / fftlength
 
@@ -88,14 +88,14 @@ def _from_timeseries(ts1, ts2, stride, fftlength=None, fftstride=None,
         stepseries1 = ts1[idx:idx_end]
         stepseries2 = ts2[idx:idx_end]
         stepcoh = stepseries1.coherence(stepseries2, fftlength=fftlength,
-                                        fftstride=fftstride, window=window,
+                                        overlap=overlap, window=window,
                                         **kwargs)
-        out[step] = stepcoh.data
+        out.data[step] = stepcoh.data
 
     return out
 
 
-def from_timeseries(ts1, ts2, stride, fftlength=None, fftstride=None,
+def from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
                     window=None, nproc=1, **kwargs):
     """Calculate the coherence `Spectrogram` between two `TimeSeries`.
 
@@ -107,8 +107,8 @@ def from_timeseries(ts1, ts2, stride, fftlength=None, fftstride=None,
         number of seconds in single PSD (column of spectrogram).
     fftlength : `float`
         number of seconds in single FFT.
-    fftstride : `int`, optiona, default: fftlength
-        number of seconds between FFTs.
+    overlap : `int`, optiona, default: fftlength
+        number of seconds of overlap between FFTs, defaults to no overlap
     window : `timeseries.window.Window`, optional, default: `None`
         window function to apply to timeseries prior to FFT.
     nproc : `int`, default: ``1``
@@ -123,27 +123,24 @@ def from_timeseries(ts1, ts2, stride, fftlength=None, fftstride=None,
     """
     # format FFT parameters
     if fftlength is None:
-        fftlength = stride
-    if fftstride is None:
-        fftstride = fftlength
+        fftlength = stride / 2.
 
     sampling = min(ts1.sample_rate.value, ts2.sample_rate.value)
 
     # get size of spectrogram
-    nFFT = int(fftlength * sampling)
     nsteps = int(ts1.size // (stride * ts1.sample_rate.value))
     nproc = min(nsteps, nproc)
 
     # single-process return
     if nsteps == 0 or nproc == 1:
         return _from_timeseries(ts1, ts2, stride, fftlength=fftlength,
-                                fftstride=fftstride, window=window, **kwargs)
+                                overlap=overlap, window=window, **kwargs)
 
     # wrap spectrogram generator
     def _specgram(q, ts):
         try:
             q.put(_from_timeseries(ts, ts2, stride, fftlength=fftlength,
-                                   fftstride=fftstride, window=window,
+                                   overlap=overlap, window=window,
                                    **kwargs))
         except Exception as e:
             q.put(e)
