@@ -180,7 +180,7 @@ class Spectrogram(Array2D):
             unit = units.dimensionless_unscaled
         else:
             raise ValueError("operand '%s' unrecognised, please give Spectrum "
-                             "or one of: 'mean', 'median'")
+                             "or one of: 'mean', 'median'" % operand)
         out = self / operand
         out.unit = unit
         return out
