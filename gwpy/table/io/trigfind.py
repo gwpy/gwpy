@@ -58,17 +58,23 @@ def find_trigger_urls(channel, etg, gpsstart, gpsend, verbose=False):
 
     # perform and cache results
     out = Cache()
+    append = out.append
     for gpsdir in gpsdirs:
         gpssearchpath = os.path.join(searchbase, str(gpsdir), trigform)
         if verbose:
             gprint("Searching %s..." % os.path.split(gpssearchpath)[0],
                    end =' ')
-        gpscache = Cache(map(CacheEntry.from_T050017,
-                             glob.glob(os.path.join(searchbase, str(gpsdir),
-                                                    trigform))))
-        out.extend(gpscache.sieve(segment=span))
+        found = set(map(
+            os.path.realpath,
+            glob.glob(os.path.join(searchbase, str(gpsdir), trigform))))
+        n = 0
+        for f in found:
+            ce = CacheEntry.from_T050017(f)
+            if ce.segment.intersects(span):
+                append(ce)
+                n += 1
         if verbose:
-            gprint("%d found" % len(gpscache.sieve(segment=span)))
+            gprint("%d found" % n)
     out.sort(key=lambda e: e.path)
 
     return out
