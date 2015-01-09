@@ -30,6 +30,7 @@ from glue.lal import (Cache, CacheEntry)
 from ... import version
 from ...segments import Segment
 from ...utils import gprint
+from ...time import to_gps
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -47,6 +48,8 @@ def find_trigger_urls(channel, etg, gpsstart, gpsend, verbose=False):
         etg = '?'+ etg[1:]
 
     # construct search
+    gpsstart = to_gps(gpsstart).seconds
+    gpsend = to_gps(gpsend).seconds
     span = Segment(gpsstart, gpsend)
     ifo, channel = channel.split(':', 1)
     trigtype = "%s_%s" % (channel, etg.lower())
