@@ -218,6 +218,7 @@ class Plot(figure.Figure):
         self._coloraxes.append(cax)
         if visible:
             divider._fig.add_axes(cax)
+            self.sca(ax)
         else:
             return
 
