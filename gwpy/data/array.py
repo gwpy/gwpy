@@ -200,7 +200,7 @@ class Array(numpy.ndarray):
                 val = None
             if key == 'epoch' and val is not None:
                 val = self.epoch.iso
-            elif not val:
+            elif val is '' or val is None:
                 val = None
             mindent = ' ' * (len(key) + 1)
             rval = str(val).replace('\n', '\n%s' % (indent+mindent))
