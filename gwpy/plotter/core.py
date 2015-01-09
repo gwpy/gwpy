@@ -191,10 +191,10 @@ class Plot(figure.Figure):
                 elif visible is False and len(ax.lines):
                     mappable = ax.lines[-1]
                     break
-        if visible and not mappable:
+        if visible and mappable is None:
             raise ValueError("Cannot determine mappable layer for this "
                              "colorbar")
-        elif not ax:
+        elif ax is None:
             raise ValueError("Cannot determine an anchor Axes for this "
                              "colorbar")
 
