@@ -215,7 +215,7 @@ class SpectrumAxes(Axes):
         x = numpy.concatenate((specvar.frequencies.data,
                                [specvar.x0.value +
                                 specvar.dx.value * specvar.shape[0]]))
-        y = specvar.bins
+        y = specvar.bins.data
         X, Y = numpy.meshgrid(x, y)
         mesh = self.pcolormesh(X, Y, specvar.data.T, **kwargs)
         if len(self.collections) == 1:
