@@ -100,8 +100,10 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
         elif gap == 'ignore':
             pass
         elif new.span[0] < other.span[0] < new.span[1]:
-            raise ValueError("Cannot append overlapping %s"
-                             % type(self).__name__)
+            raise ValueError("Cannot append overlapping {0}s:\n"
+                             "    {0} 1 span: {1}\n"
+                             "    {0} 2 span: {2}".format(
+                             type(self).__name__, self.span, other.span))
         else:
             raise ValueError("Cannot append discontiguous {0}\n"
                              "    {0} 1 span: {1}\n"
