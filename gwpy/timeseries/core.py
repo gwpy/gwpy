@@ -1616,8 +1616,10 @@ class TimeSeriesDict(OrderedDict):
                           "expanded outwards to compensate")
             if start % 60:
                 start = int(start) // 60 * 60
+                istart = start
             if end % 60:
                 end = int(end) // 60 * 60 + 60
+                iend = end
             have_minute_trends = True
         else:
             have_minute_trends = False
