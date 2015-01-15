@@ -732,6 +732,82 @@ class TimeSeries(Series):
         return specgram.variance(bins=bins, low=low, high=high, nbins=nbins,
                                  log=log, norm=norm, density=density)
 
+    def rayleigh_spectrum(self, fftlength=None, overlap=None, **kwargs):
+        """Calculate the Rayleigh `Spectrum` for this `TimeSeries`.
+
+        Parameters
+        ----------
+        fftlength : `float`, default: :attr:`TimeSeries.duration`
+            number of seconds in single FFT
+        overlap : `float`, optional, default: `None`
+            number of seconds of overlap between FFTs, defaults to that of
+            the relevant method.
+        window : `timeseries.Window`, optional
+            window function to apply to timeseries prior to FFT
+        plan : :lalsuite:`REAL8FFTPlan`, optional
+            LAL FFT plan to use when generating average spectrum,
+            substitute type 'REAL8' as appropriate.
+
+        Returns
+        -------
+        psd :  :class:`~gwpy.spectrum.core.Spectrum`
+            a data series containing the PSD.
+
+        Notes
+        -----
+        The available methods are:
+
+        """
+        from ..spectrum.registry import get_method
+        # get method
+        method_func = get_method('rayleigh')
+        # type-cast arguments
+        if fftlength is None:
+            fftlength = self.duration
+        nfft = int((fftlength * self.sample_rate).decompose().value)
+        if overlap is not None:
+            kwargs['noverlap'] = int(
+                (overlap * self.sample_rate).decompose().value)
+        # calculate and return spectrum
+        spec_ = method_func(self, nfft, **kwargs)
+        spec_.unit.__doc__ = 'Rayleigh statistic'
+        return spec_
+
+    def rayleigh_spectrogram(self, stride, fftlength=None, overlap=0,
+                             window=None, nproc=1, **kwargs):
+        """Calculate the Rayleigh statistic spectrogram of this `TimeSeries`
+
+        Parameters
+        ----------
+        timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
+            input time-series to process.
+        stride : `float`
+            number of seconds in single PSD (column of spectrogram).
+        fftlength : `float`
+            number of seconds in single FFT.
+        overlap : `int`, optiona, default: fftlength
+            number of seconds between FFTs.
+        window : `timeseries.window.Window`, optional, default: `None`
+            window function to apply to timeseries prior to FFT.
+        plan : :lalsuite:`REAL8FFTPlan`, optional
+            LAL FFT plan to use when generating average spectrum,
+            substitute type 'REAL8' as appropriate.
+        nproc : `int`, default: ``1``
+            maximum number of independent frame reading processes, default
+            is set to single-process file reading.
+
+        Returns
+        -------
+        spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
+            time-frequency Rayleigh spectrogram as generated from the
+            input time-series.
+        """
+        rspecgram = self.spectrogram(stride, method='rayleigh',
+                                     fftlength=fftlength, overlap=overlap,
+                                     window=window, nproc=nproc, **kwargs)
+        rspecgram.unit = None
+        return rspecgram
+
     # -------------------------------------------
     # TimeSeries filtering
 

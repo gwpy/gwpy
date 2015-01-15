@@ -19,6 +19,8 @@
 """`Spectrum` calculation methods using the SciPy module.
 """
 
+import numpy
+
 from astropy import units
 
 from .core import Spectrum
@@ -59,3 +61,25 @@ def bartlett(timeseries, segmentlength, **kwargs):
     return welch(timeseries, segmentlength, noverlap=0, **kwargs)
 
 register_method(bartlett)
+
+
+def rayleigh(timeseries, segmentlength, noverlap=0, **kwargs):
+    """Calculate a Rayleigh statistic spectrum
+    """
+    stepsize = segmentlength - noverlap
+    if noverlap:
+        numsegs = 1 + int((timeseries.size - segmentlength) / float(noverlap))
+    else:
+        numsegs = int(timeseries.size // segmentlength)
+    tmpdata = numpy.ndarray((numsegs, int(segmentlength//2 + 1)))
+    for i in range(numsegs):
+        ts = timeseries[i*stepsize:i*stepsize+segmentlength]
+        tmpdata[i,:] = welch(ts, segmentlength)
+    std = tmpdata.std(axis=0)
+    mean = tmpdata.mean(axis=0)
+    return Spectrum(std/mean, copy=False, f0=0,
+                    df=timeseries.sample_rate.value/segmentlength,
+                    channel=timeseries.channel,
+                    name='Rayleigh spectrum of %s' % timeseries.name)
+
+register_method(rayleigh)
