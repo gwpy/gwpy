@@ -58,7 +58,7 @@ class TimeTests(unittest.TestCase):
         today = time.tconvert('today')
         yesterday = time.tconvert('yesterday')
         self.assertAlmostEqual(today - yesterday, 86400)
-        self.assertGreaterEqual(now, today)
+        self.assertTrue(now >= today)
 
 
 if __name__ == '__main__':
