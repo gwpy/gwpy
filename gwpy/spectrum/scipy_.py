@@ -19,7 +19,6 @@
 """`Spectrum` calculation methods using the SciPy module.
 """
 
-from math import log
 import numpy
 
 from astropy import units
@@ -77,7 +76,7 @@ def rayleigh(timeseries, segmentlength, noverlap=0, **kwargs):
         ts = timeseries[i*stepsize:i*stepsize+segmentlength]
         tmpdata[i,:] = welch(ts, segmentlength)
     std = tmpdata.std(axis=0)
-    mean = tmpdata.mean(axis=0) * log(2)
+    mean = tmpdata.mean(axis=0)
     return Spectrum(std/mean, copy=False, f0=0,
                     df=timeseries.sample_rate.value/segmentlength,
                     channel=timeseries.channel,
