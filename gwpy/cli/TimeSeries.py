@@ -35,3 +35,27 @@ class TimeSeries(CliProduct):
         self.arg_time(parser)
         self.arg_plot(parser)
         return
+
+    def get_ylabel(self, args):
+        """Text for y-axis label"""
+        return 'Counts'
+
+    def gen_plot(self, args):
+        """Generate the plot from time series and arguments"""
+        import numpy
+
+        self.plot = self.timeseries[0].plot()
+        self.ymin = self.timeseries[0].min()
+        self.ymax = self.timeseries[0].max()
+        self.xmin = self.plot.get_xlim()[0]
+        self.xmax = self.plot.get_xlim()[1]
+
+        if len(self.timeseries) > 10:
+            for idx in range(1, len(self.timeseries)):
+                chname = self.timeseries[idx].channel.name
+                self.plot.add_timeseries(self.timeseries[idx],label=chname)
+                self.ymin = min(self.ymin, self.timeseries[idx].min())
+                self.ymax = max(self.ymax, self.timeseries[idx].max())
+                self.xmin = min(self.xmin, self.timeseries[idx].times.data.min())
+                self.xmax = max(self.xmax, self.timeseries[idx].times.data.min())
+        return

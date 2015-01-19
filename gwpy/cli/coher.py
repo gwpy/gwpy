@@ -26,6 +26,7 @@ from CliProduct import CliProduct
 class Coher(CliProduct):
 
     min_timeseries = 2
+    plot = 0    # this will be a matplotlib plot after derived class makes it
 
     def get_action(self):
         """Return the string used as "action" on command line."""
@@ -37,3 +38,37 @@ class Coher(CliProduct):
         self.arg_freq(parser)
         self.arg_plot(parser)
         return
+
+    def get_ylabel(self, args):
+        """Text for y-axis label"""
+        return 'Coherence'
+
+    def gen_plot(self, arg_list):
+        """Generate the coherence plot from all time series"""
+        import numpy
+
+        fftlen = self.dur / 16
+        if arg_list.secpfft:
+            fftlen = float(arg_list.secpfft)
+        ovlap = 0.5
+        if arg_list.overlap:
+            ovlap = float(arg_list.overlap)
+
+        # calculate and plot the first pair, note the first channel is the reference channel
+        coh = self.timeseries[0].coherence(self.timeseries[1], fftlength=fftlen, overlap=ovlap*fftlen)
+        #coh2 = 1 / (1-coh)
+        self.fmin = numpy.min(coh.frequencies.data)
+        self.fmax = numpy.max(coh.frequencies.data)
+        self.ymin = 0
+        self.ymax = 1
+
+        coh.name = self.timeseries[1].channel.name
+        self.plot = coh.plot()
+
+        # if we have more time series calculate and add to the first plot
+        if len(self.timeseries) > 2:
+            for idx in range(2, len(self.timeseries)):
+                cohb = self.timeseries[0].coherence(self.timeseries[idx], fftlength=fftlen, overlap=ovlap*fftlen)
+                cohb.name = self.timeseries[idx].channel.name
+                self.plot.add_spectrum(cohb)
+

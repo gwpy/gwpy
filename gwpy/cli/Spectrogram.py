@@ -35,3 +35,13 @@ class Spectrogram(CliProduct):
         self.arg_freq(parser)
         self.arg_plot(parser)
         return
+
+    def get_ylabel(self, args):
+        """Text for y-axis label"""
+        return r'$\mathrm{log_{10}  ASD}$ $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
+
+
+
+    def gen_plot(self, args):
+        """Generate the plot from time series and arguments"""
+        return

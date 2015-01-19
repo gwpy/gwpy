@@ -24,16 +24,22 @@ __author__ = 'joseph areeda'
 __email__ = 'joseph.areeda@ligo.org'
 __version__ = '0.0.0'
 
-VERBOSE = 1 # 0 = errors only, 1 = Warnings, 2 = INFO, >2 DEBUG >=5 ALL
+VERBOSE = 3 # 0 = errors only, 1 = Warnings, 2 = INFO, >2 DEBUG >=5 ALL
 
 # each Product calls a function in this file to create the plot
 def coher(args):
     if VERBOSE > 1:
         print 'coherence called'
-    mod = import_module('%s' % 'Coher')
-    class_ = getattr(mod, 'Coher')
+    from Coher import Coher
 
-    plotObj = class_()
+    plotObj = Coher()
+    plotObj.makePlot(plotObj, args)
+
+def timeseries(args):
+    if VERBOSE > 1:
+        print 'timeseries called'
+    from TimeSeries import TimeSeries
+    plotObj = TimeSeries()
     plotObj.makePlot(plotObj, args)
 
 import sys
