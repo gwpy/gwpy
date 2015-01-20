@@ -40,15 +40,19 @@ class TimeSeries(CliProduct):
         """Text for y-axis label"""
         return 'Counts'
 
+    def get_title(self, args):
+        """Start of default super title, first channel is appended to it"""
+        return 'Time series: '
+
     def gen_plot(self, args):
         """Generate the plot from time series and arguments"""
-        import numpy
+        from numpy import min, max
 
         self.plot = self.timeseries[0].plot()
         self.ymin = self.timeseries[0].min()
         self.ymax = self.timeseries[0].max()
-        self.xmin = self.plot.get_xlim()[0]
-        self.xmax = self.plot.get_xlim()[1]
+        self.xmin = self.timeseries[0].times.data.min()
+        self.xmax = self.timeseries[0].times.data.max()
 
         if len(self.timeseries) > 10:
             for idx in range(1, len(self.timeseries)):
@@ -57,5 +61,5 @@ class TimeSeries(CliProduct):
                 self.ymin = min(self.ymin, self.timeseries[idx].min())
                 self.ymax = max(self.ymax, self.timeseries[idx].max())
                 self.xmin = min(self.xmin, self.timeseries[idx].times.data.min())
-                self.xmax = max(self.xmax, self.timeseries[idx].times.data.min())
+                self.xmax = max(self.xmax, self.timeseries[idx].times.data.max())
         return

@@ -47,20 +47,26 @@ class CliProduct(object):
         self.min_timeseries = 1      # how many datasets do we need for this product
         self.chan_list = []
         self.start_list = []
+        self.dur = 0
         self.timeseries = []
         self.minMax = []
         self.VERBOSE = 1
+        self.secpfft = 1
+        self.overlap = 0.5
         self.fmin = 0
         self.fmax = 0
         self.ymin = 0
         self.ymax = 0
         self.xmin =0
         self.xmax = 0
+        self.width = 0
+        self.height = 0
         self.xinch = 12
         self.yinch = 7.68
         self.dpi = 100
         self.is_freq_plot = False
 
+#------Abstract metods------------
     @abc.abstractmethod
     def get_action(self):
         """Return the string used as "action" on command line."""
@@ -81,6 +87,40 @@ class CliProduct(object):
         """Text for y-axis label"""
         return
 
+    @abc.abstractmethod
+    def get_title(self, args):
+        """Start of default super title, first channel is appended to it"""
+        return
+
+#--------Defaults for overridable methods if product differs from default
+    def get_min_datasets(self):
+        """Override if plot requires more than 1 dataset.  eg: coherence requires 2"""
+        return 1
+
+    def get_max_datasets(self):
+        """Override if plot has a maximum number of datasets. eg: spectrogram only handles 1"""
+        return 16  # arbitrary max
+
+    def is_image(self):
+        """Override if plot is image type, eg: spectrogram"""
+        return False
+
+    def freq_is_y(self):
+        """Override if frequency is on y-axis like spectrogram"""
+        return False
+
+    def get_xlabel(self):
+        return ''
+#------Helper functions
+    def log(self,level, msg):
+        """print log message if verbosity is set high enough"""
+        if self.VERBOSE >= level:
+            print msg
+        return
+
+
+#------Argparse methods
+
     def arg_chan(self, parser):
         """Allow user to specify list of channel names, list of start gps times and single duration"""
         parser.add_argument('--start', nargs='+', action='append', required=True,
@@ -100,7 +140,7 @@ class CliProduct(object):
     def arg_chan2(self,parser):
         """list of channel names when at least 2 are required"""
         parser.add_argument('--chan', nargs='+', action='append', required=True,
-                    help='Two or more channel names, first one is compared to all the others')
+                    help='Two or more channels or times, first one is compared to all the others')
         self.arg_chan(parser)
         return
 
@@ -160,6 +200,9 @@ class CliProduct(object):
                             help='hide the color bar')
         parser.add_argument('--lincolors', action='store_true',
                             help='set intensity scale of image to linear, default=logarithmic')
+        return
+
+#-------Data transfer methods
 
     def getTimeSeries(self,arg_list):
         """Verify and interpret arguments and get all TimeSeries objects defined"""
@@ -179,6 +222,16 @@ class CliProduct(object):
                     self.start_list.append(int(startArg))
         else:
             raise ArgumentError('No start times specified')
+
+        # Verify the number of datasets specified is valid for this plot
+        n_datasets = len(self.chan_list) * len(self.start_list)
+        if n_datasets < self.get_min_datasets():
+            raise ArgumentError('%d datasets are required for this plot but only %d are supplied' \
+                                % (self.get_min_datasets(), n_datasets ))
+
+        if n_datasets > self.get_max_datasets():
+            raise ArgumentError('A maximum of %d datasets allowed for this plot but %d specified' \
+                                            % (self.get_max_datasets, n_datasets))
 
         if arg_list.duration:
             self.dur = int(arg_list.duration)
@@ -212,15 +265,16 @@ class CliProduct(object):
                 else:
                     self.timeseries.append(data)
         # report what we have if they asked for it
-        if self.VERBOSE > 2:
-            print 'Channels: %s' % self.chan_list
-            print 'Start times: %s, duration' % self.start_list, self.dur
-            print 'Number of time series: %d' % len(self.timeseries)
+        self.log(3, ('Channels: %s' % self.chan_list))
+        self.log(3, ('Start times: %s, duration' % self.start_list, self.dur))
+        self.log(3, ('Number of time series: %d' % len(self.timeseries)))
         return
 
+#---- Plotting methods
+
     def show_plot_info(self):
-        print 'X-scale: %s, Y-scale: %s' % (self.plot.get_xscale(), self.plot.get_yscale())
-        print 'X-limits %s, Y-limits %s' % (self.plot.xlim, self.plot.ylim)
+        self.log(3, ('X-scale: %s, Y-scale: %s' % (self.plot.get_xscale(), self.plot.get_yscale())))
+        self.log(3, ('X-limits %s, Y-limits %s' % (self.plot.xlim, self.plot.ylim)))
 
     def config_plot(self,arg_list):
         """Configure global plot parameters"""
@@ -235,22 +289,23 @@ class CliProduct(object):
             'font.weight': 'book',
             'legend.loc': 'best',
             'lines.linewidth': 1.5,
+            'text.usetex': 'true',
         })
 
         # determine image dimensions (geometry)
-        width = 1200
-        height = 768
+        self.width = 1200
+        self.height = 768
         if arg_list.geometry:
             try:
-                width, height = map(float, arg_list.geometry.split('x', 1))
-                height = max(height, 500)
+                self.width, self.height = map(float, arg_list.geometry.split('x', 1))
+                self.height = max(self.height, 500)
             except (TypeError, ValueError) as e:
                 e.args = ('Cannot parse --geometry as WxH, e.g. 1200x600',)
                 raise
 
         self.dpi = rcParams['figure.dpi']
-        self.xinch = width / self.dpi
-        self.yinch = height / self.dpi
+        self.xinch = self.width / self.dpi
+        self.yinch = self.height / self.dpi
         rcParams['figure.figsize'] = (self.xinch, self.yinch)
 
     def annotate_save_plot(self,arg_list):
@@ -260,21 +315,33 @@ class CliProduct(object):
 
         ax = self.plot.gca()
 
-        if arg_list.logy:
-            ax.set_yscale('log')
-        else:
-            ax.set_yscale('linear')
-
-        if self.is_freq_plot:
-            if arg_list.logf:
-                ax.set_xscale('log')
-            else:
-                ax.set_xscale('linear')
-        else:
+        if self.is_image():
+            # right now all image plots are frequency plots and y axis is frequency
+            if self.is_freq_plot:
+                if arg_list.logf:
+                    ax.set_yscale('log')
+                else:
+                    ax.set_yscale('linear')
             if arg_list.logx:
                 ax.set_xscale('log')
             else:
                 ax.set_xscale('linear')
+        else:
+            if arg_list.logy:
+                ax.set_yscale('log')
+            else:
+                ax.set_yscale('linear')
+
+            if self.is_freq_plot:
+                if arg_list.logf:
+                    ax.set_xscale('log')
+                else:
+                    ax.set_xscale('linear')
+            else:
+                if arg_list.logx:
+                    ax.set_xscale('log')
+                else:
+                    ax.set_xscale('linear')
 
         # scale the axes
         ymin = self.ymin
@@ -285,23 +352,39 @@ class CliProduct(object):
         if arg_list.ymax:
             ymax = arg_list.ymax
 
-        if self.VERBOSE > 2:
-            print 'Y-axis limits are [ %f, %f]' % (ymin, ymax)
+        self.log(3, ('Y-axis limits are [ %f, %f]' % (ymin, ymax)))
 
-        ax.set_ylim(ymin, ymax)
+        xmin = self.xmin
+        xmax = self.xmax
 
+        if not self.is_freq_plot or self.freq_is_y():
+            if arg_list.xmin:
+                    xmin = float(arg_list.xmin)
+            if arg_list.xmax:
+                xmax = float(arg_list.xmax)
+            self.log(3, ('X-axis limits are [ %f, %f]' % (self.xmin, self.xmax)))
+
+        fmin = self.fmin
+        fmax = self.fmax
         if self.is_freq_plot:
             if arg_list.fmin:
-                self.fmin = float(arg_list.fmin)
+                fmin = float(arg_list.fmin)
             if arg_list.fmax:
-                self.fmax = float(arg_list.fmax)
-            if self.VERBOSE > 2:
-                print 'Freq-axis limits are [ %f, %f]' % (fmin, fmax)
-            ax.set_xlim(self.fmin, self.fmax)
+                fmax = float(arg_list.fmax)
+            self.log(3, ('Freq-axis limits are [ %f, %f]' % (fmin, fmax)))
+            if self.freq_is_y():
+                ax.set_ylim(fmin, fmax)
+                ax.set_xlim(xmin, xmax)
+            else:
+                ax.set_xlim(fmin, fmax)
+                ax.set_ylim(ymin, ymax)
+        else:
+            ax.set_xlim(xmin, xmax)
+            ax.set_ylim(ymin, ymax)
 
-        #todo if time domain set to x limits
-
-        ax.legend(prop={'size':10})
+        # image plots don't have legends
+        if not self.is_image():
+            ax.legend(prop={'size':10})
 
         # add titles
         title = ''
@@ -317,30 +400,38 @@ class CliProduct(object):
         timeStr = "%s - %10d (%ds)" % (startGPS.iso, start, self.dur)
 
         if self.is_freq_plot:
-            secpfft = float(arg_list.secpfft)
-            ovlap = float(arg_list.overlap)
-            spec = r'%s, Fs=%s, secpfft=%.1f, overlap=%.2f' % (timeStr, fs, secpfft, ovlap)
+            spec = r'%s, Fs=%s, secpfft=%.1f, overlap=%.2f' %  \
+                    (timeStr, fs,self.secpfft, self.overlap)
+        else:
+            xdur = self.xmax - self.xmin
+            spec = r'Fs=%s, duration: %.1f' % (fs, xdur)
 
         if len(title) > 0:
             title += "\n"
-            title += spec
-            title = label_to_latex(title)
-            self.plot.set_title(title, fontsize=12)
+        title += spec
+        title = label_to_latex(title)
+        self.plot.set_title(title, fontsize=12)
+        self.log(3, ('Title is: %s' % title))
 
+        xlabel = ''
         if arg_list.xlabel:
             xlabel = label_to_latex(arg_list.xlabel)
         else:
-            xlabel = 'Frequency (Hz)'
-        self.plot.xlabel = xlabel
+            xlabel = self.get_xlabel()
+        if xlabel:
+            self.plot.set_xlabel(xlabel)
+            self.log(3, ('X-axis label is: %s' % xlabel))
 
         if arg_list.ylabel:
             ylabel = label_to_latex(arg_list.ylabel)
         else:
             ylabel = self.get_ylabel(arg_list)
-            if arg_list.logy:
+            if arg_list.logy and ylabel:
                 ylabel += ' log$_{10}$'
 
-        self.plot.ylabel = ylabel
+        if ylabel:
+            self.plot.set_ylabel(ylabel)
+            self.log(3, ('Y-axis label is: %s' % ylabel))
 
         if not arg_list.nogrid:
             ax.grid(b=True, which='major', color='k', linestyle='solid')
@@ -350,39 +441,40 @@ class CliProduct(object):
         if arg_list.suptitle:
             sup_title = arg_list.suptitle
         else:
-            sup_title = "Coherence with " + self.timeSeries[0].channel.name
+            sup_title = self.get_title(arg_list) + self.timeseries[0].channel.name
         sup_title = label_to_latex(sup_title)
         self.plot.suptitle(sup_title, fontsize=14)
 
-        if self.VERBOSE > 2:
-            self.show_plot_info()
+        self.log(3, ('Super title is: %s' % sup_title))
+        self.show_plot_info()
 
         # if they specified an output file write it
         # save the figure. Note type depends on extension of output filename (png, jpg, pdf)
         if arg_list.out:
-            if self.VERBOSE > 2:
-                print 'xinch: %.2f, yinch: %.2f, dpi: %d' % (self.xinch, self.yinch, self.dpi)
+            self.log(3, ('xinch: %.2f, yinch: %.2f, dpi: %d' % (self.xinch, self.yinch, self.dpi)))
 
             self.plot.savefig(arg_list.out, edgecolor='white', figsize=[self.xinch, self.yinch], dpi=self.dpi)
-            if self.VERBOSE > 0:
-                print 'wrote %s' % arg_list.out
+            self.log(3, ('wrote %s' % arg_list.out))
         return
 
-    def makePlot(self, plotObj, args):
+#-----The one that does all the work
+    def makePlot(self, args):
         """Make the plot, all actions are generally the same at this level"""
         if args.silent:
             self.VERBOSE = 0
         else:
             self.VERBOSE = args.verbose
 
-        if self.VERBOSE > 1:
-            print 'Verbosity level: %d' % self.VERBOSE
+        self.log(3, ('Verbosity level: %d' % self.VERBOSE))
 
         if self.VERBOSE > 2:
             print 'Arguments:'
             for key, value in args.__dict__.iteritems():
                 print '%s = %s' % (key, value)
+
         self.getTimeSeries(args)
+
+        self.config_plot(args)
 
         #this one is in the derived class
         self.gen_plot(args)
@@ -390,7 +482,6 @@ class CliProduct(object):
         self.annotate_save_plot(args)
 
         if args.interactive:
-            if self.VERBOSE > 2:
-                print 'Interactive manipulation of image should be available.'
+            self.log(3, 'Interactive manipulation of image should be available.')
             self.plot.show()
 

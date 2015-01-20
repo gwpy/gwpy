@@ -22,6 +22,10 @@
 """ Coherence plots
 """
 from CliProduct import CliProduct
+from .. import version
+
+__author__ = 'Joseph Areeda'
+__version__ = version.version
 
 class Coherencegram(CliProduct):
 
@@ -33,13 +37,74 @@ class Coherencegram(CliProduct):
         """Set up the argument list for this product"""
         self.arg_chan1(parser)
         self.arg_freq(parser)
+        self.arg_time(parser)
+        self.arg_imag(parser)
         self.arg_plot(parser)
         return
+
+    def get_max_datasets(self):
+        """Coherencegram only handles 1 at a time"""
+        return 2
+
+    def get_min_datasets(self):
+        "Coherence requires 2 datasets to calculate"
+        return 2
+
+    def is_image(self):
+        """This plot is image type"""
+        return True
+
+    def freq_is_y(self):
+        """This plot puts frequency on the y-axis of the image"""
+        return True
 
     def get_ylabel(self, args):
         """Text for y-axis label"""
         return 'Coherence'
 
-    def gen_plot(self, args):
+    def get_title(self, args):
+        """Start of default super title, first channel is appended to it"""
+        return "Coherence spectrogram: "
+
+    def gen_plot(self, arg_list):
         """Generate the plot from time series and arguments"""
+        self.is_freq_plot = True
+
+        secpfft = 1
+        if arg_list.secpfft:
+            secpfft = float(arg_list.secpfft)
+        ovlp = 0.5
+        if arg_list.overlap:
+            ovlp = float(arg_list.overlap)
+        self.secpfft = secpfft
+        self.overlap = ovlp
+
+        ovlap = secpfft*ovlp
+        nfft = self.dur/(secpfft - ovlap)
+        stride = int(nfft/(self.width * 0.8) )
+        if stride < 1:
+            stride = 1
+        stride = stride * secpfft
+        fs = self.timeseries[0].sample_rate
+
+        coh= self.timeseries[0].coherence_spectrogram(self.timeseries[1], stride)
+
+        # set default frequency limits
+        self.fmax = fs.value / 2
+        self.fmin = 1 / secpfft
+
+        # default time axis
+        self.xmin = self.timeseries[0].times.data.min()
+        self.xmax = self.timeseries[0].times.data.max()
+
+        # set intensity (color) limits
+        imin = coh.min().value
+        imax = coh.max().value
+        if arg_list.lincolors:
+            self.plot = coh.plot(vmin=imin, vmax=imax)
+            self.scaleText = r'Coherence'
+        else:
+            self.plot = coh.plot(norm='log',vmin=imin, vmax=imax)
+            self.scaleText = r'log_10 Coherence'
+        return
         return

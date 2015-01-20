@@ -38,9 +38,56 @@ class Spectrum(CliProduct):
 
     def get_ylabel(self, args):
         """Text for y-axis label"""
-        return r'$\mathrm{log_{10}  ASD}$ $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
+        if args.logy:
+            ylabel = r'$\mathrm{log_{10}  ASD}$ $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
+        else:
+            ylabel = r'$\mathrm{ASD}$ $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
+        return ylabel
 
+    def get_title(self, args):
+        """Start of default super title, first channel is appended to it"""
+        return 'Spectrum: '
 
-    def gen_plot(self, args):
+    def get_xlabel(self):
+        return 'Frequency (Hz)'
+
+    def gen_plot(self, arg_list):
         """Generate the plot from time series and arguments"""
+        from numpy import min, max
+        self.is_freq_plot = True
+
+        fftlen = 1
+        if arg_list.secpfft:
+            fftlen = float(arg_list.secpfft)
+        self.secpfft = fftlen
+        ovlap = 0.5
+        if arg_list.overlap:
+            ovlap = float(arg_list.overlap)
+        self.overlap = ovlap
+
+        self.log(2,"Calculating spectrum secpfft: %.2f, overlap: %.2f" % (fftlen,ovlap))
+
+        # calculate and plot the first spectrum
+        spectrum = self.timeseries[0].asd(fftlen, fftlen*ovlap)
+        self.fmin = min(spectrum.frequencies.data)
+        self.fmax = max(spectrum.frequencies.data)
+        self.ymin = 0
+        self.ymax = 1
+
+        label = self.timeseries[0].channel.name
+        if len(self.start_list) > 1:
+            label += ", %s" % self.timeseries[0].times.epoch.gps
+        spectrum.name = label
+        self.plot = spectrum.plot()
+
+        # if we have more time series calculate and add to the first plot
+        if len(self.timeseries) > 1:
+            for idx in range(1, len(self.timeseries)):
+                specb = self.timeseries[idx].asd(fftlen, ovlap*fftlen)
+                label = self.timeseries[idx].channel.name
+                if len(self.start_list) > 1:
+                    label += ", %s" % self.timeseries[idx].times.epoch.gps
+                specb.name = label
+                self.plot.add_spectrum(specb)
+
         return

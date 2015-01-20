@@ -19,10 +19,10 @@
 #
 """Command line interface to GWpy plotting functions
 """
-
+from gwpy import version
 __author__ = 'joseph areeda'
 __email__ = 'joseph.areeda@ligo.org'
-__version__ = '0.0.0'
+__version__ = version.version
 
 VERBOSE = 3 # 0 = errors only, 1 = Warnings, 2 = INFO, >2 DEBUG >=5 ALL
 
@@ -30,19 +30,47 @@ VERBOSE = 3 # 0 = errors only, 1 = Warnings, 2 = INFO, >2 DEBUG >=5 ALL
 def coher(args):
     if VERBOSE > 1:
         print 'coherence called'
-    from Coher import Coher
+    from gwpy.cli.Coher import Coher
 
     plotObj = Coher()
-    plotObj.makePlot(plotObj, args)
+    plotObj.makePlot(args)
+    return
 
 def timeseries(args):
     if VERBOSE > 1:
         print 'timeseries called'
-    from TimeSeries import TimeSeries
+    from gwpy.cli.TimeSeries import TimeSeries
     plotObj = TimeSeries()
-    plotObj.makePlot(plotObj, args)
+    plotObj.makePlot(args)
+    return
+
+def spectrum(args):
+    if VERBOSE > 1:
+        print 'spectrum called'
+    from gwpy.cli.Spectrum import Spectrum
+    plotObj = Spectrum()
+    plotObj.makePlot(args)
+    return
+
+def spectrogram(args):
+    if VERBOSE > 1:
+        print 'spectrogram called'
+    from gwpy.cli.Spectrogram import Spectrogram
+    plotObj = Spectrogram()
+    plotObj.makePlot(args)
+    return
+
+def coherencegram(args):
+
+    if VERBOSE > 1:
+        print 'Coherence spectrogram called'
+    from gwpy.cli.Coherencegram import Coherencegram
+    plotObj = Coherencegram()
+    plotObj.makePlot(args)
+    return
 
 import sys
+
 if sys.version < '2.6':
     raise ImportError("Python versions older than 2.6 are not supported.")
 
@@ -78,7 +106,7 @@ parentparser.add_argument('-v', '--verbose', action='count', default=1,
 parentparser.add_argument('-s', '--silent', default=False, help='show only fatal errors')
 
 # subparsers are dependent on which action is chosen
-subparsers = parentparser.add_subparsers(
+subparsers = parser.add_subparsers(
     dest='mode', title='Actions',
     description='Select one of the following actions:')
 
@@ -89,22 +117,18 @@ sp = dict()
 # -------------------------
 # Add the actions and their parameters to the subparsers
 
-# todo ask Duncan how to really do the import, this sucks but it works for testing
-path = sys.path
-path.insert(1,'/Users/areeda/ligo/gwpy/gwpy/cli')
-sys.path = path
-
 # Add the subparsers for each plot product
 for product in PRODUCTS:
 
-    mod = import_module('%s' % product)
+    mod = import_module('gwpy.cli.%s' % product)
     class_ = getattr(mod, product)
     prod = class_()
 
     action = prod.get_action()
     sp[product] = subparsers.add_parser(product, help=prod.__doc__,
                                        parents=[parentparser])
-    sp[product].set_defaults(func=product.lower())
+    operation=globals()[product.lower()]
+    sp[product].set_defaults(func=operation)
     prod.init_cli(sp[product])
 
 # -----------------------------------------------------------------------------
@@ -120,15 +144,10 @@ if __name__ == '__main__':
         import matplotlib
         matplotlib.use('Agg')
 
-    # import all third-party packages in sets (in vague order of dependence)
-    import numpy
-    from astropy.time import Time
-    from matplotlib import rcParams
-    from gwpy.timeseries import TimeSeries
-    from gwpy.plotter.tex import label_to_latex
+
 
     # parse the command line
-    args = parentparser.parse_args()
+    args = parser.parse_args()
     if args.silent:
         VERBOSE = 0
     else:
