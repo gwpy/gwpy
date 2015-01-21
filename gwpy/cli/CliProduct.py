@@ -54,7 +54,7 @@ class CliProduct(object):
         self.secpfft = 1
         self.overlap = 0.5
         self.fmin = 0
-        self.fmax = 0
+        self.fmax = 1
         self.ymin = 0
         self.ymax = 0
         self.xmin =0
@@ -65,6 +65,7 @@ class CliProduct(object):
         self.yinch = 7.68
         self.dpi = 100
         self.is_freq_plot = False
+        self.n_datasets = 0
 
 #------Abstract metods------------
     @abc.abstractmethod
@@ -234,14 +235,14 @@ class CliProduct(object):
             raise ArgumentError('No start times specified')
 
         # Verify the number of datasets specified is valid for this plot
-        n_datasets = len(self.chan_list) * len(self.start_list)
-        if n_datasets < self.get_min_datasets():
+        self.n_datasets = len(self.chan_list) * len(self.start_list)
+        if self.n_datasets < self.get_min_datasets():
             raise ArgumentError('%d datasets are required for this plot but only %d are supplied' \
-                                % (self.get_min_datasets(), n_datasets ))
+                                % (self.get_min_datasets(), self.n_datasets ))
 
-        if n_datasets > self.get_max_datasets():
+        if self.n_datasets > self.get_max_datasets():
             raise ArgumentError('A maximum of %d datasets allowed for this plot but %d specified' \
-                                            % (self.get_max_datasets, n_datasets))
+                                            % (self.get_max_datasets, self.n_datasets))
 
         if arg_list.duration:
             self.dur = int(arg_list.duration)
@@ -278,6 +279,14 @@ class CliProduct(object):
         self.log(3, ('Channels: %s' % self.chan_list))
         self.log(3, ('Start times: %s, duration' % self.start_list, self.dur))
         self.log(3, ('Number of time series: %d' % len(self.timeseries)))
+        if len(self.timeseries) != self.n_datasets:
+            self.log(0, ('%d datasets requested but only %d transfered' % (self.n_datasets, len(self.timeseries))))
+            if len(self.timeseries) > self.get_min_datasets():
+                self.log(0, 'Proceeding with the data that was transferred.')
+            else:
+                self.log(0, 'Not enough data for requested plot.')
+                from sys import exit
+                exit(2)
         return
 
 #---- Plotting methods
@@ -383,6 +392,7 @@ class CliProduct(object):
                 fmin = float(arg_list.fmin)
             if arg_list.fmax:
                 fmax = float(arg_list.fmax)
+
             self.log(3, ('Freq-axis limits are [ %f, %f]' % (fmin, fmax)))
             if self.freq_is_y():
                 ax.set_ylim(fmin, fmax)
@@ -397,6 +407,9 @@ class CliProduct(object):
         # image plots don't have legends
         if not self.is_image():
             ax.legend(prop={'size':10})
+            # if only one series is plotted hide legend
+            if self.n_datasets == 1 and ax.legend_:
+                ax.legend_.remove()
 
         # add titles
         title = ''
@@ -439,8 +452,6 @@ class CliProduct(object):
             ylabel = label_to_latex(arg_list.ylabel)
         else:
             ylabel = self.get_ylabel(arg_list)
-            if arg_list.logy and ylabel:
-                ylabel += ' log$_{10}$'
 
         if ylabel:
             self.plot.set_ylabel(ylabel)

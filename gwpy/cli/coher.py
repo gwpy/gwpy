@@ -52,7 +52,7 @@ class Coher(CliProduct):
         return 2
 
     def get_xlabel(self):
-        return 'Frequency (Hz)'
+        return 'Frequency [Hz]'
 
 
     def gen_plot(self, arg_list):

@@ -39,9 +39,9 @@ class Spectrum(CliProduct):
     def get_ylabel(self, args):
         """Text for y-axis label"""
         if args.logy:
-            ylabel = r'$\mathrm{log_{10}  ASD}$ $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
+            ylabel = r'$\mathrm{log_{10}  ASD}$ $\left[ \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right]$'
         else:
-            ylabel = r'$\mathrm{ASD}$ $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
+            ylabel = r'$\mathrm{ASD}$ $\left[ \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right]$'
         return ylabel
 
     def get_title(self):
@@ -51,12 +51,17 @@ class Spectrum(CliProduct):
     def get_xlabel(self):
         return 'Frequency (Hz)'
 
+    def freq_is_y(self):
+        """This plot puts frequency on the y-axis of the graph"""
+        return False
+
     def gen_plot(self, arg_list):
         """Generate the plot from time series and arguments"""
-        from numpy import min, max
+        from numpy import min as npmin
+        from numpy import max as npmax
         self.is_freq_plot = True
 
-        fftlen = 1
+        fftlen = 1.0
         if arg_list.secpfft:
             fftlen = float(arg_list.secpfft)
         self.secpfft = fftlen
@@ -69,10 +74,12 @@ class Spectrum(CliProduct):
 
         # calculate and plot the first spectrum
         spectrum = self.timeseries[0].asd(fftlen, fftlen*ovlap)
-        self.fmin = min(spectrum.frequencies.data)
-        self.fmax = max(spectrum.frequencies.data)
-        self.ymin = 0
-        self.ymax = 1
+
+        fs = self.timeseries[0].sample_rate.value
+        self.fmin = 1/self.secpfft
+        self.fmax = fs/2
+        self.ymin = spectrum.data.min()
+        self.ymax = spectrum.data.max()
 
         label = self.timeseries[0].channel.name
         if len(self.start_list) > 1:
@@ -84,10 +91,15 @@ class Spectrum(CliProduct):
         if len(self.timeseries) > 1:
             for idx in range(1, len(self.timeseries)):
                 specb = self.timeseries[idx].asd(fftlen, ovlap*fftlen)
+                fsb = self.timeseries[idx].sample_rate.value
+                self.fmax = max(self.fmax, fsb/2)
+                self.ymin = min(self.ymin, specb.data.min())
+                self.ymax = max(self.ymax, specb.data.max())
+
                 label = self.timeseries[idx].channel.name
                 if len(self.start_list) > 1:
                     label += ", %s" % self.timeseries[idx].times.epoch.gps
                 specb.name = label
                 self.plot.add_spectrum(specb)
-
+        self.log(2,('Frequency range: [%f, %f]' % (self.fmin, self.fmax)))
         return

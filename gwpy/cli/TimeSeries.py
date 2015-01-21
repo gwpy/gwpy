@@ -44,22 +44,40 @@ class TimeSeries(CliProduct):
         """Start of default super title, first channel is appended to it"""
         return 'Time series: '
 
+    def resample_if_needed(self, timeseries):
+        """
+        Matplotlib has a maximum number of points it will plot without throwing a too many blocks
+        exception.  This hack is a way to get around that.
+        """
+        max_size = 16384. * 32.  # that works on my mac
+        current_size = timeseries.data.size
+        if current_size <= max_size:
+            return timeseries
+        else:
+            fs = timeseries.sample_rate.value
+            newfs = max_size/current_size * fs
+            new_ts = timeseries.resample(newfs)
+        return new_ts
+
     def gen_plot(self, args):
         """Generate the plot from time series and arguments"""
-        from numpy import min, max
+        from gwpy.plotter.tex import label_to_latex
 
-        self.plot = self.timeseries[0].plot()
-        self.ymin = self.timeseries[0].min()
-        self.ymax = self.timeseries[0].max()
-        self.xmin = self.timeseries[0].times.data.min()
-        self.xmax = self.timeseries[0].times.data.max()
+        plotable_timeseries = self.resample_if_needed(self.timeseries[0])
+        self.plot = plotable_timeseries.plot()
+        self.ymin = plotable_timeseries.min().value
+        self.ymax = plotable_timeseries.max().value
+        self.xmin = plotable_timeseries.times.data.min()
+        self.xmax = plotable_timeseries.times.data.max()
 
-        if len(self.timeseries) > 10:
+        if len(self.timeseries) > 1:
             for idx in range(1, len(self.timeseries)):
-                chname = self.timeseries[idx].channel.name
-                self.plot.add_timeseries(self.timeseries[idx],label=chname)
-                self.ymin = min(self.ymin, self.timeseries[idx].min())
-                self.ymax = max(self.ymax, self.timeseries[idx].max())
-                self.xmin = min(self.xmin, self.timeseries[idx].times.data.min())
-                self.xmax = max(self.xmax, self.timeseries[idx].times.data.max())
+                plotable_timeseries = self.resample_if_needed(self.timeseries[idx])
+                chname = plotable_timeseries.channel.name
+                lbl = label_to_latex(chname)
+                self.plot.add_timeseries(plotable_timeseries,label=lbl)
+                self.ymin = min(self.ymin, plotable_timeseries.min().value)
+                self.ymax = max(self.ymax, plotable_timeseries.max().value)
+                self.xmin = min(self.xmin, plotable_timeseries.times.data.min())
+                self.xmax = max(self.xmax, plotable_timeseries.times.data.max())
         return

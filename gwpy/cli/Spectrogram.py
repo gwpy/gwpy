@@ -40,7 +40,7 @@ class Spectrogram(CliProduct):
 
     def get_ylabel(self, args):
         """Default text for y-axis label"""
-        return 'Frequency'
+        return 'Frequency [Hz]'
 
     def get_color_label(self):
         return self.scaleText
@@ -82,13 +82,12 @@ class Spectrogram(CliProduct):
         if stride < 1:
             stride = 1
         stride = stride * secpfft
-        fs = self.timeseries[0].sample_rate
+        fs = self.timeseries[0].sample_rate.value
 
         specgram = self.timeseries[0].spectrogram(stride, fftlength=secpfft, overlap=ovlap) ** (1/2.)
 
-
         # set default frequency limits
-        self.fmax = specgram.span_y.end.value
+        self.fmax = fs / 2.
         self.fmin = 1 / secpfft
 
         # default time axis
@@ -100,15 +99,19 @@ class Spectrogram(CliProduct):
         imax = max(specgram).value
         if arg_list.lo:
             lo = float(arg_list.lo) * 100
-            imin = percentile(specgram,lo)
+        else:
+            lo = 1
+        imin = percentile(specgram,lo)
         if arg_list.up:
             up = float(arg_list.up) * 100
-            imax = percentile(specgram,up)
+        else:
+            up = 100
+        imax = percentile(specgram,up)
 
         if arg_list.lincolors:
             self.plot = specgram.plot(vmin=imin, vmax=imax)
             self.scaleText = r'ASD $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
         else:
             self.plot = specgram.plot(norm='log',vmin=imin, vmax=imax)
-            self.scaleText = r'log_10 ASD $\left(\frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
+            self.scaleText = r'$log_{10} ASD \left[\frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right]$'
         return
