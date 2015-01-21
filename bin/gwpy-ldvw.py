@@ -144,8 +144,6 @@ if __name__ == '__main__':
         import matplotlib
         matplotlib.use('Agg')
 
-
-
     # parse the command line
     args = parser.parse_args()
     if args.silent:

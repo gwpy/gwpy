@@ -44,7 +44,7 @@ class Spectrum(CliProduct):
             ylabel = r'$\mathrm{ASD}$ $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
         return ylabel
 
-    def get_title(self, args):
+    def get_title(self):
         """Start of default super title, first channel is appended to it"""
         return 'Spectrum: '
 

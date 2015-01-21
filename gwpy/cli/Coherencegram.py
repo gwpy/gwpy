@@ -60,11 +60,20 @@ class Coherencegram(CliProduct):
 
     def get_ylabel(self, args):
         """Text for y-axis label"""
-        return 'Coherence'
+        return self.scale_text
 
-    def get_title(self, args):
+    def get_title(self):
         """Start of default super title, first channel is appended to it"""
         return "Coherence spectrogram: "
+
+    def get_color_label(self):
+        return self.scale_text
+
+    def get_sup_title(self):
+        """We want both channels in the title"""
+        sup = self.get_title() + self.timeseries[0].channel.name
+        sup += " vs. " + self.timeseries[1].channel.name
+        return sup
 
     def gen_plot(self, arg_list):
         """Generate the plot from time series and arguments"""
@@ -90,7 +99,7 @@ class Coherencegram(CliProduct):
         coh= self.timeseries[0].coherence_spectrogram(self.timeseries[1], stride)
 
         # set default frequency limits
-        self.fmax = fs.value / 2
+        self.fmax = coh.span_y.end.value
         self.fmin = 1 / secpfft
 
         # default time axis
@@ -102,9 +111,9 @@ class Coherencegram(CliProduct):
         imax = coh.max().value
         if arg_list.lincolors:
             self.plot = coh.plot(vmin=imin, vmax=imax)
-            self.scaleText = r'Coherence'
+            self.scale_text = r'Coherence'
         else:
             self.plot = coh.plot(norm='log',vmin=imin, vmax=imax)
-            self.scaleText = r'log_10 Coherence'
+            self.scale_text = r'log_10 Coherence'
         return
         return

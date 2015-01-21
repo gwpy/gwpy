@@ -40,7 +40,7 @@ class TimeSeries(CliProduct):
         """Text for y-axis label"""
         return 'Counts'
 
-    def get_title(self, args):
+    def get_title(self):
         """Start of default super title, first channel is appended to it"""
         return 'Time series: '
 

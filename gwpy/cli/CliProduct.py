@@ -88,7 +88,7 @@ class CliProduct(object):
         return
 
     @abc.abstractmethod
-    def get_title(self, args):
+    def get_title(self):
         """Start of default super title, first channel is appended to it"""
         return
 
@@ -110,7 +110,17 @@ class CliProduct(object):
         return False
 
     def get_xlabel(self):
+        """Override if you have a better label.  default is to usw gwpy's default label"""
         return ''
+
+    def get_color_label(self):
+        """All products with a color bar should override this"""
+        return 'action does not label color bar (it should)'
+
+    def get_sup_title(self):
+        """Override if default lacks critical info"""
+        return self.get_title() + self.timeseries[0].channel.name
+
 #------Helper functions
     def log(self,level, msg):
         """print log message if verbosity is set high enough"""
@@ -324,8 +334,11 @@ class CliProduct(object):
                     ax.set_yscale('linear')
             if arg_list.logx:
                 ax.set_xscale('log')
+
+            if arg_list.nocolorbar:
+                self.plot.add_colorbar(visible=False )
             else:
-                ax.set_xscale('linear')
+                self.plot.add_colorbar(label=self.get_color_label())
         else:
             if arg_list.logy:
                 ax.set_yscale('log')
@@ -340,8 +353,7 @@ class CliProduct(object):
             else:
                 if arg_list.logx:
                     ax.set_xscale('log')
-                else:
-                    ax.set_xscale('linear')
+            self.plot.add_colorbar(visible=False)
 
         # scale the axes
         ymin = self.ymin
@@ -394,21 +406,22 @@ class CliProduct(object):
                     title += "\n"
                 title += t
         # info on the processing
-        fs = self.timeseries[0].sample_rate
         start = self.start_list[0]
         startGPS = Time(start, format='gps')
         timeStr = "%s - %10d (%ds)" % (startGPS.iso, start, self.dur)
 
+        idx = 0  # todo: figure out a way to summarize all channels
+        fs = self.timeseries[idx].sample_rate
         if self.is_freq_plot:
             spec = r'%s, Fs=%s, secpfft=%.1f, overlap=%.2f' %  \
                     (timeStr, fs,self.secpfft, self.overlap)
         else:
             xdur = self.xmax - self.xmin
             spec = r'Fs=%s, duration: %.1f' % (fs, xdur)
-
         if len(title) > 0:
             title += "\n"
         title += spec
+
         title = label_to_latex(title)
         self.plot.set_title(title, fontsize=12)
         self.log(3, ('Title is: %s' % title))
@@ -441,9 +454,9 @@ class CliProduct(object):
         if arg_list.suptitle:
             sup_title = arg_list.suptitle
         else:
-            sup_title = self.get_title(arg_list) + self.timeseries[0].channel.name
+            sup_title = self.get_sup_title()
         sup_title = label_to_latex(sup_title)
-        self.plot.suptitle(sup_title, fontsize=14)
+        self.plot.suptitle(sup_title, fontsize=18)
 
         self.log(3, ('Super title is: %s' % sup_title))
         self.show_plot_info()

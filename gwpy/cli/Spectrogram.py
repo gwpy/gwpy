@@ -40,7 +40,10 @@ class Spectrogram(CliProduct):
 
     def get_ylabel(self, args):
         """Default text for y-axis label"""
-        return r'$\mathrm{log_{10}  ASD}$ $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
+        return 'Frequency'
+
+    def get_color_label(self):
+        return self.scaleText
 
     def get_max_datasets(self):
         """Spectrogram only handles 1 at a time"""
@@ -54,7 +57,7 @@ class Spectrogram(CliProduct):
         """This plot puts frequency on the y-axis of the image"""
         return True
 
-    def get_title(self, args):
+    def get_title(self):
         """Start of default super title, first channel is appended to it"""
         return 'Spectrogram: '
 
@@ -85,7 +88,7 @@ class Spectrogram(CliProduct):
 
 
         # set default frequency limits
-        self.fmax = fs.value / 2
+        self.fmax = specgram.span_y.end.value
         self.fmin = 1 / secpfft
 
         # default time axis

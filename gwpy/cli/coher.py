@@ -43,7 +43,7 @@ class Coher(CliProduct):
         """Text for y-axis label"""
         return 'Coherence'
 
-    def get_title(self, args):
+    def get_title(self):
         """Start of default super title, first channel is appended to it"""
         return 'Coherence with: '
 
