@@ -66,6 +66,7 @@ class CliProduct(object):
         self.dpi = 100
         self.is_freq_plot = False
         self.n_datasets = 0
+        self.filter = ''        # string for annotation if we filtered data
 
 #------Abstract metods------------
     @abc.abstractmethod
@@ -139,6 +140,7 @@ class CliProduct(object):
         parser.add_argument('--duration', default=10, help='Duration (seconds) [10]')
         parser.add_argument('-c', '--framecache',
                             help='use .gwf files in cache not NDS2, default use NDS2')
+        parser.add_argument('--highpass', help='frequency for high pass butterworth, default no filter')
         return
 
     def arg_chan1(self,parser):
@@ -188,8 +190,6 @@ class CliProduct(object):
                             help='1st title line (larger than the others)')
         parser.add_argument('--xlabel', help='x axis text')
         parser.add_argument('--ylabel', help='y axis text')
-        parser.add_argument('--ymin', help='fix min value for yaxis defaults to min of data')
-        parser.add_argument('--ymax', help='max value for y-axis default to max of data')
         parser.add_argument('--out', help='output filename, type=ext (png, pdf, jpg)')
         # legends match input files in position are displayed if any are specified.
         parser.add_argument('--legend', nargs='*', action='append',
@@ -198,19 +198,24 @@ class CliProduct(object):
                             help='do not display legend')
         parser.add_argument('--nogrid', action='store_true',
                             help='do not display grid lines')
+        parser.add_argument('--ymin', help='fix min value for yaxis defaults to min of data')
+        parser.add_argument('--ymax', help='max value for y-axis default to max of data')
+
 
         return
 
     def arg_imag(self,parser):
         """Add arguments for image based plots like spectrograms"""
-        parser.add_argument('--lo', help='min value in resulting image')
-        parser.add_argument('--up', help='max value in resulting image')
+        parser.add_argument('--imin', help='min pixel value in resulting image')
+        parser.add_argument('--imax', help='max pixek value in resulting image')
         parser.add_argument('--nopct', action='store_true',
-                            help='up and lo are pixel values, default=percentile')
+                            help='up and lo are pixel values, default=percentile if not normalized')
         parser.add_argument('--nocolorbar', action='store_true',
                             help='hide the color bar')
         parser.add_argument('--lincolors', action='store_true',
                             help='set intensity scale of image to linear, default=logarithmic')
+        parser.add_argument('--norm', action='store_true',
+                            help='Display the ratio of each fequency bin to the mean of that frequency')
         return
 
 #-------Data transfer methods
@@ -247,7 +252,7 @@ class CliProduct(object):
         if arg_list.duration:
             self.dur = int(arg_list.duration)
         else:
-            raise ArgumentError('No duration specified')
+            self.dur = 10
 
         verb = self.VERBOSE > 1
 
@@ -259,6 +264,12 @@ class CliProduct(object):
             source='frames'
             frame_cache = arg_list.framecache
 
+        # set up filter parameters for all channels
+        highpass = 0
+        if arg_list.highpass:
+            highpass = float(arg_list.highpass)
+            self.filter += "highpass(%.1f) " % highpass
+
         # Get the data from NDS or Frames
         for chan in self.chan_list:
             for start in self.start_list:
@@ -269,12 +280,10 @@ class CliProduct(object):
                 else:
                     data = TimeSeries.fetch(chan, start, start+self.dur, verbose=verb)
 
-                if data.min() == data.max():
-                    print 'Data from {0:s} has a constant value of {1:f}.',  \
-                        'Coherence can not be calculated.' \
-                        .format(chan, data.min())
-                else:
-                    self.timeseries.append(data)
+                if highpass > 0:
+                    data = data.highpass(highpass)
+
+                self.timeseries.append(data)
         # report what we have if they asked for it
         self.log(3, ('Channels: %s' % self.chan_list))
         self.log(3, ('Start times: %s, duration' % self.start_list, self.dur))
@@ -402,6 +411,7 @@ class CliProduct(object):
                 ax.set_ylim(ymin, ymax)
         else:
             ax.set_xlim(xmin, xmax)
+
             ax.set_ylim(ymin, ymax)
 
         # image plots don't have legends
@@ -423,14 +433,26 @@ class CliProduct(object):
         startGPS = Time(start, format='gps')
         timeStr = "%s - %10d (%ds)" % (startGPS.iso, start, self.dur)
 
-        idx = 0  # todo: figure out a way to summarize all channels
-        fs = self.timeseries[idx].sample_rate
+        # list the different sample rates available in all time series
+        fs_set = set()
+
+        for idx in range(0, len(self.timeseries)):
+            fs = self.timeseries[idx].sample_rate
+            fs_set.add(fs)
+
+        fs_str = ''
+        for fs in fs_set:
+            if len(fs_str) > 0:
+                fs_str += ', '
+            fs_str += '(%s)' % fs
+
         if self.is_freq_plot:
-            spec = r'%s, Fs=%s, secpfft=%.1f, overlap=%.2f' %  \
-                    (timeStr, fs,self.secpfft, self.overlap)
+            spec = r'%s, Fs=%s, secpfft=%.1f (bw=%.3f), overlap=%.2f' %  \
+                    (timeStr, fs_str, self.secpfft, 1/self.secpfft, self.overlap)
         else:
             xdur = self.xmax - self.xmin
-            spec = r'Fs=%s, duration: %.1f' % (fs, xdur)
+            spec = r'Fs=%s, duration: %.1f' % (fs_str, xdur)
+        spec += " " + self.filter
         if len(title) > 0:
             title += "\n"
         title += spec

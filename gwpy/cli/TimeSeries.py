@@ -62,6 +62,8 @@ class TimeSeries(CliProduct):
     def gen_plot(self, args):
         """Generate the plot from time series and arguments"""
         from gwpy.plotter.tex import label_to_latex
+        from numpy import min as npmin
+        from numpy import max as npmax
 
         plotable_timeseries = self.resample_if_needed(self.timeseries[0])
         self.plot = plotable_timeseries.plot()
@@ -80,4 +82,28 @@ class TimeSeries(CliProduct):
                 self.ymax = max(self.ymax, plotable_timeseries.max().value)
                 self.xmin = min(self.xmin, plotable_timeseries.times.data.min())
                 self.xmax = max(self.xmax, plotable_timeseries.times.data.max())
+        # if they chose to set the tange of the x-axis find the range of y
+        strt = self.xmin
+        stop = self.xmax
+        # a bit weird but global ymax will be >= any value in the range same for ymin
+        new_ymin = self.ymax
+        new_ymax = self.ymin
+
+        if args.xmin:
+            strt = float(args.xmin)
+        if args.xmax:
+            stop = float(args.xmax)
+        if strt != self.xmin or stop != self.xmax:
+            for idx in range(0, len(self.timeseries)):
+                x0 = self.timeseries[idx].x0.value
+                dt = self.timeseries[idx].dt.value
+                b = max(0, (strt - x0) / dt)
+
+                e = min(self.xmax, (stop - x0) / dt)
+                if e >= self.timeseries[idx].size:
+                    e = self.timeseries[idx].size - 1
+                new_ymin = min(new_ymin, npmin(self.timeseries[idx][b:e]))
+                new_ymax = max(new_ymax, npmax(self.timeseries[idx][b:e]))
+            self.ymin = new_ymin
+            self.ymax = new_ymax
         return

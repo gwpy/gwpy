@@ -86,6 +86,11 @@ class Spectrogram(CliProduct):
 
         specgram = self.timeseries[0].spectrogram(stride, fftlength=secpfft, overlap=ovlap) ** (1/2.)
 
+        norm = False
+        if arg_list.norm:
+            specgram = specgram.ratio('mean')
+            norm = True
+
         # set default frequency limits
         self.fmax = fs / 2.
         self.fmin = 1 / secpfft
@@ -97,18 +102,30 @@ class Spectrogram(CliProduct):
         # set intensity (color) limits
         imin = min(specgram).value
         imax = max(specgram).value
-        if arg_list.lo:
-            lo = float(arg_list.lo) * 100
+        if arg_list.imin:
+            lo = float(arg_list.imin)
         else:
             lo = 1
-        imin = percentile(specgram,lo)
-        if arg_list.up:
-            up = float(arg_list.up) * 100
+        if norm or arg_list.nopct:
+            imin = lo
+        else:
+            imin = percentile(specgram,lo*100)
+
+        if arg_list.imax:
+            up = float(arg_list.imax)
+        elif norm:
+            up = 4
         else:
             up = 100
-        imax = percentile(specgram,up)
+        if norm or arg_list.nopct:
+            imax = up
+        else:
+            imax = percentile(specgram,up)
 
-        if arg_list.lincolors:
+        if norm:
+            self.plot = specgram.plot(vmin=imin, vmax=imax)
+            self.scaleText = 'Normalized to mean'
+        elif arg_list.lincolors:
             self.plot = specgram.plot(vmin=imin, vmax=imax)
             self.scaleText = r'ASD $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
         else:

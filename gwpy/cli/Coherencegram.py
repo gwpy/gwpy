@@ -60,7 +60,7 @@ class Coherencegram(CliProduct):
 
     def get_ylabel(self, args):
         """Text for y-axis label"""
-        return self.scale_text
+        return 'Frequency [Hz]'
 
     def get_title(self):
         """Start of default super title, first channel is appended to it"""
@@ -97,6 +97,11 @@ class Coherencegram(CliProduct):
         fs = self.timeseries[0].sample_rate
 
         coh= self.timeseries[0].coherence_spectrogram(self.timeseries[1], stride)
+        norm = False
+        if arg_list.norm:
+            coh = coh.ratio('mean')
+            norm = True
+
 
         # set default frequency limits
         self.fmax = coh.span_y.end.value
@@ -109,11 +114,37 @@ class Coherencegram(CliProduct):
         # set intensity (color) limits
         imin = coh.min().value
         imax = coh.max().value
-        if arg_list.lincolors:
+
+        from numpy import percentile
+
+        if arg_list.imin:
+            lo = float(arg_list.imin)
+        else:
+            lo = 1
+        if norm or arg_list.nopct:
+            imin = lo
+        else:
+            imin = percentile(coh,lo*100)
+
+        if arg_list.imax:
+            up = float(arg_list.imax)
+        elif norm:
+            up = 4
+        else:
+            up = 100
+        if norm or arg_list.nopct:
+            imax = up
+        else:
+            imax = percentile(coh,up)
+
+        # plot the thing
+        if norm:
+            self.plot = coh.plot(vmin=imin, vmax=imax)
+            self.scale_text = 'Normalized to mean'
+        elif arg_list.lincolors:
             self.plot = coh.plot(vmin=imin, vmax=imax)
             self.scale_text = r'Coherence'
         else:
             self.plot = coh.plot(norm='log',vmin=imin, vmax=imax)
             self.scale_text = r'log_10 Coherence'
-        return
         return

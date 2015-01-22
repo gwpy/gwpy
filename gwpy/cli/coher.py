@@ -68,26 +68,57 @@ class Coher(CliProduct):
         self.secpfft = fftlen
         self.overlap = ovlap
 
+        if self.timeseries[0].min() == self.timeseries[0].data.max():
+            ermsg = 'Reference channel has a constant value of (%f).  Coherence can not be calculated' \
+                % self.timeseries[0].min()
+            raise ArithmeticError(ermsg)
+
+        ref_name = self.timeseries[0].channel.name
+
+        # we don't want to compare the reference channel to itself at a different time
+        next_ts = 0
+        for idx in range(1, len(self.timeseries)):
+            chname = self.timeseries[idx].channel.name
+            if chname != ref_name and self.timeseries[idx].min() != self.timeseries[idx].data.max():
+                next_ts = idx
+                break
+        if next_ts == 0:
+            raise ArithmeticError('No appropriate channels for Coherence calculation')
+
         # calculate and plot the first pair, note the first channel is the reference channel
-        coh = self.timeseries[0].coherence(self.timeseries[1], fftlength=fftlen, overlap=ovlap*fftlen)
+        coh = self.timeseries[0].coherence(self.timeseries[next_ts], fftlength=fftlen, overlap=ovlap*fftlen)
+        chname = self.timeseries[next_ts].channel.name
+        coh.name = chname
+        if len(self.start_list) > 1:
+            coh.name += ", %s" % self.timeseries[next_ts].times.epoch.gps
+        next_ts += 1
+
         #coh2 = 1 / (1-coh)
         self.fmin = min(coh.frequencies.data)
         self.fmax = max(coh.frequencies.data)
         self.ymin = 0
         self.ymax = 1
 
-        coh.name = self.timeseries[1].channel.name
-        if len(self.start_list) > 1:
-            coh.name += ", %s" % self.timeseries[1].times.epoch.gps
+
+
+        if len(self.start_list) > next_ts:
+            coh.name += ", %s" % self.timeseries[next_ts].times.epoch.gps
+            next_ts += 1
 
         self.plot = coh.plot()
 
         # if we have more time series calculate and add to the first plot
-        if len(self.timeseries) > 2:
-            for idx in range(2, len(self.timeseries)):
-                cohb = self.timeseries[0].coherence(self.timeseries[idx], fftlength=fftlen, overlap=ovlap*fftlen)
-                cohb.name = self.timeseries[idx].channel.name
-                if len(self.start_list) > 1:
-                    cohb.name += ", %s" % self.timeseries[idx].times.epoch.gps
-                self.plot.add_spectrum(cohb)
+        if len(self.timeseries) > next_ts:
+            for idx in range(next_ts, len(self.timeseries)):
+                chname = self.timeseries[idx].channel.name
+                if ref_name != chname and self.timeseries[idx].min() != self.timeseries[idx].data.max():
+                    # don't calculate against reference channel at a different time
+                    self.log(2, ('Calculating coherence of %s vs %s' % (ref_name, chname)))
+                    cohb = self.timeseries[0].coherence(self.timeseries[idx], fftlength=fftlen, overlap=ovlap*fftlen)
+                    cohb.name = chname
+                    if len(self.start_list) > 1:
+                        cohb.name += ", %s" % self.timeseries[idx].times.epoch.gps
+                    self.plot.add_spectrum(cohb)
+
+        return
 
