@@ -649,7 +649,7 @@ class ChannelList(list):
                         % (str(c), c.type, c.sample_rate) for c in found])))
             elif unique and len(found) > 1:
                 warnings.warn('Multiple instances of %r found with different '
-                              'sample rates, returning first.' % (name),
+                              'parameters, returning first.' % (name),
                               NDSWarning)
                 out.append(found[0])
             else:
