@@ -31,6 +31,25 @@ __version__ = version.version
 
 rUNDERSCORE = re.compile(r'(?<!\\)_')
 
+# groups of input parameters (for passing to Plot() and subclasses)
+FIGURE_PARAMS = [
+    'figsize',
+]
+AXES_PARAMS = [
+    'projection', 'sharex', 'sharey', 'xlim', 'ylim', 'xlabel', 'ylabel',
+    'xscale', 'yscale', 'title',
+]
+LINE_PARAMS = [
+    'linewidth', 'linestyle', 'color', 'label', 'alpha',
+]
+COLLECTION_PARAMS = [
+    'cmap', 'vmin', 'vmax', 'marker', 's', 'norm',
+]
+ARTIST_PARAMS = set(LINE_PARAMS + COLLECTION_PARAMS)
+LEGEND_PARAMS = [
+    'loc', 'borderaxespad', 'ncol',
+]
+
 
 def float_to_latex(x, format="%.2g"):
     """Convert a floating point number into a TeX representation.

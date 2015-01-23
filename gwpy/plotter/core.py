@@ -31,7 +31,7 @@ try:
 except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
-from . import (tex, axes)
+from . import (tex, axes, utils)
 from .log import CombinedLogFormatterMathtext
 from .decorators import (auto_refresh, axes_method)
 
@@ -913,3 +913,28 @@ class Plot(figure.Figure):
             else:
                 out.append([x])
         return out
+
+    @staticmethod
+    def _parse_kwargs(kwargs):
+        """Separate input kwargs dict into axes, and artist params
+
+        The assumption is that all remaining kwargs should be passed to
+        the underlying `Plot` constructor
+
+        Parameters
+        ----------
+        kwargs : `dict`
+            `dict` of input keyword arguments for `Plot`
+
+        Returns
+        -------
+        axargs, artistargs : `list` of `dict`
+            separated kwarg `dict` for the the axes and the artists
+        """
+        separatedargs = []
+        for arglist in [utils.AXES_PARAMS, utils.ARTIST_PARAMS]:
+            separatedargs.append(dict())
+            for key in arglist:
+                if key in kwargs:
+                    separatedargs[-1][key] = kwargs.pop(key)
+        return separatedargs
