@@ -44,7 +44,7 @@ baddata = TimeSeries.fetch('L1:PSL-ISS_PDB_OUT_DQ', badtime, badtime+duration)
 goodasd = gooddata.asd(4, 2)
 badasd = baddata.asd(4, 2)
 
-# Lastly, we make a plot of the data by `plotting <TimeSeries.plot>` one `TimeSeries`, and then adding the second:
+# Lastly, we make a plot of the data by `plotting <Spectrum.plot>` one `Spectrum`, and then adding the second:
 plot = badasd.plot(label='Noisy data')
 ax = plot.gca()
 ax.plot(goodasd, label='Clean data')
@@ -52,4 +52,5 @@ ax.set_xlabel('Frequency [Hz]')
 ax.set_xlim(10, 8000)
 ax.set_ylabel(r'Noise ASD [1/$\sqrt{\mathrm{Hz}}$]')
 ax.set_ylim(1e-6, 5e-4)
+ax.grid(True, 'both', 'both')
 plot.show()
