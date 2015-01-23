@@ -23,6 +23,7 @@ import numpy
 
 from matplotlib import (backends, figure, pyplot, colors as mcolors,
                         _pylab_helpers)
+from matplotlib.cbook import iterable
 from matplotlib.ticker import LogLocator
 
 try:
@@ -848,3 +849,67 @@ class Plot(figure.Figure):
     def html_map(self, filename, data=None, **kwargs):
         pass
     html_map.__doc__ = axes.Axes.html_map.__doc__
+
+    # -----------------------------------------------
+    # utilies
+
+    @staticmethod
+    def _get_axes_data(inputs, sep=False):
+        """Determine the number of axes from the input args to this `Plot`
+
+        Parameters
+        ----------
+        inputs : `list` of array-like data sets
+            a list of data arrays, or a list of lists of data sets
+        sep : `bool`, optional
+            plot each set of data on a separate `Axes`
+
+        Returns
+        -------
+        axesdata : `list` of lists of array-like data
+            a `list` with one element per required `Axes` containing the
+            array-like data sets for those `Axes`
+
+        Notes
+        -----
+        The logic for this method is as follows:
+
+        - if a `list` of data arrays are given, and `sep=False`, use 1 `Axes`
+        - if a `list` of data arrays are given, and `sep=True`, use N `Axes,
+          one for each data array
+        - if a nested `list` of data arrays are given, ignore `sep` and
+          use one `Axes` for each element in the top list.
+
+        For example:
+
+            >>> Plot._get_naxes([data1, data2], sep=False)
+            [[data1, data2]]
+            >>> Plot._get_naxes([data1, data2], sep=True)
+            [[data1], [data2]]
+            >>> Plot._get_naxes([[data1, data2], data3])
+            [[data1, data2], [data3]]
+        """
+        # if not given list, default to 1
+        if not iterable(inputs):
+            return [inputs]
+        elif not len(inputs):
+            return []
+        # if given a nested list of data, multiple axes are required
+        if any([isinstance(x, (list, tuple, dict)) for x in inputs]):
+            sep = True
+        # build list of lists
+        out = []
+        if not sep:
+            out.append([])
+        for x in inputs:
+            # if not sep, each element of inputs is a data set
+            if not sep:
+                out[0].append(x)
+            # otherwise if this element is a list already, that's fine
+            elif isinstance(x, (list, tuple)):
+                out.append(x)
+            elif isinstance(x, dict):
+                out.append(x.values())
+            else:
+                out.append([x])
+        return out
