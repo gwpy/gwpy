@@ -331,26 +331,48 @@ class TimeSeriesPlot(Plot):
     def __init__(self, *series, **kwargs):
         """Initialise a new TimeSeriesPlot
         """
+        kwargs.setdefault('projection', self._DefaultAxesClass.name)
+        kwargs.setdefault('figsize', [12, 6])
+        # extract custom keyword arguments
         sep = kwargs.pop('sep', False)
         epoch = kwargs.pop('epoch', None)
-        kwargs.setdefault('figsize', [12, 6])
+        sharex = kwargs.pop('sharex', False)
+        sharey = kwargs.pop('sharey', False)
+        # separate keyword arguments
+        axargs, plotargs = self._parse_kwargs(kwargs)
 
         # generate figure
         super(TimeSeriesPlot, self).__init__(**kwargs)
 
         # plot data
-        for ts in series:
-            self.add_timeseries(ts, newax=sep)
+        axesdata = self._get_axes_data(series, sep=sep)
+        for data in axesdata:
+            ax = self._add_new_axes(**axargs)
+            for ts in data:
+                ax.plot(ts, **plotargs)
+            if 'sharex' not in axargs and sharex is True:
+                axargs['sharex'] = ax
+            if 'sharey' not in axargs and sharey is True:
+                axargs['sharey'] = ax
+        axargs.pop('sharex', None)
+        axargs.pop('sharey', None)
+        axargs.pop('projection', None)
 
         # set epoch
-        if len(series):
-            span = SegmentList([ts.span for ts in series]).extent()
+        if len(self.axes):
+            flatdata = [ts for data in axesdata for ts in data]
+            span = SegmentList([ts.span for ts in flatdata]).extent()
             for ax in self.axes:
+                for key, val in axargs.iteritems():
+                    getattr(ax, 'set_%s' % key)(val)
                 if epoch is not None:
                     ax.set_epoch(epoch)
                 else:
                     ax.set_epoch(span[0])
-                ax.set_xlim(*span)
+                if 'xlim' not in axargs:
+                    ax.set_xlim(*span)
+                if 'label' in plotargs:
+                    ax.legend()
             for ax in self.axes[:-1]:
                 ax.set_xlabel("")
 
