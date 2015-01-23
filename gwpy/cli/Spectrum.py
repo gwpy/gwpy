@@ -21,13 +21,13 @@
 
 """ Spectrum plots
 """
-from CliProduct import CliProduct
+from cliproduct import CliProduct
 
 class Spectrum(CliProduct):
 
     def get_action(self):
         """Return the string used as "action" on command line."""
-        return 'Spectrum'
+        return 'spectrum'
 
     def init_cli(self, parser):
         """Set up the argument list for this product"""

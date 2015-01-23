@@ -26,11 +26,11 @@ __version__ = version.version
 
 VERBOSE = 3 # 0 = errors only, 1 = Warnings, 2 = INFO, >2 DEBUG >=5 ALL
 
-# each Product calls a function in this file to create the plot
-def coher(args):
+# each Product calls a function in this file to instantiate the objject that creates the plot
+def coherence(args):
     if VERBOSE > 1:
         print 'coherence called'
-    from gwpy.cli.Coher import Coher
+    from gwpy.cli.coherence import Coher
 
     plotObj = Coher()
     plotObj.makePlot(args)
@@ -39,7 +39,7 @@ def coher(args):
 def timeseries(args):
     if VERBOSE > 1:
         print 'timeseries called'
-    from gwpy.cli.TimeSeries import TimeSeries
+    from gwpy.cli.timeseries import TimeSeries
     plotObj = TimeSeries()
     plotObj.makePlot(args)
     return
@@ -47,7 +47,7 @@ def timeseries(args):
 def spectrum(args):
     if VERBOSE > 1:
         print 'spectrum called'
-    from gwpy.cli.Spectrum import Spectrum
+    from gwpy.cli.spectrum import Spectrum
     plotObj = Spectrum()
     plotObj.makePlot(args)
     return
@@ -55,7 +55,7 @@ def spectrum(args):
 def spectrogram(args):
     if VERBOSE > 1:
         print 'spectrogram called'
-    from gwpy.cli.Spectrogram import Spectrogram
+    from gwpy.cli.spectrogram import Spectrogram
     plotObj = Spectrogram()
     plotObj.makePlot(args)
     return
@@ -64,7 +64,7 @@ def coherencegram(args):
 
     if VERBOSE > 1:
         print 'Coherence spectrogram called'
-    from gwpy.cli.Coherencegram import Coherencegram
+    from gwpy.cli.coherencegram import Coherencegram
     plotObj = Coherencegram()
     plotObj.makePlot(args)
     return
@@ -85,12 +85,13 @@ class CliHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
 #----
 
 # Products are classes that implement a specific plot
+# This is a list of those class names, module names
 PRODUCTS = [
-    'Coher',
-    'Spectrum',
-    'TimeSeries',
-    'Spectrogram',
-    'Coherencegram'
+        'TimeSeries',
+        'Coherence',
+        'Spectrum',
+        'Spectrogram',
+        'Coherencegram'
 ]
 
 parser = argparse.ArgumentParser(formatter_class=CliHelpFormatter,
@@ -119,15 +120,18 @@ sp = dict()
 
 # Add the subparsers for each plot product
 for product in PRODUCTS:
-
-    mod = import_module('gwpy.cli.%s' % product)
+    mod_name = product.lower()
+    mod = import_module('gwpy.cli.%s' % mod_name)
     class_ = getattr(mod, product)
     prod = class_()
 
+    # the action is the command line argument for which lot which class to call
     action = prod.get_action()
-    sp[product] = subparsers.add_parser(product, help=prod.__doc__,
+    sp[product] = subparsers.add_parser(action, help=prod.__doc__,
                                        parents=[parentparser])
-    operation=globals()[product.lower()]
+    # the operation is the name of the function in this module
+    # we use the lower case version of the action
+    operation=globals()[action.lower()]
     sp[product].set_defaults(func=operation)
     prod.init_cli(sp[product])
 

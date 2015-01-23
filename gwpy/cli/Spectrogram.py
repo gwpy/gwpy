@@ -21,13 +21,13 @@
 
 """ Coherence plots
 """
-from CliProduct import CliProduct
+from cliproduct import CliProduct
 
 class Spectrogram(CliProduct):
 
     def get_action(self):
         """Return the string used as "action" on command line."""
-        return 'Spectrogram'
+        return 'spectrogram'
 
     def init_cli(self, parser):
         """Set up the argument list for this product"""

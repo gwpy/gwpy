@@ -21,7 +21,7 @@
 
 """ Coherence plots
 """
-from CliProduct import CliProduct
+from cliproduct import CliProduct
 from .. import version
 
 __author__ = 'Joseph Areeda'
@@ -31,7 +31,7 @@ class Coherencegram(CliProduct):
 
     def get_action(self):
         """Return the string used as "action" on command line."""
-        return 'Coherencegram'
+        return 'coherencegram'
 
     def init_cli(self, parser):
         """Set up the argument list for this product"""
