@@ -49,23 +49,28 @@ class TimeSeries(CliProduct):
         Matplotlib has a maximum number of points it will plot without throwing a too many blocks
         exception.  This hack is a way to get around that.
         """
-        max_size = 16384. * 32.  # that works on my mac
+
         current_size = timeseries.data.size
-        if current_size <= max_size:
+        if current_size <= self.max_size:
             return timeseries
         else:
             fs = timeseries.sample_rate.value
-            newfs = max_size/current_size * fs
+            newfs = self.max_size/current_size * fs
             new_ts = timeseries.resample(newfs)
         return new_ts
 
     def gen_plot(self, args):
         """Generate the plot from time series and arguments"""
+        self.max_size = 16384. * 32.  # that works on my mac
+        self.yscale_factor = 1.0
+
         from gwpy.plotter.tex import label_to_latex
         from numpy import min as npmin
         from numpy import max as npmax
 
-        plotable_timeseries = self.resample_if_needed(self.timeseries[0])
+        plotable_timeseries = self.timeseries[0]
+        if plotable_timeseries.data.size > self.max_size:
+            self.yscale_factor = 2
         self.plot = plotable_timeseries.plot()
         self.ymin = plotable_timeseries.min().value
         self.ymax = plotable_timeseries.max().value
@@ -74,7 +79,10 @@ class TimeSeries(CliProduct):
 
         if len(self.timeseries) > 1:
             for idx in range(1, len(self.timeseries)):
-                plotable_timeseries = self.resample_if_needed(self.timeseries[idx])
+                #plotable_timeseries = self.resample_if_needed(self.timeseries[idx])
+                plotable_timeseries = self.timeseries[0]
+                if plotable_timeseries.data.size > self.max_size:
+                    self.yscale_factor = 2
                 chname = plotable_timeseries.channel.name
                 lbl = label_to_latex(chname)
                 self.plot.add_timeseries(plotable_timeseries,label=lbl)
@@ -106,4 +114,11 @@ class TimeSeries(CliProduct):
                 new_ymax = max(new_ymax, npmax(self.timeseries[idx][b:e]))
             self.ymin = new_ymin
             self.ymax = new_ymax
+        if self.yscale_factor > 1:
+            self.log(2, ('Scaling y-limits, original: %f, %f)' % (self.ymin, self.ymax)))
+            yrange = self.ymax - self.ymin
+            mid = (self.ymax + self.ymin) / 2.
+            self.ymax = mid + yrange / (2 * self.yscale_factor)
+            self.ymin = mid - yrange / (2 * self.yscale_factor)
+            self.log(2, ('Scaling y-limits, new: %f, %f)' % (self.ymin, self.ymax)))
         return
