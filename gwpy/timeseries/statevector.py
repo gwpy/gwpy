@@ -366,11 +366,15 @@ class StateVector(TimeSeries):
         """
         if bits is None:
             bits = [b for b in self.bits if b is not None]
-        for i, b in enumerate(bits):
-            if not b in self.bits and isinstance(b):
-                bits[i] = self.bits[b]
+        bindex = []
+        for b in bits:
+            try:
+                bindex.append((self.bits.index(b), b))
+            except IndexError as e:
+                e.args = ('Bit %r not found in StateVector' % b)
+                raise e
         self._bitseries = TimeSeriesDict()
-        for i, bit in enumerate(self.bits):
+        for i, bit in bindex:
             self._bitseries[bit] = StateTimeSeries(
                 self.data >> i & 1, name=bit, epoch=self.x0.value,
                 channel=self.channel, sample_rate=self.sample_rate)
