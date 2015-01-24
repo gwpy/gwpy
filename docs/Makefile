@@ -14,6 +14,8 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
 EXAMPLES := $(shell cd ../examples/ && ls */*py)
 EXAMPLEDIRS := $(shell cd ../examples/ && ls -d */)
+CLIEXAMPLEDIR = $(BUILDDIR)/cli_examples
+CLIEXAMPLES = $(CLIEXAMPLEDIR)/cli-01.png $(CLIEXAMPLEDIR)/cli-02.png
 
 .PHONY: help clean apidoc html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest examples
 
@@ -41,13 +43,14 @@ help:
 
 clean:
 	-rm -rf examples/*/
+	-rm -rf $(CLIEXAMPLEDIR)
 	-rm -rf $(BUILDDIR)
 	-rm -rf _generated
 
 apidoc:
 	sphinx-apidoc -o _generated ../gwpy
 
-html: examples
+html: examples $(CLIEXAMPLES)
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
@@ -177,3 +180,16 @@ examples/%.rst: export INDEX=$(addprefix examples/,$(dir $*))index.rst
 examples/%.rst: ex2rst.py ../examples/%.py examples/index.rst
 	@$(MAKE) $(INDEX)
 	python ex2rst.py ../examples/$*.py $@
+
+$(CLIEXAMPLEDIR):
+	@echo "building cli examples"
+	@mkdir -p $(CLIEXAMPLEDIR)/
+
+$(CLIEXAMPLEDIR)/cli-01.png: $(CLIEXAMPLEDIR)
+	@echo "cli-01.png"
+	@gwpy-ldvw.py timeseries --chan L1:OAF-CAL_DARM_DQ --start 1102766651 --out $(CLIEXAMPLEDIR)/cli-01.png
+
+$(CLIEXAMPLEDIR)/cli-02.png: $(CLIEXAMPLEDIR)
+	@echo "cli-02.png"
+	@gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start 1102766451 --start 1102766651 --logf --logy --out $(CLIEXAMPLEDIR)/cli-02.png
+
