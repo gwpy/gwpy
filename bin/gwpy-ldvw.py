@@ -30,9 +30,9 @@ VERBOSE = 3 # 0 = errors only, 1 = Warnings, 2 = INFO, >2 DEBUG >=5 ALL
 def coherence(args):
     if VERBOSE > 1:
         print 'coherence called'
-    from gwpy.cli.coherence import Coher
+    from gwpy.cli.coherence import Coherence
 
-    plotObj = Coher()
+    plotObj = Coherence()
     plotObj.makePlot(args)
     return
 
