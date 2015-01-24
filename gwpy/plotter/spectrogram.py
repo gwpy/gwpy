@@ -34,31 +34,6 @@ __all__ = ['SpectrogramPlot']
 class SpectrogramPlot(TimeSeriesPlot):
     """`Figure` for displaying a :class:`~gwpy.spectrogram.Spectrogram`.
     """
-    def __init__(self, *spectrograms, **kwargs):
-        """Generate a new `SpectrogramPlot`
-        """
-        # extract plotting keyword arguments
-        plotargs = dict()
-        plotargs['vmin'] = kwargs.pop('vmin', None)
-        plotargs['vmax'] = kwargs.pop('vmax', None)
-        plotargs['norm'] = kwargs.pop('norm', None)
-        plotargs['cmap'] = kwargs.pop('cmap', None)
-        sep = kwargs.pop('sep', True)
-
-        # initialise figure
-        super(SpectrogramPlot, self).__init__(**kwargs)
-
-        # plot data
-        for i,spectrogram in enumerate(spectrograms):
-            self.add_spectrogram(spectrogram, newax=sep, **plotargs)
-            self.axes[-1].fmt_ydata = lambda f: ('%s %s'
-                                                 % (f, spectrogram.yunit))
-            self.axes[-1].set_ylabel('Frequency [%s]' % spectrogram.yunit)
-
-        # set matching epoch for each set of axes
-        if len(spectrograms) and not sep:
-            span = SegmentList([spec.span for spec in spectrograms]).extent()
-            for ax in self.axes:
-                ax.set_xlim(*span)
-            for ax in self.axes[:-1]:
-                ax.set_xlabel("")
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('sep', True)
+        super(SpectrogramPlot, self).__init__(*args, **kwargs)

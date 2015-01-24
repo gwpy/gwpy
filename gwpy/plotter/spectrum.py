@@ -21,6 +21,7 @@
 """
 
 import copy
+import numpy
 
 from matplotlib.projections import register_projection
 from matplotlib import (cm, colors)
@@ -235,32 +236,49 @@ class SpectrumPlot(Plot):
     _DefaultAxesClass = SpectrumAxes
 
     def __init__(self, *series, **kwargs):
-        # extract plotting keyword arguments
-        plotargs = dict()
-        for key in ['linewidth', 'linestyle', 'color', 'label', 'cmap',
-                    'vmin', 'vmax']:
-            if key in kwargs:
-                plotargs[key] = kwargs.pop(key)
+        kwargs.setdefault('projection', self._DefaultAxesClass.name)
+        # extract custom keyword arguments
         sep = kwargs.pop('sep', False)
-        logx = kwargs.pop('logx', True)
-        logy = kwargs.pop('logy', True)
+        xscale = kwargs.pop(
+            'xscale', kwargs.pop('logx', True) and 'log' or 'linear')
+        yscale = kwargs.pop(
+            'yscale', kwargs.pop('logy', True) and 'log' or 'linear')
+        sharex = kwargs.pop('sharex', False)
+        sharey = kwargs.pop('sharey', False)
+        # separate custom keyword arguments
+        axargs, plotargs = self._parse_kwargs(kwargs)
 
         # initialise figure
         super(SpectrumPlot, self).__init__(**kwargs)
-        self._series = []
 
-        # plot time series
-        for i, spectrum in enumerate(series):
-            self.add_spectrum(spectrum, newax=sep, **plotargs)
-            self.axes[-1].fmt_xdata = lambda f: ('%s [%s]'
-                                                 % (f, spectrum.xunit))
-            self.axes[-1].fmt_ydata = lambda a: ('%s [%s]'
-                                                 % (a, spectrum.unit))
-            if logx:
-                xlim = list(self.axes[-1].get_xlim())
+        # plot data
+        x0 = []
+        axesdata = self._get_axes_data(series, sep=sep)
+        for data in axesdata:
+            ax = self._add_new_axes(**axargs)
+            for fs in data:
+                ax.plot(fs, **plotargs)
+            x0.append(min([fs.df.value for fs in data]))
+            if 'sharex' not in axargs and sharex is True:
+                axargs['sharex'] = ax
+            if 'sharey' not in axargs and sharey is True:
+                axargs['sharey'] = ax
+        if sharex:
+            x0 = [min(x0)]*len(x0)
+        axargs.pop('sharex', None)
+        axargs.pop('sharey', None)
+        axargs.pop('projection', None)
+
+        for i, ax in enumerate(self.axes):
+            # format axes
+            for key, val in axargs.iteritems():
+                getattr(ax, 'set_%s' % key)(val)
+            # fix log frequency scale with f0 = DC
+            if xscale in ['log']:
+                xlim = list(ax.get_xlim())
                 if not xlim[0]:
-                    xlim[0] = spectrum.df.value
-                self.axes[-1].set_xscale('log')
-                self.axes[-1].set_xlim(*xlim)
-            if logy:
-                self.axes[-1].set_yscale('log')
+                    xlim[0] = x0[i]
+                ax.set_xlim(*xlim)
+            # set axis scales
+            ax.set_xscale(xscale)
+            ax.set_yscale(yscale)
