@@ -497,10 +497,15 @@ class CliProduct(object):
         # if they specified an output file write it
         # save the figure. Note type depends on extension of output filename (png, jpg, pdf)
         if arg_list.out:
-            self.log(3, ('xinch: %.2f, yinch: %.2f, dpi: %d' % (self.xinch, self.yinch, self.dpi)))
+            out_file = arg_list.out
+        else:
+            out_file = "./gwpy.png"
 
-            self.plot.savefig(arg_list.out, edgecolor='white', figsize=[self.xinch, self.yinch], dpi=self.dpi)
-            self.log(3, ('wrote %s' % arg_list.out))
+        self.log(3, ('xinch: %.2f, yinch: %.2f, dpi: %d' % (self.xinch, self.yinch, self.dpi)))
+
+        self.plot.savefig(out_file, edgecolor='white', figsize=[self.xinch, self.yinch], dpi=self.dpi)
+        self.log(3, ('wrote %s' % arg_list.out))
+
         return
 
 #-----The one that does all the work
