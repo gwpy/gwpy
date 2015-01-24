@@ -396,10 +396,6 @@ class Channel(object):
                 return False
         return True
 
-    def __hash__(self):
-        return hash((str(self), str(self.sample_rate), str(self.unit),
-                    self.url, self.type, self.dtype))
-
 
 _re_ifo = re.compile("[A-Z]\d:")
 _re_cchar = re.compile("[-_]")
