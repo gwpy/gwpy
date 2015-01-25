@@ -83,6 +83,12 @@ By default all data is pulled from an appropriate NDS2 server using GWpy's algor
 servers to try, in what order.  You can use the ``-c`` or ``--framecache`` argument to
 specify a LAL style frame cache if you prefer to get the data from .gwf frame files.
 
+Prefiltering data
+==================
+
+Data may be high pass filtered with a Butterworth window before any processing or plotting is done.
+The ``--highpass <cutoff frequency (Hz)>`` pair specifies the filter.
+
 Titles, lables, and legends
 ============================
 
@@ -109,3 +115,23 @@ The **legends** only appear by default when more than one dataset is plotted.  T
 can be set with the ``--legend`` argument, one for each dataset.  The ``--nolegend`` argument turns
 off all legends.
 
+The **gridlines** are shown by default.  To remove them from the plot uset the ``--nogrid`` argument.
+
+Interactive mode
+=================
+
+The ``--interactive`` argument uses the matplotlib/pyplot show function to display an image and allow
+simple manipulations such as zoom, pan, and comfigure subplots.  There is also a save function.  gwpy-ldvw
+will also save the image generated.
+
+Customizing individual plots
+============================
+
+Individual plots may have different default behavior and different arguments.  This section
+discussed options that behave the same for all plots.  See the appropriate section below for the
+remainder of the arguments for each plot.
+
+.. toctree::
+   :maxdepth: 1
+
+   timeseries.rst
