@@ -325,7 +325,9 @@ setup(name=PACKAGENAME,
       extras_require={
           'nds': ['nds2-client'],
           'gwf': ['ldas-tools'],
-          'doc': ['sphinx'],
+          'doc': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme',
+                  'sphinxcontrib-doxylink', 'sphinxcontrib-epydoc',
+                  'sphinxcontrib-programoutput'],
           'hdf5': ['h5py'],
       },
       dependency_links=[
