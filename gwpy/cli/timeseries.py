@@ -32,7 +32,8 @@ class TimeSeries(CliProduct):
     def init_cli(self, parser):
         """Set up the argument list for this product"""
         self.arg_chan1(parser)
-        self.arg_time(parser)
+        self.arg_ax_linx(parser)
+        self.arg_ax_liny(parser)
         self.arg_plot(parser)
         return
 

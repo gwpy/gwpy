@@ -33,12 +33,14 @@ class Spectrum(CliProduct):
         """Set up the argument list for this product"""
         self.arg_chan1(parser)
         self.arg_freq(parser)
+        self.arg_ax_xlf(parser)
+        self.arg_ax_logy(parser)
         self.arg_plot(parser)
         return
 
     def get_ylabel(self, args):
         """Text for y-axis label"""
-        if args.logy:
+        if args.nology:
             ylabel = r'$\mathrm{log_{10}  ASD}$ $\left[ \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right]$'
         else:
             ylabel = r'$\mathrm{ASD}$ $\left[ \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right]$'
@@ -49,7 +51,8 @@ class Spectrum(CliProduct):
         return 'Spectrum: '
 
     def get_xlabel(self):
-        return 'Frequency (Hz)'
+        xlabel = 'Frequency (Hz)'
+        return xlabel
 
     def freq_is_y(self):
         """This plot puts frequency on the y-axis of the graph"""

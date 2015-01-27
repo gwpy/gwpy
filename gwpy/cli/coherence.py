@@ -35,7 +35,8 @@ class Coherence(CliProduct):
     def init_cli(self, parser):
         """Set up the argument list for this product"""
         self.arg_chan2(parser)
-        self.arg_freq(parser)
+        self.arg_ax_xlf(parser)
+        self.arg_ax_y(parser)
         self.arg_plot(parser)
         return
 

@@ -33,7 +33,9 @@ class Spectrogram(CliProduct):
         """Set up the argument list for this product"""
         self.arg_chan1(parser)
         self.arg_freq(parser)
-        self.arg_time(parser)
+        self.arg_ax_linx(parser)
+        self.arg_ax_ylf(parser)
+        self.arg_ax_intlog(parser)
         self.arg_imag(parser)
         self.arg_plot(parser)
         return
@@ -105,7 +107,7 @@ class Spectrogram(CliProduct):
         if arg_list.imin:
             lo = float(arg_list.imin)
         else:
-            lo = 1
+            lo = .01
         if norm or arg_list.nopct:
             imin = lo
         else:
@@ -131,4 +133,7 @@ class Spectrogram(CliProduct):
         else:
             self.plot = specgram.plot(norm='log',vmin=imin, vmax=imax)
             self.scaleText = r'$log_{10} ASD \left[\frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right]$'
+        # pass the image limits back to the annotater
+        self.imin = imin
+        self.imax = imax
         return
