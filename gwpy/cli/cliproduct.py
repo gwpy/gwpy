@@ -301,18 +301,24 @@ class CliProduct(object):
         """Verify and interpret arguments to get all TimeSeries objects defined"""
 
         # retrieve channel data from NDS as a TimeSeries
-        if len(arg_list.chan) >= self.min_timeseries:
-            for chan in arg_list.chan:
-                self.chan_list.append(chan[0])
-        else:
+        for chans in arg_list.chan:
+            for chan in chans:
+                self.chan_list.append(chan)
+
+        if len(self.chan_list) < self.min_timeseries:
             raise ArgumentError('A minimum of %d channels must be specified for this product'  % self.min_timeseries)
 
         if len(arg_list.start) > 0:
-            for startArg in arg_list.start:
-                if type(startArg) is list:
-                    self.start_list.append(int(startArg[0]))
+            for start_arg in arg_list.start:
+                if type(start_arg) is list:
+                    for starts in start_arg:
+                        if isinstance(starts, basestring):
+                            self.start_list.append(int(starts))
+                        elif starts is list:
+                            for start_str in starts:
+                                self.start_list.append(int(start_str))
                 else:
-                    self.start_list.append(int(startArg))
+                    self.start_list.append(int(start_arg))
         else:
             raise ArgumentError('No start times specified')
 
