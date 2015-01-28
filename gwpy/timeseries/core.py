@@ -21,12 +21,10 @@
 
 from __future__ import (division, print_function)
 
-import os
 import sys
 import warnings
 import re
-from math import (ceil, log)
-from dateutil import parser as dateparser
+from math import ceil
 from multiprocessing import (Process, Queue as ProcessQueue)
 
 import numpy
