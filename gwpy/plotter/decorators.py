@@ -19,7 +19,6 @@
 """Decorator for GWpy plotting
 """
 
-import threading
 from functools import wraps
 
 from matplotlib.figure import Figure
@@ -28,8 +27,6 @@ from matplotlib.axes import Axes
 from .. import version
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
-mydata = threading.local()
 
 
 def auto_refresh(func):
@@ -40,18 +37,14 @@ def auto_refresh(func):
         """Call the method, and refresh the figure on exit
         """
         refresh = kwargs.pop('refresh', True)
-        mydata.nesting = getattr(mydata, 'nesting', 0) + 1
         try:
             return func(artist, *args, **kwargs)
         finally:
-            mydata.nesting -= 1
             if isinstance(artist, Axes):
-                if (refresh and mydata.nesting == 0 and
-                        artist.figure.get_auto_refresh()):
+                if refresh and artist.figure.get_auto_refresh():
                     artist.figure.refresh()
             elif isinstance(artist, Figure):
-                if (refresh and mydata.nesting == 0 and
-                        artist.get_auto_refresh()):
+                if refresh and artist.get_auto_refresh():
                     artist.refresh()
             else:
                 raise TypeError("Cannot determine containing Figure for "
