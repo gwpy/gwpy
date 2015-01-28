@@ -55,6 +55,8 @@ def float_to_latex(x, format="%.2g"):
     if "e" not in base_str:
         return base_str
     mantissa, exponent = base_str.split("e")
+    if float(mantissa).is_integer():
+        mantissa = int(float(mantissa))
     exponent = exponent.lstrip("0+")
     if exponent.startswith('-0'):
         exponent = '-' + exponent[2:]
