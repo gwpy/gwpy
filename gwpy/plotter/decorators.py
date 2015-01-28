@@ -36,23 +36,26 @@ def auto_refresh(func):
     """Decorate `func` to refresh the containing figure when complete
     """
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(artist, *args, **kwargs):
         """Call the method, and refresh the figure on exit
         """
         refresh = kwargs.pop('refresh', True)
         mydata.nesting = getattr(mydata, 'nesting', 0) + 1
         try:
-            return func(*args, **kwargs)
+            return func(artist, *args, **kwargs)
         finally:
             mydata.nesting -= 1
-            if isinstance(args[0], Axes):
+            if isinstance(artist, Axes):
                 if (refresh and mydata.nesting == 0 and
-                        args[0].figure.get_auto_refresh()):
-                    args[0].figure.refresh()
-            elif isinstance(args[0], Figure):
+                        artist.figure.get_auto_refresh()):
+                    artist.figure.refresh()
+            elif isinstance(artist, Figure):
                 if (refresh and mydata.nesting == 0 and
-                        args[0].get_auto_refresh()):
-                    args[0].refresh()
+                        artist.get_auto_refresh()):
+                    artist.refresh()
+            else:
+                raise TypeError("Cannot determine containing Figure for "
+                                "auto_refresh() decorator")
     return wrapper
 
 
@@ -66,10 +69,9 @@ def axes_method(func):
         This method makes no attempt to decide which `Axes` to use
     """
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(figure, *args, **kwargs):
         """Find the relevant `Axes` and call the method
         """
-        figure = args[0]
         axes = [ax for ax in figure.axes if ax not in figure._coloraxes]
         if len(axes) == 0:
             raise RuntimeError("No axes found for which '%s' is applicable"
@@ -81,5 +83,5 @@ def axes_method(func):
                                "method of the relevant Axes (stored in "
                                "``Plot.axes``) directly".format(func.__name__))
         axesf = getattr(axes[0], func.__name__)
-        return axesf(*args[1:], **kwargs)
+        return axesf(*args, **kwargs)
     return wrapper
