@@ -73,12 +73,29 @@ class Plot(figure.Figure):
         draw_if_interactive()
 
         # finalise
-        self._auto_refresh = auto_refresh
+        self.set_auto_refresh(auto_refresh)
         self.colorbars = []
         self._coloraxes = []
 
     # -----------------------------------------------
     # core plot operations
+
+    def get_auto_refresh(self):
+        """Return this `Plot`s auto-refresh setting
+        """
+        return self._auto_refresh
+
+    def set_auto_refresh(self, b):
+        """Set this `Plot`s auto-refresh setting
+
+        With auto_refresh set to `True`, all modifications of the underlying
+        `Axes` will trigger the plot to be re-drawn
+
+        Parameters
+        ----------
+        b : `True` or `False`
+        """
+        self._auto_refresh = bool(b)
 
     def refresh(self):
         """Refresh the current figure

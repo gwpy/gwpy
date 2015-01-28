@@ -47,11 +47,11 @@ def auto_refresh(func):
             mydata.nesting -= 1
             if isinstance(args[0], Axes):
                 if (refresh and mydata.nesting == 0 and
-                        args[0].figure._auto_refresh):
+                        args[0].figure.get_auto_refresh()):
                     args[0].figure.refresh()
             elif isinstance(args[0], Figure):
                 if (refresh and mydata.nesting == 0 and
-                        args[0]._auto_refresh):
+                        args[0].get_auto_refresh()):
                     args[0].refresh()
     return wrapper
 
