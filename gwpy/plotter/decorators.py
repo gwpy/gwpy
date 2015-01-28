@@ -36,15 +36,15 @@ def auto_refresh(func):
     def wrapper(artist, *args, **kwargs):
         """Call the method, and refresh the figure on exit
         """
-        refresh = kwargs.pop('refresh', True)
+        refresh = kwargs.pop('refresh', False)
         try:
             return func(artist, *args, **kwargs)
         finally:
             if isinstance(artist, Axes):
-                if refresh and artist.figure.get_auto_refresh():
+                if refresh or artist.figure.get_auto_refresh():
                     artist.figure.refresh()
             elif isinstance(artist, Figure):
-                if refresh and artist.get_auto_refresh():
+                if refresh or artist.get_auto_refresh():
                     artist.refresh()
             else:
                 raise TypeError("Cannot determine containing Figure for "
