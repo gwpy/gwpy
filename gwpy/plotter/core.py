@@ -325,27 +325,26 @@ class Plot(figure.Figure):
         shape = current[:2]
         pos = current[2]
         num = shape[0] * shape[1]
-        if sum(shape) > 2 and pos == num:
-            raise ValueError("Cannot determine where to place next Axes in "
-                             "geomerty %s" % current)
-        elif pos < num:
+        # if space left in this set
+        if pos < num:
             return (shape[0], shape[1], pos+1)
-        elif shape[1] == 1:
-            return (shape[0] + 1, 1, pos+1)
-        else:
+        # or add a new column
+        elif shape[1] > 1 and shape[0] == 1:
             return (1, shape[1] + 1, pos+1)
+        # otherwise add a new row
+        else:
+            return (shape[0] + 1, 1, pos+1)
 
     def _add_new_axes(self, projection, **kwargs):
+        # get new geomtry
         geometry = self._increment_geometry()
+        # make new axes
         ax = self.add_subplot(*geometry, projection=projection, **kwargs)
-        if (geometry[0] == 1 or geometry[1] == 1 and
-            geometry[2] == (geometry[0] * geometry[1])):
-            idx = geometry[0] == 1 and 1 or 0
-            geom = [geometry[0], geometry[1], 1]
-            for i,ax_ in enumerate(self.axes[:-1]):
-                ax_.change_geometry(*geom)
-                geom[idx] += 1
-                geom[2] += 1
+        # update geometry for previous axes
+        nrows = geometry[0]
+        ncols = geometry[1]
+        for i, ax_ in enumerate(self.axes[:-1]):
+            ax_.change_geometry(nrows, ncols, i+1)
         return ax
 
     @auto_refresh
