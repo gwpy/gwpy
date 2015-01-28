@@ -368,7 +368,7 @@ class StateVector(TimeSeries):
             bit
         """
         if bits is None:
-            bits = [b for b in self.bits if b is not (None or '')]
+            bits = [b for b in self.bits if b is not None and b is not '']
         bindex = []
         for b in bits:
             try:
