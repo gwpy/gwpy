@@ -443,9 +443,14 @@ class Array(numpy.ndarray):
                                  "Either assign the name attribute of the "
                                  "array itself, or given name= as a keyword "
                                  "argument to write().")
-            dset = h5group.create_dataset(name or self.name, data=self.data,
-                                          compression=compression,
-                                          **kwargs)
+            try:
+                dset = h5group.create_dataset(name or self.name, data=self.data,
+                                              compression=compression,
+                                              **kwargs)
+            except ValueError as e:
+                if 'Name already exists' in str(e):
+                    e.args = (str(e) + ': %s' % (name or self.name),)
+                raise
 
             # store metadata
             for attr, mdval in self.metadata.iteritems():
