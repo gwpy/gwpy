@@ -58,6 +58,7 @@ def update_docstrings(cls):
                     func = getattr(cls, name)
                     func.__func__.__doc__ = doc_
                 elif isinstance(func, property):
-                    setattr(cls, name, property(doc=doc_, fget=func.fget,
-                                                fset=func.fset, fdel=func.fdel))
+                    setattr(cls, name, property(
+                        doc=doc_, fget=func.fget,
+                        fset=func.fset, fdel=func.fdel))
     return cls

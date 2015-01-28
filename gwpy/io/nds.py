@@ -86,6 +86,7 @@ class NDSWarning(UserWarning):
 
 warnings.simplefilter('always', NDSWarning)
 
+
 def host_resolution_order(ifo, env='NDSSERVER'):
     """Generate a logical ordering of NDS (host, port) tuples for this IFO
 

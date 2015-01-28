@@ -88,11 +88,10 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
         if gap == 'pad':
             ngap = floor((other.span[0] - new.span[1]) / new.dt.value + 0.5)
             if ngap < 1:
-                raise ValueError("Cannot append {0} that starts "
-                                 "before this one:\n"
-                                 "    {0} 1 span: {1}\n"
-                                 "    {0} 2 span: {2}".format(
-                                 type(self).__name__, self.span, other.span))
+                raise ValueError(
+                    "Cannot append {0} that starts before this one:\n"
+                    "    {0} 1 span: {1}\n    {0} 2 span: {2}".format(
+                        type(self).__name__, self.span, other.span))
             gapshape = list(new.shape)
             gapshape[0] = int(ngap)
             padding = numpy.ones(gapshape, dtype=self.dtype)
@@ -100,15 +99,15 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
         elif gap == 'ignore':
             pass
         elif new.span[0] < other.span[0] < new.span[1]:
-            raise ValueError("Cannot append overlapping {0}s:\n"
-                             "    {0} 1 span: {1}\n"
-                             "    {0} 2 span: {2}".format(
-                             type(self).__name__, self.span, other.span))
+            raise ValueError(
+                "Cannot append overlapping {0}s:\n"
+                "    {0} 1 span: {1}\n    {0} 2 span: {2}".format(
+                    type(self).__name__, self.span, other.span))
         else:
-            raise ValueError("Cannot append discontiguous {0}\n"
-                             "    {0} 1 span: {1}\n"
-                             "    {0} 2 span: {2}".format(
-                             type(self).__name__, self.span, other.span))
+            raise ValueError(
+                "Cannot append discontiguous {0}\n"
+                "    {0} 1 span: {1}\n    {0} 2 span: {2}".format(
+                    type(self).__name__, self.span, other.span))
     # check empty other
     if not other.size:
         return new

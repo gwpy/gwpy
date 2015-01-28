@@ -52,8 +52,8 @@ def import_method_dependency(module, stacklevel=1):
         # get method name
         caller = inspect.stack()[stacklevel][3]
         # raise a better exception
-        if not e.args: 
-           e.args=('',)
+        if not e.args:
+            e.args = ('',)
         e.args = ("Cannot import %s required by the %s() method: %r"
                   % (module, caller, str(e)),) + e.args[1:]
         raise
@@ -73,6 +73,7 @@ def with_import(module):
         a decorator to apply to a method with the optional import
     """
     modname = module.split('.')[-1]
+
     def decorate_method(func):
         @wraps(func)
         def wrapper(*args, **kwargs):

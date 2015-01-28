@@ -155,8 +155,8 @@ def map_artist(artist, filename, mapname='points', shape='circle',
                 popup=popup, title=title, standalone=standalone, jquery=jquery)
 
 
-def map_data(data, axes, filename, mapname='points', shape='circle', popup=None,
-             title=None, standalone=True, jquery=JQUERY_URL):
+def map_data(data, axes, filename, mapname='points', shape='circle',
+             popup=None, title=None, standalone=True, jquery=JQUERY_URL):
     """Construct an HTML <map> to annotate the given `artist`
 
     Parameters

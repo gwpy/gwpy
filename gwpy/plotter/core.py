@@ -63,11 +63,11 @@ class Plot(figure.Figure):
         # generated figure, with associated interactivity from pyplot
         super(Plot, self).__init__(*args, **kwargs)
         (backend_mod, new_figure_manager, draw_if_interactive,
-                                          show) = backends.pylab_setup()
+         show) = backends.pylab_setup()
         manager = backend_mod.new_figure_manager_given_figure(1, self)
         cid = manager.canvas.mpl_connect(
-                  'button_press_event',
-                  lambda ev: _pylab_helpers.Gcf.set_active(manager))
+            'button_press_event',
+            lambda ev: _pylab_helpers.Gcf.set_active(manager))
         manager._cidgcf = cid
         _pylab_helpers.Gcf.set_active(manager)
         draw_if_interactive()
@@ -248,7 +248,7 @@ class Plot(figure.Figure):
         if log and clim[0] <= 0.0:
             cdata = mappable.get_array()
             try:
-                clim = (cdata[cdata>0.0].min(), clim[1])
+                clim = (cdata[cdata > 0.0].min(), clim[1])
             except ValueError:
                 pass
         for m in mappables:
@@ -271,8 +271,8 @@ class Plot(figure.Figure):
 
         # set log ticks
         if log:
-             kwargs.setdefault('ticks', LogLocator(subs=numpy.arange(1,11)))
-             kwargs.setdefault('format', CombinedLogFormatterMathtext())
+            kwargs.setdefault('ticks', LogLocator(subs=numpy.arange(1, 11)))
+            kwargs.setdefault('format', CombinedLogFormatterMathtext())
 
         # make colour bar
         colorbar = self.colorbar(mappable, cax=cax, **kwargs)
@@ -324,7 +324,8 @@ class Plot(figure.Figure):
             return self.get_axes(projection)[-1]
         except IndexError:
             if projection:
-                raise IndexError("No '%s' Axes found in this Plot" % projection)
+                raise IndexError("No '%s' Axes found in this Plot"
+                                 % projection)
             else:
                 raise IndexError("No Axes found in this Plot")
 
@@ -457,8 +458,7 @@ class Plot(figure.Figure):
         return ax.scatter(numpy.asarray(x), numpy.asarray(y), **kwargs)
 
     @auto_refresh
-    def _imshow(self, image, projection=None, ax=None, newax=False,
-                 **kwargs):
+    def _imshow(self, image, projection=None, ax=None, newax=False, **kwargs):
         """Internal `Plot` method to imshow onto the most
         favourable `Axes`
 
@@ -556,7 +556,8 @@ class Plot(figure.Figure):
         return self._scatter(x, y, **kwargs)
 
     @auto_refresh
-    def add_image(self, image, projection=None, ax=None, newax=False, **kwargs):
+    def add_image(self, image, projection=None, ax=None, newax=False,
+                  **kwargs):
         """Add a 2-D image to this plot
 
         Parameters
@@ -573,7 +574,6 @@ class Plot(figure.Figure):
         """
         return self._imshow(image, projection=projection, ax=ax, newax=newax,
                             **kwargs)
-
 
     @auto_refresh
     def add_timeseries(self, timeseries, projection='timeseries',
@@ -781,7 +781,7 @@ class Plot(figure.Figure):
     set_xlabel.__doc__ = axes.Axes.set_xlabel.__doc__
 
     xlabel = property(fget=get_xlabel, fset=set_xlabel,
-                    doc='x-axis label for the current axes')
+                      doc='x-axis label for the current axes')
 
     @axes_method
     def get_ylabel(self):

@@ -39,7 +39,7 @@ MACROS = [
 
 
 def float_to_latex(x, format="%.2g"):
-    """Convert a floating point number to a latex representation. 
+    """Convert a floating point number to a latex representation.
 
     In particular, scientific notation is handled gracefully: e -> 10^
 

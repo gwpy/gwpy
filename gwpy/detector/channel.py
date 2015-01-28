@@ -364,13 +364,14 @@ class Channel(object):
             unit = None
         ctype = nds2channel.channel_type_to_string(nds2channel.channel_type)
         # get dtype
-        dtype = {nds2channel.DATA_TYPE_INT16: numpy.int16,
-                 nds2channel.DATA_TYPE_INT32: numpy.int32,
-                 nds2channel.DATA_TYPE_INT64: numpy.int64,
-                 nds2channel.DATA_TYPE_FLOAT32: numpy.float32,
-                 nds2channel.DATA_TYPE_FLOAT64: numpy.float64,
-                 nds2channel.DATA_TYPE_COMPLEX32: numpy.complex64,
-                }.get(nds2channel.data_type)
+        dtype = {
+            nds2channel.DATA_TYPE_INT16: numpy.int16,
+            nds2channel.DATA_TYPE_INT32: numpy.int32,
+            nds2channel.DATA_TYPE_INT64: numpy.int64,
+            nds2channel.DATA_TYPE_FLOAT32: numpy.float32,
+            nds2channel.DATA_TYPE_FLOAT64: numpy.float64,
+            nds2channel.DATA_TYPE_COMPLEX32: numpy.complex64,
+        }.get(nds2channel.data_type)
         return cls(name, sample_rate=sample_rate, unit=unit, dtype=dtype,
                    type=ctype)
 
@@ -622,7 +623,8 @@ class ChannelList(list):
         for name in names:
             # format channel query
             if (type and (isinstance(type, (unicode, str)) or
-                         (isinstance(type, int) and log(type, 2).is_integer()))):
+                          (isinstance(type, int) and
+                           log(type, 2).is_integer()))):
                 c = Channel(name, type=type)
             else:
                 c = Channel(name)
@@ -641,8 +643,8 @@ class ChannelList(list):
                 raise ValueError(
                     "Multiple matches for channel '%s' in NDS database, "
                     "ambiguous request:\n    %s"
-                     % (name, '\n    '.join(['%s (%s, %s)'
-                        % (str(c), c.type, c.sample_rate) for c in found])))
+                    % (name, '\n    '.join(['%s (%s, %s)'
+                       % (str(c), c.type, c.sample_rate) for c in found])))
             elif unique and len(found) > 1:
                 warnings.warn('Multiple instances of %r found with different '
                               'parameters, returning first.' % (name),

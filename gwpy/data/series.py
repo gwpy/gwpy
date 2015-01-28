@@ -38,11 +38,12 @@ class Series(Array):
     """
     _metadata_slots = Array._metadata_slots + ['x0', 'dx', 'xunit', 'logx']
     xunit = Unit('')
+
     def __new__(cls, data, dtype=None, copy=False, subok=True, **metadata):
         """Define a new `Series`
         """
         if isinstance(data, (list, tuple)):
-           data = numpy.asarray(data)
+            data = numpy.asarray(data)
         if not data.ndim == 1:
             raise ValueError("Cannot create a %s with more than one "
                              "dimension" % cls.__name__)
@@ -141,7 +142,7 @@ class Series(Array):
                          numpy.log10(self.x0.value))
                 logx1 = numpy.log10(self.x0.value) + self.shape[-1] * logdx
                 self.index = numpy.logspace(numpy.log10(self.x0.value), logx1,
-                                             num=self.shape[-1])
+                                            num=self.shape[-1])
             else:
                 self.index = (numpy.arange(self.shape[-1]) * self.dx.value +
                               self.x0.value)

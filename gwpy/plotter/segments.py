@@ -35,9 +35,7 @@ except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
 from .. import version
-from . import rcParams
 from ..segments import *
-from ..timeseries import StateVector
 from .timeseries import (TimeSeriesPlot, TimeSeriesAxes)
 from .decorators import auto_refresh
 from .utils import rUNDERSCORE
@@ -178,7 +176,8 @@ class SegmentAxes(TimeSeriesAxes):
         return out
 
     @auto_refresh
-    def plot_dqflag(self, flag, y=None, known='x', facecolor='green', **kwargs):
+    def plot_dqflag(self, flag, y=None, known='x', facecolor='green',
+                    **kwargs):
         """Plot a :class:`~gwpy.segments.DataQualityFlag`
         onto these axes
 
@@ -384,7 +383,7 @@ class SegmentAxes(TimeSeriesAxes):
         return self._insetlabels
 
     insetlabels = property(fget=get_insetlabels, fset=set_insetlabels,
-                            doc=get_insetlabels.__doc__)
+                           doc=get_insetlabels.__doc__)
 
     @allow_rasterization
     def draw(self, *args, **kwargs):

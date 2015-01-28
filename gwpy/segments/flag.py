@@ -299,7 +299,6 @@ class DataQualityFlag(object):
             self._padding = Segment(0, 0)
             return self.padding
 
-
     @padding.setter
     def padding(self, pad):
         if pad is None:
@@ -502,7 +501,7 @@ class DataQualityFlag(object):
 
     @classmethod
     def from_veto_def(cls, veto):
-        """Define a new `DataQualityFlag` from a :class:`~glue.ligolw.lsctables.VetoDef.`
+        """Define a `DataQualityFlag` from a `~glue.ligolw.lsctables.VetoDef`
         """
         name = '%s:%s' % (veto.ifo, veto.name)
         try:
@@ -774,7 +773,6 @@ class DataQualityFlag(object):
     def __isub__(self, other):
         """Subtract the ``other`` `DataQualityFlag` from this one in-place.
         """
-        #self.known -= other.known
         self.active -= other.active
         return self
 
@@ -892,7 +890,7 @@ class DataQualityDict(OrderedDict):
             else:
                 key = flag
             # define flag
-            if not key in out:
+            if key not in out:
                 out[key] = DataQualityFlag(name=flag)
             # add segments
             out[key].known.extend(summary)
@@ -1068,7 +1066,7 @@ class DataQualityDict(OrderedDict):
 
     def __or__(self, other):
         if (sum(len(s.active) for s in self.values()) >=
-            sum(len(s.active) for s in other.values())):
+                sum(len(s.active) for s in other.values())):
             return self.copy().__ior__(other)
         return other.copy().__ior__(self)
 

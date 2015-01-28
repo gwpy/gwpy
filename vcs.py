@@ -30,8 +30,7 @@ from git import Repo
 from jinja2 import Template
 
 
-VERSION_PY_TEMPLATE = Template(
-"""# -*- coding: utf-8 -*-
+VERSION_PY_TEMPLATE = Template("""# -*- coding: utf-8 -*-
 {% if 'author' in package %}\
 # Copyright (C) {{ package['author'] }} ({{ package['year'] }})
 
@@ -164,4 +163,3 @@ class GitStatus(object):
         package_metadata.setdefault('year', time.gmtime().tm_year)
         fobj.write(VERSION_PY_TEMPLATE.render(status=self, version=version,
                                               package=package_metadata))
-

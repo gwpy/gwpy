@@ -134,7 +134,7 @@ def median_mean(timeseries, segmentlength, overlap, window=None, plan=None):
         median-mean-averaged `Spectrum`
     """
     return lal_psd(timeseries, 'medianmean', segmentlength, overlap,
-                    window=window, plan=None)
+                   window=window, plan=None)
 
 
 def median(timeseries, segmentlength, overlap, window=None, plan=None):
@@ -162,10 +162,11 @@ def median(timeseries, segmentlength, overlap, window=None, plan=None):
         median-mean-averaged `Spectrum`
     """
     return lal_psd(timeseries, 'medianmean', segmentlength, overlap,
-                    window=window, plan=None)
+                   window=window, plan=None)
 
 
-def lal_psd(timeseries, method, segmentlength, overlap, window=None, plan=None):
+def lal_psd(timeseries, method, segmentlength, overlap, window=None,
+            plan=None):
     """Internal wrapper to the `lal.spectrum.psd` function
 
     This function handles the conversion between GWpy `TimeSeries` and
@@ -223,7 +224,8 @@ def lal_psd(timeseries, method, segmentlength, overlap, window=None, plan=None):
     return spec
 
 
-def scipy_psd(timeseries, method, segmentlength, overlap, window=('kaiser', 24)):
+def scipy_psd(timeseries, method, segmentlength, overlap,
+              window=('kaiser', 24)):
     """Internal wrapper to the `lal.spectrum.psd` function
 
     This function handles the conversion between GWpy `TimeSeries` and
@@ -299,7 +301,7 @@ def generate_lal_fft_plan(length, level=None,
     except KeyError:
         create = getattr(lal, 'CreateForward%sFFTPlan' % laltypestr)
         if level is None:
-           level = LAL_FFTPLAN_LEVEL
+            level = LAL_FFTPLAN_LEVEL
         plan = LAL_FFTPLANS[(length, laltypestr)] = create(length, level)
     return plan
 
@@ -343,5 +345,5 @@ def generate_lal_window(length, type=('kaiser', 24),
         wtype = wtype.islower() and wtype.title() or wtype
         create = getattr(lal, 'Create%s%sWindow' % (wtype, laltypestr))
         window = LAL_WINDOWS[(length, wtype.lower(), laltypestr)] = create(
-                                                                 length, *args)
+            length, *args)
     return window
