@@ -210,6 +210,8 @@ class CliProduct(object):
         self.xaxis_type = 'linx';
         parser.add_argument('--logx', action='store_true',
                             help = 'make X-axis logarithmic, default=linear')
+        parser.add_argument('--epoch',
+                            help='center X axis on this GPS time. Incompatible with logx')
         self.arg_ax_x(parser)
         return
 
@@ -437,6 +439,9 @@ class CliProduct(object):
                     scale = 'log'
                 else:
                     scale=None      # here we use the GWpy default
+                if arg_list.epoch:
+                    epoch=float(arg_list.epoch)
+                    self.ax.set_epoch(epoch)
             elif self.xaxis_type == 'logx':
                 if arg_list.nologx:
                     scale = 'linear'
