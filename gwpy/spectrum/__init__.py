@@ -33,4 +33,3 @@ from .io import *
 # setup spectrum generation method registrations
 from .scipy_ import *
 from .lal_ import *
-

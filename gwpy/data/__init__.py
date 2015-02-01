@@ -59,4 +59,3 @@ else:
             ])
 
 __all__ = ['Array', 'Array2D', 'Series', 'Cache', 'CacheEntry']
-

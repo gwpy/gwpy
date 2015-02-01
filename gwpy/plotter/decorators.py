@@ -19,49 +19,62 @@
 """Decorator for GWpy plotting
 """
 
-import threading
+from functools import wraps
 
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
-
-from .decorator import decorator
 
 from .. import version
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-mydata = threading.local()
+
+def auto_refresh(func):
+    """Decorate `func` to refresh the containing figure when complete
+    """
+    @wraps(func)
+    def wrapper(artist, *args, **kwargs):
+        """Call the method, and refresh the figure on exit
+        """
+        refresh = kwargs.pop('refresh', False)
+        try:
+            return func(artist, *args, **kwargs)
+        finally:
+            if isinstance(artist, Axes):
+                if refresh or artist.figure.get_auto_refresh():
+                    artist.figure.refresh()
+            elif isinstance(artist, Figure):
+                if refresh or artist.get_auto_refresh():
+                    artist.refresh()
+            else:
+                raise TypeError("Cannot determine containing Figure for "
+                                "auto_refresh() decorator")
+    return wrapper
 
 
-@decorator
-def auto_refresh(f, *args, **kwargs):
-    refresh = kwargs.pop('refresh', True)
-    # The following is necessary rather than using mydata.nesting = 0 at the
-    # start of the file, because doing the latter caused issues with the Django
-    # development server.
-    mydata.nesting = getattr(mydata, 'nesting', 0) + 1
-    try:
-        return f(*args, **kwargs)
-    finally:
-        mydata.nesting -= 1
-        if isinstance(args[0], Axes):
-            if refresh and mydata.nesting == 0 and args[0].figure._auto_refresh:
-                args[0].figure.refresh()
-        elif isinstance(args[0], Figure):
-            if refresh and mydata.nesting == 0 and args[0]._auto_refresh:
-                args[0].refresh()
+def axes_method(func):
+    """Decorate `func` to call the same method of the contained `Axes`
 
-@decorator
-def axes_method(f, *args, **kwargs):
-    figure = args[0]
-    axes = [ax for ax in figure.axes if ax not in figure._coloraxes]
-    if len(axes) == 0:
-        raise RuntimeError("No axes found for which '%s' is applicable"
-                           % f.__name__)
-    if len(axes) != 1:
-        raise RuntimeError("{0} only applicable for a Plot with a single set "
-                           "of data axes. With multiple data axes, you should "
-                           "access the {0} method of the relevant Axes (stored "
-                           "in ``Plot.axes``) directly".format(f.__name__))
-    axesf = getattr(axes[0], f.__name__)
-    return axesf(*args[1:], **kwargs)
+    Raises
+    ------
+    RuntimeError
+        if multiple `Axes` are found when the method is called.
+        This method makes no attempt to decide which `Axes` to use
+    """
+    @wraps(func)
+    def wrapper(figure, *args, **kwargs):
+        """Find the relevant `Axes` and call the method
+        """
+        axes = [ax for ax in figure.axes if ax not in figure._coloraxes]
+        if len(axes) == 0:
+            raise RuntimeError("No axes found for which '%s' is applicable"
+                               % func.__name__)
+        if len(axes) != 1:
+            raise RuntimeError("{0} only applicable for a Plot with a "
+                               "single set of data axes. With multiple "
+                               "data axes, you should access the {0} "
+                               "method of the relevant Axes (stored in "
+                               "``Plot.axes``) directly".format(func.__name__))
+        axesf = getattr(axes[0], func.__name__)
+        return axesf(*args, **kwargs)
+    return wrapper

@@ -66,8 +66,7 @@ class TimeSeriesTests(unittest.TestCase):
 
     def frame_read(self, format=None):
         ts = TimeSeries.read(self.framefile, 'L1:LDAS-STRAIN', format=format)
-        self.assertTrue(ts.epoch == Time(968654552, format='gps',
-                                              scale='utc'))
+        self.assertTrue(ts.epoch == Time(968654552, format='gps', scale='utc'))
         self.assertTrue(ts.sample_rate == units.Quantity(16384, 'Hz'))
         self.assertTrue(ts.unit == units.Unit('strain'))
 

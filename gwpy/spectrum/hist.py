@@ -42,6 +42,7 @@ class SpectralVariance(Array2D):
     """
     _metadata_slots = ['name', 'unit', 'epoch', 'df', 'f0', 'bins']
     xunit = Spectrum.xunit
+
     def __new__(cls, data, name=None, channel=None, epoch=None, unit=None,
                 f0=None, df=None, bins=None, yunit=None, **kwargs):
         """Generate a new SpectralVariance
@@ -80,8 +81,9 @@ class SpectralVariance(Array2D):
         if not isinstance(bins, Array):
             bins = Array(bins, name='%s bins' % self.name, unit=self.yunit,
                          epoch=self.epoch, channel=self.channel)
-        assert bins.size == self.shape[1] + 1,\
-               ("SpectralVariance.bins must be given as a list of bin edges, "
+        if bins.size != self.shape[1] + 1:
+            raise ValueError(
+                "SpectralVariance.bins must be given as a list of bin edges, "
                 "including the rightmost edge, and have length 1 greater than "
                 "the y-axis of the SpectralVariance data")
         self.metadata['bins'] = bins
@@ -164,8 +166,8 @@ class SpectralVariance(Array2D):
             for details on specifying bins and weights
         """
         # parse args and kwargs
-        assert len(spectrograms) >= 1,\
-               "Must give at least one Spectrogram"
+        if not len(spectrograms):
+            raise ValueError("Must give at least one Spectrogram")
         bins = kwargs.pop('bins', None)
         low = kwargs.pop('low', None)
         high = kwargs.pop('high', None)
@@ -173,8 +175,9 @@ class SpectralVariance(Array2D):
         log = kwargs.pop('log', False)
         norm = kwargs.pop('norm', False)
         density = kwargs.pop('density', False)
-        assert not (norm and density),\
-               "Cannot give both norm=True and density=True, please pick one"
+        if norm and density:
+            raise ValueError("Cannot give both norm=True and density=True, "
+                             "please pick one")
 
         # get data and bins
         spectrogram = spectrograms[0]
@@ -202,9 +205,10 @@ class SpectralVariance(Array2D):
         # loop over frequencies
         out = numpy.zeros((data.shape[1], nbins))
         for i in range(data.shape[1]):
-            out[i,:], bins = numpy.histogram(data[:,i], bins, density=density)
-            if norm and out[i,:].sum():
-                out[i,:] /= out[i,:].sum()
+            out[i, :], bins = numpy.histogram(data[:, i], bins,
+                                              density=density)
+            if norm and out[i, :].sum():
+                out[i, :] /= out[i, :].sum()
 
         # return SpectralVariance
         name = '%s variance' % spectrogram.name

@@ -182,9 +182,10 @@ class BuildPortfile(Command, GitVersionMixin):
     """
     description = 'Generate Macports Portfile'
     user_options = [
-       ('version=', None, 'the X.Y.Z package version'),
-       ('portfile=', None, 'target output file, default: \'Portfile\''),
-       ('template=', None, 'Portfile template, default: \'Portfile.template\''),
+        ('version=', None, 'the X.Y.Z package version'),
+        ('portfile=', None, 'target output file, default: \'Portfile\''),
+        ('template=', None,
+         'Portfile template, default: \'Portfile.template\''),
     ]
 
     def initialize_options(self):
@@ -267,7 +268,7 @@ except ImportError as e:
 # don't use setup_requires if just checking for information
 # (credit: matplotlib/setup.py)
 setup_requires = []
-if not '--help' in sys.argv:
+if '--help' not in sys.argv:
     dist_ = Distribution({'cmdclass': cmdclass})
     dist_.parse_config_files()
     dist_.parse_command_line()
@@ -325,12 +326,14 @@ setup(name=PACKAGENAME,
       extras_require={
           'nds': ['nds2-client'],
           'gwf': ['ldas-tools'],
-          'doc': ['sphinx'],
+          'doc': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme',
+                  'sphinxcontrib-doxylink', 'sphinxcontrib-epydoc',
+                  'sphinxcontrib-programoutput'],
           'hdf5': ['h5py'],
       },
       dependency_links=[
           'https://www.lsc-group.phys.uwm.edu/daswg/download/'
-              'software/source/glue-1.46.tar.gz#egg=glue-1.46',
+          'software/source/glue-1.46.tar.gz#egg=glue-1.46',
       ],
       test_suite='gwpy.tests',
       use_2to3=False,

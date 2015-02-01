@@ -43,7 +43,7 @@ bits = [
     'Stage 2 WatchDog OK',
 ]
 
-data = StateVector.fetch('L1:ISI-ETMX_ODC_CHANNEL_OUT_DQ', 'May 22 2014 14:00', 'May 22 15:00', bits=bits)
+data = StateVector.fetch('L1:ISI-ETMX_ODC_CHANNEL_OUT_DQ', 'May 22 2014 14:00', 'May 22 2014 15:00', bits=bits)
 
 # For this example, we wish to :meth:`~StateVector.resample` the data to a
 # much lower rate, to make visualising the state much easier:

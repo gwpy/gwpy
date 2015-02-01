@@ -138,7 +138,7 @@ def inspiral_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=0, fmax=None,
     f = psd.frequencies
     condition = (f.data >= fmin.value) & (f.data < fmax.value)
     integrand = inspiral_range_psd(psd[condition], snr=snr, mass1=mass1,
-                                        mass2=mass2, horizon=horizon)
+                                   mass2=mass2, horizon=horizon)
     if fmin.value == 0.0:
         integrand[0] = 0.0
     result = units.Quantity(integrate.trapz(integrand.data, f.data[condition]),

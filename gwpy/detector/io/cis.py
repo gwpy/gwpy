@@ -17,8 +17,6 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Interface to the LIGO Channel Information System
-
-This module is based on the 
 """
 
 import json
@@ -57,9 +55,9 @@ def query(name, debug=False, timeout=None):
     while more:
         reply = _get(url, debug=debug, timeout=timeout)
         try:
-           out.extend(map(parse_json, reply[u'results']))
+            out.extend(map(parse_json, reply[u'results']))
         except KeyError:
-           pass
+            pass
         more = 'next' in reply and reply['next'] is not None
         if more:
             url = reply['next']
@@ -79,6 +77,7 @@ def _get(url, debug=False, timeout=None):
                          "Information System. Please double check the "
                          "name and try again." % url)
     return json.loads(response.read())
+
 
 def parse_json(data):
     """Parse the input data dict into a `Channel`.

@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Plotting a `Spectrogram`
+"""Plotting a `Spectrogram` of the Rayleigh statistic
 
 I would like to study the gravitational wave strain spectrogram around the time of an interesting simulated signal during the last science run (S6).
 """

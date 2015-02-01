@@ -66,6 +66,7 @@ class Axes(_Axes):
         :type: :class:`~matplotlib.text.Text`
         """
         return self.xaxis.label
+
     @xlabel.setter
     @auto_refresh
     def xlabel(self, text):
@@ -73,6 +74,7 @@ class Axes(_Axes):
             self.set_xlabel(text)
         else:
             self.xaxis.label = text
+
     @xlabel.deleter
     @auto_refresh
     def xlabel(self):
@@ -86,6 +88,7 @@ class Axes(_Axes):
         :type: :class:`~matplotlib.text.Text`
         """
         return self.yaxis.label
+
     @ylabel.setter
     @auto_refresh
     def ylabel(self, text):
@@ -93,6 +96,7 @@ class Axes(_Axes):
             self.set_ylabel(text)
         else:
             self.yaxis.label = text
+
     @ylabel.deleter
     @auto_refresh
     def ylabel(self):
@@ -108,10 +112,12 @@ class Axes(_Axes):
         :type: `tuple`
         """
         return self.get_xlim()
+
     @xlim.setter
     @auto_refresh
     def xlim(self, limits):
         self.set_xlim(*limits)
+
     @xlim.deleter
     @auto_refresh
     def xlim(self):
@@ -125,10 +131,12 @@ class Axes(_Axes):
         :type: `tuple`
         """
         return self.get_ylim()
+
     @ylim.setter
     @auto_refresh
     def ylim(self, limits):
         self.set_ylim(*limits)
+
     @ylim.deleter
     def ylim(self):
         self.relim()
@@ -222,15 +230,15 @@ class Axes(_Axes):
 
         Parameters
         ----------
-        data : `~matplotlib.artist.Artist`, `~gwpy.data.Series`, `numpy.ndarray`
+        data : `~matplotlib.artist.Artist`, `~gwpy.data.Series`, `array-like`
             data to map, one of an `Artist` already drawn on these axes (
             via :meth:`plot` or :meth:`scatter`, for example) or a data set
         imagefile : `str`
             path to image file on disk for the containing `Figure`
         mapname : `str`, optional
             ID to connect <img> tag and <map> tags, default: ``'points'``. This
-            should be unique if multiple maps are to be written to a single HTML
-            file.
+            should be unique if multiple maps are to be written to a single
+            HTML file.
         shape : `str`, optional
             shape for <area> tag, default: ``'circle'``
         standalone : `bool`, optional

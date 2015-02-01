@@ -437,7 +437,7 @@ class TimeSeriesPlot(Plot):
             divider = ax.get_axes_locator()._axes_divider
         else:
             divider = make_axes_locatable(ax)
-        if not location in ['top', 'bottom']:
+        if location not in ['top', 'bottom']:
             raise ValueError("Segments can only be positoned at 'top' or "
                              "'bottom'.")
         segax = divider.append_axes(location, height, pad=pad,

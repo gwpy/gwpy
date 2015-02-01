@@ -370,8 +370,8 @@ class Spectrogram(Array2D):
         """
         from ..spectrum import SpectralVariance
         return SpectralVariance.from_spectrogram(
-                   self, bins=bins, low=low, high=high, nbins=nbins, log=log,
-                   norm=norm, density=density)
+            self, bins=bins, low=low, high=high, nbins=nbins, log=log,
+            norm=norm, density=density)
 
     # -------------------------------------------
     # connectors

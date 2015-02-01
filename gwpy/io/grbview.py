@@ -38,7 +38,8 @@ __version__ = version.version
 
 GRBVIEW_URL = "http://grbweb.icecube.wisc.edu/GRBview.php?GRB=%s"
 
-GRBVIEW_KEY_MAP = {'GBM Public Data':'fermigbm'}
+GRBVIEW_KEY_MAP = {'GBM Public Data': 'fermigbm'}
+
 
 class GRBViewParser(HTMLParser.HTMLParser):
 
@@ -66,7 +67,7 @@ class GRBViewParser(HTMLParser.HTMLParser):
                 return
             self._key = data.rstrip(':')
             if self._key in GRBVIEW_KEY_MAP.keys():
-               self._key = GRBVIEW_KEY_MAP[self._key]
+                self._key = GRBVIEW_KEY_MAP[self._key]
             self.records[self._key] = {}
         if self._table_open:
             if self._tag == 'th':
@@ -78,6 +79,7 @@ class GRBViewParser(HTMLParser.HTMLParser):
         if tag == 'table' and self._table_open and self._key:
             self._table_open = False
             self.records[self._key] = dict(zip(self._headers, self._data))
+
 
 def query(name, detector=None):
     grb = name.upper()
@@ -93,7 +95,7 @@ def query(name, detector=None):
                 records.update(new)
             else:
                 break
-            i +=1
+            i += 1
     if len(records) == 0:
         raise ValueError("No records were found matching GRB='%s'" % name)
     grbs = []
@@ -152,8 +154,8 @@ def parse_grbview(grbs):
     pairs = itertools.combinations(grbs, 2)
     grb_triggers = []
     keep = numpy.zeros(len(grbs)).astype(bool)
-    for i,pair in enumerate(pairs):
-        a,b = pair
+    for i, pair in enumerate(pairs):
+        a, b = pair
         if a.trig_id is not None and a.trig_id == b.trig_id:
             new = GammaRayBurst()
             for attr in a.__slots__:
@@ -191,7 +193,7 @@ def _query(name):
     parser.feed(urllib2.urlopen(url).read())
     parser.close()
     records = {}
-    for detector,record in parser.records.iteritems():
+    for detector, record in parser.records.iteritems():
         if detector is None:
             continue
         records[(detector, record["grbname"])] = record

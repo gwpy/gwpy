@@ -82,7 +82,7 @@ def flag_from_hdf5(f, name=None, gpstype=LIGOTimeGPS, coalesce=True, nproc=1):
 
 
 def flag_to_hdf5(flag, output, name=None, group=None, compression='gzip',
-                **kwargs):
+                 **kwargs):
     """Write this `DataQualityFlag` to a :class:`h5py.Group`.
 
     This allows writing to an HDF5-format file.

@@ -209,6 +209,7 @@ def str_to_datetime(datestr):
         try:
             date = dateparser.parse(datestr)
         except TypeError as e:
-            e.args = ("Cannot parse date string %r: %s" % (datestr, e.args[0]),)
+            e.args = ("Cannot parse date string %r: %s"
+                      % (datestr, e.args[0]),)
             raise
     return date

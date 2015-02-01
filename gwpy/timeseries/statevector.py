@@ -368,7 +368,7 @@ class StateVector(TimeSeries):
             bit
         """
         if bits is None:
-            bits = [b for b in self.bits if b is not (None or '')]
+            bits = [b for b in self.bits if b is not None and b is not '']
         bindex = []
         for b in bits:
             try:
@@ -606,8 +606,8 @@ class StateVector(TimeSeries):
             # for each new sample, each bit is logical AND of old samples
             # bit is ON,
             for x, y in it:
-                y[...] = numpy.sum([type_((x >> bit & 1).all() * (2 ** bit)) for
-                                   bit in bits], dtype=self.dtype)
+                y[...] = numpy.sum([type_((x >> bit & 1).all() * (2 ** bit))
+                                    for bit in bits], dtype=self.dtype)
             new = StateVector(it.operands[1])
             new.metadata = self.metadata.copy()
             new.sample_rate = rate2

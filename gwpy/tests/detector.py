@@ -65,7 +65,7 @@ class ChannelTests(unittest.TestCase):
                 import kerberos
             except ImportError:
                 raise unittest.SkipTest('Channel.query() requires kerberos '
-                                         'to be installed')
+                                        'to be installed')
             else:
                 if isinstance(e, kerberos.GSSError):
                     raise unittest.SkipTest(str(e))
@@ -74,8 +74,6 @@ class ChannelTests(unittest.TestCase):
         self.assertTrue(str(new) == self.channel)
         self.assertTrue(new.ifo == self.channel.split(':', 1)[0])
         self.assertTrue(new.sample_rate == units.Quantity(32768, 'Hz'))
-
-        #self.assertTrue(new.unit == units.meter)
         self.assertTrue(new.texname == self.channel.replace('_', r'\_'))
 
     def test_query_nds2(self):

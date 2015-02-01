@@ -21,12 +21,10 @@
 
 from __future__ import (division, print_function)
 
-import os
 import sys
 import warnings
 import re
-from math import (ceil, log)
-from dateutil import parser as dateparser
+from math import ceil
 from multiprocessing import (Process, Queue as ProcessQueue)
 
 import numpy
@@ -288,9 +286,9 @@ class TimeSeries(Series):
             a new `TimeSeries` containing the data read from NDS
         """
         return TimeSeriesDict.fetch(
-                   [channel], start, end, host=host, port=port,
-                   verbose=verbose, connection=connection, verify=verify,
-                   pad=pad, type=type)[str(channel)]
+            [channel], start, end, host=host, port=port,
+            verbose=verbose, connection=connection, verify=verify,
+            pad=pad, type=type)[str(channel)]
 
     # -------------------------------------------
     # TimeSeries product methods
@@ -408,7 +406,7 @@ class TimeSeries(Series):
             stepseries *= win
             # calculated FFT, weight, and stack
             fft_ = stepseries.fft(nfft=nfft) * scaling
-            ffts.data[i,:] = fft_.data
+            ffts.data[i, :] = fft_.data
             idx += (nfft - noverlap)
         mean = ffts.mean(0)
         mean.name = self.name
@@ -582,7 +580,7 @@ class TimeSeries(Series):
                 stepseries = ts[idx:idx_end]
                 steppsd = stepseries.psd(fftlength=fftlength, overlap=overlap,
                                          method=method, **kwargs)
-                out.data[step,:] = steppsd.data
+                out.data[step, :] = steppsd.data
 
             return out
 
@@ -1646,7 +1644,8 @@ class TimeSeriesDict(OrderedDict):
             if len(channels) > 1:
                 return cls(
                     (c, cls.EntryClass.fetch(c, start, end, verbose=verbose,
-                                             type=type, verify=verify, pad=pad))
+                                             type=type, verify=verify,
+                                             pad=pad))
                     for c in channels)
             e = "Cannot find all relevant data on any known server."
             if not verbose:
@@ -1660,7 +1659,8 @@ class TimeSeriesDict(OrderedDict):
         # verify channels
         if verify:
             if verbose:
-                gprint("Checking channels against the NDS database...", end=' ')
+                gprint("Checking channels against the NDS database...",
+                       end=' ')
             else:
                 warnings.filterwarnings('ignore', category=ndsio.NDSWarning,
                                         append=False)
@@ -1732,7 +1732,8 @@ class TimeSeriesDict(OrderedDict):
                 gprint('Downloading data... ', end='\r')
 
             # determine buffer duration
-            data = connection.iterate(istart, iend, [c.ndsname for c in qchannels])
+            data = connection.iterate(istart, iend,
+                                      [c.ndsname for c in qchannels])
             nsteps = 0
             i = 0
             for buffers in data:
@@ -1747,7 +1748,8 @@ class TimeSeriesDict(OrderedDict):
                     nsteps = ceil((iend - istart) / dur)
                 i += 1
                 if verbose:
-                    gprint('Downloading data... %d%%' % (100 * i // nsteps), end='\r')
+                    gprint('Downloading data... %d%%' % (100 * i // nsteps),
+                           end='\r')
                     if i == nsteps:
                         gprint('')
             # pad to end of request if required
@@ -1761,7 +1763,6 @@ class TimeSeriesDict(OrderedDict):
             for channel in out:
                 if istart > start or iend < end:
                     out[channel] = out[channel].crop(start, end)
-
 
         if verbose:
             gprint('Success.')

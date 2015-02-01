@@ -82,7 +82,8 @@ class Array(numpy.ndarray):
     _metadata_type = dict
     _metadata_slots = ['name', 'unit', 'epoch', 'channel']
 
-    def __new__(cls, data=None, dtype=None, copy=False, subok=True, **metadata):
+    def __new__(cls, data=None, dtype=None, copy=False, subok=True,
+                **metadata):
         """Define a new `Array`, potentially from an existing one
         """
         # get dtype out of the front
@@ -209,7 +210,8 @@ class Array(numpy.ndarray):
         return "%s(%s\n%s%s)" % (self.__class__.__name__, array,
                                  indent, metadata)
 
-    def astype(self, dtype, order='K', casting='unsafe', subok=True, copy=True):
+    def astype(self, dtype, order='K', casting='unsafe', subok=True,
+               copy=True):
         new = super(Array, self).astype(dtype, order=order, casting=casting,
                                         subok=subok, copy=copy)
         new.metadata = self.metadata.copy()
@@ -358,7 +360,8 @@ class Array(numpy.ndarray):
         See `~astropy.time` for details on the `Time` object.
         """
         try:
-            return Time(float(self.metadata['epoch']), format='gps', scale='utc')
+            return Time(float(self.metadata['epoch']),
+                        format='gps', scale='utc')
         except KeyError:
             return None
 
@@ -443,9 +446,14 @@ class Array(numpy.ndarray):
                                  "Either assign the name attribute of the "
                                  "array itself, or given name= as a keyword "
                                  "argument to write().")
-            dset = h5group.create_dataset(name or self.name, data=self.data,
-                                          compression=compression,
-                                          **kwargs)
+            try:
+                dset = h5group.create_dataset(
+                    name or self.name, data=self.data, compression=compression,
+                    **kwargs)
+            except ValueError as e:
+                if 'Name already exists' in str(e):
+                    e.args = (str(e) + ': %s' % (name or self.name),)
+                raise
 
             # store metadata
             for attr, mdval in self.metadata.iteritems():

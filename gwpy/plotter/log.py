@@ -84,7 +84,8 @@ class MinorLogFormatterMathtext(GWpyLogFormatterMathtext):
         """
         viewlim = self.axis.get_view_interval()
         loglim = numpy.log10(viewlim)
-        majticks = numpy.arange(ceil(loglim[0]), floor(ceil(loglim[1])), dtype=int)
+        majticks = numpy.arange(ceil(loglim[0]), floor(ceil(loglim[1])),
+                                dtype=int)
         nticks = majticks.size
         halfdecade = nticks == 1 and modf(loglim[0])[0] < 0.7
         # if already two major ticks, don't need minor labels
