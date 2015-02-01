@@ -305,7 +305,8 @@ class CliProduct(object):
         # retrieve channel data from NDS as a TimeSeries
         for chans in arg_list.chan:
             for chan in chans:
-                self.chan_list.append(chan)
+                if not chan in self.chan_list:
+                    self.chan_list.append(chan)
 
         if len(self.chan_list) < self.min_timeseries:
             raise ArgumentError('A minimum of %d channels must be specified for this product'  % self.min_timeseries)
@@ -315,10 +316,14 @@ class CliProduct(object):
                 if type(start_arg) is list:
                     for starts in start_arg:
                         if isinstance(starts, basestring):
-                            self.start_list.append(int(starts))
+                            starti = int(starts)
+
                         elif starts is list:
                             for start_str in starts:
-                                self.start_list.append(int(start_str))
+                                starti = int(start_str)
+                        # ignore duplicates (to make it easy for ldvw)
+                        if not starti in self.start_list:
+                            self.start_list.append(starti)
                 else:
                     self.start_list.append(int(start_arg))
         else:
@@ -332,7 +337,7 @@ class CliProduct(object):
 
         if self.n_datasets > self.get_max_datasets():
             raise ArgumentError('A maximum of %d datasets allowed for this plot but %d specified' \
-                                            % (self.get_max_datasets, self.n_datasets))
+                                            % (self.get_max_datasets(), self.n_datasets))
 
         if arg_list.duration:
             self.dur = int(arg_list.duration)
