@@ -93,14 +93,23 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
     ValueError
         if reading from an unsorted, or discontiguous cache of files
     """
+    frametype = None
     # parse input source
     if isinstance(source, file):
-        filelist = [source.name]
-    elif isinstance(source, (unicode, str)):
+        source = source.name
+    if isinstance(source, (unicode, str)):
         filelist = source.split(',')
+        try:
+            frametype = CacheEntry.from_T050017(source).description
+        except ValueError:
+            pass
     elif isinstance(source, CacheEntry):
+        frametype = source.description
         filelist = [source]
     elif isinstance(source, Cache):
+        fts = set([e.description for e in source])
+        if len(fts) == 1:
+            frametype = list(fts)[0]
         source.sort(key=lambda e: e.segment[0])
         filelist = source
     else:
@@ -137,6 +146,7 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
                % (verbose, len(channels), N, N))
     # finalise
     for channel, ts in out.iteritems():
+        ts.channel.frametype = frametype
         # resample data
         if resample is not None and channel in resample:
             out[channel] = out[channel].resample(resample[channel])
