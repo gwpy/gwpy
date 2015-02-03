@@ -320,7 +320,7 @@ setup(name=PACKAGENAME,
           'numpy >= 1.7',
           'scipy >= 0.11',
           'matplotlib >= 1.3.0',
-          'astropy >= 0.3',
+          'astropy >= 0.4',
           'six >= 1.5',
       ] + extra_install_requires,
       extras_require={
