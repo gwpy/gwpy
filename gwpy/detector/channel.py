@@ -84,8 +84,8 @@ class Channel(object):
             dtype = dtype or ch.dtype
             model = model or ch.model
             url = url or ch.url
-            ch = ch.name
             frametype = frametype or ch.frametype
+            ch = ch.name
         # set attributes
         self.name = ch
         self.sample_rate = sample_rate
