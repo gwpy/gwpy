@@ -26,6 +26,7 @@ import datetime
 
 from .. import version
 from ..utils.deps import with_import
+from . import units
 from .channel import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
