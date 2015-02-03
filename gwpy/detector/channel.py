@@ -62,6 +62,8 @@ class Channel(object):
         name of the unit for the data of this channel
     dtype : `numpy.dtype`, optional
         numeric type of data for this channel
+    frametype : `str`, optional
+        LDAS name for frames that contain this `Channel`
     model : `str`, optional
         name of the SIMULINK front-end model that produces this `Channel`
 
@@ -72,7 +74,7 @@ class Channel(object):
     (https://cis.ligo.org) for which a query interface is provided.
     """
     def __init__(self, ch, sample_rate=None, unit=None, dtype=None,
-                 type=None, model=None, url=None):
+                 type=None, frametype=None, model=None, url=None):
         type_ = type
         # test for Channel input
         if isinstance(ch, Channel):
@@ -83,6 +85,7 @@ class Channel(object):
             model = model or ch.model
             url = url or ch.url
             ch = ch.name
+            frametype = frametype or ch.frametype
         # set attributes
         self.name = ch
         self.sample_rate = sample_rate
@@ -92,6 +95,7 @@ class Channel(object):
         self.dtype = dtype
         self.model = model
         self.url = url
+        self.frametype = frametype
 
     # -------------------------------------------------------------------------
     # read-write properties
@@ -230,6 +234,16 @@ class Channel(object):
     @url.setter
     def url(self, href):
         self._url = href
+
+    @property
+    def frametype(self):
+        """LDAS type description for frame files containing this `Channel`.
+        """
+        return self._frametype
+
+    @frametype.setter
+    def frametype(self, ft):
+        self._frametype = ft
 
     # -------------------------------------------------------------------------
     # read-only properties
