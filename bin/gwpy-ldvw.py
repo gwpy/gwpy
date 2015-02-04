@@ -114,5 +114,11 @@ if __name__ == '__main__':
     prod = actions[args.func]
     prod.log(2,('%s called' % args.func))
     result_code = prod.makePlot(args)
-    sys.exit(result_code)
-
+    # If they requested interactive mode and run from ipython this makes it easier
+    if prod.is_interactive:
+        from matplotlib import pyplot as plt
+        plot = prod.plot
+        timeseries = prod.timeseries
+        ax = plot.gca()
+    else:
+        sys.exit(result_code)
