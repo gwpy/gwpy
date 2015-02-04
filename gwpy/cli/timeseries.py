@@ -47,7 +47,7 @@ class TimeSeries(CliProduct):
 
     def gen_plot(self, args):
         """Generate the plot from time series and arguments"""
-        self.max_size = 16384. * 32.  # that works on my mac
+        self.max_size = 16384. * 6400.  # that works on my mac
         self.yscale_factor = 1.0
 
         from gwpy.plotter.tex import label_to_latex
@@ -75,7 +75,7 @@ class TimeSeries(CliProduct):
                 self.ymax = max(self.ymax, self.timeseries[idx].max().value)
                 self.xmin = min(self.xmin, self.timeseries[idx].times.data.min())
                 self.xmax = max(self.xmax, self.timeseries[idx].times.data.max())
-        # if they chose to set the tange of the x-axis find the range of y
+        # if they chose to set the range of the x-axis find the range of y
         strt = self.xmin
         stop = self.xmax
         # a bit weird but global ymax will be >= any value in the range same for ymin
