@@ -39,6 +39,7 @@ class Coherence(CliProduct):
         self.arg_ax_xlf(parser)
         self.arg_ax_liny(parser)
         self.arg_plot(parser)
+        self.xaxis_is_freq = True
         return
 
     def get_ylabel(self, args):
@@ -54,7 +55,7 @@ class Coherence(CliProduct):
         return 2
 
     def get_xlabel(self):
-        return 'Frequency [Hz]'
+        return 'Frequency (Hz)'
 
 
     def gen_plot(self, arg_list):
