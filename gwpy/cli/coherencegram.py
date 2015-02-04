@@ -62,7 +62,7 @@ class Coherencegram(CliProduct):
 
     def get_ylabel(self, args):
         """Text for y-axis label"""
-        return 'Frequency [Hz]'
+        return 'Frequency (Hz)'
 
     def get_title(self):
         """Start of default super title, first channel is appended to it"""
