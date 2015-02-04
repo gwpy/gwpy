@@ -52,6 +52,7 @@ Visualisation
    :maxdepth: 1
 
    plotter/index
+   cli/index
 
 .. examples
 .. ~~~~~~~~
