@@ -36,14 +36,15 @@ class Spectrum(CliProduct):
         self.arg_ax_xlf(parser)
         self.arg_ax_logy(parser)
         self.arg_plot(parser)
+        self.xaxis_is_freq = True
         return
 
     def get_ylabel(self, args):
         """Text for y-axis label"""
         if args.nology:
-            ylabel = r'$\mathrm{log_{10}  ASD}$ $\left[ \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right]$'
+            ylabel = r'$\mathrm{log_{10}  ASD}$ $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
         else:
-            ylabel = r'$\mathrm{ASD}$ $\left[ \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right]$'
+            ylabel = r'$\mathrm{ASD}$ $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
         return ylabel
 
     def get_title(self):
