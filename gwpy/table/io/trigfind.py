@@ -45,7 +45,7 @@ def find_trigger_urls(channel, etg, gpsstart, gpsend, verbose=False):
     GPS [start, end) segment.
     """
     if etg.lower().startswith('omicron'):
-        etg = '?'+ etg[1:]
+        etg = '?' + etg[1:]
 
     # construct search
     gpsstart = to_gps(gpsstart).seconds
@@ -66,7 +66,7 @@ def find_trigger_urls(channel, etg, gpsstart, gpsend, verbose=False):
         gpssearchpath = os.path.join(searchbase, str(gpsdir), trigform)
         if verbose:
             gprint("Searching %s..." % os.path.split(gpssearchpath)[0],
-                   end =' ')
+                   end=' ')
         found = set(map(
             os.path.realpath,
             glob.glob(os.path.join(searchbase, str(gpsdir), trigform))))

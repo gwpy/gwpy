@@ -32,7 +32,8 @@ class TimeSeries(CliProduct):
     def init_cli(self, parser):
         """Set up the argument list for this product"""
         self.arg_chan1(parser)
-        self.arg_time(parser)
+        self.arg_ax_linx(parser)
+        self.arg_ax_liny(parser)
         self.arg_plot(parser)
         return
 
@@ -44,53 +45,37 @@ class TimeSeries(CliProduct):
         """Start of default super title, first channel is appended to it"""
         return 'Time series: '
 
-    def resample_if_needed(self, timeseries):
-        """
-        Matplotlib has a maximum number of points it will plot without throwing a too many blocks
-        exception.  This hack is a way to get around that.
-        """
-
-        current_size = timeseries.data.size
-        if current_size <= self.max_size:
-            return timeseries
-        else:
-            fs = timeseries.sample_rate.value
-            newfs = self.max_size/current_size * fs
-            new_ts = timeseries.resample(newfs)
-        return new_ts
-
     def gen_plot(self, args):
         """Generate the plot from time series and arguments"""
-        self.max_size = 16384. * 32.  # that works on my mac
+        self.max_size = 16384. * 6400.  # that works on my mac
         self.yscale_factor = 1.0
 
         from gwpy.plotter.tex import label_to_latex
         from numpy import min as npmin
         from numpy import max as npmax
 
-        plotable_timeseries = self.timeseries[0]
-        if plotable_timeseries.data.size > self.max_size:
-            self.yscale_factor = 2
-        self.plot = plotable_timeseries.plot()
-        self.ymin = plotable_timeseries.min().value
-        self.ymax = plotable_timeseries.max().value
-        self.xmin = plotable_timeseries.times.data.min()
-        self.xmax = plotable_timeseries.times.data.max()
+        if self.timeseries[0].data.size <= self.max_size:
+            self.plot = self.timeseries[0].plot()
+        else:
+            self.plot = self.timeseries[0].plot(linestyle='None', marker='.')
+        self.ymin = self.timeseries[0].min().value
+        self.ymax = self.timeseries[0].max().value
+        self.xmin = self.timeseries[0].times.data.min()
+        self.xmax = self.timeseries[0].times.data.max()
 
         if len(self.timeseries) > 1:
             for idx in range(1, len(self.timeseries)):
-                #plotable_timeseries = self.resample_if_needed(self.timeseries[idx])
-                plotable_timeseries = self.timeseries[0]
-                if plotable_timeseries.data.size > self.max_size:
-                    self.yscale_factor = 2
-                chname = plotable_timeseries.channel.name
+                chname = self.timeseries[idx].channel.name
                 lbl = label_to_latex(chname)
-                self.plot.add_timeseries(plotable_timeseries,label=lbl)
-                self.ymin = min(self.ymin, plotable_timeseries.min().value)
-                self.ymax = max(self.ymax, plotable_timeseries.max().value)
-                self.xmin = min(self.xmin, plotable_timeseries.times.data.min())
-                self.xmax = max(self.xmax, plotable_timeseries.times.data.max())
-        # if they chose to set the tange of the x-axis find the range of y
+                if self.timeseries[idx].data.size <= self.max_size:
+                    self.plot.add_timeseries(self.timeseries[idx],label=lbl)
+                else:
+                    self.plot.add_timeseries(self.timeseries[idx],label=lbl, linestyle='None', marker='.')
+                self.ymin = min(self.ymin, self.timeseries[idx].min().value)
+                self.ymax = max(self.ymax, self.timeseries[idx].max().value)
+                self.xmin = min(self.xmin, self.timeseries[idx].times.data.min())
+                self.xmax = max(self.xmax, self.timeseries[idx].times.data.max())
+        # if they chose to set the range of the x-axis find the range of y
         strt = self.xmin
         stop = self.xmax
         # a bit weird but global ymax will be >= any value in the range same for ymin

@@ -35,7 +35,7 @@ class GWpyLiteralInclude(LiteralInclude):
     def run(self):
         out = super(GWpyLiteralInclude, self).run()
         for block in out:
-            if block.get('source', '').endswith('.py'): 
+            if block.get('source', '').endswith('.py'):
                 for i, child in enumerate(block.children):
                     content = []
                     for l in child.astext().splitlines():

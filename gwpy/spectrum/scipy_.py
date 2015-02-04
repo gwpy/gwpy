@@ -74,7 +74,7 @@ def rayleigh(timeseries, segmentlength, noverlap=0, **kwargs):
     tmpdata = numpy.ndarray((numsegs, int(segmentlength//2 + 1)))
     for i in range(numsegs):
         ts = timeseries[i*stepsize:i*stepsize+segmentlength]
-        tmpdata[i,:] = welch(ts, segmentlength)
+        tmpdata[i, :] = welch(ts, segmentlength)
     std = tmpdata.std(axis=0)
     mean = tmpdata.mean(axis=0)
     return Spectrum(std/mean, copy=False, f0=0,

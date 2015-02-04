@@ -102,8 +102,8 @@ class HistogramAxes(Axes):
             if range_[1] == range_[0]:
                 kwargs['bins'] = bins
             else:
-                kwargs['bins'] = self.bin_boundaries(range_[0], range_[1], bins,
-                                                     log=True)
+                kwargs['bins'] = self.bin_boundaries(range_[0], range_[1],
+                                                     bins, log=True)
         if kwargs.get('histtype', None) == 'stepfilled':
             kwargs.setdefault('edgecolor', 'black')
         return super(HistogramAxes, self).hist(x, **kwargs)

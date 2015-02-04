@@ -35,15 +35,17 @@ class Coherencegram(CliProduct):
 
     def init_cli(self, parser):
         """Set up the argument list for this product"""
-        self.arg_chan1(parser)
+        self.arg_chan2(parser)
         self.arg_freq(parser)
-        self.arg_time(parser)
+        self.arg_ax_linx(parser)
+        self.arg_ax_ylf(parser)
+        self.arg_ax_intlin(parser)
         self.arg_imag(parser)
         self.arg_plot(parser)
         return
 
     def get_max_datasets(self):
-        """Coherencegram only handles 1 at a time"""
+        """Coherencegram only handles 1 set of 2 at a time"""
         return 2
 
     def get_min_datasets(self):
@@ -60,7 +62,7 @@ class Coherencegram(CliProduct):
 
     def get_ylabel(self, args):
         """Text for y-axis label"""
-        return 'Frequency [Hz]'
+        return 'Frequency (Hz)'
 
     def get_title(self):
         """Start of default super title, first channel is appended to it"""
@@ -120,7 +122,7 @@ class Coherencegram(CliProduct):
         if arg_list.imin:
             lo = float(arg_list.imin)
         else:
-            lo = 1
+            lo = 0.01
         if norm or arg_list.nopct:
             imin = lo
         else:
@@ -141,10 +143,13 @@ class Coherencegram(CliProduct):
         if norm:
             self.plot = coh.plot(vmin=imin, vmax=imax)
             self.scale_text = 'Normalized to mean'
-        elif arg_list.lincolors:
-            self.plot = coh.plot(vmin=imin, vmax=imax)
-            self.scale_text = r'Coherence'
-        else:
+        elif arg_list.logcolors:
             self.plot = coh.plot(norm='log',vmin=imin, vmax=imax)
             self.scale_text = r'log_10 Coherence'
+        else:
+            self.plot = coh.plot(vmin=imin, vmax=imax)
+            self.scale_text = r'Coherence'
+        # pass the scaling to the annotater
+        self.imin = imin
+        self.imax = imax
         return

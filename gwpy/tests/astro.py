@@ -59,13 +59,14 @@ class AstroTests(unittest.TestCase):
         return r
 
     def test_burst_range(self):
-        r = astro.burst_range(self.psd[self.psd.frequencies.data<1000])
+        r = astro.burst_range(self.psd[self.psd.frequencies.data < 1000])
         self.assertEqual(r.unit, units.Mpc)
         self.assertAlmostEqual(r.value, 13.813232309724613)
         return r
 
     def test_burst_range_spectrum(self):
-        r = astro.burst_range_spectrum(self.psd[self.psd.frequencies.data<1000])
+        r = astro.burst_range_spectrum(
+            self.psd[self.psd.frequencies.data < 1000])
         self.assertEqual(r.unit, units.Mpc)
         self.assertAlmostEqual(r.max().value, 35.19303454822539)
         return r

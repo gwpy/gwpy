@@ -208,7 +208,7 @@ class SpectrumAxes(Axes):
             cmap.set_bad(cmap(0.0))
         kwargs['cmap'] = cmap
         norm = kwargs.pop('norm', None)
-        if norm is None and specvar.logy:
+        if norm == 'log' or (norm is None and specvar.logy):
             vmin = kwargs.pop('vmin', None)
             vmax = kwargs.pop('vmax', None)
             norm = colors.LogNorm(vmin=vmin, vmax=vmax)

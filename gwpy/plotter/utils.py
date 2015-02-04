@@ -97,7 +97,7 @@ def str_to_latex(input):
 
     # if given a GPS time, convert it to UTC
     if isinstance(text, Real) or isinstance(text, LIGOTimeGPS):
-       return gpstime.gps_to_str(text)
+        return gpstime.gps_to_str(text)
     # otherwise parse word by word into latex format
 
 

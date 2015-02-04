@@ -34,7 +34,9 @@ from .utils import identify_factory
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-def read_ascii(filepath, _obj=Series, xcol=0, ycol=1, delimiter=None, **kwargs):
+
+def read_ascii(filepath, _obj=Series, xcol=0, ycol=1, delimiter=None,
+               **kwargs):
     """Read a `Series` from an ASCII file
     """
     # get specific args for loadtxt
@@ -72,10 +74,12 @@ def write_ascii(series, fobj, fmt='%.18e', delimiter=' ', newline='\n',
 formats = {'txt': None,
            'csv': ','}
 
+
 def ascii_io_factory(obj, delimiter=None):
     def _read(filepath, **kwargs):
         kwargs.setdefault('delimiter', delimiter)
-        return read_ascii(filepath, _obj=obj,**kwargs)
+        return read_ascii(filepath, _obj=obj, **kwargs)
+
     def _write(series, filepath, **kwargs):
         kwargs.setdefault('delimiter', delimiter or ' ')
         return write_ascii(series, filepath, **kwargs)

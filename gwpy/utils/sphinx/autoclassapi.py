@@ -98,16 +98,16 @@ class GWpyClassDocumenter(ClassDocumenter):
 
                 def get_members(obj, typ, include_public=[]):
                     items = []
-                    want_all = self.options.inherited_members or \
-                               self.options.members is ALL
+                    want_all = (self.options.inherited_members or
+                                self.options.members is ALL)
                     members = zip(*self.get_object_members(want_all)[1])[0]
                     if self.options.exclude_members:
                         members = [m for m in members if
                                    m not in self.options.exclude_members]
                     for name in members:
                         try:
-                            documenter = get_documenter(safe_getattr(obj, name),
-                                                        obj)
+                            documenter = get_documenter(
+                                safe_getattr(obj, name), obj)
                         except AttributeError:
                             continue
                         if documenter.objtype == typ:

@@ -26,49 +26,6 @@ __version__ = version.version
 
 VERBOSE = 3 # 0 = errors only, 1 = Warnings, 2 = INFO, >2 DEBUG >=5 ALL
 
-# each Product calls a function in this file to instantiate the objject that creates the plot
-def coherence(args):
-    if VERBOSE > 1:
-        print 'coherence called'
-    from gwpy.cli.coherence import Coherence
-
-    plotObj = Coherence()
-    plotObj.makePlot(args)
-    return
-
-def timeseries(args):
-    if VERBOSE > 1:
-        print 'timeseries called'
-    from gwpy.cli.timeseries import TimeSeries
-    plotObj = TimeSeries()
-    plotObj.makePlot(args)
-    return
-
-def spectrum(args):
-    if VERBOSE > 1:
-        print 'spectrum called'
-    from gwpy.cli.spectrum import Spectrum
-    plotObj = Spectrum()
-    plotObj.makePlot(args)
-    return
-
-def spectrogram(args):
-    if VERBOSE > 1:
-        print 'spectrogram called'
-    from gwpy.cli.spectrogram import Spectrogram
-    plotObj = Spectrogram()
-    plotObj.makePlot(args)
-    return
-
-def coherencegram(args):
-
-    if VERBOSE > 1:
-        print 'Coherence spectrogram called'
-    from gwpy.cli.coherencegram import Coherencegram
-    plotObj = Coherencegram()
-    plotObj.makePlot(args)
-    return
-
 import sys
 
 if sys.version < '2.6':
@@ -113,7 +70,7 @@ subparsers = parser.add_subparsers(
 
 # dictionary for subparsers
 sp = dict()
-
+actions = dict()
 
 # -------------------------
 # Add the actions and their parameters to the subparsers
@@ -129,12 +86,10 @@ for product in PRODUCTS:
     action = prod.get_action()
     sp[product] = subparsers.add_parser(action, help=prod.__doc__,
                                        parents=[parentparser])
-    # the operation is the name of the function in this module
-    # we use the lower case version of the action
-    operation=globals()[action.lower()]
-    sp[product].set_defaults(func=operation)
+    # the operation is the name of the action
+    sp[product].set_defaults(func=action)
     prod.init_cli(sp[product])
-
+    actions[action] = prod
 # -----------------------------------------------------------------------------
 # Run
 
@@ -156,5 +111,14 @@ if __name__ == '__main__':
         VERBOSE = args.verbose
     if not args.mode:
         raise RuntimeError("Must specify action. Please try again with --help.")
-    sys.exit(args.func(args))
-
+    prod = actions[args.func]
+    prod.log(2,('%s called' % args.func))
+    result_code = prod.makePlot(args)
+    # If they requested interactive mode and run from ipython this makes it easier
+    if prod.is_interactive:
+        from matplotlib import pyplot as plt
+        plot = prod.plot
+        timeseries = prod.timeseries
+        ax = plot.gca()
+    else:
+        sys.exit(result_code)

@@ -123,10 +123,10 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
         gprint("%sReading %d channels from frames... 0/%d (0.00%%)\r"
                % (verbose, len(channels), N), end='')
     out = TimeSeriesDict()
-    for i,fp in enumerate(filelist):
+    for i, fp in enumerate(filelist):
         # read frame
-        new = _read_frame(fp, channels, type=type, dtype=dtype, verbose=verbose,
-                          _SeriesClass=_SeriesClass)
+        new = _read_frame(fp, channels, type=type, dtype=dtype,
+                          verbose=verbose, _SeriesClass=_SeriesClass)
         # store
         out.append(new)
         if verbose is not False:
@@ -193,7 +193,7 @@ def _read_frame(framefile, channels, type=None, dtype=None, verbose=False,
 
     # interpolate frame epochs from CacheEntry
     # FIXME: update when new frameCPP is released
-    nframe = 0 # int(stream.GetNumberOfFrames())
+    nframe = 0  # int(stream.GetNumberOfFrames())
     if isinstance(framefile, CacheEntry) and nframe == 1:
         epochs = [framefile.segment[0]]
     else:
@@ -356,7 +356,8 @@ else:
     registry.register_reader('gwf', StateVectorDict, read_statevectordict,
                              force=True)
     try:
-        registry.register_reader('gwf', TimeSeries, read_timeseries, force=True)
+        registry.register_reader('gwf', TimeSeries, read_timeseries,
+                                 force=True)
     except:
         pass
     else:
@@ -368,4 +369,3 @@ registry.register_reader('framecpp', TimeSeriesDict, read_timeseriesdict)
 registry.register_reader('framecpp', TimeSeries, read_timeseries)
 registry.register_reader('framecpp', StateVectorDict, read_statevectordict)
 registry.register_reader('framecpp', StateVector, read_statevector)
-

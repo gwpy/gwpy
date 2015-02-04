@@ -45,28 +45,39 @@ class CliProduct(object):
 
     def __init__(self):
         self.min_timeseries = 1      # how many datasets do we need for this product
+        self.xaxis_type = 'uk'      # scaling hints, set by individual actions
+        self.xaxis_is_freq = False  # x is going to be frequency or time
+        self.yaxis_type = 'uk'      # x and y axis types must be set
+        self.iaxis_type = None      # intensity axis (colors) may be missing
         self.chan_list = []
         self.start_list = []
         self.dur = 0
         self.timeseries = []
         self.minMax = []
-        self.VERBOSE = 1
+        self.verbose = 1
         self.secpfft = 1
         self.overlap = 0.5
+        # describe the actual plotted limits
         self.fmin = 0
         self.fmax = 1
         self.ymin = 0
         self.ymax = 0
         self.xmin =0
         self.xmax = 0
+        self.imin = 0
+        self.imax = 0
+        # image geometry
         self.width = 0
         self.height = 0
         self.xinch = 12
         self.yinch = 7.68
         self.dpi = 100
+
         self.is_freq_plot = False
         self.n_datasets = 0
         self.filter = ''        # string for annotation if we filtered data
+        self.plot = 0           # plot object
+        self.ax = 0             # current axis object from plot
 
 #------Abstract metods------------
     @abc.abstractmethod
@@ -126,7 +137,7 @@ class CliProduct(object):
 #------Helper functions
     def log(self,level, msg):
         """print log message if verbosity is set high enough"""
-        if self.VERBOSE >= level:
+        if self.verbose >= level:
             print msg
         return
 
@@ -160,21 +171,10 @@ class CliProduct(object):
     def arg_freq(self, parser):
         """Parameters for FFT based plots"""
         self.is_freq_plot = True
-        parser.add_argument('--secpfft', help='length of fft in seconds for coh calculation [duration]')
-        parser.add_argument('--overlap', help='Overlap as fraction [0-1)')
-        parser.add_argument('--logf', action='store_true',
-                            help='make frequency axis logarithmic')
-        parser.add_argument('--fmin', help='min value for frequency axis')
-        parser.add_argument('--fmax', help='max value for frequency axis')
-
-        return
-
-    def arg_time(self, parser):
-        """Add arguments for time based plots"""
-        parser.add_argument('--logx', action='store_true')
-        parser.add_argument('--xmin', help='min value for X-axis')
-        parser.add_argument('--xmax', help='max value for X-axis')
-
+        parser.add_argument('--secpfft', default='1.0',
+                            help='length of fft in seconds for coh calculation [duration]')
+        parser.add_argument('--overlap', default='0.5',
+                            help='Overlap as fraction [0-1)')
         return
 
     def arg_plot(self, parser):
@@ -183,14 +183,13 @@ class CliProduct(object):
                         help='size of resulting image WxH, default: %(default)s')
         parser.add_argument('--interactive', action='store_true',
                             help='when running from ipython allows experimentation')
-        parser.add_argument('--logy', action='store_true',
-                            help='make y-axis logarithmic')
         parser.add_argument('--title', action='append', help='One or more title lines')
         parser.add_argument('--suptitle',
                             help='1st title line (larger than the others)')
         parser.add_argument('--xlabel', help='x axis text')
         parser.add_argument('--ylabel', help='y axis text')
-        parser.add_argument('--out', help='output filename, type=ext (png, pdf, jpg)')
+        parser.add_argument('--out', help='output filename, type=ext (png, pdf, jpg), ' +
+                            'default=gwpy.png')
         # legends match input files in position are displayed if any are specified.
         parser.add_argument('--legend', nargs='*', action='append',
                       help='strings to match data files')
@@ -198,22 +197,103 @@ class CliProduct(object):
                             help='do not display legend')
         parser.add_argument('--nogrid', action='store_true',
                             help='do not display grid lines')
+
+        return
+
+    def arg_ax_x(self,parser):
+        """X-axis is called X. Do not call this one call arg_ax_linx or arg_ax_logx"""
+        parser.add_argument('--xmin', help='min value for X-axis')
+        parser.add_argument('--xmax', help='max value for X-axis')
+        return
+
+    def arg_ax_linx(self,parser):
+        """X-axis is called X and defaults to linear"""
+        self.xaxis_type = 'linx';
+        parser.add_argument('--logx', action='store_true',
+                            help = 'make X-axis logarithmic, default=linear')
+        parser.add_argument('--epoch',
+                            help='center X axis on this GPS time. Incompatible with logx')
+        self.arg_ax_x(parser)
+        return
+
+    def arg_ax_logx(self,parser):
+        """X-axis is called X and defaults to logarithmic"""
+        self.xaxis_type = 'logx';
+        parser.add_argument('--nologx', action='store_true',
+                            help = 'make X-axis linear, default=logarithmic')
+        self.arg_ax_x(parser)
+        return
+
+    def arg_ax_lf(self,parser):
+        """One of this axis is frequency and logarthmic"""
+        parser.add_argument('--nologf', action='store_true',
+                            help='make frequency axis linear, default=logarithmic')
+        parser.add_argument('--fmin', help='min value for frequency axis')
+        parser.add_argument('--fmax', help='max value for frequency axis')
+        return
+
+    def arg_ax_int(self,parser):
+        """Images have an intensity axis"""
+        parser.add_argument('--imin', help='min pixel value in resulting image')
+        parser.add_argument('--imax', help='max pixek value in resulting image')
+        return
+
+    def arg_ax_intlin(self,parser):
+        """Intensity (colors) default to linear"""
+        self.iaxis = 'lini'
+        parser.add_argument('--logcolors', action='store_true',
+                            help='set intensity scale of image to logarithmic, default=linear')
+        self.arg_ax_int(parser)
+        return
+
+    def arg_ax_intlog(self,parser):
+        """Intensity (colors) default to log"""
+        self.iaxis = "logi"
+        parser.add_argument('--lincolors', action='store_true',
+                            help='set intensity scale of image to linear, default=logarithmic')
+        self.arg_ax_int(parser)
+        return
+
+    def arg_ax_xlf(self,parser):
+        """X-axis is called F and defaults to log"""
+        self.xaxis_type = 'logf'
+        self.arg_ax_lf(parser)
+        return
+
+    def arg_ax_ylf(self,parser):
+        """Y-axis is called Frequency and defaults to log"""
+        self.yaxis_type = 'logf'
+        self.arg_ax_lf(parser)
+        return
+
+    def arg_ax_y(self,parser):
+        """Y-axis limits.  Do not call this one use arg_ax_liny or arg_ax_logy"""
         parser.add_argument('--ymin', help='fix min value for yaxis defaults to min of data')
         parser.add_argument('--ymax', help='max value for y-axis default to max of data')
+        return
 
+    def arg_ax_liny(self,parser):
+        """Y-axis is called Y and defaults to linear"""
+        self.yaxis_type = 'liny'
+        parser.add_argument('--logy', action='store_true',
+                            help='make Y-axis logarithmic, default=linear')
+        self.arg_ax_y(parser)
+        return
 
+    def arg_ax_logy(self,parser):
+        """Y-axis is called Y and defaults to log"""
+        self.yaxis_type = 'logy'
+        parser.add_argument('--nology', action='store_true',
+                            help='make Y-axis linear, default=logarthmic')
+        self.arg_ax_y(parser)
         return
 
     def arg_imag(self,parser):
         """Add arguments for image based plots like spectrograms"""
-        parser.add_argument('--imin', help='min pixel value in resulting image')
-        parser.add_argument('--imax', help='max pixek value in resulting image')
         parser.add_argument('--nopct', action='store_true',
                             help='up and lo are pixel values, default=percentile if not normalized')
         parser.add_argument('--nocolorbar', action='store_true',
                             help='hide the color bar')
-        parser.add_argument('--lincolors', action='store_true',
-                            help='set intensity scale of image to linear, default=logarithmic')
         parser.add_argument('--norm', action='store_true',
                             help='Display the ratio of each fequency bin to the mean of that frequency')
         return
@@ -221,21 +301,32 @@ class CliProduct(object):
 #-------Data transfer methods
 
     def getTimeSeries(self,arg_list):
-        """Verify and interpret arguments and get all TimeSeries objects defined"""
+        """Verify and interpret arguments to get all TimeSeries objects defined"""
 
         # retrieve channel data from NDS as a TimeSeries
-        if len(arg_list.chan) >= self.min_timeseries:
-            for chan in arg_list.chan:
-                self.chan_list.append(chan[0])
-        else:
+        for chans in arg_list.chan:
+            for chan in chans:
+                if not chan in self.chan_list:
+                    self.chan_list.append(chan)
+
+        if len(self.chan_list) < self.min_timeseries:
             raise ArgumentError('A minimum of %d channels must be specified for this product'  % self.min_timeseries)
 
         if len(arg_list.start) > 0:
-            for startArg in arg_list.start:
-                if type(startArg) is list:
-                    self.start_list.append(int(startArg[0]))
+            for start_arg in arg_list.start:
+                if type(start_arg) is list:
+                    for starts in start_arg:
+                        if isinstance(starts, basestring):
+                            starti = int(starts)
+
+                        elif starts is list:
+                            for start_str in starts:
+                                starti = int(start_str)
+                        # ignore duplicates (to make it easy for ldvw)
+                        if not starti in self.start_list:
+                            self.start_list.append(starti)
                 else:
-                    self.start_list.append(int(startArg))
+                    self.start_list.append(int(start_arg))
         else:
             raise ArgumentError('No start times specified')
 
@@ -247,14 +338,14 @@ class CliProduct(object):
 
         if self.n_datasets > self.get_max_datasets():
             raise ArgumentError('A maximum of %d datasets allowed for this plot but %d specified' \
-                                            % (self.get_max_datasets, self.n_datasets))
+                                            % (self.get_max_datasets(), self.n_datasets))
 
         if arg_list.duration:
             self.dur = int(arg_list.duration)
         else:
             self.dur = 10
 
-        verb = self.VERBOSE > 1
+        verb = self.verbose > 1
 
         # determine how we're supposed get our data
         source = 'NDS2'
@@ -284,10 +375,12 @@ class CliProduct(object):
                     data = data.highpass(highpass)
 
                 self.timeseries.append(data)
+
         # report what we have if they asked for it
         self.log(3, ('Channels: %s' % self.chan_list))
         self.log(3, ('Start times: %s, duration' % self.start_list, self.dur))
         self.log(3, ('Number of time series: %d' % len(self.timeseries)))
+
         if len(self.timeseries) != self.n_datasets:
             self.log(0, ('%d datasets requested but only %d transfered' % (self.n_datasets, len(self.timeseries))))
             if len(self.timeseries) > self.get_min_datasets():
@@ -318,6 +411,7 @@ class CliProduct(object):
             'legend.loc': 'best',
             'lines.linewidth': 1.5,
             'text.usetex': 'true',
+            'agg.path.chunksize': 10000,
         })
 
         # determine image dimensions (geometry)
@@ -335,91 +429,171 @@ class CliProduct(object):
         self.xinch = self.width / self.dpi
         self.yinch = self.height / self.dpi
         rcParams['figure.figsize'] = (self.xinch, self.yinch)
+        return
+
+    def setup_xaxis(self, arg_list):
+        """Handle scale and limits of X-axis by type"""
+        from ..time import Time
+        import re
+
+        xmin = 0        # these will be set by x min, max or f min, max
+        xmax = 1
+        scale = 'linear'
+        if self.xaxis_type == 'linx' or self.xaxis_type == 'logx':
+            # handle time on X-axis
+            xmin = self.xmin
+            xmax = self.xmax
+
+            if self.xaxis_type == 'linx':
+                if arg_list.epoch:
+                    scale = False
+                    self.ax.set_xscale('auto-gps')
+
+                    epoch=float(arg_list.epoch)
+                    if epoch < 1e8:
+                        epoch += xmin       # specified as seconds from start GPS
+                    self.ax.set_epoch(epoch)
+                    self.log(3,('Epoch set to %.2f' % epoch))
+                if arg_list.logx:
+                    scale = 'log'
+                elif not (self.get_xlabel() or arg_list.xlabel):
+                    # duplicate default label except use parens not brackets
+                    xscale = self.ax.xaxis._scale
+                    epoch = xscale.get_epoch()
+                    if epoch is None:
+                        arg_list.xlabel = 'GPS Time'
+                    else:
+                        unit = xscale.get_unit_name()
+                        utc = re.sub('\.0+', '',
+                                    Time(epoch, format='gps', scale='utc').iso)
+                        arg_list.xlabel = 'Time (%s) from %s (%s)' % (unit, utc, epoch)
+            elif self.xaxis_type == 'logx':
+                if arg_list.nologx:
+                    scale = 'linear'
+                else:
+                    scale = 'log'
+            if arg_list.xmin:
+                al_xmin = float(arg_list.xmin)
+                if self.xaxis_is_freq:
+                    xmin = al_xmin      # frequency specified
+                elif al_xmin <= 9e8:
+                    xmin += al_xmin     # time specified as seconds relative to start GPS
+                else:
+                    xmin = al_xmin      # time specified as absolute GPS
+            if arg_list.xmax:
+                al_xmax = float(arg_list.xmax)
+                if self.xaxis_is_freq:
+                    xmax = al_xmax
+                elif al_xmax <= 9e8:
+                    xmax = xmin + al_xmin
+                else:
+                    xmax = al_xmax
+        elif self.xaxis_type == 'logf':
+            # Handle frequency on the X-axis
+            xmin = self.fmin
+            xmax = self.fmax
+
+            scale = 'log'
+            if arg_list.nologf:
+                scale = 'linear'
+            if arg_list.fmin:
+                xmin = float(arg_list.fmin)
+            if arg_list.fmax:
+                xmax = float(arg_list.fmax)
+        else:
+            raise AssertionError('X-axis type [%s] is unknown' % self.xaxis_type)
+
+        if scale:
+            self.ax.set_xscale(scale)
+        self.ax.set_xlim(xmin, xmax)
+        self.log(3, ('X-axis limits are [ %f, %f], scale: %s' % (xmin, xmax, scale)))
+        return
+
+    def setup_yaxis(self,arg_list):
+        "Set scale and limits of y-axis by type"
+        ymin = self.ymin
+        ymax = self.ymax
+        scale = 'linear'
+
+        if self.yaxis_type == 'logf':
+            # Handle frequency on the Y-axis
+            ymin = self.fmin
+            ymax = self.fmax
+            scale = 'log'
+            if arg_list.nologf:
+                scale = 'linear'
+            if arg_list.fmin:
+                ymin = float(arg_list.fmin)
+            if arg_list.fmax:
+                ymax = float(arg_list.fmax)
+        elif self.yaxis_type == 'liny' or self.yaxis_type == 'logy':
+            # Handle everything but frequency on Y-axis
+            if self.yaxis_type == 'liny':
+                scale = 'linear'
+                if arg_list.logy:
+                    scale = 'log'
+            elif self.yaxis_type == 'logy':
+                scale = 'log'
+                if arg_list.nology:
+                    scale = 'linear'
+            if arg_list.ymin:
+                ymin = float(arg_list.ymin)
+            if arg_list.ymax:
+                ymax = float(arg_list.ymax)
+        else:
+            raise AssertionError('Y-axis type is unknown')
+
+        # modify axis
+        self.ax.set_yscale(scale)
+        self.ax.set_ylim(ymin, ymax)
+        self.log(3, ('Y-axis limits are [ %f, %f], scale: %s' % (ymin, ymax, scale)))
+        return
+
+    def setup_iaxis(self, arg_list):
+        """ set the limits and scale of the colorbar (intensity axis)
+        :param arg_list: global arguments
+        :return: none
+        """
+
+        if self.iaxis_type:
+            # if we have an intensity axis do this otherwise OK
+            if self.iaxis_type == 'lini':
+                scale = 'linear'
+                if arg_list.logi:
+                    scale = 'log'
+            elif self.iaxis_type == 'logi':
+                scale = 'log'
+                if arg_list.nologi:
+                    scale = 'linear'
+            else:
+                raise AssertionError('Unknown intensity axis scale')
+        return
 
     def annotate_save_plot(self,arg_list):
         """After the derived class generated a plot object finish the process"""
         from astropy.time import Time
         from gwpy.plotter.tex import label_to_latex
 
-        ax = self.plot.gca()
+        self.ax = self.plot.gca()
+        # set up axes
+        self.setup_xaxis(arg_list)
+        self.setup_yaxis(arg_list)
+        self.setup_iaxis(arg_list)
 
         if self.is_image():
-            # right now all image plots are frequency plots and y axis is frequency
-            if self.is_freq_plot:
-                if arg_list.logf:
-                    ax.set_yscale('log')
-                else:
-                    ax.set_yscale('linear')
-            if arg_list.logx:
-                ax.set_xscale('log')
-
             if arg_list.nocolorbar:
                 self.plot.add_colorbar(visible=False )
             else:
                 self.plot.add_colorbar(label=self.get_color_label())
         else:
-            if arg_list.logy:
-                ax.set_yscale('log')
-            else:
-                ax.set_yscale('linear')
-
-            if self.is_freq_plot:
-                if arg_list.logf:
-                    ax.set_xscale('log')
-                else:
-                    ax.set_xscale('linear')
-            else:
-                if arg_list.logx:
-                    ax.set_xscale('log')
             self.plot.add_colorbar(visible=False)
-
-        # scale the axes
-        ymin = self.ymin
-        ymax = self.ymax
-
-        if arg_list.ymin:
-            ymin = arg_list.ymin
-        if arg_list.ymax:
-            ymax = arg_list.ymax
-
-        self.log(3, ('Y-axis limits are [ %f, %f]' % (ymin, ymax)))
-
-        xmin = self.xmin
-        xmax = self.xmax
-
-        if not self.is_freq_plot or self.freq_is_y():
-            if arg_list.xmin:
-                    xmin = float(arg_list.xmin)
-            if arg_list.xmax:
-                xmax = float(arg_list.xmax)
-            self.log(3, ('X-axis limits are [ %f, %f]' % (self.xmin, self.xmax)))
-
-        fmin = self.fmin
-        fmax = self.fmax
-        if self.is_freq_plot:
-            if arg_list.fmin:
-                fmin = float(arg_list.fmin)
-            if arg_list.fmax:
-                fmax = float(arg_list.fmax)
-
-            self.log(3, ('Freq-axis limits are [ %f, %f]' % (fmin, fmax)))
-            if self.freq_is_y():
-                ax.set_ylim(fmin, fmax)
-                ax.set_xlim(xmin, xmax)
-            else:
-                ax.set_xlim(fmin, fmax)
-                ax.set_ylim(ymin, ymax)
-        else:
-            ax.set_xlim(xmin, xmax)
-
-            ax.set_ylim(ymin, ymax)
 
         # image plots don't have legends
         if not self.is_image():
-            ax.legend(prop={'size':10})
+            self.ax.legend(prop={'size':10})
             # if only one series is plotted hide legend
-            if self.n_datasets == 1 and ax.legend_:
-                ax.legend_.remove()
+            if self.n_datasets == 1 and self.ax.legend_:
+                self.ax.legend_.remove()
 
         # add titles
         title = ''
@@ -480,8 +654,8 @@ class CliProduct(object):
             self.log(3, ('Y-axis label is: %s' % ylabel))
 
         if not arg_list.nogrid:
-            ax.grid(b=True, which='major', color='k', linestyle='solid')
-            ax.grid(b=True, which='minor', color='0.06', linestyle='dotted')
+            self.ax.grid(b=True, which='major', color='k', linestyle='solid')
+            self.ax.grid(b=True, which='minor', color='0.06', linestyle='dotted')
 
         # info on the channel
         if arg_list.suptitle:
@@ -512,13 +686,13 @@ class CliProduct(object):
     def makePlot(self, args):
         """Make the plot, all actions are generally the same at this level"""
         if args.silent:
-            self.VERBOSE = 0
+            self.verbose = 0
         else:
-            self.VERBOSE = args.verbose
+            self.verbose = args.verbose
 
-        self.log(3, ('Verbosity level: %d' % self.VERBOSE))
+        self.log(3, ('Verbosity level: %d' % self.verbose))
 
-        if self.VERBOSE > 2:
+        if self.verbose > 2:
             print 'Arguments:'
             for key, value in args.__dict__.iteritems():
                 print '%s = %s' % (key, value)
@@ -532,7 +706,8 @@ class CliProduct(object):
 
         self.annotate_save_plot(args)
 
+        self.is_interactive = False
         if args.interactive:
             self.log(3, 'Interactive manipulation of image should be available.')
             self.plot.show()
-
+            self.is_interactive = True

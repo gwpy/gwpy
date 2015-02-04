@@ -79,7 +79,7 @@ def file_list(flist):
     if isinstance(flist, CacheEntry):
         return [flist.path]
     elif (isinstance(flist, string_types) and
-              flist.endswith(('.cache', '.lcf'))):
+          flist.endswith(('.cache', '.lcf'))):
         return open_cache(flist).pfnlist()
     elif isinstance(flist, string_types):
         return flist.split(',')

@@ -156,9 +156,9 @@ class GPSTransform(GPSTransformBase):
         """Transform an array of GPS times.
         """
         if self.epoch is None:
-             return numpy.round(a / self.scale, 4)
+            return numpy.round(a / self.scale, 4)
         else:
-             return numpy.round((a - self.epoch) / self.scale, 4)
+            return numpy.round((a - self.epoch) / self.scale, 4)
 
     def inverted(self):
         return InvertedGPSTransform(unit=self.unit, epoch=self.epoch)
@@ -299,7 +299,7 @@ class GPSScale(GPSMixin, LinearScale):
             either name (`str`) or scale (float in seconds)
         """
         viewlim = axis.get_view_interval()
-        #try and copy data from the last scale
+        # try and copy data from the last scale
         if isinstance(epoch, Time):
             epoch = epoch.utc.gps
         elif isinstance(epoch, units.Quantity):

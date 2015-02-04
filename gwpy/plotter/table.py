@@ -148,8 +148,8 @@ class EventTableAxes(TimeSeriesAxes):
                     sarray = sizes[0] + sp * (sizes[1] - sizes[0])
                 else:
                     logsizes = numpy.log10(sizes)
-                    sarray = 10 ** (logsizes[0] + sp * (
-                                                    logsizes[1] - logsizes[0]))
+                    sarray = 10 ** (
+                        logsizes[0] + sp * (logsizes[1] - logsizes[0]))
                 kwargs.setdefault('s', sarray)
 
         if color:
@@ -180,24 +180,25 @@ class EventTableAxes(TimeSeriesAxes):
         # construct vertices
         if anchor == 'll':
             verts = [((x, y), (x, y+height), (x+width, y+height),
-                      (x+width, y)) for (x,y,width,height) in
+                      (x+width, y)) for (x, y, width, height) in
                      zip(xdata, ydata, wdata, hdata)]
         elif anchor == 'lr':
             verts = [((x-width, y), (x-width, y+height), (x, y+height),
-                      (x, y)) for (x,y,width,height) in
+                      (x, y)) for (x, y, width, height) in
                      zip(xdata, ydata, wdata, hdata)]
         elif anchor == 'ul':
             verts = [((x, y-height), (x, y), (x+width, y),
-                      (x+width, y-height)) for (x,y,width,height) in
+                      (x+width, y-height)) for (x, y, width, height) in
                      zip(xdata, ydata, wdata, hdata)]
         elif anchor == 'ur':
             verts = [((x-width, y-height), (x-width, y), (x, y),
-                      (x, y-height)) for (x,y,width,height) in
+                      (x, y-height)) for (x, y, width, height) in
                      zip(xdata, ydata, wdata, hdata)]
         elif anchor == 'center':
             verts = [((x-width/2., y-height/2.), (x-width/2., y+height/2.),
-                       (x+width/2., y+height/2.), (x+width/2., y-height/2.))
-                     for (x,y,width,height) in zip(xdata, ydata, wdata, hdata)]
+                      (x+width/2., y+height/2.), (x+width/2., y-height/2.))
+                     for (x, y, width, height) in
+                     zip(xdata, ydata, wdata, hdata)]
         else:
             raise ValueError("Unrecognised tile anchor '%s'." % anchor)
 
@@ -310,7 +311,7 @@ class _EventTableMetaPlot(type):
                 plotclass = SpectrumPlot
             # otherwise as a standard Plot
             else:
-               plotclass = Plot
+                plotclass = Plot
         else:
             plotclass = Plot
         cls.__bases__ = (plotclass,)
@@ -423,7 +424,7 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
                 ax.autoscale(axis='both', tight=True)
             # set individual epoch for TimeSeriesAxes
             if isinstance(self, TimeSeriesPlot) and sep:
-                for ax,table in zip(self.axes, tables):
+                for ax, table in zip(self.axes, tables):
                     axepoch = epoch
                     if axepoch is None:
                         tcol = numpy.asarray(get_table_column(table,
@@ -450,8 +451,8 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
                 for ax in self.axes[:-1]:
                     ax.set_xlabel("")
 
-    def add_table(self, table, x, y, color=None, projection='triggers', ax=None,
-                  newax=None, **kwargs):
+    def add_table(self, table, x, y, color=None, projection='triggers',
+                  ax=None, newax=None, **kwargs):
         """Add a LIGO_LW Table to this Plot
 
         Parameters
@@ -606,7 +607,8 @@ def get_column_string(column):
         # get starting with greek word
         elif re.match('(%s)' % '|'.join(greek), w) and tex:
             if w[-1].isdigit():
-                words[i] = '$\%s_{%s}$''' % tuple(re.findall(r"[a-zA-Z]+|\d+",w))
+                words[i] = '$\%s_{%s}$''' % tuple(
+                    re.findall(r"[a-zA-Z]+|\d+", w))
             elif w.endswith('sq'):
                 words[i] = '$\%s^2$' % w.rstrip('sq')
         # get everything else

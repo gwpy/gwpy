@@ -177,7 +177,7 @@ class Bits(list):
         (bit, desc) `dict` of longer descriptions for each bit
     """
     def __init__(self, bits, channel=None, epoch=None, description=None):
-        list.__init__(self, bits)
+        list.__init__(self, [b or None for b in bits])
         if channel is not None:
             self.channel = channel
         if epoch is not None:
@@ -260,6 +260,9 @@ class Bits(list):
         return ("{1}({2},\n{0}channel={3},\n{0}epoch={4})".format(
                 indent, self.__class__.__name__,
                 mask, str(self.channel), str(self.epoch)))
+
+    def __array__(self):
+        return numpy.array([b or '' for b in self])
 
 
 @update_docstrings
@@ -365,7 +368,7 @@ class StateVector(TimeSeries):
             bit
         """
         if bits is None:
-            bits = [b for b in self.bits if b is not None]
+            bits = [b for b in self.bits if b is not None and b is not '']
         bindex = []
         for b in bits:
             try:
@@ -603,8 +606,8 @@ class StateVector(TimeSeries):
             # for each new sample, each bit is logical AND of old samples
             # bit is ON,
             for x, y in it:
-                y[...] = numpy.sum([type_((x >> bit & 1).all() * (2 ** bit)) for
-                                   bit in bits], dtype=self.dtype)
+                y[...] = numpy.sum([type_((x >> bit & 1).all() * (2 ** bit))
+                                    for bit in bits], dtype=self.dtype)
             new = StateVector(it.operands[1])
             new.metadata = self.metadata.copy()
             new.sample_rate = rate2

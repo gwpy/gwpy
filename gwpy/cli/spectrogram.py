@@ -33,14 +33,16 @@ class Spectrogram(CliProduct):
         """Set up the argument list for this product"""
         self.arg_chan1(parser)
         self.arg_freq(parser)
-        self.arg_time(parser)
+        self.arg_ax_linx(parser)
+        self.arg_ax_ylf(parser)
+        self.arg_ax_intlog(parser)
         self.arg_imag(parser)
         self.arg_plot(parser)
         return
 
     def get_ylabel(self, args):
         """Default text for y-axis label"""
-        return 'Frequency [Hz]'
+        return 'Frequency (Hz)'
 
     def get_color_label(self):
         return self.scaleText
@@ -105,7 +107,7 @@ class Spectrogram(CliProduct):
         if arg_list.imin:
             lo = float(arg_list.imin)
         else:
-            lo = 1
+            lo = .01
         if norm or arg_list.nopct:
             imin = lo
         else:
@@ -130,5 +132,8 @@ class Spectrogram(CliProduct):
             self.scaleText = r'ASD $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
         else:
             self.plot = specgram.plot(norm='log',vmin=imin, vmax=imax)
-            self.scaleText = r'$log_{10} ASD \left[\frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right]$'
+            self.scaleText = r'$log_{10} ASD \left(\frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
+        # pass the image limits back to the annotater
+        self.imin = imin
+        self.imax = imax
         return

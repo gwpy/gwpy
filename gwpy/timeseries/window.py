@@ -26,5 +26,6 @@ __version__ = version.version
 
 from numpy import kaiser, hamming, hanning
 
+
 def kaiser_factory(beta):
     return lambda x: kaiser(len(x), beta) * x
