@@ -42,7 +42,7 @@ class Spectrogram(CliProduct):
 
     def get_ylabel(self, args):
         """Default text for y-axis label"""
-        return 'Frequency [Hz]'
+        return 'Frequency (Hz)'
 
     def get_color_label(self):
         return self.scaleText
@@ -132,7 +132,7 @@ class Spectrogram(CliProduct):
             self.scaleText = r'ASD $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
         else:
             self.plot = specgram.plot(norm='log',vmin=imin, vmax=imax)
-            self.scaleText = r'$log_{10} ASD \left[\frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right]$'
+            self.scaleText = r'$log_{10} ASD \left(\frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
         # pass the image limits back to the annotater
         self.imin = imin
         self.imax = imax
