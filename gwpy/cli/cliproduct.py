@@ -445,15 +445,17 @@ class CliProduct(object):
             xmax = self.xmax
 
             if self.xaxis_type == 'linx':
+                epoch = 0
                 if arg_list.epoch:
-                    scale = False
-                    self.ax.set_xscale('auto-gps')
-
                     epoch=float(arg_list.epoch)
-                    if epoch < 1e8:
-                        epoch += xmin       # specified as seconds from start GPS
-                    self.ax.set_epoch(epoch)
                     self.log(3,('Epoch set to %.2f' % epoch))
+
+                scale = False
+                self.ax.set_xscale('auto-gps')
+
+                if epoch < 1e8:
+                    epoch += xmin       # specified as seconds from start GPS
+                self.ax.set_epoch(epoch)
                 if arg_list.logx:
                     scale = 'log'
                 elif not (self.get_xlabel() or arg_list.xlabel):
