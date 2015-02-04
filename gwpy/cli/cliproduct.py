@@ -46,6 +46,7 @@ class CliProduct(object):
     def __init__(self):
         self.min_timeseries = 1      # how many datasets do we need for this product
         self.xaxis_type = 'uk'      # scaling hints, set by individual actions
+        self.xaxis_is_freq = False  # x is going to be frequency or time
         self.yaxis_type = 'uk'      # x and y axis types must be set
         self.iaxis_type = None      # intensity axis (colors) may be missing
         self.chan_list = []
@@ -410,6 +411,7 @@ class CliProduct(object):
             'legend.loc': 'best',
             'lines.linewidth': 1.5,
             'text.usetex': 'true',
+            'agg.path.chunksize': 10000,
         })
 
         # determine image dimensions (geometry)
@@ -431,6 +433,9 @@ class CliProduct(object):
 
     def setup_xaxis(self, arg_list):
         """Handle scale and limits of X-axis by type"""
+        from ..time import Time
+        import re
+
         xmin = 0        # these will be set by x min, max or f min, max
         xmax = 1
         scale = 'linear'
@@ -440,22 +445,49 @@ class CliProduct(object):
             xmax = self.xmax
 
             if self.xaxis_type == 'linx':
+                if arg_list.epoch:
+                    scale = False
+                    self.ax.set_xscale('auto-gps')
+
+                    epoch=float(arg_list.epoch)
+                    if epoch < 1e8:
+                        epoch += xmin       # specified as seconds from start GPS
+                    self.ax.set_epoch(epoch)
+                    self.log(3,('Epoch set to %.2f' % epoch))
                 if arg_list.logx:
                     scale = 'log'
-                else:
-                    scale=None      # here we use the GWpy default
-                if arg_list.epoch:
-                    epoch=float(arg_list.epoch)
-                    self.ax.set_epoch(epoch)
+                elif not (self.get_xlabel() or arg_list.xlabel):
+                    # duplicate default label except use parens not brackets
+                    xscale = self.ax.xaxis._scale
+                    epoch = xscale.get_epoch()
+                    if epoch is None:
+                        arg_list.xlabel = 'GPS Time'
+                    else:
+                        unit = xscale.get_unit_name()
+                        utc = re.sub('\.0+', '',
+                                    Time(epoch, format='gps', scale='utc').iso)
+                        arg_list.xlabel = 'Time (%s) from %s (%s)' % (unit, utc, epoch)
             elif self.xaxis_type == 'logx':
                 if arg_list.nologx:
                     scale = 'linear'
                 else:
                     scale = 'log'
             if arg_list.xmin:
-                xmin = float(arg_list.xmin)
+                al_xmin = float(arg_list.xmin)
+                if self.xaxis_is_freq:
+                    xmin = al_xmin      # frequency specified
+                elif al_xmin <= 9e8:
+                    xmin += al_xmin     # time specified as seconds relative to start GPS
+                else:
+                    xmin = al_xmin      # time specified as absolute GPS
             if arg_list.xmax:
-                xmax = float(arg_list.xmax)
+                al_xmax = float(arg_list.xmax)
+                if self.xaxis_is_freq:
+                    xmax = al_xmax
+                elif al_xmax <= 9e8:
+                    xmax = xmin + al_xmin
+                else:
+                    xmax = al_xmax
         elif self.xaxis_type == 'logf':
             # Handle frequency on the X-axis
             xmin = self.fmin
@@ -674,7 +706,8 @@ class CliProduct(object):
 
         self.annotate_save_plot(args)
 
+        self.is_interactive = False
         if args.interactive:
             self.log(3, 'Interactive manipulation of image should be available.')
             self.plot.show()
-
+            self.is_interactive = True
