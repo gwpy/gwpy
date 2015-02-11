@@ -1736,11 +1736,11 @@ class TimeSeriesDict(OrderedDict):
         allsegs = SegmentList([Segment(istart, iend)])
         qsegs = SegmentList([Segment(istart, iend)])
         if pad is not None:
+            from subprocess import CalledProcessError
             try:
                 segs = ChannelList.query_nds2_availability(
                     channels, istart, iend, host=connection.get_host())
-            except RuntimeError:
-                print('test')
+            except (RuntimeError, CalledProcessError):
                 pass
             else:
                 for channel in segs:
@@ -1772,7 +1772,8 @@ class TimeSeriesDict(OrderedDict):
                 for buffer_, c in zip(buffers, channels):
                     ts = cls.EntryClass.from_nds2_buffer(
                         buffer_, dtype=dtype.get(c))
-                    out.append({c: ts}, pad=pad)
+                    out.append({c: ts}, pad=pad,
+                               gap=pad is None and 'raise' or 'pad')
                 if not nsteps:
                     if have_minute_trends:
                         dur = buffer_.length * 60
