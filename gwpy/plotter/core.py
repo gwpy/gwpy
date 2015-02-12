@@ -275,7 +275,7 @@ class Plot(figure.Figure):
             kwargs.setdefault('format', CombinedLogFormatterMathtext())
 
         # make colour bar
-        colorbar = self.colorbar(mappable, cax=cax, **kwargs)
+        colorbar = self.colorbar(mappable, cax=cax, ax=ax, **kwargs)
 
         # set label
         if label:
