@@ -165,7 +165,11 @@ class CliProduct(object):
         """list of channel names when at least 2 are required"""
         parser.add_argument('--chan', nargs='+', action='append', required=True,
                     help='Two or more channels or times, first one is compared to all the others')
+        parser.add_argument('--ref',
+                    help='Reference channel against which others will be compared')
+
         self.arg_chan(parser)
+
         return
 
     def arg_freq(self, parser):
