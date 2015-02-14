@@ -50,7 +50,7 @@ clean:
 apidoc:
 	sphinx-apidoc -o _generated ../gwpy
 
-html: examples $(CLIEXAMPLES)
+html: $(CLIEXAMPLES) examples
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
@@ -191,5 +191,5 @@ $(CLIEXAMPLEDIR)/cli-01.png: $(CLIEXAMPLEDIR)
 
 $(CLIEXAMPLEDIR)/cli-02.png: $(CLIEXAMPLEDIR)
 	@echo "cli-02.png"
-	@gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start 1102766451 --start 1102766651 --logf --logy --out $(CLIEXAMPLEDIR)/cli-02.png
+	@gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start 1102766451 --start 1102766651  --out $(CLIEXAMPLEDIR)/cli-02.png
 
