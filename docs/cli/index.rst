@@ -115,14 +115,15 @@ The **legends** only appear by default when more than one dataset is plotted.  T
 can be set with the ``--legend`` argument, one for each dataset.  The ``--nolegend`` argument turns
 off all legends.
 
-The **gridlines** are shown by default.  To remove them from the plot uset the ``--nogrid`` argument.
+The **gridlines** are shown by default.  To remove them from the plot use the ``--nogrid`` argument.
 
 Interactive mode
 =================
 
 The ``--interactive`` argument uses the matplotlib/pyplot show function to display an image and allow
 simple manipulations such as zoom, pan, and comfigure subplots.  There is also a save function.  gwpy-ldvw
-will also save the image generated.
+will also save the image generated. Interactive mode is described in detail in the :ref:`interactive`
+section.
 
 Customizing individual plots
 ============================
@@ -135,3 +136,4 @@ remainder of the arguments for each plot.
    :maxdepth: 1
 
    timeseries.rst
+   interactive.rst
