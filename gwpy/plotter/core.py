@@ -32,6 +32,7 @@ except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
 from . import (tex, axes, utils)
+from .axes import Axes
 from .log import CombinedLogFormatterMathtext
 from .decorators import (auto_refresh, axes_method)
 
@@ -56,6 +57,8 @@ class Plot(figure.Figure):
     figures from GWpy data objects, and modifying them on-the-fly in
     interactive mode.
     """
+    _DefaultAxesClass = Axes
+
     def __init__(self, *args, **kwargs):
         # pull non-standard keyword arguments
         auto_refresh = kwargs.pop('auto_refresh', False)
@@ -290,6 +293,11 @@ class Plot(figure.Figure):
     #
     # These methods try to guess which axes to add to, otherwise generate
     # a new one
+
+    def add_subplot(self, *args, **kwargs):
+        kwargs.setdefault('projection', self._DefaultAxesClass.name)
+        return super(Plot, self).add_subplot(*args, **kwargs)
+    add_subplot.__doc__ = figure.Figure.add_subplot.__doc__
 
     def get_axes(self, projection=None):
         """Find all `Axes`, optionally matching the given projection
