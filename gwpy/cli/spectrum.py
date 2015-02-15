@@ -75,9 +75,11 @@ class Spectrum(CliProduct):
         self.overlap = ovlap
 
         self.log(2,"Calculating spectrum secpfft: %.2f, overlap: %.2f" % (fftlen,ovlap))
+        spectra = []
 
         # calculate and plot the first spectrum
         spectrum = self.timeseries[0].asd(fftlen, fftlen*ovlap)
+        spectra.append(spectrum)
 
         fs = self.timeseries[0].sample_rate.value
         self.fmin = 1/self.secpfft
@@ -95,6 +97,7 @@ class Spectrum(CliProduct):
         if len(self.timeseries) > 1:
             for idx in range(1, len(self.timeseries)):
                 specb = self.timeseries[idx].asd(fftlen, ovlap*fftlen)
+                spectra.append(specb)
                 fsb = self.timeseries[idx].sample_rate.value
                 self.fmax = max(self.fmax, fsb/2)
                 self.ymin = min(self.ymin, specb.data.min())
@@ -106,4 +109,31 @@ class Spectrum(CliProduct):
                 specb.name = label
                 self.plot.add_spectrum(specb)
         self.log(2,('Frequency range: [%f, %f]' % (self.fmin, self.fmax)))
+        # if the specified frequency limits adjust our ymin and ymax values
+        # at this point self.ymin and self.ymax represent the full spectra
+        if arg_list.fmin or arg_list.fmax:
+            import numpy
+            mymin = self.ymax   # guaranteed to be >= anything we look at
+            mymax = self.ymin   # guaranteed to be <= anything we look at
+            myfmin = self.fmin
+            myfmax = self.fmax
+            if arg_list.fmin:
+                myfmin = float(arg_list.fmin) * spectra[0].frequencies.unit
+            if arg_list.fmax:
+                myfmax = float(arg_list.fmax) * spectra[0].frequencies.unit
+
+            for idx in range(0, len(spectra)):
+                t = numpy.where(spectra[idx].frequencies >= myfmin)
+                if t[0].size:
+                    strt = t[0][0]
+                    t = numpy.where(spectra[idx].frequencies >= myfmax)
+                    if t[0].size:
+                        stop = t[0][0]
+                    else:
+                        stop = spectra[idx].frequencies.size -1
+                    mymin = min(mymin, numpy.min(spectra[idx].data[strt:stop]))
+                    mymax = max(mymax, numpy.max(spectra[idx].data[strt:stop]))
+
+            self.ymin = mymin
+            self.ymax = mymax
         return
