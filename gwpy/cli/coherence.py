@@ -60,7 +60,7 @@ class Coherence(CliProduct):
 
     def gen_plot(self, arg_list):
         """Generate the coherence plot from all time series"""
-        from numpy import min, max
+
         self.is_freq_plot = True
         fftlen = 1
         if arg_list.secpfft:
@@ -88,8 +88,11 @@ class Coherence(CliProduct):
         if next_ts == 0:
             raise ArithmeticError('No appropriate channels for Coherence calculation')
 
+        cohs = []
         # calculate and plot the first pair, note the first channel is the reference channel
         coh = self.timeseries[0].coherence(self.timeseries[next_ts], fftlength=fftlen, overlap=ovlap*fftlen)
+        cohs.append(coh)
+
         chname = self.timeseries[next_ts].channel.name
         coh.name = chname
         if len(self.start_list) > 1:
@@ -99,8 +102,8 @@ class Coherence(CliProduct):
         #coh2 = 1 / (1-coh)
         self.fmin = min(coh.frequencies.data)
         self.fmax = max(coh.frequencies.data)
-        self.ymin = 0
-        self.ymax = 1
+        self.ymin = 0.
+        self.ymax = 1.
 
 
 
@@ -118,10 +121,38 @@ class Coherence(CliProduct):
                     # don't calculate against reference channel at a different time
                     self.log(2, ('Calculating coherence of %s vs %s' % (ref_name, chname)))
                     cohb = self.timeseries[0].coherence(self.timeseries[idx], fftlength=fftlen, overlap=ovlap*fftlen)
+                    cohs.append(cohb)
                     cohb.name = chname
                     if len(self.start_list) > 1:
                         cohb.name += ", %s" % self.timeseries[idx].times.epoch.gps
                     self.plot.add_spectrum(cohb)
+        # if the specified frequency limits adjust our ymin and ymax values
+        # at this point self.ymin and self.ymax represent the full spectra
+        if arg_list.fmin or arg_list.fmax:
+            import numpy
+            mymin = self.ymax   # guaranteed to be >= anything we look at
+            mymax = self.ymin   # guaranteed to be <= anything we look at
+            myfmin = self.fmin
+            myfmax = self.fmax
+            if arg_list.fmin:
+                myfmin = float(arg_list.fmin) * cohs[0].frequencies.unit
+            if arg_list.fmax:
+                myfmax = float(arg_list.fmax) * cohs[0].frequencies.unit
+
+            for idx in range(0, len(cohs)):
+                t = numpy.where(cohs[idx].frequencies >= myfmin)
+                if t[0].size:
+                    strt = t[0][0]
+                    t = numpy.where(cohs[idx].frequencies >= myfmax)
+                    if t[0].size:
+                        stop = t[0][0]
+                    else:
+                        stop = cohs[idx].frequencies.size -1
+                    mymin = min(mymin, numpy.min(cohs[idx].data[strt:stop]))
+                    mymax = max(mymax, numpy.max(cohs[idx].data[strt:stop]))
+
+            self.ymin = mymin
+            self.ymax = mymax
 
         return
 
