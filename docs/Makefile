@@ -1,3 +1,4 @@
+# vim: ts=4:noet
 # Makefile for Sphinx documentation
 #
 
@@ -15,9 +16,9 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 EXAMPLES := $(shell cd ../examples/ && ls */*py)
 EXAMPLEDIRS := $(shell cd ../examples/ && ls -d */)
 CLIEXAMPLEDIR = $(BUILDDIR)/cli_examples
-CLIEXAMPLES = $(CLIEXAMPLEDIR)/cli-01.png $(CLIEXAMPLEDIR)/cli-02.png
+CLIEXAMPLES = $(CLIEXAMPLEDIR)/cli-01.png $(CLIEXAMPLEDIR)/cli-02.png $(CLIEXAMPLEDIR)/cli-ts-01.png $(CLIEXAMPLEDIR)/cli-ts-02.png $(CLIEXAMPLEDIR)/cli-sp-01.png $(CLIEXAMPLEDIR)/cli-sp-02.png
 
-.PHONY: help clean apidoc html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest examples
+.PHONY: help clean apidoc html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest examples  $(CLIEXAMPLES)
 
 #This is needed with git because git doesn't create a dir if it's empty
 $(shell [ -d "_static" ] || mkdir -p _static)
@@ -186,10 +187,47 @@ $(CLIEXAMPLEDIR):
 	@mkdir -p $(CLIEXAMPLEDIR)/
 
 $(CLIEXAMPLEDIR)/cli-01.png: $(CLIEXAMPLEDIR)
-	@echo "cli-01.png"
-	@gwpy-ldvw.py timeseries --chan L1:OAF-CAL_DARM_DQ --start 1102766651 --out $(CLIEXAMPLEDIR)/cli-01.png
+	@if [ ! -e $@ ];  then \
+		echo "cli-01.png"; \
+		gwpy-ldvw.py timeseries --chan L1:OAF-CAL_DARM_DQ \
+			--start 1102766651 --out $(CLIEXAMPLEDIR)/cli-01.png; \
+	fi
 
 $(CLIEXAMPLEDIR)/cli-02.png: $(CLIEXAMPLEDIR)
-	@echo "cli-02.png"
-	@gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start 1102766451 --start 1102766651  --out $(CLIEXAMPLEDIR)/cli-02.png
+	@if [ ! -e $@ ]; then \
+		echo "cli-02.png"; \
+		gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start 1102766451 \
+			--start 1102766651  --out $(CLIEXAMPLEDIR)/cli-02.png; \
+	fi
+
+$(CLIEXAMPLEDIR)/cli-ts-01.png: $(CLIEXAMPLEDIR)
+	@if [ ! -e $@ ]; then \
+		echo "cli-ts-01"; \
+		gwpy-ldvw.py timeseries --chan L1:OAF-CAL_DARM_DQ --start 1107936100 \
+			--xmin 1107936100.2 --xmax 1107936100.25 --epoch 0.225 \
+			--duration 1 --out $(CLIEXAMPLEDIR)/cli-ts-01.png; \
+	fi
+
+$(CLIEXAMPLEDIR)/cli-ts-02.png: $(CLIEXAMPLEDIR)
+	@if [ ! -e $@ ]; then \
+		echo "cli-ts-02"; \
+		gwpy-ldvw.py timeseries --chan LVE-EX:X3_810BTORR.mean,m-trend \
+			--start 1072539420 --dur 36000 --logy \
+			--out $(CLIEXAMPLEDIR)/cli-ts-02.png; \
+	fi
+
+$(CLIEXAMPLEDIR)/cli-sp-01.png: $(CLIEXAMPLEDIR)
+	@if [ ! -e $@ ]; then \
+		echo "cli-sp-01"; \
+		gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start 1107936067 \
+			--duration 120  --secpfft 10 --out $(CLIEXAMPLEDIR)/cli-sp-01.png; \
+	fi
+
+$(CLIEXAMPLEDIR)/cli-sp-02.png: $(CLIEXAMPLEDIR)
+	@if [ ! -e $@ ]; then \
+		echo "cli-sp-02"; \
+		gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start 1107936067 \
+			--duration 120 --out $(CLIEXAMPLEDIR)/cli-sp-02.png --secpfft 10.000 \
+			--overlap 0.90 --nologf --fmin 500 --fmax 700; \
+	fi
 
