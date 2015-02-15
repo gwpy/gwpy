@@ -176,7 +176,7 @@ class CliProduct(object):
         """Parameters for FFT based plots"""
         self.is_freq_plot = True
         parser.add_argument('--secpfft', default='1.0',
-                            help='length of fft in seconds for coh calculation [duration]')
+                            help='length of fft in seconds for each calculation')
         parser.add_argument('--overlap', default='0.5',
                             help='Overlap as fraction [0-1)')
         return
