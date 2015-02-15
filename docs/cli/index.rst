@@ -136,4 +136,5 @@ remainder of the arguments for each plot.
    :maxdepth: 1
 
    timeseries.rst
+   spectrum.rst
    interactive.rst
