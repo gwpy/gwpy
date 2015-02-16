@@ -458,7 +458,7 @@ class CliProduct(object):
                 self.ax.set_xscale('auto-gps')
 
                 if epoch < 1e8:
-                    epoch += xmin       # specified as seconds from start GPS
+                    epoch += self.xmin       # specified as seconds from start GPS
                 self.ax.set_epoch(epoch)
                 if arg_list.logx:
                     scale = 'log'
@@ -482,8 +482,8 @@ class CliProduct(object):
                 al_xmin = float(arg_list.xmin)
                 if self.xaxis_is_freq:
                     xmin = al_xmin      # frequency specified
-                elif al_xmin <= 9e8:
-                    xmin += al_xmin     # time specified as seconds relative to start GPS
+                elif al_xmin <= 1e8:
+                    xmin = self.xmin + al_xmin     # time specified as seconds relative to start GPS
                 else:
                     xmin = al_xmin      # time specified as absolute GPS
             if arg_list.xmax:
@@ -491,7 +491,7 @@ class CliProduct(object):
                 if self.xaxis_is_freq:
                     xmax = al_xmax
                 elif al_xmax <= 9e8:
-                    xmax = xmin + al_xmin
+                    xmax = self.xmin + al_xmax
                 else:
                     xmax = al_xmax
         elif self.xaxis_type == 'logf':

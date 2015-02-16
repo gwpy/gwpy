@@ -90,9 +90,14 @@ class TimeSeries(CliProduct):
             for idx in range(0, len(self.timeseries)):
                 x0 = self.timeseries[idx].x0.value
                 dt = self.timeseries[idx].dt.value
+                if strt < 1e8:
+                    strt += x0
+                if stop < 1e8:
+                    stop += x0
                 b = max(0, (strt - x0) / dt)
 
                 e = min(self.xmax, (stop - x0) / dt)
+
                 if e >= self.timeseries[idx].size:
                     e = self.timeseries[idx].size - 1
                 new_ymin = min(new_ymin, npmin(self.timeseries[idx][b:e]))
