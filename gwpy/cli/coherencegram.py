@@ -92,9 +92,9 @@ class Coherencegram(CliProduct):
 
         ovlap = secpfft*ovlp
         nfft = self.dur/(secpfft - ovlap)
-        stride = int(nfft/(self.width * 0.8) )
+        stride = int(self.dur/(self.width * 0.8) )
 
-        stride = max(stride, secpfft+ovlap)
+        stride = max(stride, secpfft+(1-ovlp)*4)
         fs = self.timeseries[0].sample_rate
 
         coh= self.timeseries[0].coherence_spectrogram(self.timeseries[1], stride)
@@ -120,6 +120,8 @@ class Coherencegram(CliProduct):
 
         if arg_list.imin:
             lo = float(arg_list.imin)
+        elif norm:
+            lo = 0.5
         else:
             lo = 0.01
         if norm or arg_list.nopct:
@@ -130,7 +132,7 @@ class Coherencegram(CliProduct):
         if arg_list.imax:
             up = float(arg_list.imax)
         elif norm:
-            up = 4
+            up = 2
         else:
             up = 100
         if norm or arg_list.nopct:
