@@ -132,8 +132,8 @@ class Coherence(CliProduct):
             import numpy
             mymin = self.ymax   # guaranteed to be >= anything we look at
             mymax = self.ymin   # guaranteed to be <= anything we look at
-            myfmin = self.fmin
-            myfmax = self.fmax
+            myfmin = self.fmin * cohs[0].frequencies.unit
+            myfmax = self.fmax * cohs[0].frequencies.unit
             if arg_list.fmin:
                 myfmin = float(arg_list.fmin) * cohs[0].frequencies.unit
             if arg_list.fmax:
