@@ -447,6 +447,22 @@ class CliProduct(object):
             # handle time on X-axis
             xmin = self.xmin
             xmax = self.xmax
+            if arg_list.xmin:
+                al_xmin = float(arg_list.xmin)
+                if self.xaxis_is_freq:
+                    xmin = al_xmin      # frequency specified
+                elif al_xmin <= 1e8:
+                    xmin = self.xmin + al_xmin     # time specified as seconds relative to start GPS
+                else:
+                    xmin = al_xmin      # time specified as absolute GPS
+            if arg_list.xmax:
+                al_xmax = float(arg_list.xmax)
+                if self.xaxis_is_freq:
+                    xmax = al_xmax
+                elif al_xmax <= 9e8:
+                    xmax = self.xmin + al_xmax
+                else:
+                    xmax = al_xmax
 
             if self.xaxis_type == 'linx':
                 epoch = 0
@@ -468,32 +484,11 @@ class CliProduct(object):
                     epoch = xscale.get_epoch()
                     if epoch is None:
                         arg_list.xlabel = 'GPS Time'
-                    else:
-                        unit = xscale.get_unit_name()
-                        utc = re.sub('\.0+', '',
-                                    Time(epoch, format='gps', scale='utc').iso)
-                        arg_list.xlabel = 'Time (%s) from %s (%s)' % (unit, utc, epoch)
             elif self.xaxis_type == 'logx':
                 if arg_list.nologx:
                     scale = 'linear'
                 else:
                     scale = 'log'
-            if arg_list.xmin:
-                al_xmin = float(arg_list.xmin)
-                if self.xaxis_is_freq:
-                    xmin = al_xmin      # frequency specified
-                elif al_xmin <= 1e8:
-                    xmin = self.xmin + al_xmin     # time specified as seconds relative to start GPS
-                else:
-                    xmin = al_xmin      # time specified as absolute GPS
-            if arg_list.xmax:
-                al_xmax = float(arg_list.xmax)
-                if self.xaxis_is_freq:
-                    xmax = al_xmax
-                elif al_xmax <= 9e8:
-                    xmax = self.xmin + al_xmax
-                else:
-                    xmax = al_xmax
         elif self.xaxis_type == 'logf':
             # Handle frequency on the X-axis
             xmin = self.fmin
@@ -673,6 +668,17 @@ class CliProduct(object):
 
         self.log(3, ('Super title is: %s' % sup_title))
         self.show_plot_info()
+
+        # change the label for GPS time so Josh is happy
+        if self.ax.xaxis._scale.name == 'auto-gps':
+            import re
+            xscale = self.ax.xaxis._scale
+            epoch = xscale.get_epoch()
+            unit = xscale.get_unit_name()
+            utc = re.sub('\.0+', '',
+                        Time(epoch, format='gps', scale='utc').iso)
+            self.plot.set_xlabel('Time (%s) from %s (%s)' % (unit, utc, epoch))
+            self.ax.xaxis._set_scale(unit,epoch=epoch)
 
         # if they specified an output file write it
         # save the figure. Note type depends on extension of output filename (png, jpg, pdf)
