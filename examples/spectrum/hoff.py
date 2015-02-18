@@ -31,8 +31,10 @@ __currentmodule__ = 'gwpy.spectrum'
 # `~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.fetch()`
 # the data:
 from gwpy.timeseries import TimeSeries
-lho = TimeSeries.fetch('H1:LDAS-STRAIN', 'August 1 2010', 'August 1 2010 00:02')
-llo = TimeSeries.fetch('L1:LDAS-STRAIN', 'August 1 2010', 'August 1 2010 00:02')
+lho = TimeSeries.fetch(
+    'H1:LDAS-STRAIN,rds', 'August 1 2010', 'August 1 2010 00:02')
+llo = TimeSeries.fetch(
+    'L1:LDAS-STRAIN,rds', 'August 1 2010', 'August 1 2010 00:02')
 
 # We can then call the :meth:`~gwpy.timeseries.TimeSeries.asd` method to
 # calculated the amplitude spectral density for each
