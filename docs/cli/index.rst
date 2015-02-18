@@ -137,4 +137,7 @@ remainder of the arguments for each plot.
 
    timeseries.rst
    spectrum.rst
+   coherence.rst
+   spectrogram.rst
+   coherencegram.rst
    interactive.rst
