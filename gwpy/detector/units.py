@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2013-2015)
 #
 # This file is part of GWpy.
 #
@@ -16,20 +16,26 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module provides the core `Array` object and direct subclasses.
-
-These objects form the basic 1-D and 2-D arrays with metadata from which
-we can build specific data representations like the `TimeSeries`.
+"""This module registers a number of custom units used in GW astronomy.
 """
 
 from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-from glue.lal import (Cache, CacheEntry)
+from astropy import units
 
-from .array import *
-from .array2d import *
-from .series import *
+# enable imperial units
+units.add_enabled_units(units.imperial)
 
-__all__ = ['Array', 'Array2D', 'Series', 'Cache', 'CacheEntry']
+# -----------------------------------------------------------------------------
+# instrumental units
+
+units.add_enabled_units([
+    units.def_unit(['counts'], represents=units.Unit('count')),
+    units.def_unit(['undef'], doc='No unit has been defined for these data'),
+    units.def_unit(['coherence'], represents=units.dimensionless_unscaled),
+    units.def_unit(['strain'], represents=units.dimensionless_unscaled),
+    units.def_unit(['Degrees_C'], represents=units.Unit('Celsius')),
+    units.def_unit(['Degrees_F'], represents=units.Unit('Fahrenheit')),
+])

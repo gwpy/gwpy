@@ -25,7 +25,7 @@ import numpy
 
 from astropy.io import registry
 
-from glue.lal import CacheEntry
+from glue.lal import (Cache, CacheEntry)
 
 from .identify import register_identifier
 from ....detector import Channel
@@ -70,11 +70,22 @@ def read_timeseries(framefile, channel, start=None, end=None, dtype=None,
         a new `TimeSeries` containing the data read from disk
     """
     lal = import_method_dependency('lal.lal')
+    frametype = None
     # parse input arguments
     if isinstance(framefile, CacheEntry):
+        frametype = framefile.description
         framefile = framefile.path
     elif isinstance(framefile, file):
         framefile = framefile.name
+    elif isinstance(framefile, Cache):
+        fts = set([e.description for e in framefile])
+        if len(fts) == 1:
+            frametype = list(fts)[0]
+    if isinstance(framefile, str):
+        try:
+            frametype = CacheEntry.from_T050017(framefile).description
+        except ValueError:
+            pass
     if start and isinstance(start, Time):
         start = lal.LIGOTimeGPS(start.gps)
     if end and isinstance(end, Time):
@@ -97,6 +108,7 @@ def read_timeseries(framefile, channel, start=None, end=None, dtype=None,
                                    verbose=verbose)
     out = _target.from_lal(lalts)
     out.channel = channel
+    out.channel.frametype = frametype
     if resample:
         out = out.resample(resample)
     return out

@@ -94,7 +94,7 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
                         type(self).__name__, self.span, other.span))
             gapshape = list(new.shape)
             gapshape[0] = int(ngap)
-            padding = numpy.ones(gapshape, dtype=self.dtype)
+            padding = numpy.ones(gapshape, dtype=self.dtype) * pad
             new.append(padding, inplace=True, resize=resize)
         elif gap == 'ignore':
             pass

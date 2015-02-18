@@ -256,7 +256,7 @@ class TimeSeries(Series):
     @with_import('nds2')
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
               connection=None, verify=False, pad=None,
-              type=NDS2_FETCH_TYPE_MASK):
+              type=NDS2_FETCH_TYPE_MASK, dtype=None):
         """Fetch data from NDS into a TimeSeries.
 
         Parameters
@@ -277,8 +277,10 @@ class TimeSeries(Series):
             open NDS connection to use
         verbose : `bool`, optional
             print verbose output about NDS progress
-        type : `int`
+        type : `int`, optional
             NDS2 channel type integer
+        dtype : `type`, `numpy.dtype`, `str`, optional
+            identifier for desired output data type
 
         Returns
         -------
@@ -288,7 +290,7 @@ class TimeSeries(Series):
         return TimeSeriesDict.fetch(
             [channel], start, end, host=host, port=port,
             verbose=verbose, connection=connection, verify=verify,
-            pad=pad, type=type)[str(channel)]
+            pad=pad, type=type, dtype=dtype)[str(channel)]
 
     # -------------------------------------------
     # TimeSeries product methods
@@ -1265,14 +1267,32 @@ class TimeSeries(Series):
 
     @classmethod
     @with_import('nds2')
-    def from_nds2_buffer(cls, buffer_):
+    def from_nds2_buffer(cls, buffer_, **metadata):
         """Construct a new `TimeSeries` from an `nds2.buffer` object
+
+        Parameters
+        ----------
+        buffer_ : `nds2.buffer`
+            the input NDS2-client buffer to read
+        **metadata
+            any other metadata keyword arguments to pass to the `TimeSeries`
+            constructor
+
+        Returns
+        -------
+        timeseries : `TimeSeries`
+            a new `TimeSeries` containing the data from the `nds2.buffer`,
+            and the appropriate metadata
+
+        Notes
+        -----
+        This classmethod requires the nds2-client package
         """
         # cast as TimeSeries and return
         epoch = Time(buffer_.gps_seconds, buffer_.gps_nanoseconds,
                      format='gps')
         channel = Channel.from_nds2(buffer_.channel)
-        return cls(buffer_.data, epoch=epoch, channel=channel)
+        return cls(buffer_.data, epoch=epoch, channel=channel, **metadata)
 
     @classmethod
     @with_import('lal')
@@ -1570,7 +1590,7 @@ class TimeSeriesDict(OrderedDict):
     @with_import('nds2')
     def fetch(cls, channels, start, end, host=None, port=None,
               verify=False, verbose=False, connection=None,
-              pad=None, type=NDS2_FETCH_TYPE_MASK):
+              pad=None, type=NDS2_FETCH_TYPE_MASK, dtype=None):
         """Fetch data from NDS for a number of channels.
 
         Parameters
@@ -1593,6 +1613,9 @@ class TimeSeriesDict(OrderedDict):
             open NDS connection to use.
         type : `int`, `str`,
             NDS2 channel type integer or string name.
+        dtype : `numpy.dtype`, `str`, `type`, or `dict`
+            numeric data type for returned data, e.g. `numpy.float`, or
+            `dict` of (`channel`, `dtype`) pairs
 
         Returns
         -------
@@ -1606,6 +1629,15 @@ class TimeSeriesDict(OrderedDict):
         end = to_gps(end)
         istart = start.seconds
         iend = ceil(end)
+
+        # parse dtype
+        if isinstance(dtype, (tuple, list)):
+            dtype = [numpy.dtype(r) if r is not None else None for r in dtype]
+            dtype = dict(zip(channels, dtype))
+        elif not isinstance(dtype, dict):
+            if dtype is not None:
+                dtype = numpy.dtype(dtype)
+            dtype = dict((channel, dtype) for channel in channels)
 
         # open connection for specific host
         if host and not port and re.match('[a-z]1nds[0-9]\Z', host):
@@ -1633,7 +1665,7 @@ class TimeSeriesDict(OrderedDict):
                 try:
                     return cls.fetch(channels, start, end, host=host,
                                      port=port, verbose=verbose, type=type,
-                                     verify=verify, pad=pad)
+                                     verify=verify, dtype=dtype, pad=pad)
                 except (RuntimeError, ValueError) as e:
                     if verbose:
                         gprint('Something went wrong:', file=sys.stderr)
@@ -1645,7 +1677,7 @@ class TimeSeriesDict(OrderedDict):
                 return cls(
                     (c, cls.EntryClass.fetch(c, start, end, verbose=verbose,
                                              type=type, verify=verify,
-                                             pad=pad))
+                                             dtype=dtype.get(c), pad=pad))
                     for c in channels)
             e = "Cannot find all relevant data on any known server."
             if not verbose:
@@ -1704,11 +1736,11 @@ class TimeSeriesDict(OrderedDict):
         allsegs = SegmentList([Segment(istart, iend)])
         qsegs = SegmentList([Segment(istart, iend)])
         if pad is not None:
+            from subprocess import CalledProcessError
             try:
                 segs = ChannelList.query_nds2_availability(
                     channels, istart, iend, host=connection.get_host())
-            except RuntimeError:
-                print('test')
+            except (RuntimeError, CalledProcessError):
                 pass
             else:
                 for channel in segs:
@@ -1738,8 +1770,10 @@ class TimeSeriesDict(OrderedDict):
             i = 0
             for buffers in data:
                 for buffer_, c in zip(buffers, channels):
-                    out.append({c: cls.EntryClass.from_nds2_buffer(buffer_)},
-                               pad=pad)
+                    ts = cls.EntryClass.from_nds2_buffer(
+                        buffer_, dtype=dtype.get(c))
+                    out.append({c: ts}, pad=pad,
+                               gap=pad is None and 'raise' or 'pad')
                 if not nsteps:
                     if have_minute_trends:
                         dur = buffer_.length * 60

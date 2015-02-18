@@ -37,6 +37,33 @@ from ..segments import Segment
 
 class Array2D(Array):
     """A two-dimensional array with metadata
+
+    Parameters
+    ----------
+    data : array-like, optional, default: `None`
+        input data array
+    name : `str`, optional, default: `None`
+        descriptive title for this `Array`
+    unit : `~astropy.units.core.Unit`
+        physical unit of these data
+    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        starting GPS time of this `Array`, accepts any input for
+        :meth:`~gwpy.time.to_gps`.
+    channel : `~gwpy.detector.Channel`, `str`
+        source data stream for these data
+    dtype : :class:`~numpy.dtype`, optional, default: `None`
+        input data type
+    copy : `bool`, optional, default: `False`
+        choose to copy the input data to new memory
+    subok : `bool`, optional, default: `True`
+        allow passing of sub-classes by the array generator
+    **metadata
+        other metadata properties
+
+    Returns
+    -------
+    array : `Array`
+        a new array, with a view of the data, and all associated metadata
     """
     _metadata_slots = (Array._metadata_slots +
                        ['x0', 'dx', 'y0', 'dy', 'logx', 'logy'])
@@ -87,6 +114,8 @@ class Array2D(Array):
     @property
     def x0(self):
         """X-axis value of first sample
+
+        :type: `~astropy.units.Quantity`
         """
         return self.metadata['x0']
 
@@ -104,6 +133,8 @@ class Array2D(Array):
     @property
     def dx(self):
         """Distance between samples on the x-axis
+
+        :type: `~astropy.units.Quantity`
         """
         return self.metadata['dx']
 
@@ -121,12 +152,16 @@ class Array2D(Array):
     @property
     def span_x(self):
         """Extent of this `Array2D`
+
+        :type: `~gwpy.segments.Segment`
         """
         return Segment(self.x0, self.x0 + self.shape[0] * self.dx)
 
     @property
     def y0(self):
         """X-axis value of first sample
+
+        :type: `~astropy.units.Quantity`
         """
         return self.metadata['y0']
 
@@ -144,6 +179,8 @@ class Array2D(Array):
     @property
     def dy(self):
         """Distance between samples on the x-axis
+
+        :type: `~astropy.units.Quantity`
         """
         return self.metadata['dy']
 
@@ -161,6 +198,8 @@ class Array2D(Array):
     @property
     def span_y(self):
         """Extent of this `Array2D`
+
+        :type: `~gwpy.segments.Segment`
         """
         return Segment(self.y0, self.y0 + self.shape[1] * self.dy)
 
@@ -370,3 +409,5 @@ class Array2D(Array):
         except AttributeError:
             pass
         return new
+
+    copy.__doc__ = Array.copy.__doc__

@@ -137,21 +137,24 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
 
     # define how to read each frame
     def _read(q, pstart, pend):
-        # don't go beyond the requested limits
-        pstart = float(max(start, pstart))
-        pend = float(min(end, pend))
-        # if resampling TimeSeries, pad by 8 seconds inside cache limits
-        if cls not in (StateVector, StateVectorDict) and resample:
-            cstart = float(max(cspan[0], pstart - 8))
-            subcache = cache.sieve(segment=Segment(cstart, pend))
-            out = cls.read(subcache, channel, format=format_, start=cstart,
-                           end=pend, resample=None, **kwargs)
-            out = out.resample(resample)
-            q.put(out.crop(pstart, pend))
-        else:
-            subcache = cache.sieve(segment=Segment(pstart, pend))
-            q.put(cls.read(subcache, channel, format=format_, start=pstart,
-                           end=pend, resample=resample, **kwargs))
+        try:
+            # don't go beyond the requested limits
+            pstart = float(max(start, pstart))
+            pend = float(min(end, pend))
+            # if resampling TimeSeries, pad by 8 seconds inside cache limits
+            if cls not in (StateVector, StateVectorDict) and resample:
+                cstart = float(max(cspan[0], pstart - 8))
+                subcache = cache.sieve(segment=Segment(cstart, pend))
+                out = cls.read(subcache, channel, format=format_, start=cstart,
+                               end=pend, resample=None, **kwargs)
+                out = out.resample(resample)
+                q.put(out.crop(pstart, pend))
+            else:
+                subcache = cache.sieve(segment=Segment(pstart, pend))
+                q.put(cls.read(subcache, channel, format=format_, start=pstart,
+                               end=pend, resample=resample, **kwargs))
+        except Exception as e:
+            q.put(e)
 
     # separate cache into parts
     fperproc = int(ceil(len(cache) / nproc))
@@ -171,8 +174,10 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
 
     # get data and block
     data = [queue.get() for p in proclist]
-    for process in proclist:
+    for result in data:
         process.join()
+        if isinstance(result, Exception):
+            raise result
 
     # format and return
     if issubclass(cls, dict):
