@@ -84,20 +84,21 @@ class Coherencegram(CliProduct):
         secpfft = 1
         if arg_list.secpfft:
             secpfft = float(arg_list.secpfft)
-        ovlp = 0.5
+        ovlp_frac = 0.5
         if arg_list.overlap:
-            ovlp = float(arg_list.overlap)
+            ovlp_frac = float(arg_list.overlap)
         self.secpfft = secpfft
-        self.overlap = ovlp
+        self.overlap = ovlp_frac
 
-        ovlap = secpfft*ovlp
-        nfft = self.dur/(secpfft - ovlap)
+        ovlap_sec = secpfft*ovlp_frac
+        nfft = self.dur/(secpfft - ovlap_sec)
         stride = int(self.dur/(self.width * 0.8) )
 
-        stride = max(stride, secpfft+(1-ovlp)*32)
+        stride = max(stride, secpfft+(1-ovlp_frac)*32)
         fs = self.timeseries[0].sample_rate
 
-        coh= self.timeseries[0].coherence_spectrogram(self.timeseries[1], stride)
+        coh= self.timeseries[0].coherence_spectrogram(self.timeseries[1], stride,fftlength=secpfft,
+                                                      overlap=ovlap_sec)
         norm = False
         if arg_list.norm:
             coh = coh.ratio('mean')
