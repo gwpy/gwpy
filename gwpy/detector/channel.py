@@ -52,7 +52,7 @@ class Channel(object):
 
     Parameters
     ----------
-    ch : `str`, `Channel`
+    name : `str`, `Channel`
         name of this Channel (or another  Channel itself).
         If a `Channel` is given, all other parameters not set explicitly
         will be copied over.
@@ -73,29 +73,59 @@ class Channel(object):
     data recorded in the LIGO Channel Information System
     (https://cis.ligo.org) for which a query interface is provided.
     """
-    def __init__(self, ch, sample_rate=None, unit=None, dtype=None,
-                 type=None, frametype=None, model=None, url=None):
-        type_ = type
-        # test for Channel input
-        if isinstance(ch, Channel):
-            sample_rate = sample_rate or ch.sample_rate
-            unit = unit or ch.unit
-            type_ = type_ or ch.type
-            dtype = dtype or ch.dtype
-            model = model or ch.model
-            url = url or ch.url
-            frametype = frametype or ch.frametype
-            ch = ch.name
-        # set attributes
-        self.name = ch
-        self.sample_rate = sample_rate
-        self.unit = unit
-        if type_ is not None:
-            self.type = type_
-        self.dtype = dtype
-        self.model = model
-        self.url = url
-        self.frametype = frametype
+    MATCH = re.compile(
+        r'(?P<ifo>[A-Z]\d):'  # match IFO prefix
+         '(?P<system>[a-zA-Z0-9]+)'  # match system
+         '(?:[-_](?P<subsystem>[a-zA-Z0-9]+))?'  # match subsystem
+         '(?:_(?P<signal>[a-zA-Z0-9_]+))?'  # match signal
+         '(?:\.(?P<trend>[a-z]+))?'  # match trend type
+         '(?:,(?P<type>([a-z]-)?[a-z]+))?'  # match channel type
+    )
+
+    def __init__(self, name, sample_rate=None, unit=None, type=None,
+                 dtype=None, frametype=None, model=None, url=None):
+        """Create a new `Channel`
+        """
+        # copy existing Channel
+        if isinstance(name, Channel):
+            self = name.copy()
+            # set metadata
+            if sample_rate:
+                self.sample_rate = sample_rate
+            if unit:
+                self.unit = unit
+            if type:
+                self.type = type
+            if dtype:
+                self.dtype = dtype
+            if frametype:
+                self.frametype = frametype
+            if model:
+                self.model = model
+            if url:
+                self.url = url
+
+        # make a new channel
+        else:
+            self.name = name
+            try:
+                parts = self.parse_channel_name(name)
+            except ValueError:
+                pass
+            else:
+                for key, val in parts.iteritems():
+                    try:
+                        setattr(self, key, val)
+                    except AttributeError:
+                        setattr(self, '_%s' % key, val)
+            # set metadata
+            self.sample_rate = sample_rate
+            self.unit = unit
+            self.type = type
+            self.dtype = dtype
+            self.frametype = frametype
+            self.model = model
+            self.url = url
 
     # -------------------------------------------------------------------------
     # read-write properties
@@ -113,14 +143,7 @@ class Channel(object):
 
     @name.setter
     def name(self, n):
-        try:
-            self._name, self.type = str(n).rsplit(',', 1)
-        except IndexError:
-            pass
-        except ValueError:
-            self._name = str(n)
-        self._ifo, self._system, self._subsystem, self._signal = (
-            parse_channel_name(self._name))
+        self._name = n
 
     @property
     def sample_rate(self):
@@ -392,6 +415,74 @@ class Channel(object):
     # -------------------------------------------------------------------------
     # methods
 
+    @classmethod
+    def parse_channel_name(cls, name, strict=True):
+        """Decompose a channel name string into its components
+
+        Parameters
+        ----------
+        name : `str`
+            name to parse
+        strict : `bool`, optional
+            require exact matching of format, with no surrounding text,
+            default `True`
+
+        Returns
+        -------
+        match : `dict`
+            `dict` of channel name components with the following keys:
+
+            - `'ifo'`: the letter-number interferometer prefix
+            - `'system'`: the top-level system name
+            - `'subsystem'`: the second-level sub-system name
+            - `'signal'`: the remaining underscore-delimited signal name
+            - `'trend'`: the trend type
+            - `'ndstype'`: the NDS2 channel suffix
+
+            Any optional keys that aren't found will return a value of `None`
+
+        Raises
+        ------
+        ValueError
+            if the name cannot be parsed with at least an IFO and SYSTEM
+
+        Examples
+        --------
+        >>> Channel.parse_channel_name('L1:LSC-DARM_IN1_DQ')
+        {'ifo': 'L1',
+         'ndstype': None,
+         'signal': 'IN1_DQ',
+         'subsystem': 'DARM',
+         'system': 'LSC',
+         'trend': None}
+
+        >>> Channel.parse_channel_name(
+            'H1:ISI-BS_ST1_SENSCOR_GND_STS_X_BLRMS_100M_300M.rms,m-trend')
+        {'ifo': 'H1',
+         'ndstype': 'm-trend',
+         'signal': 'ST1_SENSCOR_GND_STS_X_BLRMS_100M_300M',
+         'subsystem': 'BS',
+         'system': 'ISI',
+         'trend': 'rms'}
+        """
+        match = cls.MATCH.search(name)
+        if match is None or (strict and (
+                match.start() != 0 or match.end() != len(name))):
+            raise ValueError("Cannot parse channel name according to LIGO "
+                             "channel-naming convention T990033")
+        return match.groupdict()
+
+    def copy(self):
+        out = type(self)()
+        out.name = str(self.name)
+        out.sample_rate = self.sample_rate.copy()
+        out.unit = self.unit
+        out.dtype = self.dtype
+        out.type = self.type
+        out.frametype = self.frametype
+        out.model = self.model
+        out.url = self.url
+
     def __str__(self):
         return self.name
 
@@ -414,30 +505,6 @@ class Channel(object):
 
 _re_ifo = re.compile("[A-Z]\d:")
 _re_cchar = re.compile("[-_]")
-
-
-def parse_channel_name(name):
-    """Decompose a channel name string into its components
-    """
-    if not name:
-        return None, None, None, None
-    # parse ifo
-    if _re_ifo.match(name):
-        ifo, name = name.split(":", 1)
-    else:
-        ifo = None
-    # parse systems
-    tags = _re_cchar.split(name, maxsplit=2)
-    system = tags[0]
-    if len(tags) > 1:
-        subsystem = tags[1]
-    else:
-        subsystem = None
-    if len(tags) > 2:
-        signal = tags[2]
-    else:
-        signal = None
-    return ifo, system, subsystem, signal
 
 
 class ChannelList(list):
