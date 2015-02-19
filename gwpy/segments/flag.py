@@ -909,6 +909,13 @@ class DataQualityDict(OrderedDict):
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments.
+        on_error : `str`
+            how to handle an error querying for one flag, one of
+
+            - `'raise'` (default): raise the Exception
+            - `'warn'`: print a warning
+            - `'ignore'`: move onto the next flag as if nothing happened
+
         url : `str`, optional, default: ``'https://dqsegdb.ligo.org'``
             URL of the segment database.
 
@@ -918,9 +925,23 @@ class DataQualityDict(OrderedDict):
             An ordered `DataQualityDict` of (name, `DataQualityFlag`)
             pairs.
         """
+        on_error = kwargs.pop('on_error', 'raise').lower()
+        if on_error not in ['raise', 'warn', 'ignore']:
+            raise ValueError("on_error must be one of 'raise', 'warn', "
+                             "or 'ignore'")
         new = cls()
         for flag in flags:
-            new[flag] = cls._EntryClass.query_dqsegdb(flag, *args, **kwargs)
+            try:
+                new[flag] = cls._EntryClass.query_dqsegdb(
+                    flag, *args, **kwargs)
+            except Exception as e:
+                new[flag] = cls._EntryClass(name=flag)
+                if on_error == 'ignore':
+                    pass
+                elif on_error == 'warn':
+                    warnings.warn(str(e))
+                else:
+                    raise
         return new
 
     # use input/output registry to allow multi-format reading
