@@ -65,11 +65,11 @@ class Coherence(CliProduct):
         fftlen = 1
         if arg_list.secpfft:
             fftlen = float(arg_list.secpfft)
-        ovlap = 0.5
+        ovlap_frac = 0.5
         if arg_list.overlap:
-            ovlap = float(arg_list.overlap)
+            ovlap_frac = float(arg_list.overlap)
         self.secpfft = fftlen
-        self.overlap = ovlap
+        self.overlap = ovlap_frac
 
         if self.timeseries[0].min() == self.timeseries[0].data.max():
             ermsg = 'Reference channel has a constant value of (%f).  Coherence can not be calculated' \
@@ -90,7 +90,8 @@ class Coherence(CliProduct):
 
         cohs = []
         # calculate and plot the first pair, note the first channel is the reference channel
-        coh = self.timeseries[0].coherence(self.timeseries[next_ts], fftlength=fftlen, overlap=ovlap*fftlen)
+        coh = self.timeseries[0].coherence(self.timeseries[next_ts], fftlength=fftlen,
+                                           overlap=ovlap_frac*fftlen)
         cohs.append(coh)
 
         chname = self.timeseries[next_ts].channel.name
@@ -120,7 +121,7 @@ class Coherence(CliProduct):
                 if ref_name != chname and self.timeseries[idx].min() != self.timeseries[idx].data.max():
                     # don't calculate against reference channel at a different time
                     self.log(2, ('Calculating coherence of %s vs %s' % (ref_name, chname)))
-                    cohb = self.timeseries[0].coherence(self.timeseries[idx], fftlength=fftlen, overlap=ovlap*fftlen)
+                    cohb = self.timeseries[0].coherence(self.timeseries[idx], fftlength=fftlen, overlap=ovlap_frac*fftlen)
                     cohs.append(cohb)
                     cohb.name = chname
                     if len(self.start_list) > 1:
