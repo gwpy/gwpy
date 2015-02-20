@@ -89,6 +89,22 @@ class Channel(object):
         # copy existing Channel
         if isinstance(name, Channel):
             self = name.copy()
+            # set metadata
+            if sample_rate:
+                self.sample_rate = sample_rate
+            if unit:
+                self.unit = unit
+            if type:
+                self.type = type
+            if dtype:
+                self.dtype = dtype
+            if frametype:
+                self.frametype = frametype
+            if model:
+                self.model = model
+            if url:
+                self.url = url
+
         # make a new channel
         else:
             self.name = name
@@ -102,20 +118,13 @@ class Channel(object):
                         setattr(self, key, val)
                     except AttributeError:
                         setattr(self, '_%s' % key, val)
-        # set metadata
-        if sample_rate is not None:
+            # set metadata
             self.sample_rate = sample_rate
-        if unit is not None:
             self.unit = unit
-        if type is not None:
             self.type = type
-        if dtype is not None:
             self.dtype = dtype
-        if frametype is not None:
             self.frametype = frametype
-        if model is not None:
             self.model = model
-        if url is not None:
             self.url = url
 
     # -------------------------------------------------------------------------
