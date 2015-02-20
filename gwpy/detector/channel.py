@@ -107,7 +107,9 @@ class Channel(object):
 
         # make a new channel
         else:
-            self.name = name
+            # strip off NDS stuff for 'name'
+            self.name = str(name).split(',')[0]
+            # parse name into component parts
             try:
                 parts = self.parse_channel_name(name)
             except ValueError:
@@ -119,9 +121,10 @@ class Channel(object):
                     except AttributeError:
                         setattr(self, '_%s' % key, val)
             # set metadata
+            if type is not None:
+                self.type = type
             self.sample_rate = sample_rate
             self.unit = unit
-            self.type = type
             self.dtype = dtype
             self.frametype = frametype
             self.model = model
@@ -151,7 +154,10 @@ class Channel(object):
 
         :type: :class:`~astropy.units.quantity.Quantity`
         """
-        return self._sample_rate
+        try:
+            return self._sample_rate
+        except AttributeError:
+            self._sample_rate = None
 
     @sample_rate.setter
     def sample_rate(self, rate):
