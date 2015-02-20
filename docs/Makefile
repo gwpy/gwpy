@@ -16,7 +16,7 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 EXAMPLES := $(shell cd ../examples/ && ls */*py)
 EXAMPLEDIRS := $(shell cd ../examples/ && ls -d */)
 CLIEXAMPLEDIR = $(BUILDDIR)/cli_examples
-CLIEXAMPLES = $(CLIEXAMPLEDIR)/cli-01.png $(CLIEXAMPLEDIR)/cli-02.png $(CLIEXAMPLEDIR)/cli-ts-01.png $(CLIEXAMPLEDIR)/cli-ts-02.png $(CLIEXAMPLEDIR)/cli-sp-01.png $(CLIEXAMPLEDIR)/cli-sp-02.png
+CLIEXAMPLES = $(CLIEXAMPLEDIR)/cli-01.png $(CLIEXAMPLEDIR)/cli-02.png $(CLIEXAMPLEDIR)/cli-ts-01.png $(CLIEXAMPLEDIR)/cli-ts-02.png $(CLIEXAMPLEDIR)/cli-sp-01.png $(CLIEXAMPLEDIR)/cli-sp-02.png $(CLIEXAMPLEDIR)/cli-cohg-01.png
 
 .PHONY: help clean apidoc html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest examples  $(CLIEXAMPLES)
 
@@ -231,3 +231,11 @@ $(CLIEXAMPLEDIR)/cli-sp-02.png: $(CLIEXAMPLEDIR)
 			--overlap 0.90 --nologf --fmin 500 --fmax 700; \
 	fi
 
+$(CLIEXAMPLEDIR)/cli-cohg-01.png: $(CLIEXAMPLEDIR)
+	@if [ ! -e $@ ]; then \
+		echo "cli-cohg-01"; \
+		gwpy-ldvw.py coherencegram --chan L1:LSC-SRCL_IN1_DQ L1:LSC-CARM_IN1_DQ \
+			--start 1107820816 1107820816 --duration 900 --duration 900 \
+			--out $(CLIEXAMPLEDIR)/cli-cohg-01.png \
+			--ref L1:LSC-SRCL_IN1_DQ --secpfft 0.500 --overlap 0.90 ;\
+	fi
