@@ -95,6 +95,7 @@ class Coherencegram(CliProduct):
         stride = int(self.dur/(self.width * 0.8) )
 
         stride = max(stride, secpfft+(1-ovlp_frac)*32)
+        stride = max(stride, secpfft*2)
         fs = self.timeseries[0].sample_rate
 
         coh= self.timeseries[0].coherence_spectrogram(self.timeseries[1], stride,fftlength=secpfft,
