@@ -72,21 +72,20 @@ class Spectrogram(CliProduct):
         secpfft = 1
         if arg_list.secpfft:
             secpfft = float(arg_list.secpfft)
-        ovlp = 0.5
+        ovlp_frac = 0.5
         if arg_list.overlap:
-            ovlp = float(arg_list.overlap)
+            ovlp_frac = float(arg_list.overlap)
         self.secpfft = secpfft
-        self.overlap = ovlp
+        self.overlap = ovlp_frac
 
-        ovlap = secpfft*ovlp
-        nfft = self.dur/(secpfft - ovlap)
+        ovlp_sec = secpfft*ovlp_frac
+        nfft = self.dur/(secpfft - ovlp_sec)
         stride = int(nfft/(self.width * 0.8) )
-        if stride < 1:
-            stride = 1
         stride = stride * secpfft
+        stride = max(2*secpfft, stride)
         fs = self.timeseries[0].sample_rate.value
 
-        specgram = self.timeseries[0].spectrogram(stride, fftlength=secpfft, overlap=ovlap) ** (1/2.)
+        specgram = self.timeseries[0].spectrogram(stride, fftlength=secpfft, overlap=ovlp_sec) ** (1/2.)
 
         norm = False
         if arg_list.norm:
