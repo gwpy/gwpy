@@ -88,47 +88,37 @@ class Channel(object):
         """
         # copy existing Channel
         if isinstance(name, Channel):
-            self = name.copy()
-            # set metadata
-            if sample_rate:
-                self.sample_rate = sample_rate
-            if unit:
-                self.unit = unit
-            if type:
-                self.type = type
-            if dtype:
-                self.dtype = dtype
-            if frametype:
-                self.frametype = frametype
-            if model:
-                self.model = model
-            if url:
-                self.url = url
-
+            sample_rate = sample_rate or name.sample_rate
+            unit = unit or name.unit
+            type = type or name.type
+            dtype = dtype or name.dtype
+            frametype = frametype or name.frametype
+            model = model or name.model
+            url = url or name.url
+            name = str(name)
         # make a new channel
+        # strip off NDS stuff for 'name'
+        self.name = str(name).split(',')[0]
+        # parse name into component parts
+        try:
+            parts = self.parse_channel_name(name)
+        except ValueError:
+            pass
         else:
-            # strip off NDS stuff for 'name'
-            self.name = str(name).split(',')[0]
-            # parse name into component parts
-            try:
-                parts = self.parse_channel_name(name)
-            except ValueError:
-                pass
-            else:
-                for key, val in parts.iteritems():
-                    try:
-                        setattr(self, key, val)
-                    except AttributeError:
-                        setattr(self, '_%s' % key, val)
-            # set metadata
-            if type is not None:
-                self.type = type
-            self.sample_rate = sample_rate
-            self.unit = unit
-            self.dtype = dtype
-            self.frametype = frametype
-            self.model = model
-            self.url = url
+            for key, val in parts.iteritems():
+                try:
+                    setattr(self, key, val)
+                except AttributeError:
+                    setattr(self, '_%s' % key, val)
+        # set metadata
+        if type is not None:
+            self.type = type
+        self.sample_rate = sample_rate
+        self.unit = unit
+        self.dtype = dtype
+        self.frametype = frametype
+        self.model = model
+        self.url = url
 
     # -------------------------------------------------------------------------
     # read-write properties
@@ -142,7 +132,10 @@ class Channel(object):
 
         :type: `str`
         """
-        return self._name
+        try:
+            return self._name
+        except AttributeError:
+            self._name = None
 
     @name.setter
     def name(self, n):
@@ -479,15 +472,10 @@ class Channel(object):
         return match.groupdict()
 
     def copy(self):
-        out = type(self)()
-        out.name = str(self.name)
-        out.sample_rate = self.sample_rate.copy()
-        out.unit = self.unit
-        out.dtype = self.dtype
-        out.type = self.type
-        out.frametype = self.frametype
-        out.model = self.model
-        out.url = self.url
+        return type(self)(self.name, unit=self.unit,
+                          sample_rate=self.sample_rate, dtype=self.dtype,
+                          type=self.type, frametype=self.frametype,
+                          model=self.model, url=self.url)
 
     def __str__(self):
         return self.name
