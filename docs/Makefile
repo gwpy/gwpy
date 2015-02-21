@@ -15,6 +15,8 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 EXAMPLES := $(shell cd ../examples/ && ls */*py)
 EXAMPLEDIRS := $(shell cd ../examples/ && ls -d */)
 
+LALSUITE_DOXTAG = lalsuite_dox.tag
+
 .PHONY: help clean apidoc html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest examples
 
 #This is needed with git because git doesn't create a dir if it's empty
@@ -43,11 +45,12 @@ clean:
 	-rm -rf examples/*/
 	-rm -rf $(BUILDDIR)
 	-rm -rf _generated
+	-rm -rf $(LALSUITE_DOXTAG)
 
 apidoc:
 	sphinx-apidoc -o _generated ../gwpy
 
-html: examples
+html: examples lalsuite_dox.tag
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
@@ -177,3 +180,6 @@ examples/%.rst: export INDEX=$(addprefix examples/,$(dir $*))index.rst
 examples/%.rst: ex2rst.py ../examples/%.py examples/index.rst
 	@$(MAKE) $(INDEX)
 	python ex2rst.py ../examples/$*.py $@
+
+$(LALSUITE_DOXTAG):
+	wget --no-check-certificate https://www.lsc-group.phys.uwm.edu/daswg/projects/lal/nightly/docs/html/lalsuite_dox.tag -O $@ --quiet
