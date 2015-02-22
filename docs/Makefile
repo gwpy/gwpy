@@ -16,7 +16,7 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 EXAMPLES := $(shell cd ../examples/ && ls */*py)
 EXAMPLEDIRS := $(shell cd ../examples/ && ls -d */)
 CLIEXAMPLEDIR = $(BUILDDIR)/cli_examples
-CLIEXAMPLES = $(CLIEXAMPLEDIR)/cli-01.png $(CLIEXAMPLEDIR)/cli-02.png $(CLIEXAMPLEDIR)/cli-ts-01.png $(CLIEXAMPLEDIR)/cli-ts-02.png $(CLIEXAMPLEDIR)/cli-sp-01.png $(CLIEXAMPLEDIR)/cli-sp-02.png $(CLIEXAMPLEDIR)/cli-cohg-01.png
+CLIEXAMPLES = $(CLIEXAMPLEDIR)/cli-01.png $(CLIEXAMPLEDIR)/cli-02.png $(CLIEXAMPLEDIR)/cli-ts-01.png $(CLIEXAMPLEDIR)/cli-ts-02.png $(CLIEXAMPLEDIR)/cli-sp-01.png $(CLIEXAMPLEDIR)/cli-sp-02.png $(CLIEXAMPLEDIR)/cli-cohg-01.png $(CLIEXAMPLEDIR)/cli-spg-01.png $(CLIEXAMPLEDIR)/cli-coh-01.png
 
 .PHONY: help clean apidoc html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest examples  $(CLIEXAMPLES)
 
@@ -44,7 +44,6 @@ help:
 
 clean:
 	-rm -rf examples/*/
-	-rm -rf $(CLIEXAMPLEDIR)
 	-rm -rf $(BUILDDIR)
 	-rm -rf _generated
 
@@ -52,11 +51,13 @@ apidoc:
 	sphinx-apidoc -o _generated ../gwpy
 
 html: $(CLIEXAMPLES) examples
+	@cp -r $(BUILDDIR)/cli_examples $(BUILDDIR)/html
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
 dirhtml:
+	@cp -r $(BUILDDIR)/cli_examples $(BUILDDIR)/dirhtml
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/dirhtml."
@@ -231,11 +232,28 @@ $(CLIEXAMPLEDIR)/cli-sp-02.png: $(CLIEXAMPLEDIR)
 			--overlap 0.90 --nologf --fmin 500 --fmax 700; \
 	fi
 
+$(CLIEXAMPLEDIR)/cli-coh-01.png: $(CLIEXAMPLEDIR)
+	@if [ ! -e $@ ]; then \
+		echo "cli-coh-01"; \
+		gwpy-ldvw.py coherence --chan L1:LSC-SRCL_IN1_DQ L1:LSC-CARM_IN1_DQ \
+			--start 1107820816  --duration 900  \
+			--out $(CLIEXAMPLEDIR)/cli-coh-01.png \
+			--ref L1:LSC-SRCL_IN1_DQ --secpfft 8.0 --overlap 0.50 ;\
+	fi
+
 $(CLIEXAMPLEDIR)/cli-cohg-01.png: $(CLIEXAMPLEDIR)
 	@if [ ! -e $@ ]; then \
 		echo "cli-cohg-01"; \
 		gwpy-ldvw.py coherencegram --chan L1:LSC-SRCL_IN1_DQ L1:LSC-CARM_IN1_DQ \
-			--start 1107820816 1107820816 --duration 900 --duration 900 \
+			--start 1107820816 --duration 900 \
 			--out $(CLIEXAMPLEDIR)/cli-cohg-01.png \
 			--ref L1:LSC-SRCL_IN1_DQ --secpfft 0.500 --overlap 0.90 ;\
 	fi
+
+$(CLIEXAMPLEDIR)/cli-spg-01.png: $(CLIEXAMPLEDIR)
+	@if [ ! -e $@ ]; then \
+		echo "cli-spg-01"; \
+		gwpy-ldvw.py spectrogram --chan L1:LSC-SRCL_IN1_DQ --start 1107937307 --dur 240 \
+		    --out $(CLIEXAMPLEDIR)/cli-spg-01.png; \
+	fi
+
