@@ -39,11 +39,11 @@ To see the available options for any action add the action keyword.  For example
                                 [--legend [LEGEND [LEGEND ...]]] [--nolegend]
                                 [--nogrid] [--ymin YMIN] [--ymax YMAX]
 
-A -h or --help after the action will provide an explanation of each option.  Since most options are
-shared among several actions we will discuss them in groups later.
+A ``-h`` or ``--help`` after the action will provide an explanation of each option.  Since most
+options are shared among several actions we will discuss them in groups.
 
-The program tries to choose reasonable defaults so the only required arguments are one channel
-and one start time.  For example:
+The program tries to choose reasonable defaults so the only required arguments for most plots are
+one channel and one start time, some plots like coherence require two channels.  For example:
 
 .. code-block:: sh
 
@@ -51,7 +51,7 @@ and one start time.  For example:
 
 Will produce a image file called gwpy.png in the current directory that looks like:
 
-.. image:: /../../cli_examples/cli-01.png
+.. image:: /../cli_examples/cli-01.png
     :align: center
     :alt: sample time series no parameters specified
 
@@ -68,7 +68,8 @@ Specify input data
 
 The line plots: time series, spectrum, and coherence accept multiple channels and multiple times,
 while the image plots:
-spectrogram and coherencegram accept only one channel and time.
+spectrogram and coherence-spectrogram accept only one (spectrogram) or two (coherence-spectrogram)
+channel(s) and one time.
 
 **Channels** are specified using their full name and it is case sensitive.
 Use the ``--chan`` argument followed by the channel name as many times as needed
@@ -96,9 +97,9 @@ The figure below is a spectrum that was generated with the command line:
 
 .. code-block:: sh
 
-    gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start 1102766451 --start 1102766651 --logf --logy --out spectrum.png
+    gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start 1102766451 1102766651 --out spectrum.png
 
-.. image:: /../../cli_examples/cli-02.png
+.. image:: /../cli_examples/cli-02.png
     :align: center
     :alt: sample spectrum
 

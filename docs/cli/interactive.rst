@@ -80,3 +80,4 @@ manipulation of the plot:
   * timeseries[] - An array of the TimeSeries objects used to create the plot
   * plot - The matplotlib figure object
   * ax - The axis of the plot
+
