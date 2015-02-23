@@ -32,6 +32,8 @@ import warnings
 from urlparse import urlparse
 from copy import copy as shallowcopy
 from math import (floor, ceil)
+from threading import Thread
+from Queue import Queue
 
 try:
     from collections import OrderedDict
@@ -798,6 +800,28 @@ class DataQualityFlag(object):
     __iadd__ = __ior__
 
 
+class _QueryDQSegDBThread(Thread):
+    """Threaded DQSegDB query
+    """
+    def __init__(self, inqueue, outqueue, *args, **kwargs):
+        Thread.__init__(self)
+        self.in_ = inqueue
+        self.out = outqueue
+        self.args = args
+        self.kwargs = kwargs
+
+    def run(self):
+        i, flag = self.in_.get()
+        self.in_.task_done()
+        try:
+            self.out.put(
+                (i, DataQualityFlag.query_dqsegdb(flag, *self.args,
+                                                  **self.kwargs)))
+        except Exception as e:
+            self.out.put((i, e))
+        self.out.task_done()
+
+
 class DataQualityDict(OrderedDict):
     """An `OrderedDict` of (key, `DataQualityFlag`) pairs.
 
@@ -931,23 +955,39 @@ class DataQualityDict(OrderedDict):
             An ordered `DataQualityDict` of (name, `DataQualityFlag`)
             pairs.
         """
+        # check on_error flag
         on_error = kwargs.pop('on_error', 'raise').lower()
         if on_error not in ['raise', 'warn', 'ignore']:
             raise ValueError("on_error must be one of 'raise', 'warn', "
                              "or 'ignore'")
+
+        # set up threading
+        inq = Queue()
+        outq = Queue()
+        for i in range(len(flags)):
+            t = _QueryDQSegDBThread(inq, outq, *args, **kwargs)
+            t.setDaemon(True)
+            t.start()
+        for i, flag in enumerate(flags):
+            inq.put((i, flag))
+
+        # capture output
+        inq.join()
+        outq.join()
         new = cls()
-        for flag in flags:
-            try:
-                new[flag] = cls._EntryClass.query_dqsegdb(
-                    flag, *args, **kwargs)
-            except Exception as e:
+        results = zip(*sorted([outq.get() for i in range(len(flags))],
+                              key=lambda x: x[0]))[1]
+        for result, flag in zip(results, flags):
+            if isinstance(result, Exception):
                 new[flag] = cls._EntryClass(name=flag)
                 if on_error == 'ignore':
                     pass
                 elif on_error == 'warn':
-                    warnings.warn(str(e))
+                    warnings.warn(str(result))
                 else:
-                    raise
+                    raise result
+            else:
+                new[flag] = result
         return new
 
     # use input/output registry to allow multi-format reading
