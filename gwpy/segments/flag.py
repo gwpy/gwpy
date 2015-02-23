@@ -42,6 +42,7 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.lsctables import VetoDefTable
 
 from .. import version
+from ..time import to_gps
 from ..utils.deps import with_import
 from ..io import (reader, writer)
 from .segments import Segment, SegmentList
@@ -371,9 +372,9 @@ class DataQualityFlag(object):
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
         elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(args[0]))
+            qsegs = SegmentList(Segment(map(to_gps, args[0])))
         elif len(args) == 2:
-            qsegs = SegmentList([Segment(args)])
+            qsegs = SegmentList([Segment(map(to_gps, args))])
         else:
             raise ValueError("DataQualityFlag.query must be called with a "
                              "flag name, and either GPS start and stop times, "
@@ -422,9 +423,9 @@ class DataQualityFlag(object):
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
         elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(args[0]))
+            qsegs = SegmentList(Segment(map(to_gps, args[0])))
         elif len(args) == 2:
-            qsegs = SegmentList([Segment(args)])
+            qsegs = SegmentList([Segment(map(to_gps, args))])
         else:
             raise ValueError("DataQualityFlag.query must be called with a "
                              "flag name, and either GPS start and stop times, "
