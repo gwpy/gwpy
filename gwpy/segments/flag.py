@@ -441,7 +441,12 @@ class DataQualityFlag(object):
             e.args = ('Flag must be of the form \'IFO:FLAG-NAME:VERSION\'',)
             raise
         else:
-            version = int(version)
+            try:
+                version = int(version)
+            except ValueError as e:
+                e.args = ('Cannot parse version number %r for flag %r'
+                          % (version, flag),)
+                raise
 
         # other keyword arguments
         request = kwargs.pop('request', 'metadata,active,known')
