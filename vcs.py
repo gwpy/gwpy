@@ -76,7 +76,10 @@ class GitStatus(object):
 
     @property
     def commit(self):
-        return self.branch.commit
+        try:
+            return self.branch.commit
+        except TypeError:
+            return self.repo.head.commit
 
     @property
     def branch(self):
