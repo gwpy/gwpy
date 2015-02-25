@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2013-2015)
 #
 # This file is part of GWpy.
 #
@@ -17,39 +17,31 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>
 
-"""Calculating and plotting a `Spectrum`
-
-I'm interested in the level of ground motion surrounding a particular time
-during commissioning of the Advanced LIGO Livingston Observatory. I don't
-have access to the frame files on disk, so I'll need to use NDS.
+"""Calculating and plotting a `SpectralVariance` histogram
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.spectrum'
 
-# In order to generate a `Spectrum` we need to import the
+# In order to generate a `SpectralVariance` histogram we need to import the
 # `~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.fetch()`
 # the data:
 from gwpy.timeseries import TimeSeries
-lho = TimeSeries.fetch(
-    'H1:LDAS-STRAIN,rds', 'August 1 2010', 'August 1 2010 00:02')
 llo = TimeSeries.fetch(
-    'L1:LDAS-STRAIN,rds', 'August 1 2010', 'August 1 2010 00:02')
+    'L1:LDAS-STRAIN,rds', 'August 1 2010', 'August 1 2010 00:10')
 
-# We can then call the :meth:`~gwpy.timeseries.TimeSeries.asd` method to
-# calculated the amplitude spectral density for each
+# We can then call the :meth:`~gwpy.timeseries.TimeSeries.spectral_variance`
+# method
 # `~gwpy.timeseries.TimeSeries`:
-lhoasd = lho.asd(2, 1)
-lloasd = llo.asd(2, 1)
+variance = llo.spectral_variance(1, log=True, low=1e-24, high=1e-19, nbins=100)
 
-# We can then :meth:`~Spectrum.plot` the spectra
-plot = lhoasd.plot(color='b', label='LHO')
+# We can then :meth:`~SpectralVariance.plot` the `SpectralVariance`
+plot = variance.plot(norm='log', vmin=0.5, vmax=100)
 ax = plot.gca()
-ax.plot(lloasd, color='g', label='LLO')
+ax.grid()
 ax.set_xlim(40, 4096)
-ax.set_ylim(1e-23, 7.5e-21)
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
-ax.get_xaxis().tick_bottom()
-ax.get_yaxis().tick_right()
+ax.set_ylim(1e-24, 1e-19)
+ax.set_xlabel('Frequency [Hz]')
+ax.set_ylabel(r'GW ASD [strain/\rtHz]')
+ax.set_title('LIGO Livingston Observatory sensitivity variance')
 plot.show()

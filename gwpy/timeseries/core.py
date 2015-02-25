@@ -1740,8 +1740,8 @@ class TimeSeriesDict(OrderedDict):
             try:
                 segs = ChannelList.query_nds2_availability(
                     channels, istart, iend, host=connection.get_host())
-            except (RuntimeError, CalledProcessError):
-                pass
+            except (RuntimeError, CalledProcessError) as e:
+                warnings.warn(str(e), ndsio.NDSWarning)
             else:
                 for channel in segs:
                     try:
@@ -1751,9 +1751,9 @@ class TimeSeriesDict(OrderedDict):
                         csegs = SegmentList([])
                     qsegs &= csegs
 
-        if verbose and len(qsegs) > 1 or abs(allsegs - qsegs):
-            gprint('Found %d viable segments of data with %.2f%% coverage'
-                   % (len(qsegs), abs(qsegs) / abs(allsegs) * 100))
+            if verbose:
+                gprint('Found %d viable segments of data with %.2f%% coverage'
+                       % (len(qsegs), abs(qsegs) / abs(allsegs) * 100))
 
         out = cls()
         for (istart, iend) in qsegs:

@@ -19,6 +19,7 @@ CLIEXAMPLEDIR = $(BUILDDIR)/cli_examples
 CLIEXAMPLES = $(CLIEXAMPLEDIR)/cli-01.png $(CLIEXAMPLEDIR)/cli-02.png $(CLIEXAMPLEDIR)/cli-ts-01.png $(CLIEXAMPLEDIR)/cli-ts-02.png $(CLIEXAMPLEDIR)/cli-sp-01.png $(CLIEXAMPLEDIR)/cli-sp-02.png $(CLIEXAMPLEDIR)/cli-cohg-01.png $(CLIEXAMPLEDIR)/cli-spg-01.png $(CLIEXAMPLEDIR)/cli-coh-01.png
 
 .PHONY: help clean apidoc html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest examples  $(CLIEXAMPLES)
+LALSUITE_DOXTAG = lalsuite_dox.tag
 
 #This is needed with git because git doesn't create a dir if it's empty
 $(shell [ -d "_static" ] || mkdir -p _static)
@@ -46,11 +47,12 @@ clean:
 	-rm -rf examples/*/
 	-rm -rf $(BUILDDIR)
 	-rm -rf _generated
+	-rm -rf $(LALSUITE_DOXTAG)
 
 apidoc:
 	sphinx-apidoc -o _generated ../gwpy
 
-html: $(CLIEXAMPLES) examples
+html: $(CLIEXAMPLES) examples lalsuite_dox.tag
 	@cp -r $(BUILDDIR)/cli_examples $(BUILDDIR)/html
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
@@ -257,3 +259,5 @@ $(CLIEXAMPLEDIR)/cli-spg-01.png: $(CLIEXAMPLEDIR)
 		    --out $(CLIEXAMPLEDIR)/cli-spg-01.png; \
 	fi
 
+$(LALSUITE_DOXTAG):
+	wget --no-check-certificate https://www.lsc-group.phys.uwm.edu/daswg/projects/lal/nightly/docs/html/lalsuite_dox.tag -O $@ --quiet

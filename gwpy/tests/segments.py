@@ -19,10 +19,16 @@
 """Unit test for segments module
 """
 
-import unittest
+import sys
 import os.path
 import tempfile
 import StringIO
+from urllib2 import URLError
+
+if sys.version_info < (2, 7):
+    import unittest2 as unittest
+else:
+    import unittest
 
 from .. import version
 from ..segments import (Segment, SegmentList, DataQualityFlag, DataQualityDict)
@@ -56,6 +62,13 @@ SEGWIZ = os.path.join(os.path.split(__file__)[0], 'data',
                       'X1-GWPY_TEST_SEGMENTS-0-10.txt')
 FLAG1 = 'X1:GWPY-TEST_SEGMENTS:1'
 FLAG2 = 'X1:GWPY-TEST_SEGMENTS:2'
+
+QUERY_START = 1108598416
+QUERY_END = 1108684816
+QUERY_KNOWN = SegmentList([(1108598416, 1108632895), (1108632901, 1108684816)])
+QUERY_ACTIVE = SegmentList([(1108623497, 1108624217)])
+QUERY_FLAG = 'L1:DMT-DC_READOUT:1'
+QUERY_URL = 'https://dqsegdb5.phy.syr.edu'
 
 
 class SegmentListTests(unittest.TestCase):
@@ -154,6 +167,17 @@ class DataQualityFlagTests(unittest.TestCase):
             self.assertTrue(flag.known == KNOWN,
                             'DataQualityFlag.read(hdf5) mismatch:\n\n%s\n\n%s'
                             % (KNOWN, flag.known))
+
+    def test_query_dqsegdb(self):
+        try:
+            flag = DataQualityFlag.query_dqsegdb(
+                QUERY_FLAG, QUERY_START, QUERY_END, url=QUERY_URL)
+        except URLError as e:
+            raise unittest.SkipTest(str(e))
+        else:
+            self.assertEqual(flag.known, QUERY_KNOWN)
+            self.assertEqual(flag.active, QUERY_ACTIVE)
+
 
 if __name__ == '__main__':
     unittest.main()

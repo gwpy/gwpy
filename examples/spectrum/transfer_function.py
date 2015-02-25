@@ -58,8 +58,6 @@ hpifft = hpi.average_fft(100, 50, window='hamming')
 # Finally, we can divide one by the other to get the transfer function
 # (up to the lower Nyquist)
 size = min(gndfft.size, hpifft.size)
-print(hpifft)
-print(gndfft)
 tf = hpifft[:size] / gndfft[:size]
 
 # The `~gwpy.plotter.BodePlot` knows how to separate a complex-valued

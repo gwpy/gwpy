@@ -32,6 +32,8 @@ import warnings
 from urlparse import urlparse
 from copy import copy as shallowcopy
 from math import (floor, ceil)
+from threading import Thread
+from Queue import Queue
 
 try:
     from collections import OrderedDict
@@ -42,6 +44,7 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.lsctables import VetoDefTable
 
 from .. import version
+from ..time import to_gps
 from ..utils.deps import with_import
 from ..io import (reader, writer)
 from .segments import Segment, SegmentList
@@ -371,9 +374,9 @@ class DataQualityFlag(object):
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
         elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(args[0]))
+            qsegs = SegmentList(Segment(map(to_gps, args[0])))
         elif len(args) == 2:
-            qsegs = SegmentList([Segment(args)])
+            qsegs = SegmentList([Segment(map(to_gps, args))])
         else:
             raise ValueError("DataQualityFlag.query must be called with a "
                              "flag name, and either GPS start and stop times, "
@@ -422,9 +425,9 @@ class DataQualityFlag(object):
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
         elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(args[0]))
+            qsegs = SegmentList(Segment(map(to_gps, args[0])))
         elif len(args) == 2:
-            qsegs = SegmentList([Segment(args)])
+            qsegs = SegmentList([Segment(map(to_gps, args))])
         else:
             raise ValueError("DataQualityFlag.query must be called with a "
                              "flag name, and either GPS start and stop times, "
@@ -440,7 +443,12 @@ class DataQualityFlag(object):
             e.args = ('Flag must be of the form \'IFO:FLAG-NAME:VERSION\'',)
             raise
         else:
-            version = int(version)
+            try:
+                version = int(version)
+            except ValueError as e:
+                e.args = ('Cannot parse version number %r for flag %r'
+                          % (version, flag),)
+                raise
 
         # other keyword arguments
         request = kwargs.pop('request', 'metadata,active,known')
@@ -792,6 +800,28 @@ class DataQualityFlag(object):
     __iadd__ = __ior__
 
 
+class _QueryDQSegDBThread(Thread):
+    """Threaded DQSegDB query
+    """
+    def __init__(self, inqueue, outqueue, *args, **kwargs):
+        Thread.__init__(self)
+        self.in_ = inqueue
+        self.out = outqueue
+        self.args = args
+        self.kwargs = kwargs
+
+    def run(self):
+        i, flag = self.in_.get()
+        self.in_.task_done()
+        try:
+            self.out.put(
+                (i, DataQualityFlag.query_dqsegdb(flag, *self.args,
+                                                  **self.kwargs)))
+        except Exception as e:
+            self.out.put((i, e))
+        self.out.task_done()
+
+
 class DataQualityDict(OrderedDict):
     """An `OrderedDict` of (key, `DataQualityFlag`) pairs.
 
@@ -909,6 +939,13 @@ class DataQualityDict(OrderedDict):
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments.
+        on_error : `str`
+            how to handle an error querying for one flag, one of
+
+            - `'raise'` (default): raise the Exception
+            - `'warn'`: print a warning
+            - `'ignore'`: move onto the next flag as if nothing happened
+
         url : `str`, optional, default: ``'https://dqsegdb.ligo.org'``
             URL of the segment database.
 
@@ -918,9 +955,39 @@ class DataQualityDict(OrderedDict):
             An ordered `DataQualityDict` of (name, `DataQualityFlag`)
             pairs.
         """
+        # check on_error flag
+        on_error = kwargs.pop('on_error', 'raise').lower()
+        if on_error not in ['raise', 'warn', 'ignore']:
+            raise ValueError("on_error must be one of 'raise', 'warn', "
+                             "or 'ignore'")
+
+        # set up threading
+        inq = Queue()
+        outq = Queue()
+        for i in range(len(flags)):
+            t = _QueryDQSegDBThread(inq, outq, *args, **kwargs)
+            t.setDaemon(True)
+            t.start()
+        for i, flag in enumerate(flags):
+            inq.put((i, flag))
+
+        # capture output
+        inq.join()
+        outq.join()
         new = cls()
-        for flag in flags:
-            new[flag] = cls._EntryClass.query_dqsegdb(flag, *args, **kwargs)
+        results = zip(*sorted([outq.get() for i in range(len(flags))],
+                              key=lambda x: x[0]))[1]
+        for result, flag in zip(results, flags):
+            if isinstance(result, Exception):
+                new[flag] = cls._EntryClass(name=flag)
+                if on_error == 'ignore':
+                    pass
+                elif on_error == 'warn':
+                    warnings.warn(str(result))
+                else:
+                    raise result
+            else:
+                new[flag] = result
         return new
 
     # use input/output registry to allow multi-format reading
