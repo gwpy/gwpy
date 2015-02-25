@@ -5,9 +5,14 @@ python:
 before_install:
   # install numpy non-python dependencies
   - sudo apt-get install -qq libatlas-dev libatlas-base-dev gfortran
-install:
+  - mkdir builds
+  - pushd builds
+  # install cython
+  - pip install --install-option="--no-cython-compile" Cython
   # install GLUE
   - pip install -q --egg https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/glue-1.46.tar.gz#egg=glue-1.4
+  - popd
+install:
   - pip install .
 script:
   - python setup.py test
