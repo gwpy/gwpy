@@ -2,12 +2,12 @@ language: python
 python:
   - "2.6"
   - "2.7"
-# install
+before_install:
+  # install numpy non-python dependencies
+  - sudo apt-get install -qq libatlas-dev libatlas-base-dev gfortran
 install:
-  # install glue
+  # install GLUE
   - pip install -q --egg https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/glue-1.46.tar.gz#egg=glue-1.4
-  # install GWpy
   - pip install .
-# run tests
 script:
   - python setup.py test
