@@ -83,13 +83,21 @@ class GitStatus(object):
 
     @property
     def branch(self):
-        if isinstance(self.repo.active_branch, str):
-            for branch in self.repo.branches:
-                if branch.name == self.repo.active_branch:
-                    return branch
-            raise RuntimeError("Cannot resolve active branch.")
+        try:
+            b = self.repo.active_branch
+        except TypeError:
+            if len(self.repo.branches) == 1:
+                return self.repo.branches[0]
+            else:
+                raise
         else:
-            return self.repo.active_branch
+            if isinstance(b, str):
+                for branch in self.repo.branches:
+                    if branch.name == b:
+                        return branch
+                raise RuntimeError("Cannot resolve active branch.")
+            else:
+                return b
 
     @property
     def tag(self):
