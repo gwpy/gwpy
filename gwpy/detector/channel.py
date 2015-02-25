@@ -791,7 +791,7 @@ class ChannelList(list):
                 continue
             elif line.startswith('Error in daq'):
                 raise RuntimeError(line)
-            elif not line.startswith(names[i].split('%')[0]):
+            elif not line.startswith(re.split('[,%]', names[i])[0]):
                 raise RuntimeError("Error parsing nds2_channel_source output")
             chan = channels[i]
             i += 1
