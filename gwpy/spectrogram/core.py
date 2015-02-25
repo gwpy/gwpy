@@ -20,6 +20,7 @@
 """
 
 import numbers
+import warnings
 
 from numpy import (vstack, array, nan_to_num, isclose, ndarray)
 
@@ -397,6 +398,59 @@ class Spectrogram(Array2D):
             raise ValueError("Spectrogram units do not match: %s vs %s."
                              % (self.unit, other.unit))
         return True
+
+    def crop_frequencies(self, low=None, high=None, copy=False):
+        """Crop this `Spectrogram` to the specified frequencies
+
+        Parameters
+        ----------
+        low : `float`
+            lower frequency bound for cropped `Spectrogram`
+        high : `float`
+            upper frequency bound for cropped `Spectrogram`
+        copy : `bool`
+            if `False` return a view of the original data, otherwise create
+            a fresh memory copy
+
+        Returns
+        -------
+        spec : `Spectrogram`
+            A new `Spectrogram` with a subset of data from the frequency
+            axis
+        """
+        if low is not None:
+            low = units.Quantity(low, 'Hz')
+        if high is not None:
+            high = units.Quantity(high, 'Hz')
+        # check low frequency
+        if low is not None and low == self.f0:
+            low = None
+        elif low is not None and low < self.f0:
+            warnings.warn('Spectrogram.crop_frequencies given low frequency '
+                          'cutoff below f0 of the input Spectrogram. Low '
+                          'frequency crop will have no effect.')
+        # check high frequency
+        if high is not None and high == self.span_y[1]:
+            high = None
+        elif high is not None and high > self.span_y[1]:
+            warnings.warn('Spectrogram.crop_frequencies given high frequency '
+                          'cutoff above cutoff of the input Spectrogram. High '
+                          'frequency crop will have no effect.')
+        # find low index
+        if low is None:
+            idx0 = None
+        else:
+            idx0 = int((low.value - self.f0.value) // self.df.value)
+        # find high index
+        if high is None:
+            idx1 = None
+        else:
+            idx1 = int((high.value - self.f0.value) // self.df.value)
+        # crop
+        if copy:
+            return self[:, idx0:idx1].copy()
+        else:
+            return self[:, idx0:idx1]
 
     is_contiguous = common.is_contiguous
     append = common.append
