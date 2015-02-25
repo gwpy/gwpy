@@ -1,0 +1,13 @@
+language: python
+python:
+  - "2.6"
+  - "2.7"
+# install
+install:
+  # install GWpy
+  - pip install .
+  # install glue
+  - pip install -q --egg https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/glue-1.46.tar.gz#egg=glue-1.4
+# run tests
+script:
+  - python setup.py test
