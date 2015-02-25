@@ -31,8 +31,7 @@ llo = TimeSeries.fetch(
     'L1:LDAS-STRAIN,rds', 'August 1 2010', 'August 1 2010 00:10')
 
 # We can then call the :meth:`~gwpy.timeseries.TimeSeries.spectral_variance`
-# method
-# `~gwpy.timeseries.TimeSeries`:
+# method of the ``llo`` `~gwpy.timeseries.TimeSeries`:
 variance = llo.spectral_variance(1, log=True, low=1e-24, high=1e-19, nbins=100)
 
 # We can then :meth:`~SpectralVariance.plot` the `SpectralVariance`
