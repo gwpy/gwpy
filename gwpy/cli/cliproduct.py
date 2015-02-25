@@ -44,15 +44,16 @@ class CliProduct(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self):
-        self.min_timeseries = 1      # how many datasets do we need for this product
+        self.min_timeseries = 1     # how many datasets do we need for this product
         self.xaxis_type = 'uk'      # scaling hints, set by individual actions
         self.xaxis_is_freq = False  # x is going to be frequency or time
         self.yaxis_type = 'uk'      # x and y axis types must be set
         self.iaxis_type = None      # intensity axis (colors) may be missing
-        self.chan_list = []
-        self.start_list = []
-        self.dur = 0
-        self.timeseries = []
+        self.chan_list = []         # list of channel names
+        self.start_list = []        # list of start times as GPS seconds
+        self.dur = 0                # one duration in seconds for all start times
+        self.timeseries = []        # time series objects after transfer
+        self.time_groups = []       # lists of indexes into time series, grouped by star ttime
         self.minMax = []
         self.verbose = 1
         self.secpfft = 1
@@ -366,8 +367,11 @@ class CliProduct(object):
             self.filter += "highpass(%.1f) " % highpass
 
         # Get the data from NDS or Frames
-        for chan in self.chan_list:
-            for start in self.start_list:
+        # time_groups is a list of timeseries index grouped by start time for coherence like plots
+        self.time_groups = []
+        for start in self.start_list:
+            time_group = []
+            for chan in self.chan_list:
                 if verb:
                     print 'Fetching %s %d, %d using %s' % (chan, start, self.dur, source)
                 if frame_cache:
@@ -379,6 +383,8 @@ class CliProduct(object):
                     data = data.highpass(highpass)
 
                 self.timeseries.append(data)
+                time_group.append(len(self.timeseries)-1)
+            self.time_groups.append(time_group)
 
         # report what we have if they asked for it
         self.log(3, ('Channels: %s' % self.chan_list))
