@@ -633,7 +633,7 @@ class CliProduct(object):
         else:
             xdur = self.xmax - self.xmin
             spec = r'Fs=%s, duration: %.1f' % (fs_str, xdur)
-        spec += " " + self.filter
+        spec += ", " + self.filter
         if len(title) > 0:
             title += "\n"
         title += spec
