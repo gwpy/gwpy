@@ -23,6 +23,7 @@
 """
 from cliproduct import CliProduct
 
+
 class TimeSeries(CliProduct):
 
     def get_action(self):
@@ -68,17 +69,21 @@ class TimeSeries(CliProduct):
                 chname = self.timeseries[idx].channel.name
                 lbl = label_to_latex(chname)
                 if self.timeseries[idx].data.size <= self.max_size:
-                    self.plot.add_timeseries(self.timeseries[idx],label=lbl)
+                    self.plot.add_timeseries(self.timeseries[idx], label=lbl)
                 else:
-                    self.plot.add_timeseries(self.timeseries[idx],label=lbl, linestyle='None', marker='.')
+                    self.plot.add_timeseries(self.timeseries[idx], label=lbl,
+                                             linestyle='None', marker='.')
                 self.ymin = min(self.ymin, self.timeseries[idx].min().value)
                 self.ymax = max(self.ymax, self.timeseries[idx].max().value)
-                self.xmin = min(self.xmin, self.timeseries[idx].times.data.min())
-                self.xmax = max(self.xmax, self.timeseries[idx].times.data.max())
+                self.xmin = min(self.xmin,
+                                self.timeseries[idx].times.data.min())
+                self.xmax = max(self.xmax,
+                                self.timeseries[idx].times.data.max())
         # if they chose to set the range of the x-axis find the range of y
         strt = self.xmin
         stop = self.xmax
-        # a bit weird but global ymax will be >= any value in the range same for ymin
+        # a bit weird but global ymax will be >= any value in
+        # the range same for ymin
         new_ymin = self.ymax
         new_ymax = self.ymin
 
@@ -105,10 +110,12 @@ class TimeSeries(CliProduct):
             self.ymin = new_ymin
             self.ymax = new_ymax
         if self.yscale_factor > 1:
-            self.log(2, ('Scaling y-limits, original: %f, %f)' % (self.ymin, self.ymax)))
+            self.log(2, ('Scaling y-limits, original: %f, %f)' %
+                         (self.ymin, self.ymax)))
             yrange = self.ymax - self.ymin
             mid = (self.ymax + self.ymin) / 2.
             self.ymax = mid + yrange / (2 * self.yscale_factor)
             self.ymin = mid - yrange / (2 * self.yscale_factor)
-            self.log(2, ('Scaling y-limits, new: %f, %f)' % (self.ymin, self.ymax)))
+            self.log(2, ('Scaling y-limits, new: %f, %f)' %
+                         (self.ymin, self.ymax)))
         return
