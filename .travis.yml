@@ -8,8 +8,8 @@ before_install:
   - sudo apt-get install -qq libatlas-dev libatlas-base-dev gfortran
   # add LSCSoft sources
   - echo "deb http://software.ligo.org/lscsoft/debian wheezy contrib" | sudo tee -a /etc/apt/source.list
-  - wget --no-check-certificate http://software.ligo.org/lscsoft/debian/pool/contrib/l/lscsoft-archive-keyring/lscsoft-archive-keyring_2008.12.10-1_all.deb
-  - sudo dpkg -i lscsoft-archive-keyring_2008.12.10-1_all.deb
+  - sudo apt-get --quiet --quiet update
+  - sudo apt-get --assume-yes --allow-unauthenticated install lscsoft-archive-keyring
   - sudo apt-get --quiet --quiet update
   - sudo apt-get --assume-yes install ldas-tools
   # install build dependencies
