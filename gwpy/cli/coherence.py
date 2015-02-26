@@ -23,7 +23,9 @@
 """
 from cliproduct import CliProduct
 
+
 class Coherence(CliProduct):
+    """Product class for coherence line plots"""
 
     min_timeseries = 2
     plot = 0    # this will be a matplotlib plot after derived class makes it
@@ -57,7 +59,6 @@ class Coherence(CliProduct):
     def get_xlabel(self):
         return 'Frequency (Hz)'
 
-
     def gen_plot(self, arg_list):
         """Generate the coherence plot from all time series"""
         import numpy
@@ -71,19 +72,22 @@ class Coherence(CliProduct):
             ovlap_frac = float(arg_list.overlap)
         self.secpfft = fftlen
         self.overlap = ovlap_frac
-        maxfs=0
+        maxfs = 0
 
         ref_name = self.timeseries[0].channel.name
 
-        # we don't want to compare the reference channel to itself at a different time
+        # we don't want to compare the reference channel to itself
+        # at a different time
         next_ts = 0
         for idx in range(1, len(self.timeseries)):
             legend_text = self.timeseries[idx].channel.name
-            if legend_text != ref_name and self.timeseries[idx].min() != self.timeseries[idx].data.max():
+            if legend_text != ref_name and self.timeseries[idx].min() != \
+                    self.timeseries[idx].data.max():
                 next_ts = idx
                 break
         if next_ts == 0:
-            raise ValueError('No appropriate channels for Coherence calculation')
+            raise ValueError('No appropriate channels for '
+                             'Coherence calculation')
 
         cohs = []
         for time_group in self.time_groups:
@@ -91,28 +95,38 @@ class Coherence(CliProduct):
 
                 ref_idx = time_group[0]
                 maxfs = max(maxfs, self.timeseries[ref_idx].sample_rate)
-                if numpy.min(self.timeseries[ref_idx]) == numpy.max(self.timeseries[ref_idx]):
-                    print 'Channel %s at %d has min=max,it cannot be used as a reference channel' \
-                          % self.timeseries[ref_idx].channel.name, self.timeseries[ref_idx].times.epoch.gps
+                if numpy.min(self.timeseries[ref_idx]) == \
+                        numpy.max(self.timeseries[ref_idx]):
+                    print 'Channel %s at %d has min=max,it cannot be used ' \
+                          'as a reference channel' \
+                          % self.timeseries[ref_idx].channel.name, \
+                        self.timeseries[ref_idx].times.epoch.gps
                 else:
-                    for idxp in range(1,len(time_group)):
+                    for idxp in range(1, len(time_group)):
                         next_ts = time_group[idxp]
 
-                        if numpy.min(self.timeseries[next_ts]) == numpy.max(self.timeseries[next_ts]):
-                            print 'Channel %s at %d has min=max, coherence with this channel will not be calculated' \
-                                  % self.timeseries[next_ts].channel.name, self.timeseries[next_ts].times.epoch.gps
+                        if numpy.min(self.timeseries[next_ts]) == \
+                                numpy.max(self.timeseries[next_ts]):
+                            print 'Channel %s at %d has min=max, coherence ' \
+                                  'with this channel will not be calculated' \
+                                  % self.timeseries[next_ts].channel.name, \
+                                self.timeseries[next_ts].times.epoch.gps
                         else:
-                            maxfs = max(maxfs, self.timeseries[next_ts].sample_rate)
-                            # calculate and plot the first pair, note the first channel is the reference channel
-                            coh = self.timeseries[ref_idx].coherence(self.timeseries[next_ts], fftlength=fftlen,
-                                                               overlap=ovlap_frac*fftlen)
+                            maxfs = max(maxfs,
+                                        self.timeseries[next_ts].sample_rate)
+                            # calculate and plot the first pair,
+                            # note the first channel is the reference channel
+                            snd_ts = self.timeseries[next_ts]
+                            coh = self.timeseries[ref_idx].\
+                                coherence(snd_ts, fftlength=fftlen,
+                                          overlap=ovlap_frac*fftlen)
 
                             legend_text = self.timeseries[next_ts].channel.name
                             if len(self.start_list) > 1:
-                                legend_text += ", %s" % self.timeseries[next_ts].times.epoch.gps
+                                legend_text += ", %s" % snd_ts.times.epoch.gps
                             coh.name = legend_text
 
-                            #coh2 = 1 / (1-coh) : how to implement Rana's scaler
+                            # coh2 = 1 / (1-coh) : how to implement alt scaler
 
                             if not cohs:
                                 self.plot = coh.plot()
@@ -122,7 +136,8 @@ class Coherence(CliProduct):
                             cohs.append(coh)
 
         if not cohs:
-            raise ValueError('No coherence was calculated due to data problems (avaiability or constant values)')
+            raise ValueError('No coherence was calculated due to data'
+                             ' problems (avaiability or constant values)')
         # if the specified frequency limits adjust our ymin and ymax values
         # at this point self.ymin and self.ymax represent the full spectra
         import numpy
@@ -143,14 +158,13 @@ class Coherence(CliProduct):
                 if t[0].size:
                     stop = t[0][t[0].size-1]
                 else:
-                    stop = cohs[idx].frequencies.size -1
+                    stop = cohs[idx].frequencies.size - 1
                 mymin = min(mymin, numpy.min(cohs[idx].data[strt:stop]))
                 mymax = max(mymax, numpy.max(cohs[idx].data[strt:stop]))
 
         self.ymin = mymin
         self.ymax = mymax
-        self.fmin = max(myfmin.value,1/self.secpfft)
+        self.fmin = max(myfmin.value, 1/self.secpfft)
         self.fmax = min(myfmax.value, maxfs.value/2)
 
         return
-
