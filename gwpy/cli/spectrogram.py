@@ -23,7 +23,9 @@
 """
 from cliproduct import CliProduct
 
+
 class Spectrogram(CliProduct):
+    """Derived class to calculate Spectrograms"""
 
     def get_action(self):
         """Return the string used as "action" on command line."""
@@ -67,7 +69,7 @@ class Spectrogram(CliProduct):
         """Generate the plot from time series and arguments"""
         self.is_freq_plot = True
 
-        from numpy import min,max,percentile
+        from numpy import min, max, percentile
 
         secpfft = 1
         if arg_list.secpfft:
@@ -80,12 +82,13 @@ class Spectrogram(CliProduct):
 
         ovlp_sec = secpfft*ovlp_frac
         nfft = self.dur/(secpfft - ovlp_sec)
-        stride = int(nfft/(self.width * 0.8) )
+        stride = int(nfft/(self.width * 0.8))
         stride = stride * secpfft
         stride = max(2*secpfft, stride)
         fs = self.timeseries[0].sample_rate.value
 
-        specgram = self.timeseries[0].spectrogram(stride, fftlength=secpfft, overlap=ovlp_sec) ** (1/2.)
+        specgram = self.timeseries[0].spectrogram(stride, fftlength=secpfft,
+                                                  overlap=ovlp_sec) ** (1/2.)
 
         norm = False
         if arg_list.norm:
@@ -110,7 +113,7 @@ class Spectrogram(CliProduct):
         if norm or arg_list.nopct:
             imin = lo
         else:
-            imin = percentile(specgram,lo*100)
+            imin = percentile(specgram, lo*100)
 
         if arg_list.imax:
             up = float(arg_list.imax)
@@ -121,17 +124,19 @@ class Spectrogram(CliProduct):
         if norm or arg_list.nopct:
             imax = up
         else:
-            imax = percentile(specgram,up)
+            imax = percentile(specgram, up)
 
         if norm:
             self.plot = specgram.plot(vmin=imin, vmax=imax)
             self.scaleText = 'Normalized to mean'
         elif arg_list.lincolors:
             self.plot = specgram.plot(vmin=imin, vmax=imax)
-            self.scaleText = r'ASD $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
+            self.scaleText = r'ASD $\left( \frac{\mathrm{Counts}}' \
+                             r'{\sqrt{\mathrm{Hz}}}\right)$'
         else:
-            self.plot = specgram.plot(norm='log',vmin=imin, vmax=imax)
-            self.scaleText = r'$log_{10} ASD \left(\frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
+            self.plot = specgram.plot(norm='log', vmin=imin, vmax=imax)
+            self.scaleText = r'$log_{10} ASD \left(\frac{\mathrm{Counts}}' \
+                             r'{\sqrt{\mathrm{Hz}}}\right)$'
         # pass the image limits back to the annotater
         self.imin = imin
         self.imax = imax
