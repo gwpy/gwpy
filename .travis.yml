@@ -7,7 +7,7 @@ before_install:
   # install numpy non-python dependencies
   - sudo apt-get install -qq libatlas-dev libatlas-base-dev gfortran
   # add LSCSoft sources
-  - echo "deb http://software.ligo.org/lscsoft/debian wheezy contrib" | sudo tee -a /etc/apt/source.list
+  - echo "deb http://software.ligo.org/lscsoft/debian wheezy contrib" | sudo tee -a /etc/apt/sources.list
   - sudo apt-get --quiet --quiet update
   - sudo apt-get --assume-yes --allow-unauthenticated install lscsoft-archive-keyring
   - sudo apt-get --quiet --quiet update
