@@ -27,7 +27,9 @@ from .. import version
 __author__ = 'Joseph Areeda'
 __version__ = version.version
 
+
 class Coherencegram(CliProduct):
+    """Derived class to implement the coherence-spectrogram"""
 
     def get_action(self):
         """Return the string used as "action" on command line."""
@@ -92,19 +94,19 @@ class Coherencegram(CliProduct):
 
         ovlap_sec = secpfft*ovlp_frac
         nfft = self.dur/(secpfft - ovlap_sec)
-        stride = int(self.dur/(self.width * 0.8) )
+        stride = int(self.dur/(self.width * 0.8))
 
         stride = max(stride, secpfft+(1-ovlp_frac)*32)
         stride = max(stride, secpfft*2)
         fs = self.timeseries[0].sample_rate
 
-        coh= self.timeseries[0].coherence_spectrogram(self.timeseries[1], stride,fftlength=secpfft,
-                                                      overlap=ovlap_sec)
+        coh = self.timeseries[0].\
+            coherence_spectrogram(self.timeseries[1],
+                                  stride, fftlength=secpfft, overlap=ovlap_sec)
         norm = False
         if arg_list.norm:
             coh = coh.ratio('mean')
             norm = True
-
 
         # set default frequency limits
         self.fmax = coh.span_y.end.value
@@ -129,7 +131,7 @@ class Coherencegram(CliProduct):
         if norm or arg_list.nopct:
             imin = lo
         else:
-            imin = percentile(coh,lo*100)
+            imin = percentile(coh, lo*100)
 
         if arg_list.imax:
             up = float(arg_list.imax)
@@ -140,14 +142,14 @@ class Coherencegram(CliProduct):
         if norm or arg_list.nopct:
             imax = up
         else:
-            imax = percentile(coh,up)
+            imax = percentile(coh, up)
 
         # plot the thing
         if norm:
             self.plot = coh.plot(vmin=imin, vmax=imax)
             self.scale_text = 'Normalized to mean'
         elif arg_list.logcolors:
-            self.plot = coh.plot(norm='log',vmin=imin, vmax=imax)
+            self.plot = coh.plot(norm='log', vmin=imin, vmax=imax)
             self.scale_text = r'log_10 Coherence'
         else:
             self.plot = coh.plot(vmin=imin, vmax=imax)
