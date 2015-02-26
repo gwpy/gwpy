@@ -19,7 +19,7 @@ It is created with the following command line
     gwpy-ldvw.py timeseries --chan LVE-EX:X3_810BTORR.mean,m-trend --start 1072539420 \
         --dur 36000 --logy
 
-.. image:: /../../cli_examples/cli-ts-02.png
+.. image:: /../cli_examples/cli-ts-02.png
     :align: center
     :alt: HVEA pressure during pump down
 
