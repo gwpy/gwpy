@@ -10,15 +10,15 @@ before_install:
   # install cython
   - travis_retry pip install --install-option="--no-cython-compile" Cython
   # install numpy
-  - travis_retry pip install numpy
+  - travis_retry pip install numpy==1.9.1
   # install scipy
-  - travis_retry pip install -vvv scipy
+  - travis_retry pip install -vvv scipy==0.13
   # install matplotlib
-  - travis_retry pip install matplotlib>=1.3.1
+  - travis_retry pip install matplotlib==1.3.1
   # install astropy
-  - travis_retry pip install astropy>=0.4
+  - travis_retry pip install astropy==1.0
   # install GLUE
-  - travis_retry pip install --egg https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/glue-1.46.tar.gz#egg=glue-1.4
+  - travis_retry pip install --egg https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/glue-1.46.tar.gz#egg=glue-1.46
   - popd
 install:
   - pip install .
