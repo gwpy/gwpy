@@ -21,6 +21,8 @@ before_install:
   - travis_retry pip install -q astropy==1.0
   # install GLUE
   - travis_retry pip install -q --egg https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/glue-1.46.tar.gz#egg=glue-1.46
+  # install h5py
+  - travis_retry pi pinstall -q h5py
   - popd
 install:
   - pip install -q .
