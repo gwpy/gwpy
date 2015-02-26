@@ -52,6 +52,12 @@ try:
 except ImportError:
     extra_install_requires.append('ordereddict>=1.1')
 
+# importlib required for cli programs
+try:
+    from importlib import import_module
+except ImportError:
+    extra_install_requires.append('importlib>=1.0.3')
+
 # import sphinx commands
 try:
     from sphinx.setup_command import BuildDoc
