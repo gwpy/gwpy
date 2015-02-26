@@ -47,4 +47,4 @@ pip-delete-this-directory.txt
 /docs/examples/*/*
 
 # Patches
-/[0-9][0-9][0-9][0-9]-*.patch
+/*.patch
