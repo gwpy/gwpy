@@ -44,16 +44,16 @@ class CliProduct(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self):
-        self.min_timeseries = 1     # how many datasets do we need for this product
+        self.min_timeseries = 1     # datasets needed for this product
         self.xaxis_type = 'uk'      # scaling hints, set by individual actions
         self.xaxis_is_freq = False  # x is going to be frequency or time
         self.yaxis_type = 'uk'      # x and y axis types must be set
         self.iaxis_type = None      # intensity axis (colors) may be missing
         self.chan_list = []         # list of channel names
         self.start_list = []        # list of start times as GPS seconds
-        self.dur = 0                # one duration in seconds for all start times
+        self.dur = 0                # one duration in secs for all start times
         self.timeseries = []        # time series objects after transfer
-        self.time_groups = []       # lists of indexes into time series, grouped by star ttime
+        self.time_groups = []       # lists of indexes into time series,
         self.minMax = []
         self.verbose = 1
         self.secpfft = 1
@@ -63,7 +63,7 @@ class CliProduct(object):
         self.fmax = 1
         self.ymin = 0
         self.ymax = 0
-        self.xmin =0
+        self.xmin = 0
         self.xmax = 0
         self.imin = 0
         self.imax = 0
@@ -80,7 +80,7 @@ class CliProduct(object):
         self.plot = 0           # plot object
         self.ax = 0             # current axis object from plot
 
-#------Abstract metods------------
+# ------Abstract metods------------
     @abc.abstractmethod
     def get_action(self):
         """Return the string used as "action" on command line."""
@@ -106,13 +106,15 @@ class CliProduct(object):
         """Start of default super title, first channel is appended to it"""
         return
 
-#--------Defaults for overridable methods if product differs from default
+# --------Defaults for overridable methods if product differs from default
     def get_min_datasets(self):
-        """Override if plot requires more than 1 dataset.  eg: coherence requires 2"""
+        """Override if plot requires more than 1 dataset.
+        eg: coherence requires 2"""
         return 1
 
     def get_max_datasets(self):
-        """Override if plot has a maximum number of datasets. eg: spectrogram only handles 1"""
+        """Override if plot has a maximum number of datasets.
+        eg: spectrogram only handles 1"""
         return 16  # arbitrary max
 
     def is_image(self):
@@ -124,7 +126,8 @@ class CliProduct(object):
         return False
 
     def get_xlabel(self):
-        """Override if you have a better label.  default is to usw gwpy's default label"""
+        """Override if you have a better label.
+        default is to usw gwpy's default label"""
         return ''
 
     def get_color_label(self):
@@ -135,39 +138,47 @@ class CliProduct(object):
         """Override if default lacks critical info"""
         return self.get_title() + self.timeseries[0].channel.name
 
-#------Helper functions
-    def log(self,level, msg):
+# ------Helper functions
+    def log(self, level, msg):
         """print log message if verbosity is set high enough"""
         if self.verbose >= level:
             print msg
         return
 
 
-#------Argparse methods
+# ------Argparse methods
 
     def arg_chan(self, parser):
-        """Allow user to specify list of channel names, list of start gps times and single duration"""
-        parser.add_argument('--start', nargs='+', action='append', required=True,
-                    help='Starting GPS times(required)')
-        parser.add_argument('--duration', default=10, help='Duration (seconds) [10]')
+        """Allow user to specify list of channel names,
+        list of start gps times and single duration"""
+        parser.add_argument('--start', nargs='+', action='append',
+                            required=True, help='Starting GPS times(required)')
+        parser.add_argument('--duration', default=10,
+                            help='Duration (seconds) [10]')
         parser.add_argument('-c', '--framecache',
-                            help='use .gwf files in cache not NDS2, default use NDS2')
-        parser.add_argument('--highpass', help='frequency for high pass butterworth, default no filter')
+                            help='use .gwf files in cache not NDS2,' +
+                                 ' default use NDS2')
+        parser.add_argument('--highpass',
+                            help='frequency for high pass butterworth,' +
+                                 ' default no filter')
         return
 
-    def arg_chan1(self,parser):
+    def arg_chan1(self, parser):
         # list of channel names when only 1 is required
-        parser.add_argument('--chan', nargs='+', action='append', required=True,
-                    help='One or more channel names.')
+        parser.add_argument('--chan', nargs='+', action='append',
+                            required=True, help='One or more channel names.')
         self.arg_chan(parser)
         return
 
-    def arg_chan2(self,parser):
+    def arg_chan2(self, parser):
         """list of channel names when at least 2 are required"""
-        parser.add_argument('--chan', nargs='+', action='append', required=True,
-                    help='Two or more channels or times, first one is compared to all the others')
+        parser.add_argument('--chan', nargs='+', action='append',
+                            required=True,
+                            help='Two or more channels or times, first' +
+                                 ' one is compared to all the others')
         parser.add_argument('--ref',
-                    help='Reference channel against which others will be compared')
+                            help='Reference channel against which ' +
+                                 'others will be compared')
 
         self.arg_chan(parser)
 
@@ -177,7 +188,8 @@ class CliProduct(object):
         """Parameters for FFT based plots"""
         self.is_freq_plot = True
         parser.add_argument('--secpfft', default='1.0',
-                            help='length of fft in seconds for each calculation')
+                            help='length of fft in seconds ' +
+                                 'for each calculation')
         parser.add_argument('--overlap', default='0.5',
                             help='Overlap as fraction [0-1)')
         return
@@ -185,19 +197,23 @@ class CliProduct(object):
     def arg_plot(self, parser):
         """Add arguments common to all plots"""
         parser.add_argument('-g', '--geometry', default='1200x600',
-                        help='size of resulting image WxH, default: %(default)s')
+                            help='size of resulting image WxH, ' +
+                                 'default: %(default)s')
         parser.add_argument('--interactive', action='store_true',
-                            help='when running from ipython allows experimentation')
-        parser.add_argument('--title', action='append', help='One or more title lines')
+                            help='when running from ipython ' +
+                                 'allows experimentation')
+        parser.add_argument('--title', action='append',
+                            help='One or more title lines')
         parser.add_argument('--suptitle',
                             help='1st title line (larger than the others)')
         parser.add_argument('--xlabel', help='x axis text')
         parser.add_argument('--ylabel', help='y axis text')
-        parser.add_argument('--out', help='output filename, type=ext (png, pdf, jpg), ' +
-                            'default=gwpy.png')
-        # legends match input files in position are displayed if any are specified.
+        parser.add_argument('--out',
+                            help='output filename, type=ext (png, pdf, ' +
+                                 'jpg), default=gwpy.png')
+        # legends match input files in position are displayed if specified.
         parser.add_argument('--legend', nargs='*', action='append',
-                      help='strings to match data files')
+                            help='strings to match data files')
         parser.add_argument('--nolegend', action='store_true',
                             help='do not display legend')
         parser.add_argument('--nogrid', action='store_true',
@@ -205,79 +221,89 @@ class CliProduct(object):
 
         return
 
-    def arg_ax_x(self,parser):
-        """X-axis is called X. Do not call this one call arg_ax_linx or arg_ax_logx"""
+    def arg_ax_x(self, parser):
+        """X-axis is called X. Do not call this
+        one call arg_ax_linx or arg_ax_logx"""
         parser.add_argument('--xmin', help='min value for X-axis')
         parser.add_argument('--xmax', help='max value for X-axis')
         return
 
-    def arg_ax_linx(self,parser):
+    def arg_ax_linx(self, parser):
         """X-axis is called X and defaults to linear"""
-        self.xaxis_type = 'linx';
+        self.xaxis_type = 'linx'
         parser.add_argument('--logx', action='store_true',
-                            help = 'make X-axis logarithmic, default=linear')
+                            help='make X-axis logarithmic, default=linear')
         parser.add_argument('--epoch',
-                            help='center X axis on this GPS time. Incompatible with logx')
+                            help='center X axis on this GPS time. ' +
+                                 'Incompatible with logx')
         self.arg_ax_x(parser)
         return
 
-    def arg_ax_logx(self,parser):
+    def arg_ax_logx(self, parser):
         """X-axis is called X and defaults to logarithmic"""
-        self.xaxis_type = 'logx';
+        self.xaxis_type = 'logx'
         parser.add_argument('--nologx', action='store_true',
-                            help = 'make X-axis linear, default=logarithmic')
+                            help='make X-axis linear, default=logarithmic')
         self.arg_ax_x(parser)
         return
 
-    def arg_ax_lf(self,parser):
-        """One of this axis is frequency and logarthmic"""
+    def arg_ax_lf(self, parser):
+        """One of this  axis is frequency and logarthmic"""
         parser.add_argument('--nologf', action='store_true',
-                            help='make frequency axis linear, default=logarithmic')
+                            help='make frequency axis linear, ' +
+                                 'default=logarithmic')
         parser.add_argument('--fmin', help='min value for frequency axis')
         parser.add_argument('--fmax', help='max value for frequency axis')
         return
 
-    def arg_ax_int(self,parser):
+    def arg_ax_int(self, parser):
         """Images have an intensity axis"""
-        parser.add_argument('--imin', help='min pixel value in resulting image')
-        parser.add_argument('--imax', help='max pixek value in resulting image')
+        parser.add_argument('--imin',
+                            help='min pixel value in resulting image')
+        parser.add_argument('--imax',
+                            help='max pixek value in resulting image')
         return
 
-    def arg_ax_intlin(self,parser):
+    def arg_ax_intlin(self, parser):
         """Intensity (colors) default to linear"""
         self.iaxis = 'lini'
         parser.add_argument('--logcolors', action='store_true',
-                            help='set intensity scale of image to logarithmic, default=linear')
+                            help='set intensity scale of image ' +
+                                 'to logarithmic, default=linear')
         self.arg_ax_int(parser)
         return
 
-    def arg_ax_intlog(self,parser):
+    def arg_ax_intlog(self, parser):
         """Intensity (colors) default to log"""
         self.iaxis = "logi"
         parser.add_argument('--lincolors', action='store_true',
-                            help='set intensity scale of image to linear, default=logarithmic')
+                            help='set intensity scale of image to linear, '
+                                 'default=logarithmic')
         self.arg_ax_int(parser)
         return
 
-    def arg_ax_xlf(self,parser):
+    def arg_ax_xlf(self, parser):
         """X-axis is called F and defaults to log"""
         self.xaxis_type = 'logf'
         self.arg_ax_lf(parser)
         return
 
-    def arg_ax_ylf(self,parser):
+    def arg_ax_ylf(self, parser):
         """Y-axis is called Frequency and defaults to log"""
         self.yaxis_type = 'logf'
         self.arg_ax_lf(parser)
         return
 
-    def arg_ax_y(self,parser):
-        """Y-axis limits.  Do not call this one use arg_ax_liny or arg_ax_logy"""
-        parser.add_argument('--ymin', help='fix min value for yaxis defaults to min of data')
-        parser.add_argument('--ymax', help='max value for y-axis default to max of data')
+    def arg_ax_y(self, parser):
+        """Y-axis limits.  Do not call this one
+        use arg_ax_liny or arg_ax_logy"""
+        parser.add_argument('--ymin', help='fix min value for yaxis' +
+                                           ' defaults to min of data')
+        parser.add_argument('--ymax', help='max value for y-axis ' +
+                                           'default to max of data')
         return
 
-    def arg_ax_liny(self,parser):
+    def arg_ax_liny(self, parser):
         """Y-axis is called Y and defaults to linear"""
         self.yaxis_type = 'liny'
         parser.add_argument('--logy', action='store_true',
@@ -285,7 +311,7 @@ class CliProduct(object):
         self.arg_ax_y(parser)
         return
 
-    def arg_ax_logy(self,parser):
+    def arg_ax_logy(self, parser):
         """Y-axis is called Y and defaults to log"""
         self.yaxis_type = 'logy'
         parser.add_argument('--nology', action='store_true',
@@ -293,29 +319,34 @@ class CliProduct(object):
         self.arg_ax_y(parser)
         return
 
-    def arg_imag(self,parser):
+    def arg_imag(self, parser):
         """Add arguments for image based plots like spectrograms"""
         parser.add_argument('--nopct', action='store_true',
-                            help='up and lo are pixel values, default=percentile if not normalized')
+                            help='up and lo are pixel values, ' +
+                                 'default=percentile if not normalized')
         parser.add_argument('--nocolorbar', action='store_true',
                             help='hide the color bar')
         parser.add_argument('--norm', action='store_true',
-                            help='Display the ratio of each fequency bin to the mean of that frequency')
+                            help='Display the ratio of each fequency ' +
+                                 'bin to the mean of that frequency')
         return
 
-#-------Data transfer methods
+# -------Data transfer methods
 
-    def getTimeSeries(self,arg_list):
-        """Verify and interpret arguments to get all TimeSeries objects defined"""
+    def getTimeSeries(self, arg_list):
+        """Verify and interpret arguments to get all
+        TimeSeries objects defined"""
 
         # retrieve channel data from NDS as a TimeSeries
         for chans in arg_list.chan:
             for chan in chans:
-                if not chan in self.chan_list:
+                if chan not in self.chan_list:
                     self.chan_list.append(chan)
 
         if len(self.chan_list) < self.min_timeseries:
-            raise ArgumentError('A minimum of %d channels must be specified for this product'  % self.min_timeseries)
+            raise ArgumentError('A minimum of %d channels must be ' +
+                                'specified for this product' %
+                                self.min_timeseries)
 
         if len(arg_list.start) > 0:
             for start_arg in arg_list.start:
@@ -328,7 +359,7 @@ class CliProduct(object):
                             for start_str in starts:
                                 starti = int(start_str)
                         # ignore duplicates (to make it easy for ldvw)
-                        if not starti in self.start_list:
+                        if starti not in self.start_list:
                             self.start_list.append(starti)
                 else:
                     self.start_list.append(int(start_arg))
@@ -338,12 +369,14 @@ class CliProduct(object):
         # Verify the number of datasets specified is valid for this plot
         self.n_datasets = len(self.chan_list) * len(self.start_list)
         if self.n_datasets < self.get_min_datasets():
-            raise ArgumentError('%d datasets are required for this plot but only %d are supplied' \
-                                % (self.get_min_datasets(), self.n_datasets ))
+            raise ArgumentError('%d datasets are required for this ' +
+                                'plot but only %d are supplied' %
+                                (self.get_min_datasets(), self.n_datasets))
 
         if self.n_datasets > self.get_max_datasets():
-            raise ArgumentError('A maximum of %d datasets allowed for this plot but %d specified' \
-                                            % (self.get_max_datasets(), self.n_datasets))
+            raise ArgumentError('A maximum of %d datasets allowed for ' +
+                                'this plot but %d specified' %
+                                (self.get_max_datasets(), self.n_datasets))
 
         if arg_list.duration:
             self.dur = int(arg_list.duration)
@@ -357,7 +390,7 @@ class CliProduct(object):
         frame_cache = False
 
         if arg_list.framecache:
-            source='frames'
+            source = 'frames'
             frame_cache = arg_list.framecache
 
         # set up filter parameters for all channels
@@ -367,17 +400,21 @@ class CliProduct(object):
             self.filter += "highpass(%.1f) " % highpass
 
         # Get the data from NDS or Frames
-        # time_groups is a list of timeseries index grouped by start time for coherence like plots
+        # time_groups is a list of timeseries index grouped by
+        # start time for coherence like plots
         self.time_groups = []
         for start in self.start_list:
             time_group = []
             for chan in self.chan_list:
                 if verb:
-                    print 'Fetching %s %d, %d using %s' % (chan, start, self.dur, source)
+                    print 'Fetching %s %d, %d using %s' % \
+                          (chan, start, self.dur, source)
                 if frame_cache:
-                    data = TimeSeries.read(frame_cache, chan, start=start, end=start+self.dur)
+                    data = TimeSeries.read(frame_cache, chan, start=start,
+                                           end=start+self.dur)
                 else:
-                    data = TimeSeries.fetch(chan, start, start+self.dur, verbose=verb)
+                    data = TimeSeries.fetch(chan, start, start+self.dur,
+                                            verbose=verb)
 
                 if highpass > 0:
                     data = data.highpass(highpass)
@@ -392,7 +429,8 @@ class CliProduct(object):
         self.log(3, ('Number of time series: %d' % len(self.timeseries)))
 
         if len(self.timeseries) != self.n_datasets:
-            self.log(0, ('%d datasets requested but only %d transfered' % (self.n_datasets, len(self.timeseries))))
+            self.log(0, ('%d datasets requested but only %d transfered' %
+                         (self.n_datasets, len(self.timeseries))))
             if len(self.timeseries) > self.get_min_datasets():
                 self.log(0, 'Proceeding with the data that was transferred.')
             else:
@@ -401,13 +439,15 @@ class CliProduct(object):
                 exit(2)
         return
 
-#---- Plotting methods
+# ---- Plotting methods
 
     def show_plot_info(self):
-        self.log(3, ('X-scale: %s, Y-scale: %s' % (self.plot.get_xscale(), self.plot.get_yscale())))
-        self.log(3, ('X-limits %s, Y-limits %s' % (self.plot.xlim, self.plot.ylim)))
+        self.log(3, ('X-scale: %s, Y-scale: %s' % (self.plot.get_xscale(),
+                                                   self.plot.get_yscale())))
+        self.log(3, ('X-limits %s, Y-limits %s' % (self.plot.xlim,
+                                                   self.plot.ylim)))
 
-    def config_plot(self,arg_list):
+    def config_plot(self, arg_list):
         """Configure global plot parameters"""
         import matplotlib
         from matplotlib import rcParams
@@ -429,7 +469,8 @@ class CliProduct(object):
         self.height = 768
         if arg_list.geometry:
             try:
-                self.width, self.height = map(float, arg_list.geometry.split('x', 1))
+                self.width, self.height = map(float,
+                                              arg_list.geometry.split('x', 1))
                 self.height = max(self.height, 500)
             except (TypeError, ValueError) as e:
                 e.args = ('Cannot parse --geometry as WxH, e.g. 1200x600',)
@@ -458,7 +499,8 @@ class CliProduct(object):
                 if self.xaxis_is_freq:
                     xmin = al_xmin      # frequency specified
                 elif al_xmin <= 1e8:
-                    xmin = self.xmin + al_xmin     # time specified as seconds relative to start GPS
+                    xmin = self.xmin + al_xmin     # time specified as
+                    # seconds relative to start GPS
                 else:
                     xmin = al_xmin      # time specified as absolute GPS
             if arg_list.xmax:
@@ -473,14 +515,15 @@ class CliProduct(object):
             if self.xaxis_type == 'linx':
                 epoch = 0
                 if arg_list.epoch:
-                    epoch=float(arg_list.epoch)
-                    self.log(3,('Epoch set to %.2f' % epoch))
+                    epoch = float(arg_list.epoch)
+                    self.log(3, ('Epoch set to %.2f' % epoch))
 
                 scale = False
                 self.ax.set_xscale('auto-gps')
 
                 if epoch < 1e8:
-                    epoch += self.xmin       # specified as seconds from start GPS
+                    epoch += self.xmin       # specified as seconds
+                    # from start GPS
                 self.ax.set_epoch(epoch)
                 if arg_list.logx:
                     scale = 'log'
@@ -508,15 +551,17 @@ class CliProduct(object):
             if arg_list.fmax:
                 xmax = float(arg_list.fmax)
         else:
-            raise AssertionError('X-axis type [%s] is unknown' % self.xaxis_type)
+            raise AssertionError('X-axis type [%s] is unknown' %
+                                 self.xaxis_type)
 
         if scale:
             self.ax.set_xscale(scale)
         self.ax.set_xlim(xmin, xmax)
-        self.log(3, ('X-axis limits are [ %f, %f], scale: %s' % (xmin, xmax, scale)))
+        self.log(3, ('X-axis limits are [ %f, %f], scale: %s' %
+                     (xmin, xmax, scale)))
         return
 
-    def setup_yaxis(self,arg_list):
+    def setup_yaxis(self, arg_list):
         "Set scale and limits of y-axis by type"
         ymin = self.ymin
         ymax = self.ymax
@@ -553,7 +598,8 @@ class CliProduct(object):
         # modify axis
         self.ax.set_yscale(scale)
         self.ax.set_ylim(ymin, ymax)
-        self.log(3, ('Y-axis limits are [ %f, %f], scale: %s' % (ymin, ymax, scale)))
+        self.log(3, ('Y-axis limits are [ %f, %f], scale: %s' %
+                     (ymin, ymax, scale)))
         return
 
     def setup_iaxis(self, arg_list):
@@ -576,8 +622,9 @@ class CliProduct(object):
                 raise AssertionError('Unknown intensity axis scale')
         return
 
-    def annotate_save_plot(self,arg_list):
-        """After the derived class generated a plot object finish the process"""
+    def annotate_save_plot(self, arg_list):
+        """After the derived class generated a plot
+        object finish the process"""
         from astropy.time import Time
         from gwpy.plotter.tex import label_to_latex
 
@@ -589,7 +636,7 @@ class CliProduct(object):
 
         if self.is_image():
             if arg_list.nocolorbar:
-                self.plot.add_colorbar(visible=False )
+                self.plot.add_colorbar(visible=False)
             else:
                 self.plot.add_colorbar(label=self.get_color_label())
         else:
@@ -597,7 +644,7 @@ class CliProduct(object):
 
         # image plots don't have legends
         if not self.is_image():
-            self.ax.legend(prop={'size':10})
+            self.ax.legend(prop={'size': 10})
             # if only one series is plotted hide legend
             if self.n_datasets == 1 and self.ax.legend_:
                 self.ax.legend_.remove()
@@ -629,7 +676,8 @@ class CliProduct(object):
 
         if self.is_freq_plot:
             spec = r'%s, Fs=%s, secpfft=%.1f (bw=%.3f), overlap=%.2f' %  \
-                    (timeStr, fs_str, self.secpfft, 1/self.secpfft, self.overlap)
+                    (timeStr, fs_str, self.secpfft, 1/self.secpfft,
+                     self.overlap)
         else:
             xdur = self.xmax - self.xmin
             spec = r'Fs=%s, duration: %.1f' % (fs_str, xdur)
@@ -662,7 +710,8 @@ class CliProduct(object):
 
         if not arg_list.nogrid:
             self.ax.grid(b=True, which='major', color='k', linestyle='solid')
-            self.ax.grid(b=True, which='minor', color='0.06', linestyle='dotted')
+            self.ax.grid(b=True, which='minor', color='0.06',
+                         linestyle='dotted')
 
         # info on the channel
         if arg_list.suptitle:
@@ -682,25 +731,28 @@ class CliProduct(object):
             epoch = xscale.get_epoch()
             unit = xscale.get_unit_name()
             utc = re.sub('\.0+', '',
-                        Time(epoch, format='gps', scale='utc').iso)
+                         Time(epoch, format='gps', scale='utc').iso)
             self.plot.set_xlabel('Time (%s) from %s (%s)' % (unit, utc, epoch))
-            self.ax.xaxis._set_scale(unit,epoch=epoch)
+            self.ax.xaxis._set_scale(unit, epoch=epoch)
 
         # if they specified an output file write it
-        # save the figure. Note type depends on extension of output filename (png, jpg, pdf)
+        # save the figure. Note type depends on extension of
+        # output filename (png, jpg, pdf)
         if arg_list.out:
             out_file = arg_list.out
         else:
             out_file = "./gwpy.png"
 
-        self.log(3, ('xinch: %.2f, yinch: %.2f, dpi: %d' % (self.xinch, self.yinch, self.dpi)))
+        self.log(3, ('xinch: %.2f, yinch: %.2f, dpi: %d' %
+                     (self.xinch, self.yinch, self.dpi)))
 
-        self.plot.savefig(out_file, edgecolor='white', figsize=[self.xinch, self.yinch], dpi=self.dpi)
+        self.plot.savefig(out_file, edgecolor='white',
+                          figsize=[self.xinch, self.yinch], dpi=self.dpi)
         self.log(3, ('wrote %s' % arg_list.out))
 
         return
 
-#-----The one that does all the work
+# -----The one that does all the work
     def makePlot(self, args):
         """Make the plot, all actions are generally the same at this level"""
         if args.silent:
@@ -719,13 +771,14 @@ class CliProduct(object):
 
         self.config_plot(args)
 
-        #this one is in the derived class
+        # this one is in the derived class
         self.gen_plot(args)
 
         self.annotate_save_plot(args)
 
         self.is_interactive = False
         if args.interactive:
-            self.log(3, 'Interactive manipulation of image should be available.')
+            self.log(3, 'Interactive manipulation of '
+                        'image should be available.')
             self.plot.show()
             self.is_interactive = True
