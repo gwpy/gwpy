@@ -8,9 +8,9 @@ before_install:
   - sudo apt-get install -qq libatlas-dev libatlas-base-dev gfortran
   # add LSCSoft sources
   - echo "deb http://software.ligo.org/lscsoft/debian wheezy contrib" | sudo tee -a /etc/apt/sources.list
-  - sudo apt-get --quiet --quiet update
+  - sudo apt-get update -qq
   - sudo apt-get --assume-yes --allow-unauthenticated install lscsoft-archive-keyring
-  - sudo apt-get --quiet --quiet update
+  - sudo apt-get update -qq
   - sudo apt-get --assume-yes install ldas-tools
   # install build dependencies
   - travis_retry pip install -q tornado jinja2 GitPython
