@@ -32,6 +32,15 @@ from gwpy.timeseries import TimeSeries
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
+# skip if we can't find a frame library
+try:
+    from lalframe import lalframe
+except ImportError:
+    try:
+        from LDASTools import frameCPP
+    except ImportError:
+        raise unittest.SkipTest('Need a frame library to perform AstroTests')
+
 
 class AstroTests(unittest.TestCase):
     """`TestCase` for the astro module
