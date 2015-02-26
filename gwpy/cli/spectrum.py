@@ -23,6 +23,7 @@
 """
 from cliproduct import CliProduct
 
+
 class Spectrum(CliProduct):
 
     def get_action(self):
@@ -42,9 +43,12 @@ class Spectrum(CliProduct):
     def get_ylabel(self, args):
         """Text for y-axis label"""
         if args.nology:
-            ylabel = r'$\mathrm{log_{10}  ASD}$ $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
+            ylabel = r'$\mathrm{log_{10}  ASD}$ ' \
+                     r'$\left( \frac{\mathrm{Counts}}' \
+                     r'{\sqrt{\mathrm{Hz}}}\right)$'
         else:
-            ylabel = r'$\mathrm{ASD}$ $\left( \frac{\mathrm{Counts}}{\sqrt{\mathrm{Hz}}}\right)$'
+            ylabel = r'$\mathrm{ASD}$ $\left( \frac{\mathrm{Counts}}' \
+                     r'{\sqrt{\mathrm{Hz}}}\right)$'
         return ylabel
 
     def get_title(self):
@@ -74,7 +78,8 @@ class Spectrum(CliProduct):
             ovlap = float(arg_list.overlap)
         self.overlap = ovlap
 
-        self.log(2,"Calculating spectrum secpfft: %.2f, overlap: %.2f" % (fftlen,ovlap))
+        self.log(2, "Calculating spectrum secpfft: %.2f, overlap: %.2f" %
+                 (fftlen, ovlap))
         spectra = []
 
         # calculate and plot the first spectrum
@@ -108,7 +113,7 @@ class Spectrum(CliProduct):
                     label += ", %s" % self.timeseries[idx].times.epoch.gps
                 specb.name = label
                 self.plot.add_spectrum(specb)
-        self.log(2,('Frequency range: [%f, %f]' % (self.fmin, self.fmax)))
+        self.log(2, ('Frequency range: [%f, %f]' % (self.fmin, self.fmax)))
         # if the specified frequency limits adjust our ymin and ymax values
         # at this point self.ymin and self.ymax represent the full spectra
         if arg_list.fmin or arg_list.fmax:
@@ -130,7 +135,7 @@ class Spectrum(CliProduct):
                     if t[0].size:
                         stop = t[0][0]
                     else:
-                        stop = spectra[idx].frequencies.size -1
+                        stop = spectra[idx].frequencies.size - 1
                     mymin = min(mymin, numpy.min(spectra[idx].data[strt:stop]))
                     mymax = max(mymax, numpy.max(spectra[idx].data[strt:stop]))
 
