@@ -98,7 +98,9 @@ def host_resolution_order(ifo, env='NDSSERVER'):
         prefix for IFO of interest
     env : `str`, optional
         environment variable name to use for server order,
-        default ``'NDSSERVER'``
+        default ``'NDSSERVER'``. The contents of this variable should
+        be a comma-separated list of `host:port` strings, e.g.
+        ``'nds1.server.com:80,nds2.server.com:80'``
 
     Returns
     -------
