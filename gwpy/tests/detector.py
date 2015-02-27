@@ -108,7 +108,7 @@ class ChannelTests(unittest.TestCase):
 
     def test_fmcs_parse(self):
         new = Channel('LVE-EX:X3_810BTORR.mean,m-trend')
-        self.assertEqual(new.ifo, 'LVE-EX')
+        self.assertEqual(new.ifo, None)
         self.assertEqual(new.name, 'LVE-EX:X3_810BTORR.mean')
         self.assertEqual(new.trend, 'mean')
         self.assertEqual(new.type, 'm-trend')
