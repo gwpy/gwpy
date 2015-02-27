@@ -11,7 +11,7 @@ The following command line shows what happens at the end of a lock to a single c
 
 .. code-block:: sh
 
-    gwpy-ldvw.py spectrogram --chan L1:LSC-SRCL_IN1_DQ --start 1107937307 --dur 240
+    gwpy-plot spectrogram --chan L1:LSC-SRCL_IN1_DQ --start 1107937307 --dur 240
 
 .. image:: /../cli_examples/cli-spg-01.png
     :align: center
@@ -22,8 +22,8 @@ The full help for the Spectrogram plot product is:
 
 .. code-block:: sh
 
-    $ gwpy-ldvw.py spectrogram --help
-    usage: gwpy_ldvw spectrogram [-h] [-v] [-s SILENT] --chan CHAN [CHAN ...]
+    $ gwpy-plot spectrogram --help
+    usage: gwpy-plot spectrogram [-h] [-v] [-s SILENT] --chan CHAN [CHAN ...]
                              --start START [START ...] [--duration DURATION]
                              [-c FRAMECACHE] [--highpass HIGHPASS]
                              [--secpfft SECPFFT] [--overlap OVERLAP] [--logx]

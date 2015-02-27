@@ -12,24 +12,24 @@ The general form of the command is:
 
 .. code-block:: sh
 
-    gwpy-ldvw.py ACTION REQUIRED-ARGUMENTS or --help [OPTIONS]
+    gwpy-plot ACTION REQUIRED-ARGUMENTS or --help [OPTIONS]
 
 Where ACTION is the name of the plot to make.  If you run the script without any agruments it will list
 the actions.
 
 .. code-block:: sh
 
-    $ gwpy-ldvw.py
-    usage: gwpy_ldvw [-h]
+    $ gwpy-plot
+    usage: gwpy-plot [-h]
                      {timeseries,coherence,spectrum,spectrogram,coherencegram} ...
-    gwpy_ldvw: error: too few arguments
+    gwpy-plot: error: too few arguments
 
 To see the available options for any action add the action keyword.  For example:
 
 .. code-block:: sh
 
-    $ gwpy-ldvw.py timeseries
-    usage: gwpy_ldvw timeseries [-h] [-v] [-s SILENT] --chan CHAN [CHAN ...]
+    $ gwpy-plot timeseries
+    usage: gwpy-plot timeseries [-h] [-v] [-s SILENT] --chan CHAN [CHAN ...]
                                 --start START [START ...] [--duration DURATION]
                                 [-c FRAMECACHE] [--highpass HIGHPASS] [--logx]
                                 [--xmin XMIN] [--xmax XMAX] [-g GEOMETRY]
@@ -47,7 +47,7 @@ one channel and one start time, some plots like coherence require two channels. 
 
 .. code-block:: sh
 
-    gwpy-ldvw.py timeseries --chan L1:OAF-CAL_DARM_DQ --start 1102766651
+    gwpy-plot timeseries --chan L1:OAF-CAL_DARM_DQ --start 1102766651
 
 Will produce a image file called gwpy.png in the current directory that looks like:
 
@@ -97,7 +97,7 @@ The figure below is a spectrum that was generated with the command line:
 
 .. code-block:: sh
 
-    gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start 1102766451 1102766651 --out spectrum.png
+    gwpy-plot spectrum --chan L1:OAF-CAL_DARM_DQ --start 1102766451 1102766651 --out spectrum.png
 
 .. image:: /../cli_examples/cli-02.png
     :align: center
@@ -122,7 +122,7 @@ Interactive mode
 =================
 
 The ``--interactive`` argument uses the matplotlib/pyplot show function to display an image and allow
-simple manipulations such as zoom, pan, and comfigure subplots.  There is also a save function.  gwpy-ldvw
+simple manipulations such as zoom, pan, and comfigure subplots.  There is also a save function.  gwpy-plot
 will also save the image generated. Interactive mode is described in detail in the :ref:`interactive`
 section.
 

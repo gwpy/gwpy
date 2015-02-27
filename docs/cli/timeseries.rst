@@ -16,7 +16,7 @@ It is created with the following command line
 
 .. code-block:: sh
 
-    gwpy-ldvw.py timeseries --chan LVE-EX:X3_810BTORR.mean,m-trend --start 1072539420 \
+    gwpy-plot timeseries --chan LVE-EX:X3_810BTORR.mean,m-trend --start 1072539420 \
         --dur 36000 --logy
 
 .. image:: /../cli_examples/cli-ts-02.png
@@ -28,7 +28,7 @@ It is created with the following command line:
 
 .. code-block:: sh
 
-    gwpy-ldvw.py timeseries --chan L1:OAF-CAL_DARM_DQ --start 1107936100 --xmin 1107936100.2 \
+    gwpy-plot timeseries --chan L1:OAF-CAL_DARM_DQ --start 1107936100 --xmin 1107936100.2 \
         --xmax 1107936100.25 --epoch 0.225 --duration 1
 
 
@@ -43,8 +43,8 @@ The full help for the Time Series product is:
 
 .. code-block:: sh
 
-    $ gwpy-ldvw.py timeseries --help
-    usage: gwpy_ldvw timeseries [-h] [-v] [-s SILENT] --chan CHAN [CHAN ...]
+    $ gwpy-plot timeseries --help
+    usage: gwpy-plot timeseries [-h] [-v] [-s SILENT] --chan CHAN [CHAN ...]
                             --start START [START ...] [--duration DURATION]
                             [-c FRAMECACHE] [--highpass HIGHPASS] [--logx]
                             [--epoch EPOCH] [--xmin XMIN] [--xmax XMAX]

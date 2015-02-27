@@ -10,7 +10,7 @@ The following parameters will produce the plot below:
 
 .. code-block:: sh
 
-    gwpy-ldvw.py coherence --chan L1:LSC-SRCL_IN1_DQ L1:LSC-CARM_IN1_DQ \
+    gwpy-plot coherence --chan L1:LSC-SRCL_IN1_DQ L1:LSC-CARM_IN1_DQ \
         --start 1107820816 --duration 900 \
         --ref L1:LSC-SRCL_IN1_DQ --secpfft 8.0 --overlap 0.50
 
@@ -22,8 +22,8 @@ The full list of parameters for coherence is:
 
 .. code-block:: sh
 
-    $ gwpy-ldvw.py coherence --help
-    usage: gwpy_ldvw coherence [-h] [-v] [-s SILENT] --chan CHAN [CHAN ...]
+    $ gwpy-plot coherence --help
+    usage: gwpy-plot coherence [-h] [-v] [-s SILENT] --chan CHAN [CHAN ...]
                                [--ref REF] --start START [START ...]
                                [--duration DURATION] [-c FRAMECACHE]
                                [--highpass HIGHPASS] [--secpfft SECPFFT]

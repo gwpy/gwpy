@@ -11,7 +11,7 @@ For example to create a spectrum from the command line in interactive mode, one 
 
 .. code-block:: sh
 
-    gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start $(lalapps_tconvert 2/1/15 08:00) --interactive
+    gwpy-plot spectrum --chan L1:OAF-CAL_DARM_DQ --start $(lalapps_tconvert 2/1/15 08:00) --interactive
 
 Resulting in:
 
@@ -59,8 +59,8 @@ path to the plot program.  Then run the command inside ipython:
 
     $ lalapps_tconvert 2/1/15 08:00
     1106812816
-    $ which gwpy-ldvw.py
-    /home/joe/.local/bin/gwpy-ldvw.py
+    $ which gwpy-plot
+    /home/joe/.local/bin/gwpy-plot
     $ ipython
     Python 2.6.6 (r266:84292, Jan 22 2014, 05:06:49)
     Type "copyright", "credits" or "license" for more information.
@@ -71,7 +71,7 @@ path to the plot program.  Then run the command inside ipython:
     help      -> Python's own help system.
     object?   -> Details about 'object'. ?object also works, ?? prints more.
 
-    In [1]: %run /home/joe/.local/bin/gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start 1106812816 --interactive
+    In [1]: %run /home/joe/.local/bin/gwpy-plot spectrum --chan L1:OAF-CAL_DARM_DQ --start 1106812816 --interactive
     In [2]:
 
 At this point you can enter any python statement.  The following variables are set to allow direct

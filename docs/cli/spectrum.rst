@@ -21,7 +21,7 @@ OAF-CAL_DARM from the 2014-02-14 lock at LLO:
 
 .. code-block:: sh
 
-    gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start 1107936067 --duration 120  --secpfft 10
+    gwpy-plot spectrum --chan L1:OAF-CAL_DARM_DQ --start 1107936067 --duration 120  --secpfft 10
 
 .. image:: /../cli_examples/cli-sp-01.png
     :align: center
@@ -31,7 +31,7 @@ To zoom in on the lines between 500 and 700 Hz we could use the following:
 
 .. code-block:: sh
 
-    gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start 1107936067 --duration 120 \
+    gwpy-plot spectrum --chan L1:OAF-CAL_DARM_DQ --start 1107936067 --duration 120 \
      --secpfft 10.000 --overlap 0.90 --nologf --fmin 500 --fmax 700
 
 .. image:: /../cli_examples/cli-sp-02.png
@@ -45,7 +45,7 @@ The full help text for the Spectrum plot product is:
 
 .. code-block:: sh
 
-    $ gwpy-ldvw.py spectrum --help
+    $ gwpy-plot spectrum --help
     usage: gwpy_ldvw spectrum [-h] [-v] [-s SILENT] --chan CHAN [CHAN ...] --start
                           START [START ...] [--duration DURATION]
                           [-c FRAMECACHE] [--highpass HIGHPASS]

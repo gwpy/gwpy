@@ -15,7 +15,7 @@ The following parameters will produce the sample image below:
 
 .. code-block:: sh
 
-    gwpy-ldvw.py coherencegram --chan L1:LSC-SRCL_IN1_DQ L1:LSC-CARM_IN1_DQ \
+    gwpy-plot coherencegram --chan L1:LSC-SRCL_IN1_DQ L1:LSC-CARM_IN1_DQ \
         --start 1107820816 --duration 900 \
         --ref L1:LSC-SRCL_IN1_DQ --secpfft 0.500 --overlap 0.90
 
@@ -34,8 +34,8 @@ The full help text for this plot product is:
 
 .. code-block:: sh
 
-    $ gwpy-ldvw.py coherencegram --help
-    usage: gwpy_ldvw coherencegram [-h] [-v] [-s SILENT] --chan CHAN [CHAN ...]
+    $ gwpy-plot coherencegram --help
+    usage: gwpy-plot coherencegram [-h] [-v] [-s SILENT] --chan CHAN [CHAN ...]
                                [--ref REF] --start START [START ...]
                                [--duration DURATION] [-c FRAMECACHE]
                                [--highpass HIGHPASS] [--secpfft SECPFFT]
