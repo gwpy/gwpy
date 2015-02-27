@@ -954,6 +954,8 @@ class TimeSeries(Series):
             one of:
 
             - :class:`scipy.signal.lti`
+            - `M`x`N` `numpy.ndarray` of second-order-sections
+              (`scipy>=0.16.0` only)
             - ``(numerator, denominator)`` polynomials
             - ``(zeros, poles, gain)``
             - ``(A, B, C, D)`` 'state-space' representation
@@ -985,29 +987,52 @@ class TimeSeries(Series):
         ------
         ValueError
             If ``filt`` arguments cannot be interpreted properly
+
+        .. note::
+
+           When using `scipy < 0.16.0` some higher-order filters may be
+           unstable. With `scipy >= 0.16.0` higher-order filters are
+           decomposed into second-order-sections, and so are much more stable.
         """
-        if len(filt) == 1 and isinstance(filt, signal.lti):
+        sos = None
+        # single argument given
+        if len(filt) == 1:
             filt = filt[0]
-            a = filt.den
-            b = filt.num
+            # detect LTI
+            if isinstance(filt, signal.lti):
+                filt = filt
+                a = filt.den
+                b = filt.num
+            # detect SOS
+            elif isinstance(filt, numpy.ndarray) and filt.ndim == 2:
+                sos = filt
+            # detect taps
+            else:
+                b = filt
+                a = [1]
+        # detect TF
         elif len(filt) == 2:
             b, a = filt
         elif len(filt) == 3:
-            b, a = signal.zpk2tf(*filt)
-        elif len(filt) == 4:
-            b, a = signal.ss2tf(*filt)
-        else:
             try:
-                b = numpy.asarray(filt)
-                assert b.ndim == 1
-            except (ValueError, AssertionError):
-                raise ValueError("Cannot interpret filter arguments. Please "
-                                 "give either a signal.lti object, or a "
-                                 "tuple in zpk or ba format. See "
-                                 "scipy.signal docs for details.")
-            else:
-                a = 1.0
-        new = signal.lfilter(b, a, self, axis=0).view(self.__class__)
+                sos = signal.zpk2sos(*filt)
+            except AttributeError:
+                b, a = signal.zpk2tf(*filt)
+        elif len(filt) == 4:
+            try:
+                zpk = signal.ss2zpk(*filt)
+                sos = signal.zpk2sos(zpk)
+            except AttributeError:
+                b, a = signal.ss2tf(*filt)
+        else:
+            raise ValueError("Cannot interpret filter arguments. Please "
+                             "give either a signal.lti object, or a "
+                             "tuple in zpk or ba format. See "
+                             "scipy.signal docs for details.")
+        if sos is not None:
+            new = signal.sosfilt(sos, self, axis=0).view(self.__class__)
+        else:
+            new = signal.lfilter(b, a, self, axis=0).view(self.__class__)
         new.metadata = self.metadata.copy()
         return new
 
