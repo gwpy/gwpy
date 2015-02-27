@@ -811,97 +811,153 @@ class TimeSeries(Series):
     # -------------------------------------------
     # TimeSeries filtering
 
-    def highpass(self, frequency, numtaps=101, window='hamming'):
+    def highpass(self, frequency, gpass=2, gstop=30, stop=None):
         """Filter this `TimeSeries` with a Butterworth high-pass filter.
-
-        See (for example) :lalsuite:`XLALHighPassREAL8TimeSeries` for more
-        information.
 
         Parameters
         ----------
         frequency : `float`
             minimum frequency for high-pass
-        amplitude : `float`, optional
-            desired amplitude response of the filter
-        order : `int`, optional
-            desired order of the Butterworth filter
-        method : `str`, optional, default: 'scipy'
-            choose method of high-passing, LAL or SciPy
+        gpass : `float`
+            the maximum loss in the passband (dB).
+        gstop : `float`
+            the minimum attenuation in the stopband (dB).
+        stop: `float`
+            stop-band edge frequency, defaults to `frequency/2`
 
         Returns
         -------
-        TimeSeries
+        hpseries : `TimeSeries`
+            a high-passed version of the input `TimeSeries`
 
         See Also
         --------
-        See :lalsuite:`XLALHighPassREAL8TimeSeries` for information on
-        the LAL method, otherwise see :mod:`scipy.signal` for the SciPy
-        method.
-        """
-        filter_ = signal.firwin(numtaps, frequency, window=window,
-                                nyq=self.sample_rate.value/2.,
-                                pass_zero=False)
-        return self.filter(*filter_)
+        signal.buttord
+        signal.butter
+            for details on how the filter is designed
+        TimeSeries.filter
+            for details on how the filter is applied
 
-    def lowpass(self, frequency, numtaps=61, window='hamming'):
+        .. note::
+
+           When using `scipy < 0.16.0` some higher-order filters may be
+           unstable. With `scipy >= 0.16.0` higher-order filters are
+           decomposed into second-order-sections, and so are much more stable.
+        """
+
+        nyq = self.sample_rate.value / 2.
+        if stop is None:
+            stop = .5 * frequency
+        # convert to float in Hertz
+        cutoff = units.Quantity(frequency, 'Hz').value / nyq
+        stop = units.Quantity(stop, 'Hz').value / nyq
+        # design filter
+        order, wn = signal.buttord(wp=cutoff, ws=stop, gpass=gpass,
+                                   gstop=gstop, analog=False)
+        zpk = signal.butter(order, wn, btype='high',
+                            analog=False, output='zpk')
+        # apply filter
+        return self.filter(*zpk)
+
+    def lowpass(self, frequency, gpass=2, gstop=30, stop=None):
         """Filter this `TimeSeries` with a Butterworth low-pass filter.
 
         Parameters
         ----------
         frequency : `float`
-            minimum frequency for low-pass
-        amplitude : `float`, optional
-            desired amplitude response of the filter
-        order : `int`, optional
-            desired order of the Butterworth filter
-        method : `str`, optional, default: 'scipy'
-            choose method of high-passing, LAL or SciPy
+            low-pass corner frequency
+        gpass : `float`
+            the maximum loss in the passband (dB).
+        gstop : `float`
+            the minimum attenuation in the stopband (dB).
+        stop: `float`
+            stop-band edge frequency, defaults to `frequency * 1.5`
 
         Returns
         -------
-        TimeSeries
+        lpseries : `TimeSeries`
+            a low-passed version of the input `TimeSeries`
 
         See Also
         --------
-        See :lalsuite:`XLALLowPassREAL8TimeSeries` for information on
-        the LAL method, otherwise see :mod:`scipy.signal` for the SciPy
-        method.
+        signal.buttord
+        signal.butter
+            for details on how the filter is designed
+        TimeSeries.filter
+            for details on how the filter is applied
+
+        .. note::
+
+           When using `scipy < 0.16.0` some higher-order filters may be
+           unstable. With `scipy >= 0.16.0` higher-order filters are
+           decomposed into second-order-sections, and so are much more stable.
         """
-        filter_ = signal.firwin(numtaps, frequency, window=window,
-                                nyq=self.sample_rate.value/2.)
-        return self.filter(*filter_)
+        nyq = self.sample_rate.value / 2.
+        if stop is None:
+            stop = 1.5 * frequency
+        # convert to float in Hertz
+        cutoff = units.Quantity(frequency, 'Hz').value / nyq
+        stop = units.Quantity(stop, 'Hz').value / nyq
+        # design filter
+        order, wn = signal.buttord(wp=cutoff, ws=stop, gpass=gpass,
+                                   gstop=gstop, analog=False)
+        zpk = signal.butter(order, wn, btype='low', analog=False, output='zpk')
+        # apply filter
+        return self.filter(*zpk)
 
-    def bandpass(self, flow, fhigh, lowtaps=61, hightaps=101,
-                 window='hamming'):
-        """Filter this `TimeSeries` by applying both low- and high-pass
-        filters.
-
-        See (for example) :lalsuite:`XLALLowPassREAL8TimeSeries` for more
-        information.
+    def bandpass(self, flow, fhigh, gpass=2, gstop=30, stops=(None, None)):
+        """Filter this `TimeSeries` by applying low- and high-pass filters.
 
         Parameters
         ----------
         flow : `float`
-            minimum frequency for high-pass
+            band-pass lower corner frequency
         fhigh : `float`
-            maximum frequency for low-pass
-        amplitude : `float`, optional
-            desired amplitude response of the filter
-        order : `int`, optional
-            desired order of the Butterworth filter
+            band-pass upper corner frequency
+        gpass : `float`
+            the maximum loss in the pass band (dB).
+        gstop : `float`
+            the minimum attenuation in the stop band (dB).
+        stops: 2-`tuple` of `float`
+            stop-band edge frequencies, defaults to `[flow/2., fhigh*1.5]`
 
         Returns
         -------
-        TimeSeries
+        bpseries : `TimeSeries`
+            a band-passed version of the input `TimeSeries`
 
         See Also
         --------
-        See :lalsuite:`XLALLowPassREAL8TimeSeries` for information on
-        the LAL method, otherwise see :mod:`scipy.signal` for the SciPy
-        method.
+        signal.buttord, signal.butter
+            for details on how the filter is designed
+        TimeSeries.filter
+            for details on how the filter is applied
+
+        .. note::
+
+           When using `scipy < 0.16.0` some higher-order filters may be
+           unstable. With `scipy >= 0.16.0` higher-order filters are
+           decomposed into second-order-sections, and so are much more stable.
         """
-        high = self.highpass(flow, numtaps=lowtaps, window=window)
-        return high.lowpass(fhigh, numtaps=hightaps, window=window)
+        nyq = self.sample_rate.value / 2.
+        if stops is None:
+            stops = [None, None]
+        stops = list(stops)
+        if stops[0] is None:
+            stops[0] = flow * 0.5
+        if stops[1] is None:
+            stops[1] = fhigh * 1.5
+        # make sure all are in Hertz
+        low = units.Quantity(flow, 'Hz').value / nyq
+        high = units.Quantity(fhigh, 'Hz').value / nyq
+        stops = [units.Quantity(s, 'Hz').value / nyq for s in stops]
+        # design filter
+        order, wn = signal.buttord(wp=[low, high], ws=stops, gpass=gpass,
+                                   gstop=gstop, analog=False)
+        zpk = signal.butter(order, wn, btype='band',
+                            analog=False, output='zpk')
+        # apply filter
+        return self.filter(*zpk)
 
     def resample(self, rate, window='hamming', numtaps=61):
         """Resample this Series to a new rate
