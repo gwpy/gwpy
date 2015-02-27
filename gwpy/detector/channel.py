@@ -297,7 +297,10 @@ class Channel(object):
 
         :type: `str`
         """
-        return self._system
+        try:
+            return self._system
+        except AttributeError:
+            self._system = None
 
     @property
     def subsystem(self):
@@ -305,7 +308,10 @@ class Channel(object):
 
         :type: `str`
         """
-        return self._subsystem
+        try:
+            return self._subsystem
+        except AttributeError:
+            self._subsystem = None
 
     @property
     def signal(self):
@@ -313,7 +319,10 @@ class Channel(object):
 
         :type: `str`
         """
-        return self._signal
+        try:
+            return self._signal
+        except AttributeError:
+            self._signal = None
 
     @property
     def texname(self):
