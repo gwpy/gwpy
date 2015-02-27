@@ -108,13 +108,13 @@ class Channel(object):
             name = str(name)
         # make a new channel
         # strip off NDS stuff for 'name'
-        self.name = str(name).split(',')[0]
         # parse name into component parts
         try:
             parts = self.parse_channel_name(name)
         except (TypeError, ValueError):
-            pass
+            self.name = str(name)
         else:
+            self.name = str(name).split(',')[0]
             for key, val in parts.iteritems():
                 try:
                     setattr(self, key, val)
