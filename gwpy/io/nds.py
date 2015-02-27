@@ -108,8 +108,8 @@ def host_resolution_order(ifo, env='NDSSERVER'):
     hosts = []
     # if NDSSERVER environment variable exists, it will contain a
     # comma-separated list of host:port strings giving the logical ordering
-    if env and os.getenv('NDSSERVER'):
-        for host in os.getenv('NDSSERVER').split(','):
+    if env and os.getenv(env):
+        for host in os.getenv(env).split(','):
             try:
                 host, port = host.rsplit(':', 1)
             except ValueError:
