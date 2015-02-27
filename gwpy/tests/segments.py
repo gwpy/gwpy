@@ -147,7 +147,7 @@ class DataQualityFlagTests(unittest.TestCase):
         try:
             flag.write(hdfout)
         except ImportError as e:
-            raise unittest.SkipTest(str(e))
+            self.skipTest(str(e))
         else:
             if delete:
                 os.remove(hdfout)
@@ -157,7 +157,7 @@ class DataQualityFlagTests(unittest.TestCase):
         try:
             hdfout = self.test_write_hdf5(delete=False)
         except ImportError as e:
-            raise unittest.SkipTest(str(e))
+            self.skipTest(str(e))
         else:
             flag = DataQualityFlag.read(hdfout)
             os.remove(hdfout)
@@ -173,7 +173,7 @@ class DataQualityFlagTests(unittest.TestCase):
             flag = DataQualityFlag.query_dqsegdb(
                 QUERY_FLAG, QUERY_START, QUERY_END, url=QUERY_URL)
         except (ImportError, URLError) as e:
-            raise unittest.SkipTest(str(e))
+            self.skipTest(str(e))
         else:
             self.assertEqual(flag.known, QUERY_KNOWN)
             self.assertEqual(flag.active, QUERY_ACTIVE)
