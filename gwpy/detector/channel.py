@@ -33,8 +33,18 @@ from astropy import units
 try:
     from ..io.nds import (NDS2_CHANNEL_TYPE, NDS2_CHANNEL_TYPESTR)
 except ImportError:
-    NDS2_CHANNEL_TYPESTR = {}
-    NDS2_CHANNEL_TYPE = {}
+    NDS2_CHANNEL_TYPESTR = {
+        1: 'online',
+         2: 'raw',
+         4: 'reduced',
+         8: 's-trend',
+         16: 'm-trend',
+         32: 'test-pt',
+         64: 'static',
+         128: 'rds',
+    }
+    NDS2_CHANNEL_TYPE = dict((val, key) for (key, val) in
+                             NDS2_CHANNEL_TYPESTR.iteritems())
 
 from .. import version
 from ..segments import (Segment, SegmentList, SegmentListDict)
