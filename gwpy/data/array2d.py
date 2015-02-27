@@ -87,26 +87,46 @@ class Array2D(Array):
 
     # rebuild getitem to handle complex slicing
     def __getitem__(self, item):
-        new = super(Array2D, self).__getitem__(item).copy()
-        # if given an int, extract a column
-        if isinstance(item, int):
-            new = Series(new, unit=self.unit, name=self.name, dx=self.dy.value,
-                         epoch=self.epoch, channel=self.channel,
-                         x0=self.y0.value)
-            new.xunit = self.yunit
-            return new
-        # if given a tuple, extract an element
-        elif isinstance(item, tuple) and len(item) == 1:
-            return Quantity(new, unit=self.unit)
-        # otherwise perform complex slice
-        elif isinstance(item, slice):
-            if item.start:
-                new.x0 += item.start * self.dx
-            if item.step:
-                new.dx *= item.step
-            return new
+        new = super(Array2D, self).__getitem__(item)
+        # unwrap item request
+        if isinstance(item, tuple):
+            x, y = item
         else:
-            return new
+            x = item
+            y = None
+        # extract a Quantity
+        if isinstance(new, (float, int)):
+            return Quantity(new, unit=self.unit)
+        # unwrap a Series
+        if len(new.shape) == 1:
+            new = new.data.view(Series)
+            new.metadata = self.metadata.copy()
+            new.metadata.pop('dy')
+            new.metadata.pop('y0')
+            if isinstance(x, (float, int)):
+                new.metadata['dx'] = self.dy
+                new.metadata['x0'] = self.y0
+        # unwrap a Spectrogram
+        else:
+            new = new.data.view(type(self))
+            new.metadata = self.metadata.copy()
+        # update metadata
+        if isinstance(x, slice):
+            if x.start:
+                new.x0 += x.start * new.dx
+            if x.step:
+                new.dx *= x.step
+        if len(new.shape) == 1 and isinstance(y, slice):
+            if y.start:
+                new.x0 += y.start * new.dx
+            if y.step:
+                new.dx *= y.step
+        elif isinstance(y, slice):
+            if y.start:
+                new.y0 = new.y0 + y.start * new.dy
+            if y.step:
+                new.dy = new.dy * y.step
+        return new
 
     # -------------------------------------------
     # Series properties

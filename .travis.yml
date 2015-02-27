@@ -1,0 +1,35 @@
+language: python
+python:
+  - "2.7"
+before_install:
+  - mkdir builds
+  - pushd builds
+  # install numpy non-python dependencies
+  - sudo apt-get install -qq libatlas-dev libatlas-base-dev gfortran
+  # add LSCSoft sources
+  - echo "deb http://software.ligo.org/lscsoft/debian wheezy contrib" | sudo tee -a /etc/apt/sources.list
+  - sudo apt-get update -qq
+  - sudo apt-get --assume-yes --allow-unauthenticated install lscsoft-archive-keyring
+  - sudo apt-get update -qq
+  - sudo apt-get --assume-yes install libhdf5-dev lalframe-python ldas-tools-framecpp-python
+  # install build dependencies
+  - travis_retry pip install -q tornado jinja2 GitPython
+  # install cython
+  - travis_retry pip install --install-option="--no-cython-compile" Cython
+  # install numpy
+  - travis_retry pip install -q numpy==1.9.1
+  # install scipy
+  - travis_wait pip install -q scipy==0.13
+  # install matplotlib
+  - travis_retry pip install -q matplotlib==1.3.1
+  # install astropy
+  - travis_retry pip install -q astropy==1.0
+  # install GLUE
+  - travis_retry pip install -q --egg https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/glue-1.46.tar.gz#egg=glue-1.46
+  # install h5py
+  - pip install h5py
+  - popd
+install:
+  - pip install -q .
+script:
+  - python setup.py test

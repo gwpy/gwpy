@@ -1318,7 +1318,10 @@ class TimeSeries(Series):
         try:
             unit = to_lal_unit(self.unit)
         except TypeError:
-            unit = lal.lalDimensionlessUnit
+            try:
+                unit = lal.DimensionlessUnit
+            except AttributeError:
+                unit = lal.lalDimensionlessUnit
         create = getattr(lal, 'Create%sTimeSeries' % typestr.upper())
         lalts = create(self.name, lal.LIGOTimeGPS(self.epoch.gps), 0,
                        self.dt.value, unit, self.size)

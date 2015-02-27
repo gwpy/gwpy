@@ -172,7 +172,7 @@ class DataQualityFlagTests(unittest.TestCase):
         try:
             flag = DataQualityFlag.query_dqsegdb(
                 QUERY_FLAG, QUERY_START, QUERY_END, url=QUERY_URL)
-        except URLError as e:
+        except (ImportError, URLError) as e:
             raise unittest.SkipTest(str(e))
         else:
             self.assertEqual(flag.known, QUERY_KNOWN)

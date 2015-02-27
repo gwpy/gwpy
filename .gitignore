@@ -30,6 +30,7 @@ pip-delete-this-directory.txt
 # Sphinx documentation
 /docs/_build
 /docs/_generated
+/docs/lalsuite_dox.tag
 
 # Version information
 /gwpy/version.py
@@ -45,4 +46,4 @@ pip-delete-this-directory.txt
 /docs/examples/*/*
 
 # Patches
-/[0-9][0-9][0-9][0-9]-*.patch
+/*.patch

@@ -37,7 +37,7 @@ class AstroTests(unittest.TestCase):
     """`TestCase` for the astro module
     """
     framefile = os.path.join(os.path.split(__file__)[0], 'data',
-                             'HLV-GW100916-968654552-1.gwf')
+                             'HLV-GW100916-968654552-1.hdf')
     tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_')
 
     def setUp(self):
