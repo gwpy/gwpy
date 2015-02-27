@@ -325,6 +325,17 @@ class Channel(object):
             self._signal = None
 
     @property
+    def trend(self):
+        """Trend type for this `Channel`.
+
+        :type: `str`
+        """
+        try:
+            return self._trend
+        except AttributeError:
+            self._trend = None
+
+    @property
     def texname(self):
         """Name of this `Channel` in LaTeX printable format.
         """
