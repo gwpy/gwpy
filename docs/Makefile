@@ -15,8 +15,12 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
 EXAMPLES := $(shell cd ../examples/ && ls */*py)
 EXAMPLEDIRS := $(shell cd ../examples/ && ls -d */)
+
+CLIPROG       = ../bin/gwpy-plot
 CLIEXAMPLEDIR = $(BUILDDIR)/cli_examples
-CLIEXAMPLES = $(CLIEXAMPLEDIR)/cli-01.png $(CLIEXAMPLEDIR)/cli-02.png $(CLIEXAMPLEDIR)/cli-ts-01.png $(CLIEXAMPLEDIR)/cli-ts-02.png $(CLIEXAMPLEDIR)/cli-sp-01.png $(CLIEXAMPLEDIR)/cli-sp-02.png $(CLIEXAMPLEDIR)/cli-cohg-01.png $(CLIEXAMPLEDIR)/cli-spg-01.png $(CLIEXAMPLEDIR)/cli-coh-01.png
+CLIEXAMPLES   = $(CLIEXAMPLEDIR)/cli-01.png $(CLIEXAMPLEDIR)/cli-02.png $(CLIEXAMPLEDIR)/cli-ts-01.png \
+                $(CLIEXAMPLEDIR)/cli-ts-02.png $(CLIEXAMPLEDIR)/cli-sp-01.png $(CLIEXAMPLEDIR)/cli-sp-02.png \
+                $(CLIEXAMPLEDIR)/cli-cohg-01.png $(CLIEXAMPLEDIR)/cli-spg-01.png $(CLIEXAMPLEDIR)/cli-coh-01.png
 
 .PHONY: help clean apidoc html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest examples  $(CLIEXAMPLES)
 LALSUITE_DOXTAG = lalsuite_dox.tag
@@ -192,21 +196,21 @@ $(CLIEXAMPLEDIR):
 $(CLIEXAMPLEDIR)/cli-01.png: $(CLIEXAMPLEDIR)
 	@if [ ! -e $@ ];  then \
 		echo "cli-01.png"; \
-		gwpy-ldvw.py timeseries --chan L1:OAF-CAL_DARM_DQ \
+		$(CLIPROG) timeseries --chan L1:OAF-CAL_DARM_DQ \
 			--start 1102766651 --out $(CLIEXAMPLEDIR)/cli-01.png; \
 	fi
 
 $(CLIEXAMPLEDIR)/cli-02.png: $(CLIEXAMPLEDIR)
 	@if [ ! -e $@ ]; then \
 		echo "cli-02.png"; \
-		gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start 1102766451 \
+		$(CLIPROG) spectrum --chan L1:OAF-CAL_DARM_DQ --start 1102766451 \
 			--start 1102766651  --out $(CLIEXAMPLEDIR)/cli-02.png; \
 	fi
 
 $(CLIEXAMPLEDIR)/cli-ts-01.png: $(CLIEXAMPLEDIR)
 	@if [ ! -e $@ ]; then \
 		echo "cli-ts-01"; \
-		gwpy-ldvw.py timeseries --chan L1:OAF-CAL_DARM_DQ --start 1107936100 \
+		$(CLIPROG) timeseries --chan L1:OAF-CAL_DARM_DQ --start 1107936100 \
 			--xmin 1107936100.2 --xmax 1107936100.25 --epoch 0.225 \
 			--duration 1 --out $(CLIEXAMPLEDIR)/cli-ts-01.png; \
 	fi
@@ -214,7 +218,7 @@ $(CLIEXAMPLEDIR)/cli-ts-01.png: $(CLIEXAMPLEDIR)
 $(CLIEXAMPLEDIR)/cli-ts-02.png: $(CLIEXAMPLEDIR)
 	@if [ ! -e $@ ]; then \
 		echo "cli-ts-02"; \
-		gwpy-ldvw.py timeseries --chan LVE-EX:X3_810BTORR.mean,m-trend \
+		$(CLIPROG) timeseries --chan LVE-EX:X3_810BTORR.mean,m-trend \
 			--start 1072539420 --dur 36000 --logy \
 			--out $(CLIEXAMPLEDIR)/cli-ts-02.png; \
 	fi
@@ -222,14 +226,14 @@ $(CLIEXAMPLEDIR)/cli-ts-02.png: $(CLIEXAMPLEDIR)
 $(CLIEXAMPLEDIR)/cli-sp-01.png: $(CLIEXAMPLEDIR)
 	@if [ ! -e $@ ]; then \
 		echo "cli-sp-01"; \
-		gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start 1107936067 \
+		$(CLIPROG) spectrum --chan L1:OAF-CAL_DARM_DQ --start 1107936067 \
 			--duration 120  --secpfft 10 --out $(CLIEXAMPLEDIR)/cli-sp-01.png; \
 	fi
 
 $(CLIEXAMPLEDIR)/cli-sp-02.png: $(CLIEXAMPLEDIR)
 	@if [ ! -e $@ ]; then \
 		echo "cli-sp-02"; \
-		gwpy-ldvw.py spectrum --chan L1:OAF-CAL_DARM_DQ --start 1107936067 \
+		$(CLIPROG) spectrum --chan L1:OAF-CAL_DARM_DQ --start 1107936067 \
 			--duration 120 --out $(CLIEXAMPLEDIR)/cli-sp-02.png --secpfft 10.000 \
 			--overlap 0.90 --nologf --fmin 500 --fmax 700; \
 	fi
@@ -237,7 +241,7 @@ $(CLIEXAMPLEDIR)/cli-sp-02.png: $(CLIEXAMPLEDIR)
 $(CLIEXAMPLEDIR)/cli-coh-01.png: $(CLIEXAMPLEDIR)
 	@if [ ! -e $@ ]; then \
 		echo "cli-coh-01"; \
-		gwpy-ldvw.py coherence --chan L1:LSC-SRCL_IN1_DQ L1:LSC-CARM_IN1_DQ \
+		$(CLIPROG) coherence --chan L1:LSC-SRCL_IN1_DQ L1:LSC-CARM_IN1_DQ \
 			--start 1107820816  --duration 900  \
 			--out $(CLIEXAMPLEDIR)/cli-coh-01.png \
 			--ref L1:LSC-SRCL_IN1_DQ --secpfft 8.0 --overlap 0.50 ;\
@@ -246,7 +250,7 @@ $(CLIEXAMPLEDIR)/cli-coh-01.png: $(CLIEXAMPLEDIR)
 $(CLIEXAMPLEDIR)/cli-cohg-01.png: $(CLIEXAMPLEDIR)
 	@if [ ! -e $@ ]; then \
 		echo "cli-cohg-01"; \
-		gwpy-ldvw.py coherencegram --chan L1:LSC-SRCL_IN1_DQ L1:LSC-CARM_IN1_DQ \
+		$(CLIPROG) coherencegram --chan L1:LSC-SRCL_IN1_DQ L1:LSC-CARM_IN1_DQ \
 			--start 1107820816 --duration 900 \
 			--out $(CLIEXAMPLEDIR)/cli-cohg-01.png \
 			--ref L1:LSC-SRCL_IN1_DQ --secpfft 0.500 --overlap 0.90 ;\
@@ -255,7 +259,7 @@ $(CLIEXAMPLEDIR)/cli-cohg-01.png: $(CLIEXAMPLEDIR)
 $(CLIEXAMPLEDIR)/cli-spg-01.png: $(CLIEXAMPLEDIR)
 	@if [ ! -e $@ ]; then \
 		echo "cli-spg-01"; \
-		gwpy-ldvw.py spectrogram --chan L1:LSC-SRCL_IN1_DQ --start 1107937307 --dur 240 \
+		$(CLIPROG) spectrogram --chan L1:LSC-SRCL_IN1_DQ --start 1107937307 --dur 240 \
 		    --out $(CLIEXAMPLEDIR)/cli-spg-01.png; \
 	fi
 
