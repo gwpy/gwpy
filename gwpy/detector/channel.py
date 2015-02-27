@@ -286,7 +286,10 @@ class Channel(object):
 
         :type: `str`
         """
-        return self._ifo
+        try:
+            return self._ifo
+        except AttributeError:
+            self._ifo = None
 
     @property
     def system(self):
