@@ -102,7 +102,7 @@ class Channel(object):
         # parse name into component parts
         try:
             parts = self.parse_channel_name(name)
-        except ValueError:
+        except (TypeError, ValueError):
             pass
         else:
             for key, val in parts.iteritems():
