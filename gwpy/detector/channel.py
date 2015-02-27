@@ -74,7 +74,7 @@ class Channel(object):
     (https://cis.ligo.org) for which a query interface is provided.
     """
     MATCH = re.compile(
-        r'(?P<ifo>[A-Z]\d):'  # match IFO prefix
+        r'(?P<ifo>[A-Z0-9-]+):'  # match IFO prefix
          '(?P<system>[a-zA-Z0-9]+)'  # match system
          '(?:[-_](?P<subsystem>[a-zA-Z0-9]+))?'  # match subsystem
          '(?:_(?P<signal>[a-zA-Z0-9_]+))?'  # match signal
