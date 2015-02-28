@@ -58,6 +58,11 @@ try:
 except ImportError:
     extra_install_requires.append('importlib>=1.0.3')
 
+# test for unittest2
+extra_tests_require = []
+if sys.version < '2.7':
+    extra_tests_require.append('unittest2')
+
 # import sphinx commands
 try:
     from sphinx.setup_command import BuildDoc
@@ -329,6 +334,8 @@ setup(name=PACKAGENAME,
           'astropy >= 0.4',
           'six >= 1.5',
       ] + extra_install_requires,
+      tests_require=[
+      ] + extra_tests_require,
       extras_require={
           'nds': ['nds2-client'],
           'gwf': ['ldas-tools'],

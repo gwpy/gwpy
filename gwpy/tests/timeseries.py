@@ -21,8 +21,13 @@
 
 import os
 import os.path
-import unittest
+import sys
 import tempfile
+
+if sys.version_info < (2, 7):
+    import unittest2 as unittest
+else:
+    import unittest
 
 from numpy import random
 
@@ -74,13 +79,13 @@ class TimeSeriesTests(unittest.TestCase):
         try:
             self.frame_read(format='lalframe')
         except ImportError as e:
-            raise unittest.SkipTest(str(e))
+            self.skipTest(str(e))
 
     def test_frame_read_framecpp(self):
         try:
             self.frame_read(format='framecpp')
         except ImportError as e:
-            raise unittest.SkipTest(str(e))
+            self.skipTest(str(e))
 
     def test_ascii_write(self, delete=True):
         self.ts = TimeSeries(self.data, sample_rate=1, name='TEST CASE',
@@ -106,7 +111,7 @@ class TimeSeriesTests(unittest.TestCase):
         try:
             self.ts.write(hdfout)
         except ImportError as e:
-            raise unittest.SkipTest(str(e))
+            self.skipTest(str(e))
         finally:
             if delete and os.path.isfile(hdfout):
                 os.remove(hdfout)
@@ -116,7 +121,7 @@ class TimeSeriesTests(unittest.TestCase):
         try:
             hdfout = self.test_hdf5_write(delete=False)
         except ImportError as e:
-            raise unittest.SkipTest(str(e))
+            self.skipTest(str(e))
         else:
             try:
                 ts = TimeSeries.read(hdfout, 'TEST CASE')

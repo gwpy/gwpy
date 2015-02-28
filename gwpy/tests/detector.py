@@ -19,7 +19,12 @@
 """Unit test for detector module
 """
 
-import unittest
+import sys
+
+if sys.version_info < (2, 7):
+    import unittest2 as unittest
+else:
+    import unittest
 
 import numpy
 
@@ -64,11 +69,11 @@ class ChannelTests(unittest.TestCase):
             try:
                 import kerberos
             except ImportError:
-                raise unittest.SkipTest('Channel.query() requires kerberos '
+                self.skipTest('Channel.query() requires kerberos '
                                         'to be installed')
             else:
                 if isinstance(e, kerberos.GSSError):
-                    raise unittest.SkipTest(str(e))
+                    self.skipTest(str(e))
                 else:
                     raise
         self.assertTrue(str(new) == self.channel)
@@ -80,7 +85,7 @@ class ChannelTests(unittest.TestCase):
         try:
             import nds2
         except ImportError as e:
-            return unittest.SkipTest(str(e))
+            self.skipTest(str(e))
         new = Channel.query_nds2(self.channel, host=NDSHOST,
                                  type=nds2.channel.CHANNEL_TYPE_RAW)
         self.assertTrue(str(new) == self.channel)
@@ -93,12 +98,12 @@ class ChannelTests(unittest.TestCase):
         try:
             import nds2
         except ImportError as e:
-            return unittest.SkipTest(str(e))
+            self.skipTest(str(e))
         else:
             try:
                 conn = nds2.connection(NDSHOST)
             except Exception as f:
-                return unittest.SkipTest(str(f))
+                self.skipTest(str(f))
             else:
                 nds2channel = conn.find_channels(self.channel)[0]
                 new = Channel.from_nds2(nds2channel)
