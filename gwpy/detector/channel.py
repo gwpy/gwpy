@@ -33,8 +33,18 @@ from astropy import units
 try:
     from ..io.nds import (NDS2_CHANNEL_TYPE, NDS2_CHANNEL_TYPESTR)
 except ImportError:
-    NDS2_CHANNEL_TYPESTR = {}
-    NDS2_CHANNEL_TYPE = {}
+    NDS2_CHANNEL_TYPESTR = {
+        1: 'online',
+         2: 'raw',
+         4: 'reduced',
+         8: 's-trend',
+         16: 'm-trend',
+         32: 'test-pt',
+         64: 'static',
+         128: 'rds',
+    }
+    NDS2_CHANNEL_TYPE = dict((val, key) for (key, val) in
+                             NDS2_CHANNEL_TYPESTR.iteritems())
 
 from .. import version
 from ..segments import (Segment, SegmentList, SegmentListDict)
@@ -74,8 +84,8 @@ class Channel(object):
     (https://cis.ligo.org) for which a query interface is provided.
     """
     MATCH = re.compile(
-        r'(?P<ifo>[A-Z]\d):'  # match IFO prefix
-         '(?P<system>[a-zA-Z0-9]+)'  # match system
+        r'((?:(?P<ifo>[A-Z]\d))?|[\w-]+):'  # match IFO prefix
+         '(?:(?P<system>[a-zA-Z0-9]+))?'  # match system
          '(?:[-_](?P<subsystem>[a-zA-Z0-9]+))?'  # match subsystem
          '(?:_(?P<signal>[a-zA-Z0-9_]+))?'  # match signal
          '(?:\.(?P<trend>[a-z]+))?'  # match trend type
@@ -98,13 +108,13 @@ class Channel(object):
             name = str(name)
         # make a new channel
         # strip off NDS stuff for 'name'
-        self.name = str(name).split(',')[0]
         # parse name into component parts
         try:
             parts = self.parse_channel_name(name)
         except (TypeError, ValueError):
-            pass
+            self.name = str(name)
         else:
+            self.name = str(name).split(',')[0]
             for key, val in parts.iteritems():
                 try:
                     setattr(self, key, val)
@@ -276,7 +286,10 @@ class Channel(object):
 
         :type: `str`
         """
-        return self._ifo
+        try:
+            return self._ifo
+        except AttributeError:
+            self._ifo = None
 
     @property
     def system(self):
@@ -284,7 +297,10 @@ class Channel(object):
 
         :type: `str`
         """
-        return self._system
+        try:
+            return self._system
+        except AttributeError:
+            self._system = None
 
     @property
     def subsystem(self):
@@ -292,7 +308,10 @@ class Channel(object):
 
         :type: `str`
         """
-        return self._subsystem
+        try:
+            return self._subsystem
+        except AttributeError:
+            self._subsystem = None
 
     @property
     def signal(self):
@@ -300,7 +319,21 @@ class Channel(object):
 
         :type: `str`
         """
-        return self._signal
+        try:
+            return self._signal
+        except AttributeError:
+            self._signal = None
+
+    @property
+    def trend(self):
+        """Trend type for this `Channel`.
+
+        :type: `str`
+        """
+        try:
+            return self._trend
+        except AttributeError:
+            self._trend = None
 
     @property
     def texname(self):

@@ -111,6 +111,13 @@ class ChannelTests(unittest.TestCase):
                 self.assertTrue(new.ifo == self.channel.split(':', 1)[0])
                 self.assertTrue(new.sample_rate == units.Quantity(32768, 'Hz'))
 
+    def test_fmcs_parse(self):
+        new = Channel('LVE-EX:X3_810BTORR.mean,m-trend')
+        self.assertEqual(new.ifo, None)
+        self.assertEqual(new.name, 'LVE-EX:X3_810BTORR.mean')
+        self.assertEqual(new.trend, 'mean')
+        self.assertEqual(new.type, 'm-trend')
+
 
 if __name__ == '__main__':
     unittest.main()
