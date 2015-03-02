@@ -1,3 +1,4 @@
+# vim: ts=4:noet
 # Makefile for Sphinx documentation
 #
 
@@ -15,9 +16,14 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 EXAMPLES := $(shell cd ../examples/ && ls */*py)
 EXAMPLEDIRS := $(shell cd ../examples/ && ls -d */)
 
-LALSUITE_DOXTAG = lalsuite_dox.tag
+CLIPROG       = ../bin/gwpy-plot
+CLIEXAMPLEDIR = $(BUILDDIR)/cli_examples
+CLIEXAMPLES   = $(CLIEXAMPLEDIR)/cli-01.png $(CLIEXAMPLEDIR)/cli-02.png $(CLIEXAMPLEDIR)/cli-ts-01.png \
+                $(CLIEXAMPLEDIR)/cli-ts-02.png $(CLIEXAMPLEDIR)/cli-sp-01.png $(CLIEXAMPLEDIR)/cli-sp-02.png \
+                $(CLIEXAMPLEDIR)/cli-cohg-01.png $(CLIEXAMPLEDIR)/cli-spg-01.png $(CLIEXAMPLEDIR)/cli-coh-01.png
 
-.PHONY: help clean apidoc html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest examples
+.PHONY: help clean apidoc html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest examples  $(CLIEXAMPLES)
+LALSUITE_DOXTAG = lalsuite_dox.tag
 
 #This is needed with git because git doesn't create a dir if it's empty
 $(shell [ -d "_static" ] || mkdir -p _static)
@@ -50,12 +56,14 @@ clean:
 apidoc:
 	sphinx-apidoc -o _generated ../gwpy
 
-html: examples lalsuite_dox.tag
+html: $(CLIEXAMPLES) examples lalsuite_dox.tag
+	@cp -r $(BUILDDIR)/cli_examples $(BUILDDIR)/html
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
 dirhtml:
+	@cp -r $(BUILDDIR)/cli_examples $(BUILDDIR)/dirhtml
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/dirhtml."
@@ -180,6 +188,80 @@ examples/%.rst: export INDEX=$(addprefix examples/,$(dir $*))index.rst
 examples/%.rst: ex2rst.py ../examples/%.py examples/index.rst
 	@$(MAKE) $(INDEX)
 	python ex2rst.py ../examples/$*.py $@
+
+$(CLIEXAMPLEDIR):
+	@echo "building cli examples"
+	@mkdir -p $(CLIEXAMPLEDIR)/
+
+$(CLIEXAMPLEDIR)/cli-01.png: $(CLIEXAMPLEDIR)
+	@if [ ! -e $@ ];  then \
+		echo "cli-01.png"; \
+		$(CLIPROG) timeseries --chan L1:OAF-CAL_DARM_DQ \
+			--start 1102766651 --out $(CLIEXAMPLEDIR)/cli-01.png; \
+	fi
+
+$(CLIEXAMPLEDIR)/cli-02.png: $(CLIEXAMPLEDIR)
+	@if [ ! -e $@ ]; then \
+		echo "cli-02.png"; \
+		$(CLIPROG) spectrum --chan L1:OAF-CAL_DARM_DQ --start 1102766451 \
+			--start 1102766651  --out $(CLIEXAMPLEDIR)/cli-02.png; \
+	fi
+
+$(CLIEXAMPLEDIR)/cli-ts-01.png: $(CLIEXAMPLEDIR)
+	@if [ ! -e $@ ]; then \
+		echo "cli-ts-01"; \
+		$(CLIPROG) timeseries --chan L1:OAF-CAL_DARM_DQ --start 1107936100 \
+			--xmin 1107936100.2 --xmax 1107936100.25 --epoch 0.225 \
+			--duration 1 --out $(CLIEXAMPLEDIR)/cli-ts-01.png; \
+	fi
+
+$(CLIEXAMPLEDIR)/cli-ts-02.png: $(CLIEXAMPLEDIR)
+	@if [ ! -e $@ ]; then \
+		echo "cli-ts-02"; \
+		$(CLIPROG) timeseries --chan LVE-EX:X3_810BTORR.mean,m-trend \
+			--start 1072539420 --dur 36000 --logy \
+			--out $(CLIEXAMPLEDIR)/cli-ts-02.png; \
+	fi
+
+$(CLIEXAMPLEDIR)/cli-sp-01.png: $(CLIEXAMPLEDIR)
+	@if [ ! -e $@ ]; then \
+		echo "cli-sp-01"; \
+		$(CLIPROG) spectrum --chan L1:OAF-CAL_DARM_DQ --start 1107936067 \
+			--duration 120  --secpfft 10 --out $(CLIEXAMPLEDIR)/cli-sp-01.png; \
+	fi
+
+$(CLIEXAMPLEDIR)/cli-sp-02.png: $(CLIEXAMPLEDIR)
+	@if [ ! -e $@ ]; then \
+		echo "cli-sp-02"; \
+		$(CLIPROG) spectrum --chan L1:OAF-CAL_DARM_DQ --start 1107936067 \
+			--duration 120 --out $(CLIEXAMPLEDIR)/cli-sp-02.png --secpfft 10.000 \
+			--overlap 0.90 --nologf --fmin 500 --fmax 700; \
+	fi
+
+$(CLIEXAMPLEDIR)/cli-coh-01.png: $(CLIEXAMPLEDIR)
+	@if [ ! -e $@ ]; then \
+		echo "cli-coh-01"; \
+		$(CLIPROG) coherence --chan L1:LSC-SRCL_IN1_DQ L1:LSC-CARM_IN1_DQ \
+			--start 1107820816  --duration 900  \
+			--out $(CLIEXAMPLEDIR)/cli-coh-01.png \
+			--ref L1:LSC-SRCL_IN1_DQ --secpfft 8.0 --overlap 0.50 ;\
+	fi
+
+$(CLIEXAMPLEDIR)/cli-cohg-01.png: $(CLIEXAMPLEDIR)
+	@if [ ! -e $@ ]; then \
+		echo "cli-cohg-01"; \
+		$(CLIPROG) coherencegram --chan L1:LSC-SRCL_IN1_DQ L1:LSC-CARM_IN1_DQ \
+			--start 1107820816 --duration 900 \
+			--out $(CLIEXAMPLEDIR)/cli-cohg-01.png \
+			--ref L1:LSC-SRCL_IN1_DQ --secpfft 0.500 --overlap 0.90 ;\
+	fi
+
+$(CLIEXAMPLEDIR)/cli-spg-01.png: $(CLIEXAMPLEDIR)
+	@if [ ! -e $@ ]; then \
+		echo "cli-spg-01"; \
+		$(CLIPROG) spectrogram --chan L1:LSC-SRCL_IN1_DQ --start 1107937307 --dur 240 \
+		    --out $(CLIEXAMPLEDIR)/cli-spg-01.png; \
+	fi
 
 $(LALSUITE_DOXTAG):
 	wget --no-check-certificate https://www.lsc-group.phys.uwm.edu/daswg/projects/lal/nightly/docs/html/lalsuite_dox.tag -O $@ --quiet
