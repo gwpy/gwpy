@@ -1744,7 +1744,7 @@ class TimeSeriesDict(OrderedDict):
                 ifo = list(ifos)[0]
             else:
                 ifo = None
-            hostlist = ndsio.host_resolution_order(ifo)
+            hostlist = ndsio.host_resolution_order(ifo, epoch=start)
             for host, port in hostlist:
                 try:
                     return cls.fetch(channels, start, end, host=host,
