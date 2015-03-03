@@ -29,6 +29,7 @@ import warnings
 import nds2
 
 from .. import version
+from ..time import to_gps
 from .kerberos import *
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -89,7 +90,8 @@ class NDSWarning(UserWarning):
 warnings.simplefilter('always', NDSWarning)
 
 
-def host_resolution_order(ifo, env='NDSSERVER'):
+def host_resolution_order(ifo, env='NDSSERVER', epoch='now',
+                          lookback=14*86400):
     """Generate a logical ordering of NDS (host, port) tuples for this IFO
 
     Parameters
@@ -101,14 +103,19 @@ def host_resolution_order(ifo, env='NDSSERVER'):
         default ``'NDSSERVER'``. The contents of this variable should
         be a comma-separated list of `host:port` strings, e.g.
         ``'nds1.server.com:80,nds2.server.com:80'``
+    epoch : `~gwpy.time.LIGOTimeGPS`, `float`
+        GPS epoch of data requested
+    lookback : `float`
+        duration of spinning-disk cache. This value triggers defaulting to
+        the CIT NDS2 server over those at the LIGO sites
 
     Returns
     -------
     hro : `list` of `2-tuples <tuple>`
-        `list` of ``(host, port)`` tuples
+        ordered `list` of ``(host, port)`` tuples
     """
     hosts = []
-    # if NDSSERVER environment variable exists, it will contain a
+    # if given environment variable exists, it will contain a
     # comma-separated list of host:port strings giving the logical ordering
     if env and os.getenv(env):
         for host in os.getenv(env).split(','):
@@ -122,10 +129,19 @@ def host_resolution_order(ifo, env='NDSSERVER'):
                 hosts.append((host, port))
     # otherwise, return the server for this IFO and the backup at CIT
     else:
-        for difo in [ifo, None]:
-            if difo in DEFAULT_HOSTS:
-                hosts.append(DEFAULT_HOSTS[difo])
-    return hosts
+        if to_gps('now') - to_gps(epoch) > lookback:
+            ifolist = [None, ifo]
+        else:
+            ifolist = [ifo, None]
+        for difo in ifolist:
+            try:
+                host, port = DEFAULT_HOSTS[difo]
+            except KeyError:
+                warnings.warn('No default host found for ifo %r' % ifo)
+            else:
+                if (host, port) not in hosts:
+                    hosts.append((host, port))
+    return list(hosts)
 
 
 def auth_connect(host, port=None):
