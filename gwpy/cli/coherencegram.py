@@ -38,7 +38,7 @@ class Coherencegram(CliProduct):
     def init_cli(self, parser):
         """Set up the argument list for this product"""
         self.arg_chan2(parser)
-        self.arg_freq(parser)
+        self.arg_freq2(parser)
         self.arg_ax_linx(parser)
         self.arg_ax_ylf(parser)
         self.arg_ax_intlin(parser)
@@ -83,10 +83,10 @@ class Coherencegram(CliProduct):
         """Generate the plot from time series and arguments"""
         self.is_freq_plot = True
 
-        secpfft = 1
+        secpfft = 0.5
         if arg_list.secpfft:
             secpfft = float(arg_list.secpfft)
-        ovlp_frac = 0.5
+        ovlp_frac = 0.9
         if arg_list.overlap:
             ovlp_frac = float(arg_list.overlap)
         self.secpfft = secpfft
