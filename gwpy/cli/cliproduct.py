@@ -185,13 +185,23 @@ class CliProduct(object):
         return
 
     def arg_freq(self, parser):
-        """Parameters for FFT based plots"""
+        """Parameters for FFT based plots, with Spectral defaults"""
         self.is_freq_plot = True
         parser.add_argument('--secpfft', default='1.0',
                             help='length of fft in seconds ' +
-                                 'for each calculation')
+                                 'for each calculation, default = 1.0')
         parser.add_argument('--overlap', default='0.5',
-                            help='Overlap as fraction [0-1)')
+                            help='Overlap as fraction [0-1), default=0.5')
+        return
+
+    def arg_freq2(self, parser):
+        """Parameters for FFT based plots, with Coherencegram defaults"""
+        self.is_freq_plot = True
+        parser.add_argument('--secpfft', default='0.5',
+                            help='length of fft in seconds ' +
+                                 'for each calculation, default=0.5')
+        parser.add_argument('--overlap', default='0.9',
+                            help='Overlap as fraction [0-1), default=0.9')
         return
 
     def arg_plot(self, parser):
