@@ -676,8 +676,10 @@ class TimeSeries(Series):
         from ..spectrum import scale_timeseries_units
         # get parameters
         sampling = units.Quantity(self.sample_rate, 'Hz').value
-        fftlength = units.Quantity(fftlength, 's').value
-        overlap = units.Quantity(overlap, 's').value
+        if isinstance(fftlength, units.Quantity):
+            fftlength = units.Quantity(fftlength, 's').value
+        if isinstance(overlap, units.Quantity):
+            overlap = units.Quantity(overlap, 's').value
         nfft = int(fftlength * sampling)  # number of points per FFT
         noverlap = int(overlap * sampling)  # number of points of overlap
         nstride = nfft - noverlap  # number of points between FFTs
@@ -704,7 +706,7 @@ class TimeSeries(Series):
                                            **kwargs)[1]
         # normalize for over-dense grid
         density = nfft//nstride
-        weights = signal.triang(density, 6)
+        weights = signal.triang(density)
         for i in xrange(nsteps):
             # get indices of overlapping columns
             x0 = max(0, i+1-density)
