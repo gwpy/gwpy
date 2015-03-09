@@ -35,6 +35,22 @@ EVENT_TABLES = (lsctables.SnglBurstTable,
                 lsctables.MultiInspiralTable,
                 lsctables.SnglRingdownTable)
 
+TIME_COLUMN = {
+    lsctables.CoincInspiralTable.tableName: ('end_time', 'end_time_ns'),
+    lsctables.CoincRingdownTable.tableName: ('start_time', 'start_time_ns'),
+    lsctables.MultiBurstTable.tableName: ('peak_time', 'peak_time_ns'),
+    lsctables.MultiInspiralTable.tableName: ('end_time', 'end_time_ns'),
+    lsctables.SimBurstTable.tableName: ('time_geocent_gps',
+                                        'time_geocent_gps_ns'),
+    lsctables.SimInspiralTable.tableName: ('geocent_end_time',
+                                           'geocent_end_time_ns'),
+    lsctables.SimRingdownTable.tableName: ('geocent_start_time',
+                                           'geocent_start_time_ns'),
+    lsctables.SnglBurstTable.tableName: ('peak_time', 'peak_time_ns'),
+    lsctables.SnglInspiralTable.tableName: ('end_time', 'end_time_ns'),
+    lsctables.SnglRingdownTable.tableName: ('start_time', 'start_time_ns'),
+}
+
 
 def get_table_column(table, column, dtype=numpy.dtype(float)):
     """Extract a column from the given table.
