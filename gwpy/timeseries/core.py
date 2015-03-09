@@ -629,6 +629,97 @@ class TimeSeries(Series):
         out.sort(key=lambda spec: spec.epoch.gps)
         return out.join()
 
+    def spectrogram2(self, fftlength, overlap=0, window='hanning',
+                     scaling='density', **kwargs):
+        """Calculate the non-averaged power `Spectrogram` of this `TimeSeries`
+
+        Parameters
+        ----------
+        fftlength : `float`
+            number of seconds in single FFT.
+        overlap : `float`, optional
+            number of seconds between FFTs.
+        window : `str` or `tuple` or `array-like`, optional
+            desired window to use. See `~scipy.signal.get_window` for a list
+            of windows and required parameters. If `window` is array_like it
+            will be used directly as the window.
+        scaling : [ 'density' | 'spectrum' ], optional
+            selects between computing the power spectral density ('density')
+            where the `Spectrogram` has units of V**2/Hz if the input is
+            measured in V and computing the power spectrum ('spectrum')
+            where the `Spectrogram` has units of V**2 if the input is
+            measured in V. Defaults to 'density'.
+        **kwargs
+            other parameters to be passed to `scipy.signal.periodogram` for
+            each column of the `Spectrogram`
+
+        Returns
+        -------
+        spectrogram: `~gwpy.spectrogram.Spectrogram`
+            a power `Spectrogram` with `1/fftlength` frequency resolution and
+            (fftlength - overlap) time resolution.
+
+        See also
+        --------
+        scipy.signal.periodogram
+            for documentation on the Fourier methods used in this calculation
+
+        Notes
+        -----
+        This method calculates overlapping periodograms for all possible
+        chunks of data entirely containing within the span of the input
+        `TimeSeries`, then normalises the power in overlapping chunks using
+        a triangular window centred on that chunk which most overlaps the
+        given `Spectrogram` time sample.
+        """
+        from ..spectrogram import Spectrogram
+        from ..spectrum import scale_timeseries_units
+        # get parameters
+        sampling = units.Quantity(self.sample_rate, 'Hz').value
+        fftlength = units.Quantity(fftlength, 's').value
+        overlap = units.Quantity(overlap, 's').value
+        nfft = int(fftlength * sampling)  # number of points per FFT
+        noverlap = int(overlap * sampling)  # number of points of overlap
+        nstride = nfft - noverlap  # number of points between FFTs
+
+        # create output object
+        nsteps = int(self.size // nstride)  # number of columns
+        nfreqs = int(nfft // 2 + 1)  # number of rows
+        unit = scale_timeseries_units(self.unit, scaling)
+        tmp = numpy.zeros((nsteps, nfreqs), dtype=self.dtype)
+        out = Spectrogram(numpy.zeros((nsteps, nfreqs), dtype=self.dtype),
+                          epoch=self.epoch, channel=self.channel,
+                          name=self.name, unit=unit, dt=fftlength-overlap,
+                          f0=0, df=1/fftlength)
+
+        # calculate overlapping periodograms
+        for i in xrange(nsteps):
+            idx = i * nstride
+            # don't proceed past end of data, causes artefacts
+            if idx+nfft > self.size:
+                break
+            ts = self.data[idx:idx+nfft]
+            tmp[i, :] = signal.periodogram(ts, fs=sampling, window=window,
+                                           nfft=nfft, scaling=scaling,
+                                           **kwargs)[1]
+        # normalize for over-dense grid
+        density = nfft//nstride
+        weights = signal.triang(density, 6)
+        for i in xrange(nsteps):
+            # get indices of overlapping columns
+            x0 = max(0, i+1-density)
+            x1 = min(i+1, nsteps-density+1)
+            if x0 == 0:
+                w = weights[-x1:]
+            elif x1 == nsteps - density + 1:
+                w = weights[:x1-x0]
+            else:
+                w = weights
+            # calculate weighted average
+            out[i, :] = numpy.average(tmp[x0:x1], axis=0, weights=w)
+
+        return out
+
     def fftgram(self, stride):
         """Calculate the Fourier-gram of this `TimeSeries`.
 
