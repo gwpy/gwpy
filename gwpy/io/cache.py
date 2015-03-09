@@ -26,6 +26,7 @@ from six import string_types
 import warnings
 
 from glue.lal import (Cache, CacheEntry)
+from glue.ligolw.table import Table
 
 from astropy.io.registry import _get_valid_format
 
@@ -204,7 +205,10 @@ def read_cache(cache, target, nproc, post, *args, **kwargs):
     # combine and return
     data = zip(*sorted(pout, key=lambda out: out[0]))[1]
     try:
-        out = data[0].copy()
+        if issubclass(target, Table):
+            out = data[0]
+        else:
+            out = data[0].copy()
     except AttributeError:
         out = data[0]
     for datum in data[1:]:

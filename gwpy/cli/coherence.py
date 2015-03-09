@@ -141,8 +141,8 @@ class Coherence(CliProduct):
         # if the specified frequency limits adjust our ymin and ymax values
         # at this point self.ymin and self.ymax represent the full spectra
         import numpy
-        mymin = numpy.min(cohs[0])
-        mymax = numpy.max(cohs[0])
+        mymin = cohs[0].data.min()
+        mymax = cohs[0].data.max()
         myfmin = 1/self.secpfft * cohs[0].frequencies.unit
         myfmax = maxfs/2
         if arg_list.fmin:
