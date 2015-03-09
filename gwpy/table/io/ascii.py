@@ -27,12 +27,26 @@ Each specific ASCII table format should define their own line parser
 
 from numpy import loadtxt
 
-from .. import lsctables
+from astropy.io.registry import (register_reader, register_identifier)
+
+from glue.ligolw.table import (reassign_ids, StripTableName)
+
+from ..lsctables import (New, TableByName)
+from ..utils import TIME_COLUMN
 from ... import version
 from ...io.cache import file_list
+from ...io.utils import identify_factory
+from ...time import LIGOTimeGPS
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
+
+
+def return_reassign_ids(elem):
+    """Wrapper to `glue.ligolw.table.reassign_ids` that returns
+    """
+    reassign_ids(elem)
+    return elem
 
 
 def table_from_ascii_factory(table, format, trig_func, cols=None, comments='#',
@@ -49,9 +63,19 @@ def table_from_ascii_factory(table, format, trig_func, cols=None, comments='#',
         method to convert one row of data (from `numpy.loadtxt`) into an event
     cols : `list` of `str`
         list of columns that can be read by default for this format
+    comments : `str`, optional, default: `'#'`
+        character used for comments in this format
+    delimiter : `str, optional, default: `None`
+        character used for column delimiter in this format
+
+    Returns
+    -------
+    row_reader : `function`
+        function that can be used to read a row of this table from ascii.
+        The returned function natively supports multi-processing.
     """
     def table_from_ascii_rows(
-            f, format=None, columns=cols, filt=None, nproc=1):
+            f, columns=cols, filt=None, nproc=1):
         """Build a `~{0}` from events in an ASCII file.
 
         Parameters
@@ -79,20 +103,28 @@ def table_from_ascii_factory(table, format, trig_func, cols=None, comments='#',
         table : `~{0}`
             a new `~{0}` filled with yummy data
         """.format(table.__name__)
-        # allow multiprocessing
-        if nproc != 1:
-            from .cache import read_cache
-            return read_cache(f, table.tableName,
-                              columns=columns, nproc=nproc, format=format)
-
         # format list of files
         files = file_list(f)
 
-        # generate output
+        # allow multiprocessing
+        if nproc != 1:
+            from ...io.cache import read_cache
+            return read_cache(files, table, nproc, return_reassign_ids,
+                              columns=columns, format=format)
+
+        # work out columns to read from ASCII
         if columns is None:
             columns = cols
+        else:
+            columns = list(columns)
+        # and translate them into LIGO_LW columns (only for 'time')
+        ligolwcolumns = list(columns)
+        if 'time' in columns and table.tableName in TIME_COLUMN:
+            ligolwcolumns.remove('time')
+            ligolwcolumns.extend(TIME_COLUMN[table.tableName])
 
-        out = lsctables.New(table, columns=columns)
+        # generate output
+        out = New(table, columns=ligolwcolumns)
         append = out.append
 
         # iterate over events
@@ -100,8 +132,71 @@ def table_from_ascii_factory(table, format, trig_func, cols=None, comments='#',
             dat = loadtxt(fp, comments=comments, delimiter=delimiter)
             for line in dat:
                 row = trig_func(line, columns=columns)
-                row.event_id = out.get_next_id()
+                if 'event_id' in ligolwcolumns:
+                    row.event_id = out.get_next_id()
                 if filt is None or filt(row):
                     append(row)
         return out
     return table_from_ascii_rows
+
+
+def row_from_ascii_factory(table, delimiter):
+    """Build a generic ASCII table row reader for the given delimiter
+    """
+    name = table.tableName
+    RowType = table.RowType
+    tcols = TIME_COLUMN.get(name, None)
+
+    def row_from_ascii(line, columns):
+        """Build a `~{0}` from a line of ASCII data
+
+        Parameters
+        ----------
+        line : `str`, `array-like`
+            a line of ASCII data, either as a delimited string, or an array
+        columns : `list` of `str`
+            the names of each of the ASCII columns, give 'time' for 'standard'
+            time columns for a given table (e.g. 'end_time', and 'end_time_ns'
+            for `SnglInspiralTable`)
+        delimiter : `str`, optional, default: any whitespace
+            the ASCII delimiter, only needed if `line` is given as a `str`
+
+        Returns
+        -------
+        {1}: `~{0}`
+            a new `~{0}` filled with data
+
+        Raises
+        ------
+        AttributeError
+            if any column is not recognised
+        """.format(RowType.__name__, StripTableName(name))
+        row = table.RowType()
+        if isinstance(line, str):
+            line = line.rstrip('\n').split(delimiter)
+        line = map(float, line)
+        for datum, colname in zip(line, columns):
+            if colname == 'time' and tcols is not None:
+                t = LIGOTimeGPS(datum)
+                setattr(row, tcols[0], t.seconds)
+                setattr(row, tcols[1], t.nanoseconds)
+            else:
+                try:
+                    getattr(row, 'set_%s' % colname)(datum)
+                except AttributeError:
+                    setattr(row, colname, datum)
+        return row
+    return row_from_ascii
+
+# register generic ASCII parsing for all tables
+for table in TableByName.itervalues():
+    # register whitespace-delimited ASCII
+    register_reader(
+        'ascii', table, table_from_ascii_factory(
+            table, 'ascii', row_from_ascii_factory(table, None)))
+    register_identifier('ascii', table, identify_factory('txt', 'txt.gz'))
+    # register csv
+    register_reader(
+        'csv', table, table_from_ascii_factory(
+            table, 'csv', row_from_ascii_factory(table, ','), delimiter=','))
+    register_identifier('csv', table, identify_factory('csv', 'csv.gz'))
