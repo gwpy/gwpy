@@ -685,7 +685,7 @@ class TimeSeries(Series):
         nstride = nfft - noverlap  # number of points between FFTs
 
         # create output object
-        nsteps = int(self.size // nstride)  # number of columns
+        nsteps = int(self.size // nstride) - 1  # number of columns
         nfreqs = int(nfft // 2 + 1)  # number of rows
         unit = scale_timeseries_units(self.unit, scaling)
         tmp = numpy.zeros((nsteps, nfreqs), dtype=self.dtype)
