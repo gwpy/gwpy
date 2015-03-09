@@ -26,7 +26,7 @@ from numpy import loadtxt
 
 from astropy.io import registry
 
-from .ascii import ascii_table_factory
+from .ascii import table_from_ascii_factory
 from ..lsctables import (SnglBurstTable, SnglBurst)
 from ... import version
 from ...io.cache import file_list
@@ -71,7 +71,8 @@ def sngl_burst_from_omega(line, columns=OMEGA_COLUMNS):
     t.search = u'omega'
 
     if isinstance(line, str):
-        line = map(float, line.rstrip('\n').split())
+        line = line.rstrip('\n').split()
+    line = map(float, line)
     try:
         peak, freq, duration, band, nerg, clst_size, clst_nerg, clst_N = line
     except IndexError:
@@ -213,12 +214,12 @@ def sngl_burst_from_omegadq(line, columns=OMEGADQ_COLUMNS):
 # register OmegaDQ
 registry.register_reader(
     'omegadq', SnglBurstTable,
-    ascii_table_factory(SnglBurstTable, 'omegadq',
-                        sngl_burst_from_omegadq, OMEGADQ_COLUMNS))
+    table_from_ascii_factory(SnglBurstTable, 'omegadq',
+                             sngl_burst_from_omegadq, OMEGADQ_COLUMNS))
 
 # register Omega
 registry.register_reader(
     'omega', SnglBurstTable,
-    ascii_table_factory(SnglBurstTable, 'omega',
-                        sngl_burst_from_omega, OMEGA_COLUMNS,
-                        comments='%'))
+    table_from_ascii_factory(SnglBurstTable, 'omega',
+                             sngl_burst_from_omega, OMEGA_COLUMNS,
+                             comments='%'))
