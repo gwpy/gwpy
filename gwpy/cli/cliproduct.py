@@ -644,10 +644,13 @@ class CliProduct(object):
 
         # image plots don't have legends
         if not self.is_image():
-            self.ax.legend(prop={'size': 10})
+            leg = self.ax.legend(prop={'size': 10})
             # if only one series is plotted hide legend
-            if self.n_datasets == 1 and self.ax.legend_:
-                self.ax.legend_.remove()
+            if self.n_datasets == 1 and leg:
+                try:
+                    leg.remove()
+                except NotImplementedError:
+                    leg.set_visible(False)
 
         # add titles
         title = ''
