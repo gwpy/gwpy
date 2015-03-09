@@ -35,8 +35,8 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 
-def ascii_table_factory(table, format, trig_func, cols=None, comments='#',
-                        delimiter=None):
+def table_from_ascii_factory(table, format, trig_func, cols=None, comments='#',
+                             delimiter=None):
     """Build a table reader for the given format
 
     Parameters
@@ -50,7 +50,8 @@ def ascii_table_factory(table, format, trig_func, cols=None, comments='#',
     cols : `list` of `str`
         list of columns that can be read by default for this format
     """
-    def table_from_ascii(f, format=None, columns=cols, filt=None, nproc=1):
+    def table_from_ascii_rows(
+            f, format=None, columns=cols, filt=None, nproc=1):
         """Build a `~{0}` from events in an ASCII file.
 
         Parameters
@@ -103,4 +104,4 @@ def ascii_table_factory(table, format, trig_func, cols=None, comments='#',
                 if filt is None or filt(row):
                     append(row)
         return out
-    return table_from_ascii
+    return table_from_ascii_rows
