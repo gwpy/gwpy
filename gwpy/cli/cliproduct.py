@@ -531,7 +531,7 @@ class CliProduct(object):
                 scale = False
                 self.ax.set_xscale('auto-gps')
 
-                if not epoch is None:
+                if epoch is not None:
                     # note zero is also false
                     if epoch > 0 and epoch < 1e8:
                         epoch += self.xmin       # specified as seconds
@@ -549,7 +549,7 @@ class CliProduct(object):
                         if epoch is None:
                             arg_list.xlabel = 'GPS Time'
                 if self.ax.get_xscale() == 'gps':
-                   for l in self.ax.xaxis.get_ticklabels():
+                    for l in self.ax.xaxis.get_ticklabels():
                         l.set_rotation(25)
                         l.set_ha('right')
             elif self.xaxis_type == 'logx':
