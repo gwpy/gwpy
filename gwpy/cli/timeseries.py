@@ -105,8 +105,8 @@ class TimeSeries(CliProduct):
 
                 if e >= self.timeseries[idx].size:
                     e = self.timeseries[idx].size - 1
-                new_ymin = min(new_ymin, npmin(self.timeseries[idx][b:e]))
-                new_ymax = max(new_ymax, npmax(self.timeseries[idx][b:e]))
+                new_ymin = min(new_ymin, npmin(self.timeseries[idx].data[b:e]))
+                new_ymax = max(new_ymax, npmax(self.timeseries[idx].data[b:e]))
             self.ymin = new_ymin
             self.ymax = new_ymax
         if self.yscale_factor > 1:
