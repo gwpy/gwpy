@@ -532,6 +532,19 @@ class TimeSeries(Series):
         # format FFT parameters
         if fftlength is None:
             fftlength = stride
+        stride = units.Quantity(stride, 's').value
+        fftlength = units.Quantity(fftlength, 's').value
+        overlap = units.Quantity(overlap, 's').value
+
+        # sanity check parameters
+        if stride > abs(self.span):
+            raise ValueError("stride cannot be greater than the duration of "
+                             "this TimeSeries")
+        if fftlength > stride:
+            raise ValueError("fftlength cannot be greater than stride")
+        if overlap >= fftlength:
+            raise ValueError("overlap must be less than fftlength")
+
 
         # get size of spectrogram
         nsamp = int((stride * self.sample_rate).decompose().value)
@@ -680,6 +693,15 @@ class TimeSeries(Series):
             fftlength = units.Quantity(fftlength, 's').value
         if isinstance(overlap, units.Quantity):
             overlap = units.Quantity(overlap, 's').value
+
+        # sanity check
+        if fftlength > abs(self.span):
+            raise ValueError("fftlength cannot be greater than the duration "
+                             "of this TimeSeries")
+        if overlap >= fftlength:
+            raise ValueError("overlap must be less than fftlength")
+
+        # convert to samples
         nfft = int(fftlength * sampling)  # number of points per FFT
         noverlap = int(overlap * sampling)  # number of points of overlap
         nstride = nfft - noverlap  # number of points between FFTs
