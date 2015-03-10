@@ -99,9 +99,9 @@ class TimeSeries(CliProduct):
                     strt += x0
                 if stop < 1e8:
                     stop += x0
-                b = max(0, (strt - x0) / dt)
+                b = int(max(0, (strt - x0) / dt))
 
-                e = min(self.xmax, (stop - x0) / dt)
+                e = int(min(self.xmax, (stop - x0) / dt))
 
                 if e >= self.timeseries[idx].size:
                     e = self.timeseries[idx].size - 1

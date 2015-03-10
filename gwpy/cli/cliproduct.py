@@ -185,13 +185,23 @@ class CliProduct(object):
         return
 
     def arg_freq(self, parser):
-        """Parameters for FFT based plots"""
+        """Parameters for FFT based plots, with Spectral defaults"""
         self.is_freq_plot = True
         parser.add_argument('--secpfft', default='1.0',
                             help='length of fft in seconds ' +
-                                 'for each calculation')
+                                 'for each calculation, default = 1.0')
         parser.add_argument('--overlap', default='0.5',
-                            help='Overlap as fraction [0-1)')
+                            help='Overlap as fraction [0-1), default=0.5')
+        return
+
+    def arg_freq2(self, parser):
+        """Parameters for FFT based plots, with Coherencegram defaults"""
+        self.is_freq_plot = True
+        parser.add_argument('--secpfft', default='0.5',
+                            help='length of fft in seconds ' +
+                                 'for each calculation, default=0.5')
+        parser.add_argument('--overlap', default='0.9',
+                            help='Overlap as fraction [0-1), default=0.9')
         return
 
     def arg_plot(self, parser):
@@ -513,7 +523,7 @@ class CliProduct(object):
                     xmax = al_xmax
 
             if self.xaxis_type == 'linx':
-                epoch = 0
+                epoch = None
                 if arg_list.epoch:
                     epoch = float(arg_list.epoch)
                     self.log(3, ('Epoch set to %.2f' % epoch))
@@ -521,18 +531,27 @@ class CliProduct(object):
                 scale = False
                 self.ax.set_xscale('auto-gps')
 
-                if epoch < 1e8:
-                    epoch += self.xmin       # specified as seconds
-                    # from start GPS
-                self.ax.set_epoch(epoch)
+                if epoch is not None:
+                    # note zero is also false
+                    if epoch > 0 and epoch < 1e8:
+                        epoch += self.xmin       # specified as seconds
+                        self.ax.set_epoch(epoch)
+                    elif epoch == 0:
+                        self.ax.set_xscale('gps')
+                        self.ax.set_epoch(0)
                 if arg_list.logx:
                     scale = 'log'
                 elif not (self.get_xlabel() or arg_list.xlabel):
                     # duplicate default label except use parens not brackets
                     xscale = self.ax.xaxis._scale
-                    epoch = xscale.get_epoch()
-                    if epoch is None:
-                        arg_list.xlabel = 'GPS Time'
+                    if self.ax.get_xscale() == 'auto-gps':
+                        epoch = xscale.get_epoch()
+                        if epoch is None:
+                            arg_list.xlabel = 'GPS Time'
+                if self.ax.get_xscale() == 'gps':
+                    for l in self.ax.xaxis.get_ticklabels():
+                        l.set_rotation(25)
+                        l.set_ha('right')
             elif self.xaxis_type == 'logx':
                 if arg_list.nologx:
                     scale = 'linear'
@@ -728,7 +747,7 @@ class CliProduct(object):
         self.show_plot_info()
 
         # change the label for GPS time so Josh is happy
-        if self.ax.xaxis._scale.name == 'auto-gps':
+        if self.ax.get_xscale() == 'auto-gps':
             import re
             xscale = self.ax.xaxis._scale
             epoch = xscale.get_epoch()

@@ -135,7 +135,7 @@ class Spectrogram(CliProduct):
                              r'{\sqrt{\mathrm{Hz}}}\right)$'
         else:
             self.plot = specgram.plot(norm='log', vmin=imin, vmax=imax)
-            self.scaleText = r'$log_{10} ASD \left(\frac{\mathrm{Counts}}' \
+            self.scaleText = r'$ASD \left(\frac{\mathrm{Counts}}' \
                              r'{\sqrt{\mathrm{Hz}}}\right)$'
         # pass the image limits back to the annotater
         self.imin = imin
