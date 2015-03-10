@@ -69,7 +69,7 @@ class Spectrogram(CliProduct):
         """Generate the plot from time series and arguments"""
         self.is_freq_plot = True
 
-        from numpy import min, max, percentile
+        from numpy import percentile
 
         secpfft = 1
         if arg_list.secpfft:
@@ -104,8 +104,8 @@ class Spectrogram(CliProduct):
         self.xmax = self.timeseries[0].times.data.max()
 
         # set intensity (color) limits
-        imin = min(specgram).value
-        imax = max(specgram).value
+        imin = specgram.data.min()
+        imax = specgram.data.max()
         if arg_list.imin:
             lo = float(arg_list.imin)
         else:
