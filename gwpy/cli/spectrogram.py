@@ -87,8 +87,17 @@ class Spectrogram(CliProduct):
         stride = max(2*secpfft, stride)
         fs = self.timeseries[0].sample_rate.value
 
-        specgram = self.timeseries[0].spectrogram(stride, fftlength=secpfft,
-                                                  overlap=ovlp_sec) ** (1/2.)
+        # based on the number of FFT calculation choose between
+        # high time resolution and high SNR
+        snr_nfft = self.dur / (secpfft * stride)
+        if (snr_nfft > 512):
+            specgram = self.timeseries[0].spectrogram(stride,
+                                                      fftlength=secpfft,
+                                                      overlap=ovlp_sec)
+        else:
+            specgram = self.timeseries[0].spectrogram2(fftlength=secpfft,
+                                                      overlap=ovlp_sec)
+        specgram = specgram ** (1/2.) # ASD
 
         norm = False
         if arg_list.norm:
