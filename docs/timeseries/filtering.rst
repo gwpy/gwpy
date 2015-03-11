@@ -24,9 +24,20 @@ The following methods of the `TimeSeries` provide functionality for band-passing
 General filtering
 =================
 
-While the above methods provide an easy way to remove unwanted frequency information, the :meth:`~TimeSeries.filter` method provides a way to apply a generic filter to any `TimeSeries` data:
+While the above methods provide an easy way to remove unwanted frequency information, the :meth:`~TimeSeries.zpk` and, more generally, :meth:`~TimeSeries.filter` methods provide a way to apply a general filters to any `TimeSeries` data:
 
 .. autosummary::
 
+   TimeSeries.zpk
    TimeSeries.filter
 
+========
+Examples
+========
+
+See the following examples for usage of the above functions:
+
+.. toctree::
+   :maxdepth: 1
+
+   ../examples/timeseries/filter
