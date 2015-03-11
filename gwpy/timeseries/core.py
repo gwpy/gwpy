@@ -915,7 +915,7 @@ class TimeSeries(Series):
             the maximum loss in the passband (dB).
         gstop : `float`
             the minimum attenuation in the stopband (dB).
-        stop: `float`
+        stop : `float`
             stop-band edge frequency, defaults to `frequency/2`
 
         Returns
@@ -925,8 +925,8 @@ class TimeSeries(Series):
 
         See Also
         --------
-        signal.buttord
-        signal.butter
+        scipy.signal.buttord
+        scipy.signal.butter
             for details on how the filter is designed
         TimeSeries.filter
             for details on how the filter is applied
@@ -973,8 +973,8 @@ class TimeSeries(Series):
 
         See Also
         --------
-        signal.buttord
-        signal.butter
+        scipy.signal.buttord
+        scipy.signal.butter
             for details on how the filter is designed
         TimeSeries.filter
             for details on how the filter is applied
@@ -1021,7 +1021,8 @@ class TimeSeries(Series):
 
         See Also
         --------
-        signal.buttord, signal.butter
+        scipy.signal.buttord
+        scipy.signal.butter
             for details on how the filter is designed
         TimeSeries.filter
             for details on how the filter is applied
@@ -1151,7 +1152,8 @@ class TimeSeries(Series):
     def filter(self, *filt):
         """Apply the given filter to this `TimeSeries`.
 
-        Recognised filter arguments are converted into the standard
+        All recognised filter arguments are converted either into cascading
+        second-order sections (if scipy >= 0.16 is installed), or into the
         ``(numerator, denominator)`` representation before being applied
         to this `TimeSeries`.
 
@@ -1173,8 +1175,8 @@ class TimeSeries(Series):
             one of:
 
             - :class:`scipy.signal.lti`
-            - `M`x`N` `numpy.ndarray` of second-order-sections
-              (`scipy>=0.16.0` only)
+            - `MxN` `numpy.ndarray` of second-order-sections
+              (`scipy` >= 0.16 only)
             - ``(numerator, denominator)`` polynomials
             - ``(zeros, poles, gain)``
             - ``(A, B, C, D)`` 'state-space' representation
