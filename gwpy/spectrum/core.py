@@ -122,12 +122,50 @@ class Spectrum(Series):
         from ..plotter import SpectrumPlot
         return SpectrumPlot(self, **kwargs)
 
+    def zpk(self, zeros, poles, gain):
+        """Filter this `Spectrum` by applying a zero-pole-gain filter
+
+        Parameters
+        ----------
+        zeros : `array-like`
+            list of zero frequencies (in Hertz)
+        poles : `array-like`
+            list of pole frequencies (in Hertz)
+        gain : `float`
+            DC gain of filter
+
+        Returns
+        -------
+        spectrum : `Spectrum`
+            the frequency-domain filtered version of the input data
+
+        See Also
+        --------
+        Spectrum.filter
+            for details on how a digital ZPK-format filter is applied
+
+        Examples
+        --------
+        To apply a zpk filter with file poles at 100 Hz, and five zeros at
+        1 Hz (giving an overall DC gain of 1e-10)::
+
+            >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
+        """
+        return self.filter(zeros, poles, gain)
+
     def filter(self, *filt, **kwargs):
         """Apply the given filter to this `Spectrum`.
 
         Recognised filter arguments are converted into the standard
         ``(numerator, denominator)`` representation before being applied
         to this `Spectrum`.
+
+        .. note::
+
+           Unlike the related
+           :meth:`TimeSeries.filter <gwpy.timeseries.TimeSeries.filter>`
+           method, here all frequency information (e.g. frequencies of
+           poles or zeros in a ZPK) is assumed to be in Hertz.
 
         Parameters
         ----------
@@ -146,6 +184,8 @@ class Spectrum(Series):
 
         See also
         --------
+        Spectrum.zpk
+            for information on filtering in zero-pole-gain format
         scipy.signal.zpk2tf
             for details on converting ``(zeros, poles, gain)`` into
             transfer function format
@@ -154,13 +194,6 @@ class Spectrum(Series):
             format
         scipy.signal.freqs
             for details on the filtering calculation
-
-        Examples
-        --------
-        To apply a zpk filter with a pole at 0 Hz, a zero at 100 Hz and
-        a gain of 25::
-
-            >>> data2 = data.filter([100], [0], 25)
 
         Raises
         ------
