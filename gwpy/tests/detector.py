@@ -20,6 +20,7 @@
 """
 
 import sys
+from urllib2 import URLError
 
 if sys.version_info < (2, 7):
     import unittest2 as unittest
@@ -65,6 +66,12 @@ class ChannelTests(unittest.TestCase):
     def test_query(self):
         try:
             new = Channel.query(self.channel)
+        except URLError as e:
+            msg = str(e)
+            if ('timed out' in msg.lower() or
+                'connection reset' in msg.lower()):
+                self.skipTest(msg)
+            raise
         except Exception as e:
             try:
                 import kerberos
