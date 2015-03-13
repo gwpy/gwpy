@@ -284,7 +284,7 @@ except ImportError as e:
 # don't use setup_requires if just checking for information
 # (credit: matplotlib/setup.py)
 setup_requires = []
-if '--help' not in sys.argv:
+if '--help' not in sys.argv and '--help-commands' not in sys.argv:
     dist_ = Distribution({'cmdclass': cmdclass})
     dist_.parse_config_files()
     dist_.parse_command_line()
