@@ -78,7 +78,7 @@ class Coherence(CliProduct):
             ref_name = arg_list.ref
         else:
             ref_name = self.timeseries[0].channel.name
-
+        self.log(3, 'Reference channel: ' + ref_name)
         # we don't want to compare the reference channel to itself
         # at a different time
         next_ts = 0
