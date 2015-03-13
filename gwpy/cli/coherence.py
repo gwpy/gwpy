@@ -74,7 +74,10 @@ class Coherence(CliProduct):
         self.overlap = ovlap_frac
         maxfs = 0
 
-        ref_name = self.timeseries[0].channel.name
+        if arg_list.ref:
+            ref_name = arg_list.ref
+        else:
+            ref_name = self.timeseries[0].channel.name
 
         # we don't want to compare the reference channel to itself
         # at a different time
