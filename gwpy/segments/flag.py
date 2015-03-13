@@ -858,9 +858,9 @@ class DataQualityDict(OrderedDict):
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
         elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(args[0]))
+            qsegs = SegmentList(Segment(map(to_gps, args[0])))
         elif len(args) == 2:
-            qsegs = SegmentList([Segment(args)])
+            qsegs = SegmentList([Segment(map(to_gps, args))])
         else:
             raise ValueError("DataQualityDict.query must be called with a "
                              "flag name, and either GPS start and stop times, "
