@@ -121,7 +121,7 @@ class GitStatus(object):
             start = ''
         else:
             start = '%s..' % tag.name
-        return self.repo.git.rev_list('%sHEAD' % start).count('\n') + 1
+        return self.repo.git.rev_list('%sHEAD' % start).count('\n')
 
     @property
     def version(self):
