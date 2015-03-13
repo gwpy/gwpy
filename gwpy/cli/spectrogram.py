@@ -101,7 +101,7 @@ class Spectrogram(CliProduct):
 
         norm = False
         if arg_list.norm:
-            specgram = specgram.ratio('mean')
+            specgram = specgram.ratio('median')
             norm = True
 
         # set default frequency limits
@@ -126,17 +126,15 @@ class Spectrogram(CliProduct):
 
         if arg_list.imax:
             up = float(arg_list.imax)
-        elif norm:
-            up = 4
         else:
             up = 100
-        if norm or arg_list.nopct:
+        if arg_list.nopct:
             imax = up
         else:
             imax = percentile(specgram, up)
 
         if norm:
-            self.plot = specgram.plot(vmin=imin, vmax=imax)
+            self.plot = specgram.plot(norm='log', vmin=imin, vmax=imax)
             self.scaleText = 'Normalized to mean'
         elif arg_list.lincolors:
             self.plot = specgram.plot(vmin=imin, vmax=imax)
