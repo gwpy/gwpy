@@ -86,6 +86,11 @@ VERSION_PY = os.path.join(PACKAGENAME, 'version.py')
 class GWpyClean(clean):
     def run(self):
         if self.all:
+            # remove dist
+            if os.path.exists('dist'):
+                remove_tree('dist')
+            else:
+                log.warn("'dist' does not exist -- can't clean it")
             # remove docs
             sphinx_dir = os.path.join(self.build_base, 'sphinx')
             if os.path.exists(sphinx_dir):
