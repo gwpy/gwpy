@@ -168,7 +168,7 @@ class SegmentAxes(TimeSeriesAxes):
         out = []
         for lab, flag in flags.iteritems():
             if label.lower() == 'name':
-                lab = ts.name
+                lab = flag.name
             elif label.lower() != 'key':
                 lab = label
             out.append(self.plot(flag, label=rUNDERSCORE.sub(r'\_', lab),
