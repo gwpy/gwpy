@@ -96,8 +96,8 @@ class Spectrogram(CliProduct):
                                                       overlap=ovlp_sec)
         else:
             specgram = self.timeseries[0].spectrogram2(fftlength=secpfft,
-                                                      overlap=ovlp_sec)
-        specgram = specgram ** (1/2.) # ASD
+                                                       overlap=ovlp_sec)
+        specgram = specgram ** (1/2.)   # ASD
 
         norm = False
         if arg_list.norm:
