@@ -176,7 +176,7 @@ class SegmentAxes(TimeSeriesAxes):
         return out
 
     @auto_refresh
-    def plot_dqflag(self, flag, y=None, known='x', facecolor='green',
+    def plot_dqflag(self, flag, y=None, known='red', facecolor=(0.2, 0.8, 0.2),
                     **kwargs):
         """Plot a :class:`~gwpy.segments.DataQualityFlag`
         onto these axes
