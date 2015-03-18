@@ -277,3 +277,40 @@ class Spectrum(Series):
                        self.f0.value, self.df.value, unit, self.size)
         lalfs.data.data = self.data
         return lalfs
+
+    @classmethod
+    def from_pycbc(cls, fs):
+        """Convert a `pycbc.types.frequencyseries.FrequencySeries` into
+        a `Spectrum`
+
+        Parameters
+        ----------
+        fs : `pycbc.types.frequencyseries.FrequencySeries`
+            the input PyCBC `~pycbc.types.frequencyseries.FrequencySeries`
+            array
+
+        Returns
+        -------
+        spectrum : `Spectrum`
+            a GWpy version of the input frequency series
+        """
+        """
+        return cls(fs.data, f0=0, df=fs.delta_f, epoch=fs.epoch)
+
+    @with_import('pycbc.types')
+    def to_pycbc(self, copy=True):
+        """Convert this `Spectrum` into a
+        `pycbc.types.frequencyseries.FrequencySeries`
+
+        Parameters
+        ----------
+        copy : `bool`, optional, default: `True`
+            if `True`, copy these data to a new array
+
+        Returns
+        -------
+        frequencyseries : `pycbc.types.frequencyseries.FrequencySeries`
+            a PyCBC representation of this `Spectrum`
+        """
+        return types.FrequencySeries(self.data, delta_f=self.df.to('Hz').value,
+                                     epoch=self.epoch.gps, copy=copy)
