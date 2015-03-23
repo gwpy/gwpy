@@ -135,13 +135,8 @@ class Spectrogram(CliProduct):
             imax = percentile(specgram, up)
 
         if norm:
-<<<<<<< HEAD
-            self.plot = specgram.plot(vmin=imin, vmax=imax)
-            self.scaleText = 'Normalized to median'
-=======
             self.plot = specgram.plot(norm='log', vmin=imin, vmax=imax)
-            self.scaleText = 'Normalized to mean'
->>>>>>> upstream/master
+            self.scaleText = 'Normalized to median'
         elif arg_list.lincolors:
             self.plot = specgram.plot(vmin=imin, vmax=imax)
             self.scaleText = r'ASD $\left( \frac{\mathrm{Counts}}' \
