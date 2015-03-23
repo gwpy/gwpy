@@ -266,6 +266,9 @@ intersphinx_mapping = {
     'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
     'matplotlib': ('http://matplotlib.sourceforge.net/', None),
     'astropy': ('http://docs.astropy.org/en/stable/', None),
+    'gwpy': ('http://gwpy.github.io/docs/stable/', None),
+    'pycbc': ('https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/',
+              'pycbc.inv'),
 }
 
 
