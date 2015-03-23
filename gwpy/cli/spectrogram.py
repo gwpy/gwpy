@@ -94,7 +94,7 @@ class Spectrogram(CliProduct):
 
         norm = False
         if arg_list.norm:
-            specgram = specgram.ratio('mean')
+            specgram = specgram.ratio('median')
             norm = True
 
         # set default frequency limits
@@ -130,7 +130,7 @@ class Spectrogram(CliProduct):
 
         if norm:
             self.plot = specgram.plot(vmin=imin, vmax=imax)
-            self.scaleText = 'Normalized to mean'
+            self.scaleText = 'Normalized to median'
         elif arg_list.lincolors:
             self.plot = specgram.plot(vmin=imin, vmax=imax)
             self.scaleText = r'ASD $\left( \frac{\mathrm{Counts}}' \
