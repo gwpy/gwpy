@@ -294,7 +294,6 @@ class Spectrum(Series):
         spectrum : `Spectrum`
             a GWpy version of the input frequency series
         """
-        """
         return cls(fs.data, f0=0, df=fs.delta_f, epoch=fs.epoch)
 
     @with_import('pycbc.types')
