@@ -24,7 +24,7 @@ from __future__ import (division, print_function)
 import sys
 import warnings
 import re
-from math import ceil
+from math import (ceil, pi)
 from multiprocessing import (Process, Queue as ProcessQueue)
 
 import numpy
@@ -532,6 +532,19 @@ class TimeSeries(Series):
         # format FFT parameters
         if fftlength is None:
             fftlength = stride
+        stride = units.Quantity(stride, 's').value
+        fftlength = units.Quantity(fftlength, 's').value
+        overlap = units.Quantity(overlap, 's').value
+
+        # sanity check parameters
+        if stride > abs(self.span):
+            raise ValueError("stride cannot be greater than the duration of "
+                             "this TimeSeries")
+        if fftlength > stride:
+            raise ValueError("fftlength cannot be greater than stride")
+        if overlap >= fftlength:
+            raise ValueError("overlap must be less than fftlength")
+
 
         # get size of spectrogram
         nsamp = int((stride * self.sample_rate).decompose().value)
@@ -680,6 +693,15 @@ class TimeSeries(Series):
             fftlength = units.Quantity(fftlength, 's').value
         if isinstance(overlap, units.Quantity):
             overlap = units.Quantity(overlap, 's').value
+
+        # sanity check
+        if fftlength > abs(self.span):
+            raise ValueError("fftlength cannot be greater than the duration "
+                             "of this TimeSeries")
+        if overlap >= fftlength:
+            raise ValueError("overlap must be less than fftlength")
+
+        # convert to samples
         nfft = int(fftlength * sampling)  # number of points per FFT
         noverlap = int(overlap * sampling)  # number of points of overlap
         nstride = nfft - noverlap  # number of points between FFTs
@@ -915,7 +937,7 @@ class TimeSeries(Series):
             the maximum loss in the passband (dB).
         gstop : `float`
             the minimum attenuation in the stopband (dB).
-        stop: `float`
+        stop : `float`
             stop-band edge frequency, defaults to `frequency/2`
 
         Returns
@@ -925,8 +947,8 @@ class TimeSeries(Series):
 
         See Also
         --------
-        signal.buttord
-        signal.butter
+        scipy.signal.buttord
+        scipy.signal.butter
             for details on how the filter is designed
         TimeSeries.filter
             for details on how the filter is applied
@@ -973,8 +995,8 @@ class TimeSeries(Series):
 
         See Also
         --------
-        signal.buttord
-        signal.butter
+        scipy.signal.buttord
+        scipy.signal.butter
             for details on how the filter is designed
         TimeSeries.filter
             for details on how the filter is applied
@@ -1021,7 +1043,8 @@ class TimeSeries(Series):
 
         See Also
         --------
-        signal.buttord, signal.butter
+        scipy.signal.buttord
+        scipy.signal.butter
             for details on how the filter is designed
         TimeSeries.filter
             for details on how the filter is applied
@@ -1090,12 +1113,83 @@ class TimeSeries(Series):
         new.sample_rate = rate
         return new
 
+    def zpk(self, zeros, poles, gain, digital=False, unit='Hz'):
+        """Filter this `TimeSeries` by applying a zero-pole-gain filter
+
+        Parameters
+        ----------
+        zeros : `array-like`
+            list of zero frequencies
+        poles : `array-like`
+            list of pole frequencies
+        gain : `float`
+            DC gain of filter
+        digital : `bool`, optional, default: `False`
+            give `True` if zeros, poles, and gain are already in Z-domain
+            digital format, otherwise they will be converted
+        unit : `str`, `~astropy.units.Unit`, optional, default: `'Hz'`
+            unit of zeros and poles, either 'Hz' or 'rad/s'
+
+        Returns
+        -------
+        timeseries : `TimeSeries`
+            the filtered version of the input data
+
+        See Also
+        --------
+        TimeSeries.filter
+            for details on how a digital ZPK-format filter is applied
+
+        Examples
+        --------
+        To apply a zpk filter with file poles at 100 Hz, and five zeros at
+        1 Hz (giving an overall DC gain of 1e-10)::
+
+            >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
+        """
+        if not digital:
+            # cast to arrays for ease
+            z = numpy.array(zeros, dtype=float)
+            p = numpy.array(poles, dtype=float)
+            k = float(gain)
+            # convert from Hz to rad/s if needed
+            unit = units.Unit(unit)
+            if unit == units.Unit('Hz'):
+                z *= -2 * pi
+                p *= -2 * pi
+            elif unit != units.Unit('rad/s'):
+                raise ValueError("zpk can only be given with unit='Hz' "
+                                 "or 'rad/s'")
+            # convert to Z-domain via bilinear transform
+            fs = 2 * self.sample_rate.to('Hz').value
+            z = z[numpy.isfinite(z)]
+            pd = (1 + p/fs) / (1 - p/fs)
+            zd = (1 + z/fs) / (1 - z/fs)
+            kd = k * numpy.prod(fs - z)/numpy.prod(fs - p)
+            zd = numpy.concatenate((zd, -numpy.ones(len(pd)-len(zd))))
+            zeros, poles, gain = zd, pd, kd
+        # apply filter
+        return self.filter(zeros, poles, gain)
+
     def filter(self, *filt):
         """Apply the given filter to this `TimeSeries`.
 
-        Recognised filter arguments are converted into the standard
+        All recognised filter arguments are converted either into cascading
+        second-order sections (if scipy >= 0.16 is installed), or into the
         ``(numerator, denominator)`` representation before being applied
         to this `TimeSeries`.
+
+        .. note::
+
+           All filters are presumed to be digital (Z-domain), if you have
+           an analog ZPK (in Hertz or in rad/s) you should be using
+           `TimeSeries.zpk` instead.
+
+        .. note::
+
+           When using `scipy` < 0.16 some higher-order filters may be
+           unstable. With `scipy` >= 0.16 higher-order filters are
+           decomposed into second-order-sections, and so are much more stable.
 
         Parameters
         ----------
@@ -1103,8 +1197,8 @@ class TimeSeries(Series):
             one of:
 
             - :class:`scipy.signal.lti`
-            - `M`x`N` `numpy.ndarray` of second-order-sections
-              (`scipy>=0.16.0` only)
+            - `MxN` `numpy.ndarray` of second-order-sections
+              (`scipy` >= 0.16 only)
             - ``(numerator, denominator)`` polynomials
             - ``(zeros, poles, gain)``
             - ``(A, B, C, D)`` 'state-space' representation
@@ -1116,32 +1210,19 @@ class TimeSeries(Series):
 
         See also
         --------
-        scipy.signal.zpk2tf
-            for details on converting ``(zeros, poles, gain)`` into
-            transfer function format
-        scipy.signal.ss2tf
-            for details on converting ``(A, B, C, D)`` to transfer function
-            format
+        TimeSeries.zpk
+            for instructions on how to filter using a ZPK with frequencies
+            in Hertz
+        scipy.signal.sosfilter
+            for details on the second-order section filtering method
+            (`scipy` >= 0.16 only)
         scipy.signal.lfilter
             for details on the filtering method
-
-        Examples
-        --------
-        To apply a zpk filter with a pole at 0 Hz, a zero at 100 Hz and
-        a gain of 25::
-
-            >>> data2 = data.filter([100], [0], 25)
 
         Raises
         ------
         ValueError
             If ``filt`` arguments cannot be interpreted properly
-
-        .. note::
-
-           When using `scipy < 0.16.0` some higher-order filters may be
-           unstable. With `scipy >= 0.16.0` higher-order filters are
-           decomposed into second-order-sections, and so are much more stable.
         """
         sos = None
         # single argument given

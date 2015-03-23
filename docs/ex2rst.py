@@ -64,6 +64,10 @@ for i,line in enumerate(lines):
     if line.startswith(('if __name__ == ', '# Show')):
         break
 
+    # hide lines
+    if line.endswith('# hide'):
+        continue
+
     # find block docs
     if line.startswith('"""'):
         indoc = not indoc

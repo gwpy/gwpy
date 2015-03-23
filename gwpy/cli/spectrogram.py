@@ -89,8 +89,16 @@ class Spectrogram(CliProduct):
         self.log(3, ('Spectrogram calc, stride: %.2f, fftlength: %.2f, '
                 'overlap: %.2f' % (stride_sec, secpfft, ovlp_sec)))
 
-        specgram = self.timeseries[0].spectrogram(stride_sec, fftlength=secpfft,
-                                                  overlap=ovlp_sec) ** (1/2.)
+        # based on the number of FFT calculation choose between
+        # high time resolution and high SNR
+        snr_nfft = self.dur / (secpfft * stride)
+        if (snr_nfft > 512):
+            specgram = self.timeseries[0].spectrogram(stride_sec, fftlength=secpfft,
+                                                      overlap=ovlp_sec)
+        else:
+            specgram = self.timeseries[0].spectrogram2(fftlength=secpfft,
+                                                       overlap=ovlp_sec)
+        specgram = specgram ** (1/2.)   # ASD
 
         norm = False
         if arg_list.norm:
@@ -119,18 +127,21 @@ class Spectrogram(CliProduct):
 
         if arg_list.imax:
             up = float(arg_list.imax)
-        elif norm:
-            up = 4
         else:
             up = 100
-        if norm or arg_list.nopct:
+        if arg_list.nopct:
             imax = up
         else:
             imax = percentile(specgram, up)
 
         if norm:
+<<<<<<< HEAD
             self.plot = specgram.plot(vmin=imin, vmax=imax)
             self.scaleText = 'Normalized to median'
+=======
+            self.plot = specgram.plot(norm='log', vmin=imin, vmax=imax)
+            self.scaleText = 'Normalized to mean'
+>>>>>>> upstream/master
         elif arg_list.lincolors:
             self.plot = specgram.plot(vmin=imin, vmax=imax)
             self.scaleText = r'ASD $\left( \frac{\mathrm{Counts}}' \
