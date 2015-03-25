@@ -91,7 +91,7 @@ class Spectrogram(CliProduct):
 
         # based on the number of FFT calculation choose between
         # high time resolution and high SNR
-        snr_nfft = self.dur / (secpfft * stride)
+        snr_nfft = self.dur / stride_sec
         if (snr_nfft > 512):
             specgram = self.timeseries[0].spectrogram(stride_sec, fftlength=secpfft,
                                                       overlap=ovlp_sec)
