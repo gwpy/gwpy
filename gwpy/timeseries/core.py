@@ -1585,7 +1585,6 @@ class TimeSeries(Series):
             except KeyError:
                 op_ = ufunc.__name__
             result = obj.view(StateTimeSeries)
-            result.unit = ""
             result.name = '%s %s %s' % (obj.name, op_, value)
             if hasattr(obj, 'unit') and str(obj.unit):
                 result.name += ' %s' % str(obj.unit)
