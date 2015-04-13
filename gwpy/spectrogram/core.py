@@ -30,6 +30,7 @@ from astropy import units
 
 from ..detector import Channel
 from ..data import (Array2D, Series)
+from ..segments import Segment
 from ..timeseries import (TimeSeries, TimeSeriesList, common)
 from ..spectrum import Spectrum
 from ..utils import update_docstrings
@@ -46,7 +47,7 @@ def as_spectrum(func):
     def decorated_func(self, *args, **kwargs):
         out = func(self, *args, **kwargs)
         if isinstance(out, Series):
-            out = Spectrum(out.data, name=out.name, unit=out.unit,
+            out = Spectrum(out.value, name=out.name, unit=out.unit,
                            epoch=out.epoch, channel=out.channel,
                            f0=out.x0.value, df=out.dx.value)
         return out
@@ -81,12 +82,12 @@ class Spectrogram(Array2D):
     result : `~gwpy.types.TimeSeries`
         A new TimeSeries
     """
-    _metadata_slots = ['name', 'unit', 'epoch', 'dt', 'f0', 'df']
-    xunit = TimeSeries.xunit
-    yunit = Spectrum.xunit
+    _metadata_slots = ['name', 'channel', 'epoch', 'dt', 'f0', 'df']
+    _default_xunit = TimeSeries._default_xunit
+    _default_yunit = Spectrum._default_xunit
 
-    def __new__(cls, data, name=None, unit=None, channel=None, epoch=None,
-                f0=None, dt=None, df=None, **kwargs):
+    def __new__(cls, data, unit=None, name=None, channel=None, epoch=0,
+                dt=1, f0=0, df=1, **kwargs):
         """Generate a new Spectrogram.
         """
         # parse Channel input
@@ -98,10 +99,12 @@ class Spectrogram(Array2D):
             if channel.sample_rate:
                 dt = dt or 1 / channel.sample_rate
         # generate Spectrogram
-        return super(Spectrogram, cls).__new__(cls, data, name=name, unit=unit,
-                                               channel=channel, epoch=epoch,
-                                               f0=f0, dt=dt, df=df,
-                                               **kwargs)
+        new = super(Spectrogram, cls).__new__(cls, data, unit=unit, name=name,
+                                              channel=channel, y0=f0, dx=dt,
+                                              dy=df, **kwargs)
+        if epoch is not None:
+            new.epoch = epoch
+        return new
 
     # -------------------------------------------
     # Spectrogram properties
@@ -146,6 +149,19 @@ class Spectrogram(Array2D):
                            fdel=Array2D.yindex.__delete__,
                            doc="Series of frequencies for this Spectrogram")
 
+    span = property(TimeSeries.span.__get__, TimeSeries.span.__set__,
+                     TimeSeries.span.__delete__,
+                     """GPS [start, stop) span for this `Spectrogram`""")
+
+    @property
+    def band(self):
+        """Frequency band described by this `Spectrogram`.
+        """
+        y0 = self.y0.to(self._default_yunit).value
+        dy = self.dy.to(self._default_yunit).value
+        return Segment(y0, y0+self.shape[1]*dy)
+
+
     # -------------------------------------------
     # Spectrogram methods
 
@@ -165,18 +181,18 @@ class Spectrogram(Array2D):
 
         Returns
         -------
-        spec : `~gwpy.data.Spectrogram`
+        spec : `~gwpy.spectrogram.Spectrogram`
             A new spectrogram
         """
         if operand == 'mean':
-            operand = self.mean(axis=0).data
+            operand = self.mean(axis=0).value
             unit = units.dimensionless_unscaled
         elif operand == 'median':
-            operand = self.median(axis=0).data
+            operand = self.median(axis=0).value
             unit = units.dimensionless_unscaled
         elif isinstance(operand, Spectrum):
             unit = self.unit / operand.unit
-            operand = operand.data
+            operand = operand.value
         elif isinstance(operand, numbers.Number):
             unit = units.dimensionless_unscaled
         else:
@@ -215,7 +231,7 @@ class Spectrogram(Array2D):
         Each :class:`~gwpy.spectrum.core.Spectrum` passed to this
         constructor must be the same length.
         """
-        data = vstack([s.data for s in spectra])
+        data = vstack([s.value for s in spectra])
         s1 = spectra[0]
         if not all(s.f0 == s1.f0 for s in spectra):
             raise ValueError("Cannot stack spectra with different f0")
@@ -248,7 +264,7 @@ class Spectrogram(Array2D):
             the given percentile `Spectrum` calculated from this
             `SpectralVaraicence`
         """
-        out = scipy.percentile(self.data, percentile, axis=0)
+        out = scipy.percentile(self.value, percentile, axis=0)
         name = '%s %s%% percentile' % (self.name, percentile)
         return Spectrum(out, epoch=self.epoch, channel=self.channel,
                         name=name, f0=self.f0, df=self.df,
@@ -356,7 +372,7 @@ class Spectrogram(Array2D):
         if kwargs:
             raise TypeError("Spectrogram.filter() got an unexpected keyword "
                             "argument '%s'" % list(kwargs.keys())[0])
-        f = self.frequencies.data.copy()
+        f = self.frequencies.value.copy()
         if f[0] == 0:
             f[0] = 1e-100
         fresp = nan_to_num(abs(signal.freqs(b, a, f)[1]))

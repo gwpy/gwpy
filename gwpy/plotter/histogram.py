@@ -61,7 +61,7 @@ class HistogramAxes(Axes):
         --------
         HistogramAxes.hist : for details on keyword arguments
         """
-        return self.hist(series.data, **kwargs)
+        return self.hist(series.value, **kwargs)
 
     def hist_table(self, table, column, **kwargs):
         """Add a histogram of the given :class:`~glue.ligolw.table.Table`.

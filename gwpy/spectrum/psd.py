@@ -256,7 +256,7 @@ def scipy_psd(timeseries, method, segmentlength, overlap,
         segmentlength = segmentlength.value
     if isinstance(overlap, units.Quantity):
         overlap = overlap.value
-    f, psd_ = signal.welch(timeseries.data, fs=timeseries.sample_rate.value,
+    f, psd_ = signal.welch(timeseries.value, fs=timeseries.sample_rate.value,
                            window=window, nperseg=segmentlength,
                            noverlap=(segmentlength-overlap))
     spec = psd_.view(Spectrum)

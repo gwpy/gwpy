@@ -20,13 +20,12 @@
 """
 
 import warnings
-from math import pi
 
 from scipy import signal
 
 from astropy import units
 
-from ..data import Series
+from ..data import (Array, Series)
 from ..detector import Channel
 from ..utils import (update_docstrings, with_import)
 
@@ -60,11 +59,11 @@ class Spectrum(Series):
     Spectrum
         a new Spectrum holding the given data
     """
-    _metadata_slots = ['name', 'unit', 'epoch', 'channel', 'f0', 'df']
-    xunit = units.Unit('Hz')
+    _metadata_slots = Array._metadata_slots + ['f0', 'df']
+    _default_xunit = units.Unit('Hz')
 
-    def __new__(cls, data, frequencies=None, name=None, unit=None,
-                epoch=None, f0=None, df=None, channel=None,
+    def __new__(cls, data, unit=None, frequencies=None, name=None,
+                epoch=None, f0=0, df=1, channel=None,
                 **kwargs):
         """Generate a new Spectrum.
         """
@@ -76,9 +75,8 @@ class Spectrum(Series):
             unit = unit or channel.unit
         # generate Spectrum
         return super(Spectrum, cls).__new__(cls, data, name=name, unit=unit,
-                                            f0=f0, df=df, channel=channel,
-                                            frequencies=frequencies,
-                                            epoch=epoch, **kwargs)
+                                            channel=channel, x0=f0, dx=df,
+                                            xindex=frequencies, **kwargs)
 
     # -------------------------------------------
     # Spectrum properties
@@ -99,9 +97,9 @@ class Spectrum(Series):
                   unit of 'Hertz'.
                   """)
 
-    frequencies = property(fget=Series.index.__get__,
-                           fset=Series.index.__set__,
-                           fdel=Series.index.__delete__,
+    frequencies = property(fget=Series.xindex.__get__,
+                           fset=Series.xindex.__set__,
+                           fdel=Series.xindex.__delete__,
                            doc="""Series of frequencies for each sample""")
 
     # -------------------------------------------
@@ -221,13 +219,12 @@ class Spectrum(Series):
         if kwargs:
             raise TypeError("Spectrum.filter() got an unexpected keyword "
                             "argument '%s'" % list(kwargs.keys())[0])
-        fresp = abs(signal.freqs(b, a, self.frequencies.data)[1])
+        fresp = abs(signal.freqs(b, a, self.frequencies.value)[1])
         if inplace:
-            self.data *= fresp
+            self.value *= fresp
             return self
         else:
-            new = (self.data * fresp).view(type(self))
-            new.metadata = self.metadata.copy()
+            new = (self.value * fresp).view(type(self))
             return new
 
     def filterba(self, *args, **kwargs):
@@ -249,7 +246,7 @@ class Spectrum(Series):
         channel = Channel(lalfs.name, unit=unit,
                           dtype=lalfs.data.data.dtype)
         return cls(lalfs.data.data, channel=channel, f0=lalfs.f0,
-                   df=lalfs.deltaF, epoch=lalfs.epoch)
+                   df=lalfs.deltaF, epoch=float(lalfs.epoch))
 
     @with_import('lal')
     def to_lal(self):
@@ -275,5 +272,5 @@ class Spectrum(Series):
         create = getattr(lal, 'Create%sFrequencySeries' % typestr.upper())
         lalfs = create(self.name, lal.LIGOTimeGPS(self.epoch.gps),
                        self.f0.value, self.df.value, unit, self.size)
-        lalfs.data.data = self.data
+        lalfs.data.data = self.value
         return lalfs

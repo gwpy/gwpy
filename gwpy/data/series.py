@@ -20,8 +20,6 @@
 """
 
 import numpy
-import inspect
-from scipy import signal
 
 from astropy.units import (Unit, Quantity)
 
@@ -30,311 +28,164 @@ __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 from .array import Array
-from ..segments import Segment
 
 
 class Series(Array):
-    """A one-dimensional array with metadata
-    """
-    _metadata_slots = Array._metadata_slots + ['x0', 'dx', 'xunit', 'logx']
-    xunit = Unit('')
+    _metadata_slots = Array._metadata_slots + ['x0', 'dx']
+    _default_xunit = Unit('')
+    _ndim = 1
 
-    def __new__(cls, data, dtype=None, copy=False, subok=True, **metadata):
-        """Define a new `Series`
-        """
-        if isinstance(data, (list, tuple)):
-            data = numpy.asarray(data)
-        if not data.ndim == 1:
-            raise ValueError("Cannot create a %s with more than one "
-                             "dimension" % cls.__name__)
-        return super(Series, cls).__new__(cls, data, dtype=dtype, copy=copy,
-                                          subok=subok, **metadata)
-
-    # simple slice, need to copy x0 away from self
-    def __getslice__(self, i, j):
-        new = super(Series, self).__getslice__(i, j).copy()
-        new.metadata = self.metadata.copy()
-        if 'x0' in new.metadata and 'dx' in self.metadata:
-            new.x0 = self.x0 + (i * self.dx)
+    def __new__(cls, value, unit=None, xindex=None, x0=0, dx=1, **kwargs):
+        shape = numpy.shape(value)
+        if len(shape) != cls._ndim:
+            raise ValueError("Cannot generate Series with %d-dimensional data"
+                             % len(shape))
+        new = super(Series, cls).__new__(cls, value, unit=unit, **kwargs)
+        if isinstance(x0, Quantity):
+            xunit = x0.unit
+        elif isinstance(dx, Quantity):
+            xunit = dx.unit
+        else:
+            xunit = cls._default_xunit
+        new.x0 = Quantity(x0, xunit)
+        new.dx = Quantity(dx, xunit)
+        new.xindex = xindex
         return new
 
-    # rebuild getitem to handle complex slicing
-    def __getitem__(self, item):
-        if isinstance(item, (float, int)):
-            return Quantity(super(Series, self).__getitem__(item), self.unit)
-        elif isinstance(item, slice):
-            item = slice(item.start is not None and int(item.start) or None,
-                         item.stop is not None and int(item.stop) or None,
-                         item.step is not None and int(item.step) or None)
-            new = super(Series, self).__getitem__(item)
-            if item.start:
-                new.x0 = float(self.x0.value)
-                new.x0 += item.start * new.dx
-            if item.step:
-                new.dx = float(self.dx.value)
-                new.dx *= item.step
-            return new
-        else:
-            new = super(Series, self).__getitem__(item)
-            if isinstance(item, (list, tuple, numpy.ndarray)):
-                new.index = self.index[item]
-            else:
-                new.index = self.index[item.argmax()]
-            return new
-
-    # -------------------------------------------
-    # Series properties
-
     @property
-    def x0(self):
-        """X-axis value of first sample
-        """
-        return self.metadata['x0']
-
-    @x0.setter
-    def x0(self, value):
-        if isinstance(value, Quantity):
-            self.metadata['x0'] = value.to(self.xunit)
-        else:
-            self.metadata['x0'] = Quantity(value, self.xunit)
-
-    @x0.deleter
-    def x0(self):
-        del self.metadata['x0']
-
-    @property
-    def dx(self):
-        """Distance between samples on the x-axis
-        """
-        return self.metadata['dx']
-
-    @dx.setter
-    def dx(self, value):
-        if isinstance(value, Quantity):
-            self.metadata['dx'] = value.to(self.xunit)
-        else:
-            self.metadata['dx'] = Quantity(value, self.xunit)
-
-    @dx.deleter
-    def dx(self):
-        del self.metadata['dx']
-
-    @property
-    def span(self):
-        """Extent of this `Series`
-        """
-        return Segment(self.x0.value,
-                       self.x0.value + self.shape[0] * self.dx.value)
-
-    @property
-    def index(self):
+    def xindex(self):
         """Positions of the data on the x-axis
 
         :type: `Series`
         """
         try:
-            return self._index
+            return self._xindex
         except AttributeError:
-            if not self.size:
-                self.index = numpy.ndarray(0)
-            elif self.logx:
-                logdx = (numpy.log10(self.x0.value + self.dx.value) -
-                         numpy.log10(self.x0.value))
-                logx1 = numpy.log10(self.x0.value) + self.shape[-1] * logdx
-                self.index = numpy.logspace(numpy.log10(self.x0.value), logx1,
-                                            num=self.shape[-1])
-            else:
-                self.index = (numpy.arange(self.shape[-1]) * self.dx.value +
-                              self.x0.value)
-            return self.index
+            self._xindex = self.x0 + (
+                numpy.arange(self.shape[0], dtype=self.dtype) * self.dx)
+            return self._xindex
 
-    @index.setter
-    def index(self, samples):
-        if not isinstance(samples, Array):
-            try:
-                self.epoch
-            except AttributeError:
-                self.x0 = samples[0]
-            fname = inspect.stack()[0][3]
-            if self.name:
-                name = '%s %s' % (self.name, fname)
-            else:
-                name = None
-            samples = Array(samples, unit=self.xunit, name=name,
-                            epoch=self.epoch, channel=self.channel, copy=True)
-        self._index = samples
-        try:
-            self.x0 = self.index[0]
-        except IndexError:
-            pass
-        try:
-            self.dx = self.index[1] - self.index[0]
-        except IndexError:
-            pass
+    @xindex.setter
+    def xindex(self, index):
+        if isinstance(index, Quantity):
+            self._xindex = index
+        elif index is None:
+            del self.xindex
+            return
+        else:
+            index = Quantity(index, unit=self._default_xunit)
+            self._xindex = index
+        self.x0 = index[0]
+        if index.size:
+            self.dx = index[1] - index[0]
+        else:
+            self.dx = None
 
-    @index.deleter
-    def index(self):
-        del self._index
+    @xindex.deleter
+    def xindex(self):
+        try:
+            del self._xindex
+        except AttributeError:
+            pass
 
     @property
-    def logx(self):
-        """Boolean telling whether this `Series` has a logarithmic
-        x-axis scale
-        """
+    def x0(self):
+        return self._x0
+
+    @x0.setter
+    def x0(self, value):
+        if not isinstance(value, Quantity) and value is not None:
+            value = Quantity(value, self._default_xunit)
         try:
-            return self.metadata['logx']
-        except KeyError:
-            self.logx = False
-            return self.logx
-
-    @logx.setter
-    def logx(self, val):
-        if (val and 'logx' in self.metadata and not self.metadata['logx'] and
-                'index' in self.metadata):
-            del self.index
-        self.metadata['logx'] = bool(val)
-
-    # -------------------------------------------
-    # Series methods
-
-    def resample(self, rate, window=None, dtype=None):
-        """Resample this Series to a new rate
-
-        Parameters
-        ----------
-        rate : `float`
-            rate to which to resample this `Series`
-        window : array_like, callable, string, float, or tuple, optional
-            specifies the window applied to the signal in the Fourier
-            domain.
-        dtype : :class:`numpy.dtype`, default: `None`
-            specific data type for output, defaults to input dtype
-
-        Returns
-        -------
-        Series
-            a new Series with the resampling applied, and the same
-            metadata
-        """
-        if isinstance(rate, Quantity):
-            rate = rate.value
-        N = int(self.shape[0] * self.dx.value * rate)
-        data = signal.resample(self.data, N, window=window)
-        new = self.__class__(data, dtype=dtype or self.dtype)
-        new.metadata = self.metadata.copy()
-        new.dx = 1 / float(rate)
-        return new
-
-    def decimate(self, q, n=None, ftype='iir', axis=-1):
-        """Downsample the signal by using a filter.
-
-        By default, an order 8 Chebyshev type I filter is used.
-        A 30 point FIR filter with hamming window is used if
-        `ftype` is 'fir'.
-
-        Parameters
-        ----------
-        q : `int`
-            the downsampling factor.
-        n : `int`, optional
-            the order of the filter (1 less than the length for 'fir').
-        ftype : `str`: {'iir', 'fir'}, optional
-            the type of the lowpass filter.
-        axis : `int`, optional
-            The axis along which to decimate.
-
-        Returns
-        -------
-        y : ndarray
-        The down-sampled signal.
-
-        See also
-        --------
-        :meth:`scipy.resample`
-        """
-        if not isinstance(q, int):
-            raise TypeError("q must be an integer")
-        if n is None:
-            if ftype == 'fir':
-                n = 30
-            else:
-                n = 8
-        if ftype == 'fir':
-            b = signal.firwin(n + 1, 1. / q, window='hamming')
-            a = 1.
-        else:
-            b, a = signal.cheby1(n, 0.05, 0.8 / q)
-        y = signal.lfilter(b, a, self.data, axis=axis)
-        out = self.__class__(y, **self.metadata)
-        sl = [slice(None)] * y.ndim
-        sl[axis] = slice(None, None, q)
-        return out[sl]
-
-    def find_peaks(self, widths, min_snr=5, min_length=1, **kwargs):
-        """Find peaks in this `Series`
-
-        Parameters
-        ----------
-        widths : sequence
-            1-D array of widths of interest (in samples)
-        **kwargs
-            other keyword arguments used by the underlying method
-            :meth:`~scipy.signal.find_peaks_cwt`
-
-        Returns
-        -------
-        peakseries : `Series`
-            new `Series` containing only the recovered peaks
-
-        See also
-        --------
-        scipy.signal.find_peaks_cwt
-            for details on the peak-finding algorithm
-        """
-        peaks = signal.find_peaks_cwt(self.data, widths, min_snr=min_snr,
-                                      min_length=min_length, **kwargs)
-        new = self[peaks]
-        new.index = self.index[peaks]
-        return new
-
-    # -------------------------------------------
-    # numpy.ndarray method modifiers
-    # all of these try to return Quantities rather than simple numbers
-
-    def max(self, *args, **kwargs):
-        return Quantity(super(Series, self).max(*args, **kwargs),
-                        unit=self.unit)
-    max.__doc__ = Array.max.__doc__
-
-    def min(self, *args, **kwargs):
-        return Quantity(super(Series, self).min(*args, **kwargs),
-                        unit=self.unit)
-    min.__doc__ = Array.min.__doc__
-
-    def mean(self, *args, **kwargs):
-        return Quantity(super(Series, self).mean(*args, **kwargs),
-                        unit=self.unit)
-    mean.__doc__ = Array.mean.__doc__
-
-    def median(self, *args, **kwargs):
-        return Quantity(super(Series, self).median(*args, **kwargs),
-                        unit=self.unit)
-    median.__doc__ = Array.median.__doc__
-
-    def __array_wrap__(self, obj, context=None):
-        """Wrap an array as a Array with metadata
-        """
-        result = super(Series, self).__array_wrap__(obj, context=context)
-        try:
-            result._index = self._index
+            x0 = self.x0
         except AttributeError:
-            pass
-        return result
+            del self.xindex
+        else:
+            if value is None or self.x0 is None or value != x0:
+                del self.xindex
+        self._x0 = value
+
+    @x0.deleter
+    def x0(self):
+        self._x0 = None
+
+    @property
+    def dx(self):
+        return self._dx
+
+    @dx.setter
+    def dx(self, value):
+        if not isinstance(value, Quantity) and value is not None:
+            value = Quantity(value).to(self.xunit)
+        try:
+            dx = self.dx
+        except AttributeError:
+            del self.xindex
+        else:
+            if value is None or self.dx is None or value != dx:
+                del self.xindex
+        self._dx = value
+
+    @dx.deleter
+    def dx(self):
+        self._dx = None
+
+    @property
+    def xunit(self):
+        return self.x0.unit
 
     def copy(self, order='C'):
         new = super(Series, self).copy(order=order)
         try:
-            new._index = self._index.copy()
+            new._xindex = self._xindex.copy()
         except AttributeError:
             pass
+        return new
+
+    def zip(self):
+        """Zip the `xindex` and `value` arrays of this `Series`
+
+        Returns
+        -------
+        stacked : 2-d `numpy.ndarray`
+            The array formed by stacking the the `xindex` and `value` of this
+            `Series`.
+
+        Examples
+        --------
+        >>> a = Series([0, 2, 4, 6, 8], xindex=[-5, -4, -3, -2, -1])
+        >>> a.zip()
+        array([[-5.,  0.],
+               [-4.,  2.],
+               [-3.,  4.],
+               [-2.,  6.],
+               [-1.,  8.]])
+
+        """
+        return numpy.column_stack((self.xindex.value, self.value))
+
+    def __array_finalize__(self, obj):
+        """Finalize a Array with metadata
+        """
+        super(Series, self).__array_finalize__(obj)
+        if hasattr(self, '_xindex'):
+            obj._xindex = self._xindex
+
+    def __getslice__(self, i, j):
+        new = super(Series, self).__getslice__(i, j)
+        new.__dict__ = self.__dict__.copy()
+        new.x0 = self.x0 + i * self.dx
+        return new
+
+    def __getitem__(self, item):
+        if isinstance(item, (float, int)):
+            return Quantity(self.value[item], unit=self.unit)
+        new = super(Series, self).__getitem__(item)
+        if isinstance(item, slice):
+            if item.start:
+                new.x0 = self.x0 + item.start * self.dx
+            if item.step:
+                new.dx = self.dx * item.step
+        elif isinstance(item, numpy.ndarray):
+            new.xindex = self.xindex[item]
         return new

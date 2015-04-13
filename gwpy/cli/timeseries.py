@@ -55,20 +55,20 @@ class TimeSeries(CliProduct):
         from numpy import min as npmin
         from numpy import max as npmax
 
-        if self.timeseries[0].data.size <= self.max_size:
+        if self.timeseries[0].size <= self.max_size:
             self.plot = self.timeseries[0].plot()
         else:
             self.plot = self.timeseries[0].plot(linestyle='None', marker='.')
         self.ymin = self.timeseries[0].min().value
         self.ymax = self.timeseries[0].max().value
-        self.xmin = self.timeseries[0].times.data.min()
-        self.xmax = self.timeseries[0].times.data.max()
+        self.xmin = self.timeseries[0].times.value.min()
+        self.xmax = self.timeseries[0].times.value.max()
 
         if len(self.timeseries) > 1:
             for idx in range(1, len(self.timeseries)):
                 chname = self.timeseries[idx].channel.name
                 lbl = label_to_latex(chname)
-                if self.timeseries[idx].data.size <= self.max_size:
+                if self.timeseries[idx].size <= self.max_size:
                     self.plot.add_timeseries(self.timeseries[idx], label=lbl)
                 else:
                     self.plot.add_timeseries(self.timeseries[idx], label=lbl,
@@ -76,9 +76,9 @@ class TimeSeries(CliProduct):
                 self.ymin = min(self.ymin, self.timeseries[idx].min().value)
                 self.ymax = max(self.ymax, self.timeseries[idx].max().value)
                 self.xmin = min(self.xmin,
-                                self.timeseries[idx].times.data.min())
+                                self.timeseries[idx].times.value.min())
                 self.xmax = max(self.xmax,
-                                self.timeseries[idx].times.data.max())
+                                self.timeseries[idx].times.value.max())
         # if they chose to set the range of the x-axis find the range of y
         strt = self.xmin
         stop = self.xmax
@@ -105,8 +105,8 @@ class TimeSeries(CliProduct):
 
                 if e >= self.timeseries[idx].size:
                     e = self.timeseries[idx].size - 1
-                new_ymin = min(new_ymin, npmin(self.timeseries[idx].data[b:e]))
-                new_ymax = max(new_ymax, npmax(self.timeseries[idx].data[b:e]))
+                new_ymin = min(new_ymin, npmin(self.timeseries[idx].value[b:e]))
+                new_ymax = max(new_ymax, npmax(self.timeseries[idx].value[b:e]))
             self.ymin = new_ymin
             self.ymax = new_ymax
         if self.yscale_factor > 1:

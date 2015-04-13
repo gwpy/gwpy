@@ -23,12 +23,13 @@ The `Array` structure provides the core array-with-metadata environment
 with the standard array methods wrapped to return instances of itself.
 """
 
+import warnings
 from copy import deepcopy
 
 import numpy
 numpy.set_printoptions(threshold=200, linewidth=65)
 
-from astropy.units import (Unit, UnitBase, Quantity)
+from astropy.units import (UnitBase, Quantity)
 from ..io import (reader, writer)
 
 from .. import version
@@ -44,16 +45,15 @@ __credits__ = "Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>"
 # -----------------------------------------------------------------------------
 # Core Array
 
-class Array(numpy.ndarray):
-    """An extension of the :class:`~numpy.ndarray`, with added
-    metadata
+class Array(Quantity):
+    """An extension of the :class:`~astropy.units.Quantity`
 
     This `Array` holds the input data and a standard set of metadata
     properties associated with GW data.
 
     Parameters
     ----------
-    data : array-like, optional, default: `None`
+    value : array-like, optional, default: `None`
         input data array
     name : `str`, optional, default: `None`
         descriptive title for this `Array`
@@ -78,87 +78,45 @@ class Array(numpy.ndarray):
     array : `Array`
         a new array, with a view of the data, and all associated metadata
     """
-    __array_priority_ = 10.1
-    _metadata_type = dict
-    _metadata_slots = ['name', 'unit', 'epoch', 'channel']
+    _metadata_slots = ['name', 'epoch', 'channel']
 
-    def __new__(cls, data=None, dtype=None, copy=False, subok=True,
-                **metadata):
+    def __new__(cls, value, unit=None, dtype=None, copy=False, subok=True,
+                name=None, epoch=None, channel=None):
         """Define a new `Array`, potentially from an existing one
         """
-        # get dtype out of the front
-        if isinstance(data, numpy.ndarray) and dtype is None:
-            dtype = data.dtype
-        elif isinstance(data, numpy.ndarray):
-            dtype = numpy.dtype(dtype)
-
-        # copy from an existing Array
-        if isinstance(data, cls):
-            if not copy and dtype == data.dtype and not metadata:
-                return data
-            elif metadata:
-                new = numpy.array(data, dtype=dtype, copy=copy, subok=True)
-                new.metadata = cls._metadata_type(metadata)
-                return new
-            else:
-                new = data.astype(dtype)
-                new.metadata = data.metadata
-                return new
-        # otherwise define a new Array from the array-like data
-        else:
-            _baseclass = type(data)
-            if copy:
-                new = super(Array, cls).__new__(cls, data.shape, dtype=dtype)
-                try:
-                    new[:] = numpy.array(data, dtype=dtype, copy=True)
-                except ValueError:
-                    pass
-            else:
-                new = numpy.array(data, dtype=dtype, copy=copy,
-                                  subok=True).view(cls)
-            new.metadata = cls._metadata_type()
-            for key, val in metadata.iteritems():
-                if val is not None:
-                    setattr(new, key, val)
-            new._baseclass = _baseclass
-            return new
+        new = super(Array, cls).__new__(cls, value, dtype=dtype, copy=copy,
+                                        subok=subok, unit=unit)
+        new.name = name
+        new.epoch = epoch
+        new.channel = channel
+        return new
 
     # -------------------------------------------
     # array manipulations
 
+    def __quantity_subclass__(self, unit):
+        return type(self), True
+    __quantity_subclass__.__doc__ = Quantity.__quantity_subclass__.__doc__
+
     def __array_finalize__(self, obj):
-        """Finalize a Array with metadata
-        """
-        self.metadata = getattr(obj, 'metadata', {}).copy()
-        self._baseclass = getattr(obj, '_baseclass', type(obj))
+        super(Array, self).__array_finalize__(obj)
+        for attr in self._metadata_slots:
+            setattr(self, attr, getattr(obj, attr, None))
+    __array_finalize__.__doc__ = Quantity.__array_finalize__.__doc__
+
+    def __array_prepare__(self, obj, context=None):
+        return super(Array, self).__array_prepare__(obj, context=context)
+    __array_prepare__.__doc__ = Quantity.__array_prepare__.__doc__
 
     def __array_wrap__(self, obj, context=None):
-        """Wrap an array as a Array with metadata
-        """
-        result = obj.view(self.__class__)
-        result.metadata = self.metadata.copy()
-        # use the context to apply the same operation to the units
-        if context is not None:
-            func, args, _ = context
-            try:
-                a, b = args[:2]
-            except ValueError:
-                pass
-            else:
-                if isinstance(a, Array):
-                    a = a.unit
-                if isinstance(b, Array):
-                    b = b.unit
-                try:
-                    newunit = func(a, b)
-                except TypeError:
-                    pass
-                else:
-                    if isinstance(newunit, Quantity):
-                        result.unit = newunit.unit
-                    else:
-                        result.unit = newunit
-        return result
+        return super(Array, self).__array_wrap__(obj, context=context)
+    __array_wrap__.__doc__ = Quantity.__array_wrap__.__doc__
+
+    def copy(self, order='C'):
+        new = super(Array, self).copy(order=order)
+        new.__dict__ = deepcopy(self.__dict__)
+        return new
+    copy.__doc__ = Quantity.copy.__doc__
 
     def __repr__(self):
         """Return a representation of this object
@@ -166,11 +124,11 @@ class Array(numpy.ndarray):
         This just represents each of the metadata objects appriopriately
         after the core data array
         """
-        indent = ' '*len('<%s(' % self.__class__.__name__)
-        array = repr(self.data)[6:-1].replace('\n'+' '*6, '\n'+indent)
-        if 'dtype' in array:
-            array += ','
-        metadatarepr = []
+        prefixstr = '<%s(' % self.__class__.__name__
+        indent = ' '*len(prefixstr)
+        arrstr = numpy.array2string(self.view(numpy.ndarray), separator=',',
+                                    prefix=prefixstr)
+        metadatarepr = ['unit=%s' % repr(self.unit)]
         for key in self._metadata_slots:
             try:
                 val = getattr(self, key)
@@ -178,10 +136,10 @@ class Array(numpy.ndarray):
                 val = None
             mindent = ' ' * (len(key) + 1)
             rval = repr(val).replace('\n', '\n%s' % (indent+mindent))
-            metadatarepr.append('%s=%s' % (key, rval))
+            metadatarepr.append('%s=%s' % (key.strip('_'), rval))
         metadata = (',\n%s' % indent).join(metadatarepr)
-        return "<%s(%s\n%s%s)>" % (self.__class__.__name__, array,
-                                   indent, metadata)
+        return "{0}{1}\n{2}{3})>".format(
+            prefixstr, arrstr, indent, metadata)
 
     def __str__(self):
         """Return a printable string format representation of this object
@@ -189,50 +147,25 @@ class Array(numpy.ndarray):
         This just prints each of the metadata objects appropriately
         after the core data array
         """
-        indent = ' '*len('%s(' % self.__class__.__name__)
-        array = str(self.data).replace('\n', '\n' + indent) + ','
-        if 'dtype' in array:
-            array += ','
-        metadatarepr = []
+        prefixstr = '%s(' % self.__class__.__name__
+        indent = ' '*len(prefixstr)
+        arrstr = numpy.array2string(self.view(numpy.ndarray), separator=',',
+                                    prefix=prefixstr)
+        metadatarepr = ['unit: %s' % repr(self.unit)]
         for key in self._metadata_slots:
             try:
                 val = getattr(self, key)
             except (AttributeError, KeyError):
                 val = None
-            if key == 'epoch' and val is not None:
-                val = self.epoch.iso
-            elif val is '' or val is None:
-                val = None
             mindent = ' ' * (len(key) + 1)
-            rval = str(val).replace('\n', '\n%s' % (indent+mindent))
-            metadatarepr.append('%s: %s' % (key, rval))
+            rval = repr(val).replace('\n', '\n%s' % (indent+mindent))
+            metadatarepr.append('%s: %s' % (key.strip('_'), rval))
         metadata = (',\n%s' % indent).join(metadatarepr)
-        return "%s(%s\n%s%s)" % (self.__class__.__name__, array,
-                                 indent, metadata)
-
-    def astype(self, dtype, order='K', casting='unsafe', subok=True,
-               copy=True):
-        new = super(Array, self).astype(dtype, order=order, casting=casting,
-                                        subok=subok, copy=copy)
-        new.metadata = self.metadata.copy()
-        return new
-    astype.__doc__ = numpy.ndarray.__doc__
+        return "{0}{1}\n{2}{3})".format(
+            prefixstr, arrstr, indent, metadata)
 
     # -------------------------------------------
     # array methods
-
-    def __pow__(self, y, z=None):
-        new = self.copy()
-        numpy.power(self, y, out=new)
-        new.unit = self.unit.__pow__(y)
-        return new
-    __pow__.__doc__ = numpy.ndarray.__pow__.__doc__
-
-    def __ipow__(self, y):
-        super(Array, self).__ipow__(y)
-        self.unit **= y
-        return self
-    __ipow__.__doc__ = numpy.ndarray.__ipow__.__doc__
 
     def median(self, axis=None, out=None, overwrite_input=False):
         return numpy.median(self, axis=axis, out=out,
@@ -240,75 +173,10 @@ class Array(numpy.ndarray):
     median.__doc__ = numpy.median.__doc__
 
     @property
-    def T(self):
-        return self.transpose()
-
-    @property
-    def H(self):
-        return self.T.conj()
-
-    @property
     def data(self):
-        return self.view(numpy.ndarray)
-    A = data
-
-    def copy(self, order='C'):
-        new = super(Array, self).copy(order=order)
-        new.metadata = deepcopy(self.metadata)
-        return new
-    copy.__doc__ = numpy.ndarray.copy.__doc__
-
-    # -------------------------------------------
-    # Pickle helpers
-
-    def __getstate__(self):
-        """Return the internal state of the object.
-
-        Returns
-        -------
-        state : `tuple`
-            A 5-tuple of (shape, dtype, typecode, rawdata, metadata)
-            for pickling
-        """
-        state = (self.shape,
-                 self.dtype,
-                 self.flags.fnc,
-                 self.data.tostring(),
-                 self.metadata
-                 )
-        return state
-
-    def __setstate__(self, state):
-        """Restore the internal state of the `Array`.
-
-        This is used for unpickling purposes.
-
-        Parameters
-        ----------
-        state : `tuple`
-            typically the output of the :meth:`Array.__getstate__`
-            method, a 5-tuple containing:
-
-            - class name
-            - a tuple giving the shape of the data
-            - a typecode for the data
-            - a binary string for the data
-            - the metadata dict
-        """
-        (shp, typ, isf, raw, meta) = state
-        super(Array, self).__setstate__((shp, typ, isf, raw))
-        self.metadata = self._metadata_type(meta)
-
-    def __reduce__(self):
-        """Initialise the pickle operation for this `Array`
-
-        Returns
-        -------
-        pickler : `tuple`
-            A 3-tuple of (reconstruct function, reconstruct args, state)
-        """
-        return (_array_reconstruct, (self.__class__, self.dtype),
-                self.__getstate__())
+        warnings.warn('Please use \'value\' instead of \'data\' for basic '
+                      'numpy.ndarray views', DeprecationWarning)
+        return self.value
 
     # -------------------------------------------
     # Array properties
@@ -319,36 +187,14 @@ class Array(numpy.ndarray):
 
         :type: `str`
         """
-        try:
-            return self.metadata['name']
-        except KeyError:
-            return None
+        return self._name
 
     @name.setter
     def name(self, val):
         if val is None:
-            self.metadata['name'] = None
+            self._name = None
         else:
-            self.metadata['name'] = str(val)
-
-    @property
-    def unit(self):
-        """Unit for this `Array`
-
-        :type: :class:`~astropy.units.core.Unit`
-        """
-        try:
-            return self.metadata['unit']
-        except KeyError:
-            self.unit = ''
-            return self.unit
-
-    @unit.setter
-    def unit(self, val):
-        if val is None or isinstance(val, Unit):
-            self.metadata['unit'] = val
-        else:
-            self.metadata['unit'] = Unit(val)
+            self._name = str(val)
 
     @property
     def epoch(self):
@@ -359,38 +205,46 @@ class Array(numpy.ndarray):
 
         See `~astropy.time` for details on the `Time` object.
         """
-        try:
-            return Time(float(self.metadata['epoch']),
-                        format='gps', scale='utc')
-        except KeyError:
+        if self._epoch is None:
             return None
+        else:
+            return Time(float(self._epoch),
+                        format='gps', scale='utc')
 
     @epoch.setter
     def epoch(self, epoch):
-        self.metadata['epoch'] = to_gps(epoch)
+        if epoch is None:
+            self._epoch = None
+        else:
+            self._epoch = to_gps(epoch)
 
     @property
     def channel(self):
         """Data channel associated with this `Array`.
         """
-        try:
-            return self.metadata['channel']
-        except KeyError:
-            return None
+        return self._channel
 
     @channel.setter
     def channel(self, ch):
         if isinstance(ch, Channel):
-            self.metadata['channel'] = ch
+            self._channel = ch
+        elif ch is None:
+            self._channel = None
         else:
-            self.metadata['channel'] = Channel(ch)
+            self._channel = Channel(ch)
+
+    @property
+    def unit(self):
+        return self._unit
+
+    @unit.setter
+    def unit(self, unit):
+        raise AttributeError("can't set attribute. To change the units of this"
+                             " %s, use the .to() instance method instead."
+                             % type(self).__name__)
 
     # -------------------------------------------
     # extras
-
-    @classmethod
-    def _getAttributeNames(cls):
-        return cls._metadata_slots
 
     # use input/output registry to allow multi-format reading
     read = classmethod(reader())
@@ -448,21 +302,24 @@ class Array(numpy.ndarray):
                                  "argument to write().")
             try:
                 dset = h5group.create_dataset(
-                    name or self.name, data=self.data, compression=compression,
-                    **kwargs)
+                    name or self.name, data=self.value,
+                    compression=compression, **kwargs)
             except ValueError as e:
                 if 'Name already exists' in str(e):
                     e.args = (str(e) + ': %s' % (name or self.name),)
                 raise
 
             # store metadata
-            for attr, mdval in self.metadata.iteritems():
+            for attr in self._metadata_slots:
+                mdval = getattr(self, attr)
                 if isinstance(mdval, Quantity):
                     dset.attrs[attr] = mdval.value
                 elif isinstance(mdval, Channel):
                     dset.attrs[attr] = mdval.ndsname
                 elif isinstance(mdval, UnitBase):
                     dset.attrs[attr] = str(mdval)
+                elif isinstance(mdval, Time):
+                    dset.attrs[attr] = mdval.utc.gps
                 else:
                     dset.attrs[attr] = mdval
 
@@ -520,16 +377,3 @@ class Array(numpy.ndarray):
                 h5file.close()
 
         return out
-
-
-def _array_reconstruct(class_, dtype):
-    """Reconstruct an `Array` after unpickling
-
-    Parameters
-    ----------
-    Class : `type`, `Array` or sub-class
-        class object to create
-    dtype : `type`, `numpy.dtype`
-        dtype to set
-    """
-    return class_.__new__(class_, [], dtype=dtype)

@@ -52,7 +52,7 @@ else:
 
 
 from .. import version
-from ..data import (Array2D, Series)
+from ..data import (Array, Array2D, Series)
 from ..detector import (Channel, ChannelList)
 from ..io import reader
 from ..segments import (Segment, SegmentList)
@@ -110,10 +110,10 @@ class TimeSeries(Series):
     :class:`~gwpy.timeseries.statevector.StateTimeSeries` - a boolean array
     with metadata copied from the starting `TimeSeries`.
     """
-    _metadata_slots = ['name', 'unit', 'epoch', 'channel', 'sample_rate']
-    xunit = units.Unit('s')
+    _default_xunit = units.second
+    _metadata_slots = ['name', 'channel', 'epoch', 'sample_rate']
 
-    def __new__(cls, data, times=None, epoch=None, channel=None, unit=None,
+    def __new__(cls, data, unit=None, times=None, epoch=0, channel=None,
                 sample_rate=None, name=None, **kwargs):
         """Generate a new TimeSeries.
         """
@@ -124,15 +124,21 @@ class TimeSeries(Series):
             name = name or channel.name
             unit = unit or channel.unit
             sample_rate = sample_rate or channel.sample_rate
+        elif sample_rate is None and 'dt' not in kwargs:
+            sample_rate = 1
         # generate TimeSeries
         new = super(TimeSeries, cls).__new__(cls, data, name=name, unit=unit,
-                                             epoch=epoch, channel=channel,
-                                             sample_rate=sample_rate,
-                                             times=times, **kwargs)
+                                             channel=channel, **kwargs)
+        if epoch is not None:
+            new.epoch = epoch
+        if sample_rate is not None:
+            new.sample_rate = sample_rate
         return new
 
     # -------------------------------------------
     # TimeSeries properties
+
+    dt = Series.dx
 
     @property
     def epoch(self):
@@ -143,22 +149,17 @@ class TimeSeries(Series):
 
         See `~astropy.time` for details on the `Time` object.
         """
-        try:
+        if self.x0 is None:
+            return None
+        else:
             return Time(self.x0, format='gps', scale='utc')
-        except KeyError:
-            raise AttributeError("No epoch has been set for this %s"
-                                 % self.__class__.__name__)
 
     @epoch.setter
     def epoch(self, epoch):
         if isinstance(epoch, Time):
             self.x0 = epoch.gps
-        elif isinstance(epoch, units.Quantity):
-            self.x0 = epoch
         else:
-            self.x0 = float(epoch)
-
-    dt = Series.dx
+            self.x0 = epoch
 
     @property
     def sample_rate(self):
@@ -168,8 +169,9 @@ class TimeSeries(Series):
 
     @sample_rate.setter
     def sample_rate(self, val):
-        if isinstance(val, int):
-            val = float(val)
+        if val is None:
+            del self.dx
+            return
         self.dx = (1 / units.Quantity(val, units.Hertz)).to(self.xunit)
         if numpy.isclose(self.dx.value, round(self.dx.value)):
             self.dx = units.Quantity(round(self.dx.value), self.dx.unit)
@@ -178,7 +180,9 @@ class TimeSeries(Series):
     def span(self):
         """Time Segment encompassed by thie `TimeSeries`.
         """
-        return Segment(*Series.span.fget(self))
+        x0 = self.x0.to(self._default_xunit).value
+        dx = self.dx.to(self._default_xunit).value
+        return Segment(x0, x0+self.shape[0]*dx)
 
     @property
     def duration(self):
@@ -186,26 +190,10 @@ class TimeSeries(Series):
         """
         return units.Quantity(self.span[1] - self.span[0], self.xunit)
 
-    times = property(fget=Series.index.__get__,
-                     fset=Series.index.__set__,
-                     fdel=Series.index.__delete__,
+    times = property(fget=Series.xindex.__get__,
+                     fset=Series.xindex.__set__,
+                     fdel=Series.xindex.__delete__,
                      doc="""Series of GPS times for each sample""")
-
-    unit = property(fget=Series.unit.__get__,
-                    fset=Series.unit.__set__,
-                    fdel=Series.unit.__delete__,
-                    doc="""Unit for this `TimeSeries`
-
-                        :type: :class:`~astropy.units.core.Unit`
-                        """)
-
-    channel = property(fget=Series.channel.__get__,
-                       fset=Series.channel.__set__,
-                       fdel=Series.channel.__delete__,
-                       doc="""Source data `Channel` for this `TimeSeries`
-
-                           :type: :class:`~gwpy.detector.channel.Channel`
-                           """)
 
     # -------------------------------------------
     # TimeSeries accessors
@@ -325,7 +313,7 @@ class TimeSeries(Series):
         correct.
         """
         from ..spectrum import Spectrum
-        dft = npfft.rfft(self.data, n=nfft) / nfft
+        dft = npfft.rfft(self.value, n=nfft) / nfft
         dft[1:] *= 2.0
         new = Spectrum(dft, epoch=self.epoch, channel=self.channel,
                        unit=self.unit)
@@ -403,12 +391,12 @@ class TimeSeries(Series):
                 continue
             stepseries = self[idx:idx_end]
             # detrend
-            stepseries -= stepseries.data.mean()
+            stepseries -= stepseries.value.mean()
             # window
             stepseries *= win
             # calculated FFT, weight, and stack
             fft_ = stepseries.fft(nfft=nfft) * scaling
-            ffts.data[i, :] = fft_.data
+            ffts.value[i, :] = fft_.value
             idx += (nfft - noverlap)
         mean = ffts.mean(0)
         mean.name = self.name
@@ -493,7 +481,7 @@ class TimeSeries(Series):
         asd_.unit.__doc__ = 'Amplitude spectral density'
         return asd_
 
-    def spectrogram(self, stride, fftlength=None, overlap=None,
+    def spectrogram(self, stride, fftlength=None, overlap=0,
                     method='welch', window=None, nproc=1, **kwargs):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
@@ -506,7 +494,7 @@ class TimeSeries(Series):
             number of seconds in single PSD (column of spectrogram).
         fftlength : `float`
             number of seconds in single FFT.
-        overlap : `int`, optiona, default: fftlength
+        overlap : `int`, optional, default: 0
             number of seconds between FFTs.
         method : `str`, optional, default: 'welch'
             average spectrum method.
@@ -532,7 +520,8 @@ class TimeSeries(Series):
         # format FFT parameters
         if fftlength is None:
             fftlength = stride
-        stride = units.Quantity(stride, 's').value
+        if overlap is None:
+            overlap = 0
         fftlength = units.Quantity(fftlength, 's').value
         overlap = units.Quantity(overlap, 's').value
 
@@ -578,11 +567,11 @@ class TimeSeries(Series):
             nfreqs = int(fftlength * ts.sample_rate.value // 2 + 1)
 
             # generate output spectrogram
-            out = Spectrogram(numpy.zeros((nsteps_, nfreqs)),
+            unit = scale_timeseries_units(
+                ts.unit, kwargs.get('scaling', 'density'))
+            out = Spectrogram(numpy.zeros((nsteps_, nfreqs)), unit=unit,
                               channel=ts.channel, epoch=ts.epoch, f0=0, df=df,
                               dt=dt, copy=True)
-            out.unit = scale_timeseries_units(
-                ts.unit, kwargs.get('scaling', 'density'))
 
             if not nsteps_:
                 return out
@@ -595,7 +584,7 @@ class TimeSeries(Series):
                 stepseries = ts[idx:idx_end]
                 steppsd = stepseries.psd(fftlength=fftlength, overlap=overlap,
                                          method=method, **kwargs)
-                out.data[step, :] = steppsd.data
+                out.value[step, :] = steppsd.value
 
             return out
 
@@ -722,7 +711,7 @@ class TimeSeries(Series):
             # don't proceed past end of data, causes artefacts
             if idx+nfft > self.size:
                 break
-            ts = self.data[idx:idx+nfft]
+            ts = self.value[idx:idx+nfft]
             tmp[i, :] = signal.periodogram(ts, fs=sampling, window=window,
                                            nfft=nfft, scaling=scaling,
                                            **kwargs)[1]
@@ -740,7 +729,7 @@ class TimeSeries(Series):
             else:
                 w = weights
             # calculate weighted average
-            out[i, :] = numpy.average(tmp[x0:x1], axis=0, weights=w)
+            out.value[i, :] = numpy.average(tmp[x0:x1], axis=0, weights=w)
 
         return out
 
@@ -783,7 +772,7 @@ class TimeSeries(Series):
             stepseries = self[idx:idx_end]
             # calculated FFT and stack
             stepfft = stepseries.fft()
-            out[step] = stepfft.data
+            out[step] = stepfft.value
             if step == 0:
                 out.frequencies = stepfft.frequencies
         return out
@@ -920,7 +909,7 @@ class TimeSeries(Series):
         rspecgram = self.spectrogram(stride, method='rayleigh',
                                      fftlength=fftlength, overlap=overlap,
                                      window=window, nproc=nproc, **kwargs)
-        rspecgram.unit = None
+        rspecgram._unit = ''
         return rspecgram
 
     # -------------------------------------------
@@ -1102,14 +1091,13 @@ class TimeSeries(Series):
         # if integer down-sampling, use decimate
         if factor.is_integer():
             factor = int(factor)
-            new = signal.decimate(self.data, factor, numtaps-1,
+            new = signal.decimate(self.value, factor, numtaps-1,
                                   ftype='fir').view(self.__class__)
         # otherwise use Fourier filtering
         else:
             nsamp = int(self.shape[0] * self.dx.value * rate)
-            new = signal.resample(self.data, nsamp,
+            new = signal.resample(self.value, nsamp,
                                   window=window).view(self.__class__)
-        new.metadata = self.metadata.copy()
         new.sample_rate = rate
         return new
 
@@ -1263,7 +1251,7 @@ class TimeSeries(Series):
             new = signal.sosfilt(sos, self, axis=0).view(self.__class__)
         else:
             new = signal.lfilter(b, a, self, axis=0).view(self.__class__)
-        new.metadata = self.metadata.copy()
+        new.__dict__ = self.__dict__.copy()
         return new
 
     def coherence(self, other, fftlength=None, overlap=None,
@@ -1329,11 +1317,10 @@ class TimeSeries(Series):
             fftlength = int((fftlength * self_.sample_rate).decompose().value)
         if window is not None:
             kwargs['window'] = window
-        coh, f = mlab.cohere(self_.data, other.data, NFFT=fftlength,
+        coh, f = mlab.cohere(self_.value, other.value, NFFT=fftlength,
                              Fs=sampling, noverlap=overlap, **kwargs)
         out = coh.view(Spectrum)
-        out.f0 = f[0]
-        out.df = (f[1] - f[0])
+        out.xindex = f
         out.epoch = self.epoch
         out.name = 'Coherence between %s and %s' % (self.name, other.name)
         return out
@@ -1443,7 +1430,7 @@ class TimeSeries(Series):
             idx = stridesamp * step
             idx_end = idx + stridesamp
             stepseries = self[idx:idx_end]
-            rms_ = numpy.sqrt(numpy.mean(numpy.abs(stepseries.data)**2))
+            rms_ = numpy.sqrt(numpy.mean(numpy.abs(stepseries.value)**2))
             data[step] = rms_
         name = '%s %.2f-second RMS' % (self.name, stride)
         return self.__class__(data, channel=self.channel, epoch=self.epoch,
@@ -1509,8 +1496,7 @@ class TimeSeries(Series):
         kwargs.setdefault('mode', 'constant')
         if isinstance(pad_width, int):
             pad_width = (pad_width,)
-        new = numpy.pad(self.data, pad_width, **kwargs).view(self.__class__)
-        new.metadata = self.metadata.copy()
+        new = numpy.pad(self.value, pad_width, **kwargs).view(self.__class__)
         new.epoch = self.epoch.gps - self.dt.value * pad_width[0]
         return new
 
@@ -1561,7 +1547,7 @@ class TimeSeries(Series):
             unit = None
         channel = Channel(lalts.name, 1/lalts.deltaT, unit=unit,
                           dtype=lalts.data.data.dtype)
-        return cls(lalts.data.data, channel=channel, epoch=lalts.epoch,
+        return cls(lalts.data.data, channel=channel, epoch=float(lalts.epoch),
                    copy=True)
 
     @with_import('lal.lal')
@@ -1580,7 +1566,7 @@ class TimeSeries(Series):
         create = getattr(lal, 'Create%sTimeSeries' % typestr.upper())
         lalts = create(self.name, lal.LIGOTimeGPS(self.epoch.gps), 0,
                        self.dt.value, unit, self.size)
-        lalts.data.data = self.data
+        lalts.data.data = self.value
         return lalts
 
     # -------------------------------------------
@@ -1599,7 +1585,6 @@ class TimeSeries(Series):
             except KeyError:
                 op_ = ufunc.__name__
             result = obj.view(StateTimeSeries)
-            result.metadata = self.metadata.copy()
             result.unit = ""
             result.name = '%s %s %s' % (obj.name, op_, value)
             if hasattr(obj, 'unit') and str(obj.unit):
@@ -2030,8 +2015,10 @@ class TimeSeriesDict(OrderedDict):
                 for buffer_, c in zip(buffers, channels):
                     ts = cls.EntryClass.from_nds2_buffer(
                         buffer_, dtype=dtype.get(c))
+                    gprint('appending:')
                     out.append({c: ts}, pad=pad,
                                gap=pad is None and 'raise' or 'pad')
+                    gprint('complete.')
                 if not nsteps:
                     if have_minute_trends:
                         dur = buffer_.length * 60

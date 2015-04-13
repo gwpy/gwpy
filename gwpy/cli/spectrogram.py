@@ -109,12 +109,12 @@ class Spectrogram(CliProduct):
         self.fmin = 1 / secpfft
 
         # default time axis
-        self.xmin = self.timeseries[0].times.data.min()
-        self.xmax = self.timeseries[0].times.data.max()
+        self.xmin = self.timeseries[0].times.value.min()
+        self.xmax = self.timeseries[0].times.value.max()
 
         # set intensity (color) limits
-        imin = specgram.data.min()
-        imax = specgram.data.max()
+        imin = specgram.value.min()
+        imax = specgram.value.max()
         if arg_list.imin:
             lo = float(arg_list.imin)
         else:

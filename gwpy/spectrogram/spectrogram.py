@@ -82,7 +82,7 @@ def _from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
         stepseries = timeseries[idx:idx_end]
         steppsd = stepseries.psd(fftlength, fftstride, method,
                                  window=window, plan=plan)
-        out[step] = steppsd.data
+        out.value[step] = steppsd.value
 
     return out
 

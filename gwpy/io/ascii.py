@@ -46,7 +46,7 @@ def read_ascii(filepath, _obj=Series, xcol=0, ycol=1, delimiter=None,
             loadargs[kwarg] = kwargs.pop(kwarg)
     # read data, format and return
     x, y = loadtxt(filepath, delimiter=delimiter, **loadargs)
-    return _obj(y, index=x, **kwargs)
+    return _obj(y, xindex=x, **kwargs)
 
 
 def write_ascii(series, fobj, fmt='%.18e', delimiter=' ', newline='\n',
@@ -64,8 +64,8 @@ def write_ascii(series, fobj, fmt='%.18e', delimiter=' ', newline='\n',
     --------
     numpy.savetxt : for documentation of keyword arguments
     """
-    x = series.index.data
-    y = series.data
+    x = series.xindex.value
+    y = series.value
     return savetxt(fobj, zip(x, y), fmt=fmt, delimiter=delimiter,
                    newline=newline, header=header, footer=footer,
                    comments=comments)

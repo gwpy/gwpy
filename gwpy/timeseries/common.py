@@ -127,7 +127,7 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
                 raise
     elif other.shape[0] < new.shape[0]:
         N = other.shape[0]
-        new.data[:-N] = new.data[N:]
+        new.value[:-N] = new.value[N:]
     else:
         N = min(new.shape[0], other.shape[0])
 
@@ -152,7 +152,7 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
         else:
             new.times[:-other.shape[0]] = new.times[other.shape[0]:]
         try:
-            new.times[-other.shape[0]:] = other.times.data
+            new.times[-other.shape[0]:] = other.times.value
         except AttributeError:
             del new.times
         try:
@@ -221,8 +221,8 @@ def prepend(self, other, gap='raise', inplace=True, pad=0.0):
     s = list(new.shape)
     s[0] = new.shape[0] + other.shape[0]
     new.resize(s, refcheck=False)
-    new[-N:] = new.data[:N]
-    new[:other.shape[0]] = other.data
+    new[-N:] = new.value[:N]
+    new[:other.shape[0]] = other.value
     return new
 
 

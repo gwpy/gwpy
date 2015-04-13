@@ -35,7 +35,7 @@ from .series import Series
 from ..segments import Segment
 
 
-class Array2D(Array):
+class Array2D(Series):
     """A two-dimensional array with metadata
 
     Parameters
@@ -65,24 +65,29 @@ class Array2D(Array):
     array : `Array`
         a new array, with a view of the data, and all associated metadata
     """
-    _metadata_slots = (Array._metadata_slots +
-                       ['x0', 'dx', 'y0', 'dy', 'logx', 'logy'])
-    xunit = Unit('')
-    yunit = Unit('')
+    _metadata_slots = Series._metadata_slots + ['y0', 'dy', 'yindex']
+    _default_xunit = Unit('')
+    _default_yunit = Unit('')
+    _ndim = 2
 
-    def __new__(cls, data, dtype=None, copy=False, subok=True, **metadata):
+    def __new__(cls, data, unit=None, xindex=None, yindex=None, x0=0,
+                dx=1, y0=0, dy=1, **kwargs):
         """Define a new `Array2D`
         """
-        if len(data) and not numpy.asarray(data).ndim == 2:
-            raise ValueError("Data must be two-dimensional")
-        return super(Array2D, cls).__new__(cls, data, dtype=dtype, copy=copy,
-                                           subok=subok, **metadata)
-
-    # simple slice, need to copy x0 away from self
-    def __getslice__(self, i, j):
-        new = super(Array2D, self).__getslice__(i, j).copy()
-        new.x0 = float(self.x0.value)
-        new.x0 += (i * new.dx)
+        new = super(Array2D, cls).__new__(cls, data, unit=unit, xindex=xindex,
+                                          x0=0, dx=dx, **kwargs)
+        if isinstance(y0, Quantity):
+            yunit = y0.unit
+        elif isinstance(dy, Quantity):
+            yunit = dy.unit
+        else:
+            yunit = cls._default_yunit
+        if y0 is not None:
+            new.y0 = Quantity(y0, yunit)
+        if dy is not None:
+            new.dy = Quantity(dy, yunit)
+        if yindex is not None:
+            new.yindex = yindex
         return new
 
     # rebuild getitem to handle complex slicing
@@ -99,17 +104,13 @@ class Array2D(Array):
             return Quantity(new, unit=self.unit)
         # unwrap a Series
         if len(new.shape) == 1:
-            new = new.data.view(Series)
-            new.metadata = self.metadata.copy()
-            new.metadata.pop('dy')
-            new.metadata.pop('y0')
+            new = new.value.view(Series)
             if isinstance(x, (float, int)):
-                new.metadata['dx'] = self.dy
-                new.metadata['x0'] = self.y0
+                new.dx = self.dy
+                new.x0 = self.y0
         # unwrap a Spectrogram
         else:
-            new = new.data.view(type(self))
-            new.metadata = self.metadata.copy()
+            new = new.value.view(type(self))
         # update metadata
         if isinstance(x, slice):
             if x.start:
@@ -129,137 +130,7 @@ class Array2D(Array):
         return new
 
     # -------------------------------------------
-    # Series properties
-
-    @property
-    def x0(self):
-        """X-axis value of first sample
-
-        :type: `~astropy.units.Quantity`
-        """
-        return self.metadata['x0']
-
-    @x0.setter
-    def x0(self, value):
-        if isinstance(value, Quantity):
-            self.metadata['x0'] = value.to(self.xunit)
-        else:
-            self.metadata['x0'] = Quantity(value, self.xunit)
-
-    @x0.deleter
-    def x0(self):
-        del self.metadata['x0']
-
-    @property
-    def dx(self):
-        """Distance between samples on the x-axis
-
-        :type: `~astropy.units.Quantity`
-        """
-        return self.metadata['dx']
-
-    @dx.setter
-    def dx(self, value):
-        if isinstance(value, Quantity):
-            self.metadata['dx'] = value.to(self.xunit)
-        else:
-            self.metadata['dx'] = Quantity(value, self.xunit)
-
-    @dx.deleter
-    def dx(self):
-        del self.metadata['dx']
-
-    @property
-    def span_x(self):
-        """Extent of this `Array2D`
-
-        :type: `~gwpy.segments.Segment`
-        """
-        return Segment(self.x0, self.x0 + self.shape[0] * self.dx)
-
-    @property
-    def y0(self):
-        """X-axis value of first sample
-
-        :type: `~astropy.units.Quantity`
-        """
-        return self.metadata['y0']
-
-    @y0.setter
-    def y0(self, value):
-        if isinstance(value, Quantity):
-            self.metadata['y0'] = value.to(self.yunit)
-        else:
-            self.metadata['y0'] = Quantity(value, self.yunit)
-
-    @y0.deleter
-    def y0(self):
-        del self.metadata['y0']
-
-    @property
-    def dy(self):
-        """Distance between samples on the x-axis
-
-        :type: `~astropy.units.Quantity`
-        """
-        return self.metadata['dy']
-
-    @dy.setter
-    def dy(self, value):
-        if isinstance(value, Quantity):
-            self.metadata['dy'] = value.to(self.yunit)
-        else:
-            self.metadata['dy'] = Quantity(value, self.yunit)
-
-    @dy.deleter
-    def dy(self):
-        del self.metadata['dy']
-
-    @property
-    def span_y(self):
-        """Extent of this `Array2D`
-
-        :type: `~gwpy.segments.Segment`
-        """
-        return Segment(self.y0, self.y0 + self.shape[1] * self.dy)
-
-    @property
-    def xindex(self):
-        """Positions of the data on the x-axis
-
-        :type: `Series`
-        """
-        try:
-            return self._xindex
-        except AttributeError:
-            if self.logx:
-                logdx = (numpy.log10(self.x0.value + self.dx.value) -
-                         numpy.log10(self.x0.value))
-                logx1 = numpy.log10(self.x0.value) + self.shape[0] * logdx
-                self.xindex = numpy.logspace(math.log10(self.x0.value), logx1,
-                                             num=self.shape[0])
-            else:
-                self.xindex = (numpy.arange(self.shape[0]) * self.dx.value +
-                               self.x0.value)
-            return self.xindex
-
-    @xindex.setter
-    def xindex(self, samples):
-        if not isinstance(samples, Array):
-            fname = inspect.stack()[0][3]
-            name = '%s %s' % (self.name, fname)
-            samples = Array(samples, unit=self.xunit, name=name,
-                            epoch=self.epoch, channel=self.channel)
-        self._xindex = samples
-        self.x0 = self.xindex[0]
-        try:
-            self.dx = self.xindex[1] - self.xindex[0]
-        except IndexError:
-            pass
-
-    @xindex.deleter
-    def xindex(self):
-        del self._xindex
+    # Array2D properties
 
     @property
     def yindex(self):
@@ -270,98 +141,78 @@ class Array2D(Array):
         try:
             return self._yindex
         except AttributeError:
-            if self.logy:
-                logdy = (numpy.log10(self.y0.value + self.dy.value) -
-                         numpy.log10(self.y0.value))
-                logy1 = numpy.log10(self.y0.value) + self.shape[-1] * logdy
-                self.yindex = numpy.logspace(math.log10(self.y0.value), logy1,
-                                             num=self.shape[-1])
-            else:
-                self.yindex = (numpy.arange(self.shape[-1]) * self.dy.value +
-                               self.y0.value)
-            return self.yindex
+            self._yindex = self.y0 + (
+                numpy.arange(self.shape[1], dtype=self.dtype) * self.dy)
+            return self._yindex
 
     @yindex.setter
-    def yindex(self, samples):
-        if not isinstance(samples, Array):
-            fname = inspect.stack()[0][3]
-            name = '%s %s' % (self.name, fname)
-            samples = Array(samples, unit=self.yunit, name=name,
-                            epoch=self.epoch, channel=self.channel)
-        self._yindex = samples
-        self.y0 = self.yindex[0]
-        try:
-            self.dy = self.yindex[1] - self.yindex[0]
-        except IndexError:
-            pass
+    def yindex(self, index):
+        if isinstance(index, Quantity):
+            self._yindex = index
+        elif index is None:
+            del self.yindex
+            return
+        else:
+            index = Quantity(index, self._default_yunit)
+            self._yindex = index
+        self.y0 = index[0]
+        if index.size:
+            self.dy = index[1] - index[0]
+        else:
+            self.dy = None
 
     @yindex.deleter
     def yindex(self):
-        del self._yindex
+        try:
+            del self._yindex
+        except AttributeError:
+            pass
 
     @property
-    def logx(self):
-        """Boolean telling whether this `Array2D` has a logarithmic
-        x-axis scale
-        """
-        try:
-            return self.metadata['logx']
-        except KeyError:
-            self.logx = False
-            return self.logx
+    def y0(self):
+        return self._y0
 
-    @logx.setter
-    def logx(self, val):
-        if (val and 'logx' in self.metadata and not self.metdata['logx'] and
-                hasattr(self, '_xindex')):
-            del self._xindex
-        self.metadata['logx'] = bool(val)
+    @y0.setter
+    def y0(self, value):
+        if not isinstance(value, Quantity) and value is not None:
+            value = Quantity(value, self._default_yunit)
+        try:
+            y0 = self.y0
+        except AttributeError:
+            del self.yindex
+        else:
+            if value is None or self.y0 is None or value != y0:
+                del self.yindex
+        self._y0 = value
+
+    @y0.deleter
+    def y0(self):
+        self._y0 = None
 
     @property
-    def logy(self):
-        """Boolean telling whether this `Array2D` has a logarithmic
-        y-ayis scale
-        """
+    def dy(self):
+        return self._dy
+
+    @dy.setter
+    def dy(self, value):
+        if not isinstance(value, Quantity) and value is not None:
+            value = Quantity(value).to(self.yunit)
         try:
-            return self.metadata['logy']
-        except KeyError:
-            self.logy = False
-            return self.logy
+            dy = self.dy
+        except AttributeError:
+            del self.yindex
+        else:
+            if value is None or self.dy is None or value != dy:
+                del self.yindex
+        self._dy = value
 
-    @logy.setter
-    def logy(self, val):
-        if (val and 'logy' in self.metadata and not self.metadata['logy'] and
-                hasattr(self, '_yindex')):
-            del self._index
-        self.metadata['logy'] = bool(val)
+    @dy.deleter
+    def dy(self):
+        self._dy = None
 
-    # -------------------------------------------
-    # Array2D methods
-
-    def resample(self, rate, window=None):
-        """Resample this Array2D to a new rate
-
-        Parameters
-        ----------
-        rate : `float`
-            rate to which to resample this `Array2D`
-        window : array_like, callable, string, float, or tuple, optional
-            specifies the window applied to the signal in the Fourier
-            domain.
-
-        Returns
-        -------
-        Array2D
-            a new Array2D with the resampling applied, and the same
-            metadata
-        """
-        if isinstance(rate, Quantity):
-            rate = rate.value
-        n = self.size * self.dx * rate
-        data = signal.resample(self.data, n, window=window)
-        new = self.__class__(data, **self.metadata)
-        new.dx = 1 / rate
-        return new
+    @property
+    def yunit(self):
+        return self.y0.unit
 
     # -------------------------------------------
     # numpy.ndarray method modifiers
@@ -373,7 +224,7 @@ class Array2D(Array):
             return Series(out, name='%s max' % self.name, unit=self.unit,
                           x0=out.y0.value, dx=out.dy.value)
         else:
-            return out * self.unit
+            return out.value * self.unit
     max.__doc__ = Array.max.__doc__
 
     def min(self, *args, **kwargs):
@@ -382,7 +233,7 @@ class Array2D(Array):
             return Series(out, name='%s min' % self.name, unit=self.unit,
                           x0=out.y0.value, dx=out.dy.value)
         else:
-            return out * self.unit
+            return out.value * self.unit
     min.__doc__ = Array.min.__doc__
 
     def mean(self, *args, **kwargs):
@@ -391,23 +242,22 @@ class Array2D(Array):
             return Series(out, name='%s mean' % self.name, unit=self.unit,
                           x0=out.y0.value, dx=out.dy.value)
         else:
-            return out * self.unit
+            return out.value * self.unit
     mean.__doc__ = Array.mean.__doc__
 
     def median(self, *args, **kwargs):
         out = super(Array2D, self).median(*args, **kwargs)
         if isinstance(out, Array) and out.ndim == 1:
-            return Series(out.data, name='%s median' % self.name,
+            return Series(out.value, name='%s median' % self.name,
                           unit=self.unit, x0=self.y0.value, dx=self.dy.value)
         else:
-            return out * self.unit
+            return out.value * self.unit
     median.__doc__ = Array.median.__doc__
 
     def __array_wrap__(self, obj, context=None):
         """Wrap an array as an `Array2D` with metadata
         """
-        result = obj.view(self.__class__)
-        result.metadata = self.metadata.copy()
+        result = super(Array2D, self).__array_wrap__(obj, context=None)
         try:
             result._xindex = self._xindex
         except AttributeError:

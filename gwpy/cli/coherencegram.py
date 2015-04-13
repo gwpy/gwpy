@@ -109,12 +109,12 @@ class Coherencegram(CliProduct):
             norm = True
 
         # set default frequency limits
-        self.fmax = coh.span_y.end.value
+        self.fmax = coh.band[1]
         self.fmin = 1 / secpfft
 
         # default time axis
-        self.xmin = self.timeseries[0].times.data.min()
-        self.xmax = self.timeseries[0].times.data.max()
+        self.xmin = self.timeseries[0].times.value.min()
+        self.xmax = self.timeseries[0].times.value.max()
 
         # set intensity (color) limits
         imin = coh.min().value

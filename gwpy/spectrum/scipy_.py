@@ -38,18 +38,14 @@ def welch(timeseries, segmentlength, noverlap=None, **kwargs):
     # get module
     signal = import_method_dependency('scipy.signal')
     # calculate PSD
-    f, psd_ = signal.welch(timeseries.data, noverlap=noverlap,
+    f, psd_ = signal.welch(timeseries.value, noverlap=noverlap,
                            fs=timeseries.sample_rate.decompose().value,
                            nperseg=segmentlength, **kwargs)
     # generate Spectrum and return
-    spec = psd_.view(Spectrum)
-    spec.frequencies = f
-    spec.name = timeseries.name
-    spec.epoch = timeseries.epoch
-    spec.channel = timeseries.channel
-    spec.unit = scale_timeseries_units(timeseries.unit,
-                                       kwargs.get('scaling', 'density'))
-    return spec
+    unit = scale_timeseries_units(timeseries.unit,
+                                  kwargs.get('scaling', 'density'))
+    return Spectrum(psd_, unit=unit, frequencies=f, name=timeseries.name,
+                    epoch=timeseries.epoch, channel=timeseries.channel)
 
 register_method(welch)
 
@@ -77,7 +73,7 @@ def rayleigh(timeseries, segmentlength, noverlap=0, **kwargs):
         tmpdata[i, :] = welch(ts, segmentlength)
     std = tmpdata.std(axis=0)
     mean = tmpdata.mean(axis=0)
-    return Spectrum(std/mean, copy=False, f0=0,
+    return Spectrum(std/mean, unit='', copy=False, f0=0,
                     df=timeseries.sample_rate.value/segmentlength,
                     channel=timeseries.channel,
                     name='Rayleigh spectrum of %s' % timeseries.name)

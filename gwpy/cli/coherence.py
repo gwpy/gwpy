@@ -82,7 +82,7 @@ class Coherence(CliProduct):
         for idx in range(1, len(self.timeseries)):
             legend_text = self.timeseries[idx].channel.name
             if legend_text != ref_name and self.timeseries[idx].min() != \
-                    self.timeseries[idx].data.max():
+                    self.timeseries[idx].value.max():
                 next_ts = idx
                 break
         if next_ts == 0:
@@ -141,8 +141,8 @@ class Coherence(CliProduct):
         # if the specified frequency limits adjust our ymin and ymax values
         # at this point self.ymin and self.ymax represent the full spectra
         import numpy
-        mymin = cohs[0].data.min()
-        mymax = cohs[0].data.max()
+        mymin = cohs[0].value.min()
+        mymax = cohs[0].value.max()
         myfmin = 1/self.secpfft * cohs[0].frequencies.unit
         myfmax = maxfs/2
         if arg_list.fmin:
@@ -159,8 +159,8 @@ class Coherence(CliProduct):
                     stop = t[0][t[0].size-1]
                 else:
                     stop = cohs[idx].frequencies.size - 1
-                mymin = min(mymin, numpy.min(cohs[idx].data[strt:stop]))
-                mymax = max(mymax, numpy.max(cohs[idx].data[strt:stop]))
+                mymin = min(mymin, numpy.min(cohs[idx].value[strt:stop]))
+                mymax = max(mymax, numpy.max(cohs[idx].value[strt:stop]))
 
         self.ymin = mymin
         self.ymax = mymax
