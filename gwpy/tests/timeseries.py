@@ -129,6 +129,16 @@ class TimeSeriesTests(unittest.TestCase):
                 if os.path.isfile(hdfout):
                     os.remove(hdfout)
 
+    def test_pickle(self):
+        """Check pickle-unpickle yields unchanged data
+        """
+        import cPickle
+        ts = TimeSeries(self.data, sample_rate=1, name='TEST CASE',
+                        epoch=0, channel='TEST CASE')
+        pickle = ts.dumps()
+        ts2 = cPickle.loads(pickle)
+        self.assertEqual(ts, ts2)
+
 
 if __name__ == '__main__':
     unittest.main()
