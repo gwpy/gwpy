@@ -165,6 +165,17 @@ class Array(Quantity):
             prefixstr, arrstr, indent, metadata)
 
     # -------------------------------------------
+    # Pickle helpers
+
+    def dumps(self, order='C'):
+        return super(Quantity, self).dumps()
+    dumps.__doc__ = numpy.ndarray.dumps.__doc__
+
+    def tostring(self, order='C'):
+        return super(Quantity, self).tostring()
+    tostring.__doc__ = numpy.ndarray.tostring.__doc__
+
+    # -------------------------------------------
     # array methods
 
     def median(self, axis=None, out=None, overwrite_input=False):
