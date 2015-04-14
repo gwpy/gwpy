@@ -2014,10 +2014,8 @@ class TimeSeriesDict(OrderedDict):
                 for buffer_, c in zip(buffers, channels):
                     ts = cls.EntryClass.from_nds2_buffer(
                         buffer_, dtype=dtype.get(c))
-                    gprint('appending:')
                     out.append({c: ts}, pad=pad,
                                gap=pad is None and 'raise' or 'pad')
-                    gprint('complete.')
                 if not nsteps:
                     if have_minute_trends:
                         dur = buffer_.length * 60
