@@ -22,7 +22,7 @@
 import numbers
 import warnings
 
-from numpy import (vstack, array, nan_to_num, isclose, ndarray)
+import numpy
 
 import scipy
 from scipy import (interpolate, signal)
@@ -41,18 +41,6 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 __version__ = version.version
 
 __all__ = ['Spectrogram', 'SpectrogramList']
-
-
-def as_spectrum(func):
-    def decorated_func(self, *args, **kwargs):
-        out = func(self, *args, **kwargs)
-        if isinstance(out, Series):
-            out = Spectrum(out.value, name=out.name, unit=out.unit,
-                           epoch=out.epoch, channel=out.channel,
-                           f0=out.x0.value, df=out.dx.value)
-        return out
-    decorated_func.__doc__ = func.__doc__
-    return decorated_func
 
 
 @update_docstrings
@@ -231,7 +219,7 @@ class Spectrogram(Array2D):
         Each :class:`~gwpy.spectrum.core.Spectrum` passed to this
         constructor must be the same length.
         """
-        data = vstack([s.value for s in spectra])
+        data = numpy.vstack([s.value for s in spectra])
         s1 = spectra[0]
         if not all(s.f0 == s1.f0 for s in spectra):
             raise ValueError("Cannot stack spectra with different f0")
@@ -366,7 +354,7 @@ class Spectrogram(Array2D):
                              "or ba format. See scipy.signal docs for "
                              "details.")
         if isinstance(a, float):
-            a = array([a])
+            a = numpy.array([a])
         # parse keyword args
         inplace = kwargs.pop('inplace', False)
         if kwargs:
@@ -375,7 +363,7 @@ class Spectrogram(Array2D):
         f = self.frequencies.value.copy()
         if f[0] == 0:
             f[0] = 1e-100
-        fresp = nan_to_num(abs(signal.freqs(b, a, f)[1]))
+        fresp = numpy.nan_to_num(abs(signal.freqs(b, a, f)[1]))
         if inplace:
             self *= fresp
             return self
@@ -429,17 +417,17 @@ class Spectrogram(Array2D):
     def is_compatible(self, other):
         """Check whether metadata attributes for self and other match.
         """
-        if type(other) in [list, tuple, ndarray]:
+        if type(other) in [list, tuple, numpy.ndarray]:
             return True
-        if not isclose(
+        if not numpy.isclose(
                 self.dt.decompose().value, other.dt.decompose().value):
             raise ValueError("Spectrogram time resolutions do not match: "
                              "%s vs %s." % (self.dt, other.dt))
-        if not isclose(
+        if not numpy.isclose(
                 self.df.decompose().value, other.df.decompose().value):
             raise ValueError("Spectrogram frequency resolutions do not match:"
                              "%s vs %s." % (self.df, other.df))
-        if not isclose(
+        if not numpy.isclose(
                 self.f0.decompose().value, other.f0.decompose().value):
             raise ValueError("Spectrogram starting frequencies do not match:"
                              "%s vs %s." % (self.f0, other.f0))
@@ -508,16 +496,23 @@ class Spectrogram(Array2D):
     crop = common.crop
 
     # -------------------------------------------
-    # numpy.ndarray method modifiers
-    # all of these try to return Spectra rather than simple numbers
+    # ufunc modifier
 
-    min = as_spectrum(Array2D.min)
-
-    max = as_spectrum(Array2D.max)
-
-    mean = as_spectrum(Array2D.mean)
-
-    median = as_spectrum(Array2D.median)
+    def _wrap_function(self, function, axis, *args, **kwargs):
+        out = super(Spectrogram, self)._wrap_function(
+            function, axis, *args, **kwargs)
+        # requested frequency axis, return a Spectrum
+        if out.ndim == 1 and axis == 0:
+            return Spectrum(out.value, name=out.name, unit=out.unit,
+                            epoch=out.epoch, channel=out.channel,
+                            f0=out.x0.value, df=out.dx.value)
+        # requested time axis, return a TimeSeries
+        elif out.ndim == 1:
+            return TimeSeries(out.value, name=out.name, unit=out.unit,
+                              epoch=out.epoch, channel=out.channel, dx=out.dx)
+        # otherwise return whatever we got back from super (Quantity)
+        return out
+    _wrap_function.__doc__ = Array2D._wrap_function.__doc__
 
 
 class SpectrogramList(TimeSeriesList):

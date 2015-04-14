@@ -218,41 +218,23 @@ class Array2D(Series):
     # numpy.ndarray method modifiers
     # all of these try to return Quantities rather than simple numbers
 
-    def max(self, *args, **kwargs):
-        out = super(Array2D, self).max(*args, **kwargs)
-        if isinstance(out, Array) and out.shape:
-            return Series(out, name='%s max' % self.name, unit=self.unit,
-                          x0=out.y0.value, dx=out.dy.value)
-        else:
-            return out.value * self.unit
-    max.__doc__ = Array.max.__doc__
-
-    def min(self, *args, **kwargs):
-        out = super(Array2D, self).min(*args, **kwargs)
-        if isinstance(out, Array) and out.shape:
-            return Series(out, name='%s min' % self.name, unit=self.unit,
-                          x0=out.y0.value, dx=out.dy.value)
-        else:
-            return out.value * self.unit
-    min.__doc__ = Array.min.__doc__
-
-    def mean(self, *args, **kwargs):
-        out = super(Array2D, self).mean(*args, **kwargs)
-        if isinstance(out, Array) and out.shape:
-            return Series(out, name='%s mean' % self.name, unit=self.unit,
-                          x0=out.y0.value, dx=out.dy.value)
-        else:
-            return out.value * self.unit
-    mean.__doc__ = Array.mean.__doc__
-
-    def median(self, *args, **kwargs):
-        out = super(Array2D, self).median(*args, **kwargs)
-        if isinstance(out, Array) and out.ndim == 1:
-            return Series(out.value, name='%s median' % self.name,
-                          unit=self.unit, x0=self.y0.value, dx=self.dy.value)
-        else:
-            return out.value * self.unit
-    median.__doc__ = Array.median.__doc__
+    def _wrap_function(self, function, *args, **kwargs):
+        axis = kwargs.get('axis', None)
+        out = super(Array2D, self)._wrap_function(function, *args, **kwargs)
+        if out.ndim == 1:
+            # return Series
+            if axis == 0:
+                x0 = self.y0
+                dx = self.dy
+                xindex = hasattr(self, '_yindex') and self.yindex or None
+            else:
+                x0 = self.x0
+                dx = self.dx
+                xindex = hasattr(self, '_xindex') and self.xindex or None
+            return Series(out.value, unit=out.unit, x0=x0, dx=dx,
+                          channel=out.channel, epoch=self.epoch, xindex=xindex,
+                          name='%s %s' % (self.name, function.__name__))
+        return out
 
     def __array_wrap__(self, obj, context=None):
         """Wrap an array as an `Array2D` with metadata

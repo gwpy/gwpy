@@ -94,6 +94,12 @@ class Array(Quantity):
     # -------------------------------------------
     # array manipulations
 
+    def _wrap_function(self, function, *args, **kwargs):
+        out = super(Array, self)._wrap_function(function, *args, **kwargs)
+        if out.ndim == 0:
+            return Quantity(out.value, out.unit)
+        return out
+
     def __quantity_subclass__(self, unit):
         return type(self), True
     __quantity_subclass__.__doc__ = Quantity.__quantity_subclass__.__doc__
@@ -178,9 +184,11 @@ class Array(Quantity):
     # -------------------------------------------
     # array methods
 
-    def median(self, axis=None, out=None, overwrite_input=False):
-        return numpy.median(self, axis=axis, out=out,
-                            overwrite_input=overwrite_input)
+    def median(self, axis=None, out=None, overwrite_input=False,
+               keepdims=False):
+        return self._wrap_function(numpy.median, axis, out=out,
+                                   overwrite_input=overwrite_input,
+                                   keepdims=keepdims)
     median.__doc__ = numpy.median.__doc__
 
     @property
