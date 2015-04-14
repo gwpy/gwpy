@@ -121,26 +121,30 @@ class Coherence(CliProduct):
                         if next_ts != ref_idx:
                             if numpy.min(self.timeseries[next_ts]) == \
                                     numpy.max(self.timeseries[next_ts]):
-                                print 'Channel %s at %d has min=max, coherence ' \
-                                      'with this channel will not be calculated' \
-                                      % self.timeseries[next_ts].channel.name, \
+                                print 'Channel %s at %d has min=max, ' \
+                                      'coherence with this channel will not ' \
+                                      'be calculated' \
+                                      % self.timeseries[next_ts].channel.name,\
                                     self.timeseries[next_ts].times.epoch.gps
                             else:
                                 maxfs = max(maxfs,
-                                            self.timeseries[next_ts].sample_rate)
+                                            self.timeseries[next_ts].
+                                            sample_rate)
                                 # calculate and plot the first pair,
-                                # note the first channel is the reference channel
+                                # note the first channel is the reference chan
                                 snd_ts = self.timeseries[next_ts]
                                 coh = self.timeseries[ref_idx].\
                                     coherence(snd_ts, fftlength=fftlen,
                                               overlap=ovlap_frac*fftlen)
 
-                                legend_text = self.timeseries[next_ts].channel.name
+                                legend_text = self.timeseries[next_ts].\
+                                    channel.name
                                 if len(self.start_list) > 1:
-                                    legend_text += ", %s" % snd_ts.times.epoch.gps
+                                    legend_text += ", %s" % \
+                                                   snd_ts.times.epoch.gps
                                 coh.name = legend_text
 
-                                # coh2 = 1 / (1-coh) : how to implement alt scaler
+                                # coh2 = 1 / (1-coh) : how to do alt scaler
 
                                 if not cohs:
                                     self.plot = coh.plot()
