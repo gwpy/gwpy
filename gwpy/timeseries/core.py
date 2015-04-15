@@ -445,7 +445,6 @@ class TimeSeries(Series):
                 (overlap * self.sample_rate).decompose().value)
         # calculate and return spectrum
         psd_ = method_func(self, nfft, **kwargs)
-        psd_.unit.__doc__ = 'Power spectral density'
         return psd_
 
     def asd(self, fftlength=None, overlap=None, method='welch', **kwargs):
@@ -478,7 +477,6 @@ class TimeSeries(Series):
         """
         asd_ = self.psd(method=method, fftlength=fftlength,
                         overlap=overlap, **kwargs) ** (1/2.)
-        asd_.unit.__doc__ = 'Amplitude spectral density'
         return asd_
 
     def spectrogram(self, stride, fftlength=None, overlap=0,
@@ -874,7 +872,6 @@ class TimeSeries(Series):
                 (overlap * self.sample_rate).decompose().value)
         # calculate and return spectrum
         spec_ = method_func(self, nfft, **kwargs)
-        spec_.unit.__doc__ = 'Rayleigh statistic'
         return spec_
 
     def rayleigh_spectrogram(self, stride, fftlength=None, overlap=0,
@@ -1323,6 +1320,7 @@ class TimeSeries(Series):
         out.xindex = f
         out.epoch = self.epoch
         out.name = 'Coherence between %s and %s' % (self.name, other.name)
+        out.unit = 'coherence'
         return out
 
     def auto_coherence(self, dt, fftlength=None, overlap=None,
