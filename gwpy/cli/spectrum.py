@@ -123,15 +123,15 @@ class Spectrum(CliProduct):
             myfmin = self.fmin
             myfmax = self.fmax
             if arg_list.fmin:
-                myfmin = float(arg_list.fmin) * spectra[0].frequencies.unit
+                myfmin = float(arg_list.fmin)
             if arg_list.fmax:
-                myfmax = float(arg_list.fmax) * spectra[0].frequencies.unit
+                myfmax = float(arg_list.fmax)
 
             for idx in range(0, len(spectra)):
-                t = numpy.where(spectra[idx].frequencies >= myfmin)
+                t = numpy.where(spectra[idx].frequencies.value >= myfmin)
                 if t[0].size:
                     strt = t[0][0]
-                    t = numpy.where(spectra[idx].frequencies >= myfmax)
+                    t = numpy.where(spectra[idx].frequencies.value >= myfmax)
                     if t[0].size:
                         stop = t[0][0]
                     else:
