@@ -29,7 +29,7 @@ from copy import deepcopy
 import numpy
 numpy.set_printoptions(threshold=200, linewidth=65)
 
-from astropy.units import (UnitBase, Quantity)
+from astropy.units import (UnitBase, Unit, Quantity)
 from ..io import (reader, writer)
 
 from .. import version
@@ -89,6 +89,8 @@ class Array(Quantity):
         new.name = name
         new.epoch = epoch
         new.channel = channel
+        if unit is None:
+            del new.unit
         return new
 
     # -------------------------------------------
@@ -254,13 +256,65 @@ class Array(Quantity):
 
     @property
     def unit(self):
-        return self._unit
+        """The physical unit of these data
+
+        :type: `~astropy.units.UnitBase`
+        """
+        try:
+            return self._unit
+        except AttributeError:
+            return None
 
     @unit.setter
     def unit(self, unit):
-        raise AttributeError("can't set attribute. To change the units of this"
-                             " %s, use the .to() instance method instead."
-                             % type(self).__name__)
+        if not hasattr(self, '_unit') or self._unit is None:
+            self._unit = Unit(unit)
+        else:
+            raise AttributeError(
+                "Can't set attribute. To change the units of this %s, use the "
+                ".to() instance method instead, otherwise use the "
+                "override_unit() instance method to forcefully set a new unit."
+                % type(self).__name__)
+
+    @unit.deleter
+    def unit(self):
+        del self._unit
+
+    # -------------------------------------------
+    # unit manipulations
+
+    def _to_own_unit(self, value, check_precision=True):
+        if self.unit is None:
+            try:
+                self.unit = ''
+                return super(Array, self)._to_own_unit(
+                    value, check_precision=check_precision)
+            finally:
+                del self.unit
+        else:
+            return super(Array, self)._to_own_unit(
+                value, check_precision=check_precision)
+    _to_own_unit.__doc__ = Quantity._to_own_unit.__doc__
+
+    def override_unit(self, unit):
+        """Forcefully reset the unit of these data
+
+        Use of this method is discouraged in favour of `Array.to`,
+        which performs accurate conversions from one unit to another.
+        The method should really only be used when the original unit of the
+        `Array` is plain wrong.
+
+        Parameters
+        ----------
+        unit : `~astropy.units.Unit`, `str`
+            the unit to force onto this array
+
+        Raises
+        ------
+        ValueError
+            if a `str` cannot be parsed as a valid unit
+        """
+        self._unit = Unit(unit)
 
     # -------------------------------------------
     # extras
