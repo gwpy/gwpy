@@ -149,7 +149,6 @@ class Spectrogram(Array2D):
         dy = self.dy.to(self._default_yunit).value
         return Segment(y0, y0+self.shape[1]*dy)
 
-
     # -------------------------------------------
     # Spectrogram methods
 
@@ -159,8 +158,8 @@ class Spectrogram(Array2D):
 
         Parameters
         ----------
-        operand : `str`, `Spectrum`
-            `Spectrum` against which to weight, or one of
+        operand : `str`, `Spectrum`, `~astropy.units.Quantity`, `float`
+            `Spectrum` or `Quantity` against which to weight, or one of
 
             - ``'mean'`` : weight against the mean of each spectrum
               in this Spectrogram
@@ -173,21 +172,13 @@ class Spectrogram(Array2D):
             A new spectrogram
         """
         if operand == 'mean':
-            operand = self.mean(axis=0).value
-            unit = units.dimensionless_unscaled
+            operand = self.mean(axis=0)
         elif operand == 'median':
-            operand = self.median(axis=0).value
-            unit = units.dimensionless_unscaled
-        elif isinstance(operand, Spectrum):
-            unit = self.unit / operand.unit
-            operand = operand.value
-        elif isinstance(operand, numbers.Number):
-            unit = units.dimensionless_unscaled
-        else:
-            raise ValueError("operand '%s' unrecognised, please give Spectrum "
-                             "or one of: 'mean', 'median'" % operand)
+            operand = self.median(axis=0)
+        elif isinstance(operand, str):
+            raise ValueError("operand %r unrecognised, please give a Quantity"
+                             " or one of: 'mean', 'median'" % operand)
         out = self / operand
-        out.unit = unit
         return out
 
     def plot(self, **kwargs):
