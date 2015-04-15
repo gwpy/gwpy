@@ -63,7 +63,7 @@ class CommonTests(object):
         # test with some data
         array = self.TEST_CLASS(self.data)
         nptest.assert_array_equal(array.value, self.data)
-        self.assertEqual(array.unit, units.Unit(''))
+        self.assertIsNone(array.unit)
         self.assertIsNone(array.name)
         self.assertIsNone(array.epoch)
         self.assertIsNone(array.channel)
