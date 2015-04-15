@@ -82,21 +82,27 @@ class Spectrogram(CliProduct):
 
         ovlp_sec = secpfft*ovlp_frac
         nfft = self.dur/(secpfft - ovlp_sec)
-        stride = int(nfft/(self.width * 0.8))
-        stride = stride * secpfft
-        stride = max(2*secpfft, stride)
+        fft_per_stride = int(nfft/(self.width * 0.8))
+        stride_sec = fft_per_stride * (secpfft - ovlp_sec) + secpfft - 1
+        stride_sec = max(2*secpfft, stride_sec)
         fs = self.timeseries[0].sample_rate.value
 
         # based on the number of FFT calculation choose between
         # high time resolution and high SNR
-        snr_nfft = self.dur / (secpfft * stride)
+        snr_nfft = self.dur / stride_sec
         if (snr_nfft > 512):
-            specgram = self.timeseries[0].spectrogram(stride,
+            specgram = self.timeseries[0].spectrogram(stride_sec,
                                                       fftlength=secpfft,
                                                       overlap=ovlp_sec)
+            self.log(3, ('Spectrogram calc, stride: %.2fs, fftlength: %.2f, '
+                         'overlap: %.2f, #fft: %d' %
+                         (stride_sec, secpfft, ovlp_sec, snr_nfft)))
         else:
             specgram = self.timeseries[0].spectrogram2(fftlength=secpfft,
                                                        overlap=ovlp_sec)
+            self.log(3, ('HR-Spectrogram calc, stride: %.2fs, fftlength: %.2f,'
+                         ' overlap: %.2f, #fft: %d' %
+                         (stride_sec, secpfft, ovlp_sec, snr_nfft)))
         specgram = specgram ** (1/2.)   # ASD
 
         norm = False
@@ -135,7 +141,7 @@ class Spectrogram(CliProduct):
 
         if norm:
             self.plot = specgram.plot(norm='log', vmin=imin, vmax=imax)
-            self.scaleText = 'Normalized to mean'
+            self.scaleText = 'Normalized to median'
         elif arg_list.lincolors:
             self.plot = specgram.plot(vmin=imin, vmax=imax)
             self.scaleText = r'ASD $\left( \frac{\mathrm{Counts}}' \

@@ -351,7 +351,45 @@ class DataQualityFlag(object):
 
     @classmethod
     def query(cls, flag, *args, **kwargs):
-        """Query the segment database for the given flag.
+        """Query for segments of a given flag
+
+        This method intelligently selects the `~DataQualityFlag.query_segdb`
+        or the `~DataQualityFlag.query_dqsegdb` methods based on the
+        ``url`` kwarg given.
+
+        Parameters
+        ----------
+        flag : str
+            The name of the flag for which to query
+        *args
+            Either, two `float`-like numbers indicating the
+            GPS [start, stop) interval, or a `SegmentList`
+            defining a number of summary segments
+        url : `str`, optional, default: ``'https://segdb.ligo.caltech.edu'``
+            URL of the segment database
+
+        See Also
+        --------
+        DataQualityFlag.query_segdb
+        DataQualityFlag.query_dqsegdb
+            for details on the actual query engine, and documentation of
+            other keyword arguments appropriate for each query
+
+        Returns
+        -------
+        flag : `DataQualityFlag`
+            A new `DataQualityFlag`, with the `known` and `active` lists
+            filled appropriately.
+        """
+        url = kwargs.get('url', 'https://segdb.ligo.caltech.edu')
+        if 'dqsegdb' in url:
+            return cls.query_dqsegdb(flag, *args, **kwargs)
+        else:
+            return cls.query_segdb(flag, *args, **kwargs)
+
+    @classmethod
+    def query_segdb(cls, flag, *args, **kwargs):
+        """Query the initial LIGO segment database for the given flag
 
         Parameters
         ----------
@@ -402,7 +440,7 @@ class DataQualityFlag(object):
     @classmethod
     @with_import('dqsegdb.apicalls')
     def query_dqsegdb(cls, flag, *args, **kwargs):
-        """Query the DQSegDB for the given flag.
+        """Query the advanced LIGO DQSegDB for the given flag
 
         Parameters
         ----------
@@ -834,8 +872,46 @@ class DataQualityDict(OrderedDict):
     # classmethods
 
     @classmethod
-    def query(cls, flags, *args, **kwargs):
-        """Query the segment database for a set of `DataQualityFlags`.
+    def query(cls, flag, *args, **kwargs):
+        """Query for segments of a set of flags.
+
+        This method intelligently selects the `~DataQualityDict.query_segdb`
+        or the `~DataQualityDict.query_dqsegdb` methods based on the
+        ``url`` kwarg given.
+
+        Parameters
+        ----------
+        flags : `iterable`
+            A list of flag names for which to query.
+        *args
+            Either, two `float`-like numbers indicating the
+            GPS [start, stop) interval, or a `SegmentList`
+            defining a number of summary segments
+        url : `str`, optional, default: ``'https://segdb.ligo.caltech.edu'``
+            URL of the segment database
+
+        See Also
+        --------
+        DataQualityDict.query_segdb
+        DataQualityDict.query_dqsegdb
+            for details on the actual query engine, and documentation of
+            other keyword arguments appropriate for each query
+
+        Returns
+        -------
+        flag : `DataQualityFlag`
+            A new `DataQualityFlag`, with the `known` and `active` lists
+            filled appropriately.
+        """
+        url = kwargs.get('url', 'https://segdb.ligo.caltech.edu')
+        if 'dqsegdb' in url:
+            return cls.query_dqsegdb(flag, *args, **kwargs)
+        else:
+            return cls.query_segdb(flag, *args, **kwargs)
+
+    @classmethod
+    def query_segdb(cls, flags, *args, **kwargs):
+        """Query the inital LIGO segment database for a list of flags.
 
         Parameters
         ----------
@@ -858,17 +934,17 @@ class DataQualityDict(OrderedDict):
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
         elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(args[0]))
+            qsegs = SegmentList(Segment(map(to_gps, args[0])))
         elif len(args) == 2:
-            qsegs = SegmentList([Segment(args)])
+            qsegs = SegmentList([Segment(map(to_gps, args))])
         else:
-            raise ValueError("DataQualityDict.query must be called with a "
-                             "flag name, and either GPS start and stop times, "
-                             "or a SegmentList of query segments")
+            raise ValueError("DataQualityDict.query_segdb must be called with "
+                             "a list of flag names, and either GPS start and "
+                             "stop times, or a SegmentList of query segments")
         url = kwargs.pop('url', 'https://segdb.ligo.caltech.edu')
         if kwargs.keys():
-            raise TypeError("DataQualityDict.query has no keyword argument "
-                            "'%s'" % kwargs.keys()[0])
+            raise TypeError("DataQualityDict.query_segdb has no keyword "
+                            "argument '%s'" % kwargs.keys()[0])
         # parse flags
         if isinstance(flags, (str, unicode)):
             flags = flags.split(',')
@@ -929,7 +1005,7 @@ class DataQualityDict(OrderedDict):
 
     @classmethod
     def query_dqsegdb(cls, flags, *args, **kwargs):
-        """Query the DQSegDB for a set of `DataQualityFlags`.
+        """Query the advanced LIGO DQSegDB for a list of flags.
 
         Parameters
         ----------

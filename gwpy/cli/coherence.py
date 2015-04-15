@@ -59,6 +59,10 @@ class Coherence(CliProduct):
     def get_xlabel(self):
         return 'Frequency (Hz)'
 
+    def get_sup_title(self):
+        """Override if default lacks critical info"""
+        return self.get_title() + self.ref_chan_name
+
     def gen_plot(self, arg_list):
         """Generate the coherence plot from all time series"""
         import numpy
@@ -74,26 +78,36 @@ class Coherence(CliProduct):
         self.overlap = ovlap_frac
         maxfs = 0
 
-        ref_name = self.timeseries[0].channel.name
+        if arg_list.ref:
+            ref_name = arg_list.ref
+        else:
+            ref_name = self.timeseries[0].channel.name
+        self.ref_chan_name = ref_name
 
+        self.log(3, 'Reference channel: ' + ref_name)
         # we don't want to compare the reference channel to itself
         # at a different time
-        next_ts = 0
-        for idx in range(1, len(self.timeseries)):
+        next_ts = -1
+        for idx in range(0, len(self.timeseries)):
             legend_text = self.timeseries[idx].channel.name
             if legend_text != ref_name and self.timeseries[idx].min() != \
                     self.timeseries[idx].value.max():
                 next_ts = idx
                 break
-        if next_ts == 0:
+        if next_ts == -1:
             raise ValueError('No appropriate channels for '
                              'Coherence calculation')
 
         cohs = []
         for time_group in self.time_groups:
+            ref_idx = time_group[0]
             if len(time_group) >= 2:
+                # find the reference channel in this group
+                for idx in range(0, len(time_group)):
+                    idxp = time_group[idx]
+                    if self.timeseries[idxp].channel.name == ref_name:
+                        ref_idx = idxp
 
-                ref_idx = time_group[0]
                 maxfs = max(maxfs, self.timeseries[ref_idx].sample_rate)
                 if numpy.min(self.timeseries[ref_idx]) == \
                         numpy.max(self.timeseries[ref_idx]):
@@ -102,38 +116,42 @@ class Coherence(CliProduct):
                           % self.timeseries[ref_idx].channel.name, \
                         self.timeseries[ref_idx].epoch.gps
                 else:
-                    for idxp in range(1, len(time_group)):
+                    for idxp in range(0, len(time_group)):
                         next_ts = time_group[idxp]
-
-                        if numpy.min(self.timeseries[next_ts]) == \
-                                numpy.max(self.timeseries[next_ts]):
-                            print 'Channel %s at %d has min=max, coherence ' \
-                                  'with this channel will not be calculated' \
-                                  % self.timeseries[next_ts].channel.name, \
-                                self.timeseries[next_ts].epoch.gps
-                        else:
-                            maxfs = max(maxfs,
-                                        self.timeseries[next_ts].sample_rate)
-                            # calculate and plot the first pair,
-                            # note the first channel is the reference channel
-                            snd_ts = self.timeseries[next_ts]
-                            coh = self.timeseries[ref_idx].\
-                                coherence(snd_ts, fftlength=fftlen,
-                                          overlap=ovlap_frac*fftlen)
-
-                            legend_text = self.timeseries[next_ts].channel.name
-                            if len(self.start_list) > 1:
-                                legend_text += ", %s" % snd_ts.epoch.gps
-                            coh.name = legend_text
-
-                            # coh2 = 1 / (1-coh) : how to implement alt scaler
-
-                            if not cohs:
-                                self.plot = coh.plot()
+                        if next_ts != ref_idx:
+                            if numpy.min(self.timeseries[next_ts]) == \
+                                    numpy.max(self.timeseries[next_ts]):
+                                print 'Channel %s at %d has min=max, ' \
+                                      'coherence with this channel will not ' \
+                                      'be calculated' \
+                                      % self.timeseries[next_ts].channel.name,\
+                                    self.timeseries[next_ts].epoch.gps
                             else:
-                                self.plot.add_spectrum(coh)
+                                maxfs = max(maxfs,
+                                            self.timeseries[next_ts].
+                                            sample_rate)
+                                # calculate and plot the first pair,
+                                # note the first channel is the reference chan
+                                snd_ts = self.timeseries[next_ts]
+                                coh = self.timeseries[ref_idx].\
+                                    coherence(snd_ts, fftlength=fftlen,
+                                              overlap=ovlap_frac*fftlen)
 
-                            cohs.append(coh)
+                                legend_text = self.timeseries[next_ts].\
+                                    channel.name
+                                if len(self.start_list) > 1:
+                                    legend_text += ", %s" % \
+                                                   snd_ts.times.epoch.gps
+                                coh.name = legend_text
+
+                                # coh2 = 1 / (1-coh) : how to do alt scaler
+
+                                if not cohs:
+                                    self.plot = coh.plot()
+                                else:
+                                    self.plot.add_spectrum(coh)
+
+                                cohs.append(coh)
 
         if not cohs:
             raise ValueError('No coherence was calculated due to data'

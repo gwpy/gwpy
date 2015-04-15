@@ -51,12 +51,13 @@ clean:
 	-rm -rf examples/*/
 	-rm -rf $(BUILDDIR)
 	-rm -rf _generated
-	-rm -rf $(LALSUITE_DOXTAG)
+	-rm -f $(LALSUITE_DOXTAG)
+	-rm -f pycbc.inv
 
 apidoc:
 	sphinx-apidoc -o _generated ../gwpy
 
-html: $(CLIEXAMPLES) examples lalsuite_dox.tag
+html: $(CLIEXAMPLES) examples lalsuite_dox.tag pycbc.inv
 	@cp -r $(BUILDDIR)/cli_examples $(BUILDDIR)/html
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
@@ -265,3 +266,6 @@ $(CLIEXAMPLEDIR)/cli-spg-01.png: $(CLIEXAMPLEDIR)
 
 $(LALSUITE_DOXTAG):
 	wget --no-check-certificate https://www.lsc-group.phys.uwm.edu/daswg/projects/lal/nightly/docs/html/lalsuite_dox.tag -O $@ --quiet
+
+pycbc.inv:
+	gsiscp ldas-pcdev2.ligo.caltech.edu:~cbc/public_html/docs/pycbc/objects.inv pycbc.inv
