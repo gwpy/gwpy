@@ -96,8 +96,6 @@ try:
                       lal.lalKelvinUnit,
                       lal.lalStrainUnit,
                       lal.lalADCCountUnit]
-    LAL_UNIT_FROM_ASTROPY = dict((units.Unit(lal.UnitToString(u)), u) for
-                                 u in LAL_UNIT_INDEX)
 except AttributeError:
     LAL_UNIT_INDEX = [lal.MeterUnit,
                       lal.KiloGramUnit,
@@ -106,7 +104,12 @@ except AttributeError:
                       lal.KelvinUnit,
                       lal.StrainUnit,
                       lal.ADCCountUnit]
-    LAL_UNIT_FROM_ASTROPY = dict((units.Unit(str(u)), u) for
+    lal_unit_to_str = str
+    LAL_UNIT_FROM_ASTROPY = dict((units.Unit(lal_unit_to_str(u)), u) for
+                                 u in LAL_UNIT_INDEX)
+else:
+    lal_unit_to_str = lal.UnitToString
+    LAL_UNIT_FROM_ASTROPY = dict((units.Unit(lal_unit_to_str(u)), u) for
                                  u in LAL_UNIT_INDEX)
 
 
@@ -170,14 +173,19 @@ def from_lal_unit(lunit):
     ValueError
         if Astropy doesn't understand the base units for the input
     """
-    aunit = units.Unit('')
+    aunit = None
     for power, lalbase in zip(lunit.unitNumerator, LAL_UNIT_INDEX):
-        astrobase = None
-        for key, val in LAL_UNIT_FROM_ASTROPY:
-            if val == lalbase:
-                astrobase = key
-        if astrobase is None:
+        # if not used, continue
+        if not power:
+            continue
+        # convert to astropy unit
+        try:
+            u = units.Unit(lal_unit_to_str(lalbase))
+        except ValueError:
             raise ValueError("Astropy has no unit corresponding to %r"
                              % lalbase)
-        aunit *= astrobase ** power
+        if aunit is None:
+            aunit = u ** power
+        else:
+            aunit *= u ** power
     return aunit
