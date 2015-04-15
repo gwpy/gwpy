@@ -239,7 +239,7 @@ class Array2D(Series):
     def __array_wrap__(self, obj, context=None):
         """Wrap an array as an `Array2D` with metadata
         """
-        result = super(Array2D, self).__array_wrap__(obj, context=None)
+        result = super(Array2D, self).__array_wrap__(obj, context=context)
         try:
             result._xindex = self._xindex
         except AttributeError:
