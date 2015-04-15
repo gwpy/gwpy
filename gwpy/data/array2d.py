@@ -142,7 +142,7 @@ class Array2D(Series):
             return self._yindex
         except AttributeError:
             self._yindex = self.y0 + (
-                numpy.arange(self.shape[1], dtype=self.dtype) * self.dy)
+                numpy.arange(self.shape[1]) * self.dy)
             return self._yindex
 
     @yindex.setter

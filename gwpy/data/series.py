@@ -62,7 +62,7 @@ class Series(Array):
             return self._xindex
         except AttributeError:
             self._xindex = self.x0 + (
-                numpy.arange(self.shape[0], dtype=self.dtype) * self.dx)
+                numpy.arange(self.shape[0]) * self.dx)
             return self._xindex
 
     @xindex.setter
