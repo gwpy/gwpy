@@ -100,7 +100,7 @@ class Coherence(CliProduct):
                     print 'Channel %s at %d has min=max,it cannot be used ' \
                           'as a reference channel' \
                           % self.timeseries[ref_idx].channel.name, \
-                        self.timeseries[ref_idx].times.epoch.gps
+                        self.timeseries[ref_idx].epoch.gps
                 else:
                     for idxp in range(1, len(time_group)):
                         next_ts = time_group[idxp]
@@ -110,7 +110,7 @@ class Coherence(CliProduct):
                             print 'Channel %s at %d has min=max, coherence ' \
                                   'with this channel will not be calculated' \
                                   % self.timeseries[next_ts].channel.name, \
-                                self.timeseries[next_ts].times.epoch.gps
+                                self.timeseries[next_ts].epoch.gps
                         else:
                             maxfs = max(maxfs,
                                         self.timeseries[next_ts].sample_rate)
@@ -123,7 +123,7 @@ class Coherence(CliProduct):
 
                             legend_text = self.timeseries[next_ts].channel.name
                             if len(self.start_list) > 1:
-                                legend_text += ", %s" % snd_ts.times.epoch.gps
+                                legend_text += ", %s" % snd_ts.epoch.gps
                             coh.name = legend_text
 
                             # coh2 = 1 / (1-coh) : how to implement alt scaler
