@@ -66,7 +66,7 @@ def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
     dt = stride
     df = 1 / fftlength
 
-    stride *= sampling
+    stride = int(stride * sampling)
 
     # get size of spectrogram
     nsteps = int(ts1.size // stride)
