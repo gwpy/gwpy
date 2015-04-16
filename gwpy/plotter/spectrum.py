@@ -103,7 +103,7 @@ class SpectrumAxes(Axes):
             kwargs.setdefault('label', spectrum.name)
         if not kwargs.get('label', True):
             kwargs.pop('label')
-        line = self.plot(spectrum.frequencies, spectrum.value, **kwargs)
+        line = self.plot(spectrum.frequencies.value, spectrum.value, **kwargs)
         if len(self.lines) == 1:
             try:
                 self.set_xlim(spectrum.frequencies[0].value,
