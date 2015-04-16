@@ -127,7 +127,7 @@ class StateTimeSeries(TimeSeries):
         """
         start = self.x0.value
         dt = self.dx.value
-        active = from_bitstream(self.data, start, dt, minlen=int(minlen))
+        active = from_bitstream(self.value, start, dt, minlen=int(minlen))
         if dtype is not float:
             active = active.__class__([Segment(dtype(s[0]), dtype(s[1])) for
                                        s in active])
@@ -286,15 +286,17 @@ class StateVector(TimeSeries):
     """
     _metadata_slots = TimeSeries._metadata_slots + ['bits']
 
-    def __new__(cls, data, bits=None, times=None, epoch=None, channel=None,
-                sample_rate=None, name=None, dtype=None, **kwargs):
+    def __new__(cls, data, bits=None, times=None, epoch=None, sample_rate=None,
+                channel=None, name=None, **kwargs):
         """Generate a new `StateVector`.
         """
-        return super(StateVector, cls).__new__(cls, data, name=name,
-                                               epoch=epoch, channel=channel,
-                                               sample_rate=sample_rate,
-                                               times=times, bits=bits,
-                                               dtype=dtype, **kwargs)
+        new = super(StateVector, cls).__new__(cls, data, name=name,
+                                              epoch=epoch, channel=channel,
+                                              sample_rate=sample_rate,
+                                              times=times,
+                                              **kwargs)
+        new.bits = new
+        return new
 
     # -------------------------------------------
     # StateVector properties
@@ -306,7 +308,7 @@ class StateVector(TimeSeries):
         :type: `Bits`
         """
         try:
-            return self.metadata['bits']
+            return self._bits
         except KeyError as e:
             if self.dtype.name.startswith(('uint', 'int')):
                 nbits = self.itemsize * 8
@@ -324,14 +326,20 @@ class StateVector(TimeSeries):
 
     @bits.setter
     def bits(self, mask):
+        if mask is None:
+            del self.bits
+            return
         if not isinstance(mask, Bits):
             mask = Bits(mask, channel=self.channel,
-                        epoch=self.metadata.get('epoch', None))
-        self.metadata['bits'] = mask
+                        epoch=self.epoch)
+        self._bits = mask
 
     @bits.deleter
     def bits(self):
-        self.metadata.pop('bits', None)
+        try:
+            del self._bits
+        except AttributeError:
+            pass
 
     @property
     def boolean(self):
@@ -343,7 +351,7 @@ class StateVector(TimeSeries):
         except AttributeError:
             nbits = len(self.bits)
             boolean = numpy.zeros((self.size, nbits), dtype=bool)
-            for i, d in enumerate(self.data):
+            for i, d in enumerate(self.value):
                 boolean[i, :] = [int(d) >> j & 1 for
                                  j in range(nbits)]
             self._boolean = ArrayTimeSeries(boolean, name=self.name,
@@ -379,7 +387,7 @@ class StateVector(TimeSeries):
         self._bitseries = TimeSeriesDict()
         for i, bit in bindex:
             self._bitseries[bit] = StateTimeSeries(
-                self.data >> i & 1, name=bit, epoch=self.x0.value,
+                self.value >> i & 1, name=bit, epoch=self.x0.value,
                 channel=self.channel, sample_rate=self.sample_rate)
         return self._bitseries
 
@@ -587,13 +595,13 @@ class StateVector(TimeSeries):
             factor = int(rate1 / rate2)
             # reshape incoming data to one column per new sample
             newsize = self.size / factor
-            old = self.data.reshape((newsize, self.size // newsize))
+            old = self.value.reshape((newsize, self.size // newsize))
             # work out number of bits
             if len(self.bits):
                 nbits = len(self.bits)
             else:
-                max = self.data.max()
-                nbits = max != 0 and int(ceil(log(self.data.max(), 2))) or 1
+                max = self.value.max()
+                nbits = max != 0 and int(ceil(log(self.value.max(), 2))) or 1
             bits = range(nbits)
             # construct an iterator over the columns of the old array
             it = numpy.nditer([old, None],
@@ -609,7 +617,7 @@ class StateVector(TimeSeries):
                 y[...] = numpy.sum([type_((x >> bit & 1).all() * (2 ** bit))
                                     for bit in bits], dtype=self.dtype)
             new = StateVector(it.operands[1])
-            new.metadata = self.metadata.copy()
+            new.__dict__ = self.__dict__.copy()
             new.sample_rate = rate2
             return new
         # error for non-integer resampling factors

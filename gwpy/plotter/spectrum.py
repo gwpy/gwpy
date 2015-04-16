@@ -103,11 +103,12 @@ class SpectrumAxes(Axes):
             kwargs.setdefault('label', spectrum.name)
         if not kwargs.get('label', True):
             kwargs.pop('label')
-        line = self.plot(spectrum.frequencies, spectrum.data, **kwargs)
+        line = self.plot(spectrum.frequencies, spectrum.value, **kwargs)
         if len(self.lines) == 1:
             try:
-                self.set_xlim(spectrum.frequencies[0],
-                              spectrum.frequencies[-1] + spectrum.df.value)
+                self.set_xlim(spectrum.frequencies[0].value,
+                              spectrum.frequencies[-1].value +
+                              spectrum.df.value)
             except IndexError:
                 pass
         if 'label' in kwargs:
@@ -158,21 +159,21 @@ class SpectrumAxes(Axes):
         color = kwargs.pop('color', line1.get_color())
         linewidth = kwargs.pop('linewidth', line1.get_linewidth()) / 10
         if min_ is not None:
-            a = self.plot(min_.frequencies, min_.data, color=color,
+            a = self.plot(min_.frequencies, min_.value, color=color,
                           linewidth=linewidth, **kwargs)
             if alpha:
-                b = self.fill_between(min_.frequencies, mean_.data, min_.data,
-                                      alpha=alpha, color=color)
+                b = self.fill_between(min_.frequencies.value, mean_.value,
+                                      min_.value, alpha=alpha, color=color)
             else:
                 b = None
         else:
             a = b = None
         if max_ is not None:
-            c = self.plot(max_.frequencies, max_.data, color=color,
+            c = self.plot(max_.frequencies, max_.value, color=color,
                           linewidth=linewidth, **kwargs)
             if alpha:
-                d = self.fill_between(max_.frequencies, mean_.data, max_.data,
-                                      alpha=alpha, color=color)
+                d = self.fill_between(max_.frequencies, mean_.value,
+                                      max_.value, alpha=alpha, color=color)
             else:
                 d = None
         else:
@@ -180,7 +181,7 @@ class SpectrumAxes(Axes):
         return line1, a, b, c, d
 
     @auto_refresh
-    def plot_variance(self, specvar, **kwargs):
+    def plot_variance(self, specvar, norm='log', **kwargs):
         """Plot a :class:`~gwpy.spectrum.hist.SpectralVariance` onto
         these axes
 
@@ -207,21 +208,19 @@ class SpectrumAxes(Axes):
             cmap = copy.deepcopy(cm.jet)
             cmap.set_bad(cmap(0.0))
         kwargs['cmap'] = cmap
-        norm = kwargs.pop('norm', None)
-        if norm == 'log' or (norm is None and specvar.logy):
+        if norm == 'log':
             vmin = kwargs.pop('vmin', None)
             vmax = kwargs.pop('vmax', None)
             norm = colors.LogNorm(vmin=vmin, vmax=vmax)
         kwargs['norm'] = norm
-        x = numpy.concatenate((specvar.frequencies.data,
+        x = numpy.concatenate((specvar.frequencies.value,
                                [specvar.x0.value +
                                 specvar.dx.value * specvar.shape[0]]))
-        y = specvar.bins.data
+        y = specvar.bins.value
         X, Y = numpy.meshgrid(x, y)
-        mesh = self.pcolormesh(X, Y, specvar.data.T, **kwargs)
+        mesh = self.pcolormesh(X, Y, specvar.value.T, **kwargs)
         if len(self.collections) == 1:
-            if specvar.logy:
-                self.set_yscale('log', nonposy='mask')
+            self.set_yscale('log', nonposy='mask')
             self.set_xlim(x[0], x[-1])
             self.set_ylim(y[0], y[-1])
         return mesh

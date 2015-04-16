@@ -91,7 +91,7 @@ class Coherence(CliProduct):
         for idx in range(0, len(self.timeseries)):
             legend_text = self.timeseries[idx].channel.name
             if legend_text != ref_name and self.timeseries[idx].min() != \
-                    self.timeseries[idx].data.max():
+                    self.timeseries[idx].value.max():
                 next_ts = idx
                 break
         if next_ts == -1:
@@ -114,7 +114,7 @@ class Coherence(CliProduct):
                     print 'Channel %s at %d has min=max,it cannot be used ' \
                           'as a reference channel' \
                           % self.timeseries[ref_idx].channel.name, \
-                        self.timeseries[ref_idx].times.epoch.gps
+                        self.timeseries[ref_idx].epoch.gps
                 else:
                     for idxp in range(0, len(time_group)):
                         next_ts = time_group[idxp]
@@ -125,7 +125,7 @@ class Coherence(CliProduct):
                                       'coherence with this channel will not ' \
                                       'be calculated' \
                                       % self.timeseries[next_ts].channel.name,\
-                                    self.timeseries[next_ts].times.epoch.gps
+                                    self.timeseries[next_ts].epoch.gps
                             else:
                                 maxfs = max(maxfs,
                                             self.timeseries[next_ts].
@@ -159,8 +159,8 @@ class Coherence(CliProduct):
         # if the specified frequency limits adjust our ymin and ymax values
         # at this point self.ymin and self.ymax represent the full spectra
         import numpy
-        mymin = cohs[0].data.min()
-        mymax = cohs[0].data.max()
+        mymin = cohs[0].value.min()
+        mymax = cohs[0].value.max()
         myfmin = 1/self.secpfft * cohs[0].frequencies.unit
         myfmax = maxfs/2
         if arg_list.fmin:
@@ -177,8 +177,8 @@ class Coherence(CliProduct):
                     stop = t[0][t[0].size-1]
                 else:
                     stop = cohs[idx].frequencies.size - 1
-                mymin = min(mymin, numpy.min(cohs[idx].data[strt:stop]))
-                mymax = max(mymax, numpy.max(cohs[idx].data[strt:stop]))
+                mymin = min(mymin, numpy.min(cohs[idx].value[strt:stop]))
+                mymax = max(mymax, numpy.max(cohs[idx].value[strt:stop]))
 
         self.ymin = mymin
         self.ymax = mymax

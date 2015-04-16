@@ -71,11 +71,11 @@ def inspiral_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False):
     )
     # calculate inspiral range ASD in m
     integrand = (
-        prefactor.value * psd.frequencies.data ** (-7/3.) / psd /
+        prefactor.value * psd.frequencies.value ** (-7/3.) / psd /
         units.Mpc.decompose().scale ** 2)
-    integrand.unit = 'Mpc^2 / Hz'
+    integrand._unit = units.Unit('Mpc^2 / Hz')
     # restrict to ISCO
-    integrand = integrand[psd.frequencies.data < fisco.value]
+    integrand = integrand[psd.frequencies.value < fisco.value]
     # normalize and return
     if integrand.f0.value == 0.0:
         integrand[0] = 0.0
@@ -135,13 +135,14 @@ def inspiral_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=0, fmax=None,
     fmin = units.Quantity(fmin, 'Hz')
 
     # integrate
-    f = psd.frequencies
-    condition = (f.data >= fmin.value) & (f.data < fmax.value)
+    f = psd.frequencies.to('Hz')
+    condition = (f >= fmin) & (f < fmax)
     integrand = inspiral_range_psd(psd[condition], snr=snr, mass1=mass1,
                                    mass2=mass2, horizon=horizon)
     if fmin.value == 0.0:
         integrand[0] = 0.0
-    result = units.Quantity(integrate.trapz(integrand.data, f.data[condition]),
+    result = units.Quantity(integrate.trapz(integrand.value,
+                                            f.value[condition]),
                             unit=integrand.unit * units.Hertz)
 
     return (result ** (1/2.)).to(unit)
@@ -167,12 +168,13 @@ def burst_range_spectrum(psd, snr=8, energy=1e-2, unit='Mpc'):
     rangespec : `~gwpy.spectrum.Spectrum`
         the burst range `Spectrum` [Mpc (default)]
     """
+    unit = units.Unit(unit)
     a = (constants.G.value * energy * constants.M_sun.value * 0.4 /
          (pi**2 * constants.c.value))**(1/2.)
     dspec = a / (snr * psd**(1/2.) * psd.frequencies) / constants.pc.value
     conv = units.pc.get_converter(unit)
     rspec = conv(dspec)
-    rspec.unit = unit
+    rspec._unit = unit
     if rspec.f0.value == 0.0:
         rspec[0] = 0.0
     return rspec
@@ -202,7 +204,7 @@ def burst_range(psd, snr=8, energy=1e-2, fmin=100, fmax=500, unit='Mpc'):
     range : `~astropy.units.Quantity`
         the GRB-like-burst sensitive range [Mpc (default)]
     """
-    freqs = psd.frequencies.data
+    freqs = psd.frequencies.value
     # restrict integral
     if not fmin:
         fmin = freqs.min()
@@ -212,7 +214,7 @@ def burst_range(psd, snr=8, energy=1e-2, fmin=100, fmax=500, unit='Mpc'):
     # calculate integrand and integrate
     integrand = burst_range_spectrum(
         psd[condition], snr=snr, energy=energy) ** 3
-    result = integrate.trapz(integrand.data, freqs[condition])
+    result = integrate.trapz(integrand.value, freqs[condition])
     # normalize and return
     r = units.Quantity(result / (fmax - fmin), unit=integrand.unit) ** (1/3.)
     return r.to(unit)

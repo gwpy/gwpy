@@ -29,7 +29,7 @@ from .. import version
 __version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-from ..data import (Array, Array2D)
+from ..data import (Quantity, Array, Array2D)
 from .core import Spectrum
 from ..detector import Channel
 
@@ -40,11 +40,11 @@ class SpectralVariance(Array2D):
     """A 2-dimensional array containing the variance histogram of a
     frequency-series `Spectrum`
     """
-    _metadata_slots = ['name', 'unit', 'epoch', 'df', 'f0', 'bins']
+    _metadata_slots = Spectrum._metadata_slots + ['bins']
     xunit = Spectrum.xunit
 
-    def __new__(cls, data, name=None, channel=None, epoch=None, unit=None,
-                f0=None, df=None, bins=None, yunit=None, **kwargs):
+    def __new__(cls, data, bins, name=None, channel=None, epoch=None, unit=None,
+                f0=None, df=None, **kwargs):
         """Generate a new SpectralVariance
         """
         # parse Channel input
@@ -53,13 +53,11 @@ class SpectralVariance(Array2D):
             name = name or channel.name
             unit = unit or channel.unit
         # generate Spectrogram
-        return super(SpectralVariance, cls).__new__(cls, data, name=name,
-                                                    yunit=yunit,
-                                                    channel=channel,
-                                                    epoch=epoch,
-                                                    f0=f0, df=df,
-                                                    bins=bins,
-                                                    **kwargs)
+        new = super(SpectralVariance, cls).__new__(
+            cls, data, name=name, channel=channel, epoch=epoch,
+            x0=f0, dx=df, y0=None, dy=None, **kwargs)
+        new.bins = bins
+        return new
 
     # -------------------------------------------
     # SpectralVariance properties
@@ -74,19 +72,27 @@ class SpectralVariance(Array2D):
 
     @property
     def bins(self):
-        return self.metadata['bins']
+        return self._bins
 
     @bins.setter
     def bins(self, bins):
-        if not isinstance(bins, Array):
-            bins = Array(bins, name='%s bins' % self.name, unit=self.yunit,
-                         epoch=self.epoch, channel=self.channel)
+        if bins is None:
+            del self.bins
+            return
+        bins = Quantity(bins)
         if bins.size != self.shape[1] + 1:
             raise ValueError(
                 "SpectralVariance.bins must be given as a list of bin edges, "
                 "including the rightmost edge, and have length 1 greater than "
                 "the y-axis of the SpectralVariance data")
-        self.metadata['bins'] = bins
+        self._bins = bins
+
+    @bins.deleter
+    def bins(self):
+        try:
+            del self._bins
+        except AttributeError:
+            pass
 
     # over-write yindex to communicate with bins
     @property
@@ -181,7 +187,7 @@ class SpectralVariance(Array2D):
 
         # get data and bins
         spectrogram = spectrograms[0]
-        data = numpy.vstack(s.data for s in spectrograms)
+        data = numpy.vstack(s.value for s in spectrograms)
         ubins = (bins is not None)
         if bins is None:
             if low is None and log:
@@ -201,6 +207,7 @@ class SpectralVariance(Array2D):
             else:
                 bins = numpy.linspace(low, high, num=nbins+1)
         nbins = bins.size-1
+        bins = bins * spectrogram.unit
 
         # loop over frequencies
         out = numpy.zeros((data.shape[1], nbins))
@@ -212,11 +219,9 @@ class SpectralVariance(Array2D):
 
         # return SpectralVariance
         name = '%s variance' % spectrogram.name
-        new = SpectralVariance(out, epoch=spectrogram.epoch,
-                               yunit=spectrogram.unit, name=name,
-                               channel=spectrogram.channel,
-                               f0=spectrogram.f0, df=spectrogram.df,
-                               logy=log, bins=bins)
+        new = cls(out, bins, epoch=spectrogram.epoch, name=name,
+                  channel=spectrogram.channel, f0=spectrogram.f0,
+                  df=spectrogram.df)
         new._normed = norm
         new._density = density
         return new
@@ -235,12 +240,12 @@ class SpectralVariance(Array2D):
             the given percentile `Spectrum` calculated from this
             `SpectralVaraicence`
         """
-        rows, columns = self.data.shape
+        rows, columns = self.shape
         out = numpy.zeros(rows)
         # Loop over frequencies
         for i in range(rows):
             # Calculate cumulative sum for array
-            cumsumvals = numpy.cumsum(self.data[i, :])
+            cumsumvals = numpy.cumsum(self.value[i, :])
 
             # Find value nearest requested percentile
             abs_cumsumvals_minus_percentile = numpy.abs(cumsumvals -

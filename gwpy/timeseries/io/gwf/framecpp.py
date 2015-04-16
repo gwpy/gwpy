@@ -257,10 +257,10 @@ def _read_frame(framefile, channels, type=None, dtype=None, verbose=False,
                 arr = vect.GetDataArray()
                 dx = vect.GetDim(0).dx
                 if ts is None:
-                    unit = vect.GetUnitY()
+                    unit = vect.GetUnitY() or None
                     ts = _SeriesClass(arr, epoch=thisepoch, dx=dx, name=name,
                                       channel=channel, unit=unit, dtype=dtype_,
-                                      copy=True)
+                                      copy=False).copy()
                     if not ts.channel.dtype:
                         ts.channel.dtype = arr.dtype
                 elif dtype_:

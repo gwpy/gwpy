@@ -196,7 +196,7 @@ def map_data(data, axes, filename, mapname='points', shape='circle',
     so that the relevant DPI and figure size information is fixed.
     """
     if isinstance(data, Series):
-        data = numpy.vstack((data.index, data.data)).T
+        data = numpy.vstack((data.xindex.value, data.value)).T
     elif isinstance(data, numpy.ndarray):
         pass
     else:

@@ -187,7 +187,7 @@ class TimeSeriesAxes(Axes):
             kwargs.setdefault('label', timeseries.name)
         if not self.epoch:
             self.set_epoch(timeseries.x0)
-        line = self.plot(timeseries.times, timeseries.data, **kwargs)
+        line = self.plot(timeseries.times.value, timeseries.value, **kwargs)
         if len(self.lines) == 1 and timeseries.size:
             self.set_xlim(*timeseries.span)
         return line
@@ -232,17 +232,17 @@ class TimeSeriesAxes(Axes):
         color = kwargs.pop('color', line1.get_color())
         linewidth = kwargs.pop('linewidth', line1.get_linewidth()) / 2
         if min_ is not None:
-            a = self.plot(min_.times, min_.data, color=color,
+            a = self.plot(min_.times.value, min_.value, color=color,
                           linewidth=linewidth, **kwargs)
-            b = self.fill_between(min_.times, mean_.data, min_.data, alpha=0.1,
-                                  color=color)
+            b = self.fill_between(min_.times.value, mean_.value, min_.value,
+                                  alpha=0.1, color=color)
         else:
             a = b = None
         if max_ is not None:
-            c = self.plot(max_.times, max_.data, color=color,
+            c = self.plot(max_.times.value, max_.value, color=color,
                           linewidth=linewidth, **kwargs)
-            d = self.fill_between(max_.times, mean_.data, max_.data, alpha=0.1,
-                                  color=color)
+            d = self.fill_between(max_.times.value, mean_.value, max_.value,
+                                  alpha=0.1, color=color)
         else:
             c = d = None
         return line1, a, b, c, d
@@ -287,16 +287,15 @@ class TimeSeriesAxes(Axes):
         kwargs['norm'] = norm
         if not self.epoch:
             self.set_epoch(spectrogram.x0)
-        x = numpy.concatenate((spectrogram.times.data,
-                               [spectrogram.span_x[-1].value]))
-        y = numpy.concatenate((spectrogram.frequencies.data,
-                               [spectrogram.y0.value +
-                                spectrogram.dy.value * spectrogram.shape[1]]))
+        x = numpy.concatenate((spectrogram.times.value,
+                               [spectrogram.span[-1]]))
+        y = numpy.concatenate((spectrogram.frequencies.value,
+                               [spectrogram.band[-1]]))
         X, Y = numpy.meshgrid(x, y)
-        mesh = self.pcolormesh(X, Y, spectrogram.data.T, **kwargs)
+        mesh = self.pcolormesh(X, Y, spectrogram.value.T, **kwargs)
         if len(self.collections) == 1:
-            self.set_xlim(*map(numpy.float64, spectrogram.span_x))
-            self.set_ylim(*map(numpy.float64, spectrogram.span_y))
+            self.set_xlim(*spectrogram.span)
+            self.set_ylim(*spectrogram.band)
         if not self.get_ylabel():
             self.add_label_unit(spectrogram.yunit, axis='y')
 

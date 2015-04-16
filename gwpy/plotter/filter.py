@@ -126,7 +126,7 @@ class BodePlot(Plot):
         # get xlim
         if (frequencies is None and len(filters) == 1 and
                 isinstance(filters[0], Spectrum)):
-            frequencies = filters[0].frequencies.data
+            frequencies = filters[0].frequencies.value
         if frequencies is not None:
             frequencies = frequencies[frequencies > 0]
             self.maxes.set_xlim(frequencies.min(), frequencies.max())
@@ -213,15 +213,15 @@ class BodePlot(Plot):
         # parse spectrum arguments
         kwargs.setdefault('label', spectrum.name)
         # get magnitude
-        mag = numpy.absolute(spectrum.data)
+        mag = numpy.absolute(spectrum.value)
         if dB:
             mag = to_db(mag)
             if not power:
                 mag *= 2.
         # get phase
-        phase = numpy.angle(spectrum.data, deg=True)
+        phase = numpy.angle(spectrum.value, deg=True)
         # plot
-        w = spectrum.frequencies.data
+        w = spectrum.frequencies.value
         lm = self.maxes.plot(w, mag, **kwargs)
         lp = self.paxes.plot(w, phase, **kwargs)
         return lm, lp

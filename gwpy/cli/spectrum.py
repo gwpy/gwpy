@@ -89,12 +89,12 @@ class Spectrum(CliProduct):
         fs = self.timeseries[0].sample_rate.value
         self.fmin = 1/self.secpfft
         self.fmax = fs/2
-        self.ymin = spectrum.data.min()
-        self.ymax = spectrum.data.max()
+        self.ymin = spectrum.value.min()
+        self.ymax = spectrum.value.max()
 
         label = self.timeseries[0].channel.name
         if len(self.start_list) > 1:
-            label += ", %s" % self.timeseries[0].times.epoch.gps
+            label += ", %s" % self.timeseries[0].epoch.gps
         spectrum.name = label
         self.plot = spectrum.plot()
 
@@ -105,12 +105,12 @@ class Spectrum(CliProduct):
                 spectra.append(specb)
                 fsb = self.timeseries[idx].sample_rate.value
                 self.fmax = max(self.fmax, fsb/2)
-                self.ymin = min(self.ymin, specb.data.min())
-                self.ymax = max(self.ymax, specb.data.max())
+                self.ymin = min(self.ymin, specb.value.min())
+                self.ymax = max(self.ymax, specb.value.max())
 
                 label = self.timeseries[idx].channel.name
                 if len(self.start_list) > 1:
-                    label += ", %s" % self.timeseries[idx].times.epoch.gps
+                    label += ", %s" % self.timeseries[idx].epoch.gps
                 specb.name = label
                 self.plot.add_spectrum(specb)
         self.log(2, ('Frequency range: [%f, %f]' % (self.fmin, self.fmax)))
@@ -123,21 +123,21 @@ class Spectrum(CliProduct):
             myfmin = self.fmin
             myfmax = self.fmax
             if arg_list.fmin:
-                myfmin = float(arg_list.fmin) * spectra[0].frequencies.unit
+                myfmin = float(arg_list.fmin)
             if arg_list.fmax:
-                myfmax = float(arg_list.fmax) * spectra[0].frequencies.unit
+                myfmax = float(arg_list.fmax)
 
             for idx in range(0, len(spectra)):
-                t = numpy.where(spectra[idx].frequencies >= myfmin)
+                t = numpy.where(spectra[idx].frequencies.value >= myfmin)
                 if t[0].size:
                     strt = t[0][0]
-                    t = numpy.where(spectra[idx].frequencies >= myfmax)
+                    t = numpy.where(spectra[idx].frequencies.value >= myfmax)
                     if t[0].size:
                         stop = t[0][0]
                     else:
                         stop = spectra[idx].frequencies.size - 1
-                    mymin = min(mymin, numpy.min(spectra[idx].data[strt:stop]))
-                    mymax = max(mymax, numpy.max(spectra[idx].data[strt:stop]))
+                    mymin = min(mymin, numpy.min(spectra[idx].value[strt:stop]))
+                    mymax = max(mymax, numpy.max(spectra[idx].value[strt:stop]))
 
             self.ymin = mymin
             self.ymax = mymax

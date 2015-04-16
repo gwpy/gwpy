@@ -66,7 +66,7 @@ def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
     dt = stride
     df = 1 / fftlength
 
-    stride *= sampling
+    stride = int(stride * sampling)
 
     # get size of spectrogram
     nsteps = int(ts1.size // stride)
@@ -74,8 +74,7 @@ def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
 
     # generate output spectrogram
     out = Spectrogram(zeros((nsteps, nfreqs)), epoch=ts1.epoch,
-                      f0=0, df=df, dt=dt, copy=True)
-    out.unit = 'coherence'
+                      f0=0, df=df, dt=dt, copy=True, unit='coherence')
 
     if not nsteps:
         return out
@@ -90,7 +89,7 @@ def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
         stepcoh = stepseries1.coherence(stepseries2, fftlength=fftlength,
                                         overlap=overlap, window=window,
                                         **kwargs)
-        out.data[step] = stepcoh.data
+        out.value[step] = stepcoh.value
 
     return out
 
