@@ -547,7 +547,11 @@ class TimeSeries(Series):
                 kwargs['window'] = generate_lal_window(nfft, dtype=self.dtype)
             if kwargs.get('plan', None) is None:
                 kwargs['plan'] = generate_lal_fft_plan(nfft, dtype=self.dtype)
-        elif window is not None:
+        else:
+            if window is None:
+                window = 'hanning'
+            if isinstance(window, str) or type(window) is tuple:
+                window = signal.get_window(window, nfft)
             kwargs['window'] = window
 
         # set up single process Spectrogram generation
@@ -700,6 +704,12 @@ class TimeSeries(Series):
                           epoch=self.epoch, channel=self.channel,
                           name=self.name, unit=unit, dt=fftlength-overlap,
                           f0=0, df=1/fftlength)
+
+        # get window
+        if window is None:
+            window = 'boxcar'
+        if isinstance(window, (str, tuple)):
+            window = signal.get_window(window, nfft)
 
         # calculate overlapping periodograms
         for i in xrange(nsteps):
