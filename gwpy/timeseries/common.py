@@ -20,16 +20,14 @@
 """
 
 import warnings
-from math import (ceil, floor)
+from math import floor
 
 import numpy
 
-from astropy import units
 from astropy.time import Time
 
 from .. import version
 from ..data import Series
-from ..segments import Segment
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version

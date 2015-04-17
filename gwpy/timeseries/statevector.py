@@ -42,7 +42,6 @@ from .core import (TimeSeries, TimeSeriesDict, ArrayTimeSeries,
                    NDS2_FETCH_TYPE_MASK)
 from ..detector import Channel
 from ..time import Time
-from ..segments import *
 from ..utils import update_docstrings
 from ..io import reader
 from .. import version
@@ -125,6 +124,7 @@ class StateTimeSeries(TimeSeries):
             defines the `known` segments, while the contiguous `True`
             sets defined each of the `active` segments
         """
+        from ..segments import (Segment, SegmentList)
         start = self.x0.value
         dt = self.dx.value
         active = from_bitstream(self.value, start, dt, minlen=int(minlen))

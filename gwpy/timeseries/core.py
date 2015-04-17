@@ -31,8 +31,6 @@ import numpy
 from numpy import fft as npfft
 from scipy import signal
 
-from matplotlib import mlab
-
 try:
     from collections import OrderedDict
 except ImportError:
@@ -52,10 +50,9 @@ else:
 
 
 from .. import version
-from ..data import (Array, Array2D, Series)
+from ..data import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
 from ..io import reader
-from ..segments import (Segment, SegmentList)
 from ..time import (Time, to_gps)
 from ..utils import (gprint, update_docstrings, with_import)
 from . import common
@@ -180,6 +177,7 @@ class TimeSeries(Series):
     def span(self):
         """Time Segment encompassed by thie `TimeSeries`.
         """
+        from ..segments import Segment
         x0 = self.x0.to(self._default_xunit).value
         dx = self.dx.to(self._default_xunit).value
         return Segment(x0, x0+self.shape[0]*dx)
@@ -1290,6 +1288,7 @@ class TimeSeries(Series):
         :func:`matplotlib.mlab.cohere`
             for details of the coherence calculator
         """
+        from matplotlib import mlab
         from ..spectrum import Spectrum
         # check sampling rates
         if self.sample_rate.to('Hertz') != other.sample_rate.to('Hertz'):
@@ -1680,6 +1679,7 @@ class TimeSeriesList(list):
 
     @property
     def segments(self):
+        from ..segments import SegmentList
         return SegmentList([item.span for item in self])
 
     def append(self, item):
@@ -1898,6 +1898,7 @@ class TimeSeriesDict(OrderedDict):
             a new `TimeSeriesDict` of (`str`, `TimeSeries`) pairs fetched
             from NDS.
         """
+        from ..segments import (Segment, SegmentList)
         from ..io import nds as ndsio
         # parse times
         start = to_gps(start)
