@@ -213,10 +213,12 @@ def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
     stream = frameCPP.IFrameFStream(fp)
 
     # interpolate frame epochs from CacheEntry
-    # FIXME: update when new frameCPP is released
-    nframe = 0  # int(stream.GetNumberOfFrames())
+    try:
+        nframe = int(stream.GetNumberOfFrames())
+    except (AttributeError, ValueError):
+        nframe = None
     if isinstance(framefile, CacheEntry) and nframe == 1:
-        epochs = [framefile.segment[0]]
+        epochs = [float(framefile.segment[0])]
     else:
         epochs = None
 
