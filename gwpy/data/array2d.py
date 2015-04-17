@@ -32,7 +32,6 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 from .array import Array
 from .series import Series
-from ..segments import Segment
 
 
 class Array2D(Series):
