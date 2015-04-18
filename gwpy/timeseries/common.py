@@ -131,7 +131,14 @@ def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
     else:
         N = min(new.shape[0], other.shape[0])
 
-    new[-N:] = other[-N:]
+    # if units are the same, can shortcut
+    if type(other) == type(new) and other.unit == new.unit:
+        new.value[-N:] = other.value[-N:]
+    # otherwise if its just a numpy array
+    elif type(other) == type(new.value):
+        new.value[-N:] = other[-N:]
+    else:
+        new[-N:] = other[-N:]
     try:
         if isinstance(self, Series):
             self._index
