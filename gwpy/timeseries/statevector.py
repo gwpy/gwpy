@@ -295,7 +295,7 @@ class StateVector(TimeSeries):
                                               sample_rate=sample_rate,
                                               times=times,
                                               **kwargs)
-        new.bits = new
+        new.bits = bits
         return new
 
     # -------------------------------------------
