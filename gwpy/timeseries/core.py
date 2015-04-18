@@ -1103,6 +1103,7 @@ class TimeSeries(Series):
             nsamp = int(self.shape[0] * self.dx.value * rate)
             new = signal.resample(self.value, nsamp,
                                   window=window).view(self.__class__)
+        new.__dict__ = self.__dict__.copy()
         new.sample_rate = rate
         return new
 
@@ -1504,6 +1505,7 @@ class TimeSeries(Series):
         if isinstance(pad_width, int):
             pad_width = (pad_width,)
         new = numpy.pad(self.value, pad_width, **kwargs).view(self.__class__)
+        new.__dict__ = self.__dict__.copy()
         new.epoch = self.epoch.gps - self.dt.value * pad_width[0]
         return new
 
