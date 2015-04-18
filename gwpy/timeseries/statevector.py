@@ -124,7 +124,7 @@ class StateTimeSeries(TimeSeries):
             defines the `known` segments, while the contiguous `True`
             sets defined each of the `active` segments
         """
-        from ..segments import (Segment, SegmentList)
+        from ..segments import (Segment, SegmentList, DataQualityFlag)
         start = self.x0.value
         dt = self.dx.value
         active = from_bitstream(self.value, start, dt, minlen=int(minlen))
@@ -467,6 +467,7 @@ class StateVector(TimeSeries):
             for details on the segment representation method for
             `StateVector` bits
         """
+        from ..segments import DataQualityDict
         out = DataQualityDict()
         bitseries = self.get_bit_series(bits=bits)
         for bit, sts in bitseries.iteritems():
