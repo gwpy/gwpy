@@ -242,9 +242,9 @@ def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
         for channel in channels:
             name = str(channel)
             if name in adcs:
-                ctype[name] = 'adc'
+                ctype[channel] = 'adc'
             elif name in procs:
-                ctype[name] = 'proc'
+                ctype[channel] = 'proc'
             else:
                 raise ValueError("Channel %s not found in frame table of "
                                  "contents" % name)
@@ -253,7 +253,7 @@ def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
     out = TimeSeriesDict()
     for channel in channels:
         name = str(channel)
-        read_ = getattr(stream, 'ReadFr%sData' % ctype[name].title())
+        read_ = getattr(stream, 'ReadFr%sData' % ctype[channel].title())
         ts = None
         i = 0
         dtype_ = dtype.get(channel, None)
@@ -274,7 +274,7 @@ def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
                                       copy=False).copy()
                     if not ts.channel.dtype:
                         ts.channel.dtype = arr.dtype
-                    ts.channel._ctype = ctype[name]
+                    ts.channel._ctype = ctype[channel]
                 elif dtype_:
                     ts.append(arr.astype(dtype_))
                 else:
