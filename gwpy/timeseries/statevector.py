@@ -309,7 +309,7 @@ class StateVector(TimeSeries):
         """
         try:
             return self._bits
-        except KeyError as e:
+        except AttributeError as e:
             if self.dtype.name.startswith(('uint', 'int')):
                 nbits = self.itemsize * 8
                 self.bits = Bits(['Bit %d' % b for b in range(nbits)],
@@ -319,10 +319,7 @@ class StateVector(TimeSeries):
                 self.bits = self.channel.bits
                 return self.bits
             else:
-                e.args = ("No bit listing given for StateVector, and data "
-                          "type doesn't determine how many bits there should "
-                          "be, please give bits manually.",)
-                raise e
+                return None
 
     @bits.setter
     def bits(self, mask):
