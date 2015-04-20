@@ -1567,7 +1567,7 @@ class TimeSeries(Series):
         typestr = LAL_TYPE_STR_FROM_NUMPY[self.dtype.type]
         try:
             unit = to_lal_unit(self.unit)
-        except TypeError:
+        except (TypeError, AttributeError):
             try:
                 unit = lal.DimensionlessUnit
             except AttributeError:
