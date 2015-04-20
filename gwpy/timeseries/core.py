@@ -1546,7 +1546,7 @@ class TimeSeries(Series):
 
     @classmethod
     @with_import('lal')
-    def from_lal(cls, lalts):
+    def from_lal(cls, lalts, copy=True):
         """Generate a new TimeSeries from a LAL TimeSeries of any type.
         """
         from ..utils.lal import from_lal_unit
@@ -1557,7 +1557,7 @@ class TimeSeries(Series):
         channel = Channel(lalts.name, 1/lalts.deltaT, unit=unit,
                           dtype=lalts.data.data.dtype)
         return cls(lalts.data.data, channel=channel, epoch=float(lalts.epoch),
-                   copy=True)
+                   copy=copy, dtype=lalts.data.data.dtype)
 
     @with_import('lal.lal')
     def to_lal(self):
