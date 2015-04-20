@@ -34,6 +34,9 @@ from ...io.cache import cache_segments
 from .. import (TimeSeries, TimeSeriesList, TimeSeriesDict,
                 StateVector, StateVectorDict)
 
+# set maximum number of channels with which to still use lalframe
+MAX_LALFRAME_CHANNELS = 4
+
 
 def read_cache(cache, channel, start=None, end=None, resample=None,
                gap='raise', nproc=1, **kwargs):
@@ -113,9 +116,9 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
             else:
                 raise ValueError(msg)
 
-    # if reading one channel, try to use lalframe, its faster
-    if (isinstance(channel, str) or
-            (isinstance(channel, (list, tuple)) and len(channel) == 1)):
+    # if reading a small number of channels, try to use lalframe, its faster
+    if (isinstance(channel, str) or (isinstance(channel, (list, tuple)) and
+                                     len(channel) <= MAX_LALFRAME_CHANNELS)):
         try:
             from lalframe import frread
         except ImportError:
