@@ -614,7 +614,7 @@ class StateVector(TimeSeries):
             for x, y in it:
                 y[...] = numpy.sum([type_((x >> bit & 1).all() * (2 ** bit))
                                     for bit in bits], dtype=self.dtype)
-            new = StateVector(it.operands[1])
+            new = StateVector(it.operands[1], dtype=dtype)
             new.__dict__ = self.__dict__.copy()
             new.sample_rate = rate2
             return new
