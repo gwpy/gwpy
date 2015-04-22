@@ -95,7 +95,10 @@ class Series(Array):
     @x0.setter
     def x0(self, value):
         if not isinstance(value, Quantity) and value is not None:
-            value = Quantity(value, self._default_xunit)
+            try:
+                value = Quantity(value, self._default_xunit)
+            except TypeError:
+                value = Quantity(float(value), self._default_xunit)
         try:
             x0 = self.x0
         except AttributeError:
