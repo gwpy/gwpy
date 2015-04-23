@@ -113,7 +113,7 @@ class TimeSeries(Series):
     _default_xunit = units.second
     _metadata_slots = ['name', 'channel', 'epoch', 'sample_rate']
 
-    def __new__(cls, data, unit=None, times=None, epoch=0, channel=None,
+    def __new__(cls, data, unit=None, times=None, epoch=None, channel=None,
                 sample_rate=None, name=None, **kwargs):
         """Generate a new TimeSeries.
         """
@@ -124,11 +124,16 @@ class TimeSeries(Series):
             name = name or channel.name
             unit = unit or channel.unit
             sample_rate = sample_rate or channel.sample_rate
-        elif sample_rate is None and 'dt' not in kwargs:
+        if times is None and 'xindex' in kwargs:
+            times = kwargs.pop('xindex')
+        if sample_rate is None and times is None and 'dt' not in kwargs:
             sample_rate = 1
+        if epoch is None and times is None and 't0' not in kwargs:
+            epoch = 0
         # generate TimeSeries
         new = super(TimeSeries, cls).__new__(cls, data, name=name, unit=unit,
-                                             channel=channel, **kwargs)
+                                             xindex=times, channel=channel,
+                                             **kwargs)
         if epoch is not None:
             new.epoch = epoch
         if sample_rate is not None:
