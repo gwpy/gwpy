@@ -73,6 +73,8 @@ class Spectrum(Series):
                        Channel(channel))
             name = name or channel.name
             unit = unit or channel.unit
+        if frequencies is None and 'xindex' in kwargs:
+            frequencies = kwargs.pop('xindex')
         # generate Spectrum
         return super(Spectrum, cls).__new__(cls, data, name=name, unit=unit,
                                             channel=channel, x0=f0, dx=df,

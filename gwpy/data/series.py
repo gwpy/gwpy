@@ -67,19 +67,17 @@ class Series(Array):
 
     @xindex.setter
     def xindex(self, index):
-        if isinstance(index, Quantity):
-            self._xindex = index
-        elif index is None:
+        if index is None:
             del self.xindex
             return
-        else:
+        elif not isinstance(index, Quantity):
             index = Quantity(index, unit=self._default_xunit)
-            self._xindex = index
         self.x0 = index[0]
         if index.size:
             self.dx = index[1] - index[0]
         else:
             self.dx = None
+        self._xindex = index
 
     @xindex.deleter
     def xindex(self):
