@@ -23,7 +23,6 @@ from __future__ import division
 
 import os
 import warnings
-from decimal import _Infinity as infinity
 from math import ceil
 from multiprocessing import (Process, Queue as ProcessQueue)
 
@@ -31,10 +30,12 @@ from astropy.io import registry
 
 from glue.lal import Cache
 
-from ...segments import (Segment, SegmentList)
 from ...io.cache import cache_segments
 from .. import (TimeSeries, TimeSeriesList, TimeSeriesDict,
                 StateVector, StateVectorDict)
+
+# set maximum number of channels with which to still use lalframe
+MAX_LALFRAME_CHANNELS = 4
 
 
 def read_cache(cache, channel, start=None, end=None, resample=None,
@@ -74,6 +75,8 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     data : :class:`~gwpy.timeseries.core.TimeSeries`
         a new `TimeSeries` containing the data read from disk
     """
+    from gwpy.segments import (Segment, SegmentList)
+
     cls = kwargs.pop('target', TimeSeries)
     # open cache from file if given
     if isinstance(cache, (unicode, str, file)):
@@ -113,9 +116,9 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
             else:
                 raise ValueError(msg)
 
-    # if reading one channel, try to use lalframe, its faster
-    if (isinstance(channel, str) or
-            (isinstance(channel, (list, tuple)) and len(channel) == 1)):
+    # if reading a small number of channels, try to use lalframe, its faster
+    if (isinstance(channel, str) or (isinstance(channel, (list, tuple)) and
+                                     len(channel) <= MAX_LALFRAME_CHANNELS)):
         try:
             from lalframe import frread
         except ImportError:

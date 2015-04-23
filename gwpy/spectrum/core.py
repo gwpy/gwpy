@@ -237,7 +237,7 @@ class Spectrum(Series):
 
     @classmethod
     @with_import('lal')
-    def from_lal(cls, lalfs):
+    def from_lal(cls, lalfs, copy=True):
         """Generate a new `Spectrum` from a LAL `FrequencySeries` of any type
         """
         from ..utils.lal import from_lal_unit
@@ -248,7 +248,8 @@ class Spectrum(Series):
         channel = Channel(lalfs.name, unit=unit,
                           dtype=lalfs.data.data.dtype)
         return cls(lalfs.data.data, channel=channel, f0=lalfs.f0,
-                   df=lalfs.deltaF, epoch=float(lalfs.epoch))
+                   df=lalfs.deltaF, epoch=float(lalfs.epoch),
+                   dtype=lalfs.data.data.dtype, copy=copy)
 
     @with_import('lal')
     def to_lal(self):

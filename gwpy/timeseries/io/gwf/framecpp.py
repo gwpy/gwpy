@@ -124,6 +124,13 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
     elif not isinstance(resample, dict):
         raise ValueError("Cannot parse resample request, please review "
                          "documentation for that argument")
+    # parse type
+    if isinstance(type, str):
+        type = dict((channel, type) for channel in channels)
+    elif isinstance(type, (tuple, list)):
+        type = dict(zip(channels, type))
+    elif type is None:
+        type = {}
     # read each individually and append
     N = len(filelist)
     if verbose:
@@ -134,8 +141,12 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
     out = TimeSeriesDict()
     for i, fp in enumerate(filelist):
         # read frame
-        new = _read_frame(fp, channels, type=type, dtype=dtype,
+        new = _read_frame(fp, channels, ctype=type, dtype=dtype,
                           verbose=verbose, _SeriesClass=_SeriesClass)
+        ## get channel type for next frame (means we only query the TOC once)
+        if not i:
+            for channel, ts in new.iteritems():
+                type[channel] = ts.channel._ctype
         # store
         out.append(new)
         if verbose is not False:
@@ -156,7 +167,7 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
     return out
 
 
-def _read_frame(framefile, channels, type=None, dtype=None, verbose=False,
+def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
                 _SeriesClass=TimeSeries):
     """Internal function to read data from a single frame.
 
@@ -168,7 +179,7 @@ def _read_frame(framefile, channels, type=None, dtype=None, verbose=False,
         path to GWF-format frame file on disk.
     channels : `list`
         list of channels to read.
-    type : `str`, optional
+    ctype : `str`, optional
         channel data type to read, one of: ``'adc'``, ``'proc'``.
     dtype : `numpy.dtype`, `str`, `type`, `dict`
     verbose : `bool`, optional
@@ -202,23 +213,23 @@ def _read_frame(framefile, channels, type=None, dtype=None, verbose=False,
     stream = frameCPP.IFrameFStream(fp)
 
     # interpolate frame epochs from CacheEntry
-    # FIXME: update when new frameCPP is released
-    nframe = 0  # int(stream.GetNumberOfFrames())
+    try:
+        nframe = int(stream.GetNumberOfFrames())
+    except (AttributeError, ValueError):
+        nframe = None
     if isinstance(framefile, CacheEntry) and nframe == 1:
-        epochs = [framefile.segment[0]]
+        epochs = [float(framefile.segment[0])]
     else:
         epochs = None
 
     # load table of contents if needed
-    if epochs is None or not type:
+    if epochs is None or not ctype:
         toc = stream.GetTOC()
     # get list of frame epochs
     if epochs is None:
         epochs = toc.GTimeS
     # work out channel types
-    if type:
-        ctype = dict((str(channel), type) for channel in channels)
-    else:
+    if not ctype:
         try:
             adcs = toc.GetADC().keys()
         except AttributeError:
@@ -231,9 +242,9 @@ def _read_frame(framefile, channels, type=None, dtype=None, verbose=False,
         for channel in channels:
             name = str(channel)
             if name in adcs:
-                ctype[name] = 'adc'
+                ctype[channel] = 'adc'
             elif name in procs:
-                ctype[name] = 'proc'
+                ctype[channel] = 'proc'
             else:
                 raise ValueError("Channel %s not found in frame table of "
                                  "contents" % name)
@@ -242,7 +253,7 @@ def _read_frame(framefile, channels, type=None, dtype=None, verbose=False,
     out = TimeSeriesDict()
     for channel in channels:
         name = str(channel)
-        read_ = getattr(stream, 'ReadFr%sData' % ctype[name].title())
+        read_ = getattr(stream, 'ReadFr%sData' % ctype[channel].title())
         ts = None
         i = 0
         dtype_ = dtype.get(channel, None)
@@ -263,6 +274,7 @@ def _read_frame(framefile, channels, type=None, dtype=None, verbose=False,
                                       copy=False).copy()
                     if not ts.channel.dtype:
                         ts.channel.dtype = arr.dtype
+                    ts.channel._ctype = ctype[channel]
                 elif dtype_:
                     ts.append(arr.astype(dtype_))
                 else:

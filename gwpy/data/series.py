@@ -38,8 +38,8 @@ class Series(Array):
     def __new__(cls, value, unit=None, xindex=None, x0=0, dx=1, **kwargs):
         shape = numpy.shape(value)
         if len(shape) != cls._ndim:
-            raise ValueError("Cannot generate Series with %d-dimensional data"
-                             % len(shape))
+            raise ValueError("Cannot generate %s with %d-dimensional data"
+                             % (cls.__name__, len(shape)))
         new = super(Series, cls).__new__(cls, value, unit=unit, **kwargs)
         if isinstance(x0, Quantity):
             xunit = x0.unit
@@ -93,7 +93,10 @@ class Series(Array):
     @x0.setter
     def x0(self, value):
         if not isinstance(value, Quantity) and value is not None:
-            value = Quantity(value, self._default_xunit)
+            try:
+                value = Quantity(value, self._default_xunit)
+            except TypeError:
+                value = Quantity(float(value), self._default_xunit)
         try:
             x0 = self.x0
         except AttributeError:

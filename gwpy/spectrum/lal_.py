@@ -208,7 +208,7 @@ def lal_psd(timeseries, segmentlength, noverlap=None, method='welch',
     # format and return
     spec = Spectrum.from_lal(lalfs)
     spec.channel = timeseries.channel
-    spec.unit = scale_timeseries_units(timeseries.unit, scaling='density')
+    spec._unit = scale_timeseries_units(timeseries.unit, scaling='density')
     return spec
 
 

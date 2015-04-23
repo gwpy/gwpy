@@ -31,8 +31,6 @@ import numpy
 from numpy import fft as npfft
 from scipy import signal
 
-from matplotlib import mlab
-
 try:
     from collections import OrderedDict
 except ImportError:
@@ -52,10 +50,9 @@ else:
 
 
 from .. import version
-from ..data import (Array, Array2D, Series)
+from ..data import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
 from ..io import reader
-from ..segments import (Segment, SegmentList)
 from ..time import (Time, to_gps)
 from ..utils import (gprint, update_docstrings, with_import)
 from . import common
@@ -185,6 +182,7 @@ class TimeSeries(Series):
     def span(self):
         """Time Segment encompassed by thie `TimeSeries`.
         """
+        from ..segments import Segment
         x0 = self.x0.to(self._default_xunit).value
         dx = self.dx.to(self._default_xunit).value
         return Segment(x0, x0+self.shape[0]*dx)
@@ -554,7 +552,11 @@ class TimeSeries(Series):
                 kwargs['window'] = generate_lal_window(nfft, dtype=self.dtype)
             if kwargs.get('plan', None) is None:
                 kwargs['plan'] = generate_lal_fft_plan(nfft, dtype=self.dtype)
-        elif window is not None:
+        else:
+            if window is None:
+                window = 'hanning'
+            if isinstance(window, str) or type(window) is tuple:
+                window = signal.get_window(window, nfft)
             kwargs['window'] = window
 
         # set up single process Spectrogram generation
@@ -707,6 +709,12 @@ class TimeSeries(Series):
                           epoch=self.epoch, channel=self.channel,
                           name=self.name, unit=unit, dt=fftlength-overlap,
                           f0=0, df=1/fftlength)
+
+        # get window
+        if window is None:
+            window = 'boxcar'
+        if isinstance(window, (str, tuple)):
+            window = signal.get_window(window, nfft)
 
         # calculate overlapping periodograms
         for i in xrange(nsteps):
@@ -1296,6 +1304,7 @@ class TimeSeries(Series):
         :func:`matplotlib.mlab.cohere`
             for details of the coherence calculator
         """
+        from matplotlib import mlab
         from ..spectrum import Spectrum
         # check sampling rates
         if self.sample_rate.to('Hertz') != other.sample_rate.to('Hertz'):
@@ -1542,7 +1551,7 @@ class TimeSeries(Series):
 
     @classmethod
     @with_import('lal')
-    def from_lal(cls, lalts):
+    def from_lal(cls, lalts, copy=True):
         """Generate a new TimeSeries from a LAL TimeSeries of any type.
         """
         from ..utils.lal import from_lal_unit
@@ -1553,7 +1562,7 @@ class TimeSeries(Series):
         channel = Channel(lalts.name, 1/lalts.deltaT, unit=unit,
                           dtype=lalts.data.data.dtype)
         return cls(lalts.data.data, channel=channel, epoch=float(lalts.epoch),
-                   copy=True)
+                   copy=copy, dtype=lalts.data.data.dtype)
 
     @with_import('lal.lal')
     def to_lal(self):
@@ -1563,7 +1572,7 @@ class TimeSeries(Series):
         typestr = LAL_TYPE_STR_FROM_NUMPY[self.dtype.type]
         try:
             unit = to_lal_unit(self.unit)
-        except TypeError:
+        except (TypeError, AttributeError):
             try:
                 unit = lal.DimensionlessUnit
             except AttributeError:
@@ -1687,6 +1696,7 @@ class TimeSeriesList(list):
 
     @property
     def segments(self):
+        from ..segments import SegmentList
         return SegmentList([item.span for item in self])
 
     def append(self, item):
@@ -1741,7 +1751,7 @@ class TimeSeriesList(list):
              in this list
         """
         if len(self) == 0:
-            return self.EntryClass([])
+            return self.EntryClass(numpy.empty((0,0)))
         self.sort(key=lambda t: t.epoch.gps)
         out = self[0].copy()
         for ts in self[1:]:
@@ -1905,6 +1915,7 @@ class TimeSeriesDict(OrderedDict):
             a new `TimeSeriesDict` of (`str`, `TimeSeries`) pairs fetched
             from NDS.
         """
+        from ..segments import (Segment, SegmentList)
         from ..io import nds as ndsio
         # parse times
         start = to_gps(start)

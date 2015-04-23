@@ -26,7 +26,6 @@ All other time conversions can be easily completed using the `Time`
 object.
 """
 
-from dateutil import parser as dateparser
 from astropy.time import Time
 
 try:

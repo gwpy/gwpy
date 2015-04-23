@@ -42,7 +42,6 @@ from .core import (TimeSeries, TimeSeriesDict, ArrayTimeSeries,
                    NDS2_FETCH_TYPE_MASK)
 from ..detector import Channel
 from ..time import Time
-from ..segments import *
 from ..utils import update_docstrings
 from ..io import reader
 from .. import version
@@ -125,6 +124,7 @@ class StateTimeSeries(TimeSeries):
             defines the `known` segments, while the contiguous `True`
             sets defined each of the `active` segments
         """
+        from ..segments import (Segment, SegmentList, DataQualityFlag)
         start = self.x0.value
         dt = self.dx.value
         active = from_bitstream(self.value, start, dt, minlen=int(minlen))
@@ -467,6 +467,7 @@ class StateVector(TimeSeries):
             for details on the segment representation method for
             `StateVector` bits
         """
+        from ..segments import DataQualityDict
         out = DataQualityDict()
         bitseries = self.get_bit_series(bits=bits)
         for bit, sts in bitseries.iteritems():
@@ -613,7 +614,7 @@ class StateVector(TimeSeries):
             for x, y in it:
                 y[...] = numpy.sum([type_((x >> bit & 1).all() * (2 ** bit))
                                     for bit in bits], dtype=self.dtype)
-            new = StateVector(it.operands[1])
+            new = StateVector(it.operands[1], dtype=dtype)
             new.__dict__ = self.__dict__.copy()
             new.sample_rate = rate2
             return new

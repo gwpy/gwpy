@@ -47,7 +47,6 @@ except ImportError:
                              NDS2_CHANNEL_TYPESTR.iteritems())
 
 from .. import version
-from ..segments import (Segment, SegmentList, SegmentListDict)
 from ..time import to_gps
 from ..utils.deps import with_import
 
@@ -789,6 +788,7 @@ class ChannelList(list):
             a `dict` of (channel, `dict`) pairs where the nested `dict`
             is over (frametype, SegmentList) segment-availability pairs
         """
+        from ..segments import (Segment, SegmentList, SegmentListDict)
         names = []
         for c in channels:
             name = str(c)
