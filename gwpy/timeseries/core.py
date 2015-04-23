@@ -126,9 +126,9 @@ class TimeSeries(Series):
             sample_rate = sample_rate or channel.sample_rate
         if times is None and 'xindex' in kwargs:
             times = kwargs.pop('xindex')
-        if sample_rate is None and times is None and 'dt' not in kwargs:
+        if sample_rate is None and times is None and 'dx' not in kwargs:
             sample_rate = 1
-        if epoch is None and times is None and 't0' not in kwargs:
+        if epoch is None and times is None and 'x0' not in kwargs:
             epoch = 0
         # generate TimeSeries
         new = super(TimeSeries, cls).__new__(cls, data, name=name, unit=unit,
