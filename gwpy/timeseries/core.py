@@ -1751,7 +1751,7 @@ class TimeSeriesList(list):
              in this list
         """
         if len(self) == 0:
-            return self.EntryClass(numpy.empty((0,0)))
+            return self.EntryClass(numpy.empty((0,) * self.EntryClass._ndim))
         self.sort(key=lambda t: t.epoch.gps)
         out = self[0].copy()
         for ts in self[1:]:
