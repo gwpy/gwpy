@@ -385,6 +385,8 @@ class Array(Quantity):
             # store metadata
             for attr in self._metadata_slots:
                 mdval = getattr(self, attr)
+                if mdval is None:
+                    continue
                 if isinstance(mdval, Quantity):
                     dset.attrs[attr] = mdval.value
                 elif isinstance(mdval, Channel):
@@ -394,7 +396,13 @@ class Array(Quantity):
                 elif isinstance(mdval, Time):
                     dset.attrs[attr] = mdval.utc.gps
                 else:
-                    dset.attrs[attr] = mdval
+                    try:
+                        dset.attrs[attr] = mdval
+                    except ValueError as e:
+                        e.args = ("Failed to store %s (%s) for %s: %s"
+                                  % (attr, type(mdval).__name__,
+                                     type(self).__name__, str(e)),)
+                        raise
 
         finally:
             if not isinstance(output, h5py.Group):
