@@ -74,8 +74,9 @@ class Spectrogram(Array2D):
     _default_xunit = TimeSeries._default_xunit
     _default_yunit = Spectrum._default_xunit
 
-    def __new__(cls, data, unit=None, name=None, channel=None, epoch=0,
-                dt=1, f0=0, df=1, **kwargs):
+    def __new__(cls, data, unit=None, name=None, channel=None, epoch=None,
+                dt=None, times=None, f0=None, df=None, frequencies=None,
+                **kwargs):
         """Generate a new Spectrogram.
         """
         # parse Channel input
@@ -86,10 +87,24 @@ class Spectrogram(Array2D):
             unit = unit or channel.unit
             if channel.sample_rate:
                 dt = dt or 1 / channel.sample_rate
+        # get axis-based params
+        if epoch is None:
+            epoch = kwargs.pop('x0', 0)
+        if dt is None:
+            dt = kwargs.pop('dx', 1)
+        if f0 is None:
+            f0 = kwargs.pop('y0', 0)
+        if df is None:
+            df = kwargs.pop('dy', 1)
+        if times is None:
+            times = kwargs.pop('xindex', None)
+        if frequencies is None:
+            frequencies = kwargs.pop('frequencies', None)
         # generate Spectrogram
         new = super(Spectrogram, cls).__new__(cls, data, unit=unit, name=name,
                                               channel=channel, y0=f0, dx=dt,
-                                              dy=df, **kwargs)
+                                              dy=df, xindex=times,
+                                              yindex=frequencies, **kwargs)
         if epoch is not None:
             new.epoch = epoch
         return new
