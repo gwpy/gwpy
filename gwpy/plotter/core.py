@@ -23,6 +23,7 @@ import numpy
 
 from matplotlib import (backends, figure, pyplot, colors as mcolors,
                         _pylab_helpers)
+from matplotlib.axes import SubplotBase
 from matplotlib.cbook import iterable
 from matplotlib.ticker import LogLocator
 
@@ -339,7 +340,12 @@ class Plot(figure.Figure):
         """
         if not len(self.axes):
             return (1, 1, 1)
-        current = self.axes[-1].get_geometry()
+        # get bottom axes
+        try:
+            ca = [ax for ax in self.axes if isinstance(ax, SubplotBase)][-1]
+        except IndexError:
+            ca = self.gca()
+        current = ca.get_geometry()
         shape = current[:2]
         pos = current[2]
         num = shape[0] * shape[1]
@@ -357,13 +363,16 @@ class Plot(figure.Figure):
         # get new geomtry
         geometry = self._increment_geometry()
         # make new axes
-        ax = self.add_subplot(*geometry, projection=projection, **kwargs)
+        newax = self.add_subplot(*geometry, projection=projection, **kwargs)
         # update geometry for previous axes
         nrows = geometry[0]
         ncols = geometry[1]
-        for i, ax_ in enumerate(self.axes[:-1]):
-            ax_.change_geometry(nrows, ncols, i+1)
-        return ax
+        i = 0
+        for ax in self.axes[:-1]:
+            if isinstance(ax, SubplotBase):
+                i += 1
+                ax.change_geometry(nrows, ncols, i)
+        return newax
 
     @auto_refresh
     def _plot(self, x, y, *args, **kwargs):
