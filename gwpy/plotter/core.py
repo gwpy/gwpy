@@ -23,6 +23,7 @@ import numpy
 
 from matplotlib import (backends, figure, pyplot, colors as mcolors,
                         _pylab_helpers)
+from matplotlib.axes import SubplotBase
 from matplotlib.cbook import iterable
 from matplotlib.ticker import LogLocator
 
@@ -339,7 +340,12 @@ class Plot(figure.Figure):
         """
         if not len(self.axes):
             return (1, 1, 1)
-        current = self.axes[-1].get_geometry()
+        # get bottom axes
+        try:
+            ca = [ax for ax in self.axes if isinstance(ax, SubplotBase)][-1]
+        except IndexError:
+            ca = self.gca()
+        current = ca.get_geometry()
         shape = current[:2]
         pos = current[2]
         num = shape[0] * shape[1]
@@ -357,13 +363,16 @@ class Plot(figure.Figure):
         # get new geomtry
         geometry = self._increment_geometry()
         # make new axes
-        ax = self.add_subplot(*geometry, projection=projection, **kwargs)
+        newax = self.add_subplot(*geometry, projection=projection, **kwargs)
         # update geometry for previous axes
         nrows = geometry[0]
         ncols = geometry[1]
-        for i, ax_ in enumerate(self.axes[:-1]):
-            ax_.change_geometry(nrows, ncols, i+1)
-        return ax
+        i = 0
+        for ax in self.axes[:-1]:
+            if isinstance(ax, SubplotBase):
+                i += 1
+                ax.change_geometry(nrows, ncols, i)
+        return newax
 
     @auto_refresh
     def _plot(self, x, y, *args, **kwargs):
@@ -396,6 +405,8 @@ class Plot(figure.Figure):
         projection = kwargs.pop('projection', None)
         ax = kwargs.pop('ax', None)
         newax = kwargs.pop('newax', False)
+        sharex = kwargs.pop('sharex', None)
+        sharey = kwargs.pop('sharey', None)
 
         # set kwargs
         kwargs.setdefault("linestyle", "-")
@@ -409,7 +420,8 @@ class Plot(figure.Figure):
             except IndexError:
                 newax = True
         if newax:
-            ax = self._add_new_axes(projection=projection)
+            ax = self._add_new_axes(projection=projection,
+                                    sharex=sharex, sharey=sharey)
         # plot on axes
         return ax.plot(numpy.asarray(x), numpy.asarray(y), **kwargs)[0]
 
@@ -445,6 +457,8 @@ class Plot(figure.Figure):
         """
         # set kwargs
         kwargs.setdefault("s", 20)
+        sharex = kwargs.pop('sharex', None)
+        sharey = kwargs.pop('sharey', None)
 
         # find relevant axes
         if ax is None and not newax:
@@ -453,7 +467,8 @@ class Plot(figure.Figure):
             except IndexError:
                 newax = True
         if newax:
-            ax = self._add_new_axes(projection=projection)
+            ax = self._add_new_axes(projection=projection,
+                                    sharex=sharex, sharey=sharey)
         # plot on axes
         return ax.scatter(numpy.asarray(x), numpy.asarray(y), **kwargs)
 
@@ -485,6 +500,8 @@ class Plot(figure.Figure):
         Collection
             the :class:`~matplotlib.image.AxesImage` for this image
         """
+        sharex = kwargs.pop('sharex', None)
+        sharey = kwargs.pop('sharey', None)
         # find relevant axes
         if ax is None and not newax:
             try:
@@ -492,7 +509,8 @@ class Plot(figure.Figure):
             except IndexError:
                 newax = True
         if newax:
-            ax = self._add_new_axes(projection=projection)
+            ax = self._add_new_axes(projection=projection,
+                                    sharex=sharex, sharey=sharey)
         # plot on axes
         return ax.imshow(image, **kwargs)
 
@@ -577,7 +595,8 @@ class Plot(figure.Figure):
 
     @auto_refresh
     def add_timeseries(self, timeseries, projection='timeseries',
-                       ax=None, newax=False, **kwargs):
+                       ax=None, newax=False, sharex=None, sharey=None,
+                       **kwargs):
         """Add a :class:`~gwpy.timeseries.core.TimeSeries` trace to this plot
 
         Parameters
@@ -600,12 +619,12 @@ class Plot(figure.Figure):
         Line2D
             the :class:`~matplotlib.lines.Line2D` for this line layer
         """
-        return self.add_array(timeseries, 'timeseries',
-                              ax=ax, newax=newax, **kwargs)
+        return self.add_array(timeseries, 'timeseries', ax=ax, newax=newax,
+                              sharex=sharex, sharey=sharey, **kwargs)
 
     @auto_refresh
     def add_spectrum(self, spectrum, projection='spectrum', ax=None,
-                     newax=False, **kwargs):
+                     newax=False, sharex=None, sharey=None, **kwargs):
         """Add a :class:`~gwpy.spectrum.core.Spectrum` trace to this plot
 
         Parameters
@@ -628,12 +647,13 @@ class Plot(figure.Figure):
         Line2D
             the :class:`~matplotlib.lines.Line2D` for this line layer
         """
-        return self.add_array(spectrum, 'spectrum',
-                              ax=ax, newax=newax, **kwargs)
+        return self.add_array(spectrum, 'spectrum', ax=ax, newax=newax,
+                              sharex=sharex, sharey=sharey, **kwargs)
 
     @auto_refresh
     def add_spectrogram(self, spectrogram, projection='timeseries',
-                        ax=None, newax=False, **kwargs):
+                        ax=None, newax=False, sharex=None, sharey=None,
+                        **kwargs):
         """Add a :class:`~gwpy.spectrogram.core.Spectrogram` trace to
         this plot
 
@@ -657,11 +677,12 @@ class Plot(figure.Figure):
         Line2D
             the :class:`~matplotlib.lines.Line2D` for this line layer
         """
-        return self.add_array(spectrogram, 'timeseries',
-                              ax=ax, newax=newax, **kwargs)
+        return self.add_array(spectrogram, 'timeseries', ax=ax, newax=newax,
+                              sharex=sharex, sharey=sharey, **kwargs)
 
     @auto_refresh
-    def add_array(self, array, projection, ax=None, newax=False, **kwargs):
+    def add_array(self, array, projection, ax=None, newax=False,
+                  sharex=None, sharey=None, **kwargs):
         """Add a :class:`~gwpy.data.array.Array` to this plot
 
         Parameters
@@ -690,12 +711,13 @@ class Plot(figure.Figure):
             except IndexError:
                 newax = True
         if newax:
-            ax = self._add_new_axes(projection=projection)
+            ax = self._add_new_axes(projection=projection,
+                                    sharex=sharex, sharey=sharey)
         # plot on axes
         return ax.plot(array, **kwargs)
 
     def add_dataqualityflag(self, flag, projection=None, ax=None, newax=False,
-                            **kwargs):
+                            sharex=None, sharey=None, **kwargs):
         """Add a :class:`~gwpy.segments.flag.DataQualityFlag` to this plot
 
         Parameters
@@ -711,7 +733,8 @@ class Plot(figure.Figure):
             except IndexError:
                 newax = True
         if newax:
-            ax = self._add_new_axes(projection=projection)
+            ax = self._add_new_axes(projection=projection,
+                                    sharex=sharex, sharey=sharey)
         # plot on axes
         return ax.plot(flag, **kwargs)
 
