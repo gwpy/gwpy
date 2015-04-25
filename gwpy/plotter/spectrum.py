@@ -159,7 +159,7 @@ class SpectrumAxes(Axes):
         color = kwargs.pop('color', line1.get_color())
         linewidth = kwargs.pop('linewidth', line1.get_linewidth()) / 10
         if min_ is not None:
-            a = self.plot(min_.frequencies, min_.value, color=color,
+            a = self.plot(min_.frequencies.value, min_.value, color=color,
                           linewidth=linewidth, **kwargs)
             if alpha:
                 b = self.fill_between(min_.frequencies.value, mean_.value,
@@ -169,10 +169,10 @@ class SpectrumAxes(Axes):
         else:
             a = b = None
         if max_ is not None:
-            c = self.plot(max_.frequencies, max_.value, color=color,
+            c = self.plot(max_.frequencies.value, max_.value, color=color,
                           linewidth=linewidth, **kwargs)
             if alpha:
-                d = self.fill_between(max_.frequencies, mean_.value,
+                d = self.fill_between(max_.frequencies.value, mean_.value,
                                       max_.value, alpha=alpha, color=color)
             else:
                 d = None
