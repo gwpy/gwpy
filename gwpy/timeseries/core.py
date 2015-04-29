@@ -115,12 +115,11 @@ class TimeSeries(Series):
         """Generate a new TimeSeries.
         """
         # parse Channel input
-        if channel:
-            channel = (isinstance(channel, Channel) and channel or
-                       Channel(channel))
+        if isinstance(channel, Channel):
             name = name or channel.name
             unit = unit or channel.unit
-            sample_rate = sample_rate or channel.sample_rate
+            if sample_rate is None and times is None and 'dx' not in kwargs:
+                sample_rate = channel.sample_rate
         if times is None and 'xindex' in kwargs:
             times = kwargs.pop('xindex')
         if sample_rate is None and times is None and 'dx' not in kwargs:
