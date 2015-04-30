@@ -114,14 +114,14 @@ class Array2D(Series):
         # update metadata
         if isinstance(x, slice):
             if x.start:
-                new.x0 += x.start * new.dx
+                new.x0 = new.x0 + x.start * new.dx
             if x.step:
-                new.dx *= x.step
+                new.dx = new.dx + x.step
         if len(new.shape) == 1 and isinstance(y, slice):
             if y.start:
-                new.x0 += y.start * new.dx
+                new.x0 = new.x0 + y.start * new.dx
             if y.step:
-                new.dx *= y.step
+                new.dx = new.dx * y.step
         elif isinstance(y, slice):
             if y.start:
                 new.y0 = new.y0 + y.start * new.dy
