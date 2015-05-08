@@ -20,6 +20,7 @@
 """
 
 import warnings
+from copy import deepcopy
 
 from scipy import signal
 
@@ -227,6 +228,7 @@ class Spectrum(Series):
             return self
         else:
             new = (self.value * fresp).view(type(self))
+            new.__dict__ = deepcopy(self.__dict__)
             return new
 
     def filterba(self, *args, **kwargs):
