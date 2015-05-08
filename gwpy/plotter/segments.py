@@ -238,7 +238,8 @@ class SegmentAxes(TimeSeriesAxes):
         # make active collection
         collection = self.plot_segmentlist(flag.active, y=y, label=name,
                                            facecolor=facecolor, **kwargs)
-        if len(self.collections) == 1:
+        if (known is not None and len(self.collections) == 2 or
+                len(self.collections) == 1):
             if len(flag.known):
                 self.set_xlim(*map(float, flag.extent))
             self.autoscale(axis='y')
