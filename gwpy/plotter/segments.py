@@ -402,7 +402,7 @@ class SegmentAxes(TimeSeriesAxes):
                 tick.set_position((0.01, tick.get_position()[1]))
                 tick.set_bbox({'alpha': 0.5, 'facecolor': 'white',
                                'edgecolor': 'none'})
-            else:
+            elif self._insetlabels is False:
                 tick.set_horizontalalignment('right')
                 tick.set_position((0, tick.get_position()[1]))
                 tick.set_bbox({})
