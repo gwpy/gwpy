@@ -247,7 +247,7 @@ class SegmentAxes(TimeSeriesAxes):
 
     @auto_refresh
     def plot_segmentlist(self, segmentlist, y=None, collection=True,
-                         label=None, **kwargs):
+                         label=None, rasterized=None, **kwargs):
         """Plot a :class:`~gwpy.segments.SegmentList` onto these axes
 
         Parameters
@@ -285,6 +285,7 @@ class SegmentAxes(TimeSeriesAxes):
             pass
         if collection:
             coll = PatchCollection(patches, len(patches) != 0)
+            coll.set_rasterized(rasterized)
             if label is not None:
                 coll.set_label(rUNDERSCORE.sub(r'\_', str(label)))
             if collection == 'ignore':
@@ -297,6 +298,7 @@ class SegmentAxes(TimeSeriesAxes):
             out = []
             for p in patches:
                 p.set_label(label)
+                p.set_rasterized(rasterized)
                 label = ''
                 out.append(self.add_patch(p))
             return out
