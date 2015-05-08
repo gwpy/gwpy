@@ -232,7 +232,7 @@ class SegmentAxes(TimeSeriesAxes):
                     vkwargs['fill'] = True
                     vkwargs['facecolor'] = known
                     vkwargs['edgecolor'] = 'black'
-            vkwargs['collection'] = False
+            vkwargs['collection'] = 'ignore'
             vkwargs['zorder'] = -1000
             self.plot_segmentlist(flag.known, y=y, label=name, **vkwargs)
         # make active collection
@@ -286,6 +286,11 @@ class SegmentAxes(TimeSeriesAxes):
             coll = PatchCollection(patches, len(patches) != 0)
             if label is not None:
                 coll.set_label(rUNDERSCORE.sub(r'\_', str(label)))
+            if collection == 'ignore':
+                coll._ignore = True
+            else:
+                coll._ignore = False
+            coll._ypos = y
             return self.add_collection(coll)
         else:
             out = []
@@ -534,11 +539,10 @@ class SegmentFormatter(Formatter):
 
     def __call__(self, t, pos=None):
         # if segments have been plotted at this y-axis value, continue
-        for i, coll in enumerate(self.axis.axes.collections):
-            y = coll.get_datalim(coll.axes.transData).intervaly
-            if y[0] == numpy.inf and not t == i:
-                pass
-            elif t in Segment(*y) or t == i:
+        collections = [c for c in self.axis.axes.collections if
+                       not getattr(c, '_ignore', True)]
+        for i, coll in enumerate(collections):
+            if t == coll._ypos:
                 return coll.get_label()
         for patch in self.axis.axes.patches:
             if not patch.get_label():
