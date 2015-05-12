@@ -115,7 +115,6 @@ def table_from_file(f, tablename, columns=None, filt=None,
             gprint('%d rows remaining\n' % len(out))
     if columns is not None:
         tableclass.loadcolumns = _oldcols
-    xmldoc.unlink()
     return out
 
 
