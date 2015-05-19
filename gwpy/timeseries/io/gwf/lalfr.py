@@ -21,75 +21,85 @@
 
 from __future__ import division
 
-import numpy
-
 from astropy.io import registry
 
 from glue.lal import (Cache, CacheEntry)
 
 from .identify import register_identifier
-from ....detector import Channel
-from ....time import Time
 from ... import (TimeSeries, StateVector, TimeSeriesDict, StateVectorDict)
+from ....time import to_gps
 from ....utils import (import_method_dependency, with_import)
 
 
 @with_import('lalframe.frread')
-def read_timeseries(framefile, channel, start=None, end=None, dtype=None,
-                    resample=False, verbose=False, _target=TimeSeries):
-    """Read a `TimeSeries` of data from a gravitational-wave frame file
-
-    This method is a thin wrapper around `lalframe.frread.read_timeseries`
-    and so can accept any input accepted by that function.
+def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
+                        resample=None, verbose=False, _SeriesClass=TimeSeries):
+    """Read the data for a list of channels from a GWF data source.
 
     Parameters
     ----------
-    framefile : `str`, :class:`glue.lal.Cache`, :lalsuite:`LALCache`
+    source : `str`, :class:`glue.lal.Cache`, `list`
         data source object, one of:
 
         - `str` : frame file path
-        - :class:`glue.lal.Cache` : pure python cache object
-        - :lalsuite:`LALCAche` : C-based cache object
+        - :class:`glue.lal.Cache`, `list` : contiguous list of frame paths
 
-    channel : :class:`~gwpy.detector.channel.Channel`, `str`
-        data channel to read from frames
+    channels : `list`
+        list of channel names (or `Channel` objects) to read from frame.
     start : `Time`, :lalsuite:`LIGOTimeGPS`, optional
-        start GPS time of desired data
+        start GPS time of desired data.
     end : `Time`, :lalsuite:`LIGOTimeGPS`, optional
-        end GPS time of desired data
-    dtype : `type`, `numpy.dtype`, `str`, optional
-        identifier for desired output data type
+        end GPS time of desired data.
+    type : `str`
+        type of channel, one of ``'adc'`` or ``'proc'``.
+    dtype : `numpy.dtype`, `str`, `type`, or `dict`
+        numeric data type for returned data, e.g. `numpy.float`, or
+        `dict` of (`channel`, `dtype`) pairs
     resample : `float`, optional
         rate of samples per second at which to resample input TimeSeries.
     verbose : `bool`, optional
-        print verbose output
+        print verbose output.
 
     Returns
     -------
-    data : :class:`~gwpy.timeseries.core.TimeSeries`
-        a new `TimeSeries` containing the data read from disk
+    dict : :class:`~gwpy.timeseries.core.TimeSeriesDict`
+        dict of (channel, `TimeSeries`) data pairs
+
+    Notes
+    -----
+    If reading from a list, or cache, or framefiles, the frames contained
+    must be contiguous and sorted in chronological order for this function
+    to return without exception.
+
+    Raises
+    ------
+    ValueError
+        if reading from an unsorted, or discontiguous cache of files
     """
     lal = import_method_dependency('lal.lal')
     frametype = None
     # parse input arguments
-    if isinstance(framefile, CacheEntry):
-        frametype = framefile.description
-        framefile = framefile.path
-    elif isinstance(framefile, file):
-        framefile = framefile.name
-    elif isinstance(framefile, Cache):
-        fts = set([e.description for e in framefile])
+    if isinstance(source, CacheEntry):
+        frametype = source.description
+        source = source.path
+    elif isinstance(source, file):
+        source = source.name
+    elif isinstance(source, Cache):
+        fts = set([ce.description for ce in source])
         if len(fts) == 1:
             frametype = list(fts)[0]
-    if isinstance(framefile, str):
+    if isinstance(source, str):
         try:
-            frametype = CacheEntry.from_T050017(framefile).description
+            frametype = CacheEntry.from_T050017(source).description
         except ValueError:
             pass
-    if start and isinstance(start, Time):
-        start = lal.LIGOTimeGPS(start.gps)
-    if end and isinstance(end, Time):
-        end = lal.LIGOTimeGPS(end.gps)
+    # set times
+    if start is not None:
+        start = to_gps(start)
+        start = lal.LIGOTimeGPS(start.seconds, start.nanoseconds)
+    if end is not None:
+        end = to_gps(end)
+        end = lal.LIGOTimeGPS(end.seconds, end.nanoseconds)
     if start and end:
         duration = float(end - start)
     elif end:
@@ -101,27 +111,58 @@ def read_timeseries(framefile, channel, start=None, end=None, dtype=None,
             start = lal.LIGOTimeGPS(start)
         except TypeError:
             start = lal.LIGOTimeGPS(float(start))
-    if dtype is not None:
-        dtype = numpy.dtype(dtype).type
-    lalts = frread.read_timeseries(framefile, str(channel), start=start,
-                                   duration=duration, datatype=dtype,
-                                   verbose=verbose)
-    out = _target.from_lal(lalts)
-    out.channel = channel
-    out.channel.frametype = frametype
-    if resample:
-        out = out.resample(resample)
+    # parse resampling
+    if isinstance(resample, int):
+        resample = dict((channel, resample) for channel in channels)
+    elif isinstance(resample, (tuple, list)):
+        resample = dict(zip(channels, resample))
+    elif resample is None:
+        resample = {}
+    elif not isinstance(resample, dict):
+        raise ValueError("Cannot parse resample request, please review "
+                         "documentation for that argument")
+    # parse dtype
+    if isinstance(dtype, (str, type)):
+        dtype = dict((channel, dtype) for channel in channels)
+    elif isinstance(dtype, (tuple, list)):
+        dtype = dict(zip(channels, dtype))
+    elif dtype is None:
+        dtype = {}
+    elif not isinstance(dtype, dict):
+        raise ValueError("Cannot parse dtype request, please review "
+                         "documentation for that argument")
+
+    # read data
+    try:
+        laldata = frread.read_timeseries(source, map(str, channels),
+                                         start=start, duration=duration,
+                                         verbose=verbose)
+    # if old version of lalframe.frread
+    except TypeError:
+        laldata = [frread.read_timeseries(source, str(c), start=start,
+                                          duration=duration, verbose=verbose)
+                   for c in channels]
+    # convert to native objects and return
+    out = TimeSeriesDict()
+    for channel, lalts in zip(channels, laldata):
+        ts = _SeriesClass.from_lal(lalts)
+        ts.channel = channel
+        ts.channel.frametype = frametype
+        if channel in dtype:
+            ts = ts.astype(dtype[channel])
+        if channel in resample:
+            ts = ts.resample(resample[channel])
+        out[channel] = ts
     return out
 
 
 @with_import('lalframe.frread')
-def read_timeseriesdict(framefile, channels, **kwargs):
-    """Read data for multiple channels from the given GWF-format
-    ``framefile``
+def read_timeseries(source, channel, **kwargs):
+    """Read data for multiple channels from the GWF-file source
 
     Parameters
     ----------
-    framefile : `str`, :class:`glue.lal.Cache`, :lalsuite:`LALCache`
+    source : `str`, :class:`glue.lal.Cache`, :lalsuite:`LALCache`
         data source object, one of:
 
         - `str` : frame file path
@@ -132,37 +173,15 @@ def read_timeseriesdict(framefile, channels, **kwargs):
 
     See Also
     --------
-    :func:`~gwpy.io.gwf.lalframe.read_timeseries`
+    :func:`~gwpy.io.gwf.lalframe.read_timeseriesdict`
         for documentation on keyword arguments
 
     Returns
     -------
-    dict : :class:`~gwpy.timeseries.core.TimeSeriesDict`
-        dict of (channel, `TimeSeries`) data pairs
+    dict : :class:`~gwpy.timeseries.core.TimeSeries`
+        a new `TimeSeries` containing the data read from disk
     """
-    out = TimeSeriesDict()
-    resample = kwargs.pop('resample', None)
-    if isinstance(resample, int) or resample is None:
-        resample = dict((channel, resample) for channel in channels)
-    elif isinstance(resample, (tuple, list)):
-        resample = dict(zip(channels, resample))
-    elif not isinstance(resample, dict):
-        raise ValueError("Cannot parse resample request, please review "
-                         "documentation for that argument")
-    dtype = kwargs.pop('dtype', None)
-    if isinstance(dtype, type) or dtype is None:
-        dtype = dict((channel, dtype) for channel in channels)
-    elif isinstance(dtype, (tuple, list)):
-        dtype = dict(zip(channels, dtype))
-    elif not isinstance(dtype, dict):
-        raise ValueError("Cannot parse dtype request, please review "
-                         "documentation for that argument")
-    for channel in channels:
-        out[channel] = read_timeseries(framefile, channel,
-                                       resample=resample.get(channel, None),
-                                       dtype=dtype.get(channel, None),
-                                       **kwargs)
-    return out
+    return read_timeseriesdict(source, [channel], **kwargs)[channel]
 
 
 @with_import('lalframe.frread')
@@ -170,7 +189,7 @@ def read_statevector_dict(source, channels, bitss=[], **kwargs):
     """Read a `StateVectorDict` of data from a gravitational-wave
     frame file
     """
-    kwargs.setdefault('_target', StateVector)
+    kwargs.setdefault('_SeriesClass', StateVector)
     svd = StateVectorDict(read_timeseriesdict(source, channels, **kwargs))
     for (channel, bits) in zip(channels, bitss):
         svd[channel].bits = bits
@@ -179,7 +198,7 @@ def read_statevector_dict(source, channels, bitss=[], **kwargs):
 
 @with_import('lalframe.frread')
 def read_statevector(source, channel, bits=None, **kwargs):
-    kwargs.setdefault('_target', StateVector)
+    kwargs.setdefault('_SeriesClass', StateVector)
     sv = read_timeseries(source, channel, **kwargs).view(StateVector)
     sv.bits = bits
     return sv
