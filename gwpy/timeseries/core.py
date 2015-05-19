@@ -1762,7 +1762,8 @@ class TimeSeriesDict(OrderedDict):
     """Ordered key-value mapping of named `TimeSeries` containing data
     for many channels over the same time interval.
 
-    Currently the class doesn't do anything special. FIXME.
+    The main entry points for this object are the :meth:`~TimeSeriesDict.read`
+    and :meth:`~TimeSeriesDict.fetch` data access methods.
     """
     EntryClass = TimeSeries
 
