@@ -17,23 +17,19 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Read data from gravitational-wave frames using frameCPP.
-
-Direct access to the frameCPP library is the easiest way to read multiple
-channels from a single frame file in one go.
 """
 
 from __future__ import division
+import __builtin__
 
 import numpy
 
-from astropy.io import registry
-
-from glue.lal import (Cache, CacheEntry)
-
-from .identify import register_identifier
 from .... import version
+from ....io.cache import (CacheEntry, file_list)
 from ....utils import (gprint, with_import)
-from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
+from ... import (TimeSeries, TimeSeriesDict)
+
+from . import channel_dict_kwarg
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -42,12 +38,12 @@ __version__ = version.version
 try:
     from LDAStools import frameCPP
 except ImportError:
-    frameCPP = 'frameCPP'
+    DEPENDS = 'frameCPP'
 else:
-    frameCPP = 'LDAStools.frameCPP'
+    DEPENDS = 'LDAStools.frameCPP'
 
 
-@with_import(frameCPP)
+@with_import(DEPENDS)
 def read_timeseriesdict(source, channels, start=None, end=None, type=None,
                         dtype=None, resample=None, verbose=False,
                         _SeriesClass=TimeSeries):
@@ -95,42 +91,27 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
     """
     frametype = None
     # parse input source
-    if isinstance(source, file):
-        source = source.name
-    if isinstance(source, (unicode, str)):
-        filelist = source.split(',')
-        try:
-            frametype = CacheEntry.from_T050017(source).description
-        except ValueError:
-            pass
-    elif isinstance(source, CacheEntry):
-        frametype = source.description
-        filelist = [source]
-    elif isinstance(source, Cache):
-        fts = set([e.description for e in source])
-        if len(fts) == 1:
-            frametype = list(fts)[0]
-        source.sort(key=lambda e: e.segment[0])
-        filelist = source
-    else:
-        filelist = list(source)
+    filelist = file_list(source)
+    try:
+        frametype = CacheEntry.from_T050017(filelist[0]).description
+    except ValueError:
+        frametype = None
     # parse resampling
-    if isinstance(resample, int):
-        resample = dict((channel, resample) for channel in channels)
-    elif isinstance(resample, (tuple, list)):
-        resample = dict(zip(channels, resample))
-    elif resample is None:
-        resample = {}
-    elif not isinstance(resample, dict):
-        raise ValueError("Cannot parse resample request, please review "
+    resample = channel_dict_kwarg(resample, channels, (int,))
+    if resample is None:
+        raise ValueError("Cannot parse `resample` request, please review "
                          "documentation for that argument")
     # parse type
-    if isinstance(type, str):
-        type = dict((channel, type) for channel in channels)
-    elif isinstance(type, (tuple, list)):
-        type = dict(zip(channels, type))
-    elif type is None:
-        type = {}
+    type = channel_dict_kwarg(type, channels, (str,))
+    if resample is None:
+        raise ValueError("Cannot parse channel `type` request, please review "
+                         "documentation for that argument")
+    # parse dtype
+    dtype = channel_dict_kwarg(dtype, channels, (__builtin__.type,),
+                               astype=numpy.dtype)
+    if resample is None:
+        raise ValueError("Cannot parse `dtype` request, please review "
+                         "documentation for that argument")
     # read each individually and append
     N = len(filelist)
     if verbose:
@@ -195,15 +176,6 @@ def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
     """
     if isinstance(channels, (unicode, str)):
         channels = channels.split(',')
-
-    # parse dtype
-    if isinstance(dtype, (tuple, list)):
-        dtype = [numpy.dtype(r) if r is not None else None for r in dtype]
-        dtype = dict(zip(channels, dtype))
-    elif not isinstance(dtype, dict):
-        if dtype is not None:
-            dtype = numpy.dtype(dtype)
-        dtype = dict((channel, dtype) for channel in channels)
 
     # open file
     if isinstance(framefile, CacheEntry):
@@ -287,107 +259,3 @@ def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
             out[channel] = ts
 
     return out
-
-
-@with_import(frameCPP)
-def read_timeseries(source, channel, **kwargs):
-    """Read a `TimeSeries` of data from a gravitational-wave frame file
-
-    Parameters
-    ----------
-    source : `str`, :class:`glue.lal.Cache`, `list`
-        data source object, one of:
-
-        - `str` : frame file path
-        - :class:`glue.lal.Cache`, `list` : contiguous list of frame paths
-
-    channel : :class:`~gwpy.detector.channel.Channel`, `str`
-        data channel to read from frames
-
-    See Also
-    --------
-    :func:`~gwpy.io.gwf.framecpp.read_timeseriesdict`
-        for documentation on keyword arguments
-
-    Returns
-    -------
-    data : :class:`~gwpy.timeseries.core.TimeSeries`
-        a new `TimeSeries` containing the data read from disk
-    """
-    return read_timeseriesdict(source, [channel], **kwargs)[channel]
-
-
-@with_import(frameCPP)
-def read_statevectordict(source, channels, bitss=[], **kwargs):
-    """Read a `StateVectorDict` of data from a gravitational-wave
-    frame file.
-    """
-    kwargs.setdefault('_SeriesClass', StateVector)
-    svd = StateVectorDict(read_timeseriesdict(source, channels, **kwargs))
-    for (channel, bits) in zip(channels, bitss):
-        svd[channel].bits = bits
-    return svd
-
-
-@with_import(frameCPP)
-def read_statevector(source, channel, bits=None, **kwargs):
-    """Read a `StateVector` of data from a gravitational-wave frame file
-
-    Parameters
-    ----------
-    source : `str`, :class:`glue.lal.Cache`, `list`
-        data source object, one of:
-
-        - `str` : frame file path
-        - :class:`glue.lal.Cache`, `list` : contiguous list of frame paths
-
-    channel : :class:`~gwpy.detector.channel.Channel`, `str`
-        data channel to read from frames
-    bits : `list`
-        ordered list of bit identifiers (names)
-
-    See Also
-    --------
-    :func:`~gwpy.io.gwf.framecpp.read_timeseriesdict`
-        for documentation on keyword arguments
-
-    Returns
-    -------
-    data : :class:`~gwpy.timeseries.core.StateVector`
-        a new `StateVector` containing the data read from disk
-    """
-    kwargs.setdefault('_SeriesClass', StateVector)
-    sv = read_timeseries(source, channel, **kwargs)
-    sv.bits = bits
-    return sv
-
-
-# register gwf reader first
-try:
-    __import__(frameCPP, fromlist=[''])
-except ImportError:
-    pass
-else:
-    try:
-        register_identifier('gwf')
-    except Exception as e:
-        if not str(e).startswith('Identifier for format'):
-            raise
-    registry.register_reader('gwf', TimeSeriesDict, read_timeseriesdict,
-                             force=True)
-    registry.register_reader('gwf', StateVectorDict, read_statevectordict,
-                             force=True)
-    try:
-        registry.register_reader('gwf', TimeSeries, read_timeseries,
-                                 force=True)
-    except:
-        pass
-    else:
-        registry.register_reader('gwf', StateVector, read_statevector,
-                                 force=True)
-
-# register framecpp
-registry.register_reader('framecpp', TimeSeriesDict, read_timeseriesdict)
-registry.register_reader('framecpp', TimeSeries, read_timeseries)
-registry.register_reader('framecpp', StateVectorDict, read_statevectordict)
-registry.register_reader('framecpp', StateVector, read_statevector)

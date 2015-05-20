@@ -21,17 +21,17 @@
 
 from __future__ import division
 
-from astropy.io import registry
-
 from glue.lal import (Cache, CacheEntry)
 
-from .identify import register_identifier
-from ... import (TimeSeries, StateVector, TimeSeriesDict, StateVectorDict)
 from ....time import to_gps
 from ....utils import (import_method_dependency, with_import)
+from ... import (TimeSeries, TimeSeriesDict)
+from . import channel_dict_kwarg
+
+DEPENDS = 'lalframe.frread'
 
 
-@with_import('lalframe.frread')
+@with_import(DEPENDS)
 def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
                         resample=None, verbose=False, _SeriesClass=TimeSeries):
     """Read the data for a list of channels from a GWF data source.
@@ -112,23 +112,13 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
         except TypeError:
             start = lal.LIGOTimeGPS(float(start))
     # parse resampling
-    if isinstance(resample, int):
-        resample = dict((channel, resample) for channel in channels)
-    elif isinstance(resample, (tuple, list)):
-        resample = dict(zip(channels, resample))
-    elif resample is None:
-        resample = {}
-    elif not isinstance(resample, dict):
+    resample = channel_dict_kwarg(resample, channels, (int,))
+    if resample is None:
         raise ValueError("Cannot parse resample request, please review "
                          "documentation for that argument")
     # parse dtype
-    if isinstance(dtype, (str, type)):
-        dtype = dict((channel, dtype) for channel in channels)
-    elif isinstance(dtype, (tuple, list)):
-        dtype = dict(zip(channels, dtype))
-    elif dtype is None:
-        dtype = {}
-    elif not isinstance(dtype, dict):
+    dtype = channel_dict_kwarg(dtype, channels, (str, type))
+    if dtype is None:
         raise ValueError("Cannot parse dtype request, please review "
                          "documentation for that argument")
 
@@ -154,75 +144,3 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
             ts = ts.resample(resample[channel])
         out[channel] = ts
     return out
-
-
-@with_import('lalframe.frread')
-def read_timeseries(source, channel, **kwargs):
-    """Read data for multiple channels from the GWF-file source
-
-    Parameters
-    ----------
-    source : `str`, :class:`glue.lal.Cache`, :lalsuite:`LALCache`
-        data source object, one of:
-
-        - `str` : frame file path
-        - :class:`glue.lal.Cache` : pure python cache object
-        - :lalsuite:`LALCAche` : C-based cache object
-    channels : `list`
-        list of channel names (or `Channel` objects) to read from frame
-
-    See Also
-    --------
-    :func:`~gwpy.io.gwf.lalframe.read_timeseriesdict`
-        for documentation on keyword arguments
-
-    Returns
-    -------
-    dict : :class:`~gwpy.timeseries.core.TimeSeries`
-        a new `TimeSeries` containing the data read from disk
-    """
-    return read_timeseriesdict(source, [channel], **kwargs)[channel]
-
-
-@with_import('lalframe.frread')
-def read_statevector_dict(source, channels, bitss=[], **kwargs):
-    """Read a `StateVectorDict` of data from a gravitational-wave
-    frame file
-    """
-    kwargs.setdefault('_SeriesClass', StateVector)
-    svd = StateVectorDict(read_timeseriesdict(source, channels, **kwargs))
-    for (channel, bits) in zip(channels, bitss):
-        svd[channel].bits = bits
-    return svd
-
-
-@with_import('lalframe.frread')
-def read_statevector(source, channel, bits=None, **kwargs):
-    kwargs.setdefault('_SeriesClass', StateVector)
-    sv = read_timeseries(source, channel, **kwargs).view(StateVector)
-    sv.bits = bits
-    return sv
-
-
-# register 'gwf' reader first
-try:
-    import lalframe
-except ImportError:
-    pass
-else:
-    register_identifier('gwf')
-    registry.register_reader('gwf', TimeSeries, read_timeseries, force=True)
-    registry.register_reader('gwf', StateVector, read_statevector, force=True)
-    try:
-        registry.register_reader('gwf', TimeSeriesDict, read_timeseriesdict)
-    except Exception as e:
-        if not str(e).startswith('Reader for format'):
-            raise
-    else:
-        registry.register_reader('gwf', StateVectorDict, read_statevector_dict)
-
-# register lalframe
-registry.register_reader('lalframe', TimeSeries, read_timeseries)
-registry.register_reader('lalframe', StateVector, read_statevector)
-registry.register_reader('lalframe', TimeSeriesDict, read_timeseriesdict)
-registry.register_reader('lalframe', StateVectorDict, read_statevector_dict)
