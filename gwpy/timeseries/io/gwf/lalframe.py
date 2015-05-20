@@ -77,6 +77,7 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
         if reading from an unsorted, or discontiguous cache of files
     """
     lal = import_method_dependency('lal.lal')
+    from gwpy.utils.lal import to_lal_ligotimegps
     frametype = None
     # parse input arguments
     if isinstance(source, CacheEntry):
@@ -95,22 +96,15 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
             pass
     # set times
     if start is not None:
-        start = to_gps(start)
-        start = lal.LIGOTimeGPS(start.seconds, start.nanoseconds)
+        start = to_lal_ligotimegps(start)
     if end is not None:
-        end = to_gps(end)
-        end = lal.LIGOTimeGPS(end.seconds, end.nanoseconds)
+        end = to_lal_ligotimegps(end)
     if start and end:
         duration = float(end - start)
     elif end:
         raise ValueError("If `end` is given, `start` must also be given")
     else:
         duration = None
-    if start:
-        try:
-            start = lal.LIGOTimeGPS(start)
-        except TypeError:
-            start = lal.LIGOTimeGPS(float(start))
     # parse resampling
     resample = channel_dict_kwarg(resample, channels, (int,))
     if resample is None:

@@ -31,6 +31,7 @@ from lal import lal
 
 from .. import version
 from .. import timeseries
+from ..time import to_gps
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -189,3 +190,20 @@ def from_lal_unit(lunit):
         else:
             aunit *= u ** power
     return aunit
+
+
+def to_lal_ligotimegps(gps):
+    """Convert the given GPS time to a :lal:`LIGOTimeGPS` object
+
+    Parameters
+    ----------
+    gps : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        input GPS time, can be anything parsable by :meth:`~gwpy.time.to_gps`
+
+    Returns
+    -------
+    ligotimegps : :lal:`LIGOTimeGPS`
+        a SWIG-LAL `LIGOTimeGPS` representation of the given GPS time
+    """
+    gps = to_gps(gps)
+    return lal.LIGOTimeGPS(gps.seconds, gps.nanoseconds)
