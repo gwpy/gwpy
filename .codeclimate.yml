@@ -1,0 +1,6 @@
+languages:
+  Python: true
+exclude_paths:
+  - "gwpy/tests/data/*"
+  - "docs/*"
+  - "examples/*"
