@@ -114,7 +114,7 @@ else:
 
 
 def to_lal_unit(aunit):
-    """Convert the input unit into a :lalsuite:`LALUnit`
+    """Convert the input unit into a :lal:`LALUnit`
 
     For example::
 
@@ -129,7 +129,7 @@ def to_lal_unit(aunit):
 
     Returns
     -------
-    unit : :lalsuite:`LALUnit`
+    unit : :lal:`LALUnit`
         the LALUnit representation of the input
 
     Raises
@@ -156,11 +156,11 @@ def to_lal_unit(aunit):
 
 
 def from_lal_unit(lunit):
-    """Convert a :lalsuite`LALUnit` into a `~astropy.units.Unit`
+    """Convert a :lal`LALUnit` into a `~astropy.units.Unit`
 
     Parameters
     ----------
-    aunit : :lalsuite:`LALUnit`
+    aunit : :lal:`LALUnit`
         the input unit
 
     Returns

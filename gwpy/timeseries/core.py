@@ -420,7 +420,7 @@ class TimeSeries(Series):
             the relevant method.
         window : `timeseries.Window`, optional
             window function to apply to timeseries prior to FFT
-        plan : :lalsuite:`REAL8FFTPlan`, optional
+        plan : :lal:`REAL8FFTPlan`, optional
             LAL FFT plan to use when generating average spectrum,
             substitute type 'REAL8' as appropriate.
 
@@ -463,7 +463,7 @@ class TimeSeries(Series):
             the relevant method.
         window : `timeseries.Window`, optional
             window function to apply to timeseries prior to FFT
-        plan : :lalsuite:`REAL8FFTPlan`, optional
+        plan : :lal:`REAL8FFTPlan`, optional
             LAL FFT plan to use when generating average spectrum,
             substitute type 'REAL8' as appropriate.
 
@@ -500,7 +500,7 @@ class TimeSeries(Series):
             average spectrum method.
         window : `timeseries.window.Window`, optional, default: `None`
             window function to apply to timeseries prior to FFT.
-        plan : :lalsuite:`REAL8FFTPlan`, optional
+        plan : :lal:`REAL8FFTPlan`, optional
             LAL FFT plan to use when generating average spectrum,
             substitute type 'REAL8' as appropriate.
         nproc : `int`, default: ``1``
@@ -858,7 +858,7 @@ class TimeSeries(Series):
             the relevant method.
         window : `timeseries.Window`, optional
             window function to apply to timeseries prior to FFT
-        plan : :lalsuite:`REAL8FFTPlan`, optional
+        plan : :lal:`REAL8FFTPlan`, optional
             LAL FFT plan to use when generating average spectrum,
             substitute type 'REAL8' as appropriate.
 
@@ -902,7 +902,7 @@ class TimeSeries(Series):
             number of seconds between FFTs.
         window : `timeseries.window.Window`, optional, default: `None`
             window function to apply to timeseries prior to FFT.
-        plan : :lalsuite:`REAL8FFTPlan`, optional
+        plan : :lal:`REAL8FFTPlan`, optional
             LAL FFT plan to use when generating average spectrum,
             substitute type 'REAL8' as appropriate.
         nproc : `int`, default: ``1``

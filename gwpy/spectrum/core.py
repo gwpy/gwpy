@@ -261,7 +261,7 @@ class Spectrum(Series):
         -------
         lalspec : `FrequencySeries`
             an XLAL-format FrequencySeries of a given type, e.g.
-            :lalsuite:`REAL8FrequencySeries`
+            :lal:`REAL8FrequencySeries`
 
         Notes
         -----

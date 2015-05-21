@@ -106,7 +106,7 @@ def from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
         number of seconds between FFTs.
     window : `timeseries.window.Window`, optional, default: `None`
         window function to apply to timeseries prior to FFT.
-    plan : :lalsuite:`REAL8FFTPlan`, optional
+    plan : :lal:`REAL8FFTPlan`, optional
         LAL FFT plan to use when generating average spectrum,
         substitute type 'REAL8' as appropriate.
     nproc : `int`, default: ``1``
