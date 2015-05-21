@@ -92,7 +92,7 @@ class StateTimeSeries(TimeSeries):
                                                    epoch=epoch,
                                                    channel=channel,
                                                    sample_rate=sample_rate,
-                                                   times=times)
+                                                   times=times, **kwargs)
 
     def to_dqflag(self, name=None, minlen=1, dtype=float, round=False,
                   label=None, description=None):
