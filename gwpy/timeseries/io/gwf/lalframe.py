@@ -21,8 +21,7 @@
 
 from __future__ import division
 
-from glue.lal import (Cache, CacheEntry)
-
+from ....io.cache import (CacheEntry, file_list)
 from ....time import to_gps
 from ....utils import (import_method_dependency, with_import)
 from ... import (TimeSeries, TimeSeriesDict)
@@ -78,22 +77,12 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
     """
     lal = import_method_dependency('lal.lal')
     from gwpy.utils.lal import to_lal_ligotimegps
-    frametype = None
     # parse input arguments
-    if isinstance(source, CacheEntry):
-        frametype = source.description
-        source = source.path
-    elif isinstance(source, file):
-        source = source.name
-    elif isinstance(source, Cache):
-        fts = set([ce.description for ce in source])
-        if len(fts) == 1:
-            frametype = list(fts)[0]
-    if isinstance(source, str):
-        try:
-            frametype = CacheEntry.from_T050017(source).description
-        except ValueError:
-            pass
+    filelist = file_list(source)
+    try:
+        frametype = CacheEntry.from_T050017(filelist[0]).description
+    except ValueError:
+        frametype = None
     # set times
     if start is not None:
         start = to_lal_ligotimegps(start)
