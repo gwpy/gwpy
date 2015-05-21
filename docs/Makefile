@@ -23,7 +23,6 @@ CLIEXAMPLES   = $(CLIEXAMPLEDIR)/cli-01.png $(CLIEXAMPLEDIR)/cli-02.png $(CLIEXA
                 $(CLIEXAMPLEDIR)/cli-cohg-01.png $(CLIEXAMPLEDIR)/cli-spg-01.png $(CLIEXAMPLEDIR)/cli-coh-01.png
 
 .PHONY: help clean apidoc html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest examples  $(CLIEXAMPLES)
-LALSUITE_DOXTAG = lalsuite_dox.tag
 
 #This is needed with git because git doesn't create a dir if it's empty
 $(shell [ -d "_static" ] || mkdir -p _static)
@@ -51,13 +50,13 @@ clean:
 	-rm -rf examples/*/
 	-rm -rf $(BUILDDIR)
 	-rm -rf _generated
-	-rm -f $(LALSUITE_DOXTAG)
+	-rm -f lal*.tag
 	-rm -f pycbc.inv
 
 apidoc:
 	sphinx-apidoc -o _generated ../gwpy
 
-html: $(CLIEXAMPLES) examples lalsuite_dox.tag pycbc.inv
+html: $(CLIEXAMPLES) examples lal.tag lalframe.tag pycbc.inv
 	@cp -r $(BUILDDIR)/cli_examples $(BUILDDIR)/html
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
@@ -264,8 +263,8 @@ $(CLIEXAMPLEDIR)/cli-spg-01.png: $(CLIEXAMPLEDIR)
 		    --out $(CLIEXAMPLEDIR)/cli-spg-01.png; \
 	fi
 
-$(LALSUITE_DOXTAG):
-	wget --no-check-certificate https://www.lsc-group.phys.uwm.edu/daswg/projects/lal/nightly/docs/html/lalsuite_dox.tag -O $@ --quiet
+%.tag:
+	wget --no-check-certificate http://software.ligo.org/docs/lalsuite/$*/$*.tag -O $@ --quiet
 
 pycbc.inv:
 	gsiscp ldas-pcdev2.ligo.caltech.edu:~cbc/public_html/docs/pycbc/objects.inv pycbc.inv

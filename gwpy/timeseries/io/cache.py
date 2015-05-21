@@ -53,9 +53,9 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
         on disk
     channel : :class:`~gwpy.detector.channel.Channel`, `str`
         data channel to read from frames
-    start : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+    start : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
         start GPS time of desired data
-    end : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+    end : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
         end GPS time of desired data
     resample : `float`, optional
         rate (samples per second) to resample
@@ -244,7 +244,7 @@ def identify_cache_file(*args, **kwargs):
 
 def identify_cache(*args, **kwargs):
     """Determine an input object as a :class:`glue.lal.Cache` or a
-    :lalsuite:`LALCache`.
+    :lal:`LALCache`.
     """
     cacheobj = args[3]
     if isinstance(cacheobj, Cache):

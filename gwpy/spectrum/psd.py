@@ -63,7 +63,7 @@ def bartlett(timeseries, segmentlength, window=None, plan=None):
         input `TimeSeries` data
     segmentlength : `int`
         number of samples in each average
-    plan : :lalsuite:`REAL8FFTPlan`, optional
+    plan : :lal:`REAL8FFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
 
     Returns
@@ -79,7 +79,7 @@ def welch(timeseries, segmentlength, overlap, window=None, plan=None):
     """Calculate the power spectral density of the given `TimeSeries`
     using the Welch average method.
 
-    For more details see :lalsuite:`XLALREAL8AverageSpectrumWelch`.
+    For more details see :lal:`XLALREAL8AverageSpectrumWelch`.
 
     Parameters
     ----------
@@ -93,7 +93,7 @@ def welch(timeseries, segmentlength, overlap, window=None, plan=None):
         number of samples between averages
     window : optional
         window function to apply to timeseries prior to FFT
-    plan : :lalsuite:`REAL8FFTPlan`, optional
+    plan : :lal:`REAL8FFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
 
     Returns
@@ -113,7 +113,7 @@ def median_mean(timeseries, segmentlength, overlap, window=None, plan=None):
     """Calculate the power spectral density of the given `TimeSeries`
     using the median-mean average method.
 
-    For more details see :lalsuite:`XLALREAL8AverageSpectrumMedianMean`.
+    For more details see :lal:`XLALREAL8AverageSpectrumMedianMean`.
 
     Parameters
     ----------
@@ -125,7 +125,7 @@ def median_mean(timeseries, segmentlength, overlap, window=None, plan=None):
         number of samples between averages
     window : optional
         window function to apply to timeseries prior to FFT
-    plan : :lalsuite:`REAL8FFTPlan`, optional
+    plan : :lal:`REAL8FFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
 
     Returns
@@ -141,7 +141,7 @@ def median(timeseries, segmentlength, overlap, window=None, plan=None):
     """Calculate the power spectral density of the given `TimeSeries`
     using the median-mean average method.
 
-    For more details see :lalsuite:`XLALREAL8AverageSpectrumMean`.
+    For more details see :lal:`XLALREAL8AverageSpectrumMean`.
 
     Parameters
     ----------
@@ -153,7 +153,7 @@ def median(timeseries, segmentlength, overlap, window=None, plan=None):
         number of samples between averages
     window : optional
         window function to apply to timeseries prior to FFT
-    plan : :lalsuite:`REAL8FFTPlan`, optional
+    plan : :lal:`REAL8FFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
 
     Returns
@@ -170,7 +170,7 @@ def lal_psd(timeseries, method, segmentlength, overlap, window=None,
     """Internal wrapper to the `lal.spectrum.psd` function
 
     This function handles the conversion between GWpy `TimeSeries` and
-    XLAL ``TimeSeries``, (e.g. :lalsuite:`XLALREAL8TimeSeries`).
+    XLAL ``TimeSeries``, (e.g. :lal:`XLALREAL8TimeSeries`).
 
     Parameters
     ----------
@@ -184,7 +184,7 @@ def lal_psd(timeseries, method, segmentlength, overlap, window=None,
         number of samples between averages
     window : optional
         window function to apply to timeseries prior to FFT
-    plan : :lalsuite:`REAL8FFTPlan`, optional
+    plan : :lal:`REAL8FFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
 
     Returns
@@ -229,7 +229,7 @@ def scipy_psd(timeseries, method, segmentlength, overlap,
     """Internal wrapper to the `lal.spectrum.psd` function
 
     This function handles the conversion between GWpy `TimeSeries` and
-    XLAL ``TimeSeries``, (e.g. :lalsuite:`XLALREAL8TimeSeries`).
+    XLAL ``TimeSeries``, (e.g. :lal:`XLALREAL8TimeSeries`).
 
     Parameters
     ----------
@@ -289,7 +289,7 @@ def generate_lal_fft_plan(length, level=None,
 
     Returns
     -------
-    :lalsuite:`REAL8FFTPlan`
+    :lal:`REAL8FFTPlan`
         FFT plan of the relevant data type
     """
     from lal import (lal, utils as lalutils)

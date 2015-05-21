@@ -63,8 +63,7 @@ def identify_cache_file(*args, **kwargs):
 
 
 def identify_cache(*args, **kwargs):
-    """Determine an input object as a :class:`glue.lal.Cache` or a
-    :lalsuite:`LALCache`.
+    """Determine an input object as a :class:`glue.lal.Cache`
     """
     cacheobj = args[3]
     if isinstance(cacheobj, Cache):
