@@ -86,9 +86,11 @@ epydoc_mapping = {
 }
 
 # doxylink
-doxylink = {'lalsuite': ('lalsuite_dox.tag',
-                         'https://www.lsc-group.phys.uwm.edu/daswg/projects/'
-                         'lal/nightly/docs/html/')}
+LALSUITE_DOCS = 'http://software.ligo.org/docs/lalsuite'
+doxylink = {
+    'lal': ('lal.tag', '%s/lal/' % LALSUITE_DOCS),
+    'lalframe': ('lalframe.tag', '%s/lalframe/' % LALSUITE_DOCS),
+}
 
 # matplotlib plot directive
 plot_rcparams = GWPY_PLOT_PARAMS
