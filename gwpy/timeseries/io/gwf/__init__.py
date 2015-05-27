@@ -75,6 +75,8 @@ def channel_dict_kwarg(value, channels, types=None, astype=None):
         out = dict(zip(channels, value))
     elif value is None:
         out = dict()
+    elif isinstance(value, dict):
+        out = value.copy()
     else:
         return None
     if astype is not None:
