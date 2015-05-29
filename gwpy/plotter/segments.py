@@ -204,7 +204,7 @@ class SegmentAxes(TimeSeriesAxes):
         """
         # get y axis position
         if y is None:
-            y = len(self.collections)
+            y = self.get_next_y()
         # get flag name
         name = kwargs.pop('label', flag.texname)
 
@@ -272,7 +272,7 @@ class SegmentAxes(TimeSeriesAxes):
             list of :class:`~matplotlib.patches.Rectangle` patches
         """
         if y is None:
-            y = len(self.collections)
+            y = self.get_next_y()
         patches = []
         for seg in segmentlist:
             patches.append(self.build_segment(seg, y, **kwargs))
@@ -325,7 +325,7 @@ class SegmentAxes(TimeSeriesAxes):
             each segmentlist
         """
         if y is None:
-            y = len(self.collections)
+            y = self.get_next_y()
         collections = []
         for name, segmentlist in segmentlistdict.iteritems():
             collections.append(self.plot_segmentlist(segmentlist, y=y,
@@ -381,6 +381,34 @@ class SegmentAxes(TimeSeriesAxes):
                     t.set_x(_xlim[0] + (_xlim[1] - _xlim[0]) * 0.01)
         return out
     set_xlim.__doc__ = TimeSeriesAxes.set_xlim.__doc__
+
+    def get_next_y(self):
+        """Find the next y-axis value at which a segment list can be placed
+
+        This method simply counts the number of independent segmentlists or
+        flags that have been plotted onto these axes.
+        """
+        return len(self.get_collections(ignore=False))
+
+    def get_collections(self, ignore=None):
+        """Return the collections matching the given `_ignore` value
+
+        Parameters
+        ----------
+        ignore : `bool`, or `None`
+            value of `_ignore` to match
+
+        Returns
+        -------
+        collections : `list`
+            if `ignore=None`, simply returns all collections, otherwise
+            returns those collections matching the `ignore` parameter
+        """
+        if ignore is None:
+            return self.collections
+        else:
+            return [c for c in self.collections if
+                    getattr(c, '_ignore', None) == ignore]
 
     def set_insetlabels(self, inset=None):
         self._insetlabels = (inset is None and not self._insetlabels) or inset
@@ -542,9 +570,7 @@ class SegmentFormatter(Formatter):
 
     def __call__(self, t, pos=None):
         # if segments have been plotted at this y-axis value, continue
-        collections = [c for c in self.axis.axes.collections if
-                       not getattr(c, '_ignore', True)]
-        for i, coll in enumerate(collections):
+        for i, coll in enumerate(self.axis.axes.get_collections(ignore=False)):
             if t == coll._ypos:
                 return coll.get_label()
         for patch in self.axis.axes.patches:
