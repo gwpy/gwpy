@@ -70,7 +70,7 @@ else:
         2: numpy.float64,
         3: numpy.float32,
         4: numpy.int32,
-        5: numpy.in64,
+        5: numpy.int64,
         6: numpy.complex64,
         7: numpy.complex128,
         8: numpy.string_,
