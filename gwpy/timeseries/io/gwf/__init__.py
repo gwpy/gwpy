@@ -39,6 +39,8 @@ from ....utils import with_import
 from ....version import version
 from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
 
+from .identify import *
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version
 
