@@ -76,7 +76,9 @@ def file_list(flist):
     """Parse a number of possible input types into a list of filepaths.
     """
     # format list of files
-    if isinstance(flist, CacheEntry):
+    if isinstance(flist, file):
+        return [flist.name]
+    elif isinstance(flist, CacheEntry):
         return [flist.path]
     elif (isinstance(flist, string_types) and
           flist.endswith(('.cache', '.lcf'))):

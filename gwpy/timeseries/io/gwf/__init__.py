@@ -39,6 +39,8 @@ from ....utils import with_import
 from ....version import version
 from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
 
+from .identify import *
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version
 
@@ -102,7 +104,18 @@ def register_gwf_io_library(library, package='gwpy.timeseries.io.gwf'):
     # import library
     lib = importlib.import_module('.%s' % library, package=package)
     dependency = lib.DEPENDS
-    read_timeseriesdict = lib.read_timeseriesdict
+    reader = lib.read_timeseriesdict
+
+    def read_timeseriesdict(*args, **kwargs):
+        """Read `TimeSeriesDict` from GWF source
+        """
+        nproc = kwargs.pop('nproc', 1)
+        if nproc > 1:
+            from ..cache import read_cache
+            kwargs['target'] = TimeSeriesDict
+            return read_cache(*args, **kwargs)
+        else:
+            return reader(*args, **kwargs)
 
     @with_import(dependency)
     def read_timeseries(source, channel, **kwargs):

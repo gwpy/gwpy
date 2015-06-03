@@ -39,7 +39,7 @@ MAX_LALFRAME_CHANNELS = 4
 
 
 def read_cache(cache, channel, start=None, end=None, resample=None,
-               gap='raise', nproc=1, **kwargs):
+               gap='raise', nproc=1, format=None, **kwargs):
     """Read a `TimeSeries` from a cache of data files using
     multiprocessing.
 
@@ -117,25 +117,26 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
                 raise ValueError(msg)
 
     # if reading a small number of channels, try to use lalframe, its faster
-    if (isinstance(channel, str) or (isinstance(channel, (list, tuple)) and
-                                     len(channel) <= MAX_LALFRAME_CHANNELS)):
+    if format is None and (
+            isinstance(channel, str) or (isinstance(channel, (list, tuple)) and
+            len(channel) <= MAX_LALFRAME_CHANNELS)):
         try:
             from lalframe import frread
         except ImportError:
-            format_ = 'gwf'
+            format = 'gwf'
         else:
             kwargs.pop('type', None)
-            format_ = 'lalframe'
+            format = 'lalframe'
     # otherwise use the file extension as the format
-    else:
-        format_ = os.path.splitext(cache[0].path)[1][1:]
+    elif format is None:
+        format = os.path.splitext(cache[0].path)[1][1:]
 
     # force one frame per process minimum
     nproc = min(nproc, len(cache))
 
     # single-process
     if nproc <= 1:
-        return cls.read(cache, channel, format=format_, start=start, end=end,
+        return cls.read(cache, channel, format=format, start=start, end=end,
                         resample=resample, **kwargs)
 
     # define how to read each frame
@@ -148,13 +149,13 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
             if cls not in (StateVector, StateVectorDict) and resample:
                 cstart = float(max(cspan[0], pstart - 8))
                 subcache = cache.sieve(segment=Segment(cstart, pend))
-                out = cls.read(subcache, channel, format=format_, start=cstart,
+                out = cls.read(subcache, channel, format=format, start=cstart,
                                end=pend, resample=None, **kwargs)
                 out = out.resample(resample)
                 q.put(out.crop(pstart, pend))
             else:
                 subcache = cache.sieve(segment=Segment(pstart, pend))
-                q.put(cls.read(subcache, channel, format=format_, start=pstart,
+                q.put(cls.read(subcache, channel, format=format, start=pstart,
                                end=pend, resample=resample, **kwargs))
         except Exception as e:
             q.put(e)
