@@ -36,11 +36,49 @@ __version__ = version.version
 
 # get frameCPP path
 try:
-    from LDAStools import frameCPP
+    from LDAStools.frameCPP import FrVect
 except ImportError:
     DEPENDS = 'frameCPP'
+    try:
+        from frameCPP import FrVect
+    except ImportError:
+        FrVect = None
 else:
     DEPENDS = 'LDAStools.frameCPP'
+
+# get frameCPP type mapping
+if FrVect is not None:
+    NUMPY_TYPE_FROM_FRVECT = {
+        FrVect.FR_VECT_C: numpy.int8,
+        FrVect.FR_VECT_2S: numpy.int16,
+        FrVect.FR_VECT_8R: numpy.float64,
+        FrVect.FR_VECT_4R: numpy.float32,
+        FrVect.FR_VECT_4S: numpy.int32,
+        FrVect.FR_VECT_8S: numpy.int64,
+        FrVect.FR_VECT_8C: numpy.complex64,
+        FrVect.FR_VECT_16C: numpy.complex128,
+        FrVect.FR_VECT_STRING: numpy.string_,
+        FrVect.FR_VECT_2U: numpy.uint16,
+        FrVect.FR_VECT_4U: numpy.uint32,
+        FrVect.FR_VECT_8U: numpy.uint64,
+    }
+# default to LDASTools v2.2.1
+else:
+    NUMPY_TYPE_FROM_FRVECT = {
+        0: numpy.int8,
+        1: numpy.int16,
+        2: numpy.float64,
+        3: numpy.float32,
+        4: numpy.int32,
+        5: numpy.in64,
+        6: numpy.complex64,
+        7: numpy.complex128,
+        8: numpy.string_,
+        9: numpy.uint16,
+        10: numpy.uint32,
+        11: numpy.uint64,
+        12: numpy.uint8,
+    }
 
 
 @with_import(DEPENDS)
@@ -238,6 +276,9 @@ def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
             thisepoch = epochs[i] + offset
             for vect in data.data:
                 arr = vect.GetDataArray()
+                if isinstance(arr, buffer):
+                   arr = numpy.frombuffer(
+                       arr, dtype=NUMPY_TYPE_FROM_FRVECT[vect.GetType()])
                 dx = vect.GetDim(0).dx
                 if ts is None:
                     unit = vect.GetUnitY() or None
