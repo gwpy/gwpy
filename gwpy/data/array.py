@@ -189,11 +189,8 @@ class Array(Quantity):
     # -------------------------------------------
     # array methods
 
-    def median(self, axis=None, out=None, overwrite_input=False,
-               keepdims=False):
-        return self._wrap_function(numpy.median, axis, out=out,
-                                   overwrite_input=overwrite_input,
-                                   keepdims=keepdims)
+    def median(self, axis=None, **kwargs):
+        return self._wrap_function(numpy.median, axis, **kwargs)
     median.__doc__ = numpy.median.__doc__
 
     @property
