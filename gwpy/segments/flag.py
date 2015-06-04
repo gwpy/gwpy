@@ -942,6 +942,9 @@ class DataQualityDict(OrderedDict):
                              "a list of flag names, and either GPS start and "
                              "stop times, or a SegmentList of query segments")
         url = kwargs.pop('url', 'https://segdb.ligo.caltech.edu')
+        if kwargs.pop('on_error', None) is not None:
+            warnings.warn("DataQualityDict.query_segdb doesn't accept the "
+                          "on_error keyword argument")
         if kwargs.keys():
             raise TypeError("DataQualityDict.query_segdb has no keyword "
                             "argument '%s'" % kwargs.keys()[0])
