@@ -504,8 +504,9 @@ class DataQualityFlag(object):
             segl = SegmentList([seg])
             new.known &= segl
             new.active &= segl
-            new.description = data['metadata']['comment']
-            new.isgood = not data['metadata']['active_indicates_ifo_badness']
+            new.description = data['metadata'].get('flag_description', None)
+            new.isgood = not data['metadata'].get(
+                'active_indicates_ifo_badness', False)
         new.coalesce()
 
         return new
