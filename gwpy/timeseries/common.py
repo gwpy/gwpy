@@ -287,12 +287,12 @@ def crop(self, start=None, end=None, copy=False):
     if start is None:
         idx0 = None
     else:
-        idx0 = int(float(start - self.span[0]) // self.dt.value)
+        idx0 = int(float(start - self.span[0]) / self.dt.value)
     # find end index
     if end is None:
         idx1 = None
     else:
-        idx1 = int(float(end - self.span[0]) // self.dt.value)
+        idx1 = int(float(end - self.span[0]) / self.dt.value)
         if idx1 >= self.size:
             idx1 = None
     # crop
