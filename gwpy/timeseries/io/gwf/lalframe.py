@@ -119,7 +119,6 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
     out = TimeSeriesDict()
     for channel, lalts in zip(channels, laldata):
         ts = _SeriesClass.from_lal(lalts)
-        ts.channel = channel
         ts.channel.frametype = frametype
         if channel in dtype:
             ts = ts.astype(dtype[channel])
