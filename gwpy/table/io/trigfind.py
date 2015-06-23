@@ -59,6 +59,13 @@ def find_trigger_urls(channel, etg, gpsstart, gpsend, verbose=False):
     trigform = ('%s-%s_%s-%s-*.xml*'
                 % (ifo, re_dash.sub('_', channel), etg.lower(), '[0-9]'*10))
 
+    # test for channel-level directory
+    if not os.path.isdir(searchbase):
+        raise ValueError("No channel-level directory found at %s. Either the "
+                         "channel name or ETG names are wrong, or this "
+                         "channel is not configured for this ETG."
+                         % searchbase)
+
     # perform and cache results
     out = Cache()
     append = out.append
