@@ -124,6 +124,12 @@ def _fetch_factory(table):
             a new `{0}` containing triggers read from the standard
             paths
 
+        Raises
+        ------
+        ValueError
+            if no channel-level directory is found for the given channel,
+            indicating that nothing has ever been processed for this channel.
+
         See also
         --------
         {0}.read :
