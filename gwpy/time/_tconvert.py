@@ -66,7 +66,7 @@ def tconvert(gpsordate='now'):
         return from_gps(gps)
 
 
-def to_gps(t, **tparams):
+def to_gps(t, *args, **kwargs):
     """Convert any input date/time into a :class:`~gwpy.time.LIGOTimeGPS`.
 
     Any input object that can be cast as a
@@ -100,11 +100,16 @@ def to_gps(t, **tparams):
         `LIGOTimeGPS`.
     """
     # allow Time conversion to override type-checking
-    if tparams:
-        return Time(t, **tparams).utc.gps
+    if args or kwargs:
+        return Time(t, *args, **kwargs).utc.gps
     # if lal.LIGOTimeGPS
     if hasattr(t, 'gpsSeconds'):
         return LIGOTimeGPS(t.gpsSeconds, t.gpsNanoSeconds)
+    # or convert numeric string to float (e.g. '123.456')
+    try:
+        t = float(t)
+    except (TypeError, ValueError):
+        pass
     # or convert str into datetime.datetime
     if isinstance(t, str):
         t = str_to_datetime(t)
