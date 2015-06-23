@@ -229,6 +229,18 @@ class TimeSeries(Series):
                is only available when giving a :class:`~glue.lal.Cache` of
                frames, or using the ``format='cache'`` keyword argument.
 
+        gap : `str`, optional
+            how to handle gaps in the cache, one of
+
+            - 'ignore': do nothing, let the undelying reader method handle it
+            - 'warn': do nothing except print a warning to the screen
+            - 'raise': raise an exception upon finding a gap (default)
+            - 'pad': insert a value to fill the gaps
+
+        pad : `float`, optional
+            value with which to fill gaps in the source data, only used if
+            gap is not given, or `gap='pad'` is given
+
         Returns
         -------
         timeseries : `TimeSeries`
@@ -1795,6 +1807,18 @@ class TimeSeriesDict(OrderedDict):
                Parallel frame reading, via the ``nproc`` keyword argument,
                is only available when giving a :class:`~glue.lal.Cache` of
                frames, or using the ``format='cache'`` keyword argument.
+
+        gap : `str`, optional
+            how to handle gaps in the cache, one of
+
+            - 'ignore': do nothing, let the undelying reader method handle it
+            - 'warn': do nothing except print a warning to the screen
+            - 'raise': raise an exception upon finding a gap (default)
+            - 'pad': insert a value to fill the gaps
+
+        pad : `float`, optional
+            value with which to fill gaps in the source data, only used if
+            gap is not given, or `gap='pad'` is given
 
         Returns
         -------
