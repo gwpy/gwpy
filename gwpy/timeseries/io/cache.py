@@ -154,7 +154,7 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
         for seg in segs:
             new = read_cache(cache, channel, start=seg[0], end=seg[1],
                              resample=resample, nproc=nproc, format=format,
-                             **kwargs)
+                             target=cls, **kwargs)
             if out is None:
                 out = new.copy()
             else:

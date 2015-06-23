@@ -115,6 +115,7 @@ def register_gwf_io_library(library, package='gwpy.timeseries.io.gwf'):
         if nproc > 1 or pad is not None:
             from ..cache import read_cache
             kwargs['target'] = TimeSeriesDict
+            kwargs['nproc'] = nproc
             kwargs['pad'] = pad
             return read_cache(source, *args, **kwargs)
         else:
