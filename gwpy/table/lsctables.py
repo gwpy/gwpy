@@ -189,6 +189,10 @@ for table in TableByName.itervalues():
                The ``contenthandler`` keyword argument is only applicable
                when reading from ``LIGO_LW`` documents.
 
+        **loadtxtkwargs
+            when reading from ASCII, all other keyword arguments are passed
+            directly to `numpy.loadtxt`
+
         Returns
         -------
         table : :class:`{0}`
