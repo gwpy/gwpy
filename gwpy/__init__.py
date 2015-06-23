@@ -39,10 +39,17 @@ warnings.filterwarnings("ignore", "The oldnumeric module",
                         DeprecationWarning)
 
 # set metadata
-from . import version
+try:
+    from . import version
+except ImportError:
+    # this _should_ fail only during a clean build
+    __version__ = 'build'
+    __date__ = ''
+else:
+    __version__ = version.version
+    __date__ = version.__date__
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
-__date__ = version.__date__
 __credits__ = "The LIGO Scientific Collaboration and the Virgo Collaboration"
 
 __import__('pkg_resources').declare_namespace(__name__)
