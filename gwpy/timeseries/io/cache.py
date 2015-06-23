@@ -39,7 +39,7 @@ MAX_LALFRAME_CHANNELS = 4
 
 
 def read_cache(cache, channel, start=None, end=None, resample=None,
-               gap='raise', nproc=1, format=None, **kwargs):
+               gap=None, pad=None, nproc=1, format=None, **kwargs):
     """Read a `TimeSeries` from a cache of data files using
     multiprocessing.
 
@@ -64,6 +64,17 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     nproc : `int`, default: ``1``
         maximum number of independent frame reading processes, default
         is set to single-process file reading.
+    gap : `str`, optional
+        how to handle gaps in the cache, one of
+
+        - 'ignore': do nothing, let the undelying reader method handle it
+        - 'warn': do nothing except print a warning to the screen
+        - 'raise': raise an exception upon finding a gap (default)
+        - 'pad': insert a value to fill the gaps
+
+    pad : `float`, optional
+        value with which to fill gaps in the source data, only used if
+        gap is not given, or `gap='pad'` is given
 
     Notes
     -----
@@ -102,19 +113,23 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     cspan = Segment(cache[0].segment[0], cache[-1].segment[1])
 
     # check for gaps
-    segs = cache_segments(cache, on_missing='ignore')
-    if len(segs) != 1:
+    if gap is None and pad is not None:
+        gap = 'pad'
+    elif gap is None:
+        gap = 'raise'
+    segs = cache_segments(cache, on_missing='ignore') & SegmentList([span])
+    if len(segs) != 1 and gap.lower() == 'ignore' or gap.lower() == 'pad':
+        pass
+    elif len(segs) != 1:
         gaps = SegmentList([cspan]) - segs
-        if gap.lower() == 'ignore':
-            pass
+        msg = ("The cache given to %s.read has gaps in it in the "
+               "following segments:\n    %s"
+               % (cls.__name__, '\n    '.join(map(str, gaps))))
+        if gap.lower() == 'warn':
+            warnings.warn(msg)
         else:
-            msg = ("The cache given to %s.read has gaps in it in the "
-                   "following segments:\n    %s"
-                   % (cls.__name__, '\n    '.join(map(str, gaps))))
-            if gap.lower() == 'warn':
-                warnings.warn(msg)
-            else:
-                raise ValueError(msg)
+            raise ValueError(msg)
+        segs = type(segs)([span])
 
     # if reading a small number of channels, try to use lalframe, its faster
     if format is None and (
@@ -130,6 +145,23 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     # otherwise use the file extension as the format
     elif format is None:
         format = os.path.splitext(cache[0].path)[1][1:]
+
+    # -- process multiple cache segments --------
+    # this entry point loops this method for each segment
+
+    if len(segs) > 1:
+        out = None
+        for seg in segs:
+            new = read_cache(cache, channel, start=seg[0], end=seg[1],
+                             resample=resample, nproc=nproc, format=format,
+                             target=cls, **kwargs)
+            if out is None:
+                out = new.copy()
+            else:
+                out.append(new, gap='pad', pad=pad)
+        return out
+
+    # -- process single cache segment
 
     # force one frame per process minimum
     nproc = min(nproc, len(cache))

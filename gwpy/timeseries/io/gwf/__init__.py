@@ -106,40 +106,44 @@ def register_gwf_io_library(library, package='gwpy.timeseries.io.gwf'):
     dependency = lib.DEPENDS
     reader = lib.read_timeseriesdict
 
-    def read_timeseriesdict(*args, **kwargs):
+    def read_timeseriesdict(source, *args, **kwargs):
         """Read `TimeSeriesDict` from GWF source
         """
+        # use multiprocessing or padding
         nproc = kwargs.pop('nproc', 1)
-        if nproc > 1:
+        pad = kwargs.pop('pad', None)
+        if nproc > 1 or pad is not None:
             from ..cache import read_cache
             kwargs['target'] = TimeSeriesDict
-            return read_cache(*args, **kwargs)
+            kwargs['nproc'] = nproc
+            kwargs['pad'] = pad
+            return read_cache(source, *args, **kwargs)
         else:
-            return reader(*args, **kwargs)
+            return reader(source, *args, **kwargs)
 
     @with_import(dependency)
-    def read_timeseries(source, channel, **kwargs):
+    def read_timeseries(source, channel, *args, **kwargs):
         """Read `TimeSeries` from GWF source
         """
-        return read_timeseriesdict(source, [channel], **kwargs)[channel]
+        return read_timeseriesdict(source, [channel], *args, **kwargs)[channel]
 
     @with_import(dependency)
-    def read_statevector(source, channel, bits=None,
-                         _SeriesClass=StateVector, **kwargs):
+    def read_statevector(source, channel, *args, **kwargs):
         """Read `StateVector` from GWF source
         """
-        sv = read_timeseries(
-            source, channel, _SeriesClass=_SeriesClass, **kwargs)
+        bits = kwargs.pop('bits', None)
+        kwargs.setdefault('_SeriesClass', StateVector)
+        sv = read_timeseries(source, channel, *args, **kwargs)
         sv.bits = bits
         return sv
 
     @with_import(dependency)
-    def read_statevectordict(source, channels, bitss=[],
-                             _SeriesClass=StateVector, **kwargs):
+    def read_statevectordict(source, channels, *args, **kwargs):
         """Read `StateVectorDict` from GWF source
         """
-        svd = StateVectorDict(read_timeseriesdict(
-            source, channels, _SeriesClass=_SeriesClass, **kwargs))
+        bitss.pop('bitss', [])
+        kwargs.setdefault('_SeriesClass', StateVector)
+        svd = StateVectorDict(read_timeseriesdict(source, channels, **kwargs))
         for (channel, bits) in zip(channels, bitss):
             svd[channel].bits = bits
         return svd
