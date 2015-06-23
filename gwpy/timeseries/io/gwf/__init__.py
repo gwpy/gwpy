@@ -106,16 +106,19 @@ def register_gwf_io_library(library, package='gwpy.timeseries.io.gwf'):
     dependency = lib.DEPENDS
     reader = lib.read_timeseriesdict
 
-    def read_timeseriesdict(*args, **kwargs):
+    def read_timeseriesdict(source, *args, **kwargs):
         """Read `TimeSeriesDict` from GWF source
         """
+        # use multiprocessing or padding
         nproc = kwargs.pop('nproc', 1)
-        if nproc > 1:
+        pad = kwargs.pop('pad', None)
+        if nproc > 1 or pad is not None:
             from ..cache import read_cache
             kwargs['target'] = TimeSeriesDict
-            return read_cache(*args, **kwargs)
+            kwargs['pad'] = pad
+            return read_cache(source, *args, **kwargs)
         else:
-            return reader(*args, **kwargs)
+            return reader(source, *args, **kwargs)
 
     @with_import(dependency)
     def read_timeseries(source, channel, **kwargs):
