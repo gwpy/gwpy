@@ -19,16 +19,3 @@
 
 """GWpy tests.
 """
-
-# XXX: HACK for astropy breaking test suite
-from astropy.utils.data import _deltemps
-import atexit
-try:
-    idx = zip(*atexit._exithandlers)[0].index(_deltemps)
-except ValueError:
-    pass
-else:
-    atexit._exithandlers.pop(idx)
-
-# run tests
-from . import (timeseries, detector)
