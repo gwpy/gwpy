@@ -34,8 +34,8 @@ before_install:
   - popd
 install:
   - coverage run --source=gwpy setup.py test
-  - pip install .
 script:
+  - pip install .
 after_success:
   - coveralls
 notifications:
