@@ -37,6 +37,7 @@ from gwpy.time import Time
 
 from gwpy import version
 from gwpy.timeseries.core import TimeSeries
+from gwpy.timeseries.statevector import StateVector
 
 SEED = 1
 GPS_EPOCH = Time(0, format='gps', scale='utc')
@@ -216,6 +217,14 @@ class TimeSeriesTests(unittest.TestCase):
         self.assertEquals(ts3.x0, ts1.x0 + ts2.duration)
         self.assertEquals(ts3.size, ts1.size)
         self.assertRaises(ValueError, ts3.update, ts1)
+
+
+# -----------------------------------------------------------------------------
+
+class StateVectorTests(TimeSeriesTests):
+    """`~unittest.TestCase` for the `~gwpy.timeseries.StateVector` object
+    """
+    SeriesClass = StateVector
 
 
 if __name__ == '__main__':
