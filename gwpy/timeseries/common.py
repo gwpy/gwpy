@@ -228,6 +228,7 @@ def prepend(self, other, gap='raise', inplace=True, pad=0.0):
     new.resize(s, refcheck=False)
     new[-N:] = new.value[:N]
     new[:other.shape[0]] = other.value
+    new.x0 = other.x0.copy()
     return new
 
 
