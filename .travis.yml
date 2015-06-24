@@ -33,7 +33,7 @@ before_install:
   - pip install coveralls
   - popd
 install:
-  - coverage run --source=gwpy setup.py test
+  - coverage run --source=gwpy --omit="gwpy/tests/*,gwpy/*version*" setup.py test
 script:
   - pip install .
 after_success:
