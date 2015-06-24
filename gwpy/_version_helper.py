@@ -16,8 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>
 
-"""Git version generator
+"""Git version generator for GWpy (or any package, for that matter)
 """
+
+from __future__ import absolute_import
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Adam Mercer <adam.mercer@ligo.org>'

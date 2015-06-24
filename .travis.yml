@@ -32,7 +32,7 @@ before_install:
   - pip install h5py
   - popd
 install:
-  - pip install -q .
+  - pip install .
 script:
   - python setup.py test
 notifications:

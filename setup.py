@@ -131,7 +131,7 @@ class GitVersionMixin(object):
         """Generate target file with versioning information from git VCS
         """
         log.info("generating %s" % pyfile)
-        import vcs
+        import gwpy._version_helper as vcs
         gitstatus = vcs.GitStatus()
         try:
             with open(pyfile, 'w') as fobj:
