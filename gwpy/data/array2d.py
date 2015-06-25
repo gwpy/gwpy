@@ -219,9 +219,10 @@ class Array2D(Series):
     # all of these try to return Quantities rather than simple numbers
 
     def _wrap_function(self, function, *args, **kwargs):
-        axis = kwargs.get('axis', None)
         out = super(Array2D, self)._wrap_function(function, *args, **kwargs)
         if out.ndim == 1:
+            # HACK: need to check astropy will always pass axis as first arg
+            axis = args[0]
             # return Series
             if axis == 0:
                 x0 = self.y0
