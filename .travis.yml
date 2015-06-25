@@ -12,7 +12,7 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get --assume-yes --allow-unauthenticated install lscsoft-archive-keyring
   - sudo apt-get update -qq
-  - sudo apt-get --assume-yes install libhdf5-dev lalframe-python ldas-tools-framecpp-python
+  - sudo apt-get --assume-yes install libhdf5-dev lal-python lalframe-python ldas-tools-framecpp-python
   - sudo apt-get --assume-yes install python-nds2-client
   # install build dependencies
   - travis_retry pip install -q tornado jinja2 GitPython
@@ -33,9 +33,9 @@ before_install:
   - pip install coveralls
   - popd
 install:
-  - pip install .
+  - coverage run --source=gwpy --omit="gwpy/tests/*,gwpy/*version*" setup.py test
 script:
-  - coverage run --source=gwpy setup.py test
+  - pip install .
 after_success:
   - coveralls
 notifications:

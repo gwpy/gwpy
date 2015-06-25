@@ -108,7 +108,7 @@ class TimeSeries(Series):
     with metadata copied from the starting `TimeSeries`.
     """
     _default_xunit = units.second
-    _metadata_slots = ['name', 'channel', 'epoch', 'sample_rate']
+    _metadata_slots = ['name', 'channel', 'x0', 'dx']
 
     def __new__(cls, data, unit=None, times=None, epoch=None, channel=None,
                 sample_rate=None, name=None, **kwargs):
@@ -1471,7 +1471,9 @@ class TimeSeries(Series):
                 raise ValueError("TimeSeries sampling rates do not match: "
                                  "%s vs %s." % (self.sample_rate,
                                                 other.sample_rate))
-            if not self.unit == other.unit:
+            if not self.unit == other.unit and not (
+                    self.unit in [units.dimensionless_unscaled, None] and
+                    other.unit in [units.Unit(''), None]):
                 raise ValueError("TimeSeries units do not match: %s vs %s."
                                  % (str(self.unit), str(other.unit)))
         else:
@@ -1575,7 +1577,7 @@ class TimeSeries(Series):
         return cls(lalts.data.data, channel=channel, epoch=float(lalts.epoch),
                    copy=copy, dtype=lalts.data.data.dtype)
 
-    @with_import('lal.lal')
+    @with_import('lal')
     def to_lal(self):
         """Convert this `TimeSeries` into a LAL TimeSeries.
         """
