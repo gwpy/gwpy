@@ -127,7 +127,7 @@ def lal_psd(timeseries, segmentlength, noverlap=None, method='welch',
 
     Parameters
     ----------
-    timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
+    timeseries : :class:`~gwpy.timeseries.TimeSeries`
         input `TimeSeries` data.
     method : `str`
         average method.

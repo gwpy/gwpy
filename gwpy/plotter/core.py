@@ -597,11 +597,11 @@ class Plot(figure.Figure):
     def add_timeseries(self, timeseries, projection='timeseries',
                        ax=None, newax=False, sharex=None, sharey=None,
                        **kwargs):
-        """Add a :class:`~gwpy.timeseries.core.TimeSeries` trace to this plot
+        """Add a :class:`~gwpy.timeseries.TimeSeries` trace to this plot
 
         Parameters
         ----------
-        timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
+        timeseries : :class:`~gwpy.timeseries.TimeSeries`
             the TimeSeries to display
         projection : `str`, optional, default: `'timeseries'`
             name of the Axes projection on which to plot

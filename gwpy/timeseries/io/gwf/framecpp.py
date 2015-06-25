@@ -113,7 +113,7 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
 
     Returns
     -------
-    dict : :class:`~gwpy.timeseries.core.TimeSeriesDict`
+    dict : :class:`~gwpy.timeseries.TimeSeriesDict`
         dict of (channel, `TimeSeries`) data pairs
 
     Notes
@@ -145,7 +145,8 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
         raise ValueError("Cannot parse channel `type` request, please review "
                          "documentation for that argument")
     # parse dtype
-    dtype = channel_dict_kwarg(dtype, channels, (str, type), astype=numpy.dtype)
+    dtype = channel_dict_kwarg(dtype, channels, (str, __builtin__.type),
+                               astype=numpy.dtype)
     if dtype is None:
         raise ValueError("Cannot parse `dtype` request, please review "
                          "documentation for that argument")
@@ -204,11 +205,11 @@ def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
         print verbose output, optional, default: `False`
     _SeriesClass : `type`, optional
         class object to use as the data holder for a single channel,
-        default is :class:`~gwpy.timeseries.core.TimeSeries`
+        default is :class:`~gwpy.timeseries.TimeSeries`
 
     Returns
     -------
-    dict : :class:`~gwpy.timeseries.core.TimeSeriesDict`
+    dict : :class:`~gwpy.timeseries.TimeSeriesDict`
         dict of (channel, `TimeSeries`) data pairs
     """
     if isinstance(channels, (unicode, str)):

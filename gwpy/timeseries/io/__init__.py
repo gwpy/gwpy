@@ -24,8 +24,7 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-from ..core import TimeSeries
-from ..statevector import (StateVector, StateTimeSeries)
+from .. import (TimeSeries, StateVector, StateTimeSeries)
 
 # register ASCII
 from ...io.ascii import register_ascii
