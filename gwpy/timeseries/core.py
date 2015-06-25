@@ -108,7 +108,7 @@ class TimeSeries(Series):
     with metadata copied from the starting `TimeSeries`.
     """
     _default_xunit = units.second
-    _metadata_slots = ['name', 'channel', 'epoch', 'sample_rate']
+    _metadata_slots = ['name', 'channel', 'x0', 'dx']
 
     def __new__(cls, data, unit=None, times=None, epoch=None, channel=None,
                 sample_rate=None, name=None, **kwargs):
