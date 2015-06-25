@@ -83,7 +83,7 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
 
     Returns
     -------
-    data : :class:`~gwpy.timeseries.core.TimeSeries`
+    data : :class:`~gwpy.timeseries.TimeSeries`
         a new `TimeSeries` containing the data read from disk
     """
     from gwpy.segments import (Segment, SegmentList)

@@ -42,7 +42,7 @@ def _from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
                      method='welch', window=None, plan=None):
     """Generate a time-frequency power spectral density
     :class:`~gwpy.spectrogram.core.Spectrogram` from a
-    :class:`~gwpy.timeseries.core.TimeSeries`.
+    :class:`~gwpy.timeseries.TimeSeries`.
 
     For each `stride`, a PSD :class:`~gwpy.spectrum.core.Spectrum`
     is generate using the given `method`, with all resulting
@@ -94,7 +94,7 @@ def from_timeseries(timeseries, stride, fftlength=None, fftstride=None,
 
     Parameters
     ----------
-    timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
+    timeseries : :class:`~gwpy.timeseries.TimeSeries`
         input time-series to process.
     stride : `float`
         number of seconds in single PSD (column of spectrogram).

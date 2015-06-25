@@ -500,11 +500,11 @@ class Spectrogram(Array2D):
     # -------------------------------------------
     # ufunc modifier
 
-    def _wrap_function(self, function, axis, *args, **kwargs):
+    def _wrap_function(self, function, *args, **kwargs):
         out = super(Spectrogram, self)._wrap_function(
-            function, axis, *args, **kwargs)
+            function, *args, **kwargs)
         # requested frequency axis, return a Spectrum
-        if out.ndim == 1 and axis == 0:
+        if out.ndim == 1 and out.x0.unit == self.y0.unit:
             return Spectrum(out.value, name=out.name, unit=out.unit,
                             epoch=out.epoch, channel=out.channel,
                             f0=out.x0.value, df=out.dx.value)

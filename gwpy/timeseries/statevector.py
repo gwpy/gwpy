@@ -30,29 +30,32 @@ statement of instrumental operation
 from math import (ceil, log)
 import sys
 
-if sys.version_info[0] < 3:
-    range = xrange
-
 import numpy
 
 from glue.segmentsUtils import from_bitstream
 from astropy.units import Quantity
 
-from .core import (TimeSeries, TimeSeriesDict, ArrayTimeSeries,
-                   NDS2_FETCH_TYPE_MASK)
+from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
+                   ArrayTimeSeries, NDS2_FETCH_TYPE_MASK,
+                   as_series_dict_class)
 from ..detector import Channel
 from ..time import Time
 from ..utils import update_docstrings
 from ..io import reader
 from .. import version
+
+if sys.version_info[0] < 3:
+    range = xrange
+
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-__all__ = ['StateTimeSeries', 'StateVector', 'StateVectorDict', 'Bits']
+__all__ = ['StateTimeSeries',
+           'StateVector', 'StateVectorDict', 'StateVectorList', 'Bits']
 
 
 @update_docstrings
-class StateTimeSeries(TimeSeries):
+class StateTimeSeries(TimeSeriesBase):
     """Boolean array representing a good/bad state determination
     of some data.
 
@@ -80,6 +83,7 @@ class StateTimeSeries(TimeSeries):
     statebit : `StateTimeSeries`
         A new `StateTimeSeries`
     """
+
     def __new__(cls, data, times=None, epoch=None, channel=None,
                 unit='dimensionless', sample_rate=None, name=None, **kwargs):
         """Generate a new StateTimeSeries
@@ -143,14 +147,6 @@ class StateTimeSeries(TimeSeries):
         """Bogus function inherited from superclass, do not use.
         """
         raise NotImplementedError("The to_lal method, inherited from the "
-                                  "TimeSeries, cannot be used with the "
-                                  "StateTimeSeries because LAL has no "
-                                  "BooleanTimeSeries structure")
-
-    def spectrogram(self, *args, **kwargs):
-        """Bogus function inherited from parent class, do not use.
-        """
-        raise NotImplementedError("The spectrogram method, inherited from the "
                                   "TimeSeries, cannot be used with the "
                                   "StateTimeSeries because LAL has no "
                                   "BooleanTimeSeries structure")
@@ -266,7 +262,7 @@ class Bits(list):
 
 
 @update_docstrings
-class StateVector(TimeSeries):
+class StateVector(TimeSeriesBase):
     """Binary array representing good/bad state determinations of some data.
 
     Each binary bit represents a single boolean condition, with the
@@ -284,7 +280,7 @@ class StateVector(TimeSeries):
         `StateVector` with un-even sampling
 
     """
-    _metadata_slots = TimeSeries._metadata_slots + ['bits']
+    _metadata_slots = TimeSeriesBase._metadata_slots + ['bits']
 
     def __new__(cls, data, bits=None, times=None, epoch=None, sample_rate=None,
                 channel=None, name=None, **kwargs):
@@ -381,7 +377,7 @@ class StateVector(TimeSeries):
             except IndexError as e:
                 e.args = ('Bit %r not found in StateVector' % b)
                 raise e
-        self._bitseries = TimeSeriesDict()
+        self._bitseries = StateTimeSeriesDict()
         for i, bit in bindex:
             self._bitseries[bit] = StateTimeSeries(
                 self.value >> i & 1, name=bit, epoch=self.x0.value,
@@ -392,64 +388,7 @@ class StateVector(TimeSeries):
     # StateVector methods
 
     # use input/output registry to allow multi-format reading
-    read = classmethod(reader(doc="""
-        Read data into a `StateVector`.
-
-        Parameters
-        ----------
-        source : `str`, `~glue.lal.Cache`
-            a single file path `str`, or a `~glue.lal.Cache` containing
-            a contiguous list of files.
-        channel : `str`, `~gwpy.detector.core.Channel`
-            the name of the channel to read, or a `Channel` object.
-        start : `~gwpy.time.Time`, `float`, optional
-            GPS start time of required data.
-        end : `~gwpy.time.Time`, `float`, optional
-            GPS end time of required data.
-        format : `str`, optional
-            source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable formats.
-        nproc : `int`, optional, default: ``1``
-            number of parallel processes to use, serial process by
-            default.
-
-            .. note::
-
-               Parallel frame reading, via the ``nproc`` keyword argument,
-               is only available when giving a :class:`~glue.lal.Cache` of
-               frames, or using the ``format='cache'`` keyword argument.
-
-        gap : `str`, optional
-            how to handle gaps in the cache, one of
-
-            - 'ignore': do nothing, let the undelying reader method handle it
-            - 'warn': do nothing except print a warning to the screen
-            - 'raise': raise an exception upon finding a gap (default)
-            - 'pad': insert a value to fill the gaps
-
-        pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
-
-        Returns
-        -------
-        statevector : `StateVector`
-            a new `StateVector` containing data for the given channel.
-
-        Raises
-        ------
-        Exception
-            if no format could be automatically identified.
-
-        .. warning::
-
-           The 'built-in' formats below may require third-party
-           libraries in order to function. If the relevant libraries
-           cannot be loaded at run-time, that format will be removed
-           from the list.
-
-        Notes
-        -----"""))
+    read = classmethod(reader(doc=TimeSeriesBase.read.__doc__))
 
     def to_dqflags(self, bits=None, minlen=1, dtype=float, round=False):
         """Convert this `StateVector` into a `SegmentListDict`.
@@ -638,78 +577,21 @@ class StateVector(TimeSeries):
             raise ValueError("New sample rate must be divisor of input "
                              "series rate if downsampling a StateVector")
 
-    def spectrogram(self, *args, **kwargs):
-        """Bogus function inherited from parent class, do not use.
-        """
-        raise NotImplementedError("The spectrogram method, inherited from the "
-                                  "TimeSeries, cannot be used with the "
-                                  "StateTimeSeries because LAL has no "
-                                  "BooleanTimeSeries structure")
+
+@update_docstrings
+@as_series_dict_class(StateTimeSeries)
+class StateTimeSeriesDict(TimeSeriesBaseDict):
+    EntryClass = StateTimeSeries
+    read = classmethod(reader(doc=TimeSeriesBaseDict.read.__doc__))
 
 
 @update_docstrings
-class StateVectorDict(TimeSeriesDict):
-    """Analog of the :class:`~gwpy.timeseries.core.TimeSeriesDict`
-    for :class:`~gwpy.timeseries.statevector.StateVector` objects.
-
-    See Also
-    --------
-    :class:`gwpy.timeseries.core.TimeSeriesDict`
-        for more object information.
-    """
+@as_series_dict_class(StateVector)
+class StateVectorDict(TimeSeriesBaseDict):
     EntryClass = StateVector
-
-    read = classmethod(reader(doc="""
-        Read data into a `StateVectorDict`.
-
-        Parameters
-        ----------
-        source : `str`, `~glue.lal.Cache`
-            a single file path `str`, or a `~glue.lal.Cache` containing
-            a contiguous list of files.
-        channels : `~gwpy.detector.channel.ChannelList`, `list`
-            a list of channels to read from the source.
-        start : `~gwpy.time.Time`, `float`, optional
-            GPS start time of required data.
-        end : `~gwpy.time.Time`, `float`, optional
-            GPS end time of required data.
-        format : `str`, optional
-            source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-        nproc : `int`, optional, default: ``1``
-            number of parallel processes to use, serial process by
-            default.
-
-            .. note::
-
-               Parallel frame reading, via the ``nproc`` keyword argument,
-               is only available when giving a :class:`~glue.lal.Cache` of
-               frames, or using the ``format='cache'`` keyword argument.
-
-        gap : `str`, optional
-            how to handle gaps in the cache, one of
-
-            - 'ignore': do nothing, let the undelying reader method handle it
-            - 'warn': do nothing except print a warning to the screen
-            - 'raise': raise an exception upon finding a gap (default)
-            - 'pad': insert a value to fill the gaps
-
-        pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
+    read = classmethod(reader(doc=TimeSeriesBaseDict.read.__doc__))
 
 
-
-        Returns
-        -------
-        dict : `StateVectorDict`
-            a new `StateVectorDict` containing data for the given channel.
-
-        Raises
-        ------
-        Exception
-            if no format could be automatically identified.
-
-        Notes
-        -----"""))
+@update_docstrings
+class StateVectorList(TimeSeriesBaseList):
+    EntryClass = StateVector

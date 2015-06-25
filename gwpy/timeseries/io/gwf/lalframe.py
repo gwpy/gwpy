@@ -61,7 +61,7 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
 
     Returns
     -------
-    dict : :class:`~gwpy.timeseries.core.TimeSeriesDict`
+    dict : :class:`~gwpy.timeseries.TimeSeriesDict`
         dict of (channel, `TimeSeries`) data pairs
 
     Notes
