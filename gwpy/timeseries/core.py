@@ -72,6 +72,7 @@ class TimeSeriesBase(Series):
     """
     _default_xunit = units.second
     _metadata_slots = ['name', 'channel', 'epoch', 'sample_rate']
+    DictClass = None
 
     def __new__(cls, data, unit=None, times=None, epoch=None, channel=None,
                 sample_rate=None, name=None, **kwargs):
@@ -252,7 +253,7 @@ class TimeSeriesBase(Series):
         TimeSeries
             a new `TimeSeries` containing the data read from NDS
         """
-        return TimeSeriesDict.fetch(
+        return cls.DictClass.fetch(
             [channel], start, end, host=host, port=port,
             verbose=verbose, connection=connection, verify=verify,
             pad=pad, type=type, dtype=dtype)[str(channel)]
@@ -472,18 +473,36 @@ class ArrayTimeSeries(TimeSeriesBase, Array2D):
         return new
 
 
-class TimeSeriesBaseDict(OrderedDict):
-    """Ordered key-value mapping of named `TimeSeries` containing data
-    for many channels over the same time interval.
+def as_series_dict_class(seriesclass):
+    """Decorate a `dict` class to declare itself as the `DictClass` for
+    its `EntryClass`
 
-    The main entry points for this object are the :meth:`~TimeSeriesDict.read`
-    and :meth:`~TimeSeriesDict.fetch` data access methods.
+    This method should be used to decorate sub-classes of the
+    `TimeSeriesBaseDict` to provide a reference to that class from the
+    relevant subclass of `TimeSeriesBase`.
+    """
+    def decorate_class(cls):
+        seriesclass.DictClass = cls
+        return cls
+    return decorate_class
+
+
+@as_series_dict_class(TimeSeriesBase)
+class TimeSeriesBaseDict(OrderedDict):
+    """Ordered key-value mapping of named `TimeSeriesBase` objects
+
+    This object is designed to hold data for many different sources (channels)
+    for a single time span.
+
+    The main entry points for this object are the
+    :meth:`~TimeSeriesBaseDict.read` and :meth:`~TimeSeriesBaseDict.fetch`
+    data access methods.
     """
     EntryClass = TimeSeriesBase
 
     # use input/output registry to allow multi-format reading
     read = classmethod(reader(doc="""
-        Read data into a `TimeSeriesDict`.
+        Read data into a `TimeSeriesBaseDict`.
 
         Parameters
         ----------
@@ -524,8 +543,8 @@ class TimeSeriesBaseDict(OrderedDict):
 
         Returns
         -------
-        dict : `TimeSeriesDict`
-            a new `TimeSeriesDict` containing data for the given channel.
+        dict : `TimeSeriesBaseDict`
+            a new `TimeSeriesBaseDict` containing data for the given channel.
 
         Raises
         ------
@@ -563,7 +582,7 @@ class TimeSeriesBaseDict(OrderedDict):
         return self
 
     def crop(self, start=None, end=None, copy=False):
-        """Crop each entry of this `TimeSeriesDict`.
+        """Crop each entry of this `TimeSeriesBaseDict`.
 
         This method calls the :meth:`crop` method of all entries and
         modifies this dict in place.
@@ -637,8 +656,8 @@ class TimeSeriesBaseDict(OrderedDict):
 
         Returns
         -------
-        data : :class:`~gwpy.timeseries.core.TimeSeriesDict`
-            a new `TimeSeriesDict` of (`str`, `TimeSeries`) pairs fetched
+        data : :class:`~gwpy.timeseries.TimeSeriesBaseDict`
+            a new `TimeSeriesBaseDict` of (`str`, `TimeSeries`) pairs fetched
             from NDS.
         """
         from ..segments import (Segment, SegmentList)
@@ -822,7 +841,7 @@ class TimeSeriesBaseDict(OrderedDict):
         return out
 
     def plot(self, label='key', **kwargs):
-        """Plot the data for this `TimeSeriesDict`.
+        """Plot the data for this `TimeSeriesBaseDict`.
 
         Parameters
         ----------
@@ -830,7 +849,7 @@ class TimeSeriesBaseDict(OrderedDict):
             labelling system to use, or fixed label for all elements
             Special values include
 
-            - ``'key'``: use the key of the `TimeSeriesDict`,
+            - ``'key'``: use the key of the `TimeSeriesBaseDict`,
             - ``'name'``: use the :attr:`~TimeSeries.name` of each element
 
             If anything else, that fixed label will be used for all lines.
@@ -853,3 +872,115 @@ class TimeSeriesBaseDict(OrderedDict):
                 lab = label
             ax.plot(ts, label=lab, **kwargs)
         return plot_
+
+
+class TimeSeriesBaseList(list):
+    """Fancy list representing a list of `TimeSeriesBase`
+
+    The `TimeSeriesBaseList` provides an easy way to collect and organise
+    `TimeSeriesBase` for a single `Channel` over multiple segments.
+
+    Parameters
+    ----------
+    *items
+        any number of `TimeSeriesBase`
+
+    Returns
+    -------
+    list
+        a new `TimeSeriesBaseList`
+
+    Raises
+    ------
+    TypeError
+        if any elements are not `TimeSeriesBase`
+    """
+    EntryClass = TimeSeriesBase
+
+    def __init__(self, *items):
+        """Initialise a new list
+        """
+        super(TimeSeriesBaseList, self).__init__()
+        for item in items:
+            self.append(item)
+
+    @property
+    def segments(self):
+        from ..segments import SegmentList
+        return SegmentList([item.span for item in self])
+
+    def append(self, item):
+        if not isinstance(item, self.EntryClass):
+            raise TypeError("Cannot append type '%s' to %s"
+                            % (item.__class__.__name__,
+                               self.__class__.__name__))
+        super(TimeSeriesBaseList, self).append(item)
+        return self
+    append.__doc__ = list.append.__doc__
+
+    def extend(self, item):
+        item = TimeSeriesBaseList(item)
+        super(TimeSeriesBaseList, self).extend(item)
+    extend.__doc__ = list.extend.__doc__
+
+    def coalesce(self):
+        """Merge contiguous elements of this list into single objects
+
+        This method implicitly sorts and potentially shortens the this list.
+        """
+        self.sort(key=lambda ts: ts.x0.value)
+        i = j = 0
+        N = len(self)
+        while j < N:
+            this = self[j]
+            j += 1
+            if j < N and this.is_contiguous(self[j]) == 1:
+                while j < N and this.is_contiguous(self[j]):
+                    try:
+                        this = self[i] = this.append(self[j])
+                    except ValueError as e:
+                        if 'cannot resize this array' in str(e):
+                            this = this.copy()
+                            this = self[i] = this.append(self[j])
+                        else:
+                            raise
+                    j += 1
+            else:
+                self[i] = this
+            i += 1
+        del self[i:]
+        return self
+
+    def join(self, pad=0.0, gap='raise'):
+        """Concatenate all of the elements of this list into a single object
+
+        Parameters
+        ----------
+        pad : `float`, optional, default: `0.0`
+            value with which to pad gaps
+        gap : `str`, optional, default: `'raise'`
+            what to do in the event of a discontguity in the data, one of
+
+            - 'raise': raise an exception
+            - 'warn': print a warning
+            - 'ignore': append series as if there was no gap
+            - 'pad': pad the gap with a value
+
+        Returns
+        -------
+        `TimeSeriesBase`
+             a single `TimeSeriesBase` covering the full span of all entries
+             in this list
+
+        See Also
+        --------
+        TimeSeriesBase.append
+            for details on how the individual series are concatenated together
+        """
+        if len(self) == 0:
+            return self.EntryClass(numpy.empty((0,) * self.EntryClass._ndim))
+        self.sort(key=lambda t: t.epoch.gps)
+        out = self[0].copy()
+        for ts in self[1:]:
+            out.append(ts, gap=gap, pad=pad)
+        return out

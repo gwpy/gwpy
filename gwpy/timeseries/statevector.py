@@ -35,8 +35,9 @@ import numpy
 from glue.segmentsUtils import from_bitstream
 from astropy.units import Quantity
 
-from .core import (TimeSeriesBase, TimeSeriesBaseDict, ArrayTimeSeries,
-                   NDS2_FETCH_TYPE_MASK)
+from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
+                   ArrayTimeSeries, NDS2_FETCH_TYPE_MASK,
+                   as_series_dict_class)
 from ..detector import Channel
 from ..time import Time
 from ..utils import update_docstrings
@@ -49,7 +50,8 @@ if sys.version_info[0] < 3:
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-__all__ = ['StateTimeSeries', 'StateVector', 'StateVectorDict', 'Bits']
+__all__ = ['StateTimeSeries',
+           'StateVector', 'StateVectorDict', 'StateVectorList', 'Bits']
 
 
 @update_docstrings
@@ -81,6 +83,7 @@ class StateTimeSeries(TimeSeriesBase):
     statebit : `StateTimeSeries`
         A new `StateTimeSeries`
     """
+
     def __new__(cls, data, times=None, epoch=None, channel=None,
                 unit='dimensionless', sample_rate=None, name=None, **kwargs):
         """Generate a new StateTimeSeries
@@ -576,22 +579,19 @@ class StateVector(TimeSeriesBase):
 
 
 @update_docstrings
+@as_series_dict_class(StateTimeSeries)
 class StateTimeSeriesDict(TimeSeriesBaseDict):
-    """Temporary
-    """
     EntryClass = StateTimeSeries
     read = classmethod(reader(doc=TimeSeriesBaseDict.read.__doc__))
 
 
 @update_docstrings
+@as_series_dict_class(StateVector)
 class StateVectorDict(TimeSeriesBaseDict):
-    """Analog of the :class:`~gwpy.timeseries.core.TimeSeriesDict`
-    for :class:`~gwpy.timeseries.statevector.StateVector` objects.
-
-    See Also
-    --------
-    :class:`gwpy.timeseries.core.TimeSeriesDict`
-        for more object information.
-    """
     EntryClass = StateVector
     read = classmethod(reader(doc=TimeSeriesBaseDict.read.__doc__))
+
+
+@update_docstrings
+class StateVectorList(TimeSeriesBaseList):
+    EntryClass = StateVector

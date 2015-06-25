@@ -49,7 +49,8 @@ else:
 from .. import version
 from ..io import reader
 from ..utils import (update_docstrings, with_import)
-from .core import (TimeSeriesBase, TimeSeriesBaseDict)
+from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
+                   as_series_dict_class)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -203,7 +204,7 @@ class TimeSeries(TimeSeriesBase):
             # detrend
             stepseries -= stepseries.value.mean()
             # window
-            stepseries *= win
+            stepseries *= win.astype(stepseries.dtype)
             # calculated FFT, weight, and stack
             fft_ = stepseries.fft(nfft=nfft) * scaling
             ffts.value[i, :] = fft_.value
@@ -1297,107 +1298,17 @@ class TimeSeries(TimeSeriesBase):
                                 epoch=self.epoch.gps, copy=copy)
 
 
-class TimeSeriesList(list):
-    """Fancy list representing a list of `TimeSeries`
-
-    The `TimeSeriesList` provides an easy way to collect and organise
-    `TimeSeries` for a single `Channel` over multiple segments.
-
-    Parameters
-    ----------
-    *items
-        any number of `TimeSeries`
-
-    Returns
-    -------
-    list
-        a new `TimeSeriesList`
-
-    Raises
-    ------
-    TypeError
-        if any elements are not `TimeSeries`
-    """
-    EntryClass = TimeSeries
-
-    def __init__(self, *items):
-        """Initalise a new `TimeSeriesList`
-        """
-        super(TimeSeriesList, self).__init__()
-        for item in items:
-            self.append(item)
-
-    @property
-    def segments(self):
-        from ..segments import SegmentList
-        return SegmentList([item.span for item in self])
-
-    def append(self, item):
-        if not isinstance(item, self.EntryClass):
-            raise TypeError("Cannot append type '%s' to %s"
-                            % (item.__class__.__name__,
-                               self.__class__.__name__))
-        super(TimeSeriesList, self).append(item)
-        return self
-    append.__doc__ = list.append.__doc__
-
-    def extend(self, item):
-        item = TimeSeriesList(item)
-        super(TimeSeriesList, self).extend(item)
-    extend.__doc__ = list.extend.__doc__
-
-    def coalesce(self):
-        """Sort the elements of this `TimeSeriesList` by epoch and merge
-        contiguous `TimeSeries` elements into single objects.
-        """
-        self.sort(key=lambda ts: ts.x0.value)
-        i = j = 0
-        N = len(self)
-        while j < N:
-            this = self[j]
-            j += 1
-            if j < N and this.is_contiguous(self[j]) == 1:
-                while j < N and this.is_contiguous(self[j]):
-                    try:
-                        this = self[i] = this.append(self[j])
-                    except ValueError as e:
-                        if 'cannot resize this array' in str(e):
-                            this = this.copy()
-                            this = self[i] = this.append(self[j])
-                        else:
-                            raise
-                    j += 1
-            else:
-                self[i] = this
-            i += 1
-        del self[i:]
-        return self
-
-    def join(self, pad=0.0, gap='raise'):
-        """Concatenate all of the `TimeSeries` in this list into a
-        a single object
-
-        Returns
-        -------
-        `TimeSeries`
-             a single `TimeSeries covering the full span of all entries
-             in this list
-        """
-        if len(self) == 0:
-            return self.EntryClass(numpy.empty((0,) * self.EntryClass._ndim))
-        self.sort(key=lambda t: t.epoch.gps)
-        out = self[0].copy()
-        for ts in self[1:]:
-            out.append(ts, gap=gap, pad=pad)
-        return out
-
-
+@update_docstrings
+@as_series_dict_class(TimeSeries)
 class TimeSeriesDict(TimeSeriesBaseDict):
-    """Ordered key-value mapping of named `TimeSeries` containing data
-    for many channels over the same time interval.
-
-    The main entry points for this object are the :meth:`~TimeSeriesDict.read`
-    and :meth:`~TimeSeriesDict.fetch` data access methods.
-    """
+    __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
+                                                 'TimeSeries')
     EntryClass = TimeSeries
     read = classmethod(reader(doc=TimeSeriesBaseDict.read.__doc__))
+
+
+@update_docstrings
+class TimeSeriesList(TimeSeriesBaseList):
+    __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
+                                                 'TimeSeries')
+    EntryClass = TimeSeries
