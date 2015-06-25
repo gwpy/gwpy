@@ -28,8 +28,7 @@ from astropy.io.registry import (register_reader, register_writer,
 
 from ... import version
 from ...io.hdf5 import identify_hdf5
-from ..core import TimeSeries
-from ..statevector import StateVector
+from .. import (TimeSeries, StateVector)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version

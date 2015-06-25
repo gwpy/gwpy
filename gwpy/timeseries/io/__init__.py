@@ -24,7 +24,7 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-from ..core import TimeSeries
+from ..timeseries import TimeSeries
 
 # register ASCII
 from ...io.ascii import register_ascii
