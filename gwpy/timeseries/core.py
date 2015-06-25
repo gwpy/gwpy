@@ -1577,7 +1577,7 @@ class TimeSeries(Series):
         return cls(lalts.data.data, channel=channel, epoch=float(lalts.epoch),
                    copy=copy, dtype=lalts.data.data.dtype)
 
-    @with_import('lal.lal')
+    @with_import('lal')
     def to_lal(self):
         """Convert this `TimeSeries` into a LAL TimeSeries.
         """
