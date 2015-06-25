@@ -253,7 +253,7 @@ class TimeSeriesTests(unittest.TestCase):
         ts = self.get_test_series()
         try:
             lalts = ts.to_lal()
-        except NotImplementedError as e:
+        except (NotImplementedError, ImportError) as e:
             self.skipTest(str(e))
         ts2 = type(ts).from_lal(lalts)
         self.assertEqual(ts, ts2)
