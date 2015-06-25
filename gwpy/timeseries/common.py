@@ -203,6 +203,8 @@ def prepend(self, other, gap='raise', inplace=True, pad=0.0):
         new = self.copy()
     # fill gap
     if new.is_contiguous(other) != -1:
+        if type(other) == type(new.value):
+            gap = 'ignore'
         if gap == 'pad':
             ngap = (new.span[0]-other.span[1]) // new.dt.value
             if ngap < 1:
@@ -210,10 +212,7 @@ def prepend(self, other, gap='raise', inplace=True, pad=0.0):
                                  "after this one.")
             gapshape = list(new.shape)
             gapshape[0] = ngap
-            padding = numpy.ones(gapshape).view(new.__class__) * pad
-            padding.epoch = other.span[1]
-            padding.dt = new.dt
-            padding.unit = new.unit
+            padding = numpy.ones(gapshape, dtype=self.dtype) * pad
             new.prepend(padding, inplace=True)
         elif gap == 'ignore':
             pass
@@ -222,13 +221,21 @@ def prepend(self, other, gap='raise', inplace=True, pad=0.0):
         else:
             raise ValueError("Cannot prepend discontiguous TimeSeries")
     # resize first
-    N = new.shape[0]
+    M = other.shape[0]
     s = list(new.shape)
-    s[0] = new.shape[0] + other.shape[0]
+    s[0] = M + new.shape[0]
     new.resize(s, refcheck=False)
-    new[-N:] = new.value[:N]
-    new[:other.shape[0]] = other.value
-    new.x0 = other.x0.copy()
+    # copy old data to the end
+    new.value[M:] = new.value[:-M]
+    # then copy new data to the start
+    if type(other) == type(new) and other.unit == new.unit:
+        new.value[:M] = other.value
+    # otherwise if its just a numpy array
+    elif type(other) == type(new.value) or other.dtype.name.startswith('uint'):
+        new.value[:M] = other
+    else:
+        new.value[:M] = other
+    new.x0 = new.x0.value - M * new.dx.value
     return new
 
 
