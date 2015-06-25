@@ -1471,7 +1471,9 @@ class TimeSeries(Series):
                 raise ValueError("TimeSeries sampling rates do not match: "
                                  "%s vs %s." % (self.sample_rate,
                                                 other.sample_rate))
-            if not self.unit == other.unit:
+            if not self.unit == other.unit and not (
+                    self.unit in [units.dimensionless_unscaled, None] and
+                    other.unit in [units.Unit(''), None]):
                 raise ValueError("TimeSeries units do not match: %s vs %s."
                                  % (str(self.unit), str(other.unit)))
         else:
