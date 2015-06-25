@@ -145,9 +145,8 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
         raise ValueError("Cannot parse channel `type` request, please review "
                          "documentation for that argument")
     # parse dtype
-    dtype = channel_dict_kwarg(dtype, channels, (__builtin__.type,),
-                               astype=numpy.dtype)
-    if resample is None:
+    dtype = channel_dict_kwarg(dtype, channels, (str, type), astype=numpy.dtype)
+    if dtype is None:
         raise ValueError("Cannot parse `dtype` request, please review "
                          "documentation for that argument")
     # read each individually and append
