@@ -121,7 +121,10 @@ if __name__ == '__main__':
     if prod.is_interactive:
         from matplotlib import pyplot as plt
         plot = prod.plot
+        # pull raw data and plotted results from product for their use
         timeseries = prod.timeseries
+        result = prod.result
+        print('Raw data is in "timeseries", plotted data is in "result"')
         ax = plot.gca()
     else:
         sys.exit(result_code)
