@@ -109,6 +109,8 @@ class Spectrogram(CliProduct):
         if arg_list.norm:
             specgram = specgram.ratio('median')
             norm = True
+        # save if we're interactive
+        self.result = specgram
 
         # set default frequency limits
         self.fmax = fs / 2.
