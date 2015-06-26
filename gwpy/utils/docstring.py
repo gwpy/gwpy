@@ -22,6 +22,8 @@
 from inspect import getmembers, ismethod
 from types import FunctionType
 
+from matplotlib.docstring import (interpd, dedent_interpd)
+
 
 def update_docstrings(cls):
     """Update member docstrings to reference this class instead of parents

@@ -23,14 +23,39 @@ import numpy
 
 from astropy.units import (Unit, Quantity)
 
+from .array import Array
 from .. import version
+from ..utils.docstring import dedent_interpd
+
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-from .array import Array
 
-
+@dedent_interpd
 class Series(Array):
+    """A one-dimensional data series
+
+    This class provides a generic 1-D array, and provides the underlying
+    super-class for the `TimeSeries` and `Spectrum` objects, amongst others
+
+    Parameters
+    ----------
+    %(Array1)s
+    x0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
+        the starting value for the x-axis of this array
+    dx : `float`, `~astropy.units.Quantity, optional, default: `1`
+        the step size for the x-axis of this array
+    xindex : `array-like`
+        the complete array of x-axis values for this array. This argument
+        takes precedence over `x0` and `dx` so should be
+        given in place of these if relevant, not alongside
+    %(Array2)s
+
+    Returns
+    -------
+    series : `Series`
+        a new `Series`
+    """
     _metadata_slots = Array._metadata_slots + ['x0', 'dx']
     _default_xunit = Unit('')
     _ndim = 1
