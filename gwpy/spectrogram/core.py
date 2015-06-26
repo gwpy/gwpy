@@ -31,7 +31,7 @@ from astropy import units
 from ..detector import Channel
 from ..data import (Array2D, Series)
 from ..segments import Segment
-from ..timeseries import (TimeSeries, TimeSeriesList, common)
+from ..timeseries import (TimeSeries, TimeSeriesList)
 from ..spectrum import Spectrum
 from ..utils import update_docstrings
 
@@ -490,12 +490,6 @@ class Spectrogram(Array2D):
             return self[:, idx0:idx1].copy()
         else:
             return self[:, idx0:idx1]
-
-    is_contiguous = common.is_contiguous
-    append = common.append
-    prepend = common.prepend
-    update = common.update
-    crop = common.crop
 
     # -------------------------------------------
     # ufunc modifier

@@ -19,9 +19,12 @@
 """The `Series` is a one-dimensional array with metadata
 """
 
+from warnings import warn
+from math import floor
+
 import numpy
 
-from astropy.units import (Unit, Quantity)
+from astropy.units import (Unit, Quantity, dimensionless_unscaled)
 
 from .array import Array
 from .. import version
@@ -76,6 +79,8 @@ class Series(Array):
         new.dx = Quantity(dx, xunit)
         new.xindex = xindex
         return new
+
+    # -- series properties ----------------------
 
     @property
     def xindex(self):
@@ -160,6 +165,19 @@ class Series(Array):
     def xunit(self):
         return self.x0.unit
 
+    @property
+    def xspan(self):
+        """X-axis [low, high) segment encompassed by this series
+
+        :type: `~gwpy.segments.Segment`
+        """
+        from ..segments import Segment
+        x0 = self.x0.to(self._default_xunit).value
+        dx = self.dx.to(self._default_xunit).value
+        return Segment(x0, x0+self.shape[0]*dx)
+
+    # -- series methods -------------------------
+
     def copy(self, order='C'):
         new = super(Series, self).copy(order=order)
         try:
@@ -214,4 +232,337 @@ class Series(Array):
                 new.dx = self.dx * item.step
         elif isinstance(item, numpy.ndarray):
             new.xindex = self.xindex[item]
+        return new
+
+    # -- series manipulations ------------------
+
+    def is_contiguous(self, other, tol=1/2.**18):
+        """Check whether other is contiguous with self.
+
+        Parameters
+        ----------
+        other : `Series`, `numpy.ndarray`
+            another `Series` to test for contiguity
+        tol : `float`, optional
+            the numerical tolerance of the test
+
+        Returns
+        -------
+        1
+            if `other` is contiguous with this series, i.e. would attach
+            seamlessly onto the end
+        -1
+            if `other` is anti-contiguous with this seires, i.e. would attach
+            seamlessly onto the start
+        0
+            if `other` is completely dis-contiguous with thie series
+
+        Notes
+        -----
+        if a raw `numpy.ndarray` is passed as other, with no metadata, then
+        the contiguity check will always pass
+        """
+        self.is_compatible(other)
+        if isinstance(other, type(self)):
+            if abs(float(self.xspan[1] - other.xspan[0])) < tol:
+                return 1
+            elif abs(float(other.xspan[1] - self.xspan[0])) < tol:
+                return -1
+            else:
+                return 0
+        elif type(other) in [list, tuple, numpy.ndarray]:
+            return 1
+
+    def is_compatible(self, other):
+        """Check whether this series and other have compatible metadata
+
+        This method tests that the `sample size <Series.dx>`, and the
+        `~Series.unit` match.
+        """
+        if isinstance(other, type(self)):
+            if not self.dx == other.dx:
+                raise ValueError("%s sample sizes do not match: "
+                                 "%s vs %s." % (type(self).__name__,
+                                                self.dx, other.dx))
+            if not self.unit == other.unit and not (
+                    self.unit in [dimensionless_unscaled, None] and
+                    other.unit in [dimensionless_unscaled, None]):
+                raise ValueError("%s units do not match: %s vs %s."
+                                 % (type(self).__name__, str(self.unit),
+                                    str(other.unit)))
+        else:
+            arr = numpy.asarray(other)
+            if arr.ndim != self.ndim:
+                raise ValueError("Dimensionality does not match")
+            if arr.dtype != self.dtype:
+                warn("Array data types do not match: %s vs %s"
+                     % (self.dtype, other.dtype))
+        return True
+
+    def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
+        """Connect another series onto the end of the current one.
+
+        Parameters
+        ----------
+        other : `Series`
+            the second data set to connect to this one
+        gap : `str`, optional, default: ``'raise'``
+            action to perform if there's a gap between the other series
+            and this one. One of
+
+                - ``'raise'`` - raise an `Exception`
+                    - ``'ignore'`` - remove gap and join data
+                - ``'pad'`` - pad gap with zeros
+
+        inplace : `bool`, optional, default: `True`
+            perform operation in-place, modifying current `Series`,
+            otherwise copy data and return new `Series`
+
+            .. warn::
+
+               inplace append bypasses the reference check in
+               `numpy.ndarray.resize`, so be carefully to only use this
+               for arrays that haven't been sharing their memory!
+
+        pad : `float`, optional, default: ``0.0``
+            value with which to pad discontiguous series
+        resize : `bool`, optional, default: `True`
+            resize this array to accommodate new data, otherwise shift the
+            old data to the left (potentially falling off the start) and
+            put the new data in at the end
+
+        Returns
+        -------
+        series : `Series`
+            a new series containing joined data sets
+        """
+        # check metadata
+        self.is_compatible(other)
+        # make copy if needed
+        if not inplace:
+            self = self.copy()
+        # fill gap
+        if self.is_contiguous(other) != 1:
+            if gap == 'pad':
+                ngap = floor(
+                    (other.xspan[0] - self.xspan[1]) / self.dx.value + 0.5)
+                if ngap < 1:
+                    raise ValueError(
+                        "Cannot append {0} that starts before this one:\n"
+                        "    {0} 1 span: {1}\n    {0} 2 span: {2}".format(
+                            type(self).__name__, self.xspan, other.xspan))
+                gapshape = list(self.shape)
+                gapshape[0] = int(ngap)
+                padding = numpy.ones(gapshape, dtype=self.dtype) * pad
+                self.append(padding, inplace=True, resize=resize)
+            elif gap == 'ignore':
+                pass
+            elif self.xspan[0] < other.xspan[0] < self.xspan[1]:
+                raise ValueError(
+                    "Cannot append overlapping {0}s:\n"
+                    "    {0} 1 span: {1}\n    {0} 2 span: {2}".format(
+                        type(self).__name__, self.xspan, other.xspan))
+            else:
+                raise ValueError(
+                    "Cannot append discontiguous {0}\n"
+                    "    {0} 1 span: {1}\n    {0} 2 span: {2}".format(
+                        type(self).__name__, self.xspan, other.xspan))
+
+        # check empty other
+        if not other.size:
+            return self
+
+        # resize first
+        if resize:
+            N = other.shape[0]
+            s = list(self.shape)
+            s[0] = self.shape[0] + other.shape[0]
+            try:
+                self.resize(s, refcheck=False)
+            except ValueError as e:
+                if 'resize only works on single-segment arrays' in str(e):
+                    self = self.copy()
+                    self.resize(s)
+                else:
+                    raise
+        elif other.shape[0] < self.shape[0]:
+            N = other.shape[0]
+            self.value[:-N] = self.value[N:]
+        else:
+            N = min(self.shape[0], other.shape[0])
+
+        # if units are the same, can shortcut
+        if type(other) == type(self) and other.unit == self.unit:
+            self.value[-N:] = other.value[-N:]
+        # otherwise if its just a numpy array
+        elif type(other) == type(self.value) or (
+                other.dtype.name.startswith('uint')):
+            self.value[-N:] = other[-N:]
+        else:
+            self[-N:] = other[-N:]
+        try:
+            self._xindex
+        except AttributeError:
+            if not resize:
+                self.x0 = self.x0.value + other.shape[0] * self.dx.value
+        else:
+            if resize:
+                try:
+                    self.xindex.resize((s[0],), refcheck=False)
+                except ValueError as e:
+                    if 'cannot resize' in str(e):
+                        self.xindex = numpy.resize(self.xindex, (s[0],))
+                    else:
+                        raise
+            else:
+                self.xindex[:-other.shape[0]] = self.xindex[other.shape[0]:]
+            try:
+                self.xindex[-other.shape[0]:] = other.xindex.value
+            except AttributeError:
+                del self.xindex
+            try:
+                self.dx = self.xindex[1] - self.xindex[0]
+            except IndexError:
+                pass
+            self.epoch = self.xindex[0]
+        return self
+
+    def prepend(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
+        """Connect another `Series` onto the start of the current one.
+
+        Parameters
+        ----------
+        other : `TimeSeries`
+            the second data set to connect to this one
+        gap : `str`, optional, default: ``'raise'``
+            action to perform if there's a gap between the other series
+            and this one. One of
+
+                - ``'raise'`` - raise an `Exception`
+                - ``'ignore'`` - remove gap and join data
+                - ``'pad'`` - pad gap with zeros
+
+        inplace : `bool`, optional, default: `True`
+            perform operation in-place, modifying current `TimeSeries,
+            otherwise copy data and return new `TimeSeries`
+
+            .. warn::
+
+               inplace prepend bypasses the reference check in
+               `numpy.ndarray.resize`, so be carefully to only use this
+               for arrays that haven't been sharing their memory!
+
+        pad : `float`, optional, default: ``0.0``
+            value with which to pad discontiguous `Series`
+        resize : `bool`, optional, default: `True`
+
+        Returns
+        -------
+        series : `TimeSeries`
+            time-series containing joined data sets
+        """
+        out = other.append(self, gap=gap, inplace=False,
+                           pad=pad, resize=resize)
+        if inplace:
+            self.resize(out.shape, refcheck=False)
+            self[:] = out[:]
+            self.x0 = out.x0.copy()
+            del out
+            return self
+        else:
+            return out
+
+    def update(self, other, inplace=True):
+        """Update this `Series` by appending new data from an other
+        and dropping the same amount of data off the start.
+
+        This is a convenience method that just calls `~Series.append` with
+        `resize=False`.
+        """
+        return self.append(other, inplace=inplace, resize=False)
+
+    def crop(self, start=None, end=None, copy=False):
+        """Crop this `Series` to the given x-axis extent.
+
+        Parameters
+        ----------
+        start : `float`, optional
+            lower limit of x-axis to crop to, defaults to
+            current `~Series.x0`
+        end : `float`, optional
+            upper limit of x-axis to crop to, defaults to current series end
+        copy : `bool`, optional, default: `False`
+            copy the input data to fresh memory, otherwise return a view
+
+        Returns
+        -------
+        series : `Series`
+            A new `Series` with a sub-set of the input data
+
+        Notes
+        -----
+        If either ``start`` or ``end`` are outside of the original
+        `Series` span, warnings will be printed and the limits will
+        be restricted to the :attr:`~Series.xspan`
+        """
+        # pin early starts to time-series start
+        if start == self.xspan[0]:
+            start = None
+        elif start is not None and start < self.xspan[0]:
+            warn('%s.crop given start smaller than current start.'
+                 'Crop will begin when the Series actually starts.')
+            start = None
+        # pin late ends to time-series end
+        if end == self.xspan[1]:
+            end = None
+        if start is not None and end > self.xspan[1]:
+            warn('%s.crop given end larger than current end.'
+                 'Crop will end when the Series actually ends.')
+            end = None
+        # find start index
+        if start is None:
+            idx0 = None
+        else:
+            idx0 = int(float(start - self.xspan[0]) / self.dx.value)
+        # find end index
+        if end is None:
+            idx1 = None
+        else:
+            idx1 = int(float(end - self.xspan[0]) / self.dx.value)
+            if idx1 >= self.size:
+                idx1 = None
+        # crop
+        if copy:
+            return self[idx0:idx1].copy()
+        else:
+            return self[idx0:idx1]
+
+    def pad(self, pad_width, **kwargs):
+        """Pad this `Series`.
+
+        Parameters
+        ----------
+        pad_width : `int`, pair of `ints`
+            number of samples by which to pad each end of the array.
+            Single int to pad both ends by the same amount, or
+            (before, after) `tuple` to give uneven padding
+        **kwargs
+            see :meth:`numpy.pad` for kwarg documentation
+
+        Returns
+        -------
+        series : `Series`
+            the padded version of the input
+
+        See also
+        --------
+        numpy.pad
+            for details on the underlying functionality
+        """
+        kwargs.setdefault('mode', 'constant')
+        if isinstance(pad_width, int):
+            pad_width = (pad_width,)
+        new = numpy.pad(self.value, pad_width, **kwargs).view(type(self))
+        new.__dict__ = self.__dict__.copy()
+        new.x0 -= self.dx * pad_width[0]
         return new
