@@ -110,7 +110,7 @@ class Array2D(Series):
         # unwrap a Spectrogram
         else:
             new = new.value.view(type(self))
-            new.__dict__ = self.__dict__.copy()
+            new.__dict__ = self.copy_metadata()
         # update metadata
         if isinstance(x, slice):
             if x.start:

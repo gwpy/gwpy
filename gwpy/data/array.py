@@ -130,9 +130,14 @@ class Array(Quantity):
 
     def copy(self, order='C'):
         new = super(Array, self).copy(order=order)
-        new.__dict__ = deepcopy(self.__dict__)
+        new.__dict__ = self.copy_metadata()
         return new
     copy.__doc__ = Quantity.copy.__doc__
+
+    def copy_metadata(self):
+        """Return a deepcopy of the metadata for this array
+        """
+        return deepcopy(self.__dict__)
 
     def __repr__(self):
         """Return a representation of this object

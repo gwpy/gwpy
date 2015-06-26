@@ -915,7 +915,7 @@ class TimeSeries(TimeSeriesBase):
             nsamp = int(self.shape[0] * self.dx.value * rate)
             new = signal.resample(self.value, nsamp,
                                   window=window).view(self.__class__)
-        new.__dict__ = self.__dict__.copy()
+        new.__dict__ = self.copy_metadata()
         new.sample_rate = rate
         return new
 
@@ -1069,7 +1069,7 @@ class TimeSeries(TimeSeriesBase):
             new = signal.sosfilt(sos, self, axis=0).view(self.__class__)
         else:
             new = signal.lfilter(b, a, self, axis=0).view(self.__class__)
-        new.__dict__ = self.__dict__.copy()
+        new.__dict__ = self.copy_metadata()
         return new
 
     def coherence(self, other, fftlength=None, overlap=None,

@@ -217,7 +217,7 @@ class Series(Array):
 
     def __getslice__(self, i, j):
         new = super(Series, self).__getslice__(i, j)
-        new.__dict__ = self.__dict__.copy()
+        new.__dict__ = self.copy_metadata()
         new.x0 = self.x0 + i * self.dx
         return new
 
@@ -563,6 +563,6 @@ class Series(Array):
         if isinstance(pad_width, int):
             pad_width = (pad_width,)
         new = numpy.pad(self.value, pad_width, **kwargs).view(type(self))
-        new.__dict__ = self.__dict__.copy()
+        new.__dict__ = self.copy_metadata()
         new.x0 -= self.dx * pad_width[0]
         return new
