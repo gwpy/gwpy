@@ -60,7 +60,7 @@ def find_trigger_urls(channel, etg, gpsstart, gpsend, verbose=False):
                 % (ifo, re_dash.sub('_', channel), etg.lower(), '[0-9]'*10))
 
     # test for channel-level directory
-    if not os.path.isdir(searchbase):
+    if not glob.glob(searchbase):
         raise ValueError("No channel-level directory found at %s. Either the "
                          "channel name or ETG names are wrong, or this "
                          "channel is not configured for this ETG."
