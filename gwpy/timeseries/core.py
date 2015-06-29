@@ -51,7 +51,6 @@ from ..detector import (Channel, ChannelList)
 from ..io import reader
 from ..time import (Time, to_gps)
 from ..utils import (gprint, update_docstrings, with_import)
-from . import common
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -104,6 +103,7 @@ class TimeSeriesBase(Series):
     # TimeSeries properties
 
     dt = Series.dx
+    span = Series.xspan
 
     @property
     def epoch(self):
@@ -140,15 +140,6 @@ class TimeSeriesBase(Series):
         self.dx = (1 / units.Quantity(val, units.Hertz)).to(self.xunit)
         if numpy.isclose(self.dx.value, round(self.dx.value)):
             self.dx = units.Quantity(round(self.dx.value), self.dx.unit)
-
-    @property
-    def span(self):
-        """Time Segment encompassed by thie `TimeSeries`.
-        """
-        from ..segments import Segment
-        x0 = self.x0.to(self._default_xunit).value
-        dx = self.dx.to(self._default_xunit).value
-        return Segment(x0, x0+self.shape[0]*dx)
 
     @property
     def duration(self):
@@ -259,71 +250,7 @@ class TimeSeriesBase(Series):
             pad=pad, type=type, dtype=dtype)[str(channel)]
 
     # -------------------------------------------
-    # connectors
-
-    def is_compatible(self, other):
-        """Check whether metadata attributes for self and other match.
-        """
-        if isinstance(other, type(self)):
-            if not self.sample_rate == other.sample_rate:
-                raise ValueError("TimeSeries sampling rates do not match: "
-                                 "%s vs %s." % (self.sample_rate,
-                                                other.sample_rate))
-            if not self.unit == other.unit and not (
-                    self.unit in [units.dimensionless_unscaled, None] and
-                    other.unit in [units.Unit(''), None]):
-                raise ValueError("TimeSeries units do not match: %s vs %s."
-                                 % (str(self.unit), str(other.unit)))
-        else:
-            arr = numpy.asarray(other)
-            if arr.ndim != self.ndim:
-                raise ValueError("Dimensionality does not match")
-            if arr.dtype != self.dtype:
-                warnings.warn("dtype mismatch: %s vs %s"
-                              % (self.dtype, other.dtype))
-        return True
-
-    # -------------------------------------------
-    # Common operations
-
-    crop = common.crop
-    is_contiguous = common.is_contiguous
-    append = common.append
-    prepend = common.prepend
-    update = common.update
-
-    # -------------------------------------------
     # Utilities
-
-    def pad(self, pad_width, **kwargs):
-        """Pad this `TimeSeries`.
-
-        Parameters
-        ----------
-        pad_width : `int`, pair of `ints`
-            number of samples by which to pad each end of the array.
-            Single int to pad both ends by the same amount, or
-            (before, after) `tuple` to give uneven padding
-        **kwargs
-            see :meth:`numpy.pad` for kwarg documentation
-
-        Returns
-        -------
-        t2 : `TimeSeries`
-            the padded version of the input
-
-        See also
-        --------
-        numpy.pad
-            for details on the underlying functionality
-        """
-        kwargs.setdefault('mode', 'constant')
-        if isinstance(pad_width, int):
-            pad_width = (pad_width,)
-        new = numpy.pad(self.value, pad_width, **kwargs).view(self.__class__)
-        new.__dict__ = self.__dict__.copy()
-        new.epoch = self.epoch.gps - self.dt.value * pad_width[0]
-        return new
 
     def plot(self, **kwargs):
         """Plot the data for this `TimeSeriesBase`.

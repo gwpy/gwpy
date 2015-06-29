@@ -36,6 +36,7 @@ from .. import version
 from ..detector import Channel
 from ..time import (Time, to_gps)
 from ..utils import with_import
+from ..utils.docstring import (interpd, dedent_interpd)
 
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -45,19 +46,12 @@ __credits__ = "Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>"
 # -----------------------------------------------------------------------------
 # Core Array
 
-class Array(Quantity):
-    """An extension of the :class:`~astropy.units.Quantity`
-
-    This `Array` holds the input data and a standard set of metadata
-    properties associated with GW data.
-
-    Parameters
-    ----------
-    value : array-like, optional, default: `None`
+# update docstring interpreter with generic Array parameters
+interpd.update(Array1="""value : array-like, optional, default: `None`
         input data array
     name : `str`, optional, default: `None`
-        descriptive title for this `Array`
-    unit : `~astropy.units.core.Unit`
+        descriptive title for this `Array`""")
+interpd.update(Array2="""unit : `~astropy.units.core.Unit`
         physical unit of these data
     epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
         starting GPS time of this `Array`, accepts any input for
@@ -69,9 +63,20 @@ class Array(Quantity):
     copy : `bool`, optional, default: `False`
         choose to copy the input data to new memory
     subok : `bool`, optional, default: `True`
-        allow passing of sub-classes by the array generator
-    **metadata
-        other metadata properties
+        allow passing of sub-classes by the array generator""")
+
+
+@dedent_interpd
+class Array(Quantity):
+    """An extension of the :class:`~astropy.units.Quantity`
+
+    This `Array` holds the input data and a standard set of metadata
+    properties associated with GW data.
+
+    Parameters
+    ----------
+    %(Array1)s
+    %(Array2)s
 
     Returns
     -------
@@ -125,9 +130,14 @@ class Array(Quantity):
 
     def copy(self, order='C'):
         new = super(Array, self).copy(order=order)
-        new.__dict__ = deepcopy(self.__dict__)
+        new.__dict__ = self.copy_metadata()
         return new
     copy.__doc__ = Quantity.copy.__doc__
+
+    def copy_metadata(self):
+        """Return a deepcopy of the metadata for this array
+        """
+        return deepcopy(self.__dict__)
 
     def __repr__(self):
         """Return a representation of this object
