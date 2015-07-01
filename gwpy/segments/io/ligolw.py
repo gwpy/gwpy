@@ -84,7 +84,7 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
     id_ = dict()
     if flags is not None and len(flags) == 1 and flags[0] is None:
         out[None] = DataQualityFlag()
-        id_[None] = None
+        id_[None] = []
     for row in seg_def_table:
         ifos = row.get_ifos()
         name = row.name
@@ -94,12 +94,12 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
                 name += ':%d' % row.version
         else:
             name = None
-        if flags is None:
+        if flags is None or name in flags:
             out[name] = DataQualityFlag(name)
-            id_[name] = row.segment_def_id
-        elif name in flags:
-            out[name] = DataQualityFlag(name)
-            id_[name] = row.segment_def_id
+            try:
+                id_[name].append(row.segment_def_id)
+            except (AttributeError, KeyError):
+                id_[name] = [row.segment_def_id]
     if flags is None and not len(out.keys()):
         raise RuntimeError("No segment definitions found in file.")
     elif flags is not None and len(out.keys()) != len(flags):
@@ -111,7 +111,7 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
     seg_sum_table = lsctables.SegmentSumTable.get_table(xmldoc)
     for row in seg_sum_table:
         for flag in out:
-            if id_[flag] is None or row.segment_def_id == id_[flag]:
+            if not id_[flag] or row.segment_def_id in id_[flag]:
                 try:
                     s = row.get()
                 except AttributeError:
@@ -124,7 +124,7 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
     seg_table = lsctables.SegmentTable.get_table(xmldoc)
     for row in seg_table:
         for flag in out:
-            if id_[flag] is None or row.segment_def_id == id_[flag]:
+            if not id_[flag] or row.segment_def_id in id_[flag]:
                 try:
                     s = row.get()
                 except AttributeError:
