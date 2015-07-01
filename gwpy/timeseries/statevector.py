@@ -438,6 +438,9 @@ class StateVector(TimeSeriesBase):
         pad : `float`, optional
             value with which to fill gaps in the source data, only used if
             gap is not given, or `gap='pad'` is given
+
+        Notes
+        -----
         """))
 
     def to_dqflags(self, bits=None, minlen=1, dtype=float, round=False):
@@ -640,7 +643,7 @@ class StateTimeSeriesDict(TimeSeriesBaseDict):
 class StateVectorDict(TimeSeriesBaseDict):
     EntryClass = StateVector
     read = classmethod(reader(doc="""
-        Read data into a `StateVectorDict`
+        Read data for multiple bit vector channels into a `StateVectorDict`
 
         Parameters
         ----------
@@ -695,7 +698,10 @@ class StateVectorDict(TimeSeriesBaseDict):
         statevectordict : `StateVectorDict`
             a `StateVectorDict` of (`channel`, `StateVector`) pairs. The keys
             are guaranteed to be the ordered list `channels` as given.
-    """))
+
+        Notes
+        -----
+        """))
 
 
 @update_docstrings
