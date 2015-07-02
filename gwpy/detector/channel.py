@@ -65,16 +65,16 @@ class Channel(object):
         name of this Channel (or another  Channel itself).
         If a `Channel` is given, all other parameters not set explicitly
         will be copied over.
-    sample_rate : `float`, :class:`~astropy.units.quantity.Quantity`, optional
+    sample_rate : `float`, `~astropy.units.Quantity`, optional
         number of samples per second
-    unit : :class:`~astropy.units.core.Unit`, `str`, optional
+    unit : `~astropy.units.Unit`, `str`, optional
         name of the unit for the data of this channel
     dtype : `numpy.dtype`, optional
         numeric type of data for this channel
     frametype : `str`, optional
-        LDAS name for frames that contain this `Channel`
+        LDAS name for frames that contain this channel
     model : `str`, optional
-        name of the SIMULINK front-end model that produces this `Channel`
+        name of the SIMULINK front-end model that produces this channel
 
     Notes
     -----
@@ -134,7 +134,7 @@ class Channel(object):
 
     @property
     def name(self):
-        """Name of this `Channel`.
+        """Name of this channel.
 
         This should follow the naming convention, with the following
         format: 'IFO:SYSTEM-SUBSYSTEM_SIGNAL'
@@ -152,9 +152,9 @@ class Channel(object):
 
     @property
     def sample_rate(self):
-        """Rate of samples (Hertz) for this `Channel`.
+        """Rate of samples (Hertz) for this channel.
 
-        :type: :class:`~astropy.units.quantity.Quantity`
+        :type: `~astropy.units.Quantity`
         """
         try:
             return self._sample_rate
@@ -174,9 +174,9 @@ class Channel(object):
 
     @property
     def unit(self):
-        """Data unit for this `Channel`.
+        """Data unit for this channel.
 
-        :type: :class:`~astropy.units.core.Unit`
+        :type: `~astropy.units.Unit`
         """
         return self._unit
 
@@ -189,7 +189,7 @@ class Channel(object):
 
     @property
     def model(self):
-        """Name of the SIMULINK front-end model that defines this `Channel`.
+        """Name of the SIMULINK front-end model that defines this channel.
 
         :type: `str`
         """
@@ -229,7 +229,7 @@ class Channel(object):
 
     @property
     def ndstype(self):
-        """NDS type integer for this `Channel`.
+        """NDS type integer for this channel.
 
         This property is mapped to the `Channel.type` string.
         """
@@ -241,9 +241,9 @@ class Channel(object):
 
     @property
     def dtype(self):
-        """Numeric type for data in this `Channel`.
+        """Numeric type for data in this channel.
 
-        :type: :class:`~numpy.dtype`
+        :type: `~numpy.dtype`
         """
         return self._dtype
 
@@ -256,7 +256,7 @@ class Channel(object):
 
     @property
     def url(self):
-        """CIS browser url for this `Channel`.
+        """CIS browser url for this channel.
 
         :type: `str`
         """
@@ -268,7 +268,7 @@ class Channel(object):
 
     @property
     def frametype(self):
-        """LDAS type description for frame files containing this `Channel`.
+        """LDAS type description for frame files containing this channel.
         """
         return self._frametype
 
@@ -281,7 +281,7 @@ class Channel(object):
 
     @property
     def ifo(self):
-        """Interferometer prefix for this `Channel`.
+        """Interferometer prefix for this channel.
 
         :type: `str`
         """
@@ -292,7 +292,7 @@ class Channel(object):
 
     @property
     def system(self):
-        """Instrumental system for this `Channel`.
+        """Instrumental system for this channel.
 
         :type: `str`
         """
@@ -303,7 +303,7 @@ class Channel(object):
 
     @property
     def subsystem(self):
-        """Instrumental sub-system for this `Channel`.
+        """Instrumental sub-system for this channel.
 
         :type: `str`
         """
@@ -314,7 +314,7 @@ class Channel(object):
 
     @property
     def signal(self):
-        """Instrumental signal for this `Channel`.
+        """Instrumental signal for this channel.
 
         :type: `str`
         """
@@ -325,7 +325,7 @@ class Channel(object):
 
     @property
     def trend(self):
-        """Trend type for this `Channel`.
+        """Trend type for this channel.
 
         :type: `str`
         """
@@ -336,13 +336,13 @@ class Channel(object):
 
     @property
     def texname(self):
-        """Name of this `Channel` in LaTeX printable format.
+        """Name of this channel in LaTeX printable format.
         """
         return str(self).replace("_", r"\_")
 
     @property
     def ndsname(self):
-        """Name of this `Channel` as stored in the NDS database
+        """Name of this channel as stored in the NDS database
         """
         if self.type not in [None, 'raw', 'reduced']:
             return '%s,%s' % (self.name, self.type)

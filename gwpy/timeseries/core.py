@@ -50,7 +50,8 @@ from ..data import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
 from ..io import reader
 from ..time import (Time, to_gps)
-from ..utils import (gprint, update_docstrings, with_import)
+from ..utils import (gprint, with_import)
+from ..utils.docstring import interpolate_docstrings
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -64,8 +65,17 @@ _UFUNC_STRING = {'less': '<',
                  'greater': '>',
                  }
 
+interpolate_docstrings.update({
+    'time-axis': (
+        """sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
+        the rate of samples per second (Hertz)
+    times : `array-like`
+        the complete array of GPS times accompanying the data for this series.
+        This argument takes precedence over `epoch` and `sample_rate` so should
+        be given in place of these if relevant, not alongside"""),
+})
 
-@update_docstrings
+@interpolate_docstrings
 class TimeSeriesBase(Series):
     """An `Array` with time-domain metadata.
     """
@@ -107,12 +117,11 @@ class TimeSeriesBase(Series):
 
     @property
     def epoch(self):
-        """Starting GPS time epoch for this `TimeSeries`.
+        """GPS epoch for these data.
 
-        This attribute is recorded as a `~gwpy.time.Time` object in the
-        GPS format, allowing native conversion into other formats.
+        This attribute is stored internally by the `x0` attribute
 
-        See `~astropy.time` for details on the `Time` object.
+        :type: `~astropy.time.Time`
         """
         if self.x0 is None:
             return None
@@ -124,11 +133,18 @@ class TimeSeriesBase(Series):
         if isinstance(epoch, Time):
             self.x0 = epoch.gps
         else:
-            self.x0 = epoch
+            try:
+                self.x0 = to_gps(epoch)
+            except TypeError:
+                self.x0 = epoch
 
     @property
     def sample_rate(self):
         """Data rate for this `TimeSeries` in samples per second (Hertz).
+
+        This attribute is stored internally by the `dx` attribute
+
+        :type: `~astropy.units.Quantity` scalar
         """
         return (1 / self.dx).to('Hertz')
 
@@ -143,7 +159,7 @@ class TimeSeriesBase(Series):
 
     @property
     def duration(self):
-        """Duration of this `TimeSeries` in seconds.
+        """Duration of this series in seconds
         """
         return units.Quantity(self.span[1] - self.span[0], self.xunit)
 
@@ -155,33 +171,38 @@ class TimeSeriesBase(Series):
     # -------------------------------------------
     # TimeSeries accessors
 
-    # use input/output registry to allow multi-format reading
-    read = classmethod(reader(doc="""
-        Read data into a `TimeSeries`.
+    interpolate_docstrings.update({
+        'timeseries-read1': """source : `str`, `~glue.lal.Cache`
+            source of data, any of the following:
 
-        Parameters
-        ----------
-        source : `str`, `~glue.lal.Cache`
-            a single file path `str`, or a `~glue.lal.Cache` containing
-            a contiguous list of files.
-        channel : `str`, `~gwpy.detector.core.Channel`
+            - `str` path of single data file
+            - `str` path of LAL-format cache file
+            - `~glue.lal.Cache` describing one or more data files,
+
+        channel : `str`, `~gwpy.detector.Channel`
             the name of the channel to read, or a `Channel` object.
-        start : `~gwpy.time.Time`, `float`, optional
-            GPS start time of required data.
-        end : `~gwpy.time.Time`, `float`, optional
-            GPS end time of required data.
-        format : `str`, optional
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS start time of required data, defaults to start of data found;
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, defaults to end of data found;
+            any input parseable by `~gwpy.time.to_gps` is fine""",
+
+        'timeseries-read2': """format : `str`, optional
             source format identifier. If not given, the format will be
             detected if possible. See below for list of acceptable
             formats.
-        nproc : `int`, optional, default: ``1``
+
+        nproc : `int`, optional, default: `1`
             number of parallel processes to use, serial process by
             default.
 
             .. note::
 
                Parallel frame reading, via the ``nproc`` keyword argument,
-               is only available when giving a :class:`~glue.lal.Cache` of
+               is only available when giving a `~glue.lal.Cache` of
                frames, or using the ``format='cache'`` keyword argument.
 
         gap : `str`, optional
@@ -194,55 +215,54 @@ class TimeSeriesBase(Series):
 
         pad : `float`, optional
             value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
+            gap is not given, or `gap='pad'` is given""",
 
-        Returns
-        -------
-        timeseries : `TimeSeries`
-            a new `TimeSeries` containing data for the given channel.
+        'timeseries-fetch1': """channel : `str`, `~gwpy.detector.Channel`
+            the name of the channel to read, or a `Channel` object.
 
-        Raises
-        ------
-        Exception
-            if no format could be automatically identified.
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS start time of required data,
+            any input parseable by `~gwpy.time.to_gps` is fine
 
-        Notes
-        -----"""))
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS end time of required data,
+            any input parseable by `~gwpy.time.to_gps` is fine""",
+
+        'timeseries-fetch2': """host : `str`, optional
+            URL of NDS server to use, defaults to observatory site host
+
+        port : `int`, optional
+            port number for NDS server query, must be given with `host`
+
+        verify : `bool`, optional, default: `True`
+            check channels exist in database before asking for data
+
+        connection : :class:`~gwpy.io.nds.NDS2Connection`
+            open NDS connection to use
+
+        verbose : `bool`, optional
+            print verbose output about NDS progress
+
+        type : `int`, optional
+            NDS2 channel type integer
+
+        dtype : `type`, `numpy.dtype`, `str`, optional
+            identifier for desired output data type""",
+    })
 
     @classmethod
+    @interpolate_docstrings
     @with_import('nds2')
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
               connection=None, verify=False, pad=None,
               type=NDS2_FETCH_TYPE_MASK, dtype=None):
-        """Fetch data from NDS into a `TimeSeriesBase`.
+        """Fetch data from NDS into a `TimeSeries`.
 
         Parameters
         ----------
-        channel : :class:`~gwpy.detector.channel.Channel`, or `str`
-            required data channel
-        start : `~gwpy.time.Time`, or float
-            GPS start time of data span
-        end : `~gwpy.time.Time`, or float
-            GPS end time of data span
-        host : `str`, optional
-            URL of NDS server to use, defaults to observatory site host
-        port : `int`, optional
-            port number for NDS server query, must be given with `host`
-        verify : `bool`, optional, default: `True`
-            check channels exist in database before asking for data
-        connection : :class:`~gwpy.io.nds.NDS2Connection`
-            open NDS connection to use
-        verbose : `bool`, optional
-            print verbose output about NDS progress
-        type : `int`, optional
-            NDS2 channel type integer
-        dtype : `type`, `numpy.dtype`, `str`, optional
-            identifier for desired output data type
+        %(timeseries-fetch1)s
 
-        Returns
-        -------
-        TimeSeries
-            a new `TimeSeries` containing the data read from NDS
+        %(timeseries-fetch2)s
         """
         return cls.DictClass.fetch(
             [channel], start, end, host=host, port=port,
@@ -253,7 +273,7 @@ class TimeSeriesBase(Series):
     # Utilities
 
     def plot(self, **kwargs):
-        """Plot the data for this `TimeSeriesBase`.
+        """Plot the data for this `TimeSeries`
         """
         from ..plotter import TimeSeriesPlot
         return TimeSeriesPlot(self, **kwargs)

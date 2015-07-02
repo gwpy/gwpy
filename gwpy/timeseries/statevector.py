@@ -40,9 +40,9 @@ from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
 from ..detector import Channel
 from ..time import Time
-from ..utils import update_docstrings
 from ..io import reader
 from .. import version
+from ..utils.docstring import interpolate_docstrings
 
 if sys.version_info[0] < 3:
     range = xrange
@@ -54,34 +54,28 @@ __all__ = ['StateTimeSeries',
            'StateVector', 'StateVectorDict', 'StateVectorList', 'Bits']
 
 
-@update_docstrings
+@interpolate_docstrings
 class StateTimeSeries(TimeSeriesBase):
     """Boolean array representing a good/bad state determination
     of some data.
 
     Parameters
     ----------
-    data : `numpy.ndarray`, `list`
-        Data values to initialise TimeSeries
-    times : `numpy.ndarray`, optional
-        array of time values to accompany data, these are required for
-        `StateTimeSeries` with un-even sampling
-    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-        start time for `StateTimeSeries`, can be given in any form accepted
-        by :meth:`~gwpy.time.to_gps`.
-    channel : `~gwpy.detector.Channel`, `str`, optional
-        source data channel
-    unit : `~astropy.units.Unit`, optional
-        the units of the data
-    sample_rate : `float`, optional
-        number of samples per second
-    name : `str`, optional
-        descriptive title for these data
+    %(Array1)s
 
-    Returns
-    -------
-    statebit : `StateTimeSeries`
-        A new `StateTimeSeries`
+    %(time-axis)s
+
+    %(Array2)s
+
+    Notes
+    -----
+    The input data array is cast to the `bool` data type upon creation of
+    this series.
+
+    .. rubric:: Key methods
+
+       ~StateTimeSeries.to_dqflag
+
     """
 
     def __new__(cls, data, times=None, epoch=None, channel=None,
@@ -101,11 +95,12 @@ class StateTimeSeries(TimeSeriesBase):
     def to_dqflag(self, name=None, minlen=1, dtype=float, round=False,
                   label=None, description=None):
         """Convert this `StateTimeSeries` into a
-        `~gwpy.segments.DataQualityFlag`.
+        `~gwpy.segments.DataQualityFlag`
 
         Each contiguous set of `True` values are grouped as a
-        `~gwpy.segments.Segment` running from the start of the first
-        found `True`, to the end of the last.
+        `~gwpy.segments.Segment` running from the GPS time the first
+        found `True`, to the GPS time of the next `False` (or the end
+        of the series)
 
         Parameters
         ----------
@@ -113,10 +108,12 @@ class StateTimeSeries(TimeSeriesBase):
             minimum number of consecutive `True` values to identify as a
             `~gwpy.segments.Segment`. This is useful to ignore single
             bit flips, for example.
+
         dtype : `type`, `callable`, default: `float`
             output segment entry type, can pass either a type for simple
             casting, or a callable function that accepts a float and returns
             another numeric type
+
         round : `bool`, optional, default: False
             choose to round each `~gwpy.segments.Segment` to its
             inclusive integer boundaries
@@ -261,7 +258,7 @@ class Bits(list):
         return numpy.array([b or '' for b in self])
 
 
-@update_docstrings
+@interpolate_docstrings
 class StateVector(TimeSeriesBase):
     """Binary array representing good/bad state determinations of some data.
 
@@ -271,13 +268,26 @@ class StateVector(TimeSeriesBase):
 
     Parameters
     ----------
-    data : `numpy.ndarray`, `list`
-        binary data values to initialise `StateVector`
+    %(Array1)s
+
     bits : `Bits`, `list`, optional
         list of bits defining this `StateVector`
-    times : `numpy.ndarray`, optional
-        array of time values to accompany data, these are required for
-        `StateVector` with un-even sampling
+
+    %(time-axis)s
+
+    %(Array2)s
+
+    Notes
+    -----
+    Key methods:
+
+    .. autosummary::
+
+        ~StateVector.fetch
+        ~StateVector.read
+        ~StateVector.write
+        ~StateVector.to_dqflags
+        ~StateVector.plot
 
     """
     _metadata_slots = TimeSeriesBase._metadata_slots + ['bits']
@@ -388,13 +398,53 @@ class StateVector(TimeSeriesBase):
     # StateVector methods
 
     # use input/output registry to allow multi-format reading
-    read = classmethod(reader(doc=TimeSeriesBase.read.__doc__))
+    read = classmethod(interpolate_docstrings(
+        reader(doc="""Read data into a `StateVector`
+
+        Parameters
+        ----------
+        %(timeseries-read1)s
+
+        bits : `list`, optional
+            list of bits names for this `StateVector`, give `None` at
+            any point in the list to mask that bit
+
+        %(timeseries-read2)s
+
+        Example
+        -------
+        To read the S6 state vector, with names for all the bits::
+
+            >>> sv = StateVector.read(
+                'H-H1_LDAS_C02_L2-968654592-128.gwf', 'H1:IFO-SV_STATE_VECTOR',
+                bits=['Science mode', 'Conlog OK', 'Locked',
+                      'No injections', 'No Excitations'],
+                dtype='uint32')
+
+        then you can convert these to segments
+
+            >>> segments = sv.to_dqflags()
+
+        or to read just the interferometer operations bits::
+
+            >>> sv = StateVector.read(
+                'H-H1_LDAS_C02_L2-968654592-128.gwf', 'H1:IFO-SV_STATE_VECTOR',
+                bits=['Science mode', None, 'Locked'], dtype='uint32')
+
+        Running `to_dqflags` on this example would only give 2 flags, rather
+        than all five.
+
+        Alternatively the `bits` attribute can be reset after reading, but
+        before any further operations.
+
+        Notes
+        -----""")))
 
     def to_dqflags(self, bits=None, minlen=1, dtype=float, round=False):
-        """Convert this `StateVector` into a `SegmentListDict`.
+        """Convert this `StateVector` into a `~gwpy.segments.DataQualityDict`
 
-        The `StateTimeSeries` for each bit is converted into a `SegmentList`
-        with the bits combined into a dict.
+        The `StateTimeSeries` for each bit is converted into a
+        `~gwpy.segments.DataQualityFlag` with the bits combined into a dict.
 
         Parameters
         ----------
@@ -402,6 +452,7 @@ class StateVector(TimeSeriesBase):
            minimum number of consecutive `True` values to identify as a
            `Segment`. This is useful to ignore single bit flips,
            for example.
+
         bits : `list`, optional
             a list of bit indices or bit names to select, defaults to
             `~StateVector.bits`
@@ -428,35 +479,19 @@ class StateVector(TimeSeriesBase):
         return out
 
     @classmethod
+    @interpolate_docstrings
     def fetch(cls, channel, start, end, bits=None, host=None, port=None,
               verbose=False, connection=None, type=NDS2_FETCH_TYPE_MASK):
         """Fetch data from NDS into a `StateVector`.
 
         Parameters
         ----------
-        channel : :class:`~gwpy.detector.channel.Channel`, or `str`
-            required data channel
-        start : `~gwpy.time.Time`, or float
-            GPS start time of data span
-        end : `~gwpy.time.Time`, or float
-            GPS end time of data span
+        %(timeseries-fetch1)s
+
         bits : `Bits`, `list`, optional
             definition of bits for this `StateVector`
-        host : `str`, optional
-            URL of NDS server to use, defaults to observatory site host.
-        port : `int`, optional
-            port number for NDS server query, must be given with `host`.
-        verbose : `bool`, optional
-            print verbose output about NDS progress.
-        connection : :class:`~gwpy.io.nds.NDS2Connection`
-            open NDS connection to use.
-        type : `int`, `str`,
-            NDS2 channel type integer or string name.
 
-        Returns
-        -------
-        data : `StateVector`
-            a new `StateVector` containing the data read from NDS
+        %(timeseries-fetch2)s
         """
         new = StateVectorDict.fetch(
             [channel], start, end, host=host, port=port,
@@ -578,20 +613,17 @@ class StateVector(TimeSeriesBase):
                              "series rate if downsampling a StateVector")
 
 
-@update_docstrings
 @as_series_dict_class(StateTimeSeries)
 class StateTimeSeriesDict(TimeSeriesBaseDict):
     EntryClass = StateTimeSeries
     read = classmethod(reader(doc=TimeSeriesBaseDict.read.__doc__))
 
 
-@update_docstrings
 @as_series_dict_class(StateVector)
 class StateVectorDict(TimeSeriesBaseDict):
     EntryClass = StateVector
     read = classmethod(reader(doc=TimeSeriesBaseDict.read.__doc__))
 
 
-@update_docstrings
 class StateVectorList(TimeSeriesBaseList):
     EntryClass = StateVector

@@ -64,19 +64,25 @@ class DataQualityFlag(object):
     Parameters
     ----------
     name : str, optional
-        The name of this `DataQualityFlag`.
+        The name of this flag.
         This should be of the form {ifo}:{tag}:{version}, e.g.
         'H1:DMT-SCIENCE:1'. Use `label` for human-readable names.
+
     active : `SegmentList`, optional
         A list of active segments for this flag
+
     known : `SegmentList`, optional
         A list of known segments for this flag
+
     label : `str`, optional
         Human-readable name for this flag, e.g. ``'Science-mode'``
+
     category : `int`, optional
         Veto category for this flag.
+
     description : `str`, optional
         Human-readable description of why this flag was created.
+
     isgood : `bool`, optional
         Do active segments mean the IFO was in a good state?
     """
@@ -108,7 +114,7 @@ class DataQualityFlag(object):
 
     @property
     def name(self):
-        """The name associated with this `DataQualityFlag`.
+        """The name associated with this flag.
 
         This normally takes the form {ifo}:{tag}:{version}. If found,
         each component is stored separately the associated attributes.
@@ -127,7 +133,7 @@ class DataQualityFlag(object):
 
     @property
     def ifo(self):
-        """The interferometer associated with this `DataQualityFlag`.
+        """The interferometer associated with this flag.
 
         This should be a single uppercase letter and a single number,
         e.g. ``'H1'``.
@@ -142,7 +148,7 @@ class DataQualityFlag(object):
 
     @property
     def tag(self):
-        """The tag (name) associated with this `DataQualityFlag`.
+        """The tag (name) associated with this flag.
 
         This should take the form ``'AAA-BBB_CCC_DDD'``, i.e. where
         each component is an uppercase acronym of alphanumeric
@@ -159,13 +165,13 @@ class DataQualityFlag(object):
 
     @property
     def version(self):
-        """The version number of this `DataQualityFlag`.
+        """The version number of this flag.
 
         Each flag in the segment database is stored with a version
         integer, with each successive version representing a more
         accurate dataset for its known segments than any previous.
 
-        :type: `str`
+        :type: `int`
         """
         return self._version
 
@@ -178,7 +184,7 @@ class DataQualityFlag(object):
 
     @property
     def label(self):
-        """A human-readable label for this `DataQualityFlag`.
+        """A human-readable label for this flag.
 
         For example: ``'Science-mode'``.
 
@@ -192,7 +198,7 @@ class DataQualityFlag(object):
 
     @property
     def active(self):
-        """The set of segments during which this `DataQualityFlag` was
+        """The set of segments during which this flag was
         active.
         """
         return self._active
@@ -210,7 +216,7 @@ class DataQualityFlag(object):
 
     @property
     def known(self):
-        """The set of segments during which this `DataQualityFlag` was
+        """The set of segments during which this flag was
         known, and its state was well defined.
         """
         return self._known
@@ -228,7 +234,7 @@ class DataQualityFlag(object):
 
     @property
     def valid(self):
-        """The set of segments during which this `DataQualityFlag` was
+        """The set of segments during which this flag was
         known, and its state was well defined.
         """
         warnings.warn("The 'valid' property of the DataQualityFlag "
@@ -255,7 +261,7 @@ class DataQualityFlag(object):
 
     @property
     def category(self):
-        """Veto category for this `DataQualityFlag`.
+        """Veto category for this flag.
 
         :type: `int`
         """
@@ -270,7 +276,7 @@ class DataQualityFlag(object):
 
     @property
     def description(self):
-        """Description of why/how this `DataQualityFlag` was generated.
+        """Description of why/how this flag was generated.
 
         :type: `str`
         """
@@ -314,7 +320,7 @@ class DataQualityFlag(object):
 
     @property
     def texname(self):
-        """Name of this `DataQualityFlag` in LaTeX printable format.
+        """Name of this flag in LaTeX printable format.
         """
         try:
             return self.name.replace('_', r'\_')
@@ -332,7 +338,7 @@ class DataQualityFlag(object):
 
     @property
     def livetime(self):
-        """Amount of time this `DataQualityFlag` was `active`.
+        """Amount of time this flag was `active`.
 
         :type: `float`
         """
@@ -585,7 +591,7 @@ class DataQualityFlag(object):
         Parameters
         ----------
         source : `str`
-            source of segments for this `DataQualityFlag`. This must be
+            source of segments for this flag. This must be
             either a URL for a segment database or a path to a file on disk.
         segments : `SegmentList`, optional
             a list of valid segments during which to query, if not given,
@@ -640,7 +646,7 @@ class DataQualityFlag(object):
         return self.active
 
     def round(self):
-        """Round this `DataQualityFlag` to integer segments.
+        """Round this flag to integer segments.
 
         Returns
         -------
@@ -658,7 +664,7 @@ class DataQualityFlag(object):
         return new.coalesce()
 
     def coalesce(self):
-        """Coalesce the segments for this `DataQualityFlag`.
+        """Coalesce the segments for this flag.
 
         This method does two things:
 
@@ -699,7 +705,7 @@ class DataQualityFlag(object):
                                               repr(self.description)))
 
     def copy(self):
-        """Build an exact copy of this `DataQualityFlag`.
+        """Build an exact copy of this flag.
 
         Returns
         -------
@@ -718,7 +724,7 @@ class DataQualityFlag(object):
         return new
 
     def plot(self, **kwargs):
-        """Plot this `DataQualityFlag`.
+        """Plot this flag.
 
         Parameters
         ----------
@@ -729,7 +735,7 @@ class DataQualityFlag(object):
         Returns
         -------
         plot : `~gwpy.plotter.segments.SegmentPlot`
-            a new `Plot` with this `DataQualityFlag` displayed on a set of
+            a new `Plot` with this flag displayed on a set of
             :class:`~gwpy.plotter.segments.SegmentAxes`.
         """
         from ..plotter import (rcParams, SegmentPlot)
@@ -806,14 +812,14 @@ class DataQualityFlag(object):
         return self.copy().__iand__(other)
 
     def __iand__(self, other):
-        """Intersect this `DataQualityFlag` with ``other`` in-place.
+        """Intersect this flag with ``other`` in-place.
         """
         self.known &= other.known
         self.active &= other.active
         return self
 
     def __sub__(self, other):
-        """Find the difference between this `DataQualityFlag` and another.
+        """Find the difference between this flag and another.
         """
         return self.copy().__isub__(other)
 
@@ -824,7 +830,7 @@ class DataQualityFlag(object):
         return self
 
     def __or__(self, other):
-        """Find the union of this `DataQualityFlag` and ``other``.
+        """Find the union of this flag and ``other``.
         """
         return self.copy().__ior__(other)
 
@@ -862,7 +868,7 @@ class _QueryDQSegDBThread(Thread):
 
 
 class DataQualityDict(OrderedDict):
-    """An `OrderedDict` of (key, `DataQualityFlag`) pairs.
+    """An `~collections.OrderedDict` of (key, `DataQualityFlag`) pairs.
 
     Since the `DataQualityDict` is an `OrderedDict`, all iterations over
     its elements retain the order in which they were inserted.
@@ -1152,16 +1158,18 @@ class DataQualityDict(OrderedDict):
         Segments will be fetched from the database, with any
         :attr:`~DataQualityFlag.padding` added on-the-fly.
 
-        Entries in this `DataQualityDict` will be modified in-place.
+        Entries in this dict will be modified in-place.
 
         Parameters
         ----------
         source : `str`
-            source of segments for this `DataQualityFlag`. This must be
+            source of segments for this flag. This must be
             either a URL for a segment database or a path to a file on disk.
+
         segments : `SegmentList`, optional
             a list of known segments during which to query, if not given,
             existing known segments for flags will be used.
+
         **kwargs
             any other keyword arguments to be passed to
             :meth:`DataQualityFlag.query` or :meth:`DataQualityFlag.read`.
@@ -1250,44 +1258,42 @@ class DataQualityDict(OrderedDict):
         return new
 
     def union(self):
-        """Return the union of all flags in this `DataQualityDict`
+        """Return the union of all flags in this dict
 
         Returns
         -------
         union : `DataQualityFlag`
             a new `DataQualityFlag` who's active and known segments
-            are the union of those of the values of this `DataQualityDict`.
+            are the union of those of the values of this dict
         """
         usegs = reduce(operator.or_, self.itervalues())
         usegs.name = ' | '.join(self.iterkeys())
         return usegs
 
     def intersection(self):
-        """Return the intersection of all flags in this `DataQualityDict`
+        """Return the intersection of all flags in this dict
 
         Returns
         -------
         intersection : `DataQualityFlag`
             a new `DataQualityFlag` who's active and known segments
-            are the intersection of those of the values of this
-            `DataQualityDict`.
+            are the intersection of those of the values of this dict
         """
         isegs = reduce(operator.and_, self.itervalues())
         isegs.name = ' & '.join(self.iterkeys())
         return isegs
 
     def plot(self, label='key', **kwargs):
-        """Plot the data for this `DataQualityDict`.
+        """Plot the data for this dict.
 
         Parameters
         ----------
         label : `str`, optional
-            labelling system to use, or fixed label for all `DataQualityFlags`.
-            Special values include
+            labelling system to use, or fixed label for all flags,
+            special values include
 
             - ``'key'``: use the key of the `DataQualityDict`,
-            - ``'name'``: use the :attr:`~DataQualityFlag.name` of the
-              `DataQualityFlag`
+            - ``'name'``: use the :attr:`~DataQualityFlag.name` of the flag
 
             If anything else, that fixed label will be used for all lines.
 

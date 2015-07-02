@@ -36,7 +36,7 @@ from .. import version
 from ..detector import Channel
 from ..time import (Time, to_gps)
 from ..utils import with_import
-from ..utils.docstring import (interpd, dedent_interpd)
+from ..utils.docstring import interpolate_docstrings
 
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -47,26 +47,35 @@ __credits__ = "Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>"
 # Core Array
 
 # update docstring interpreter with generic Array parameters
-interpd.update(Array1="""value : array-like, optional, default: `None`
+interpolate_docstrings.update(
+    Array1="""value : array-like
         input data array
-    name : `str`, optional, default: `None`
-        descriptive title for this `Array`""")
-interpd.update(Array2="""unit : `~astropy.units.core.Unit`
+
+    unit : `~astropy.units.Unit`, optional
         physical unit of these data
+
     epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
-        starting GPS time of this `Array`, accepts any input for
-        :meth:`~gwpy.time.to_gps`.
+        GPS epoch associated with these data,
+        any input parsable by `~gwpy.time.to_gps` is fine""",
+
+    Array2="""name : `str`, optional, default: `None`
+        descriptive title for this array
+
     channel : `~gwpy.detector.Channel`, `str`
         source data stream for these data
+
     dtype : :class:`~numpy.dtype`, optional, default: `None`
         input data type
+
     copy : `bool`, optional, default: `False`
         choose to copy the input data to new memory
+
     subok : `bool`, optional, default: `True`
-        allow passing of sub-classes by the array generator""")
+        allow passing of sub-classes by the array generator""",
+)
 
 
-@dedent_interpd
+@interpolate_docstrings
 class Array(Quantity):
     """An extension of the :class:`~astropy.units.Quantity`
 
@@ -76,12 +85,26 @@ class Array(Quantity):
     Parameters
     ----------
     %(Array1)s
+
     %(Array2)s
 
     Returns
     -------
     array : `Array`
         a new array, with a view of the data, and all associated metadata
+
+    Examples
+    --------
+    To create a new `Array` from a list of samples:
+
+        >>> a = Array([1, 2, 3, 4, 5], 'm/s', name='my data')
+        >>> print(a)
+        Array([ 1., 2., 3., 4., 5.]
+              unit: Unit("m / s"),
+              name: 'my data',
+              epoch: None,
+              channel: None)
+
     """
     _metadata_slots = ['name', 'epoch', 'channel']
 
@@ -112,21 +135,17 @@ class Array(Quantity):
 
     def __quantity_subclass__(self, unit):
         return type(self), True
-    __quantity_subclass__.__doc__ = Quantity.__quantity_subclass__.__doc__
 
     def __array_finalize__(self, obj):
         super(Array, self).__array_finalize__(obj)
         for attr in self._metadata_slots:
             setattr(self, attr, getattr(obj, attr, None))
-    __array_finalize__.__doc__ = Quantity.__array_finalize__.__doc__
 
     def __array_prepare__(self, obj, context=None):
         return super(Array, self).__array_prepare__(obj, context=context)
-    __array_prepare__.__doc__ = Quantity.__array_prepare__.__doc__
 
     def __array_wrap__(self, obj, context=None):
         return super(Array, self).__array_wrap__(obj, context=context)
-    __array_wrap__.__doc__ = Quantity.__array_wrap__.__doc__
 
     def copy(self, order='C'):
         new = super(Array, self).copy(order=order)
@@ -142,7 +161,7 @@ class Array(Quantity):
     def __repr__(self):
         """Return a representation of this object
 
-        This just represents each of the metadata objects appriopriately
+        This just represents each of the metadata objects appropriately
         after the core data array
         """
         prefixstr = '<%s(' % self.__class__.__name__
@@ -214,7 +233,7 @@ class Array(Quantity):
 
     @property
     def name(self):
-        """Name for this `Array`
+        """Name for this data set
 
         :type: `str`
         """
@@ -229,17 +248,14 @@ class Array(Quantity):
 
     @property
     def epoch(self):
-        """Starting GPS time epoch for this `Array`.
+        """GPS epoch associated with these data
 
-        This attribute is recorded as a `~gwpy.time.Time` object in the
-        GPS format, allowing native conversion into other formats.
-
-        See `~astropy.time` for details on the `Time` object.
+        :type: `~astropy.time.Time`
         """
         if self._epoch is None:
             return None
         else:
-            return Time(float(self._epoch),
+            return Time(float(to_gps(self._epoch)),
                         format='gps', scale='utc')
 
     @epoch.setter
@@ -251,7 +267,9 @@ class Array(Quantity):
 
     @property
     def channel(self):
-        """Data channel associated with this `Array`.
+        """Instrumental channel associated with these data
+
+        :type: `~gwpy.detector.Channel`
         """
         return self._channel
 
@@ -309,10 +327,10 @@ class Array(Quantity):
     def override_unit(self, unit):
         """Forcefully reset the unit of these data
 
-        Use of this method is discouraged in favour of `Array.to`,
+        Use of this method is discouraged in favour of `to()`,
         which performs accurate conversions from one unit to another.
         The method should really only be used when the original unit of the
-        `Array` is plain wrong.
+        array is plain wrong.
 
         Parameters
         ----------
@@ -336,7 +354,7 @@ class Array(Quantity):
     @with_import('h5py')
     def to_hdf5(self, output, name=None, group=None, compression='gzip',
                 **kwargs):
-        """Convert this `Array` to a :class:`h5py.Dataset`.
+        """Convert this array to a :class:`h5py.Dataset`.
 
         This allows writing to an HDF5-format file.
 
@@ -344,13 +362,17 @@ class Array(Quantity):
         ----------
         output : `str`, :class:`h5py.Group`
             path to new output file, or open h5py `Group` to write to.
+
         name : `str`, optional
             custom name for this `Array` in the HDF hierarchy, defaults
             to the `name` attribute of the `Array`.
+
         group : `str`, optional
             group to create for this time-series.
+
         compression : `str`, optional
             name of compression filter to use
+
         **kwargs
             other keyword arguments passed to
             :meth:`h5py.Group.create_dataset`.
@@ -423,14 +445,16 @@ class Array(Quantity):
     @classmethod
     @with_import('h5py')
     def from_hdf5(cls, f, name=None):
-        """Read a `Array` from the given HDF file.
+        """Read an array from the given HDF file.
 
         Parameters
         ----------
         f : `str`, :class:`h5py.HLObject`
             path to HDF file on disk, or open `h5py.HLObject`.
+
         type_ : `type`
             target class to read
+
         name : `str`
             path in HDF hierarchy of dataset.
         """

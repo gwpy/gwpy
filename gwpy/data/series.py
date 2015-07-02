@@ -28,30 +28,37 @@ from astropy.units import (Unit, Quantity, dimensionless_unscaled)
 
 from .array import Array
 from .. import version
-from ..utils.docstring import dedent_interpd
+from ..utils.docstring import interpolate_docstrings
 
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-@dedent_interpd
+interpolate_docstrings.update(
+    ArrayXaxis=(
+        """x0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
+        the starting value for the x-axis of this array
+
+    dx : `float`, `~astropy.units.Quantity, optional, default: `1`
+        the step size for the x-axis of this array
+
+    xindex : `array-like`
+        the complete array of x-axis values for this array. This argument
+        takes precedence over `x0` and `dx` so should be
+        given in place of these if relevant, not alongside"""),
+)
+
+
+@interpolate_docstrings
 class Series(Array):
     """A one-dimensional data series
-
-    This class provides a generic 1-D array, and provides the underlying
-    super-class for the `TimeSeries` and `Spectrum` objects, amongst others
 
     Parameters
     ----------
     %(Array1)s
-    x0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
-        the starting value for the x-axis of this array
-    dx : `float`, `~astropy.units.Quantity, optional, default: `1`
-        the step size for the x-axis of this array
-    xindex : `array-like`
-        the complete array of x-axis values for this array. This argument
-        takes precedence over `x0` and `dx` so should be
-        given in place of these if relevant, not alongside
+
+    %(ArrayXaxis)s
+
     %(Array2)s
 
     Returns
@@ -86,7 +93,7 @@ class Series(Array):
     def xindex(self):
         """Positions of the data on the x-axis
 
-        :type: `Series`
+        :type: `~astropy.units.Quantity` array
         """
         try:
             return self._xindex
@@ -118,6 +125,10 @@ class Series(Array):
 
     @property
     def x0(self):
+        """X-axis value of the first data point
+
+        :type: `~astropy.units.Quantity` scalar
+        """
         return self._x0
 
     @x0.setter
@@ -142,6 +153,10 @@ class Series(Array):
 
     @property
     def dx(self):
+        """X-axis sample separation
+
+        :type: `~astropy.units.Quantity` scalar
+        """
         return self._dx
 
     @dx.setter
@@ -163,11 +178,15 @@ class Series(Array):
 
     @property
     def xunit(self):
+        """Unit of x-axis index
+
+        :type: `~astropy.units.Unit`
+        """
         return self.x0.unit
 
     @property
     def xspan(self):
-        """X-axis [low, high) segment encompassed by this series
+        """X-axis [low, high) segment encompassed by these data
 
         :type: `~gwpy.segments.Segment`
         """
@@ -185,6 +204,7 @@ class Series(Array):
         except AttributeError:
             pass
         return new
+    copy.__doc__ = Array.copy.__doc__
 
     def zip(self):
         """Zip the `xindex` and `value` arrays of this `Series`
@@ -193,7 +213,7 @@ class Series(Array):
         -------
         stacked : 2-d `numpy.ndarray`
             The array formed by stacking the the `xindex` and `value` of this
-            `Series`.
+            series
 
         Examples
         --------
@@ -209,8 +229,6 @@ class Series(Array):
         return numpy.column_stack((self.xindex.value, self.value))
 
     def __array_finalize__(self, obj):
-        """Finalize a Array with metadata
-        """
         super(Series, self).__array_finalize__(obj)
         if hasattr(self, '_xindex'):
             obj._xindex = self._xindex
@@ -242,7 +260,8 @@ class Series(Array):
         Parameters
         ----------
         other : `Series`, `numpy.ndarray`
-            another `Series` to test for contiguity
+            another series of the same type to test for contiguity
+
         tol : `float`, optional
             the numerical tolerance of the test
 
@@ -305,7 +324,8 @@ class Series(Array):
         Parameters
         ----------
         other : `Series`
-            the second data set to connect to this one
+            another series of the same type to connect to this one
+
         gap : `str`, optional, default: ``'raise'``
             action to perform if there's a gap between the other series
             and this one. One of
@@ -318,7 +338,7 @@ class Series(Array):
             perform operation in-place, modifying current `Series`,
             otherwise copy data and return new `Series`
 
-            .. warn::
+            .. warning::
 
                inplace append bypasses the reference check in
                `numpy.ndarray.resize`, so be carefully to only use this
@@ -326,6 +346,7 @@ class Series(Array):
 
         pad : `float`, optional, default: ``0.0``
             value with which to pad discontiguous series
+
         resize : `bool`, optional, default: `True`
             resize this array to accommodate new data, otherwise shift the
             old data to the left (potentially falling off the start) and
@@ -428,12 +449,13 @@ class Series(Array):
         return self
 
     def prepend(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
-        """Connect another `Series` onto the start of the current one.
+        """Connect another series onto the start of the current one.
 
         Parameters
         ----------
-        other : `TimeSeries`
-            the second data set to connect to this one
+        other : `Series`
+            another series of the same type as this one
+
         gap : `str`, optional, default: ``'raise'``
             action to perform if there's a gap between the other series
             and this one. One of
@@ -443,10 +465,10 @@ class Series(Array):
                 - ``'pad'`` - pad gap with zeros
 
         inplace : `bool`, optional, default: `True`
-            perform operation in-place, modifying current `TimeSeries,
-            otherwise copy data and return new `TimeSeries`
+            perform operation in-place, modifying current series,
+            otherwise copy data and return new series
 
-            .. warn::
+            .. warning::
 
                inplace prepend bypasses the reference check in
                `numpy.ndarray.resize`, so be carefully to only use this
@@ -473,7 +495,7 @@ class Series(Array):
             return out
 
     def update(self, other, inplace=True):
-        """Update this `Series` by appending new data from an other
+        """Update this series by appending new data from an other
         and dropping the same amount of data off the start.
 
         This is a convenience method that just calls `~Series.append` with
@@ -482,22 +504,24 @@ class Series(Array):
         return self.append(other, inplace=inplace, resize=False)
 
     def crop(self, start=None, end=None, copy=False):
-        """Crop this `Series` to the given x-axis extent.
+        """Crop this series to the given x-axis extent.
 
         Parameters
         ----------
         start : `float`, optional
             lower limit of x-axis to crop to, defaults to
             current `~Series.x0`
+
         end : `float`, optional
             upper limit of x-axis to crop to, defaults to current series end
+
         copy : `bool`, optional, default: `False`
             copy the input data to fresh memory, otherwise return a view
 
         Returns
         -------
         series : `Series`
-            A new `Series` with a sub-set of the input data
+            A new series with a sub-set of the input data
 
         Notes
         -----
@@ -538,7 +562,7 @@ class Series(Array):
             return self[idx0:idx1]
 
     def pad(self, pad_width, **kwargs):
-        """Pad this `Series`.
+        """Pad this series to a new size
 
         Parameters
         ----------
