@@ -105,6 +105,10 @@ def table_from_file(f, tablename, columns=None, filt=None,
     # find table class
     tableclass = lsctables.TableByName[table.StripTableName(tablename)]
 
+    # get content handler
+    if contenthandler is None:
+        contenthandler = get_partial_contenthandler(tableclass)
+
     # allow cache multiprocessing
     if nproc != 1:
         return tableclass.read(f, columns=columns,
