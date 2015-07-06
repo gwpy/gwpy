@@ -36,7 +36,7 @@ from .. import version
 from ..detector import Channel
 from ..time import (Time, to_gps)
 from ..utils import with_import
-from ..utils.docstring import interpolate_docstrings
+from ..utils.docstring import interpolate_docstring
 
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -47,7 +47,7 @@ __credits__ = "Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>"
 # Core Array
 
 # update docstring interpreter with generic Array parameters
-interpolate_docstrings.update(
+interpolate_docstring.update(
     Array1="""value : array-like
         input data array
 
@@ -75,7 +75,7 @@ interpolate_docstrings.update(
 )
 
 
-@interpolate_docstrings
+@interpolate_docstring
 class Array(Quantity):
     """An extension of the :class:`~astropy.units.Quantity`
 

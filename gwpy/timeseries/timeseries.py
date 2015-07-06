@@ -49,7 +49,7 @@ else:
 from .. import version
 from ..io import reader
 from ..utils import with_import
-from ..utils.docstring import interpolate_docstrings
+from ..utils.docstring import interpolate_docstring
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
 
@@ -57,7 +57,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 
-@interpolate_docstrings
+@interpolate_docstring
 class TimeSeries(TimeSeriesBase):
     """A time-domain data array
 
@@ -95,7 +95,7 @@ class TimeSeries(TimeSeriesBase):
         ~TimeSeries.plot
 
     """
-    read = classmethod(interpolate_docstrings(reader(
+    read = classmethod(interpolate_docstring(reader(
         doc="""Read data into a `TimeSeries`
 
         Parameters

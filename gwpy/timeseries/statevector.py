@@ -42,7 +42,7 @@ from ..detector import Channel
 from ..time import Time
 from ..io import reader
 from .. import version
-from ..utils.docstring import interpolate_docstrings
+from ..utils.docstring import interpolate_docstring
 
 if sys.version_info[0] < 3:
     range = xrange
@@ -54,7 +54,7 @@ __all__ = ['StateTimeSeries',
            'StateVector', 'StateVectorDict', 'StateVectorList', 'Bits']
 
 
-@interpolate_docstrings
+@interpolate_docstring
 class StateTimeSeries(TimeSeriesBase):
     """Boolean array representing a good/bad state determination
     of some data.
@@ -258,7 +258,7 @@ class Bits(list):
         return numpy.array([b or '' for b in self])
 
 
-@interpolate_docstrings
+@interpolate_docstring
 class StateVector(TimeSeriesBase):
     """Binary array representing good/bad state determinations of some data.
 
@@ -398,7 +398,7 @@ class StateVector(TimeSeriesBase):
     # StateVector methods
 
     # use input/output registry to allow multi-format reading
-    read = classmethod(interpolate_docstrings(
+    read = classmethod(interpolate_docstring(
         reader(doc="""Read data into a `StateVector`
 
         Parameters
@@ -479,7 +479,7 @@ class StateVector(TimeSeriesBase):
         return out
 
     @classmethod
-    @interpolate_docstrings
+    @interpolate_docstring
     def fetch(cls, channel, start, end, bits=None, host=None, port=None,
               verbose=False, connection=None, type=NDS2_FETCH_TYPE_MASK):
         """Fetch data from NDS into a `StateVector`.

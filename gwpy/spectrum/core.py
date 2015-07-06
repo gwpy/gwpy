@@ -29,7 +29,7 @@ from astropy import units
 from ..data import (Array, Series)
 from ..detector import Channel
 from ..utils import with_import
-from ..utils.docstring import interpolate_docstrings
+from ..utils.docstring import interpolate_docstring
 
 
 from .. import version
@@ -38,7 +38,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
 __all__ = ['Spectrum']
 
-interpolate_docstrings.update({
+interpolate_docstring.update({
     'frequency-axis': (
         """f0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
         starting frequency for these data
@@ -51,7 +51,7 @@ interpolate_docstrings.update({
 })
 
 
-@interpolate_docstrings
+@interpolate_docstring
 class Spectrum(Series):
     """A data array holding some metadata to represent a spectrum.
 

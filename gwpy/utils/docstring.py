@@ -21,6 +21,6 @@
 
 from matplotlib.docstring import Substitution
 
-interpolate_docstrings = Substitution()
+interpolate_docstring = Substitution()
 
 

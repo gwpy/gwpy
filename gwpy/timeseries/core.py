@@ -51,7 +51,7 @@ from ..detector import (Channel, ChannelList)
 from ..io import reader
 from ..time import (Time, to_gps)
 from ..utils import (gprint, with_import)
-from ..utils.docstring import interpolate_docstrings
+from ..utils.docstring import interpolate_docstring
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -65,7 +65,7 @@ _UFUNC_STRING = {'less': '<',
                  'greater': '>',
                  }
 
-interpolate_docstrings.update({
+interpolate_docstring.update({
     'time-axis': (
         """sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
         the rate of samples per second (Hertz)
@@ -75,7 +75,7 @@ interpolate_docstrings.update({
         be given in place of these if relevant, not alongside"""),
 })
 
-@interpolate_docstrings
+@interpolate_docstring
 class TimeSeriesBase(Series):
     """An `Array` with time-domain metadata.
     """
@@ -171,7 +171,7 @@ class TimeSeriesBase(Series):
     # -------------------------------------------
     # TimeSeries accessors
 
-    interpolate_docstrings.update({
+    interpolate_docstring.update({
         'timeseries-read1': """source : `str`, `~glue.lal.Cache`
             source of data, any of the following:
 
@@ -251,7 +251,7 @@ class TimeSeriesBase(Series):
     })
 
     @classmethod
-    @interpolate_docstrings
+    @interpolate_docstring
     @with_import('nds2')
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
               connection=None, verify=False, pad=None,

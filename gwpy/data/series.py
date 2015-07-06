@@ -28,13 +28,13 @@ from astropy.units import (Unit, Quantity, dimensionless_unscaled)
 
 from .array import Array
 from .. import version
-from ..utils.docstring import interpolate_docstrings
+from ..utils.docstring import interpolate_docstring
 
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-interpolate_docstrings.update(
+interpolate_docstring.update(
     ArrayXaxis=(
         """x0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
         the starting value for the x-axis of this array
@@ -49,7 +49,7 @@ interpolate_docstrings.update(
 )
 
 
-@interpolate_docstrings
+@interpolate_docstring
 class Series(Array):
     """A one-dimensional data series
 

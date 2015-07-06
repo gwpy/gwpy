@@ -26,12 +26,12 @@ from astropy.units import (Unit, Quantity)
 from .array import Array
 from .series import Series
 from .. import version
-from ..utils.docstring import interpolate_docstrings
+from ..utils.docstring import interpolate_docstring
 
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-interpolate_docstrings.update(
+interpolate_docstring.update(
     ArrayYaxis=(
         """y0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
         the starting value for the y-axis of this array
@@ -46,7 +46,7 @@ interpolate_docstrings.update(
 )
 
 
-@interpolate_docstrings
+@interpolate_docstring
 class Array2D(Series):
     """A two-dimensional array with metadata
 

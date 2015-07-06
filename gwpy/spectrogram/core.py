@@ -32,7 +32,7 @@ from ..data import (Array2D, Series)
 from ..segments import Segment
 from ..timeseries import (TimeSeries, TimeSeriesList)
 from ..spectrum import Spectrum
-from ..utils.docstring import interpolate_docstrings
+from ..utils.docstring import interpolate_docstring
 
 from .. import version
 
@@ -42,7 +42,7 @@ __version__ = version.version
 __all__ = ['Spectrogram', 'SpectrogramList']
 
 
-@interpolate_docstrings
+@interpolate_docstring
 class Spectrogram(Array2D):
     """A 2D array holding a spectrogram of time-frequency data
 
