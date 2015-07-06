@@ -26,7 +26,9 @@ from gzip import GzipFile
 from astropy.utils.compat.gzip import GzipFile as AstroGzipFile
 
 from glue.lal import CacheEntry
-from glue.ligolw.ligolw import (Document, LIGOLWContentHandler)
+from glue.ligolw.ligolw import (Document, LIGOLWContentHandler,
+                                PartialLIGOLWContentHandler)
+from glue.ligolw.table import CompareTableNames as compare_table_names
 from glue.ligolw.utils.ligolw_add import ligolw_add
 from glue.ligolw import (table, lsctables)
 
@@ -41,6 +43,33 @@ __version__ = version.version
 
 class GWpyContentHandler(LIGOLWContentHandler):
     pass
+
+
+def get_partial_contenthandler(table):
+    """Build a `~glue.ligolw.ligolw.PartialLIGOLWContentHandler` for this table
+
+    Parameters
+    ----------
+    table : `type`
+        the table class to be read
+
+    Returns
+    -------
+    contenthandler : `type`
+        a subclass of `~glue.ligolw.ligolw.PartialLIGOLWContentHandler` to
+        read only the given `table`
+    """
+    def _filter_func(name, attrs):
+        if name == table.tagName and attrs.has_key('Name'):
+            return compare_table_names(attrs.get('Name'), table.tableName) == 0
+        else:
+            return False
+
+    class _ContentHandler(PartialLIGOLWContentHandler):
+        def __init__(self, document):
+            super(_ContentHandler, self).__init__(document, _filter_func)
+
+    return _ContentHandler
 
 
 def table_from_file(f, tablename, columns=None, filt=None,
