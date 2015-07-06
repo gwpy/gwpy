@@ -42,6 +42,8 @@ __version__ = version.version
 
 
 class GWpyContentHandler(LIGOLWContentHandler):
+    """Empty sub-class of `~glue.ligolw.ligolw.LIGOLWContentHandler`
+    """
     pass
 
 
@@ -73,8 +75,8 @@ def get_partial_contenthandler(table):
 
 
 def table_from_file(f, tablename, columns=None, filt=None,
-                    contenthandler=GWpyContentHandler, nproc=1, verbose=False):
-    """Read a :class:`~glue.ligolw.table.Table` from a LIGO_LW file.
+                    contenthandler=None, nproc=1, verbose=False):
+    """Read a `~glue.ligolw.table.Table` from a LIGO_LW file.
 
     Parameters
     ----------
@@ -83,9 +85,9 @@ def table_from_file(f, tablename, columns=None, filt=None,
 
         - an open `file`
         - a `str` pointing to a file path on disk
-        - a formatted :class:`~glue.lal.CacheEntry` representing one file
+        - a formatted `~glue.lal.CacheEntry` representing one file
         - a `list` of `str` file paths
-        - a formatted :class:`~glue.lal.Cache` representing many files
+        - a formatted `~glue.lal.Cache` representing many files
 
     tablename : `str`
         name of the table to read.
@@ -94,12 +96,12 @@ def table_from_file(f, tablename, columns=None, filt=None,
     filt : `function`, optional
         function by which to `filter` events. The callable must accept as
         input a row of the table event and return `True`/`False`.
-    contenthandler : :class:`~glue.ligolw.ligolw.LIGOLWContentHandler`
+    contenthandler : `~glue.ligolw.ligolw.LIGOLWContentHandler`
         SAX content handler for parsing LIGO_LW documents.
 
     Returns
     -------
-    table : :class:`~glue.ligolw.table.Table`
+    table : `~glue.ligolw.table.Table`
         `Table` of data with given columns filled
     """
     # find table class
