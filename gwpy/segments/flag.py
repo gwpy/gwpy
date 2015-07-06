@@ -1107,14 +1107,17 @@ class DataQualityDict(OrderedDict):
     """))
 
     @classmethod
-    def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None):
+    def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None,
+                               format='ligolw'):
         """Read a `DataQualityDict` from a LIGO_LW XML VetoDefinerTable.
         """
-        start = to_gps(start)
-        end = to_gps(end)
+        if start is not None:
+            start = to_gps(start)
+        if end is not None:
+            end = to_gps(end)
         # read veto definer file
         from gwpy.table.lsctables import VetoDefTable
-        veto_def_table = VetoDefTable.read(fp)
+        veto_def_table = VetoDefTable.read(fp, format=format)
         # parse flag definitions
         out = cls()
         for row in veto_def_table:
