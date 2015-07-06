@@ -556,7 +556,7 @@ class DataQualityFlag(object):
         except TypeError:
             pass
         known = Segment(veto.start_time, veto.end_time)
-        pad = Segment(veto.start_pad, veto.end_pad)
+        pad = (veto.start_pad, veto.end_pad)
         return cls(name=name, known=[known], category=veto.category,
                    description=veto.comment, padding=pad)
 
@@ -1102,14 +1102,12 @@ class DataQualityDict(OrderedDict):
     def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None):
         """Read a `DataQualityDict` from a LIGO_LW XML VetoDefinerTable.
         """
-        # open file
-        if isinstance(fp, (str, unicode)):
-            fobj = open(fp, 'r')
-        else:
-            fobj = fp
-        xmldoc = ligolw_utils.load_fileobj(fobj)[0]
-        # read veto definers
-        veto_def_table = VetoDefTable.get_table(xmldoc)
+        start = to_gps(start)
+        end = to_gps(end)
+        # read veto definer file
+        from gwpy.table.lsctables import VetoDefTable
+        veto_def_table = VetoDefTable.read(fp)
+        # parse flag definitions
         out = cls()
         for row in veto_def_table:
             if ifo and row.ifo != ifo:
