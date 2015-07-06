@@ -42,7 +42,7 @@ except ImportError:
 
 from numpy import inf
 
-from glue.segments import (infinity, PosInfinity)
+from glue.segments import PosInfinity
 
 from .. import version
 from ..time import to_gps
