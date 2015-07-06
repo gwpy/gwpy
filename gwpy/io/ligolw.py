@@ -62,7 +62,7 @@ def get_partial_contenthandler(table):
         read only the given `table`
     """
     def _filter_func(name, attrs):
-        if name == table.tagName and 'Name' in attrs:
+        if name == table.tagName and attrs.has_key('Name'):
             return compare_table_names(attrs.get('Name'), table.tableName) == 0
         else:
             return False
