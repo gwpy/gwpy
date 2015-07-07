@@ -495,7 +495,7 @@ class DataQualityFlag(object):
         # process query
         new = cls(name=flag)
         for start, end in qsegs:
-            if end == PosInfinity or end == +inf:
+            if end == PosInfinity or float(end) == +inf:
                 end = to_gps('now').seconds
             data, uri = apicalls.dqsegdbQueryTimes(protocol, server, ifo,
                                                    name, version, request,
