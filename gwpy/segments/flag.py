@@ -40,8 +40,9 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.lsctables import VetoDefTable
+from numpy import inf
+
+from glue.segments import PosInfinity
 
 from .. import version
 from ..time import to_gps
@@ -493,15 +494,17 @@ class DataQualityFlag(object):
 
         # process query
         new = cls(name=flag)
-        for seg in qsegs:
+        for start, end in qsegs:
+            if end == PosInfinity or end == +inf:
+                end = to_gps('now').seconds
             data, uri = apicalls.dqsegdbQueryTimes(protocol, server, ifo,
                                                    name, version, request,
-                                                   seg[0], seg[1])
+                                                   start, end)
             for s2 in data['active']:
                 new.active.append(Segment(*s2))
             for s2 in data['known']:
                 new.known.append(Segment(*s2))
-            segl = SegmentList([seg])
+            segl = SegmentList([Segment(start, end)])
             new.known &= segl
             new.active &= segl
             new.description = data['metadata'].get('flag_description', None)
@@ -555,8 +558,10 @@ class DataQualityFlag(object):
             name += ':%d' % int(veto.version)
         except TypeError:
             pass
+        if veto.end_time == 0:
+            veto.end_time = PosInfinity
         known = Segment(veto.start_time, veto.end_time)
-        pad = Segment(veto.start_pad, veto.end_pad)
+        pad = (veto.start_pad, veto.end_pad)
         return cls(name=name, known=[known], category=veto.category,
                    description=veto.comment, padding=pad)
 
@@ -969,6 +974,8 @@ class DataQualityDict(OrderedDict):
             else:
                 vers = dqflag.version
             for gpsstart, gpsend in qsegs:
+                if gpsend == PosInfinity or gpsend == +inf:
+                    gpsend = to_gps('now').seconds
                 gpsstart = float(gpsstart)
                 if not gpsstart.is_integer():
                     raise ValueError("Segment database queries can only"
@@ -1060,6 +1067,7 @@ class DataQualityDict(OrderedDict):
         for result, flag in zip(results, flags):
             if isinstance(result, Exception):
                 new[flag] = cls._EntryClass(name=flag)
+                result.args = ('%s [%s]' % (str(result), str(flag)),)
                 if on_error == 'ignore':
                     pass
                 elif on_error == 'warn':
@@ -1099,17 +1107,18 @@ class DataQualityDict(OrderedDict):
     """))
 
     @classmethod
-    def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None):
+    def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None,
+                               format='ligolw'):
         """Read a `DataQualityDict` from a LIGO_LW XML VetoDefinerTable.
         """
-        # open file
-        if isinstance(fp, (str, unicode)):
-            fobj = open(fp, 'r')
-        else:
-            fobj = fp
-        xmldoc = ligolw_utils.load_fileobj(fobj)[0]
-        # read veto definers
-        veto_def_table = VetoDefTable.get_table(xmldoc)
+        if start is not None:
+            start = to_gps(start)
+        if end is not None:
+            end = to_gps(end)
+        # read veto definer file
+        from gwpy.table.lsctables import VetoDefTable
+        veto_def_table = VetoDefTable.read(fp, format=format)
+        # parse flag definitions
         out = cls()
         for row in veto_def_table:
             if ifo and row.ifo != ifo:
