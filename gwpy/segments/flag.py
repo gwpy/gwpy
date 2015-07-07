@@ -974,7 +974,7 @@ class DataQualityDict(OrderedDict):
             else:
                 vers = dqflag.version
             for gpsstart, gpsend in qsegs:
-                if gpsend == PosInfinity or gpsend == +inf:
+                if gpsend == PosInfinity or float(gpsend) == +inf:
                     gpsend = to_gps('now').seconds
                 gpsstart = float(gpsstart)
                 if not gpsstart.is_integer():
