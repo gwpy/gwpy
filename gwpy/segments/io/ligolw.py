@@ -90,7 +90,7 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
         name = row.name
         if ifos and name:
             name = ':'.join([''.join(row.get_ifos()), row.name])
-            if row.version:
+            if row.version is not None:
                 name += ':%d' % row.version
         else:
             name = None
