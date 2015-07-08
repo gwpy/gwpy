@@ -48,7 +48,8 @@ else:
 
 from .. import version
 from ..io import reader
-from ..utils import (update_docstrings, with_import)
+from ..utils import with_import
+from ..utils.docstring import interpolate_docstring
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
 
@@ -56,28 +57,20 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 
-@update_docstrings
+@interpolate_docstring
 class TimeSeries(TimeSeriesBase):
-    """An `Array` with time-domain metadata.
+    """A time-domain data array
 
     Parameters
     ----------
-    data : `numpy.ndarray`, `list`
-        Data values to initialise TimeSeries
-    epoch : `float` GPS time, or :class:`~gwpy.time.Time`, optional
-        TimeSeries start time
-    channel : :class:`~gwpy.detector.channels.Channel`, `str`, optional
-        Data channel for this TimeSeries
-    unit : :class:`~astropy.units.core.Unit`, optional
-        The units of the data
+    %(Array1)s
 
-    Returns
-    -------
-    TimeSeries
-        a new `TimeSeries`
+    %(time-axis)s
 
-    Notes
-    -----
+    %(Array2)s
+
+    Examples
+    --------
     Any regular array, i.e. any iterable collection of data, can be
     easily converted into a `TimeSeries`::
 
@@ -91,8 +84,28 @@ class TimeSeries(TimeSeriesBase):
     All comparison operations performed on a `TimeSeries` will return a
     :class:`~gwpy.timeseries.statevector.StateTimeSeries` - a boolean array
     with metadata copied from the starting `TimeSeries`.
+
+    .. rubric:: Key Methods
+
+    .. autosummary::
+
+        ~TimeSeries.fetch
+        ~TimeSeries.read
+        ~TimeSeries.write
+        ~TimeSeries.plot
+
     """
-    read = classmethod(reader(doc=TimeSeriesBase.read.__doc__))
+    read = classmethod(interpolate_docstring(reader(
+        doc="""Read data into a `TimeSeries`
+
+        Parameters
+        ----------
+        %(timeseries-read1)s
+
+        %(timeseries-read2)s
+
+        Notes
+        -----""")))
 
     def fft(self, nfft=None):
         """Compute the one-dimensional discrete Fourier transform of
@@ -144,9 +157,11 @@ class TimeSeries(TimeSeriesBase):
         fftlength : `float`
             number of seconds in single FFT, default, use
             whole `TimeSeries`
+
         overlap : `float`
             numbers of seconds by which to overlap neighbouring FFTs,
             by default, no overlap is used.
+
         window : `str`, :class:`numpy.ndarray`
             name of the window function to use, or an array of length
             ``fftlength * TimeSeries.sample_rate`` to use as the window.
@@ -1298,7 +1313,6 @@ class TimeSeries(TimeSeriesBase):
                                 epoch=self.epoch.gps, copy=copy)
 
 
-@update_docstrings
 @as_series_dict_class(TimeSeries)
 class TimeSeriesDict(TimeSeriesBaseDict):
     __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
@@ -1307,7 +1321,6 @@ class TimeSeriesDict(TimeSeriesBaseDict):
     read = classmethod(reader(doc=TimeSeriesBaseDict.read.__doc__))
 
 
-@update_docstrings
 class TimeSeriesList(TimeSeriesBaseList):
     __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
                                                  'TimeSeries')
