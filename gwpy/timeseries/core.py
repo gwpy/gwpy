@@ -130,7 +130,9 @@ class TimeSeriesBase(Series):
 
     @epoch.setter
     def epoch(self, epoch):
-        if isinstance(epoch, Time):
+        if epoch is None:
+            self.x0 = None
+        elif isinstance(epoch, Time):
             self.x0 = epoch.gps
         else:
             try:
