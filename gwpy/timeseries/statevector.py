@@ -388,7 +388,60 @@ class StateVector(TimeSeriesBase):
     # StateVector methods
 
     # use input/output registry to allow multi-format reading
-    read = classmethod(reader(doc=TimeSeriesBase.read.__doc__))
+    read = classmethod(reader(doc="""
+        Read data into a `StateVector`
+
+        Parameters
+        ----------
+        source : `str`, `~glue.lal.Cache`
+            a single file path `str`, or a `~glue.lal.Cache` containing
+            a contiguous list of files.
+
+        channel : `str`, `~gwpy.detector.core.Channel`
+            the name of the channel to read, or a `Channel` object.
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str` optional
+            GPS start time of required data, anything parseable by
+            :meth:`~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, anything parseable by
+            :meth:`~gwpy.time.to_gps` is fine
+
+        bits : `list`, optional
+            list of bits names for this `StateVector`, give `None` at
+            any point in the list to mask that bit
+
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+
+        nproc : `int`, optional, default: ``1``
+            number of parallel processes to use, serial process by
+            default.
+
+            .. note::
+
+               Parallel frame reading, via the ``nproc`` keyword argument,
+               is only available when giving a :class:`~glue.lal.Cache` of
+               frames, or using the ``format='cache'`` keyword argument.
+
+        gap : `str`, optional
+            how to handle gaps in the cache, one of
+
+            - 'ignore': do nothing, let the undelying reader method handle it
+            - 'warn': do nothing except print a warning to the screen
+            - 'raise': raise an exception upon finding a gap (default)
+            - 'pad': insert a value to fill the gaps
+
+        pad : `float`, optional
+            value with which to fill gaps in the source data, only used if
+            gap is not given, or `gap='pad'` is given
+
+        Notes
+        -----
+        """))
 
     def to_dqflags(self, bits=None, minlen=1, dtype=float, round=False):
         """Convert this `StateVector` into a `SegmentListDict`.
@@ -589,7 +642,66 @@ class StateTimeSeriesDict(TimeSeriesBaseDict):
 @as_series_dict_class(StateVector)
 class StateVectorDict(TimeSeriesBaseDict):
     EntryClass = StateVector
-    read = classmethod(reader(doc=TimeSeriesBaseDict.read.__doc__))
+    read = classmethod(reader(doc="""
+        Read data for multiple bit vector channels into a `StateVectorDict`
+
+        Parameters
+        ----------
+        source : `str`, `~glue.lal.Cache`
+            a single file path `str`, or a `~glue.lal.Cache` containing
+            a contiguous list of files.
+
+        channels : `~gwpy.detector.channel.ChannelList`, `list`
+            a list of channels to read from the source.
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str` optional
+            GPS start time of required data, anything parseable by
+            :meth:`~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, anything parseable by
+            :meth:`~gwpy.time.to_gps` is fine
+
+        bits : `list` of `lists`, `dict`, optional
+            the ordered list of interesting bit lists for each channel,
+            or a `dict` of (`channel`, `list`) pairs
+
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+
+        nproc : `int`, optional, default: ``1``
+            number of parallel processes to use, serial process by
+            default.
+
+            .. note::
+
+               Parallel frame reading, via the ``nproc`` keyword argument,
+               is only available when giving a :class:`~glue.lal.Cache` of
+               frames, or using the ``format='cache'`` keyword argument.
+
+        gap : `str`, optional
+            how to handle gaps in the cache, one of
+
+            - 'ignore': do nothing, let the undelying reader method handle it
+            - 'warn': do nothing except print a warning to the screen
+            - 'raise': raise an exception upon finding a gap (default)
+            - 'pad': insert a value to fill the gaps
+
+        pad : `float`, optional
+            value with which to fill gaps in the source data, only used if
+            gap is not given, or `gap='pad'` is given
+
+        Returns
+        -------
+        statevectordict : `StateVectorDict`
+            a `StateVectorDict` of (`channel`, `StateVector`) pairs. The keys
+            are guaranteed to be the ordered list `channels` as given.
+
+        Notes
+        -----
+        """))
 
 
 @update_docstrings

@@ -141,10 +141,21 @@ def register_gwf_io_library(library, package='gwpy.timeseries.io.gwf'):
     def read_statevectordict(source, channels, *args, **kwargs):
         """Read `StateVectorDict` from GWF source
         """
-        bitss.pop('bitss', [])
+        bitss = kwargs.pop('bits', {})
+        # read list of bit lists
+        if (isinstance(bitss, (list, tuple)) and len(bitss) and
+                isinstance(bitss[0], (list, tuple))):
+            bitss = dict(zip(channels, bitss))
+        # read single list for all channels
+        elif isinstance(bitss, (list, tuple)):
+            bitss = dict((channel, bitss) for channel in channels)
+        # otherwise assume dict of bit lists
+
+        # read data as timeseriesdict and repackage with bits
         kwargs.setdefault('_SeriesClass', StateVector)
-        svd = StateVectorDict(read_timeseriesdict(source, channels, **kwargs))
-        for (channel, bits) in zip(channels, bitss):
+        svd = StateVectorDict(
+            read_timeseriesdict(source, channels, *args, **kwargs))
+        for (channel, bits) in bitss.iteritems():
             svd[channel].bits = bits
         return svd
 
