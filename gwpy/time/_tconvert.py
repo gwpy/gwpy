@@ -116,11 +116,17 @@ def to_gps(t, *args, **kwargs):
     # or convert tuple into datetime.datetime
     elif isinstance(t, (tuple, list)):
         t = datetime.datetime(*t)
-    # and then into Time
+    # and then into lal.LIGOTimeGPS or Time
     if isinstance(t, datetime.date):
-        if not isinstance(t, datetime.datetime):
-            t = datetime.datetime.combine(t, datetime.time.min)
-        t = Time(t, scale='utc')
+        # try and use LAL, it's more reliable (possibly)
+        try:
+            from lal import UTCToGPS
+        except ImportError:
+            if not isinstance(t, datetime.datetime):
+                t = datetime.datetime.combine(t, datetime.time.min)
+            t = Time(t, scale='utc')
+        else:
+            return to_gps(UTCToGPS(t.timetuple()))
     # and then into LIGOTimeGPS
     if isinstance(t, Time):
         return time_to_gps(t)
