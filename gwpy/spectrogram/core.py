@@ -19,13 +19,12 @@
 """Spectrogram object
 """
 
-import numbers
 import warnings
 
 import numpy
 
 import scipy
-from scipy import (interpolate, signal)
+from scipy import signal
 from astropy import units
 
 from ..detector import Channel
@@ -33,7 +32,7 @@ from ..data import (Array2D, Series)
 from ..segments import Segment
 from ..timeseries import (TimeSeries, TimeSeriesList)
 from ..spectrum import Spectrum
-from ..utils import update_docstrings
+from ..utils.docstring import interpolate_docstring
 
 from .. import version
 
@@ -43,32 +42,30 @@ __version__ = version.version
 __all__ = ['Spectrogram', 'SpectrogramList']
 
 
-@update_docstrings
+@interpolate_docstring
 class Spectrogram(Array2D):
-    """A 2-dimensional array holding a spectrogram of time-frequency
-    amplitude.
+    """A 2D array holding a spectrogram of time-frequency data
 
     Parameters
     ----------
-    data : numpy.ndarray, list
-        Data values to initialise FrequencySeries
-    epoch : GPS time, or `~gwpy.time.Time`, optional
-        TimeSeries start time
-    f0 : `float`
-        Starting frequency for this series
-    dt : float, optional
-        Time between samples (second)
-    df : float, optional
-        Frequency resolution (Hertz)
-    name : str, optional
-        Name for this Spectrum
-    unit : `~astropy.units.Unit`, optional
-        The units of the data
+    %(Array1)s
 
-    Returns
-    -------
-    result : `~gwpy.types.TimeSeries`
-        A new TimeSeries
+    %(time-axis)s
+
+    %(frequency-axis)s
+
+    %(Array2)s
+
+    Notes
+    -----
+    Key methods:
+
+    .. autosummary::
+
+       ~Spectrogram.read
+       ~Spectrogram.write
+       ~Spectrogram.plot
+       ~Spectrogram.zpk
     """
     _metadata_slots = ['name', 'channel', 'epoch', 'dt', 'f0', 'df']
     _default_xunit = TimeSeries._default_xunit
@@ -110,32 +107,37 @@ class Spectrogram(Array2D):
 
     epoch = property(TimeSeries.epoch.__get__, TimeSeries.epoch.__set__,
                      TimeSeries.epoch.__delete__,
-                     """Starting GPS epoch for this `Spectrogram`""")
+                     """Starting GPS epoch for this `Spectrogram`
+
+                     :type:`~gwpy.segments.Segment`
+                     """)
 
     span = property(TimeSeries.span.__get__, TimeSeries.span.__set__,
                     TimeSeries.span.__delete__,
-                    """GPS [start, stop) span for this `Spectrogram`""")
+                    """GPS [start, stop) span for this `Spectrogram`
+
+                    :type:`~gwpy.segments.Segment`
+                    """)
 
     dt = property(TimeSeries.dt.__get__, TimeSeries.dt.__set__,
                   TimeSeries.dt.__delete__,
-                  """Time-spacing for this `Spectrogram`""")
+                  """Time-spacing for this `Spectrogram`
+
+                  :type:`~astropy.units.Quantity` in seconds
+                  """)
 
     f0 = property(Array2D.y0.__get__, Array2D.y0.__set__,
                   Array2D.y0.__delete__,
                   """Starting frequency for this `Spectrogram`
 
-                  This attributes is recorded as a
-                  :class:`~astropy.units.quantity.Quantity` object, assuming a
-                  unit of 'Hertz'.
+                  :type: `~astropy.units.Quantity` in Hertz
                   """)
 
     df = property(Array2D.dy.__get__, Array2D.dy.__set__,
                   Array2D.dy.__delete__,
-                  """Frequency spacing of this `Spectogram`
+                  """Frequency spacing of this `Spectrogram`
 
-                  This attributes is recorded as a
-                  :class:`~astropy.units.quantity.Quantity` object, assuming a
-                  unit of 'Hertz'.
+                  :type: `~astropy.units.Quantity` in Hertz
                   """)
 
     times = property(fget=Array2D.xindex.__get__,
@@ -164,12 +166,11 @@ class Spectrogram(Array2D):
     # Spectrogram methods
 
     def ratio(self, operand):
-        """Calculate the ratio of this `Spectrogram` against a
-        reference.
+        """Calculate the ratio of this `Spectrogram` against a reference
 
         Parameters
         ----------
-        operand : `str`, `Spectrum`, `~astropy.units.Quantity`, `float`
+        operand : `str`, `~gwpy.spectrum.Spectrum`, `~astropy.units.Quantity`
             `Spectrum` or `Quantity` against which to weight, or one of
 
             - ``'mean'`` : weight against the mean of each spectrum
@@ -179,8 +180,8 @@ class Spectrogram(Array2D):
 
         Returns
         -------
-        spec : `~gwpy.spectrogram.Spectrogram`
-            A new spectrogram
+        spectrogram : `Spectrogram`
+            a new `Spectrogram`
         """
         if operand == 'mean':
             operand = self.mean(axis=0)
@@ -205,8 +206,8 @@ class Spectrogram(Array2D):
         Parameters
         ----------
         *spectra
-            any number of :class:`~gwpy.spectrum.core.Spectrum` series
-        dt : `float`, :class:`~astropy.units.quantity.Quantity`, optional
+            any number of `~gwpy.spectrum.Spectrum` series
+        dt : `float`, `~astropy.units.Quantity`, optional
             stride between given spectra
 
         Returns
@@ -214,11 +215,11 @@ class Spectrogram(Array2D):
         Spectrogram
             a new `Spectrogram` from a vertical stacking of the spectra
             The new object takes the metadata from the first given
-            :class:`~gwpy.spectrum.core.Spectrum` if not given explicitly
+            `~gwpy.spectrum.Spectrum` if not given explicitly
 
         Notes
         -----
-        Each :class:`~gwpy.spectrum.core.Spectrum` passed to this
+        Each `~gwpy.spectrum.Spectrum` passed to this
         constructor must be the same length.
         """
         data = numpy.vstack([s.value for s in spectra])
@@ -250,7 +251,7 @@ class Spectrogram(Array2D):
 
         Returns
         -------
-        spectrum : :class:`~gwpy.spectrum.core.Spectrum`
+        spectrum : `~gwpy.spectrum.Spectrum`
             the given percentile `Spectrum` calculated from this
             `SpectralVaraicence`
         """
@@ -311,7 +312,7 @@ class Spectrogram(Array2D):
         *filt
             one of:
 
-            - :class:`scipy.signal.lti`
+            - `scipy.signal.lti`
             - ``(numerator, denominator)`` polynomials
             - ``(zeros, poles, gain)``
             - ``(A, B, C, D)`` 'state-space' representation
@@ -379,7 +380,7 @@ class Spectrogram(Array2D):
 
         Parameters
         ----------
-        bins : :class:`~numpy.ndarray`, optional, default `None`
+        bins : `~numpy.ndarray`, optional, default `None`
             array of histogram bin edges, including the rightmost edge
         low : `float`, optional, default: `None`
             left edge of lowest amplitude bin, only read

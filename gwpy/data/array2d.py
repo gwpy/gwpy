@@ -19,45 +19,46 @@
 """The `Series` is a one-dimensional array with metadata
 """
 
-import math
-import inspect
-
 import numpy
-from scipy import signal
-from astropy.units import (Unit, Quantity)
 
-from .. import version
-__version__ = version.version
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+from astropy.units import (Unit, Quantity)
 
 from .array import Array
 from .series import Series
+from .. import version
+from ..utils.docstring import interpolate_docstring
+
+__version__ = version.version
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+interpolate_docstring.update(
+    ArrayYaxis=(
+        """y0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
+        the starting value for the y-axis of this array
+
+    dy : `float`, `~astropy.units.Quantity, optional, default: `1`
+        the step size for the y-axis of this array
+
+    yindex : `array-like`
+        the complete array of y-axis values for this array. This argument
+        takes precedence over `y0` and `dy` so should be
+        given in place of these if relevant, not alongside"""),
+)
 
 
+@interpolate_docstring
 class Array2D(Series):
     """A two-dimensional array with metadata
 
     Parameters
     ----------
-    data : array-like, optional, default: `None`
-        input data array
-    name : `str`, optional, default: `None`
-        descriptive title for this `Array`
-    unit : `~astropy.units.core.Unit`
-        physical unit of these data
-    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
-        starting GPS time of this `Array`, accepts any input for
-        :meth:`~gwpy.time.to_gps`.
-    channel : `~gwpy.detector.Channel`, `str`
-        source data stream for these data
-    dtype : :class:`~numpy.dtype`, optional, default: `None`
-        input data type
-    copy : `bool`, optional, default: `False`
-        choose to copy the input data to new memory
-    subok : `bool`, optional, default: `True`
-        allow passing of sub-classes by the array generator
-    **metadata
-        other metadata properties
+    %(Array1)s
+
+    %(ArrayXaxis)s
+
+    %(ArrayYaxis)s
+
+    %(Array2)s
 
     Returns
     -------
@@ -136,7 +137,7 @@ class Array2D(Series):
     def yindex(self):
         """Positions of the data on the y-axis
 
-        :type: `Series`
+        :type: `~astropy.units.Quantity` array
         """
         try:
             return self._yindex
@@ -170,6 +171,10 @@ class Array2D(Series):
 
     @property
     def y0(self):
+        """Y-axis value of the first data point
+
+        :type: `~astropy.units.Quantity` scalar
+        """
         return self._y0
 
     @y0.setter
@@ -195,6 +200,10 @@ class Array2D(Series):
 
     @dy.setter
     def dy(self, value):
+        """Y-axis sample separation
+
+        :type: `~astropy.units.Quantity` scalar
+        """
         if not isinstance(value, Quantity) and value is not None:
             value = Quantity(value).to(self.yunit)
         try:
@@ -212,7 +221,22 @@ class Array2D(Series):
 
     @property
     def yunit(self):
+        """Unit of y-axis index
+
+        :type: `~astropy.units.Unit`
+        """
         return self.y0.unit
+
+    @property
+    def yspan(self):
+        """Y-axis [low, high) segment encompassed by these data
+
+        :type: `~gwpy.segments.Segment`
+        """
+        from ..segments import Segment
+        y0 = self.y0.to(self._default_yunit).value
+        dy = self.dy.to(self._default_yunit).value
+        return Segment(y0, y0+self.shape[1]*dy)
 
     # -------------------------------------------
     # numpy.ndarray method modifiers
@@ -238,8 +262,6 @@ class Array2D(Series):
         return out
 
     def __array_wrap__(self, obj, context=None):
-        """Wrap an array as an `Array2D` with metadata
-        """
         result = super(Array2D, self).__array_wrap__(obj, context=context)
         try:
             result._xindex = self._xindex
@@ -262,5 +284,4 @@ class Array2D(Series):
         except AttributeError:
             pass
         return new
-
-    copy.__doc__ = Array.copy.__doc__
+    copy.__doc__ = Series.copy.__doc__
