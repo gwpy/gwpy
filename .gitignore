@@ -32,6 +32,7 @@ pip-delete-this-directory.txt
 /docs/_build
 /docs/_generated
 /docs/lal*.tag
+/docs/*.inv
 
 # Version information
 /gwpy/version.py
