@@ -533,15 +533,17 @@ class Series(Array):
         if start == self.xspan[0]:
             start = None
         elif start is not None and start < self.xspan[0]:
-            warn('%s.crop given start smaller than current start.'
-                 'Crop will begin when the Series actually starts.')
+            warn('%s.crop given start smaller than current start, '
+                 'crop will begin when the Series actually starts.'
+                 % type(self).__name__)
             start = None
         # pin late ends to time-series end
         if end == self.xspan[1]:
             end = None
         if start is not None and end > self.xspan[1]:
-            warn('%s.crop given end larger than current end.'
-                 'Crop will end when the Series actually ends.')
+            warn('%s.crop given end larger than current end, '
+                 'crop will end when the Series actually ends.'
+                 % type(self).__name__)
             end = None
         # find start index
         if start is None:
