@@ -58,7 +58,11 @@ git_tag = '{{ status.tag.name }}'\
 {% else %}\
 git_tag = None\
 {% endif %}
-git_branch = '{{ status.branch.name }}'
+{% if status.branch %}\
+git_branch = '{{ status.branch.name }}'\
+{% else %}
+git_branch = None\
+{% endif %}
 git_author = "{{ status.author }}"
 git_committer = "{{ status.committer }}"
 git_is_dirty = {{ status.is_dirty() }}
@@ -80,7 +84,7 @@ class GitStatus(object):
     def commit(self):
         try:
             return self.branch.commit
-        except TypeError:
+        except (TypeError, AttributeError):
             return self.repo.head.commit
 
     @property
@@ -91,7 +95,7 @@ class GitStatus(object):
             if len(self.repo.branches) == 1:
                 return self.repo.branches[0]
             else:
-                raise
+                return None
         else:
             if isinstance(b, str):
                 for branch in self.repo.branches:
