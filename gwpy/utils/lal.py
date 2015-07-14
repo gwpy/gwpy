@@ -142,17 +142,21 @@ def to_lal_unit(aunit):
         aunit = units.Unit(aunit)
     lunit = lal.Unit()
     for base, power in zip(aunit.bases, aunit.powers):
-        lalbase = None
-        for eqbase in base.find_equivalent_units():
-            try:
-                lalbase = LAL_UNIT_FROM_ASTROPY[eqbase]
-            except KeyError:
-                continue
-            else:
-                lunit *= lalbase ** power
-                break
+        # try this base
+        try:
+            lalbase = LAL_UNIT_FROM_ASTROPY[base]
+        except KeyError:
+            lalbase = None
+            # otherwise loop through the equivalent bases
+            for eqbase in base.find_equivalent_units():
+                try:
+                    lalbase = LAL_UNIT_FROM_ASTROPY[eqbase]
+                except KeyError:
+                    continue
+        # if we didn't find anything, raise an exception
         if lalbase is None:
             raise ValueError("LAL has no unit corresponding to %r" % base)
+        lunit *= lalbase ** power
     return lunit
 
 
