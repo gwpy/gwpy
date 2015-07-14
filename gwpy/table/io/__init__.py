@@ -38,5 +38,8 @@ from .omicron import *
 # import omega I/O
 from .omega import *
 
+# import cWB I/O
+from .cwb import *
+
 # import cache I/O
 from .cache import *

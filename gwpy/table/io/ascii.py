@@ -121,7 +121,12 @@ def table_from_ascii_factory(table, format, trig_func, cols=None, **kwargs):
         else:
             columns = list(columns)
         # and translate them into LIGO_LW columns (only for 'time')
-        ligolwcolumns = list(columns)
+        try:
+            ligolwcolumns = list(columns)
+        except TypeError as e:
+            e.args = ('This ascii format requires the column list to be given '
+                      'manually, please give the `columns` keyword argument',)
+            raise
         if 'time' in columns and table.tableName in TIME_COLUMN:
             ligolwcolumns.remove('time')
             ligolwcolumns.extend(TIME_COLUMN[table.tableName])
