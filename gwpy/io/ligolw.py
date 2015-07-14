@@ -22,8 +22,7 @@ All specific unified input/output for class objecst should be placed in
 an 'io' subdirectory of the containing directory for that class.
 """
 
-from gzip import GzipFile
-from astropy.utils.compat.gzip import GzipFile as AstroGzipFile
+from .utils import GzipFile
 
 from glue.lal import CacheEntry
 from glue.ligolw.ligolw import (Document, LIGOLWContentHandler,
@@ -123,7 +122,7 @@ def table_from_file(f, tablename, columns=None, filt=None,
         tableclass.loadcolumns = columns
 
     # generate Document and populate
-    files = [fp.name if isinstance(fp, (file, GzipFile, AstroGzipFile)) else
+    files = [fp.name if isinstance(fp, (file, GzipFile)) else
              fp for fp in file_list(f)]
     xmldoc = Document()
     ligolw_add(xmldoc, files, non_lsc_tables_ok=True,

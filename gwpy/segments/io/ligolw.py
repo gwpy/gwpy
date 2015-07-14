@@ -26,13 +26,12 @@ from glue.ligolw.ligolw import (Document, LIGO_LW)
 from glue.ligolw.utils import write_filename
 from glue.ligolw.utils.ligolw_add import ligolw_add
 
-from gzip import GzipFile
-from astropy.utils.compat.gzip import GzipFile as AstroGzipFile
 
 from astropy.time import Time
 from astropy.io import registry
 
 from ... import version
+from ...io.utils import GzipFile
 from ...io.ligolw import (identify_ligolw, GWpyContentHandler)
 from ...io.cache import file_list
 from ...segments import (Segment, DataQualityFlag, DataQualityDict)
@@ -69,7 +68,7 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
 
     # generate Document and populate
     xmldoc = Document()
-    files = [fp.name if isinstance(fp, (file, GzipFile, AstroGzipFile))
+    files = [fp.name if isinstance(fp, (file, GzipFile))
              else fp for fp in file_list(f)]
     ligolw_add(xmldoc, files, non_lsc_tables_ok=True,
                contenthandler=contenthandler)

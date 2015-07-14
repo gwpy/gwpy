@@ -19,9 +19,7 @@
 """Utilities for unified input/output
 """
 
-import gzip
-
-from astropy.utils.compat.gzip import GzipFile as AstroGzipFile
+from astropy.utils.compat.gzip import GzipFile
 
 from glue.lal import CacheEntry
 
@@ -36,7 +34,7 @@ def identify_factory(*extensions):
         """Identify the given extensions in a file object/path
         """
         fp = args[3]
-        if isinstance(fp, (file, gzip.GzipFile, AstroGzipFile)):
+        if isinstance(fp, (file, GzipFile)):
             fp = fp.name
         elif isinstance(fp, CacheEntry):
             fp = fp.path
@@ -60,6 +58,6 @@ def gopen(name, *args, **kwargs):
         `gzip.open` for files with a `name` ending in `.gz`
     """
     if name.endswith('.gz'):
-        return gzip.open(name, *args, **kwargs)
+        return GzipFile(name, *args, **kwargs)
     else:
         return open(name, *args, **kwargs)
