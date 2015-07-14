@@ -137,6 +137,8 @@ class TimeSeries(TimeSeriesBase):
         correct.
         """
         from ..spectrum import Spectrum
+        if nfft is None:
+            nfft = self.size
         dft = npfft.rfft(self.value, n=nfft) / nfft
         dft[1:] *= 2.0
         new = Spectrum(dft, epoch=self.epoch, channel=self.channel,
