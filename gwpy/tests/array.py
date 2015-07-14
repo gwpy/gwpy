@@ -69,7 +69,7 @@ class CommonTests(object):
         kwargs.setdefault('copy', False)
         return self.TEST_CLASS(self.data, *args, **kwargs)
 
-    def assertArrayEquals(self, ts1, ts2, *args):
+    def assertArraysEqual(self, ts1, ts2, *args):
         nptest.assert_array_equal(ts1.value, ts2.value)
         if not args:
             args = self.TEST_CLASS._metadata_slots
@@ -172,7 +172,7 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         ts = self.create()
         pickle = ts.dumps()
         ts2 = cPickle.loads(pickle)
-        self.assertArrayEquals(ts, ts2)
+        self.assertArraysEqual(ts, ts2)
 
     def test_crop(self):
         """Test cropping `Series` by GPS times
