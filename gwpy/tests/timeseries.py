@@ -38,6 +38,8 @@ from ..time import Time
 
 from .. import version
 from ..timeseries import (TimeSeries, StateVector)
+from ..spectrum import Spectrum
+from ..spectrogram import Spectrogram
 from .array import SeriesTestCase
 
 SEED = 1
@@ -51,14 +53,14 @@ __version__ = version.version
 
 # -----------------------------------------------------------------------------
 
-class TimeSeriesTestCase(SeriesTestCase):
+class TimeSeriesTestMixin(object):
     """`~unittest.TestCase` for the `~gwpy.timeseries.TimeSeries` class
     """
     channel = 'L1:LDAS-STRAIN'
     framefile = os.path.join(os.path.split(__file__)[0], 'data',
                              'HLV-GW100916-968654552-1.gwf')
     tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_')
-    TEST_CLASS = TimeSeries
+    TEST_CLASS = None
 
     def test_creation_with_metadata(self):
         self.ts = self.create()
@@ -149,7 +151,129 @@ class TimeSeriesTestCase(SeriesTestCase):
 
 # -----------------------------------------------------------------------------
 
-class StateVectorTestCase(TimeSeriesTestCase):
+class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
+    TEST_CLASS = TimeSeries
+
+    def _read(self):
+        return self.TEST_CLASS.read(self.framefile, self.channel)
+
+    def test_fft(self):
+        ts = self._read()
+        fs = ts.fft()
+        self.assertEqual(fs.size, ts.size//2+1)
+        fs = ts.fft(nfft=256)
+        self.assertEqual(fs.size, 129)
+        self.assertIsInstance(fs, Spectrum)
+        self.assertEqual(fs.x0, 0*units.Hertz)
+        self.assertEqual(fs.dx, 1*units.Hertz)
+        self.assertIs(ts.channel, fs.channel)
+
+    def test_average_fft(self):
+        ts = self._read()
+        # test all defaults
+        fs = ts.average_fft()
+        self.assertEqual(fs.size, ts.size//2+1)
+        self.assertEqual(fs.f0, 0 * units.Hertz)
+        self.assertIsInstance(fs, Spectrum)
+        self.assertIs(fs.channel, ts.channel)
+        # test fftlength
+        fs = ts.average_fft(fftlength=0.5)
+        self.assertEqual(fs.size, 0.5 * ts.sample_rate.value // 2 + 1)
+        self.assertEqual(fs.df, 2 * units.Hertz)
+        # test overlap
+        fs = ts.average_fft(fftlength=0.4, overlap=0.2)
+
+    def test_psd(self):
+        ts = self._read()
+        # test all defaults
+        fs = ts.psd()
+        self.assertEqual(fs.size, ts.size//2+1)
+        self.assertEqual(fs.f0, 0*units.Hertz)
+        self.assertEqual(fs.df, 1 / ts.duration)
+        self.assertIsInstance(fs, Spectrum)
+        self.assertIs(fs.channel, ts.channel)
+        self.assertEqual(fs.unit, ts.unit ** 2 / units.Hertz)
+        # test fftlength
+        fs = ts.psd(fftlength=0.5)
+        self.assertEqual(fs.size, 0.5 * ts.sample_rate.value // 2 + 1)
+        self.assertEqual(fs.df, 2 * units.Hertz)
+        # test overlap
+        ts.psd(fftlength=0.4, overlap=0.2)
+        # test methods
+        ts.psd(fftlength=0.4, overlap=0.2, method='welch')
+        try:
+            ts.psd(fftlength=0.4, overlap=0.2, method='lal-welch')
+        except ImportError as e:
+            self.skipTest(str(e))
+        else:
+            ts.psd(fftlength=0.4, overlap=0.2, method='median-mean')
+            ts.psd(fftlength=0.4, overlap=0.2, method='median')
+            # test check for at least two averages
+            self.assertRaises(ValueError, ts.psd, method='median-mean')
+
+    def test_asd(self):
+        ts = self._read()
+        fs = ts.asd()
+        self.assertEqual(fs.unit, ts.unit / units.Hertz ** (1/2.))
+
+    def test_spectrogram(self):
+        ts = self._read()
+        # test defaults
+        sg = ts.spectrogram(1)
+        self.assertEqual(sg.shape, (1, ts.size//2+1))
+        self.assertEqual(sg.f0, 0*units.Hertz)
+        self.assertEqual(sg.df, 1 / ts.duration)
+        self.assertIsInstance(sg, Spectrogram)
+        self.assertIs(sg.channel, ts.channel)
+        self.assertEqual(sg.unit, ts.unit ** 2 / units.Hertz)
+        self.assertEqual(sg.epoch, ts.epoch)
+        self.assertEqual(sg.span, ts.span)
+        # check the same result as PSD
+        psd = ts.psd()
+        nptest.assert_array_equal(sg.data[0], psd.data)
+        # test fftlength
+        sg = ts.spectrogram(1, fftlength=0.5)
+        self.assertEqual(sg.shape, (1, 0.5 * ts.size//2+1))
+        self.assertEqual(sg.df, 2 * units.Hertz)
+        self.assertEqual(sg.dt, 1 * units.second)
+        # test overlap
+        sg = ts.spectrogram(0.5, fftlength=0.2, overlap=0.1)
+        self.assertEqual(sg.shape, (2, 0.2 * ts.size//2 + 1))
+        self.assertEqual(sg.df, 5 * units.Hertz)
+        self.assertEqual(sg.dt, 0.5 * units.second)
+        # test multiprocessing
+        sg2 = ts.spectrogram(0.5, fftlength=0.2, overlap=0.1, nproc=2)
+        self.assertArraysEqual(sg, sg2)
+
+    def test_spectrogram2(self):
+        ts = self._read()
+        # test defaults
+        sg = ts.spectrogram2(1)
+        self.assertEqual(sg.shape, (1, ts.size//2+1))
+        self.assertEqual(sg.f0, 0*units.Hertz)
+        self.assertEqual(sg.df, 1 / ts.duration)
+        self.assertIsInstance(sg, Spectrogram)
+        self.assertIs(sg.channel, ts.channel)
+        self.assertEqual(sg.unit, ts.unit ** 2 / units.Hertz)
+        self.assertEqual(sg.epoch, ts.epoch)
+        self.assertEqual(sg.span, ts.span)
+        # test the same result as spectrogam
+        sg1 = ts.spectrogram(1)
+        nptest.assert_array_equal(sg.data, sg1.data)
+        # test fftlength
+        sg = ts.spectrogram2(0.5)
+        self.assertEqual(sg.shape, (2, 0.5 * ts.size//2+1))
+        self.assertEqual(sg.df, 2 * units.Hertz)
+        self.assertEqual(sg.dt, 0.5 * units.second)
+        # test overlap
+        sg = ts.spectrogram2(fftlength=0.2, overlap=0.19)
+        self.assertEqual(sg.shape, (99, 0.2 * ts.size//2 + 1))
+        self.assertEqual(sg.df, 5 * units.Hertz)
+        # note: bizarre stride length because 16384/100 gets rounded
+        self.assertEqual(sg.dt, 0.010009765625 * units.second)
+
+
+class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
     """`~unittest.TestCase` for the `~gwpy.timeseries.StateVector` object
     """
     TEST_CLASS = StateVector
