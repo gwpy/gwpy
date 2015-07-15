@@ -30,6 +30,7 @@ before_install:
   - travis_retry pip install -q --egg https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/glue-1.46.tar.gz#egg=glue-1.46
   # install h5py
   - pip install -q h5py
+  - pip install -q unittest2
   - pip install -q pytest
   - pip install -q coveralls
   - popd
