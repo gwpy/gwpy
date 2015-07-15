@@ -31,9 +31,9 @@ import numpy
 
 from astropy import units
 
-from .. import version
-from ..detector import Channel
-from ..utils import with_import
+from gwpy import version
+from gwpy.detector import Channel
+from gwpy.utils import with_import
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version

@@ -34,13 +34,13 @@ from numpy import testing as nptest
 
 from astropy import units
 
-from ..time import Time
+from gwpy.time import Time
 
-from .. import version
-from ..timeseries import (TimeSeries, StateVector)
-from ..spectrum import Spectrum
-from ..spectrogram import Spectrogram
-from .array import SeriesTestCase
+from gwpy import version
+from gwpy.timeseries import (TimeSeries, StateVector)
+from gwpy.spectrum import Spectrum
+from gwpy.spectrogram import Spectrogram
+from test_array import SeriesTestCase
 
 SEED = 1
 GPS_EPOCH = Time(0, format='gps', scale='utc')
