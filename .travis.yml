@@ -35,8 +35,9 @@ before_install:
   - pip install -q coveralls
   - popd
 install:
-  - coverage run --source=gwpy --omit="gwpy/tests/*,gwpy/*version*" -m py.test -v
+  - python setup.py build
 script:
+  - coverage run --source=gwpy --omit="gwpy/tests/*,gwpy/*version*" -m py.test -v
   - pip install .
 after_success:
   - coveralls
