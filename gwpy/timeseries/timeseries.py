@@ -137,6 +137,8 @@ class TimeSeries(TimeSeriesBase):
         correct.
         """
         from ..spectrum import Spectrum
+        if nfft is None:
+            nfft = self.size
         dft = npfft.rfft(self.value, n=nfft) / nfft
         dft[1:] *= 2.0
         new = Spectrum(dft, epoch=self.epoch, channel=self.channel,
@@ -523,14 +525,15 @@ class TimeSeries(TimeSeriesBase):
         nstride = nfft - noverlap  # number of points between FFTs
 
         # create output object
-        nsteps = int(self.size // nstride) - 1  # number of columns
-        nfreqs = int(nfft // 2 + 1)  # number of rows
+        nsteps = 1 + int((self.size - nstride) / nstride)  # number of columns
+        nfreqs = int(nfft / 2 + 1)  # number of rows
         unit = scale_timeseries_units(self.unit, scaling)
+        dt = nstride * self.dt
         tmp = numpy.zeros((nsteps, nfreqs), dtype=self.dtype)
         out = Spectrogram(numpy.zeros((nsteps, nfreqs), dtype=self.dtype),
                           epoch=self.epoch, channel=self.channel,
-                          name=self.name, unit=unit, dt=fftlength-overlap,
-                          f0=0, df=1/fftlength)
+                          name=self.name, unit=unit, dt=dt, f0=0,
+                          df=1/fftlength)
 
         # get window
         if window is None:

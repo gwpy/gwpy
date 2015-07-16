@@ -26,7 +26,7 @@ if sys.version_info < (2, 7):
 else:
     import unittest
 
-from .. import version
+from gwpy import version
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -38,7 +38,7 @@ class IoTests(unittest.TestCase):
         """Test `host_resolution_order` with `None` IFO
         """
         try:
-            from ..io import nds
+            from gwpy.io import nds
         except ImportError as e:
             self.skipTest(str(e))
         hro = nds.host_resolution_order(None, env=None)
@@ -48,7 +48,7 @@ class IoTests(unittest.TestCase):
         """Test `host_resolution_order` with `ifo` argument
         """
         try:
-            from ..io import nds
+            from gwpy.io import nds
         except ImportError as e:
             self.skipTest(str(e))
         hro = nds.host_resolution_order('L1', env=None)
@@ -60,7 +60,7 @@ class IoTests(unittest.TestCase):
         """Test `host_resolution_order` with default env set
         """
         try:
-            from ..io import nds
+            from gwpy.io import nds
         except ImportError as e:
             self.skipTest(str(e))
         os.environ['NDSSERVER'] = 'test1.ligo.org:80,test2.ligo.org:43'
@@ -75,7 +75,7 @@ class IoTests(unittest.TestCase):
         """Test `host_resolution_order` with non-default env set
         """
         try:
-            from ..io import nds
+            from gwpy.io import nds
         except ImportError as e:
             self.skipTest(str(e))
         os.environ['TESTENV'] = 'test1.ligo.org:80,test2.ligo.org:43'
@@ -87,7 +87,7 @@ class IoTests(unittest.TestCase):
         """Test `host_resolution_order` with old GPS epoch
         """
         try:
-            from ..io import nds
+            from gwpy.io import nds
         except ImportError as e:
             self.skipTest(str(e))
         # test kwarg doesn't change anything

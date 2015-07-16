@@ -29,12 +29,16 @@ before_install:
   # install GLUE
   - travis_retry pip install -q --egg https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/glue-1.46.tar.gz#egg=glue-1.46
   # install h5py
-  - pip install h5py
-  - pip install coveralls
+  - pip install -q h5py
+  - pip install -q unittest2
+  - pip install -q importlib
+  - pip install -q pytest
+  - pip install -q coveralls
   - popd
 install:
-  - coverage run --source=gwpy --omit="gwpy/tests/*,gwpy/*version*" setup.py test
+  - python setup.py build
 script:
+  - coverage run --source=gwpy --omit="gwpy/tests/*,gwpy/*version*" -m py.test -v
   - pip install .
 after_success:
   - coveralls

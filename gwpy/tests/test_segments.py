@@ -32,8 +32,9 @@ else:
 
 from glue.segments import PosInfinity
 
-from .. import version
-from ..segments import (Segment, SegmentList, DataQualityFlag, DataQualityDict)
+from gwpy import version
+from gwpy.segments import (Segment, SegmentList,
+                           DataQualityFlag, DataQualityDict)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
