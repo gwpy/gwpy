@@ -206,7 +206,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         try:
             ts.psd(fftlength=0.4, overlap=0.2, method='lal-welch')
         except ImportError as e:
-            self.skipTest(str(e))
+            pass
         else:
             ts.psd(fftlength=0.4, overlap=0.2, method='median-mean')
             ts.psd(fftlength=0.4, overlap=0.2, method='median')
