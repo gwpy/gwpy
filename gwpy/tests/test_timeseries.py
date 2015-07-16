@@ -47,6 +47,10 @@ GPS_EPOCH = Time(0, format='gps', scale='utc')
 ONE_HZ = units.Quantity(1, 'Hz')
 ONE_SECOND = units.Quantity(1, 'second')
 
+TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
+                          'HLV-GW100916-968654552-1.gwf')
+TEST_HDF_FILE = '%s.hdf' % TEST_GWF_FILE[:-4]
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
@@ -57,8 +61,6 @@ class TimeSeriesTestMixin(object):
     """`~unittest.TestCase` for the `~gwpy.timeseries.TimeSeries` class
     """
     channel = 'L1:LDAS-STRAIN'
-    framefile = os.path.join(os.path.split(__file__)[0], 'data',
-                             'HLV-GW100916-968654552-1.gwf')
     tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_')
     TEST_CLASS = None
 
@@ -71,7 +73,7 @@ class TimeSeriesTestMixin(object):
 
     def frame_read(self, format=None):
         ts = self.TEST_CLASS.read(
-            self.framefile, self.channel, format=format)
+            TEST_GWF_FILE, self.channel, format=format)
         self.assertTrue(ts.epoch == Time(968654552, format='gps', scale='utc'))
         self.assertTrue(ts.sample_rate == units.Quantity(16384, 'Hz'))
         self.assertTrue(ts.unit == units.Unit('strain'))
@@ -155,7 +157,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
     TEST_CLASS = TimeSeries
 
     def _read(self):
-        return self.TEST_CLASS.read(self.framefile, self.channel)
+        return self.TEST_CLASS.read(TEST_HDF_FILE, self.channel)
 
     def test_fft(self):
         ts = self._read()
