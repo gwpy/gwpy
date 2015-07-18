@@ -20,15 +20,10 @@
 """
 
 import abc
-import sys
+
+from compat import unittest
 
 from numpy import testing as nptest
-
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
-
 import numpy
 
 from astropy import units

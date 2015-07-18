@@ -19,16 +19,12 @@
 """Unit test for segments module
 """
 
-import sys
 import os.path
 import tempfile
 import StringIO
 from urllib2 import (urlopen, URLError)
 
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
+from compat import unittest
 
 from glue.segments import PosInfinity
 
