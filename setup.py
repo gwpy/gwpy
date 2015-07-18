@@ -351,7 +351,7 @@ setup(name=PACKAGENAME,
       },
       dependency_links=[
           'https://www.lsc-group.phys.uwm.edu/daswg/download/'
-          'software/source/glue-1.46.tar.gz#egg=glue-1.46',
+          'software/source/glue-1.48.tar.gz#egg=glue-1.48',
       ],
       test_suite='gwpy.tests',
       use_2to3=False,
