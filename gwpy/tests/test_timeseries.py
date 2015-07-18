@@ -21,13 +21,9 @@
 
 import os
 import os.path
-import sys
 import tempfile
 
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
+from compat import unittest
 
 import numpy
 from numpy import testing as nptest

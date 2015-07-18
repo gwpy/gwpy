@@ -19,13 +19,9 @@
 """Unit test for detector module
 """
 
-import sys
 from urllib2 import URLError
 
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
+from compat import unittest
 
 import numpy
 

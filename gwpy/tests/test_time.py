@@ -19,8 +19,9 @@
 """Unit test for the time module
 """
 
-import unittest
 import datetime
+
+from compat import unittest
 
 from gwpy import time
 
