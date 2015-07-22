@@ -186,6 +186,19 @@ class DataQualityFlagTests(unittest.TestCase):
             self.assertEqual(flag.known, QUERY_KNOWN)
             self.assertEqual(flag.active, QUERY_ACTIVE)
 
+    def test_query_dqsegdb_multi(self):
+        querymid = int(QUERY_START + (QUERY_END - QUERY_START) /2.)
+        segs = SegmentList([Segment(QUERY_START, querymid),
+                            Segment(querymid, QUERY_END)])
+        try:
+            flag = DataQualityFlag.query_dqsegdb(
+                QUERY_FLAG, segs, url=QUERY_URL)
+        except (ImportError, URLError) as e:
+            self.skipTest(str(e))
+        else:
+            self.assertEqual(flag.known, QUERY_KNOWN)
+            self.assertEqual(flag.active, QUERY_ACTIVE)
+
 
 class DataQualityDictTestCase(unittest.TestCase):
     tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_dqdict')
