@@ -499,13 +499,14 @@ class DataQualityFlag(object):
         request = kwargs.pop('request', 'metadata,active,known')
 
         # process query
-        new = cls(name=flag)
+        out = cls(name=flag)
         for start, end in qsegs:
             if end == PosInfinity or float(end) == +inf:
                 end = to_gps('now').seconds
             data, uri = apicalls.dqsegdbQueryTimes(protocol, server, ifo,
                                                    name, version, request,
                                                    start, end)
+            new = cls(name=flag)
             for s2 in data['active']:
                 new.active.append(Segment(*s2))
             for s2 in data['known']:
@@ -513,12 +514,13 @@ class DataQualityFlag(object):
             segl = SegmentList([Segment(start, end)])
             new.known &= segl
             new.active &= segl
-            new.description = data['metadata'].get('flag_description', None)
-            new.isgood = not data['metadata'].get(
+            out += new
+            out.description = data['metadata'].get('flag_description', None)
+            out.isgood = not data['metadata'].get(
                 'active_indicates_ifo_badness', False)
-        new.coalesce()
+        out.coalesce()
 
-        return new
+        return out
 
     # use input/output registry to allow multi-format reading
     read = classmethod(reader(doc="""
