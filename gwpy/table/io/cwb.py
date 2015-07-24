@@ -232,6 +232,20 @@ def sngl_burst_table_from_cwb_ascii(f, columns=None, ifo=None, filt=None,
     return out
 
 
+def sngl_burst_from_cwb(f, *args, **kwargs):
+    """Read a `SnglBurstTable` from a cWB file either ROOT of EVENTS.TXT ASCII
+    """
+    files = file_list(f)
+    extensions = list(set(os.path.splitext(fp)[1] for fp in files))
+    if len(extensions) == 1 and extensions[0].lower() == '.root':
+        raise NotImplementedError("Reading cWB from ROOT files has not been "
+                                  "implemented yet")
+    elif len(extensions) <= 1:
+        return sngl_burst_table_from_cwb_ascii(f, *args, **kwargs)
+    raise ValueError("Cannot determine correct cWB reader for multiple file "
+                     "extensions: %s" % ", ".join(extensions))
+
+
 def identify_cwb_ascii(origin, path, fileobj, *args, **kwargs):
     """Automatically identify a fileobj as 'cwb-ascii' format
 
@@ -278,3 +292,4 @@ def identify_cwb_ascii(origin, path, fileobj, *args, **kwargs):
 
 register_identifier('cwb-ascii', SnglBurstTable, identify_cwb_ascii)
 register_reader('cwb-ascii', SnglBurstTable, sngl_burst_table_from_cwb_ascii)
+register_reader('cwb', SnglBurstTable, sngl_burst_from_cwb)
