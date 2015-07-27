@@ -28,11 +28,6 @@ import numpy
 from numpy import fft as npfft
 from scipy import signal
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
-
 from astropy import units
 
 try:
@@ -50,6 +45,7 @@ from .. import version
 from ..io import reader
 from ..utils import with_import
 from ..utils.docstring import interpolate_docstring
+from ..utils.compat import OrderedDict
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
 

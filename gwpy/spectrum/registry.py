@@ -23,11 +23,7 @@ an average power spectral density. Users can define their own through
 the registry method `register_method`.
 """
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
-
+from ..utils.compat import OrderedDict
 from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
