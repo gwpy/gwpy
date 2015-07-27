@@ -35,11 +35,6 @@ from math import (floor, ceil)
 from threading import Thread
 from Queue import Queue
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
-
 from numpy import inf
 
 from glue.segments import PosInfinity
@@ -47,6 +42,7 @@ from glue.segments import PosInfinity
 from .. import version
 from ..time import to_gps
 from ..utils.deps import with_import
+from ..utils.compat import OrderedDict
 from ..io import (reader, writer)
 from .segments import Segment, SegmentList
 

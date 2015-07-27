@@ -28,11 +28,6 @@ from math import ceil
 
 import numpy
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
-
 from astropy import units
 
 try:
@@ -52,6 +47,7 @@ from ..io import reader
 from ..time import (Time, to_gps)
 from ..utils import (gprint, with_import)
 from ..utils.docstring import interpolate_docstring
+from ..utils.compat import OrderedDict
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
