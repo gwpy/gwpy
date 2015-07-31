@@ -59,7 +59,7 @@ class CliProduct(object):
         self.secpfft = 1
         self.overlap = 0.5
         # describe the actual plotted limits
-        self.result = None          # spectrum, or coherence what is plotted
+        self.result = 0          # spectrum, or coherence what is plotted
         self.fmin = 0
         self.fmax = 1
         self.ymin = 0
