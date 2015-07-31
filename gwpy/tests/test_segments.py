@@ -19,19 +19,18 @@
 """Unit test for segments module
 """
 
-import sys
 import os.path
 import tempfile
 import StringIO
-from urllib2 import URLError
+from urllib2 import (urlopen, URLError)
 
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
+from compat import unittest
 
-from .. import version
-from ..segments import (Segment, SegmentList, DataQualityFlag, DataQualityDict)
+from glue.segments import PosInfinity
+
+from gwpy import version
+from gwpy.segments import (Segment, SegmentList,
+                           DataQualityFlag, DataQualityDict)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -69,6 +68,11 @@ QUERY_KNOWN = SegmentList([(1108598416, 1108632895), (1108632901, 1108684816)])
 QUERY_ACTIVE = SegmentList([(1108623497, 1108624217)])
 QUERY_FLAG = 'L1:DMT-DC_READOUT:1'
 QUERY_URL = 'https://dqsegdb5.phy.syr.edu'
+
+VETO_DEFINER_FILE = ('https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/'
+                     'segments/ER7/H1L1V1-ER7_CBC_OFFLINE.xml')
+ER7_START = 'June 3'
+ER7_END = 'June 14'
 
 
 class SegmentListTests(unittest.TestCase):
@@ -177,6 +181,68 @@ class DataQualityFlagTests(unittest.TestCase):
         else:
             self.assertEqual(flag.known, QUERY_KNOWN)
             self.assertEqual(flag.active, QUERY_ACTIVE)
+
+    def test_query_dqsegdb_multi(self):
+        querymid = int(QUERY_START + (QUERY_END - QUERY_START) /2.)
+        segs = SegmentList([Segment(QUERY_START, querymid),
+                            Segment(querymid, QUERY_END)])
+        try:
+            flag = DataQualityFlag.query_dqsegdb(
+                QUERY_FLAG, segs, url=QUERY_URL)
+        except (ImportError, URLError) as e:
+            self.skipTest(str(e))
+        else:
+            self.assertEqual(flag.known, QUERY_KNOWN)
+            self.assertEqual(flag.active, QUERY_ACTIVE)
+
+
+class DataQualityDictTestCase(unittest.TestCase):
+    tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_dqdict')
+    VETO_DEFINER = tmpfile % 'vdf.xml'
+
+    def setUp(self):
+        # download veto definer
+        vdffile = urlopen(VETO_DEFINER_FILE)
+        with open(self.VETO_DEFINER, 'w') as f:
+            f.write(vdffile.read())
+
+    def tearDown(self):
+        if os.path.isfile(self.VETO_DEFINER):
+            os.remove(self.VETO_DEFINER)
+
+    def test_from_veto_definer_file(self):
+        vdf = DataQualityDict.from_veto_definer_file(self.VETO_DEFINER)
+        self.assertNotEqual(len(vdf.keys()), 0)
+        # test missing h(t) flag
+        self.assertIn('H1:DCH-MISSING_H1_HOFT_C00:1', vdf)
+        self.assertEquals(vdf['H1:DCH-MISSING_H1_HOFT_C00:1'].known[0][0],
+                          1073779216)
+        self.assertEquals(vdf['H1:DCH-MISSING_H1_HOFT_C00:1'].known[0][-1],
+                          PosInfinity)
+        self.assertEquals(vdf['H1:DCH-MISSING_H1_HOFT_C00:1'].category, 1)
+        # test injections padding
+        self.assertEquals(vdf['H1:ODC-INJECTION_CBC:1'].padding, Segment(-8, 8))
+
+    def test_read_ligolw(self):
+        flags = DataQualityDict.read(SEGXML)
+        self.assertEquals(len(flags.keys()), 2)
+        self.assertIn(FLAG1, flags)
+        self.assertIn(FLAG2, flags)
+        flags = DataQualityDict.read(SEGXML, [FLAG2])
+        self.assertEquals(len(flags.keys()), 1)
+        self.assertEquals(flags[FLAG2].known, KNOWN2)
+        self.assertEquals(flags[FLAG2].active, ACTIVE2)
+
+    def test_write_ligolw(self):
+        tmpfile = self.tmpfile % 'xml.gz'
+        try:
+            flags = DataQualityDict.read(SEGXML)
+        except Exception:
+            self.skipTest(str(e))
+        try:
+            flags.write(tmpfile)
+        finally:
+            os.remove(tmpfile)
 
 
 if __name__ == '__main__':

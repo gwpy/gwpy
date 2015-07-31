@@ -31,7 +31,7 @@ __version__ = version.version
 
 USE_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
 
-LATEX_CONTROL_CHARS = ["%", "\\", "_", "~"]
+LATEX_CONTROL_CHARS = ["%", "\\", "_", "~", "&"]
 
 MACROS = [
     r'\def\rtHz{\ensuremath{\sqrt{\mathrm{Hz}}}}',  # \sqrt{Hz} label

@@ -20,6 +20,7 @@
 """
 
 import warnings
+from copy import deepcopy
 
 from scipy import signal
 
@@ -27,7 +28,8 @@ from astropy import units
 
 from ..data import (Array, Series)
 from ..detector import Channel
-from ..utils import (update_docstrings, with_import)
+from ..utils import with_import
+from ..utils.docstring import interpolate_docstring
 
 
 from .. import version
@@ -36,28 +38,41 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
 __all__ = ['Spectrum']
 
+interpolate_docstring.update({
+    'frequency-axis': (
+        """f0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
+        starting frequency for these data
+    df : `float`, `~astropy.units.Quantity`, optional, default: `1`
+        frequency resolution for these data
+    frequencies : `array-like`
+        the complete array of frequencies indexing the data.
+        This argument takes precedence over `f0` and `df` so should
+        be given in place of these if relevant, not alongside"""),
+})
 
-@update_docstrings
+
+@interpolate_docstring
 class Spectrum(Series):
     """A data array holding some metadata to represent a spectrum.
 
     Parameters
     ----------
-    data : `numpy.ndarray`, `list`
-        array to initialise `Spectrum`
-    f0 : `float`, optional
-        starting frequency for this `Spectrum`
-    df : `float`, optional
-        frequency resolution
-    name : `str`, optional
-        name for this `Spectrum`
-    unit : :class:`~astropy.units.Unit`, optional
-        The units of the data
+    %(Array1)s
 
-    Returns
-    -------
-    Spectrum
-        a new Spectrum holding the given data
+    %(frequency-axis)s
+
+    %(Array2)s
+
+    Notes
+    -----
+    Key methods:
+
+    .. autosummary::
+
+       ~Spectrum.read
+       ~Spectrum.write
+       ~Spectrum.plot
+       ~Spectrum.zpk
     """
     _metadata_slots = Array._metadata_slots + ['f0', 'df']
     _default_xunit = units.Unit('Hz')
@@ -86,17 +101,13 @@ class Spectrum(Series):
     f0 = property(Series.x0.__get__, Series.x0.__set__, Series.x0.__delete__,
                   """Starting frequency for this `Spectrum`
 
-                  This attributes is recorded as a
-                  :class:`~astropy.units.quantity.Quantity` object, assuming a
-                  unit of 'Hertz'.
+                  :type: `~astropy.units.Quantity` scalar
                   """)
 
     df = property(Series.dx.__get__, Series.dx.__set__, Series.dx.__delete__,
                   """Frequency spacing of this `Spectrum`
 
-                  This attributes is recorded as a
-                  :class:`~astropy.units.quantity.Quantity` object, assuming a
-                  unit of 'Hertz'.
+                  :type: `~astropy.units.Quantity` scalar
                   """)
 
     frequencies = property(fget=Series.xindex.__get__,
@@ -111,12 +122,12 @@ class Spectrum(Series):
         """Display this `Spectrum` in a figure
 
         All arguments are passed onto the
-        :class:`~gwpy.plotter.spectrum.SpectrumPlot` constructor
+        :class:`~gwpy.plotter.SpectrumPlot` constructor
 
         Returns
         -------
         SpectrumPlot
-            a new :class:`~gwpy.plotter.spectrum.SpectrumPlot` rendering
+            a new :class:`~gwpy.plotter.SpectrumPlot` rendering
             of this `Spectrum`
         """
         from ..plotter import SpectrumPlot
@@ -227,6 +238,7 @@ class Spectrum(Series):
             return self
         else:
             new = (self.value * fresp).view(type(self))
+            new.__dict__ = deepcopy(self.__dict__)
             return new
 
     def filterba(self, *args, **kwargs):
@@ -259,7 +271,7 @@ class Spectrum(Series):
         -------
         lalspec : `FrequencySeries`
             an XLAL-format FrequencySeries of a given type, e.g.
-            :lalsuite:`REAL8FrequencySeries`
+            :lal:`REAL8FrequencySeries`
 
         Notes
         -----

@@ -63,8 +63,7 @@ def identify_cache_file(*args, **kwargs):
 
 
 def identify_cache(*args, **kwargs):
-    """Determine an input object as a :class:`glue.lal.Cache` or a
-    :lalsuite:`LALCache`.
+    """Determine an input object as a :class:`glue.lal.Cache`
     """
     cacheobj = args[3]
     if isinstance(cacheobj, Cache):
@@ -77,7 +76,9 @@ def file_list(flist):
     """Parse a number of possible input types into a list of filepaths.
     """
     # format list of files
-    if isinstance(flist, CacheEntry):
+    if isinstance(flist, file):
+        return [flist.name]
+    elif isinstance(flist, CacheEntry):
         return [flist.path]
     elif (isinstance(flist, string_types) and
           flist.endswith(('.cache', '.lcf'))):
@@ -267,23 +268,7 @@ def cache_segments(*caches, **kwargs):
         raise TypeError("%r is an invalid keyword for cache_segments"
                         % kwargs.keys()[0])
     out = SegmentList()
-    nframes = sum(len(c) for c in caches)
-    if nframes == 0:
-        return out
     for cache in caches:
         found, _ = cache.checkfilesexist(on_missing=on_missing)
-        # build segment for this cache
-        if not len(found):
-            continue
-        seg = found[0].segment
-        for e in found:
-            # if new segment doesn't overlap, append and start again
-            if e.segment.disjoint(seg):
-                out.append(seg)
-                seg = e.segment
-            # otherwise, append to current segment
-            else:
-                seg |= e.segment
-    # append final segment and return
-    out.append(seg)
-    return out
+        out.extend(e.segment for e in found)
+    return out.coalesce()

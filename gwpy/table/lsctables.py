@@ -124,6 +124,12 @@ def _fetch_factory(table):
             a new `{0}` containing triggers read from the standard
             paths
 
+        Raises
+        ------
+        ValueError
+            if no channel-level directory is found for the given channel,
+            indicating that nothing has ever been processed for this channel.
+
         See also
         --------
         {0}.read :
@@ -161,6 +167,15 @@ for table in TableByName.itervalues():
         columns : `list`, optional
             list of column name strings to read, default all.
 
+        ifo : `str`, optional
+            prefix of IFO to read
+
+            .. warning::
+
+               the ``ifo`` keyword argument is only applicable (but is
+               required) when reading single-interferometer data from
+               a multi-interferometer file
+
         filt : `function`, optional
             function by which to `filter` events. The callable must
             accept as input a row of the table event and return
@@ -182,6 +197,10 @@ for table in TableByName.itervalues():
 
                The ``contenthandler`` keyword argument is only applicable
                when reading from ``LIGO_LW`` documents.
+
+        **loadtxtkwargs
+            when reading from ASCII, all other keyword arguments are passed
+            directly to `numpy.loadtxt`
 
         Returns
         -------

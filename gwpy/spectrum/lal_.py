@@ -43,7 +43,7 @@ LAL_FFTPLAN_LEVEL = 1
 
 def generate_lal_fft_plan(length, level=None,
                           dtype=numpy.dtype(numpy.float64)):
-    """Build a :lalsuite:`REAL8FFTPlan` for a fast Fourier transform.
+    """Build a :lal:`REAL8FFTPlan` for a fast Fourier transform.
 
     Parameters
     ----------
@@ -57,7 +57,7 @@ def generate_lal_fft_plan(length, level=None,
 
     Returns
     -------
-    :lalsuite:`REAL8FFTPlan`
+    :lal:`REAL8FFTPlan`
         FFT plan of the relevant data type
     """
     from ..utils.lal import LAL_TYPE_STR_FROM_NUMPY
@@ -127,7 +127,7 @@ def lal_psd(timeseries, segmentlength, noverlap=None, method='welch',
 
     Parameters
     ----------
-    timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
+    timeseries : :class:`~gwpy.timeseries.TimeSeries`
         input `TimeSeries` data.
     method : `str`
         average method.
@@ -137,7 +137,7 @@ def lal_psd(timeseries, segmentlength, noverlap=None, method='welch',
         number of samples to overlap between segments, defaults to 50%.
     window : `tuple`, `str`, optional
         window parameters to apply to timeseries prior to FFT
-    plan : :lalsuite:`REAL8FFTPlan`, optional
+    plan : :lal:`REAL8FFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
 
     Returns

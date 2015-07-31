@@ -31,6 +31,7 @@ from lal import lal
 
 from .. import version
 from .. import timeseries
+from ..time import to_gps
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -114,7 +115,7 @@ else:
 
 
 def to_lal_unit(aunit):
-    """Convert the input unit into a :lalsuite:`LALUnit`
+    """Convert the input unit into a :lal:`LALUnit`
 
     For example::
 
@@ -129,7 +130,7 @@ def to_lal_unit(aunit):
 
     Returns
     -------
-    unit : :lalsuite:`LALUnit`
+    unit : :lal:`LALUnit`
         the LALUnit representation of the input
 
     Raises
@@ -141,26 +142,30 @@ def to_lal_unit(aunit):
         aunit = units.Unit(aunit)
     lunit = lal.Unit()
     for base, power in zip(aunit.bases, aunit.powers):
-        lalbase = None
-        for eqbase in base.find_equivalent_units():
-            try:
-                lalbase = LAL_UNIT_FROM_ASTROPY[eqbase]
-            except KeyError:
-                continue
-            else:
-                lunit *= lalbase ** power
-                break
+        # try this base
+        try:
+            lalbase = LAL_UNIT_FROM_ASTROPY[base]
+        except KeyError:
+            lalbase = None
+            # otherwise loop through the equivalent bases
+            for eqbase in base.find_equivalent_units():
+                try:
+                    lalbase = LAL_UNIT_FROM_ASTROPY[eqbase]
+                except KeyError:
+                    continue
+        # if we didn't find anything, raise an exception
         if lalbase is None:
             raise ValueError("LAL has no unit corresponding to %r" % base)
+        lunit *= lalbase ** power
     return lunit
 
 
 def from_lal_unit(lunit):
-    """Convert a :lalsuite`LALUnit` into a `~astropy.units.Unit`
+    """Convert a :lal`LALUnit` into a `~astropy.units.Unit`
 
     Parameters
     ----------
-    aunit : :lalsuite:`LALUnit`
+    aunit : :lal:`LALUnit`
         the input unit
 
     Returns
@@ -189,3 +194,20 @@ def from_lal_unit(lunit):
         else:
             aunit *= u ** power
     return aunit
+
+
+def to_lal_ligotimegps(gps):
+    """Convert the given GPS time to a :lal:`LIGOTimeGPS` object
+
+    Parameters
+    ----------
+    gps : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        input GPS time, can be anything parsable by :meth:`~gwpy.time.to_gps`
+
+    Returns
+    -------
+    ligotimegps : :lal:`LIGOTimeGPS`
+        a SWIG-LAL `LIGOTimeGPS` representation of the given GPS time
+    """
+    gps = to_gps(gps)
+    return lal.LIGOTimeGPS(gps.seconds, gps.nanoseconds)

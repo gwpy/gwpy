@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2013)
 #
@@ -17,18 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""GWpy tests.
+"""Python version compatibilities
 """
 
-# XXX: HACK for astropy breaking test suite
-from astropy.utils.data import _deltemps
-import atexit
-try:
-    idx = zip(*atexit._exithandlers)[0].index(_deltemps)
-except ValueError:
-    pass
-else:
-    atexit._exithandlers.pop(idx)
+from __future__ import print_function
 
-# run tests
-from . import (timeseries, detector)
+from .. import version
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__version__ = version.version
+
+# OrderedDict isn't bundled with python < 2.7
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict

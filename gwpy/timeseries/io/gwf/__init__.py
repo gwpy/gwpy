@@ -31,10 +31,158 @@ preferred, in the instance that both lalframe and frameCPP are available
 on a system.
 """
 
-from ....version import version
+import importlib
 
-from . import lalfr
-from . import framecpp
+from astropy.io.registry import register_reader
+
+from ....utils import with_import
+from ....version import version
+from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
+
+from .identify import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version
+
+BUILTIN_LIBRARIES = [
+    'lalframe',
+    'framecpp',
+]
+
+
+def channel_dict_kwarg(value, channels, types=None, astype=None):
+    """Format the given kwarg value in a dict with one value per channel
+
+    Parameters
+    ----------
+    value : any type
+        keyword argument value as given by user
+    channels : `list`
+        list of channels being read
+    types : `list` of `type`
+        list of valid object types for value
+    astype : `type`
+        output type for `dict` values
+
+    Returns
+    -------
+    dict : `dict`
+        `dict` of values, one value per channel key, if parsing is successful
+    None : `None`
+        `None`, if parsing was unsuccessful
+    """
+    if types is not None and isinstance(value, tuple(types)):
+        out = dict((c, value) for c in channels)
+    elif isinstance(value, (tuple, list)):
+        out = dict(zip(channels, value))
+    elif value is None:
+        out = dict()
+    elif isinstance(value, dict):
+        out = value.copy()
+    else:
+        return None
+    if astype is not None:
+        return dict((key, astype(out[key])) for key in out)
+    else:
+        return out
+
+
+def register_gwf_io_library(library, package='gwpy.timeseries.io.gwf'):
+    """Register a full set of GWF I/O methods for the given library
+
+    The given library must define a `read_timeseriesdict`
+    method, taking a GWF source and a list of channels, and kwargs,
+    and returning a `TimeSeriesDict` of data.
+
+    Additionally, the library must store the name of the upstream I/O
+    library it uses in the 'DEPENDS' variable.
+
+    This method then wraps the `read_timeseriesdict` method from the
+    given to provide readers for the `TimeSeries`, `StateVector`, and
+    `StateVectorDict` objects
+    """
+    # import library
+    lib = importlib.import_module('.%s' % library, package=package)
+    dependency = lib.DEPENDS
+    reader = lib.read_timeseriesdict
+
+    def read_timeseriesdict(source, *args, **kwargs):
+        """Read `TimeSeriesDict` from GWF source
+        """
+        # use multiprocessing or padding
+        nproc = kwargs.pop('nproc', 1)
+        pad = kwargs.pop('pad', None)
+        if nproc > 1 or pad is not None:
+            from ..cache import read_cache
+            kwargs['target'] = TimeSeriesDict
+            kwargs['nproc'] = nproc
+            kwargs['pad'] = pad
+            return read_cache(source, *args, **kwargs)
+        else:
+            return reader(source, *args, **kwargs)
+
+    @with_import(dependency)
+    def read_timeseries(source, channel, *args, **kwargs):
+        """Read `TimeSeries` from GWF source
+        """
+        return read_timeseriesdict(source, [channel], *args, **kwargs)[channel]
+
+    @with_import(dependency)
+    def read_statevector(source, channel, *args, **kwargs):
+        """Read `StateVector` from GWF source
+        """
+        bits = kwargs.pop('bits', None)
+        kwargs.setdefault('_SeriesClass', StateVector)
+        sv = read_timeseries(source, channel, *args, **kwargs)
+        sv.bits = bits
+        return sv
+
+    @with_import(dependency)
+    def read_statevectordict(source, channels, *args, **kwargs):
+        """Read `StateVectorDict` from GWF source
+        """
+        bitss = kwargs.pop('bits', {})
+        # read list of bit lists
+        if (isinstance(bitss, (list, tuple)) and len(bitss) and
+                isinstance(bitss[0], (list, tuple))):
+            bitss = dict(zip(channels, bitss))
+        # read single list for all channels
+        elif isinstance(bitss, (list, tuple)):
+            bitss = dict((channel, bitss) for channel in channels)
+        # otherwise assume dict of bit lists
+
+        # read data as timeseriesdict and repackage with bits
+        kwargs.setdefault('_SeriesClass', StateVector)
+        svd = StateVectorDict(
+            read_timeseriesdict(source, channels, *args, **kwargs))
+        for (channel, bits) in bitss.iteritems():
+            svd[channel].bits = bits
+        return svd
+
+    # register format
+    register_reader(library, TimeSeriesDict, read_timeseriesdict)
+    register_reader(library, TimeSeries, read_timeseries)
+    register_reader(library, StateVectorDict, read_statevectordict)
+    register_reader(library, StateVector, read_statevector)
+
+    # register generic 'GWF' format
+    try:
+        __import__(dependency, fromlist=[''])
+    except ImportError:
+        pass
+    else:
+        register_reader('gwf', TimeSeriesDict, read_timeseriesdict,
+                        force=True)
+        register_reader('gwf', TimeSeries, read_timeseries,
+                        force=True)
+        register_reader('gwf', StateVectorDict, read_statevectordict,
+                        force=True)
+        register_reader('gwf', StateVector, read_statevector,
+                        force=True)
+    return (read_timeseries, read_timeseriesdict,
+            read_statevector, read_statevectordict)
+
+
+# register builtin libraries
+for library in BUILTIN_LIBRARIES:
+    register_gwf_io_library(library)

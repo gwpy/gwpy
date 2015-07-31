@@ -45,14 +45,14 @@ def read_losc_data(filename, channel, group=None, copy=False):
         name of containing HDF5 group for ``channel``. If not given,
         the first dataset named ``channel`` will be assumed as the right
         one.
-    start : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+    start : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
         start GPS time of desired data
-    end : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+    end : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
         end GPS time of desired data
 
     Returns
     -------
-    data : :class`~gwpy.timeseries.core.TimeSeries`
+    data : :class`~gwpy.timeseries.TimeSeries`
         a new `TimeSeries` containing the data read from disk
     """
     h5file = open_hdf5(filename)
@@ -85,14 +85,14 @@ def read_losc_data_cache(f, channel, start=None, end=None, resample=None,
         name of containing HDF5 group for ``channel``. If not given,
         the first dataset named ``channel`` will be assumed as the right
         one.
-    start : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+    start : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
         start GPS time of desired data
-    end : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+    end : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
         end GPS time of desired data
 
     Returns
     -------
-    data : :class`~gwpy.timeseries.core.TimeSeries`
+    data : :class`~gwpy.timeseries.TimeSeries`
         a new `TimeSeries` containing the data read from disk
     """
     files = file_list(f)
@@ -167,9 +167,9 @@ def read_losc_state_cache(*args, **kwargs):
         name of containing HDF5 group for ``channel``. If not given,
         the first dataset named ``channel`` will be assumed as the right
         one.
-    start : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+    start : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
         start GPS time of desired data
-    end : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+    end : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
         end GPS time of desired data
 
 

@@ -16,8 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>
 
-"""Git version generator
+"""Git version generator for GWpy (or any package, for that matter)
 """
+
+from __future__ import absolute_import
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Adam Mercer <adam.mercer@ligo.org>'
@@ -56,7 +58,11 @@ git_tag = '{{ status.tag.name }}'\
 {% else %}\
 git_tag = None\
 {% endif %}
-git_branch = '{{ status.branch.name }}'
+{% if status.branch %}\
+git_branch = '{{ status.branch.name }}'\
+{% else %}
+git_branch = None\
+{% endif %}
 git_author = "{{ status.author }}"
 git_committer = "{{ status.committer }}"
 git_is_dirty = {{ status.is_dirty() }}
@@ -78,7 +84,7 @@ class GitStatus(object):
     def commit(self):
         try:
             return self.branch.commit
-        except TypeError:
+        except (TypeError, AttributeError):
             return self.repo.head.commit
 
     @property
@@ -89,7 +95,7 @@ class GitStatus(object):
             if len(self.repo.branches) == 1:
                 return self.repo.branches[0]
             else:
-                raise
+                return None
         else:
             if isinstance(b, str):
                 for branch in self.repo.branches:

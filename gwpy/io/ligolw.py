@@ -22,11 +22,12 @@ All specific unified input/output for class objecst should be placed in
 an 'io' subdirectory of the containing directory for that class.
 """
 
-from gzip import GzipFile
-from astropy.utils.compat.gzip import GzipFile as AstroGzipFile
+from .utils import GzipFile
 
 from glue.lal import CacheEntry
-from glue.ligolw.ligolw import (Document, LIGOLWContentHandler)
+from glue.ligolw.ligolw import (Document, LIGOLWContentHandler,
+                                PartialLIGOLWContentHandler)
+from glue.ligolw.table import CompareTableNames as compare_table_names
 from glue.ligolw.utils.ligolw_add import ligolw_add
 from glue.ligolw import (table, lsctables)
 
@@ -40,12 +41,41 @@ __version__ = version.version
 
 
 class GWpyContentHandler(LIGOLWContentHandler):
+    """Empty sub-class of `~glue.ligolw.ligolw.LIGOLWContentHandler`
+    """
     pass
 
 
+def get_partial_contenthandler(table):
+    """Build a `~glue.ligolw.ligolw.PartialLIGOLWContentHandler` for this table
+
+    Parameters
+    ----------
+    table : `type`
+        the table class to be read
+
+    Returns
+    -------
+    contenthandler : `type`
+        a subclass of `~glue.ligolw.ligolw.PartialLIGOLWContentHandler` to
+        read only the given `table`
+    """
+    def _filter_func(name, attrs):
+        if name == table.tagName and attrs.has_key('Name'):
+            return compare_table_names(attrs.get('Name'), table.tableName) == 0
+        else:
+            return False
+
+    class _ContentHandler(PartialLIGOLWContentHandler):
+        def __init__(self, document):
+            super(_ContentHandler, self).__init__(document, _filter_func)
+
+    return _ContentHandler
+
+
 def table_from_file(f, tablename, columns=None, filt=None,
-                    contenthandler=GWpyContentHandler, nproc=1, verbose=False):
-    """Read a :class:`~glue.ligolw.table.Table` from a LIGO_LW file.
+                    contenthandler=None, nproc=1, verbose=False):
+    """Read a `~glue.ligolw.table.Table` from a LIGO_LW file.
 
     Parameters
     ----------
@@ -54,9 +84,9 @@ def table_from_file(f, tablename, columns=None, filt=None,
 
         - an open `file`
         - a `str` pointing to a file path on disk
-        - a formatted :class:`~glue.lal.CacheEntry` representing one file
+        - a formatted `~glue.lal.CacheEntry` representing one file
         - a `list` of `str` file paths
-        - a formatted :class:`~glue.lal.Cache` representing many files
+        - a formatted `~glue.lal.Cache` representing many files
 
     tablename : `str`
         name of the table to read.
@@ -65,16 +95,20 @@ def table_from_file(f, tablename, columns=None, filt=None,
     filt : `function`, optional
         function by which to `filter` events. The callable must accept as
         input a row of the table event and return `True`/`False`.
-    contenthandler : :class:`~glue.ligolw.ligolw.LIGOLWContentHandler`
+    contenthandler : `~glue.ligolw.ligolw.LIGOLWContentHandler`
         SAX content handler for parsing LIGO_LW documents.
 
     Returns
     -------
-    table : :class:`~glue.ligolw.table.Table`
+    table : `~glue.ligolw.table.Table`
         `Table` of data with given columns filled
     """
     # find table class
     tableclass = lsctables.TableByName[table.StripTableName(tablename)]
+
+    # get content handler
+    if contenthandler is None:
+        contenthandler = get_partial_contenthandler(tableclass)
 
     # allow cache multiprocessing
     if nproc != 1:
@@ -88,7 +122,7 @@ def table_from_file(f, tablename, columns=None, filt=None,
         tableclass.loadcolumns = columns
 
     # generate Document and populate
-    files = [fp.name if isinstance(fp, (file, GzipFile, AstroGzipFile)) else
+    files = [fp.name if isinstance(fp, (file, GzipFile)) else
              fp for fp in file_list(f)]
     xmldoc = Document()
     ligolw_add(xmldoc, files, non_lsc_tables_ok=True,
@@ -115,7 +149,6 @@ def table_from_file(f, tablename, columns=None, filt=None,
             gprint('%d rows remaining\n' % len(out))
     if columns is not None:
         tableclass.loadcolumns = _oldcols
-    xmldoc.unlink()
     return out
 
 

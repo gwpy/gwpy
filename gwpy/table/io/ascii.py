@@ -49,8 +49,7 @@ def return_reassign_ids(elem):
     return elem
 
 
-def table_from_ascii_factory(table, format, trig_func, cols=None, comments='#',
-                             delimiter=None):
+def table_from_ascii_factory(table, format, trig_func, cols=None, **kwargs):
     """Build a table reader for the given format
 
     Parameters
@@ -63,10 +62,8 @@ def table_from_ascii_factory(table, format, trig_func, cols=None, comments='#',
         method to convert one row of data (from `numpy.loadtxt`) into an event
     cols : `list` of `str`
         list of columns that can be read by default for this format
-    comments : `str`, optional, default: `'#'`
-        character used for comments in this format
-    delimiter : `str, optional, default: `None`
-        character used for column delimiter in this format
+    **kwargs
+        default keyword arguments to pass to `numpy.loadtxt`
 
     Returns
     -------
@@ -75,7 +72,7 @@ def table_from_ascii_factory(table, format, trig_func, cols=None, comments='#',
         The returned function natively supports multi-processing.
     """
     def table_from_ascii_rows(
-            f, columns=cols, filt=None, nproc=1):
+            f, columns=cols, filt=None, nproc=1, **loadtxtkwargs):
         """Build a `~{0}` from events in an ASCII file.
 
         Parameters
@@ -97,12 +94,18 @@ def table_from_ascii_factory(table, format, trig_func, cols=None, comments='#',
         nproc : `int`, optional, default: 1
             number of parallel processes with which to distribute file I/O,
             default: serial process
+        **loadtxtkwargs
+            all other keyword arguments are passed to `numpy.loadtxt`
 
         Returns
         -------
         table : `~{0}`
             a new `~{0}` filled with yummy data
         """.format(table.__name__)
+        # format keyword arguments
+        kwargs_ = kwargs.copy()
+        kwargs_.update(loadtxtkwargs)
+
         # format list of files
         files = file_list(f)
 
@@ -110,7 +113,7 @@ def table_from_ascii_factory(table, format, trig_func, cols=None, comments='#',
         if nproc != 1:
             from ...io.cache import read_cache
             return read_cache(files, table, nproc, return_reassign_ids,
-                              columns=columns, format=format)
+                              columns=columns, format=format, **kwargs_)
 
         # work out columns to read from ASCII
         if columns is None:
@@ -118,7 +121,12 @@ def table_from_ascii_factory(table, format, trig_func, cols=None, comments='#',
         else:
             columns = list(columns)
         # and translate them into LIGO_LW columns (only for 'time')
-        ligolwcolumns = list(columns)
+        try:
+            ligolwcolumns = list(columns)
+        except TypeError as e:
+            e.args = ('This ascii format requires the column list to be given '
+                      'manually, please give the `columns` keyword argument',)
+            raise
         if 'time' in columns and table.tableName in TIME_COLUMN:
             ligolwcolumns.remove('time')
             ligolwcolumns.extend(TIME_COLUMN[table.tableName])
@@ -129,7 +137,7 @@ def table_from_ascii_factory(table, format, trig_func, cols=None, comments='#',
 
         # iterate over events
         for fp in files:
-            dat = loadtxt(fp, comments=comments, delimiter=delimiter)
+            dat = loadtxt(fp, **kwargs_)
             for line in dat:
                 row = trig_func(line, columns=columns)
                 if 'event_id' in ligolwcolumns:

@@ -65,10 +65,14 @@ class Segment(_Segment):
 
     @property
     def start(self):
+        """The GPS start time of this segment
+        """
         return self[0]
 
     @property
     def end(self):
+        """The GPS end time of this segment
+        """
         return self[1]
 
     def __repr__(self):
@@ -101,18 +105,21 @@ class SegmentList(_SegmentList):
     ----------
     filename : `str`
         path of file to read
+
     format : `str`, optional
         source format identifier. If not given, the format will be
         detected if possible. See below for list of acceptable
         formats.
+
     flag : `str`, optional, default: read all segments
         name of flag to read from file.
+
     gpstype : `type`, optional, default: `float`
         datatype to force for segment GPS times
+
     strict : `bool`, optional, default: `True`
         require segment start and stop times match printed duration,
         only valid for ``format='segwizard'``.
-
 
     Returns
     -------
@@ -138,18 +145,21 @@ class SegmentListDict(_SegmentListDict):
     ----------
     filename : `str`
         path of file to read
+
     format : `str`, optional
         source format identifier. If not given, the format will be
         detected if possible. See below for list of acceptable
         formats.
+
     flags : `list`, optional, default: read all flags
         name of flag to read from file.
+
     gpstype : `type`, optional, default: `float`
         datatype to force for segment GPS times
+
     strict : `bool`, optional, default: `True`
         require segment start and stop times match printed duration,
         only valid for ``format='segwizard'``.
-
 
     Returns
     -------

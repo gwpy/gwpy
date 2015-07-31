@@ -42,7 +42,7 @@ def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
                      window=None, **kwargs):
     """Generate a time-frequency coherence
     :class:`~gwpy.spectrogram.core.Spectrogram` from a pair of
-    :class:`~gwpy.timeseries.core.TimeSeries`.
+    :class:`~gwpy.timeseries.TimeSeries`.
 
     For each `stride`, a PSD :class:`~gwpy.spectrum.core.Spectrum`
     is generated, with all resulting spectra stacked in time and returned.
@@ -100,7 +100,7 @@ def from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
 
     Parameters
     ----------
-    timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
+    timeseries : :class:`~gwpy.timeseries.TimeSeries`
         input time-series to process.
     stride : `float`
         number of seconds in single PSD (column of spectrogram).

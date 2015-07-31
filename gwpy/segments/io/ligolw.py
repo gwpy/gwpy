@@ -26,13 +26,12 @@ from glue.ligolw.ligolw import (Document, LIGO_LW)
 from glue.ligolw.utils import write_filename
 from glue.ligolw.utils.ligolw_add import ligolw_add
 
-from gzip import GzipFile
-from astropy.utils.compat.gzip import GzipFile as AstroGzipFile
 
 from astropy.time import Time
 from astropy.io import registry
 
 from ... import version
+from ...io.utils import GzipFile
 from ...io.ligolw import (identify_ligolw, GWpyContentHandler)
 from ...io.cache import file_list
 from ...segments import (Segment, DataQualityFlag, DataQualityDict)
@@ -69,7 +68,7 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
 
     # generate Document and populate
     xmldoc = Document()
-    files = [fp.name if isinstance(fp, (file, GzipFile, AstroGzipFile))
+    files = [fp.name if isinstance(fp, (file, GzipFile))
              else fp for fp in file_list(f)]
     ligolw_add(xmldoc, files, non_lsc_tables_ok=True,
                contenthandler=contenthandler)
@@ -84,22 +83,22 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
     id_ = dict()
     if flags is not None and len(flags) == 1 and flags[0] is None:
         out[None] = DataQualityFlag()
-        id_[None] = None
+        id_[None] = []
     for row in seg_def_table:
         ifos = row.get_ifos()
         name = row.name
         if ifos and name:
             name = ':'.join([''.join(row.get_ifos()), row.name])
-            if row.version:
+            if row.version is not None:
                 name += ':%d' % row.version
         else:
             name = None
-        if flags is None:
+        if flags is None or name in flags:
             out[name] = DataQualityFlag(name)
-            id_[name] = row.segment_def_id
-        elif name in flags:
-            out[name] = DataQualityFlag(name)
-            id_[name] = row.segment_def_id
+            try:
+                id_[name].append(row.segment_def_id)
+            except (AttributeError, KeyError):
+                id_[name] = [row.segment_def_id]
     if flags is None and not len(out.keys()):
         raise RuntimeError("No segment definitions found in file.")
     elif flags is not None and len(out.keys()) != len(flags):
@@ -111,7 +110,7 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
     seg_sum_table = lsctables.SegmentSumTable.get_table(xmldoc)
     for row in seg_sum_table:
         for flag in out:
-            if id_[flag] is None or row.segment_def_id == id_[flag]:
+            if not id_[flag] or row.segment_def_id in id_[flag]:
                 try:
                     s = row.get()
                 except AttributeError:
@@ -124,7 +123,7 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
     seg_table = lsctables.SegmentTable.get_table(xmldoc)
     for row in seg_table:
         for flag in out:
-            if id_[flag] is None or row.segment_def_id == id_[flag]:
+            if not id_[flag] or row.segment_def_id in id_[flag]:
                 try:
                     s = row.get()
                 except AttributeError:

@@ -92,7 +92,7 @@ class TimeSeriesAxes(Axes):
             unit = scale.get_unit_name()
             utc = re.sub('\.0+', '',
                          Time(epoch, format='gps', scale='utc').iso)
-            self.set_xlabel('Time [%s] from %s (%s)' % (unit, utc, epoch))
+            self.set_xlabel('Time [%s] from %s UTC (%s)' % (unit, utc, epoch))
 
     def auto_gps_scale(self):
         """Automagically set the GPS scale for the time-axis of this plot
@@ -134,7 +134,7 @@ class TimeSeriesAxes(Axes):
         Parameters
         ----------
         args
-            a single :class:`~gwpy.timeseries.core.TimeSeries` (or sub-class)
+            a single :class:`~gwpy.timeseries.TimeSeries` (or sub-class)
             or standard (x, y) data arrays
         kwargs
             keyword arguments applicable to :meth:`~matplotib.axens.Axes.plot`
@@ -160,12 +160,12 @@ class TimeSeriesAxes(Axes):
 
     @auto_refresh
     def plot_timeseries(self, timeseries, **kwargs):
-        """Plot a :class:`~gwpy.timeseries.core.TimeSeries` onto these
+        """Plot a :class:`~gwpy.timeseries.TimeSeries` onto these
         axes
 
         Parameters
         ----------
-        timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
+        timeseries : :class:`~gwpy.timeseries.TimeSeries`
             data to plot
         **kwargs
             any other keyword arguments acceptable for
@@ -203,11 +203,11 @@ class TimeSeriesAxes(Axes):
 
         Parameters
         ----------
-        mean_ : :class:`~gwpy.timeseries.core.TimeSeries`
+        mean_ : :class:`~gwpy.timeseries.TimeSeries`
             data to plot normally
-        min_ : :class:`~gwpy.timeseries.core.TimeSeries`
+        min_ : :class:`~gwpy.timeseries.TimeSeries`
             first data set to shade to mean_
-        max_ : :class:`~gwpy.timeseries.core.TimeSeries`
+        max_ : :class:`~gwpy.timeseries.TimeSeries`
             second data set to shade to mean_
         **kwargs
             any other keyword arguments acceptable for
@@ -314,12 +314,12 @@ register_projection(TimeSeriesAxes)
 
 
 class TimeSeriesPlot(Plot):
-    """`Figure` for displaying a :class:`~gwpy.timeseries.core.TimeSeries`.
+    """`Figure` for displaying a :class:`~gwpy.timeseries.TimeSeries`.
 
     Parameters
     ----------
     *series : `TimeSeries`
-        any number of :class:`~gwpy.timeseries.core.TimeSeries` to
+        any number of :class:`~gwpy.timeseries.TimeSeries` to
         display on the plot
     **kwargs
         other keyword arguments as applicable for the

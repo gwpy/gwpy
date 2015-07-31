@@ -58,6 +58,15 @@ class EventTableAxes(TimeSeriesAxes):
     """
     name = 'triggers'
 
+    def __init__(self, fig, *args, **kwargs):
+        tsp = isinstance(fig, TimeSeriesPlot)
+        if not tsp:
+            kwargs.setdefault('xscale', 'linear')
+        super(EventTableAxes, self).__init__(fig, *args, **kwargs)
+        if not tsp:
+            self.set_xlabel('')
+            self.fmt_xdata = None
+
     def plot(self, *args, **kwargs):
         """Plot data onto these axes
 

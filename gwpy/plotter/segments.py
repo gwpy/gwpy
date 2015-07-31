@@ -204,7 +204,7 @@ class SegmentAxes(TimeSeriesAxes):
         """
         # get y axis position
         if y is None:
-            y = len(self.collections)
+            y = self.get_next_y()
         # get flag name
         name = kwargs.pop('label', flag.texname)
 
@@ -232,13 +232,14 @@ class SegmentAxes(TimeSeriesAxes):
                     vkwargs['fill'] = True
                     vkwargs['facecolor'] = known
                     vkwargs['edgecolor'] = 'black'
-            vkwargs['collection'] = False
+            vkwargs['collection'] = 'ignore'
             vkwargs['zorder'] = -1000
             self.plot_segmentlist(flag.known, y=y, label=name, **vkwargs)
         # make active collection
         collection = self.plot_segmentlist(flag.active, y=y, label=name,
                                            facecolor=facecolor, **kwargs)
-        if len(self.collections) == 1:
+        if (known is not None and len(self.collections) == 2 or
+                len(self.collections) == 1):
             if len(flag.known):
                 self.set_xlim(*map(float, flag.extent))
             self.autoscale(axis='y')
@@ -246,7 +247,7 @@ class SegmentAxes(TimeSeriesAxes):
 
     @auto_refresh
     def plot_segmentlist(self, segmentlist, y=None, collection=True,
-                         label=None, **kwargs):
+                         label=None, rasterized=None, **kwargs):
         """Plot a :class:`~gwpy.segments.SegmentList` onto these axes
 
         Parameters
@@ -271,7 +272,7 @@ class SegmentAxes(TimeSeriesAxes):
             list of :class:`~matplotlib.patches.Rectangle` patches
         """
         if y is None:
-            y = len(self.collections)
+            y = self.get_next_y()
         patches = []
         for seg in segmentlist:
             patches.append(self.build_segment(seg, y, **kwargs))
@@ -284,13 +285,20 @@ class SegmentAxes(TimeSeriesAxes):
             pass
         if collection:
             coll = PatchCollection(patches, len(patches) != 0)
+            coll.set_rasterized(rasterized)
             if label is not None:
                 coll.set_label(rUNDERSCORE.sub(r'\_', str(label)))
+            if collection == 'ignore':
+                coll._ignore = True
+            else:
+                coll._ignore = False
+            coll._ypos = y
             return self.add_collection(coll)
         else:
             out = []
             for p in patches:
                 p.set_label(label)
+                p.set_rasterized(rasterized)
                 label = ''
                 out.append(self.add_patch(p))
             return out
@@ -317,7 +325,7 @@ class SegmentAxes(TimeSeriesAxes):
             each segmentlist
         """
         if y is None:
-            y = len(self.collections)
+            y = self.get_next_y()
         collections = []
         for name, segmentlist in segmentlistdict.iteritems():
             collections.append(self.plot_segmentlist(segmentlist, y=y,
@@ -374,6 +382,34 @@ class SegmentAxes(TimeSeriesAxes):
         return out
     set_xlim.__doc__ = TimeSeriesAxes.set_xlim.__doc__
 
+    def get_next_y(self):
+        """Find the next y-axis value at which a segment list can be placed
+
+        This method simply counts the number of independent segmentlists or
+        flags that have been plotted onto these axes.
+        """
+        return len(self.get_collections(ignore=False))
+
+    def get_collections(self, ignore=None):
+        """Return the collections matching the given `_ignore` value
+
+        Parameters
+        ----------
+        ignore : `bool`, or `None`
+            value of `_ignore` to match
+
+        Returns
+        -------
+        collections : `list`
+            if `ignore=None`, simply returns all collections, otherwise
+            returns those collections matching the `ignore` parameter
+        """
+        if ignore is None:
+            return self.collections
+        else:
+            return [c for c in self.collections if
+                    getattr(c, '_ignore', None) == ignore]
+
     def set_insetlabels(self, inset=None):
         self._insetlabels = (inset is None and not self._insetlabels) or inset
 
@@ -394,7 +430,7 @@ class SegmentAxes(TimeSeriesAxes):
                 tick.set_position((0.01, tick.get_position()[1]))
                 tick.set_bbox({'alpha': 0.5, 'facecolor': 'white',
                                'edgecolor': 'none'})
-            else:
+            elif self._insetlabels is False:
                 tick.set_horizontalalignment('right')
                 tick.set_position((0, tick.get_position()[1]))
                 tick.set_bbox({})
@@ -534,11 +570,8 @@ class SegmentFormatter(Formatter):
 
     def __call__(self, t, pos=None):
         # if segments have been plotted at this y-axis value, continue
-        for i, coll in enumerate(self.axis.axes.collections):
-            y = coll.get_datalim(coll.axes.transData).intervaly
-            if y[0] == numpy.inf and not t == i:
-                pass
-            elif t in Segment(*y) or t == i:
+        for i, coll in enumerate(self.axis.axes.get_collections(ignore=False)):
+            if t == coll._ypos:
                 return coll.get_label()
         for patch in self.axis.axes.patches:
             if not patch.get_label():

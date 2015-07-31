@@ -21,8 +21,9 @@
 
 import os
 import os.path
-import unittest
 import tempfile
+
+from compat import unittest
 
 from astropy import units
 

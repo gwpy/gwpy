@@ -131,7 +131,7 @@ class GitVersionMixin(object):
         """Generate target file with versioning information from git VCS
         """
         log.info("generating %s" % pyfile)
-        import vcs
+        import gwpy._version_helper as vcs
         gitstatus = vcs.GitStatus()
         try:
             with open(pyfile, 'w') as fobj:
@@ -351,7 +351,7 @@ setup(name=PACKAGENAME,
       },
       dependency_links=[
           'https://www.lsc-group.phys.uwm.edu/daswg/download/'
-          'software/source/glue-1.46.tar.gz#egg=glue-1.46',
+          'software/source/glue-1.48.tar.gz#egg=glue-1.48',
       ],
       test_suite='gwpy.tests',
       use_2to3=False,

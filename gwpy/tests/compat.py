@@ -16,30 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Input/output methods for tabular data.
+"""Compatibility module to import unittest
 """
 
-from glue.ligolw.ligolw import LIGOLWContentHandler
+import sys
 
-from .. import lsctables
-lsctables.use_in(LIGOLWContentHandler)
-
-from ... import version
-
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
-
-# import LIGO_LW I/O
-from .ligolw import *
-
-# try importing ROOT-based I/O
-from .omicron import *
-
-# import omega I/O
-from .omega import *
-
-# import cWB I/O
-from .cwb import *
-
-# import cache I/O
-from .cache import *
+if sys.version_info < (2, 7):
+    import unittest2 as unittest
+else:
+    import unittest

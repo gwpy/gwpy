@@ -39,7 +39,7 @@ MAX_LALFRAME_CHANNELS = 4
 
 
 def read_cache(cache, channel, start=None, end=None, resample=None,
-               gap='raise', nproc=1, **kwargs):
+               gap=None, pad=None, nproc=1, format=None, **kwargs):
     """Read a `TimeSeries` from a cache of data files using
     multiprocessing.
 
@@ -53,9 +53,9 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
         on disk
     channel : :class:`~gwpy.detector.channel.Channel`, `str`
         data channel to read from frames
-    start : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+    start : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
         start GPS time of desired data
-    end : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+    end : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
         end GPS time of desired data
     resample : `float`, optional
         rate (samples per second) to resample
@@ -64,6 +64,17 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     nproc : `int`, default: ``1``
         maximum number of independent frame reading processes, default
         is set to single-process file reading.
+    gap : `str`, optional
+        how to handle gaps in the cache, one of
+
+        - 'ignore': do nothing, let the undelying reader method handle it
+        - 'warn': do nothing except print a warning to the screen
+        - 'raise': raise an exception upon finding a gap (default)
+        - 'pad': insert a value to fill the gaps
+
+    pad : `float`, optional
+        value with which to fill gaps in the source data, only used if
+        gap is not given, or `gap='pad'` is given
 
     Notes
     -----
@@ -72,7 +83,7 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
 
     Returns
     -------
-    data : :class:`~gwpy.timeseries.core.TimeSeries`
+    data : :class:`~gwpy.timeseries.TimeSeries`
         a new `TimeSeries` containing the data read from disk
     """
     from gwpy.segments import (Segment, SegmentList)
@@ -102,40 +113,62 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     cspan = Segment(cache[0].segment[0], cache[-1].segment[1])
 
     # check for gaps
-    segs = cache_segments(cache, on_missing='ignore')
-    if len(segs) != 1:
+    if gap is None and pad is not None:
+        gap = 'pad'
+    elif gap is None:
+        gap = 'raise'
+    segs = cache_segments(cache, on_missing='ignore') & SegmentList([span])
+    if len(segs) != 1 and gap.lower() == 'ignore' or gap.lower() == 'pad':
+        pass
+    elif len(segs) != 1:
         gaps = SegmentList([cspan]) - segs
-        if gap.lower() == 'ignore':
-            pass
+        msg = ("The cache given to %s.read has gaps in it in the "
+               "following segments:\n    %s"
+               % (cls.__name__, '\n    '.join(map(str, gaps))))
+        if gap.lower() == 'warn':
+            warnings.warn(msg)
         else:
-            msg = ("The cache given to %s.read has gaps in it in the "
-                   "following segments:\n    %s"
-                   % (cls.__name__, '\n    '.join(map(str, gaps))))
-            if gap.lower() == 'warn':
-                warnings.warn(msg)
-            else:
-                raise ValueError(msg)
+            raise ValueError(msg)
+        segs = type(segs)([span])
 
     # if reading a small number of channels, try to use lalframe, its faster
-    if (isinstance(channel, str) or (isinstance(channel, (list, tuple)) and
-                                     len(channel) <= MAX_LALFRAME_CHANNELS)):
+    if format is None and (
+            isinstance(channel, str) or (isinstance(channel, (list, tuple)) and
+            len(channel) <= MAX_LALFRAME_CHANNELS)):
         try:
             from lalframe import frread
         except ImportError:
-            format_ = 'gwf'
+            format = 'gwf'
         else:
             kwargs.pop('type', None)
-            format_ = 'lalframe'
+            format = 'lalframe'
     # otherwise use the file extension as the format
-    else:
-        format_ = os.path.splitext(cache[0].path)[1][1:]
+    elif format is None:
+        format = os.path.splitext(cache[0].path)[1][1:]
+
+    # -- process multiple cache segments --------
+    # this entry point loops this method for each segment
+
+    if len(segs) > 1:
+        out = None
+        for seg in segs:
+            new = read_cache(cache, channel, start=seg[0], end=seg[1],
+                             resample=resample, nproc=nproc, format=format,
+                             target=cls, **kwargs)
+            if out is None:
+                out = new.copy()
+            else:
+                out.append(new, gap='pad', pad=pad)
+        return out
+
+    # -- process single cache segment
 
     # force one frame per process minimum
     nproc = min(nproc, len(cache))
 
     # single-process
     if nproc <= 1:
-        return cls.read(cache, channel, format=format_, start=start, end=end,
+        return cls.read(cache, channel, format=format, start=start, end=end,
                         resample=resample, **kwargs)
 
     # define how to read each frame
@@ -148,13 +181,13 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
             if cls not in (StateVector, StateVectorDict) and resample:
                 cstart = float(max(cspan[0], pstart - 8))
                 subcache = cache.sieve(segment=Segment(cstart, pend))
-                out = cls.read(subcache, channel, format=format_, start=cstart,
+                out = cls.read(subcache, channel, format=format, start=cstart,
                                end=pend, resample=None, **kwargs)
                 out = out.resample(resample)
                 q.put(out.crop(pstart, pend))
             else:
                 subcache = cache.sieve(segment=Segment(pstart, pend))
-                q.put(cls.read(subcache, channel, format=format_, start=pstart,
+                q.put(cls.read(subcache, channel, format=format, start=pstart,
                                end=pend, resample=resample, **kwargs))
         except Exception as e:
             q.put(e)
@@ -244,7 +277,7 @@ def identify_cache_file(*args, **kwargs):
 
 def identify_cache(*args, **kwargs):
     """Determine an input object as a :class:`glue.lal.Cache` or a
-    :lalsuite:`LALCache`.
+    :lal:`LALCache`.
     """
     cacheobj = args[3]
     if isinstance(cacheobj, Cache):

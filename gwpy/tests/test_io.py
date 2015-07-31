@@ -20,13 +20,13 @@
 """
 
 import os
-import sys
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
+import tempfile
 
-from .. import version
+from compat import unittest
+
+from gwpy import version
+from gwpy.io.cache import (Cache, CacheEntry, cache_segments)
+from gwpy.segments import (Segment, SegmentList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -38,7 +38,7 @@ class IoTests(unittest.TestCase):
         """Test `host_resolution_order` with `None` IFO
         """
         try:
-            from ..io import nds
+            from gwpy.io import nds
         except ImportError as e:
             self.skipTest(str(e))
         hro = nds.host_resolution_order(None, env=None)
@@ -48,7 +48,7 @@ class IoTests(unittest.TestCase):
         """Test `host_resolution_order` with `ifo` argument
         """
         try:
-            from ..io import nds
+            from gwpy.io import nds
         except ImportError as e:
             self.skipTest(str(e))
         hro = nds.host_resolution_order('L1', env=None)
@@ -60,7 +60,7 @@ class IoTests(unittest.TestCase):
         """Test `host_resolution_order` with default env set
         """
         try:
-            from ..io import nds
+            from gwpy.io import nds
         except ImportError as e:
             self.skipTest(str(e))
         os.environ['NDSSERVER'] = 'test1.ligo.org:80,test2.ligo.org:43'
@@ -75,7 +75,7 @@ class IoTests(unittest.TestCase):
         """Test `host_resolution_order` with non-default env set
         """
         try:
-            from ..io import nds
+            from gwpy.io import nds
         except ImportError as e:
             self.skipTest(str(e))
         os.environ['TESTENV'] = 'test1.ligo.org:80,test2.ligo.org:43'
@@ -87,7 +87,7 @@ class IoTests(unittest.TestCase):
         """Test `host_resolution_order` with old GPS epoch
         """
         try:
-            from ..io import nds
+            from gwpy.io import nds
         except ImportError as e:
             self.skipTest(str(e))
         # test kwarg doesn't change anything
@@ -106,6 +106,51 @@ class IoTests(unittest.TestCase):
         self.assertListEqual(
             hro, [('test1.ligo.org', 80), ('test2.ligo.org', 43)])
 
+    @staticmethod
+    def make_cache():
+        segs = SegmentList()
+        cache = Cache()
+        for seg in [(0, 1), (1, 2), (4, 5)]:
+            d = seg[1] - seg[0]
+            _, f = tempfile.mkstemp(prefix='A-',
+                                    suffix='-%d-%d.tmp' % (seg[0], d))
+            cache.append(CacheEntry.from_T050017(f))
+            segs.append(Segment(*seg))
+        return cache, segs
+
+    @staticmethod
+    def destroy_cache(cache):
+        for f in cache.pfnlist():
+            if os.path.isfile(f):
+                os.remove(f)
+
+    def test_cache_segments(self):
+        # check empty input
+        sl = cache_segments()
+        self.assertIsInstance(sl, SegmentList)
+        self.assertEquals(len(sl), 0)
+        cache, segs = self.make_cache()
+        try:
+            # check good cache
+            sl = cache_segments(cache)
+            self.assertNotEquals(sl, segs)
+            self.assertEquals(sl, type(segs)(segs).coalesce())
+            # check bad cache
+            os.remove(cache[0].path)
+            sl = cache_segments(cache)
+            self.assertEquals(sl, segs[1:])
+            # check cache with no existing files
+            sl = cache_segments(cache[:1])
+            self.assertEquals(sl, SegmentList())
+            # check errors
+            self.assertRaises(TypeError, cache_segments, blah='blah')
+            self.assertRaises(ValueError, cache_segments, cache,
+                              on_missing='error')
+            self.assertRaises(ValueError, cache_segments, cache,
+                             on_missing='blah')
+        # clean up
+        finally:
+            self.destroy_cache(cache)
 
 
 if __name__ == '__main__':
