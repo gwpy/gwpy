@@ -293,7 +293,7 @@ class SegmentAxes(TimeSeriesAxes):
             else:
                 coll._ignore = False
             coll._ypos = y
-            return self.add_collection(coll)
+            out = self.add_collection(coll)
         else:
             out = []
             for p in patches:
@@ -301,7 +301,8 @@ class SegmentAxes(TimeSeriesAxes):
                 p.set_rasterized(rasterized)
                 label = ''
                 out.append(self.add_patch(p))
-            return out
+        self.autoscale(axis='y')
+        return out
 
     @auto_refresh
     def plot_segmentlistdict(self, segmentlistdict, y=None, dy=1, **kwargs):
