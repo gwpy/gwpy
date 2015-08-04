@@ -48,7 +48,7 @@ from gwpy.plotter import (figure, Plot, Axes,
                           SpectrogramPlot, BodePlot)
 from gwpy.plotter.gps import (GPSTransform, InvertedGPSTransform)
 from gwpy.plotter.html import map_data
-from gwpy.plotter.tex import (float_to_latex, label_to_latex)
+from gwpy.plotter.tex import (float_to_latex, label_to_latex, USE_TEX)
 
 from test_timeseries import TEST_HDF_FILE
 
@@ -316,7 +316,10 @@ class TimeSeriesAxesTestCase(TimeSeriesMixin, AxesTestCase):
         self.assertEqual(ax.get_epoch(), self.sg.x0.value)
         self.assertTupleEqual(ax.get_xlim(), tuple(self.sg.xspan))
         # check frequency axis
-        self.assertEqual(ax.get_ylabel(), r'Frequency [$\mathrm{Hz}$]')
+        if USE_TEX:
+            self.assertEqual(ax.get_ylabel(), r'Frequency [$\mathrm{Hz}$]')
+        else:
+            self.assertEqual(ax.get_ylabel(), r'Frequency [Hz]')
         # check kwarg parsing
         c = ax.plot_spectrogram(self.sg, norm='log')
         self.assertIsInstance(c.norm, LogNorm)
