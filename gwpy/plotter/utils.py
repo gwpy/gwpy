@@ -77,30 +77,6 @@ def float_to_latex(x, format="%.2g"):
         return r"$%s\times 10^{%s}$" % (mantissa, exponent)
 
 
-def str_to_latex(input):
-    """Format a string for display in TeX
-
-    @param text
-       any string of text to be converted into TeX format OR
-       a LIGOTimeGPS to be converted to UTC for display
-
-    @code
-    >>> latex("bank_chisq_dof")
-    'Bank $\\chi^2$ degrees of freedom'
-    >>> latex(LIGOTimeGPS(1000000000))
-    'September 14 2011, 01:46:25 UTC'
-    @endcode
-
-    @returns the input text formatted for latex
-    """
-    from lal.gpstime import gps_to_str
-
-    # if given a GPS time, convert it to UTC
-    if isinstance(text, Real) or isinstance(text, LIGOTimeGPS):
-        return gpstime.gps_to_str(text)
-    # otherwise parse word by word into latex format
-
-
 def color_cycle(colors=None):
     """An infinite iterator of the given (or default) color cycle.
     """
