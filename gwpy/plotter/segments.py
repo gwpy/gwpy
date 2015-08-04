@@ -366,7 +366,8 @@ class SegmentAxes(TimeSeriesAxes):
         else:
             raise ValueError("valign must be one of 'top', 'center', or "
                              "'bottom'")
-        return Rectangle((segment[0], y0), width=abs(segment), height=height,
+        width = segment[1] - segment[0]
+        return Rectangle((segment[0], y0), width=width, height=height,
                          **kwargs)
 
     def set_xlim(self, *args, **kwargs):
