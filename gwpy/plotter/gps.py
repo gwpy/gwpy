@@ -156,9 +156,9 @@ class GPSTransform(GPSTransformBase):
         """Transform an array of GPS times.
         """
         if self.epoch is None:
-            return numpy.round(a / self.scale, 4)
+            return a / self.scale
         else:
-            return numpy.round((a - self.epoch) / self.scale, 4)
+            return (a - self.epoch) / self.scale
 
     def inverted(self):
         return InvertedGPSTransform(unit=self.unit, epoch=self.epoch)

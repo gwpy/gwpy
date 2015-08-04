@@ -219,9 +219,10 @@ class Axes(_Axes):
         # make legend
         legend = super(Axes, self).legend(*args, **kwargs)
         # find relevant axes
-        lframe = legend.get_frame()
-        lframe.set_alpha(alpha)
-        [l.set_linewidth(linewidth) for l in legend.get_lines()]
+        if legend is not None:
+            lframe = legend.get_frame()
+            lframe.set_alpha(alpha)
+            [l.set_linewidth(linewidth) for l in legend.get_lines()]
         return legend
     legend.__doc__ = _Axes.legend.__doc__
 

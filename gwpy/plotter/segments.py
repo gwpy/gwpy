@@ -293,7 +293,7 @@ class SegmentAxes(TimeSeriesAxes):
             else:
                 coll._ignore = False
             coll._ypos = y
-            return self.add_collection(coll)
+            out = self.add_collection(coll)
         else:
             out = []
             for p in patches:
@@ -301,7 +301,8 @@ class SegmentAxes(TimeSeriesAxes):
                 p.set_rasterized(rasterized)
                 label = ''
                 out.append(self.add_patch(p))
-            return out
+        self.autoscale(axis='y')
+        return out
 
     @auto_refresh
     def plot_segmentlistdict(self, segmentlistdict, y=None, dy=1, **kwargs):
@@ -365,7 +366,8 @@ class SegmentAxes(TimeSeriesAxes):
         else:
             raise ValueError("valign must be one of 'top', 'center', or "
                              "'bottom'")
-        return Rectangle((segment[0], y0), width=abs(segment), height=height,
+        width = segment[1] - segment[0]
+        return Rectangle((segment[0], y0), width=width, height=height,
                          **kwargs)
 
     def set_xlim(self, *args, **kwargs):
@@ -463,8 +465,9 @@ class SegmentPlot(TimeSeriesPlot):
         """
         # separate kwargs into figure args and plotting args
         figargs = {}
-        if 'figsize' in kwargs:
-            figargs['figsize'] = kwargs.pop('figsize')
+        for key in ['figsize', 'auto_refresh']:
+            if key in kwargs:
+                figargs[key] = kwargs.pop(key)
         sep = kwargs.pop('sep', False)
         epoch = kwargs.pop('epoch', None)
         inset = kwargs.pop('insetlabels', False)
