@@ -465,8 +465,9 @@ class SegmentPlot(TimeSeriesPlot):
         """
         # separate kwargs into figure args and plotting args
         figargs = {}
-        if 'figsize' in kwargs:
-            figargs['figsize'] = kwargs.pop('figsize')
+        for key in ['figsize', 'auto_refresh']:
+            if key in kwargs:
+                figargs[key] = kwargs.pop(key)
         sep = kwargs.pop('sep', False)
         epoch = kwargs.pop('epoch', None)
         inset = kwargs.pop('insetlabels', False)
