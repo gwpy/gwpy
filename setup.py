@@ -334,9 +334,9 @@ setup(name=PACKAGENAME,
       install_requires=[
           'python-dateutil',
           'numpy >= 1.7',
-          'scipy >= 0.11',
+          'scipy >= 0.16.0',
           'matplotlib >= 1.3.0',
-          'astropy >= 0.4',
+          'astropy >= 1.0',
           'six >= 1.5',
       ] + extra_install_requires,
       tests_require=[
