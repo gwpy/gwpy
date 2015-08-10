@@ -648,6 +648,42 @@ class DataQualityFlag(object):
         self.active = self.active.protract(x)
         return self.active
 
+    def pad(self, *args):
+        """Apply a padding to each segment in this `DataQualityFlag`
+
+        This method either takes no arguments, in which case the value of
+        the :attr:`~DataQualityFlag.padding` attribute will be used,
+        or two values representing the padding for the start and end of
+        each segment.
+
+        This `DataQualityFlag` is modified in-place.
+
+        Parameters
+        ----------
+        start : `float`
+            padding to apply to the start of the each segment, a positive
+            number means pad outwards (protract), otherwise a negative
+            means to pad inwards (contract)
+        end : `float`
+            padding to apply to the end of each segment, using the same
+            logic as for `start`
+
+        Returns
+        -------
+        paddedflag : `DataQualityFlag`
+            a view of the modified flag
+        """
+        if len(args) == 0:
+            start, end = self.padding
+        elif len(args) == 2:
+            start, end = args
+        else:
+            raise ValueError("Cannot parse (start, end) padding from %r"
+                             % args)
+        self.active = [(s[0]-start, s[1]+end) for s in self.active]
+        self.known = [(s[0]-start, s[1]+end) for s in self.known]
+        return self
+
     def round(self):
         """Round this flag to integer segments.
 
