@@ -55,6 +55,18 @@ ACTIVE2 = SegmentList([
     Segment(110, 120),
 ])
 
+# get padding stuff
+PADDING = (0.5, 1)
+KNOWNPAD = SegmentList([
+    Segment(-.5, 4),
+    Segment(5.5, 8),
+])
+ACTIVEPAD = SegmentList([
+    Segment(.5, 3),
+    Segment(2.5, 5),
+    Segment(4.5, 8),
+])
+
 SEGXML = os.path.join(os.path.split(__file__)[0], 'data',
                       'X1-GWPY_TEST_SEGMENTS-0-10.xml.gz')
 SEGWIZ = os.path.join(os.path.split(__file__)[0], 'data',
@@ -194,6 +206,12 @@ class DataQualityFlagTests(unittest.TestCase):
         else:
             self.assertEqual(flag.known, QUERY_KNOWN)
             self.assertEqual(flag.active, QUERY_ACTIVE)
+
+    def test_pad(self):
+        flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
+        padded = flag.pad(*PADDING)
+        self.assertListEqual(padded.active, ACTIVEPAD)
+        self.assertListEqual(padded.known, KNOWNPAD)
 
 
 class DataQualityDictTestCase(unittest.TestCase):
