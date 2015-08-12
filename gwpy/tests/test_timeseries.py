@@ -28,6 +28,8 @@ from compat import unittest
 import numpy
 from numpy import testing as nptest
 
+from scipy import signal
+
 from astropy import units
 
 from gwpy.time import Time
@@ -276,6 +278,22 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(sg.df, 5 * units.Hertz)
         # note: bizarre stride length because 16384/100 gets rounded
         self.assertEqual(sg.dt, 0.010009765625 * units.second)
+
+    def test_whiten(self):
+        # create noise with a glitch in it at 1000 Hz
+        noise = self.random.zpk([], [0], 1)
+        glitchtime = 0.5
+        glitch = signal.gausspulse(noise.times.value + glitchtime,
+                                   bw=100) * 1e-4
+        data = noise + glitch
+        # whiten and test that the max amplitude is recovered at the glitch
+        tmax = data.times[data.argmax()]
+        self.assertNotAlmostEqual(tmax.value, -glitchtime)
+        whitened = data.whiten(2, 1)
+        self.assertEqual(noise.size, whitened.size)
+        self.assertAlmostEqual(whitened.mean(), 0.0, places=5)
+        tmax = whitened.times[whitened.argmax()]
+        self.assertAlmostEqual(tmax.value, -glitchtime)
 
     def test_detrend(self):
         self.assertNotAlmostEqual(self.random.mean(), 0.0)
