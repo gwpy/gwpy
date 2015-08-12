@@ -39,6 +39,7 @@ from gwpy.spectrogram import Spectrogram
 from test_array import SeriesTestCase
 
 SEED = 1
+numpy.random.seed(SEED)
 GPS_EPOCH = Time(0, format='gps', scale='utc')
 ONE_HZ = units.Quantity(1, 'Hz')
 ONE_SECOND = units.Quantity(1, 'second')
@@ -151,6 +152,12 @@ class TimeSeriesTestMixin(object):
 
 class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
     TEST_CLASS = TimeSeries
+
+    def setUp(self):
+        super(TimeSeriesTestCase, self).setUp()
+        self.random = self.TEST_CLASS(
+            numpy.random.normal(loc=1, size=16384 * 10), sample_rate=16384,
+            epoch=-5)
 
     def _read(self):
         return self.TEST_CLASS.read(TEST_HDF_FILE, self.channel)
@@ -269,6 +276,11 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(sg.df, 5 * units.Hertz)
         # note: bizarre stride length because 16384/100 gets rounded
         self.assertEqual(sg.dt, 0.010009765625 * units.second)
+
+    def test_detrend(self):
+        self.assertNotAlmostEqual(self.random.mean(), 0.0)
+        detrended = self.random.detrend()
+        self.assertAlmostEqual(detrended.mean(), 0.0)
 
 
 class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):

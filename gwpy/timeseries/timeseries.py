@@ -1270,6 +1270,32 @@ class TimeSeries(TimeSeriesBase):
         return self.__class__(data, channel=self.channel, epoch=self.epoch,
                               name=name, sample_rate=(1/float(stride)))
 
+    def detrend(self, detrend='constant'):
+        """Remove the trend from this `TimeSeries`
+
+        This method just wraps :meth:`scipy.signal.detrend` to return
+        an object of the same type as the input.
+
+        Parameters
+        ----------
+        detrend : `str`, optional, default: `constant`
+            the type of detrending.
+
+        Returns
+        -------
+        detrended : `TimeSeries`
+            the detrended input series
+
+        See Also
+        --------
+        scipy.signal.detrend
+            for details on the options for the `detrend` argument, and
+            how the operation is done
+        """
+        data = signal.detrend(self.value, type=detrend).view(type(self))
+        data.__dict__ = self.copy_metadata()
+        return data
+
     def plot(self, **kwargs):
         """Plot the data for this TimeSeries.
         """
