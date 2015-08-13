@@ -56,15 +56,15 @@ ACTIVE2 = SegmentList([
 ])
 
 # get padding stuff
-PADDING = (0.5, 1)
-KNOWNPAD = SegmentList([
-    Segment(-.5, 4),
-    Segment(5.5, 8),
-])
+PADDING = (-0.5, 1)
 ACTIVEPAD = SegmentList([
     Segment(.5, 3),
     Segment(2.5, 5),
     Segment(4.5, 8),
+])
+ACTIVEPADC = SegmentList([
+    Segment(.5, 3),
+    Segment(6, 7),
 ])
 
 SEGXML = os.path.join(os.path.split(__file__)[0], 'data',
@@ -209,9 +209,23 @@ class DataQualityFlagTests(unittest.TestCase):
 
     def test_pad(self):
         flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
-        padded = flag.pad(*PADDING)
+        # test without arguments (and no padding)
+        padded = flag.pad()
+        self.assertListEqual(padded.known, flag.known)
+        self.assertListEqual(padded.active, flag.active)
+        # test without arguments (and no padding)
+        flag.padding = PADDING
+        padded = flag.pad()
+        self.assertListEqual(padded.known, flag.known)
         self.assertListEqual(padded.active, ACTIVEPAD)
-        self.assertListEqual(padded.known, KNOWNPAD)
+        # test with arguments
+        flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
+        padded = flag.pad(*PADDING)
+        self.assertListEqual(padded.known, flag.known)
+        self.assertListEqual(padded.active, ACTIVEPAD)
+        # test coalesce
+        padded.coalesce()
+        self.assertListEqual(padded.active, ACTIVEPADC)
 
 
 class DataQualityDictTestCase(unittest.TestCase):
