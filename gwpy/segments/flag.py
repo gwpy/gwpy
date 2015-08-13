@@ -649,7 +649,7 @@ class DataQualityFlag(object):
         return self.active
 
     def pad(self, *args):
-        """Apply a padding to each `active` segment in this `DataQualityFlag`
+        """Apply a padding to each segment in this `DataQualityFlag`
 
         This method either takes no arguments, in which case the value of
         the :attr:`~DataQualityFlag.padding` attribute will be used,
@@ -661,9 +661,9 @@ class DataQualityFlag(object):
         `end` padding will contract a segment at one or both ends,
         and vice-versa.
 
-        This method only pads the :attr:`~DataQualityFlag.active` list,
-        as applying a padding should not enhance the
-        :attr:`~DataQualityFlag.known` information for this flag.
+        This method will apply the same padding to both the
+        `~DataQualityFlag.known` and `~DataQualityFlag.active` lists,
+        but will not :meth:`~DataQualityFlag.coalesce` the result.
 
         Parameters
         ----------
@@ -685,6 +685,7 @@ class DataQualityFlag(object):
             raise ValueError("Cannot parse (start, end) padding from %r"
                              % args)
         new = self.copy()
+        new.known = [(s[0]+start, s[1]+end) for s in self.known]
         new.active = [(s[0]+start, s[1]+end) for s in self.active]
         return new
 
