@@ -575,7 +575,7 @@ class DataQualityFlag(object):
     write = writer()
 
     def populate(self, source='https://segdb.ligo.caltech.edu', segments=None,
-                 **kwargs):
+                 pad=True, **kwargs):
         """Query the segment database for this flag's active segments.
 
         This method assumes all of the metadata for each flag have been
@@ -596,9 +596,15 @@ class DataQualityFlag(object):
         source : `str`
             source of segments for this flag. This must be
             either a URL for a segment database or a path to a file on disk.
+
         segments : `SegmentList`, optional
             a list of valid segments during which to query, if not given,
             existing known segments for this flag will be used.
+
+        pad : `bool`, optional, default: `True`
+            apply the `~DataQualityFlag.padding` associated with this
+            flag, default: `True`.
+
         **kwargs
             any other keyword arguments to be passed to
             :meth:`DataQualityFlag.query` or :meth:`DataQualityFlag.read`.
@@ -610,7 +616,7 @@ class DataQualityFlag(object):
         """
         tmp = DataQualityDict()
         tmp[self.name] = self
-        tmp.populate(source=source, segments=segments, **kwargs)
+        tmp.populate(source=source, segments=segments, pad=pad, **kwargs)
         return tmp[self.name]
 
     def contract(self, x):
@@ -1192,7 +1198,7 @@ class DataQualityDict(OrderedDict):
     write = writer()
 
     def populate(self, source='https://segdb.ligo.caltech.edu',
-                 segments=None, **kwargs):
+                 segments=None, pad=True, **kwargs):
         """Query the segment database for each flag's active segments.
 
         This method assumes all of the metadata for each flag have been
@@ -1218,6 +1224,10 @@ class DataQualityDict(OrderedDict):
             a list of known segments during which to query, if not given,
             existing known segments for flags will be used.
 
+        pad : `bool`, optional, default: `True`
+            apply the `~DataQualityFlag.padding` associated with each
+            flag, default: `True`.
+
         **kwargs
             any other keyword arguments to be passed to
             :meth:`DataQualityFlag.query` or :meth:`DataQualityFlag.read`.
@@ -1229,20 +1239,21 @@ class DataQualityDict(OrderedDict):
         """
         # format source
         source = urlparse(source)
-        known = reduce(operator.or_,
-                       [f.known for f in self.values()]).coalesce()
-        if segments:
-            known &= SegmentList(segments)
+        # perform query for all segments
+        segments = SegmentList(map(Segment, segments))
         if source.netloc:
-            tmp = type(self).query(self.keys(), known,
+            tmp = type(self).query(self.keys(), segments,
                                    url=source.geturl(), **kwargs)
         else:
             tmp = type(self).read(source.geturl(), self.name, **kwargs)
-        for key, flag in self.iteritems():
-            self[key].known &= known
-            self[key].active = [type(seg)(seg[0] - flag.padding[0],
-                                          seg[1] + flag.padding[1])
-                                for seg in tmp[key].active]
+        # apply padding and wrap to given known segments
+        for key in self:
+            self[key].known &= tmp[key].known
+            self[key].active = tmp[key].active
+            if pad:
+                self[key] = self[key].pad()
+                self[key].known &= segments
+                self[key].active &= segments
         return self
 
     def __iand__(self, other):
