@@ -649,24 +649,28 @@ class DataQualityFlag(object):
         return self.active
 
     def pad(self, *args):
-        """Apply a padding to each segment in this `DataQualityFlag`
+        """Apply a padding to each `active` segment in this `DataQualityFlag`
 
         This method either takes no arguments, in which case the value of
         the :attr:`~DataQualityFlag.padding` attribute will be used,
         or two values representing the padding for the start and end of
         each segment.
 
-        This `DataQualityFlag` is modified in-place.
+        For both the `start` and `end` paddings, a positive value means
+        pad forward in time, so that a positive `start` pad or negative
+        `end` padding will contract a segment at one or both ends,
+        and vice-versa.
+
+        This method only pads the :attr:`~DataQualityFlag.active` list,
+        as applying a padding should not enhance the
+        :attr:`~DataQualityFlag.known` information for this flag.
 
         Parameters
         ----------
         start : `float`
-            padding to apply to the start of the each segment, a positive
-            number means pad outwards (protract), otherwise a negative
-            means to pad inwards (contract)
+            padding to apply to the start of the each segment
         end : `float`
-            padding to apply to the end of each segment, using the same
-            logic as for `start`
+            padding to apply to the end of each segment
 
         Returns
         -------
@@ -680,9 +684,9 @@ class DataQualityFlag(object):
         else:
             raise ValueError("Cannot parse (start, end) padding from %r"
                              % args)
-        self.active = [(s[0]-start, s[1]+end) for s in self.active]
-        self.known = [(s[0]-start, s[1]+end) for s in self.known]
-        return self
+        new = self.copy()
+        new.active = [(s[0]+start, s[1]+end) for s in self.active]
+        return new
 
     def round(self):
         """Round this flag to integer segments.
