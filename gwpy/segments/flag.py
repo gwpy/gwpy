@@ -368,7 +368,7 @@ class DataQualityFlag(object):
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
-        url : `str`, optional, default: ``'https://segdb.ligo.caltech.edu'``
+        url : `str`, optional, default: ``'https://segments.ligo.org'``
             URL of the segment database
 
         See Also
@@ -384,7 +384,7 @@ class DataQualityFlag(object):
             A new `DataQualityFlag`, with the `known` and `active` lists
             filled appropriately.
         """
-        url = kwargs.get('url', 'https://segdb.ligo.caltech.edu')
+        url = kwargs.get('url', 'https://segments.ligo.org')
         if 'dqsegdb' in url or re.match('https://[a-z1-9-]+.ligo.org', url):
             return cls.query_dqsegdb(flag, *args, **kwargs)
         else:
@@ -402,7 +402,7 @@ class DataQualityFlag(object):
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
-        url : `str`, optional, default: ``'https://segdb.ligo.caltech.edu'``
+        url : `str`, optional, default: ``'https://segments.ligo.org'``
             URL of the segment database
 
         Returns
@@ -574,7 +574,7 @@ class DataQualityFlag(object):
 
     write = writer()
 
-    def populate(self, source='https://segdb.ligo.caltech.edu', segments=None,
+    def populate(self, source='https://segments.ligo.org', segments=None,
                  pad=True, **kwargs):
         """Query the segment database for this flag's active segments.
 
@@ -944,7 +944,7 @@ class DataQualityDict(OrderedDict):
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
-        url : `str`, optional, default: ``'https://segdb.ligo.caltech.edu'``
+        url : `str`, optional, default: ``'https://segments.ligo.org'``
             URL of the segment database
 
         See Also
@@ -960,7 +960,7 @@ class DataQualityDict(OrderedDict):
             A new `DataQualityFlag`, with the `known` and `active` lists
             filled appropriately.
         """
-        url = kwargs.get('url', 'https://segdb.ligo.caltech.edu')
+        url = kwargs.get('url', 'https://segments.ligo.org')
         if 'dqsegdb' in url:
             return cls.query_dqsegdb(flag, *args, **kwargs)
         else:
@@ -978,7 +978,7 @@ class DataQualityDict(OrderedDict):
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments.
-        url : `str`, optional, default: ``'https://segdb.ligo.caltech.edu'``
+        url : `str`, optional, default: ``'https://segments.ligo.org'``
             URL of the segment database.
 
         Returns
@@ -998,7 +998,7 @@ class DataQualityDict(OrderedDict):
             raise ValueError("DataQualityDict.query_segdb must be called with "
                              "a list of flag names, and either GPS start and "
                              "stop times, or a SegmentList of query segments")
-        url = kwargs.pop('url', 'https://segdb.ligo.caltech.edu')
+        url = kwargs.pop('url', 'https://segments.ligo.org')
         if kwargs.pop('on_error', None) is not None:
             warnings.warn("DataQualityDict.query_segdb doesn't accept the "
                           "on_error keyword argument")
@@ -1197,7 +1197,7 @@ class DataQualityDict(OrderedDict):
 
     write = writer()
 
-    def populate(self, source='https://segdb.ligo.caltech.edu',
+    def populate(self, source='https://segments.ligo.org',
                  segments=None, pad=True, **kwargs):
         """Query the segment database for each flag's active segments.
 
