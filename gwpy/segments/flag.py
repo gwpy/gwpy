@@ -514,7 +514,6 @@ class DataQualityFlag(object):
             out.description = data['metadata'].get('flag_description', None)
             out.isgood = not data['metadata'].get(
                 'active_indicates_ifo_badness', False)
-        out.coalesce()
 
         return out
 
@@ -1039,8 +1038,6 @@ class DataQualityDict(OrderedDict):
                     engine, (ifo, name, vers, gpsstart, gpsend, 0, 0))
         segs = segdb_utils.query_segments(engine, 'segment', segdefs)
         segsum = segdb_utils.query_segments(engine, 'segment_summary', segdefs)
-        segs = [s.coalesce() for s in segs]
-        segsum = [s.coalesce() for s in segsum]
         # build output
         out = cls()
         for definition, segments, summary in zip(segdefs, segs, segsum):
