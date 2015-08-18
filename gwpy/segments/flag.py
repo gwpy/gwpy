@@ -50,9 +50,9 @@ __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['DataQualityFlag', 'DataQualityDict']
 
-_re_inv = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+):(?P<version>\d+)\Z")
-_re_in = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+)\Z")
-_re_nv = re.compile(r"\A(?P<tag>[^/]+):(?P<ver>\d+)\Z")
+re_IFO_TAG_VERSION = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+):(?P<version>\d+)\Z")
+re_IFO_TAG = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+)\Z")
+re_TAG_VERSION = re.compile(r"\A(?P<tag>[^/]+):(?P<ver>\d+)\Z")
 
 
 class DataQualityFlag(object):
@@ -822,18 +822,18 @@ class DataQualityFlag(object):
             self.ifo = None
             self.tag = None
             self.version = None
-        elif _re_inv.match(name):
-            match = _re_inv.match(name).groupdict()
+        elif re_IFO_TAG_VERSION.match(name):
+            match = re_IFO_TAG_VERSION.match(name).groupdict()
             self.ifo = match['ifo']
             self.tag = match['tag']
             self.version = int(match['version'])
-        elif _re_in.match(name):
-            match = _re_in.match(name).groupdict()
+        elif re_IFO_TAG.match(name):
+            match = re_IFO_TAG.match(name).groupdict()
             self.ifo = match['ifo']
             self.tag = match['tag']
             self.version = None
-        elif _re_nv.match(name):
-            match = _re_nv.match(name).groupdict()
+        elif re_TAG_VERSION.match(name):
+            match = re_TAG_VERSION.match(name).groupdict()
             self.ifo = None
             self.tag = match['tag']
             self.version = None
