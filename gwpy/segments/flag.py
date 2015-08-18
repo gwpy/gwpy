@@ -478,30 +478,28 @@ class DataQualityFlag(object):
             'url', 'https://dqsegdb.ligo.org').split('://', 1)
 
         # parse flag
-        try:
-            ifo, name, version = flag.split(':', 2)
-        except ValueError as e:
-            e.args = ('Flag must be of the form \'IFO:FLAG-NAME:VERSION\'',)
-            raise
-        else:
-            try:
-                version = int(version)
-            except ValueError as e:
-                e.args = ('Cannot parse version number %r for flag %r'
-                          % (version, flag),)
-                raise
+        out = cls(name=flag)
+        if out.ifo is None or out.tag is None:
+            raise ValueError("Cannot parse ifo or tag (name) for flag %r"
+                             % flag)
 
         # other keyword arguments
         request = kwargs.pop('request', 'metadata,active,known')
 
         # process query
-        out = cls(name=flag)
         for start, end in qsegs:
             if end == PosInfinity or float(end) == +inf:
                 end = to_gps('now').seconds
-            data, uri = apicalls.dqsegdbQueryTimes(protocol, server, ifo,
-                                                   name, version, request,
-                                                   start, end)
+            if out.version is None:
+                data, versions, _ = apicalls.dqsegdbCascadedQuery(
+                    protocol, server, out.ifo, out.tag, request,
+                    start, end)
+                metadata = versions[-1]['metadata']
+            else:
+                data, _ = apicalls.dqsegdbQueryTimes(
+                    protocol, server, out.ifo, out.tag, out.version, request,
+                    start, end)
+                metadata = data['metadata']
             new = cls(name=flag)
             for s2 in data['active']:
                 new.active.append(Segment(*s2))
@@ -511,8 +509,8 @@ class DataQualityFlag(object):
             new.known &= segl
             new.active &= segl
             out += new
-            out.description = data['metadata'].get('flag_description', None)
-            out.isgood = not data['metadata'].get(
+            out.description = metadata.get('flag_description', None)
+            out.isgood = not metadata.get(
                 'active_indicates_ifo_badness', False)
 
         return out
