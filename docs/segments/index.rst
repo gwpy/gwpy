@@ -26,7 +26,7 @@ The :class:`DataQualityFlag`
 ============================
 
 A `DataQualityFlag` is an annotated set of segments that indicate something about instrumental operation.
-Each flag is defined by applying some algorithm on data and generating a :class:`~gwpy.segments.segments.SegmentList` that indicates some good or bad condition has been met during those times.
+Each flag is defined by applying some algorithm on data and generating a :class:`SegmentList` that indicates some good or bad condition has been met during those times.
 For example, the times during which the LIGO interferometers are operating under 'science-mode' conditions are recorded as the 'science' flag, which are used by data analysis groups to define periods of data over which to run their pipelines.
 Conversely, in the last science run (S6, June 2009 - October 2010), high seismic noise around the observatory buildings was recorded in a data-quality flag used by analysis groups to veto periods of analysis due to sub-standard data.
 
@@ -42,7 +42,7 @@ Each `DataQualityFlag` has some key attributes:
 The Segment Database
 ====================
 
-The LIGO and Virgo instrument utilise hundreds of data-quality flags to record instrumental state on a daily basis.
+The LIGO and Virgo instruments utilise hundreds of data-quality flags to record instrumental state on a daily basis.
 These flags are stored in a joint segment database - a queryable database recording each flag, its valid and active segment lists, and all metadata associated with its generation.
 The segment database is the primary access point for users to study data-quality flags and apply them in their analyses.
 
@@ -81,11 +81,11 @@ This reference includes the following `class` entries:
 .. autosummary::
    :nosignatures:
 
-   ~gwpy.segments.flag.DataQualityFlag
-   ~gwpy.segments.flag.DataQualityDict
-   ~gwpy.segments.segments.Segment
-   ~gwpy.segments.segments.SegmentList
-   ~gwpy.segments.segments.SegmentListDict
+   DataQualityFlag
+   DataQualityDict
+   Segment
+   SegmentList
+   SegmentListDict
 
 .. autoclass:: DataQualityFlag
 

@@ -21,7 +21,7 @@ before_install:
   # install numpy
   - travis_retry pip install -q numpy==1.9.1
   # install scipy
-  - travis_wait pip install -q scipy==0.13
+  - travis_wait pip install -q scipy==0.16
   # install matplotlib
   - travis_retry pip install -q matplotlib==1.3.1
   # install astropy

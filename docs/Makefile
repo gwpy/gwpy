@@ -264,7 +264,7 @@ $(CLIEXAMPLEDIR)/cli-spg-01.png: $(CLIEXAMPLEDIR)
 	fi
 
 %.tag:
-	wget --no-check-certificate http://software.ligo.org/docs/lalsuite/$*/$*.tag -O $@ --quiet
+	-wget --no-check-certificate http://software.ligo.org/docs/lalsuite/$*/$*.tag -O $@ --quiet
 
 pycbc.inv:
-	gsiscp ldas-pcdev2.ligo.caltech.edu:~cbc/public_html/docs/pycbc/objects.inv pycbc.inv
+	-gsiscp ldas-pcdev2.ligo.caltech.edu:~cbc/public_html/docs/pycbc/objects.inv pycbc.inv

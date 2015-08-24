@@ -150,6 +150,8 @@ class Plot(figure.Figure):
     def close(self):
         """Close the plot and release its memory.
         """
+        for ax in self.axes:
+            ax.cla()
         pyplot.close(self)
 
     # -----------------------------------------------

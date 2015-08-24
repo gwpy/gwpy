@@ -55,6 +55,22 @@ ACTIVE2 = SegmentList([
     Segment(110, 120),
 ])
 
+# get padding stuff
+PADDING = (-0.5, 1)
+KNOWNPAD = SegmentList([
+    Segment(-.5, 4),
+    Segment(5.5, 8),
+])
+ACTIVEPAD = SegmentList([
+    Segment(.5, 3),
+    Segment(2.5, 5),
+    Segment(4.5, 8),
+])
+ACTIVEPADC = SegmentList([
+    Segment(.5, 4),
+    Segment(5.5, 8),
+])
+
 SEGXML = os.path.join(os.path.split(__file__)[0], 'data',
                       'X1-GWPY_TEST_SEGMENTS-0-10.xml.gz')
 SEGWIZ = os.path.join(os.path.split(__file__)[0], 'data',
@@ -182,6 +198,17 @@ class DataQualityFlagTests(unittest.TestCase):
             self.assertEqual(flag.known, QUERY_KNOWN)
             self.assertEqual(flag.active, QUERY_ACTIVE)
 
+    def test_query_dqsegdb_versionless(self):
+        try:
+            flag = DataQualityFlag.query_dqsegdb(
+                QUERY_FLAG.rsplit(':', 1)[0], QUERY_START, QUERY_END,
+                url=QUERY_URL)
+        except (ImportError, URLError) as e:
+            self.skipTest(str(e))
+        else:
+            self.assertEqual(flag.known, QUERY_KNOWN)
+            self.assertEqual(flag.active, QUERY_ACTIVE)
+
     def test_query_dqsegdb_multi(self):
         querymid = int(QUERY_START + (QUERY_END - QUERY_START) /2.)
         segs = SegmentList([Segment(QUERY_START, querymid),
@@ -194,6 +221,26 @@ class DataQualityFlagTests(unittest.TestCase):
         else:
             self.assertEqual(flag.known, QUERY_KNOWN)
             self.assertEqual(flag.active, QUERY_ACTIVE)
+
+    def test_pad(self):
+        flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
+        # test without arguments (and no padding)
+        padded = flag.pad()
+        self.assertListEqual(padded.known, flag.known)
+        self.assertListEqual(padded.active, flag.active)
+        # test without arguments (and no padding)
+        flag.padding = PADDING
+        padded = flag.pad()
+        self.assertListEqual(padded.known, KNOWNPAD)
+        self.assertListEqual(padded.active, ACTIVEPAD)
+        # test with arguments
+        flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
+        padded = flag.pad(*PADDING)
+        self.assertListEqual(padded.known, KNOWNPAD)
+        self.assertListEqual(padded.active, ACTIVEPAD)
+        # test coalesce
+        padded.coalesce()
+        self.assertListEqual(padded.active, ACTIVEPADC)
 
 
 class DataQualityDictTestCase(unittest.TestCase):

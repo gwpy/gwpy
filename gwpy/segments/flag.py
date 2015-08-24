@@ -50,9 +50,9 @@ __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['DataQualityFlag', 'DataQualityDict']
 
-_re_inv = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+):(?P<version>\d+)\Z")
-_re_in = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+)\Z")
-_re_nv = re.compile(r"\A(?P<tag>[^/]+):(?P<ver>\d+)\Z")
+re_IFO_TAG_VERSION = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+):(?P<version>\d+)\Z")
+re_IFO_TAG = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+)\Z")
+re_TAG_VERSION = re.compile(r"\A(?P<tag>[^/]+):(?P<ver>\d+)\Z")
 
 
 class DataQualityFlag(object):
@@ -368,7 +368,7 @@ class DataQualityFlag(object):
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
-        url : `str`, optional, default: ``'https://segdb.ligo.caltech.edu'``
+        url : `str`, optional, default: ``'https://segments.ligo.org'``
             URL of the segment database
 
         See Also
@@ -384,8 +384,8 @@ class DataQualityFlag(object):
             A new `DataQualityFlag`, with the `known` and `active` lists
             filled appropriately.
         """
-        url = kwargs.get('url', 'https://segdb.ligo.caltech.edu')
-        if 'dqsegdb' in url:
+        url = kwargs.get('url', 'https://segments.ligo.org')
+        if 'dqsegdb' in url or re.match('https://[a-z1-9-]+.ligo.org', url):
             return cls.query_dqsegdb(flag, *args, **kwargs)
         else:
             return cls.query_segdb(flag, *args, **kwargs)
@@ -402,7 +402,7 @@ class DataQualityFlag(object):
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
-        url : `str`, optional, default: ``'https://segdb.ligo.caltech.edu'``
+        url : `str`, optional, default: ``'https://segments.ligo.org'``
             URL of the segment database
 
         Returns
@@ -478,30 +478,28 @@ class DataQualityFlag(object):
             'url', 'https://dqsegdb.ligo.org').split('://', 1)
 
         # parse flag
-        try:
-            ifo, name, version = flag.split(':', 2)
-        except ValueError as e:
-            e.args = ('Flag must be of the form \'IFO:FLAG-NAME:VERSION\'',)
-            raise
-        else:
-            try:
-                version = int(version)
-            except ValueError as e:
-                e.args = ('Cannot parse version number %r for flag %r'
-                          % (version, flag),)
-                raise
+        out = cls(name=flag)
+        if out.ifo is None or out.tag is None:
+            raise ValueError("Cannot parse ifo or tag (name) for flag %r"
+                             % flag)
 
         # other keyword arguments
         request = kwargs.pop('request', 'metadata,active,known')
 
         # process query
-        out = cls(name=flag)
         for start, end in qsegs:
             if end == PosInfinity or float(end) == +inf:
                 end = to_gps('now').seconds
-            data, uri = apicalls.dqsegdbQueryTimes(protocol, server, ifo,
-                                                   name, version, request,
-                                                   start, end)
+            if out.version is None:
+                data, versions, _ = apicalls.dqsegdbCascadedQuery(
+                    protocol, server, out.ifo, out.tag, request,
+                    start, end)
+                metadata = versions[-1]['metadata']
+            else:
+                data, _ = apicalls.dqsegdbQueryTimes(
+                    protocol, server, out.ifo, out.tag, out.version, request,
+                    start, end)
+                metadata = data['metadata']
             new = cls(name=flag)
             for s2 in data['active']:
                 new.active.append(Segment(*s2))
@@ -511,10 +509,9 @@ class DataQualityFlag(object):
             new.known &= segl
             new.active &= segl
             out += new
-            out.description = data['metadata'].get('flag_description', None)
-            out.isgood = not data['metadata'].get(
+            out.description = metadata.get('flag_description', None)
+            out.isgood = not metadata.get(
                 'active_indicates_ifo_badness', False)
-        out.coalesce()
 
         return out
 
@@ -574,8 +571,8 @@ class DataQualityFlag(object):
 
     write = writer()
 
-    def populate(self, source='https://segdb.ligo.caltech.edu', segments=None,
-                 **kwargs):
+    def populate(self, source='https://segments.ligo.org', segments=None,
+                 pad=True, **kwargs):
         """Query the segment database for this flag's active segments.
 
         This method assumes all of the metadata for each flag have been
@@ -596,9 +593,15 @@ class DataQualityFlag(object):
         source : `str`
             source of segments for this flag. This must be
             either a URL for a segment database or a path to a file on disk.
+
         segments : `SegmentList`, optional
             a list of valid segments during which to query, if not given,
             existing known segments for this flag will be used.
+
+        pad : `bool`, optional, default: `True`
+            apply the `~DataQualityFlag.padding` associated with this
+            flag, default: `True`.
+
         **kwargs
             any other keyword arguments to be passed to
             :meth:`DataQualityFlag.query` or :meth:`DataQualityFlag.read`.
@@ -610,7 +613,7 @@ class DataQualityFlag(object):
         """
         tmp = DataQualityDict()
         tmp[self.name] = self
-        tmp.populate(source=source, segments=segments, **kwargs)
+        tmp.populate(source=source, segments=segments, pad=pad, **kwargs)
         return tmp[self.name]
 
     def contract(self, x):
@@ -647,6 +650,47 @@ class DataQualityFlag(object):
         """
         self.active = self.active.protract(x)
         return self.active
+
+    def pad(self, *args):
+        """Apply a padding to each segment in this `DataQualityFlag`
+
+        This method either takes no arguments, in which case the value of
+        the :attr:`~DataQualityFlag.padding` attribute will be used,
+        or two values representing the padding for the start and end of
+        each segment.
+
+        For both the `start` and `end` paddings, a positive value means
+        pad forward in time, so that a positive `start` pad or negative
+        `end` padding will contract a segment at one or both ends,
+        and vice-versa.
+
+        This method will apply the same padding to both the
+        `~DataQualityFlag.known` and `~DataQualityFlag.active` lists,
+        but will not :meth:`~DataQualityFlag.coalesce` the result.
+
+        Parameters
+        ----------
+        start : `float`
+            padding to apply to the start of the each segment
+        end : `float`
+            padding to apply to the end of each segment
+
+        Returns
+        -------
+        paddedflag : `DataQualityFlag`
+            a view of the modified flag
+        """
+        if len(args) == 0:
+            start, end = self.padding
+        elif len(args) == 2:
+            start, end = args
+        else:
+            raise ValueError("Cannot parse (start, end) padding from %r"
+                             % args)
+        new = self.copy()
+        new.known = [(s[0]+start, s[1]+end) for s in self.known]
+        new.active = [(s[0]+start, s[1]+end) for s in self.active]
+        return new
 
     def round(self):
         """Round this flag to integer segments.
@@ -776,18 +820,18 @@ class DataQualityFlag(object):
             self.ifo = None
             self.tag = None
             self.version = None
-        elif _re_inv.match(name):
-            match = _re_inv.match(name).groupdict()
+        elif re_IFO_TAG_VERSION.match(name):
+            match = re_IFO_TAG_VERSION.match(name).groupdict()
             self.ifo = match['ifo']
             self.tag = match['tag']
             self.version = int(match['version'])
-        elif _re_in.match(name):
-            match = _re_in.match(name).groupdict()
+        elif re_IFO_TAG.match(name):
+            match = re_IFO_TAG.match(name).groupdict()
             self.ifo = match['ifo']
             self.tag = match['tag']
             self.version = None
-        elif _re_nv.match(name):
-            match = _re_nv.match(name).groupdict()
+        elif re_TAG_VERSION.match(name):
+            match = re_TAG_VERSION.match(name).groupdict()
             self.ifo = None
             self.tag = match['tag']
             self.version = None
@@ -897,7 +941,7 @@ class DataQualityDict(OrderedDict):
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
-        url : `str`, optional, default: ``'https://segdb.ligo.caltech.edu'``
+        url : `str`, optional, default: ``'https://segments.ligo.org'``
             URL of the segment database
 
         See Also
@@ -913,7 +957,7 @@ class DataQualityDict(OrderedDict):
             A new `DataQualityFlag`, with the `known` and `active` lists
             filled appropriately.
         """
-        url = kwargs.get('url', 'https://segdb.ligo.caltech.edu')
+        url = kwargs.get('url', 'https://segments.ligo.org')
         if 'dqsegdb' in url:
             return cls.query_dqsegdb(flag, *args, **kwargs)
         else:
@@ -931,7 +975,7 @@ class DataQualityDict(OrderedDict):
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments.
-        url : `str`, optional, default: ``'https://segdb.ligo.caltech.edu'``
+        url : `str`, optional, default: ``'https://segments.ligo.org'``
             URL of the segment database.
 
         Returns
@@ -951,7 +995,7 @@ class DataQualityDict(OrderedDict):
             raise ValueError("DataQualityDict.query_segdb must be called with "
                              "a list of flag names, and either GPS start and "
                              "stop times, or a SegmentList of query segments")
-        url = kwargs.pop('url', 'https://segdb.ligo.caltech.edu')
+        url = kwargs.pop('url', 'https://segments.ligo.org')
         if kwargs.pop('on_error', None) is not None:
             warnings.warn("DataQualityDict.query_segdb doesn't accept the "
                           "on_error keyword argument")
@@ -992,8 +1036,6 @@ class DataQualityDict(OrderedDict):
                     engine, (ifo, name, vers, gpsstart, gpsend, 0, 0))
         segs = segdb_utils.query_segments(engine, 'segment', segdefs)
         segsum = segdb_utils.query_segments(engine, 'segment_summary', segdefs)
-        segs = [s.coalesce() for s in segs]
-        segsum = [s.coalesce() for s in segsum]
         # build output
         out = cls()
         for definition, segments, summary in zip(segdefs, segs, segsum):
@@ -1150,8 +1192,8 @@ class DataQualityDict(OrderedDict):
 
     write = writer()
 
-    def populate(self, source='https://segdb.ligo.caltech.edu',
-                 segments=None, **kwargs):
+    def populate(self, source='https://segments.ligo.org',
+                 segments=None, pad=True, **kwargs):
         """Query the segment database for each flag's active segments.
 
         This method assumes all of the metadata for each flag have been
@@ -1177,6 +1219,10 @@ class DataQualityDict(OrderedDict):
             a list of known segments during which to query, if not given,
             existing known segments for flags will be used.
 
+        pad : `bool`, optional, default: `True`
+            apply the `~DataQualityFlag.padding` associated with each
+            flag, default: `True`.
+
         **kwargs
             any other keyword arguments to be passed to
             :meth:`DataQualityFlag.query` or :meth:`DataQualityFlag.read`.
@@ -1188,20 +1234,21 @@ class DataQualityDict(OrderedDict):
         """
         # format source
         source = urlparse(source)
-        known = reduce(operator.or_,
-                       [f.known for f in self.values()]).coalesce()
-        if segments:
-            known &= SegmentList(segments)
+        # perform query for all segments
+        segments = SegmentList(map(Segment, segments))
         if source.netloc:
-            tmp = type(self).query(self.keys(), known,
+            tmp = type(self).query(self.keys(), segments,
                                    url=source.geturl(), **kwargs)
         else:
             tmp = type(self).read(source.geturl(), self.name, **kwargs)
-        for key, flag in self.iteritems():
-            self[key].known &= known
-            self[key].active = [type(seg)(seg[0] - flag.padding[0],
-                                          seg[1] + flag.padding[1])
-                                for seg in tmp[key].active]
+        # apply padding and wrap to given known segments
+        for key in self:
+            self[key].known &= tmp[key].known
+            self[key].active = tmp[key].active
+            if pad:
+                self[key] = self[key].pad()
+                self[key].known &= segments
+                self[key].active &= segments
         return self
 
     def __iand__(self, other):
