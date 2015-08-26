@@ -958,7 +958,7 @@ class DataQualityDict(OrderedDict):
             filled appropriately.
         """
         url = kwargs.get('url', 'https://segments.ligo.org')
-        if 'dqsegdb' in url:
+        if 'dqsegdb' in url or re.match('https://[a-z1-9-]+.ligo.org', url):
             return cls.query_dqsegdb(flag, *args, **kwargs)
         else:
             return cls.query_segdb(flag, *args, **kwargs)
