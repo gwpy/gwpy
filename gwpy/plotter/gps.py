@@ -211,7 +211,9 @@ class GPSAutoLocator(GPSLocatorMixin, ticker.MaxNLocator):
         Each of the `epoch` and `scale` keyword arguments should match those
         passed to the `~gwpy.plotter.GPSFormatter`
         """
-        if not steps and unit == 3600:
+        if not steps and unit == units.week:
+            steps = [1]
+        elif not steps and unit == units.hour:
             steps = [1, 2, 4, 5, 6, 8, 10, 12, 24]
         elif not steps:
             steps = [1, 2, 5, 10]
@@ -243,7 +245,9 @@ class GPSAutoMinorLocator(GPSLocatorMixin, ticker.AutoMinorLocator):
                 scale_ = trans.get_scale()
                 gpsstep = majorstep / scale_
                 x = int(round(10 ** (numpy.log10(gpsstep) % 1)))
-                if x in [1, 5, 10]:
+                if trans.unit == units.week:
+                    ndivs = 7
+                elif trans.unit != units.day and x in [1, 5, 10]:
                     ndivs = 5
                 else:
                     ndivs = 4
