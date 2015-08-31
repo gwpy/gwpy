@@ -183,12 +183,12 @@ class InvertedGPSTransform(GPSTransform):
 class GPSLocatorMixin(GPSMixin):
     """Metaclass for GPS-axis locator
     """
-    def tick_values(self, vmin, vmax):
+    def __call__(self):
+        vmin, vmax = self.axis.get_view_interval()
         trans = self.axis._scale.get_transform()
         vmin = trans.transform(vmin)
         vmax = trans.transform(vmax)
-        locs = super(GPSLocatorMixin, self).tick_values(vmin, vmax)
-        return trans.inverted().transform(locs)
+        return trans.inverted().transform(self.tick_values(vmin, vmax))
 
     def refresh(self):
         """refresh internal information based on current lim
@@ -211,15 +211,25 @@ class GPSAutoLocator(GPSLocatorMixin, ticker.MaxNLocator):
         Each of the `epoch` and `scale` keyword arguments should match those
         passed to the `~gwpy.plotter.GPSFormatter`
         """
-        if not steps and unit == units.week:
-            steps = [1]
-        elif not steps and unit == units.hour:
+        # steps for a week scale are dynamically set in tick_values()
+        if not steps and unit == units.hour:
             steps = [1, 2, 4, 5, 6, 8, 10, 12, 24]
+        elif not steps and unit == units.year:
+            steps = [1, 2, 4, 6, 12]
         elif not steps:
             steps = [1, 2, 5, 10]
         super(GPSAutoLocator, self).__init__(epoch=epoch, unit=unit,
                                              nbins=nbins, steps=steps,
                                              **kwargs)
+
+    def tick_values(self, vmin, vmax):
+        # if less than 6 weeks, major tick every week
+        if self.get_unit() == units.week and vmax - vmin <= 6:
+            self._steps = [1, 10]
+        # otherwise fall-back to normal multiples
+        else:
+            self._steps = [1, 2, 5, 10]
+        return super(GPSAutoLocator, self).tick_values(vmin, vmax)
 
 
 class GPSAutoMinorLocator(GPSLocatorMixin, ticker.AutoMinorLocator):
@@ -245,8 +255,10 @@ class GPSAutoMinorLocator(GPSLocatorMixin, ticker.AutoMinorLocator):
                 scale_ = trans.get_scale()
                 gpsstep = majorstep / scale_
                 x = int(round(10 ** (numpy.log10(gpsstep) % 1)))
-                if trans.unit == units.week:
+                if trans.unit == units.week and gpsstep == 1:
                     ndivs = 7
+                elif trans.unit == units.year and gpsstep <= 1:
+                    ndivs = 6
                 elif trans.unit != units.day and x in [1, 5, 10]:
                     ndivs = 5
                 else:
