@@ -453,7 +453,7 @@ class DataQualityFlag(object):
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
-        url : `str`, optional, default: ``'https://dqsegdb.ligo.org'``
+        url : `str`, optional, default: ``'https://segments.ligo.org'``
             URL of the segment database
 
         Returns
@@ -475,7 +475,7 @@ class DataQualityFlag(object):
                              "or a SegmentList of query segments")
         # get server
         protocol, server = kwargs.pop(
-            'url', 'https://dqsegdb.ligo.org').split('://', 1)
+            'url', 'https://segments.ligo.org').split('://', 1)
 
         # parse flag
         out = cls(name=flag)
@@ -1079,7 +1079,7 @@ class DataQualityDict(OrderedDict):
             - `'warn'`: print a warning
             - `'ignore'`: move onto the next flag as if nothing happened
 
-        url : `str`, optional, default: ``'https://dqsegdb.ligo.org'``
+        url : `str`, optional, default: ``'https://segments.ligo.org'``
             URL of the segment database.
 
         Returns
