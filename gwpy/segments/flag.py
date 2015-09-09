@@ -302,15 +302,15 @@ class DataQualityFlag(object):
         try:
             return self._padding
         except AttributeError:
-            self._padding = Segment(0, 0)
+            self._padding = (0, 0)
             return self.padding
 
     @padding.setter
     def padding(self, pad):
         if pad is None:
-            self._padding = Segment(0, 0)
+            self._padding = (0, 0)
         else:
-            self._padding = Segment(pad[0], pad[1])
+            self._padding = (pad[0], pad[1])
 
     # -------------------------------------------------------------------------
     # read-only properties
