@@ -28,6 +28,8 @@ from compat import unittest
 import numpy
 from numpy import testing as nptest
 
+from scipy import signal
+
 from astropy import units
 
 from gwpy.time import Time
@@ -39,6 +41,7 @@ from gwpy.spectrogram import Spectrogram
 from test_array import SeriesTestCase
 
 SEED = 1
+numpy.random.seed(SEED)
 GPS_EPOCH = Time(0, format='gps', scale='utc')
 ONE_HZ = units.Quantity(1, 'Hz')
 ONE_SECOND = units.Quantity(1, 'second')
@@ -151,6 +154,12 @@ class TimeSeriesTestMixin(object):
 
 class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
     TEST_CLASS = TimeSeries
+
+    def setUp(self):
+        super(TimeSeriesTestCase, self).setUp()
+        self.random = self.TEST_CLASS(
+            numpy.random.normal(loc=1, size=16384 * 10), sample_rate=16384,
+            epoch=-5)
 
     def _read(self):
         return self.TEST_CLASS.read(TEST_HDF_FILE, self.channel)
@@ -269,6 +278,27 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(sg.df, 5 * units.Hertz)
         # note: bizarre stride length because 16384/100 gets rounded
         self.assertEqual(sg.dt, 0.010009765625 * units.second)
+
+    def test_whiten(self):
+        # create noise with a glitch in it at 1000 Hz
+        noise = self.random.zpk([], [0], 1)
+        glitchtime = 0.5
+        glitch = signal.gausspulse(noise.times.value + glitchtime,
+                                   bw=100) * 1e-4
+        data = noise + glitch
+        # whiten and test that the max amplitude is recovered at the glitch
+        tmax = data.times[data.argmax()]
+        self.assertNotAlmostEqual(tmax.value, -glitchtime)
+        whitened = data.whiten(2, 1)
+        self.assertEqual(noise.size, whitened.size)
+        self.assertAlmostEqual(whitened.mean(), 0.0, places=5)
+        tmax = whitened.times[whitened.argmax()]
+        self.assertAlmostEqual(tmax.value, -glitchtime)
+
+    def test_detrend(self):
+        self.assertNotAlmostEqual(self.random.mean(), 0.0)
+        detrended = self.random.detrend()
+        self.assertAlmostEqual(detrended.mean(), 0.0)
 
 
 class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
