@@ -32,7 +32,7 @@ from glue.lal import Cache
 
 from ...io.cache import cache_segments
 from .. import (TimeSeries, TimeSeriesList, TimeSeriesDict,
-                StateVector, StateVectorDict)
+                StateVector, StateVectorList, StateVectorDict)
 
 # set maximum number of channels with which to still use lalframe
 MAX_LALFRAME_CHANNELS = 4
@@ -228,7 +228,10 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
             del tsd
         return out
     else:
-        out = TimeSeriesList(*data)
+        if cls in (TimeSeries, TimeSeriesDict):
+            out = TimeSeriesList(*data)
+        else:
+            out = StateVectorList(*data)
         out.sort(key=lambda ts: ts.epoch.gps)
         ts = out.join(gap=gap)
         return ts
