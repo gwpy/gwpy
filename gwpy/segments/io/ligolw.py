@@ -23,7 +23,7 @@ import datetime
 
 from glue.lal import LIGOTimeGPS
 from glue.ligolw.ligolw import (Document, LIGO_LW)
-from glue.ligolw.utils import write_filename
+from glue.ligolw.utils import (write_filename, write_fileobj)
 from glue.ligolw.utils.ligolw_add import ligolw_add
 
 
