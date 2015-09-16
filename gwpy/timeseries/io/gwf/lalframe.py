@@ -77,7 +77,9 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
     """
     lal = import_method_dependency('lal.lal')
     from gwpy.utils.lal import to_lal_ligotimegps
-    # parse input arguments
+    # parse input arguments (astropy insists on opening files)
+    if isinstance(source, file):
+        source = source.name
     filelist = file_list(source)
     try:
         frametype = CacheEntry.from_T050017(filelist[0]).description
