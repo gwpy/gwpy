@@ -31,6 +31,7 @@ from numpy import testing as nptest
 from scipy import signal
 
 from astropy import units
+from astropy.io.registry import (get_reader, register_reader)
 
 from gwpy.time import Time
 
@@ -81,17 +82,33 @@ class TimeSeriesTestMixin(object):
         array = self.create()
         self.assertEquals(array.epoch.gps, array.x0.value)
 
-    def test_frame_read_lalframe(self):
+    def _test_frame_read_format(self, format):
+        # test with specific format
         try:
-            self.frame_read(format='lalframe')
+            self.frame_read(format=format)
         except ImportError as e:
             self.skipTest(str(e))
+        else:
+            # test again with no format argument
+            # but we need to move other readers out of the way first
+            try:
+                read_ = get_reader('gwf', TimeSeries)
+            except Exception:
+                pass
+            else:
+                register_reader('gwf', TimeSeries,
+                                get_reader(format, TimeSeries),
+                                force=True)
+                try:
+                    self.frame_read()
+                finally:
+                    register_reader('gwf', TimeSeries, read_, force=True)
+
+    def test_frame_read_lalframe(self):
+        return self._test_frame_read_format('lalframe')
 
     def test_frame_read_framecpp(self):
-        try:
-            self.frame_read(format='framecpp')
-        except ImportError as e:
-            self.skipTest(str(e))
+        return self._test_frame_read_format('framecpp')
 
     def test_ascii_write(self, delete=True):
         self.ts = self.create()
