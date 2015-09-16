@@ -12,6 +12,12 @@ addons:
       - zlib1g
       - libgsl0
       - libgsl0ldbl
+cache:
+  directories:
+    - lscsoft/libframe-8.20
+    - lscsoft/ldas-tools-2.4.1
+    - lscsoft/lal-6.15.0
+    - lscsoft/lalframe-1.3.0
 before_install:
   - . .travis/build_lal.sh
   - travis_retry pip install -q tornado jinja2 GitPython
