@@ -150,13 +150,10 @@ class Spectrogram(Array2D):
                            fdel=Array2D.yindex.__delete__,
                            doc="Series of frequencies for this Spectrogram")
 
-    @property
-    def band(self):
-        """Frequency band described by this `Spectrogram`.
-        """
-        y0 = self.y0.to(self._default_yunit).value
-        dy = self.dy.to(self._default_yunit).value
-        return Segment(y0, y0+self.shape[1]*dy)
+    band = property(fget=Array2D.yspan.__get__,
+                    fset=Array2D.yspan.__set__,
+                    fdel=Array2D.yspan.__delete__,
+                    doc="""Frequency band described by this `Spectrogram`""")
 
     # -------------------------------------------
     # Spectrogram methods
