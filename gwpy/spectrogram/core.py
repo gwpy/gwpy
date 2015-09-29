@@ -452,9 +452,9 @@ class Spectrogram(Array2D):
             axis
         """
         if low is not None:
-            low = units.Quantity(low, 'Hz')
+            low = units.Quantity(low, self._default_yunit)
         if high is not None:
-            high = units.Quantity(high, 'Hz')
+            high = units.Quantity(high, self._default_yunit)
         # check low frequency
         if low is not None and low == self.f0:
             low = None
@@ -463,9 +463,9 @@ class Spectrogram(Array2D):
                           'cutoff below f0 of the input Spectrogram. Low '
                           'frequency crop will have no effect.')
         # check high frequency
-        if high is not None and high == self.span_y[1]:
+        if high is not None and high.value == self.band[1]:
             high = None
-        elif high is not None and high > self.span_y[1]:
+        elif high is not None and high.value > self.band[1]:
             warnings.warn('Spectrogram.crop_frequencies given high frequency '
                           'cutoff above cutoff of the input Spectrogram. High '
                           'frequency crop will have no effect.')
