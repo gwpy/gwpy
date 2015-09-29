@@ -150,10 +150,6 @@ class Spectrogram(Array2D):
                            fdel=Array2D.yindex.__delete__,
                            doc="Series of frequencies for this Spectrogram")
 
-    span = property(TimeSeries.span.__get__, TimeSeries.span.__set__,
-                     TimeSeries.span.__delete__,
-                     """GPS [start, stop) span for this `Spectrogram`""")
-
     @property
     def band(self):
         """Frequency band described by this `Spectrogram`.
