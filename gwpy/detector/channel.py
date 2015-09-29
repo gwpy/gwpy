@@ -47,6 +47,7 @@ except ImportError:
                              NDS2_CHANNEL_TYPESTR.iteritems())
 
 from .. import version
+from ..io import reader, writer
 from ..time import to_gps
 from ..utils.deps import with_import
 
@@ -595,6 +596,19 @@ class ChannelList(list):
         `ChannelList`.
         """
         return set([c.ifo for c in self])
+
+    read = classmethod(reader(
+        doc="""Read a `ChannelList` from a file
+
+        Parameters
+        ----------
+        source : `str`, `file`
+            either an open file object, or a file name path to read
+
+        Notes
+        -----"""))
+
+    write = writer()
 
     @classmethod
     def from_names(cls, *names):
