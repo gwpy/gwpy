@@ -17,22 +17,14 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """This module attaches the HDF5 input output methods to the Spectrum.
-
-While these methods are available as methods of the class itself,
-this module attaches them to the unified I/O registry, making it a bit
-cleaner.
 """
 
-from astropy.io.registry import (register_reader, register_writer,
-                                 register_identifier)
-
 from ... import version
-from ...io.hdf5 import identify_hdf5
-from ..core import Spectrum
+from ...data.io import hdf5
+from .. import (Spectrum, SpectralVariance)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-register_reader('hdf', Spectrum, Spectrum.from_hdf5)
-register_writer('hdf', Spectrum, Spectrum.to_hdf5)
-register_identifier('hdf', Spectrum, identify_hdf5)
+for array_type in (Spectrum, SpectralVariance):
+    hdf5.register_hdf5_array_io(array_type)

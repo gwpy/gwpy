@@ -17,22 +17,13 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """This module attaches the HDF5 input output methods to the Spectrogram.
-
-While these methods are avialable as methods of the class itself,
-this module attaches them to the unified I/O registry, making it a bit
-cleaner.
 """
 
-from astropy.io.registry import (register_reader, register_writer,
-                                 register_identifier)
-
 from ... import version
-from ...io.hdf5 import identify_hdf5
-from ..core import Spectrogram
+from ...data.io import hdf5
+from .. import Spectrogram
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-register_reader('hdf', Spectrogram, Spectrogram.from_hdf5)
-register_writer('hdf', Spectrogram, Spectrogram.to_hdf5)
-register_identifier('hdf', Spectrogram, identify_hdf5)
+hdf5.register_hdf5_array_io(Spectrogram)
