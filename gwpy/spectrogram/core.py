@@ -150,17 +150,10 @@ class Spectrogram(Array2D):
                            fdel=Array2D.yindex.__delete__,
                            doc="Series of frequencies for this Spectrogram")
 
-    span = property(TimeSeries.span.__get__, TimeSeries.span.__set__,
-                     TimeSeries.span.__delete__,
-                     """GPS [start, stop) span for this `Spectrogram`""")
-
-    @property
-    def band(self):
-        """Frequency band described by this `Spectrogram`.
-        """
-        y0 = self.y0.to(self._default_yunit).value
-        dy = self.dy.to(self._default_yunit).value
-        return Segment(y0, y0+self.shape[1]*dy)
+    band = property(fget=Array2D.yspan.__get__,
+                    fset=Array2D.yspan.__set__,
+                    fdel=Array2D.yspan.__delete__,
+                    doc="""Frequency band described by this `Spectrogram`""")
 
     # -------------------------------------------
     # Spectrogram methods
@@ -459,9 +452,9 @@ class Spectrogram(Array2D):
             axis
         """
         if low is not None:
-            low = units.Quantity(low, 'Hz')
+            low = units.Quantity(low, self._default_yunit)
         if high is not None:
-            high = units.Quantity(high, 'Hz')
+            high = units.Quantity(high, self._default_yunit)
         # check low frequency
         if low is not None and low == self.f0:
             low = None
@@ -470,9 +463,9 @@ class Spectrogram(Array2D):
                           'cutoff below f0 of the input Spectrogram. Low '
                           'frequency crop will have no effect.')
         # check high frequency
-        if high is not None and high == self.span_y[1]:
+        if high is not None and high.value == self.band[1]:
             high = None
-        elif high is not None and high > self.span_y[1]:
+        elif high is not None and high.value > self.band[1]:
             warnings.warn('Spectrogram.crop_frequencies given high frequency '
                           'cutoff above cutoff of the input Spectrogram. High '
                           'frequency crop will have no effect.')
