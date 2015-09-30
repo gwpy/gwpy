@@ -20,8 +20,6 @@
 """
 
 import os
-import os.path
-import tempfile
 
 from compat import unittest
 
@@ -61,8 +59,6 @@ class TimeSeriesTestMixin(object):
     """`~unittest.TestCase` for the `~gwpy.timeseries.TimeSeries` class
     """
     channel = 'L1:LDAS-STRAIN'
-    tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_')
-    TEST_CLASS = None
 
     def test_creation_with_metadata(self):
         self.ts = self.create()
@@ -125,30 +121,6 @@ class TimeSeriesTestMixin(object):
         finally:
             if os.path.isfile(fp):
                 os.remove(fp)
-
-    def test_hdf5_write(self, delete=True):
-        self.ts = self.create(name=self.channel)
-        hdfout = self.tmpfile % 'hdf'
-        try:
-            self.ts.write(hdfout)
-        except ImportError as e:
-            self.skipTest(str(e))
-        finally:
-            if delete and os.path.isfile(hdfout):
-                os.remove(hdfout)
-        return hdfout
-
-    def test_hdf5_read(self):
-        try:
-            hdfout = self.test_hdf5_write(delete=False)
-        except ImportError as e:
-            self.skipTest(str(e))
-        else:
-            try:
-                self.TEST_CLASS.read(hdfout, self.channel)
-            finally:
-                if os.path.isfile(hdfout):
-                    os.remove(hdfout)
 
     def test_resample(self):
         """Test the `TimeSeries.resample` method
