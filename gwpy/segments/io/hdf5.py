@@ -239,10 +239,10 @@ def segmentlist_to_hdf5(seglist, output, name, group=None,
     return dset
 
 
-register_reader('hdf', SegmentList, segmentlist_from_hdf5)
-register_writer('hdf', SegmentList, segmentlist_to_hdf5)
-register_identifier('hdf', SegmentList, identify_hdf5)
+register_reader('hdf5', SegmentList, segmentlist_from_hdf5)
+register_writer('hdf5', SegmentList, segmentlist_to_hdf5)
+register_identifier('hdf5', SegmentList, identify_hdf5)
 
-register_reader('hdf', DataQualityFlag, flag_from_hdf5)
-register_writer('hdf', DataQualityFlag, flag_to_hdf5)
-register_identifier('hdf', DataQualityFlag, identify_hdf5)
+register_reader('hdf5', DataQualityFlag, flag_from_hdf5)
+register_writer('hdf5', DataQualityFlag, flag_to_hdf5)
+register_identifier('hdf5', DataQualityFlag, identify_hdf5)
