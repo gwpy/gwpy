@@ -135,26 +135,36 @@ class CommonTests(object):
 
     # -- test I/O -------------------------------
 
-    def test_hdf5_write(self, delete=True):
+    def test_hdf5_write(self, delete=True, format=[None, 'hdf5', 'hdf']):
+        if isinstance(format, (list, tuple)):
+            formats = format
+        else:
+            formats = [format]
         hdfout = self.tmpfile % 'hdf'
-        try:
-            self.TEST_ARRAY.write(hdfout)
-        except ImportError as e:
-            self.skipTest(str(e))
-        finally:
-            if delete and os.path.isfile(hdfout):
-                os.remove(hdfout)
+        for format in formats:
+            try:
+                self.TEST_ARRAY.write(hdfout, format=format)
+            except ImportError as e:
+                self.skipTest(str(e))
+            finally:
+                if delete and os.path.isfile(hdfout):
+                    os.remove(hdfout)
         return hdfout
 
-    def test_hdf5_read(self):
+    def test_hdf5_read(self, format=[None, 'hdf5', 'hdf']):
         try:
-            hdfout = self.test_hdf5_write(delete=False)
+            hdfout = self.test_hdf5_write(delete=False, format='hdf5')
         except ImportError as e:
             self.skipTest(str(e))
         else:
+            if isinstance(format, (list, tuple)):
+                formats = format
+            else:
+                formats = [format]
             try:
-                ts = self.TEST_CLASS.read(hdfout)
-                self.assertArraysEqual(self.TEST_ARRAY, ts)
+                for format in formats:
+                    ts = self.TEST_CLASS.read(hdfout, format=format)
+                    self.assertArraysEqual(self.TEST_ARRAY, ts)
             finally:
                 if os.path.isfile(hdfout):
                     os.remove(hdfout)
