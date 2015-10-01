@@ -27,3 +27,4 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 hdf5.register_hdf5_array_io(Spectrogram)
+hdf5.register_hdf5_array_io(Spectrogram, format='hdf', identify=False)

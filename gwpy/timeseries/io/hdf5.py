@@ -28,3 +28,4 @@ __version__ = version.version
 
 for array_type in (TimeSeries, StateVector, StateTimeSeries):
     hdf5.register_hdf5_array_io(array_type)
+    hdf5.register_hdf5_array_io(array_type, format='hdf', identify=False)

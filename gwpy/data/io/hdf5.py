@@ -174,7 +174,7 @@ def array_to_hdf5(array, output, name=None, group=None, compression='gzip',
     return dset
 
 
-def register_hdf5_array_io(array_type, format='hdf5'):
+def register_hdf5_array_io(array_type, format='hdf5', identify=True):
     """Registry read() and write() methods for the HDF5 format
     """
     def from_hdf5(*args, **kwargs):
@@ -185,9 +185,11 @@ def register_hdf5_array_io(array_type, format='hdf5'):
         return array_to_hdf5(*args, **kwargs)
     registry.register_reader(format, array_type, from_hdf5)
     registry.register_writer(format, array_type, to_hdf5)
-    registry.register_identifier(format, array_type, hdf5io.identify_hdf5)
+    if identify:
+        registry.register_identifier(format, array_type, hdf5io.identify_hdf5)
 
 
 # register for basic types
 for array_type in (Array, Series, Array2D):
     register_hdf5_array_io(array_type)
+    register_hdf5_array_io(array_type, format='hdf', identify=False)
