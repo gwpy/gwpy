@@ -351,144 +351,34 @@ class Array(Quantity):
     read = classmethod(reader())
     write = writer()
 
-    @with_import('h5py')
-    def to_hdf5(self, output, name=None, group=None, compression='gzip',
-                **kwargs):
+    def to_hdf5(self, *args, **kwargs):
         """Convert this array to a :class:`h5py.Dataset`.
 
-        This allows writing to an HDF5-format file.
+        This method has been deprecated in favour of the unified I/O method:
 
-        Parameters
-        ----------
-        output : `str`, :class:`h5py.Group`
-            path to new output file, or open h5py `Group` to write to.
-
-        name : `str`, optional
-            custom name for this `Array` in the HDF hierarchy, defaults
-            to the `name` attribute of the `Array`.
-
-        group : `str`, optional
-            group to create for this time-series.
-
-        compression : `str`, optional
-            name of compression filter to use
-
-        **kwargs
-            other keyword arguments passed to
-            :meth:`h5py.Group.create_dataset`.
-
-        Returns
-        -------
-        dset : :class:`h5py.Dataset`
-            HDF dataset containing these data.
+        Class.write(..., format='hdf5')
         """
-        # create output object
-        if isinstance(output, h5py.Group):
-            h5file = output
-        else:
-            h5file = h5py.File(output, 'w')
-
-        try:
-            # if group
-            if group:
-                try:
-                    h5group = h5file[group]
-                except KeyError:
-                    h5group = h5file.create_group(group)
-            else:
-                h5group = h5file
-
-            # create dataset
-            name = name or self.name
-            if name is None:
-                raise ValueError("Cannot store Array without a name. "
-                                 "Either assign the name attribute of the "
-                                 "array itself, or given name= as a keyword "
-                                 "argument to write().")
-            try:
-                dset = h5group.create_dataset(
-                    name or self.name, data=self.value,
-                    compression=compression, **kwargs)
-            except ValueError as e:
-                if 'Name already exists' in str(e):
-                    e.args = (str(e) + ': %s' % (name or self.name),)
-                raise
-
-            # store metadata
-            for attr in self._metadata_slots:
-                mdval = getattr(self, attr)
-                if mdval is None:
-                    continue
-                if isinstance(mdval, Quantity):
-                    dset.attrs[attr] = mdval.value
-                elif isinstance(mdval, Channel):
-                    dset.attrs[attr] = mdval.ndsname
-                elif isinstance(mdval, UnitBase):
-                    dset.attrs[attr] = str(mdval)
-                elif isinstance(mdval, Time):
-                    dset.attrs[attr] = mdval.utc.gps
-                else:
-                    try:
-                        dset.attrs[attr] = mdval
-                    except ValueError as e:
-                        e.args = ("Failed to store %s (%s) for %s: %s"
-                                  % (attr, type(mdval).__name__,
-                                     type(self).__name__, str(e)),)
-                        raise
-
-        finally:
-            if not isinstance(output, h5py.Group):
-                h5file.close()
-
-        return dset
+        warnings.warn("The {0}.to_hdf5 and {0}.from_hdf5 methods have been "
+                      "deprecated and will be removed in an upcoming release. "
+                      "Please use the unified I/O methods {0}.read() and "
+                      "{0}.write() with the `format='hdf5'` keyword "
+                      "argument".format(type(self).__name__),
+                      DeprecationWarning)
+        kwargs.setdefault('format', 'hdf5')
+        return self.write(*args, **kwargs)
 
     @classmethod
-    @with_import('h5py')
-    def from_hdf5(cls, f, name=None):
+    def from_hdf5(cls, *args, **kwargs):
         """Read an array from the given HDF file.
 
-        Parameters
-        ----------
-        f : `str`, :class:`h5py.HLObject`
-            path to HDF file on disk, or open `h5py.HLObject`.
+        This method has been deprecated in favour of the unified I/O method:
 
-        type_ : `type`
-            target class to read
-
-        name : `str`
-            path in HDF hierarchy of dataset.
+        Class.write(..., format='hdf5')
         """
-        from ..io.hdf5 import open_hdf5
-
-        h5file = open_hdf5(f)
-
-        if name is None and not isinstance(h5file, h5py.Dataset):
-            if len(h5file) == 1:
-                name = h5file.keys()[0]
-            else:
-                raise ValueError("Multiple data sets found in HDF structure, "
-                                 "please give name='...' to specify")
-
-        try:
-            # find dataset
-            if isinstance(h5file, h5py.Dataset):
-                dataset = h5file
-            else:
-                try:
-                    dataset = h5file[name]
-                except KeyError:
-                    if name.startswith('/'):
-                        raise
-                    name2 = '/%s/%s' % (cls.__name__.lower(), name)
-                    if name2 in h5file:
-                        dataset = h5file[name2]
-                    else:
-                        raise
-
-            # read array, close file, and return
-            out = cls(dataset[()], **dict(dataset.attrs))
-        finally:
-            if not isinstance(f, (h5py.Dataset, h5py.Group)):
-                h5file.close()
-
-        return out
+        warnings.warn("The {0}.to_hdf5 and {0}.from_hdf5 methods have been "
+                      "deprecated and will be removed in an upcoming release. "
+                      "Please use the unified I/O methods {0}.read() and "
+                      "{0}.write() with the `format='hdf5'` keyword "
+                      "argument".format(cls.__name__), DeprecationWarning)
+        kwargs.setdefault('format', 'hdf5')
+        return self.read(*args, **kwargs)
