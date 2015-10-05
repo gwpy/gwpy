@@ -381,4 +381,4 @@ class Array(Quantity):
                       "{0}.write() with the `format='hdf5'` keyword "
                       "argument".format(cls.__name__), DeprecationWarning)
         kwargs.setdefault('format', 'hdf5')
-        return self.read(*args, **kwargs)
+        return cls.read(*args, **kwargs)
