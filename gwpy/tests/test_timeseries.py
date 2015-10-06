@@ -20,15 +20,16 @@
 """
 
 import os
-import os.path
-import tempfile
 
 from compat import unittest
 
 import numpy
 from numpy import testing as nptest
 
+from scipy import signal
+
 from astropy import units
+from astropy.io.registry import (get_reader, register_reader)
 
 from gwpy.time import Time
 
@@ -39,6 +40,7 @@ from gwpy.spectrogram import Spectrogram
 from test_array import SeriesTestCase
 
 SEED = 1
+numpy.random.seed(SEED)
 GPS_EPOCH = Time(0, format='gps', scale='utc')
 ONE_HZ = units.Quantity(1, 'Hz')
 ONE_SECOND = units.Quantity(1, 'second')
@@ -57,8 +59,6 @@ class TimeSeriesTestMixin(object):
     """`~unittest.TestCase` for the `~gwpy.timeseries.TimeSeries` class
     """
     channel = 'L1:LDAS-STRAIN'
-    tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_')
-    TEST_CLASS = None
 
     def test_creation_with_metadata(self):
         self.ts = self.create()
@@ -78,17 +78,33 @@ class TimeSeriesTestMixin(object):
         array = self.create()
         self.assertEquals(array.epoch.gps, array.x0.value)
 
-    def test_frame_read_lalframe(self):
+    def _test_frame_read_format(self, format):
+        # test with specific format
         try:
-            self.frame_read(format='lalframe')
+            self.frame_read(format=format)
         except ImportError as e:
             self.skipTest(str(e))
+        else:
+            # test again with no format argument
+            # but we need to move other readers out of the way first
+            try:
+                read_ = get_reader('gwf', TimeSeries)
+            except Exception:
+                pass
+            else:
+                register_reader('gwf', TimeSeries,
+                                get_reader(format, TimeSeries),
+                                force=True)
+                try:
+                    self.frame_read()
+                finally:
+                    register_reader('gwf', TimeSeries, read_, force=True)
+
+    def test_frame_read_lalframe(self):
+        return self._test_frame_read_format('lalframe')
 
     def test_frame_read_framecpp(self):
-        try:
-            self.frame_read(format='framecpp')
-        except ImportError as e:
-            self.skipTest(str(e))
+        return self._test_frame_read_format('framecpp')
 
     def test_ascii_write(self, delete=True):
         self.ts = self.create()
@@ -105,30 +121,6 @@ class TimeSeriesTestMixin(object):
         finally:
             if os.path.isfile(fp):
                 os.remove(fp)
-
-    def test_hdf5_write(self, delete=True):
-        self.ts = self.create(name=self.channel)
-        hdfout = self.tmpfile % 'hdf'
-        try:
-            self.ts.write(hdfout)
-        except ImportError as e:
-            self.skipTest(str(e))
-        finally:
-            if delete and os.path.isfile(hdfout):
-                os.remove(hdfout)
-        return hdfout
-
-    def test_hdf5_read(self):
-        try:
-            hdfout = self.test_hdf5_write(delete=False)
-        except ImportError as e:
-            self.skipTest(str(e))
-        else:
-            try:
-                self.TEST_CLASS.read(hdfout, self.channel)
-            finally:
-                if os.path.isfile(hdfout):
-                    os.remove(hdfout)
 
     def test_resample(self):
         """Test the `TimeSeries.resample` method
@@ -151,6 +143,12 @@ class TimeSeriesTestMixin(object):
 
 class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
     TEST_CLASS = TimeSeries
+
+    def setUp(self):
+        super(TimeSeriesTestCase, self).setUp()
+        self.random = self.TEST_CLASS(
+            numpy.random.normal(loc=1, size=16384 * 10), sample_rate=16384,
+            epoch=-5)
 
     def _read(self):
         return self.TEST_CLASS.read(TEST_HDF_FILE, self.channel)
@@ -269,6 +267,27 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(sg.df, 5 * units.Hertz)
         # note: bizarre stride length because 16384/100 gets rounded
         self.assertEqual(sg.dt, 0.010009765625 * units.second)
+
+    def test_whiten(self):
+        # create noise with a glitch in it at 1000 Hz
+        noise = self.random.zpk([], [0], 1)
+        glitchtime = 0.5
+        glitch = signal.gausspulse(noise.times.value + glitchtime,
+                                   bw=100) * 1e-4
+        data = noise + glitch
+        # whiten and test that the max amplitude is recovered at the glitch
+        tmax = data.times[data.argmax()]
+        self.assertNotAlmostEqual(tmax.value, -glitchtime)
+        whitened = data.whiten(2, 1)
+        self.assertEqual(noise.size, whitened.size)
+        self.assertAlmostEqual(whitened.mean(), 0.0, places=5)
+        tmax = whitened.times[whitened.argmax()]
+        self.assertAlmostEqual(tmax.value, -glitchtime)
+
+    def test_detrend(self):
+        self.assertNotAlmostEqual(self.random.mean(), 0.0)
+        detrended = self.random.detrend()
+        self.assertAlmostEqual(detrended.mean(), 0.0)
 
 
 class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):

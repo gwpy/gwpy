@@ -1270,6 +1270,94 @@ class TimeSeries(TimeSeriesBase):
         return self.__class__(data, channel=self.channel, epoch=self.epoch,
                               name=name, sample_rate=(1/float(stride)))
 
+    def whiten(self, fftlength, overlap=0, method='welch', window='hanning',
+               detrend='constant', **kwargs):
+        """White this `TimeSeries` against its own ASD
+
+        Parameters
+        ----------
+        fftlength : `float`
+            number of seconds in single FFT
+
+        overlap : `float`, optional, default: 0
+            numbers of seconds by which to overlap neighbouring FFTs,
+            by default, no overlap is used.
+
+        method : `str`, optional, default: `welch`
+            average spectrum method
+
+        window : `str`, :class:`numpy.ndarray`
+            name of the window function to use, or an array of length
+            ``fftlength * TimeSeries.sample_rate`` to use as the window.
+
+        **kwargs
+            other keyword arguments are passed to the `TimeSeries.asd`
+            method to estimate the amplitude spectral density `Spectrum`
+            of this `TimeSeries.
+
+        Returns
+        -------
+        out : `TimeSeries`
+            a whitened version of the input data
+
+        See Also
+        --------
+        TimeSeries.asd
+            for details on the ASD calculation
+        numpy.fft
+            for details on the Fourier transform algorithm used her
+        scipy.signal
+        """
+        # build whitener
+        invasd = 1. / self.asd(fftlength, overlap=overlap,
+                               method=method, window=window, **kwargs)
+        # build window
+        nfft = int((fftlength * self.sample_rate).decompose().value)
+        noverlap = int((overlap * self.sample_rate).decompose().value)
+        # format window
+        if type(window).__module__ == 'lal.lal':
+            window = window.data.data
+        elif not isinstance(window, numpy.ndarray):
+            window = signal.get_window(window, nfft)
+        # create output series
+        nstride = nfft - noverlap
+        nsteps = 1 + int((self.size - nfft) / nstride)
+        out = type(self)(numpy.zeros(nsteps * nstride + noverlap))
+        out.__dict__ = self.copy_metadata()
+        # loop over ffts and whiten each one
+        for i in range(nsteps):
+             i0 = i * nstride
+             i1 = i0 + nfft
+             in_ = self[i0:i1].detrend(detrend) * window
+             out[i0:i1] += npfft.irfft(in_.fft().value * invasd)
+        return out
+
+    def detrend(self, detrend='constant'):
+        """Remove the trend from this `TimeSeries`
+
+        This method just wraps :meth:`scipy.signal.detrend` to return
+        an object of the same type as the input.
+
+        Parameters
+        ----------
+        detrend : `str`, optional, default: `constant`
+            the type of detrending.
+
+        Returns
+        -------
+        detrended : `TimeSeries`
+            the detrended input series
+
+        See Also
+        --------
+        scipy.signal.detrend
+            for details on the options for the `detrend` argument, and
+            how the operation is done
+        """
+        data = signal.detrend(self.value, type=detrend).view(type(self))
+        data.__dict__ = self.copy_metadata()
+        return data
+
     def plot(self, **kwargs):
         """Plot the data for this TimeSeries.
         """

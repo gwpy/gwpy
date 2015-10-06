@@ -302,15 +302,15 @@ class DataQualityFlag(object):
         try:
             return self._padding
         except AttributeError:
-            self._padding = Segment(0, 0)
+            self._padding = (0, 0)
             return self.padding
 
     @padding.setter
     def padding(self, pad):
         if pad is None:
-            self._padding = Segment(0, 0)
+            self._padding = (0, 0)
         else:
-            self._padding = Segment(pad[0], pad[1])
+            self._padding = (pad[0], pad[1])
 
     # -------------------------------------------------------------------------
     # read-only properties
@@ -453,7 +453,7 @@ class DataQualityFlag(object):
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
-        url : `str`, optional, default: ``'https://dqsegdb.ligo.org'``
+        url : `str`, optional, default: ``'https://segments.ligo.org'``
             URL of the segment database
 
         Returns
@@ -475,7 +475,7 @@ class DataQualityFlag(object):
                              "or a SegmentList of query segments")
         # get server
         protocol, server = kwargs.pop(
-            'url', 'https://dqsegdb.ligo.org').split('://', 1)
+            'url', 'https://segments.ligo.org').split('://', 1)
 
         # parse flag
         out = cls(name=flag)
@@ -958,7 +958,7 @@ class DataQualityDict(OrderedDict):
             filled appropriately.
         """
         url = kwargs.get('url', 'https://segments.ligo.org')
-        if 'dqsegdb' in url:
+        if 'dqsegdb' in url or re.match('https://[a-z1-9-]+.ligo.org', url):
             return cls.query_dqsegdb(flag, *args, **kwargs)
         else:
             return cls.query_segdb(flag, *args, **kwargs)
@@ -1079,7 +1079,7 @@ class DataQualityDict(OrderedDict):
             - `'warn'`: print a warning
             - `'ignore'`: move onto the next flag as if nothing happened
 
-        url : `str`, optional, default: ``'https://dqsegdb.ligo.org'``
+        url : `str`, optional, default: ``'https://segments.ligo.org'``
             URL of the segment database.
 
         Returns

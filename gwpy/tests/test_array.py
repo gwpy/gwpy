@@ -20,6 +20,8 @@
 """
 
 import abc
+import os
+import tempfile
 
 from compat import unittest
 
@@ -46,6 +48,7 @@ CHANNEL = Channel(CHANNEL_NAME)
 class CommonTests(object):
     __metaclass_ = abc.ABCMeta
     TEST_CLASS = Array
+    tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_')
 
     def setUp(self, dtype=None):
         numpy.random.seed(SEED)
@@ -57,7 +60,9 @@ class CommonTests(object):
         try:
             return self._TEST_ARRAY
         except AttributeError:
-            self._TEST_ARRAY = self.create()
+            self._TEST_ARRAY = self.create(name='test', unit='meter',
+                                           channel=CHANNEL_NAME,
+                                           epoch=TIME_EPOCH)
             return self.TEST_ARRAY
 
     def create(self, *args, **kwargs):
@@ -67,7 +72,7 @@ class CommonTests(object):
     def assertArraysEqual(self, ts1, ts2, *args):
         nptest.assert_array_equal(ts1.value, ts2.value)
         if not args:
-            args = self.TEST_CLASS._metadata_slots
+            args = ['units'] + self.TEST_CLASS._metadata_slots
         for attr in args:
             self.assertEqual(getattr(ts1, attr, None),
                              getattr(ts2, attr, None))
@@ -91,7 +96,7 @@ class CommonTests(object):
         self.assertEquals(array.unit, units.m)
 
     def test_name(self):
-        array = self.create()
+        array = self.create(name=None)
         self.assertIsNone(array.name)
         array = self.create(name='TEST CASE')
         self.assertEquals(array.name, 'TEST CASE')
@@ -127,6 +132,42 @@ class CommonTests(object):
         array2 = array.copy()
         nptest.assert_array_equal(array.value, array2.value)
         self.assertEqual(array.unit, array2.unit)
+
+    # -- test I/O -------------------------------
+
+    def test_hdf5_write(self, delete=True, format=[None, 'hdf5', 'hdf']):
+        if isinstance(format, (list, tuple)):
+            formats = format
+        else:
+            formats = [format]
+        hdfout = self.tmpfile % 'hdf'
+        for format in formats:
+            try:
+                self.TEST_ARRAY.write(hdfout, format=format)
+            except ImportError as e:
+                self.skipTest(str(e))
+            finally:
+                if delete and os.path.isfile(hdfout):
+                    os.remove(hdfout)
+        return hdfout
+
+    def test_hdf5_read(self, format=[None, 'hdf5', 'hdf']):
+        try:
+            hdfout = self.test_hdf5_write(delete=False, format='hdf5')
+        except ImportError as e:
+            self.skipTest(str(e))
+        else:
+            if isinstance(format, (list, tuple)):
+                formats = format
+            else:
+                formats = [format]
+            try:
+                for format in formats:
+                    ts = self.TEST_CLASS.read(hdfout, format=format)
+                    self.assertArraysEqual(self.TEST_ARRAY, ts)
+            finally:
+                if os.path.isfile(hdfout):
+                    os.remove(hdfout)
 
 
 class ArrayTestCase(CommonTests, unittest.TestCase):

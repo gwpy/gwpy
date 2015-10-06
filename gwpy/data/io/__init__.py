@@ -16,16 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module attaches the HDF5 input output methods to the Spectrum.
+"""Input/Output routines for the Array and its sub-classes.
 """
 
-from ... import version
-from ...data.io import hdf5
-from .. import (Spectrum, SpectralVariance)
+from .. import version
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-for array_type in (Spectrum, SpectralVariance):
-    hdf5.register_hdf5_array_io(array_type)
-    hdf5.register_hdf5_array_io(array_type, format='hdf', identify=False)
+from .. import (Array, Series, Array2D)
+
+# register ASCII
+from ...io.ascii import register_ascii
+register_ascii(Series)
+
+# register HDF5
+from . import hdf5

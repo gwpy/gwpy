@@ -24,4 +24,4 @@ from ... import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-from . import cis
+from . import (cis, clf, omega)

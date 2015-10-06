@@ -47,6 +47,7 @@ except ImportError:
                              NDS2_CHANNEL_TYPESTR.iteritems())
 
 from .. import version
+from ..io import reader, writer
 from ..time import to_gps
 from ..utils.deps import with_import
 
@@ -69,6 +70,11 @@ class Channel(object):
         number of samples per second
     unit : `~astropy.units.Unit`, `str`, optional
         name of the unit for the data of this channel
+    frequency_range : `tuple` of `float`
+        [low, high) spectral frequency range of interest for this channel
+    safe : `bool`, optional
+        is this channel 'safe' to use as a witness of non-gravitational-wave
+        noise in the interferometer
     dtype : `numpy.dtype`, optional
         numeric type of data for this channel
     frametype : `str`, optional
@@ -91,14 +97,17 @@ class Channel(object):
          '(?:,(?P<type>([a-z]-)?[a-z]+))?'  # match channel type
     )
 
-    def __init__(self, name, sample_rate=None, unit=None, type=None,
-                 dtype=None, frametype=None, model=None, url=None):
+    def __init__(self, name, sample_rate=None, unit=None, frequency_range=None,
+                 safe=None, type=None, dtype=None, frametype=None,
+                 model=None, url=None):
         """Create a new `Channel`
         """
         # copy existing Channel
         if isinstance(name, Channel):
             sample_rate = sample_rate or name.sample_rate
             unit = unit or name.unit
+            frequency_range = frequency_range or name.frequency_range
+            safe = safe or name.safe
             type = type or name.type
             dtype = dtype or name.dtype
             frametype = frametype or name.frametype
@@ -124,6 +133,8 @@ class Channel(object):
             self.type = type
         self.sample_rate = sample_rate
         self.unit = unit
+        self.frequency_range = frequency_range
+        self.safe = safe
         self.dtype = dtype
         self.frametype = frametype
         self.model = model
@@ -186,6 +197,48 @@ class Channel(object):
             self._unit = None
         else:
             self._unit = units.Unit(u)
+
+    @property
+    def frequency_range(self):
+        """Frequency range of interest (Hertz) for this channel
+
+        :type: `~astropy.units.Quantity` array
+        """
+        return self._frequency_range
+
+    @frequency_range.setter
+    def frequency_range(self, frange):
+        if frange is None:
+            del self.frequency_range
+        else:
+            low, hi = frange
+            self._frequency_range = units.Quantity((low, hi), unit='Hz')
+
+    @frequency_range.deleter
+    def frequency_range(self):
+        self._frequency_range = None
+
+    @property
+    def safe(self):
+        """Whether this channel is 'safe' to use as a noise witness
+
+        Any channel that records part or all of a GW signal as it
+        interacts with the interferometer is not safe to use as a noise
+        witness
+
+        A safe value of `None` simply indicates that the safety of this
+        channel has not been determined
+
+        :type: `bool` or `None`
+        """
+        return self._safe
+
+    @safe.setter
+    def safe(self, s):
+        if s is None:
+            self._safe = None
+        else:
+            self._safe = bool(s)
 
     @property
     def model(self):
@@ -543,6 +596,19 @@ class ChannelList(list):
         `ChannelList`.
         """
         return set([c.ifo for c in self])
+
+    read = classmethod(reader(
+        doc="""Read a `ChannelList` from a file
+
+        Parameters
+        ----------
+        source : `str`, `file`
+            either an open file object, or a file name path to read
+
+        Notes
+        -----"""))
+
+    write = writer()
 
     @classmethod
     def from_names(cls, *names):
