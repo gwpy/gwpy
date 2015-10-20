@@ -135,14 +135,24 @@ def _fetch_factory(table):
         {0}.read :
             for documentation of the available keyword arguments
         """
+        from gwpy.segments import Segment
         from .io.trigfind import find_trigger_urls
         # check times
         start = to_gps(start)
         end = to_gps(end)
         # find files
         cache = find_trigger_urls(channel, etg, start, end, verbose=verbose)
+        # construct filter
+        infilt = kwargs.pop('filt', None)
+        segment = Segment(float(start), float(end))
+        if infilt is None:
+            def filt(row):
+                return float(row.get_peak()) in segment
+        else:
+            def filt(row):
+                return infilt(row) and float(row.get_peak()) in segment
         # read and return
-        return cls.read(cache, format='ligolw', **kwargs)
+        return cls.read(cache, format='ligolw', filt=filt, **kwargs)
     fetch.__doc__ = fetch.__doc__.format(table.__name__)
 
     return classmethod(fetch)
