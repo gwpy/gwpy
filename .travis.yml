@@ -36,7 +36,7 @@ before_install:
 install:
   - python setup.py build
 script:
-  - coverage run --source=gwpy --omit="gwpy/tests/*,gwpy/*version*" -m py.test -v
+  - coverage run --source=gwpy --omit="gwpy/tests/*,gwpy/*version*,gwpy/utils/sphinx/*" -m py.test -v
   - pip install .
 after_success:
   - coveralls
