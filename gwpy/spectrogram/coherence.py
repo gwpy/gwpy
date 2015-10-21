@@ -31,7 +31,6 @@ from astropy import units
 
 from .. import version
 from .core import (Spectrogram, SpectrogramList)
-from ..spectrum import psd
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
