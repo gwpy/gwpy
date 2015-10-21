@@ -18,23 +18,19 @@ before_install:
   - travis_retry pip install -q tornado jinja2 GitPython
   # install cython
   - travis_retry pip install --install-option="--no-cython-compile" Cython
-  # install numpy
+  # install python dependencies
   - travis_retry pip install -q numpy==1.9.1
-  # install scipy
   - travis_wait pip install -q scipy==0.16
-  # install matplotlib
   - travis_retry pip install -q matplotlib==1.3.1
-  # install astropy
   - travis_retry pip install -q astropy==1.0
+  - travis_retry pip install -q h5py
+  - travis_retry pip install -q unittest2
+  - travis_retry pip install -q importlib
+  - travis_retry pip install -q pytest
+  - travis_retry pip install -q coveralls
   # install GLUE
   - travis_retry pip install -q kerberos
   - travis_retry pip install -q --egg https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/glue-1.48.tar.gz#egg=glue-1.48
-  # install h5py
-  - pip install -q h5py
-  - pip install -q unittest2
-  - pip install -q importlib
-  - pip install -q pytest
-  - pip install -q coveralls
   - popd
 install:
   - python setup.py build
