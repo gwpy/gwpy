@@ -49,3 +49,10 @@ pip-delete-this-directory.txt
 
 # Patches
 /*.patch
+
+# py.test cache dir
+/.cache
+
+# dqsegdb files
+__dqsegdb*.json
+__segments*.json
