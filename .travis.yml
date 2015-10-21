@@ -28,9 +28,10 @@ before_install:
   - travis_retry pip install -q importlib
   - travis_retry pip install -q pytest
   - travis_retry pip install -q coveralls
-  # install GLUE
+  # install LSCSoft python packages
   - travis_retry pip install -q kerberos
-  - travis_retry pip install -q --egg https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/glue-1.48.tar.gz#egg=glue-1.48
+  - travis_retry pip install -q --egg http://software.ligo.org/lscsoft/source/glue-1.49.1.tar.gz#egg=glue-1.49.1
+  - travis_retry pip install -q --egg http://software.ligo.org/lscsoft/source/dqsegdb-1.2.2.tar.gz#egg=dqsegdb-1.2.2
   - popd
 install:
   - python setup.py build
