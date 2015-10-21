@@ -44,16 +44,16 @@ before_install:
   # build FFTW3
   - source .travis/build-with-autotools.sh http://www.fftw.org/fftw-${FFTW_VERSION}.tar.gz ./fftw-${FFTW_VERSION}
 
-  # build numpy and scipy
-  - travis_retry pip install --install-option="--no-cython-compile" Cython
-  - travis_retry pip install -q numpy==1.9.1
-  - travis_wait pip install -q scipy==0.16
-
   # build LAL packages
   - echo ${PKG_CONFIG_PATH}
   - ls ./fftw-${FFTW_VERSION}/lib/pkgconfig
   - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/lalsuite/lal-${LAL_VERSION}.tar.gz ./lal-${LAL_VERSION}
   - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/lalsuite/lalframe-${LALFRAME_VERSION}.tar.gz ./lalframe-${LALFRAME_VERSION}
+
+  # build numpy and scipy
+  - travis_retry pip install --install-option="--no-cython-compile" Cython
+  - travis_retry pip install -q numpy==1.9.1
+  - travis_wait pip install -q scipy==0.16
 
   # install build dependencies
   - travis_retry pip install tornado jinja2 GitPython
