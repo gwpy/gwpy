@@ -40,7 +40,7 @@ before_install:
 
   # build numpy and scipy
   - travis_retry pip install -q numpy==1.9.1
-  - travis_wait pip install -q scipy==0.16
+  - travis_wait pip install scipy==0.16
 
   # build LAL packages
   - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/lalsuite/lal-${LAL_VERSION}.tar.gz ./lal-${LAL_VERSION}
