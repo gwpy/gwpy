@@ -26,10 +26,10 @@ addons:
       - python-scipy
       - bc
       # glue dependencies
-      - python-cjson
       - python-m2crypto
       # misc python packages
       - python-matplotlib
+      - texlive-latex-extra
 
 before_install:
   # update pip
