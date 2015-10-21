@@ -22,3 +22,4 @@ make
 make install
 
 export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${target}/lib/pkgconfig
+cd -
