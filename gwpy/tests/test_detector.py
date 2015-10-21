@@ -89,8 +89,11 @@ class ChannelTests(unittest.TestCase):
             import nds2
         except ImportError as e:
             self.skipTest(str(e))
-        new = Channel.query_nds2(self.channel, host=NDSHOST,
-                                 type=nds2.channel.CHANNEL_TYPE_RAW)
+        try:
+            new = Channel.query_nds2(self.channel, host=NDSHOST,
+                                     type=nds2.channel.CHANNEL_TYPE_RAW)
+        except IOError as e:
+            self.skipTest(str(e))
         self.assertTrue(str(new) == self.channel)
         self.assertTrue(new.ifo == self.channel.split(':', 1)[0])
         self.assertTrue(new.sample_rate == units.Quantity(32768, 'Hz'))
