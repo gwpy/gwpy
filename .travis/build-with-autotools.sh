@@ -11,13 +11,13 @@ builddir="build_$RANDOM"
 mkdir -p $builddir
 echo "Building into $builddir"
 # untar
-wget $tarball -O `basename $tarball`
+wget $tarball --quiet -O `basename $tarball`
 tar -zxf `basename $tarball` -C $builddir --strip-components=1
 cd $builddir
 if [ -f ./00boot ]; then
     ./00boot
 fi
-./configure --prefix=`greadlink -f $target` --enable-silent-rules --quiet
+./configure --prefix=`readlink -f $target` --enable-silent-rules --quiet
 make
 make install
 
