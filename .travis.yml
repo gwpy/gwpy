@@ -31,7 +31,7 @@ before_install:
   - travis_retry pip install -q coveralls
   # install LSCSoft python packages
   - travis_retry pip install -q kerberos
-  - travis_retry pip install -q cjson
+  - travis_retry pip install -q python-cjson
   - travis_retry pip install -q M2Crypto
   - travis_retry pip install -q --egg http://software.ligo.org/lscsoft/source/glue-1.49.1.tar.gz#egg=glue-1.49.1
   - travis_retry pip install -q --egg http://software.ligo.org/lscsoft/source/dqsegdb-1.2.2.tar.gz#egg=dqsegdb-1.2.2
