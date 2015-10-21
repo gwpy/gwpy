@@ -19,6 +19,7 @@ before_install:
   - travis_retry pip install -q tornado jinja2 GitPython
   # install M2Crypto for glue/dqsegdb
   - sudo apt-get --assume-yes install python-m2crypto
+  - export PATH=$PATH:/usr/bin
   - travis_retry pip install M2Crypto
   # install cython
   - travis_retry pip install --install-option="--no-cython-compile" Cython
