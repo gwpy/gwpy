@@ -33,9 +33,9 @@ addons:
       - bc
       # glue dependencies
       - python-m2crypto
-      # misc python packages
-      - python-matplotlib
+      # misc python dependencies
       - texlive-latex-extra
+      - libhdf5-dev
 
 before_install:
   # update pip
