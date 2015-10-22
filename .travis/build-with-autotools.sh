@@ -20,7 +20,7 @@ cd $builddir
 if [ -f ./00boot ]; then
     ./00boot
 fi
-./configure --prefix=$target --enable-silent-rules --quiet $@
+./configure --prefix=$target --enable-silent-rules $@
 make
 make install
 
