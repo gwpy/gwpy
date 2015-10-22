@@ -12,6 +12,7 @@ env:
     - LALFRAME_VERSION="1.3.0"
     - LIBFRAME_VERSION="8.20"
     - LDAS_TOOLS_VERSION="2.4.1"
+    - NDS2_CLIENT_VERSION="0.10.4"
 
 addons:
   apt:
@@ -31,6 +32,8 @@ addons:
       - python-numpy
       - python-scipy
       - bc
+      # nds2 dependencies
+      - libsasl2-2
       # glue dependencies
       - python-m2crypto
       # misc python dependencies
@@ -50,7 +53,10 @@ before_install:
 
   # build LAL packages
   - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/lalsuite/lal-${LAL_VERSION}.tar.gz ./lal-${LAL_VERSION}
-  #- source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/lalsuite/lalframe-${LALFRAME_VERSION}.tar.gz ./lalframe-${LALFRAME_VERSION}
+  - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/lalsuite/lalframe-${LALFRAME_VERSION}.tar.gz ./lalframe-${LALFRAME_VERSION}
+
+  # build NDS2 client
+  - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/nds2-client-${NDS2_CLIENT_VERSION}.tar.gz ./nds2-client-${NDS2_CLIENT_VERSION} --disable-swig-java --disable-mex-matlab
 
   # build numpy and scipy
   - travis_retry pip install --install-option="--no-cython-compile" Cython
