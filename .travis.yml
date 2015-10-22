@@ -49,6 +49,7 @@ before_install:
   - source .travis/build-with-autotools.sh http://www.fftw.org/fftw-${FFTW_VERSION}.tar.gz ./fftw-${FFTW_VERSION} --enable-shared=yes --enable-float
 
   # build frame libraries
+  - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/ldas-tools-${LDAS_TOOLS_VERSION}.tar.gz ./ldas-tools-${LDAS_TOOLS_VERSION}
   - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/libframe-${LIBFRAME_VERSION}.tar.gz ./libframe-${LIBFRAME_VERSION}
 
   # build LAL packages
