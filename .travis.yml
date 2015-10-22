@@ -31,7 +31,6 @@ addons:
       - python-numpy
       - python-scipy
       - bc
-      - libgsl0ldbl
       # glue dependencies
       - python-m2crypto
       # misc python dependencies
