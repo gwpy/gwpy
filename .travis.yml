@@ -42,7 +42,7 @@ before_install:
   - pip install --upgrade pip
 
   # build FFTW3
-  - source .travis/build-with-autotools.sh http://www.fftw.org/fftw-${FFTW_VERSION}.tar.gz ./fftw-${FFTW_VERSION}
+  - source .travis/build-with-autotools.sh http://www.fftw.org/fftw-${FFTW_VERSION}.tar.gz ./fftw-${FFTW_VERSION} --enable-float
 
   # build LAL packages
   - echo ${PKG_CONFIG_PATH}

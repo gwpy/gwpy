@@ -5,7 +5,10 @@
 set -e
 
 tarball=$1
-target=`readlink -f $2`
+shift
+target=`readlink -f $1`
+shift
+configargs="$@"
 
 builddir="build_$RANDOM"
 mkdir -p $builddir
@@ -17,7 +20,7 @@ cd $builddir
 if [ -f ./00boot ]; then
     ./00boot
 fi
-./configure --prefix=$target --enable-silent-rules --quiet
+./configure --prefix=$target --enable-silent-rules --quiet $@
 make
 make install
 
