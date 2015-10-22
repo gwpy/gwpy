@@ -35,7 +35,7 @@ addons:
       - python-m2crypto
       # misc python dependencies
       - texlive-latex-extra
-      - libhdf5-dev
+      - libhdf5-serial-dev
 
 before_install:
   # update pip
