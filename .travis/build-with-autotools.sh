@@ -25,5 +25,6 @@ make
 make install
 
 export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${target}/lib/pkgconfig
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${target}/lib
 cd -
 rm -rf ${builddir}
