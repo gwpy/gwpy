@@ -31,5 +31,8 @@ make install
 
 export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${target}/lib/pkgconfig
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${target}/lib
+if [ -d ${target}/lib/python${TRAVIS_PYTHON_VERSION}/site-packages ]; then
+  export PYTHONPATH=${PYTHONPATH}:${target}/lib/python${TRAVIS_PYTHON_VERSION}/site-packages
+fi
 cd -
 rm -rf ${builddir}
