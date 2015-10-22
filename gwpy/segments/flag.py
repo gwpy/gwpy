@@ -730,6 +730,7 @@ class DataQualityFlag(object):
             a view of this flag, not a copy.
         """
         self.known = self.known.coalesce()
+        self.active = self.active.coalesce()
         self.active = (self.known & self.active).coalesce()
         return self
 
