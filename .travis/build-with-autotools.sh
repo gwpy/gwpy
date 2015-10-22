@@ -2,15 +2,19 @@
 #
 # build a package with autotools
 
-set -e
+set -ev
 
 tarball=$1
 shift
-target=`readlink -f $1`
+if [[ "`uname`" == "Darwin"* ]]; then
+    target=`greadlink -f $1`
+else
+    target=`readlink -f $1`
+fi
 shift
 configargs="$@"
 
-if [ "$(ls -A ${target}/lib/pkconfig)" ]; then
+if [ -d ${target}/lib/pkgconfig ] && [ "$(ls -A ${target}/lib/pkconfig)" ]; then
     echo "Target pkg-config directory is not empty, presuming successful cached build, will not build this package"
     return 0
 fi
@@ -31,8 +35,9 @@ make install
 
 export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${target}/lib/pkgconfig
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${target}/lib
-if [ -d ${target}/lib/python${TRAVIS_PYTHON_VERSION}/site-packages ]; then
-  export PYTHONPATH=${PYTHONPATH}:${target}/lib/python${TRAVIS_PYTHON_VERSION}/site-packages
-fi
+for libd in "lib lib64"; do
+    sited="${target}/${libd}/python${TRAVIS_PYTHON_VERSION}/site-packages"
+    [ -d ${sited} ] && export PYTHONPATH=${PYTHONPATH}:${sited}
+done
 cd -
 rm -rf ${builddir}
