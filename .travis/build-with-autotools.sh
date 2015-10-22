@@ -10,6 +10,11 @@ target=`readlink -f $1`
 shift
 configargs="$@"
 
+if [ "$(ls -A ${target}/lib/pkconfig)" ]; then
+    echo "Target pkg-config directory is not empty, presuming successful cached build, will not build this package"
+    exit 0
+fi
+
 builddir="build_$RANDOM"
 mkdir -p $builddir
 echo "Building into $builddir"
