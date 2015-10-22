@@ -23,9 +23,11 @@ for libd in "lib lib64"; do
 done
 
 # check for cached build
-if [ -d ${target}/lib/pkgconfig ] && [ "$(ls -A ${target}/lib/pkconfig)" ]; then
-    echo "Target pkg-config directory is not empty, presuming successful cached build, will not build this package"
-    return 0
+if [ -d ${target}/lib/pkgconfig ]; then
+    if [ "$(ls -A ${target}/lib/pkconfig)" ]; then
+        echo "Target pkg-config directory is not empty, presuming successful cached build, will not build this package"
+        return 0
+    fi
 fi
 
 builddir="build_$RANDOM"
