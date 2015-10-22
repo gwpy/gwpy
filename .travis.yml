@@ -46,10 +46,8 @@ before_install:
   - source .travis/build-with-autotools.sh http://www.fftw.org/fftw-${FFTW_VERSION}.tar.gz ./fftw-${FFTW_VERSION} --enable-shared=yes --enable-float
 
   # build LAL packages
-  - echo ${PKG_CONFIG_PATH}
-  - ls ./fftw-${FFTW_VERSION}/lib/pkgconfig
   - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/lalsuite/lal-${LAL_VERSION}.tar.gz ./lal-${LAL_VERSION}
-  - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/lalsuite/lalframe-${LALFRAME_VERSION}.tar.gz ./lalframe-${LALFRAME_VERSION}
+  #- source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/lalsuite/lalframe-${LALFRAME_VERSION}.tar.gz ./lalframe-${LALFRAME_VERSION}
 
   # build numpy and scipy
   - travis_retry pip install --install-option="--no-cython-compile" Cython
