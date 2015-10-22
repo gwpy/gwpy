@@ -26,7 +26,7 @@ if [ -f ./00boot ]; then
     ./00boot
 fi
 ./configure --prefix=$target --enable-silent-rules --quiet $@
-make
+make -j
 make install
 
 export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${target}/lib/pkgconfig
