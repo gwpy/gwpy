@@ -245,8 +245,10 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
     def test_append(self):
         """Test the `Series.append` method
         """
+        # create arrays
         ts1 = self.create()
         ts2 = self.create(x0=ts1.xspan[1])
+        # test basic append
         ts3 = ts1.append(ts2, inplace=False)
         self.assertEquals(ts3.epoch, ts1.epoch)
         self.assertEquals(ts3.x0, ts1.x0)
@@ -255,6 +257,21 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         self.assertRaises(ValueError, ts3.append, ts1)
         nptest.assert_array_equal(ts3.value[:ts1.size], ts1.value)
         nptest.assert_array_equal(ts3.value[-ts2.size:], ts2.value)
+        # test appending with one xindex deletes it in the output
+        ts1.xindex
+        ts4 = ts1.append(ts2, inplace=False)
+        self.assertTrue(hasattr(ts4, '_xindex'))
+        nptest.assert_array_equal(
+            ts4.xindex.value,
+            numpy.concatenate((ts1.xindex.value, ts2.xindex.value)))
+        # test appending with both xindex appends as well
+        ts1.xindex
+        ts2.xindex
+        ts5 = ts1.append(ts2, inplace=False)
+        self.assertTrue(hasattr(ts5, '_xindex'))
+        nptest.assert_array_equal(
+            ts5.xindex.value,
+            numpy.concatenate((ts1.xindex.value, ts2.xindex.value)))
 
     def test_prepend(self):
         """Test the `Series.prepend` method
