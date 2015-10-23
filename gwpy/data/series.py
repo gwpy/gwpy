@@ -438,7 +438,7 @@ class Series(Array):
             else:
                 self.xindex[:-other.shape[0]] = self.xindex[other.shape[0]:]
             try:
-                self.xindex[-other.shape[0]:] = other.xindex.value
+                self.xindex[-other.shape[0]:] = other._xindex
             except AttributeError:
                 del self.xindex
             try:
