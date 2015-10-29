@@ -20,6 +20,7 @@
 """
 
 import datetime
+from six import string_types
 
 from glue.lal import LIGOTimeGPS
 from glue.ligolw.ligolw import (Document, LIGO_LW)
@@ -153,7 +154,7 @@ def write_ligolw(flag, fobj, **kwargs):
     # TODO: add process information
     write_to_xmldoc(flag, xmldoc)
     # and write
-    if isinstance(fobj, str):
+    if isinstance(fobj, string_types):
         return write_filename(xmldoc, fobj, gz=fobj.endswith('.gz'))
     else:
         return write_fileobj(xmldoc, fobj, gz=fobj.name.endswith('.gz'))

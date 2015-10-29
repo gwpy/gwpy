@@ -22,6 +22,7 @@
 import os.path
 import tempfile
 import StringIO
+from six import PY3
 from urllib2 import (urlopen, URLError)
 
 from compat import unittest
@@ -83,7 +84,7 @@ QUERY_END = 1108684816
 QUERY_KNOWN = SegmentList([(1108598416, 1108632895), (1108632901, 1108684816)])
 QUERY_ACTIVE = SegmentList([(1108623497, 1108624217)])
 QUERY_FLAG = 'L1:DMT-DC_READOUT:1'
-QUERY_URL = 'https://dqsegdb5.phy.syr.edu'
+QUERY_URL = 'https://segments.ligo.org'
 
 VETO_DEFINER_FILE = ('https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/'
                      'segments/ER7/H1L1V1-ER7_CBC_OFFLINE.xml')
@@ -157,9 +158,16 @@ class DataQualityFlagTests(unittest.TestCase):
                         % (KNOWN, flag.known))
 
     def test_write_ligolw(self):
-        tmpfile = self.tmpfile % 'xml.gz'
-        DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN).write(tmpfile)
-        os.remove(tmpfile)
+        if PY3:
+            types = [str]
+        else:
+            types = [str, unicode]
+        for type_ in types:
+            tmpfile = type_(self.tmpfile % 'xml.gz')
+            try:
+                DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN).write(tmpfile)
+            finally:
+                os.remove(tmpfile)
 
     def test_write_hdf5(self, delete=True):
         flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
@@ -188,39 +196,44 @@ class DataQualityFlagTests(unittest.TestCase):
                             'DataQualityFlag.read(hdf5) mismatch:\n\n%s\n\n%s'
                             % (KNOWN, flag.known))
 
-    def test_query_dqsegdb(self):
+    def _query(self, cm, *args, **kwargs):
         try:
-            flag = DataQualityFlag.query_dqsegdb(
-                QUERY_FLAG, QUERY_START, QUERY_END, url=QUERY_URL)
+            return cm(*args, **kwargs)
         except (ImportError, URLError) as e:
             self.skipTest(str(e))
-        else:
-            self.assertEqual(flag.known, QUERY_KNOWN)
-            self.assertEqual(flag.active, QUERY_ACTIVE)
+        except AttributeError as e:
+            if 'PKCS5_SALT_LEN' in str(e):
+                self.skipTest(str(e))
+            else:
+                raise
+
+    def test_query(self):
+        flag = self._query(DataQualityFlag.query,
+                           QUERY_FLAG, QUERY_START, QUERY_END, url=QUERY_URL)
+        self.assertEqual(flag.known, QUERY_KNOWN)
+        self.assertEqual(flag.active, QUERY_ACTIVE)
+
+    def test_query_dqsegdb(self):
+        flag = self._query(DataQualityFlag.query_dqsegdb,
+                           QUERY_FLAG, QUERY_START, QUERY_END, url=QUERY_URL)
+        self.assertEqual(flag.known, QUERY_KNOWN)
+        self.assertEqual(flag.active, QUERY_ACTIVE)
 
     def test_query_dqsegdb_versionless(self):
-        try:
-            flag = DataQualityFlag.query_dqsegdb(
-                QUERY_FLAG.rsplit(':', 1)[0], QUERY_START, QUERY_END,
-                url=QUERY_URL)
-        except (ImportError, URLError) as e:
-            self.skipTest(str(e))
-        else:
-            self.assertEqual(flag.known, QUERY_KNOWN)
-            self.assertEqual(flag.active, QUERY_ACTIVE)
+        flag = self._query(DataQualityFlag.query_dqsegdb,
+                           QUERY_FLAG.rsplit(':', 1)[0], QUERY_START,
+                           QUERY_END, url=QUERY_URL)
+        self.assertEqual(flag.known, QUERY_KNOWN)
+        self.assertEqual(flag.active, QUERY_ACTIVE)
 
     def test_query_dqsegdb_multi(self):
         querymid = int(QUERY_START + (QUERY_END - QUERY_START) /2.)
         segs = SegmentList([Segment(QUERY_START, querymid),
                             Segment(querymid, QUERY_END)])
-        try:
-            flag = DataQualityFlag.query_dqsegdb(
-                QUERY_FLAG, segs, url=QUERY_URL)
-        except (ImportError, URLError) as e:
-            self.skipTest(str(e))
-        else:
-            self.assertEqual(flag.known, QUERY_KNOWN)
-            self.assertEqual(flag.active, QUERY_ACTIVE)
+        flag = self._query(DataQualityFlag.query_dqsegdb,
+                           QUERY_FLAG, segs, url=QUERY_URL)
+        self.assertEqual(flag.known, QUERY_KNOWN)
+        self.assertEqual(flag.active, QUERY_ACTIVE)
 
     def test_pad(self):
         flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
@@ -284,7 +297,7 @@ class DataQualityDictTestCase(unittest.TestCase):
         tmpfile = self.tmpfile % 'xml.gz'
         try:
             flags = DataQualityDict.read(SEGXML)
-        except Exception:
+        except Exception as e:
             self.skipTest(str(e))
         try:
             flags.write(tmpfile)
