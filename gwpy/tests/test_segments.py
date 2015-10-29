@@ -22,6 +22,7 @@
 import os.path
 import tempfile
 import StringIO
+from six import PY3
 from urllib2 import (urlopen, URLError)
 
 from compat import unittest
@@ -157,9 +158,16 @@ class DataQualityFlagTests(unittest.TestCase):
                         % (KNOWN, flag.known))
 
     def test_write_ligolw(self):
-        tmpfile = self.tmpfile % 'xml.gz'
-        DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN).write(tmpfile)
-        os.remove(tmpfile)
+        if PY3:
+            types = [str]
+        else:
+            types = [str, unicode]
+        for type_ in types:
+            tmpfile = type_(self.tmpfile % 'xml.gz')
+            try:
+                DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN).write(tmpfile)
+            finally:
+                os.remove(tmpfile)
 
     def test_write_hdf5(self, delete=True):
         flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
