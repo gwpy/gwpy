@@ -297,7 +297,7 @@ class DataQualityDictTestCase(unittest.TestCase):
         tmpfile = self.tmpfile % 'xml.gz'
         try:
             flags = DataQualityDict.read(SEGXML)
-        except Exception:
+        except Exception as e:
             self.skipTest(str(e))
         try:
             flags.write(tmpfile)
