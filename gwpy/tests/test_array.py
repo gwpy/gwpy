@@ -316,6 +316,24 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         # test bogus input
         self.assertRaises(ValueError, ts1.pad, -1)
 
+    def test_diff(self):
+        """Test the `Series.diff` method
+
+        This just ensures that the returned `Series` has the right length
+        and the right x0
+        """
+        ts1 = self.create()
+        diff = ts1.diff()
+        self.assertIsInstance(diff, type(ts1))
+        self.assertEqual(ts1.size - 1, diff.size)
+        self.assertEqual(diff.x0, ts1.x0 + ts1.dx)
+        self.assertEqual(diff.xspan[1], ts1.xspan[1])
+        self.assertEqual(diff.channel, ts1.channel)
+        # test n=3
+        diff = ts1.diff(n=3)
+        self.assertEqual(ts1.size - 3, diff.size)
+        self.assertEqual(diff.x0, ts1.x0 + ts1.dx * 3)
+
 
 if __name__ == '__main__':
     unittest.main()

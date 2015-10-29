@@ -228,6 +228,39 @@ class Series(Array):
         """
         return numpy.column_stack((self.xindex.value, self.value))
 
+    def diff(self, n=1, axis=-1):
+        """Calculate the n-th order discrete difference along given axis.
+
+        The first order difference is given by ``out[n] = a[n+1] - a[n]`` along
+        the given axis, higher order differences are calculated by using `diff`
+        recursively.
+
+        Parameters
+        ----------
+        n : int, optional
+            The number of times values are differenced.
+        axis : int, optional
+            The axis along which the difference is taken, default is the
+            last axis.
+
+        Returns
+        -------
+        diff : `Series`
+            The `n` order differences. The shape of the output is the same
+            as the input, except along `axis` where the dimension is
+            smaller by `n`.
+
+        See Also
+        --------
+        numpy.diff
+            for documentation on the underlying method
+        """
+        out = super(Array, self).diff(n=n, axis=axis)
+        out.x0 = self.x0 + self.dx * n
+        return out
+
+    diff.__doc__ = numpy.diff.__doc__
+
     def __array_finalize__(self, obj):
         super(Series, self).__array_finalize__(obj)
         if hasattr(self, '_xindex'):
