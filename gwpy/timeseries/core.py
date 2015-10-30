@@ -771,17 +771,18 @@ class TimeSeriesBaseDict(OrderedDict):
                            end='\r')
                     if i == nsteps:
                         gprint('')
-            # pad to end of request if required
-            if iend < float(end):
-                dt = float(end) - float(iend)
-                for channel in out:
-                    nsamp = dt * out[channel].sample_rate.value
-                    out[channel].append(
-                        numpy.ones(nsamp, dtype=out[channel].dtype) * pad)
-            # match request exactly
+
+        # pad to end of request if required
+        if len(qsegs) and iend < float(end):
+            dt = float(end) - float(iend)
             for channel in out:
-                if istart > start or iend < end:
-                    out[channel] = out[channel].crop(start, end)
+                nsamp = dt * out[channel].sample_rate.value
+                out[channel].append(
+                    numpy.ones(nsamp, dtype=out[channel].dtype) * pad)
+        # match request exactly
+        for channel in out:
+            if istart > start or iend < end:
+                out[channel] = out[channel].crop(start, end)
 
         if verbose:
             gprint('Success.')
