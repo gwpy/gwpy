@@ -63,7 +63,6 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     from ..detector import Channel
     channel = Channel(channel)
     name = channel.name
-    ifo = channel.ifo
     if gpstime is not None:
         gpstime = to_gps(gpstime).seconds
     connection = connect(host, port)
@@ -79,7 +78,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
                 frame = connection.find_frame_urls(
                     channel.ifo[0], ft, gpstime, gpstime, urltype='file',
                     on_gaps='ignore')[0]
-        except (IndexError, RuntimeError) as e:
+        except (IndexError, RuntimeError):
             continue
         else:
             if os.access(frame.path, os.R_OK) and (
@@ -179,7 +178,7 @@ def find_best_frametype(channel, start, end, urltype='file',
         cache.sort(key=lambda x: -abs(x[0].to_segmentlistdict().values()[0]))
         try:
             return cache[0][0]
-        except IndexError as e:
+        except IndexError:
             raise ValueError("Cannot find any valid frametypes for %r"
                              % channel)
     else:
