@@ -920,7 +920,7 @@ class TimeSeriesBaseDict(OrderedDict):
                                                urltype='file')
             # read data
             out.append(cls.read(cache, clist, start=start, end=end, pad=pad,
-                                dtype=dtype, nproc=nproc))
+                                dtype=dtype, nproc=nproc, format='gwf'))
             if verbose:
                 gprint("Done")
         return out
