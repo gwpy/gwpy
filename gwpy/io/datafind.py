@@ -87,7 +87,6 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
                 frames.append((ft, frame.path))
     # sort frames by allocated block size and regular size
     # (to put frames on tape at the bottom of the list)
-    print(frames)
     frames.sort(key=lambda x: (on_tape(x[1]), num_channels(x[1])))
     # search each frametype for the given channel
     found = []
