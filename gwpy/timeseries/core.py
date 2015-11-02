@@ -335,7 +335,7 @@ class TimeSeriesBase(Series):
         """
         return cls.DictClass.get(
             [channel], start, end, pad=pad, dtype=dtype, verbose=verbose,
-            **kwargs)
+            **kwargs)[str(channel)]
 
     # -------------------------------------------
     # Utilities
@@ -900,9 +900,9 @@ class TimeSeriesBaseDict(OrderedDict):
                     frametypes[ft].append(c)
                 except KeyError:
                     frametypes[ft] = [c]
-            if len(frametypes) > 1:
+            if verbose and len(frametypes) > 1:
                 gprint("Determined %d frametypes to read" % len(frametypes))
-            else:
+            elif verbose:
                 gprint("Determined best frametype as %r"
                        % frametypes.keys()[0])
         else:
@@ -983,8 +983,8 @@ class TimeSeriesBaseDict(OrderedDict):
                     gprint("Failed to access data from frames, trying NDS...")
         # otherwise fetch from NDS
         try:
-            cls.fetch(channels, start, end, pad=pad, dtype=dtype,
-                      verbose=verbose, **kwargs)
+            return cls.fetch(channels, start, end, pad=pad, dtype=dtype,
+                             verbose=verbose, **kwargs)
         except RuntimeError:
             # if all else fails, try and get each channel individually
             return cls(
