@@ -26,6 +26,8 @@ import datetime
 
 from dateutil import parser as dateparser
 
+from astropy.units import Quantity
+
 from .. import version
 from . import (Time, LIGOTimeGPS)
 
@@ -127,6 +129,9 @@ def to_gps(t, *args, **kwargs):
     # and then into LIGOTimeGPS
     if isinstance(t, Time):
         return time_to_gps(t)
+    # extract quantity to a float in seconds
+    if isinstance(t, Quantity):
+        t = t.to('second').value
     # if all else fails...
     return LIGOTimeGPS(t)
 
