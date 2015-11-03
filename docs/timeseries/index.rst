@@ -43,17 +43,26 @@ As described above, the data from each instrument are archived for off-line stud
 To learn more about this particular data format, take a look at the specification document `LIGO-T970130 <https://dcc.ligo.org/LIGO-T970130/public>`_.
 These files are stored on disk by the LIGO Data Grid and can be either accessed either directly or remotely.
 
-The `TimeSeries` for a given :class:`~gwpy.detector.channel.Channel` can be read from disk using the :meth:`TimeSeries.read` `classmethod` as follows::
+The easiest way to access interferometer data is to use `TimeSeries.get`:
+
+.. automethod:: TimeSeries.get
+   :noindex:
+
+This method will try direct file access and remote NDS2 access in order to get you the data you want, with the minimum of inputs (direct file access is preferred)::
 
     >>> from gwpy.timeseries import TimeSeries
-    >>> data = TimeSeries.read('/archive/frames/A6/L0/LLO/L-R-10670/L-R-1067042880-32.gwf', 'L1:PSL-ODC_CHANNEL_OUT_DQ')
+    >>> data = TimeSeries.get('L1:PSL-ODC_CHANNEL_OUT_DQ', 1067042880, 1067042912)
 
-Alternatively, the data can be downloaded on-the-fly via the `Network Data Server <https://www.lsc-group.phys.uwm.edu/daswg/projects/nds-client.html>`_ using the :meth:`TimeSeries.fetch` `classmethod`::
+If you want to be more specific, there are three other methods that you can use that allow more control over the data access:
 
-    >>> from gwpy.timeseries import TimeSeries
-    >>> data = TimeSeries.fetch('L1:PSL-ODC_CHANNEL_OUT_DQ', 1067042880, 1067042912)
+.. autosummary::
 
-Both of the above snippets will return identical `TimeSeries`.
+   TimeSeries.fetch
+   TimeSeries.find
+   TimeSeries.read
+
+All of these should return identical `TimeSeries` objects.
+
 For more details on accessing data via either of these sources, or from publicly-released data files, please read the following tutorials:
 
 .. toctree::
@@ -87,7 +96,7 @@ The `TimeSeriesDict`
 --------------------
 
 The `TimeSeriesDict` does for multiple channels what the `TimeSeriesList` does for multiple epochs, allowing easy collection of `TimeSeries` from a single epochs but multiple sources.
-The most immediate itilities of this object are the :meth:`TimeSeriesDict.read` and :meth:`TimeSeriesDict.fetch` methods, allowing users to read and download respectively data for numerous channels in a single command.
+This class offers the same data access as for the `TimeSeries`, with the `TimeSeriesDict.get` the easiest way to load some data.
 See the full reference for what other functionality is available.
 
 .. _plotting-a-timeseries:

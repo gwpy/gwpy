@@ -977,7 +977,8 @@ class TimeSeriesBaseDict(OrderedDict):
             try_frames = False
         # try and find from frames
         if try_frames:
-            gprint("Attempting to access data from frames...")
+            if verbose:
+                gprint("Attempting to access data from frames...")
             try:
                 return cls.find(channels, start, end, pad=pad, dtype=dtype,
                                 verbose=verbose, allow_tape=allow_tape,
