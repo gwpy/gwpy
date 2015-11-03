@@ -991,17 +991,25 @@ class TimeSeriesBaseDict(OrderedDict):
                                 **kwargs)
             except (RuntimeError, ValueError) as e:
                 if verbose:
+                    gprint(str(e), file=sys.stderr)
                     gprint("Failed to access data from frames, trying NDS...")
         # otherwise fetch from NDS
         try:
             return cls.fetch(channels, start, end, pad=pad, dtype=dtype,
                              verbose=verbose, **kwargs)
-        except RuntimeError:
+        except RuntimeError as e:
             # if all else fails, try and get each channel individually
-            return cls(
-                (c, cls.EntryClass.get(c, start, end, pad=pad, dtype=dtype,
-                                       verbose=verbose, **kwargs))
-                for c in channels)
+            if len(channels) == 1:
+                raise
+            else:
+                if verbose:
+                    gprint(str(e), file=sys.stderr)
+                    gprint("Failed to access data for all channels as a "
+                           "group, tryging individually:")
+                return cls(
+                    (c, cls.EntryClass.get(c, start, end, pad=pad, dtype=dtype,
+                                           verbose=verbose, **kwargs))
+                    for c in channels)
 
     def plot(self, label='key', **kwargs):
         """Plot the data for this `TimeSeriesBaseDict`.
