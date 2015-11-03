@@ -37,6 +37,7 @@ from gwpy import version
 from gwpy.timeseries import (TimeSeries, StateVector)
 from gwpy.spectrum import Spectrum
 from gwpy.spectrogram import Spectrogram
+from gwpy.io.cache import Cache
 from test_array import SeriesTestCase
 
 SEED = 1
@@ -99,6 +100,9 @@ class TimeSeriesTestMixin(object):
                     self.frame_read()
                 finally:
                     register_reader('gwf', TimeSeries, read_, force=True)
+            # test errors
+            self.assertRaises(ValueError, self.TEST_CLASS.read, Cache(),
+                              self.channel, format=format)
 
     def test_frame_read_lalframe(self):
         return self._test_frame_read_format('lalframe')

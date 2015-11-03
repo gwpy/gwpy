@@ -109,6 +109,9 @@ def register_gwf_io_library(library, package='gwpy.timeseries.io.gwf'):
     def read_timeseriesdict(source, *args, **kwargs):
         """Read `TimeSeriesDict` from GWF source
         """
+        if isinstance(source, list) and not len(source):
+            raise ValueError("Cannot read from empty %s"
+                             % type(source).__name__)
         # use multiprocessing or padding
         nproc = kwargs.pop('nproc', 1)
         pad = kwargs.pop('pad', None)
