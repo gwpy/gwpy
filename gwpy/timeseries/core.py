@@ -305,7 +305,10 @@ class TimeSeriesBase(Series):
     @interpolate_docstring
     def get(cls, channel, start, end, pad=None, dtype=None, verbose=False,
             **kwargs):
-        """Get data for this channel
+        """Get data for this channel from frames or NDS
+
+        This method dynamically accesses either frames on disk, or a
+        remote NDS2 server to find and return data for the given interval
 
         Parameters
         ----------
@@ -313,7 +316,7 @@ class TimeSeriesBase(Series):
 
         pad : `float`, optional
             value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
+            gap is not given, or ``gap='pad'`` is given
         dtype : `numpy.dtype`, `str`, `type`, or `dict`
             numeric data type for returned data, e.g. `numpy.float`, or
             `dict` of (`channel`, `dtype`) pairs
@@ -323,8 +326,8 @@ class TimeSeriesBase(Series):
         verbose : `bool`, optional
             print verbose output about NDS progress.
         **kwargs            other keyword arguments to pass to either
-            `TimeSeriesBaseDict.find` (for direct GWF file access) or
-            `TimeSeriesBaseDict.fetch` for remote NDS2 access
+            :meth:`.find` (for direct GWF file access) or
+            :meth:`.fetch` for remote NDS2 access
 
         See Also
         --------
@@ -928,7 +931,7 @@ class TimeSeriesBaseDict(OrderedDict):
     @classmethod
     def get(cls, channels, start, end, pad=None, dtype=None, verbose=False,
             allow_tape=False, **kwargs):
-        """Get the data for the multiple channels
+        """Retrieve data for multiple channels from frames or NDS
 
         This method dynamically accesses either frames on disk, or a
         remote NDS2 server to find and return data for the given interval
