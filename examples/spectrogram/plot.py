@@ -25,10 +25,14 @@ I would like to study the gravitational wave strain spectrogram around the time 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.spectrogram'
 
-# First, we import the :class:`~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.fetch` the data:
+import os
+os.environ.pop('LIGO_DATAFIND_SERVER')
+
+# First, we import the :class:`~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.get` the data:
 from gwpy.timeseries import TimeSeries
-gwdata = TimeSeries.fetch(
-    'H1:LDAS-STRAIN,rds', 'September 16 2010 06:40', 'September 16 2010 06:50')
+gwdata = TimeSeries.get(
+    'H1:LDAS-STRAIN', 'September 16 2010 06:40', 'September 16 2010 06:50',
+    verbose=True)
 
 # Next, we can calculate a `Spectrogram` using the 
 # :meth:`~gwpy.timeseries.TimeSeries.spectrogram` method of the #

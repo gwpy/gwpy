@@ -24,10 +24,10 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.spectrum'
 
 # In order to generate a `SpectralVariance` histogram we need to import the
-# `~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.fetch()`
+# `~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.get`
 # the data:
 from gwpy.timeseries import TimeSeries
-llo = TimeSeries.fetch(
+llo = TimeSeries.get(
     'L1:LDAS-STRAIN,rds', 'August 1 2010', 'August 1 2010 00:10')
 
 # We can then call the :meth:`~gwpy.timeseries.TimeSeries.spectral_variance`

@@ -36,9 +36,9 @@ goodtime = 1061800700
 badtime = 1061524816
 duration = 120
 
-# Next we get :meth:`~TimeSeries.fetch` the data:
-gooddata = TimeSeries.fetch('L1:PSL-ISS_PDB_OUT_DQ', goodtime, goodtime+duration)
-baddata = TimeSeries.fetch('L1:PSL-ISS_PDB_OUT_DQ', badtime, badtime+duration)
+# Next we :meth:`~TimeSeries.get` the data:
+gooddata = TimeSeries.get('L1:PSL-ISS_PDB_OUT_DQ', goodtime, goodtime+duration)
+baddata = TimeSeries.get('L1:PSL-ISS_PDB_OUT_DQ', badtime, badtime+duration)
 
 # and calculate an `amplitude spectral density (ASD) <TimeSeries.asd>` using a 4-second Fourier transform with a 2-second overlap:
 goodasd = gooddata.asd(4, 2)

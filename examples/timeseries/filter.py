@@ -30,9 +30,9 @@ whitening to show the physical content of these data.
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.timeseries'
 
-# First, we import the `TimeSeries` and `~TimeSeries.fetch` the data:
+# First, we import the `TimeSeries` and :meth:`~TimeSeries.get` the data:
 from gwpy.timeseries import TimeSeries
-white = TimeSeries.fetch(
+white = TimeSeries.get(
     'L1:OAF-CAL_DARM_DQ', 'March 2 2015 12:00', 'March 2 2015 12:30')
 
 # Now, we can re-calibrate these data into displacement units by first applying

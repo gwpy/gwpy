@@ -32,10 +32,10 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.timeseries'
 
 # As with the other `~gwpy.spectrogram.Spectrogram` examples, we import the
-# `TimeSeries` class, and :meth:`~TimeSeries.fetch` the data, but in this
+# `TimeSeries` class, and :meth:`~TimeSeries.get` the data, but in this
 # example we only need 5 seconds of datam,
 from gwpy.timeseries import TimeSeries
-gwdata = TimeSeries.fetch(
+gwdata = TimeSeries.get(
     'L1:OAF-CAL_DARM_DQ', 'Feb 28 2015 06:02:05', 'Feb 28 2015 06:02:10')
 
 # Now we can call the `~TimeSeries.spectrogram2` method of `gwdata` to

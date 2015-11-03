@@ -35,9 +35,9 @@ a frequency of around 5-50Hz.
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.timeseries'
 
-# First, we import the `TimeSeries` and `~TimeSeries.fetch` the data:
+# First, we import the `TimeSeries` and :meth:`~TimeSeries.get` the data:
 from gwpy.timeseries import TimeSeries
-data = TimeSeries.fetch('H1:ASC-Y_TR_A_NSUM_OUT_DQ', 1123084670, 1123084800)
+data = TimeSeries.get('H1:ASC-Y_TR_A_NSUM_OUT_DQ', 1123084670, 1123084800)
 
 # Now, we can `~TimeSeries.whiten` the data to enhance the higher-frequency
 # content
