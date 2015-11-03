@@ -691,6 +691,10 @@ class TimeSeriesBaseDict(OrderedDict):
         istart = start.seconds
         iend = ceil(end)
 
+        # test S6 h(t) channel
+        if any(re.match('[HL]1:LDAS-STRAIN\Z', str(c)) for c in channels):
+            verify = True
+
         # parse dtype
         if isinstance(dtype, (tuple, list)):
             dtype = [numpy.dtype(r) if r is not None else None for r in dtype]
