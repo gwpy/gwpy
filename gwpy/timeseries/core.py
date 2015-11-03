@@ -21,6 +21,7 @@
 
 from __future__ import (division, print_function)
 
+import os
 import sys
 import warnings
 import re
@@ -43,7 +44,7 @@ else:
 from .. import version
 from ..data import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
-from ..io import reader
+from ..io import (reader, datafind)
 from ..time import (Time, to_gps)
 from ..utils import (gprint, with_import)
 from ..utils.docstring import interpolate_docstring
@@ -266,6 +267,81 @@ class TimeSeriesBase(Series):
             [channel], start, end, host=host, port=port,
             verbose=verbose, connection=connection, verify=verify,
             pad=pad, type=type, dtype=dtype)[str(channel)]
+
+    @classmethod
+    @interpolate_docstring
+    def find(cls, channel, start, end, frametype=None,
+             pad=None, dtype=None, nproc=1, verbose=False, **readargs):
+        """Find and read data from frames for a channel
+
+        Parameters
+        ----------
+        %(timeseries-fetch1)s
+
+        frametype : `str`, optional
+            name of frametype in which this channel is stored, will search
+            for containing frame types if necessary
+
+        pad : `float`, optional
+            value with which to fill gaps in the source data, only used if
+            gap is not given, or `gap='pad'` is given
+
+        nproc : `int`, optional, default: `1`
+            number of parallel processes to use, serial process by
+            default.
+
+        dtype : `numpy.dtype`, `str`, `type`, or `dict`
+            numeric data type for returned data, e.g. `numpy.float`, or
+            `dict` of (`channel`, `dtype`) pairs
+
+        verbose : `bool`, optional
+            print verbose output about NDS progress.
+
+        **readargs
+            any other keyword arguments to be passed to `.read()`
+        """
+        return cls.DictClass.find(
+            [channel], start, end, frametype=frametype, verbose=verbose,
+            pad=pad, dtype=dtype, nproc=nproc, **readargs)[str(channel)]
+
+    @classmethod
+    @interpolate_docstring
+    def get(cls, channel, start, end, pad=None, dtype=None, verbose=False,
+            **kwargs):
+        """Get data for this channel from frames or NDS
+
+        This method dynamically accesses either frames on disk, or a
+        remote NDS2 server to find and return data for the given interval
+
+        Parameters
+        ----------
+        %(timeseries-fetch1)s
+
+        pad : `float`, optional
+            value with which to fill gaps in the source data, only used if
+            gap is not given, or ``gap='pad'`` is given
+        dtype : `numpy.dtype`, `str`, `type`, or `dict`
+            numeric data type for returned data, e.g. `numpy.float`, or
+            `dict` of (`channel`, `dtype`) pairs
+        nproc : `int`, optional, default: `1`
+            number of parallel processes to use, serial process by
+            default.
+        verbose : `bool`, optional
+            print verbose output about NDS progress.
+        **kwargs            other keyword arguments to pass to either
+            :meth:`.find` (for direct GWF file access) or
+            :meth:`.fetch` for remote NDS2 access
+
+        See Also
+        --------
+        TimeSeries.fetch
+            for grabbing data from a remote NDS2 server
+        TimeSeries.find
+            for discovering and reading data from local GWF files
+        """
+        return cls.DictClass.get(
+            [channel], start, end, pad=pad, dtype=dtype, verbose=verbose,
+            **kwargs)[str(channel)]
 
     # -------------------------------------------
     # Utilities
@@ -615,6 +691,10 @@ class TimeSeriesBaseDict(OrderedDict):
         istart = start.seconds
         iend = ceil(end)
 
+        # test S6 h(t) channel
+        if any(re.match('[HL]1:LDAS-STRAIN\Z', str(c)) for c in channels):
+            verify = True
+
         # parse dtype
         if isinstance(dtype, (tuple, list)):
             dtype = [numpy.dtype(r) if r is not None else None for r in dtype]
@@ -787,6 +867,154 @@ class TimeSeriesBaseDict(OrderedDict):
         if verbose:
             gprint('Success.')
         return out
+
+    @classmethod
+    def find(cls, channels, start, end, frametype=None,
+             pad=None, dtype=None, nproc=1, verbose=False,
+             allow_tape=True, **readargs):
+        """Find and read data from frames for a number of channels.
+
+        Parameters
+        ----------
+        channels : `list`
+            required data channels.
+        start : `~gwpy.time.Time`, or float
+            GPS start time of data span.
+        end : `~gwpy.time.Time`, or float
+            GPS end time of data span.
+        frametype : `str`, optional
+            name of frametype in which this channel is stored, by default
+            will search for all required frame types
+        pad : `float`, optional
+            value with which to fill gaps in the source data, only used if
+            gap is not given, or `gap='pad'` is given
+        dtype : `numpy.dtype`, `str`, `type`, or `dict`
+            numeric data type for returned data, e.g. `numpy.float`, or
+            `dict` of (`channel`, `dtype`) pairs
+        nproc : `int`, optional, default: `1`
+            number of parallel processes to use, serial process by
+            default.
+        verbose : `bool`, optional
+            print verbose output about NDS progress.
+        allow_tape : `bool`, optional, default: `True`
+            allow reading from frames on tape
+        **readargs
+            any other keyword arguments to be passed to `.read()`
+        """
+        start = to_gps(start)
+        end = to_gps(end)
+        # -- find frametype(s)
+        if frametype is None:
+            frametypes = dict()
+            for c in channels:
+                ft = datafind.find_best_frametype(c, start, end,
+                                                  allow_tape=allow_tape)
+                try:
+                    frametypes[ft].append(c)
+                except KeyError:
+                    frametypes[ft] = [c]
+            if verbose and len(frametypes) > 1:
+                gprint("Determined %d frametypes to read" % len(frametypes))
+            elif verbose:
+                gprint("Determined best frametype as %r"
+                       % frametypes.keys()[0])
+        else:
+            frametypes = {frametype: channels}
+        # -- read data
+        out = cls()
+        for ft, clist in frametypes.iteritems():
+            if verbose:
+                gprint("Reading data from %s frames..." % ft, end=' ')
+            # find frames
+            channellist = ChannelList.from_names(*clist)
+            ifos = ''.join(sorted(set(c.ifo[0] for c in channellist)))
+            connection = datafind.connect()
+            cache = connection.find_frame_urls(ifos, ft, start, end,
+                                               urltype='file')
+            # read data
+            readargs.setdefault('format', 'gwf')
+            out.append(cls.read(cache, clist, start=start, end=end, pad=pad,
+                                dtype=dtype, nproc=nproc, **readargs))
+            if verbose:
+                gprint("Done")
+        return out
+
+    @classmethod
+    def get(cls, channels, start, end, pad=None, dtype=None, verbose=False,
+            allow_tape=False, **kwargs):
+        """Retrieve data for multiple channels from frames or NDS
+
+        This method dynamically accesses either frames on disk, or a
+        remote NDS2 server to find and return data for the given interval
+
+        Parameters
+        ----------
+        channels : `list`
+            required data channels.
+        start : `~gwpy.time.Time`, or float
+            GPS start time of data span.
+        end : `~gwpy.time.Time`, or float
+            GPS end time of data span.
+        frametype : `str`, optional
+            name of frametype in which this channel is stored, by default
+            will search for all required frame types
+        pad : `float`, optional
+            value with which to fill gaps in the source data, only used if
+            gap is not given, or `gap='pad'` is given
+        dtype : `numpy.dtype`, `str`, `type`, or `dict`
+            numeric data type for returned data, e.g. `numpy.float`, or
+            `dict` of (`channel`, `dtype`) pairs
+        nproc : `int`, optional, default: `1`
+            number of parallel processes to use, serial process by
+            default.
+        verbose : `bool`, optional
+            print verbose output about NDS progress.
+        allow_tape : `bool`, optional, default: `False`
+            allow the use of frames that are held on tape, default is `False`
+            to attempt to allow the `TimeSeries.fetch` method to
+            intelligently select a server that doesn't use tapes for
+            data storage (doesn't always work)
+        **kwargs
+            other keyword arguments to pass to either
+            `TimeSeriesBaseDict.find` (for direct GWF file access) or
+            `TimeSeriesBaseDict.fetch` for remote NDS2 access
+        """
+        try_frames = True
+        # work out whether to use NDS2 or frames
+        if not os.getenv('LIGO_DATAFIND_SERVER'):
+            try_frames = False
+        host = kwargs.get('host', None)
+        if host is not None and host.startswith('nds'):
+            try_frames = False
+        # try and find from frames
+        if try_frames:
+            if verbose:
+                gprint("Attempting to access data from frames...")
+            try:
+                return cls.find(channels, start, end, pad=pad, dtype=dtype,
+                                verbose=verbose, allow_tape=allow_tape,
+                                **kwargs)
+            except (RuntimeError, ValueError) as e:
+                if verbose:
+                    gprint(str(e), file=sys.stderr)
+                    gprint("Failed to access data from frames, trying NDS...")
+        # otherwise fetch from NDS
+        try:
+            return cls.fetch(channels, start, end, pad=pad, dtype=dtype,
+                             verbose=verbose, **kwargs)
+        except RuntimeError as e:
+            # if all else fails, try and get each channel individually
+            if len(channels) == 1:
+                raise
+            else:
+                if verbose:
+                    gprint(str(e), file=sys.stderr)
+                    gprint("Failed to access data for all channels as a "
+                           "group, tryging individually:")
+                return cls(
+                    (c, cls.EntryClass.get(c, start, end, pad=pad, dtype=dtype,
+                                           verbose=verbose, **kwargs))
+                    for c in channels)
 
     def plot(self, label='key', **kwargs):
         """Plot the data for this `TimeSeriesBaseDict`.

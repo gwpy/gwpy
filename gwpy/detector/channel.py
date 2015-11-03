@@ -47,7 +47,7 @@ except ImportError:
                              NDS2_CHANNEL_TYPESTR.iteritems())
 
 from .. import version
-from ..io import reader, writer
+from ..io import (reader, writer, datafind)
 from ..time import to_gps
 from ..utils.deps import with_import
 
@@ -555,6 +555,39 @@ class Channel(object):
             raise ValueError("Cannot parse channel name according to LIGO "
                              "channel-naming convention T990033")
         return match.groupdict()
+
+    def find_frametype(self, gpstime=None, frametype_match=None,
+                       host=None, port=None, return_all=False,
+                       exclude_tape=False):
+        """Find the containing frametype(s) for this `Channel`
+
+        Parameters
+        ----------
+        gpstime : `int`
+            a reference GPS time at which to search for frame files
+        frametype_match : `str`
+            a regular expression string to use to down-select from the
+            list of all available frametypes
+        host : `str`
+            the name of the datafind server to use for frame file discovery
+        port : `int`
+            the port of the datafind server on the given host
+        return_all: `bool`, default: `False`
+            return all matched frame types, otherwise only the first match is
+            returned
+        exclude_tape : `bool`, default: `False`
+            do not search frame files that appear to be on magnetic tape
+
+        Returns
+        -------
+        frametype : `str`, `list`
+            the first matching frametype containing the this channel
+            (`return_all=False`, or a `list` of all matches
+        """
+        return datafind.find_frametype(
+            self, gpstime=gpstime, frametype_match=frametype_match,
+            host=host, port=port, return_all=return_all,
+            exclude_tape=exclude_tape)
 
     def copy(self):
         return type(self)(self.name, unit=self.unit,

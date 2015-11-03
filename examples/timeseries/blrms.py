@@ -41,12 +41,12 @@ channels = [
     '%s:ISI-BS_ST1_SENSCOR_GND_STS_Z_BLRMS_30M_100M.mean,s-trend',
 ]
 
-# At last we can fetch 12 hours of data for each interferometer using the
-# `TimeSeriesDict.fetch` method:
-lho = TimeSeriesDict.fetch([c % 'H1' for c in channels],
-                           'Feb 13 2015 16:00', 'Feb 14 2015 04:00')
-llo = TimeSeriesDict.fetch([c % 'L1' for c in channels],
-                           'Feb 13 2015 16:00', 'Feb 14 2015 04:00')
+# At last we can :meth:`~TimeSeriesDict.get` 12 hours of data for each
+# interferometer:
+lho = TimeSeriesDict.get([c % 'H1' for c in channels],
+                         'Feb 13 2015 16:00', 'Feb 14 2015 04:00', verbose=True)
+llo = TimeSeriesDict.get([c % 'L1' for c in channels],
+                         'Feb 13 2015 16:00', 'Feb 14 2015 04:00', verbose=True)
 
 # Next we can plot the data, with a separate `~gwpy.plotter.Axes` for each
 # instrument:

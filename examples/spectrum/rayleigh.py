@@ -24,9 +24,9 @@
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.spectrum'
 
-# First, we import the :class:`~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.fetch` the data:
+# First, we import the :class:`~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.get` the data:
 from gwpy.timeseries import TimeSeries
-gwdata = TimeSeries.fetch(
+gwdata = TimeSeries.get(
     'H1:LDAS-STRAIN,rds', 'September 16 2010 06:40', 'September 16 2010 06:50')
 
 # Next, we can calculate a Rayleigh statistic `Spectrum` using the 

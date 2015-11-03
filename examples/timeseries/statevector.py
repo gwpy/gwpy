@@ -31,7 +31,7 @@ __currentmodule__ = 'gwpy.timeseries'
 from gwpy.timeseries import StateVector
 
 # Next, we define which bits we want to use, and can then
-# :meth:`~StateVector.fetch` the data:
+# :meth:`~StateVector.get` the data:
 bits = [
     'Summary state',
     'State 1 damped',
@@ -43,7 +43,7 @@ bits = [
     'Stage 2 WatchDog OK',
 ]
 
-data = StateVector.fetch('L1:ISI-ETMX_ODC_CHANNEL_OUT_DQ', 'May 22 2014 14:00', 'May 22 2014 15:00', bits=bits)
+data = StateVector.get('L1:ISI-ETMX_ODC_CHANNEL_OUT_DQ', 'May 22 2014 14:00', 'May 22 2014 15:00', bits=bits)
 data = data.astype('uint32')  # hide
 
 # For this example, we wish to :meth:`~StateVector.resample` the data to a

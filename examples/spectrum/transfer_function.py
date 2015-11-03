@@ -44,9 +44,9 @@ end = start + 1800
 gndchannel = 'L1:ISI-GND_STS_ITMY_Z_DQ'
 hpichannel = 'L1:HPI-ITMY_BLND_L4C_Z_IN1_DQ'
 
-# We can call the :meth:`~TimeSeriesDict.fetch` method of the `TimeSeriesDict`
+# We can call the :meth:`~TimeSeriesDict.get` method of the `TimeSeriesDict`
 # to retrieve all data in a single operation:
-data = TimeSeriesDict.fetch([gndchannel, hpichannel], start, end, verbose=True)
+data = TimeSeriesDict.get([gndchannel, hpichannel], start, end, verbose=True)
 gnd = data[gndchannel]
 hpi = data[hpichannel]
 

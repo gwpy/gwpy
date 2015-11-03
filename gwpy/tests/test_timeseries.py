@@ -50,6 +50,10 @@ TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
                           'HLV-GW100916-968654552-1.gwf')
 TEST_HDF_FILE = '%s.hdf' % TEST_GWF_FILE[:-4]
 
+FIND_CHANNEL = 'L1:LDAS-STRAIN'
+FIND_GPS = 968654552
+FIND_FRAMETYPE = 'L1_LDAS_C02_L2'
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
@@ -74,6 +78,7 @@ class TimeSeriesTestMixin(object):
         self.assertTrue(ts.epoch == Time(968654552, format='gps', scale='utc'))
         self.assertTrue(ts.sample_rate == units.Quantity(16384, 'Hz'))
         self.assertTrue(ts.unit == units.Unit('strain'))
+        return ts
 
     def test_epoch(self):
         array = self.create()
@@ -109,6 +114,34 @@ class TimeSeriesTestMixin(object):
 
     def test_frame_read_framecpp(self):
         return self._test_frame_read_format('framecpp')
+
+    def test_find(self):
+        try:
+            ts = self.TEST_CLASS.find(FIND_CHANNEL, FIND_GPS, FIND_GPS+1,
+                                      frametype=FIND_FRAMETYPE)
+        except (ImportError, RuntimeError) as e:
+            self.skipTest(str(e))
+        else:
+            self.assertEqual(ts.x0.value, FIND_GPS)
+            self.assertEqual(abs(ts.span), 1)
+            try:
+                comp = self.frame_read()
+            except ImportError:
+                pass
+            else:
+                nptest.assert_array_almost_equal(ts.value, comp.value)
+
+    def test_find_best_frametype(self):
+        try:
+            ts = self.TEST_CLASS.find(FIND_CHANNEL, FIND_GPS, FIND_GPS+1)
+        except (ImportError, RuntimeError) as e:
+            self.skipTest(str(e))
+
+    def test_get(self):
+        try:
+            ts = self.TEST_CLASS.get(FIND_CHANNEL, FIND_GPS, FIND_GPS+1)
+        except (ImportError, RuntimeError) as e:
+            self.skipTest(str(e))
 
     def test_ascii_write(self, delete=True):
         self.ts = self.create()

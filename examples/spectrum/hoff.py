@@ -28,12 +28,12 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.spectrum'
 
 # In order to generate a `Spectrum` we need to import the
-# `~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.fetch()`
+# `~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.get`
 # the data:
 from gwpy.timeseries import TimeSeries
-lho = TimeSeries.fetch(
+lho = TimeSeries.get(
     'H1:LDAS-STRAIN,rds', 'August 1 2010', 'August 1 2010 00:02')
-llo = TimeSeries.fetch(
+llo = TimeSeries.get(
     'L1:LDAS-STRAIN,rds', 'August 1 2010', 'August 1 2010 00:02')
 
 # We can then call the :meth:`~gwpy.timeseries.TimeSeries.asd` method to
