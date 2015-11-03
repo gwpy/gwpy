@@ -922,7 +922,7 @@ class TimeSeriesBaseDict(OrderedDict):
                 gprint("Reading data from %s frames..." % ft, end=' ')
             # find frames
             channellist = ChannelList.from_names(*clist)
-            ifos = ' '.join(sorted(c.ifo[0] for c in channellist))
+            ifos = ''.join(sorted(set(c.ifo[0] for c in channellist)))
             connection = datafind.connect()
             cache = connection.find_frame_urls(ifos, ft, start, end,
                                                urltype='file')
