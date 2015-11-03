@@ -271,7 +271,7 @@ class TimeSeriesBase(Series):
     @classmethod
     @interpolate_docstring
     def find(cls, channel, start, end, frametype=None,
-             pad=None, dtype=None, nproc=1, verbose=False):
+             pad=None, dtype=None, nproc=1, verbose=False, **readargs):
         """Find and read data from frames for a channel
 
         Parameters
@@ -296,10 +296,13 @@ class TimeSeriesBase(Series):
 
         verbose : `bool`, optional
             print verbose output about NDS progress.
+
+        **readargs
+            any other keyword arguments to be passed to `.read()`
         """
         return cls.DictClass.find(
             [channel], start, end, frametype=frametype, verbose=verbose,
-            pad=pad, dtype=dtype, nproc=nproc)[str(channel)]
+            pad=pad, dtype=dtype, nproc=nproc, **readargs)[str(channel)]
 
     @classmethod
     @interpolate_docstring
@@ -863,7 +866,7 @@ class TimeSeriesBaseDict(OrderedDict):
     @classmethod
     def find(cls, channels, start, end, frametype=None,
              pad=None, dtype=None, nproc=1, verbose=False,
-             allow_tape=True):
+             allow_tape=True, **readargs):
         """Find and read data from frames for a number of channels.
 
         Parameters
@@ -890,6 +893,8 @@ class TimeSeriesBaseDict(OrderedDict):
             print verbose output about NDS progress.
         allow_tape : `bool`, optional, default: `True`
             allow reading from frames on tape
+        **readargs
+            any other keyword arguments to be passed to `.read()`
         """
         start = to_gps(start)
         end = to_gps(end)
@@ -922,8 +927,9 @@ class TimeSeriesBaseDict(OrderedDict):
             cache = connection.find_frame_urls(ifos, ft, start, end,
                                                urltype='file')
             # read data
+            readargs.setdefault('format', 'gwf')
             out.append(cls.read(cache, clist, start=start, end=end, pad=pad,
-                                dtype=dtype, nproc=nproc, format='gwf'))
+                                dtype=dtype, nproc=nproc, **readargs))
             if verbose:
                 gprint("Done")
         return out
