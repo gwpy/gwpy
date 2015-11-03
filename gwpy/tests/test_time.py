@@ -23,9 +23,9 @@ import datetime
 
 from compat import unittest
 
-from gwpy import time
+from astropy.units import (UnitConversionError, Quantity)
 
-from gwpy import version
+from gwpy import (version, time)
 
 DATE = datetime.datetime(2000, 1, 1, 0, 0)
 GPS = 630720013
@@ -38,8 +38,18 @@ class TimeTests(unittest.TestCase):
     """`TestCase` for the time module
     """
     def test_to_gps(self):
-        gps = time.to_gps(DATE)
-        self.assertEqual(gps, GPS)
+        # test datetime conversion
+        self.assertEqual(time.to_gps(DATE), GPS)
+        # test Time
+        self.assertEqual(
+            time.to_gps(DATE, format='datetime', scale='utc'), GPS)
+        # test tuple
+        self.assertEqual(time.to_gps(tuple(DATE.timetuple())[:6]), GPS)
+        # test Quantity
+        self.assertEqual(time.to_gps(Quantity(GPS, 's')), GPS)
+        # test errors
+        self.assertRaises(UnitConversionError, time.to_gps, Quantity(1, 'm'))
+        self.assertRaises(ValueError, time.to_gps, 'random string')
 
     def test_from_gps(self):
         date = time.from_gps(GPS)
@@ -49,6 +59,14 @@ class TimeTests(unittest.TestCase):
         # from GPS
         date = time.tconvert(GPS)
         self.assertEqual(date, DATE)
+        # from GPS using LAL LIGOTimeGPS
+        try:
+            from lal import LIGOTimeGPS
+        except ImportError:
+            pass
+        else:
+            d = time.tconvert(LIGOTimeGPS(GPS))
+            self.assertEqual(d, DATE)
         # to GPS
         gps = time.tconvert(date)
         self.assertEqual(gps, GPS)
@@ -60,6 +78,8 @@ class TimeTests(unittest.TestCase):
         yesterday = time.tconvert('yesterday')
         self.assertAlmostEqual(today - yesterday, 86400)
         self.assertTrue(now >= today)
+        tomorrow = time.tconvert('tomorrow')
+        self.assertAlmostEqual(tomorrow - today, 86400)
 
 
 if __name__ == '__main__':
