@@ -197,6 +197,7 @@ class TimeSeries(TimeSeriesBase):
                 raise ValueError('window must be 1-D')
             elif win.shape[0] != nfft:
                 raise ValueError('Window is the wrong size.')
+        win = win.astype(self.dtype)
         scaling = 1. / numpy.absolute(win).mean()
 
         if nfft % 2:
@@ -213,11 +214,7 @@ class TimeSeries(TimeSeriesBase):
             idx_end = idx + nfft
             if idx_end > self.size:
                 continue
-            stepseries = self[idx:idx_end]
-            # detrend
-            stepseries -= stepseries.value.mean()
-            # window
-            stepseries *= win.astype(stepseries.dtype)
+            stepseries = self[idx:idx_end].detrend() * win
             # calculated FFT, weight, and stack
             fft_ = stepseries.fft(nfft=nfft) * scaling
             ffts.value[i, :] = fft_.value
