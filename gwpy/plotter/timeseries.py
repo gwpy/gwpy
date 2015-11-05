@@ -274,11 +274,6 @@ class TimeSeriesAxes(Axes):
         grid = (self.xaxis._gridOnMajor, self.xaxis._gridOnMinor,
                 self.yaxis._gridOnMajor, self.yaxis._gridOnMinor)
 
-        cmap = kwargs.pop('cmap', None)
-        if cmap is None:
-            cmap = copy.deepcopy(cm.jet)
-            cmap.set_bad(cmap(0.0))
-        kwargs['cmap'] = cmap
         norm = kwargs.pop('norm', None)
         if norm == 'log':
             vmin = kwargs.get('vmin', None)

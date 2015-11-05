@@ -26,7 +26,7 @@ import numpy
 from matplotlib.projections import register_projection
 from matplotlib import (cm, colors)
 
-from . import tex
+from . import (tex, rcParams)
 from .utils import *
 from .core import Plot
 from .axes import Axes
@@ -203,11 +203,6 @@ class SpectrumAxes(Axes):
         :meth:`matplotlib.axes.Axes.pcolormesh`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
-        cmap = kwargs.pop('cmap', None)
-        if cmap is None:
-            cmap = copy.deepcopy(cm.jet)
-            cmap.set_bad(cmap(0.0))
-        kwargs['cmap'] = cmap
         if norm == 'log':
             vmin = kwargs.pop('vmin', None)
             vmax = kwargs.pop('vmax', None)
