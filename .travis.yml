@@ -54,16 +54,12 @@ before_install:
   - source .travis/build-with-autotools.sh http://www.fftw.org/fftw-${FFTW_VERSION}.tar.gz --enable-shared=yes --enable-float
 
   # build frame libraries
-  - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/sour
-ce/ldas-tools-${LDAS_TOOLS_VERSION}.tar.gz
-  - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/sour
-ce/libframe-${LIBFRAME_VERSION}.tar.gz
+  - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/ldas-tools-${LDAS_TOOLS_VERSION}.tar.gz
+  - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/libframe-${LIBFRAME_VERSION}.tar.gz
 
   # build LAL packages
-  - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/sour
-ce/lalsuite/lal-${LAL_VERSION}.tar.gz
-  - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/sour
-ce/lalsuite/lalframe-${LALFRAME_VERSION}.tar.gz
+  - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/lalsuite/lal-${LAL_VERSION}.tar.gz
+  - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/lalsuite/lalframe-${LALFRAME_VERSION}.tar.gz
 
   # build NDS2 client
   - source .travis/build-with-autotools.sh http://software.ligo.org/lscsoft/source/nds2-client-${NDS2_CLIENT_VERSION}.tar.gz --disable-swig-java --disable-mex-matlab
