@@ -73,7 +73,7 @@ def inspiral_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False):
     integrand = (
         prefactor.value * psd.frequencies.value ** (-7/3.) / psd /
         units.Mpc.decompose().scale ** 2)
-    integrand._unit = units.Unit('Mpc^2 / Hz')
+    integrand.override_unit(units.Unit('Mpc^2 / Hz'))
     # restrict to ISCO
     integrand = integrand[psd.frequencies.value < fisco.value]
     # normalize and return
@@ -174,7 +174,7 @@ def burst_range_spectrum(psd, snr=8, energy=1e-2, unit='Mpc'):
     dspec = a / (snr * psd**(1/2.) * psd.frequencies) / constants.pc.value
     conv = units.pc.get_converter(unit)
     rspec = conv(dspec)
-    rspec._unit = unit
+    rspec.override_unit(unit)
     if rspec.f0.value == 0.0:
         rspec[0] = 0.0
     return rspec
