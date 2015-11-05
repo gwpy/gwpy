@@ -8,22 +8,18 @@ tarball=$1
 shift
 configargs="$@"
 
+echo "----------------------------------------------------------------------"
+echo "Installing from ${tarball}"
+
 # set install target to python prefix
 target=`python -c "import sys; print(sys.prefix)"`
+echo "Will install into ${target}"
 
-# set paths
-
-# check for cached build
-if [ -d ${target}/lib/pkgconfig ]; then
-    if [ "$(ls -A ${target}/lib/pkconfig)" ]; then
-        echo "Target pkg-config directory is not empty, presuming successful cached build, will not build this package"
-        return 0
-    fi
-fi
-
+# move to build directory
 builddir="build_$RANDOM"
 mkdir -p $builddir
 echo "Building into $builddir"
+
 # untar
 wget $tarball --quiet -O `basename $tarball`
 tar -zxf `basename $tarball` -C $builddir --strip-components=1
@@ -37,5 +33,3 @@ make install
 
 cd -
 rm -rf ${builddir}
-echo "Updated PYTHONPATH to"
-echo ${PYTHONPATH}
