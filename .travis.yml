@@ -46,8 +46,10 @@ before_install:
 
   # build and install numpy first
   - pip install -q numpy>=1.9.1
+
   # set paths for PKG_CONFIG
-  - export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${target}/lib/pkgconfig
+  - export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${VIRTUAL_ENV}/lib/pkgconfig
+  - echo "PKG_CONFIG_PATH: ${PKG_CONFIG_PATH}"
 
   # build FFTW3 (double and float)
   - source .travis/build-with-autotools.sh http://www.fftw.org/fftw-${FFTW_VERSION}.tar.gz --enable-shared=yes
