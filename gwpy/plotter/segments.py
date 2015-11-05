@@ -428,14 +428,27 @@ class SegmentAxes(TimeSeriesAxes):
         # inset the labels if requested
         for tick in self.get_yaxis().get_ticklabels():
             if self._insetlabels:
+                # record parameters we are changing
+                tick._orig_bbox = tick.get_bbox_patch()
+                tick._orig_ha = tick.get_ha()
+                tick._orig_pos = tick.get_position()
+                # modify tick
                 tick.set_horizontalalignment('left')
                 tick.set_position((0.01, tick.get_position()[1]))
                 tick.set_bbox({'alpha': 0.5, 'facecolor': 'white',
                                'edgecolor': 'none'})
             elif self._insetlabels is False:
-                tick.set_horizontalalignment('right')
-                tick.set_position((0, tick.get_position()[1]))
-                tick.set_bbox({})
+                # if label has been moved, reset things
+                try:
+                    tick.set_bbox(tick._orig_bbox)
+                except AttributeError:
+                    pass
+                else:
+                    tick.set_horizontalalignment(tick._orig_ha)
+                    tick.set_position(tick._orig_pos)
+                    del tick._orig_bbox
+                    del tick._orig_ha
+                    del tick._orig_pos
         return super(SegmentAxes, self).draw(*args, **kwargs)
 
     draw.__doc__ = TimeSeriesAxes.draw.__doc__

@@ -212,7 +212,7 @@ class EventTableAxes(TimeSeriesAxes):
             raise ValueError("Unrecognised tile anchor '%s'." % anchor)
 
         # build collection
-        cmap = kwargs.pop('cmap', cm.jet)
+        cmap = kwargs.pop('cmap', pyplot.rcParams['image.cmap'])
         coll = collections.PolyCollection(verts, edgecolors=edgecolors,
                                           linewidth=linewidth, **kwargs)
         if color:
