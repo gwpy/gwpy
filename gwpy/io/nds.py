@@ -123,20 +123,19 @@ def host_resolution_order(ifo, env='NDSSERVER', epoch='now',
                 port = int(port)
             if (host, port) not in hosts:
                 hosts.append((host, port))
-    # otherwise, return the server for this IFO and the backup at CIT
+    # If that host fails, return the server for this IFO and the backup at CIT
+    if to_gps('now') - to_gps(epoch) > lookback:
+        ifolist = [None, ifo]
     else:
-        if to_gps('now') - to_gps(epoch) > lookback:
-            ifolist = [None, ifo]
+        ifolist = [ifo, None]
+    for difo in ifolist:
+        try:
+            host, port = DEFAULT_HOSTS[difo]
+        except KeyError:
+            warnings.warn('No default host found for ifo %r' % ifo)
         else:
-            ifolist = [ifo, None]
-        for difo in ifolist:
-            try:
-                host, port = DEFAULT_HOSTS[difo]
-            except KeyError:
-                warnings.warn('No default host found for ifo %r' % ifo)
-            else:
-                if (host, port) not in hosts:
-                    hosts.append((host, port))
+            if (host, port) not in hosts:
+                hosts.append((host, port))
     return list(hosts)
 
 
