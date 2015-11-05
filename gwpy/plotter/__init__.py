@@ -23,7 +23,7 @@ all be easily visualised using the relevant plotting objects, with
 many configurable parameters both interactive, and in saving to disk.
 """
 
-from matplotlib import (rcParams, pyplot)
+from matplotlib import (rcParams, pyplot, __version__ as mpl_version)
 
 from .. import version
 
@@ -43,21 +43,8 @@ from .filter import *
 from .table import *
 from .histogram import *
 
+# set default params
 GWPY_PLOT_PARAMS = {
-    "axes.color_cycle": [
-        (0.0, 0.4, 1.0),  # blue
-        'r',              # red
-        (0.2, 0.8, 0.2),  # green
-        (1.0, 0.7, 0.0),  # yellow(ish)
-        (0.5, 0., 0.75),  # magenta
-        'gray',
-        (0.3, 0.7, 1.0),  # light blue
-        'pink',
-        (0.13671875, 0.171875, 0.0859375),  # dark green
-        (1.0, 0.4, 0.0),  # orange
-        'saddlebrown',
-        'navy',
-    ],
     "axes.grid": True,
     "axes.axisbelow": False,
     "axes.formatter.limits": (-3, 4),
@@ -73,6 +60,33 @@ GWPY_PLOT_PARAMS = {
     "xtick.labelsize": 20,
     "ytick.labelsize": 20,
 }
+
+# construct new default color cycle
+GWPY_COLOR_CYCLE = [
+    (0.0, 0.4, 1.0),  # blue
+    'r',              # red
+    (0.2, 0.8, 0.2),  # green
+    (1.0, 0.7, 0.0),  # yellow(ish)
+    (0.5, 0., 0.75),  # magenta
+    'gray',
+    (0.3, 0.7, 1.0),  # light blue
+    'pink',
+    (0.13671875, 0.171875, 0.0859375),  # dark green
+    (1.0, 0.4, 0.0),  # orange
+    'saddlebrown',
+    'navy',
+]
+
+# set mpl version dependent stuff
+if mpl_version < '1.5':
+    GWPY_PLOT_PARAMS['axes.color_cycle'] = GWPY_COLOR_CYCLE
+else:
+    from matplotlib import cycler
+    GWPY_PLOT_PARAMS.update({
+        'axes.prop_cycle': cycler('color', GWPY_COLOR_CYCLE),
+    })
+
+# set latex options
 if rcParams['text.usetex'] or USE_TEX:
     GWPY_PLOT_PARAMS.update({
         "text.usetex": True,
@@ -80,6 +94,8 @@ if rcParams['text.usetex'] or USE_TEX:
         "font.serif": ["Computer Modern"],
         "text.latex.preamble": MACROS,
     })
+
+# update matplotlib rcParams with new settings
 rcParams.update(GWPY_PLOT_PARAMS)
 
 # fix matplotlib issue #3470
