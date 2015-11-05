@@ -21,7 +21,10 @@
 
 """ Coherence plots
 """
-from cliproduct import CliProduct
+
+from numpy import percentile
+
+from .cliproduct import CliProduct
 from .. import version
 
 __author__ = 'Joseph Areeda'
@@ -51,7 +54,7 @@ class Coherencegram(CliProduct):
         return 2
 
     def get_min_datasets(self):
-        "Coherence requires 2 datasets to calculate"
+        """Coherence requires 2 datasets to calculate"""
         return 2
 
     def is_image(self):
@@ -93,16 +96,13 @@ class Coherencegram(CliProduct):
         self.overlap = ovlp_frac
 
         ovlap_sec = secpfft*ovlp_frac
-        nfft = self.dur/(secpfft - ovlap_sec)
         stride = int(self.dur/(self.width * 0.8))
 
         stride = max(stride, secpfft+(1-ovlp_frac)*32)
         stride = max(stride, secpfft*2)
-        fs = self.timeseries[0].sample_rate
 
-        coh = self.timeseries[0].\
-            coherence_spectrogram(self.timeseries[1],
-                                  stride, fftlength=secpfft, overlap=ovlap_sec)
+        coh = self.timeseries[0].coherence_spectrogram(
+            self.timeseries[1], stride, fftlength=secpfft, overlap=ovlap_sec)
         norm = False
         if arg_list.norm:
             coh = coh.ratio('mean')
@@ -117,11 +117,6 @@ class Coherencegram(CliProduct):
         self.xmax = self.timeseries[0].times.value.max()
 
         # set intensity (color) limits
-        imin = coh.min().value
-        imax = coh.max().value
-
-        from numpy import percentile
-
         if arg_list.imin:
             lo = float(arg_list.imin)
         elif norm:

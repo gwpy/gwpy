@@ -65,8 +65,6 @@ class Spectrum(CliProduct):
 
     def gen_plot(self, arg_list):
         """Generate the plot from time series and arguments"""
-        from numpy import min as npmin
-        from numpy import max as npmax
         self.is_freq_plot = True
 
         fftlen = 1.0

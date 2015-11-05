@@ -53,7 +53,7 @@ class Coherence(CliProduct):
         return 'Coherence with: '
 
     def get_min_datasets(self):
-        "Coherence requires 2 datasets for the calculation"
+        """Coherence requires 2 datasets for the calculation"""
         return 2
 
     def get_xlabel(self):
