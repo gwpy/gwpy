@@ -119,7 +119,8 @@ You can then, if you wish, install the package by running the ``setup.py`` scrip
 .. code-block:: bash
 
     cd gwpy
-    python setup.py install --user
+    pip install -r requirements.txt
+    pip install .
 
 .. warning::
 

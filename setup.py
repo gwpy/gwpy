@@ -268,20 +268,8 @@ cmdclass['port'] = BuildPortfile
 
 
 # -----------------------------------------------------------------------------
-# Process complicated dependencies
-
-# XXX: this can be removed as soon as a stable release of glue can
-#      handle pip/--user
-try:
-    from glue import git_version
-except ImportError as e:
-    e.args = ("GWpy requires the GLUE package, which isn\'t available from "
-              "PyPI.\nPlease visit\n"
-              "https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html\n"
-              "to download and install it manually.",)
-    raise
-
 # don't use setup_requires if just checking for information
+
 # (credit: matplotlib/setup.py)
 setup_requires = []
 if '--help' not in sys.argv and '--help-commands' not in sys.argv:
