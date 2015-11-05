@@ -23,6 +23,7 @@ var/
 MANIFEST
 Portfile
 .coverage
+.eggs/
 
 # Installer logs
 pip-log.txt
