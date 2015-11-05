@@ -46,3 +46,5 @@ make install
 
 cd -
 rm -rf ${builddir}
+echo "Updated PYTHONPATH to"
+echo ${PYTHONPATH}
