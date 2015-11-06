@@ -19,6 +19,8 @@
 """Handle TeX formatting for matplotlib output
 """
 
+from __future__ import division
+
 import os
 
 from astropy import units
@@ -113,11 +115,11 @@ def format_unit_list(unitlist, negative=False):
             out.append(texformatter._get_unit_name(base))
         elif power == 0.5 and not negative:
             out.append('\sqrt{{{0}}}'.format(label_to_latex(base.name)))
-        elif 1/power == int(1/power):
+        elif power != 1 and 1/power == int(1/power):
             out.append('{0}^{{1/{1}}}'.format(
                 label_to_latex(base.name), int(1/power)))
         elif negative:
-            out.append('{0}^{-{{1}}}'.format(
+            out.append('{0}^{{-{1}}}'.format(
                 label_to_latex(base.name), power))
         else:
             out.append('{0}^{{{1}}}'.format(

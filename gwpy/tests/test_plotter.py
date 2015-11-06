@@ -34,6 +34,8 @@ from matplotlib.legend import Legend
 from matplotlib.colors import LogNorm
 from matplotlib.collections import PatchCollection
 
+from astropy import units
+
 from compat import unittest
 
 from gwpy import version
@@ -48,7 +50,8 @@ from gwpy.plotter import (figure, Plot, Axes,
                           SpectrogramPlot, BodePlot)
 from gwpy.plotter.gps import (GPSTransform, InvertedGPSTransform)
 from gwpy.plotter.html import map_data
-from gwpy.plotter.tex import (float_to_latex, label_to_latex, USE_TEX)
+from gwpy.plotter.tex import (float_to_latex, label_to_latex,
+                              unit_to_latex, USE_TEX)
 
 from test_timeseries import TEST_HDF_FILE
 
@@ -611,6 +614,12 @@ class TexTestCase(unittest.TestCase):
         self.assertEqual(label_to_latex('Test'), 'Test')
         self.assertEqual(label_to_latex('Test_with_underscore'),
                          r'Test\_with\_underscore')
+
+    def test_unit_to_latex(self):
+        t = unit_to_latex(units.Hertz)
+        self.assertEqual(t, r'$\mathrm{Hz}$')
+        t = unit_to_latex(units.Volt.decompose())
+        self.assertEqual(t, r'$\mathrm{m^{2}\,kg\,A^{-1}\,s^{-3}}$')
 
 
 # -- gwpy.plotter.html module tests -------------------------------------------
