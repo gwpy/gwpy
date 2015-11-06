@@ -18,7 +18,7 @@ echo "Will install into ${target}"
 echo "Building into $builddir"
 
 # dont rebuild from scratch if not required
-if [ -d $builddir ]; then
+if [ -f $builddir/configure ]; then
     echo "Cached build directory found, not downloading tarball"
 else
     mkdir -p $builddir
