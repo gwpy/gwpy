@@ -83,7 +83,7 @@ install:
   - python setup.py build
 
 script:
-  - coverage run --source=gwpy --omit="gwpy/tests/*,gwpy/*version*,gwpy/utils/sphinx/*" -m py.test -v
+  - coverage run --source=gwpy --omit="gwpy/tests/*,gwpy/*version*,gwpy/utils/sphinx/*" -m py.test -v gwpy/
   - pip install .
 
 after_success:
