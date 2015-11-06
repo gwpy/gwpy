@@ -68,10 +68,11 @@ before_install:
   # install cython to speed up scipy build
   - travis_retry pip install -q --install-option="--no-cython-compile" Cython
 
-  # install python dependencies
-  - pip install -r requirements.txt
+  # install testing dependencies
+  - pip install -q coveralls pytest unittest2
 
 install:
+  - pip install -r requirements.txt
   - python setup.py build
 
 script:
