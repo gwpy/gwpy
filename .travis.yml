@@ -58,7 +58,7 @@ before_install:
   - export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${VIRTUAL_ENV}/lib/pkgconfig
 
   # build FFTW3 (double and float)
-  - source .travis/build-with-autotools.sh fftw-${FFTW_VERSION} ${FFTW}
+  - source .travis/build-with-autotools.sh fftw-${FFTW_VERSION} ${FFTW} --enable-shared=yes
   - source .travis/build-with-autotools.sh fftw-${FFTW_VERSION}-float ${FFTW} --enable-shared=yes --enable-float
 
   # build frame libraries
