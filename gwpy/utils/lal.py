@@ -30,7 +30,6 @@ from astropy import units
 from lal import lal
 
 from .. import version
-from .. import timeseries
 from ..time import to_gps
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
