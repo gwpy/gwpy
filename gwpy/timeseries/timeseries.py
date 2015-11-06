@@ -740,7 +740,7 @@ class TimeSeries(TimeSeriesBase):
         rspecgram = self.spectrogram(stride, method='rayleigh',
                                      fftlength=fftlength, overlap=overlap,
                                      window=window, nproc=nproc, **kwargs)
-        rspecgram._unit = ''
+        rspecgram.override_unit('')
         return rspecgram
 
     # -------------------------------------------
