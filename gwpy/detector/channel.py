@@ -822,7 +822,6 @@ class ChannelList(list):
             if host is None:
                 raise ValueError("Please given either an open nds2.connection,"
                                  " or the name of the host to connect to")
-            from ..io.nds import auth_connect
             connection = auth_connect(host, port)
         if isinstance(names, str):
             names = [names]
