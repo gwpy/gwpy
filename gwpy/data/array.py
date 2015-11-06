@@ -109,14 +109,14 @@ class Array(Quantity):
     _metadata_slots = ['name', 'epoch', 'channel']
 
     def __new__(cls, value, unit=None, dtype=None, copy=False, subok=True,
-                name=None, epoch=None, channel=None):
+                order=None, name=None, epoch=None, channel=None):
         """Define a new `Array`, potentially from an existing one
         """
         if dtype is None and isinstance(value, numpy.ndarray):
             dtype = value.dtype
 
         new = super(Array, cls).__new__(cls, value, dtype=dtype, copy=copy,
-                                        subok=subok, unit=unit)
+                                        subok=subok, order=order, unit=unit)
         new.name = name
         new.epoch = epoch
         new.channel = channel
