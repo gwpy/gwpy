@@ -68,7 +68,7 @@ For example,
 import re
 try:
     import configparser
-except:
+except ImportError:
     import ConfigParser as configparser
 
 from numpy import inf
