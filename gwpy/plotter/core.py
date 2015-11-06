@@ -229,18 +229,13 @@ class Plot(figure.Figure):
 
         # get new colour axis
         divider = make_axes_locatable(ax)
-        if location == 'right':
-            cax = divider.new_horizontal(size=width, pad=pad,
-                                         axes_class=axes_class)
-        elif location == 'top':
-            cax = divider.new_vertical(size=width, pad=pad,
-                                       axes_class=axes_class)
-        else:
+        if location not in ['right', 'top']:
             raise ValueError("'left' and 'bottom' colorbars have not "
                              "been implemented")
+        cax = divider.append_axes(location, width, pad=pad,
+                                  add_to_figure=visible, axes_class=axes_class)
         self._coloraxes.append(cax)
         if visible:
-            divider._fig.add_axes(cax)
             self.sca(ax)
         else:
             return
