@@ -90,6 +90,11 @@ class ChannelTests(unittest.TestCase):
         except ImportError as e:
             self.skipTest(str(e))
         try:
+            from gwpy.io import kerberos
+            kerberos.which('kinit')
+        except ValueError as e:
+            self.skipTest(str(e))
+        try:
             new = Channel.query_nds2(self.channel, host=NDSHOST,
                                      type=nds2.channel.CHANNEL_TYPE_RAW)
         except IOError as e:
