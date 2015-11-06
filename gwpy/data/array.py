@@ -27,21 +27,20 @@ import warnings
 from copy import deepcopy
 
 import numpy
-numpy.set_printoptions(threshold=200, linewidth=65)
 
-from astropy.units import (UnitBase, Unit, Quantity)
+from astropy.units import (Unit, Quantity)
 from ..io import (reader, writer)
 
 from .. import version
 from ..detector import Channel
 from ..time import (Time, to_gps)
-from ..utils import with_import
 from ..utils.docstring import interpolate_docstring
 
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>"
 
+numpy.set_printoptions(threshold=200, linewidth=65)
 
 # -----------------------------------------------------------------------------
 # Core Array

@@ -24,7 +24,7 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-from .. import (Array, Series, Array2D)
+from .. import Series
 
 # register ASCII
 from ...io.ascii import register_ascii

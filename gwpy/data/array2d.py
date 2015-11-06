@@ -23,7 +23,6 @@ import numpy
 
 from astropy.units import (Unit, Quantity)
 
-from .array import Array
 from .series import Series
 from .. import version
 from ..utils.docstring import interpolate_docstring
