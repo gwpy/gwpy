@@ -193,11 +193,10 @@ class Axes(_Axes):
         used, but which may be modified by :meth:`apply_aspect`, and a
         second which is the starting point for :meth:`apply_aspect`.
         """
-        return super(Axes, self).set_position(pos, which='both')
+        return super(Axes, self).set_position(pos, which=which)
 
     @auto_refresh
     def add_label_unit(self, unit, axis='x'):
-        attr = "%slabel" % axis
         label = getattr(self, 'get_%slabel' % axis)()
         if not label:
             label = unit.__doc__
