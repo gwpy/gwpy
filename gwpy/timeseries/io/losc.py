@@ -21,7 +21,7 @@
 For more details, see https://losc.ligo.org
 """
 
-from glue.lal import (Cache, CacheEntry)
+from glue.lal import CacheEntry
 
 from astropy.io import registry
 from astropy.units import (Unit, Quantity)
@@ -77,7 +77,7 @@ def read_losc_data_cache(f, channel, start=None, end=None, resample=None,
 
     Parameters
     ----------
-    source : `str`, `list`, :class:`glue.lal.Cache`
+    source : `str`, `list`, `~glue.lal.Cache`
         path to LOSC-format HDF5 file to read or cache of many files.
     channel : `str`
         name of HDF5 dataset to read.
@@ -137,11 +137,10 @@ def read_losc_state(filename, channel, group=None, start=None, end=None):
         epoch = dataset.attrs['Xstart']
     except KeyError:
         try:
-            from glue.lal import CacheEntry
-        except ImportError:
+            ce = CacheEntry.from_T050017(h5file.filename)
+        except ValueError:
             epoch = None
         else:
-            ce = CacheEntry.from_T050017(h5file.filename)
             epoch = ce.segment[0]
     try:
         dt = dataset.attrs['Xspacing']
