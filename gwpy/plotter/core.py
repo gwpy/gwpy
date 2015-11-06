@@ -32,7 +32,7 @@ try:
 except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
-from . import (tex, axes, utils)
+from . import (axes, utils)
 from .axes import Axes
 from .log import CombinedLogFormatterMathtext
 from .decorators import (auto_refresh, axes_method)
@@ -66,8 +66,7 @@ class Plot(figure.Figure):
 
         # generated figure, with associated interactivity from pyplot
         super(Plot, self).__init__(*args, **kwargs)
-        (backend_mod, new_figure_manager, draw_if_interactive,
-         show) = backends.pylab_setup()
+        backend_mod, _, draw_if_interactive, _ = backends.pylab_setup()
         manager = backend_mod.new_figure_manager_given_figure(1, self)
         cid = manager.canvas.mpl_connect(
             'button_press_event',
