@@ -21,8 +21,9 @@ echo "Building into $builddir"
 if [ -f $builddir/configure ]; then
     echo "Cached build directory found, not downloading tarball"
 else
+    echo "New build requested, downloading tarball..."
     mkdir -p $builddir
-    wget $tarball --quiet -O `basename $tarball`
+    wget $tarball -O `basename $tarball`
     tar -zxf `basename $tarball` -C $builddir --strip-components=1
 fi
 
