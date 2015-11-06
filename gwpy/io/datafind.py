@@ -21,7 +21,6 @@
 
 import os.path
 
-from glue import datafind
 from glue.lal import CacheEntry
 
 from .. import version
@@ -32,6 +31,7 @@ __version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
+@with_import('glue.datafind')
 def connect(host=None, port=None):
     """Open a new datafind connection
 
