@@ -92,7 +92,6 @@ def parse_json(data):
     c : `Channel`
         a `Channel` built from the data
     """
-    name = data['name']
     sample_rate = data['datarate']
     unit = data['units']
     dtype = CIS_DATA_TYPE[data['datatype']]

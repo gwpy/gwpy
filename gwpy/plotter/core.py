@@ -32,7 +32,7 @@ try:
 except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
-from . import (tex, axes, utils)
+from . import (axes, utils)
 from .axes import Axes
 from .log import CombinedLogFormatterMathtext
 from .decorators import (auto_refresh, axes_method)
@@ -66,8 +66,7 @@ class Plot(figure.Figure):
 
         # generated figure, with associated interactivity from pyplot
         super(Plot, self).__init__(*args, **kwargs)
-        (backend_mod, new_figure_manager, draw_if_interactive,
-         show) = backends.pylab_setup()
+        backend_mod, _, draw_if_interactive, _ = backends.pylab_setup()
         manager = backend_mod.new_figure_manager_given_figure(1, self)
         cid = manager.canvas.mpl_connect(
             'button_press_event',
@@ -230,18 +229,13 @@ class Plot(figure.Figure):
 
         # get new colour axis
         divider = make_axes_locatable(ax)
-        if location == 'right':
-            cax = divider.new_horizontal(size=width, pad=pad,
-                                         axes_class=axes_class)
-        elif location == 'top':
-            cax = divider.new_vertical(size=width, pad=pad,
-                                       axes_class=axes_class)
-        else:
+        if location not in ['right', 'top']:
             raise ValueError("'left' and 'bottom' colorbars have not "
                              "been implemented")
+        cax = divider.append_axes(location, width, pad=pad,
+                                  add_to_figure=visible, axes_class=axes_class)
         self._coloraxes.append(cax)
         if visible:
-            divider._fig.add_axes(cax)
             self.sca(ax)
         else:
             return

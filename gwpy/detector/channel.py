@@ -822,7 +822,6 @@ class ChannelList(list):
             if host is None:
                 raise ValueError("Please given either an open nds2.connection,"
                                  " or the name of the host to connect to")
-            from ..io.nds import auth_connect
             connection = auth_connect(host, port)
         if isinstance(names, str):
             names = [names]
@@ -831,15 +830,16 @@ class ChannelList(list):
             if (type and (isinstance(type, (unicode, str)) or
                           (isinstance(type, int) and
                            log(type, 2).is_integer()))):
-                c = Channel(name, type=type)
+                channel = Channel(name, type=type)
             else:
-                c = Channel(name)
-            if c.ndstype is not None:
-                found = connection.find_channels(c.ndsname, c.ndstype)
+                channel = Channel(name)
+            if channel.ndstype is not None:
+                found = connection.find_channels(
+                    channel.ndsname, channel.ndstype)
             elif type is not None:
-                found = connection.find_channels(c.name, type)
+                found = connection.find_channels(channel.name, type)
             else:
-                found = connection.find_channels(c.name)
+                found = connection.find_channels(channel.name)
             found = ChannelList(map(Channel.from_nds2, found))
             _names = set([c.ndsname for c in found])
             if unique and len(_names) == 0:
@@ -853,7 +853,7 @@ class ChannelList(list):
                        % (str(c), c.type, c.sample_rate) for c in found])))
             elif unique and len(found) > 1:
                 warnings.warn('Multiple instances of %r found with different '
-                              'parameters, returning first.' % (name),
+                              'parameters, returning first.' % name,
                               NDSWarning)
                 out.append(found[0])
             else:

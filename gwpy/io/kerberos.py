@@ -67,7 +67,7 @@ def which(program):
     """
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-    fpath, fname = os.path.split(program)
+    fpath = os.path.split(program)[0]
     if fpath:
         if is_exe(program):
             return program
@@ -184,7 +184,7 @@ def parse_keytab(keytab):
     """
     cmd = ['klist', '-k', '-K', keytab]
     klist = Popen(cmd, stdout=PIPE, stderr=PIPE)
-    out, err = klist.communicate()
+    out = klist.communicate()[0]
     if klist.returncode:
         raise KerberosError("Cannot read keytab '%s'" % keytab)
     principals = []

@@ -581,7 +581,7 @@ class SegmentPlot(TimeSeriesPlot):
 class SegmentFormatter(Formatter):
     """Custom tick formatter for y-axis flag names
     """
-    def __init__(self, flags={}):
+    def __init__(self, flags=dict()):
         self.flags = flags
 
     def __call__(self, t, pos=None):

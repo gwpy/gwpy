@@ -90,7 +90,7 @@ class Spectrogram(CliProduct):
         # based on the number of FFT calculation choose between
         # high time resolution and high SNR
         snr_nfft = self.dur / stride_sec
-        if (snr_nfft > 512):
+        if snr_nfft > 512:
             specgram = self.timeseries[0].spectrogram(stride_sec,
                                                       fftlength=secpfft,
                                                       overlap=ovlp_sec)
@@ -119,8 +119,6 @@ class Spectrogram(CliProduct):
         self.xmax = self.timeseries[0].times.value.max()
 
         # set intensity (color) limits
-        imin = specgram.value.min()
-        imax = specgram.value.max()
         if arg_list.imin:
             lo = float(arg_list.imin)
         else:

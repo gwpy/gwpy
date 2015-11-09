@@ -400,7 +400,7 @@ class TimeSeriesPlot(Plot):
             self.set_epoch(timeseries.epoch)
 
     def add_state_segments(self, segments, ax=None, height=0.2, pad=0.1,
-                           location='bottom', plotargs={}):
+                           location='bottom', plotargs=dict()):
         """Add a `SegmentList` to this `TimeSeriesPlot` indicating state
         information about the main Axes data.
 

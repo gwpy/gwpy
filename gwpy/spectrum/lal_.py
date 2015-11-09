@@ -62,7 +62,6 @@ def generate_lal_fft_plan(length, level=None,
     """
     from ..utils.lal import LAL_TYPE_STR_FROM_NUMPY
     from lal import lal
-    global LAL_FFTPLANS
     laltype = LAL_TYPE_STR_FROM_NUMPY[dtype.type]
     try:
         plan = LAL_FFTPLANS[(length, laltype)]
@@ -97,7 +96,6 @@ def generate_lal_window(length, type_=('kaiser', 24),
     """
     from ..utils.lal import LAL_TYPE_STR_FROM_NUMPY
     from lal import lal
-    global LAL_WINDOWS
     laltype = LAL_TYPE_STR_FROM_NUMPY[dtype.type]
     wtype = isinstance(type_, (list, tuple)) and type_[0] or str(type_)
     try:

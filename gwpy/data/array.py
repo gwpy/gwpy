@@ -27,21 +27,20 @@ import warnings
 from copy import deepcopy
 
 import numpy
-numpy.set_printoptions(threshold=200, linewidth=65)
 
-from astropy.units import (UnitBase, Unit, Quantity)
+from astropy.units import (Unit, Quantity)
 from ..io import (reader, writer)
 
 from .. import version
 from ..detector import Channel
 from ..time import (Time, to_gps)
-from ..utils import with_import
 from ..utils.docstring import interpolate_docstring
 
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>"
 
+numpy.set_printoptions(threshold=200, linewidth=65)
 
 # -----------------------------------------------------------------------------
 # Core Array
@@ -109,14 +108,14 @@ class Array(Quantity):
     _metadata_slots = ['name', 'epoch', 'channel']
 
     def __new__(cls, value, unit=None, dtype=None, copy=False, subok=True,
-                name=None, epoch=None, channel=None):
+                order=None, name=None, epoch=None, channel=None):
         """Define a new `Array`, potentially from an existing one
         """
         if dtype is None and isinstance(value, numpy.ndarray):
             dtype = value.dtype
 
         new = super(Array, cls).__new__(cls, value, dtype=dtype, copy=copy,
-                                        subok=subok, unit=unit)
+                                        subok=subok, order=order, unit=unit)
         new.name = name
         new.epoch = epoch
         new.channel = channel

@@ -34,7 +34,11 @@ Implemented methods (used by multiple products):
 """
 
 import abc
+import sys
+import re
+
 from argparse import ArgumentError
+
 from gwpy.timeseries import TimeSeries
 
 
@@ -354,9 +358,9 @@ class CliProduct(object):
                     self.chan_list.append(chan)
 
         if len(self.chan_list) < self.min_timeseries:
-            raise ArgumentError('A minimum of %d channels must be ' +
-                                'specified for this product' %
-                                self.min_timeseries)
+            raise ArgumentError(
+                'A minimum of %d channels must be specified for this product'
+                % self.min_timeseries)
 
         if len(arg_list.start) > 0:
             for start_arg in arg_list.start:
@@ -379,14 +383,14 @@ class CliProduct(object):
         # Verify the number of datasets specified is valid for this plot
         self.n_datasets = len(self.chan_list) * len(self.start_list)
         if self.n_datasets < self.get_min_datasets():
-            raise ArgumentError('%d datasets are required for this ' +
-                                'plot but only %d are supplied' %
-                                (self.get_min_datasets(), self.n_datasets))
+            raise ArgumentError(
+                '%d datasets are required for this plot but only %d are '
+                'supplied' % (self.get_min_datasets(), self.n_datasets))
 
         if self.n_datasets > self.get_max_datasets():
-            raise ArgumentError('A maximum of %d datasets allowed for ' +
-                                'this plot but %d specified' %
-                                (self.get_max_datasets(), self.n_datasets))
+            raise ArgumentError(
+                'A maximum of %d datasets allowed for this plot but %d '
+                'specified' % (self.get_max_datasets(), self.n_datasets))
 
         if arg_list.duration:
             self.dur = int(arg_list.duration)
@@ -445,8 +449,7 @@ class CliProduct(object):
                 self.log(0, 'Proceeding with the data that was transferred.')
             else:
                 self.log(0, 'Not enough data for requested plot.')
-                from sys import exit
-                exit(2)
+                sys.exit(2)
         return
 
 # ---- Plotting methods
@@ -459,7 +462,6 @@ class CliProduct(object):
 
     def config_plot(self, arg_list):
         """Configure global plot parameters"""
-        import matplotlib
         from matplotlib import rcParams
 
         # set rcParams
@@ -494,8 +496,6 @@ class CliProduct(object):
 
     def setup_xaxis(self, arg_list):
         """Handle scale and limits of X-axis by type"""
-        from ..time import Time
-        import re
 
         xmin = 0        # these will be set by x min, max or f min, max
         xmax = 1
@@ -627,18 +627,8 @@ class CliProduct(object):
         :return: none
         """
 
-        if self.iaxis_type:
-            # if we have an intensity axis do this otherwise OK
-            if self.iaxis_type == 'lini':
-                scale = 'linear'
-                if arg_list.logi:
-                    scale = 'log'
-            elif self.iaxis_type == 'logi':
-                scale = 'log'
-                if arg_list.nologi:
-                    scale = 'linear'
-            else:
-                raise AssertionError('Unknown intensity axis scale')
+        if self.iaxis_type not in [None, 'lin1', 'log1']:
+            raise AssertionError('Unknown intensity axis scale')
         return
 
     def annotate_save_plot(self, arg_list):
@@ -712,7 +702,6 @@ class CliProduct(object):
         self.plot.set_title(title, fontsize=12)
         self.log(3, ('Title is: %s' % title))
 
-        xlabel = ''
         if arg_list.xlabel:
             xlabel = label_to_latex(arg_list.xlabel)
         else:
@@ -748,7 +737,6 @@ class CliProduct(object):
 
         # change the label for GPS time so Josh is happy
         if self.ax.get_xscale() == 'auto-gps':
-            import re
             xscale = self.ax.xaxis._scale
             epoch = xscale.get_epoch()
             unit = xscale.get_unit_name()
