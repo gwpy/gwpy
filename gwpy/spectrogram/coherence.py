@@ -135,7 +135,7 @@ def from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
                                 overlap=overlap, window=window, **kwargs)
 
     # wrap spectrogram generator
-    def _specgram(q, ts):
+    def _specgram(q, ts, ts2):
         try:
             q.put(_from_timeseries(ts, ts2, stride, fftlength=fftlength,
                                    overlap=overlap, window=window,
