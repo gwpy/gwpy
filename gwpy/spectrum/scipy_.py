@@ -87,13 +87,15 @@ def csd(timeseries, othertimeseries, segmentlength, noverlap=None, **kwargs):
     # get module
     signal = import_method_dependency('scipy.signal')
     # calculate CSD
-    f, csd_ = signal.csd(timeseries.value, othertimeseries.value, noverlap=noverlap,
+    f, csd_ = signal.csd(timeseries.value, othertimeseries.value,
+                         noverlap=noverlap,
                          fs=timeseries.sample_rate.decompose().value,
                          nperseg=segmentlength, **kwargs)
     # generate Spectrum and return
     unit = scale_timeseries_units(timeseries.unit,
                                   kwargs.get('scaling', 'density'))
-    return Spectrum(csd_, unit=unit, frequencies=f, name=str(timeseries.name)+'---'+str(othertimeseries.name),
+    return Spectrum(csd_, unit=unit, frequencies=f,
+                    name=str(timeseries.name)+'---'+str(othertimeseries.name),
                     epoch=timeseries.epoch, channel=timeseries.channel)
 
 register_method(csd)

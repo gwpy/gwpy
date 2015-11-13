@@ -432,30 +432,32 @@ class TimeSeries(TimeSeriesBase):
             unit = scale_timeseries_units(
                 ts.unit, kwargs.get('scaling', 'density'))
             size = (nsteps_, nfreqs)
-            initial = numpy.zeros(size) if cross is None else numpy.zeros(size, dtype=complex)
-            out = Spectrogram(initial, unit=unit,
-                              channel=ts.channel, epoch=ts.epoch, f0=0, df=df,
-                              dt=dt, copy=True)
+            dtype = numpy.float64 if cross is None else complex
+            out = Spectrogram(numpy.zeros((nsteps_, nfreqs)), dtype=dtype,
+                              unit=unit, channel=ts.channel, epoch=ts.epoch,
+                              f0=0, df=df, dt=dt, copy=True)
 
             if not nsteps_:
                 return out
 
             # stride through TimeSeries, calculating PSDs or CSDs
             if cross is not None and method not in (None, 'welch'):
-                print("Warning: cannot calculate cross spectral density using the "
-                      "%s method. Using 'welch' instead..." % method)
+                print("Warning: cannot calculate cross spectral density using "
+                      "the %s method. Using 'welch' instead..." % method)
             for step in range(nsteps_):
                 # find step TimeSeries
                 idx = nsamp * step
                 idx_end = idx + nsamp
                 stepseries = ts[idx:idx_end]
                 if cts is None:
-                    stepsd = stepseries.psd(fftlength=fftlength, overlap=overlap,
+                    stepsd = stepseries.psd(fftlength=fftlength,
+                                            overlap=overlap,
                                             method=method, **kwargs)
                 else:
                     otherstepseries = cts[idx:idx_end]
-                    stepsd = stepseries.csd(otherstepseries, fftlength=fftlength, overlap=overlap,
-                                            **kwargs)
+                    stepsd = stepseries.csd(otherstepseries,
+                                            fftlength=fftlength,
+                                            overlap=overlap, **kwargs)
                 out.value[step, :] = stepsd.value
             return out
 
