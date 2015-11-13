@@ -300,7 +300,44 @@ class TimeSeries(TimeSeriesBase):
                         overlap=overlap, **kwargs) ** (1/2.)
         return asd_
 
-    def spectrogram(self, stride, fftlength=None, overlap=0,
+    def csd(self, other, fftlength=None, overlap=None, **kwargs):
+        """Calculate the CSD `Spectrum` for this `TimeSeries` and other.
+
+        Parameters
+        ----------
+        fftlength : `float`, default: :attr:`TimeSeries.duration`
+            number of seconds in single FFT
+        overlap : `float`, optional, default: `None`
+            number of seconds of overlap between FFTs, defaults to that of
+            the relevant method.
+        window : `timeseries.Window`, optional
+            window function to apply to timeseries prior to FFT
+        plan : :lal:`REAL8FFTPlan`, optional
+            LAL FFT plan to use when generating average spectrum,
+            substitute type 'REAL8' as appropriate.
+
+        Returns
+        -------
+        csd :  :class:`~gwpy.spectrum.core.Spectrum`
+            a data series containing the CSD.
+        """
+
+        from ..spectrum.registry import get_method
+        # get method
+        scaling = kwargs.get('scaling', 'density')
+        method_func = get_method('csd', scaling=scaling)
+        # type-cast arguments
+        if fftlength is None:
+            fftlength = self.duration
+        nfft = int((fftlength * self.sample_rate).decompose().value)
+        if overlap is not None:
+            kwargs['noverlap'] = int(
+                (overlap * self.sample_rate).decompose().value)
+        # calculate and return spectrum
+        csd_ = method_func(self, other, nfft, **kwargs)
+        return csd_
+
+    def spectrogram(self, stride, cross=None, fftlength=None, overlap=0,
                     method='welch', window=None, nproc=1, **kwargs):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
@@ -311,6 +348,9 @@ class TimeSeries(TimeSeriesBase):
             input time-series to process.
         stride : `float`
             number of seconds in single PSD (column of spectrogram).
+        cross : :class:`~gwpy.timeseries.core.TimeSeries`
+            time-series for calculating CSD spectrogram
+            if None, then calculates PSD spectrogram
         fftlength : `float`
             number of seconds in single FFT.
         overlap : `int`, optional, default: 0
@@ -377,7 +417,7 @@ class TimeSeries(TimeSeriesBase):
             kwargs['window'] = window
 
         # set up single process Spectrogram generation
-        def _from_timeseries(ts):
+        def _from_timeseries(ts, cts):
             """Generate a `Spectrogram` from a `TimeSeries`.
             """
             # calculate specgram parameters
@@ -391,33 +431,42 @@ class TimeSeries(TimeSeriesBase):
             # generate output spectrogram
             unit = scale_timeseries_units(
                 ts.unit, kwargs.get('scaling', 'density'))
-            out = Spectrogram(numpy.zeros((nsteps_, nfreqs)), unit=unit,
+            size = (nsteps_, nfreqs)
+            initial = numpy.zeros(size) if cross is None else numpy.zeros(size, dtype=complex)
+            out = Spectrogram(initial, unit=unit,
                               channel=ts.channel, epoch=ts.epoch, f0=0, df=df,
                               dt=dt, copy=True)
 
             if not nsteps_:
                 return out
 
-            # stride through TimeSeries, calcaulting PSDs
+            # stride through TimeSeries, calculating PSDs or CSDs
+            if cross is not None and method not in (None, 'welch'):
+                print("Warning: cannot calculate cross spectral density using the "
+                      "%s method. Using 'welch' instead..." % method)
             for step in range(nsteps_):
                 # find step TimeSeries
                 idx = nsamp * step
                 idx_end = idx + nsamp
                 stepseries = ts[idx:idx_end]
-                steppsd = stepseries.psd(fftlength=fftlength, overlap=overlap,
-                                         method=method, **kwargs)
-                out.value[step, :] = steppsd.value
-
+                if cts is None:
+                    stepsd = stepseries.psd(fftlength=fftlength, overlap=overlap,
+                                            method=method, **kwargs)
+                else:
+                    otherstepseries = cts[idx:idx_end]
+                    stepsd = stepseries.csd(otherstepseries, fftlength=fftlength, overlap=overlap,
+                                            **kwargs)
+                out.value[step, :] = stepsd.value
             return out
 
         # single-process return
         if nsteps == 0 or nproc == 1:
-            return _from_timeseries(self)
+            return _from_timeseries(self, cross)
 
         # wrap spectrogram generator
-        def _specgram(q, ts):
+        def _specgram(q, ts, cts):
             try:
-                q.put(_from_timeseries(ts))
+                q.put(_from_timeseries(ts, cts))
             except Exception as e:
                 q.put(e)
 

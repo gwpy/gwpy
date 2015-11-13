@@ -79,3 +79,21 @@ def rayleigh(timeseries, segmentlength, noverlap=0, **kwargs):
                     name='Rayleigh spectrum of %s' % timeseries.name)
 
 register_method(rayleigh)
+
+
+def csd(timeseries, othertimeseries, segmentlength, noverlap=None, **kwargs):
+    """Calculate the CSD using scipy's csd method (which uses Welch's method)
+    """
+    # get module
+    signal = import_method_dependency('scipy.signal')
+    # calculate CSD
+    f, csd_ = signal.csd(timeseries.value, othertimeseries.value, noverlap=noverlap,
+                         fs=timeseries.sample_rate.decompose().value,
+                         nperseg=segmentlength, **kwargs)
+    # generate Spectrum and return
+    unit = scale_timeseries_units(timeseries.unit,
+                                  kwargs.get('scaling', 'density'))
+    return Spectrum(csd_, unit=unit, frequencies=f, name=str(timeseries.name)+'---'+str(othertimeseries.name),
+                    epoch=timeseries.epoch, channel=timeseries.channel)
+
+register_method(csd)
