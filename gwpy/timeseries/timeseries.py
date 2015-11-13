@@ -431,7 +431,6 @@ class TimeSeries(TimeSeriesBase):
             # generate output spectrogram
             unit = scale_timeseries_units(
                 ts.unit, kwargs.get('scaling', 'density'))
-            size = (nsteps_, nfreqs)
             dtype = numpy.float64 if cross is None else complex
             out = Spectrogram(numpy.zeros((nsteps_, nfreqs)), dtype=dtype,
                               unit=unit, channel=ts.channel, epoch=ts.epoch,
