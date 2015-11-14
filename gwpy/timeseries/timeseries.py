@@ -790,6 +790,43 @@ class TimeSeries(TimeSeriesBase):
         rspecgram.override_unit('')
         return rspecgram
 
+    def cross_spectrogram(self, other, stride, fftlength=None, overlap=0,
+                          window=None, nproc=1, **kwargs):
+        """Calculate the cross spectral density spectrogram of this
+           `TimeSeries` with 'other'.
+
+        Parameters
+        ----------
+        timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
+            input time-series to process.
+        other : :class:`~gwpy.timeseries.core.TimeSeries`
+            second time-series for cross spectral density calculation
+        stride : `float`
+            number of seconds in single PSD (column of spectrogram).
+        fftlength : `float`
+            number of seconds in single FFT.
+        overlap : `int`, optiona, default: fftlength
+            number of seconds between FFTs.
+        window : `timeseries.window.Window`, optional, default: `None`
+            window function to apply to timeseries prior to FFT.
+        plan : :lal:`REAL8FFTPlan`, optional
+            LAL FFT plan to use when generating average spectrum,
+            substitute type 'REAL8' as appropriate.
+        nproc : `int`, default: ``1``
+            maximum number of independent frame reading processes, default
+            is set to single-process file reading.
+
+        Returns
+        -------
+        spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
+            time-frequency cross spectrogram as generated from the
+            two input time-series.
+        """
+        cspecgram = self.spectrogram(stride, cross=other,
+                                     fftlength=fftlength, overlap=overlap,
+                                     window=window, nproc=nproc, **kwargs)
+        return cspecgram
+
     # -------------------------------------------
     # TimeSeries filtering
 
