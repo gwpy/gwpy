@@ -277,6 +277,8 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         # test multiprocessing
         sg2 = ts.spectrogram(0.5, fftlength=0.2, overlap=0.1, nproc=2)
         self.assertArraysEqual(sg, sg2)
+        # test methods
+        ts.spectrogram(0.5, fftlength=0.2, method='bartlett')
 
     def test_spectrogram2(self):
         ts = self._read()
