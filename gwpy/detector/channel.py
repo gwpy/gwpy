@@ -915,7 +915,7 @@ class ChannelList(list):
 
         # parse output
         re_seg = re.compile('\A(?P<obs>[A-Z])-(?P<type>\w+):'
-                            '(?P<start>\d+)-(?P<end>\d+)\Z')
+                            '(?P<start>\d+)-(?P<end>(\d+|inf))\Z')
         segs = {}
         i = 0
         for line in out.splitlines():
@@ -938,7 +938,7 @@ class ChannelList(list):
                                        "output:\n%s" % line)
                 ftype = m['type']
                 try:
-                    seg = Segment(int(m['start']), int(m['end'])) & span
+                    seg = Segment(float(m['start']), float(m['end'])) & span
                 except ValueError:
                     continue
                 if ftype in segs[chan]:
