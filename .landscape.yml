@@ -7,3 +7,8 @@ ignore-paths:
     - docs
     - examples
     - ez_setup.py
+
+# ignore errors
+pylint:
+  disable:
+    - super-on-old-class
