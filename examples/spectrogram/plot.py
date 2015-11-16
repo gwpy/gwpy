@@ -25,9 +25,6 @@ I would like to study the gravitational wave strain spectrogram around the time 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.spectrogram'
 
-import os
-os.environ.pop('LIGO_DATAFIND_SERVER')
-
 # First, we import the :class:`~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.get` the data:
 from gwpy.timeseries import TimeSeries
 gwdata = TimeSeries.get(
