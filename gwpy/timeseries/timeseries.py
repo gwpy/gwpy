@@ -480,9 +480,13 @@ class TimeSeries(TimeSeriesBase):
         queue = ProcessQueue(nproc)
         processlist = []
         for i in range(nproc):
+            tsamp = self[i * nsampperproc:
+                         (i + 1) * nsampperproc]
+            csamp = (None if cross is None else
+                     cross[i * nsampperproc:
+                           (i + 1) * nsampperproc])
             process = Process(target=_specgram,
-                              args=(queue, self[i * nsampperproc:
-                                                (i + 1) * nsampperproc]))
+                              args=(queue, tsamp, csamp))
             process.daemon = True
             processlist.append(process)
             process.start()
