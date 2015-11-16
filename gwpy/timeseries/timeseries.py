@@ -337,7 +337,7 @@ class TimeSeries(TimeSeriesBase):
         csd_ = method_func(self, other, nfft, **kwargs)
         return csd_
 
-    def spectrogram(self, stride, cross=None, fftlength=None, overlap=0,
+    def spectrogram(self, stride, fftlength=None, overlap=0,
                     method='welch', window=None, nproc=1, **kwargs):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
@@ -348,9 +348,6 @@ class TimeSeries(TimeSeriesBase):
             input time-series to process.
         stride : `float`
             number of seconds in single PSD (column of spectrogram).
-        cross : :class:`~gwpy.timeseries.core.TimeSeries`
-            time-series for calculating CSD spectrogram
-            if None, then calculates PSD spectrogram
         fftlength : `float`
             number of seconds in single FFT.
         overlap : `int`, optional, default: 0
@@ -365,6 +362,11 @@ class TimeSeries(TimeSeriesBase):
         nproc : `int`, default: ``1``
             maximum number of independent frame reading processes, default
             is set to single-process file reading.
+        cross : :class:`~gwpy.timeseries.core.TimeSeries`
+            optional keyword argument
+            time-series for calculating CSD spectrogram
+            if None, then calculates PSD spectrogram
+
 
         Returns
         -------
@@ -383,6 +385,7 @@ class TimeSeries(TimeSeriesBase):
             overlap = 0
         fftlength = units.Quantity(fftlength, 's').value
         overlap = units.Quantity(overlap, 's').value
+        cross = kwargs.pop('cross', None)
 
         # sanity check parameters
         if stride > abs(self.span):
@@ -431,7 +434,7 @@ class TimeSeries(TimeSeriesBase):
             # generate output spectrogram
             unit = scale_timeseries_units(
                 ts.unit, kwargs.get('scaling', 'density'))
-            dtype = numpy.float64 if cross is None else complex
+            dtype = numpy.float64 if cts is None else complex
             out = Spectrogram(numpy.zeros((nsteps_, nfreqs)), dtype=dtype,
                               unit=unit, channel=ts.channel, epoch=ts.epoch,
                               f0=0, df=df, dt=dt, copy=True)
@@ -440,7 +443,7 @@ class TimeSeries(TimeSeriesBase):
                 return out
 
             # stride through TimeSeries, calculating PSDs or CSDs
-            if cross is not None and method not in (None, 'welch'):
+            if cts is not None and method not in (None, 'welch'):
                 print("Warning: cannot calculate cross spectral density using "
                       "the %s method. Using 'welch' instead..." % method)
             for step in range(nsteps_):
@@ -790,8 +793,8 @@ class TimeSeries(TimeSeriesBase):
         rspecgram.override_unit('')
         return rspecgram
 
-    def cross_spectrogram(self, other, stride, fftlength=None, overlap=0,
-                          window=None, nproc=1, **kwargs):
+    def csd_spectrogram(self, other, stride, fftlength=None, overlap=0,
+                        window=None, nproc=1, **kwargs):
         """Calculate the cross spectral density spectrogram of this
            `TimeSeries` with 'other'.
 
@@ -822,9 +825,9 @@ class TimeSeries(TimeSeriesBase):
             time-frequency cross spectrogram as generated from the
             two input time-series.
         """
-        cspecgram = self.spectrogram(stride, cross=other,
-                                     fftlength=fftlength, overlap=overlap,
-                                     window=window, nproc=nproc, **kwargs)
+        cspecgram = self.spectrogram(stride, fftlength=fftlength,
+                                     overlap=overlap, window=window,
+                                     cross=other, nproc=nproc, **kwargs)
         return cspecgram
 
     # -------------------------------------------
