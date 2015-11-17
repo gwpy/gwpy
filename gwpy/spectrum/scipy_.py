@@ -54,6 +54,7 @@ def bartlett(timeseries, segmentlength, **kwargs):
     """Calculate a PSD using the Bartlett average method.
     """
     import_method_dependency('scipy.signal')
+    kwargs.pop('noverlap', None) 
     return welch(timeseries, segmentlength, noverlap=0, **kwargs)
 
 register_method(bartlett)
