@@ -999,6 +999,8 @@ class TimeSeriesBaseDict(OrderedDict):
                     gprint(str(e), file=sys.stderr)
                     gprint("Failed to access data from frames, trying NDS...")
         # otherwise fetch from NDS
+        kwargs.pop('nproc', None)
+        kwargs.pop('frametype', None)
         try:
             return cls.fetch(channels, start, end, pad=pad, dtype=dtype,
                              verbose=verbose, **kwargs)
@@ -1010,7 +1012,7 @@ class TimeSeriesBaseDict(OrderedDict):
                 if verbose:
                     gprint(str(e), file=sys.stderr)
                     gprint("Failed to access data for all channels as a "
-                           "group, tryging individually:")
+                           "group, trying individually:")
                 return cls(
                     (c, cls.EntryClass.get(c, start, end, pad=pad, dtype=dtype,
                                            verbose=verbose, **kwargs))
