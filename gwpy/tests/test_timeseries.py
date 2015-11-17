@@ -249,6 +249,26 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         fs = ts.asd()
         self.assertEqual(fs.unit, ts.unit / units.Hertz ** (1/2.))
 
+    def test_csd(self):
+        ts = self._read()
+        # test all defaults
+        fs = ts.csd(ts)
+        self.assertEqual(fs.size, ts.size//2+1)
+        self.assertEqual(fs.f0, 0*units.Hertz)
+        self.assertEqual(fs.df, 1 / ts.duration)
+        self.assertIsInstance(fs, Spectrum)
+        self.assertIs(fs.channel, ts.channel)
+        self.assertEqual(fs.unit, ts.unit ** 2 / units.Hertz)
+        # test that self-CSD is equal to PSD
+        sp = ts.psd()
+        nptest.assert_array_equal(fs.data, sp.data)
+        # test fftlength
+        fs = ts.csd(ts, fftlength=0.5)
+        self.assertEqual(fs.size, 0.5 * ts.sample_rate.value // 2 + 1)
+        self.assertEqual(fs.df, 2 * units.Hertz)
+        # test overlap
+        ts.csd(ts, fftlength=0.4, overlap=0.2)
+
     def test_spectrogram(self):
         ts = self._read()
         # test defaults
@@ -326,6 +346,34 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         detrended = self.random.detrend()
         self.assertAlmostEqual(detrended.mean(), 0.0)
 
+    def test_csd_spectrogram(self):
+        ts = self._read()
+        # test defaults
+        sg = ts.csd_spectrogram(ts, 1)
+        self.assertEqual(sg.shape, (1, ts.size//2+1))
+        self.assertEqual(sg.f0, 0*units.Hertz)
+        self.assertEqual(sg.df, 1 / ts.duration)
+        self.assertIsInstance(sg, Spectrogram)
+        self.assertIs(sg.channel, ts.channel)
+        self.assertEqual(sg.unit, ts.unit ** 2 / units.Hertz)
+        self.assertEqual(sg.epoch, ts.epoch)
+        self.assertEqual(sg.span, ts.span)
+        # check the same result as CSD
+        csd = ts.csd(ts)
+        nptest.assert_array_equal(sg.data[0], csd.data)
+        # test fftlength
+        sg = ts.csd_spectrogram(ts, 1, fftlength=0.5)
+        self.assertEqual(sg.shape, (1, 0.5 * ts.size//2+1))
+        self.assertEqual(sg.df, 2 * units.Hertz)
+        self.assertEqual(sg.dt, 1 * units.second)
+        # test overlap
+        sg = ts.csd_spectrogram(ts, 0.5, fftlength=0.2, overlap=0.1)
+        self.assertEqual(sg.shape, (2, 0.2 * ts.size//2 + 1))
+        self.assertEqual(sg.df, 5 * units.Hertz)
+        self.assertEqual(sg.dt, 0.5 * units.second)
+        # test multiprocessing
+        sg2 = ts.csd_spectrogram(ts, 0.5, fftlength=0.2, overlap=0.1, nproc=2)
+        self.assertArraysEqual(sg, sg2)
 
 class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
     """`~unittest.TestCase` for the `~gwpy.timeseries.StateVector` object
