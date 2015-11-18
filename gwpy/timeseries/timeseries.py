@@ -437,7 +437,7 @@ class TimeSeries(TimeSeriesBase):
             dtype = numpy.float64 if cts is None else complex
             out = Spectrogram(numpy.zeros((nsteps_, nfreqs)), dtype=dtype,
                               unit=unit, channel=ts.channel, epoch=ts.epoch,
-                              f0=0, df=df, dt=dt, copy=True)
+                              f0=0, df=df, dt=dt, copy=False)
 
             if not nsteps_:
                 return out
@@ -649,7 +649,7 @@ class TimeSeries(TimeSeriesBase):
         dtype = numpy.complex
         out = Spectrogram(numpy.zeros((nsteps, nfreqs), dtype=dtype),
                           name=self.name, epoch=self.epoch, f0=0, df=df,
-                          dt=dt, copy=True, unit=self.unit, dtype=dtype)
+                          dt=dt, copy=False, unit=self.unit, dtype=dtype)
         # stride through TimeSeries, recording FFTs as columns of Spectrogram
         for step in range(nsteps):
             # find step TimeSeries
