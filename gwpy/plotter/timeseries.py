@@ -286,7 +286,7 @@ class TimeSeriesAxes(Axes):
                                [spectrogram.span[-1]]))
         y = numpy.concatenate((spectrogram.frequencies.value,
                                [spectrogram.band[-1]]))
-        X, Y = numpy.meshgrid(x, y, copy=False)
+        X, Y = numpy.meshgrid(x, y, copy=False, sparse=True)
         mesh = self.pcolormesh(X, Y, spectrogram.value.T, **kwargs)
         if len(self.collections) == 1:
             self.set_xlim(*spectrogram.span)
