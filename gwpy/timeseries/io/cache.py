@@ -156,7 +156,7 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
                              resample=resample, nproc=nproc, format=format,
                              target=cls, **kwargs)
             if out is None:
-                out = new.copy()
+                out = new
             else:
                 out.append(new, gap='pad', pad=pad)
         return out

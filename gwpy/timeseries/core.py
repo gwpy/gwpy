@@ -393,8 +393,12 @@ class TimeSeriesBase(Series):
             unit = None
         channel = Channel(lalts.name, sample_rate=1/lalts.deltaT, unit=unit,
                           dtype=lalts.data.data.dtype)
-        return cls(lalts.data.data, channel=channel, epoch=float(lalts.epoch),
-                   copy=copy, dtype=lalts.data.data.dtype)
+        out = cls(lalts.data.data, channel=channel, epoch=float(lalts.epoch),
+                  copy=False)
+        if copy:
+            return out.copy()
+        else:
+            return out
 
     @with_import('lal')
     def to_lal(self):

@@ -26,6 +26,7 @@ import numpy
 
 from .... import version
 from ....io.cache import (CacheEntry, file_list)
+from ....segments import Segment
 from ....utils import (gprint, with_import)
 from ... import (TimeSeries, TimeSeriesDict)
 
@@ -160,14 +161,14 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
     out = TimeSeriesDict()
     for i, fp in enumerate(filelist):
         # read frame
-        new = _read_frame(fp, channels, ctype=type, dtype=dtype,
-                          verbose=verbose, _SeriesClass=_SeriesClass)
+        new = _read_frame(fp, channels, start=start, end=end, ctype=type,
+                          dtype=dtype, _SeriesClass=_SeriesClass)
         ## get channel type for next frame (means we only query the TOC once)
         if not i:
             for channel, ts in new.iteritems():
                 type[channel] = ts.channel._ctype
         # store
-        out.append(new)
+        out.append(new, copy=False)
         if verbose is not False:
             gprint("%sReading %d channels from frames... %d/%d (%.1f%%)\r"
                    % (verbose, len(channels), i+1, N, (i+1)/N * 100), end='')
@@ -183,11 +184,13 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
         # crop data
         if start is not None or end is not None:
             out[channel] = out[channel].crop(start=start, end=end)
+        # copy into fresh memory if needed
+        out[channel] = numpy.require(out[channel], requirements=['O'])
     return out
 
 
-def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
-                _SeriesClass=TimeSeries):
+def _read_frame(framefile, channels, start=None, end=None, ctype=None,
+                dtype=None, _SeriesClass=TimeSeries):
     """Internal function to read data from a single frame.
 
     All users should be using the wrapper `read_timeseriesdict`.
@@ -198,11 +201,13 @@ def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
         path to GWF-format frame file on disk.
     channels : `list`
         list of channels to read.
+    start : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+        start GPS time of desired data.
+    end : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+        end GPS time of desired data.
     ctype : `str`, optional
         channel data type to read, one of: ``'adc'``, ``'proc'``.
     dtype : `numpy.dtype`, `str`, `type`, `dict`
-    verbose : `bool`, optional
-        print verbose output, optional, default: `False`
     _SeriesClass : `type`, optional
         class object to use as the data holder for a single channel,
         default is :class:`~gwpy.timeseries.TimeSeries`
@@ -214,6 +219,10 @@ def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
     """
     if isinstance(channels, (unicode, str)):
         channels = channels.split(',')
+
+    # construct span segment
+    span = Segment(start is not None and start or -numpy.inf,
+                   end is not None and end or numpy.inf)
 
     # open file
     if isinstance(framefile, CacheEntry):
@@ -274,6 +283,14 @@ def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
                 break
             offset = data.GetTimeOffset()
             thisepoch = epochs[i] + offset
+            try:
+                thisspan = Segment(thisepoch, thisepoch + data.GetTRange())
+            except AttributeError:
+                pass
+            else:
+                if not thisspan.intersects(span):
+                    i += 1
+                    continue
             for vect in data.data:
                 arr = vect.GetDataArray()
                 if isinstance(arr, buffer):
@@ -281,14 +298,16 @@ def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
                        arr, dtype=NUMPY_TYPE_FROM_FRVECT[vect.GetType()])
                 dx = vect.GetDim(0).dx
                 if ts is None:
+                    # create array
                     unit = vect.GetUnitY() or None
-                    ts = _SeriesClass(arr, epoch=thisepoch, dx=dx, name=name,
-                                      channel=channel, unit=unit, dtype=dtype_,
-                                      copy=False).copy()
+                    ts = numpy.require(
+                        _SeriesClass(arr, epoch=thisepoch, dx=dx, name=name,
+                                     channel=channel, unit=unit, dtype=dtype_,
+                                     copy=False), requirements=['O'])
                     if not ts.channel.dtype:
                         ts.channel.dtype = arr.dtype
                     ts.channel._ctype = ctype[channel]
-                elif dtype_:
+                elif arr.dtype != ts.dtype:
                     ts.append(arr.astype(dtype_))
                 else:
                     ts.append(arr)
