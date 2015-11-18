@@ -162,8 +162,7 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
     for i, fp in enumerate(filelist):
         # read frame
         new = _read_frame(fp, channels, start=start, end=end, ctype=type,
-                          dtype=dtype, verbose=verbose,
-                          _SeriesClass=_SeriesClass)
+                          dtype=dtype, _SeriesClass=_SeriesClass)
         ## get channel type for next frame (means we only query the TOC once)
         if not i:
             for channel, ts in new.iteritems():
@@ -191,7 +190,7 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
 
 
 def _read_frame(framefile, channels, start=None, end=None, ctype=None,
-                dtype=None, verbose=False, _SeriesClass=TimeSeries):
+                dtype=None, _SeriesClass=TimeSeries):
     """Internal function to read data from a single frame.
 
     All users should be using the wrapper `read_timeseriesdict`.
@@ -209,8 +208,6 @@ def _read_frame(framefile, channels, start=None, end=None, ctype=None,
     ctype : `str`, optional
         channel data type to read, one of: ``'adc'``, ``'proc'``.
     dtype : `numpy.dtype`, `str`, `type`, `dict`
-    verbose : `bool`, optional
-        print verbose output, optional, default: `False`
     _SeriesClass : `type`, optional
         class object to use as the data holder for a single channel,
         default is :class:`~gwpy.timeseries.TimeSeries`
