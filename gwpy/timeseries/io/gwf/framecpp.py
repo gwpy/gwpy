@@ -169,7 +169,7 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
             for channel, ts in new.iteritems():
                 type[channel] = ts.channel._ctype
         # store
-        out.append(new)
+        out.append(new, copy=False)
         if verbose is not False:
             gprint("%sReading %d channels from frames... %d/%d (%.1f%%)\r"
                    % (verbose, len(channels), i+1, N, (i+1)/N * 100), end='')
@@ -185,6 +185,8 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
         # crop data
         if start is not None or end is not None:
             out[channel] = out[channel].crop(start=start, end=end)
+        # copy into fresh memory if needed
+        out[channel] = numpy.require(out[channel], requirements=['O'])
     return out
 
 
