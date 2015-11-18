@@ -26,6 +26,7 @@ import numpy
 
 from .... import version
 from ....io.cache import (CacheEntry, file_list)
+from ....segments import Segment
 from ....utils import (gprint, with_import)
 from ... import (TimeSeries, TimeSeriesDict)
 
@@ -160,8 +161,9 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
     out = TimeSeriesDict()
     for i, fp in enumerate(filelist):
         # read frame
-        new = _read_frame(fp, channels, ctype=type, dtype=dtype,
-                          verbose=verbose, _SeriesClass=_SeriesClass)
+        new = _read_frame(fp, channels, start=start, end=end, ctype=type,
+                          dtype=dtype, verbose=verbose,
+                          _SeriesClass=_SeriesClass)
         ## get channel type for next frame (means we only query the TOC once)
         if not i:
             for channel, ts in new.iteritems():
@@ -186,8 +188,8 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
     return out
 
 
-def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
-                _SeriesClass=TimeSeries):
+def _read_frame(framefile, channels, start=None, end=None, ctype=None,
+                dtype=None, verbose=False, _SeriesClass=TimeSeries):
     """Internal function to read data from a single frame.
 
     All users should be using the wrapper `read_timeseriesdict`.
@@ -198,6 +200,10 @@ def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
         path to GWF-format frame file on disk.
     channels : `list`
         list of channels to read.
+    start : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+        start GPS time of desired data.
+    end : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+        end GPS time of desired data.
     ctype : `str`, optional
         channel data type to read, one of: ``'adc'``, ``'proc'``.
     dtype : `numpy.dtype`, `str`, `type`, `dict`
@@ -214,6 +220,10 @@ def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
     """
     if isinstance(channels, (unicode, str)):
         channels = channels.split(',')
+
+    # construct span segment
+    span = Segment(start is not None and start or -numpy.inf,
+                   end is not None and end or numpy.inf)
 
     # open file
     if isinstance(framefile, CacheEntry):
@@ -274,6 +284,14 @@ def _read_frame(framefile, channels, ctype=None, dtype=None, verbose=False,
                 break
             offset = data.GetTimeOffset()
             thisepoch = epochs[i] + offset
+            try:
+                thisspan = Segment(thisepoch, thisepoch + data.GetTRange())
+            except AttributeError:
+                pass
+            else:
+                if not thisspan.intersects(span):
+                    i += 1
+                    continue
             for vect in data.data:
                 arr = vect.GetDataArray()
                 if isinstance(arr, buffer):
