@@ -301,14 +301,16 @@ def _read_frame(framefile, channels, start=None, end=None, ctype=None,
                        arr, dtype=NUMPY_TYPE_FROM_FRVECT[vect.GetType()])
                 dx = vect.GetDim(0).dx
                 if ts is None:
+                    # create array
                     unit = vect.GetUnitY() or None
-                    ts = _SeriesClass(arr, epoch=thisepoch, dx=dx, name=name,
-                                      channel=channel, unit=unit, dtype=dtype_,
-                                      copy=False).copy()
+                    ts = numpy.require(
+                        _SeriesClass(arr, epoch=thisepoch, dx=dx, name=name,
+                                     channel=channel, unit=unit, dtype=dtype_,
+                                     copy=False), requirements=['O'])
                     if not ts.channel.dtype:
                         ts.channel.dtype = arr.dtype
                     ts.channel._ctype = ctype[channel]
-                elif dtype_:
+                elif arr.dtype != ts.dtype:
                     ts.append(arr.astype(dtype_))
                 else:
                     ts.append(arr)
