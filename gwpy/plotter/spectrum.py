@@ -212,7 +212,7 @@ class SpectrumAxes(Axes):
                                [specvar.x0.value +
                                 specvar.dx.value * specvar.shape[0]]))
         y = specvar.bins.value
-        X, Y = numpy.meshgrid(x, y)
+        X, Y = numpy.meshgrid(x, y, copy=False)
         mesh = self.pcolormesh(X, Y, specvar.value.T, **kwargs)
         if len(self.collections) == 1:
             self.set_yscale('log', nonposy='mask')
