@@ -465,7 +465,8 @@ class Series(Array):
                     self.xindex.resize((s[0],), refcheck=False)
                 except ValueError as e:
                     if 'cannot resize' in str(e):
-                        self.xindex = numpy.resize(self.xindex, (s[0],))
+                        self.xindex = self.xindex.copy()
+                        self.xindex.resize((s[0],))
                     else:
                         raise
             else:
