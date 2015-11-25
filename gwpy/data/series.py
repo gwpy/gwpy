@@ -191,9 +191,15 @@ class Series(Array):
         :type: `~gwpy.segments.Segment`
         """
         from ..segments import Segment
-        x0 = self.x0.to(self._default_xunit).value
-        dx = self.dx.to(self._default_xunit).value
-        return Segment(x0, x0+self.shape[0]*dx)
+        try:
+            self._xindex
+        except AttributeError:
+            x0 = self.x0.to(self._default_xunit).value
+            dx = self.dx.to(self._default_xunit).value
+            return Segment(x0, x0+self.shape[0]*dx)
+        else:
+            return Segment(self.xindex.value[0],
+                           self.xindex.value[-1] + self.dx.value)
 
     # -- series methods -------------------------
 

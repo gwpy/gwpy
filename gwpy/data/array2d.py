@@ -233,9 +233,15 @@ class Array2D(Series):
         :type: `~gwpy.segments.Segment`
         """
         from ..segments import Segment
-        y0 = self.y0.to(self._default_yunit).value
-        dy = self.dy.to(self._default_yunit).value
-        return Segment(y0, y0+self.shape[1]*dy)
+        try:
+            self._yindex
+        except AttributeError:
+            y0 = self.y0.to(self._default_yunit).value
+            dy = self.dy.to(self._default_yunit).value
+            return Segment(y0, y0+self.shape[0]*dy)
+        else:
+            return Segment(self.yindex.value[0],
+                           self.yindex.value[-1] + self.dy.value)
 
     # -------------------------------------------
     # numpy.ndarray method modifiers
