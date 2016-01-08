@@ -235,14 +235,16 @@ class TimeSeriesAxes(Axes):
             a = self.plot(min_.times.value, min_.value, color=color,
                           linewidth=linewidth, **kwargs)
             b = self.fill_between(min_.times.value, mean_.value, min_.value,
-                                  alpha=0.1, color=color)
+                                  alpha=0.1, color=color,
+                                  rasterized=kwargs.get('rasterized'))
         else:
             a = b = None
         if max_ is not None:
             c = self.plot(max_.times.value, max_.value, color=color,
                           linewidth=linewidth, **kwargs)
             d = self.fill_between(max_.times.value, mean_.value, max_.value,
-                                  alpha=0.1, color=color)
+                                  alpha=0.1, color=color,
+                                  rasterized=kwargs.get('rasterized'))
         else:
             c = d = None
         return line1, a, b, c, d

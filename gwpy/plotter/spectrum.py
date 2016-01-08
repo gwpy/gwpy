@@ -163,7 +163,8 @@ class SpectrumAxes(Axes):
                           linewidth=linewidth, **kwargs)
             if alpha:
                 b = self.fill_between(min_.frequencies.value, mean_.value,
-                                      min_.value, alpha=alpha, color=color)
+                                      min_.value, alpha=alpha, color=color,
+                                      rasterized=kwargs.get('rasterized'))
             else:
                 b = None
         else:
@@ -173,7 +174,8 @@ class SpectrumAxes(Axes):
                           linewidth=linewidth, **kwargs)
             if alpha:
                 d = self.fill_between(max_.frequencies.value, mean_.value,
-                                      max_.value, alpha=alpha, color=color)
+                                      max_.value, alpha=alpha, color=color,
+                                      rasterized=kwargs.get('rasterized'))
             else:
                 d = None
         else:
