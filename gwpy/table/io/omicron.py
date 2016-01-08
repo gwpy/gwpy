@@ -160,8 +160,8 @@ def table_from_root(f, columns=OMICRON_COLUMNS, filt=None, nproc=1):
 
     # iterate over events
     nevents = tree.GetEntries()
-    for i in range(nevents):
-        tree.GetEntry()
+    for i in xrange(nevents):
+        tree.GetEntry(i)
         burst = sngl_burst_from_root(tree, columns=columns)
         if filt is None or filt(burst):
             append(burst)
