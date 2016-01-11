@@ -433,7 +433,7 @@ class TimeSeriesBase(Series):
         timeseries : `TimeSeries`
             a GWpy version of the input timeseries
         """
-        return cls(ts.data, epoch=ts.epoch, sample_rate=1/ts.delta_t)
+        return cls(ts.data, epoch=ts.start_time, sample_rate=1/ts.delta_t)
 
     @with_import('pycbc.types')
     def to_pycbc(self, copy=True):
