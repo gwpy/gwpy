@@ -1455,41 +1455,6 @@ class TimeSeries(TimeSeriesBase):
         from ..plotter import TimeSeriesPlot
         return TimeSeriesPlot(self, **kwargs)
 
-    @classmethod
-    def from_pycbc(cls, ts):
-        """Convert a `pycbc.types.timeseries.TimeSeries` into a `TimeSeries`
-
-        Parameters
-        ----------
-        ts : `pycbc.types.timeseries.TimeSeries`
-            the input PyCBC `~pycbc.types.timeseries.TimeSeries` array
-
-        Returns
-        -------
-        timeseries : `TimeSeries`
-            a GWpy version of the input timeseries
-        """
-        return cls(ts.data, epoch=ts.epoch, sample_rate=1/ts.delta_t)
-
-    @with_import('pycbc.types')
-    def to_pycbc(self, copy=True):
-        """Convert this `TimeSeries` into a PyCBC
-        `~pycbc.types.timeseries.TimeSeries`
-
-        Parameters
-        ----------
-        copy : `bool`, optional, default: `True`
-            if `True`, copy these data to a new array
-
-        Returns
-        -------
-        timeseries : `~pycbc.types.timeseries.TimeSeries`
-            a PyCBC representation of this `TimeSeries`
-        """
-        return types.TimeSeries(self.data,
-                                delta_t=self.dx.to('s').value,
-                                epoch=self.epoch.gps, copy=copy)
-
 
 @as_series_dict_class(TimeSeries)
 class TimeSeriesDict(TimeSeriesBaseDict):
