@@ -1466,6 +1466,27 @@ class TimeSeries(TimeSeriesBase):
 
     def notch(self, frequency, type='iir', **kwargs):
         """Notch out a frequency in a `TimeSeries`
+
+        Parameters
+        ----------
+        frequency : `float`, `~astropy.units.Quantity`
+            frequency (default in Hertz) at which to apply the notch
+        type : `str`, optional, default: 'iir'
+            type of filter to apply, currently only 'iir' is supported
+        **kwargs
+            other keyword arguments to pass to `scipy.signal.iirdesign`
+
+        Returns
+        -------
+        notched : `TimeSeries`
+           a notch-filtered copy of the input `TimeSeries`
+
+        See Also
+        --------
+        TimeSeries.filter
+           for details on the filtering method
+        scipy.signal.iirdesign
+            for details on the IIR filter design method
         """
         zpk = create_notch(frequency, self.sample_rate.value,
                            type=type, **kwargs)

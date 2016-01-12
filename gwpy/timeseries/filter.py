@@ -33,6 +33,28 @@ __version__ = version.version
 
 def create_notch(frequency, sample_rate, type='iir', **kwargs):
     """Design a ZPK notch filter for the given frequency and sampling rate
+
+    Parameters
+    ----------
+    frequency : `float`, `~astropy.units.Quantity`
+        frequency (default in Hertz) at which to apply the notch
+    sample_rate : `float`, `~astropy.units.Quantity`
+        number of samples per second for `TimeSeries` to which this notch
+        filter will be applied
+    type : `str`, optional, default: 'iir'
+        type of filter to apply, currently only 'iir' is supported
+    **kwargs
+        other keyword arguments to pass to `scipy.signal.iirdesign`
+
+    Returns
+    -------
+    zpk : `tuple` of `complex` or `float`
+       the filter components in digital zero-pole-gain format
+
+    See Also
+    --------
+    scipy.signal.iirdesign
+        for details on the IIR filter design method
     """
     frequency = Quantity(frequency, 'Hz').value
     sample_rate = Quantity(sample_rate, 'Hz').value
