@@ -54,6 +54,13 @@ FIND_CHANNEL = 'L1:LDAS-STRAIN'
 FIND_GPS = 968654552
 FIND_FRAMETYPE = 'L1_LDAS_C02_L2'
 
+# filtering test outputs
+NOTCH_60HZ = (
+    numpy.asarray([ 0.99973536+0.02300468j,  0.99973536-0.02300468j]),
+    numpy.asarray([ 0.99954635-0.02299956j,  0.99954635+0.02299956j]),
+    0.99981094420429639,
+)
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
@@ -376,6 +383,24 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         # test multiprocessing
         sg2 = ts.csd_spectrogram(ts, 0.5, fftlength=0.2, overlap=0.1, nproc=2)
         self.assertArraysEqual(sg, sg2)
+
+    def test_notch_design(self):
+        # test simple notch
+        from gwpy.timeseries.filter import create_notch
+        notch = create_notch(60, 16384)
+        for a, b in zip(notch, NOTCH_60HZ):
+            nptest.assert_array_almost_equal(a, b)
+        # test Quantities
+        notch2 = create_notch(60 * ONE_HZ, 16384 * ONE_HZ)
+        for a, b in zip(notch, notch2):
+            nptest.assert_array_almost_equal(a, b)
+
+    def test_notch(self):
+        # test notch runs end-to-end
+        ts = self.create(sample_rate=256)
+        notched = ts.notch(10)
+        # test breaks when you try and 'fir' notch
+        self.assertRaises(NotImplementedError, ts.notch, 10, type='fir')
 
 class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
     """`~unittest.TestCase` for the `~gwpy.timeseries.StateVector` object
