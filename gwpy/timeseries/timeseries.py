@@ -1362,7 +1362,7 @@ class TimeSeries(TimeSeriesBase):
                               name=name, sample_rate=(1/float(stride)))
 
     def whiten(self, fftlength, overlap=0, method='welch', window='hanning',
-               detrend='constant', **kwargs):
+               detrend='constant', asd=None, **kwargs):
         """White this `TimeSeries` against its own ASD
 
         Parameters
@@ -1380,6 +1380,9 @@ class TimeSeries(TimeSeriesBase):
         window : `str`, :class:`numpy.ndarray`
             name of the window function to use, or an array of length
             ``fftlength * TimeSeries.sample_rate`` to use as the window.
+
+        asd : `~gwpy.spectrum.Spectrum`
+            the amplitude-spectral density using which to whiten the data
 
         **kwargs
             other keyword arguments are passed to the `TimeSeries.asd`
@@ -1400,8 +1403,12 @@ class TimeSeries(TimeSeriesBase):
         scipy.signal
         """
         # build whitener
-        invasd = 1. / self.asd(fftlength, overlap=overlap,
-                               method=method, window=window, **kwargs)
+        if asd is None:
+            asd = self.asd(fftlength, overlap=overlap,
+                           method=method, window=window, **kwargs)
+        if isinstance(asd, units.Quantity):
+            asd = asd.value
+        invasd = 1. / asd
         # build window
         nfft = int((fftlength * self.sample_rate).decompose().value)
         noverlap = int((overlap * self.sample_rate).decompose().value)
@@ -1415,6 +1422,7 @@ class TimeSeries(TimeSeriesBase):
         nsteps = 1 + int((self.size - nfft) / nstride)
         out = type(self)(numpy.zeros(nsteps * nstride + noverlap))
         out.__dict__ = self.copy_metadata()
+        del out.times
         # loop over ffts and whiten each one
         for i in range(nsteps):
              i0 = i * nstride
