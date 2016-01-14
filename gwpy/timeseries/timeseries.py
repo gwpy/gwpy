@@ -21,6 +21,7 @@
 
 from __future__ import (division, print_function)
 
+from warnings import warn
 from math import (ceil, pi)
 from multiprocessing import (Process, Queue as ProcessQueue)
 
@@ -445,8 +446,8 @@ class TimeSeries(TimeSeriesBase):
 
             # stride through TimeSeries, calculating PSDs or CSDs
             if cts is not None and method not in (None, 'welch'):
-                print("Warning: cannot calculate cross spectral density using "
-                      "the %s method. Using 'welch' instead..." % method)
+                warn("Cannot calculate cross spectral density using "
+                     "the %r method. Using 'welch' instead..." % method)
             for step in range(nsteps_):
                 # find step TimeSeries
                 idx = nsamp * step
