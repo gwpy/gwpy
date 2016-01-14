@@ -20,6 +20,7 @@
 """
 
 import os
+import pytest
 
 from compat import unittest
 
@@ -383,6 +384,9 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         # test multiprocessing
         sg2 = ts.csd_spectrogram(ts, 0.5, fftlength=0.2, overlap=0.1, nproc=2)
         self.assertArraysEqual(sg, sg2)
+        # test method not 'welch' raises warning
+        with pytest.warns(UserWarning):
+           ts.csd_spectrogram(ts, 0.5, method='median-mean')
 
     def test_notch_design(self):
         # test simple notch
