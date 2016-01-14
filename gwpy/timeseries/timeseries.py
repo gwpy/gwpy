@@ -405,7 +405,7 @@ class TimeSeries(TimeSeriesBase):
 
         # generate window and plan if needed
         method_func = get_method(method)
-        if method_func.__module__.endswith('lal_'):
+        if method_func.__module__.endswith('lal_') and cross is None:
             safe_import('lal', method)
             from ..spectrum.lal_ import (generate_lal_fft_plan,
                                          generate_lal_window)
