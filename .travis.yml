@@ -52,7 +52,7 @@ before_install:
   - pip install -q --upgrade pip
 
   # build and install numpy first
-  - pip install -q numpy>=1.9.1
+  - pip install -q "numpy>=1.9.1"
 
   # set paths for PKG_CONFIG
   - export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${VIRTUAL_ENV}/lib/pkgconfig
@@ -76,7 +76,7 @@ before_install:
   - travis_retry pip install -q --install-option="--no-cython-compile" Cython
 
   # install testing dependencies
-  - pip install -q coveralls pytest unittest2
+  - pip install -q coveralls "pytest>=2.8" unittest2
 
 install:
   - pip install -r requirements.txt
