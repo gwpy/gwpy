@@ -21,6 +21,7 @@
 
 from __future__ import (division, print_function)
 
+from warnings import warn
 from math import (ceil, pi)
 from multiprocessing import (Process, Queue as ProcessQueue)
 
@@ -405,7 +406,7 @@ class TimeSeries(TimeSeriesBase):
 
         # generate window and plan if needed
         method_func = get_method(method)
-        if method_func.__module__.endswith('lal_'):
+        if method_func.__module__.endswith('lal_') and cross is None:
             safe_import('lal', method)
             from ..spectrum.lal_ import (generate_lal_fft_plan,
                                          generate_lal_window)
@@ -445,8 +446,8 @@ class TimeSeries(TimeSeriesBase):
 
             # stride through TimeSeries, calculating PSDs or CSDs
             if cts is not None and method not in (None, 'welch'):
-                print("Warning: cannot calculate cross spectral density using "
-                      "the %s method. Using 'welch' instead..." % method)
+                warn("Cannot calculate cross spectral density using "
+                     "the %r method. Using 'welch' instead..." % method)
             for step in range(nsteps_):
                 # find step TimeSeries
                 idx = nsamp * step
