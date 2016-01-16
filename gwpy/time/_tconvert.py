@@ -153,8 +153,14 @@ def from_gps(gps):
         gps = LIGOTimeGPS(gps)
     except (ValueError, TypeError):
         gps = LIGOTimeGPS(float(gps))
-    dt = Time(gps.seconds, gps.nanoseconds * 1e-9,
-              format='gps', scale='utc').datetime
+    try:
+        from lal import GPSToUTC
+    except ImportError:
+        dt = Time(gps.seconds, gps.nanoseconds * 1e-9,
+                  format='gps', scale='utc').datetime
+    else:
+        dt = datetime.datetime(*GPSToUTC(gps.seconds)[:6])
+        dt += datetime.timedelta(seconds=gps.nanoseconds * 1e-9)
     if float(gps).is_integer():
         return dt.replace(microsecond=0)
     else:
