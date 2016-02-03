@@ -50,6 +50,7 @@ from .. import version
 from ..io import (reader, writer, datafind)
 from ..time import to_gps
 from ..utils.deps import with_import
+from .units import parse_unit
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -196,7 +197,7 @@ class Channel(object):
         if u is None:
             self._unit = None
         else:
-            self._unit = units.Unit(u)
+            self._unit = parse_unit(u)
 
     @property
     def frequency_range(self):

@@ -24,12 +24,13 @@ For more details, see https://losc.ligo.org
 from glue.lal import CacheEntry
 
 from astropy.io import registry
-from astropy.units import (Unit, Quantity)
+from astropy.units import Quantity
 
 from .. import (StateVector, TimeSeries, TimeSeriesList)
 from ...utils.deps import with_import
 from ...io.cache import file_list
 from ...io.hdf5 import open_hdf5
+from ...detector.units import parse_unit
 
 
 def read_losc_data(filename, channel, group=None, copy=False):
@@ -62,10 +63,10 @@ def read_losc_data(filename, channel, group=None, copy=False):
     # read data
     nddata = dataset.value
     # read metadata
-    xunit = Unit(dataset.attrs['Xunits'])
+    xunit = parse_unit(dataset.attrs['Xunits'])
     epoch = dataset.attrs['Xstart']
     dt = Quantity(dataset.attrs['Xspacing'], xunit)
-    unit = Unit(dataset.attrs['Yunits'])
+    unit = dataset.attrs['Yunits']
     # build and return
     return TimeSeries(nddata, epoch=epoch, sample_rate=(1/dt).to('Hertz'),
                       unit=unit, name=channel.rsplit('/', 1)[0], copy=copy)
@@ -148,7 +149,7 @@ def read_losc_state(filename, channel, group=None, start=None, end=None,
     except KeyError:
         dt = Quantity(1, 's')
     else:
-        xunit = Unit(dataset.attrs['Xunit'])
+        xunit = parse_unit(dataset.attrs['Xunit'])
         dt = Quantity(dt, xunit)
     return StateVector(nddata, bits=bits, epoch=epoch, name='Data quality',
                        sample_rate=(1/dt).to('Hertz'), copy=copy)
