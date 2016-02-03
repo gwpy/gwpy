@@ -84,6 +84,7 @@ class CommonTests(object):
         """
         # test basic empty contructor
         self.assertRaises(TypeError, self.TEST_CLASS)
+        self.assertRaises(IndexError, self.TEST_CLASS, [])
         # test with some data
         array = self.create()
         nptest.assert_array_equal(array.value, self.data)
