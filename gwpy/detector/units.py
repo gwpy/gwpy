@@ -28,6 +28,46 @@ from astropy import units
 # enable imperial units
 units.add_enabled_units(units.imperial)
 
+
+def parse_unit(name, parse_strict='warn'):
+    """Attempt to intelligently parse a `str` as a `~astropy.units.Unit`
+
+    Parameters
+    ----------
+    name : `str`
+        unit name to parse
+    parse_strict : `str`
+        one of 'silent', 'warn', or 'raise' depending on how pedantic
+        you want the parser to be
+
+    Returns
+    -------
+    unit : `~astropy.units.UnitBase`
+        the unit parsed by `~astropy.units.Unit`
+
+    Raises
+    ------
+    ValueError
+        if the unit cannot be parsed and `parse_strict='raise'`
+    """
+    if name is None or isinstance(name, units.UnitBase):
+        return name
+    name = str(name)
+    # try simple parse
+    try:
+        return units.Unit(name)
+    except ValueError:
+        pass
+    # try plural parsing
+    if name.endswith('s'):
+        try:
+            return units.Unit(name[:-1])
+        except ValueError:
+            pass
+    # otherwise allow a loose parsing
+    return units.Unit(name, parse_strict=parse_strict)
+
+
 # -----------------------------------------------------------------------------
 # instrumental units
 

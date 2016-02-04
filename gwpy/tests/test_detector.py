@@ -21,6 +21,8 @@
 
 from urllib2 import URLError
 
+import pytest
+
 from compat import unittest
 
 import numpy
@@ -30,6 +32,7 @@ from astropy import units
 from gwpy import version
 from gwpy.detector import Channel
 from gwpy.utils import with_import
+from gwpy.detector.units import parse_unit
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -128,6 +131,24 @@ class ChannelTests(unittest.TestCase):
         self.assertEqual(new.name, 'LVE-EX:X3_810BTORR.mean')
         self.assertEqual(new.trend, 'mean')
         self.assertEqual(new.type, 'm-trend')
+
+
+class UnitTest(unittest.TestCase):
+    def test_parse_unit(self):
+        # check None
+        self.assertIsNone(parse_unit(None))
+        # check unit in, unit out
+        u = units.Unit('m')
+        self.assertIs(parse_unit(u), u)
+        # check normal string
+        self.assertEqual(parse_unit('meter'), units.Unit('meter'))
+        # check plural
+        self.assertEqual(parse_unit('Volts'), units.Unit('V'))
+        # check warning
+        with pytest.warns(units.UnitsWarning):
+            self.assertIsInstance(parse_unit('blah'), units.UnrecognizedUnit)
+        # check error
+        self.assertRaises(ValueError, parse_unit, 'blah', parse_strict='raise')
 
 
 if __name__ == '__main__':

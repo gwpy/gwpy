@@ -28,11 +28,12 @@ from copy import deepcopy
 
 import numpy
 
-from astropy.units import (Unit, Quantity)
+from astropy.units import Quantity
 from ..io import (reader, writer)
 
 from .. import version
 from ..detector import Channel
+from ..detector.units import parse_unit
 from ..time import (Time, to_gps)
 from ..utils.docstring import interpolate_docstring
 
@@ -114,6 +115,7 @@ class Array(Quantity):
         if dtype is None and isinstance(value, numpy.ndarray):
             dtype = value.dtype
 
+        unit = parse_unit(unit, parse_strict='warn')
         new = super(Array, cls).__new__(cls, value, dtype=dtype, copy=copy,
                                         subok=subok, order=order, unit=unit)
         new.name = name
@@ -295,7 +297,7 @@ class Array(Quantity):
     @unit.setter
     def unit(self, unit):
         if not hasattr(self, '_unit') or self._unit is None:
-            self._unit = Unit(unit)
+            self._unit = parse_unit(unit)
         else:
             raise AttributeError(
                 "Can't set attribute. To change the units of this %s, use the "
@@ -323,7 +325,7 @@ class Array(Quantity):
                 value, check_precision=check_precision)
     _to_own_unit.__doc__ = Quantity._to_own_unit.__doc__
 
-    def override_unit(self, unit):
+    def override_unit(self, unit, parse_strict='raise'):
         """Forcefully reset the unit of these data
 
         Use of this method is discouraged in favour of `to()`,
@@ -341,7 +343,7 @@ class Array(Quantity):
         ValueError
             if a `str` cannot be parsed as a valid unit
         """
-        self._unit = Unit(unit)
+        self._unit = parse_unit(unit, parse_strict=parse_strict)
 
     # -------------------------------------------
     # extras
