@@ -31,6 +31,7 @@ from glue.ligolw.table import Table
 from astropy.io.registry import _get_valid_format
 
 from .. import version
+from .utils import GzipFile
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -74,9 +75,31 @@ def identify_cache(*args, **kwargs):
 
 def file_list(flist):
     """Parse a number of possible input types into a list of filepaths.
+
+    Parameters
+    ----------
+    flist : `file-like` or `list-like` iterable
+        the input data container, normally just a single file path, or a list
+        of paths, but can generally be any of the following
+
+        - `str` representing a single file path (or comma-separated collection)
+        - open `file` or `~gzip.GzipFile` object
+        - `~glue.lal.CacheEntry`
+        - `~glue.lal.Cache` object or `str` with '.cache' or '.lcf extension
+        - simple `list` or `tuple` of `str` paths
+
+    Returns
+    -------
+    files : `list`
+        `list` of `str` file paths
+
+    Raises
+    ------
+    ValueError
+        if the input `flist` cannot be interpreted as any of the above inputs
     """
     # format list of files
-    if isinstance(flist, file):
+    if isinstance(flist, (file, GzipFile)):
         return [flist.name]
     elif isinstance(flist, CacheEntry):
         return [flist.path]
@@ -89,8 +112,8 @@ def file_list(flist):
         return flist.pfnlist()
     elif isinstance(flist, (list, tuple)):
         return flist
-    else:
-        return list([flist])
+    raise ValueError("Could not parse input %r as one or more "
+                     "file-like objects" % flist)
 
 
 # ----------------------------------------------------------------------------
