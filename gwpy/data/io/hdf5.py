@@ -20,12 +20,11 @@
 """
 
 from astropy.units import Quantity, UnitBase
-from astropy.io import registry
 from astropy.time import Time
 
 from ... import version
 from ...detector import Channel
-from ...io import hdf5 as hdf5io
+from ...io import (hdf5 as hdf5io, registry)
 from ...utils.deps import with_import
 from .. import (Array, Series, Array2D)
 

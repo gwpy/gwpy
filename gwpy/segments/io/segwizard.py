@@ -24,10 +24,10 @@ from six import string_types
 from glue.lal import (CacheEntry, Cache, LIGOTimeGPS)
 from glue import segmentsUtils
 
-from astropy.io import registry
-
 from ... import version
 from .. import (Segment, SegmentList, DataQualityFlag)
+from ...io import registry
+from ...io.utils import identify_factory
 from ...io.cache import file_list
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -66,19 +66,6 @@ def flag_from_segwizard(filename, flag=None, coalesce=True, gpstype=float,
                                 strict=strict, nproc=nproc)
     out.known = out.active
     return out
-
-
-def identify_segwizard(*args, **kwargs):
-    filename = args[3]
-    if isinstance(filename, file):
-        filename = filename.name
-    elif isinstance(filename, CacheEntry):
-        filename = filename.path
-    if (isinstance(filename, string_types) and
-            filename.endswith(('txt', 'dat'))):
-        return True
-    else:
-        return False
 
 
 def to_segwizard(segs, fobj, header=True, coltype=int):
@@ -153,6 +140,8 @@ def flag_to_segwizard(flag, fobj, header=True, coltype=int):
                          "directly to write just those segments.")
     to_segwizard(flag.active, fobj, header=header, coltype=coltype)
 
+
+identify_segwizard = identify_factory('txt', 'dat')
 
 registry.register_reader('segwizard', DataQualityFlag, flag_from_segwizard)
 registry.register_writer('segwizard', DataQualityFlag, flag_to_segwizard)

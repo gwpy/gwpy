@@ -19,6 +19,8 @@
 """Write GWpy objects to HDF5 files
 """
 
+from six import string_types
+
 try:
     import h5py
     HAVE_H5PY = True
@@ -45,16 +47,13 @@ def open_hdf5(filename):
         return h5py.File(filename, 'r')
 
 
-def identify_hdf5(*args, **kwargs):
+def identify_hdf5(origin, path, fileobj, *args, **kwargs):
     """Identify an input file as LOSC HDF based on its filename
     """
-    filename = args[3]
-    if isinstance(filename, file):
-        filename = filename.name
-    if (isinstance(filename, (unicode, str)) and
-            filename.endswith(('hdf', 'hdf5'))):
+    if isinstance(path, (unicode, str)) and path.endswith(('hdf', 'hdf5')):
         return True
-    elif HAVE_H5PY and isinstance(filename, (h5py.Group, h5py.Dataset)):
+    elif (HAVE_H5PY and len(args) and
+          isinstance(args[0], (h5py.Group, h5py.Dataset))):
         return True
     else:
         return False

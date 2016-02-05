@@ -19,6 +19,8 @@
 """Utilities for unified input/output
 """
 
+from six import string_types
+
 from astropy.utils.compat.gzip import GzipFile
 
 from glue.lal import CacheEntry
@@ -30,16 +32,10 @@ __version__ = version.version
 
 
 def identify_factory(*extensions):
-    def identify(*args, **kwargs):
+    def identify(origin, path, fileobj, *args, **kwargs):
         """Identify the given extensions in a file object/path
         """
-        fp = args[3]
-        if isinstance(fp, (file, GzipFile)):
-            fp = fp.name
-        elif isinstance(fp, CacheEntry):
-            fp = fp.path
-        # identify string
-        if isinstance(fp, (unicode, str)) and fp.endswith(extensions):
+        if isinstance(path, string_types) and path.endswith(extensions):
             return True
         else:
             return False

@@ -24,12 +24,11 @@ import sys
 if sys.version_info[0] < 3:
     range = xrange
 
-from astropy.io import registry
-
 from glue.lal import (Cache, CacheEntry)
 
 from .. import lsctables
 from ... import version
+from ...io import registry
 from ...io.cache import open_cache
 from ...time import LIGOTimeGPS
 from ...utils import with_import
@@ -169,18 +168,12 @@ def table_from_root(f, columns=OMICRON_COLUMNS, filt=None, nproc=1):
     return out
 
 
-def identify_omicron(*args, **kwargs):
+def identify_omicron(origin, path, fileobj, *args, **kwargs):
     """Determine an input object as an Omicron-format ROOT file.
     """
-    fp = args[3]
-    if isinstance(fp, file):
-        fp = fp.name
-    elif isinstance(fp, CacheEntry):
-        fp = fp.path
     # identify string
-    if (isinstance(fp, (unicode, str)) and
-            fp.endswith('root') and
-            'omicron' in fp.lower()):
+    if (isinstance(path, (unicode, str)) and
+            fp.endswith('.root') and 'omicron' in fp.lower()):
         return True
         # identify cache object
     else:

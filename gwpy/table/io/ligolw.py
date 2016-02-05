@@ -19,11 +19,10 @@
 """Read LIGO_LW documents into glue.ligolw.table.Table objects.
 """
 
-from astropy.io import registry
-
 from glue.ligolw.table import StripTableName as strip
 from glue.ligolw.lsctables import TableByName
 
+from ...io import registry
 from ...io.ligolw import (table_from_file, identify_ligolw)
 from ... import version
 

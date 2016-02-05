@@ -27,8 +27,6 @@ Each specific ASCII table format should define their own line parser
 
 from numpy import loadtxt
 
-from astropy.io.registry import (register_reader, register_identifier)
-
 from glue.ligolw.table import (reassign_ids, StripTableName)
 
 from ..lsctables import (New, TableByName)
@@ -36,6 +34,7 @@ from ..utils import TIME_COLUMN
 from ... import version
 from ...io.cache import file_list
 from ...io.utils import identify_factory
+from ...io.registry import (register_reader, register_identifier)
 from ...time import LIGOTimeGPS
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
