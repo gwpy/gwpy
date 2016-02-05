@@ -39,7 +39,9 @@ from gwpy.timeseries import (TimeSeries, StateVector)
 from gwpy.spectrum import Spectrum
 from gwpy.spectrogram import Spectrogram
 from gwpy.io.cache import Cache
+
 from test_array import SeriesTestCase
+import common
 
 SEED = 1
 numpy.random.seed(SEED)
@@ -182,6 +184,9 @@ class TimeSeriesTestMixin(object):
             self.skipTest(str(e))
         ts2 = type(ts).from_lal(lalts)
         self.assertEqual(ts, ts2)
+
+    def test_io_identify(self):
+        common.test_io_identify(self.TEST_CLASS, ['txt', 'hdf', 'gwf'])
 
 
 # -----------------------------------------------------------------------------
