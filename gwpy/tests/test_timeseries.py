@@ -115,9 +115,13 @@ class TimeSeriesTestMixin(object):
                     self.frame_read()
                 finally:
                     register_reader('gwf', TimeSeries, read_, force=True)
-            # test errors
+            # test empty Cache()
             self.assertRaises(ValueError, self.TEST_CLASS.read, Cache(),
                               self.channel, format=format)
+
+            # test cache method with `nproc=2`
+            c = Cache.from_urls([TEST_GWF_FILE])
+            ts = self.TEST_CLASS.read(c, self.channel, nproc=2, format=format)
 
     def test_frame_read_lalframe(self):
         return self._test_frame_read_format('lalframe')
