@@ -48,31 +48,6 @@ def open_cache(lcf):
             return Cache.fromfile(f)
 
 
-def identify_cache_file(*args, **kwargs):
-    """Determine an input object as either a LAL-format cache file.
-    """
-    cachefile = args[3]
-    if isinstance(cachefile, file):
-        cachefile = cachefile.name
-    # identify string
-    if (isinstance(cachefile, string_types) and
-            cachefile.endswith(('.lcf', '.cache'))):
-        return True
-    # identify cache object
-    else:
-        return False
-
-
-def identify_cache(*args, **kwargs):
-    """Determine an input object as a :class:`glue.lal.Cache`
-    """
-    cacheobj = args[3]
-    if isinstance(cacheobj, Cache):
-        return True
-    else:
-        return False
-
-
 def file_list(flist):
     """Parse a number of possible input types into a list of filepaths.
 
