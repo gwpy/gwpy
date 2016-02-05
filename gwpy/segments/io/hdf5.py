@@ -27,14 +27,14 @@ import h5py
 import numpy
 from distutils.version import LooseVersion
 
-from astropy.io.registry import (register_reader, register_writer,
-                                 register_identifier)
 from astropy.units import (UnitBase, Quantity)
 
 from glue.lal import LIGOTimeGPS
 
 from ... import version
 from ...io.hdf5 import (open_hdf5, identify_hdf5)
+from ...io.registry import (register_reader, register_writer,
+                            register_identifier)
 from ..flag import DataQualityFlag
 from ..segments import (SegmentList, Segment)
 

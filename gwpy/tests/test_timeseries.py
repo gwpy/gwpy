@@ -39,7 +39,9 @@ from gwpy.timeseries import (TimeSeries, StateVector)
 from gwpy.spectrum import Spectrum
 from gwpy.spectrogram import Spectrogram
 from gwpy.io.cache import Cache
+
 from test_array import SeriesTestCase
+import common
 
 SEED = 1
 numpy.random.seed(SEED)
@@ -113,9 +115,13 @@ class TimeSeriesTestMixin(object):
                     self.frame_read()
                 finally:
                     register_reader('gwf', TimeSeries, read_, force=True)
-            # test errors
+            # test empty Cache()
             self.assertRaises(ValueError, self.TEST_CLASS.read, Cache(),
                               self.channel, format=format)
+
+            # test cache method with `nproc=2`
+            c = Cache.from_urls([TEST_GWF_FILE])
+            ts = self.TEST_CLASS.read(c, self.channel, nproc=2, format=format)
 
     def test_frame_read_lalframe(self):
         return self._test_frame_read_format('lalframe')
@@ -182,6 +188,9 @@ class TimeSeriesTestMixin(object):
             self.skipTest(str(e))
         ts2 = type(ts).from_lal(lalts)
         self.assertEqual(ts, ts2)
+
+    def test_io_identify(self):
+        common.test_io_identify(self.TEST_CLASS, ['txt', 'hdf', 'gwf'])
 
 
 # -----------------------------------------------------------------------------

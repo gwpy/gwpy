@@ -33,13 +33,11 @@ on a system.
 
 import importlib
 
-from astropy.io.registry import register_reader
-
 from ....utils import with_import
 from ....version import version
+from ....io.registry import (register_reader, register_identifier)
+from ....io.utils import identify_factory
 from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
-
-from .identify import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version
@@ -168,6 +166,10 @@ def register_gwf_io_library(library, package='gwpy.timeseries.io.gwf'):
     register_reader(library, StateVectorDict, read_statevectordict)
     register_reader(library, StateVector, read_statevector)
 
+    # register .gwf identifier
+    for cls in [TimeSeriesDict, TimeSeries, StateVectorDict, StateVector]:
+        register_identifier('gwf', cls, identify_factory('gwf'), force=True)
+
     # register generic 'GWF' format
     try:
         __import__(dependency, fromlist=[''])
@@ -182,6 +184,7 @@ def register_gwf_io_library(library, package='gwpy.timeseries.io.gwf'):
                         force=True)
         register_reader('gwf', StateVector, read_statevector,
                         force=True)
+
     return (read_timeseries, read_timeseriesdict,
             read_statevector, read_statevectordict)
 

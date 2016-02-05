@@ -23,12 +23,11 @@ import os.path
 import re
 import warnings
 
-from astropy.io.registry import (register_reader, register_identifier)
-
 from glue.lal import CacheEntry
 
 from .ascii import return_reassign_ids
 from ..lsctables import SnglBurstTable
+from ...io.registry import (register_reader, register_identifier)
 from ...io.cache import (file_list, read_cache)
 from ...io.utils import (gopen, GzipFile)
 from ... import version
@@ -260,23 +259,16 @@ def identify_cwb_ascii(origin, path, fileobj, *args, **kwargs):
     a sensible error message prompting them to manually specify
     `format='cwb-ascii'`.
     """
-    # get file path and filobj
-    if isinstance(fileobj, (file, GzipFile)):
-        fp = fileobj.name
-        pos = fileobj.tell()
-        close = False
-    elif isinstance(fileobj, CacheEntry):
-        fp = fileobj.path
-        fileobj = gopen(fp, 'rb')
-        close = True
-    else:
-        fp = fileobj
-        fileobj = gopen(fp, 'rb')
-        close = True
     # identify by name
-    if not os.path.basename(fp) in ['EVENTS.txt', 'EVENTS.txt.gz']:
+    if path is None or (
+            os.path.basename(fp) in ['EVENTS.txt', 'EVENTS.txt.gz']):
         return False
     # verify contents
+    if fileobj is None:
+        fileobj = open(path, 'rb')
+        close = True
+    else:
+        close = False
     pos = fileobj.tell()
     try:
         fileobj.seek(0)

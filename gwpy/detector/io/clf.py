@@ -73,8 +73,7 @@ except ImportError:
 
 from numpy import inf
 
-from astropy.io import registry
-
+from ...io import registry
 from ...io.utils import identify_factory
 from ...utils.compat import OrderedDict
 from ... import version

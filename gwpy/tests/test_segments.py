@@ -25,13 +25,15 @@ import StringIO
 from six import PY3
 from urllib2 import (urlopen, URLError)
 
-from compat import unittest
-
 from glue.segments import PosInfinity
 
 from gwpy import version
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
+from gwpy.io.registry import identify_format
+
+from compat import unittest
+import common
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -110,6 +112,9 @@ class SegmentListTests(unittest.TestCase):
                         'SegmentList.write(segwizard) mismatch, %s '
                         'differs from %s' % (tmpfile, SEGWIZ))
         os.remove(tmpfile)
+
+    def test_io_identify(self):
+        common.test_io_identify(SegmentList, ['txt', 'hdf', 'hdf5'])
 
 
 class DataQualityFlagTests(unittest.TestCase):
@@ -255,6 +260,9 @@ class DataQualityFlagTests(unittest.TestCase):
         padded.coalesce()
         self.assertListEqual(padded.active, ACTIVEPADC)
 
+    def test_io_identify(self):
+        common.test_io_identify(DataQualityFlag, ['xml', 'xml.gz', 'txt'])
+
 
 class DataQualityDictTestCase(unittest.TestCase):
     tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_dqdict')
@@ -303,6 +311,9 @@ class DataQualityDictTestCase(unittest.TestCase):
             flags.write(tmpfile)
         finally:
             os.remove(tmpfile)
+
+    def test_io_identify(self):
+        common.test_io_identify(DataQualityDict, ['xml', 'xml.gz'])
 
 
 if __name__ == '__main__':

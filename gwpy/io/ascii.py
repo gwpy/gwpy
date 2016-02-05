@@ -23,12 +23,9 @@ These files should be in two-column x,y format
 
 from numpy import (savetxt, loadtxt)
 
-from astropy.io.registry import (register_reader,
-                                 register_writer,
-                                 register_identifier)
-
 from ..data import Series
 from .. import version
+from .registry import (register_reader, register_writer, register_identifier)
 from .utils import identify_factory
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

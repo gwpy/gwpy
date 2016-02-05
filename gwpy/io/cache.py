@@ -31,6 +31,7 @@ from glue.ligolw.table import Table
 from astropy.io.registry import _get_valid_format
 
 from .. import version
+from .utils import GzipFile
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -47,36 +48,33 @@ def open_cache(lcf):
             return Cache.fromfile(f)
 
 
-def identify_cache_file(*args, **kwargs):
-    """Determine an input object as either a LAL-format cache file.
-    """
-    cachefile = args[3]
-    if isinstance(cachefile, file):
-        cachefile = cachefile.name
-    # identify string
-    if (isinstance(cachefile, string_types) and
-            cachefile.endswith(('.lcf', '.cache'))):
-        return True
-    # identify cache object
-    else:
-        return False
-
-
-def identify_cache(*args, **kwargs):
-    """Determine an input object as a :class:`glue.lal.Cache`
-    """
-    cacheobj = args[3]
-    if isinstance(cacheobj, Cache):
-        return True
-    else:
-        return False
-
-
 def file_list(flist):
     """Parse a number of possible input types into a list of filepaths.
+
+    Parameters
+    ----------
+    flist : `file-like` or `list-like` iterable
+        the input data container, normally just a single file path, or a list
+        of paths, but can generally be any of the following
+
+        - `str` representing a single file path (or comma-separated collection)
+        - open `file` or `~gzip.GzipFile` object
+        - `~glue.lal.CacheEntry`
+        - `~glue.lal.Cache` object or `str` with '.cache' or '.lcf extension
+        - simple `list` or `tuple` of `str` paths
+
+    Returns
+    -------
+    files : `list`
+        `list` of `str` file paths
+
+    Raises
+    ------
+    ValueError
+        if the input `flist` cannot be interpreted as any of the above inputs
     """
     # format list of files
-    if isinstance(flist, file):
+    if isinstance(flist, (file, GzipFile)):
         return [flist.name]
     elif isinstance(flist, CacheEntry):
         return [flist.path]
@@ -89,8 +87,8 @@ def file_list(flist):
         return flist.pfnlist()
     elif isinstance(flist, (list, tuple)):
         return flist
-    else:
-        return list([flist])
+    raise ValueError("Could not parse input %r as one or more "
+                     "file-like objects" % flist)
 
 
 # ----------------------------------------------------------------------------

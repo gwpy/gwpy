@@ -29,9 +29,9 @@ from glue.ligolw.utils.ligolw_add import ligolw_add
 
 
 from astropy.time import Time
-from astropy.io import registry
 
 from ... import version
+from ...io import registry
 from ...io.utils import GzipFile
 from ...io.ligolw import (identify_ligolw, GWpyContentHandler)
 from ...io.cache import file_list

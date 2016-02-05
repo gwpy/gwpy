@@ -21,9 +21,8 @@
 
 from types import FunctionType
 
-from astropy.io.registry import (read, write)
-
 from .. import version
+from .registry import (read, write)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
