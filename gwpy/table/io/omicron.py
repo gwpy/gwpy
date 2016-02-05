@@ -173,7 +173,7 @@ def identify_omicron(origin, path, fileobj, *args, **kwargs):
     """
     # identify string
     if (isinstance(path, (unicode, str)) and
-            fp.endswith('.root') and 'omicron' in fp.lower()):
+            path.endswith('.root') and 'omicron' in path.lower()):
         return True
         # identify cache object
     else:

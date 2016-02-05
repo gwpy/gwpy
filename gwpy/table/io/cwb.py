@@ -261,11 +261,14 @@ def identify_cwb_ascii(origin, path, fileobj, *args, **kwargs):
     """
     # identify by name
     if path is None or (
-            os.path.basename(fp) in ['EVENTS.txt', 'EVENTS.txt.gz']):
+            os.path.basename(path) in ['EVENTS.txt', 'EVENTS.txt.gz']):
         return False
     # verify contents
     if fileobj is None:
-        fileobj = open(path, 'rb')
+        try:
+            fileobj = open(path, 'rb')
+        except IOError:
+            return False
         close = True
     else:
         close = False
