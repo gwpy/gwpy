@@ -25,6 +25,8 @@ Each specific ASCII table format should define their own line parser
 (that generates each row of the table) and pass it to the factory method.
 """
 
+from six import string_types
+
 from numpy import loadtxt
 
 from glue.ligolw.table import (reassign_ids, StripTableName)
@@ -189,6 +191,8 @@ def row_from_ascii_factory(table, delimiter):
             line = line.rstrip('\n').split(delimiter)
         for datum, colname in zip(line, columns):
             if colname == 'time' and tcols is not None:
+                if isinstance(datum, string_types):
+                    datum = str(datum)
                 t = LIGOTimeGPS(datum)
                 setattr(row, tcols[0], t.seconds)
                 setattr(row, tcols[1], t.nanoseconds)
