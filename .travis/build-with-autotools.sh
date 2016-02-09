@@ -31,6 +31,8 @@ fi
 cd $builddir
 if [ -f ./00boot ]; then
     ./00boot
+elif [ -f ./autogen.sh ]; then
+    ./autogen.sh
 fi
 ./configure --enable-silent-rules --prefix=$target $@
 make -j 2 || make
