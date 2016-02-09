@@ -81,14 +81,14 @@ class Mixin(object):
         fig = self.FIGURE_CLASS()
         return fig, fig.gca()
 
-
-class PlotTestCase(Mixin, unittest.TestCase):
-    """`TestCase` for the `gwpy.plotter` module
-    """
     @property
     def use_tex(self):
         return rcParams['text.usetex']
 
+
+class PlotTestCase(Mixin, unittest.TestCase):
+    """`TestCase` for the `gwpy.plotter` module
+    """
     def test_init(self):
         # test object creation
         fig, ax = self.new()
