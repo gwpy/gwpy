@@ -179,6 +179,10 @@ def from_lal_unit(lunit):
     ValueError
         if Astropy doesn't understand the base units for the input
     """
+    try:
+        lunit = lal.Unit(lunit)
+    except RuntimeError:
+        raise TypeError("Cannot convert %r to lal.Unit" % lunit)
     aunit = None
     for power, lalbase in zip(lunit.unitNumerator, LAL_UNIT_INDEX):
         # if not used, continue
