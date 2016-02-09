@@ -140,6 +140,7 @@ def to_lal_unit(aunit):
     """
     if isinstance(aunit, string_types):
         aunit = units.Unit(aunit)
+    aunit = aunit.decompose()
     lunit = lal.Unit()
     for base, power in zip(aunit.bases, aunit.powers):
         # try this base
