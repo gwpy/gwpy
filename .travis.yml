@@ -15,7 +15,7 @@ env:
     - LDAS_TOOLS_VERSION="2.4.1"
     - NDS2_CLIENT_VERSION="0.10.4"
     # tarballs
-    - SWIG="https://github.com/swig/swig/archive/rel-${SWIG_VERSION}.tar.gz"
+    - SWIG_="https://github.com/swig/swig/archive/rel-${SWIG_VERSION}.tar.gz"
     - FFTW="http://www.fftw.org/fftw-${FFTW_VERSION}.tar.gz"
     - LDAS_TOOLS="http://software.ligo.org/lscsoft/source/ldas-tools-${LDAS_TOOLS_VERSION}.tar.gz"
     - LIBFRAME="http://software.ligo.org/lscsoft/source/libframe-${LIBFRAME_VERSION}.tar.gz"
@@ -60,7 +60,7 @@ before_install:
   - export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${VIRTUAL_ENV}/lib/pkgconfig
 
   # build a newer version of swig
-  - source .travis/build-with-autotools.sh swig-${SWIG_VERSION} ${SWIG}
+  - source .travis/build-with-autotools.sh swig-${SWIG_VERSION} ${SWIG_}
 
   # build FFTW3 (double and float)
   - source .travis/build-with-autotools.sh fftw-${FFTW_VERSION} ${FFTW} --enable-shared=yes
