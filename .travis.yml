@@ -7,7 +7,7 @@ sudo: false
 
 env:
   global:
-    - SWIG_VERSION="2.0.11"
+    - SWIG_VERSION="3.0.8"
     - FFTW_VERSION="3.3.4"
     - LAL_VERSION="6.15.0"
     - LALFRAME_VERSION="1.3.0"
