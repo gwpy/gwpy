@@ -31,6 +31,7 @@ from lal import lal
 
 from .. import version
 from ..time import to_gps
+import gwpy.detector.units
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
