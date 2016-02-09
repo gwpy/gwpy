@@ -33,6 +33,6 @@ if [ -f ./00boot ]; then
     ./00boot
 fi
 ./configure --enable-silent-rules --prefix=$target $@
-make -j || make
+make -j 2 || make
 make install
 cd -
