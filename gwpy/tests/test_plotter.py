@@ -461,6 +461,7 @@ class EventTableAxesTestCase(EventTableMixin, AxesTestCase):
                           anchor='other')
 
     def test_get_column_string(self):
+        rcParams['text.usetex'] = True
         self.assertEqual(get_column_string('snr'), 'SNR')
         self.assertEqual(get_column_string('reduced_chisq'),
                          r'Reduced $\chi^2$')
