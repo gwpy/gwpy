@@ -31,6 +31,7 @@ from lal import lal
 
 from .. import version
 from ..time import to_gps
+import gwpy.detector.units
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -139,6 +140,7 @@ def to_lal_unit(aunit):
     """
     if isinstance(aunit, string_types):
         aunit = units.Unit(aunit)
+    aunit = aunit.decompose()
     lunit = lal.Unit()
     for base, power in zip(aunit.bases, aunit.powers):
         # try this base
@@ -177,6 +179,10 @@ def from_lal_unit(lunit):
     ValueError
         if Astropy doesn't understand the base units for the input
     """
+    try:
+        lunit = lal.Unit(lunit)
+    except RuntimeError:
+        raise TypeError("Cannot convert %r to lal.Unit" % lunit)
     aunit = None
     for power, lalbase in zip(lunit.unitNumerator, LAL_UNIT_INDEX):
         # if not used, continue

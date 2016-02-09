@@ -150,6 +150,24 @@ class UnitTest(unittest.TestCase):
         # check error
         self.assertRaises(ValueError, parse_unit, 'blah', parse_strict='raise')
 
+    def test_lal_conversion(self):
+        try:
+            from gwpy.utils import lal as lalutils
+        except ImportError as e:
+            self.skipTest(str(e))
+        # test to LAL
+        lalunit = lalutils.to_lal_unit('meter')
+        self.assertEqual(lalunit, lalutils.lal.MeterUnit)
+        # test from LAL
+        aunit = lalutils.from_lal_unit(lalunit)
+        self.assertEqual(aunit, units.meter)
+        # test compound
+        self.assertEqual(units.Newton,
+            lalutils.from_lal_unit(lalutils.to_lal_unit(units.Newton)))
+        # test error
+        self.assertRaises(ValueError, lalutils.to_lal_unit, 'blah')
+        self.assertRaises(TypeError, lalutils.from_lal_unit,  'blah')
+
 
 if __name__ == '__main__':
     unittest.main()

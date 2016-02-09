@@ -32,7 +32,8 @@ from matplotlib import use
 use('agg')
 from matplotlib.legend import Legend
 from matplotlib.colors import LogNorm
-from matplotlib.collections import PatchCollection
+from matplotlib.collections import (PathCollection, PatchCollection,
+                                    PolyCollection)
 
 from astropy import units
 
@@ -52,8 +53,10 @@ from gwpy.plotter.gps import (GPSTransform, InvertedGPSTransform)
 from gwpy.plotter.html import map_data
 from gwpy.plotter.tex import (float_to_latex, label_to_latex,
                               unit_to_latex, USE_TEX)
+from gwpy.plotter.table import get_column_string
 
 from test_timeseries import TEST_HDF_FILE
+from test_table import SnglBurstTableTestCase
 
 # design ZPK for BodePlot test
 ZPK = [100], [1], 1e-2
@@ -397,13 +400,70 @@ class EventTableMixin(object):
     FIGURE_CLASS = EventTablePlot
     AXES_CLASS = EventTableAxes
 
+    def setUp(self):
+        self.table = SnglBurstTableTestCase.TABLE_CLASS.read(
+            SnglBurstTableTestCase.TEST_XML_FILE)
+
 
 class EventTablePlotTestCase(EventTableMixin, PlotTestCase):
-    pass
+    def test_init_with_table(self):
+        self.FIGURE_CLASS(self.table, 'time', 'central_freq').close()
+        self.assertRaises(ValueError, self.FIGURE_CLASS, self.table)
+        self.FIGURE_CLASS(self.table, 'time', 'central_freq', 'snr').close()
+        self.FIGURE_CLASS(self.table, 'time', 'central_freq', 'snr').close()
 
 
 class EventTableAxesTestCase(EventTableMixin, AxesTestCase):
-    pass
+    def test_plot_table(self):
+        fig, ax = self.new()
+        snrs = self.table.get_column('snr')
+        snrs.sort()
+        # test with color
+        c = ax.plot_table(self.table, 'time', 'central_freq', 'snr')
+        shape = c.get_offsets().shape
+        self.assertIsInstance(c, PathCollection)
+        self.assertEqual(shape[0], len(self.table))
+        nptest.assert_array_equal(c.get_array(), snrs)
+        # test with size_by
+        c = ax.plot_table(self.table, 'time', 'central_freq', size_by='snr')
+        # test with color and size_by
+        c = ax.plot_table(self.table, 'time', 'central_freq', 'snr',
+                          size_by='snr')
+        nptest.assert_array_equal(c.get_array(), snrs)
+        # test add_loudest
+        ax.set_title('title')
+        ax.add_loudest(self.table, 'snr', 'time', 'central_freq')
+
+    def test_plot_tiles(self):
+        fig, ax = self.new()
+        snrs = self.table.get_column('snr')
+        snrs.sort()
+        # test with color
+        c = ax.plot_tiles(self.table, 'time', 'central_freq', 'duration',
+                          'bandwidth', 'snr')
+        shape = c.get_offsets().shape
+        self.assertIsInstance(c, PolyCollection)
+        # test other anchors
+        c = ax.plot_tiles(self.table, 'time', 'central_freq', 'duration',
+                          'bandwidth', 'snr', anchor='ll')
+        c = ax.plot_tiles(self.table, 'time', 'central_freq', 'duration',
+                          'bandwidth', 'snr', anchor='lr')
+        c = ax.plot_tiles(self.table, 'time', 'central_freq', 'duration',
+                          'bandwidth', 'snr', anchor='ul')
+        c = ax.plot_tiles(self.table, 'time', 'central_freq', 'duration',
+                          'bandwidth', 'snr', anchor='ur')
+        self.assertRaises(ValueError, ax.plot_tiles, self.table, 'time',
+                          'central_freq', 'duration', 'bandwidth', 'snr',
+                          anchor='other')
+
+    def test_get_column_string(self):
+        self.assertEqual(get_column_string('snr'), 'SNR')
+        self.assertEqual(get_column_string('reduced_chisq'),
+                         r'Reduced $\chi^2$')
+        self.assertEqual(get_column_string('flow'),
+                         r'f$_{\mbox{\small low}}$')
+        self.assertEqual(get_column_string('end_time_ns'),
+                         r'End Time $(ns)$')
 
 
 # -- Segment plotter ----------------------------------------------------------
