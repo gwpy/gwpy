@@ -66,10 +66,10 @@ before_install:
   - source .travis/build-with-autotools.sh libframe-${LIBFRAME_VERSION} ${LIBFRAME}
 
   # build LAL packages
-  - source .travis/build-with-autotools.sh lal-${LAL_VERSION} ${LAL}
-  - source .travis/build-with-autotools.sh lalframe-${LALFRAME_VERSION} ${LALFRAME}
+  - source .travis/build-with-autotools.sh lal-${LAL_VERSION} ${LAL} --enable-swig-python
+  - source .travis/build-with-autotools.sh lalframe-${LALFRAME_VERSION} ${LALFRAME} --enable-swig-python
   # test LAL import
-  - ls /home/travis/virtualenv/python2.7_with_system_site_packages/lib/python2.6/site-packages/
+  - ls /home/travis/virtualenv/python2.7_with_system_site_packages/lib/python2.7/site-packages/
   - python -c "import lal; print(lal.__file__)"
 
   # build NDS2 client
