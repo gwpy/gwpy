@@ -155,8 +155,8 @@ class CliProduct(object):
     def arg_chan(self, parser):
         """Allow user to specify list of channel names,
         list of start gps times and single duration"""
-        parser.add_argument('--start', nargs='+', action='append',
-                            required=True, help='Starting GPS times(required)')
+        parser.add_argument('--start', nargs='+',
+                            help='Starting GPS times(required)')
         parser.add_argument('--duration', default=10,
                             help='Duration (seconds) [10]')
         parser.add_argument('-c', '--framecache',
@@ -363,20 +363,7 @@ class CliProduct(object):
                 % self.min_timeseries)
 
         if len(arg_list.start) > 0:
-            for start_arg in arg_list.start:
-                if type(start_arg) is list:
-                    for starts in start_arg:
-                        if isinstance(starts, basestring):
-                            starti = int(starts)
-
-                        elif starts is list:
-                            for start_str in starts:
-                                starti = int(start_str)
-                        # ignore duplicates (to make it easy for ldvw)
-                        if starti not in self.start_list:
-                            self.start_list.append(starti)
-                else:
-                    self.start_list.append(int(start_arg))
+            self.start_list = list(set(map(int, arg_list.start)))
         else:
             raise ArgumentError('No start times specified')
 

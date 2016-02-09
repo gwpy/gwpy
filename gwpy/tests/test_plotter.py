@@ -42,7 +42,7 @@ from compat import unittest
 from gwpy import version
 from gwpy.segments import (DataQualityFlag, Segment, SegmentList)
 from gwpy.timeseries import TimeSeries
-from gwpy.plotter import (figure, Plot, Axes,
+from gwpy.plotter import (figure, rcParams, Plot, Axes,
                           TimeSeriesPlot, TimeSeriesAxes,
                           SpectrumPlot, SpectrumAxes,
                           EventTablePlot, EventTableAxes,
@@ -80,6 +80,10 @@ class Mixin(object):
         """
         fig = self.FIGURE_CLASS()
         return fig, fig.gca()
+
+    @property
+    def use_tex(self):
+        return rcParams['text.usetex']
 
 
 class PlotTestCase(Mixin, unittest.TestCase):
@@ -322,7 +326,7 @@ class TimeSeriesAxesTestCase(TimeSeriesMixin, AxesTestCase):
         self.assertEqual(ax.get_epoch(), self.sg.x0.value)
         self.assertTupleEqual(ax.get_xlim(), tuple(self.sg.xspan))
         # check frequency axis
-        if USE_TEX:
+        if self.use_tex:
             self.assertEqual(ax.get_ylabel(), r'Frequency [$\mathrm{Hz}$]')
         else:
             self.assertEqual(ax.get_ylabel(), r'Frequency [Hz]')
@@ -457,6 +461,7 @@ class EventTableAxesTestCase(EventTableMixin, AxesTestCase):
                           anchor='other')
 
     def test_get_column_string(self):
+        rcParams['text.usetex'] = True
         self.assertEqual(get_column_string('snr'), 'SNR')
         self.assertEqual(get_column_string('reduced_chisq'),
                          r'Reduced $\chi^2$')
