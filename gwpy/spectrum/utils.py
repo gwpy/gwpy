@@ -62,5 +62,5 @@ def scale_timeseries_units(tsunit, scaling='density'):
     if tsunit:
         specunit = tsunit ** 2 / baseunit
     else:
-        specunit = 1 / baseunit
+        specunit = baseunit ** -1
     return specunit
