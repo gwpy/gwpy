@@ -68,6 +68,9 @@ before_install:
   # build LAL packages
   - source .travis/build-with-autotools.sh lal-${LAL_VERSION} ${LAL}
   - source .travis/build-with-autotools.sh lalframe-${LALFRAME_VERSION} ${LALFRAME}
+  # test LAL import
+  - ls /home/travis/virtualenv/python2.7_with_system_site_packages/lib/python2.6/site-packages/
+  - python -c "import lal; print(lal.__file__)"
 
   # build NDS2 client
   - source .travis/build-with-autotools.sh nds2-client-${NDS2_CLIENT_VERSION} ${NDS2_CLIENT} --disable-swig-java --disable-mex-matlab

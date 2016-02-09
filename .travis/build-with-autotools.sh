@@ -32,7 +32,7 @@ cd $builddir
 if [ -f ./00boot ]; then
     ./00boot
 fi
-./configure --enable-silent-rules --quiet --prefix=$target $@
+./configure --enable-silent-rules --prefix=$target $@
 make -j || make
 make install
 cd -
