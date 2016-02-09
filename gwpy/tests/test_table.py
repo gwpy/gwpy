@@ -28,6 +28,7 @@ from numpy import testing as nptest
 
 from gwpy import version
 from gwpy.table import lsctables
+from gwpy.table.io import trigfind
 
 import common
 
@@ -97,3 +98,8 @@ class SnglBurstTableTestCase(TableTestMixin, unittest.TestCase):
                                   table2.get_column('snr'))
         nptest.assert_array_equal(table.get_column('central_freq'),
                                   table2.get_column('central_freq'))
+
+    def test_trigfind(self):
+        # test error
+        self.assertRaises(ValueError, trigfind.find_trigger_urls,
+                          'X1:CHANNEL', 'doesnt-exist', 0, 1)
