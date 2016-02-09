@@ -28,6 +28,7 @@ from compat import unittest
 
 from gwpy import version
 from gwpy.timeseries import TimeSeries
+from gwpy.plotter import rcParams
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -81,6 +82,7 @@ class CliTestMixin(object):
     def test_gen_plot(self):
         product, args = self.test_get_timeseries()
         product.config_plot(args)
+        rcParams.update({'text.usetex': False,})
         product.gen_plot(args)
         return product, args
 
