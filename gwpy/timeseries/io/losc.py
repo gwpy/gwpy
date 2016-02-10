@@ -171,10 +171,10 @@ def read_losc_state(filename, channel, group=None, start=None, end=None,
     except KeyError:
         dt = Quantity(1, 's')
     else:
-        xunit = parse_unit(dataset.attrs['Xunit'])
+        xunit = parse_unit(dataset.attrs['Xunits'])
         dt = Quantity(dt, xunit)
     return StateVector(nddata, bits=bits, epoch=epoch, name='Data quality',
-                       sample_rate=(1/dt).to('Hertz'), copy=copy)
+                       dx=dt, copy=copy)
 
 
 def read_losc_state_cache(*args, **kwargs):
