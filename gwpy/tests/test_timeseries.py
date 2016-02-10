@@ -21,6 +21,10 @@
 
 import os
 import pytest
+import tempfile
+
+from six.moves.urllib.request import urlopen
+from six.moves.urllib.error import URLError
 
 from compat import unittest
 
@@ -56,6 +60,28 @@ TEST_HDF_FILE = '%s.hdf' % TEST_GWF_FILE[:-4]
 FIND_CHANNEL = 'L1:LDAS-STRAIN'
 FIND_GPS = 968654552
 FIND_FRAMETYPE = 'L1_LDAS_C02_L2'
+
+LOSC_HDF_FILE = ("https://losc.ligo.org/archive/data/S6/930086912/"
+                 "L-L1_LOSC_4_V1-931069952-4096.hdf5")
+LOSC_DQ_BITS = [
+    'Science data available',
+    'Category-1 checks passed for CBC high-mass search',
+    'Category-2 and 1 checks passed for CBC high-mass search',
+    'Category-3 and 2 and 1 checks passed for CBC high-mass search',
+    'Category-4,3,2,1 checks passed for CBC high-mass search',
+    'Category-1 checks passed for CBC low-mass search',
+    'Category-2 and 1 checks passed for CBC low-mass search',
+    'Category-3 and 2 and 1 checks passed for CBC low-mass search',
+    'Category-4, veto active for CBC low-mass search',
+    'Category-1 checks passed for burst search',
+    'Category-2 and 1 checks passed for burst search',
+    'Category-3 and 2 and 1 checks passed for burst search',
+    'Category-4, 3 and 2 and 1 checks passed for burst search',
+    'Category-3 and 2 and 1 and hveto checks passed for burst search',
+    'Category-4, 3 and 2 and 1 and hveto checks passed for burst search',
+    'Category-1 checks passed for continuous-wave search',
+    'Category-1 checks passed for stochastic search',
+]
 
 # filtering test outputs
 NOTCH_60HZ = (
@@ -199,6 +225,22 @@ class TimeSeriesTestMixin(object):
 
     def test_io_identify(self):
         common.test_io_identify(self.TEST_CLASS, ['txt', 'hdf', 'gwf'])
+
+    def test_losc(self):
+        _, tmpfile = tempfile.mkstemp(prefix='GWPY-TEST_LOSC_', suffix='.hdf')
+        try:
+            response = urlopen(LOSC_HDF_FILE)
+            with open(tmpfile, 'w') as f:
+                f.write(response.read())
+            self._test_losc_inner(tmpfile)  # actually run test here
+        except (URLError, ImportError) as e:
+            self.skipTest(str(e))
+        finally:
+            if os.path.isfile(tmpfile):
+                os.remove(tmpfile)
+
+    def _test_losc_inner(self):
+        self.skipTest("LOSC inner test method has not been written yet")
 
 
 # -----------------------------------------------------------------------------
@@ -423,6 +465,13 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         # test breaks when you try and 'fir' notch
         self.assertRaises(NotImplementedError, ts.notch, 10, type='fir')
 
+    def _test_losc_inner(self, loscfile):
+        ts = self.TEST_CLASS.read(loscfile, 'Strain', format='losc')
+        self.assertEqual(ts.x0, units.Quantity(931069952, 's'))
+        self.assertEqual(ts.dx, units.Quantity(0.000244140625, 's'))
+        self.assertEqual(ts.name, 'Strain')
+
+
 class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
     """`~unittest.TestCase` for the `~gwpy.timeseries.StateVector` object
     """
@@ -430,6 +479,12 @@ class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
 
     def setUp(self):
         super(StateVectorTestCase, self).setUp(dtype='uint32')
+
+    def _test_losc_inner(self, loscfile):
+        ts = self.TEST_CLASS.read(loscfile, 'quality/simple', format='losc')
+        self.assertEqual(ts.x0, units.Quantity(931069952, 's'))
+        self.assertEqual(ts.dx, units.Quantity(1.0, 's'))
+        self.assertListEqual(list(ts.bits), LOSC_DQ_BITS)
 
 
 if __name__ == '__main__':
