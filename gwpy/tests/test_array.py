@@ -49,6 +49,7 @@ class CommonTests(object):
     __metaclass_ = abc.ABCMeta
     TEST_CLASS = Array
     tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_')
+    EMPTY_ARRAY_ERROR = IndexError
 
     def setUp(self, dtype=None):
         numpy.random.seed(SEED)
@@ -84,7 +85,7 @@ class CommonTests(object):
         """
         # test basic empty contructor
         self.assertRaises(TypeError, self.TEST_CLASS)
-        self.assertRaises(IndexError, self.TEST_CLASS, [])
+        self.assertRaises(self.EMPTY_ARRAY_ERROR, self.TEST_CLASS, [])
         # test with some data
         array = self.create()
         nptest.assert_array_equal(array.value, self.data)
