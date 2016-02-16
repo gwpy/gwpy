@@ -91,7 +91,7 @@ class CommonTests(object):
 
     def test_unit(self):
         array = self.create()
-        self.assertIsNone(array.unit)
+        self.assertEqual(array.unit, units.dimensionless_unscaled)
         array = self.create(unit='m')
         self.assertEquals(array.unit, units.m)
 
