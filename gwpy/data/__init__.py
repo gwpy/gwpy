@@ -31,5 +31,6 @@ from glue.lal import (Cache, CacheEntry)
 from .array import *
 from .array2d import *
 from .series import *
+import io
 
 __all__ = ['Array', 'Array2D', 'Series', 'Cache', 'CacheEntry']
