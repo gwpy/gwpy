@@ -345,6 +345,20 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         self.assertEqual(ts1.size - 3, diff.size)
         self.assertEqual(diff.x0, ts1.x0 + ts1.dx * 3)
 
+    def test_value_at(self):
+        ts1 = self.TEST_CLASS([1, 2, 3, 4, 5, 4, 3, 2, 1], dx=.5, unit='m')
+        self.assertEqual(ts1.value_at(1.5), 4 * ts1.unit)
+        self.assertEqual(ts1.value_at(1.5 * ts1.xunit), 4 * units.m)
+        self.assertRaises(IndexError, ts1.value_at, 1.6)
+        # test TimeSeries unit conversion
+        if ts1.xunit == units.s:
+            self.assertEqual(ts1.value_at(1500 * units.millisecond),
+                             4 * units.m)
+        # test Spectrum unit conversion
+        elif ts1.xunit == units.Hz:
+            self.assertEqual(ts1.value_at(1500 * units.milliHertz),
+                             4 * units.m)
+
 
 class Array2DTestCase(CommonTests, unittest.TestCase):
     TEST_CLASS = Array2D
@@ -364,6 +378,19 @@ class Array2DTestCase(CommonTests, unittest.TestCase):
         self.assertIsInstance(a[0][0], units.Quantity)
         self.assertEqual(a[0].unit, a.unit)
         self.assertEqual(a[0][0].unit, a.unit)
+
+    def test_value_at(self):
+        arr = numpy.arange(25).reshape((5, 5))
+        ts1 = self.TEST_CLASS(arr, dx=.5, dy=.25, unit='m')
+        self.assertEqual(ts1.value_at(1.5, .75), 18 * ts1.unit)
+        self.assertEqual(ts1.value_at(1.0 * ts1.xunit, .25 * ts1.yunit),
+                         11 * units.m)
+        self.assertRaises(IndexError, ts1.value_at, 1.6, 5.8)
+        # test Spectrogram unit conversion
+        if ts1.xunit == units.s and ts1.yunit == units.Hz:
+            self.assertEqual(ts1.value_at(1500 * units.millisecond,
+                                          750 * units.milliHertz),
+                             18 * units.m)
 
 
 if __name__ == '__main__':

@@ -203,6 +203,27 @@ class Series(Array):
 
     # -- series methods -------------------------
 
+    def value_at(self, x):
+        """Return the value of this `Series` at the given `xindex` value
+
+        Parameters
+        ----------
+        x : `float`, `~astropy.units.Quantity`
+            the `xindex` value at which to search
+
+        Returns
+        -------
+        y : `~astropy.units.Quantity`
+            the value of this Series at the given `xindex` value
+        """
+        x = Quantity(x, self.xindex.unit).value
+        try:
+            idx = (self.xindex.value == x).nonzero()[0][0]
+        except IndexError as e:
+            e.args = ("Value %r not found in array index",)
+            raise
+        return self[idx]
+
     def copy(self, order='C'):
         new = super(Series, self).copy(order=order)
         try:
