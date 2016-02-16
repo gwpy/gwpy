@@ -99,11 +99,11 @@ class Array2D(Series):
             x = item
             y = None
         # extract a Quantity
-        if isinstance(new, (float, int)):
+        if numpy.shape(new) == ():
             return Quantity(new, unit=self.unit)
         # unwrap a Series
         if len(new.shape) == 1:
-            new = new.value.view(Series)
+            new = new.view(Series)
             if isinstance(x, (float, int)):
                 new.dx = self.dy
                 new.x0 = self.y0
