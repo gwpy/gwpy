@@ -32,7 +32,7 @@ from astropy import units
 from astropy.time import Time
 
 from gwpy import version
-from gwpy.data import (Array, Series)
+from gwpy.data import (Array, Series, Array2D)
 from gwpy.detector import Channel
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -75,8 +75,12 @@ class CommonTests(object):
         if not args:
             args = ['units'] + self.TEST_CLASS._metadata_slots
         for attr in args:
-            self.assertEqual(getattr(ts1, attr, None),
-                             getattr(ts2, attr, None))
+            a = getattr(ts1, attr, None)
+            b = getattr(ts2, attr, None)
+            if isinstance(a, numpy.ndarray) and isinstance(b, numpy.ndarray):
+                nptest.assert_array_equal(a, b)
+            else:
+                self.assertEqual(a, b)
 
     # -- test methods ---------------------------
 
@@ -183,6 +187,12 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         series = self.create(x0=0, dx=1)
         self.assertEqual(series.x0, units.Quantity(0, series._default_xunit))
         self.assertEqual(series.dx, units.Quantity(1, series._default_xunit))
+
+    def test_getitem(self):
+        a = self.create()
+        self.assertEqual(a[0].value, a.value[0])
+        self.assertIsInstance(a[0], units.Quantity)
+        self.assertEqual(a[0].unit, a.unit)
 
     def test_xunit(self, unit=None):
         if unit is None:
@@ -334,6 +344,26 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         diff = ts1.diff(n=3)
         self.assertEqual(ts1.size - 3, diff.size)
         self.assertEqual(diff.x0, ts1.x0 + ts1.dx * 3)
+
+
+class Array2DTestCase(CommonTests, unittest.TestCase):
+    TEST_CLASS = Array2D
+    EMPTY_ARRAY_ERROR = ValueError
+
+    def setUp(self, dtype=None):
+        numpy.random.seed(SEED)
+        self.data = (numpy.random.random(100)
+                     * 1e5).astype(dtype=dtype).reshape((10, 10))
+        self.datasq = self.data ** 2
+
+    def test_getitem(self):
+        a = self.create()
+        self.assertEqual(a[0, 0], a[0][0])
+        nptest.assert_array_equal(a[0].value, a.value[0])
+        self.assertIsInstance(a[0], Series)
+        self.assertIsInstance(a[0][0], units.Quantity)
+        self.assertEqual(a[0].unit, a.unit)
+        self.assertEqual(a[0][0].unit, a.unit)
 
 
 if __name__ == '__main__':
