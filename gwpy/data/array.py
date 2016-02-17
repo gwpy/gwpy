@@ -121,8 +121,6 @@ class Array(Quantity):
         new.name = name
         new.epoch = epoch
         new.channel = channel
-        if unit is None:
-            del new.unit
         return new
 
     # -------------------------------------------

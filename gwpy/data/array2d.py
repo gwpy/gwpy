@@ -99,11 +99,11 @@ class Array2D(Series):
             x = item
             y = None
         # extract a Quantity
-        if isinstance(new, (float, int)):
+        if numpy.shape(new) == ():
             return Quantity(new, unit=self.unit)
         # unwrap a Series
         if len(new.shape) == 1:
-            new = new.value.view(Series)
+            new = new.view(Series)
             if isinstance(x, (float, int)):
                 new.dx = self.dy
                 new.x0 = self.y0
@@ -242,6 +242,38 @@ class Array2D(Series):
         else:
             return Segment(self.yindex.value[0],
                            self.yindex.value[-1] + self.dy.value)
+
+    # -- Array2D methods ------------------------
+
+    def value_at(self, x, y):
+        """Return the value of this `Series` at the given `(x, y)` coordinates
+
+        Parameters
+        ----------
+        x : `float`, `~astropy.units.Quantity`
+            the `xindex` value at which to search
+        x : `float`, `~astropy.units.Quantity`
+            the `yindex` value at which to search
+
+        Returns
+        -------
+        z : `~astropy.units.Quantity`
+            the value of this Series at the given coordinates
+        """
+        x = Quantity(x, self.xindex.unit).value
+        y = Quantity(y, self.yindex.unit).value
+        try:
+            idx = (self.xindex.value == x).nonzero()[0][0]
+        except IndexError as e:
+            e.args = ("Value %r not found in array xindex",)
+            raise
+        try:
+            idy = (self.yindex.value == y).nonzero()[0][0]
+        except IndexError as e:
+            e.args = ("Value %r not found in array yindex",)
+            raise
+        print(idx, idy)
+        return self[idx, idy]
 
     # -------------------------------------------
     # numpy.ndarray method modifiers

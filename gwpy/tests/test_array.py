@@ -32,7 +32,7 @@ from astropy import units
 from astropy.time import Time
 
 from gwpy import version
-from gwpy.data import (Array, Series)
+from gwpy.data import (Array, Series, Array2D)
 from gwpy.detector import Channel
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -49,6 +49,7 @@ class CommonTests(object):
     __metaclass_ = abc.ABCMeta
     TEST_CLASS = Array
     tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_')
+    EMPTY_ARRAY_ERROR = IndexError
 
     def setUp(self, dtype=None):
         numpy.random.seed(SEED)
@@ -74,8 +75,12 @@ class CommonTests(object):
         if not args:
             args = ['units'] + self.TEST_CLASS._metadata_slots
         for attr in args:
-            self.assertEqual(getattr(ts1, attr, None),
-                             getattr(ts2, attr, None))
+            a = getattr(ts1, attr, None)
+            b = getattr(ts2, attr, None)
+            if isinstance(a, numpy.ndarray) and isinstance(b, numpy.ndarray):
+                nptest.assert_array_equal(a, b)
+            else:
+                self.assertEqual(a, b)
 
     # -- test methods ---------------------------
 
@@ -84,14 +89,14 @@ class CommonTests(object):
         """
         # test basic empty contructor
         self.assertRaises(TypeError, self.TEST_CLASS)
-        self.assertRaises(IndexError, self.TEST_CLASS, [])
+        self.assertRaises(self.EMPTY_ARRAY_ERROR, self.TEST_CLASS, [])
         # test with some data
         array = self.create()
         nptest.assert_array_equal(array.value, self.data)
 
     def test_unit(self):
         array = self.create()
-        self.assertIsNone(array.unit)
+        self.assertEqual(array.unit, units.dimensionless_unscaled)
         array = self.create(unit='m')
         self.assertEquals(array.unit, units.m)
 
@@ -182,6 +187,12 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         series = self.create(x0=0, dx=1)
         self.assertEqual(series.x0, units.Quantity(0, series._default_xunit))
         self.assertEqual(series.dx, units.Quantity(1, series._default_xunit))
+
+    def test_getitem(self):
+        a = self.create()
+        self.assertEqual(a[0].value, a.value[0])
+        self.assertIsInstance(a[0], units.Quantity)
+        self.assertEqual(a[0].unit, a.unit)
 
     def test_xunit(self, unit=None):
         if unit is None:
@@ -333,6 +344,53 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         diff = ts1.diff(n=3)
         self.assertEqual(ts1.size - 3, diff.size)
         self.assertEqual(diff.x0, ts1.x0 + ts1.dx * 3)
+
+    def test_value_at(self):
+        ts1 = self.TEST_CLASS([1, 2, 3, 4, 5, 4, 3, 2, 1], dx=.5, unit='m')
+        self.assertEqual(ts1.value_at(1.5), 4 * ts1.unit)
+        self.assertEqual(ts1.value_at(1.5 * ts1.xunit), 4 * units.m)
+        self.assertRaises(IndexError, ts1.value_at, 1.6)
+        # test TimeSeries unit conversion
+        if ts1.xunit == units.s:
+            self.assertEqual(ts1.value_at(1500 * units.millisecond),
+                             4 * units.m)
+        # test Spectrum unit conversion
+        elif ts1.xunit == units.Hz:
+            self.assertEqual(ts1.value_at(1500 * units.milliHertz),
+                             4 * units.m)
+
+
+class Array2DTestCase(CommonTests, unittest.TestCase):
+    TEST_CLASS = Array2D
+    EMPTY_ARRAY_ERROR = ValueError
+
+    def setUp(self, dtype=None):
+        numpy.random.seed(SEED)
+        self.data = (numpy.random.random(100)
+                     * 1e5).astype(dtype=dtype).reshape((10, 10))
+        self.datasq = self.data ** 2
+
+    def test_getitem(self):
+        a = self.create()
+        self.assertEqual(a[0, 0], a[0][0])
+        nptest.assert_array_equal(a[0].value, a.value[0])
+        self.assertIsInstance(a[0], Series)
+        self.assertIsInstance(a[0][0], units.Quantity)
+        self.assertEqual(a[0].unit, a.unit)
+        self.assertEqual(a[0][0].unit, a.unit)
+
+    def test_value_at(self):
+        arr = numpy.arange(25).reshape((5, 5))
+        ts1 = self.TEST_CLASS(arr, dx=.5, dy=.25, unit='m')
+        self.assertEqual(ts1.value_at(1.5, .75), 18 * ts1.unit)
+        self.assertEqual(ts1.value_at(1.0 * ts1.xunit, .25 * ts1.yunit),
+                         11 * units.m)
+        self.assertRaises(IndexError, ts1.value_at, 1.6, 5.8)
+        # test Spectrogram unit conversion
+        if ts1.xunit == units.s and ts1.yunit == units.Hz:
+            self.assertEqual(ts1.value_at(1500 * units.millisecond,
+                                          750 * units.milliHertz),
+                             18 * units.m)
 
 
 if __name__ == '__main__':
