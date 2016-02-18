@@ -23,6 +23,7 @@ import numpy
 
 from matplotlib import (backends, figure, pyplot, colors as mcolors,
                         _pylab_helpers)
+from matplotlib.backend_bases import FigureManagerBase
 from matplotlib.axes import SubplotBase
 from matplotlib.cbook import iterable
 from matplotlib.ticker import LogLocator
@@ -67,7 +68,11 @@ class Plot(figure.Figure):
         # generated figure, with associated interactivity from pyplot
         super(Plot, self).__init__(*args, **kwargs)
         backend_mod, _, draw_if_interactive, _ = backends.pylab_setup()
-        manager = backend_mod.new_figure_manager_given_figure(1, self)
+        try:
+            manager = backend_mod.new_figure_manager_given_figure(1, self)
+        except AttributeError:
+            canvas = backend_mod.FigureCanvas(self)
+            manager = FigureManagerBase(canvas, 1)
         cid = manager.canvas.mpl_connect(
             'button_press_event',
             lambda ev: _pylab_helpers.Gcf.set_active(manager))
