@@ -220,7 +220,7 @@ class Series(Array):
         try:
             idx = (self.xindex.value == x).nonzero()[0][0]
         except IndexError as e:
-            e.args = ("Value %r not found in array index",)
+            e.args = ("Value %r not found in array index" % x,)
             raise
         return self[idx]
 
