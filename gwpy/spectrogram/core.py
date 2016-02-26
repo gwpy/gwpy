@@ -21,6 +21,8 @@
 
 import warnings
 
+from six import string_types
+
 import numpy
 
 import scipy
@@ -176,13 +178,15 @@ class Spectrogram(Array2D):
         spectrogram : `Spectrogram`
             a new `Spectrogram`
         """
-        if operand == 'mean':
-            operand = self.mean(axis=0)
-        elif operand == 'median':
-            operand = self.median(axis=0)
-        elif isinstance(operand, str):
-            raise ValueError("operand %r unrecognised, please give a Quantity"
-                             " or one of: 'mean', 'median'" % operand)
+        if isinstance(operand, string_types):
+            if operand == 'mean':
+                operand = self.mean(axis=0)
+            elif operand == 'median':
+                operand = self.median(axis=0)
+            else:
+                raise ValueError("operand %r unrecognised, please give a "
+                                 "Quantity or one of: 'mean', 'median'"
+                                 % operand)
         out = self / operand
         return out
 
