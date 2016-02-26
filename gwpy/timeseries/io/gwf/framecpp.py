@@ -279,8 +279,11 @@ def _read_frame(framefile, channels, start=None, end=None, ctype=None,
         while True:
             try:
                 data = read_(i, name)
-            except IndexError:
-                break
+            except IndexError as e:
+                if 'exceeds the range' in str(e):  # no more frames
+                    break
+                else:  # some other problem (likely channel not present)
+                    raise
             offset = data.GetTimeOffset()
             thisepoch = epochs[i] + offset
             try:
