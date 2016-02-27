@@ -95,7 +95,7 @@ install:
   - python setup.py build
 
 script:
-  - . ./travis/run-tests.sh
+  - . .travis/run-tests.sh
   - pip install .
 
 after_success:
