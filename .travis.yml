@@ -57,11 +57,11 @@ matrix:
     - python: 2.7
       env: STRICT=false
     - python: 2.7
-      env: STRICT=false PRE="--pre"
+      env: STRICT=true PRE="--pre"
   allow_failures:
     - python: 2.6
     - python: 2.7
-      env: STRICT=false PRE="--pre"
+      env: STRICT=true PRE="--pre"
 
 before_install:
   # update pip
