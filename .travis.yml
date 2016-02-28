@@ -5,31 +5,6 @@ virtualenv:
 
 sudo: false
 
-env:
-  global:
-    - SWIG_VERSION="3.0.8"
-    - FFTW_VERSION="3.3.4"
-    - LAL_VERSION="6.15.0"
-    - LALFRAME_VERSION="1.3.0"
-    - LIBFRAME_VERSION="8.20"
-    - LDAS_TOOLS_VERSION="2.4.1"
-    - NDS2_CLIENT_VERSION="0.10.4"
-    # tarballs
-    - SWIG_="https://github.com/swig/swig/archive/rel-${SWIG_VERSION}.tar.gz"
-    - FFTW="http://www.fftw.org/fftw-${FFTW_VERSION}.tar.gz"
-    - LDAS_TOOLS="http://software.ligo.org/lscsoft/source/ldas-tools-${LDAS_TOOLS_VERSION}.tar.gz"
-    - LIBFRAME="http://software.ligo.org/lscsoft/source/libframe-${LIBFRAME_VERSION}.tar.gz"
-    - LAL="http://software.ligo.org/lscsoft/source/lalsuite/lal-${LAL_VERSION}.tar.gz"
-    - LALFRAME="http://software.ligo.org/lscsoft/source/lalsuite/lalframe-${LALFRAME_VERSION}.tar.gz"
-    - NDS2_CLIENT="http://software.ligo.org/lscsoft/source/nds2-client-${NDS2_CLIENT_VERSION}.tar.gz"
-  matrix:
-    - STRICT=false
-    - STRICT=true
-
-matrix:
-  allow_failures:
-    - env: STRICT=true
-
 addons:
   apt:
     packages:
@@ -56,42 +31,56 @@ addons:
       - texlive-latex-extra
       - libhdf5-serial-dev
 
+
+env:
+  global:
+    - SWIG_VERSION="3.0.8"
+    - FFTW_VERSION="3.3.4"
+    - LAL_VERSION="6.15.0"
+    - LALFRAME_VERSION="1.3.0"
+    - LIBFRAME_VERSION="8.20"
+    - LDAS_TOOLS_VERSION="2.4.1"
+    - NDS2_CLIENT_VERSION="0.10.4"
+    # tarballs
+    - SWIG_="https://github.com/swig/swig/archive/rel-${SWIG_VERSION}.tar.gz"
+    - FFTW="http://www.fftw.org/fftw-${FFTW_VERSION}.tar.gz"
+    - LDAS_TOOLS="http://software.ligo.org/lscsoft/source/ldas-tools-${LDAS_TOOLS_VERSION}.tar.gz"
+    - LIBFRAME="http://software.ligo.org/lscsoft/source/libframe-${LIBFRAME_VERSION}.tar.gz"
+    - LAL="http://software.ligo.org/lscsoft/source/lalsuite/lal-${LAL_VERSION}.tar.gz"
+    - LALFRAME="http://software.ligo.org/lscsoft/source/lalsuite/lalframe-${LALFRAME_VERSION}.tar.gz"
+    - NDS2_CLIENT="http://software.ligo.org/lscsoft/source/nds2-client-${NDS2_CLIENT_VERSION}.tar.gz"
+
+matrix:
+  include:
+    - python: 2.6
+      env: STRICT=false
+    - python: 2.7
+      env: STRICT=false
+    - python: 2.7
+      env: STRICT=false PRE="--pre"
+  allow_failures:
+    - python: 2.6
+    - python: 2.7
+      env: STRICT=false PRE="--pre"
+
 before_install:
   # update pip
-  - pip install -q --upgrade pip
+  - pip install -q ${PRE} --upgrade pip
 
   # build and install numpy first
-  - pip install -q "numpy>=1.9.1"
+  - pip install -q ${PRE} "numpy>=1.9.1"
 
-  # set paths for PKG_CONFIG
-  - export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${VIRTUAL_ENV}/lib/pkgconfig
-
-  # build a newer version of swig
-  - source .travis/build-with-autotools.sh swig-${SWIG_VERSION} ${SWIG_}
-
-  # build FFTW3 (double and float)
-  - source .travis/build-with-autotools.sh fftw-${FFTW_VERSION} ${FFTW} --enable-shared=yes
-  - source .travis/build-with-autotools.sh fftw-${FFTW_VERSION}-float ${FFTW} --enable-shared=yes --enable-float
-
-  # build frame libraries
-  - source .travis/build-with-autotools.sh ldas-tools-${LDAS_TOOLS_VERSION} ${LDAS_TOOLS}
-  - source .travis/build-with-autotools.sh libframe-${LIBFRAME_VERSION} ${LIBFRAME}
-
-  # build LAL packages
-  - source .travis/build-with-autotools.sh lal-${LAL_VERSION} ${LAL} --enable-swig-python
-  - source .travis/build-with-autotools.sh lalframe-${LALFRAME_VERSION} ${LALFRAME} --enable-swig-python
-
-  # build NDS2 client
-  - source .travis/build-with-autotools.sh nds2-client-${NDS2_CLIENT_VERSION} ${NDS2_CLIENT} --disable-swig-java --disable-mex-matlab
+  # build src packages
+  - source .travis/build-src-dependencies.sh
 
   # install cython to speed up scipy build
-  - travis_retry pip install -q --install-option="--no-cython-compile" Cython
+  - travis_retry pip install -q ${PRE} --install-option="--no-cython-compile" Cython
 
   # install testing dependencies
-  - pip install -q coveralls "pytest>=2.8" unittest2
+  - pip install -q ${PRE} coveralls "pytest>=2.8" unittest2
 
 install:
-  - pip install -r requirements.txt
+  - pip install ${PRE} -r requirements.txt
   - python setup.py build
 
 script:
