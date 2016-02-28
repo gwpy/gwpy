@@ -13,7 +13,8 @@ source .travis/build-with-autotools.sh ldas-tools-${LDAS_TOOLS_VERSION} ${LDAS_T
 source .travis/build-with-autotools.sh libframe-${LIBFRAME_VERSION} ${LIBFRAME}
 
 # build LAL packages
-source .travis/build-with-autotools.sh lal-${LAL_VERSION} ${LAL} --enable-swig-python  - source .travis/build-with-autotools.sh lalframe-${LALFRAME_VERSION} ${LALFRAME} --enable-swig-python
+source .travis/build-with-autotools.sh lal-${LAL_VERSION} ${LAL} --enable-swig-python
+source .travis/build-with-autotools.sh lalframe-${LALFRAME_VERSION} ${LALFRAME} --enable-swig-python
 
 # build NDS2 client
 source .travis/build-with-autotools.sh nds2-client-${NDS2_CLIENT_VERSION} ${NDS2_CLIENT} --disable-swig-java --disable-mex-matlab
