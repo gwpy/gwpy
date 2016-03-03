@@ -87,9 +87,9 @@ notifications:
 
 cache:
   apt: true
+  pip: true
+  ccache: true
   directories:
-    # cache pip wheels
-    - $HOME/.cache/pip
     # cache src builds
     - ./swig-${SWIG_VERSION}
     - ./fftw-${FFTW_VERSION}
