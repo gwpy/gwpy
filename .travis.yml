@@ -6,26 +6,19 @@ addons:
       # generic packages
       - gcc
       - gfortran
-      - python-dev
       - libblas-dev
       - liblapack-dev
       # lal dependencies
       - pkg-config
-      - python-all-dev
       - zlib1g-dev
       - libgsl0-dev
       - swig
-      - python-numpy
-      - python-scipy
       - bc
       # nds2 dependencies
       - libsasl2-2
-      # glue dependencies
-      - python-m2crypto
       # misc python dependencies
       - texlive-latex-extra
       - libhdf5-serial-dev
-
 
 env:
   global:
