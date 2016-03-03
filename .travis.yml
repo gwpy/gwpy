@@ -48,15 +48,20 @@ env:
 matrix:
   include:
     - python: 2.6
+      env: STRICT=false
     - python: 2.7
+      env: STRICT=false
     - python: 3.5
+      env: STRICT=false
     - python: 2.7
       env: STRICT=true PRE="--pre"
   allow_failures:
     - python: 2.6
+      env: STRICT=false
     - python: 2.7
       env: STRICT=true PRE="--pre"
     - python: 3.5
+      env: STRICT=false
 
 before_install:
   # update pip
