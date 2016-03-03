@@ -941,6 +941,9 @@ class TimeSeriesBaseDict(OrderedDict):
             connection = datafind.connect()
             cache = connection.find_frame_urls(observatory, ft, start, end,
                                                urltype='file')
+            if len(cache) == 0:
+                raise RuntimeError("No %s-%s frame files found for [%d, %d)"
+                                   % (observatory, ft, start, end))
             # read data
             readargs.setdefault('format', 'gwf')
             out.append(cls.read(cache, clist, start=start, end=end, pad=pad,
