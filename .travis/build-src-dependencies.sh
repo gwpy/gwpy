@@ -13,7 +13,7 @@ source .travis/build-with-autotools.sh ldas-tools-${LDAS_TOOLS_VERSION}-${TRAVIS
 source .travis/build-with-autotools.sh libframe-${LIBFRAME_VERSION}-${TRAVIS_PYTHON_VERSION} ${LIBFRAME}
 
 # build LAL packages
-source .travis/build-with-autotools.sh lal-${LAL_VERSION} ${LAL}-${TRAVIS_PYTHON_VERSION} --enable-swig-python
+source .travis/build-with-autotools.sh lal-${LAL_VERSION}-${TRAVIS_PYTHON_VERSION} ${LAL} --enable-swig-python
 source .travis/build-with-autotools.sh lalframe-${LALFRAME_VERSION}-${TRAVIS_PYTHON_VERSION} ${LALFRAME} --enable-swig-python
 
 # build NDS2 client
