@@ -91,11 +91,11 @@ cache:
     # cache pip wheels
     - $HOME/.cache/pip
     # cache src builds
-    - ./swig-${SWIG_VERSION}-${TRAVIS_PYTHON_VERSION}
-    - ./fftw-${FFTW_VERSION}-${TRAVIS_PYTHON_VERSION}
-    - ./fftw-${FFTW_VERSION}-float-${TRAVIS_PYTHON_VERSION}
-    - ./ldas-tools-${LDAS_TOOLS_VERSION}-${TRAVIS_PYTHON_VERSION}
-    - ./libframe-${LIBFRAME_VERSION}-${TRAVIS_PYTHON_VERSION}
-    - ./lal-${LAL_VERSION}-${TRAVIS_PYTHON_VERSION}
-    - ./lalframe-${LALFRAME_VERSION}-${TRAVIS_PYTHON_VERSION}
-    - ./nds2-client-${NDS2_CLIENT_VERSION}-${TRAVIS_PYTHON_VERSION}
+    - ./swig-${SWIG_VERSION}
+    - ./fftw-${FFTW_VERSION}
+    - ./fftw-${FFTW_VERSION}-float
+    - ./ldas-tools-${LDAS_TOOLS_VERSION}
+    - ./libframe-${LIBFRAME_VERSION}
+    - ./lal-${LAL_VERSION}
+    - ./lalframe-${LALFRAME_VERSION}
+    - ./nds2-client-${NDS2_CLIENT_VERSION}
