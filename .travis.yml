@@ -1,10 +1,5 @@
 language: python
 
-virtualenv:
-  system_site_packages: true
-
-sudo: false
-
 addons:
   apt:
     packages:
