@@ -875,7 +875,7 @@ class TimeSeriesBaseDict(OrderedDict):
     @classmethod
     def find(cls, channels, start, end, frametype=None,
              pad=None, dtype=None, nproc=1, verbose=False,
-             allow_tape=True, **readargs):
+             allow_tape=True, observatory=None, **readargs):
         """Find and read data from frames for a number of channels.
 
         Parameters
@@ -931,9 +931,15 @@ class TimeSeriesBaseDict(OrderedDict):
                 gprint("Reading data from %s frames..." % ft, end=' ')
             # find frames
             channellist = ChannelList.from_names(*clist)
-            ifos = ''.join(sorted(set(c.ifo[0] for c in channellist)))
+            if observatory is None:
+                try:
+                    observatory = ''.join(
+                        sorted(set(c.ifo[0] for c in channellist)))
+                except TypeError as e:
+                    e.args = ("Cannot parse list of IFOs from channel names",)
+                    raise
             connection = datafind.connect()
-            cache = connection.find_frame_urls(ifos, ft, start, end,
+            cache = connection.find_frame_urls(observatory, ft, start, end,
                                                urltype='file')
             # read data
             readargs.setdefault('format', 'gwf')
@@ -1005,6 +1011,7 @@ class TimeSeriesBaseDict(OrderedDict):
         # otherwise fetch from NDS
         kwargs.pop('nproc', None)
         kwargs.pop('frametype', None)
+        kwargs.pop('observatory', None)
         try:
             return cls.fetch(channels, start, end, pad=pad, dtype=dtype,
                              verbose=verbose, **kwargs)
