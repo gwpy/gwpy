@@ -24,6 +24,9 @@ import tempfile
 import importlib
 import argparse
 
+from matplotlib import use
+use('agg')
+
 from compat import unittest
 
 from gwpy import version
