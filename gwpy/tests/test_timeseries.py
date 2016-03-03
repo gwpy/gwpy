@@ -144,6 +144,14 @@ class TimeSeriesTestMixin(object):
                 pass
             else:
                 nptest.assert_array_almost_equal(ts.value, comp.value)
+            # test observatory
+            ts2 = self.TEST_CLASS.find(FIND_CHANNEL, FIND_GPS, FIND_GPS+1,
+                                      frametype=FIND_FRAMETYPE,
+                                      observatory=FIND_CHANNEL[0])
+            self.assertArraysEqual(ts, ts2)
+            self.assertRaises(RuntimeError, self.TEST_CLASS.find, FIND_CHANNEL,
+                              FIND_GPS, FIND_GPS+1, frametype=FIND_FRAMETYPE,
+                              observatory='X')
 
     def test_find_best_frametype(self):
         try:
