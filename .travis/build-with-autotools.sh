@@ -35,6 +35,6 @@ elif [ -f ./autogen.sh ]; then
     ./autogen.sh
 fi
 ./configure --enable-silent-rules --prefix=$target $@
-make -j 2 || make
-make install
+make -j 2 --silent || make --silent
+make install --silent
 cd -

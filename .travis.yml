@@ -1,9 +1,24 @@
 language: python
 
-virtualenv:
-  system_site_packages: true
-
-sudo: false
+addons:
+  apt:
+    packages:
+      # generic packages
+      - gcc
+      - gfortran
+      - libblas-dev
+      - liblapack-dev
+      # lal dependencies
+      - pkg-config
+      - zlib1g-dev
+      - libgsl0-dev
+      - swig
+      - bc
+      # nds2 dependencies
+      - libsasl2-2
+      # misc python dependencies
+      - texlive-latex-extra
+      - libhdf5-serial-dev
 
 env:
   global:
@@ -23,72 +38,44 @@ env:
     - LALFRAME="http://software.ligo.org/lscsoft/source/lalsuite/lalframe-${LALFRAME_VERSION}.tar.gz"
     - NDS2_CLIENT="http://software.ligo.org/lscsoft/source/nds2-client-${NDS2_CLIENT_VERSION}.tar.gz"
 
-addons:
-  apt:
-    packages:
-      # generic packages
-      - gcc
-      - gfortran
-      - python-dev
-      - libblas-dev
-      - liblapack-dev
-      # lal dependencies
-      - pkg-config
-      - python-all-dev
-      - zlib1g-dev
-      - libgsl0-dev
-      - swig
-      - python-numpy
-      - python-scipy
-      - bc
-      # nds2 dependencies
-      - libsasl2-2
-      # glue dependencies
-      - python-m2crypto
-      # misc python dependencies
-      - texlive-latex-extra
-      - libhdf5-serial-dev
+matrix:
+  include:
+    - python: 2.6
+      env: STRICT=false
+    - python: 2.7
+      env: STRICT=false
+    - python: 3.5
+      env: STRICT=false
+    - python: 2.7
+      env: STRICT=true PRE="--pre"
+  allow_failures:
+    - python: 2.7
+      env: STRICT=true PRE="--pre"
+    - python: 3.5
+      env: STRICT=false
 
 before_install:
   # update pip
-  - pip install -q --upgrade pip
+  - pip install -q ${PRE} --upgrade pip
 
   # build and install numpy first
-  - pip install -q "numpy>=1.9.1"
+  - pip install -q ${PRE} "numpy>=1.9.1"
 
-  # set paths for PKG_CONFIG
-  - export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${VIRTUAL_ENV}/lib/pkgconfig
-
-  # build a newer version of swig
-  - source .travis/build-with-autotools.sh swig-${SWIG_VERSION} ${SWIG_}
-
-  # build FFTW3 (double and float)
-  - source .travis/build-with-autotools.sh fftw-${FFTW_VERSION} ${FFTW} --enable-shared=yes
-  - source .travis/build-with-autotools.sh fftw-${FFTW_VERSION}-float ${FFTW} --enable-shared=yes --enable-float
-
-  # build frame libraries
-  - source .travis/build-with-autotools.sh ldas-tools-${LDAS_TOOLS_VERSION} ${LDAS_TOOLS}
-  - source .travis/build-with-autotools.sh libframe-${LIBFRAME_VERSION} ${LIBFRAME}
-
-  # build LAL packages
-  - source .travis/build-with-autotools.sh lal-${LAL_VERSION} ${LAL} --enable-swig-python
-  - source .travis/build-with-autotools.sh lalframe-${LALFRAME_VERSION} ${LALFRAME} --enable-swig-python
-
-  # build NDS2 client
-  - source .travis/build-with-autotools.sh nds2-client-${NDS2_CLIENT_VERSION} ${NDS2_CLIENT} --disable-swig-java --disable-mex-matlab
+  # build src packages
+  - source .travis/build-src-dependencies.sh
 
   # install cython to speed up scipy build
-  - travis_retry pip install -q --install-option="--no-cython-compile" Cython
+  - travis_retry pip install -q ${PRE} --install-option="--no-cython-compile" Cython
 
   # install testing dependencies
-  - pip install -q coveralls "pytest>=2.8" unittest2
+  - pip install -q ${PRE} coveralls "pytest>=2.8" unittest2
 
 install:
-  - pip install -r requirements.txt
+  - pip install ${PRE} -r requirements.txt
   - python setup.py build
 
 script:
-  - coverage run --source=gwpy --omit="gwpy/tests/*,gwpy/*version*,gwpy/utils/sphinx/*" -m py.test -v gwpy/
+  - . .travis/run-tests.sh
   - pip install .
 
 after_success:
@@ -100,9 +87,9 @@ notifications:
 
 cache:
   apt: true
+  pip: true
+  ccache: true
   directories:
-    # cache pip wheels
-    - $HOME/.cache/pip
     # cache src builds
     - ./swig-${SWIG_VERSION}
     - ./fftw-${FFTW_VERSION}
