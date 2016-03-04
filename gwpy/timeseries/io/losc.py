@@ -124,6 +124,28 @@ def read_losc_data_cache(f, channel, start=None, end=None, resample=None,
 def read_losc_state(filename, channel, group=None, start=None, end=None,
                     copy=False):
     """Read a `StateVector` from a LOSC-format HDF file.
+
+    Parameters
+    ----------
+    filename : `str`
+        path to LOSC-format HDF5 file to read.
+    channel : `str`
+        name of HDF5 dataset to read.
+    group : `str`, optional
+        name of containing HDF5 group for ``channel``. If not given,
+        the first dataset named ``channel`` will be assumed as the right
+        one.
+    start : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
+        start GPS time of desired data
+    end : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
+        end GPS time of desired data
+    copy : `bool`, default: `False`
+        create a fresh-memory copy of the underlying array
+
+    Returns
+    -------
+    data : :class`~gwpy.timeseries.TimeSeries`
+        a new `TimeSeries` containing the data read from disk
     """
     h5file = open_hdf5(filename)
     if group:
@@ -149,10 +171,10 @@ def read_losc_state(filename, channel, group=None, start=None, end=None,
     except KeyError:
         dt = Quantity(1, 's')
     else:
-        xunit = parse_unit(dataset.attrs['Xunit'])
+        xunit = parse_unit(dataset.attrs['Xunits'])
         dt = Quantity(dt, xunit)
     return StateVector(nddata, bits=bits, epoch=epoch, name='Data quality',
-                       sample_rate=(1/dt).to('Hertz'), copy=copy)
+                       dx=dt, copy=copy)
 
 
 def read_losc_state_cache(*args, **kwargs):
