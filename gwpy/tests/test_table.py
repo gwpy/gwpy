@@ -26,14 +26,20 @@ import unittest
 import numpy
 from numpy import testing as nptest
 
+from astropy import units
+
 from gwpy import version
+from gwpy.time import LIGOTimeGPS
 from gwpy.table import lsctables
-from gwpy.table.io import trigfind
+from gwpy.table.io import (omega, trigfind)
+from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
 
 import common
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
+
+TEST_DATA_DIR = os.path.join(os.path.split(__file__)[0], 'data')
 
 
 class TableTestMixin(object):
@@ -49,8 +55,9 @@ class SnglBurstTableTestCase(TableTestMixin, unittest.TestCase):
     """
     TABLE_CLASS = lsctables.SnglBurstTable
     TEST_XML_FILE = os.path.join(
-        os.path.split(__file__)[0], 'data',
-        'H1-LDAS_STRAIN-968654552-10.xml.gz')
+        TEST_DATA_DIR, 'H1-LDAS_STRAIN-968654552-10.xml.gz')
+    TEST_OMEGA_FILE = os.path.join(TEST_DATA_DIR, 'omega.txt')
+    TEST_OMEGADQ_FILE = os.path.join(TEST_DATA_DIR, 'omegadq.txt')
 
     def test_read_ligolw(self):
         table = self.TABLE_CLASS.read(self.TEST_XML_FILE)
@@ -103,3 +110,35 @@ class SnglBurstTableTestCase(TableTestMixin, unittest.TestCase):
         # test error
         self.assertRaises(ValueError, trigfind.find_trigger_urls,
                           'X1:CHANNEL', 'doesnt-exist', 0, 1)
+
+    def test_read_omega(self):
+        self.assertRaises(TypeError, self.TABLE_CLASS.read,
+                          self.TEST_OMEGA_FILE)
+        table = self.TABLE_CLASS.read(self.TEST_OMEGA_FILE, format='omega')
+        self.assertEquals(len(table), 92)
+        self.assertEquals(table[0].snr, 147.66187483916312)
+        self.assertEquals(table[50].get_start(),
+                          LIGOTimeGPS(966211219, 530621317))
+        self.assertEquals(table.columnnames, omega.OMEGA_LIGOLW_COLUMNS)
+
+    def test_read_omegadq(self):
+        self.assertRaises(TypeError, self.TABLE_CLASS.read,
+                          self.TEST_OMEGADQ_FILE)
+        table = self.TABLE_CLASS.read(self.TEST_OMEGADQ_FILE, format='omegadq')
+        self.assertEquals(len(table), 9)
+        self.assertEquals(table[0].snr, 5.304714883949938)
+        self.assertEquals(table[6].get_start(),
+                          LIGOTimeGPS(966211228,123722672))
+        self.assertEquals(table.columnnames, omega.OMEGADQ_LIGOLW_COLUMNS)
+
+    def test_rates(self):
+        # test event_rate
+        table = self.TABLE_CLASS.read(self.TEST_XML_FILE)
+        rate = table.event_rate(1)
+        self.assertIsInstance(rate, TimeSeries)
+        self.assertEquals(rate.sample_rate, 1 * units.Hz)
+        # test binned_event_rates
+        rates = table.binned_event_rates(1, 'snr', [2, 4, 6])
+        self.assertIsInstance(rates, TimeSeriesDict)
+        table.binned_event_rates(1, 'snr', [2, 4, 6], operator='in')
+        table.binned_event_rates(1, 'snr', [(0, 2), (2, 4), (4, 6)])

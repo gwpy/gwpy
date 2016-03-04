@@ -137,7 +137,7 @@ def table_from_ascii_factory(table, format, trig_func, cols=None, **kwargs):
         append = out.append
 
         # get dtypes
-        dtype = kwargs.pop('dtype', None)
+        dtype = kwargs_.pop('dtype', None)
         if dtype is None:
             dtype = [(c, 'a20') if c == 'time' else (c, '<f8')
                      for c in columns]
