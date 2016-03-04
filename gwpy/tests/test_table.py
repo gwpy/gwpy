@@ -21,7 +21,6 @@
 
 import os.path
 import tempfile
-import unittest
 
 import numpy
 from numpy import testing as nptest
@@ -35,6 +34,7 @@ from gwpy.table.io import (omega, trigfind)
 from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
 
 import common
+from compat import unittest
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
