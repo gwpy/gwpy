@@ -61,6 +61,10 @@ class ChannelTests(unittest.TestCase):
         self.assertTrue(new.sample_rate == units.Quantity(16384, 'Hz'))
         self.assertTrue(new.unit == units.meter)
         self.assertTrue(new.texname == r'L1:LSC-DARM\_ERR')
+        new2 = Channel(new)
+        self.assertEqual(new.sample_rate, new2.sample_rate)
+        self.assertEqual(new.unit, new2.unit)
+        self.assertEqual(new.texname, new2.texname)
 
     def test_query(self):
         try:
