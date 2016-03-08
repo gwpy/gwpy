@@ -270,19 +270,20 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         nptest.assert_array_equal(ts3.value[-ts2.size:], ts2.value)
         # test appending with one xindex deletes it in the output
         ts1.xindex
-        ts4 = ts1.append(ts2, inplace=False)
-        self.assertTrue(hasattr(ts4, '_xindex'))
-        nptest.assert_array_equal(
-            ts4.xindex.value,
-            numpy.concatenate((ts1.xindex.value, ts2.xindex.value)))
+        ts3 = ts1.append(ts2, inplace=False)
+        self.assertFalse(hasattr(ts3, '_xindex'))
         # test appending with both xindex appends as well
         ts1.xindex
         ts2.xindex
-        ts5 = ts1.append(ts2, inplace=False)
-        self.assertTrue(hasattr(ts5, '_xindex'))
+        ts3 = ts1.append(ts2, inplace=False)
+        self.assertTrue(hasattr(ts3, '_xindex'))
         nptest.assert_array_equal(
-            ts5.xindex.value,
+            ts3.xindex.value,
             numpy.concatenate((ts1.xindex.value, ts2.xindex.value)))
+        # test appending with one only and not resize
+        del ts2.xindex
+        ts3 = ts1.append(ts2, inplace=False, resize=False)
+        self.assertEqual(ts3.x0, ts1.x0 + ts1.dx * ts2.size)
 
     def test_prepend(self):
         """Test the `Series.prepend` method
