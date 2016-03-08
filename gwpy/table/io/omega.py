@@ -22,6 +22,8 @@
 import sys
 from math import sqrt
 
+from six import string_types
+
 from numpy import loadtxt
 
 from astropy.io import registry
@@ -35,24 +37,55 @@ from ...time import LIGOTimeGPS
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-OMEGA_COLUMNS = ['search', 'event_id', 'peak_time', 'peak_time_ns',
-                 'start_time', 'start_time_ns',
-                 'stop_time', 'stop_time_ns', 'duration',
-                 'central_freq', 'flow', 'fhigh', 'bandwidth',
-                 'snr', 'amplitude', 'confidence']
+OMEGA_DTYPE = [
+    ('time', 'a20'),
+    ('frequency', '<f8'),
+    ('duration', '<f8'),
+    ('bandwidth', '<f8'),
+    ('energy', '<f8'),
+    None,
+    None,
+    None,
+]
+OMEGA_LIGOLW_COLUMNS = ['search', 'event_id', 'peak_time', 'peak_time_ns',
+                        'start_time', 'start_time_ns',
+                        'stop_time', 'stop_time_ns', 'duration',
+                        'central_freq', 'flow', 'fhigh', 'bandwidth',
+                        'snr', 'amplitude', 'confidence']
 
-OMEGADQ_COLUMNS = ['search', 'event_id', 'peak_time', 'peak_time_ns',
-                   'start_time', 'start_time_ns',
-                   'stop_time', 'stop_time_ns', 'duration',
-                   'ms_start_time', 'ms_start_time_ns',
-                   'ms_stop_time', 'ms_stop_time_ns', 'ms_duration',
-                   'central_freq', 'peak_frequency',
-                   'flow', 'fhigh', 'bandwidth',
-                   'ms_flow', 'ms_fhigh', 'ms_bandwidth',
-                   'snr', 'ms_snr', 'amplitude', 'confidence']
+OMEGADQ_DTYPE = [
+    ('start', 'a20'),
+    ('stop', 'a20'),
+    ('peak', 'a20'),
+    ('flow', '<f8'),
+    ('fhigh', '<f8'),
+    None,
+    ('ms_start', 'a20'),
+    ('ms_stop', 'a20'),
+    ('ms_fmin', '<f8'),
+    ('ms_fmax', '<f8'),
+    None,
+    ('energy', '<f8'),
+    ('ms_snr', '<f8'),
+]
+OMEGADQ_LIGOLW_COLUMNS = ['search', 'event_id', 'peak_time', 'peak_time_ns',
+                          'start_time', 'start_time_ns',
+                          'stop_time', 'stop_time_ns', 'duration',
+                          'ms_start_time', 'ms_start_time_ns',
+                          'ms_stop_time', 'ms_stop_time_ns', 'ms_duration',
+                          'central_freq', 'peak_frequency',
+                          'flow', 'fhigh', 'bandwidth',
+                          'ms_flow', 'ms_fhigh', 'ms_bandwidth',
+                          'snr', 'ms_snr', 'amplitude', 'confidence']
 
 
-def sngl_burst_from_omega(line, columns=OMEGA_COLUMNS):
+def to_LIGOTimeGPS(x):
+    if isinstance(x, string_types):
+        x = str(x)
+    return LIGOTimeGPS(x)
+
+
+def sngl_burst_from_omega(line, columns=OMEGA_LIGOLW_COLUMNS):
     """Build a `SnglBurst` from an Omega ASCII line.
 
     Parameters
@@ -72,14 +105,11 @@ def sngl_burst_from_omega(line, columns=OMEGA_COLUMNS):
 
     if isinstance(line, str):
         line = line.rstrip('\n').split()
-    line = map(float, line)
-    try:
-        peak, freq, duration, band, nerg, clst_size, clst_nerg, clst_N = line
-    except IndexError:
-        peak, freq, duration, band, nerg = line
+    peak, freq, duration, band, nerg = line
+    duration = float(duration)
 
     # parse time data
-    peak = LIGOTimeGPS(peak)
+    peak = to_LIGOTimeGPS(peak)
     if 'time' in columns or 'peak_time' in columns:
         t.peak_time = peak.seconds
     if 'time' in columns or 'peak_time_ns' in columns:
@@ -121,7 +151,7 @@ def sngl_burst_from_omega(line, columns=OMEGA_COLUMNS):
     return t
 
 
-def sngl_burst_from_omegadq(line, columns=OMEGADQ_COLUMNS):
+def sngl_burst_from_omegadq(line, columns=OMEGADQ_LIGOLW_COLUMNS):
     """Build a `SnglBurst` from an Omega DQ (DetChar) ASCII line.
 
     Parameters
@@ -141,21 +171,21 @@ def sngl_burst_from_omegadq(line, columns=OMEGADQ_COLUMNS):
 
     if isinstance(line, str):
         line = map(float, line.rstrip('\n').split())
-    (start, stop, peak, flow, fhigh, nevents, ms_start, ms_stop, ms_flow,
-     ms_fhigh, clst_size, clst_energy, ms_snr) = line
+    (start, stop, peak, flow, fhigh, ms_start, ms_stop, ms_flow,
+     ms_fhigh, clst_energy, ms_snr) = line
 
     # parse time data
-    peak = LIGOTimeGPS(peak)
+    peak = to_LIGOTimeGPS(peak)
     if 'time' in columns or 'peak_time' in columns:
         t.peak_time = peak.seconds
     if 'time' in columns or 'peak_time_ns' in columns:
         t.peak_time_ns = peak.nanoseconds
-    start = LIGOTimeGPS(start)
+    start = to_LIGOTimeGPS(start)
     if 'start_time' in columns:
         t.start_time = start.seconds
     if 'start_time_ns' in columns:
         t.start_time_ns = start.nanoseconds
-    stop = LIGOTimeGPS(stop)
+    stop = to_LIGOTimeGPS(stop)
     if 'stop_time' in columns:
         t.stop_time = stop.seconds
     if 'stop_time_ns' in columns:
@@ -176,12 +206,12 @@ def sngl_burst_from_omegadq(line, columns=OMEGADQ_COLUMNS):
         t.central_freq = flow + (fhigh - flow) * .5
 
     # most-significant tile information
-    ms_start = LIGOTimeGPS(ms_start)
+    ms_start = to_LIGOTimeGPS(ms_start)
     if 'ms_start_time' in columns:
         t.ms_start_time = ms_start.seconds
     if 'ms_start_time_ns' in columns:
         t.ms_start_time_ns = ms_start.nanoseconds
-    ms_stop = LIGOTimeGPS(ms_stop)
+    ms_stop = to_LIGOTimeGPS(ms_stop)
     if 'ms_stop_time' in columns:
         t.ms_stop_time = ms_stop.seconds
     if 'ms_stop_time_ns' in columns:
@@ -214,12 +244,16 @@ def sngl_burst_from_omegadq(line, columns=OMEGADQ_COLUMNS):
 # register OmegaDQ
 registry.register_reader(
     'omegadq', SnglBurstTable,
-    table_from_ascii_factory(SnglBurstTable, 'omegadq',
-                             sngl_burst_from_omegadq, OMEGADQ_COLUMNS))
+    table_from_ascii_factory(
+        SnglBurstTable, 'omegadq', sngl_burst_from_omegadq,
+        OMEGADQ_LIGOLW_COLUMNS,
+        dtype=filter(lambda x: x is not None, OMEGADQ_DTYPE),
+        usecols=[i for i, c in enumerate(OMEGADQ_DTYPE) if c is not None]))
 
 # register Omega
 registry.register_reader(
     'omega', SnglBurstTable,
-    table_from_ascii_factory(SnglBurstTable, 'omega',
-                             sngl_burst_from_omega, OMEGA_COLUMNS,
-                             comments='%'))
+    table_from_ascii_factory(
+        SnglBurstTable, 'omega', sngl_burst_from_omega, OMEGA_LIGOLW_COLUMNS,
+        dtype=filter(lambda x: x is not None, OMEGA_DTYPE), comments='%',
+        usecols=[i for i, c in enumerate(OMEGA_DTYPE) if c is not None]))
