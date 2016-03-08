@@ -502,11 +502,14 @@ class Series(Array):
                 self.xindex[-other.shape[0]:] = other._xindex
             except AttributeError:
                 del self.xindex
-            try:
-                self.dx = self.xindex[1] - self.xindex[0]
-            except IndexError:
-                pass
-            self.epoch = self.xindex[0]
+                if not resize:
+                    self.x0 = self.x0 + self.dx * other.shape[0]
+            else:
+                try:
+                    self.dx = self.xindex[1] - self.xindex[0]
+                except IndexError:
+                    pass
+                self.x0 = self.xindex[0]
         return self
 
     def prepend(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
