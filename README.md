@@ -15,6 +15,7 @@ Project status
 [![PyPI version](https://badge.fury.io/py/gwpy.svg)](http://badge.fury.io/py/gwpy)  
 [![Build Status](https://travis-ci.org/gwpy/gwpy.svg?branch=master)](https://travis-ci.org/gwpy/gwpy)  
 [![Coverage Status](https://coveralls.io/repos/gwpy/gwpy/badge.svg)](https://coveralls.io/r/gwpy/gwpy)  
+[![Research software impact](http://depsy.org/api/package/pypi/gwpy/badge.svg)](http://depsy.org/package/python/gwpy)  
 [![Code Climate](https://codeclimate.com/github/gwpy/gwpy/badges/gpa.svg)](https://codeclimate.com/github/gwpy/gwpy)  
 [![Code Health](https://landscape.io/github/gwpy/gwpy/master/landscape.svg?style=flat)](https://landscape.io/github/gwpy/gwpy/master)  
 [![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/gwpy/gwpy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
