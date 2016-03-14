@@ -90,12 +90,13 @@ class HistogramAxes(Axes):
         bins = kwargs.get('bins', 30)
         weights = kwargs.get('weights', None)
         if isinstance(weights, (float, int)):
-            kwargs['weights'] = []
             if isinstance(x, numpy.ndarray) or not iterable(x[0]):
-                kwargs['weights'].append(numpy.ones_like(x) * weights)
+                kwargs['weights'] = numpy.ones_like(x) * weights
             else:
+                kwargs['weights'] = []
                 for x2 in x:
                     kwargs['weights'].append(numpy.ones_like(x2) * weights)
+                kwargs['weights'] = numpy.asarray(kwargs['weights'])
         if logbins and (bins is None or isinstance(bins, (float, int))):
             bins = bins or 30
             range_ = kwargs.pop('range', self.common_limits(x))
