@@ -574,6 +574,11 @@ class HistogramAxesTestCase(HistogramMixin, AxesTestCase):
                                   [1, 10., 100.])
         self.assertRaises(ValueError, ax.bin_boundaries, 0, 100, 2, log=True)
 
+    def test_histogram_weights(self):
+        fig, ax = self.new()
+        ax.hist(numpy.random.random(1000), weights=10.)
+        fig.close()
+
 
 # -- Filter plotter -----------------------------------------------------------
 
