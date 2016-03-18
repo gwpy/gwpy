@@ -1157,6 +1157,36 @@ class DataQualityDict(OrderedDict):
     def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None,
                                format='ligolw'):
         """Read a `DataQualityDict` from a LIGO_LW XML VetoDefinerTable.
+
+        Parameters
+        ----------
+        fp : `str`
+            path of veto definer file to read
+        start : `~gwpy.time.LIGOTimeGPS`, `int`, optional
+            GPS start time at which to restrict returned flags
+        end : `~gwpy.time.LIGOTimeGPS`, `int`, optional
+            GPS end time at which to restrict returned flags
+        ifo : `str`, optional
+            interferometer prefix whose flags you want to read
+        format : `str`, optional
+            format of file to read (passed to `VetoDefTable.read`),
+            currently only 'ligolw' is supported
+
+        Returns
+        -------
+        flags : `DataQualityDict`
+            a `DataQualityDict` of flags parsed from the `veto_def_table`
+            of the input file.
+
+        Notes
+        -----
+        This method does not automatically `~DataQualityDict.populate`
+        the `active` segment list of any flags, a separate call should
+        be made for that as follows
+
+        >>> flags = DataQualityDict.from_veto_definer_file('/path/to/file.xml')
+        >>> flags.populate()
+
         """
         if start is not None:
             start = to_gps(start)
