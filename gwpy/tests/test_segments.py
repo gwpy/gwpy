@@ -324,8 +324,8 @@ class DataQualityDictTestCase(unittest.TestCase):
         vdf.pop("H1:FAKE_CAT5:1", None)
         try:
             vdf.populate(url='https://segments.ligo.org')
-        except ImportError:
-            self.skipTest()
+        except ImportError as e:
+            self.skipTest(str(e))
         else:
             self.assertEqual(
                 len(vdf['H1:HVT-ER7_A_RND17:1'].active), 36)
