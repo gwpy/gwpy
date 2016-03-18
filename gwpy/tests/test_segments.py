@@ -90,8 +90,7 @@ QUERY_URL = 'https://segments.ligo.org'
 
 VETO_DEFINER_FILE = ('https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/'
                      'segments/ER7/H1L1V1-ER7_CBC_OFFLINE.xml')
-ER7_START = 'June 3'
-ER7_END = 'June 14'
+VETO_DEFINER_TEST_SEGMENTS = SegmentList([Segment(1117411216, 1117497616)])
 
 
 class SegmentListTests(unittest.TestCase):
@@ -290,6 +289,9 @@ class DataQualityDictTestCase(unittest.TestCase):
         self.assertEquals(vdf['H1:DCH-MISSING_H1_HOFT_C00:1'].category, 1)
         # test injections padding
         self.assertEquals(vdf['H1:ODC-INJECTION_CBC:1'].padding, Segment(-8, 8))
+        # test download URL
+        vdf2 = DataQualityDict.from_veto_definer_file(VETO_DEFINER_FILE)
+        self.assertEqual(len(vdf.keys()), len(vdf2.keys()))
 
     def test_read_ligolw(self):
         flags = DataQualityDict.read(SEGXML)
@@ -314,6 +316,23 @@ class DataQualityDictTestCase(unittest.TestCase):
 
     def test_io_identify(self):
         common.test_io_identify(DataQualityDict, ['xml', 'xml.gz'])
+
+    def test_populate(self):
+        start, end = VETO_DEFINER_TEST_SEGMENTS[0]
+        vdf = DataQualityDict.from_veto_definer_file(
+            VETO_DEFINER_FILE, ifo='H1', start=start, end=end)
+        vdf.pop("H1:FAKE_CAT5:1", None)
+        try:
+            vdf.populate(url='https://segments.ligo.org')
+        except ImportError:
+            self.skipTest()
+        else:
+            self.assertEqual(
+                len(vdf['H1:HVT-ER7_A_RND17:1'].active), 36)
+            vdf = DataQualityDict.from_veto_definer_file(
+                VETO_DEFINER_FILE, ifo='H1')
+            vdf.pop("H1:FAKE_CAT5:1", None)
+            vdf.populate(segments=VETO_DEFINER_TEST_SEGMENTS)
 
 
 if __name__ == '__main__':
