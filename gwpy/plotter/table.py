@@ -265,7 +265,7 @@ class EventTableAxes(TimeSeriesAxes):
                 scat.append([float(val)])
             column = get_column_string(column)
             if pyplot.rcParams['text.usetex'] and column.endswith('Time'):
-                disp += (r" %s$= %s$" % (column, LIGOTimeGPS(val)))
+                disp += (r" %s$= %s$" % (column, LIGOTimeGPS(float(val))))
             elif pyplot.rcParams['text.usetex']:
                 disp += (r" %s$=$ %s" % (column, float_to_latex(val, '%.3g')))
             else:
