@@ -29,11 +29,14 @@ for handling multiple flags over the same global time interval.
 import operator
 import re
 import warnings
+import tempfile
 from urlparse import urlparse
 from copy import copy as shallowcopy
 from math import (floor, ceil)
 from threading import Thread
 from Queue import Queue
+
+from six.moves.urllib import request
 
 from numpy import inf
 
@@ -1164,7 +1167,15 @@ class DataQualityDict(OrderedDict):
             end = to_gps(end)
         # read veto definer file
         from gwpy.table.lsctables import VetoDefTable
-        veto_def_table = VetoDefTable.read(fp, format=format)
+        if urlparse(fp).scheme in ['http', 'https']:
+            response = request.urlopen(fp)
+            local = tempfile.NamedTemporaryFile()
+            with tempfile.NamedTemporaryFile() as temp:
+                temp.write(response.read())
+                temp.flush()
+                veto_def_table = VetoDefTable.read(temp.name, format=format)
+        else:
+            veto_def_table = VetoDefTable.read(fp, format=format)
         # parse flag definitions
         out = cls()
         for row in veto_def_table:
@@ -1236,20 +1247,23 @@ class DataQualityDict(OrderedDict):
         # format source
         source = urlparse(source)
         # perform query for all segments
-        segments = SegmentList(map(Segment, segments))
-        if source.netloc:
+        if source.netloc and segments is not None:
+            segments = SegmentList(map(Segment, segments))
             tmp = type(self).query(self.keys(), segments,
                                    url=source.geturl(), **kwargs)
-        else:
+        elif not source.netloc:
             tmp = type(self).read(source.geturl(), self.name, **kwargs)
         # apply padding and wrap to given known segments
         for key in self:
+            if segments is None and source.netloc:
+                tmp = {key: self[key].query(self[key].name, self[key].known)}
             self[key].known &= tmp[key].known
             self[key].active = tmp[key].active
             if pad:
                 self[key] = self[key].pad()
-                self[key].known &= segments
-                self[key].active &= segments
+                if segments is not None:
+                    self[key].known &= segments
+                    self[key].active &= segments
         return self
 
     def __iand__(self, other):
