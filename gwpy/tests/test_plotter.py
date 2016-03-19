@@ -249,6 +249,8 @@ class TimeSeriesPlotTestCase(TimeSeriesMixin, PlotTestCase):
         for ax in fig.axes:
             self.assertEqual(len(ax.lines), 1)
         self.assertIs(fig.axes[1]._sharex, fig.axes[0])
+        # test kwarg parsing
+        fig = self.FIGURE_CLASS(self.ts, figsize=[12, 6], rasterized=True)
 
     def test_add_colorbar(self):
         def make_fig():

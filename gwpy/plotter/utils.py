@@ -40,10 +40,10 @@ AXES_PARAMS = [
     'xscale', 'yscale', 'title',
 ]
 LINE_PARAMS = [
-    'linewidth', 'linestyle', 'color', 'label', 'alpha',
+    'linewidth', 'linestyle', 'color', 'label', 'alpha', 'rasterized',
 ]
 COLLECTION_PARAMS = [
-    'cmap', 'vmin', 'vmax', 'marker', 's', 'norm',
+    'cmap', 'vmin', 'vmax', 'marker', 's', 'norm', 'rasterized',
 ]
 ARTIST_PARAMS = set(LINE_PARAMS + COLLECTION_PARAMS)
 LEGEND_PARAMS = [
