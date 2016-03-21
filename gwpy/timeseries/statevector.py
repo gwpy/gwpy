@@ -440,6 +440,18 @@ class StateVector(TimeSeriesBase):
         Notes
         -----""")))
 
+    write = classmethod(writer(
+        doc="""Write this `StateVector` to a file
+
+        Parameters
+        ----------
+        outfile : `str`
+            path of output file
+
+        Notes
+        -----
+        """))
+
     def to_dqflags(self, bits=None, minlen=1, dtype=float, round=False):
         """Convert this `StateVector` into a `~gwpy.segments.DataQualityDict`
 

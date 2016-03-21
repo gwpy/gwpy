@@ -43,7 +43,7 @@ else:
 
 
 from .. import version
-from ..io import reader
+from ..io import (reader, writer)
 from ..utils import with_import
 from ..utils.docstring import interpolate_docstring
 from ..utils.compat import OrderedDict
@@ -104,6 +104,18 @@ class TimeSeries(TimeSeriesBase):
 
         Notes
         -----""")))
+
+    write = classmethod(writer(
+        doc="""Write this `TimeSeries` to a file
+
+        Parameters
+        ----------
+        outfile : `str`
+            path of output file
+
+        Notes
+        -----
+        """))
 
     def fft(self, nfft=None):
         """Compute the one-dimensional discrete Fourier transform of

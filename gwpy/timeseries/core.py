@@ -44,7 +44,7 @@ else:
 from .. import version
 from ..data import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
-from ..io import (reader, datafind)
+from ..io import (reader, writer, datafind)
 from ..time import (Time, to_gps)
 from ..utils import (gprint, with_import)
 from ..utils.docstring import interpolate_docstring
@@ -580,6 +580,11 @@ class TimeSeriesBaseDict(OrderedDict):
 
         Notes
         -----"""))
+
+    write = writer(doc="""Write this `TimeSeriesDict` to a file
+
+        Notes
+        -----""")
 
     def __iadd__(self, other):
         return self.append(other)
