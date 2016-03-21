@@ -39,7 +39,8 @@ from astropy.io.registry import (get_reader, register_reader)
 from gwpy.time import Time
 
 from gwpy import version
-from gwpy.timeseries import (TimeSeries, StateVector)
+from gwpy.timeseries import (TimeSeries, StateVector, TimeSeriesDict,
+                             StateVectorDict)
 from gwpy.spectrum import Spectrum
 from gwpy.spectrogram import Spectrogram
 from gwpy.io.cache import Cache
@@ -154,6 +155,27 @@ class TimeSeriesTestMixin(object):
 
     def test_frame_read_framecpp(self):
         return self._test_frame_read_format('framecpp')
+
+    def frame_write(self, format=None):
+        try:
+            ts = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel)
+        except ImportError as e:
+            self.skipTest(str(e))
+        else:
+            with tempfile.NamedTemporaryFile(suffix='.gwf') as f:
+                ts.write(f.name)
+                ts2 = self.TEST_CLASS.read(f.name, self.channel)
+            self.assertArraysEqual(ts, ts2)
+            for ctype in ['sim', 'proc', 'adc']:
+                ts.channel._ctype = ctype
+                with tempfile.NamedTemporaryFile(suffix='.gwf') as f:
+                    ts.write(f.name, format=format)
+
+    def test_frame_write(self):
+        self.frame_write(format='gwf')
+
+    def test_frame_write_framecpp(self):
+        self.frame_write(format='framecpp')
 
     def test_find(self):
         try:
@@ -485,6 +507,34 @@ class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(ts.x0, units.Quantity(931069952, 's'))
         self.assertEqual(ts.dx, units.Quantity(1.0, 's'))
         self.assertListEqual(list(ts.bits), LOSC_DQ_BITS)
+
+
+# -- TimeSeriesDict tests ------------------------------------------------------
+
+class TimeSeriesDictTestCase(unittest.TestCase):
+    channels = ['H1:LDAS-STRAIN', 'L1:LDAS-STRAIN']
+    TEST_CLASS = TimeSeriesDict
+
+    def test_init(self):
+        tsd = self.TEST_CLASS()
+
+    def test_frame_read(self):
+        return self.TEST_CLASS.read(TEST_GWF_FILE, self.channels)
+
+    def test_frame_write(self):
+        try:
+            tsd = self.test_frame_read()
+        except ImportError as e:
+            self.skipTest(str(e))
+        else:
+            with tempfile.NamedTemporaryFile(suffix='.gwf') as f:
+                tsd.write(f.name)
+                tsd2 = self.TEST_CLASS.read(f.name, tsd.keys())
+            self.assertDictEqual(tsd, tsd2)
+
+
+class StateVectorDictTestCase(TimeSeriesDictTestCase):
+    TEST_CLASS = StateVectorDict
 
 
 if __name__ == '__main__':
