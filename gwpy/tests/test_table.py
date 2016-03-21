@@ -22,6 +22,8 @@
 import os.path
 import tempfile
 
+import pytest
+
 import numpy
 from numpy import testing as nptest
 
@@ -142,3 +144,32 @@ class SnglBurstTableTestCase(TableTestMixin, unittest.TestCase):
         self.assertIsInstance(rates, TimeSeriesDict)
         table.binned_event_rates(1, 'snr', [2, 4, 6], operator='in')
         table.binned_event_rates(1, 'snr', [(0, 2), (2, 4), (4, 6)])
+
+    def test_to_recarray(self):
+        table = self.TABLE_CLASS.read(self.TEST_XML_FILE)
+        arr = table.to_recarray()
+        self.assertListEqual(list(arr.dtype.names), table.columnnames)
+        nptest.assert_array_equal(table.get_column('snr'), arr['snr'])
+        nptest.assert_array_equal(
+            table.get_peak().astype(float),
+            arr['peak_time'] + arr['peak_time_ns'] * 1e-9)
+        # test with errors/warning
+        table = self.TABLE_CLASS.read(self.TEST_XML_FILE, columns=['snr'])
+        self.assertRaises(AttributeError, table.to_recarray)
+        with pytest.warns(UserWarning):
+            table.to_recarray(on_attributeerror='warn')
+
+    def test_from_recarray(self):
+        table = self.TABLE_CLASS.read(self.TEST_XML_FILE)
+        arr = table.to_recarray()
+        table2 = self.TABLE_CLASS.from_recarray(arr)
+        for column in table.columnnames:
+            if column == 'process_id':  # broken
+                continue
+            if table.validcolumns[column] == 'ilwd:char':  # ID columns
+                nptest.assert_array_equal(table.getColumnByName(column),
+                                          table2.getColumnByName(column))
+            else:
+                nptest.assert_array_equal(
+                    table.getColumnByName(column).asarray(),
+                    table2.getColumnByName(column).asarray())

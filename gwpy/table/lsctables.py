@@ -19,7 +19,12 @@
 """Drop in of :mod:`glue.ligolw.lsctables` to annotate Table classes.
 """
 
+import warnings
+
 from glue.ligolw.lsctables import *
+from glue.ligolw.table import StripTableName as strip_table_name
+from glue.ligolw.types import ToNumPyType as NUMPY_TYPE
+from glue.ligolw.ilwd import get_ilwdchar_class
 
 from .. import version
 from ..io import reader
@@ -28,6 +33,89 @@ from ..time import to_gps
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 __all__ = TableByName.keys()
+
+NUMPY_TYPE['ilwd:char'] = numpy.dtype(int).name
+NUMPY_TYPE['lstring'] = 'a20'
+
+
+def to_recarray(self, columns=None, on_attributeerror='raise'):
+    """Convert this table to a structured `numpy.recarray`
+
+    This returned `~numpy.recarray` is a blank data container, mapping
+    columns in the original LIGO_LW table to fields in the output, but
+    mapping none of the instance methods of the origin table.
+
+    Parameters
+    ----------
+    columns : `list` of `str`, optional
+        the columns to populate, if not given, all columns present in the
+        table are mapped
+    on_attributeerror : `str`
+        how to handle `AttributeError` when accessing rows, one of
+
+        - 'raise' : raise normal exception
+        - 'ignore' : skip over this column
+        - 'warn' : print a warning instead of raising error
+
+    """
+    # get numpy-type columns
+    if columns is None:
+       columns = self.columnnames
+    dtypes = [(str(c), NUMPY_TYPE[self.validcolumns[c]])
+              for c in columns]
+    # create array
+    m = len(self)
+    out = numpy.recarray((len(self),), dtype=dtypes)
+    # and fill it
+    for column in columns:
+        orig_type = self.validcolumns[column]
+        try:
+            if orig_type == 'ilwd:char':  # numpy tries long() which breaks
+                out[column] = map(int, self.getColumnByName(column))
+            else:
+                out[column] = self.getColumnByName(column)
+        except AttributeError as e:
+            if on_attributeerror == 'ignore':
+                pass
+            elif on_attributeerror == 'warn':
+                warnings.warn('Caught %s: %s' % (type(e).__name__, str(e)))
+            else:
+                raise
+    return out
+
+
+def from_recarray(cls, array, columns=None):
+    """Create a new table from a `numpy.recarray`
+
+    Parameters
+    ----------
+    array : `numpy.recarray`
+        an array of data
+    column : `list` of `str`, optional
+        the columns to populate, if not given, all columns present in the
+        `~numpy.recarray` are mapped
+
+    Notes
+    -----
+    The columns populated in the `numpy.recarray` must all map exactly to
+    valid columns of the target `~glue.ligolw.table.Table`.
+    """
+    if columns is None:
+        columns = list(array.dtype.names)
+    out = New(cls, columns=columns)
+    tblname = strip_table_name(out.tableName)
+    ilwdchar = dict((col, get_ilwdchar_class(tblname, col))
+                    for (col, llwtype) in zip(out.columnnames, out.columntypes)
+                    if llwtype == 'ilwd:char')
+    for rec in array:
+        row = out.RowType()
+        for col, llwtype in zip(out.columnnames, out.columntypes):
+            if llwtype == 'ilwd:char':
+                setattr(row, col, ilwdchar[col](rec[col]))
+            else:
+                setattr(row, col, rec[col])
+        out.append(row)
+    return out
 
 
 def _plot_factory():
@@ -220,6 +308,10 @@ for table in TableByName.itervalues():
         Notes
         -----
         """.format(table.__name__)))
+
+    table.to_recarray = to_recarray
+    table.from_recarray = classmethod(from_recarray)
+
     if ('start_time' in table.validcolumns or
             'peak_time' in table.validcolumns or
             'end_time' in table.validcolumns):
