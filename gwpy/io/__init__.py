@@ -47,7 +47,7 @@ def reader(name=None, doc=None):
     return func
 
 
-def writer():
+def writer(doc=None):
     """Construct a new unified input/output writeer.
 
     This method is required to create a new copy of the
@@ -58,6 +58,9 @@ def writer():
     write : `function`
         A copy of the :func:`astropy.io.registry.write` function
     """
-    return FunctionType(write.func_code, write.func_globals,
+    func = FunctionType(write.func_code, write.func_globals,
                         write.func_name, write.func_defaults,
                         write.func_closure)
+    if doc is not None:
+        func.__doc__ = doc.strip('\n ')
+    return func
