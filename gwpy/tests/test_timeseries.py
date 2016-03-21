@@ -155,6 +155,27 @@ class TimeSeriesTestMixin(object):
     def test_frame_read_framecpp(self):
         return self._test_frame_read_format('framecpp')
 
+    def frame_write(self, format=None):
+        try:
+            ts = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel)
+        except ImportError as e:
+            self.skipTest(str(e))
+        else:
+            with tempfile.NamedTemporaryFile(suffix='.gwf') as f:
+                ts.write(f.name)
+                ts2 = self.TEST_CLASS.read(f.name, self.channel)
+            self.assertArraysEqual(ts, ts2)
+            for ctype in ['sim', 'proc', 'adc']:
+                ts.channel._ctype = ctype
+                with tempfile.NamedTemporaryFile(suffix='.gwf') as f:
+                    ts.write(f.name, format=format)
+
+    def test_frame_write(self):
+        self.frame_write(format='gwf')
+
+    def test_frame_write_framecpp(self):
+        self.frame_write(format='framecpp')
+
     def test_find(self):
         try:
             ts = self.TEST_CLASS.find(FIND_CHANNEL, FIND_GPS, FIND_GPS+1,
