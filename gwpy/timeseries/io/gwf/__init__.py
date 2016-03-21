@@ -35,7 +35,9 @@ import importlib
 
 from ....utils import with_import
 from ....version import version
-from ....io.registry import (register_reader, register_identifier)
+from ....io.registry import (register_reader,
+                             register_writer,
+                             register_identifier)
 from ....io.utils import identify_factory
 from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
 
@@ -166,27 +168,53 @@ def register_gwf_io_library(library, package='gwpy.timeseries.io.gwf'):
     register_reader(library, StateVectorDict, read_statevectordict)
     register_reader(library, StateVector, read_statevector)
 
+    # -- writer
+
+    try:
+        write_timeseriesdict = lib.write_timeseriesdict
+    except AttributeError:
+        pass
+    else:
+        @with_import(dependency)
+        def write_timeseries(timeseries, target, *args, **kwargs):
+            """Write a `TimeSeries` to GWF file
+            """
+            return write_timeseriesdict({None: timeseries}, target,
+                                        *args, **kwargs)
+
+        # register format
+        register_writer(library, TimeSeriesDict, write_timeseriesdict)
+        register_writer(library, TimeSeries, write_timeseries)
+        register_writer(library, StateVectorDict, write_timeseriesdict)
+        register_writer(library, StateVector, write_timeseries)
+
+    # -- identifier
+
     # register .gwf identifier
     for cls in [TimeSeriesDict, TimeSeries, StateVectorDict, StateVector]:
         register_identifier('gwf', cls, identify_factory('gwf'), force=True)
 
-    # register generic 'GWF' format
+    # -- register generic 'GWF' format
+
     try:
         __import__(dependency, fromlist=[''])
     except ImportError:
         pass
     else:
-        register_reader('gwf', TimeSeriesDict, read_timeseriesdict,
-                        force=True)
-        register_reader('gwf', TimeSeries, read_timeseries,
-                        force=True)
-        register_reader('gwf', StateVectorDict, read_statevectordict,
-                        force=True)
-        register_reader('gwf', StateVector, read_statevector,
-                        force=True)
-
-    return (read_timeseries, read_timeseriesdict,
-            read_statevector, read_statevectordict)
+        register_reader('gwf', TimeSeriesDict, read_timeseriesdict, force=True)
+        register_reader('gwf', TimeSeries, read_timeseries, force=True)
+        register_reader('gwf', StateVectorDict, read_statevectordict, force=True)
+        register_reader('gwf', StateVector, read_statevector, force=True)
+        try:
+            register_writer('gwf', TimeSeriesDict, write_timeseriesdict,
+                            force=True)
+        except (NameError, UnboundLocalError):
+            pass
+        else:
+            register_writer('gwf', TimeSeries, write_timeseries, force=True)
+            register_writer('gwf', StateVectorDict, write_timeseriesdict,
+                            force=True)
+            register_writer('gwf', StateVector, write_timeseries, force=True)
 
 
 # register builtin libraries
