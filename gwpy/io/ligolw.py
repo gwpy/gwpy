@@ -126,13 +126,11 @@ def table_from_file(f, tablename, columns=None, filt=None,
                contenthandler=contenthandler, verbose=verbose)
 
     # extract table
-    try:
-        out = tableclass.get_table(xmldoc)
-    except ValueError:
-        out = lsctables.New(tableclass, columns=columns)
+    out = tableclass.get_table(xmldoc)
     if verbose:
         gprint('%d rows found in %s table' % (len(out), out.tableName))
 
+    # filter output
     if filt:
         if verbose:
             gprint('filtering rows ...', end=' ')
@@ -144,8 +142,11 @@ def table_from_file(f, tablename, columns=None, filt=None,
         out = out_
         if verbose:
             gprint('%d rows remaining\n' % len(out))
+
+    # reset loadcolumns and return
     if columns is not None:
         tableclass.loadcolumns = _oldcols
+
     return out
 
 
