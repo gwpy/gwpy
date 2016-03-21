@@ -105,7 +105,7 @@ class TimeSeries(TimeSeriesBase):
         Notes
         -----""")))
 
-    write = classmethod(writer(
+    write = writer(
         doc="""Write this `TimeSeries` to a file
 
         Parameters
@@ -115,7 +115,7 @@ class TimeSeries(TimeSeriesBase):
 
         Notes
         -----
-        """))
+        """)
 
     def fft(self, nfft=None):
         """Compute the one-dimensional discrete Fourier transform of

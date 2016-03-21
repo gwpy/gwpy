@@ -40,7 +40,7 @@ from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
 from ..detector import Channel
 from ..time import Time
-from ..io import reader
+from ..io import (reader, writer)
 from .. import version
 from ..utils.docstring import interpolate_docstring
 
@@ -440,7 +440,7 @@ class StateVector(TimeSeriesBase):
         Notes
         -----""")))
 
-    write = classmethod(writer(
+    write = writer(
         doc="""Write this `StateVector` to a file
 
         Parameters
@@ -450,7 +450,7 @@ class StateVector(TimeSeriesBase):
 
         Notes
         -----
-        """))
+        """)
 
     def to_dqflags(self, bits=None, minlen=1, dtype=float, round=False):
         """Convert this `StateVector` into a `~gwpy.segments.DataQualityDict`
