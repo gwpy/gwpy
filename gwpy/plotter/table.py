@@ -30,6 +30,7 @@ display these tables in x-y format, with optional colouring.
 from __future__ import division
 
 import re
+from math import floor
 from six import string_types
 
 import numpy
@@ -438,10 +439,11 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
                     if axepoch is None:
                         tcol = numpy.asarray(get_table_column(table,
                                                               columns['x']))
+                        m = int(floor(tcol.min()))
                         if epoch is None:
-                            epoch = tcol.min()
+                            epoch = m
                         else:
-                            epoch = min(epoch, tcol.min())
+                            epoch = min(epoch, m)
                     ax.set_epoch(epoch)
             # set global epoch for TimeSeriesPlot
             elif isinstance(self, TimeSeriesPlot):
@@ -450,10 +452,11 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
                     for table in tables:
                         tcol = numpy.asarray(get_table_column(table,
                                                               columns['x']))
+                        m = int(floor(tcol.min()))
                         if epoch is None:
-                            epoch = tcol.min()
+                            epoch = m
                         else:
-                            epoch = min(epoch, tcol.min())
+                            epoch = min(epoch, m)
                 ax.set_epoch(epoch)
             # remove labels
             if sep:
