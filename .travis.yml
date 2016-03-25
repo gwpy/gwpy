@@ -53,6 +53,7 @@ matrix:
       env: STRICT=true PRE="--pre"
     - python: 3.5
       env: STRICT=false
+  fast_finish: true
 
 before_install:
   # update pip
