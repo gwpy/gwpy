@@ -21,17 +21,17 @@
 
 from tempfile import NamedTemporaryFile
 
-from numpy import (testing as nptest, arange)
+from numpy import (testing as nptest, arange, linspace)
 
 from scipy import signal
 
 from astropy import units
 
 from gwpy import version
-from gwpy.spectrum import Spectrum
+from gwpy.spectrum import (Spectrum, SpectralVariance)
 from gwpy.plotter import SpectrumPlot
 
-from test_array import SeriesTestCase
+from test_array import (SeriesTestCase, Array2DTestCase)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -118,6 +118,42 @@ class SpectrumTestCase(SeriesTestCase):
     def test_read_write_txt(self):
         self._test_read_write('txt', fmt='txt')
         self._test_read_write('txt')
+
+
+class SpectralVarianceTestCase(Array2DTestCase):
+    TEST_CLASS = SpectralVariance
+
+    def setUp(self):
+        super(SpectralVarianceTestCase, self).setUp()
+        self.bins = linspace(0, 1e5, self.data.shape[1] + 1, endpoint=True)
+
+    def create(self, *args, **kwargs):
+        kwargs.setdefault('copy', False)
+        return self.TEST_CLASS(self.data, self.bins, *args, **kwargs)
+
+    def test_init(self):
+        # test with some data
+        array = self.create()
+        nptest.assert_array_equal(array.value, self.data)
+        nptest.assert_array_equal(array.bins.value, self.bins)
+        self.assertEqual(array.x0, 0 * units.Hertz)
+        self.assertEqual(array.df, 1 * units.Hertz)
+        self.assertEqual(array.y0, self.bins[0])
+        self.assertEqual(array.dy, self.bins[1] - self.bins[0])
+
+    def test_plot(self):
+        plot = self.create().plot()
+        self.assertIsInstance(plot, SpectrumPlot)
+
+    def test_value_at(self):
+        ts1 = self.create(dx=.5, unit='m')
+        y = self.bins[2]
+        self.assertEqual(ts1.value_at(1.5, self.bins[3]),
+                         self.data[3][3] * ts1.unit)
+        self.assertEqual(ts1.value_at(1.0 * ts1.xunit,
+                                      self.bins[1] * ts1.yunit),
+                         self.data[2][1] * units.m)
+        self.assertRaises(IndexError, ts1.value_at, 1.6, 5.8)
 
 
 if __name__ == '__main__':
