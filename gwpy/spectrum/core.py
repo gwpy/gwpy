@@ -90,6 +90,9 @@ class Spectrum(Series):
             unit = unit or channel.unit
         if frequencies is None and 'xindex' in kwargs:
             frequencies = kwargs.pop('xindex')
+        # allow use of x0 and dx
+        f0 = kwargs.pop('x0', f0)
+        df = kwargs.pop('dx', df)
         # generate Spectrum
         return super(Spectrum, cls).__new__(cls, data, name=name, unit=unit,
                                             channel=channel, x0=f0, dx=df,
