@@ -38,3 +38,6 @@ fi
 make -j 2 --silent || make --silent
 make install --silent
 cd -
+echo "----------------------------------------------------------------------"
+echo "Successfully installed `basename ${tarball}`"
+echo "----------------------------------------------------------------------"
