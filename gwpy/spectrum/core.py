@@ -133,6 +133,42 @@ class Spectrum(Series):
         from ..plotter import SpectrumPlot
         return SpectrumPlot(self, **kwargs)
 
+    def ifft(self, nfft=None):
+        """Compute the one-dimensional discrete inverse Fourier
+        transform of this `Spectrum`.
+
+        Parameters
+        ----------
+        nfft : `int`, optional
+            length of the desired Fourier transform.
+            Input will be cropped or padded to match the desired length.
+            If nfft is not given, the length of the `Spectrum`
+            will be used
+
+        Returns
+        -------
+        out : :class:`~gwpy.timeseries.TimeSeries`
+            the normalised, real-valued `TimeSeries`.
+
+        See Also
+        --------
+        :mod:`scipy.fftpack` for the definition of the DFT and conventions
+        used.
+
+        Notes
+        -----
+        This method, in constrast to the :meth:`numpy.fft.rfft` method
+        it calls, applies the necessary normalisation such that the
+        amplitude of the output :class:`~gwpy.spectrum.Spectrum` is
+        correct.
+        """
+        from ..timeseries import TimeSeries
+        dift = npfft.irfft(self.value)
+        nout = (len(dft) - 1) * 2
+        new = TimeSeries(dift, epoch=self.epoch, channel=self.channel,
+                       unit=self.unit, dx=1/self.dx/nout)
+        return new
+
     def zpk(self, zeros, poles, gain):
         """Filter this `Spectrum` by applying a zero-pole-gain filter
 
