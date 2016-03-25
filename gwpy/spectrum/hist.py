@@ -41,10 +41,10 @@ class SpectralVariance(Array2D):
     frequency-series `Spectrum`
     """
     _metadata_slots = Spectrum._metadata_slots + ['bins']
-    xunit = Spectrum.xunit
+    _default_xunit = Spectrum._default_xunit
 
     def __new__(cls, data, bins, name=None, channel=None, epoch=None, unit=None,
-                f0=None, df=None, **kwargs):
+                f0=0, df=1, **kwargs):
         """Generate a new SpectralVariance
         """
         # parse Channel input
@@ -52,10 +52,16 @@ class SpectralVariance(Array2D):
             channel = Channel(channel)
             name = name or channel.name
             unit = unit or channel.unit
+        if unit is None and isinstance(data, Quantity):
+            unit = Quantity.unit
+        x0 = kwargs.pop('x0', f0)
+        dx = kwargs.pop('dx', df)
+        kwargs['y0'] = None
+        kwargs['dy'] = None
         # generate Spectrogram
         new = super(SpectralVariance, cls).__new__(
-            cls, data, name=name, channel=channel, epoch=epoch,
-            x0=f0, dx=df, y0=None, dy=None, **kwargs)
+            cls, data, name=name, channel=channel, epoch=epoch, unit=unit,
+            x0=x0, dx=dx, **kwargs)
         new.bins = bins
         return new
 
@@ -132,6 +138,13 @@ class SpectralVariance(Array2D):
 
     # -------------------------------------------
     # SpectralVariance methods
+
+    def __getitem__(self, item):
+        if isinstance(item, tuple) and len(item) == 2:
+            return self[item[0]][item[1]]
+        else:
+            return super(SpectralVariance, self).__getitem__(item)
+    __getitem__.__doc__ = Array2D.__getitem__.__doc__
 
     @classmethod
     def from_spectrogram(cls, *spectrograms, **kwargs):
