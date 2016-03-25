@@ -80,7 +80,8 @@ class CommonTests(object):
             if isinstance(a, numpy.ndarray) and isinstance(b, numpy.ndarray):
                 nptest.assert_array_equal(a, b)
             else:
-                self.assertEqual(a, b)
+                self.assertEqual(a, b,
+                    msg="%r attribute doesn't match: %s != %s" % (attr, a, b))
 
     # -- test methods ---------------------------
 
