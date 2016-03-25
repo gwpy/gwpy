@@ -93,7 +93,8 @@ class Spectrum(Series):
         # generate Spectrum
         return super(Spectrum, cls).__new__(cls, data, name=name, unit=unit,
                                             channel=channel, x0=f0, dx=df,
-                                            xindex=frequencies, **kwargs)
+                                            epoch=epoch, xindex=frequencies,
+                                            **kwargs)
 
     # -------------------------------------------
     # Spectrum properties
