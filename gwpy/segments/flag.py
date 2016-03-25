@@ -846,17 +846,6 @@ class DataQualityFlag(object):
                              "`DataQualityFlag.label` attribute" % name)
         return self.ifo, self.tag, self.version
 
-    def __getslice__(self, slice_):
-        return self.__class__(name=self.name, known=self.known,
-                              active=self.active[slice_], label=self.label,
-                              description=self.description, isgood=self.isgood)
-
-    def __getitem__(self, item):
-        if isinstance(item, int) or isinstance(item, slice):
-            return self.active[item]
-        else:
-            self.__getslice__(item)
-
     def __and__(self, other):
         """Find the intersection of this one and ``other``.
         """
