@@ -22,6 +22,7 @@
 import warnings
 from copy import deepcopy
 
+from numpy import fft as npfft
 from scipy import signal
 
 from astropy import units
@@ -132,6 +133,39 @@ class Spectrum(Series):
         """
         from ..plotter import SpectrumPlot
         return SpectrumPlot(self, **kwargs)
+
+    def ifft(self):
+        """Compute the one-dimensional discrete inverse Fourier
+        transform of this `Spectrum`.
+
+        Returns
+        -------
+        out : :class:`~gwpy.timeseries.TimeSeries`
+            the normalised, real-valued `TimeSeries`.
+
+        See Also
+        --------
+        :mod:`scipy.fftpack` for the definition of the DFT and conventions
+        used.
+
+        Notes
+        -----
+        This method applies the necessary normalisation such that the
+        condition holds:
+
+            >>> timeseries = TimeSeries([1.0, 0.0, -1.0, 0.0], sample_rate=1.0)
+            >>> timeseries.fft().ifft() == timeseries
+        """
+        from ..timeseries import TimeSeries
+        nout = (self.size - 1) * 2
+        # Undo normalization from TimeSeries.fft
+        # The DC component does not have the factor of two applied
+        # so we account for it here
+        dift[0] *= 2
+        dift = npfft.irfft(self.value * nout / 2)
+        new = TimeSeries(dift, epoch=self.epoch, channel=self.channel,
+                       unit=self.unit * units.Hertz, dx=1/self.dx/nout)
+        return new
 
     def zpk(self, zeros, poles, gain):
         """Filter this `Spectrum` by applying a zero-pole-gain filter
