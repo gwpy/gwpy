@@ -159,6 +159,9 @@ class Spectrum(Series):
         from ..timeseries import TimeSeries
         nout = (self.size - 1) * 2
         # Undo normalization from TimeSeries.fft
+        # The DC component does not have the factor of two applied
+        # so we account for it here
+        dift[0] *= 2
         dift = npfft.irfft(self.value * nout / 2)
         new = TimeSeries(dift, epoch=self.epoch, channel=self.channel,
                        unit=self.unit * units.Hertz, dx=1/self.dx/nout)
