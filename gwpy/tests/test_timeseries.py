@@ -41,7 +41,7 @@ from gwpy.time import Time
 from gwpy import version
 from gwpy.timeseries import (TimeSeries, StateVector, TimeSeriesDict,
                              StateVectorDict)
-from gwpy.spectrum import Spectrum
+from gwpy.spectrum import (Spectrum, SpectralVariance)
 from gwpy.spectrogram import Spectrogram
 from gwpy.io.cache import Cache
 
@@ -415,6 +415,11 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(sg.df, 5 * units.Hertz)
         # note: bizarre stride length because 16384/100 gets rounded
         self.assertEqual(sg.dt, 0.010009765625 * units.second)
+
+    def test_spectral_variance(self):
+        ts = self._read()
+        variance = ts.spectral_variance(.5)
+        self.assertIsInstance(variance, SpectralVariance)
 
     def test_whiten(self):
         # create noise with a glitch in it at 1000 Hz

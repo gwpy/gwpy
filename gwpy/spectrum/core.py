@@ -91,10 +91,14 @@ class Spectrum(Series):
             unit = unit or channel.unit
         if frequencies is None and 'xindex' in kwargs:
             frequencies = kwargs.pop('xindex')
+        # allow use of x0 and dx
+        f0 = kwargs.pop('x0', f0)
+        df = kwargs.pop('dx', df)
         # generate Spectrum
         return super(Spectrum, cls).__new__(cls, data, name=name, unit=unit,
                                             channel=channel, x0=f0, dx=df,
-                                            xindex=frequencies, **kwargs)
+                                            epoch=epoch, xindex=frequencies,
+                                            **kwargs)
 
     # -------------------------------------------
     # Spectrum properties
@@ -319,7 +323,11 @@ class Spectrum(Series):
         except TypeError:
             unit = lal.lalDimensionlessUnit
         create = getattr(lal, 'Create%sFrequencySeries' % typestr.upper())
-        lalfs = create(self.name, lal.LIGOTimeGPS(self.epoch.gps),
+        if self.epoch is None:
+            epoch = 0
+        else:
+            epoch = self.epoch.gps
+        lalfs = create(self.name, lal.LIGOTimeGPS(epoch),
                        self.f0.value, self.df.value, unit, self.size)
         lalfs.data.data = self.value
         return lalfs
@@ -357,5 +365,9 @@ class Spectrum(Series):
         frequencyseries : `pycbc.types.frequencyseries.FrequencySeries`
             a PyCBC representation of this `Spectrum`
         """
+        if self.epoch is None:
+            epoch = None
+        else:
+            epoch = self.epoch.gps
         return types.FrequencySeries(self.data, delta_f=self.df.to('Hz').value,
-                                     epoch=self.epoch.gps, copy=copy)
+                                     epoch=epoch, copy=copy)
