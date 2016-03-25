@@ -382,17 +382,16 @@ class Array2DTestCase(CommonTests, unittest.TestCase):
         self.assertEqual(a[0][0].unit, a.unit)
 
     def test_value_at(self):
-        arr = numpy.arange(25).reshape((5, 5))
-        ts1 = self.TEST_CLASS(arr, dx=.5, dy=.25, unit='m')
-        self.assertEqual(ts1.value_at(1.5, .75), 18 * ts1.unit)
+        ts1 = self.create(dx=.5, dy=.25, unit='m')
+        self.assertEqual(ts1.value_at(1.5, .75), self.data[3][3] * ts1.unit)
         self.assertEqual(ts1.value_at(1.0 * ts1.xunit, .25 * ts1.yunit),
-                         11 * units.m)
+                         self.data[2][1] * units.m)
         self.assertRaises(IndexError, ts1.value_at, 1.6, 5.8)
         # test Spectrogram unit conversion
         if ts1.xunit == units.s and ts1.yunit == units.Hz:
             self.assertEqual(ts1.value_at(1500 * units.millisecond,
                                           750 * units.milliHertz),
-                             18 * units.m)
+                             self.data[3][3] * units.m)
 
 
 if __name__ == '__main__':
