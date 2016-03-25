@@ -22,6 +22,7 @@
 import warnings
 from copy import deepcopy
 
+from numpy import fft as npfft
 from scipy import signal
 
 from astropy import units
@@ -133,17 +134,9 @@ class Spectrum(Series):
         from ..plotter import SpectrumPlot
         return SpectrumPlot(self, **kwargs)
 
-    def ifft(self, nfft=None):
+    def ifft(self):
         """Compute the one-dimensional discrete inverse Fourier
         transform of this `Spectrum`.
-
-        Parameters
-        ----------
-        nfft : `int`, optional
-            length of the desired Fourier transform.
-            Input will be cropped or padded to match the desired length.
-            If nfft is not given, the length of the `Spectrum`
-            will be used
 
         Returns
         -------
@@ -157,16 +150,18 @@ class Spectrum(Series):
 
         Notes
         -----
-        This method, in constrast to the :meth:`numpy.fft.rfft` method
-        it calls, applies the necessary normalisation such that the
-        amplitude of the output :class:`~gwpy.spectrum.Spectrum` is
-        correct.
+        This method applies the necessary normalisation such that the
+        condition holds:
+
+            >>> timeseries = TimeSeries([1.0, 0.0, -1.0, 0.0], sample_rate=1.0)
+            >>> timeseries.fft().ifft() == timeseries
         """
         from ..timeseries import TimeSeries
-        dift = npfft.irfft(self.value)
-        nout = (len(dft) - 1) * 2
+        nout = (self.size - 1) * 2
+        # Undo normalization from TimeSeries.fft
+        dift = npfft.irfft(self.value * nout / 2)
         new = TimeSeries(dift, epoch=self.epoch, channel=self.channel,
-                       unit=self.unit, dx=1/self.dx/nout)
+                       unit=self.unit * units.Hertz, dx=1/self.dx/nout)
         return new
 
     def zpk(self, zeros, poles, gain):
