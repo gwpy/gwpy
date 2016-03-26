@@ -153,10 +153,7 @@ class Channel(object):
 
         :type: `str`
         """
-        try:
-            return self._name
-        except AttributeError:
-            self._name = None
+        return self._name
 
     @name.setter
     def name(self, n):
@@ -168,10 +165,7 @@ class Channel(object):
 
         :type: `~astropy.units.Quantity`
         """
-        try:
-            return self._sample_rate
-        except AttributeError:
-            self._sample_rate = None
+        return self._sample_rate
 
     @sample_rate.setter
     def sample_rate(self, rate):
@@ -746,7 +740,7 @@ class ChannelList(list):
                  entry.sample_rate.value == sample_rate]
         if sample_range is not None:
             c = [entry for entry in c if
-                 sample_range[0] <= float(entry.sample_rate) <=
+                 sample_range[0] <= entry.sample_rate.value <=
                  sample_range[1]]
         for attr, val in others.iteritems():
             if val is not None:
