@@ -1181,3 +1181,7 @@ class TimeSeriesBaseList(list):
         for ts in self[1:]:
             out.append(ts, gap=gap, pad=pad)
         return out
+
+    def __getslice__(self, i, j):
+        return type(self)(*super(TimeSeriesBaseList, self).__getslice__(i, j))
+    __getslice__.__doc__ = list.__getslice__.__doc__

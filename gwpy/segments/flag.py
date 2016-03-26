@@ -55,7 +55,7 @@ __all__ = ['DataQualityFlag', 'DataQualityDict']
 
 re_IFO_TAG_VERSION = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+):(?P<version>\d+)\Z")
 re_IFO_TAG = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+)\Z")
-re_TAG_VERSION = re.compile(r"\A(?P<tag>[^/]+):(?P<ver>\d+)\Z")
+re_TAG_VERSION = re.compile(r"\A(?P<tag>[^/]+):(?P<version>\d+)\Z")
 
 
 class DataQualityFlag(object):
@@ -838,24 +838,13 @@ class DataQualityFlag(object):
             match = re_TAG_VERSION.match(name).groupdict()
             self.ifo = None
             self.tag = match['tag']
-            self.version = None
+            self.version = int(match['version'])
         else:
             raise ValueError("No flag name structure detected in '%s', flags "
                              "should be named as '{ifo}:{tag}:{version}'. "
                              "For arbitrary strings, use the "
                              "`DataQualityFlag.label` attribute" % name)
         return self.ifo, self.tag, self.version
-
-    def __getslice__(self, slice_):
-        return self.__class__(name=self.name, known=self.known,
-                              active=self.active[slice_], label=self.label,
-                              description=self.description, isgood=self.isgood)
-
-    def __getitem__(self, item):
-        if isinstance(item, int) or isinstance(item, slice):
-            return self.active[item]
-        else:
-            self.__getslice__(item)
 
     def __and__(self, other):
         """Find the intersection of this one and ``other``.

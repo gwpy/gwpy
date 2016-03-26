@@ -40,7 +40,7 @@ from gwpy.time import Time
 
 from gwpy import version
 from gwpy.timeseries import (TimeSeries, StateVector, TimeSeriesDict,
-                             StateVectorDict)
+                             StateVectorDict, TimeSeriesList)
 from gwpy.spectrum import (Spectrum, SpectralVariance)
 from gwpy.spectrogram import Spectrogram
 from gwpy.io.cache import Cache
@@ -540,6 +540,29 @@ class TimeSeriesDictTestCase(unittest.TestCase):
 
 class StateVectorDictTestCase(TimeSeriesDictTestCase):
     TEST_CLASS = StateVectorDict
+
+
+# -- TimeSeriesList tests -----------------------------------------------------
+
+class TimeSeriesListTestCase(unittest.TestCase):
+    TEST_CLASS = TimeSeriesList
+
+    def create(self):
+        out = self.TEST_CLASS()
+        for epoch in [0, 100, 400]:
+            data = (numpy.random.random(100) * 1e5).astype(float)
+            out.append(out.EntryClass(data, epoch=epoch, sample_rate=1))
+        return out
+
+    def test_segments(self):
+        tsl = self.create()
+        segs = tsl.segments
+        self.assertListEqual(tsl.segments, [(0, 100), (100, 200), (400, 500)])
+
+    def test_coalesce(self):
+        tsl = self.create()
+        tsl2 = self.create().coalesce()
+        self.assertEqual(tsl2[0], tsl[0].append(tsl[1], inplace=False))
 
 
 if __name__ == '__main__':
