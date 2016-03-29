@@ -34,6 +34,8 @@ try:
 except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
+import glue.segments
+
 from .. import version
 from ..segments import *
 from .timeseries import (TimeSeriesPlot, TimeSeriesAxes)
@@ -118,15 +120,15 @@ class SegmentAxes(TimeSeriesAxes):
                 out.append(self.plot_dqflag(args[0], **kwargs))
                 args.pop(0)
                 continue
-            elif isinstance(args[0], SegmentListDict):
+            elif isinstance(args[0], glue.segments.segmentlistdict):
                 out.extend(self.plot_segmentlistdict(args[0], **kwargs))
                 args.pop(0)
                 continue
-            elif isinstance(args[0], SegmentList):
+            elif isinstance(args[0], glue.segments.segmentlist):
                 out.append(self.plot_segmentlist(args[0], **kwargs))
                 args.pop(0)
                 continue
-            elif isinstance(args[0], Segment):
+            elif isinstance(args[0], glue.segments.segment):
                 raise ValueError("Input must be DataQualityFlag, "
                                  "SegmentListDict, or SegmentList")
             break
