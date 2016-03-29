@@ -47,14 +47,14 @@ __version__ = version.version
 
 
 class SegmentAxes(TimeSeriesAxes):
-    """Custom `Axes` for a :class:`~gwpy.plotter.SegmentPlot`.
+    """Custom `Axes` for a `~gwpy.plotter.SegmentPlot`.
 
     This `SegmentAxes` provides custom methods for displaying any of
 
-    - :class:`~gwpy.segments.DataQualityFlag`
-    - :class:`~gwpy.segments.Segment`
-    - :class:`~gwpy.segments.SegmentList`
-    - :class:`~gwpy.segments.SegmentListDict`
+    - `~gwpy.segments.DataQualityFlag`
+    - `~gwpy.segments.Segment` or `glue.segments.segment`
+    - `~gwpy.segments.SegmentList` or `glue.segments.segmentlist`
+    - `~gwpy.segments.SegmentListDict` or `glue.segments.segmentlistdict`
 
     Parameters
     ----------
@@ -92,18 +92,20 @@ class SegmentAxes(TimeSeriesAxes):
         args
             a single instance of
 
-                - :class:`~gwpy.segments.DataQualityFlag`
-                - :class:`~gwpy.segments.Segment`
-                - :class:`~gwpy.segments.SegmentList`
-                - :class:`~gwpy.segments.SegmentListDict`
+                - `~gwpy.segments.DataQualityFlag`
+                - `~gwpy.segments.Segment`
+                - `~gwpy.segments.SegmentList`
+                - `~gwpy.segments.SegmentListDict`
+
+            or equivalent types upstream from `glue.segments`
 
         kwargs
-            keyword arguments applicable to :meth:`~matplotib.axes.Axes.plot`
+            keyword arguments applicable to `~matplotib.axes.Axes.plot`
 
         Returns
         -------
         Line2D
-            the :class:`~matplotlib.lines.Line2D` for this line layer
+            the `~matplotlib.lines.Line2D` for this line layer
 
         See Also
         --------
@@ -139,11 +141,11 @@ class SegmentAxes(TimeSeriesAxes):
 
     @auto_refresh
     def plot_dqdict(self, flags, label='key', known='x', **kwargs):
-        """Plot a :class:`~gwpy.segments.DataQualityDict` onto these axes
+        """Plot a `~gwpy.segments.DataQualityDict` onto these axes
 
         Parameters
         ----------
-        flags : :class:`~gwpy.segments.DataQualityDict`
+        flags : `~gwpy.segments.DataQualityDict`
             data-quality dict to display
         label : `str`, optional
             labelling system to use, or fixed label for all `DataQualityFlags`.
@@ -160,12 +162,12 @@ class SegmentAxes(TimeSeriesAxes):
             :meth:`~SegmentAxes.plot_segmentlist`, or `None` to hide.
         **kwargs
             any other keyword arguments acceptable for
-            :class:`~matplotlib.patches.Rectangle`
+            `~matplotlib.patches.Rectangle`
 
         Returns
         -------
-        collection : :class:`~matplotlib.patches.PatchCollection`
-            list of :class:`~matplotlib.patches.Rectangle` patches
+        collection : `~matplotlib.patches.PatchCollection`
+            list of `~matplotlib.patches.Rectangle` patches
         """
         out = []
         for lab, flag in flags.iteritems():
@@ -180,12 +182,12 @@ class SegmentAxes(TimeSeriesAxes):
     @auto_refresh
     def plot_dqflag(self, flag, y=None, known='red', facecolor=(0.2, 0.8, 0.2),
                     **kwargs):
-        """Plot a :class:`~gwpy.segments.DataQualityFlag`
+        """Plot a `~gwpy.segments.DataQualityFlag`
         onto these axes
 
         Parameters
         ----------
-        flag : :class:`~gwpy.segments.DataQualityFlag`
+        flag : `~gwpy.segments.DataQualityFlag`
             data-quality flag to display
         y : `float`, optional
             y-axis value for new segments
@@ -197,12 +199,12 @@ class SegmentAxes(TimeSeriesAxes):
             :meth:`~SegmentAxes.plot_segmentlist`, or `None` to hide.
         **kwargs
             any other keyword arguments acceptable for
-            :class:`~matplotlib.patches.Rectangle`
+            `~matplotlib.patches.Rectangle`
 
         Returns
         -------
-        collection : :class:`~matplotlib.patches.PatchCollection`
-            list of :class:`~matplotlib.patches.Rectangle` patches
+        collection : `~matplotlib.patches.PatchCollection`
+            list of `~matplotlib.patches.Rectangle` patches
         """
         # get y axis position
         if y is None:
@@ -250,28 +252,28 @@ class SegmentAxes(TimeSeriesAxes):
     @auto_refresh
     def plot_segmentlist(self, segmentlist, y=None, collection=True,
                          label=None, rasterized=None, **kwargs):
-        """Plot a :class:`~gwpy.segments.SegmentList` onto these axes
+        """Plot a `~gwpy.segments.SegmentList` onto these axes
 
         Parameters
         ----------
-        segmentlist : :class:`~gwpy.segments.SegmentList`
+        segmentlist : `~gwpy.segments.SegmentList`
             list of segments to display
         y : `float`, optional
             y-axis value for new segments
         collection : `bool`, default: `True`
             add all patches as a
-            :class:`~matplotlib.collections.PatchCollection`, doesn't seem
+            `~matplotlib.collections.PatchCollection`, doesn't seem
             to work for hatched rectangles
         label : `str`, optional
             custom descriptive name to print as y-axis tick label
         **kwargs
             any other keyword arguments acceptable for
-            :class:`~matplotlib.patches.Rectangle`
+            `~matplotlib.patches.Rectangle`
 
         Returns
         -------
-        collection : :class:`~matplotlib.patches.PatchCollection`
-            list of :class:`~matplotlib.patches.Rectangle` patches
+        collection : `~matplotlib.patches.PatchCollection`
+            list of `~matplotlib.patches.Rectangle` patches
         """
         if y is None:
             y = self.get_next_y()
@@ -308,23 +310,23 @@ class SegmentAxes(TimeSeriesAxes):
 
     @auto_refresh
     def plot_segmentlistdict(self, segmentlistdict, y=None, dy=1, **kwargs):
-        """Plot a :class:`~gwpy.segments.SegmentListDict` onto
+        """Plot a `~gwpy.segments.SegmentListDict` onto
         these axes
 
         Parameters
         ----------
-        segmentlistdict : :class:`~gwpy.segments.SegmentListDict`
-            (name, :class:`~gwpy.segments.SegmentList`) dict
+        segmentlistdict : `~gwpy.segments.SegmentListDict`
+            (name, `~gwpy.segments.SegmentList`) dict
         y : `float`, optional
             starting y-axis value for new segmentlists
         **kwargs
             any other keyword arguments acceptable for
-            :class:`~matplotlib.patches.Rectangle`
+            `~matplotlib.patches.Rectangle`
 
         Returns
         -------
         collections : `list`
-            list of :class:`~matplotlib.patches.PatchCollection` sets for
+            list of `~matplotlib.patches.PatchCollection` sets for
             each segmentlist
         """
         if y is None:
@@ -338,12 +340,12 @@ class SegmentAxes(TimeSeriesAxes):
 
     @staticmethod
     def build_segment(segment, y, height=.8, valign='center', **kwargs):
-        """Build a :class:`~matplotlib.patches.Rectangle` to display
-        a single :class:`~gwpy.segments.Segment`
+        """Build a `~matplotlib.patches.Rectangle` to display
+        a single `~gwpy.segments.Segment`
 
         Parameters
         ----------
-        segment : :class:`~gwpy.segments.Segment`
+        segment : `~gwpy.segments.Segment`
             [start, stop) GPS segment
         y : `float`
             y-axis position for segment
@@ -354,7 +356,7 @@ class SegmentAxes(TimeSeriesAxes):
             `top`, `center`, or `bottom`
         **kwargs
             any other keyword arguments acceptable for
-            :class:`~matplotlib.patches.Rectangle`
+            `~matplotlib.patches.Rectangle`
 
         Returns
         -------
@@ -459,19 +461,18 @@ register_projection(SegmentAxes)
 
 
 class SegmentPlot(TimeSeriesPlot):
-    """`Figure` for displaying a :class:`~gwpy.segments.DataQualityFlag`.
+    """`Figure` for displaying a `~gwpy.segments.DataQualityFlag`.
 
     Parameters
     ----------
     *flags : `DataQualityFlag`
-        any number of :class:`~gwpy.segments.DataQualityFlag` to
+        any number of `~gwpy.segments.DataQualityFlag` to
         display on the plot
     insetlabels : `bool`, default: `False`
         display segment labels inside the axes. Prevents very long segment
         names from getting squeezed off the end of a standard figure
     **kwargs
-        other keyword arguments as applicable for the
-        :class:`~gwpy.plotter.Plot`
+        other keyword arguments as applicable for the `~gwpy.plotter.Plot`
     """
     _DefaultAxesClass = SegmentAxes
 
