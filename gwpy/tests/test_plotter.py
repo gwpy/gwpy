@@ -215,6 +215,15 @@ class AxesTestCase(Mixin, unittest.TestCase):
             self.assertEqual(l.get_linewidth(), 8)
         fig.close()
 
+    def test_matplotlib_compat(self):
+        for method in ['plot', 'loglog', 'semilogx', 'semilogy']:
+            fig, ax = self.new()
+            plot = getattr(ax, method)
+            print(type(fig), type(ax), plot)
+            plot([1, 2, 3, 4, 5])
+            plot([1, 2, 3, 4, 5], color='green', linestyle='--')
+            fig.close()
+
 
 # -- TimeSeries plotters ------------------------------------------------------
 
