@@ -1279,7 +1279,7 @@ class DataQualityDict(OrderedDict):
             self[key].known &= tmp[key].known
             self[key].active = tmp[key].active
             if pad:
-                self[key] = self[key].pad()
+                self[key] = self[key].pad(inplace=True)
                 if segments is not None:
                     self[key].known &= segments
                     self[key].active &= segments
