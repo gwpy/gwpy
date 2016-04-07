@@ -654,7 +654,7 @@ class DataQualityFlag(object):
         self.active = self.active.protract(x)
         return self.active
 
-    def pad(self, *args):
+    def pad(self, *args, **kwargs):
         """Apply a padding to each segment in this `DataQualityFlag`
 
         This method either takes no arguments, in which case the value of
@@ -677,6 +677,9 @@ class DataQualityFlag(object):
             padding to apply to the start of the each segment
         end : `float`
             padding to apply to the end of each segment
+        inplace : `bool`, optional, default: `False`
+            modify this object in-place, default is `False`, i.e. return
+            a copy of the original object with padded segments
 
         Returns
         -------
@@ -690,7 +693,13 @@ class DataQualityFlag(object):
         else:
             raise ValueError("Cannot parse (start, end) padding from %r"
                              % args)
-        new = self.copy()
+        if kwargs.pop('inplace', False):
+            new = self
+        else:
+            new = self.copy()
+        if kwargs:
+            raise TypeError("unexpected keyword argument %r"
+                            % kwargs.keys()[0])
         new.known = [(s[0]+start, s[1]+end) for s in self.known]
         new.active = [(s[0]+start, s[1]+end) for s in self.active]
         return new

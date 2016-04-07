@@ -405,6 +405,14 @@ class DataQualityFlagTests(unittest.TestCase, TestCaseWithQueryMixin):
         # test coalesce
         padded.coalesce()
         self.assertListEqual(padded.active, ACTIVEPADC)
+        # test in-place
+        flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
+        padded = flag.pad(*PADDING)
+        self.assertIsNot(flag, padded)
+        padded = flag.pad(*PADDING, inplace=True)
+        self.assertIs(flag, padded)
+        # test other kwargs fail
+        self.assertRaises(TypeError, flag.pad, *PADDING, kwarg='test')
 
     def test_io_identify(self):
         common.test_io_identify(DataQualityFlag, ['xml', 'xml.gz', 'txt'])
