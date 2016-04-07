@@ -78,8 +78,8 @@ class TimeSeriesAxes(Axes):
     # -----------------------------------------------
     # GPS scaling
 
-    def set_xscale(self, scale):
-        super(TimeSeriesAxes, self).set_xscale(scale)
+    def set_xscale(self, scale, *args, **kwargs):
+        super(TimeSeriesAxes, self).set_xscale(scale, *args, **kwargs)
         if scale != 'auto-gps' and self.get_xlabel() == '_auto':
             self.set_xlabel('')
 
