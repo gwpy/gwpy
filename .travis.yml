@@ -19,6 +19,7 @@ addons:
       # misc python dependencies
       - texlive-latex-extra
       - texlive-fonts-recommended
+      - dvipng
       - libhdf5-serial-dev
 
 env:
