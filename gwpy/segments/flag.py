@@ -31,7 +31,7 @@ import re
 import warnings
 import tempfile
 from urlparse import urlparse
-from copy import copy as shallowcopy
+from copy import (copy as shallowcopy, deepcopy)
 from math import (floor, ceil)
 from threading import Thread
 from Queue import Queue
@@ -654,7 +654,7 @@ class DataQualityFlag(object):
         self.active = self.active.protract(x)
         return self.active
 
-    def pad(self, *args):
+    def pad(self, *args, **kwargs):
         """Apply a padding to each segment in this `DataQualityFlag`
 
         This method either takes no arguments, in which case the value of
@@ -677,6 +677,9 @@ class DataQualityFlag(object):
             padding to apply to the start of the each segment
         end : `float`
             padding to apply to the end of each segment
+        inplace : `bool`, optional, default: `False`
+            modify this object in-place, default is `False`, i.e. return
+            a copy of the original object with padded segments
 
         Returns
         -------
@@ -690,7 +693,13 @@ class DataQualityFlag(object):
         else:
             raise ValueError("Cannot parse (start, end) padding from %r"
                              % args)
-        new = self.copy()
+        if kwargs.pop('inplace', False):
+            new = self
+        else:
+            new = self.copy()
+        if kwargs:
+            raise TypeError("unexpected keyword argument %r"
+                            % kwargs.keys()[0])
         new.known = [(s[0]+start, s[1]+end) for s in self.known]
         new.active = [(s[0]+start, s[1]+end) for s in self.active]
         return new
@@ -763,16 +772,7 @@ class DataQualityFlag(object):
         flag2 : `DataQualityFlag`
             a copy of the original flag, but with a fresh memory address.
         """
-        new = self.__class__()
-        new.ifo = self.ifo
-        new.name = self.name
-        new.version = self.version
-        new.description = self.description
-        new.known = self._ListClass([self._EntryClass(s[0], s[1]) for
-                                    s in self.known])
-        new.active = self._ListClass([self._EntryClass(s[0], s[1]) for
-                                     s in self.active])
-        return new
+        return deepcopy(self)
 
     def plot(self, **kwargs):
         """Plot this flag.
@@ -1279,7 +1279,7 @@ class DataQualityDict(OrderedDict):
             self[key].known &= tmp[key].known
             self[key].active = tmp[key].active
             if pad:
-                self[key] = self[key].pad()
+                self[key] = self[key].pad(inplace=True)
                 if segments is not None:
                     self[key].known &= segments
                     self[key].active &= segments
