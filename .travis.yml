@@ -18,6 +18,7 @@ addons:
       - libsasl2-2
       # misc python dependencies
       - texlive-latex-extra
+      - texlive-fonts-recommended
       - libhdf5-serial-dev
 
 env:
