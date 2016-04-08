@@ -593,7 +593,7 @@ class HistogramAxesTestCase(HistogramMixin, AxesTestCase):
 
 # -- Filter plotter -----------------------------------------------------------
 
-class BodePlotTestCase(unittest.TestCase):
+class BodePlotTestCase(Mixin, unittest.TestCase):
     FIGURE_CLASS = BodePlot
 
     def test_init(self):
@@ -684,7 +684,7 @@ class InverseGpsTransformTestCase(GpsTransformTestCase):
 
 # -- gwpy.plotter.tex module tests --------------------------------------------
 
-class TexTestCase(unittest.TestCase):
+class TexTestCase(Mixin, unittest.TestCase):
     def test_float_to_latex(self):
         self.assertEqual(float_to_latex(1), '1')
         self.assertEqual(float_to_latex(100), '10^{2}')
