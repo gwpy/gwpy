@@ -85,6 +85,16 @@ class Mixin(object):
     def use_tex(self):
         return rcParams['text.usetex']
 
+    def save(self, fig, suffix='.png'):
+        with tempfile.NamedTemporaryFile(suffix=suffix) as f:
+            fig.save(f.name)
+        return fig
+
+    def save_and_close(self, fig, suffix='.png'):
+        self.save(fig, suffix=suffix)
+        fig.close()
+        return fig
+
 
 class PlotTestCase(Mixin, unittest.TestCase):
     """`TestCase` for the `gwpy.plotter` module
@@ -100,7 +110,7 @@ class PlotTestCase(Mixin, unittest.TestCase):
         self.assertEqual(len(fig._coloraxes), 0)
         # test gca
         self.assertIsInstance(ax, self.AXES_CLASS)
-        fig.close()
+        self.save_and_close(fig)
 
     def test_auto_refresh(self):
         fig = self.FIGURE_CLASS()
@@ -109,17 +119,7 @@ class PlotTestCase(Mixin, unittest.TestCase):
         self.assertTrue(fig.get_auto_refresh())
         fig = self.FIGURE_CLASS(auto_refresh=True)
         self.assertTrue(fig.get_auto_refresh())
-        fig.close()
-
-    def test_save(self):
-        fig = self.FIGURE_CLASS()
-        f = tempfile.mktemp(suffix='.png')
-        try:
-            fig.save(f)
-        finally:
-            if os.path.isfile(f):
-                os.remove(f)
-            fig.close()
+        self.save_and_close(fig)
 
     # -- test axes_method decorators
     def test_axes_methods(self):
@@ -172,7 +172,7 @@ class PlotTestCase(Mixin, unittest.TestCase):
         fig.set_yscale('log')
         self.assertEqual(fig.get_yscale(), 'log')
         self.assertEqual(fig.get_yscale(), ax.get_yscale())
-        fig.close()
+        self.save_and_close(fig)
 
     def test_logx(self):
         fig, ax = self.new()
@@ -180,7 +180,7 @@ class PlotTestCase(Mixin, unittest.TestCase):
         fig.logx = True
         self.assertEqual(ax.get_xscale(), 'log')
         self.assertTrue(fig.logx)
-        fig.close()
+        self.save_and_close(fig)
 
     def test_logy(self):
         fig, ax = self.new()
@@ -188,14 +188,14 @@ class PlotTestCase(Mixin, unittest.TestCase):
         fig.logy = True
         self.assertEqual(ax.get_yscale(), 'log')
         self.assertTrue(fig.logy)
-        fig.close()
+        self.save_and_close(fig)
 
     def test_add_legend(self):
         fig, ax = self.new()
         self.assertIsNone(fig.add_legend())
         ax.plot([1, 2, 3, 4], label='Plot')
         self.assertIsInstance(fig.add_legend(), Legend)
-        fig.close()
+        self.save_and_close(fig)
 
     def test_figure(self):
         fig = figure()
@@ -213,7 +213,16 @@ class AxesTestCase(Mixin, unittest.TestCase):
         self.assertEqual(leg.get_frame().get_alpha(), 0.8)
         for l in leg.get_lines():
             self.assertEqual(l.get_linewidth(), 8)
-        fig.close()
+        self.save_and_close(fig)
+
+    def test_matplotlib_compat(self):
+        for method in ['plot', 'loglog', 'semilogx', 'semilogy']:
+            fig, ax = self.new()
+            plot = getattr(ax, method)
+            print(type(fig), type(ax), plot)
+            plot([1, 2, 3, 4, 5])
+            plot([1, 2, 3, 4, 5], color='green', linestyle='--')
+            self.save_and_close(fig)
 
 
 # -- TimeSeries plotters ------------------------------------------------------
@@ -262,12 +271,12 @@ class TimeSeriesPlotTestCase(TimeSeriesMixin, PlotTestCase):
         cb = fig.add_colorbar()
         self.assertEqual(len(fig.colorbars), 1)
         self.assertIs(cb, fig.colorbars[0])
-        fig.close()
+        self.save_and_close(fig)
         # test kwargs
         fig, ax = make_fig()
         fig.add_colorbar(ax=ax, norm='log', clim=[1e-22, 1e-18],
                          label='Test colorbar')
-        fig.close()
+        self.save_and_close(fig)
 
 
 class TimeSeriesAxesTestCase(TimeSeriesMixin, AxesTestCase):
@@ -277,7 +286,7 @@ class TimeSeriesAxesTestCase(TimeSeriesMixin, AxesTestCase):
         self.assertEqual(ax.get_epoch(), 0)
         self.assertEqual(ax.get_xscale(), 'auto-gps')
         self.assertEqual(ax.get_xlabel(), '_auto')
-        fig.close()
+        self.save_and_close(fig)
 
     def test_plot_timeseries(self):
         fig, ax = self.new()
@@ -290,7 +299,7 @@ class TimeSeriesAxesTestCase(TimeSeriesMixin, AxesTestCase):
         # check GPS axis is set ok
         self.assertEqual(ax.get_epoch(), self.ts.x0.value)
         self.assertTupleEqual(ax.get_xlim(), tuple(self.ts.span))
-        fig.close()
+        self.save_and_close(fig)
 
     def test_plot_timeseries_mmm(self):
         fig, ax = self.new()
@@ -299,7 +308,7 @@ class TimeSeriesAxesTestCase(TimeSeriesMixin, AxesTestCase):
         self.assertEqual(len(artists), 5)
         self.assertEqual(len(ax.lines), 3)
         self.assertEqual(len(ax.collections), 2)
-        fig.close()
+        self.save_and_close(fig)
         # test min only
         fig, ax = self.new()
         artists = ax.plot_timeseries_mmm(self.mmm[0], min_=self.mmm[1])
@@ -308,7 +317,7 @@ class TimeSeriesAxesTestCase(TimeSeriesMixin, AxesTestCase):
         self.assertIsNone(artists[4])
         self.assertEqual(len(ax.lines), 2)
         self.assertEqual(len(ax.collections), 1)
-        fig.close()
+        self.save_and_close(fig)
         # test max only
         fig, ax = self.new()
         artists = ax.plot_timeseries_mmm(self.mmm[0], max_=self.mmm[2])
@@ -335,12 +344,12 @@ class TimeSeriesAxesTestCase(TimeSeriesMixin, AxesTestCase):
         # check kwarg parsing
         c = ax.plot_spectrogram(self.sg, norm='log')
         self.assertIsInstance(c.norm, LogNorm)
-        fig.close()
+        self.save_and_close(fig)
 
     def test_plot(self):
         fig, ax = self.new()
         ax.plot(self.ts)
-        fig.close()
+        self.save_and_close(fig)
 
 
 # -- Spectrum plotters --------------------------------------------------------
@@ -371,7 +380,7 @@ class SpectrumAxesTestCase(SpectrumMixin, AxesTestCase):
         l = ax.plot_spectrum(self.asd)[0]
         nptest.assert_array_equal(l.get_xdata(), self.asd.frequencies.value)
         nptest.assert_array_equal(l.get_ydata(), self.asd.value)
-        fig.close()
+        self.save_and_close(fig)
 
     def test_plot_spectrum_mmm(self):
         fig, ax = self.new()
@@ -380,7 +389,7 @@ class SpectrumAxesTestCase(SpectrumMixin, AxesTestCase):
         self.assertEqual(len(artists), 5)
         self.assertEqual(len(ax.lines), 3)
         self.assertEqual(len(ax.collections), 2)
-        fig.close()
+        self.save_and_close(fig)
         # test min only
         fig, ax = self.new()
         artists = ax.plot_spectrum_mmm(self.mmm[0], min_=self.mmm[1])
@@ -389,7 +398,7 @@ class SpectrumAxesTestCase(SpectrumMixin, AxesTestCase):
         self.assertIsNone(artists[4])
         self.assertEqual(len(ax.lines), 2)
         self.assertEqual(len(ax.collections), 1)
-        fig.close()
+        self.save_and_close(fig)
         # test max only
         fig, ax = self.new()
         artists = ax.plot_spectrum_mmm(self.mmm[0], max_=self.mmm[2])
@@ -529,7 +538,7 @@ class SegmentAxesTestCase(SegmentMixin, AxesTestCase):
                                 rasterized=True)
         self.assertEqual(c.get_label(), 'My segments')
         self.assertTrue(c.get_rasterized())
-        fig.close()
+        self.save_and_close(fig)
 
     def test_plot(self):
         fig, ax = self.new()
@@ -579,12 +588,12 @@ class HistogramAxesTestCase(HistogramMixin, AxesTestCase):
     def test_histogram_weights(self):
         fig, ax = self.new()
         ax.hist(numpy.random.random(1000), weights=10.)
-        fig.close()
+        self.save_and_close(fig)
 
 
 # -- Filter plotter -----------------------------------------------------------
 
-class BodePlotTestCase(unittest.TestCase):
+class BodePlotTestCase(Mixin, unittest.TestCase):
     FIGURE_CLASS = BodePlot
 
     def test_init(self):
@@ -615,7 +624,7 @@ class BodePlotTestCase(unittest.TestCase):
         nptest.assert_array_equal(lm.get_ydata(), MAGNITUDE)
         nptest.assert_array_equal(lp.get_xdata(), FREQUENCIES)
         nptest.assert_array_equal(lp.get_ydata(), PHASE)
-        fig.close()
+        self.save_and_close(fig)
         # test method 2
         fig = self.FIGURE_CLASS(ZPK)
         lm = fig.maxes.get_lines()[0]
@@ -675,7 +684,7 @@ class InverseGpsTransformTestCase(GpsTransformTestCase):
 
 # -- gwpy.plotter.tex module tests --------------------------------------------
 
-class TexTestCase(unittest.TestCase):
+class TexTestCase(Mixin, unittest.TestCase):
     def test_float_to_latex(self):
         self.assertEqual(float_to_latex(1), '1')
         self.assertEqual(float_to_latex(100), '10^{2}')

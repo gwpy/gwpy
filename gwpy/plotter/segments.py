@@ -41,6 +41,7 @@ from ..segments import *
 from .timeseries import (TimeSeriesPlot, TimeSeriesAxes)
 from .decorators import auto_refresh
 from .utils import rUNDERSCORE
+from . import rcParams
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -290,14 +291,21 @@ class SegmentAxes(TimeSeriesAxes):
         if collection:
             coll = PatchCollection(patches, len(patches) != 0)
             coll.set_rasterized(rasterized)
-            if label is not None:
-                coll.set_label(rUNDERSCORE.sub(r'\_', str(label)))
             if collection == 'ignore':
                 coll._ignore = True
             else:
                 coll._ignore = False
             coll._ypos = y
             out = self.add_collection(coll)
+            # reset label with tex-formatting now
+            #   matplotlib default label is applied by add_collection
+            #   so we can only replace the leading underscore after
+            #   this point
+            if label is None:
+                label = coll.get_label()
+            if rcParams['text.usetex']:
+                label = rUNDERSCORE.sub(r'\_', str(label))
+            coll.set_label(label)
         else:
             out = []
             for p in patches:
