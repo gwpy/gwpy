@@ -505,7 +505,7 @@ class StateVector(TimeSeriesBase):
 
         %(timeseries-fetch2)s
         """
-        new = StateVectorDict.fetch(
+        new = cls.DictClass.fetch(
             [channel], start, end, host=host, port=port,
             verbose=verbose, connection=connection)[channel]
         if bits:
