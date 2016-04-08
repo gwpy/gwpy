@@ -41,6 +41,7 @@ from ..segments import *
 from .timeseries import (TimeSeriesPlot, TimeSeriesAxes)
 from .decorators import auto_refresh
 from .utils import rUNDERSCORE
+from . import rcParams
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -290,8 +291,11 @@ class SegmentAxes(TimeSeriesAxes):
         if collection:
             coll = PatchCollection(patches, len(patches) != 0)
             coll.set_rasterized(rasterized)
-            if label is not None:
-                coll.set_label(rUNDERSCORE.sub(r'\_', str(label)))
+            if label is None:
+                label = coll.get_label()
+            if rcParams['text.usetex']:
+                label = rUNDERSCORE.sub(r'\_', str(label))
+            coll.set_label(label)
             if collection == 'ignore':
                 coll._ignore = True
             else:
