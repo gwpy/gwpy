@@ -505,9 +505,52 @@ class StateVector(TimeSeriesBase):
 
         %(timeseries-fetch2)s
         """
-        new = StateVectorDict.fetch(
+        new = cls.DictClass.fetch(
             [channel], start, end, host=host, port=port,
             verbose=verbose, connection=connection)[channel]
+        if bits:
+            new.bits = bits
+        return new
+
+    @classmethod
+    @interpolate_docstring
+    def get(cls, channel, start, end, bits=None, **kwargs):
+        """Get data for this channel from frames or NDS
+
+        Parameters
+        ----------
+        %(timeseries-fetch1)s
+
+        bits : `Bits`, `list`, optional
+            definition of bits for this `StateVector`
+
+        pad : `float`, optional
+            value with which to fill gaps in the source data, only used if
+            gap is not given, or ``gap='pad'`` is given
+
+        dtype : `numpy.dtype`, `str`, `type`, or `dict`
+            numeric data type for returned data, e.g. `numpy.float`, or
+            `dict` of (`channel`, `dtype`) pairs
+
+        nproc : `int`, optional, default: `1`
+            number of parallel processes to use, serial process by
+            default.
+
+        verbose : `bool`, optional
+            print verbose output about NDS progress.
+
+        **kwargs            other keyword arguments to pass to either
+            :meth:`.find` (for direct GWF file access) or
+            :meth:`.fetch` for remote NDS2 access
+
+        See Also
+        --------
+        StateVector.fetch
+            for grabbing data from a remote NDS2 server
+        StateVector.find
+            for discovering and reading data from local GWF files
+        """
+        new = cls.DictClass.get([channel], start, end, **kwargs)[channel]
         if bits:
             new.bits = bits
         return new
