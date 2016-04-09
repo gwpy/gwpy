@@ -1442,7 +1442,7 @@ class TimeSeries(TimeSeriesBase):
              i0 = i * nstride
              i1 = i0 + nfft
              in_ = self[i0:i1].detrend(detrend) * window
-             out[i0:i1] += npfft.irfft(in_.fft().value * invasd)
+             out.value[i0:i1] += npfft.irfft(in_.fft().value * invasd)
         return out
 
     def detrend(self, detrend='constant'):
