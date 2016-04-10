@@ -14,7 +14,7 @@ bash .travis/build-with-autotools.sh fftw-${FFTW_VERSION}-float/${TRAVIS_PYTHON_
 
 
 # build frame libraries
-bash .travis/build-with-autotools.sh ldas-tools-${LDAS_TOOLS_VERSION}/${TRAVIS_PYTHON_VERSION} ${LDAS_TOOLS} || FAILURES="$FAILURES ldas-tools"
+bash .travis/build-with-autotools.sh framecpp-${FRAMECPP_VERSION}/${TRAVIS_PYTHON_VERSION} ${FRAMECPP} || FAILURES="$FAILURES framecpp"
 
 bash .travis/build-with-autotools.sh libframe-${LIBFRAME_VERSION}/${TRAVIS_PYTHON_VERSION} ${LIBFRAME} || FAILURES="$FAILURES libframe"
 
