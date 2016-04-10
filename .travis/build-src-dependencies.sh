@@ -12,6 +12,8 @@ bash .travis/build-with-autotools.sh swig-${SWIG_VERSION}/${TRAVIS_PYTHON_VERSIO
 bash .travis/build-with-autotools.sh fftw-${FFTW_VERSION}/${TRAVIS_PYTHON_VERSION} ${FFTW} --enable-shared=yes || FAILURES="$FAILURES fftw"
 bash .travis/build-with-autotools.sh fftw-${FFTW_VERSION}-float/${TRAVIS_PYTHON_VERSION} ${FFTW} --enable-shared=yes --enable-float || FAILURES="$FAILURES fftw-float"
 
+# build ldas-tools-al
+bash .travis/build-with-autotools.sh ldas-tools-al-${LDAS_TOOLS_AL_VERSION}/${TRAVIS_PYTHON_VERSION} ${LDAS_TOOLS_AL} || FAILURES="$FAILURES ldas-tools-al"
 
 # build frame libraries
 bash .travis/build-with-autotools.sh framecpp-${FRAMECPP_VERSION}/${TRAVIS_PYTHON_VERSION} ${FRAMECPP} || FAILURES="$FAILURES framecpp"
