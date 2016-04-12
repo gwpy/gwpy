@@ -269,6 +269,42 @@ class TimeSeriesBase(Series):
             pad=pad, type=type, dtype=dtype)[str(channel)]
 
     @classmethod
+    def fetch_open_data(cls, ifo, start, end, name='strain/Strain',
+                        sample_rate=4096, host='https://losc.ligo.org'):
+        """Fetch open-access data from the LIGO Open Science Center
+
+        Parameters
+        ----------
+        ifo : `str`
+            the two-character prefix of the IFO in which you are interested,
+            e.g. `'L1'`
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS start time of required data, defaults to start of data found;
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, defaults to end of data found;
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        name : `str`, optional
+            the full name of HDF5 dataset that represents the data you want,
+            e.g. `'strain/Strain'` for _h(t)_ data, or `'quality/simple'`
+            for basic data-quality information
+
+        sample_rate : `float`, optional, default: `4096`
+            the sample rate of desired data. Most data are stored
+            by LOSC at 4096 Hz, however there may be event-related
+            data releases with a 16384 Hz rate
+
+        host : `str`, optional
+            HTTP host name of LOSC server to access
+        """
+        from .io.losc import fetch_losc_data
+        return fetch_losc_data(ifo, start, end, channel=name, cls=cls,
+                               sample_rate=sample_rate, host=host)
+
+    @classmethod
     @interpolate_docstring
     def find(cls, channel, start, end, frametype=None,
              pad=None, dtype=None, nproc=1, verbose=False, **readargs):

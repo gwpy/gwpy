@@ -41,6 +41,7 @@ from gwpy.time import Time
 from gwpy import version
 from gwpy.timeseries import (TimeSeries, StateVector, TimeSeriesDict,
                              StateVectorDict, TimeSeriesList)
+from gwpy.segments import Segment
 from gwpy.spectrum import (Spectrum, SpectralVariance)
 from gwpy.spectrogram import Spectrogram
 from gwpy.io.cache import Cache
@@ -57,6 +58,8 @@ ONE_SECOND = units.Quantity(1, 'second')
 TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
                           'HLV-GW100916-968654552-1.gwf')
 TEST_HDF_FILE = '%s.hdf' % TEST_GWF_FILE[:-4]
+TEST_SEGMENT = Segment(968654552, 968654553)
+
 
 FIND_CHANNEL = 'L1:LDAS-STRAIN'
 FIND_GPS = 968654552
@@ -83,6 +86,7 @@ LOSC_DQ_BITS = [
     'Category-1 checks passed for continuous-wave search',
     'Category-1 checks passed for stochastic search',
 ]
+LOSC_GW150914 = 1126259462
 
 # filtering test outputs
 NOTCH_60HZ = (
@@ -247,6 +251,38 @@ class TimeSeriesTestMixin(object):
 
     def test_io_identify(self):
         common.test_io_identify(self.TEST_CLASS, ['txt', 'hdf', 'gwf'])
+
+    def test_fetch_open_data(self):
+        skip = None
+        try:
+            ts = self.TEST_CLASS.fetch_open_data(self.channel[:2],
+                                                 *TEST_SEGMENT)
+        except URLError as e:
+            self.skipTest(str(e))
+        else:
+            self.assertEqual(ts.unit, units.Unit('strain'))
+            self.assertEqual(ts.sample_rate, 4096 * units.Hz)
+            self.assertEqual(ts.span, TEST_SEGMENT)
+            nptest.assert_allclose(
+                ts.value[:10],
+                [-2.86995824e-17, -2.77331804e-17, -2.67514139e-17,
+                 -2.57456587e-17, -2.47232689e-17, -2.37029998e-17,
+                 -2.26415858e-17, -2.15710360e-17, -2.04492206e-17,
+                 -1.93265041e-17])
+
+        # try GW150914 data at 16 kHz
+        try:
+            ts = self.TEST_CLASS.fetch_open_data(
+                self.channel[:2], LOSC_GW150914-16, LOSC_GW150914+16,
+                sample_rate=16384)
+        except URLError as e:
+            self.skipTest(str(e))
+        else:
+            self.assertEqual(ts.sample_rate, 16384 * units.Hz)
+
+        # make sure errors get thrown
+        self.assertRaises(ValueError, self.TEST_CLASS.fetch_open_data,
+                          self.channel[:2], 0, 1)
 
     def test_losc(self):
         _, tmpfile = tempfile.mkstemp(prefix='GWPY-TEST_LOSC_', suffix='.hdf')
@@ -512,6 +548,19 @@ class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(ts.x0, units.Quantity(931069952, 's'))
         self.assertEqual(ts.dx, units.Quantity(1.0, 's'))
         self.assertListEqual(list(ts.bits), LOSC_DQ_BITS)
+
+    def test_fetch_open_data(self):
+        skip = None
+        try:
+            ts = self.TEST_CLASS.fetch_open_data(self.channel[:2],
+                                                 *TEST_SEGMENT)
+        except URLError as e:
+            self.skipTest(str(e))
+        else:
+            self.assertEqual(ts.sample_rate, 1 * units.Hz)
+            self.assertEqual(ts.span, TEST_SEGMENT)
+            self.assertListEqual(list(ts.bits), LOSC_DQ_BITS)
+            self.assertEqual(ts.value[0], 131071)  # sanity check data
 
 
 # -- TimeSeriesDict tests ------------------------------------------------------
