@@ -498,6 +498,22 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(ts.dx, units.Quantity(0.000244140625, 's'))
         self.assertEqual(ts.name, 'Strain')
 
+    def test_q_transform(self):
+        gps = 968654558
+        duration = 32
+        start = int(round(gps - duration/2.))
+        end = start + duration
+        try:
+            ts = self.TEST_CLASS.get('H1:LDAS-STRAIN', start, end)
+        except (ImportError, RuntimeError) as e:
+            self.skipTest(str(e))
+        else:
+            qspecgram = ts.resample(4096).q_transform()
+            self.assertIsInstance(qspecgram, Spectrogram)
+            self.assertTupleEqual(qspecgram.shape, (32000, 2560))
+            self.assertAlmostEqual(qspecgram.q, 11.313708499)
+            self.assertAlmostEqual(qspecgram.value.max(), 37.7381136725)
+
 
 class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
     """`~unittest.TestCase` for the `~gwpy.timeseries.StateVector` object
