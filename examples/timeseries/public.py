@@ -27,21 +27,18 @@ These data are public, so we can load them directly from the web.
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.timeseries'
 
-# First: import everything we need (and nothing we don't need)
-from urllib2 import urlopen
-from numpy import asarray
+# The `TimeSeries` object has a `classmethod` dedicated to fetching open-access
+# data hosted by the LIGO Open Science Center, so we can just import that
+# object
 from gwpy.timeseries import TimeSeries
 
-# Next, download the data as a string of text
-data = urlopen('http://www.ligo.org/science/GW100916/L-strain_hp30-968654552-10.txt').read()
+# then call the `~TimeSeries.fetch_open_data` method, passing it the prefix
+# for the interferometer we want ('L1'), and the GPS start and stop times of
+# our query:
+data = TimeSeries.fetch_open_data('L1', 968654552, 968654562)
 
-# We can now parse the text as a list of floats, and generate a `TimeSeries`
-# by supplying the necessary metadata
-ts = TimeSeries(asarray(data.splitlines(), dtype=float),
-                epoch=968654552, sample_rate=16384, unit='strain')
-
-# Finally, we can make a plot:
-plot = ts.plot()
+# and then we can make a plot:
+plot = data.plot()
 plot.set_title('LIGO Livingston Observatory data for GW100916')
 plot.set_ylabel('Gravitational-wave strain amplitude')
-plot.show()
+plot.show(block=True)
