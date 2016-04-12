@@ -41,9 +41,9 @@ else:
                             nds2.channel.CHANNEL_TYPE_TEST_POINT |
                             nds2.channel.CHANNEL_TYPE_STATIC)
 
-
 from .. import version
 from ..io import (reader, writer)
+from ..segments import Segment
 from ..utils import with_import
 from ..utils.docstring import interpolate_docstring
 from ..utils.compat import OrderedDict
@@ -1504,6 +1504,161 @@ class TimeSeries(TimeSeriesBase):
         zpk = create_notch(frequency, self.sample_rate.value,
                            type=type, **kwargs)
         return self.filter(*zpk)
+
+    def q_transform(self, qrange=(4, 64), frange=(0, numpy.inf),
+                    gps=None, search=.5, tres=.001, fres=.5, outseg=None,
+                    **psdkwargs):
+        """Scan a `TimeSeries` using a multi-Q transform
+
+        Parameters
+        ----------
+        qrange : `tuple` of `float`, optional
+            `(low, high)` range of Qs to scan
+
+        frange : `tuple` of `float`, optional
+            `(log, high)` range of frequencies to scan
+
+        gps : `float`, optional
+            central time of interest for determine loudest Q-plane
+
+        search : `float`, optional
+            window around `gps` in which to find peak energies, only
+            used if `gps` is given
+
+        tres : `float`, optional
+            desired time resolution (seconds) of output `Spectrogram`
+
+        fres : `float`, `None`, optional
+            desired frequency resolution (Hertz) of output `Spectrogram`,
+            give `None` to skip this step and return the original resolution,
+            e.g. if you're going to do your own interpolation
+
+        outseg : `~gwpy.segments.Segment`, optional
+            GPS `[start, stop)` segment for output `Spectrogram`
+
+        **psdkwargs
+            keyword arguments to pass to `TimeSeries.psd` when whitening
+            the input data
+
+        Returns
+        -------
+        specgram : `~gwpy.spectrogram.Spectrogram`
+            output `Spectrogram` of normalised Q energy
+
+        Notes
+        -----
+        It is highly recommended to use the `outseg` keyword argument when
+        only a small window around a given GPS time is of interest. This
+        will speed up this method a little, but can greatly speed up
+        rendering the resulting `~gwpy.spectrogram.Spectrogram` using
+        `~matplotlib.axes.Axes.pcolormesh`.
+
+        If you aren't going to use `pcolormesh` in the end, don't worry.
+
+        See Also
+        --------
+        TimeSeries.psd
+            for documentation on acceptable `**psdkwargs`
+        TimeSeries.whiten
+            for documentation on how the whitening is done
+        gwpy.signal.qtransform
+            for code and documentation on how the Q-transform is implemented
+        scipy.interpolate
+            for details on how the interpolation is implemented. This method
+            uses `~scipy.interpolate.InterpolatedUnivariateSpline` to
+            cast all frequency rows to the same time-axis, and then
+            `~scipy.interpolate.interpd` to apply the desired frequency
+            resolution across the band.
+        """
+        from scipy.interpolate import (interp2d, InterpolatedUnivariateSpline)
+        from ..spectrogram import Spectrogram
+        from ..signal.qtransform import QTiling
+
+        if outseg is None:
+            outseg = self.span
+
+        # generate tiling
+        planes = QTiling(abs(self.span), self.sample_rate.value,
+                         qrange=qrange, frange=frange)
+
+        # condition data
+        psdkw = {
+            'method': 'median-mean',
+            'fftlength': 2,
+            'overlap': 1,
+        }
+        psdkw.update(psdkwargs)
+        fftlength = psdkw.pop('fftlength')
+        overlap = psdkw.pop('overlap')
+        asd = self.asd(fftlength, overlap, **psdkw)
+        wdata = self.whiten(fftlength, overlap, asd=asd)
+        fdata = wdata.fft().value
+
+        # set up results
+        peakq = None
+        peakenergy = 0
+
+        # Q-transform data for each `(Q, frequency)` row
+        for plane in planes:
+            normenergies = []
+            for row in plane:
+                # window data
+                windowed = fdata[row.get_data_indices()] * row.get_window()
+                # pad data, move negative frequencies to the end, and IFFT
+                padded = numpy.pad(windowed, row.padding, mode='constant')
+                wenergy = npfft.ifftshift(padded)
+                cenergy = npfft.ifft(wenergy)
+                # calculate normalized energy
+                energy = TimeSeries(
+                    cenergy.real ** 2. + cenergy.imag ** 2.,
+                    x0=self.x0, dx=self.duration/cenergy.size,
+                    copy=False)
+                meanenergy = energy.mean()
+                normenergies.append(energy / meanenergy)
+                # calculate the peak energy
+                if gps is None:
+                    peak = normenergies[-1].value.max()
+                else:
+                    peak = normenergies[-1].crop(
+                        gps-search, gps+search).value.max()
+                if peak > peakenergy:
+                    peakenergy = peak
+                    peakq = plane.q
+            # if this Q-plane is louder than the others, record its energies
+            if peakq == plane.q:
+                norms = normenergies
+                frequencies = plane.farray
+
+        # build regular Spectrogram from peak-Q data by interpolating each
+        # (Q, frequency) `TimeSeries` to have the same time resolution
+        nx = int(abs(Segment(*outseg)) / tres)
+        ny = frequencies.size
+        out = Spectrogram(numpy.zeros((nx, ny)), x0=outseg[0], dx=tres,
+                          frequencies=frequencies)
+        # FIXME: bug in Array2D.yindex setting
+        out._yindex = type(out.y0)(frequencies, out.y0.unit)
+        # record Q in output
+        out.q = peakq
+        # interpolate rows
+        for i, row in enumerate(norms):
+            row = row.crop(*outseg)
+            interp = InterpolatedUnivariateSpline(row.times.value, row.value)
+            out[:, i] = interp(out.times.value)
+
+        # then interpolate the spectrogram to increase the frequency resolution
+        # XXX: this is done because duncan doesn't like interpolated images,
+        #      because they don't support log scaling
+        if fres is None:  # unless user tells us not to
+            return out
+        else:
+            interp = interp2d(out.times.value, frequencies, out.value.T,
+                              kind='cubic')
+            f2 = numpy.arange(planes.frange[0], planes.frange[1], fres)
+            new = Spectrogram(interp(out.times.value, f2).T,
+                              x0=outseg[0], dx=tres,
+                              f0=planes.frange[0], df=fres)
+            new.q = peakq
+            return new
 
 
 @as_series_dict_class(TimeSeries)
