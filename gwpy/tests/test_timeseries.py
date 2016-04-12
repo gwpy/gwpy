@@ -540,15 +540,15 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         start = int(round(gps - duration/2.))
         end = start + duration
         try:
-            ts = self.TEST_CLASS.get('H1:LDAS-STRAIN', start, end)
+            ts = self.TEST_CLASS.fetch_open_data('H1', start, end)
         except (ImportError, RuntimeError) as e:
             self.skipTest(str(e))
         else:
-            qspecgram = ts.resample(4096).q_transform()
+            qspecgram = ts.q_transform()
             self.assertIsInstance(qspecgram, Spectrogram)
             self.assertTupleEqual(qspecgram.shape, (32000, 2560))
-            self.assertAlmostEqual(qspecgram.q, 11.313708499)
-            self.assertAlmostEqual(qspecgram.value.max(), 37.7381136725)
+            self.assertAlmostEqual(qspecgram.q, 11.31370849898476)
+            self.assertAlmostEqual(qspecgram.value.max(), 37.158404056005764)
 
 
 class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
