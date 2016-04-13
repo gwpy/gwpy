@@ -32,25 +32,25 @@ duration = 32
 start = int(round(gps - duration/2.))
 end = start + duration
 
-# next, we import the `TimeSeries` and :meth:`~TimeSeries.get` the data:
+# next, we import the `TimeSeries` and fetch some open data from
+# `LOSC <//losc.ligo.org>`_:
 from gwpy.timeseries import TimeSeries
-data = TimeSeries.get('H1:LDAS-STRAIN', start, end)
-
-# In order to speed up the operation, we choose to downsample our data
-data = data.resample(4096)
+data = TimeSeries.fetch_open_data('H1', start, end)
 
 # and next we generate the `~TimeSeries.q_transform` of these data:
 qspecgram = data.q_transform()
 
 # Now, we can plot the resulting `~gwpy.spectrogram.Spectrogram`, focusing on a
 # specific window around the interesting time
+#
 # .. note::
 #
-#    Using `~gwpy.spectrogram.Spectrogram.crop` is highly recommended at this stage
-#    because rendering the high-resolution spectrogram as it is done here is very
-#    slow (for experts this is because we're using `~matplotlib.axes.Axes.pcolormesh`
-#    and not any sort of image interpolation, mainly to support both linear and #
-#    log scaling nicely)
+#    Using `~gwpy.spectrogram.Spectrogram.crop` is highly recommended at
+#    this stage because rendering the high-resolution spectrogram as it is
+#    done here is very slow (for experts this is because we're using
+#    `~matplotlib.axes.Axes.pcolormesh` and not any sort of image
+#    interpolation, mainly to support both linear and log scaling nicely)
+
 plot = qspecgram.crop(gps-.3, gps+.1).plot(figsize=[8, 6])
 ax = plot.gca()
 ax.set_epoch(gps)
@@ -58,7 +58,7 @@ ax.set_yscale('log')
 ax.set_xlabel('Time [milliseconds]')
 ax.set_ylim(50, 1000)
 ax.grid(True, axis='y', which='both')
-plot.add_colorbar(clim=[0, 25], cmap='viridis', label='Normalized energy')
+plot.add_colorbar(cmap='viridis', label='Normalized energy')
 plot.show()
 
 # I think we just detected a gravitational wave signal! But, before you get too exited, this is an example of a 'blind
