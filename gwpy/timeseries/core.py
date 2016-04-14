@@ -970,8 +970,11 @@ class TimeSeriesBaseDict(OrderedDict):
         for ft, clist in frametypes.iteritems():
             if verbose:
                 gprint("Reading data from %s frames..." % ft, end=' ')
-            # find frames
+            # parse as a ChannelList
             channellist = ChannelList.from_names(*clist)
+            # strip trend tags from channel names
+            clist = [c.name for c in channellist]
+            # find observatory for this group
             if observatory is None:
                 try:
                     observatory = ''.join(
@@ -979,6 +982,7 @@ class TimeSeriesBaseDict(OrderedDict):
                 except TypeError as e:
                     e.args = ("Cannot parse list of IFOs from channel names",)
                     raise
+            # find frames
             connection = datafind.connect()
             cache = connection.find_frame_urls(observatory, ft, start, end,
                                                urltype='file')

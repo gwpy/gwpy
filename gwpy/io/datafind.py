@@ -20,15 +20,21 @@
 """
 
 import os.path
+import re
 
 from glue.lal import CacheEntry
 
 from .. import version
 from ..time import to_gps
-from ..utils import with_import
+from ..utils import (shell, with_import)
 
 __version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+S6_HOFT_NAME = re.compile('\A(H|L)1:LDAS-STRAIN\Z')
+S6_RECOLORED_TYPE = re.compile('\AT1200307_V4_EARLY_RECOLORED_V2\Z')
+SECOND_TREND_TYPE = re.compile('\A([A-Z][0-9]_)?T\Z')
+MINUTE_TREND_TYPE = re.compile('\A([A-Z][0-9]_)?M\Z')
 
 
 @with_import('glue.datafind')
@@ -59,6 +65,30 @@ def connect(host=None, port=None):
 def find_frametype(channel, gpstime=None, frametype_match=None,
                    host=None, port=None, return_all=False, exclude_tape=False):
     """Find the frametype(s) that hold data for a given channel
+
+    Parameters
+    channel : `str`, `~gwpy.detector.Channel`
+        the channel to be found
+    gpstime : `int`, optional
+        target GPS time at which to find correct type
+    frametype_match : `str`, optiona
+        regular expression to use for frametype `str` matching
+    host : `str`, optional
+        name of datafind host to use
+    port : `int`, optional
+        port on datafind host to use
+    return_all : `bool`, optional, default: `False`
+        return all found types, default is to return to 'best' match
+    exclude_tape : `bool`, optional, default: `False`
+        do not test types whose frame files are stored on tape (not on
+        spinning disk)
+
+    Returns
+    -------
+    frametype : `str`
+        if `return_all` is `False`, name of best match frame type
+    types : `list` of `str`
+        if `return_all` is `True`, the list of all matching frame types
     """
     from ..detector import Channel
     channel = Channel(channel)
@@ -87,14 +117,22 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     # sort frames by allocated block size and regular size
     # (to put frames on tape at the bottom of the list)
     frames.sort(key=lambda x: (on_tape(x[1]), num_channels(x[1])))
+    # if looking for LDAS-STRAIN, put recoloured types at the end
+    if S6_HOFT_NAME.match(name):
+        frames.sort(key=lambda x: S6_RECOLORED_TYPE.match(x[0]) and 2 or 1)
+    if channel.type == 'm-trend':
+        frames.sort(key=lambda x: MINUTE_TREND_TYPE.match(x[0]) and 1 or 2)
+    elif channel.type == 's-trend':
+        frames.sort(key=lambda x: SECOND_TREND_TYPE.match(x[0]) and 1 or 2)
+
     # search each frametype for the given channel
     found = []
     for ft, path in frames:
-        if get_channel_type(name, path):
-            if not return_all:
-                return ft
-            else:
-                found.append(ft)
+        inframe = channel_in_frame(name, path)
+        if inframe and not return_all:
+            return ft
+        elif inframe:
+            found.append(ft)
     if len(found) == 0 and gpstime:
         raise ValueError("Cannot locate %r in any known frametype at GPS=%d"
                          % (name, gpstime))
@@ -107,6 +145,21 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
 @with_import('lalframe')
 def num_channels(framefile):
     """Find the total number of channels in this framefile
+
+    Parameters
+    ----------
+    framefile : `str`
+        path to GWF-format file on disk
+
+    Returns
+    -------
+    n : `int`
+        the total number of channels found in the table of contents for this
+        file
+
+    Notes
+    -----
+    This method requires LALFrame
     """
     frfile = lalframe.FrameUFrFileOpen(framefile, "r")
     frtoc = lalframe.FrameUFrTOCRead(frfile)
@@ -150,6 +203,34 @@ def get_channel_type(channel, framefile):
                     return type_
             i += 1
     return False
+
+
+def channel_in_frame(channel, framefile):
+    """Determine whether a channel is stored in this framefile
+
+    Parameters
+    ----------
+    channel : `str`
+        name of channel to find
+    framefile : `str`
+        path of GWF file to test
+
+    Returns
+    -------
+    inframe : `bool`
+        whether this channel is included in the table of contents for
+        the given framefile
+    """
+    name = str(channel)
+    try:
+        out = shell.call(['FrChannels', framefile])[0]
+    except shell.CalledProcessError:
+        return get_channel_type(channel, framefile) is not False
+    else:
+        for line in out.splitlines():
+            if line.split(' ')[0] == name:
+                return True
+        return False
 
 
 def find_best_frametype(channel, start, end, urltype='file',
