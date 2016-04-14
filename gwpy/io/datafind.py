@@ -20,6 +20,7 @@
 """
 
 import os.path
+import re
 
 from glue.lal import CacheEntry
 
@@ -29,6 +30,11 @@ from ..utils import (shell, with_import)
 
 __version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+S6_HOFT_NAME = re.compile('\A(H|L)1:LDAS-STRAIN\Z')
+S6_RECOLORED_TYPE = re.compile('\AT1200307_V4_EARLY_RECOLORED_V2\Z')
+SECOND_TREND_TYPE = re.compile('\A([A-Z][0-9]_)?T\Z')
+MINUTE_TREND_TYPE = re.compile('\A([A-Z][0-9]_)?M\Z')
 
 
 @with_import('glue.datafind')
@@ -87,6 +93,14 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     # sort frames by allocated block size and regular size
     # (to put frames on tape at the bottom of the list)
     frames.sort(key=lambda x: (on_tape(x[1]), num_channels(x[1])))
+    # if looking for LDAS-STRAIN, put recoloured types at the end
+    if S6_HOFT_NAME.match(name):
+        frames.sort(key=lambda x: S6_RECOLORED_TYPE.match(x[0]) and 2 or 1)
+    if channel.type == 'm-trend':
+        frames.sort(key=lambda x: MINUTE_TREND_TYPE.match(x[0]) and 1 or 2)
+    elif channel.type == 's-trend':
+        frames.sort(key=lambda x: SECOND_TREND_TYPE.match(x[0]) and 1 or 2)
+
     # search each frametype for the given channel
     found = []
     for ft, path in frames:
