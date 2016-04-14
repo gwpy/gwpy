@@ -36,6 +36,7 @@ except NameError:
 import re
 from subprocess import (PIPE, Popen)
 
+from ..utils.shell import which
 from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
@@ -45,38 +46,6 @@ __all__ = ['kinit']
 
 class KerberosError(RuntimeError):
     pass
-
-
-def which(program):
-    """Find full path of executable program
-
-    Parameters
-    ----------
-    program : `str`
-        path of executable name for which to search
-
-    Returns
-    -------
-    programpath
-        the full absolute path of the executable
-
-    Raises
-    ------
-    ValueError
-        if not executable program is found
-    """
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-    fpath = os.path.split(program)[0]
-    if fpath:
-        if is_exe(program):
-            return program
-    else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-    raise ValueError("No executable '%s' found in PATH" % program)
 
 
 def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
