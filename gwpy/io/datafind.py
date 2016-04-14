@@ -25,7 +25,7 @@ from glue.lal import CacheEntry
 
 from .. import version
 from ..time import to_gps
-from ..utils import with_import
+from ..utils import (shell, with_import)
 
 __version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -90,11 +90,11 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     # search each frametype for the given channel
     found = []
     for ft, path in frames:
-        if get_channel_type(name, path):
-            if not return_all:
-                return ft
-            else:
-                found.append(ft)
+        inframe = channel_in_frame(name, path)
+        if inframe and not return_all:
+            return ft
+        elif inframe:
+            found.append(ft)
     if len(found) == 0 and gpstime:
         raise ValueError("Cannot locate %r in any known frametype at GPS=%d"
                          % (name, gpstime))
@@ -150,6 +150,34 @@ def get_channel_type(channel, framefile):
                     return type_
             i += 1
     return False
+
+
+def channel_in_frame(channel, framefile):
+    """Determine whether a channel is stored in this framefile
+
+    Parameters
+    ----------
+    channel : `str`
+        name of channel to find
+    framefile : `str`
+        path of GWF file to test
+
+    Returns
+    -------
+    inframe : `bool`
+        whether this channel is included in the table of contents for
+        the given framefile
+    """
+    name = str(channel)
+    try:
+        out = shell.call(['FrChannels', framefile])[0]
+    except shell.CalledProcessError:
+        return get_channel_type(channel, framefile) is not False
+    else:
+        for line in out.splitlines():
+            if line.split(' ')[0] == name:
+                return True
+        return False
 
 
 def find_best_frametype(channel, start, end, urltype='file',
