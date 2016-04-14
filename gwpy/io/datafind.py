@@ -65,6 +65,30 @@ def connect(host=None, port=None):
 def find_frametype(channel, gpstime=None, frametype_match=None,
                    host=None, port=None, return_all=False, exclude_tape=False):
     """Find the frametype(s) that hold data for a given channel
+
+    Parameters
+    channel : `str`, `~gwpy.detector.Channel`
+        the channel to be found
+    gpstime : `int`, optional
+        target GPS time at which to find correct type
+    frametype_match : `str`, optiona
+        regular expression to use for frametype `str` matching
+    host : `str`, optional
+        name of datafind host to use
+    port : `int`, optional
+        port on datafind host to use
+    return_all : `bool`, optional, default: `False`
+        return all found types, default is to return to 'best' match
+    exclude_tape : `bool`, optional, default: `False`
+        do not test types whose frame files are stored on tape (not on
+        spinning disk)
+
+    Returns
+    -------
+    frametype : `str`
+        if `return_all` is `False`, name of best match frame type
+    types : `list` of `str`
+        if `return_all` is `True`, the list of all matching frame types
     """
     from ..detector import Channel
     channel = Channel(channel)
@@ -121,6 +145,21 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
 @with_import('lalframe')
 def num_channels(framefile):
     """Find the total number of channels in this framefile
+
+    Parameters
+    ----------
+    framefile : `str`
+        path to GWF-format file on disk
+
+    Returns
+    -------
+    n : `int`
+        the total number of channels found in the table of contents for this
+        file
+
+    Notes
+    -----
+    This method requires LALFrame
     """
     frfile = lalframe.FrameUFrFileOpen(framefile, "r")
     frtoc = lalframe.FrameUFrTOCRead(frfile)
