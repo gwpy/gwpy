@@ -206,6 +206,23 @@ class TimeSeriesTestMixin(object):
                               observatory='X')
 
     def test_find_best_frametype(self):
+        from gwpy.io import datafind
+        # check we can actually run this test here
+        try:
+            os.environ['LIGO_DATAFIND_SERVER']
+        except KeyError as e:
+            self.skipTest(str(e))
+        # test a few (channel, frametype) pairs
+        for channel, target in [
+                ('H1:GDS-CALIB_STRAIN', 'H1_HOFT_C00'),
+                ('L1:IMC-ODC_CHANNEL_OUT_DQ', 'L1_R'),
+                ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend', 'H1_T'),
+                ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend', 'H1_M')]:
+            ft = datafind.find_best_frametype(
+                channel, 1143504017, 1143504017+100)
+            self.assertEqual(ft, target)
+
+        # test that this works end-to-end as part of a TimeSeries.find
         try:
             ts = self.TEST_CLASS.find(FIND_CHANNEL, FIND_GPS, FIND_GPS+1)
         except (ImportError, RuntimeError) as e:

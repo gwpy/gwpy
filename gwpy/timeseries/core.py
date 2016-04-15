@@ -973,7 +973,7 @@ class TimeSeriesBaseDict(OrderedDict):
             # parse as a ChannelList
             channellist = ChannelList.from_names(*clist)
             # strip trend tags from channel names
-            clist = [c.name for c in channellist]
+            names = [c.name for c in channellist]
             # find observatory for this group
             if observatory is None:
                 try:
@@ -991,8 +991,11 @@ class TimeSeriesBaseDict(OrderedDict):
                                    % (observatory, ft, start, end))
             # read data
             readargs.setdefault('format', 'gwf')
-            out.append(cls.read(cache, clist, start=start, end=end, pad=pad,
-                                dtype=dtype, nproc=nproc, **readargs))
+            new = cls.read(cache, names, start=start, end=end, pad=pad,
+                           dtype=dtype, nproc=nproc, **readargs)
+            # map back to user-given channel name and append
+            out.append(type(new)((key, new[c]) for
+                                 (key, c) in zip(clist, names)))
             if verbose:
                 gprint("Done")
         return out

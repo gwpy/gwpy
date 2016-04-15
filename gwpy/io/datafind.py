@@ -33,8 +33,8 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 S6_HOFT_NAME = re.compile('\A(H|L)1:LDAS-STRAIN\Z')
 S6_RECOLORED_TYPE = re.compile('\AT1200307_V4_EARLY_RECOLORED_V2\Z')
-SECOND_TREND_TYPE = re.compile('\A([A-Z][0-9]_)?T\Z')
-MINUTE_TREND_TYPE = re.compile('\A([A-Z][0-9]_)?M\Z')
+SECOND_TREND_TYPE = re.compile('\A(.*_)?T\Z')  # T or anything ending in _T
+MINUTE_TREND_TYPE = re.compile('\A(.*_)?M\Z')  # M or anything ending in _M
 
 
 @with_import('glue.datafind')
@@ -120,10 +120,18 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     # if looking for LDAS-STRAIN, put recoloured types at the end
     if S6_HOFT_NAME.match(name):
         frames.sort(key=lambda x: S6_RECOLORED_TYPE.match(x[0]) and 2 or 1)
+
+    # need to handle trends as a special case
     if channel.type == 'm-trend':
         frames.sort(key=lambda x: MINUTE_TREND_TYPE.match(x[0]) and 1 or 2)
+        # if no minute-trend types found, force an error
+        if frames and not MINUTE_TREND_TYPE.match(frames[0][0]):
+            frames = []
     elif channel.type == 's-trend':
         frames.sort(key=lambda x: SECOND_TREND_TYPE.match(x[0]) and 1 or 2)
+        # if no second-trend types found, force an error
+        if frames and not SECOND_TREND_TYPE.match(frames[0][0]):
+            frames = []
 
     # search each frametype for the given channel
     found = []
@@ -133,11 +141,14 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
             return ft
         elif inframe:
             found.append(ft)
-    if len(found) == 0 and gpstime:
-        raise ValueError("Cannot locate %r in any known frametype at GPS=%d"
-                         % (name, gpstime))
-    elif len(found) == 0:
-        raise ValueError("Cannot locate %r in any known frametype" % name)
+    if exclude_tape:
+        msg = "Cannot locate %r in any known frametype that isn't on tape"
+    else:
+        msg = "Cannot locate %r in any known frametype"
+    if gpstime:
+        msg += " at GPS=%d" % gpstime
+    if len(found) == 0:
+        raise ValueError(msg % name)
     else:
         return found
 
