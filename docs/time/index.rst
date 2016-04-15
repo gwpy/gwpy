@@ -1,3 +1,5 @@
+.. _time:
+
 .. currentmodule:: gwpy.time
 
 ####################
