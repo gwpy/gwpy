@@ -19,34 +19,27 @@ First steps
 
    What is GWpy? <overview>
    How do I install GWpy? <install>
-   What should I do first? <getting_started>
 
-Working with gravitational-wave interferometer data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Working with data
+~~~~~~~~~~~~~~~~~
 
-First, let's consider the core objects used to represent instrumental data:
+**Working with interferometer data**
 
 .. toctree::
    :maxdepth: 2
 
-   time/index
-   detector/channel
    timeseries/index
-   spectrum/index
-   spectrogram/index
-   segments/index
+   signal/index
 
-After that, there are a few more advanced objects that extend the functionality of those above:
+**Working with state information and segments**
 
 .. toctree::
    :maxdepth: 2
 
+   segments/index
    timeseries/statevector
-   spectrum/variance
-   table/index
 
-Visualisation
-~~~~~~~~~~~~~
+**Visualising data**
 
 .. toctree::
    :maxdepth: 1
