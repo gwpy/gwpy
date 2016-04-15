@@ -1,3 +1,5 @@
+.. _install:
+
 ***************
 Installing GWpy
 ***************
@@ -148,12 +150,25 @@ You can then, if you wish, install the package by running the ``setup.py`` scrip
 Available installations
 ***********************
 
-If you are a member of the LIGO Scientific Collaboration, both the GWpy and astropy packages are installed on all shared computing centres.
+If you are a member of the LIGO Scientific Collaboration, a `virtualenv <https://virtualenv.pypa.io/en/latest/>`_ is available for you to use on the LIGO Data Grid, providing an isolated environment including GWpy and its dependencies.
 
-If you use the ``bash`` shell, you can source the following script to set up the environment for the GWpy package
+How you enter this environment depends on which shell you are using:
+
+**Bash**
 
 .. code-block:: bash
 
-    source /home/detchar/opt/gwpysoft/etc/gwpy-user-env.sh
+   . ~detchar/opt/gwpysoft/bin/activate
 
-If anyone wants to write an equivalent shell script for the ``csh`` shell, please e-mail it to `Duncan <duncan.macleod@ligo.org>`_.
+**Csh**
+
+.. code-block:: csh
+
+   . ~detchar/opt/gwpysoft/bin/activate.csh
+
+In either case, once you are finished with your work, if you want to return to your original environment, you can `deactivate` the virtualenv:
+
+.. code-block:: bash
+
+   deactivate
+
