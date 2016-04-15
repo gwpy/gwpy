@@ -1,3 +1,5 @@
+.. _channel:
+
 .. currentmodule:: gwpy.detector
 
 ####################
