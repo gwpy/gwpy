@@ -100,7 +100,10 @@ class GWpyClassDocumenter(ClassDocumenter):
                     items = []
                     want_all = (self.options.inherited_members or
                                 self.options.members is ALL)
-                    members = zip(*self.get_object_members(want_all)[1])[0]
+                    try:
+                        members = zip(*self.get_object_members(want_all)[1])[0]
+                    except IndexError:
+                        members = []
                     if self.options.exclude_members:
                         members = [m for m in members if
                                    m not in self.options.exclude_members]
