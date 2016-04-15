@@ -47,12 +47,11 @@ clean:
 	-rm -rf $(BUILDDIR)
 	-rm -rf _generated
 	-rm -f lal*.tag
-	-rm -f pycbc.inv
 
 apidoc:
 	sphinx-apidoc -o _generated ../gwpy
 
-html: cli-examples examples lal.tag lalframe.tag pycbc.inv
+html: cli-examples examples lal.tag lalframe.tag
 	@cp -r $(BUILDDIR)/cli_examples $(BUILDDIR)/html
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
@@ -273,6 +272,3 @@ $(CLIEXAMPLEDIR)/cli-spg-01.png: $(CLIEXAMPLEDIR)
 
 %.tag:
 	-wget --no-check-certificate http://software.ligo.org/docs/lalsuite/$*/$*.tag -O $@ --quiet
-
-pycbc.inv:
-	-gsiscp ldas-pcdev2.ligo.caltech.edu:~cbc/public_html/docs/pycbc/objects.inv pycbc.inv
