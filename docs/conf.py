@@ -62,7 +62,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
-    'sphinx.ext.pngmath',
+    'sphinx.ext.imgmath',
     'sphinx.ext.autosummary',
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.linkcode',
@@ -183,8 +183,9 @@ html_theme_options = {
     'source_link_position': None,
     'navbar_site_name': "Contents",
     'navbar_links': [("Examples", "examples/index")],
-    'navbar_sidebarrel': False,
+    'navbar_sidebarrel': True,
     'navbar_pagenav': False,
+    'bootswatch_theme': 'flatly',
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
@@ -268,9 +269,7 @@ intersphinx_mapping = {
     'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
     'matplotlib': ('http://matplotlib.sourceforge.net/', None),
     'astropy': ('http://docs.astropy.org/en/stable/', None),
-    'gwpy': ('http://gwpy.github.io/docs/stable/', None),
-    'pycbc': ('https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/',
-              'pycbc.inv'),
+    'pycbc': ('http://ligo-cbc.github.io/pycbc/latest/html/', None),
 }
 
 

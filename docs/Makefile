@@ -18,11 +18,7 @@ EXAMPLEDIRS := $(shell cd ../examples/ && ls -d */)
 
 CLIPROG       = ../bin/gwpy-plot
 CLIEXAMPLEDIR = $(BUILDDIR)/cli_examples
-CLIEXAMPLES   = $(CLIEXAMPLEDIR)/cli-01.png $(CLIEXAMPLEDIR)/cli-02.png $(CLIEXAMPLEDIR)/cli-ts-01.png \
-                $(CLIEXAMPLEDIR)/cli-ts-02.png $(CLIEXAMPLEDIR)/cli-sp-01.png $(CLIEXAMPLEDIR)/cli-sp-02.png \
-                $(CLIEXAMPLEDIR)/cli-cohg-01.png $(CLIEXAMPLEDIR)/cli-spg-01.png $(CLIEXAMPLEDIR)/cli-coh-01.png
-
-.PHONY: help clean apidoc html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest examples  $(CLIEXAMPLES)
+.PHONY: help clean apidoc html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest
 
 #This is needed with git because git doesn't create a dir if it's empty
 $(shell [ -d "_static" ] || mkdir -p _static)
@@ -51,12 +47,11 @@ clean:
 	-rm -rf $(BUILDDIR)
 	-rm -rf _generated
 	-rm -f lal*.tag
-	-rm -f pycbc.inv
 
 apidoc:
 	sphinx-apidoc -o _generated ../gwpy
 
-html: $(CLIEXAMPLES) examples lal.tag lalframe.tag pycbc.inv
+html: cli-examples examples lal.tag lalframe.tag
 	@cp -r $(BUILDDIR)/cli_examples $(BUILDDIR)/html
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
@@ -151,6 +146,7 @@ doctest:
 	@echo "Testing of doctests in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/doctest/output.txt."
 
+.PHONY: examples
 examples: $(addprefix examples/,$(EXAMPLES:py=rst))
 
 ../examples/%/index.rst:
@@ -188,6 +184,17 @@ examples/%.rst: export INDEX=$(addprefix examples/,$(dir $*))index.rst
 examples/%.rst: ex2rst.py ../examples/%.py examples/index.rst
 	@$(MAKE) $(INDEX)
 	python ex2rst.py ../examples/$*.py $@
+
+.PHONY: cli-examples
+cli-examples: $(CLIEXAMPLEDIR)/cli-01.png \
+              $(CLIEXAMPLEDIR)/cli-02.png \
+              $(CLIEXAMPLEDIR)/cli-ts-01.png \
+              $(CLIEXAMPLEDIR)/cli-ts-02.png \
+              $(CLIEXAMPLEDIR)/cli-sp-01.png \
+              $(CLIEXAMPLEDIR)/cli-sp-02.png \
+              $(CLIEXAMPLEDIR)/cli-cohg-01.png \
+              $(CLIEXAMPLEDIR)/cli-spg-01.png \
+              $(CLIEXAMPLEDIR)/cli-coh-01.png
 
 $(CLIEXAMPLEDIR):
 	@echo "building cli examples"
@@ -265,6 +272,3 @@ $(CLIEXAMPLEDIR)/cli-spg-01.png: $(CLIEXAMPLEDIR)
 
 %.tag:
 	-wget --no-check-certificate http://software.ligo.org/docs/lalsuite/$*/$*.tag -O $@ --quiet
-
-pycbc.inv:
-	-gsiscp ldas-pcdev2.ligo.caltech.edu:~cbc/public_html/docs/pycbc/objects.inv pycbc.inv

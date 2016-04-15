@@ -41,6 +41,7 @@ events = SnglBurstTable.read('../../gwpy/tests/data/H1-LDAS_STRAIN-968654552-10.
 rates = events.binned_event_rates(1, 'snr', [2, 3, 5, 8], operator='>=',
                                   start=968654552, end=968654562)
 # .. note::
+#
 #    The list `[2, 3, 5, 8]` and operator `>=` specifies SNR tresholds of 
 #    2, 3, 5, and 8.
 

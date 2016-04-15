@@ -49,30 +49,6 @@ class GWpyClassDocumenter(ClassDocumenter):
     """
     objtype = 'class'
 
-    def add_directive_header(self, sig):
-        if self.doc_as_attr:
-            self.directivetype = 'attribute'
-        Documenter.add_directive_header(self, sig)
-
-        # add inheritance info, if wanted
-        if not self.doc_as_attr and self.options.show_inheritance:
-            self.add_line(u'', '<autodoc>')
-            if (hasattr(self.object, '__bases__') and
-                    len(self.object.__bases__)):
-                bases = []
-                for b in self.object.__bases__:
-                    if b.__module__ == '__builtin__':
-                        bases.append(u':class:`%s`' % b.__name__)
-                    elif b.__module__.startswith('gwpy.'):
-                        bases.append(u':class:`%s.%s`'
-                                     % (b.__module__.rsplit('.', 1)[0],
-                                        b.__name__))
-                    else:
-                        bases.append(u':class:`%s.%s`'
-                                     % (b.__module__, b.__name__))
-                self.add_line(u'   Bases: %s' % ', '.join(bases),
-                              '<autodoc>')
-
     def add_content(self, more_content, no_docstring=False):
         if self.doc_as_attr:
             super(GWpyClassDocumenter, self).add_content(
@@ -100,7 +76,10 @@ class GWpyClassDocumenter(ClassDocumenter):
                     items = []
                     want_all = (self.options.inherited_members or
                                 self.options.members is ALL)
-                    members = zip(*self.get_object_members(want_all)[1])[0]
+                    try:
+                        members = zip(*self.get_object_members(want_all)[1])[0]
+                    except IndexError:
+                        members = []
                     if self.options.exclude_members:
                         members = [m for m in members if
                                    m not in self.options.exclude_members]

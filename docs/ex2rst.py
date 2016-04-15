@@ -75,6 +75,8 @@ for i,line in enumerate(lines):
 
     # skip empty lines not in a block quote
     if not line and not indoc:
+        if output:
+            output.append('')
         continue
 
     # find code
@@ -82,11 +84,9 @@ for i,line in enumerate(lines):
         incode = False
         output.append('')
 
-    # find plots
-
     # comments
     if line.startswith('#'):
-        output.append(line.strip('# '))
+        output.append(line[2:])
     # metadata
     elif line.startswith('__'):
         key, value = map(lambda x: x.strip(' _="\'').rstrip(' _="\''),

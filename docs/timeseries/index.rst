@@ -1,137 +1,133 @@
+.. _timeseries:
+
 .. currentmodule:: gwpy.timeseries
 
-#######################
-The :class:`TimeSeries`
-#######################
-
-.. code-block:: python
-
-   >>> from gwpy.timeseries import TimeSeries
-
+#############################
+Accessing interferometer data
+#############################
 
 Gravitational-wave detectors are time-domain instruments, attempting to record gravitational-wave amplitude as a differential change in the lengths of each of the interferometer arms.
+The primary output of these detectors is a single time-stream of gravitational-wave strain.
+
 Alongside these data, thousands of auxiliary instrumental control and error signals and environmental monitors are recorded in real-time and recorded to disk and archived for off-line study.
+The data are archived in ``.gwf`` files, a custom binary format that efficiently stores the time streams and all necessary metadata, for more details about this particular data format, take a look at the specification document `LIGO-T970130 <https://dcc.ligo.org/LIGO-T970130/public>`_.
 
-GWpy represents these data through the :class:`TimeSeries` object, a sub-class of the :class:`numpy.ndarray` containing the data themselves and a full set of metadata.
+==================
+Remote data access
+==================
 
-Any `TimeSeries` can be generated from a standard `~numpy.ndarray` or `list` by providing the data and the minimal :attr:`~TimeSeries.epoch` and :attr:`~TimeSeries.sample_rate` metadata::
+GWpy provides ways to download these data, one for authorised collaborators, and another for public data releases:
 
-   >>> series = TimeSeries([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], epoch=1000000000, sample_rate=1)
-   >>> print(series)
-   TimeSeries([ 1  2  3  4  5  6  7  8  9 10],
-              name: None,
-              unit: None,
-              epoch: 2011-09-14 01:46:59.000,
-              channel: None,
-              sample_rate: 1 Hz)
+============================  ===========  ===============================================
+Method                        Restricted?  Description
+============================  ===========  ===============================================
+`TimeSeries.get`              LIGO.ORG     Fetch data via NDS2 or `gw_data_find`
+`TimeSeries.fetch_open_data`  public       Fetch data from LIGO Open Science Center (LOSC)
+============================  ===========  ===============================================
 
-The full set of metadata that can be provided is as follows:
+Public
+------
 
-.. autosummary::
+For example, to fetch 32 seconds of strain data around event `GW150914 <http://dx.doi.org/10.1103/PhysRevLett.116.061102>`_::
 
-   ~TimeSeries.name
-   ~TimeSeries.unit
-   ~TimeSeries.epoch
-   ~TimeSeries.sample_rate
-   ~TimeSeries.channel
+    from gwpy.timeseries import TimeSeries
+    data = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
 
-=============================
-Accessing interferometer data
-=============================
+Here the ``'L1'`` refers to the `LIGO Livingston Observatory <https://www.ligo.caltech.edu/LA>`_ (``'H1'`` would be the `LIGO Hanford Observatory <https://www.ligo.caltech.edu/WA>`_), and the two 10-digit numbers are GPS times (for more details on GPS timing, see :ref:`time`). You could just as easily use a more readable format::
 
-As described above, the data from each instrument are archived for off-line study in gravitational-wave frame (``.gwf``) files.
-To learn more about this particular data format, take a look at the specification document `LIGO-T970130 <https://dcc.ligo.org/LIGO-T970130/public>`_.
-These files are stored on disk by the LIGO Data Grid and can be either accessed either directly or remotely.
+    data = TimeSeries.fetch_open_data('L1', 'Sep 14 2015 09:50:29', 'Sep 14 2015 09:51:01')
 
-The easiest way to access interferometer data is to use `TimeSeries.get`:
+.. note::
 
-.. automethod:: TimeSeries.get
-   :noindex:
+   These data are part of small snippet of LIGO data provided by the `LIGO Open Science Center <https://losc.ligo.org>`_, and are freely available to the public, see the LOSC website for full details on which data are available.
 
-This method will try direct file access and remote NDS2 access in order to get you the data you want, with the minimum of inputs (direct file access is preferred)::
+LIGO.ORG
+--------
 
-    >>> from gwpy.timeseries import TimeSeries
-    >>> data = TimeSeries.get('L1:PSL-ODC_CHANNEL_OUT_DQ', 1067042880, 1067042912)
+If you have LIGO.ORG credentials, meaning you're a member of the LIGO Scientific Collaboration or the Virgo Collaboration, you need to specify the exact name of the :ref:`channel <channel>` you want::
 
-If you want to be more specific, there are three other methods that you can use that allow more control over the data access:
+    data = TimeSeries.get('H1:GDS-CALIB_STRAIN', 1126259446, 1126259478)
 
-.. autosummary::
+With authenticated access, you also have access to the thousands of auxiliary channels mentioned above, if you run.::
 
-   TimeSeries.fetch
-   TimeSeries.find
-   TimeSeries.read
+    gnd = TimeSeries.get('L1:ISI-GND_STS_ITMY_Z_DQ', 'Jan 1 2016', 'Jan 1 2016 01:00')
 
-All of these should return identical `TimeSeries` objects.
+you'll get back one hour of data from the vertical-ground-motion seismometer located near the ITMY vacuum enclosure at LIGO Livingston.
 
-For more details on accessing data via either of these sources, or from publicly-released data files, please read the following tutorials:
+The `TimeSeries.get` method tries direct file access (using `glue.datafind` for file discovery) first, then falls back to using the Network Data Server (NDS2) for remote access. If you want to manually use NDS2 for remote access you can instead use the `TimeSeries.fetch` method.
 
-.. toctree::
-   :maxdepth: 1
+=================
+Local data access
+=================
 
-   gwf
-   nds
-   public-data
+If you have direct access to one or more files of data, either on the LIGO Data Grid (where the ``gwf`` files are stored) or you have some files of your own, you can use the `TimeSeries.read` method:
 
-========================
-`TimeSeries` collections
-========================
+This method is an example of the unified input/output system provided by `astropy <https://astropy.org>`_, so should respond in the same way whether you give it a ``gwf`` file, or an `''hdf5''` file, or a simple `''txt''` file.:
 
-A single `TimeSeries` is meant to represent one stream of contiguous data from a single source.
-There are two collections provided that allow you to bundle multiple `TimeSeries` from a single source, and multiple `TimeSeries` of the same epoch from a number of sources:
+    data = TimeSeries.read('mydata.gwf', 'L1:GDS-CALIB_STRAIN')
 
---------------------
-The `TimeSeriesList`
---------------------
+.. note::
 
-The `TimeSeriesList` is an extension of the builtin `list` type to allow easy collection and manipulation of a number of `TimeSeries` from a single source, say different epochs from a single :class:`~gwpy.detector.channel.Channel`.
-This object comes with a few handy methods that make combining multiple epochs very simple:
+   The input options to `TimeSeries.read` depend on what format the source data are in, please refer to the function documentation for details and examples
 
-.. autosummary::
+If you are on the LIGO Data Grid, but you don't know where the files are, you can use the `TimeSeries.find` method to automatically locate and read data for a given channel::
 
-   ~TimeSeriesList.coalesce
-   ~TimeSeriesList.join
+    data = TimeSeries.find('L1:ISI-GND_STS_ITMY_Z_DQ', 'Jan 1 2016', 'Jan 1 2016 01:00')
 
---------------------
-The `TimeSeriesDict`
---------------------
+============================================
+Accessing data for multiple channels at once
+============================================
 
-The `TimeSeriesDict` does for multiple channels what the `TimeSeriesList` does for multiple epochs, allowing easy collection of `TimeSeries` from a single epochs but multiple sources.
-This class offers the same data access as for the `TimeSeries`, with the `TimeSeriesDict.get` the easiest way to load some data.
-See the full reference for what other functionality is available.
+Because typically each ``gwf`` file contains data for a large number of channels, it is inefficient to ask for data for each channel in turn, since that would meaning opening, decoding, and closing each file every time.
+Instead you can read all of the data you want in a single step, using the `TimeSeriesDict` object, either for remote access::
 
-.. _plotting-a-timeseries:
+    from gwpy.timeseries import TimeSeriesDict
+    alldata = TimeSeriesDict.fetch(['H1:ISI-GND_STS_ITMX_X_DQ', 'H1:SUS-ITMX_L2_WIT_L_DQ', 'Feb 1 09:00', 'Feb 1 09:15')
+
+or from ``gwf`` files::
+
+    alldata = TimeSeriesDict.get(['H1:PSL-PWR_PMC_TRANS_OUT16','H1:IMC-PWR_IN_OUT16'], 'Feb 1 00:00', 'Feb 1 02:00')  # fetch the data via NDS
+
+[These two channels represent the power generated by the Pre-Stabilized Laser at the input to interferometer, and the power actually entering the Input Mode Cleaner.]
 
 =======================
 Plotting a `TimeSeries`
 =======================
 
-The `TimeSeries` object comes with its own :meth:`~TimeSeries.plot` method, which will quickly construct a :class:`~gwpy.plotter.timeseries.TimeSeriesPlot`.
+The `TimeSeries` object comes with its own :meth:`~TimeSeries.plot` method, which will quickly construct a `~gwpy.plotter.timeseries.TimeSeriesPlot`.
 In the following example, we download ten seconds of gravitational-wave strain data from the LIGO Hanford Observatory, and display it:
 
-.. plot:: timeseries/timeseries_plot.py
-   :include-source:
+.. plot::
+
+   from gwpy.timeseries import TimeSeries  # load the class
+   gwdata = TimeSeries.fetch_open_data('H1', 968654552, 968654562)  # fetch data from LOSC
+   plot = gwdata.plot()  # make a plot
+   ax = plot.gca()  # extract the Axes object
+   ax.set_ylabel('Gravitational-wave amplitude [strain]')  # set the label for the Y-axis
+   ax.set_title('LIGO Hanford Observatory data')  # set the title
+   plot.show()  # show me the plot
 
 |
 
-As described in the `NDS access documentation <nds>`_, downloading these data requires LIGO.ORG credentials (issued to members of the LIGO-Virgo Collaboration and friends).
-However, these data, and more from other LIGO milestones, are available publicly `here <http://www.ligo.org/science/data-releases.php>`_.
-For instructions on how to download and read those data, please `read this <public-data>`_.
+And similarly for the `TimeSeriesDict` (using `~TimeSeriesDict.plot`):
 
-=========================
-`TimeSeries` applications
-=========================
+.. plot::
 
-.. toctree::
-   :titlesonly:
+   from gwpy.timeseries import TimeSeriesDict  # load the class
+   alldata = TimeSeriesDict.get(['H1:PSL-PWR_PMC_TRANS_OUT16','H1:IMC-PWR_IN_OUT16'], 'Feb 1 00:00', 'Feb 1 02:00')  # fetch the data via NDS
+   plot = alldata.plot()  # make a plot
+   ax = plot.gca()  # extract the Axes object
+   ax.set_ylabel('Power [W]')  # set the label for the Y-axis
+   ax.set_title('Available vs requested input power for H1')  # set the title
+   plot.show()  # show me the plot
 
-   filtering
-   statevector
+|
 
-=========================
-`Class <class>` reference
-=========================
+=============
+Reference/API
+=============
 
-This reference contains the following `Class` entries:
+The `gwpy.timeseries` module provides the following `class` objects for handling instrumental data:
 
 .. autosummary::
    :nosignatures:
