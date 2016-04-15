@@ -20,133 +20,45 @@
  * This file contains sphinx-specific extensions to the core GWpy CSS
  */
 
-dd {
-    margin-left: 0px;
-}
 
-dl.attribute tt.descname,
-dl.method tt.descname,
-dl.class tt.descname {
-    font-size: 140% !important;
-}
-
-.rubric {
-    font-size: 120%;
-    border-bottom: 1px solid #ccc;
-}
-
-p.rubric {
-    padding-top: 0;
-    margin-top: 0;
-}
-
-.bs-sidenav.affix {
-    margin-top: 0px !important;
-}
-
-.field-list blockquote {
-    border-left: 0 !important;
-    padding-left: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-.field-list blockquote p {
-    padding-left: 20px;
-    font-size: 100% !important;
-}
-
-blockquote {
-    padding: 0 !important;
-}
-
-.docutils {
-    padding: 0 !important;
-}
-
-tt.docutils,
-span.classifier {
-    font-style: normal !important;
-}
-
-dl.method p.rubric,
-dl.attribute p.rubric {
-    font-size: 100%;
-    font-weight: bold;
-    border-bottom: 0;
-}
-
-.table tr > td:first-child {
-    font-family: monospace;
-}
-
-/* ------------------------------------------------------------------------- */
-/* Attributes                                                                */
-
-dl.attribute dd {
-    padding-left: 40px;
-}
-
-dl.attribute em.property {
-    padding-left: 5px;
-}
-
-/* ------------------------------------------------------------------------- */
-/* Methods                                                                   */
-
-dl.method dd, 
-dl.classmethod dd {
-    padding-left: 40px;
-}
-
-dl.method div.admonition {
-    padding-left: 0;
-}
-
-dl.method > dt,
-dl.method > dt > em,
-dl.classmethod > dt,
-dl.classmethod > dt > em {
-    font-family: monospace;
-    font-weight: normal;
-    font-style: normal;
-}
-
-table.field-list th.field-name {
-    padding-left: 0;
-    margin-left: 0;
-}
-
-
-
-/* ------------------------------------------------------------------------- */
-/* Classes                                                                   */
-
-tt.descclassname,
-tt.descclassname + tt.descname {
-    font-size: 200% !important;
-}
-
-dl.class table.field-list td.field-body > p {
-    font-family: monospace !important;
-}
-
-dl.class:after {
-    content: "";
-    display: block;
-    height: 1px;
-    width: 80%;
-    margin: 30px 10% 50px;
-    background: #ccc;
-}
-
-/* ------------------------------------------------------------------------- */
-/* Sidebar                                                                   */
+/* -- side-bar formatting ------------------------------------------------- */
 
 .bs-sidenav {
-    background-color: transparent;
-    border: 0;
-    border-radius: 0;
-    border-right: 1px solid #eee;
+		background-color: transparent;
+		border: 0;
+		border-radius: 0;
+		border-right: 1px solid #eee;
 }
 
+/* -- table links --------------------------------------------------------- */
+
+table a {
+		text-decoration: none !important;
+}
+
+/* -- autoclass formatting ------------------------------------------------ */
+
+/* class title */
+dl.class > dt > em,
+dl.class > dt > code {
+		font-size: 150%;
+}
+dl.class > dt > code.descclassname {
+		padding-right: 0px;
+}
+dl.class > dt > code:descname {
+		padding-left: 0px;
+}
+
+/* class documentation */
+dl.class > dd,
+dl.method > dd,
+dl.attribute > dd {
+		margin-left: 40px;
+}
+
+/* parameter lists */
+dl.class table.field-list blockquote {
+		border-left: none;
+		margin-bottom: 0px;
+}
