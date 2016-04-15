@@ -21,6 +21,24 @@
  */
 
 
+/* -- footer -------------------------------------------------------------- */
+
+html {
+		position: relative;
+		min-height: 100%;
+}
+
+body {
+		margin-bottom: 140px;
+}
+
+footer {
+		position: absolute;
+		bottom: 0;
+		width: 100%;
+		height: 100px;
+}
+
 /* -- side-bar formatting ------------------------------------------------- */
 
 .bs-sidenav {
@@ -53,6 +71,7 @@ dl.class > dt > code:descname {
 /* class documentation */
 dl.class > dd,
 dl.method > dd,
+dl.classmethod > dd,
 dl.attribute > dd {
 		margin-left: 40px;
 }
@@ -61,4 +80,14 @@ dl.attribute > dd {
 dl.class table.field-list blockquote {
 		border-left: none;
 		margin-bottom: 0px;
+}
+
+/* table inside method */
+dl.classmethod table {
+		width: auto;
+}
+
+dl.classmethod table th:first-child,
+dl.classmethod table td:first-child, {
+		padding-left: 0px;
 }
