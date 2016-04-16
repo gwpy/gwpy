@@ -2,10 +2,6 @@
 {{ methods.remove('__init__') }}
 {% endif %}
 
-.. code-block:: python
-
-   >>> from {{ module }} import {{ name }}
-
 {{ docstring }}
 
 {% block attributes_summary %}
