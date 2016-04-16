@@ -1422,6 +1422,9 @@ class TimeSeries(TimeSeriesBase):
                            method=method, window=window, **kwargs)
         if isinstance(asd, units.Quantity):
             asd = asd.value
+ 
+        # remove zeros from asd before inverting - replace with min of asd
+        asd[asd==0.] = asd[asd>0.].min()
         invasd = 1. / asd
         # build window
         nfft = int((fftlength * self.sample_rate).decompose().value)
