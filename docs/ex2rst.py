@@ -99,8 +99,8 @@ for i,line in enumerate(lines):
     # code
     else:
         if not incode:
-            output.append('')
-        output.append('    >>> %s' % line)
+            output.extend(('', '.. code-block:: python', ''))
+        output.append('   %s' % line)
         incode = True
 
     # end block quote
