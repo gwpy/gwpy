@@ -153,7 +153,10 @@ class TimeSeries(TimeSeriesBase):
         dft[1:] *= 2.0
         new = Spectrum(dft, epoch=self.epoch, channel=self.channel,
                        unit=self.unit)
-        new.frequencies = npfft.rfftfreq(self.size, d=self.dx.value)
+        try:
+            new.frequencies = npfft.rfftfreq(nfft, d=self.dx.value)
+        except AttributeError:
+            new.frequencies = numpy.arange(0, new.size) / (nfft * self.dx.value)
         return new
 
     def average_fft(self, fftlength=None, overlap=0, window=None):
