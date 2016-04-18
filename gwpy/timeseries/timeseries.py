@@ -1627,7 +1627,7 @@ class TimeSeries(TimeSeriesBase):
             # if this Q-plane is louder than the others, record its energies
             if peakq == plane.q:
                 norms = normenergies
-                frequencies = plane.farray
+                frequencies = plane.frequencies
 
         # build regular Spectrogram from peak-Q data by interpolating each
         # (Q, frequency) `TimeSeries` to have the same time resolution
@@ -1654,7 +1654,7 @@ class TimeSeries(TimeSeriesBase):
             interp = interp2d(out.times.value, frequencies, out.value.T,
                               kind='cubic')
             f2 = numpy.arange(planes.frange[0], planes.frange[1], fres)
-            new = Spectrogram(interp(out.times.value, f2).T,
+            new = Spectrogram(interp(out.times.value, f2 + fres/2.).T,
                               x0=outseg[0], dx=tres,
                               f0=planes.frange[0], df=fres)
             new.q = peakq
