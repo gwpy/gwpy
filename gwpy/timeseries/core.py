@@ -1055,7 +1055,7 @@ class TimeSeriesBaseDict(OrderedDict):
                 return cls.find(channels, start, end, pad=pad, dtype=dtype,
                                 verbose=verbose, allow_tape=allow_tape,
                                 **kwargs)
-            except (RuntimeError, ValueError) as e:
+            except (ImportError, RuntimeError, ValueError) as e:
                 if verbose:
                     gprint(str(e), file=sys.stderr)
                     gprint("Failed to access data from frames, trying NDS...")
