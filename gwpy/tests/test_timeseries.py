@@ -344,7 +344,6 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         fs = ts.fft(nfft=256)
         self.assertEqual(fs.size, 129)
         self.assertEqual(fs.dx, ts.sample_rate / 256)
-        raise RuntimeError("")
 
     def test_average_fft(self):
         ts = self._read()
