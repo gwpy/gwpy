@@ -567,7 +567,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
             self.assertIsInstance(qspecgram, Spectrogram)
             self.assertTupleEqual(qspecgram.shape, (32000, 2560))
             self.assertAlmostEqual(qspecgram.q, 11.31370849898476)
-            self.assertAlmostEqual(qspecgram.value.max(), 37.158404056005764)
+            self.assertAlmostEqual(qspecgram.value.max(), 37.157012691452067)
 
 
 class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
