@@ -336,12 +336,14 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         ts = self._read()
         fs = ts.fft()
         self.assertEqual(fs.size, ts.size//2+1)
-        fs = ts.fft(nfft=256)
-        self.assertEqual(fs.size, 129)
         self.assertIsInstance(fs, Spectrum)
         self.assertEqual(fs.x0, 0*units.Hertz)
         self.assertEqual(fs.dx, 1*units.Hertz)
         self.assertIs(ts.channel, fs.channel)
+        # test with nfft arg
+        fs = ts.fft(nfft=256)
+        self.assertEqual(fs.size, 129)
+        self.assertEqual(fs.dx, ts.sample_rate / 256)
 
     def test_average_fft(self):
         ts = self._read()
