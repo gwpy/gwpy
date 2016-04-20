@@ -136,7 +136,7 @@ class QPlane(QBase):
     """Iterable representation of a Q-transform plane
 
     For a given Q, an array of frequencies can be iterated over, yielding
-    a `QRow` each time.
+    a `QTile` each time.
 
     Parameters
     ----------
@@ -163,11 +163,11 @@ class QPlane(QBase):
     def __iter__(self):
         """Iterate over this `QPlane`
 
-        Yields a `QRow` at each frequency
+        Yields a `QTile` at each frequency
         """
-        # for each frequency, yield a QRow
+        # for each frequency, yield a QTile
         for f in self._iter_frequencies():
-            yield QRow(self.q, f, self.duration, self.sampling,
+            yield QTile(self.q, f, self.duration, self.sampling,
                        mismatch=self.mismatch)
         raise StopIteration()
 
@@ -180,7 +180,7 @@ class QPlane(QBase):
         nfreq = int(max(1, ceil(fcum_mismatch / self.deltam)))
         fstep = fcum_mismatch / nfreq
         fstepmin = 1 / self.duration
-        # for each frequency, yield a QRow
+        # for each frequency, yield a QTile
         for i in xrange(nfreq):
             yield (minf * exp(2 / (2 + self.q**2)**(1/2.) * (i + .5) * fstep)
                  // fstepmin * fstepmin)
@@ -205,11 +205,11 @@ class QPlane(QBase):
         return f - bandwidths / 2.
 
 
-class QRow(QBase):
-    """Representation of a set of tiles with fixed Q and frequency
+class QTile(QBase):
+    """Representation of a tile with fixed Q and frequency
     """
     def __init__(self, q, frequency, duration, sampling, mismatch=.2):
-        super(QRow, self).__init__(q, duration, sampling, mismatch=mismatch)
+        super(QTile, self).__init__(q, duration, sampling, mismatch=mismatch)
         self.frequency = frequency
 
     @property
