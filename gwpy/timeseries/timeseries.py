@@ -1603,29 +1603,19 @@ class TimeSeries(TimeSeriesBase):
 
         # Q-transform data for each `(Q, frequency)` tile
         for plane in planes:
-            normenergies = []
-            for qtile in plane:
-                # get energy from transform
-                cenergy = qtile.transform(fdata, epoch=self.x0)
-                # calculate normalized energy
-                energy = TimeSeries(
-                    cenergy.value.real ** 2. + cenergy.value.imag ** 2.,
-                    x0=cenergy.x0, dx=cenergy.dx, copy=False)
-                meanenergy = energy.mean()
-                normenergies.append(energy / meanenergy)
-                # calculate the peak energy
+            f, normenergies = plane.transform(fdata, normalized=True,
+                                              epoch=self.x0)
+            # find peak energy in this plane and record if loudest
+            for ts in normenergies:
                 if gps is None:
-                    peak = normenergies[-1].value.max()
+                    peak = ts.value.max()
                 else:
-                    peak = normenergies[-1].crop(
-                        gps-search, gps+search).value.max()
+                    peak = ts.crop(gps-search, gps+search).value.max()
                 if peak > peakenergy:
                     peakenergy = peak
                     peakq = plane.q
-            # if this Q-plane is louder than the others, record its energies
-            if peakq == plane.q:
-                norms = normenergies
-                frequencies = plane.frequencies
+                    norms = normenergies
+                    frequencies = f
 
         # build regular Spectrogram from peak-Q data by interpolating each
         # (Q, frequency) `TimeSeries` to have the same time resolution
