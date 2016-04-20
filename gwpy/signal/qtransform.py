@@ -275,13 +275,16 @@ class QTile(QBase):
         pad = self.ntiles - self.windowsize
         return (int((pad - 1)/2.), int((pad + 1)/2.))
 
-    def transform(self, fseries, epoch=None):
+    def transform(self, fseries, normalized=True, epoch=None):
         """Calculate the energy `TimeSeries` for the given fseries
 
         Parameters
         ----------
         fseries : `~gwpy.spectrum.Spectrum`
             the complex FFT of a time-series data set
+        normalized : `bool`, optional
+            normalize the energy of the output, if `False` the output
+            is the complex `~numpy.fft.ifft` output of the Q-tranform
         epoch : `~gwpy.time.LIGOTimeGPS`, `float`, optional
             the epoch of these data, only used for metadata in the output
             `TimeSeries`, and not requires if the input `fseries` has the
@@ -302,8 +305,16 @@ class QTile(QBase):
         if epoch is None:
             epoch = fseries.epoch
         tdenergy = npfft.ifft(wenergy)
-        return TimeSeries(tdenergy, x0=epoch, dx=self.duration/tdenergy.size,
-                          copy=False)
+        cenergy = TimeSeries(tdenergy, x0=epoch, dx=self.duration/tdenergy.size,
+                             copy=False)
+        if normalized:
+            energy = type(cenergy)(
+                cenergy.value.real ** 2. + cenergy.value.imag ** 2.,
+                x0=cenergy.x0, dx=cenergy.dx, copy=False)
+            meanenergy = energy.mean()
+            return energy / meanenergy
+        else:
+            return cenergy
 
 
 def next_power_of_two(x):
