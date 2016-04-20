@@ -39,6 +39,14 @@ Working with data
    segments/index
    timeseries/statevector
 
+**Working with frequency-domain data**
+
+.. toctree::
+   :maxdepth: 1
+
+   spectrum/index
+   spectrogram/index
+
 **Visualising data**
 
 .. toctree::
@@ -47,8 +55,8 @@ Working with data
    plotter/index
    cli/index
 
-.. examples
-.. ~~~~~~~~
+.. ----------------------------------------------------------------
+.. other sections (not directly linked, but need for cross-linking)
 
 .. toctree::
    :hidden:
@@ -61,6 +69,3 @@ Indices and tables
 .. toctree::
 
 * :ref:`genindex`
-* :ref:`modindex`
-
-|

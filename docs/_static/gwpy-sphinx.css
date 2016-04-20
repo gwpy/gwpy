@@ -54,6 +54,12 @@ table a {
 		text-decoration: none !important;
 }
 
+/* -- code formatting ----------------------------------------------------- */
+
+code {
+	padding: 0px
+}
+
 /* -- autoclass formatting ------------------------------------------------ */
 
 /* class title */
