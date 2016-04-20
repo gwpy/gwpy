@@ -1601,21 +1601,16 @@ class TimeSeries(TimeSeriesBase):
         peakq = None
         peakenergy = 0
 
-        # Q-transform data for each `(Q, frequency)` row
+        # Q-transform data for each `(Q, frequency)` tile
         for plane in planes:
             normenergies = []
-            for row in plane:
-                # window data
-                windowed = fdata[row.get_data_indices()] * row.get_window()
-                # pad data, move negative frequencies to the end, and IFFT
-                padded = numpy.pad(windowed, row.padding, mode='constant')
-                wenergy = npfft.ifftshift(padded)
-                cenergy = npfft.ifft(wenergy)
+            for qtile in plane:
+                # get energy from transform
+                cenergy = qtile.transform(fdata, epoch=self.x0)
                 # calculate normalized energy
                 energy = TimeSeries(
-                    cenergy.real ** 2. + cenergy.imag ** 2.,
-                    x0=self.x0, dx=self.duration/cenergy.size,
-                    copy=False)
+                    cenergy.value.real ** 2. + cenergy.value.imag ** 2.,
+                    x0=cenergy.x0, dx=cenergy.dx, copy=False)
                 meanenergy = energy.mean()
                 normenergies.append(energy / meanenergy)
                 # calculate the peak energy
