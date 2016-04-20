@@ -30,6 +30,9 @@ from math import (log, ceil, pi, isinf, exp)
 from six.moves import xrange
 
 import numpy
+from numpy import fft as npfft
+
+from ..timeseries import TimeSeries
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Scott Coughlin <scott.coughlin@ligo.org>'
@@ -271,6 +274,20 @@ class QTile(QBase):
         """
         pad = self.ntiles - self.windowsize
         return (int((pad - 1)/2.), int((pad + 1)/2.))
+
+    def transform(self, fseries, epoch=None):
+        """Calculate the energy `TimeSeries` for the given fseries
+        """
+        windowed = fseries[self.get_data_indices()] * self.get_window()
+        # pad data, move negative frequencies to the end, and IFFT
+        padded = numpy.pad(windowed, self.padding, mode='constant')
+        wenergy = npfft.ifftshift(padded)
+        # return a `TimeSeries`
+        if epoch is None:
+            epoch = fseries.epoch
+        tdenergy = npfft.ifft(wenergy)
+        return TimeSeries(tdenergy, x0=epoch, dx=self.duration/tdenergy.size,
+                          copy=False)
 
 
 def next_power_of_two(x):
