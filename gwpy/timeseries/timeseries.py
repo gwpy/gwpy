@@ -270,7 +270,7 @@ class TimeSeries(TimeSeriesBase):
         The available methods are:
 
         """
-        from ..spectrum.registry import get_method
+        from ..frequencyseries.registry import get_method
         # get method
         scaling = kwargs.get('scaling', 'density')
         method_func = get_method(method, scaling=scaling)
@@ -339,7 +339,7 @@ class TimeSeries(TimeSeriesBase):
             a data series containing the CSD.
         """
 
-        from ..spectrum.registry import get_method
+        from ..frequencyseries.registry import get_method
         # get method
         scaling = kwargs.get('scaling', 'density')
         method_func = get_method('csd', scaling=scaling)
@@ -391,8 +391,9 @@ class TimeSeries(TimeSeriesBase):
             time-frequency power spectrogram as generated from the
             input time-series.
         """
-        from ..spectrum.utils import (safe_import, scale_timeseries_units)
-        from ..spectrum.registry import get_method
+        from ..frequencyseries.utils import (
+            safe_import, scale_timeseries_units)
+        from ..frequencyseries.registry import get_method
         from ..spectrogram import (Spectrogram, SpectrogramList)
 
         # format FFT parameters
@@ -423,8 +424,8 @@ class TimeSeries(TimeSeriesBase):
         method_func = get_method(method)
         if method_func.__module__.endswith('lal_') and cross is None:
             safe_import('lal', method)
-            from ..spectrum.lal_ import (generate_lal_fft_plan,
-                                         generate_lal_window)
+            from ..frequencyseries.lal_ import (generate_lal_fft_plan,
+                                                generate_lal_window)
             if kwargs.get('window', None) is None:
                 kwargs['window'] = generate_lal_window(nfft, dtype=self.dtype)
             if kwargs.get('plan', None) is None:
@@ -571,7 +572,7 @@ class TimeSeries(TimeSeriesBase):
         given `Spectrogram` time sample.
         """
         from ..spectrogram import Spectrogram
-        from ..spectrum import scale_timeseries_units
+        from ..frequencyseries import scale_timeseries_units
         # get parameters
         sampling = units.Quantity(self.sample_rate, 'Hz').value
         if isinstance(fftlength, units.Quantity):
@@ -765,7 +766,7 @@ class TimeSeries(TimeSeriesBase):
         The available methods are:
 
         """
-        from ..spectrum.registry import get_method
+        from ..frequencyseries.registry import get_method
         # get method
         method_func = get_method('rayleigh')
         # type-cast arguments

@@ -30,7 +30,7 @@ __version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 from ..data import (Quantity, Array, Array2D)
-from .core import Spectrum
+from .core import FrequencySeries
 from ..detector import Channel
 
 __all__ = ['SpectralVariance']
@@ -38,10 +38,10 @@ __all__ = ['SpectralVariance']
 
 class SpectralVariance(Array2D):
     """A 2-dimensional array containing the variance histogram of a
-    frequency-series `Spectrum`
+    frequency-series `FrequencySeries`
     """
-    _metadata_slots = Spectrum._metadata_slots + ['bins']
-    _default_xunit = Spectrum._default_xunit
+    _metadata_slots = FrequencySeries._metadata_slots + ['bins']
+    _default_xunit = FrequencySeries._default_xunit
 
     def __new__(cls, data, bins, name=None, channel=None, epoch=None, unit=None,
                 f0=0, df=1, **kwargs):
@@ -249,8 +249,8 @@ class SpectralVariance(Array2D):
 
         Returns
         -------
-        spectrum : :class:`~gwpy.spectrum.core.Spectrum`
-            the given percentile `Spectrum` calculated from this
+        spectrum : `~gwpy.frequencyseries.FrequencySeries`
+            the given percentile `FrequencySeries` calculated from this
             `SpectralVaraicence`
         """
         rows, columns = self.shape
@@ -267,11 +267,11 @@ class SpectralVariance(Array2D):
             val = self.bins[minindex]
             out[i] = val
         name = '%s %s%% percentile' % (self.name, percentile)
-        return Spectrum(out, epoch=self.epoch, frequencies=self.bins[:-1],
-                        channel=self.channel, name=name)
+        return FrequencySeries(out, epoch=self.epoch, channel=self.channel,
+                               frequencies=self.bins[:-1], name=name)
 
     def plot(self, **kwargs):
         """Plot this `SpectralVariance`.
         """
-        from ..plotter import SpectrumPlot
-        return SpectrumPlot(self, **kwargs)
+        from ..plotter import FrequencySeriesPlot
+        return FrequencySeriesPlot(self, **kwargs)

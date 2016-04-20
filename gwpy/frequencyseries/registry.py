@@ -66,7 +66,7 @@ def register_method(func, name=None, force=False, scaling='density'):
         methods = spectrum_methods
         append_doc(TimeSeries.power_spectrum, doc)
     else:
-        raise ValueError("Unknown Spectrum type: %r" % scaling)
+        raise ValueError("Unknown FrequencySeries type: %r" % scaling)
     # record method in registry
     if name in methods and not force:
         raise KeyError("'%s' already registered, use force=True to override."
@@ -89,4 +89,4 @@ def get_method(name, scaling='density'):
             raise ValueError("No power spectrum method registered with "
                              "name %r" % name)
     else:
-        raise ValueError("Unknown Spectrum type: %r" % scaling)
+        raise ValueError("Unknown FrequencySeries type: %r" % scaling)
