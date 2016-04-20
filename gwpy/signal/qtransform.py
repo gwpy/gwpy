@@ -207,6 +207,41 @@ class QPlane(QBase):
         bandwidths = 2 * pi ** (1/2.) * f / self.q
         return f - bandwidths / 2.
 
+    def transform(self, fseries, normalized=True, epoch=None):
+        """Calculate the energy `TimeSeries` for the given fseries
+
+        Parameters
+        ----------
+        fseries : `~gwpy.spectrum.Spectrum`
+            the complex FFT of a time-series data set
+        normalized : `bool`, optional
+            normalize the energy of the output, if `False` the output
+            is the complex `~numpy.fft.ifft` output of the Q-tranform
+        epoch : `~gwpy.time.LIGOTimeGPS`, `float`, optional
+            the epoch of these data, only used for metadata in the output
+            `TimeSeries`, and not requires if the input `fseries` has the
+            epoch populated.
+
+        Returns
+        -------
+        frequencies : `numpy.ndarray`
+            array of frequencies for this `QPlane`
+        transforms : `list` of `~gwpy.timeseries.TimeSeries`
+            the complex energies of the Q-transform of the input `fseries`
+            at each frequency
+
+        See Also
+        --------
+        QTile.transform
+            for details on the transform for a single `(Q, frequency)` tile
+        """
+        out = []
+        for qtile in self:
+            # get energy from transform
+            out.append(qtile.transform(fseries, normalized=normalized,
+                                       epoch=epoch))
+        return self.frequencies, out
+
 
 class QTile(QBase):
     """Representation of a tile with fixed Q and frequency
