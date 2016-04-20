@@ -42,7 +42,7 @@ from glue.ligolw.table import Table
 from ..time import LIGOTimeGPS
 from .core import Plot
 from .timeseries import (TimeSeriesAxes, TimeSeriesPlot)
-from .spectrum import SpectrumPlot
+from .frequencyseries import FrequencySeriesPlot
 from .utils import float_to_latex
 from ..table.utils import (get_table_column, get_row_value)
 
@@ -316,9 +316,9 @@ class _EventTableMetaPlot(type):
             # initialise figure as a TimeSeriesPlot
             if re.search('time\Z', xcol, re.I):
                 plotclass = TimeSeriesPlot
-            # or as a SpectrumPlot
+            # or as a FrequencySeriesPlot
             elif re.search('(freq\Z|frequency\Z)', xcol, re.I):
-                plotclass = SpectrumPlot
+                plotclass = FrequencySeriesPlot
             # otherwise as a standard Plot
             else:
                 plotclass = Plot
@@ -328,7 +328,7 @@ class _EventTableMetaPlot(type):
         return super(_EventTableMetaPlot, cls).__call__(*args, **kwargs)
 
 
-class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
+class EventTablePlot(TimeSeriesPlot, FrequencySeriesPlot, Plot):
     """`Figure` for displaying a :class:`~glue.ligolw.table.Table`.
 
     Parameters
@@ -365,7 +365,7 @@ class EventTablePlot(TimeSeriesPlot, SpectrumPlot, Plot):
     the output is a child of the :class:`~gwpy.plotter.TimeSeriesPlot`,
     allowing easy formatting of GPS times, while if the x-column ends with
     'frequency', the output comes from the
-    :class:`~gwpy.plotter.SpectrumPlot`, otherwise the parent is
+    :class:`~gwpy.plotter.FrequencySeriesPlot`, otherwise the parent is
     the core :class:`~gwpy.plotter.Plot`.
     """
     _DefaultAxesClass = EventTableAxes

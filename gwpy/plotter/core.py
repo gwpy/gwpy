@@ -19,6 +19,8 @@
 """Extension of the basic matplotlib Figure for GWpy
 """
 
+import warnings
+
 import numpy
 
 from matplotlib import (backends, figure, pyplot, colors as mcolors,
@@ -624,15 +626,15 @@ class Plot(figure.Figure):
                               sharex=sharex, sharey=sharey, **kwargs)
 
     @auto_refresh
-    def add_spectrum(self, spectrum, projection='spectrum', ax=None,
-                     newax=False, sharex=None, sharey=None, **kwargs):
-        """Add a :class:`~gwpy.spectrum.core.Spectrum` trace to this plot
+    def add_frequencyseries(self, spectrum, projection='spectrum', ax=None,
+                            newax=False, sharex=None, sharey=None, **kwargs):
+        """Add a `~gwpy.frequencyseries.FrequencySeries` trace to this plot
 
         Parameters
         ----------
-        spectrum : :class:`~gwpy.spectrum.core.spectrum`
-            the `Spectrum` to display
-        projection : `str`, optional, default: `'Spectrum'`
+        spectrum : `~gwpy.frequencyseries.FrequencySeries`
+            the `FrequencySeries` to display
+        projection : `str`, optional, default: `'frequencyseries'`
             name of the Axes projection on which to plot
         ax : :class:`~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
@@ -648,8 +650,16 @@ class Plot(figure.Figure):
         Line2D
             the :class:`~matplotlib.lines.Line2D` for this line layer
         """
-        return self.add_array(spectrum, 'spectrum', ax=ax, newax=newax,
-                              sharex=sharex, sharey=sharey, **kwargs)
+        return self.add_array(spectrum, 'frequencyseries', ax=ax,
+                              newax=newax, sharex=sharex, sharey=sharey,
+                              **kwargs)
+
+    @auto_refresh
+    def add_spectrum(self, *args, **kwargs):
+        warnings.warn("This method was renamed add_frequencyseries()",
+                      DeprecationWarning)
+        return self.add_frequencyseries(*args, **kwargs)
+    add_spectrum.__doc__ = add_frequencyseries.__doc__
 
     @auto_refresh
     def add_spectrogram(self, spectrogram, projection='timeseries',

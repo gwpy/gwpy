@@ -126,16 +126,15 @@ class FrequencySeries(Series):
         """Display this `FrequencySeries` in a figure
 
         All arguments are passed onto the
-        :class:`~gwpy.plotter.SpectrumPlot` constructor
+        `~gwpy.plotter.FrequencySeriesPlot` constructor
 
         Returns
         -------
-        SpectrumPlot
-            a new :class:`~gwpy.plotter.SpectrumPlot` rendering
-            of this `FrequencySeries`
+        plot : `~gwpy.plotter.FrequencySeriesPlot`
+            a new `FrequencySeriesPlot` rendering of this `FrequencySeries`
         """
-        from ..plotter import SpectrumPlot
-        return SpectrumPlot(self, **kwargs)
+        from ..plotter import FrequencySeriesPlot
+        return FrequencySeriesPlot(self, **kwargs)
 
     def ifft(self):
         """Compute the one-dimensional discrete inverse Fourier

@@ -26,7 +26,7 @@ from scipy import signal
 from matplotlib.ticker import MultipleLocator
 
 from .core import Plot
-from ..spectrum import Spectrum
+from ..frequencyseries import FrequencySeries
 
 from .. import version
 __version__ = version.version
@@ -54,7 +54,7 @@ class BodePlot(Plot):
 
     Parameters
     ----------
-    *filters : `~scipy.signal.lti`, `~gwpy.spectrum.Spectrum`, `tuple`
+    *filters : `~scipy.signal.lti`, `~gwpy.frequencyseries.FrequencySeries`, `tuple`
         any number of the following:
 
         - linear time-invariant filters, either
@@ -63,7 +63,7 @@ class BodePlot(Plot):
              - 3: (zeros, poles, gain)
              - 4: (A, B, C, D)
 
-        - complex-valued `spectra <gwpy.spectrum.Spectrum>` representing
+        - complex-valued `spectra <gwpy.frequencyseries.FrequencySeries>` representing
           a transfer function
 
     frequencies : `numpy.ndarray`, optional
@@ -73,7 +73,7 @@ class BodePlot(Plot):
         amplitude.
     **kwargs
         other keyword arguments as applicable for `Plot` or
-        :meth:`~SpectrumAxes.plot`
+        :meth:`~FrequencySeriesAxes.plot`
 
     Returns
     -------
@@ -104,7 +104,7 @@ class BodePlot(Plot):
 
         # add filters
         for filter_ in filters:
-            if isinstance(filter_, Spectrum):
+            if isinstance(filter_, FrequencySeries):
                 self.add_spectrum(filter_, dB=dB, **kwargs)
             else:
                 self.add_filter(filter_, frequencies=frequencies,
@@ -125,7 +125,7 @@ class BodePlot(Plot):
 
         # get xlim
         if (frequencies is None and len(filters) == 1 and
-                isinstance(filters[0], Spectrum)):
+                isinstance(filters[0], FrequencySeries)):
             frequencies = filters[0].frequencies.value
         if frequencies is not None:
             frequencies = frequencies[frequencies > 0]
@@ -133,13 +133,13 @@ class BodePlot(Plot):
 
     @property
     def maxes(self):
-        """`SpectrumAxes` for the Bode magnitude
+        """`FrequencySeriesAxes` for the Bode magnitude
         """
         return self.axes[0]
 
     @property
     def paxes(self):
-        """`SpectrumAxes` for the Bode phase
+        """`FrequencySeriesAxes` for the Bode phase
         """
         return self.axes[1]
 
@@ -187,12 +187,12 @@ class BodePlot(Plot):
         return lm, lp
 
     def add_spectrum(self, spectrum, dB=True, power=False, **kwargs):
-        """Plot the magnitude and phase of a complex-valued Spectrum
+        """Plot the magnitude and phase of a complex-valued FrequencySeries
 
         Parameters
         ----------
-        spectrum : `~gwpy.spectrum.Spectrum`
-            the (complex-valued) `Spectrum` to display
+        spectrum : `~gwpy.frequencyseries.FrequencySeries`
+            the (complex-valued) `FrequencySeries` to display
         db : `bool`, optional, default: `True`
             if `True`, display magnitude in decibels, otherwise display
             amplitude.

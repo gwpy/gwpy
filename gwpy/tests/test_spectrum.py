@@ -29,7 +29,7 @@ from astropy import units
 
 from gwpy import version
 from gwpy.spectrum import (Spectrum, SpectralVariance)
-from gwpy.plotter import SpectrumPlot
+from gwpy.plotter import FrequencySeriesPlot
 
 from test_array import (SeriesTestCase, Array2DTestCase)
 
@@ -59,7 +59,7 @@ class SpectrumTestCase(SeriesTestCase):
     def test_plot(self):
         array = self.create()
         plot = array.plot()
-        self.assertIsInstance(plot, SpectrumPlot)
+        self.assertIsInstance(plot, FrequencySeriesPlot)
 
     def test_filter(self):
         array = self.create()
@@ -143,7 +143,7 @@ class SpectralVarianceTestCase(Array2DTestCase):
 
     def test_plot(self):
         plot = self.create().plot()
-        self.assertIsInstance(plot, SpectrumPlot)
+        self.assertIsInstance(plot, FrequencySeriesPlot)
 
     def test_value_at(self):
         ts1 = self.create(dx=.5, unit='m')

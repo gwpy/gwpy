@@ -31,15 +31,15 @@ from .utils import *
 from .core import Plot
 from .axes import Axes
 from .decorators import auto_refresh
-from ..spectrum import (Spectrum, SpectralVariance)
+from ..frequencyseries import (FrequencySeries, SpectralVariance)
 
 from .. import version
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-class SpectrumAxes(Axes):
-    """Custom `Axes` for a :class:`~gwpy.plotter.SpectrumPlot`.
+class FrequencySeriesAxes(Axes):
+    """Custom `Axes` for a :class:`~gwpy.plotter.FrequencySeriesPlot`.
     """
     name = 'spectrum'
 
@@ -53,8 +53,8 @@ class SpectrumAxes(Axes):
         Parameters
         ----------
         args
-            a single :class:`~gwpy.spectrum.core.spectrum` (or sub-class)
-            or standard (x, y) data arrays
+            a single :class:`~gwpy.frequencyseries.FrequencySeries`
+            (or sub-class) or standard (x, y) data arrays
         kwargs
             keyword arguments applicable to :meth:`~matplotib.axes.Axes.plot`
 
@@ -68,20 +68,20 @@ class SpectrumAxes(Axes):
         :meth:`matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
-        if len(args) == 1 and isinstance(args[0], Spectrum):
+        if len(args) == 1 and isinstance(args[0], FrequencySeries):
             return self.plot_spectrum(*args, **kwargs)
         elif len(args) == 1 and isinstance(args[0], SpectralVariance):
             return self.plot_variance(*args, **kwargs)
         else:
-            return super(SpectrumAxes, self).plot(*args, **kwargs)
+            return super(FrequencySeriesAxes, self).plot(*args, **kwargs)
 
     @auto_refresh
     def plot_spectrum(self, spectrum, **kwargs):
-        """Plot a :class:`~gwpy.spectrum.core.Spectrum` onto these axes
+        """Plot a :class:`~gwpy.frequencyseries.FrequencySeries` onto these axes
 
         Parameters
         ----------
-        spectrum : :class:`~gwpy.spectrum.core.Spectrum`
+        spectrum : :class:`~gwpy.frequencyseries.FrequencySeries`
             data to plot
         **kwargs
             any other keyword arguments acceptable for
@@ -118,20 +118,20 @@ class SpectrumAxes(Axes):
     @auto_refresh
     def plot_spectrum_mmm(self, mean_, min_=None, max_=None, alpha=0.1,
                           **kwargs):
-        """Plot a `Spectrum` onto these axes, with (min, max) shaded
+        """Plot a `FrequencySeries` onto these axes, with (min, max) shaded
         regions
 
-        The `mean_` `Spectrum` is plotted normally, while the `min_`
+        The `mean_` `FrequencySeries` is plotted normally, while the `min_`
         and `max_ spectra are plotted lightly below and above,
         with a fill between them and the mean_.
 
         Parameters
         ----------
-        mean_ : :class:`~gwpy.spectrum.core.Spectrum
+        mean_ : :class:`~gwpy.frequencyseries.FrequencySeries
             data to plot normally
-        min_ : :class:`~gwpy.spectrum.core.Spectrum
+        min_ : :class:`~gwpy.frequencyseries.FrequencySeries
             first data set to shade to mean_
-        max_ : :class:`~gwpy.spectrum.core.Spectrum
+        max_ : :class:`~gwpy.frequencyseries.FrequencySeries
             second data set to shade to mean_
         alpha : `float`, optional
             weight of filled region, ``0.0`` for transparent through ``1.0``
@@ -184,12 +184,12 @@ class SpectrumAxes(Axes):
 
     @auto_refresh
     def plot_variance(self, specvar, norm='log', **kwargs):
-        """Plot a :class:`~gwpy.spectrum.hist.SpectralVariance` onto
+        """Plot a :class:`~gwpy.frequencyseries.SpectralVariance` onto
         these axes
 
         Parameters
         ----------
-        spectrum : class:`~gwpy.spectrum.hist.SpectralVariance`
+        spectrum : class:`~gwpy.frequencyseries.SpectralVariance`
             data to plot
         **kwargs
             any other eyword arguments acceptable for
@@ -223,13 +223,13 @@ class SpectrumAxes(Axes):
         return mesh
 
 
-register_projection(SpectrumAxes)
+register_projection(FrequencySeriesAxes)
 
 
-class SpectrumPlot(Plot):
-    """`Figure` for displaying a :class:`~gwpy.spectrum.core.Spectrum`.
+class FrequencySeriesPlot(Plot):
+    """`Figure` for displaying a `~gwpy.frequencyseries.FrequencySeries`
     """
-    _DefaultAxesClass = SpectrumAxes
+    _DefaultAxesClass = FrequencySeriesAxes
 
     def __init__(self, *series, **kwargs):
         kwargs.setdefault('projection', self._DefaultAxesClass.name)
@@ -245,7 +245,7 @@ class SpectrumPlot(Plot):
         axargs, plotargs = self._parse_kwargs(kwargs)
 
         # initialise figure
-        super(SpectrumPlot, self).__init__(**kwargs)
+        super(FrequencySeriesPlot, self).__init__(**kwargs)
 
         # plot data
         x0 = []
@@ -278,3 +278,21 @@ class SpectrumPlot(Plot):
             # set axis scales
             ax.set_xscale(xscale)
             ax.set_yscale(yscale)
+
+
+# -- deprecated classes
+
+class SpectrumPlot(FrequencySeriesPlot):
+    def __init__(self, *args, **kwargs):
+        warnings.warn("The SpectrumPlot object was replaced by the "
+                      "FrequencySeriesPlot, and will be removed in an "
+                      "upcoming release.", DeprecationWarning)
+        super(SpectrumPlot, self).__init__(*args, **kwargs)
+
+
+class SpectrumAxes(FrequencySeriesAxes):
+    def __init__(self, *args, **kwargs):
+        warnings.warn("The SpectrumAxes object was replaced by the "
+                      "FrequencySeriesAxes, and will be removed in an "
+                      "upcoming release.", DeprecationWarning)
+        super(SpectrumAxes, self).__init__(*args, **kwargs)

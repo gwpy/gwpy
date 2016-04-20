@@ -273,5 +273,5 @@ class SpectralVariance(Array2D):
     def plot(self, **kwargs):
         """Plot this `SpectralVariance`.
         """
-        from ..plotter import SpectrumPlot
-        return SpectrumPlot(self, **kwargs)
+        from ..plotter import FrequencySeriesPlot
+        return FrequencySeriesPlot(self, **kwargs)
