@@ -44,7 +44,7 @@ baddata = TimeSeries.get('L1:PSL-ISS_PDB_OUT_DQ', badtime, badtime+duration)
 goodasd = gooddata.asd(4, 2)
 badasd = baddata.asd(4, 2)
 
-# Lastly, we make a plot of the data by `plotting <Spectrum.plot>` one `Spectrum`, and then adding the second:
+# Lastly, we make a plot of the data by `plotting <FrequencySeries.plot>` one `~gwpy.frequencyseries.FrequencySeries`, and then adding the second:
 plot = badasd.plot(label='Noisy data')
 ax = plot.gca()
 ax.plot(goodasd, label='Clean data')

@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>
 
-"""Calculating and plotting a `Spectrum`
+"""Calculating and plotting a `FrequencySeries`
 
 I'm interested in the level of ground motion surrounding a particular time
 during commissioning of the Advanced LIGO Livingston Observatory. I don't
@@ -25,9 +25,9 @@ have access to the frame files on disk, so I'll need to use NDS.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.spectrum'
+__currentmodule__ = 'gwpy.frequencyseries'
 
-# In order to generate a `Spectrum` we need to import the
+# In order to generate a `FrequencySeries` we need to import the
 # `~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.get`
 # the data:
 from gwpy.timeseries import TimeSeries
@@ -42,7 +42,7 @@ llo = TimeSeries.get(
 lhoasd = lho.asd(2, 1)
 lloasd = llo.asd(2, 1)
 
-# We can then :meth:`~Spectrum.plot` the spectra
+# We can then :meth:`~FrequencySeries.plot` the spectra
 plot = lhoasd.plot(color='b', label='LHO')
 ax = plot.gca()
 ax.plot(lloasd, color='g', label='LLO')

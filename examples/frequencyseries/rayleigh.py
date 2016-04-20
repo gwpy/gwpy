@@ -22,19 +22,19 @@
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.spectrum'
+__currentmodule__ = 'gwpy.frequencyseries'
 
 # First, we import the :class:`~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.get` the data:
 from gwpy.timeseries import TimeSeries
 gwdata = TimeSeries.get(
     'H1:LDAS-STRAIN,rds', 'September 16 2010 06:40', 'September 16 2010 06:50')
 
-# Next, we can calculate a Rayleigh statistic `Spectrum` using the 
+# Next, we can calculate a Rayleigh statistic `FrequencySeries` using the 
 # :meth:`~gwpy.timeseries.TimeSeries.rayleigh_spectrum` method of the
 # `~gwpy.timeseries.TimeSeries` with a 2-second FFT and 1-second overlap (50%):
 rayleigh = gwdata.rayleigh_spectrum(2, 1)
 
-# and can make a plot using the :meth:`~Spectrum.plot` method
+# and can make a plot using the :meth:`~FrequencySeries.plot` method
 plot = rayleigh.plot()
 plot.set_xscale('log')
 plot.set_xlim(40, 4000)
