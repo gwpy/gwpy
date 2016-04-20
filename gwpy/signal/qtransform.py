@@ -277,6 +277,22 @@ class QTile(QBase):
 
     def transform(self, fseries, epoch=None):
         """Calculate the energy `TimeSeries` for the given fseries
+
+        Parameters
+        ----------
+        fseries : `~gwpy.spectrum.Spectrum`
+            the complex FFT of a time-series data set
+        epoch : `~gwpy.time.LIGOTimeGPS`, `float`, optional
+            the epoch of these data, only used for metadata in the output
+            `TimeSeries`, and not requires if the input `fseries` has the
+            epoch populated.
+
+        Returns
+        -------
+        energy : `~gwpy.timeseries.TimeSeries`
+            a `TimeSeries` of the complex energy from the Q-transform of
+            this tile against the data. Basically just the raw output
+            of the :meth:`~numpy.fft.ifft`
         """
         windowed = fseries[self.get_data_indices()] * self.get_window()
         # pad data, move negative frequencies to the end, and IFFT
