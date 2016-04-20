@@ -42,7 +42,7 @@ from gwpy import version
 from gwpy.timeseries import (TimeSeries, StateVector, TimeSeriesDict,
                              StateVectorDict, TimeSeriesList)
 from gwpy.segments import Segment
-from gwpy.spectrum import (Spectrum, SpectralVariance)
+from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.spectrogram import Spectrogram
 from gwpy.io.cache import Cache
 
@@ -336,7 +336,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         ts = self._read()
         fs = ts.fft()
         self.assertEqual(fs.size, ts.size//2+1)
-        self.assertIsInstance(fs, Spectrum)
+        self.assertIsInstance(fs, FrequencySeries)
         self.assertEqual(fs.x0, 0*units.Hertz)
         self.assertEqual(fs.dx, 1*units.Hertz)
         self.assertIs(ts.channel, fs.channel)
@@ -351,7 +351,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         fs = ts.average_fft()
         self.assertEqual(fs.size, ts.size//2+1)
         self.assertEqual(fs.f0, 0 * units.Hertz)
-        self.assertIsInstance(fs, Spectrum)
+        self.assertIsInstance(fs, FrequencySeries)
         self.assertIs(fs.channel, ts.channel)
         # test fftlength
         fs = ts.average_fft(fftlength=0.5)
@@ -367,7 +367,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(fs.size, ts.size//2+1)
         self.assertEqual(fs.f0, 0*units.Hertz)
         self.assertEqual(fs.df, 1 / ts.duration)
-        self.assertIsInstance(fs, Spectrum)
+        self.assertIsInstance(fs, FrequencySeries)
         self.assertIs(fs.channel, ts.channel)
         self.assertEqual(fs.unit, ts.unit ** 2 / units.Hertz)
         # test fftlength
@@ -400,7 +400,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(fs.size, ts.size//2+1)
         self.assertEqual(fs.f0, 0*units.Hertz)
         self.assertEqual(fs.df, 1 / ts.duration)
-        self.assertIsInstance(fs, Spectrum)
+        self.assertIsInstance(fs, FrequencySeries)
         self.assertIs(fs.channel, ts.channel)
         self.assertEqual(fs.unit, ts.unit ** 2 / units.Hertz)
         # test that self-CSD is equal to PSD

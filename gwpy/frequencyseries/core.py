@@ -377,4 +377,4 @@ class Spectrum(FrequencySeries):
         warnings.warn("The gwpy.spectrum.Spectrum was renamed "
                       "gwpy.frequencyseries.FrequencySeries",
                       DeprecationWarning)
-        return FrequencySeries(*args, **kwargs)
+        return super(Spectrum, cls).__new__(cls, *args, **kwargs)
