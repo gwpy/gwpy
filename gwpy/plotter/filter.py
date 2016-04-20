@@ -186,8 +186,8 @@ class BodePlot(Plot):
         lp = self.paxes.plot(w, phase, **kwargs)
         return lm, lp
 
-    def add_spectrum(self, spectrum, dB=True, power=False, **kwargs):
-        """Plot the magnitude and phase of a complex-valued FrequencySeries
+    def add_frequencyseries(self, spectrum, dB=True, power=False, **kwargs):
+        """Plot the magnitude and phase of a complex-valued `FrequencySeries`
 
         Parameters
         ----------
@@ -225,3 +225,8 @@ class BodePlot(Plot):
         lm = self.maxes.plot(w, mag, **kwargs)
         lp = self.paxes.plot(w, phase, **kwargs)
         return lm, lp
+
+    def add_spectrum(self, *args, **kwargs):
+        warnings.warn("This method was renamed add_frequencyseries()",
+                      DeprecationWarning)
+        return self.add_frequencyseries(*args, **kwargs)
