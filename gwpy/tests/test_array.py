@@ -356,7 +356,7 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         if ts1.xunit == units.s:
             self.assertEqual(ts1.value_at(1500 * units.millisecond),
                              4 * units.m)
-        # test Spectrum unit conversion
+        # test FrequencySeries unit conversion
         elif ts1.xunit == units.Hz:
             self.assertEqual(ts1.value_at(1500 * units.milliHertz),
                              4 * units.m)

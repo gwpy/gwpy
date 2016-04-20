@@ -33,7 +33,7 @@ from ..detector import Channel
 from ..data import (Array2D, Series)
 from ..segments import Segment
 from ..timeseries import (TimeSeries, TimeSeriesList)
-from ..spectrum import Spectrum
+from ..frequencyseries import FrequencySeries
 from ..utils.docstring import interpolate_docstring
 
 from .. import version
@@ -71,7 +71,7 @@ class Spectrogram(Array2D):
     """
     _metadata_slots = ['name', 'channel', 'epoch', 'dt', 'f0', 'df']
     _default_xunit = TimeSeries._default_xunit
-    _default_yunit = Spectrum._default_xunit
+    _default_yunit = FrequencySeries._default_xunit
 
     def __new__(cls, data, unit=None, name=None, channel=None, epoch=None,
                 dt=None, times=None, f0=None, df=None, frequencies=None,
@@ -165,8 +165,9 @@ class Spectrogram(Array2D):
 
         Parameters
         ----------
-        operand : `str`, `~gwpy.spectrum.Spectrum`, `~astropy.units.Quantity`
-            `Spectrum` or `Quantity` against which to weight, or one of
+        operand : `str`, `~gwpy.frequencyseries.FrequencySeries`,
+                  `~astropy.units.Quantity`
+            `FrequencySeries` or `Quantity` to weight against, or one of
 
             - ``'mean'`` : weight against the mean of each spectrum
               in this Spectrogram
@@ -203,7 +204,7 @@ class Spectrogram(Array2D):
         Parameters
         ----------
         *spectra
-            any number of `~gwpy.spectrum.Spectrum` series
+            any number of `~gwpy.frequencyseries.FrequencySeries` series
         dt : `float`, `~astropy.units.Quantity`, optional
             stride between given spectra
 
@@ -212,11 +213,11 @@ class Spectrogram(Array2D):
         Spectrogram
             a new `Spectrogram` from a vertical stacking of the spectra
             The new object takes the metadata from the first given
-            `~gwpy.spectrum.Spectrum` if not given explicitly
+            `~gwpy.frequencyseries.FrequencySeries` if not given explicitly
 
         Notes
         -----
-        Each `~gwpy.spectrum.Spectrum` passed to this
+        Each `~gwpy.frequencyseries.FrequencySeries` passed to this
         constructor must be the same length.
         """
         data = numpy.vstack([s.value for s in spectra])
@@ -248,16 +249,16 @@ class Spectrogram(Array2D):
 
         Returns
         -------
-        spectrum : `~gwpy.spectrum.Spectrum`
-            the given percentile `Spectrum` calculated from this
+        spectrum : `~gwpy.frequencyseries.FrequencySeries`
+            the given percentile `FrequencySeries` calculated from this
             `SpectralVaraicence`
         """
         out = scipy.percentile(self.value, percentile, axis=0)
         name = '%s %s%% percentile' % (self.name, percentile)
-        return Spectrum(out, epoch=self.epoch, channel=self.channel,
-                        name=name, f0=self.f0, df=self.df,
-                        frequencies=(hasattr(self, '_frequencies') and
-                                     self.frequencies or None))
+        return FrequencySeries(out, epoch=self.epoch, channel=self.channel,
+                               name=name, f0=self.f0, df=self.df,
+                               frequencies=(hasattr(self, '_frequencies') and
+                                            self.frequencies or None))
 
     def zpk(self, zeros, poles, gain):
         """Filter this `Spectrogram` by applying a zero-pole-gain filter
@@ -321,7 +322,7 @@ class Spectrogram(Array2D):
 
         See also
         --------
-        Spectrum.zpk
+        FrequencySeries.zpk
             for information on filtering in zero-pole-gain format
         scipy.signal.zpk2tf
             for details on converting ``(zeros, poles, gain)`` into
@@ -406,7 +407,7 @@ class Spectrogram(Array2D):
         :func:`numpy.histogram`
             for details on specifying bins and weights
         """
-        from ..spectrum import SpectralVariance
+        from ..frequencyseries import SpectralVariance
         return SpectralVariance.from_spectrogram(
             self, bins=bins, low=low, high=high, nbins=nbins, log=log,
             norm=norm, density=density)
@@ -495,11 +496,11 @@ class Spectrogram(Array2D):
     def _wrap_function(self, function, *args, **kwargs):
         out = super(Spectrogram, self)._wrap_function(
             function, *args, **kwargs)
-        # requested frequency axis, return a Spectrum
+        # requested frequency axis, return a FrequencySeries
         if out.ndim == 1 and out.x0.unit == self.y0.unit:
-            return Spectrum(out.value, name=out.name, unit=out.unit,
-                            epoch=out.epoch, channel=out.channel,
-                            f0=out.x0.value, df=out.dx.value)
+            return FrequencySeries(out.value, name=out.name, unit=out.unit,
+                                   epoch=out.epoch, channel=out.channel,
+                                   f0=out.x0.value, df=out.dx.value)
         # requested time axis, return a TimeSeries
         elif out.ndim == 1:
             return TimeSeries(out.value, name=out.name, unit=out.unit,

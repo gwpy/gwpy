@@ -131,8 +131,8 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        out : :class:`~gwpy.spectrum.Spectrum`
-            the normalised, complex-valued FFT `Spectrum`.
+        out : :class:`~gwpy.frequencyseries.FrequencySeries`
+            the normalised, complex-valued FFT `FrequencySeries`.
 
         See Also
         --------
@@ -143,16 +143,16 @@ class TimeSeries(TimeSeriesBase):
         -----
         This method, in constrast to the :meth:`numpy.fft.rfft` method
         it calls, applies the necessary normalisation such that the
-        amplitude of the output :class:`~gwpy.spectrum.Spectrum` is
+        amplitude of the output :class:`~gwpy.frequencyseries.FrequencySeries` is
         correct.
         """
-        from ..spectrum import Spectrum
+        from ..frequencyseries import FrequencySeries
         if nfft is None:
             nfft = self.size
         dft = npfft.rfft(self.value, n=nfft) / nfft
         dft[1:] *= 2.0
-        new = Spectrum(dft, epoch=self.epoch, channel=self.channel,
-                       unit=self.unit)
+        new = FrequencySeries(dft, epoch=self.epoch, channel=self.channel,
+                              unit=self.unit)
         try:
             new.frequencies = npfft.rfftfreq(nfft, d=self.dx.value)
         except AttributeError:
@@ -183,7 +183,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        out : complex-valued :class:`~gwpy.spectrum.Spectrum`
+        out : complex-valued :class:`~gwpy.frequencyseries.FrequencySeries`
             the transformed output, with populated frequencies array
             metadata
 
@@ -243,7 +243,7 @@ class TimeSeries(TimeSeriesBase):
         return mean
 
     def psd(self, fftlength=None, overlap=None, method='welch', **kwargs):
-        """Calculate the PSD `Spectrum` for this `TimeSeries`.
+        """Calculate the PSD `FrequencySeries` for this `TimeSeries`.
 
         Parameters
         ----------
@@ -262,7 +262,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        psd :  :class:`~gwpy.spectrum.core.Spectrum`
+        psd :  :class:`~gwpy.frequencyseries.FrequencySeries`
             a data series containing the PSD.
 
         Notes
@@ -286,7 +286,7 @@ class TimeSeries(TimeSeriesBase):
         return psd_
 
     def asd(self, fftlength=None, overlap=None, method='welch', **kwargs):
-        """Calculate the ASD `Spectrum` of this `TimeSeries`.
+        """Calculate the ASD `FrequencySeries` of this `TimeSeries`.
 
         Parameters
         ----------
@@ -305,7 +305,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        psd :  :class:`~gwpy.spectrum.core.Spectrum`
+        psd :  :class:`~gwpy.frequencyseries.FrequencySeries`
             a data series containing the PSD.
 
         Notes
@@ -318,7 +318,7 @@ class TimeSeries(TimeSeriesBase):
         return asd_
 
     def csd(self, other, fftlength=None, overlap=None, **kwargs):
-        """Calculate the CSD `Spectrum` for this `TimeSeries` and other.
+        """Calculate the CSD `FrequencySeries` for two `TimeSeries`
 
         Parameters
         ----------
@@ -335,7 +335,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        csd :  :class:`~gwpy.spectrum.core.Spectrum`
+        csd :  :class:`~gwpy.frequencyseries.FrequencySeries`
             a data series containing the CSD.
         """
 
@@ -741,7 +741,7 @@ class TimeSeries(TimeSeriesBase):
                                  log=log, norm=norm, density=density)
 
     def rayleigh_spectrum(self, fftlength=None, overlap=None, **kwargs):
-        """Calculate the Rayleigh `Spectrum` for this `TimeSeries`.
+        """Calculate the Rayleigh `FrequencySeries` for this `TimeSeries`.
 
         Parameters
         ----------
@@ -758,7 +758,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        psd :  :class:`~gwpy.spectrum.core.Spectrum`
+        psd :  :class:`~gwpy.frequencyseries.FrequencySeries`
             a data series containing the PSD.
 
         Notes
@@ -1220,8 +1220,9 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        coherence : :class:`~gwpy.spectrum.core.Spectrum`
-            the coherence `Spectrum` of this `TimeSeries` with the other
+        coherence : :class:`~gwpy.frequencyseries.FrequencySeries`
+            the coherence `FrequencySeries` of this `TimeSeries`
+            with the other
 
         Notes
         -----
@@ -1235,7 +1236,7 @@ class TimeSeries(TimeSeriesBase):
             for details of the coherence calculator
         """
         from matplotlib import mlab
-        from ..spectrum import Spectrum
+        from ..frequencyseries import FrequencySeries
         # check sampling rates
         if self.sample_rate.to('Hertz') != other.sample_rate.to('Hertz'):
             sampling = min(self.sample_rate.value, other.sample_rate.value)
@@ -1261,7 +1262,7 @@ class TimeSeries(TimeSeriesBase):
             kwargs['window'] = window
         coh, f = mlab.cohere(self_.value, other.value, NFFT=fftlength,
                              Fs=sampling, noverlap=overlap, **kwargs)
-        out = coh.view(Spectrum)
+        out = coh.view(FrequencySeries)
         out.xindex = f
         out.epoch = self.epoch
         out.name = 'Coherence between %s and %s' % (self.name, other.name)
@@ -1298,8 +1299,9 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        coherence : :class:`~gwpy.spectrum.core.Spectrum`
-            the coherence `Spectrum` of this `TimeSeries` with the other
+        coherence : :class:`~gwpy.frequencyseries.FrequencySeries`
+            the coherence `FrequencySeries` of this `TimeSeries`
+            with the other
 
         Notes
         -----
@@ -1399,13 +1401,13 @@ class TimeSeries(TimeSeriesBase):
             name of the window function to use, or an array of length
             ``fftlength * TimeSeries.sample_rate`` to use as the window.
 
-        asd : `~gwpy.spectrum.Spectrum`
+        asd : `~gwpy.frequencyseries.FrequencySeries`
             the amplitude-spectral density using which to whiten the data
 
         **kwargs
             other keyword arguments are passed to the `TimeSeries.asd`
-            method to estimate the amplitude spectral density `Spectrum`
-            of this `TimeSeries.
+            method to estimate the amplitude spectral density
+            `FrequencySeries` of this `TimeSeries.
 
         Returns
         -------
