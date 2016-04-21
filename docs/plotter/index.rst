@@ -50,7 +50,7 @@ Plot types
 The following diagram displays the available Plot objects and their
 inheritance from :class:`Plot`.
 
-.. inheritance-diagram:: core timeseries spectrum spectrogram table filter
+.. inheritance-diagram:: core timeseries frequencyseries spectrogram table filter
 
 The following pages outline specific applications of some of the specialist plot types
 

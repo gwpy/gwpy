@@ -37,26 +37,27 @@ white = TimeSeries.get(
 
 # Now, we can re-calibrate these data into displacement units by first applying
 # a `highpass <TimeSeries.highpass>` filter to remove the low-frequency noise,
-# and then applying our de-whitening filter in `ZPK <TimeSeries.zpk>` format 
+# and then applying our de-whitening filter in `ZPK <TimeSeries.zpk>` format
 # with five zeros at 100 Hz and five poles at 1 Hz (giving an overall DC
 # gain of 10 :sup:`-10`:
 hp = white.highpass(4)
 displacement = hp.zpk([100]*5, [1]*5, 1e-10)
 
 # We can visualise the impact of the whitening by calculating the ASD
-# `~gwpy.spectrum.Spectrum` before and after the filter,
+# `~gwpy.frequencyseries.FrequencySeries` before and after the filter,
 
 whiteasd = white.asd(8, 4)
 dispasd = displacement.asd(8, 4)
 
 # and plotting:
 
-from gwpy.plotter import SpectrumPlot
-plot = SpectrumPlot(whiteasd, dispasd, sep=True, sharex=True, label=None)
+from gwpy.plotter import FrequencySeriesPlot
+plot = FrequencySeriesPlot(whiteasd, dispasd, sep=True, sharex=True, label=None)
 
-# Here we have passed the two `spectra <gwpy.spectrum.Spectrum>` in order,
-# then `sep=True` to display them on separate Axes, `sharex=True` to tie 
-# the `~matplotlib.axis.XAxis` of each of the `~gwpy.plotter.SpectrumAxes` 
+# Here we have passed the two
+# `spectra <gwpy.frequencyseries.FrequencySeries>` in order,
+# then `sep=True` to display them on separate Axes, `sharex=True` to tie
+# the `~matplotlib.axis.XAxis` of each of the `~gwpy.plotter.FrequencySeriesAxes`
 # together, and `label=None` to remove any unwanted legends.
 #
 # Finally, we prettify our plot with some limits, and some labels:

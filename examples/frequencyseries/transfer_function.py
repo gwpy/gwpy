@@ -61,7 +61,7 @@ size = min(gndfft.size, hpifft.size)
 tf = hpifft[:size] / gndfft[:size]
 
 # The `~gwpy.plotter.BodePlot` knows how to separate a complex-valued
-# `~gwpy.spectrum.Spectrum` into magnitude and phase:
+# `~gwpy.frequencyseries.FrequencySeries` into magnitude and phase:
 plot = BodePlot(tf)
 plot.maxes.set_title(
     r'L1 ITMY ground $\rightarrow$ HPI transfer function')

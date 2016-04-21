@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Input/Output routines for the Spectrum.
+"""Input/Output routines for the FrequencySeries.
 """
 
 from .. import version
@@ -24,11 +24,11 @@ from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = version.version
 
-from ..core import Spectrum
+from ..core import FrequencySeries
 
 # register ASCII
 from ...io.ascii import register_ascii
-register_ascii(Spectrum)
+register_ascii(FrequencySeries)
 
 # register HDF5
 from . import hdf5

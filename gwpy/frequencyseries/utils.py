@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilities for `Spectrum calculation.
+"""Utilities for `FrequencySeries` calculation.
 """
 
 from astropy import units
@@ -32,25 +32,25 @@ def safe_import(module, method):
     try:
         return __import__(module, fromlist=[''])
     except ImportError:
-        raise ImportError("The '%s' Spectrum method requires the %s module."
-                          % (method, module))
+        raise ImportError("The '%s' FrequencySeries method requires the %s "
+                          "module." % (method, module))
 
 
 def scale_timeseries_units(tsunit, scaling='density'):
-    """Scale the unit of a `TimeSeries` to match that of a `Spectrum`.
+    """Scale the unit of a `TimeSeries` to match that of a `FrequencySeries`
 
     Parameters
     ----------
     tsunit : `~astropy.units.UnitBase`
         input unit from `TimeSeries`
     scaling : `str`
-        type of spectrum, either 'density' for a PSD, or 'spectrum' for a
-        power spectrum.
+        type of frequency series, either 'density' for a PSD, or
+        'spectrum' for a power spectrum.
 
     Returns
     -------
-    spectrumunit : `~astropy.units.Unit`
-        unit to be applied to the resulting `Spectrum`.
+    unit : `~astropy.units.Unit`
+        unit to be applied to the resulting `FrequencySeries`.
     """
     # set units
     if scaling == 'density':

@@ -43,7 +43,7 @@ def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
     :class:`~gwpy.spectrogram.core.Spectrogram` from a pair of
     :class:`~gwpy.timeseries.TimeSeries`.
 
-    For each `stride`, a PSD :class:`~gwpy.spectrum.core.Spectrum`
+    For each `stride`, a PSD :class:`~gwpy.frequencyseries.FrequencySeries`
     is generated, with all resulting spectra stacked in time and returned.
     """
     # check sampling rates

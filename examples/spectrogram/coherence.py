@@ -20,7 +20,8 @@
 """Calculating the time-dependent coherence between two channels
 
 The standard coherence calculation outputs a frequency series
-(`~gwpy.spectrum.Spectrum`) giving a time-averaged measure of coherence.
+(`~gwpy.frequencyseries.FrequencySeries`) giving a time-averaged measure
+of coherence.
 
 The `TimeSeries` method :meth:`~TimeSeries.coherence_spectrogram` performs the
 same coherence calculation every ``stride``, giving a time-varying coherence

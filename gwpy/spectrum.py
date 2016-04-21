@@ -16,16 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module attaches the HDF5 input output methods to the Spectrum.
+"""Deprecated module name
 """
 
-from ... import version
-from ...data.io import hdf5
-from .. import (Spectrum, SpectralVariance)
+import warnings
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
+warnings.warn("The gwpy.spectrum module has been renamed "
+              "gwpy.frequencyseries, you should use that from now on.",
+              DeprecationWarning)
 
-for array_type in (Spectrum, SpectralVariance):
-    hdf5.register_hdf5_array_io(array_type)
-    hdf5.register_hdf5_array_io(array_type, format='hdf', identify=False)
+from .frequencyseries import *

@@ -44,7 +44,7 @@ from gwpy.segments import (DataQualityFlag, Segment, SegmentList)
 from gwpy.timeseries import TimeSeries
 from gwpy.plotter import (figure, rcParams, Plot, Axes,
                           TimeSeriesPlot, TimeSeriesAxes,
-                          SpectrumPlot, SpectrumAxes,
+                          FrequencySeriesPlot, FrequencySeriesAxes,
                           EventTablePlot, EventTableAxes,
                           HistogramPlot, HistogramAxes,
                           SegmentPlot, SegmentAxes,
@@ -352,20 +352,20 @@ class TimeSeriesAxesTestCase(TimeSeriesMixin, AxesTestCase):
         self.save_and_close(fig)
 
 
-# -- Spectrum plotters --------------------------------------------------------
+# -- FrequencySeries plotters --------------------------------------------------------
 
-class SpectrumMixin(object):
-    FIGURE_CLASS = SpectrumPlot
-    AXES_CLASS = SpectrumAxes
+class FrequencySeriesMixin(object):
+    FIGURE_CLASS = FrequencySeriesPlot
+    AXES_CLASS = FrequencySeriesAxes
 
     def setUp(self):
         self.ts = TimeSeries.read(TEST_HDF_FILE, 'H1:LDAS-STRAIN')
         self.asd = self.ts.asd(1)
         self.mmm = [self.asd, self.asd*0.9, self.asd*1.1]
 
-class SpectrumPlotTestCase(SpectrumMixin, PlotTestCase):
+class FrequencySeriesPlotTestCase(FrequencySeriesMixin, PlotTestCase):
     def test_init(self):
-        super(SpectrumPlotTestCase, self).test_init()
+        super(FrequencySeriesPlotTestCase, self).test_init()
         # test convenience plotting
         fig = self.FIGURE_CLASS(self.asd)
         self.assertEqual(len(fig.axes), 1)
@@ -374,7 +374,7 @@ class SpectrumPlotTestCase(SpectrumMixin, PlotTestCase):
         self.assertEqual(len(ax.lines), 1)
 
 
-class SpectrumAxesTestCase(SpectrumMixin, AxesTestCase):
+class FrequencySeriesAxesTestCase(FrequencySeriesMixin, AxesTestCase):
     def test_plot_spectrum(self):
         fig, ax = self.new()
         l = ax.plot_spectrum(self.asd)[0]
@@ -601,13 +601,13 @@ class BodePlotTestCase(Mixin, unittest.TestCase):
         self.assertEqual(len(fig.axes), 2)
         maxes, paxes = fig.axes
         # test magnigtude axes
-        self.assertIsInstance(maxes, SpectrumAxes)
+        self.assertIsInstance(maxes, FrequencySeriesAxes)
         self.assertEqual(maxes.get_xscale(), 'log')
         self.assertEqual(maxes.get_xlabel(), '')
         self.assertEqual(maxes.get_yscale(), 'linear')
         self.assertEqual(maxes.get_ylabel(), 'Magnitude [dB]')
         # test phase axes
-        self.assertIsInstance(paxes, SpectrumAxes)
+        self.assertIsInstance(paxes, FrequencySeriesAxes)
         self.assertEqual(paxes.get_xscale(), 'log')
         self.assertEqual(paxes.get_xlabel(), 'Frequency [Hz]')
         self.assertEqual(paxes.get_yscale(), 'linear')

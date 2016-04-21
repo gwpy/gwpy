@@ -37,7 +37,7 @@ from .log import *
 from .core import *
 from .timeseries import *
 from .spectrogram import *
-from .spectrum import *
+from .frequencyseries import *
 from .segments import *
 from .filter import *
 from .table import *

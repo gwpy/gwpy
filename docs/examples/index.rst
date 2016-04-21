@@ -7,7 +7,7 @@ GWpy examples
 
    timeseries/index
 
-   spectrum/index
+   frequencyseries/index
 
    spectrogram/index
 

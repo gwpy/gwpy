@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for spectrum module
+"""Unit test for frequencyseries module
 """
 
 from tempfile import NamedTemporaryFile
@@ -28,7 +28,7 @@ from scipy import signal
 from astropy import units
 
 from gwpy import version
-from gwpy.spectrum import (Spectrum, SpectralVariance)
+from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.plotter import FrequencySeriesPlot
 
 from test_array import (SeriesTestCase, Array2DTestCase)
@@ -39,10 +39,10 @@ __version__ = version.version
 
 # -----------------------------------------------------------------------------
 
-class SpectrumTestCase(SeriesTestCase):
-    """`~unittest.TestCase` for the `~gwpy.spectrum.Spectrum` class
+class FrequencySeriesTestCase(SeriesTestCase):
+    """`~unittest.TestCase` for the `~gwpy.frequencyseries.FrequencySeries`
     """
-    TEST_CLASS = Spectrum
+    TEST_CLASS = FrequencySeries
 
     def test_f0_df(self):
         array = self.create()
@@ -92,8 +92,13 @@ class SpectrumTestCase(SeriesTestCase):
         array = self.create()
         try:
             pycbcarray = array.to_pycbc()
-        except ImportError as e:
-            self.skipTest(str(e))
+        except (ValueError, ImportError) as e:
+            # catch dodgy error on missing dependency
+            if isinstance(e, ValueError) and (
+                'insecure string pickle' not in str(e)):
+                raise
+            else:
+                self.skipTest(str(e))
         nptest.assert_array_equal(pycbcarray.data, array.value)
         array2 = type(array).from_pycbc(pycbcarray)
         self.assertArraysEqual(array, array2, 'units', 'df', 'f0')

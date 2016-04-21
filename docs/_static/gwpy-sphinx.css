@@ -21,6 +21,12 @@
  */
 
 
+/* -- banner image -------------------------------------------------------- */
+
+img[src*="https://gwpy.github.io/images/gwpy_docs_1200.png"] {
+    max-width: 600px;
+}
+
 /* -- footer -------------------------------------------------------------- */
 
 html {
@@ -52,6 +58,12 @@ footer {
 
 table a {
 		text-decoration: none !important;
+}
+
+/* -- code formatting ----------------------------------------------------- */
+
+code {
+	padding: 0px
 }
 
 /* -- autoclass formatting ------------------------------------------------ */

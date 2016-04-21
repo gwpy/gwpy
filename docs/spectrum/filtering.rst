@@ -2,13 +2,13 @@
 Filtering frequency-domain data
 ###############################
 
-Frequency-domain data (a :class:`~gwpy.spectrum.Spectrum` or a :class:`~gwpy.spectrogram.Spectrogram`) can be filtered using an arbitrary filter using the :meth:`filter` methods of those objects:
+Frequency-domain data (a :class:`~gwpy.frequencyseries.FrequencySeries` or a :class:`~gwpy.spectrogram.Spectrogram`) can be filtered using an arbitrary filter using the :meth:`filter` methods of those objects:
 
-.. currentmodule:: gwpy.spectrum
+.. currentmodule:: gwpy.frequencyseries
 
 .. autosummary::
 
-   Spectrum.filter
+   FrequencySeries.filter
 
 .. currentmodule:: gwpy.spectrogram
 

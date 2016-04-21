@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Representation of a frequency-series spectrum
+"""Representation of a frequency series
 """
 
 import warnings
@@ -37,7 +37,7 @@ from .. import version
 __version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
-__all__ = ['Spectrum']
+__all__ = ['FrequencySeries', 'Spectrum']
 
 interpolate_docstring.update({
     'frequency-axis': (
@@ -53,8 +53,8 @@ interpolate_docstring.update({
 
 
 @interpolate_docstring
-class Spectrum(Series):
-    """A data array holding some metadata to represent a spectrum.
+class FrequencySeries(Series):
+    """A data array holding some metadata to represent a frequency series
 
     Parameters
     ----------
@@ -70,10 +70,10 @@ class Spectrum(Series):
 
     .. autosummary::
 
-       ~Spectrum.read
-       ~Spectrum.write
-       ~Spectrum.plot
-       ~Spectrum.zpk
+       ~FrequencySeries.read
+       ~FrequencySeries.write
+       ~FrequencySeries.plot
+       ~FrequencySeries.zpk
     """
     _metadata_slots = Array._metadata_slots + ['f0', 'df']
     _default_xunit = units.Unit('Hz')
@@ -81,7 +81,7 @@ class Spectrum(Series):
     def __new__(cls, data, unit=None, frequencies=None, name=None,
                 epoch=None, f0=0, df=1, channel=None,
                 **kwargs):
-        """Generate a new Spectrum.
+        """Generate a new FrequencySeries.
         """
         # parse Channel input
         if channel:
@@ -95,22 +95,21 @@ class Spectrum(Series):
         f0 = kwargs.pop('x0', f0)
         df = kwargs.pop('dx', df)
         # generate Spectrum
-        return super(Spectrum, cls).__new__(cls, data, name=name, unit=unit,
-                                            channel=channel, x0=f0, dx=df,
-                                            epoch=epoch, xindex=frequencies,
-                                            **kwargs)
+        return super(FrequencySeries, cls).__new__(
+            cls, data, name=name, unit=unit, channel=channel, x0=f0, dx=df,
+            epoch=epoch, xindex=frequencies, **kwargs)
 
     # -------------------------------------------
-    # Spectrum properties
+    # FrequencySeries properties
 
     f0 = property(Series.x0.__get__, Series.x0.__set__, Series.x0.__delete__,
-                  """Starting frequency for this `Spectrum`
+                  """Starting frequency for this `FrequencySeries`
 
                   :type: `~astropy.units.Quantity` scalar
                   """)
 
     df = property(Series.dx.__get__, Series.dx.__set__, Series.dx.__delete__,
-                  """Frequency spacing of this `Spectrum`
+                  """Frequency spacing of this `FrequencySeries`
 
                   :type: `~astropy.units.Quantity` scalar
                   """)
@@ -121,22 +120,21 @@ class Spectrum(Series):
                            doc="""Series of frequencies for each sample""")
 
     # -------------------------------------------
-    # Spectrum methods
+    # FrequencySeries methods
 
     def plot(self, **kwargs):
-        """Display this `Spectrum` in a figure
+        """Display this `FrequencySeries` in a figure
 
         All arguments are passed onto the
-        :class:`~gwpy.plotter.SpectrumPlot` constructor
+        `~gwpy.plotter.FrequencySeriesPlot` constructor
 
         Returns
         -------
-        SpectrumPlot
-            a new :class:`~gwpy.plotter.SpectrumPlot` rendering
-            of this `Spectrum`
+        plot : `~gwpy.plotter.FrequencySeriesPlot`
+            a new `FrequencySeriesPlot` rendering of this `FrequencySeries`
         """
-        from ..plotter import SpectrumPlot
-        return SpectrumPlot(self, **kwargs)
+        from ..plotter import FrequencySeriesPlot
+        return FrequencySeriesPlot(self, **kwargs)
 
     def ifft(self):
         """Compute the one-dimensional discrete inverse Fourier
@@ -172,7 +170,7 @@ class Spectrum(Series):
         return new
 
     def zpk(self, zeros, poles, gain):
-        """Filter this `Spectrum` by applying a zero-pole-gain filter
+        """Filter this `FrequencySeries` by applying a zero-pole-gain filter
 
         Parameters
         ----------
@@ -185,12 +183,12 @@ class Spectrum(Series):
 
         Returns
         -------
-        spectrum : `Spectrum`
+        spectrum : `FrequencySeries`
             the frequency-domain filtered version of the input data
 
         See Also
         --------
-        Spectrum.filter
+        FrequencySeries.filter
             for details on how a digital ZPK-format filter is applied
 
         Examples
@@ -203,11 +201,11 @@ class Spectrum(Series):
         return self.filter(zeros, poles, gain)
 
     def filter(self, *filt, **kwargs):
-        """Apply the given filter to this `Spectrum`.
+        """Apply the given filter to this `FrequencySeries`.
 
         Recognised filter arguments are converted into the standard
         ``(numerator, denominator)`` representation before being applied
-        to this `Spectrum`.
+        to this `FrequencySeries`.
 
         .. note::
 
@@ -228,12 +226,12 @@ class Spectrum(Series):
 
         Returns
         -------
-        result : `Spectrum`
-            the filtered version of the input `Spectrum`
+        result : `FrequencySeries`
+            the filtered version of the input `FrequencySeries`
 
         See also
         --------
-        Spectrum.zpk
+        FrequencySeries.zpk
             for information on filtering in zero-pole-gain format
         scipy.signal.zpk2tf
             for details on converting ``(zeros, poles, gain)`` into
@@ -268,7 +266,7 @@ class Spectrum(Series):
         # parse keyword args
         inplace = kwargs.pop('inplace', False)
         if kwargs:
-            raise TypeError("Spectrum.filter() got an unexpected keyword "
+            raise TypeError("FrequencySeries.filter() got an unexpected keyword "
                             "argument '%s'" % list(kwargs.keys())[0])
         fresp = abs(signal.freqs(b, a, self.frequencies.value)[1])
         if inplace:
@@ -281,14 +279,14 @@ class Spectrum(Series):
 
     def filterba(self, *args, **kwargs):
         warnings.warn("filterba will be removed soon, please use "
-                      "Spectrum.filter instead, with the same arguments",
+                      "FrequencySeries.filter instead, with the same arguments",
                       DeprecationWarning)
         return self.filter(*args, **kwargs)
 
     @classmethod
     @with_import('lal')
     def from_lal(cls, lalfs, copy=True):
-        """Generate a new `Spectrum` from a LAL `FrequencySeries` of any type
+        """Generate a new `FrequencySeries` from a LAL `FrequencySeries` of any type
         """
         from ..utils.lal import from_lal_unit
         try:
@@ -303,7 +301,7 @@ class Spectrum(Series):
 
     @with_import('lal')
     def to_lal(self):
-        """Convert this `Spectrum` into a LAL FrequencySeries.
+        """Convert this `FrequencySeries` into a LAL FrequencySeries.
 
         Returns
         -------
@@ -335,7 +333,7 @@ class Spectrum(Series):
     @classmethod
     def from_pycbc(cls, fs):
         """Convert a `pycbc.types.frequencyseries.FrequencySeries` into
-        a `Spectrum`
+        a `FrequencySeries`
 
         Parameters
         ----------
@@ -345,14 +343,14 @@ class Spectrum(Series):
 
         Returns
         -------
-        spectrum : `Spectrum`
+        spectrum : `FrequencySeries`
             a GWpy version of the input frequency series
         """
         return cls(fs.data, f0=0, df=fs.delta_f, epoch=fs.epoch)
 
     @with_import('pycbc.types')
     def to_pycbc(self, copy=True):
-        """Convert this `Spectrum` into a
+        """Convert this `FrequencySeries` into a
         `pycbc.types.frequencyseries.FrequencySeries`
 
         Parameters
@@ -363,7 +361,7 @@ class Spectrum(Series):
         Returns
         -------
         frequencyseries : `pycbc.types.frequencyseries.FrequencySeries`
-            a PyCBC representation of this `Spectrum`
+            a PyCBC representation of this `FrequencySeries`
         """
         if self.epoch is None:
             epoch = None
@@ -371,3 +369,11 @@ class Spectrum(Series):
             epoch = self.epoch.gps
         return types.FrequencySeries(self.data, delta_f=self.df.to('Hz').value,
                                      epoch=epoch, copy=copy)
+
+
+class Spectrum(FrequencySeries):
+    def __new__(cls, *args, **kwargs):
+        warnings.warn("The gwpy.spectrum.Spectrum was renamed "
+                      "gwpy.frequencyseries.FrequencySeries",
+                      DeprecationWarning)
+        return super(Spectrum, cls).__new__(cls, *args, **kwargs)

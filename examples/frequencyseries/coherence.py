@@ -47,7 +47,7 @@ data = TimeSeriesDict.get(['L1:LSC-SRCL_IN1_DQ', 'L1:LSC-CARM_IN1_DQ'],
 # transform length, with a 4-second (50%) overlap:
 coh = data['L1:LSC-SRCL_IN1_DQ'].coherence(data['L1:LSC-CARM_IN1_DQ'], 8, 4)
 
-# Finally, we can :meth:`~gwpy.spectrum.Spectrum.plot` the resulting data:
+# Finally, we can :meth:`~gwpy.frequencyseries.FrequencySeries.plot` the resulting data:
 plot = coh.plot(figsize=[12, 6], label=None)
 ax = plot.gca()
 ax.set_yscale('linear')

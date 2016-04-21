@@ -34,9 +34,9 @@ From there, anything you might want to do with the :class:`~gwpy.timeseries.Time
 
     >>> spectrum = mydata.asd(4)
 
-where the ``4`` argument tells the :meth:`~gwpy.timeseries.TimeSeries.asd` method to generate a Welch average spectrum (by default) with non-overlapping, 4-second Fourier transforms.
+where the ``4`` argument tells the :meth:`~gwpy.timeseries.TimeSeries.asd` method to generate a Welch average ASD `~gwpy.frequencyseries.FrequencySeries` (by default) with non-overlapping, 4-second Fourier transforms.
 
-Then you have a new object, a :class:`~gwpy.spectrum.Spectrum`, with its own methods and properties.
+Then you have a new object, a :class:`~gwpy.frequencyseries.FrequencySeries`, with its own methods and properties.
 
 ============
 Core objects
@@ -48,7 +48,7 @@ There are a small number of core objects provided by GWpy, each representing the
    :nosignatures:
 
    ~gwpy.timeseries.TimeSeries
-   ~gwpy.spectrum.Spectrum
+   ~gwpy.frequencyseries.FrequencySeries
    ~gwpy.spectrogram.Spectrogram
    ~gwpy.segments.DataQualityFlag
 

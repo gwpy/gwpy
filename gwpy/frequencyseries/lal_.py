@@ -24,7 +24,7 @@ import warnings
 
 import numpy
 
-from .core import Spectrum
+from .core import FrequencySeries
 from .registry import register_method
 from .utils import scale_timeseries_units
 from ..utils import with_import
@@ -121,7 +121,7 @@ def generate_lal_window(length, type_=('kaiser', 24),
 @with_import('lal.lal')
 def lal_psd(timeseries, segmentlength, noverlap=None, method='welch',
             window=None, plan=None):
-    """Generate a PSD `Spectrum` using XLAL.
+    """Generate a PSD `FrequencySeries` using XLAL.
 
     Parameters
     ----------
@@ -141,7 +141,7 @@ def lal_psd(timeseries, segmentlength, noverlap=None, method='welch',
     Returns
     -------
     Spectrum
-        average power `Spectrum`
+        average power `FrequencySeries`
     """
     # get LAL
     from ..utils.lal import LAL_TYPE_STR_FROM_NUMPY
@@ -204,7 +204,7 @@ def lal_psd(timeseries, segmentlength, noverlap=None, method='welch',
                      window, plan)
 
     # format and return
-    spec = Spectrum.from_lal(lalfs)
+    spec = FrequencySeries.from_lal(lalfs)
     spec.channel = timeseries.channel
     spec._unit = scale_timeseries_units(timeseries.unit, scaling='density')
     return spec

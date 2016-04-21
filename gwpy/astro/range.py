@@ -38,7 +38,7 @@ def inspiral_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False):
 
     Parameters
     ----------
-    psd : `~gwpy.spectrum.Spectrum`
+    psd : `~gwpy.frequencyseries.FrequencySeries`
         the instrumental power-spectral-density data
     snr : `float`, optional
         the signal-to-noise ratio for which to calculate range
@@ -53,7 +53,7 @@ def inspiral_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False):
 
     Returns
     -------
-    rspec : `~gwpy.spectrum.Spectrum`
+    rspec : `~gwpy.frequencyseries.FrequencySeries`
         the calculated inspiral sensitivity PSD [Mpc^2 / Hz]
     """
     # compute chirp mass and symmetric mass ratio
@@ -96,7 +96,7 @@ def inspiral_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=0, fmax=None,
 
     Parameters
     ----------
-    psd : `~gwpy.spectrum.Spectrum`
+    psd : `~gwpy.frequencyseries.FrequencySeries`
         the instrumental power-spectral-density data
     snr : `float`, optional
         the signal-to-noise ratio for which to calculate range
@@ -153,7 +153,7 @@ def burst_range_spectrum(psd, snr=8, energy=1e-2, unit='Mpc'):
 
     Parameters
     ----------
-    psd : `~gwpy.spectrum.Spectrum`
+    psd : `~gwpy.frequencyseries.FrequencySeries`
         the instrumental power-spectral-density data
     snr : `float`, optional
         the signal-to-noise ratio for which to calculate range
@@ -165,8 +165,8 @@ def burst_range_spectrum(psd, snr=8, energy=1e-2, unit='Mpc'):
 
     Returns
     -------
-    rangespec : `~gwpy.spectrum.Spectrum`
-        the burst range `Spectrum` [Mpc (default)]
+    rangespec : `~gwpy.frequencyseries.FrequencySeries`
+        the burst range `FrequencySeries` [Mpc (default)]
     """
     unit = units.Unit(unit)
     a = (constants.G.value * energy * constants.M_sun.value * 0.4 /
@@ -185,7 +185,7 @@ def burst_range(psd, snr=8, energy=1e-2, fmin=100, fmax=500, unit='Mpc'):
 
     Parameters
     ----------
-    psd : `~gwpy.spectrum.Spectrum`
+    psd : `~gwpy.frequencyseries.FrequencySeries`
         the instrumental power-spectral-density data
     snr : `float`, optional
         the signal-to-noise ratio for which to calculate range

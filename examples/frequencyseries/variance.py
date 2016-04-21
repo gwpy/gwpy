@@ -21,7 +21,7 @@
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.spectrum'
+__currentmodule__ = 'gwpy.frequencyseries'
 
 # In order to generate a `SpectralVariance` histogram we need to import the
 # `~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.get`

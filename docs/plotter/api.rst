@@ -11,7 +11,7 @@ This document provides a reference for the following :class:`~matplotlib.figure.
 
    Plot
    TimeSeriesPlot
-   SpectrumPlot
+   FrequencySeriesPlot
    SpectrogramPlot
    SegmentPlot
    EventTablePlot
@@ -24,7 +24,7 @@ and the following :class:`~matplotlib.axes.Axes` `class` objects:
 
    Axes
    TimeSeriesAxes
-   SpectrumAxes
+   FrequencySeriesAxes
    SegmentAxes
    EventTableAxes
 
@@ -42,7 +42,7 @@ Each of the below classes represents a figure object; for brevity inherited meth
    :no-inherited-members:
 
 
-.. autoclass:: SpectrumPlot
+.. autoclass:: FrequencySeriesPlot
    :no-inherited-members:
 
 
@@ -76,7 +76,7 @@ Each of the below classes represents a set of axes on which data are displayed; 
    :no-inherited-members:
 
 
-.. autoclass:: SpectrumAxes
+.. autoclass:: FrequencySeriesAxes
    :no-inherited-members:
 
 
