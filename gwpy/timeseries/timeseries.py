@@ -359,35 +359,53 @@ class TimeSeries(TimeSeriesBase):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
 
+        Each time-bin of the output `Spectrogram` is calculated by taking
+        a chunk of the `TimeSeries` in the segment
+        `[t - overlap/2., t + stride + overlap/2.)` and calculating the
+        :meth:`~gwpy.timeseries.TimeSeries.psd` of those data.
+
+        As a result, each time-bin is calculated using `stride + overlap`
+        seconds of data.
+
         Parameters
         ----------
-        timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
+        timeseries : `TimeSeries`
             input time-series to process.
+
         stride : `float`
             number of seconds in single PSD (column of spectrogram).
+
         fftlength : `float`
             number of seconds in single FFT.
+
         overlap : `int`, optional, default: 0
             number of seconds between FFTs.
+
         method : `str`, optional, default: 'welch'
             average spectrum method.
-        window : `timeseries.window.Window`, optional, default: `None`
-            window function to apply to timeseries prior to FFT.
+
+        window : `str`, `numpy.ndarray`, optional, default: `None`
+            window function to apply to timeseries prior to FFT,
+            see `scipy.signal.get_window` for details on acceptable
+            formats
+
         plan : :lal:`REAL8FFTPlan`, optional
             LAL FFT plan to use when generating average spectrum,
-            substitute type 'REAL8' as appropriate.
+            substitute type 'REAL8' as appropriate. This is only accepted
+            if you select `method` as one of 'median-mean', 'median', or
+            'lal-welch'
+
         nproc : `int`, default: ``1``
-            maximum number of independent frame reading processes, default
-            is set to single-process file reading.
-        cross : :class:`~gwpy.timeseries.core.TimeSeries`
+            number of CPUs to use in parallel processing of FFTs
+
+        cross : `TimeSeries`
             optional keyword argument
             time-series for calculating CSD spectrogram
             if None, then calculates PSD spectrogram
 
-
         Returns
         -------
-        spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
+        spectrogram : `~gwpy.spectrogram.Spectrogram`
             time-frequency power spectrogram as generated from the
             input time-series.
         """
@@ -417,8 +435,10 @@ class TimeSeries(TimeSeriesBase):
         # get size of spectrogram
         nsamp = int((stride * self.sample_rate).decompose().value)
         nfft = int((fftlength * self.sample_rate).decompose().value)
+        noverlap = int((overlap * self.sample_rate).decompose().value)
         nsteps = int(self.size // nsamp)
         nproc = min(nsteps, nproc)
+        noverlap2 = int(noverlap // 2.)
 
         # generate window and plan if needed
         method_func = get_method(method)
@@ -438,7 +458,7 @@ class TimeSeries(TimeSeriesBase):
             kwargs['window'] = window
 
         # set up single process Spectrogram generation
-        def _from_timeseries(ts, cts):
+        def _from_timeseries(ts, cts, epoch=None):
             """Generate a `Spectrogram` from a `TimeSeries`.
             """
             # calculate specgram parameters
@@ -453,8 +473,10 @@ class TimeSeries(TimeSeriesBase):
             unit = scale_timeseries_units(
                 ts.unit, kwargs.get('scaling', 'density'))
             dtype = numpy.float64 if cts is None else complex
+            if epoch is None:
+                epoch = ts.epoch
             out = Spectrogram(numpy.zeros((nsteps_, nfreqs)), dtype=dtype,
-                              unit=unit, channel=ts.channel, epoch=ts.epoch,
+                              unit=unit, channel=ts.channel, epoch=epoch,
                               f0=0, df=df, dt=dt, copy=False)
 
             if not nsteps_:
@@ -465,9 +487,9 @@ class TimeSeries(TimeSeriesBase):
                 warn("Cannot calculate cross spectral density using "
                      "the %r method. Using 'welch' instead..." % method)
             for step in range(nsteps_):
-                # find step TimeSeries
-                idx = nsamp * step
-                idx_end = idx + nsamp
+                # find step TimeSeries with overlap
+                idx = max(0, nsamp * step - noverlap2)
+                idx_end = min(ts.size, idx + nsamp + noverlap)
                 stepseries = ts[idx:idx_end]
                 if cts is None:
                     stepsd = stepseries.psd(fftlength=fftlength,
@@ -486,9 +508,9 @@ class TimeSeries(TimeSeriesBase):
             return _from_timeseries(self, cross)
 
         # wrap spectrogram generator
-        def _specgram(q, ts, cts):
+        def _specgram(q, *args, **kwargs):
             try:
-                q.put(_from_timeseries(ts, cts))
+                q.put(_from_timeseries(*args, **kwargs))
             except Exception as e:
                 q.put(e)
 
@@ -498,13 +520,20 @@ class TimeSeries(TimeSeriesBase):
         queue = ProcessQueue(nproc)
         processlist = []
         for i in range(nproc):
-            tsamp = self[i * nsampperproc:
-                         (i + 1) * nsampperproc]
-            csamp = (None if cross is None else
-                     cross[i * nsampperproc:
-                           (i + 1) * nsampperproc])
-            process = Process(target=_specgram,
-                              args=(queue, tsamp, csamp))
+            # index of un-overlapped time-series and epoch
+            a = i * nsampperproc
+            t = self.x0 + self.dx * a
+            # overlapped indices for FFT
+            ao = max(0, a - noverlap2)
+            bo = min(self.size, a + nsampperproc + noverlap)
+            tsamp = self[ao:bo]
+            if cross is None:
+                csamp = None
+            else:
+                csamp = cross[ao:bo]
+            # process this chunk
+            process = Process(target=_specgram, args=(queue, tsamp, csamp),
+                              kwargs={'epoch': t})
             process.daemon = True
             processlist.append(process)
             process.start()
