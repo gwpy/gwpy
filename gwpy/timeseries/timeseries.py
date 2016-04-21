@@ -359,35 +359,53 @@ class TimeSeries(TimeSeriesBase):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
 
+        Each time-bin of the output `Spectrogram` is calculated by taking
+        a chunk of the `TimeSeries` in the segment
+        `[t - overlap/2., t + stride + overlap/2.)` and calculating the
+        :meth:`~gwpy.timeseries.TimeSeries.psd` of those data.
+
+        As a result, each time-bin is calculated using `stride + overlap`
+        seconds of data.
+
         Parameters
         ----------
-        timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
+        timeseries : `TimeSeries`
             input time-series to process.
+
         stride : `float`
             number of seconds in single PSD (column of spectrogram).
+
         fftlength : `float`
             number of seconds in single FFT.
+
         overlap : `int`, optional, default: 0
             number of seconds between FFTs.
+
         method : `str`, optional, default: 'welch'
             average spectrum method.
-        window : `timeseries.window.Window`, optional, default: `None`
-            window function to apply to timeseries prior to FFT.
+
+        window : `str`, `numpy.ndarray`, optional, default: `None`
+            window function to apply to timeseries prior to FFT,
+            see `scipy.signal.get_window` for details on acceptable
+            formats
+
         plan : :lal:`REAL8FFTPlan`, optional
             LAL FFT plan to use when generating average spectrum,
-            substitute type 'REAL8' as appropriate.
+            substitute type 'REAL8' as appropriate. This is only accepted
+            if you select `method` as one of 'median-mean', 'median', or
+            'lal-welch'
+
         nproc : `int`, default: ``1``
-            maximum number of independent frame reading processes, default
-            is set to single-process file reading.
-        cross : :class:`~gwpy.timeseries.core.TimeSeries`
+            number of CPUs to use in parallel processing of FFTs
+
+        cross : `TimeSeries`
             optional keyword argument
             time-series for calculating CSD spectrogram
             if None, then calculates PSD spectrogram
 
-
         Returns
         -------
-        spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
+        spectrogram : `~gwpy.spectrogram.Spectrogram`
             time-frequency power spectrogram as generated from the
             input time-series.
         """
