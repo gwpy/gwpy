@@ -30,6 +30,9 @@ from math import (log, ceil, pi, isinf, exp)
 from six.moves import xrange
 
 import numpy
+from numpy import fft as npfft
+
+from ..timeseries import TimeSeries
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Scott Coughlin <scott.coughlin@ligo.org>'
@@ -136,7 +139,7 @@ class QPlane(QBase):
     """Iterable representation of a Q-transform plane
 
     For a given Q, an array of frequencies can be iterated over, yielding
-    a `QRow` each time.
+    a `QTile` each time.
 
     Parameters
     ----------
@@ -163,11 +166,11 @@ class QPlane(QBase):
     def __iter__(self):
         """Iterate over this `QPlane`
 
-        Yields a `QRow` at each frequency
+        Yields a `QTile` at each frequency
         """
-        # for each frequency, yield a QRow
+        # for each frequency, yield a QTile
         for f in self._iter_frequencies():
-            yield QRow(self.q, f, self.duration, self.sampling,
+            yield QTile(self.q, f, self.duration, self.sampling,
                        mismatch=self.mismatch)
         raise StopIteration()
 
@@ -180,7 +183,7 @@ class QPlane(QBase):
         nfreq = int(max(1, ceil(fcum_mismatch / self.deltam)))
         fstep = fcum_mismatch / nfreq
         fstepmin = 1 / self.duration
-        # for each frequency, yield a QRow
+        # for each frequency, yield a QTile
         for i in xrange(nfreq):
             yield (minf * exp(2 / (2 + self.q**2)**(1/2.) * (i + .5) * fstep)
                  // fstepmin * fstepmin)
@@ -204,12 +207,47 @@ class QPlane(QBase):
         bandwidths = 2 * pi ** (1/2.) * f / self.q
         return f - bandwidths / 2.
 
+    def transform(self, fseries, normalized=True, epoch=None):
+        """Calculate the energy `TimeSeries` for the given fseries
 
-class QRow(QBase):
-    """Representation of a set of tiles with fixed Q and frequency
+        Parameters
+        ----------
+        fseries : `~gwpy.spectrum.Spectrum`
+            the complex FFT of a time-series data set
+        normalized : `bool`, optional
+            normalize the energy of the output, if `False` the output
+            is the complex `~numpy.fft.ifft` output of the Q-tranform
+        epoch : `~gwpy.time.LIGOTimeGPS`, `float`, optional
+            the epoch of these data, only used for metadata in the output
+            `TimeSeries`, and not requires if the input `fseries` has the
+            epoch populated.
+
+        Returns
+        -------
+        frequencies : `numpy.ndarray`
+            array of frequencies for this `QPlane`
+        transforms : `list` of `~gwpy.timeseries.TimeSeries`
+            the complex energies of the Q-transform of the input `fseries`
+            at each frequency
+
+        See Also
+        --------
+        QTile.transform
+            for details on the transform for a single `(Q, frequency)` tile
+        """
+        out = []
+        for qtile in self:
+            # get energy from transform
+            out.append(qtile.transform(fseries, normalized=normalized,
+                                       epoch=epoch))
+        return self.frequencies, out
+
+
+class QTile(QBase):
+    """Representation of a tile with fixed Q and frequency
     """
     def __init__(self, q, frequency, duration, sampling, mismatch=.2):
-        super(QRow, self).__init__(q, duration, sampling, mismatch=mismatch)
+        super(QTile, self).__init__(q, duration, sampling, mismatch=mismatch)
         self.frequency = frequency
 
     @property
@@ -271,6 +309,47 @@ class QRow(QBase):
         """
         pad = self.ntiles - self.windowsize
         return (int((pad - 1)/2.), int((pad + 1)/2.))
+
+    def transform(self, fseries, normalized=True, epoch=None):
+        """Calculate the energy `TimeSeries` for the given fseries
+
+        Parameters
+        ----------
+        fseries : `~gwpy.spectrum.Spectrum`
+            the complex FFT of a time-series data set
+        normalized : `bool`, optional
+            normalize the energy of the output, if `False` the output
+            is the complex `~numpy.fft.ifft` output of the Q-tranform
+        epoch : `~gwpy.time.LIGOTimeGPS`, `float`, optional
+            the epoch of these data, only used for metadata in the output
+            `TimeSeries`, and not requires if the input `fseries` has the
+            epoch populated.
+
+        Returns
+        -------
+        energy : `~gwpy.timeseries.TimeSeries`
+            a `TimeSeries` of the complex energy from the Q-transform of
+            this tile against the data. Basically just the raw output
+            of the :meth:`~numpy.fft.ifft`
+        """
+        windowed = fseries[self.get_data_indices()] * self.get_window()
+        # pad data, move negative frequencies to the end, and IFFT
+        padded = numpy.pad(windowed, self.padding, mode='constant')
+        wenergy = npfft.ifftshift(padded)
+        # return a `TimeSeries`
+        if epoch is None:
+            epoch = fseries.epoch
+        tdenergy = npfft.ifft(wenergy)
+        cenergy = TimeSeries(tdenergy, x0=epoch, dx=self.duration/tdenergy.size,
+                             copy=False)
+        if normalized:
+            energy = type(cenergy)(
+                cenergy.value.real ** 2. + cenergy.value.imag ** 2.,
+                x0=cenergy.x0, dx=cenergy.dx, copy=False)
+            meanenergy = energy.mean()
+            return energy / meanenergy
+        else:
+            return cenergy
 
 
 def next_power_of_two(x):
