@@ -21,6 +21,8 @@
 """
 
 import copy
+import warnings
+
 import numpy
 
 from matplotlib.projections import register_projection
