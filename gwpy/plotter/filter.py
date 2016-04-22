@@ -19,7 +19,9 @@
 """Definition of a BodePlot
 """
 
+import warnings
 from math import pi
+
 import numpy
 
 from scipy import signal
