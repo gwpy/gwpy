@@ -73,10 +73,11 @@ def file_list(flist):
     ValueError
         if the input `flist` cannot be interpreted as any of the above inputs
     """
-    # format list of files
+    # detect open files
     if isinstance(flist, (file, GzipFile)):
-        return [flist.name]
-    elif isinstance(flist, CacheEntry):
+        flist = flist.name
+    # then format list of file paths
+    if isinstance(flist, CacheEntry):
         return [flist.path]
     elif (isinstance(flist, string_types) and
           flist.endswith(('.cache', '.lcf'))):
