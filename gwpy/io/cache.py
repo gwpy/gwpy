@@ -23,6 +23,7 @@ from __future__ import division
 from math import ceil
 from multiprocessing import (cpu_count, Process, Queue as ProcessQueue)
 from six import string_types
+import tempfile
 import warnings
 
 from glue.lal import (Cache, CacheEntry)
@@ -35,6 +36,14 @@ from .utils import GzipFile
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
+
+# build list of file-like types
+FILE_LIKE = [file, GzipFile]
+try:  # protect against private member being removed
+    FILE_LIKE.append(tempfile._TemporaryFileWrapper)
+except AttributeError:
+    pass
+FILE_LIKE = tuple(FILE_LIKE)
 
 
 def open_cache(lcf):
@@ -74,7 +83,7 @@ def file_list(flist):
         if the input `flist` cannot be interpreted as any of the above inputs
     """
     # detect open files
-    if isinstance(flist, (file, GzipFile)):
+    if isinstance(flist, FILE_LIKE):
         flist = flist.name
     # then format list of file paths
     if isinstance(flist, CacheEntry):
