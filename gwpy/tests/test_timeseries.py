@@ -160,6 +160,18 @@ class TimeSeriesTestMixin(object):
     def test_frame_read_framecpp(self):
         return self._test_frame_read_format('framecpp')
 
+    def test_frame_read_cache(self):
+        try:
+            a = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel)
+        except Exception as e:  # don't care why this fails for this test
+            self.skipTest(str(e))
+        c = Cache.from_urls([TEST_GWF_FILE])
+        with tempfile.NamedTemporaryFile(suffix='.lcf', delete=False) as f:
+            c.tofile(f)
+            f.delete = True
+            b = self.TEST_CLASS.read(f.name, self.channel)
+            self.assertArraysEqual(a, b)
+
     def frame_write(self, format=None):
         try:
             ts = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel)
