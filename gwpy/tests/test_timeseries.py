@@ -171,6 +171,8 @@ class TimeSeriesTestMixin(object):
             f.delete = True
             b = self.TEST_CLASS.read(f.name, self.channel)
             self.assertArraysEqual(a, b)
+            b = self.TEST_CLASS.read(f, self.channel)
+            self.assertArraysEqual(a, b)
 
     def frame_write(self, format=None):
         try:
