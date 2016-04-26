@@ -667,7 +667,7 @@ class StateVector(TimeSeriesBase):
             newsize = self.size / factor
             old = self.value.reshape((newsize, self.size // newsize))
             # work out number of bits
-            if len(self.bits):
+            if self.bits is not None and len(self.bits):
                 nbits = len(self.bits)
             else:
                 max = self.value.max()
