@@ -45,6 +45,7 @@ from gwpy.segments import Segment
 from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.spectrogram import Spectrogram
 from gwpy.io.cache import Cache
+from gwpy.plotter import TimeSeriesPlot
 
 from test_array import SeriesTestCase
 import common
@@ -277,6 +278,8 @@ class TimeSeriesTestMixin(object):
             lalts = ts.to_lal()
         except (NotImplementedError, ImportError) as e:
             self.skipTest(str(e))
+        else:
+            from lal import DimensionlessUnit
         ts2 = type(ts).from_lal(lalts)
         self.assertEqual(ts, ts2)
 
@@ -330,6 +333,12 @@ class TimeSeriesTestMixin(object):
 
     def _test_losc_inner(self):
         self.skipTest("LOSC inner test method has not been written yet")
+
+    def test_plot(self):
+        ts = self.create()
+        plot = ts.plot()
+        self.assertIsInstance(plot, TimeSeriesPlot)
+        return plot
 
 
 # -----------------------------------------------------------------------------
@@ -618,6 +627,18 @@ class TimeSeriesDictTestCase(unittest.TestCase):
     channels = ['H1:LDAS-STRAIN', 'L1:LDAS-STRAIN']
     TEST_CLASS = TimeSeriesDict
 
+    def read(self):
+        try:
+            return self._test_data.copy()
+        except AttributeError:
+            try:
+                self._test_data = self.TEST_CLASS.read(
+                    TEST_GWF_FILE, self.channels)
+            except ImportError as e:
+                self.skipTest(str(e))
+            else:
+                return self.read()
+
     def test_init(self):
         tsd = self.TEST_CLASS()
 
@@ -635,9 +656,50 @@ class TimeSeriesDictTestCase(unittest.TestCase):
                 tsd2 = self.TEST_CLASS.read(f.name, tsd.keys())
             self.assertDictEqual(tsd, tsd2)
 
+    def test_plot(self):
+        tsd = self.read()
+        plot = tsd.plot()
+        self.assertIsInstance(plot, TimeSeriesPlot)
+        self.assertEqual(len(plot.gca().lines), 2)
+
+    def test_resample(self):
+        tsd = self.read()
+        tsd.resample(2048)
+        for key in tsd:
+            self.assertEqual(tsd[key].sample_rate, 2048 * units.Hertz)
+
+    def test_crop(self):
+        tsd = self.read()
+        tsd.crop(968654552, 968654552.5)
+        for key in tsd:
+            self.assertEqual(tsd[key].span, Segment(968654552, 968654552.5))
+
+    def test_append(self):
+        a = self.read()
+        a.crop(968654552, 968654552.5, copy=True)
+        b = self.read()
+        b.crop(968654552.5, 968654553)
+        a.append(b)
+        for key in a:
+            self.assertEqual(a[key].span, Segment(968654552, 968654553))
+
+    def test_prepend(self):
+        a = self.read()
+        a.crop(968654552, 968654552.5)
+        b = self.read()
+        b.crop(968654552.5, 968654553, copy=True)
+        b.prepend(a)
+        for key in b:
+            self.assertEqual(b[key].span, Segment(968654552, 968654553))
+
 
 class StateVectorDictTestCase(TimeSeriesDictTestCase):
     TEST_CLASS = StateVectorDict
+
+    def test_plot(self):
+        tsd = self.read()
+        plot = tsd.plot()
+        self.assertIsInstance(plot, TimeSeriesPlot)
 
 
 # -- TimeSeriesList tests -----------------------------------------------------
