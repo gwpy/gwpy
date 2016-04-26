@@ -371,7 +371,9 @@ class SegmentAxes(TimeSeriesAxes):
         box : `~matplotlib.patches.Rectangle`
             rectangle patch for segment display
         """
-        if valign.lower() == 'center':
+        if valign.lower() == 'bottom':
+            y0 = y
+        elif valign.lower() in ['center', 'centre']:
             y0 = y - height/2.
         elif valign.lower() == 'top':
             y0 = y - height
