@@ -43,7 +43,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 class FrequencySeriesAxes(Axes):
     """Custom `Axes` for a :class:`~gwpy.plotter.FrequencySeriesPlot`.
     """
-    name = 'spectrum'
+    name = 'frequencyseries'
 
     # -------------------------------------------
     # GWpy class plotting methods
@@ -293,8 +293,12 @@ class SpectrumPlot(FrequencySeriesPlot):
 
 
 class SpectrumAxes(FrequencySeriesAxes):
+    name = 'spectrum'
+
     def __init__(self, *args, **kwargs):
         warnings.warn("The SpectrumAxes object was replaced by the "
                       "FrequencySeriesAxes, and will be removed in an "
                       "upcoming release.", DeprecationWarning)
         super(SpectrumAxes, self).__init__(*args, **kwargs)
+
+register_projection(SpectrumAxes)
