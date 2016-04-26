@@ -33,6 +33,9 @@ from numpy import testing as nptest
 
 from scipy import signal
 
+from matplotlib import use
+use('agg')
+
 from astropy import units
 from astropy.io.registry import (get_reader, register_reader)
 
@@ -41,11 +44,11 @@ from gwpy.time import Time
 from gwpy import version
 from gwpy.timeseries import (TimeSeries, StateVector, TimeSeriesDict,
                              StateVectorDict, TimeSeriesList)
-from gwpy.segments import Segment
+from gwpy.segments import (Segment, DataQualityFlag, DataQualityDict)
 from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.spectrogram import Spectrogram
 from gwpy.io.cache import Cache
-from gwpy.plotter import TimeSeriesPlot
+from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
 
 from test_array import SeriesTestCase
 import common
@@ -286,24 +289,29 @@ class TimeSeriesTestMixin(object):
     def test_io_identify(self):
         common.test_io_identify(self.TEST_CLASS, ['txt', 'hdf', 'gwf'])
 
-    def test_fetch_open_data(self):
-        skip = None
+    def fetch_open_data(self):
         try:
-            ts = self.TEST_CLASS.fetch_open_data(self.channel[:2],
-                                                 *TEST_SEGMENT)
-        except URLError as e:
-            self.skipTest(str(e))
-        else:
-            self.assertEqual(ts.unit, units.Unit('strain'))
-            self.assertEqual(ts.sample_rate, 4096 * units.Hz)
-            self.assertEqual(ts.span, TEST_SEGMENT)
-            nptest.assert_allclose(
-                ts.value[:10],
-                [-2.86995824e-17, -2.77331804e-17, -2.67514139e-17,
-                 -2.57456587e-17, -2.47232689e-17, -2.37029998e-17,
-                 -2.26415858e-17, -2.15710360e-17, -2.04492206e-17,
-                 -1.93265041e-17])
+            return self._open_data
+        except AttributeError:
+            try:
+                type(self)._open_data = self.TEST_CLASS.fetch_open_data(
+                    self.channel[:2], *TEST_SEGMENT)
+            except URLError as e:
+                self.skipTest(str(e))
+            else:
+                return self.fetch_open_data()
 
+    def test_fetch_open_data(self):
+        ts = self.fetch_open_data()
+        self.assertEqual(ts.unit, units.Unit('strain'))
+        self.assertEqual(ts.sample_rate, 4096 * units.Hz)
+        self.assertEqual(ts.span, TEST_SEGMENT)
+        nptest.assert_allclose(
+            ts.value[:10],
+            [-2.86995824e-17, -2.77331804e-17, -2.67514139e-17,
+             -2.57456587e-17, -2.47232689e-17, -2.37029998e-17,
+             -2.26415858e-17, -2.15710360e-17, -2.04492206e-17,
+             -1.93265041e-17])
         # try GW150914 data at 16 kHz
         try:
             ts = self.TEST_CLASS.fetch_open_data(
@@ -608,17 +616,33 @@ class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertListEqual(list(ts.bits), LOSC_DQ_BITS)
 
     def test_fetch_open_data(self):
-        skip = None
-        try:
-            ts = self.TEST_CLASS.fetch_open_data(self.channel[:2],
-                                                 *TEST_SEGMENT)
-        except URLError as e:
-            self.skipTest(str(e))
-        else:
-            self.assertEqual(ts.sample_rate, 1 * units.Hz)
-            self.assertEqual(ts.span, TEST_SEGMENT)
-            self.assertListEqual(list(ts.bits), LOSC_DQ_BITS)
-            self.assertEqual(ts.value[0], 131071)  # sanity check data
+        ts = self.fetch_open_data()
+        self.assertEqual(ts.sample_rate, 1 * units.Hz)
+        self.assertEqual(ts.span, TEST_SEGMENT)
+        self.assertListEqual(list(ts.bits), LOSC_DQ_BITS)
+        self.assertEqual(ts.value[0], 131071)  # sanity check data
+
+    def test_to_dqflags(self):
+        sv = self.fetch_open_data()
+        dqdict = sv.to_dqflags()
+        self.assertIsInstance(dqdict, DataQualityDict)
+        for i, (key, flag) in enumerate(dqdict.items()):
+            self.assertIsInstance(flag, DataQualityFlag)
+            self.assertEqual(flag.name, sv.bits[i])
+            self.assertListEqual(flag.known, [sv.span])
+
+    def test_plot(self):
+        data = self.fetch_open_data()
+        # test segment plotting
+        plot = data.plot()
+        self.assertIsInstance(plot, SegmentPlot)
+        self.assertEqual(len(plot.gca().collections), len(data.bits) * 2)
+        plot.close()
+        # test timeseries plotting
+        plot = data.plot(format='timeseries')
+        self.assertIsInstance(plot, TimeSeriesPlot)
+        self.assertEqual(len(plot.gca().lines), 1)
+        plot.close()
 
 
 # -- TimeSeriesDict tests ------------------------------------------------------
