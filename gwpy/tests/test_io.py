@@ -25,15 +25,18 @@ import tempfile
 from compat import unittest
 
 from gwpy import version
+from gwpy.io import datafind
 from gwpy.io.cache import (Cache, CacheEntry, cache_segments)
 from gwpy.segments import (Segment, SegmentList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
+TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
+                          'HLV-GW100916-968654552-1.gwf')
 
-class IoTests(unittest.TestCase):
 
+class NdsIoTestCase(unittest.TestCase):
     def test_nds2_host_order_none(self):
         """Test `host_resolution_order` with `None` IFO
         """
@@ -112,6 +115,8 @@ class IoTests(unittest.TestCase):
                   ('nds.ligo-la.caltech.edu', 31200),
                   ('nds.ligo.caltech.edu', 31200)])
 
+
+class CacheIoTestCase(unittest.TestCase):
     @staticmethod
     def make_cache():
         segs = SegmentList()
@@ -158,6 +163,25 @@ class IoTests(unittest.TestCase):
         finally:
             self.destroy_cache(cache)
 
+
+class DataFindIoTestCase(unittest.TestCase):
+    def test_num_channels(self):
+        self.assertEqual(datafind.num_channels(TEST_GWF_FILE), 3)
+
+    def test_get_channel_type(self):
+        self.assertEqual(
+            datafind.get_channel_type('L1:LDAS-STRAIN', TEST_GWF_FILE), 'proc')
+
+    def test_channel_in_frame(self):
+        self.assertTrue(
+            datafind.channel_in_frame('L1:LDAS-STRAIN', TEST_GWF_FILE))
+        self.assertFalse(
+            datafind.channel_in_frame('X1:NOT-IN_FRAME', TEST_GWF_FILE))
+
+    def test_on_tape(self):
+        self.assertFalse(datafind.on_tape(TEST_GWF_FILE))
+        self.assertFalse(datafind.on_tape(
+            CacheEntry.from_T050017(TEST_GWF_FILE)))
 
 if __name__ == '__main__':
     unittest.main()
