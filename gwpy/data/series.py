@@ -604,7 +604,7 @@ class Series(Array):
         # pin late ends to time-series end
         if end == self.xspan[1]:
             end = None
-        if start is not None and end > self.xspan[1]:
+        if end is not None and end > self.xspan[1]:
             warn('%s.crop given end larger than current end, '
                  'crop will end when the Series actually ends.'
                  % type(self).__name__)
