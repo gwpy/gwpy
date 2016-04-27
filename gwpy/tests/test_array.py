@@ -232,9 +232,9 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         nptest.assert_array_equal(ts2.value, ts.value[10:20])
         # check that warnings are printed for out-of-bounds
         with pytest.warns(UserWarning):
-            ts.crop(self.xspan[0]-1, self.xspan[1])
+            ts.crop(ts.xspan[0]-1, ts.xspan[1])
         with pytest.warns(UserWarning):
-            ts.crop(self.xspan[0], self.xspan[1]+1)
+            ts.crop(ts.xspan[0], ts.xspan[1]+1)
 
     def test_is_compatible(self):
         """Test the `Series.is_compatible` method
