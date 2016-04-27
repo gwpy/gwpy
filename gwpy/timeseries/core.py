@@ -522,6 +522,8 @@ class ArrayTimeSeries(TimeSeriesBase, Array2D):
                 sample_rate=None, name=None, **kwargs):
         """Generate a new ArrayTimeSeries.
         """
+        warnings.warn("The ArrayTimeSeries is deprecated and will be removed "
+                      "before the 1.0 release", DeprecationWarning)
         # parse Channel input
         if channel:
             channel = (isinstance(channel, Channel) and channel or
@@ -531,8 +533,8 @@ class ArrayTimeSeries(TimeSeriesBase, Array2D):
             sample_rate = sample_rate or channel.sample_rate
         # generate TimeSeries
         new = Array2D.__new__(cls, data, name=name, unit=unit, epoch=epoch,
-                              channel=channel, sample_rate=sample_rate,
-                              times=times, **kwargs)
+                              channel=channel, x0=1/sample_rate,
+                              xindex=times, **kwargs)
         return new
 
 
