@@ -234,7 +234,7 @@ class Spectrogram(Array2D):
         if not ('dt' in kwargs or 'times' in kwargs):
             try:
                 kwargs.setdefault('dt', spectra[1].epoch.gps - s1.epoch.gps)
-            except AttributeError:
+            except (AttributeError, IndexError):
                 raise ValueError("Cannot determine dt (time-spacing) for "
                                  "Spectrogram from inputs")
         return Spectrogram(data, **kwargs)
