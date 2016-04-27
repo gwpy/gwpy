@@ -23,6 +23,7 @@ import abc
 import os
 import tempfile
 
+import pytest
 from compat import unittest
 
 from numpy import testing as nptest
