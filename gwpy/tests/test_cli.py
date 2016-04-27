@@ -36,13 +36,16 @@ from gwpy.plotter import rcParams
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
+TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
+                          'HLV-GW100916-968654552-1.gwf')
 _, TEMP_PLOT_FILE = tempfile.mkstemp(prefix='GWPY-UNITTEST_', suffix='.png')
 
 
 class CliTestMixin(object):
     PRODUCT_NAME = 'gwpy.cli.cliproduct.CliProduct'
     ACTION = None
-    TEST_ARGS = None
+    TEST_ARGS = ['--chan', 'H1:LDAS-STRAIN', '--start', '968654552',
+                 '--framecache', TEST_GWF_FILE]
 
     def setUp(self):
         self.PRODUCT_TYPE = self._import_product()
@@ -115,33 +118,33 @@ class CliTestMixin(object):
 class CliTimeSeriesTests(CliTestMixin, unittest.TestCase):
     PRODUCT_NAME = 'gwpy.cli.timeseries.TimeSeries'
     ACTION = 'timeseries'
-    TEST_ARGS = ['--chan', 'X1:TEST-CHANNEL', '--start', 0]
 
 
 class CliSpectrumTests(CliTestMixin, unittest.TestCase):
     PRODUCT_NAME = 'gwpy.cli.spectrum.Spectrum'
     ACTION = 'spectrum'
-    TEST_ARGS = ['--chan', 'X1:TEST-CHANNEL', '--start', 0]
 
 
 class CliSpectrogramTests(CliTestMixin, unittest.TestCase):
     PRODUCT_NAME = 'gwpy.cli.spectrogram.Spectrogram'
     ACTION = 'spectrogram'
-    TEST_ARGS = ['--chan', 'X1:TEST-CHANNEL', '--start', 0]
 
 
 class CliCoherenceTests(CliTestMixin, unittest.TestCase):
     PRODUCT_NAME = 'gwpy.cli.coherence.Coherence'
     ACTION = 'coherence'
-    TEST_ARGS = ['--chan', 'X1:TEST-CHANNEL', '--chan', 'Y1:TEST-CHANNEL',
-                 '--start', 0]
+    TEST_ARGS = CliTestMixin.TEST_ARGS + [
+        '--chan', 'L1:LDAS-STRAIN', '--secpfft', '0.25',
+    ]
 
 
 class CliCoherencegramTests(CliTestMixin, unittest.TestCase):
     PRODUCT_NAME = 'gwpy.cli.coherencegram.Coherencegram'
     ACTION = 'coherencegram'
+    # XXX coherencegram fails to generate using 1-second of input data
+    #     which is probably fair enough
     TEST_ARGS = ['--chan', 'X1:TEST-CHANNEL', '--chan', 'Y1:TEST-CHANNEL',
-                 '--start', 0]
+                 '--start', '968654552']
 
 
 if __name__ == '__main__':
