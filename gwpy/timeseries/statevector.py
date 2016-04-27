@@ -36,8 +36,8 @@ from glue.segmentsUtils import from_bitstream
 from astropy.units import Quantity
 
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
-                   ArrayTimeSeries, NDS2_FETCH_TYPE_MASK,
-                   as_series_dict_class)
+                   NDS2_FETCH_TYPE_MASK, as_series_dict_class)
+from ..data import Array2D
 from ..detector import Channel
 from ..time import Time
 from ..io import (reader, writer)
@@ -357,10 +357,8 @@ class StateVector(TimeSeriesBase):
             for i, d in enumerate(self.value):
                 boolean[i, :] = [int(d) >> j & 1 for
                                  j in range(nbits)]
-            self._boolean = ArrayTimeSeries(boolean, name=self.name,
-                                            epoch=self.epoch,
-                                            sample_rate=self.sample_rate,
-                                            y0=0, dy=1)
+            self._boolean = Array2D(boolean, name=self.name,
+                                    x0=self.x0, dx=self.dx, y0=0, dy=1)
             return self.boolean
 
     def get_bit_series(self, bits=None):
