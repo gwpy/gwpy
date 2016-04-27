@@ -46,6 +46,7 @@ from gwpy.timeseries import (TimeSeries, StateVector, TimeSeriesDict,
                              StateVectorDict, TimeSeriesList)
 from gwpy.segments import (Segment, DataQualityFlag, DataQualityDict)
 from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
+from gwpy.data import Array2D
 from gwpy.spectrogram import Spectrogram
 from gwpy.io.cache import Cache
 from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
@@ -281,10 +282,15 @@ class TimeSeriesTestMixin(object):
             lalts = ts.to_lal()
         except (NotImplementedError, ImportError) as e:
             self.skipTest(str(e))
-        else:
-            from lal import DimensionlessUnit
         ts2 = type(ts).from_lal(lalts)
         self.assertEqual(ts, ts2)
+        # test copy=False
+        ts2 = type(ts).from_lal(lalts, copy=False)
+        self.assertEqual(ts, ts2)
+        # test no unit
+        ts.override_unit(None)
+        ts2 = type(ts).from_lal(lalts, copy=False)
+        self.assertIs(ts2.unit, units.dimensionless_unscaled)
 
     def test_io_identify(self):
         common.test_io_identify(self.TEST_CLASS, ['txt', 'hdf', 'gwf'])
@@ -643,6 +649,12 @@ class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertIsInstance(plot, TimeSeriesPlot)
         self.assertEqual(len(plot.gca().lines), 1)
         plot.close()
+
+    def test_boolean(self):
+        data = self.fetch_open_data()
+        b = data.boolean
+        self.assertIsInstance(b, Array2D)
+        self.assertTupleEqual(b.shape, (data.size, len(data.bits)))
 
 
 # -- TimeSeriesDict tests ------------------------------------------------------
