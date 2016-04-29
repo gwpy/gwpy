@@ -31,16 +31,6 @@ from scipy import signal
 
 from astropy import units
 
-try:
-    import nds2
-except ImportError:
-    NDS2_FETCH_TYPE_MASK = None
-else:
-    NDS2_FETCH_TYPE_MASK = (nds2.channel.CHANNEL_TYPE_RAW |
-                            nds2.channel.CHANNEL_TYPE_RDS |
-                            nds2.channel.CHANNEL_TYPE_TEST_POINT |
-                            nds2.channel.CHANNEL_TYPE_STATIC)
-
 from .. import version
 from ..io import (reader, writer)
 from ..segments import Segment

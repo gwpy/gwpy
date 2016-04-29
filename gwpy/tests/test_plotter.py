@@ -40,7 +40,9 @@ from astropy import units
 from compat import unittest
 
 from gwpy import version
-from gwpy.segments import (DataQualityFlag, Segment, SegmentList)
+from gwpy.segments import (DataQualityFlag,
+                           Segment, SegmentList, SegmentListDict)
+from gwpy.frequencyseries import FrequencySeries
 from gwpy.timeseries import TimeSeries
 from gwpy.plotter import (figure, rcParams, Plot, Axes,
                           TimeSeriesPlot, TimeSeriesAxes,
@@ -200,8 +202,35 @@ class PlotTestCase(Mixin, unittest.TestCase):
     def test_figure(self):
         fig = figure()
         self.assertIsInstance(fig, Plot)
+        fig.close()
         fig = figure(FigureClass=self.FIGURE_CLASS)
         self.assertIsInstance(fig, self.FIGURE_CLASS)
+        fig.close()
+
+    def test_add_line(self):
+        fig, ax = self.new()
+        fig.add_line([1, 2, 3, 4], [1, 2, 3, 4])
+        self.assertEqual(len(ax.lines), 1)
+        fig.close()
+
+    def test_add_scatter(self):
+        fig, ax = self.new()
+        fig.add_scatter([1, 2, 3, 4], [1, 2, 3, 4])
+        self.assertEqual(len(ax.collections), 1)
+        fig.close()
+
+    def test_add_arrays(self):
+        ts = TimeSeries([1, 2, 3, 4])
+        fs = FrequencySeries([1, 2, 3, 4])
+        fig = self.FIGURE_CLASS()
+        self.assertEqual(len(fig.axes), 0)
+        fig.add_timeseries(ts)
+        self.assertEqual(len(fig.axes), 1)
+        self.assertIsInstance(fig.axes[0], TimeSeriesAxes)
+        fig.add_frequencyseries(fs)
+        self.assertEqual(len(fig.axes), 2)
+        self.assertIsInstance(fig.axes[1], FrequencySeriesAxes)
+        fig.close()
 
 
 class AxesTestCase(Mixin, unittest.TestCase):
@@ -496,7 +525,12 @@ class SegmentMixin(object):
 
 
 class SegmentPlotTestCase(SegmentMixin, PlotTestCase):
-    pass
+    def test_add_bitmask(self):
+        fig, ax = self.new()
+        ax.plot(self.segments)
+        maxes = fig.add_bitmask(0b0110)
+        self.assertEqual(maxes.name, ax.name)  # test same type
+        maxes = fig.add_bitmask('0b0110', topdown=True)
 
 
 class SegmentAxesTestCase(SegmentMixin, AxesTestCase):
@@ -517,6 +551,11 @@ class SegmentAxesTestCase(SegmentMixin, AxesTestCase):
         # check kwarg passing
         patch = self.AXES_CLASS.build_segment((1.1, 2.4), 10, facecolor='red')
         self.assertTupleEqual(patch.get_facecolor(), (1.0, 0.0, 0.0, 1.0))
+        # check valign
+        patch = self.AXES_CLASS.build_segment((1.1, 2.4), 10, valign='top')
+        self.assertTupleEqual(patch.get_xy(), (1.1, 9.2))
+        patch = self.AXES_CLASS.build_segment((1.1, 2.4), 10, valign='bottom')
+        self.assertTupleEqual(patch.get_xy(), (1.1, 10.0))
 
     def test_plot_segmentlist(self):
         fig, ax = self.new()
@@ -538,6 +577,22 @@ class SegmentAxesTestCase(SegmentMixin, AxesTestCase):
                                 rasterized=True)
         self.assertEqual(c.get_label(), 'My segments')
         self.assertTrue(c.get_rasterized())
+        # test collection=False
+        c = ax.plot_segmentlist(self.segments, collection=False, label='test')
+        self.assertIsInstance(c, list)
+        self.assertNotIsInstance(c, PatchCollection)
+        self.assertEqual(c[0].get_label(), 'test')
+        self.assertEqual(c[1].get_label(), '')
+        self.assertEqual(len(ax.patches), len(self.segments))
+        # test empty
+        c = ax.plot_segmentlist(type(self.segments)())
+        self.save_and_close(fig)
+
+    def test_plot_segmentlistdict(self):
+        sld = SegmentListDict()
+        sld['TEST'] = self.segments
+        fig, ax = self.new()
+        ax.plot(sld)
         self.save_and_close(fig)
 
     def test_plot(self):
@@ -545,6 +600,13 @@ class SegmentAxesTestCase(SegmentMixin, AxesTestCase):
         ax.plot(self.segments)
         ax.plot(self.flag)
         ax.plot(self.flag, self.segments)
+        self.save_and_close(fig)
+
+    def test_insetlabels(self):
+        fig, ax = self.new()
+        ax.plot(self.segments)
+        ax.set_insetlabels(True)
+        self.save_and_close(fig)
 
 
 # -- Histogram plotter --------------------------------------------------------

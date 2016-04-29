@@ -379,7 +379,12 @@ class TimeSeriesPlot(Plot):
     def epoch(self):
         """Find the GPS epoch of this plot
         """
-        axes = self._find_axes(self._DefaultAxesClass.name)
+        try:  # look for this class (allow for subclasses)
+            axes = self._find_axes(self._DefaultAxesClass.name)
+        except IndexError:  # look for base timeseries
+            for ax in self.axes:
+                if isinstance(ax, TimeSeriesAxes):
+                    axes = ax
         return axes.epoch
 
     def get_epoch(self):

@@ -23,6 +23,7 @@ import abc
 import os
 import tempfile
 
+import pytest
 from compat import unittest
 
 from numpy import testing as nptest
@@ -230,6 +231,10 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         self.assertEqual(ts2.x0.value, 10)
         self.assertEqual(ts2.xspan[1], 20)
         nptest.assert_array_equal(ts2.value, ts.value[10:20])
+        # check that warnings are printed for out-of-bounds
+        with pytest.warns(UserWarning):
+            ts.crop(ts.xspan[0]-1, ts.xspan[1])
+            ts.crop(ts.xspan[0], ts.xspan[1]+1)
 
     def test_is_compatible(self):
         """Test the `Series.is_compatible` method
@@ -285,6 +290,14 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         del ts2.xindex
         ts3 = ts1.append(ts2, inplace=False, resize=False)
         self.assertEqual(ts3.x0, ts1.x0 + ts1.dx * ts2.size)
+        # test discontiguous appends
+        ts3 = self.create(x0=ts1.xspan[1] + 1)
+        ts4 = ts1.copy()
+        self.assertRaises(ValueError, ts1.append, ts3)
+        ts4.append(ts3, gap='ignore')
+        self.assertEqual(ts4.shape[0], ts1.shape[0] + ts3.shape[0])
+        nptest.assert_array_equal(
+            ts4.value, numpy.concatenate((ts1.value, ts3.value)))
 
     def test_prepend(self):
         """Test the `Series.prepend` method
