@@ -27,7 +27,7 @@ from compat import unittest
 
 from astropy import units
 
-from gwpy import (astro, version)
+from gwpy import astro
 from gwpy.timeseries import TimeSeries
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
