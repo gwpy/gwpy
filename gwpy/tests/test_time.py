@@ -25,13 +25,12 @@ from compat import unittest
 
 from astropy.units import (UnitConversionError, Quantity)
 
-from gwpy import (version, time)
+from gwpy import time
 
 DATE = datetime.datetime(2000, 1, 1, 0, 0)
 GPS = 630720013
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 class TimeTests(unittest.TestCase):

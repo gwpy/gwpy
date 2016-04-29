@@ -35,8 +35,6 @@ from .axes import Axes
 from .decorators import auto_refresh
 from ..frequencyseries import (FrequencySeries, SpectralVariance)
 
-from .. import version
-__version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 

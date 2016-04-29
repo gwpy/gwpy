@@ -22,9 +22,7 @@
 import os
 from subprocess import (Popen, PIPE, CalledProcessError)
 
-from .. import version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 def which(program):

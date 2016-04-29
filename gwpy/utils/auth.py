@@ -30,10 +30,7 @@ import socket
 
 from glue.auth.saml import HTTPNegotiateAuthHandler
 
-from .. import version
-
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 COOKIE_JAR = os.path.join(tempfile.gettempdir(), getpass.getuser())
 LIGO_LOGIN_URL = 'login.ligo.org'

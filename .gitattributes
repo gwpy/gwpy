@@ -1,0 +1,2 @@
+gwpy/_version.py export-subst
+gwpy/version.py export-subst

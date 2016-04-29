@@ -19,11 +19,6 @@
 """Input/Output routines for the Array and its sub-classes.
 """
 
-from .. import version
-
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
-
 from .. import Series
 
 # register ASCII
@@ -32,3 +27,5 @@ register_ascii(Series)
 
 # register HDF5
 from . import hdf5
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

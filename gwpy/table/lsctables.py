@@ -26,12 +26,10 @@ from glue.ligolw.table import StripTableName as strip_table_name
 from glue.ligolw.types import ToNumPyType as NUMPY_TYPE
 from glue.ligolw.ilwd import get_ilwdchar_class
 
-from .. import version
 from ..io import reader
 from ..time import to_gps
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 __all__ = TableByName.keys()
 
 NUMPY_TYPE['ilwd:char'] = numpy.dtype(int).name

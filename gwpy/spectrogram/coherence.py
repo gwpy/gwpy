@@ -29,12 +29,9 @@ from numpy import zeros
 
 from astropy import units
 
-from .. import version
 from .core import (Spectrogram, SpectrogramList)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
-__date__ = ""
 
 
 def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,

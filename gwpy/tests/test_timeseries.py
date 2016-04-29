@@ -41,7 +41,6 @@ from astropy.io.registry import (get_reader, register_reader)
 
 from gwpy.time import Time
 
-from gwpy import version
 from gwpy.timeseries import (TimeSeries, StateVector, TimeSeriesDict,
                              StateVectorDict, TimeSeriesList)
 from gwpy.segments import (Segment, DataQualityFlag, DataQualityDict)
@@ -101,7 +100,6 @@ NOTCH_60HZ = (
 )
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 # -----------------------------------------------------------------------------

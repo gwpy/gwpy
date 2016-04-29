@@ -32,10 +32,8 @@ from matplotlib.scale import (LogScale, register_scale)
 from matplotlib.ticker import (is_decade, LogFormatterMathtext, LogLocator)
 
 from .tex import float_to_latex
-from .. import version
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 class GWpyLogFormatterMathtext(LogFormatterMathtext):

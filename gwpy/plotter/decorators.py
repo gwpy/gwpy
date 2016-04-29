@@ -24,8 +24,6 @@ from functools import wraps
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 
-from .. import version
-__version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 

@@ -28,13 +28,11 @@ import warnings
 
 import nds2
 
-from .. import version
 from ..time import to_gps
 from .kerberos import *
 from ..utils.compat import OrderedDict
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 DEFAULT_HOSTS = OrderedDict([
     (None, ('nds.ligo.caltech.edu', 31200)),

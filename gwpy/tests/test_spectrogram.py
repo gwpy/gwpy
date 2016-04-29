@@ -26,13 +26,11 @@ from numpy import testing as nptest
 
 from astropy import units
 
-from gwpy import version
 from gwpy.spectrogram import Spectrogram
 
 from test_array import Array2DTestCase
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 # -----------------------------------------------------------------------------

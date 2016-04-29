@@ -35,10 +35,8 @@ from ..table.utils import get_table_column
 from .axes import Axes
 from .core import Plot
 from ..data import Series
-from .. import version
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 class HistogramAxes(Axes):

@@ -24,14 +24,12 @@ from six import string_types
 from glue.lal import (CacheEntry, Cache, LIGOTimeGPS)
 from glue import segmentsUtils
 
-from ... import version
 from .. import (Segment, SegmentList, DataQualityFlag)
 from ...io import registry
 from ...io.utils import identify_factory
 from ...io.cache import file_list
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 
 def from_segwizard(f, coalesce=True, gpstype=LIGOTimeGPS, strict=True,

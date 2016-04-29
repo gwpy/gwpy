@@ -24,13 +24,11 @@ import tempfile
 
 from compat import unittest
 
-from gwpy import version
 from gwpy.io import datafind
 from gwpy.io.cache import (Cache, CacheEntry, cache_segments)
 from gwpy.segments import (Segment, SegmentList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
                           'HLV-GW100916-968654552-1.gwf')

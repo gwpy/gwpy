@@ -24,11 +24,9 @@ import re
 
 from glue.lal import CacheEntry
 
-from .. import version
 from ..time import to_gps
 from ..utils import (shell, with_import)
 
-__version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 S6_HOFT_NAME = re.compile('\A(H|L)1:LDAS-STRAIN\Z')

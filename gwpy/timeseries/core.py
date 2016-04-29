@@ -41,7 +41,6 @@ else:
                             nds2.channel.CHANNEL_TYPE_TEST_POINT |
                             nds2.channel.CHANNEL_TYPE_STATIC)
 
-from .. import version
 from ..data import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
 from ..io import (reader, writer, datafind)
@@ -51,7 +50,6 @@ from ..utils.docstring import interpolate_docstring
 from ..utils.compat import OrderedDict
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 __all__ = ['TimeSeriesBase', 'ArrayTimeSeries', 'TimeSeriesBaseDict']
 

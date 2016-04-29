@@ -31,7 +31,6 @@ from gwpy import (astro, version)
 from gwpy.timeseries import TimeSeries
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 class AstroTests(unittest.TestCase):

@@ -19,9 +19,7 @@
 """This module registers a number of custom units used in GW astronomy.
 """
 
-from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 from astropy import units
 

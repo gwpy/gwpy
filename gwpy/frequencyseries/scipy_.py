@@ -27,9 +27,8 @@ from .core import FrequencySeries
 from .registry import register_method
 from ..utils import import_method_dependency
 from .utils import scale_timeseries_units
-from .. import version
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 def welch(timeseries, segmentlength, noverlap=None, **kwargs):

@@ -27,13 +27,11 @@ import re
 
 from glue.lal import (Cache, CacheEntry)
 
-from ... import version
 from ...segments import Segment
 from ...utils import gprint
 from ...time import to_gps
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 TRIGFIND_BASE_PATH = "/home/detchar/triggers"
 re_dash = re.compile('-')

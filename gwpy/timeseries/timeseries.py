@@ -31,7 +31,6 @@ from scipy import signal
 
 from astropy import units
 
-from .. import version
 from ..io import (reader, writer)
 from ..segments import Segment
 from ..utils import with_import
@@ -42,7 +41,6 @@ from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
 from .filter import create_notch
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 @interpolate_docstring

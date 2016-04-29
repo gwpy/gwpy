@@ -30,8 +30,6 @@ from matplotlib.ticker import MultipleLocator
 from .core import Plot
 from ..frequencyseries import FrequencySeries
 
-from .. import version
-__version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['BodePlot']
 

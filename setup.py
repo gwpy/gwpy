@@ -40,7 +40,6 @@ finally:
     from setuptools import (setup, find_packages)
     from setuptools.command import (build_py, egg_info)
 
-from distutils import log
 from distutils.dist import Distribution
 from distutils.cmd import Command
 from distutils.command.clean import (clean, log, remove_tree)
@@ -77,7 +76,10 @@ AUTHOR = 'Duncan Macleod'
 AUTHOR_EMAIL = 'duncan.macleod@ligo.org'
 LICENSE = 'GPLv3'
 
-VERSION_PY = os.path.join(PACKAGENAME, 'version.py')
+# set versioning information
+import versioneer
+__version__ = versioneer.get_version()
+cmdclass.update(versioneer.get_cmdclass())
 
 
 # -----------------------------------------------------------------------------
@@ -97,13 +99,6 @@ class GWpyClean(clean):
                 remove_tree(sphinx_dir, dry_run=self.dry_run)
             else:
                 log.warn("%r does not exist -- can't clean it", sphinx_dir)
-            # remove version.py
-            for vpy in [VERSION_PY, VERSION_PY + 'c']:
-                if os.path.exists(vpy) and not self.dry_run:
-                    log.info('removing %r' % vpy)
-                    os.unlink(vpy)
-                elif not os.path.exists(vpy):
-                    log.warn("%r does not exist -- can't clean it", vpy)
             # remove setup eggs
             for egg in glob.glob('*.egg'):
                 if os.path.isdir(egg):
@@ -121,79 +116,9 @@ class GWpyClean(clean):
 cmdclass['clean'] = GWpyClean
 
 
-# -----------------------------------------------------------------------------
-# Custom builders to write version.py
+# -- build a Portfile for macports --------------------------------------------
 
-class GitVersionMixin(object):
-    """Mixin class to add methods to generate version information from git.
-    """
-    def write_version_py(self, pyfile):
-        """Generate target file with versioning information from git VCS
-        """
-        log.info("generating %s" % pyfile)
-        import gwpy._version_helper as vcs
-        gitstatus = vcs.GitStatus()
-        try:
-            with open(pyfile, 'w') as fobj:
-                gitstatus.write(fobj, author=AUTHOR, email=AUTHOR_EMAIL)
-        except:
-            if os.path.exists(pyfile):
-                os.unlink(pyfile)
-            raise
-        return gitstatus
-
-    def update_metadata(self):
-        """Import package base and update distribution metadata
-        """
-        import gwpy
-        self.distribution.metadata.version = gwpy.__version__
-        desc, longdesc = gwpy.__doc__.split('\n', 1)
-        self.distribution.metadata.description = desc
-        self.distribution.metadata.long_description = longdesc.strip('\n')
-
-
-class GWpyBuildPy(build_py.build_py, GitVersionMixin):
-    """Custom build_py command to deal with version generation
-    """
-    def __init__(self, *args, **kwargs):
-        build_py.build_py.__init__(self, *args, **kwargs)
-
-    def run(self):
-        try:
-            self.write_version_py(VERSION_PY)
-        except ImportError:
-            raise
-        except:
-            if not os.path.isfile(VERSION_PY):
-                raise
-        self.update_metadata()
-        build_py.build_py.run(self)
-
-cmdclass['build_py'] = GWpyBuildPy
-
-
-class GWpyEggInfo(egg_info.egg_info, GitVersionMixin):
-    """Custom egg_info command to deal with version generation
-    """
-    def finalize_options(self):
-        try:
-            self.write_version_py(VERSION_PY)
-        except ImportError:
-            raise
-        except:
-            if not os.path.isfile(VERSION_PY):
-                raise
-        if not self.distribution.metadata.version:
-            self.update_metadata()
-        egg_info.egg_info.finalize_options(self)
-
-cmdclass['egg_info'] = GWpyEggInfo
-
-
-# -----------------------------------------------------------------------------
-# Build Portfile
-
-class BuildPortfile(Command, GitVersionMixin):
+class BuildPortfile(Command):
     """Generate a Macports Portfile for this project from the current build
     """
     description = 'Generate Macports Portfile'
@@ -218,11 +143,7 @@ class BuildPortfile(Command, GitVersionMixin):
     def run(self):
         # get version from distribution
         if self.version is None:
-            try:
-                self.update_metadata()
-            except ImportError:
-                self.run_command('sdist')
-                self.update_metadata()
+            self.version = __version__
         # find dist file
         dist = os.path.join(
             'dist',
@@ -231,7 +152,6 @@ class BuildPortfile(Command, GitVersionMixin):
         # run sdist if needed
         if not os.path.isfile(dist):
             self.run_command('sdist')
-            self.update_metadata()
         # get checksum digests
         log.info('reading distribution tarball %r' % dist)
         with open(dist, 'rb') as fobj:
@@ -267,8 +187,7 @@ class BuildPortfile(Command, GitVersionMixin):
 cmdclass['port'] = BuildPortfile
 
 
-# -----------------------------------------------------------------------------
-# don't use setup_requires if just checking for information
+# -- don't use setup_requires if just checking for information ----------------
 
 # (credit: matplotlib/setup.py)
 setup_requires = []
@@ -281,8 +200,7 @@ if '--help' not in sys.argv and '--help-commands' not in sys.argv:
             dist_.commands == ['clean']):
         setup_requires = ['tornado', 'numpy >= 1.7', 'jinja2', 'gitpython']
 
-# -----------------------------------------------------------------------------
-# Find files
+# -- find files ---------------------------------------------------------------
 
 # Use the find_packages tool to locate all packages and modules
 packagenames = find_packages()
@@ -293,14 +211,17 @@ if os.path.isdir('bin'):
 else:
     scripts = []
 
-# -----------------------------------------------------------------------------
-# run setup
+# -- run setup ----------------------------------------------------------------
 
 setup(name=PACKAGENAME,
       provides=[PACKAGENAME],
-      version=None,
-      description=None,
-      long_description=None,
+      version=__version__,
+      description="A python package for gravitational-wave astrophysics",
+      long_description="""
+          GWpy is a collaboration-driven `Python <http://www.python.org>`_
+          package providing tools for studying data from ground-based
+          gravitational-wave detectors.
+      """,
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
       license=LICENSE,

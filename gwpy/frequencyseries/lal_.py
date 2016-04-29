@@ -28,9 +28,8 @@ from .core import FrequencySeries
 from .registry import register_method
 from .utils import scale_timeseries_units
 from ..utils import with_import
-from .. import version
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 # cache windows internally
 LAL_WINDOWS = {}

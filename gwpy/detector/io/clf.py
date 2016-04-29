@@ -76,11 +76,9 @@ from numpy import inf
 from ...io import registry
 from ...io.utils import identify_factory
 from ...utils.compat import OrderedDict
-from ... import version
 from .. import (Channel, ChannelList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 CHANNEL_DEFINITION = re.compile(
     "(?P<name>[a-zA-Z0-9:_-]+)"

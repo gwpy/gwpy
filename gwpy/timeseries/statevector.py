@@ -41,13 +41,11 @@ from ..data import Array2D
 from ..detector import Channel
 from ..time import Time
 from ..io import (reader, writer)
-from .. import version
 from ..utils.docstring import interpolate_docstring
 
 if sys.version_info[0] < 3:
     range = xrange
 
-__version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 __all__ = ['StateTimeSeries',

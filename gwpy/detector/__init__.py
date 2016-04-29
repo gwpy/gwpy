@@ -24,14 +24,12 @@
 
 import datetime
 
-from .. import version
 from ..utils.deps import with_import
 from . import units
 from .channel import *
 from .io import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 # local time-zone for ground-based laser interferometers
 TIMEZONE = {

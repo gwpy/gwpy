@@ -31,10 +31,8 @@ from matplotlib.transforms import Transform
 from astropy import units
 
 from ..time import Time
-from .. import version
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 TIME_UNITS = [units.nanosecond,
               units.microsecond,

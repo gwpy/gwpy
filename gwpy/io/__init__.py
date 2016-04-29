@@ -21,11 +21,9 @@
 
 from types import FunctionType
 
-from .. import version
 from .registry import (read, write)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 
 def reader(name=None, doc=None):

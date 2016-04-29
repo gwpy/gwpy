@@ -27,14 +27,12 @@ if sys.version_info[0] < 3:
 from glue.lal import (Cache, CacheEntry)
 
 from .. import lsctables
-from ... import version
 from ...io import registry
 from ...io.cache import open_cache
 from ...time import LIGOTimeGPS
 from ...utils import with_import
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 OMICRON_COLUMNS = ['search', 'peak_time', 'peak_time_ns',
                    'start_time', 'start_time_ns',

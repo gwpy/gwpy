@@ -26,11 +26,9 @@ import os
 
 from astropy.io import registry
 
-from ... import version
 from ...utils.compat import OrderedDict
 from .. import (Channel, ChannelList)
 
-__version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 OMEGA_LOCATION = os.getenv('OMEGA_LOCATION', None)

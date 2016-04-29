@@ -23,9 +23,7 @@ dependencies within GWpy code.
 import inspect
 from functools import wraps
 
-from .. import version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 def import_method_dependency(module, stacklevel=1):

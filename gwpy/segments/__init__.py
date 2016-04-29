@@ -23,10 +23,7 @@ The core of this module is adapted from the :mod:`Grid LIGO User Environment
 (GLUE) package <glue.segments>`.
 """
 
-from .. import version
-
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 from .segments import (Segment, SegmentList, SegmentListDict)
 from .flag import *

@@ -22,9 +22,6 @@ These objects form the basic 1-D and 2-D arrays with metadata from which
 we can build specific data representations like the `TimeSeries`.
 """
 
-from .. import version
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 from glue.lal import (Cache, CacheEntry)
 
@@ -33,4 +30,5 @@ from .array2d import *
 from .series import *
 import io
 
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['Array', 'Array2D', 'Series', 'Cache', 'CacheEntry']
