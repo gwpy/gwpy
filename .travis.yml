@@ -65,7 +65,7 @@ before_install:
   - pip install -q ${PRE} "numpy>=1.7"
 
   # build src packages and set 'latest' package versions (if required)
-  - source .travis/setup.sh
+  - source .travis/find-latest-releases.sh
   - source .travis/build-src-dependencies.sh
 
   # install cython to speed up scipy build
