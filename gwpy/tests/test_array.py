@@ -234,7 +234,6 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         # check that warnings are printed for out-of-bounds
         with pytest.warns(UserWarning):
             ts.crop(ts.xspan[0]-1, ts.xspan[1])
-        with pytest.warns(UserWarning):
             ts.crop(ts.xspan[0], ts.xspan[1]+1)
 
     def test_is_compatible(self):
