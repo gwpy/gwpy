@@ -29,8 +29,8 @@ env:
     - LAL_VERSION="6.15.0"
     - LALFRAME_VERSION="1.3.0"
     - LIBFRAME_VERSION="8.20"
-    - LDAS_TOOLS_AL_VERSION="2.5.0"
-    - FRAMECPP_VERSION="2.5.0"
+    - LDAS_TOOLS_AL_VERSION="2.5.1"
+    - FRAMECPP_VERSION="2.5.1"
     - NDS2_CLIENT_VERSION="0.10.4"
     # tarballs
     - SWIG_="https://github.com/swig/swig/archive/rel-${SWIG_VERSION}.tar.gz"
