@@ -22,8 +22,10 @@
 import os.path
 import tempfile
 import StringIO
+
 from six import PY3
-from urllib2 import (urlopen, URLError)
+from six.moves.urllib.request import urlopen
+from six.moves.urllib.error import URLError
 
 import pytest
 
@@ -125,8 +127,14 @@ class TestCaseWithQueryMixin(object):
     def _query(self, cm, *args, **kwargs):
         try:
             return cm(*args, **kwargs)
-        except (ImportError, URLError, LDBDClientException) as e:
+        except (ImportError, UnboundLocalError, LDBDClientException,
+                SystemExit) as e:
             self.skipTest(str(e))
+        except URLError as e:
+            if e.code == 401:
+                self.skipTest(str(e))
+            else:
+                raise
         except AttributeError as e:
             if 'PKCS5_SALT_LEN' in str(e):
                 self.skipTest(str(e))
