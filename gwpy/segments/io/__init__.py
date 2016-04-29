@@ -19,10 +19,7 @@
 """
 """
 
-from ... import version
-
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 from .ligolw import *
 from .segwizard import *

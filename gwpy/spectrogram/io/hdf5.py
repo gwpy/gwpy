@@ -19,12 +19,10 @@
 """This module attaches the HDF5 input output methods to the Spectrogram.
 """
 
-from ... import version
 from ...data.io import hdf5
 from .. import Spectrogram
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 hdf5.register_hdf5_array_io(Spectrogram)
 hdf5.register_hdf5_array_io(Spectrogram, format='hdf', identify=False)

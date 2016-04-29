@@ -39,7 +39,6 @@ from astropy import units
 
 from compat import unittest
 
-from gwpy import version
 from gwpy.segments import (DataQualityFlag,
                            Segment, SegmentList, SegmentListDict)
 from gwpy.frequencyseries import FrequencySeries
@@ -68,7 +67,6 @@ MAGNITUDE = 20 * numpy.log10(numpy.absolute(H))
 PHASE = numpy.degrees(numpy.unwrap(numpy.angle(H)))
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 class Mixin(object):

@@ -29,8 +29,6 @@ from matplotlib.projections import register_projection
 from .decorators import auto_refresh
 from . import (rcParams, tex, html)
 
-from .. import version
-__version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 

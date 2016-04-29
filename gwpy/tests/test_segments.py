@@ -32,7 +32,6 @@ import pytest
 from glue.segments import PosInfinity
 from glue.LDBDWClient import LDBDClientException
 
-from gwpy import version
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 from gwpy.io.registry import identify_format
@@ -42,7 +41,6 @@ from compat import unittest
 import common
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 KNOWN = SegmentList([
     Segment(0, 3),

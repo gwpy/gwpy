@@ -22,8 +22,6 @@ gravitational-wave laser interferometer was operating in a specific
 configuration.
 """
 
-from .. import version
-__version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 

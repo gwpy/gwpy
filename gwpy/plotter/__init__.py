@@ -25,10 +25,7 @@ many configurable parameters both interactive, and in saving to disk.
 
 from matplotlib import (rcParams, pyplot, __version__ as mpl_version)
 
-from .. import version
-
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 from .tex import (USE_TEX, MACROS)
 from .gps import *

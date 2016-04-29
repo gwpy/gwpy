@@ -25,10 +25,8 @@
 from numpy import percentile
 
 from .cliproduct import CliProduct
-from .. import version
 
 __author__ = 'Joseph Areeda'
-__version__ = version.version
 
 
 class Coherencegram(CliProduct):

@@ -24,10 +24,7 @@ from glue.ligolw.ligolw import LIGOLWContentHandler
 from .. import lsctables
 lsctables.use_in(LIGOLWContentHandler)
 
-from ... import version
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 # import LIGO_LW I/O
 from .ligolw import *

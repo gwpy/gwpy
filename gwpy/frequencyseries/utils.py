@@ -21,9 +21,7 @@
 
 from astropy import units
 
-from .. import version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 
 def safe_import(module, method):

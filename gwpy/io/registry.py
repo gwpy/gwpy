@@ -25,10 +25,8 @@ from astropy.io.registry import *
 astropy_register_identifier = register_identifier
 
 from .cache import file_list
-from .. import version
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 
 def identify_with_list(identifier):

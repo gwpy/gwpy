@@ -25,10 +25,7 @@ from scipy import signal
 
 from astropy.units import Quantity
 
-from .. import version
-
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 
 def create_notch(frequency, sample_rate, type='iir', **kwargs):

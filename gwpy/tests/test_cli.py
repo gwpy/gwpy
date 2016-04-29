@@ -29,12 +29,10 @@ use('agg')
 
 from compat import unittest
 
-from gwpy import version
 from gwpy.timeseries import TimeSeries
 from gwpy.plotter import rcParams
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
                           'HLV-GW100916-968654552-1.gwf')

@@ -19,7 +19,4 @@
 """Command-line utils for GWpy
 """
 
-from .. import version
-
 __author__ = 'Joseph Areeda'
-__version__ = version.version

@@ -27,11 +27,9 @@ try:
 except ImportError:
     HAVE_H5PY = False
 
-from .. import version
 from ..utils.deps import with_import
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 @with_import('h5py')

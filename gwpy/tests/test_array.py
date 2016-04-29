@@ -32,12 +32,10 @@ import numpy
 from astropy import units
 from astropy.time import Time
 
-from gwpy import version
 from gwpy.data import (Array, Series, Array2D)
 from gwpy.detector import Channel
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 SEED = 1
 GPS_EPOCH = 12345

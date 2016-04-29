@@ -37,9 +37,8 @@ import re
 from subprocess import (PIPE, Popen)
 
 from ..utils.shell import which
-from .. import version
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 __all__ = ['kinit']
 

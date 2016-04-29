@@ -19,12 +19,10 @@
 """This module attaches the HDF5 input output methods to the FrequencySeries.
 """
 
-from ... import version
 from ...data.io import hdf5
 from .. import (FrequencySeries, SpectralVariance, Spectrum)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 for array_type in (FrequencySeries, SpectralVariance, Spectrum):
     hdf5.register_hdf5_array_io(array_type)

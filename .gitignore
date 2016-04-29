@@ -35,9 +35,6 @@ pip-delete-this-directory.txt
 /docs/lal*.tag
 /docs/*.inv
 
-# Version information
-/gwpy/version.py
-
 # OS/editor files
 *.swp
 .DS_Store

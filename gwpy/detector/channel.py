@@ -46,14 +46,12 @@ except ImportError:
     NDS2_CHANNEL_TYPE = dict((val, key) for (key, val) in
                              NDS2_CHANNEL_TYPESTR.iteritems())
 
-from .. import version
 from ..io import (reader, writer, datafind)
 from ..time import to_gps
 from ..utils.deps import with_import
 from .units import parse_unit
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 re_quote = re.compile(r'^[\s\"\']+|[\s\"\']+$')
 

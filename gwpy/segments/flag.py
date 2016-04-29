@@ -43,14 +43,12 @@ from numpy import inf
 
 from glue.segments import PosInfinity
 
-from .. import version
 from ..time import to_gps
 from ..utils.deps import with_import
 from ..utils.compat import OrderedDict
 from ..io import (reader, writer)
 from .segments import Segment, SegmentList
 
-__version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['DataQualityFlag', 'DataQualityDict']
 

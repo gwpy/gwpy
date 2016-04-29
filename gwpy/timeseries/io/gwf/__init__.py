@@ -34,7 +34,6 @@ on a system.
 import importlib
 
 from ....utils import with_import
-from ....version import version
 from ....io.registry import (register_reader,
                              register_writer,
                              register_identifier)
@@ -42,7 +41,6 @@ from ....io.utils import identify_factory
 from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version
 
 BUILTIN_LIBRARIES = [
     'lalframe',

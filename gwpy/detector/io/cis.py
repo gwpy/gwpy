@@ -24,12 +24,10 @@ import numpy
 
 from urllib2 import HTTPError
 
-from ... import version
 from ...utils import auth
 from .. import (Channel, ChannelList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 CIS_API_URL = 'https://cis.ligo.org/api/channel'
 CIS_DATA_TYPE = {4: numpy.float32}

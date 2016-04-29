@@ -26,10 +26,7 @@ import os
 from astropy import units
 from astropy.units.format import (latex as ulatex, utils as uutils)
 
-from .. import version
-
 __author__ = "Duncan M. Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 USE_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
 

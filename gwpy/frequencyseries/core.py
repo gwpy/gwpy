@@ -33,8 +33,6 @@ from ..utils import with_import
 from ..utils.docstring import interpolate_docstring
 
 
-from .. import version
-__version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
 __all__ = ['FrequencySeries', 'Spectrum']

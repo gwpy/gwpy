@@ -31,11 +31,9 @@ from glue.ligolw.table import Table
 
 from astropy.io.registry import _get_valid_format
 
-from .. import version
 from .utils import GzipFile
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 # build list of file-like types
 FILE_LIKE = [file, GzipFile]

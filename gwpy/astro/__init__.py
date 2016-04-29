@@ -40,9 +40,6 @@ Each of the above methods has been given default parameters corresponding to
 the standard usage by the LIGO project.
 """
 
-from .. import version
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 from .range import *

@@ -23,9 +23,7 @@ from __future__ import print_function
 
 from sys import stdout
 
-from .. import version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 from .deps import *
 

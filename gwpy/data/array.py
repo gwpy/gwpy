@@ -31,13 +31,11 @@ import numpy
 from astropy.units import Quantity
 from ..io import (reader, writer)
 
-from .. import version
 from ..detector import Channel
 from ..detector.units import parse_unit
 from ..time import (Time, to_gps)
 from ..utils.docstring import interpolate_docstring
 
-__version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>"
 

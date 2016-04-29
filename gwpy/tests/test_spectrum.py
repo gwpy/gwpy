@@ -27,14 +27,12 @@ from scipy import signal
 
 from astropy import units
 
-from gwpy import version
 from gwpy.spectrum import (Spectrum, SpectralVariance)
 from gwpy.plotter import FrequencySeriesPlot
 
 from test_array import (SeriesTestCase, Array2DTestCase)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 # -----------------------------------------------------------------------------

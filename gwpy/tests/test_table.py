@@ -29,7 +29,6 @@ from numpy import testing as nptest
 
 from astropy import units
 
-from gwpy import version
 from gwpy.time import LIGOTimeGPS
 from gwpy.table import lsctables
 from gwpy.table.io import (omega, trigfind)
@@ -39,7 +38,6 @@ import common
 from compat import unittest
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 TEST_DATA_DIR = os.path.join(os.path.split(__file__)[0], 'data')
 

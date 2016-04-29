@@ -24,11 +24,9 @@ from math import ceil
 
 import numpy
 
-from .. import version
 from .utils import (EVENT_TABLES, get_table_column)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 __all__ = ['event_rate', 'binned_event_rates']
 
 OPERATORS = {'<': _operator.lt, '<=': _operator.le, '=': _operator.eq,

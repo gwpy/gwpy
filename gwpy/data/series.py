@@ -27,10 +27,8 @@ import numpy
 from astropy.units import (Unit, Quantity, dimensionless_unscaled)
 
 from .array import Array
-from .. import version
 from ..utils.docstring import interpolate_docstring
 
-__version__ = version.version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 

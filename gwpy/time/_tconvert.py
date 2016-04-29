@@ -28,11 +28,9 @@ from dateutil import parser as dateparser
 
 from astropy.units import Quantity
 
-from .. import version
 from . import (Time, LIGOTimeGPS)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 __all__ = ['tconvert', 'to_gps', 'from_gps']
 
 

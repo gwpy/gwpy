@@ -25,10 +25,7 @@ from astropy.utils.compat.gzip import GzipFile
 
 from glue.lal import CacheEntry
 
-from .. import version
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 def identify_factory(*extensions):

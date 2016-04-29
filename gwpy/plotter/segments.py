@@ -36,7 +36,6 @@ except ImportError:
 
 import glue.segments
 
-from .. import version
 from ..segments import *
 from .timeseries import (TimeSeriesPlot, TimeSeriesAxes)
 from .decorators import auto_refresh
@@ -44,7 +43,6 @@ from .utils import rUNDERSCORE
 from . import rcParams
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 class SegmentAxes(TimeSeriesAxes):

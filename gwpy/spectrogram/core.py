@@ -36,10 +36,7 @@ from ..timeseries import (TimeSeries, TimeSeriesList)
 from ..frequencyseries import FrequencySeries
 from ..utils.docstring import interpolate_docstring
 
-from .. import version
-
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
-__version__ = version.version
 
 __all__ = ['Spectrogram', 'SpectrogramList']
 

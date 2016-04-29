@@ -24,12 +24,10 @@ These files should be in two-column x,y format
 from numpy import (savetxt, loadtxt)
 
 from ..data import Series
-from .. import version
 from .registry import (register_reader, register_writer, register_identifier)
 from .utils import identify_factory
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 
 def read_ascii(filepath, _obj=Series, xcol=0, ycol=1, delimiter=None,

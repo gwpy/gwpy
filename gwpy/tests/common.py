@@ -21,10 +21,8 @@
 
 from gwpy.io.cache import (Cache, CacheEntry)
 from gwpy.io.registry import identify_format
-from gwpy import version
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 def test_io_identify(cls, extensions, modes=['read', 'write']):

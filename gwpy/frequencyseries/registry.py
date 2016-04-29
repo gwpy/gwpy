@@ -24,9 +24,8 @@ the registry method `register_method`.
 """
 
 from ..utils.compat import OrderedDict
-from .. import version
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 spectrum_methods = OrderedDict()
 density_methods = OrderedDict()

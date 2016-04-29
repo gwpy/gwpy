@@ -21,9 +21,7 @@
 
 from __future__ import print_function
 
-from .. import version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 # OrderedDict isn't bundled with python < 2.7
 try:

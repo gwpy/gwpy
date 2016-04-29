@@ -26,11 +26,9 @@ import numpy
 from matplotlib.collections import Collection
 from matplotlib.figure import Figure
 
-from .. import version
 from ..data import Series
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 JQUERY_URL = '//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'
 

@@ -19,10 +19,7 @@
 """Input/Output routines for the TimeSeries and its sub-classes.
 """
 
-from .. import version
-
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 from .. import (TimeSeries, StateVector, StateTimeSeries)
 

@@ -29,13 +29,11 @@ from glue.ligolw.table import CompareTableNames as compare_table_names
 from glue.ligolw.utils.ligolw_add import ligolw_add
 from glue.ligolw import (table, lsctables)
 
-from .. import version
 from ..utils import gprint
 from .cache import file_list
 from .utils import identify_factory
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 class GWpyContentHandler(LIGOLWContentHandler):

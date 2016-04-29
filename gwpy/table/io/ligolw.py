@@ -24,10 +24,8 @@ from glue.ligolw.lsctables import TableByName
 
 from ...io import registry
 from ...io.ligolw import (table_from_file, identify_ligolw)
-from ... import version
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 __all__ = []
 
 

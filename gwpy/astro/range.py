@@ -27,10 +27,7 @@ from scipy import integrate
 
 from astropy import (units, constants)
 
-from .. import version
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 def inspiral_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False):

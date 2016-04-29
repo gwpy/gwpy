@@ -24,7 +24,6 @@ import __builtin__
 
 import numpy
 
-from .... import version
 from ....io.cache import (CacheEntry, file_list)
 from ....time import LIGOTimeGPS
 from ....segments import Segment
@@ -34,7 +33,6 @@ from ... import (TimeSeries, TimeSeriesDict)
 from . import channel_dict_kwarg
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 # get frameCPP path
 try:

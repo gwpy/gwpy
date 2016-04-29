@@ -29,12 +29,10 @@ import numpy
 
 from astropy import units
 
-from gwpy import version
 from gwpy.detector import (Channel, ChannelList)
 from gwpy.detector.units import parse_unit
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 NDSHOST = 'nds.ligo-la.caltech.edu'
 

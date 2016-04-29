@@ -19,10 +19,7 @@
 """Input/Output routines for the Spectrogram.
 """
 
-from .. import version
-
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 try:
     from . import hdf5

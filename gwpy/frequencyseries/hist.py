@@ -25,8 +25,6 @@ import sys
 if sys.version_info[0] < 3:
     range = xrange
 
-from .. import version
-__version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 from ..data import (Quantity, Array, Array2D)

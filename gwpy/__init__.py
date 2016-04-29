@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""A package to enable gravitational-wave astrophysics in Python.
+"""A python package for gravitational-wave astrophysics
 
 GWpy is a collaboration-driven `Python <http://www.python.org>`_ package
 providing tools for studying data from ground-based gravitational-wave
@@ -35,18 +35,10 @@ warnings.filterwarnings("ignore", "Module (.*) was already import from")
 warnings.filterwarnings("ignore", "The oldnumeric module",
                         DeprecationWarning)
 
-# set metadata
-try:
-    from . import version
-except ImportError:
-    # this _should_ fail only during a clean build
-    __version__ = 'build'
-    __date__ = ''
-else:
-    __version__ = version.version
-    __date__ = version.__date__
-
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "The LIGO Scientific Collaboration and the Virgo Collaboration"
 
-__import__('pkg_resources').declare_namespace(__name__)
+# get version information
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions

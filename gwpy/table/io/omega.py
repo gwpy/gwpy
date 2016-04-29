@@ -30,12 +30,10 @@ from astropy.io import registry
 
 from .ascii import table_from_ascii_factory
 from ..lsctables import (SnglBurstTable, SnglBurst)
-from ... import version
 from ...io.cache import file_list
 from ...time import LIGOTimeGPS
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 OMEGA_DTYPE = [
     ('time', 'a20'),

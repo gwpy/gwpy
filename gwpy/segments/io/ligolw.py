@@ -30,7 +30,6 @@ from glue.ligolw.utils.ligolw_add import ligolw_add
 
 from astropy.time import Time
 
-from ... import version
 from ...io import registry
 from ...io.utils import GzipFile
 from ...io.ligolw import (identify_ligolw, GWpyContentHandler)
@@ -39,7 +38,6 @@ from ...segments import (Segment, DataQualityFlag, DataQualityDict)
 from ...table import lsctables
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = version.version
 
 
 def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,

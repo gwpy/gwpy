@@ -55,9 +55,6 @@ from .io import *
 # attach rate methods
 from .rate import (event_rate, binned_event_rates)
 
-from .. import version
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Kipp Cannon <kipp.cannon@ligo.org>'
-__version__ = version.version
 __all__ = ['Column', 'Document', 'Table', 'lsctables']
