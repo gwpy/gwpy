@@ -80,7 +80,7 @@ install:
 
 script:
   - . .travis/run-tests.sh
-  - pip install .
+  - pip install . -vvv
 
 after_success:
   - coveralls
