@@ -6,7 +6,7 @@ if [[ "${PRE}" == "--pre" ]]; then  # open conditional
 
 # -- utilities
 
-pip install --quiet bs4
+pip install --quiet bs4 six
 find_latest_version() {
     python .travis/find-latest-release.py -o version $@
 }
