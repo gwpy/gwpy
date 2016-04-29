@@ -37,6 +37,7 @@ from threading import Thread
 from Queue import Queue
 
 from six.moves.urllib import request
+from six.moves.urllib.error import URLError
 
 from numpy import inf
 
@@ -499,9 +500,13 @@ class DataQualityFlag(object):
                     start, end)
                 metadata = versions[-1]['metadata']
             else:
-                data, _ = apicalls.dqsegdbQueryTimes(
-                    protocol, server, out.ifo, out.tag, out.version, request,
-                    start, end)
+                try:
+                    data, _ = apicalls.dqsegdbQueryTimes(
+                        protocol, server, out.ifo, out.tag, out.version,
+                        request, start, end)
+                except URLError as e:
+                    e.args = ('Error querying for %s: %s' % (flag, e),)
+                    raise
                 metadata = data['metadata']
             new = cls(name=flag)
             for s2 in data['active']:
@@ -1224,7 +1229,7 @@ class DataQualityDict(OrderedDict):
     write = writer()
 
     def populate(self, source='https://segments.ligo.org',
-                 segments=None, pad=True, **kwargs):
+                 segments=None, pad=True, on_error='raise', **kwargs):
         """Query the segment database for each flag's active segments.
 
         This method assumes all of the metadata for each flag have been
@@ -1254,6 +1259,13 @@ class DataQualityDict(OrderedDict):
             apply the `~DataQualityFlag.padding` associated with each
             flag, default: `True`.
 
+        on_error : `str`
+            how to handle an error querying for one flag, one of
+
+            - `'raise'` (default): raise the Exception
+            - `'warn'`: print a warning
+            - `'ignore'`: move onto the next flag as if nothing happened
+
         **kwargs
             any other keyword arguments to be passed to
             :meth:`DataQualityFlag.query` or :meth:`DataQualityFlag.read`.
@@ -1263,19 +1275,33 @@ class DataQualityDict(OrderedDict):
         self : `DataQualityDict`
             a reference to the modified DataQualityDict
         """
+        # check on_error flag
+        if on_error not in ['raise', 'warn', 'ignore']:
+            raise ValueError("on_error must be one of 'raise', 'warn', "
+                             "or 'ignore'")
         # format source
         source = urlparse(source)
         # perform query for all segments
         if source.netloc and segments is not None:
             segments = SegmentList(map(Segment, segments))
-            tmp = type(self).query(self.keys(), segments,
-                                   url=source.geturl(), **kwargs)
+            tmp = type(self).query(self.keys(), segments, url=source.geturl(),
+                                   on_error=on_error, **kwargs)
         elif not source.netloc:
             tmp = type(self).read(source.geturl(), self.name, **kwargs)
         # apply padding and wrap to given known segments
         for key in self:
             if segments is None and source.netloc:
-                tmp = {key: self[key].query(self[key].name, self[key].known)}
+                try:
+                    tmp = {key: self[key].query(
+                        self[key].name, self[key].known, **kwargs)}
+                except URLError as e:
+                    if on_error == 'ignore':
+                        pass
+                    elif on_error == 'warn':
+                        warnings.warn('Error querying for %s: %s' % (key, e))
+                    else:
+                        raise
+                    continue
             self[key].known &= tmp[key].known
             self[key].active = tmp[key].active
             if pad:

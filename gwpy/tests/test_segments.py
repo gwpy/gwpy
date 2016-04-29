@@ -22,8 +22,10 @@
 import os.path
 import tempfile
 import StringIO
+
 from six import PY3
-from urllib2 import (urlopen, URLError)
+from six.moves.urllib.request import urlopen
+from six.moves.urllib.error import URLError
 
 import pytest
 
@@ -125,8 +127,14 @@ class TestCaseWithQueryMixin(object):
     def _query(self, cm, *args, **kwargs):
         try:
             return cm(*args, **kwargs)
-        except (ImportError, URLError, LDBDClientException) as e:
+        except (ImportError, UnboundLocalError, LDBDClientException,
+                SystemExit) as e:
             self.skipTest(str(e))
+        except URLError as e:
+            if e.code == 401:
+                self.skipTest(str(e))
+            else:
+                raise
         except AttributeError as e:
             if 'PKCS5_SALT_LEN' in str(e):
                 self.skipTest(str(e))
@@ -481,21 +489,36 @@ class DataQualityDictTests(unittest.TestCase, TestCaseWithQueryMixin):
         common.test_io_identify(DataQualityDict, ['xml', 'xml.gz'])
 
     def test_populate(self):
+        # read veto definer
         start, end = VETO_DEFINER_TEST_SEGMENTS[0]
         vdf = DataQualityDict.from_veto_definer_file(
             VETO_DEFINER_FILE, ifo='H1', start=start, end=end)
-        vdf.pop("H1:FAKE_CAT5:1", None)
+        # test query that should fail with 404
         try:
             vdf.populate(url='https://segments.ligo.org')
-        except ImportError as e:
+        except (ImportError, UnboundLocalError) as e:
             self.skipTest(str(e))
+        except URLError as e:
+            if e.code == 401:  # 401 is uninformative
+                self.skipTest(str(e))
+            elif e.code == 404:
+                pass
+            else:
+                raise
         else:
-            self.assertEqual(
-                len(vdf['H1:HVT-ER7_A_RND17:1'].active), 36)
-            vdf = DataQualityDict.from_veto_definer_file(
-                VETO_DEFINER_FILE, ifo='H1')
-            vdf.pop("H1:FAKE_CAT5:1", None)
-            vdf.populate(segments=VETO_DEFINER_TEST_SEGMENTS)
+            raise AssertionError("URLError not raised")
+        # check reduction to warning
+        vdf = DataQualityDict.from_veto_definer_file(
+            VETO_DEFINER_FILE, ifo='H1', start=start, end=end)
+        with pytest.warns(UserWarning):
+            vdf.populate(url='https://segments.ligo.org', on_error='warn')
+        # check results
+        self.assertEqual(
+            len(vdf['H1:HVT-ER7_A_RND17:1'].active), 36)
+        # check use of specific segments
+        vdf = DataQualityDict.from_veto_definer_file(
+            VETO_DEFINER_FILE, ifo='H1')
+        vdf.populate(segments=VETO_DEFINER_TEST_SEGMENTS, on_error='ignore')
 
     def test_query(self):
         result = self._query(DataQualityDict.query,
