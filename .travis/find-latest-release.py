@@ -27,7 +27,7 @@ parser.add_argument('-o', '--output-format', default='url',
 args = parser.parse_args()
 
 listing = BeautifulSoup(urlopen(args.url), 'html.parser')
-match = re.compile('%s-(?P<version>(.*)).%s' % (args.package, args.extension))
+match = re.compile('%s-(?P<version>([0-9]+.[0-9]+(.*))).%s' % (args.package, args.extension))
 
 latest = LooseVersion('0.0.0')
 
