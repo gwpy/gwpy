@@ -62,7 +62,7 @@ before_install:
   - pip install -q ${PRE} --upgrade pip
 
   # build and install numpy first
-  - pip install -q ${PRE} "numpy>=1.9.1"
+  - pip install -q ${PRE} "numpy>=1.7"
 
   # build src packages and set 'latest' package versions (if required)
   - source .travis/setup.sh
