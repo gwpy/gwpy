@@ -23,10 +23,16 @@ from __future__ import absolute_import
 
 import os
 import time
+import warnings
 from distutils.version import (Version, LooseVersion)
 
 from git import Repo
 from jinja2 import Template
+
+warnings.warn("gwpy._version_helper will be removed before the 1.0 release of "
+              "GWpy, please don't depend on it. Instead, I recommend using "
+              "versioneer [https://github.com/warner/python-versioneer]",
+              DeprecationWarning)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Adam Mercer <adam.mercer@ligo.org>'
