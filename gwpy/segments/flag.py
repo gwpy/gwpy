@@ -37,6 +37,7 @@ from threading import Thread
 from Queue import Queue
 
 from six.moves.urllib import request
+from six.moves.urllib.error import URLError
 
 from numpy import inf
 
@@ -499,9 +500,13 @@ class DataQualityFlag(object):
                     start, end)
                 metadata = versions[-1]['metadata']
             else:
-                data, _ = apicalls.dqsegdbQueryTimes(
-                    protocol, server, out.ifo, out.tag, out.version, request,
-                    start, end)
+                try:
+                    data, _ = apicalls.dqsegdbQueryTimes(
+                        protocol, server, out.ifo, out.tag, out.version,
+                        request, start, end)
+                except URLError as e:
+                    e.args = ('Error querying for %s: %s' % (flag, e),)
+                    raise
                 metadata = data['metadata']
             new = cls(name=flag)
             for s2 in data['active']:
