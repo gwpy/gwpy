@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# don't install if doing a 'minimal' build
+[[ "$MINIMAL" = true ]] && return
+
 # set paths for PKG_CONFIG
 export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${VIRTUAL_ENV}/lib/pkgconfig
 

@@ -233,7 +233,7 @@ def channel_in_frame(channel, framefile):
     name = str(channel)
     try:
         out = shell.call(['FrChannels', framefile])[0]
-    except shell.CalledProcessError:
+    except (OSError, shell.CalledProcessError):
         return get_channel_type(channel, framefile) is not False
     else:
         for line in out.splitlines():

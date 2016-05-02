@@ -43,18 +43,17 @@ env:
 matrix:
   include:
     - python: 2.6
-      env: STRICT=false
     - python: 2.7
       env: STRICT=false
-    - python: 3.5
-      env: STRICT=false
-    - python: 2.7
+    - python: 2.7  # test latest release of upstream packages
       env: STRICT=true PRE="--pre"
+    - python: 2.7  # python-only build
+      env: MINIMAL=true
+    - python: 3.5
   allow_failures:
     - python: 2.7
       env: STRICT=true PRE="--pre"
     - python: 3.5
-      env: STRICT=false
   fast_finish: true
 
 before_install:
