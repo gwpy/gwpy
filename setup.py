@@ -83,7 +83,6 @@ try:
     from collections import OrderedDict
 except ImportError:
     install_requires.append('ordereddict>=1.1')
-    tests_require.append('ordereddict>=1.1')
 
 # importlib required for cli programs
 try:
@@ -99,6 +98,8 @@ tests_require = [
 ]
 if sys.version < '2.7':
     tests_require.append('unittest2')
+if 'ordereddict>=1.1' in install_requires:
+    tests_require.append('ordereddict>=1.1')
 
 
 # -- custom clean command -----------------------------------------------------
