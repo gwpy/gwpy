@@ -180,6 +180,11 @@ class TimeSeriesTestMixin(object):
     def frame_write(self, format=None):
         try:
             ts = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel)
+        except Exception as e:
+            if 'No reader' in str(e):
+                self.skipTest(str(e))
+            else:
+                raise
         except ImportError as e:
             self.skipTest(str(e))
         else:
@@ -598,11 +603,11 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         except (ImportError, RuntimeError) as e:
             self.skipTest(str(e))
         else:
-            qspecgram = ts.q_transform()
+            qspecgram = ts.q_transform(method='welch')
             self.assertIsInstance(qspecgram, Spectrogram)
             self.assertTupleEqual(qspecgram.shape, (32000, 2560))
             self.assertAlmostEqual(qspecgram.q, 11.31370849898476)
-            self.assertAlmostEqual(qspecgram.value.max(), 37.157012691452067)
+            self.assertAlmostEqual(qspecgram.value.max(), 37.035843858490509)
 
 
 class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
@@ -668,6 +673,11 @@ class TimeSeriesDictTestCase(unittest.TestCase):
             try:
                 self._test_data = self.TEST_CLASS.read(
                     TEST_GWF_FILE, self.channels)
+            except Exception as e:
+                if 'No reader' in str(e):
+                    self.skipTest(str(e))
+                else:
+                    raise
             except ImportError as e:
                 self.skipTest(str(e))
             else:
@@ -677,11 +687,22 @@ class TimeSeriesDictTestCase(unittest.TestCase):
         tsd = self.TEST_CLASS()
 
     def test_frame_read(self):
-        return self.TEST_CLASS.read(TEST_GWF_FILE, self.channels)
+        try:
+            return self.TEST_CLASS.read(TEST_GWF_FILE, self.channels)
+        except Exception as e:
+            if 'No reader' in str(e):
+                self.skipTest(str(e))
+            else:
+                raise
 
     def test_frame_write(self):
         try:
             tsd = self.test_frame_read()
+        except Exception as e:
+            if 'No reader' in str(e):
+                self.skipTest(str(e))
+            else:
+                raise
         except ImportError as e:
             self.skipTest(str(e))
         else:

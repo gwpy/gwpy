@@ -70,7 +70,13 @@ class CliTestMixin(object):
         product, parser = self.test_init_cli()
         args = parser.parse_args(self.TEST_ARGS + ['--out', TEMP_PLOT_FILE])
         try:
-            product.getTimeSeries(args)
+            try:
+                product.getTimeSeries(args)
+            except Exception as e:
+                if 'No reader' in str(e):
+                    raise RuntimeError(str(e))
+                else:
+                    raise
         except (RuntimeError, ImportError):
             product.timeseries = []
             product.time_groups = []
