@@ -54,8 +54,6 @@ if {${name} ne ${subport}} {
     depends_build-append \
                         port:pkgconfig \
                         port:py${python.version}-setuptools \
-                        port:py${python.version}-jinja2 \
-                        port:py${python.version}-gitpython
 }
 
 # ----------------------------------------------------------------------------
