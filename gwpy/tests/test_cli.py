@@ -24,6 +24,8 @@ import tempfile
 import importlib
 import argparse
 
+from numpy import random
+
 from matplotlib import use
 use('agg')
 
@@ -80,12 +82,14 @@ class CliTestMixin(object):
         except (RuntimeError, ImportError):
             product.timeseries = []
             product.time_groups = []
+            product.start_list = []
             for s in args.start:
+                product.start_list.append(int(s))
                 product.time_groups.append([])
                 for c in args.chan:
                     product.timeseries.append(
-                        TimeSeries(range(1000), sample_rate=10, channel=c,
-                                   epoch=s))
+                        TimeSeries(random.random(1024 * 100), sample_rate=1024,
+                                   channel=c, epoch=s))
                     product.time_groups[-1].append(len(product.timeseries)-1)
         return product, args
 
