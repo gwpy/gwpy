@@ -83,6 +83,7 @@ try:
     from collections import OrderedDict
 except ImportError:
     install_requires.append('ordereddict>=1.1')
+    tests_require.append('ordereddict>=1.1')
 
 # importlib required for cli programs
 try:
