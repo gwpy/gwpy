@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2016)
 #
 # This file is part of GWpy.
 #
@@ -19,8 +19,6 @@
 
 """Setup the GWpy package
 """
-
-from __future__ import print_function
 
 import sys
 if sys.version < '2.6':
@@ -44,46 +42,67 @@ from distutils.dist import Distribution
 from distutils.cmd import Command
 from distutils.command.clean import (clean, log, remove_tree)
 
-# test for OrderedDict
-extra_install_requires = []
-try:
-    from collections import OrderedDict
-except ImportError:
-    extra_install_requires.append('ordereddict>=1.1')
-
-# importlib required for cli programs
-try:
-    from importlib import import_module
-except ImportError:
-    extra_install_requires.append('importlib>=1.0.3')
-
-# test for unittest2
-extra_tests_require = []
-if sys.version < '2.7':
-    extra_tests_require.append('unittest2')
-
-# import sphinx commands
-try:
-    from sphinx.setup_command import BuildDoc
-except ImportError:
-    cmdclass = {}
-else:
-    cmdclass = {'build_sphinx': BuildDoc}
-
 # set basic metadata
 PACKAGENAME = 'gwpy'
 AUTHOR = 'Duncan Macleod'
 AUTHOR_EMAIL = 'duncan.macleod@ligo.org'
 LICENSE = 'GPLv3'
 
-# set versioning information
+cmdclass = {}
+
+# -- versioning ---------------------------------------------------------------
+
 import versioneer
 __version__ = versioneer.get_version()
 cmdclass.update(versioneer.get_cmdclass())
 
+# -- dependencies -------------------------------------------------------------
 
-# -----------------------------------------------------------------------------
-# Clean up, including Sphinx, and setup_requires eggs
+# declare basic dependencies for each stage
+setup_requires = [
+]
+install_requires = [
+    'python-dateutil',
+    'numpy>=1.7',
+    'scipy>=0.16.0',
+    'matplotlib>=1.3.0',
+    'astropy>=1.0',
+    'six>=1.5'
+]
+extras_require = {
+    'nds': ['nds2-client'],
+    'gwf': ['ldas-tools'],
+    'doc': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme',
+            'sphinxcontrib-doxylink', 'sphinxcontrib-epydoc',
+            'sphinxcontrib-programoutput'],
+    'hdf5': ['h5py'],
+}
+
+# test for OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    install_requires.append('ordereddict>=1.1')
+
+# importlib required for cli programs
+try:
+    from importlib import import_module
+except ImportError:
+    install_requires.append('importlib>=1.0.3')
+
+# -- set test dependencies ----------------------------------------------------
+
+setup_requires.append('pytest-runner')
+tests_require = [
+    'pytest',
+]
+if sys.version < '2.7':
+    tests_require.append('unittest2')
+if 'ordereddict>=1.1' in install_requires:
+    tests_require.append('ordereddict>=1.1')
+
+
+# -- custom clean command -----------------------------------------------------
 
 class GWpyClean(clean):
     def run(self):
@@ -100,7 +119,7 @@ class GWpyClean(clean):
             else:
                 log.warn("%r does not exist -- can't clean it", sphinx_dir)
             # remove setup eggs
-            for egg in glob.glob('*.egg'):
+            for egg in glob.glob('*.egg') + glob.glob('*.egg-info'):
                 if os.path.isdir(egg):
                     remove_tree(egg, dry_run=self.dry_run)
                 else:
@@ -185,20 +204,9 @@ class BuildPortfile(Command):
             return out.splitlines()[0].rsplit(' ', 1)[-1]
 
 cmdclass['port'] = BuildPortfile
+if 'port' in sys.argv:
+    setup_requires.append('jinja2')
 
-
-# -- don't use setup_requires if just checking for information ----------------
-
-# (credit: matplotlib/setup.py)
-setup_requires = []
-if '--help' not in sys.argv and '--help-commands' not in sys.argv:
-    dist_ = Distribution({'cmdclass': cmdclass})
-    dist_.parse_config_files()
-    dist_.parse_command_line()
-    if not (any('--' + opt in sys.argv for opt in
-            Distribution.display_option_names + ['help']) or
-            dist_.commands == ['clean']):
-        setup_requires = ['tornado', 'numpy >= 1.7', 'jinja2', 'gitpython']
 
 # -- find files ---------------------------------------------------------------
 
@@ -206,12 +214,13 @@ if '--help' not in sys.argv and '--help-commands' not in sys.argv:
 packagenames = find_packages()
 
 # glob for all scripts
-if os.path.isdir('bin'):
-    scripts = glob.glob(os.path.join('bin', '*'))
-else:
-    scripts = []
+scripts = glob.glob(os.path.join('bin', '*'))
 
 # -- run setup ----------------------------------------------------------------
+
+# don't install things if just running --help
+if '--help' in sys.argv or '--help-commands' in sys.argv:
+    setup_requires = []
 
 setup(name=PACKAGENAME,
       provides=[PACKAGENAME],
@@ -231,37 +240,9 @@ setup(name=PACKAGENAME,
       cmdclass=cmdclass,
       scripts=scripts,
       setup_requires=setup_requires,
-      requires=[
-          'glue',
-          'dateutil',
-          'numpy',
-          'scipy',
-          'matplotlib',
-          'astropy',
-          'six',
-      ],
-      install_requires=[
-          'python-dateutil',
-          'numpy >= 1.7',
-          'scipy >= 0.16.0',
-          'matplotlib >= 1.3.0',
-          'astropy >= 1.0',
-          'six >= 1.5',
-      ] + extra_install_requires,
-      tests_require=[
-      ] + extra_tests_require,
-      extras_require={
-          'nds': ['nds2-client'],
-          'gwf': ['ldas-tools'],
-          'doc': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme',
-                  'sphinxcontrib-doxylink', 'sphinxcontrib-epydoc',
-                  'sphinxcontrib-programoutput'],
-          'hdf5': ['h5py'],
-      },
-      dependency_links=[
-          'https://www.lsc-group.phys.uwm.edu/daswg/download/'
-          'software/source/glue-1.48.tar.gz#egg=glue-1.48',
-      ],
+      install_requires=install_requires,
+      tests_require=tests_require,
+      extras_require=extras_require,
       test_suite='gwpy.tests',
       use_2to3=False,
       classifiers=[

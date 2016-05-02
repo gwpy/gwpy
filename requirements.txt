@@ -6,11 +6,12 @@ matplotlib>=1.4.1
 gitpython
 h5py>=1.3
 importlib
+ordereddict>=1.1
 argparse
+jinja2
 M2Crypto
 pykerberos
 python-cjson
-jinja2
-tornado
+pyRXP
 http://software.ligo.org/lscsoft/source/glue-1.49.1.tar.gz
 http://software.ligo.org/lscsoft/source/dqsegdb-1.2.2.tar.gz
