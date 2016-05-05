@@ -106,8 +106,8 @@ def call(cmd, stdout=PIPE, stderr=PIPE, on_error='raise', **kwargs):
         if on_error == 'ignore':
             pass
         elif on_error == 'warn':
-            e = CalledProcessError(proc.returncode, cmd=cmdstr, output=err)
+            e = CalledProcessError(proc.returncode, cmdstr)
             warnings.warn(str(e))
         else:
-            raise CalledProcessError(proc.returncode, cmd=cmdstr, output=err)
+            raise CalledProcessError(proc.returncode, cmdstr)
     return out, err
