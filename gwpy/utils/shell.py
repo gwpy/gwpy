@@ -20,6 +20,7 @@
 """
 
 import os
+import warnings
 from subprocess import (Popen, PIPE, CalledProcessError)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -57,19 +58,56 @@ def which(program):
     raise ValueError("No executable '%s' found in PATH" % program)
 
 
-def call(cmd, stdout=PIPE, stderr=PIPE, on_error='raise'):
+def call(cmd, stdout=PIPE, stderr=PIPE, on_error='raise', **kwargs):
     """Call out to the shell using `subprocess.Popen`
+
+    Parameters
+    ----------
+    stdout : `file-like`, optional
+        stream for stdout
+
+    stderr : `file-like`, optional
+        stderr for stderr
+
+    on_error : `str`, optional
+        what to do when the command fails, one of
+
+        - 'ignore' - do nothing
+        - 'warn' - print a warning
+        - 'raise' - raise an exception
+
+    **kwargs
+        other keyword arguments to pass to `subprocess.Popen`
+
+    Returns
+    -------
+    out : `str`
+        the output stream of the command
+    err : `str`
+        the error stream from the command
+
+    Raises
+    ------
+    OSError
+        if `cmd` is a `str` (or `shell=True` is passed) and the executable
+        is not found
+    subprocess.CalledProcessError
+        if the command fails otherwise
     """
-    proc = Popen(cmd, stdout=stdout, stderr=stderr)
+    if isinstance(cmd, (list, tuple)):
+        cmdstr = ' '.join(cmd)
+        kwargs.setdefault('shell', False)
+    else:
+        cmdstr = str(cmd)
+        kwargs.setdefault('shell', True)
+    proc = Popen(cmd, stdout=stdout, stderr=stderr, **kwargs)
     out, err = proc.communicate()
     if proc.returncode:
         if on_error == 'ignore':
             pass
         elif on_error == 'warn':
-            e = CalledProcessError(proc.returncode, cmd=' '.join(frchannels),
-                                   output=err)
+            e = CalledProcessError(proc.returncode, cmdstr)
             warnings.warn(str(e))
         else:
-            raise CalledProcessError(proc.returncode, cmd=' '.join(frchannels),
-                                     output=err)
+            raise CalledProcessError(proc.returncode, cmdstr)
     return out, err
