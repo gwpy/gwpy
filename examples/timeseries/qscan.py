@@ -61,6 +61,8 @@ ax.grid(True, axis='y', which='both')
 plot.add_colorbar(cmap='viridis', label='Normalized energy')
 plot.show()
 
-# I think we just detected a gravitational wave signal! But, before you get too exited, this is an example of a 'blind
-# injection', a simulated signal introduced into the interferometer(s) in order to test the detection process end-to-end.
+# I think we just detected a gravitational wave signal! But, before you
+# get too excited, this is an example of a 'blind injection', a simulated
+# signal introduced into the interferometer(s) in order to test the
+# detection process end-to-end.
 # For more details, see `here <http://www.ligo.org/scientists/GW100916/>`_.
