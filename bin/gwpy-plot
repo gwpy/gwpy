@@ -19,14 +19,14 @@
 #
 """Command line interface to GWpy plotting functions
 """
-from gwpy import version
 import sys
 from importlib import import_module
 import argparse
 
+from gwpy import __version__
+
 __author__ = 'joseph areeda'
 __email__ = 'joseph.areeda@ligo.org'
-__version__ = version.version
 
 
 VERBOSE = 3     # 0 = errors only, 1 = Warnings, 2 = INFO, >2 DEBUG >=5 ALL
