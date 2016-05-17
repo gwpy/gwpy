@@ -1530,7 +1530,7 @@ class TimeSeries(TimeSeriesBase):
 
     def q_transform(self, qrange=(4, 64), frange=(0, numpy.inf),
                     gps=None, search=.5, tres=.001, fres=.5, outseg=None,
-                    **psdkwargs):
+                    whiten=True, **psdkwargs):
         """Scan a `TimeSeries` using a multi-Q transform
 
         Parameters
@@ -1613,9 +1613,12 @@ class TimeSeries(TimeSeriesBase):
         psdkw.update(psdkwargs)
         fftlength = psdkw.pop('fftlength')
         overlap = psdkw.pop('overlap')
-        asd = self.asd(fftlength, overlap, **psdkw)
-        wdata = self.whiten(fftlength, overlap, asd=asd)
-        fdata = wdata.fft().value
+        if whiten:
+            asd = self.asd(fftlength, overlap, **psdkw)
+            wdata = self.whiten(fftlength, overlap, asd=asd)
+            fdata = wdata.fft().value
+        else:
+            fdata = self.fft().value
 
         # set up results
         peakq = None
