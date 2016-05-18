@@ -91,9 +91,9 @@ class Channel(object):
         r'((?:(?P<ifo>[A-Z]\d))?|[\w-]+):'  # match IFO prefix
          '(?:(?P<system>[a-zA-Z0-9]+))?'  # match system
          '(?:[-_](?P<subsystem>[a-zA-Z0-9]+))?'  # match subsystem
-         '(?:_(?P<signal>[a-zA-Z0-9_]+))?'  # match signal
-         '(?:\.(?P<trend>[a-z]+))?'  # match trend type
-         '(?:,(?P<type>([a-z]-)?[a-z]+))?'  # match channel type
+         '(?:[-_](?P<signal>[a-zA-Z0-9_-]+?))?'  # match signal
+         '(?:[\.-](?P<trend>[a-z]+))?'  # match trend type
+         '(?:,(?P<type>([a-z]-)?[a-z]+))?$'  # match channel type
     )
 
     def __init__(self, name, sample_rate=None, unit=None, frequency_range=None,
