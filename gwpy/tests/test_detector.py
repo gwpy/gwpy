@@ -85,6 +85,20 @@ class ChannelTests(unittest.TestCase):
         self.assertEqual(c.name, 'X1:TEST-CHANNEL_NAME_PARSING.rms')
         self.assertEqual(c.ndsname,
                          'X1:TEST-CHANNEL_NAME_PARSING.rms,m-trend')
+        # test parsing GEO channels
+        out = Channel.parse_channel_name("G1:PSL_SL_PWR-AMPL-OUTLP-av")
+        self.assertDictEqual(
+            out, {'ifo': 'G1', 'system': 'PSL', 'subsystem': 'SL',
+                  'signal': 'PWR-AMPL-OUTLP', 'trend': 'av', 'type': None})
+        # test virgo channels
+        out = Channel.parse_channel_name("V1:h_16384Hz")
+        self.assertDictEqual(
+            out, {'ifo': 'V1', 'system':'h', 'subsystem':'16384Hz',
+                  'signal': None, 'trend': None, 'type': None})
+        out = Channel.parse_channel_name("V1:Sa_PR_f0_zL_500Hz")
+        self.assertDictEqual(
+            out, {'ifo': 'V1', 'system':'Sa', 'subsystem':'PR',
+                  'signal': 'f0_zL_500Hz', 'trend': None, 'type': None})
 
     def test_property_frequency_range(self):
         new = Channel('test', frequency_range=(1, 40))
