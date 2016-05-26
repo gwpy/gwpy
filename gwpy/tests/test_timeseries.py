@@ -642,6 +642,11 @@ class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertIsInstance(b, Array2D)
         self.assertTupleEqual(b.shape, (data.size, len(data.bits)))
 
+    def test_resample(self):
+        ts1 = self.create(sample_rate=100)
+        ts2 = ts1.resample(10)
+        self.assertEquals(ts2.sample_rate, ONE_HZ*10)
+
 
 # -- TimeSeriesDict tests ------------------------------------------------------
 
