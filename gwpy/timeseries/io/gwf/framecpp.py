@@ -179,6 +179,8 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
                % (verbose, len(channels), N, N))
     # finalise
     for channel, ts in out.iteritems():
+        ts.channel.sample_rate = ts.sample_rate
+        ts.channel.unit = ts.unit
         ts.channel.frametype = frametype
         # resample data
         if resample is not None and channel in resample:
