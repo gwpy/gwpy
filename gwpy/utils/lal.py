@@ -181,7 +181,7 @@ def from_lal_unit(lunit):
         lunit = lal.Unit(lunit)
     except RuntimeError:
         raise TypeError("Cannot convert %r to lal.Unit" % lunit)
-    aunit = None
+    aunit = units.Unit("")
     for power, lalbase in zip(lunit.unitNumerator, LAL_UNIT_INDEX):
         # if not used, continue
         if not power:
@@ -192,10 +192,7 @@ def from_lal_unit(lunit):
         except ValueError:
             raise ValueError("Astropy has no unit corresponding to %r"
                              % lalbase)
-        if aunit is None:
-            aunit = u ** power
-        else:
-            aunit *= u ** power
+        aunit *= u ** power
     return aunit
 
 
