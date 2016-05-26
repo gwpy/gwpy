@@ -40,6 +40,7 @@ class SpectralVariance(Array2D):
     """
     _metadata_slots = FrequencySeries._metadata_slots + ['bins']
     _default_xunit = FrequencySeries._default_xunit
+    _rowclass = FrequencySeries
 
     def __new__(cls, data, bins, name=None, channel=None, epoch=None, unit=None,
                 f0=0, df=1, **kwargs):
@@ -138,10 +139,21 @@ class SpectralVariance(Array2D):
     # SpectralVariance methods
 
     def __getitem__(self, item):
-        if isinstance(item, tuple) and len(item) == 2:
+        if isinstance(item, int):
+            out = self.value[item].view(self._columnclass)
+            out.unit = self.unit
+            try:
+                out.xindex = self.yindex
+            except AttributeError:
+                pass
+            return out
+        if isinstance(item, tuple) and item[0] == slice(None, None, None):
+            out = self.value.__getitem__(item).view(self._rowclass)
+            out.xindex = self.xindex
+            return out
+        if (isinstance(item, tuple) and len(item) == 2):
             return self[item[0]][item[1]]
-        else:
-            return super(SpectralVariance, self).__getitem__(item)
+        return super(SpectralVariance, self).__getitem__(item)
     __getitem__.__doc__ = Array2D.__getitem__.__doc__
 
     @classmethod

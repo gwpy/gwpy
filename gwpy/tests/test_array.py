@@ -387,10 +387,11 @@ class Array2DTestCase(CommonTests, unittest.TestCase):
         a = self.create()
         self.assertEqual(a[0, 0], a[0][0])
         nptest.assert_array_equal(a[0].value, a.value[0])
-        self.assertIsInstance(a[0], Series)
+        self.assertIsInstance(a[0], self.TEST_CLASS._columnclass)
         self.assertIsInstance(a[0][0], units.Quantity)
         self.assertEqual(a[0].unit, a.unit)
         self.assertEqual(a[0][0].unit, a.unit)
+        self.assertIsInstance(a[:,0], self.TEST_CLASS._rowclass)
 
     def test_value_at(self):
         ts1 = self.create(dx=.5, dy=.25, unit='m')

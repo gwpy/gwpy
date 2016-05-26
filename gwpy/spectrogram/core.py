@@ -69,6 +69,8 @@ class Spectrogram(Array2D):
     _metadata_slots = ['name', 'channel', 'epoch', 'dt', 'f0', 'df']
     _default_xunit = TimeSeries._default_xunit
     _default_yunit = FrequencySeries._default_xunit
+    _rowclass = TimeSeries
+    _columnclass = FrequencySeries
 
     def __new__(cls, data, unit=None, name=None, channel=None, epoch=None,
                 dt=None, times=None, f0=None, df=None, frequencies=None,
