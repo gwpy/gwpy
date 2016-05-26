@@ -33,7 +33,7 @@ from astropy import units
 
 from ..io import (reader, writer)
 from ..segments import Segment
-from ..signal import notch
+from ..signal import (notch, sosfiltfilt)
 from ..utils import with_import
 from ..utils.docstring import interpolate_docstring
 from ..utils.compat import OrderedDict
@@ -1117,7 +1117,7 @@ class TimeSeries(TimeSeriesBase):
         # apply filter
         return self.filter(zeros, poles, gain)
 
-    def filter(self, *filt):
+    def filter(self, *filt, **kwargs):
         """Apply the given filter to this `TimeSeries`.
 
         All recognised filter arguments are converted either into cascading
@@ -1149,6 +1149,12 @@ class TimeSeries(TimeSeriesBase):
             - ``(zeros, poles, gain)``
             - ``(A, B, C, D)`` 'state-space' representation
 
+        filtfilt : `bool`, optional, default: `False`
+            filter forward and backwards to preserve phase
+
+        **kwargs
+            other keyword arguments are passed to the filter method
+
         Returns
         -------
         result : `TimeSeries`
@@ -1170,6 +1176,9 @@ class TimeSeries(TimeSeriesBase):
         ValueError
             If ``filt`` arguments cannot be interpreted properly
         """
+        # parse keyword arguments
+        filtfilt = kwargs.pop('filtfilt', False)
+
         sos = None
         # single argument given
         if len(filt) == 1:
@@ -1205,10 +1214,17 @@ class TimeSeries(TimeSeriesBase):
                              "give either a signal.lti object, or a "
                              "tuple in zpk or ba format. See "
                              "scipy.signal docs for details.")
+        cls = type(self)
         if sos is not None:
-            new = signal.sosfilt(sos, self, axis=0).view(self.__class__)
+            if filtfilt:
+                new = sosfiltfilt(sos, self, axis=0, **kwargs).view(cls)
+            else:
+                new = signal.sosfilt(sos, self, axis=0, **kwargs).view(cls)
         else:
-            new = signal.lfilter(b, a, self, axis=0).view(self.__class__)
+            if filtfilt:
+                new = signal.filtfilt(b, a, self, axis=0, **kwargs).view(cls)
+            else:
+                new = signal.lfilter(b, a, self, axis=0, **kwargs).view(cls)
         new.__dict__ = self.copy_metadata()
         return new
 
