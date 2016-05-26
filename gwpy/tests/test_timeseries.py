@@ -105,16 +105,16 @@ class TimeSeriesTestMixin(object):
     def test_creation_with_metadata(self):
         self.ts = self.create()
         repr(self.ts)
-        self.assertTrue(self.ts.epoch == GPS_EPOCH)
-        self.assertTrue(self.ts.sample_rate == ONE_HZ)
-        self.assertTrue(self.ts.dt == ONE_SECOND)
+        self.assertEqual(self.ts.epoch, GPS_EPOCH)
+        self.assertEqual(self.ts.sample_rate, ONE_HZ)
+        self.assertEqual(self.ts.dt, ONE_SECOND)
 
     def frame_read(self, format=None):
         ts = self.TEST_CLASS.read(
             TEST_GWF_FILE, self.channel, format=format)
-        self.assertTrue(ts.epoch == Time(968654552, format='gps', scale='utc'))
-        self.assertTrue(ts.sample_rate == units.Quantity(16384, 'Hz'))
-        self.assertTrue(ts.unit == units.Unit('strain'))
+        self.assertEqual(ts.epoch, Time(968654552, format='gps', scale='utc'))
+        self.assertEqual(ts.sample_rate, units.Quantity(16384, 'Hz'))
+        self.assertEqual(ts.unit, units.Unit('strain'))
         # check that channel carries the correct parameters
         self.assertEqual(ts.channel.sample_rate, ts.sample_rate)
         self.assertEqual(ts.channel.unit, ts.unit)
