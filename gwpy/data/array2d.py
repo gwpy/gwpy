@@ -65,6 +65,8 @@ class Array2D(Series):
     _metadata_slots = Series._metadata_slots + ['y0', 'dy', 'yindex']
     _default_xunit = Unit('')
     _default_yunit = Unit('')
+    _rowclass = Series
+    _columnclass = Series
     _ndim = 2
 
     def __new__(cls, data, unit=None, xindex=None, yindex=None, x0=0,
@@ -101,10 +103,12 @@ class Array2D(Series):
             return Quantity(new, unit=self.unit)
         # unwrap a Series
         if len(new.shape) == 1:
-            new = new.view(Series)
             if isinstance(x, (float, int)):
+                new = new.view(self._columnclass)
                 new.dx = self.dy
                 new.x0 = self.y0
+            else:
+                new = new.view(self._rowclass)
         # unwrap a Spectrogram
         else:
             new = new.value.view(type(self))

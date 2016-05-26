@@ -40,6 +40,7 @@ class SpectralVariance(Array2D):
     """
     _metadata_slots = FrequencySeries._metadata_slots + ['bins']
     _default_xunit = FrequencySeries._default_xunit
+    _rowclass = FrequencySeries
 
     def __new__(cls, data, bins, name=None, channel=None, epoch=None, unit=None,
                 f0=0, df=1, **kwargs):
