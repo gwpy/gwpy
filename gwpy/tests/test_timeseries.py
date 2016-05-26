@@ -115,6 +115,9 @@ class TimeSeriesTestMixin(object):
         self.assertTrue(ts.epoch == Time(968654552, format='gps', scale='utc'))
         self.assertTrue(ts.sample_rate == units.Quantity(16384, 'Hz'))
         self.assertTrue(ts.unit == units.Unit('strain'))
+        # check that channel carries the correct parameters
+        self.assertEqual(ts.channel.sample_rate, ts.sample_rate)
+        self.assertEqual(ts.channel.unit, ts.unit)
         return ts
 
     def test_epoch(self):
