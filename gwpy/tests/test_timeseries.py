@@ -92,13 +92,6 @@ LOSC_DQ_BITS = [
 ]
 LOSC_GW150914 = 1126259462
 
-# filtering test outputs
-NOTCH_60HZ = (
-    numpy.asarray([ 0.99973536+0.02300468j,  0.99973536-0.02300468j]),
-    numpy.asarray([ 0.99954635-0.02299956j,  0.99954635+0.02299956j]),
-    0.99981094420429639,
-)
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
@@ -568,17 +561,6 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         # test method not 'welch' raises warning
         with pytest.warns(UserWarning):
            ts.csd_spectrogram(ts, 0.5, method='median-mean')
-
-    def test_notch_design(self):
-        # test simple notch
-        from gwpy.timeseries.filter import create_notch
-        notch = create_notch(60, 16384)
-        for a, b in zip(notch, NOTCH_60HZ):
-            nptest.assert_array_almost_equal(a, b)
-        # test Quantities
-        notch2 = create_notch(60 * ONE_HZ, 16384 * ONE_HZ)
-        for a, b in zip(notch, notch2):
-            nptest.assert_array_almost_equal(a, b)
 
     def test_notch(self):
         # test notch runs end-to-end
