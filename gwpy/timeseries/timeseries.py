@@ -33,12 +33,12 @@ from astropy import units
 
 from ..io import (reader, writer)
 from ..segments import Segment
+from ..signal import notch
 from ..utils import with_import
 from ..utils.docstring import interpolate_docstring
 from ..utils.compat import OrderedDict
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
-from .filter import create_notch
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -1524,8 +1524,7 @@ class TimeSeries(TimeSeriesBase):
         scipy.signal.iirdesign
             for details on the IIR filter design method
         """
-        zpk = create_notch(frequency, self.sample_rate.value,
-                           type=type, **kwargs)
+        zpk = notch(frequency, self.sample_rate.value, type=type, **kwargs)
         return self.filter(*zpk)
 
     def q_transform(self, qrange=(4, 64), frange=(0, numpy.inf),
