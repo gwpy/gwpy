@@ -1021,7 +1021,7 @@ class TimeSeries(TimeSeriesBase):
         # apply filter
         return self.filter(*zpk)
 
-    def resample(self, rate, window='hamming', numtaps=61):
+    def resample(self, rate, window='hamming', ftype='fir', n=None):
         """Resample this Series to a new rate
 
         Parameters
@@ -1042,22 +1042,29 @@ class TimeSeries(TimeSeriesBase):
             a new Series with the resampling applied, and the same
             metadata
         """
+        if n is None and ftype == 'iir':
+            n = 8
+        elif n is None:
+            n = 60
+
         if isinstance(rate, units.Quantity):
             rate = rate.value
         factor = (self.sample_rate.value / rate)
         # if integer down-sampling, use decimate
         if factor.is_integer():
-            factor = int(factor)
-            new = signal.decimate(self.value, factor, numtaps-1,
-                                  ftype='fir').view(self.__class__)
+            if ftype == 'iir':
+                f = signal.cheby1(n, 0.05, 0.8/factor, output='sos')
+            else:
+                f = signal.firwin(n+1, 1./factor, window=window)
+            return self.filter(f, filtfilt=True)[::int(factor)]
         # otherwise use Fourier filtering
         else:
             nsamp = int(self.shape[0] * self.dx.value * rate)
             new = signal.resample(self.value, nsamp,
                                   window=window).view(self.__class__)
-        new.__dict__ = self.copy_metadata()
-        new.sample_rate = rate
-        return new
+            new.__dict__ = self.copy_metadata()
+            new.sample_rate = rate
+            return new
 
     def zpk(self, zeros, poles, gain, digital=False, unit='Hz'):
         """Filter this `TimeSeries` by applying a zero-pole-gain filter
