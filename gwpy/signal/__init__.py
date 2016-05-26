@@ -22,3 +22,6 @@ applications.
 """
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+from .filter_design import *
+from .filter import *

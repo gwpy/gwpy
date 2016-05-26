@@ -33,12 +33,12 @@ from astropy import units
 
 from ..io import (reader, writer)
 from ..segments import Segment
+from ..signal import (notch, sosfiltfilt)
 from ..utils import with_import
 from ..utils.docstring import interpolate_docstring
 from ..utils.compat import OrderedDict
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
-from .filter import create_notch
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -1021,7 +1021,7 @@ class TimeSeries(TimeSeriesBase):
         # apply filter
         return self.filter(*zpk)
 
-    def resample(self, rate, window='hamming', numtaps=61):
+    def resample(self, rate, window='hamming', ftype='fir', n=None):
         """Resample this Series to a new rate
 
         Parameters
@@ -1030,11 +1030,12 @@ class TimeSeries(TimeSeriesBase):
             rate to which to resample this `Series`
         window : array_like, callable, string, float, or tuple, optional
             specifies the window applied to the signal in the Fourier
-            domain.
-        numtaps : `int`, default: ``61``
-            length of the filter (number of coefficients, i.e. the filter
-            order + 1). This option is only valid for an integer-scale
-            downsampling.
+            domain, only used for `ftype='fir'` or irregular downsampling
+        ftype : `str`, optional
+            type of filter, either 'fir' or 'iir', defaults to 'fir'
+        n : `int`, optional
+            if `ftype='fir'` the number of taps in the filter, otherwise
+            the order of the Chebyshev type I IIR filter
 
         Returns
         -------
@@ -1042,22 +1043,29 @@ class TimeSeries(TimeSeriesBase):
             a new Series with the resampling applied, and the same
             metadata
         """
+        if n is None and ftype == 'iir':
+            n = 8
+        elif n is None:
+            n = 60
+
         if isinstance(rate, units.Quantity):
             rate = rate.value
         factor = (self.sample_rate.value / rate)
         # if integer down-sampling, use decimate
         if factor.is_integer():
-            factor = int(factor)
-            new = signal.decimate(self.value, factor, numtaps-1,
-                                  ftype='fir').view(self.__class__)
+            if ftype == 'iir':
+                f = signal.cheby1(n, 0.05, 0.8/factor, output='sos')
+            else:
+                f = signal.firwin(n+1, 1./factor, window=window)
+            return self.filter(f, filtfilt=True)[::int(factor)]
         # otherwise use Fourier filtering
         else:
             nsamp = int(self.shape[0] * self.dx.value * rate)
             new = signal.resample(self.value, nsamp,
                                   window=window).view(self.__class__)
-        new.__dict__ = self.copy_metadata()
-        new.sample_rate = rate
-        return new
+            new.__dict__ = self.copy_metadata()
+            new.sample_rate = rate
+            return new
 
     def zpk(self, zeros, poles, gain, digital=False, unit='Hz'):
         """Filter this `TimeSeries` by applying a zero-pole-gain filter
@@ -1117,7 +1125,7 @@ class TimeSeries(TimeSeriesBase):
         # apply filter
         return self.filter(zeros, poles, gain)
 
-    def filter(self, *filt):
+    def filter(self, *filt, **kwargs):
         """Apply the given filter to this `TimeSeries`.
 
         All recognised filter arguments are converted either into cascading
@@ -1149,6 +1157,12 @@ class TimeSeries(TimeSeriesBase):
             - ``(zeros, poles, gain)``
             - ``(A, B, C, D)`` 'state-space' representation
 
+        filtfilt : `bool`, optional, default: `False`
+            filter forward and backwards to preserve phase
+
+        **kwargs
+            other keyword arguments are passed to the filter method
+
         Returns
         -------
         result : `TimeSeries`
@@ -1170,6 +1184,9 @@ class TimeSeries(TimeSeriesBase):
         ValueError
             If ``filt`` arguments cannot be interpreted properly
         """
+        # parse keyword arguments
+        filtfilt = kwargs.pop('filtfilt', False)
+
         sos = None
         # single argument given
         if len(filt) == 1:
@@ -1205,10 +1222,17 @@ class TimeSeries(TimeSeriesBase):
                              "give either a signal.lti object, or a "
                              "tuple in zpk or ba format. See "
                              "scipy.signal docs for details.")
+        cls = type(self)
         if sos is not None:
-            new = signal.sosfilt(sos, self, axis=0).view(self.__class__)
+            if filtfilt:
+                new = sosfiltfilt(sos, self, axis=0, **kwargs).view(cls)
+            else:
+                new = signal.sosfilt(sos, self, axis=0, **kwargs).view(cls)
         else:
-            new = signal.lfilter(b, a, self, axis=0).view(self.__class__)
+            if filtfilt:
+                new = signal.filtfilt(b, a, self, axis=0, **kwargs).view(cls)
+            else:
+                new = signal.lfilter(b, a, self, axis=0, **kwargs).view(cls)
         new.__dict__ = self.copy_metadata()
         return new
 
@@ -1524,8 +1548,7 @@ class TimeSeries(TimeSeriesBase):
         scipy.signal.iirdesign
             for details on the IIR filter design method
         """
-        zpk = create_notch(frequency, self.sample_rate.value,
-                           type=type, **kwargs)
+        zpk = notch(frequency, self.sample_rate.value, type=type, **kwargs)
         return self.filter(*zpk)
 
     def q_transform(self, qrange=(4, 64), frange=(0, numpy.inf),

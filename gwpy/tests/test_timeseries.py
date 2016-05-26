@@ -92,13 +92,6 @@ LOSC_DQ_BITS = [
 ]
 LOSC_GW150914 = 1126259462
 
-# filtering test outputs
-NOTCH_60HZ = (
-    numpy.asarray([ 0.99973536+0.02300468j,  0.99973536-0.02300468j]),
-    numpy.asarray([ 0.99954635-0.02299956j,  0.99954635+0.02299956j]),
-    0.99981094420429639,
-)
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
@@ -276,8 +269,9 @@ class TimeSeriesTestMixin(object):
         """Test the `TimeSeries.resample` method
         """
         ts1 = self.create(sample_rate=100)
-        ts2 = ts1.resample(10)
+        ts2 = ts1.resample(10, ftype='iir')
         self.assertEquals(ts2.sample_rate, ONE_HZ*10)
+        ts1.resample(10, ftype='fir', n=10)
 
     def test_to_from_lal(self):
         ts = self.create()
@@ -569,17 +563,6 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         with pytest.warns(UserWarning):
            ts.csd_spectrogram(ts, 0.5, method='median-mean')
 
-    def test_notch_design(self):
-        # test simple notch
-        from gwpy.timeseries.filter import create_notch
-        notch = create_notch(60, 16384)
-        for a, b in zip(notch, NOTCH_60HZ):
-            nptest.assert_array_almost_equal(a, b)
-        # test Quantities
-        notch2 = create_notch(60 * ONE_HZ, 16384 * ONE_HZ)
-        for a, b in zip(notch, notch2):
-            nptest.assert_array_almost_equal(a, b)
-
     def test_notch(self):
         # test notch runs end-to-end
         ts = self.create(sample_rate=256)
@@ -658,6 +641,11 @@ class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
         b = data.boolean
         self.assertIsInstance(b, Array2D)
         self.assertTupleEqual(b.shape, (data.size, len(data.bits)))
+
+    def test_resample(self):
+        ts1 = self.create(sample_rate=100)
+        ts2 = ts1.resample(10)
+        self.assertEquals(ts2.sample_rate, ONE_HZ*10)
 
 
 # -- TimeSeriesDict tests ------------------------------------------------------
