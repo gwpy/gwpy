@@ -274,7 +274,6 @@ class Array2D(Series):
         except IndexError as e:
             e.args = ("Value %r not found in array yindex",)
             raise
-        print(idx, idy)
         return self[idx, idy]
 
     # -------------------------------------------
