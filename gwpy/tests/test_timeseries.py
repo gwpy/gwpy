@@ -269,8 +269,9 @@ class TimeSeriesTestMixin(object):
         """Test the `TimeSeries.resample` method
         """
         ts1 = self.create(sample_rate=100)
-        ts2 = ts1.resample(10)
+        ts2 = ts1.resample(10, ftype='iir')
         self.assertEquals(ts2.sample_rate, ONE_HZ*10)
+        ts1.resample(10, ftype='fir', n=10)
 
     def test_to_from_lal(self):
         ts = self.create()
