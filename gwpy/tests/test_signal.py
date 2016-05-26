@@ -26,9 +26,12 @@ from numpy import testing as nptest
 
 from scipy import signal
 
+from astropy import units
+
 from gwpy import signal as gwpy_signal
 
-# filtering test outputs
+ONE_HZ = units.Quantity(1, 'Hz')
+
 NOTCH_60HZ = (
     numpy.asarray([ 0.99973536+0.02300468j,  0.99973536-0.02300468j]),
     numpy.asarray([ 0.99954635-0.02299956j,  0.99954635+0.02299956j]),
@@ -45,10 +48,10 @@ class FilterDesignTestCase(unittest.TestCase):
     """
     def test_notch_design(self):
         # test simple notch
-        notch = gwpy_signal.notch(60, 16384)
-        for a, b in zip(notch, NOTCH_60HZ):
+        zpk = gwpy_signal.notch(60, 16384)
+        for a, b in zip(zpk, NOTCH_60HZ):
             nptest.assert_array_almost_equal(a, b)
         # test Quantities
-        notch2 = create_notch(60 * ONE_HZ, 16384 * ONE_HZ)
-        for a, b in zip(notch, notch2):
+        zpk2 = gwpy_signal.notch(60 * ONE_HZ, 16384 * ONE_HZ)
+        for a, b in zip(zpk, zpk2):
             nptest.assert_array_almost_equal(a, b)
