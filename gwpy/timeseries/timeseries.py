@@ -1030,11 +1030,12 @@ class TimeSeries(TimeSeriesBase):
             rate to which to resample this `Series`
         window : array_like, callable, string, float, or tuple, optional
             specifies the window applied to the signal in the Fourier
-            domain.
-        numtaps : `int`, default: ``61``
-            length of the filter (number of coefficients, i.e. the filter
-            order + 1). This option is only valid for an integer-scale
-            downsampling.
+            domain, only used for `ftype='fir'` or irregular downsampling
+        ftype : `str`, optional
+            type of filter, either 'fir' or 'iir', defaults to 'fir'
+        n : `int`, optional
+            if `ftype='fir'` the number of taps in the filter, otherwise
+            the order of the Chebyshev type I IIR filter
 
         Returns
         -------
