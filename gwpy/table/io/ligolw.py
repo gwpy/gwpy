@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2013-2016)
 #
 # This file is part of GWpy.
 #
@@ -19,11 +19,15 @@
 """Read LIGO_LW documents into glue.ligolw.table.Table objects.
 """
 
+import warnings
+
 from glue.ligolw.table import StripTableName as strip
 from glue.ligolw.lsctables import TableByName
 
 from ...io import registry
+from ...io.cache import (read_cache, file_list)
 from ...io.ligolw import (table_from_file, identify_ligolw)
+from .. import GWRecArray
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = []
@@ -32,15 +36,38 @@ __all__ = []
 def read_table_factory(table_):
     """Define a custom function to read this table from a LIGO_LW file.
     """
-    def _read(f, *args, **kwargs):
+    def _read_ligolw(f, *args, **kwargs):
         return table_from_file(f, table_.tableName, *args, **kwargs)
-    return _read
+
+    def _read_recarray(f, *args, **kwargs):
+        # set up keyword arguments
+        reckwargs = {
+            'on_attributeerror': 'raise',
+            'get_as_columns': False
+        }
+        for key in reckwargs:
+            if key in kwargs:
+                reckwargs[key] = kwargs.pop(key)
+        # handle multiprocessing
+        nproc = kwargs.pop('nproc', 1)
+        if nproc > 1:
+            kwargs['format'] = strip(table_.tableName)
+            return read_cache(file_list(f), GWRecArray, nproc, None,
+                              *args, **kwargs)
+
+        return table_from_file(f, table_.tableName,
+                               *args, **kwargs).to_recarray(**reckwargs)
+
+    return _read_ligolw, _read_recarray
+
 
 # register reader and auto-id for LIGO_LW
 for table in TableByName.itervalues():
     tablename = strip(table.tableName)
-    func = read_table_factory(table)
-    # register generic reader and table-specific reader
-    registry.register_reader('ligolw', table, func)
-    registry.register_reader(tablename, table, func)
+    llwfunc, recfunc = read_table_factory(table)
+    # register generic reader and table-specific reader for LIGO_LW
+    registry.register_reader('ligolw', table, llwfunc)
+    registry.register_reader(tablename, table, llwfunc)
     registry.register_identifier('ligolw', table, identify_ligolw)
+    # register table-specific reader for GWRecArray
+    registry.register_reader(tablename, GWRecArray, recfunc)
