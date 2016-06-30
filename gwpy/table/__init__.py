@@ -45,9 +45,11 @@ warnings.filterwarnings('ignore', 'column name', UserWarning)
 from glue.ligolw.ligolw import (Column, Document)
 from glue.ligolw.table import Table
 
+# import custom recarray
+from .rec import GWRecArray
+
 # import all tables
 from . import lsctables
-
 
 # attach unified I/O
 from .io import *
@@ -57,4 +59,4 @@ from .rate import (event_rate, binned_event_rates)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Kipp Cannon <kipp.cannon@ligo.org>'
-__all__ = ['Column', 'Document', 'Table', 'lsctables']
+__all__ = ['Column', 'Document', 'Table', 'lsctables', 'GWRecArray']
