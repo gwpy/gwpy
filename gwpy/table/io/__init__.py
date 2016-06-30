@@ -37,3 +37,6 @@ from .omega import *
 
 # import cWB I/O
 from .cwb import *
+
+# import PyCBC live I/O
+from .pycbc import *

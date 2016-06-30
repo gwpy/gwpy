@@ -72,6 +72,9 @@ before_install:
   # install testing dependencies
   - pip install -q ${PRE} coveralls "pytest>=2.8" unittest2
 
+  # need to install astropy 1.1 specifically for py26
+  - if [[ ${TRAVIS_PYTHON_VERSION} == '2.6' ]]; then pip install "astropy==1.1"; fi
+
 install:
   - pip install ${PRE} -r requirements.txt
   - python setup.py build
