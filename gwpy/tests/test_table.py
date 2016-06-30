@@ -30,8 +30,9 @@ from numpy import testing as nptest
 from astropy import units
 
 from gwpy.time import LIGOTimeGPS
-from gwpy.table import lsctables
+from gwpy.table import (lsctables, GWRecArray)
 from gwpy.table.io import (omega, trigfind)
+from gwpy.table.utils import (get_table_column, get_row_value)
 from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
 
 import common
@@ -48,6 +49,17 @@ class TableTestMixin(object):
     def test_has_gwpy_methods(self):
         for method in ['read', 'plot']:
             self.assertTrue(hasattr(self.TABLE_CLASS, method))
+
+    def test_recarray_read(self):
+        tablename = lsctables.strip_table_name(self.TABLE_CLASS.tableName)
+        # simple
+        table = GWRecArray.read(self.TEST_XML_FILE, format=tablename)
+        self.assertEquals(len(table), 2052)
+        # nproc
+        table = GWRecArray.read(self.TEST_XML_FILE, format=tablename, nproc=2)
+        # get_as_column
+        table = GWRecArray.read(self.TEST_XML_FILE, format=tablename,
+                                get_as_columns=True)
 
 
 class SnglBurstTableTestCase(TableTestMixin, unittest.TestCase):
@@ -171,3 +183,22 @@ class SnglBurstTableTestCase(TableTestMixin, unittest.TestCase):
                 nptest.assert_array_equal(
                     table.getColumnByName(column).asarray(),
                     table2.getColumnByName(column).asarray())
+
+
+class GWRecArrayTestCase(unittest.TestCase):
+    def test_get_table_row_methods(self):
+        testfile = SnglBurstTableTestCase.TEST_XML_FILE
+        table = GWRecArray.read(SnglBurstTableTestCase.TEST_XML_FILE,
+                                format='sngl_burst')
+        # test simple column
+        snr = get_table_column(table, 'snr')
+        nptest.assert_array_equal(snr, table['snr'])
+        # test 'time' special-case
+        time = get_table_column(table, 'time')
+        nptest.assert_array_equal(
+            time, table['peak_time'] + table['peak_time_ns'] * 1e-9)
+        # test row
+        row = table[0]
+        self.assertEqual(get_row_value(row, 'snr'), row['snr'])
+        self.assertEqual(get_row_value(row, 'time'),
+                         row['peak_time'] + row['peak_time_ns'] * 1e-9)
