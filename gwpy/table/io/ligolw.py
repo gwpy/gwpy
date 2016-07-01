@@ -19,8 +19,6 @@
 """Read LIGO_LW documents into glue.ligolw.table.Table objects.
 """
 
-import warnings
-
 from glue.ligolw.table import StripTableName as strip
 from glue.ligolw.lsctables import TableByName
 
@@ -40,6 +38,13 @@ def read_table_factory(table_):
         return table_from_file(f, table_.tableName, *args, **kwargs)
 
     def _read_recarray(f, *args, **kwargs):
+        # handle multiprocessing
+        nproc = kwargs.pop('nproc', 1)
+        if nproc > 1:
+            kwargs['format'] = strip(table_.tableName)
+            return read_cache(file_list(f), GWRecArray, nproc, None,
+                              *args, **kwargs)
+
         # set up keyword arguments
         reckwargs = {
             'on_attributeerror': 'raise',
@@ -48,13 +53,9 @@ def read_table_factory(table_):
         for key in reckwargs:
             if key in kwargs:
                 reckwargs[key] = kwargs.pop(key)
-        # handle multiprocessing
-        nproc = kwargs.pop('nproc', 1)
-        if nproc > 1:
-            kwargs['format'] = strip(table_.tableName)
-            return read_cache(file_list(f), GWRecArray, nproc, None,
-                              *args, **kwargs)
+        reckwargs['columns'] = kwargs.get('columns', None)
 
+        # read from LIGO_LW
         return table_from_file(f, table_.tableName,
                                *args, **kwargs).to_recarray(**reckwargs)
 
