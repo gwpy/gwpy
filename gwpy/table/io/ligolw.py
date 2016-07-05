@@ -48,6 +48,8 @@ def read_table_factory(table_):
         for key in reckwargs:
             if key in kwargs:
                 reckwargs[key] = kwargs.pop(key)
+        reckwargs['columns'] = kwargs.get('columns', None)
+
         # handle multiprocessing
         nproc = kwargs.pop('nproc', 1)
         if nproc > 1:
