@@ -35,12 +35,12 @@ from ..rec import GWRecArray
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-INVALID_COLUMNS = ['psd']
+INVALID_COLUMNS = ['psd', 'loudest']
 PYCBC_FILENAME = re.compile('([A-Z][0-9])+-Live-[0-9.]+-[0-9.]+.hdf')
 
 
 @with_import('h5py')
-def recarray_from_file(source, ifo=None, columns=None):
+def recarray_from_file(source, ifo=None, columns=None, loudest=False):
     """Read a `GWRecArray` from a PyCBC live HDF5 file
     """
     # read HDF5 file
@@ -67,7 +67,11 @@ def recarray_from_file(source, ifo=None, columns=None):
         columns = [c for c in source if c not in INVALID_COLUMNS]
     names, data = zip(*[(k, source[k][:]) for k in source if k in columns])
     names = list(map(str, names))
-    data = list(data)
+    if loudest:  # recover only the 'loudest' events
+        loudest = source['loudest'][:]
+        data = [d[loudest] for d in data]
+    else:
+        data = list(data)
     # calculate new_snr on-the-fly
     if 'new_snr' in columns and 'new_snr' not in source:
         # get columns needed for newsnr
@@ -89,17 +93,19 @@ def recarray_from_file(source, ifo=None, columns=None):
     return out
 
 
-def recarray_from_pycbc_live(source, ifo=None, columns=None, nproc=1):
+def recarray_from_pycbc_live(source, ifo=None, columns=None, nproc=1, **kwargs):
     """Read a `GWRecArray` from one or more PyCBC live files
     """
     source = file_list(source)
     if nproc > 1:
         from ...io.cache import read_cache
         return read_cache(source, GWRecArray, nproc, None,
-                          ifo=ifo, columns=columns, format='pycbc_live')
+                          ifo=ifo, columns=columns, format='pycbc_live',
+                          **kwargs)
 
     source = filter_empty_files(source, ifo=ifo)
-    arrays = [recarray_from_file(x, ifo=ifo, columns=columns) for x in source]
+    arrays = [recarray_from_file(x, ifo=ifo, columns=columns, **kwargs)
+              for x in source]
     return recfunctions.stack_arrays(arrays, asrecarray=True, usemask=False,
                                      autoconvert=True).view(GWRecArray)
 
