@@ -46,7 +46,6 @@ from ..detector import (Channel, ChannelList)
 from ..io import (reader, writer, datafind)
 from ..time import (Time, to_gps)
 from ..utils import (gprint, with_import)
-from ..utils.docstring import interpolate_docstring
 from ..utils.compat import OrderedDict
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -60,19 +59,44 @@ _UFUNC_STRING = {'less': '<',
                  'greater': '>',
                  }
 
-interpolate_docstring.update({
-    'time-axis': (
-        """sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
+
+class TimeSeriesBase(Series):
+    """An `Array` with time-domain metadata.
+
+    Parameters
+    ----------
+    value : array-like
+        input data array
+
+    unit : `~astropy.units.Unit`, optional
+        physical unit of these data
+
+    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS epoch associated with these data,
+        any input parsable by `~gwpy.time.to_gps` is fine
+
+    sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
         the rate of samples per second (Hertz)
+
     times : `array-like`
         the complete array of GPS times accompanying the data for this series.
         This argument takes precedence over `epoch` and `sample_rate` so should
-        be given in place of these if relevant, not alongside"""),
-})
+        be given in place of these if relevant, not alongside
 
-@interpolate_docstring
-class TimeSeriesBase(Series):
-    """An `Array` with time-domain metadata.
+    name : `str`, optional
+        descriptive title for this array
+
+    channel : `~gwpy.detector.Channel`, `str`, optional
+        source data stream for these data
+
+    dtype : `~numpy.dtype`, optional
+        input data type
+
+    copy : `bool`, optional, default: `False`
+        choose to copy the input data to new memory
+
+    subok : `bool`, optional, default: `True`
+        allow passing of sub-classes by the array generator
     """
     _default_xunit = units.second
     _metadata_slots = ['name', 'channel', 'x0', 'dx']
@@ -168,53 +192,16 @@ class TimeSeriesBase(Series):
     # -------------------------------------------
     # TimeSeries accessors
 
-    interpolate_docstring.update({
-        'timeseries-read1': """source : `str`, `~glue.lal.Cache`
-            source of data, any of the following:
+    @classmethod
+    @with_import('nds2')
+    def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
+              connection=None, verify=False, pad=None,
+              type=NDS2_FETCH_TYPE_MASK, dtype=None):
+        """Fetch data from NDS into a `TimeSeries`.
 
-            - `str` path of single data file
-            - `str` path of LAL-format cache file
-            - `~glue.lal.Cache` describing one or more data files,
-
+        Parameters
+        ----------
         channel : `str`, `~gwpy.detector.Channel`
-            the name of the channel to read, or a `Channel` object.
-
-        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS start time of required data, defaults to start of data found;
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS end time of required data, defaults to end of data found;
-            any input parseable by `~gwpy.time.to_gps` is fine""",
-
-        'timeseries-read2': """format : `str`, optional
-            source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        nproc : `int`, optional, default: `1`
-            number of parallel processes to use, serial process by
-            default.
-
-            .. note::
-
-               Parallel frame reading, via the ``nproc`` keyword argument,
-               is only available when giving a `~glue.lal.Cache` of
-               frames, or using the ``format='cache'`` keyword argument.
-
-        gap : `str`, optional
-            how to handle gaps in the cache, one of
-
-            - 'ignore': do nothing, let the undelying reader method handle it
-            - 'warn': do nothing except print a warning to the screen
-            - 'raise': raise an exception upon finding a gap (default)
-            - 'pad': insert a value to fill the gaps
-
-        pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given""",
-
-        'timeseries-fetch1': """channel : `str`, `~gwpy.detector.Channel`
             the name of the channel to read, or a `Channel` object.
 
         start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
@@ -223,9 +210,9 @@ class TimeSeriesBase(Series):
 
         end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
             GPS end time of required data,
-            any input parseable by `~gwpy.time.to_gps` is fine""",
+            any input parseable by `~gwpy.time.to_gps` is fine
 
-        'timeseries-fetch2': """host : `str`, optional
+        host : `str`, optional
             URL of NDS server to use, defaults to observatory site host
 
         port : `int`, optional
@@ -244,22 +231,7 @@ class TimeSeriesBase(Series):
             NDS2 channel type integer
 
         dtype : `type`, `numpy.dtype`, `str`, optional
-            identifier for desired output data type""",
-    })
-
-    @classmethod
-    @interpolate_docstring
-    @with_import('nds2')
-    def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
-              connection=None, verify=False, pad=None,
-              type=NDS2_FETCH_TYPE_MASK, dtype=None):
-        """Fetch data from NDS into a `TimeSeries`.
-
-        Parameters
-        ----------
-        %(timeseries-fetch1)s
-
-        %(timeseries-fetch2)s
+            identifier for desired output data type
         """
         return cls.DictClass.fetch(
             [channel], start, end, host=host, port=port,
@@ -303,14 +275,22 @@ class TimeSeriesBase(Series):
                                sample_rate=sample_rate, host=host)
 
     @classmethod
-    @interpolate_docstring
     def find(cls, channel, start, end, frametype=None,
              pad=None, dtype=None, nproc=1, verbose=False, **readargs):
         """Find and read data from frames for a channel
 
         Parameters
         ----------
-        %(timeseries-fetch1)s
+        channel : `str`, `~gwpy.detector.Channel`
+            the name of the channel to read, or a `Channel` object.
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS start time of required data,
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS end time of required data,
+            any input parseable by `~gwpy.time.to_gps` is fine
 
         frametype : `str`, optional
             name of frametype in which this channel is stored, will search
@@ -339,7 +319,6 @@ class TimeSeriesBase(Series):
             pad=pad, dtype=dtype, nproc=nproc, **readargs)[str(channel)]
 
     @classmethod
-    @interpolate_docstring
     def get(cls, channel, start, end, pad=None, dtype=None, verbose=False,
             **kwargs):
         """Get data for this channel from frames or NDS
@@ -349,7 +328,16 @@ class TimeSeriesBase(Series):
 
         Parameters
         ----------
-        %(timeseries-fetch1)s
+        channel : `str`, `~gwpy.detector.Channel`
+            the name of the channel to read, or a `Channel` object.
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS start time of required data,
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS end time of required data,
+            any input parseable by `~gwpy.time.to_gps` is fine
 
         pad : `float`, optional
             value with which to fill gaps in the source data, only used if

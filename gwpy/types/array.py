@@ -34,57 +34,48 @@ from ..io import (reader, writer)
 from ..detector import Channel
 from ..detector.units import parse_unit
 from ..time import (Time, to_gps)
-from ..utils.docstring import interpolate_docstring
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>"
 
 numpy.set_printoptions(threshold=200, linewidth=65)
 
+
 # -----------------------------------------------------------------------------
 # Core Array
 
-# update docstring interpreter with generic Array parameters
-interpolate_docstring.update(
-    Array1="""value : array-like
-        input data array
-
-    unit : `~astropy.units.Unit`, optional
-        physical unit of these data
-
-    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
-        GPS epoch associated with these data,
-        any input parsable by `~gwpy.time.to_gps` is fine""",
-
-    Array2="""name : `str`, optional, default: `None`
-        descriptive title for this array
-
-    channel : `~gwpy.detector.Channel`, `str`
-        source data stream for these data
-
-    dtype : :class:`~numpy.dtype`, optional, default: `None`
-        input data type
-
-    copy : `bool`, optional, default: `False`
-        choose to copy the input data to new memory
-
-    subok : `bool`, optional, default: `True`
-        allow passing of sub-classes by the array generator""",
-)
-
-
-@interpolate_docstring
 class Array(Quantity):
-    """An extension of the :class:`~astropy.units.Quantity`
+    """Array holding data with a unit, and other metadata
 
     This `Array` holds the input data and a standard set of metadata
     properties associated with GW data.
 
     Parameters
     ----------
-    %(Array1)s
+    value : array-like
+        input data array
 
-    %(Array2)s
+    unit : `~astropy.units.Unit`, optional
+        physical unit of these data
+
+    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS epoch associated with these data,
+        any input parsable by `~gwpy.time.to_gps` is fine
+
+    name : `str`, optional
+        descriptive title for this array
+
+    channel : `~gwpy.detector.Channel`, `str`, optional
+        source data stream for these data
+
+    dtype : `~numpy.dtype`, optional
+        input data type
+
+    copy : `bool`, optional, default: `False`
+        choose to copy the input data to new memory
+
+    subok : `bool`, optional, default: `True`
+        allow passing of sub-classes by the array generator
 
     Returns
     -------

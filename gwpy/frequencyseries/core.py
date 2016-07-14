@@ -30,37 +30,53 @@ from astropy import units
 from ..types import (Array, Series)
 from ..detector import Channel
 from ..utils import with_import
-from ..utils.docstring import interpolate_docstring
 
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
 __all__ = ['FrequencySeries', 'Spectrum']
 
-interpolate_docstring.update({
-    'frequency-axis': (
-        """f0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
-        starting frequency for these data
-    df : `float`, `~astropy.units.Quantity`, optional, default: `1`
-        frequency resolution for these data
-    frequencies : `array-like`
-        the complete array of frequencies indexing the data.
-        This argument takes precedence over `f0` and `df` so should
-        be given in place of these if relevant, not alongside"""),
-})
 
-
-@interpolate_docstring
 class FrequencySeries(Series):
     """A data array holding some metadata to represent a frequency series
 
     Parameters
     ----------
-    %(Array1)s
+    value : array-like
+        input data array
 
-    %(frequency-axis)s
+    unit : `~astropy.units.Unit`, optional
+        physical unit of these data
 
-    %(Array2)s
+    f0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
+        starting frequency for these data
+
+    df : `float`, `~astropy.units.Quantity`, optional, default: `1`
+        frequency resolution for these data
+
+    frequencies : `array-like`
+        the complete array of frequencies indexing the data.
+        This argument takes precedence over `f0` and `df` so should
+        be given in place of these if relevant, not alongside
+
+    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS epoch associated with these data,
+        any input parsable by `~gwpy.time.to_gps` is fine
+
+    name : `str`, optional
+        descriptive title for this array
+
+    channel : `~gwpy.detector.Channel`, `str`, optional
+        source data stream for these data
+
+    dtype : `~numpy.dtype`, optional
+        input data type
+
+    copy : `bool`, optional, default: `False`
+        choose to copy the input data to new memory
+
+    subok : `bool`, optional, default: `True`
+        allow passing of sub-classes by the array generator
 
     Notes
     -----

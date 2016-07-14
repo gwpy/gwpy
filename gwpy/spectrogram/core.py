@@ -34,26 +34,64 @@ from ..types import (Array2D, Series)
 from ..segments import Segment
 from ..timeseries import (TimeSeries, TimeSeriesList)
 from ..frequencyseries import FrequencySeries
-from ..utils.docstring import interpolate_docstring
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
 __all__ = ['Spectrogram', 'SpectrogramList']
 
 
-@interpolate_docstring
 class Spectrogram(Array2D):
     """A 2D array holding a spectrogram of time-frequency data
 
     Parameters
     ----------
-    %(Array1)s
+    value : array-like
+        input data array
 
-    %(time-axis)s
+    unit : `~astropy.units.Unit`, optional
+        physical unit of these data
 
-    %(frequency-axis)s
+    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS epoch associated with these data,
+        any input parsable by `~gwpy.time.to_gps` is fine
 
-    %(Array2)s
+    sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
+        the rate of samples per second (Hertz)
+
+    times : `array-like`
+        the complete array of GPS times accompanying the data for this series.
+        This argument takes precedence over `epoch` and `sample_rate` so should
+        be given in place of these if relevant, not alongside
+
+    f0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
+        starting frequency for these data
+
+    df : `float`, `~astropy.units.Quantity`, optional, default: `1`
+        frequency resolution for these data
+
+    frequencies : `array-like`
+        the complete array of frequencies indexing the data.
+        This argument takes precedence over `f0` and `df` so should
+        be given in place of these if relevant, not alongside
+
+    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS epoch associated with these data,
+        any input parsable by `~gwpy.time.to_gps` is fine
+
+    name : `str`, optional
+        descriptive title for this array
+
+    channel : `~gwpy.detector.Channel`, `str`, optional
+        source data stream for these data
+
+    dtype : `~numpy.dtype`, optional
+        input data type
+
+    copy : `bool`, optional, default: `False`
+        choose to copy the input data to new memory
+
+    subok : `bool`, optional, default: `True`
+        allow passing of sub-classes by the array generator
 
     Notes
     -----

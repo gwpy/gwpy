@@ -27,14 +27,22 @@ import numpy
 from astropy.units import (Unit, Quantity, dimensionless_unscaled)
 
 from .array import Array
-from ..utils.docstring import interpolate_docstring
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-interpolate_docstring.update(
-    ArrayXaxis=(
-        """x0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
+class Series(Array):
+    """A one-dimensional data series
+
+    Parameters
+    ----------
+    value : array-like
+        input data array
+
+    unit : `~astropy.units.Unit`, optional
+        physical unit of these data
+
+    x0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
         the starting value for the x-axis of this array
 
     dx : `float`, `~astropy.units.Quantity, optional, default: `1`
@@ -43,21 +51,26 @@ interpolate_docstring.update(
     xindex : `array-like`
         the complete array of x-axis values for this array. This argument
         takes precedence over `x0` and `dx` so should be
-        given in place of these if relevant, not alongside"""),
-)
+        given in place of these if relevant, not alongside
 
+    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS epoch associated with these data,
+        any input parsable by `~gwpy.time.to_gps` is fine
 
-@interpolate_docstring
-class Series(Array):
-    """A one-dimensional data series
+    name : `str`, optional
+        descriptive title for this array
 
-    Parameters
-    ----------
-    %(Array1)s
+    channel : `~gwpy.detector.Channel`, `str`, optional
+        source data stream for these data
 
-    %(ArrayXaxis)s
+    dtype : `~numpy.dtype`, optional
+        input data type
 
-    %(Array2)s
+    copy : `bool`, optional, default: `False`
+        choose to copy the input data to new memory
+
+    subok : `bool`, optional, default: `True`
+        allow passing of sub-classes by the array generator
 
     Returns
     -------

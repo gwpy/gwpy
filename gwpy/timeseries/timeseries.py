@@ -35,7 +35,6 @@ from ..io import (reader, writer)
 from ..segments import Segment
 from ..signal import (notch, sosfiltfilt)
 from ..utils import with_import
-from ..utils.docstring import interpolate_docstring
 from ..utils.compat import OrderedDict
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
@@ -43,17 +42,54 @@ from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-@interpolate_docstring
 class TimeSeries(TimeSeriesBase):
     """A time-domain data array
 
     Parameters
     ----------
-    %(Array1)s
+    value : array-like
+        input data array
 
-    %(time-axis)s
+    unit : `~astropy.units.Unit`, optional
+        physical unit of these data
 
-    %(Array2)s
+    sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
+        the rate of samples per second (Hertz)
+
+    times : `array-like`
+        the complete array of GPS times accompanying the data for this series.
+        This argument takes precedence over `epoch` and `sample_rate` so should
+        be given in place of these if relevant, not alongside
+
+    x0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
+        the starting value for the x-axis of this array
+
+    dx : `float`, `~astropy.units.Quantity, optional, default: `1`
+        the step size for the x-axis of this array
+
+    xindex : `array-like`
+        the complete array of x-axis values for this array. This argument
+        takes precedence over `x0` and `dx` so should be
+        given in place of these if relevant, not alongside
+
+    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS epoch associated with these data,
+        any input parsable by `~gwpy.time.to_gps` is fine
+
+    name : `str`, optional
+        descriptive title for this array
+
+    channel : `~gwpy.detector.Channel`, `str`, optional
+        source data stream for these data
+
+    dtype : `~numpy.dtype`, optional
+        input data type
+
+    copy : `bool`, optional, default: `False`
+        choose to copy the input data to new memory
+
+    subok : `bool`, optional, default: `True`
+        allow passing of sub-classes by the array generator
 
     Examples
     --------
@@ -81,17 +117,58 @@ class TimeSeries(TimeSeriesBase):
         ~TimeSeries.plot
 
     """
-    read = classmethod(interpolate_docstring(reader(
+    read = classmethod(reader(
         doc="""Read data into a `TimeSeries`
 
         Parameters
         ----------
-        %(timeseries-read1)s
+        source : `str`, `~glue.lal.Cache`
+            source of data, any of the following:
 
-        %(timeseries-read2)s
+            - `str` path of single data file
+            - `str` path of LAL-format cache file
+            - `~glue.lal.Cache` describing one or more data files,
+
+        channel : `str`, `~gwpy.detector.Channel`
+            the name of the channel to read, or a `Channel` object.
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS start time of required data, defaults to start of data found;
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, defaults to end of data found;
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+
+        nproc : `int`, optional, default: `1`
+            number of parallel processes to use, serial process by
+            default.
+
+            .. note::
+
+               Parallel frame reading, via the ``nproc`` keyword argument,
+               is only available when giving a `~glue.lal.Cache` of
+               frames, or using the ``format='cache'`` keyword argument.
+
+        gap : `str`, optional
+            how to handle gaps in the cache, one of
+
+            - 'ignore': do nothing, let the undelying reader method handle it
+            - 'warn': do nothing except print a warning to the screen
+            - 'raise': raise an exception upon finding a gap (default)
+            - 'pad': insert a value to fill the gaps
+
+        pad : `float`, optional
+            value with which to fill gaps in the source data, only used if
+            gap is not given, or `gap='pad'` is given
 
         Notes
-        -----""")))
+        -----"""))
 
     write = writer(
         doc="""Write this `TimeSeries` to a file
