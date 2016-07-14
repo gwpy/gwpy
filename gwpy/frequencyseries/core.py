@@ -27,7 +27,7 @@ from scipy import signal
 
 from astropy import units
 
-from ..data import (Array, Series)
+from ..types import (Array, Series)
 from ..detector import Channel
 from ..utils import with_import
 from ..utils.docstring import interpolate_docstring

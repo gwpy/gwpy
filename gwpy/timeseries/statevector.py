@@ -37,7 +37,7 @@ from astropy.units import Quantity
 
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    NDS2_FETCH_TYPE_MASK, as_series_dict_class)
-from ..data import Array2D
+from ..types import Array2D
 from ..detector import Channel
 from ..time import Time
 from ..io import (reader, writer)

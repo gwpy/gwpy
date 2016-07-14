@@ -26,7 +26,7 @@ import numpy
 from matplotlib.collections import Collection
 from matplotlib.figure import Figure
 
-from ..data import Series
+from ..types import Series
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

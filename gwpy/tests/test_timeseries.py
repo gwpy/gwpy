@@ -45,7 +45,7 @@ from gwpy.timeseries import (TimeSeries, StateVector, TimeSeriesDict,
                              StateVectorDict, TimeSeriesList)
 from gwpy.segments import (Segment, DataQualityFlag, DataQualityDict)
 from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
-from gwpy.data import Array2D
+from gwpy.types import Array2D
 from gwpy.spectrogram import Spectrogram
 from gwpy.io.cache import Cache
 from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)

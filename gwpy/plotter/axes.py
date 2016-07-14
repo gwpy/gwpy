@@ -228,7 +228,7 @@ class Axes(_Axes):
 
         Parameters
         ----------
-        data : `~matplotlib.artist.Artist`, `~gwpy.data.Series`, `array-like`
+        data : `~matplotlib.artist.Artist`, `~gwpy.types.Series`, `array-like`
             data to map, one of an `Artist` already drawn on these axes (
             via :meth:`plot` or :meth:`scatter`, for example) or a data set
         imagefile : `str`

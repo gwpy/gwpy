@@ -17,7 +17,7 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """This module defines plotting classes for the data series defined in
-`~gwpy.data`
+`~gwpy.frequencyseries`
 """
 
 import copy

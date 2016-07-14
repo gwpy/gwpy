@@ -32,7 +32,7 @@ import numpy
 from astropy import units
 from astropy.time import Time
 
-from gwpy.data import (Array, Series, Array2D)
+from gwpy.types import (Array, Series, Array2D)
 from gwpy.detector import Channel
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

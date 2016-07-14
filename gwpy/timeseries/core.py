@@ -41,7 +41,7 @@ else:
                             nds2.channel.CHANNEL_TYPE_TEST_POINT |
                             nds2.channel.CHANNEL_TYPE_STATIC)
 
-from ..data import (Array2D, Series)
+from ..types import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
 from ..io import (reader, writer, datafind)
 from ..time import (Time, to_gps)

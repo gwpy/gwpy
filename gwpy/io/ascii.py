@@ -23,7 +23,7 @@ These files should be in two-column x,y format
 
 from numpy import (savetxt, loadtxt)
 
-from ..data import Series
+from ..types import Series
 from .registry import (register_reader, register_writer, register_identifier)
 from .utils import identify_factory
 

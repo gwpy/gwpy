@@ -30,7 +30,7 @@ from scipy import signal
 from astropy import units
 
 from ..detector import Channel
-from ..data import (Array2D, Series)
+from ..types import (Array2D, Series)
 from ..segments import Segment
 from ..timeseries import (TimeSeries, TimeSeriesList)
 from ..frequencyseries import FrequencySeries
