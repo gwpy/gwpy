@@ -225,7 +225,10 @@ class Series(Array):
 
     @dx.deleter
     def dx(self):
-        del self._dx
+        try:
+            del self._dx
+        except AttributeError:
+            pass
 
     # xindex
     @property
