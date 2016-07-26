@@ -411,7 +411,8 @@ class TimeSeries(TimeSeriesBase):
         return csd_
 
     def spectrogram(self, stride, fftlength=None, overlap=0,
-                    method='welch', window=None, nproc=1, **kwargs):
+                    method='welch', window=None, nproc=1,
+                    cross=None, **kwargs):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
 
@@ -468,7 +469,6 @@ class TimeSeries(TimeSeriesBase):
             overlap = 0
         fftlength = units.Quantity(fftlength, 's').value
         overlap = units.Quantity(overlap, 's').value
-        cross = kwargs.pop('cross', None)
 
         # sanity check parameters
         if stride > abs(self.span):
