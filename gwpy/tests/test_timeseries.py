@@ -39,7 +39,7 @@ use('agg')
 from astropy import units
 from astropy.io.registry import (get_reader, register_reader)
 
-from gwpy.time import Time
+from gwpy.time import (Time, LIGOTimeGPS)
 
 from gwpy.timeseries import (TimeSeries, StateVector, TimeSeriesDict,
                              StateVectorDict, TimeSeriesList)
@@ -119,6 +119,18 @@ class TimeSeriesTestMixin(object):
         self.assertEqual(ts.channel.sample_rate, ts.sample_rate)
         self.assertEqual(ts.channel.unit, ts.unit)
         return ts
+
+    def test_ligotimegps(self):
+        # test that LIGOTimeGPS works
+        array = self.create(t0=LIGOTimeGPS(0))
+        self.assertEqual(array.t0.value, 0)
+        array.t0 = LIGOTimeGPS(10)
+        self.assertEqual(array.t0.value, 10)
+        array.x0 = LIGOTimeGPS(1000000000)
+        self.assertEqual(array.t0.value, 1000000000)
+        # check epoch access
+        array.epoch = LIGOTimeGPS(10)
+        self.assertEqual(array.t0.value, 10)
 
     def test_epoch(self):
         array = self.create()

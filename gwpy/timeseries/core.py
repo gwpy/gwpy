@@ -134,12 +134,12 @@ class TimeSeriesBase(Series):
         if epoch is not None and t0 is not None:
             raise ValueError("give only one of epoch or t0")
         if epoch is None and dt is not None:
-            kwargs['x0'] = t0
+            kwargs['x0'] = float(t0)  # cast to float to handle LIGOTimeGPS
         elif epoch is not None:
             if isinstance(epoch, Time):
                 kwargs['x0'] = epoch.gps
             else:
-                kwargs['x0'] = epoch
+                kwargs['x0'] = float(epoch)
         # parse sample_rate or dt
         if sample_rate is not None and dt is not None:
             raise ValueError("give only one of sample_rate or dt")
