@@ -89,32 +89,26 @@ class FrequencySeries(Series):
        ~FrequencySeries.plot
        ~FrequencySeries.zpk
     """
-    _metadata_slots = Array._metadata_slots + ['f0', 'df']
     _default_xunit = units.Unit('Hz')
+    _print_slots = ['f0', 'df', 'epoch', 'name', 'channel', '_frequencies']
 
-    def __new__(cls, data, unit=None, frequencies=None, name=None,
-                epoch=None, f0=0, df=1, channel=None,
-                **kwargs):
+    def __new__(cls, data, unit=None, f0=None, df=None, frequencies=None,
+                name=None, epoch=None, channel=None, **kwargs):
         """Generate a new FrequencySeries.
         """
-        # parse Channel input
-        if channel:
-            channel = (isinstance(channel, Channel) and channel or
-                       Channel(channel))
-            name = name or channel.name
-            unit = unit or channel.unit
-        if frequencies is None and 'xindex' in kwargs:
-            frequencies = kwargs.pop('xindex')
-        # allow use of x0 and dx
-        f0 = kwargs.pop('x0', f0)
-        df = kwargs.pop('dx', df)
+        if f0 is not None:
+            kwargs['x0'] = f0
+        if df is not None:
+            kwargs['dx'] = df
+        if frequencies is not None:
+            kwargs['xindex'] = frequencies
+
         # generate Spectrum
         return super(FrequencySeries, cls).__new__(
-            cls, data, name=name, unit=unit, channel=channel, x0=f0, dx=df,
-            epoch=epoch, xindex=frequencies, **kwargs)
+            cls, data, unit=unit, name=name, channel=channel,
+            epoch=epoch, **kwargs)
 
-    # -------------------------------------------
-    # FrequencySeries properties
+    # -- FrequencySeries properties -------------
 
     f0 = property(Series.x0.__get__, Series.x0.__set__, Series.x0.__delete__,
                   """Starting frequency for this `FrequencySeries`
@@ -133,8 +127,7 @@ class FrequencySeries(Series):
                            fdel=Series.xindex.__delete__,
                            doc="""Series of frequencies for each sample""")
 
-    # -------------------------------------------
-    # FrequencySeries methods
+    # -- FrequencySeries methods ----------------
 
     def plot(self, **kwargs):
         """Display this `FrequencySeries` in a figure

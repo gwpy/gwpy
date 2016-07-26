@@ -1,5 +1,5 @@
-# coding=utf-8
-# Copyright (C) Duncan Macleod (2013)
+# -*- coding: utf-8 -*-
+# Copyright (C) Duncan Macleod (2013-2016)
 #
 # This file is part of GWpy.
 #
@@ -23,7 +23,7 @@ import numpy
 
 from astropy.units import (Unit, Quantity)
 
-from .series import Series
+from .series import (Series, is_regular)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -50,6 +50,10 @@ class Array2D(Series):
         takes precedence over `x0` and `dx` so should be
         given in place of these if relevant, not alongside
 
+    xunit : `~astropy.units.Unit`, optional
+        the unit of the x-axis coordinates. If not given explicitly, it will be
+        taken from any of `dx`, `x0`, or `xindex`, or set to a boring default
+
     y0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
         the starting value for the y-axis of this array
 
@@ -60,6 +64,10 @@ class Array2D(Series):
         the complete array of y-axis values for this array. This argument
         takes precedence over `y0` and `dy` so should be
         given in place of these if relevant, not alongside
+
+    yunit : `~astropy.units.Unit`, optional
+        the unit of the y-axis coordinates. If not given explicitly, it will be
+        taken from any of `dy`, `y0`, or `yindex`, or set to a boring default
 
     epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS epoch associated with these data,
@@ -92,22 +100,27 @@ class Array2D(Series):
     _columnclass = Series
     _ndim = 2
 
-    def __new__(cls, data, unit=None, xindex=None, yindex=None, x0=0,
-                dx=1, y0=0, dy=1, **kwargs):
+    def __new__(cls, data, unit=None,
+                x0=None, dx=None, xindex=None, xunit=None,
+                y0=None, dy=None, yindex=None, yunit=None, **kwargs):
         """Define a new `Array2D`
         """
+
+        # create new object
         new = super(Array2D, cls).__new__(cls, data, unit=unit, xindex=xindex,
-                                          x0=0, dx=dx, **kwargs)
-        if isinstance(y0, Quantity):
-            yunit = y0.unit
-        elif isinstance(dy, Quantity):
+                                          x0=x0, dx=dx, **kwargs)
+
+        # set new metadata
+        if isinstance(dy, Quantity):
             yunit = dy.unit
+        elif isinstance(y0, Quantity):
+            yunit = y0.unit
         else:
             yunit = cls._default_yunit
-        if y0 is not None:
-            new.y0 = Quantity(y0, yunit)
         if dy is not None:
             new.dy = Quantity(dy, yunit)
+        if y0 is not None:
+            new.y0 = Quantity(y0, yunit)
         if yindex is not None:
             new.yindex = yindex
         return new
@@ -134,8 +147,8 @@ class Array2D(Series):
                 new = new.view(self._rowclass)
         # unwrap a Spectrogram
         else:
-            new = new.value.view(type(self))
-            new.__dict__ = self.copy_metadata()
+            new = new.view(type(self))
+            #new.__dict__ = self.copy_metadata()
         # update metadata
         if isinstance(x, slice):
             if x.start:
@@ -154,59 +167,40 @@ class Array2D(Series):
                 new.dy = new.dy * y.step
         return new
 
-    # -------------------------------------------
-    # Array2D properties
-
-    @property
-    def yindex(self):
-        """Positions of the data on the y-axis
-
-        :type: `~astropy.units.Quantity` array
-        """
-        try:
-            return self._yindex
-        except AttributeError:
-            self._yindex = self.y0 + (
-                numpy.arange(self.shape[1]) * self.dy)
-            return self._yindex
-
-    @yindex.setter
-    def yindex(self, index):
-        if isinstance(index, Quantity):
-            self._yindex = index
-        elif index is None:
+    def __array_finalize__(self, obj):
+        super(Array2D, self).__array_finalize__(obj)
+        # Series.__array_finalize__ might set _yindex to None, so delete it
+        if getattr(self, '_yindex', 0) is None:
             del self.yindex
-            return
-        else:
-            index = Quantity(index, self._default_yunit)
-            self._yindex = index
-        self.y0 = index[0]
-        if index.size:
-            self.dy = index[1] - index[0]
-        else:
-            self.dy = None
 
-    @yindex.deleter
-    def yindex(self):
-        try:
-            del self._yindex
-        except AttributeError:
-            pass
+    # -- Array2d properties ---------------------
 
+    # y0
     @property
     def y0(self):
-        """Y-axis value of the first data point
+        """Y-axis coordinate of the first data point
 
         :type: `~astropy.units.Quantity` scalar
         """
-        return self._y0
+        try:
+            return self._y0
+        except AttributeError:
+            self._y0 = Quantity(0, self.yunit)
+            return self._y0
 
     @y0.setter
     def y0(self, value):
-        if not isinstance(value, Quantity) and value is not None:
-            value = Quantity(value, self._default_yunit)
+        if value is None:
+            del self.y0
+            return
+        if not isinstance(value, Quantity):
+            try:
+                value = Quantity(value, self.yunit)
+            except TypeError:
+                value = Quantity(float(value), self.yunit)
+        # if setting new y0, delete yindex
         try:
-            y0 = self.y0
+            y0 = self._y0
         except AttributeError:
             del self.yindex
         else:
@@ -216,22 +210,45 @@ class Array2D(Series):
 
     @y0.deleter
     def y0(self):
-        self._y0 = None
+        try:
+            del self._y0
+        except AttributeError:
+            pass
 
+    # dy
     @property
     def dy(self):
-        return self._dy
-
-    @dy.setter
-    def dy(self, value):
         """Y-axis sample separation
 
         :type: `~astropy.units.Quantity` scalar
         """
-        if not isinstance(value, Quantity) and value is not None:
-            value = Quantity(value).to(self.yunit)
         try:
-            dy = self.dy
+            return self._dy
+        except AttributeError:
+            try:
+                self._yindex
+            except AttributeError:
+                self._dy = Quantity(1, self.yunit)
+            else:
+                if not self.yindex.regular:
+                    raise AttributeError(
+                        "This series has an irregular y-axis "
+                        "index, so 'dy' is not well defined")
+                self._dy = self.yindex[1] - self.yindex[0]
+            return self._dy
+
+    @dy.setter
+    def dy(self, value):
+        # delete if None
+        if value is None:
+            del self.dy
+            return
+        # convert float to Quantity
+        if not isinstance(value, Quantity):
+            value = Quantity(value).to(self.yunit)
+        # if value is changing, delete yindex
+        try:
+            dy = self._dy
         except AttributeError:
             del self.yindex
         else:
@@ -241,19 +258,65 @@ class Array2D(Series):
 
     @dy.deleter
     def dy(self):
-        self._dy = None
+        try:
+            del self._dy
+        except AttributeError:
+            pass
 
     @property
     def yunit(self):
-        """Unit of y-axis index
+        """Unit of Y-axis index
 
         :type: `~astropy.units.Unit`
         """
-        return self.y0.unit
+        try:
+            return self._dy.unit
+        except AttributeError:
+            try:
+                return self._y0.unit
+            except AttributeError:
+                return self._default_yunit
+
+    # yindex
+    @property
+    def yindex(self):
+        """Positions of the data on the y-axis
+
+        :type: `~astropy.units.Quantity` array
+        """
+        try:
+            return self._yindex
+        except AttributeError:
+            # create regular index on-the-fly
+            self._yindex = self.y0 + (
+                numpy.arange(self.shape[1]) * self.dy)
+            return self._yindex
+
+    @yindex.setter
+    def yindex(self, index):
+        if index is None:
+            del self.yindex
+            return
+        if not isinstance(index, Quantity):
+            index = Quantity(index, unit=self._default_yunit, copy=False)
+        self.y0 = index[0]
+        index.regular = is_regular(index.value)
+        if index.regular:
+            self.dy = index[1] - index[0]
+        else:
+            del self.dy
+        self._yindex = index
+
+    @yindex.deleter
+    def yindex(self):
+        try:
+            del self._yindex
+        except AttributeError:
+            pass
 
     @property
     def yspan(self):
-        """Y-axis [low, high) segment encompassed by these data
+        """X-axis [low, high) segment encompassed by these data
 
         :type: `~gwpy.segments.Segment`
         """
@@ -261,10 +324,11 @@ class Array2D(Series):
         try:
             self._yindex
         except AttributeError:
-            y0 = self.y0.to(self._default_yunit).value
-            dy = self.dy.to(self._default_yunit).value
-            return Segment(y0, y0+self.shape[0]*dy)
+            y0 = self.y0.to(self.yunit).value
+            dy = self.dy.to(self.yunit).value
+            return Segment(y0, y0 + self.shape[1] * dy)
         else:
+            dy = self.yindex.value[-1] - self.yindex.value[-2]
             return Segment(self.yindex.value[0],
                            self.yindex.value[-1] + self.dy.value)
 
@@ -299,8 +363,7 @@ class Array2D(Series):
             raise
         return self[idx, idy]
 
-    # -------------------------------------------
-    # numpy.ndarray method modifiers
+    # -- Array2D modifiers ----------------------
     # all of these try to return Quantities rather than simple numbers
 
     def _wrap_function(self, function, *args, **kwargs):
@@ -322,27 +385,27 @@ class Array2D(Series):
                           name='%s %s' % (self.name, function.__name__))
         return out
 
-    def __array_wrap__(self, obj, context=None):
-        result = super(Array2D, self).__array_wrap__(obj, context=context)
-        try:
-            result._xindex = self._xindex
-        except AttributeError:
-            pass
-        try:
-            result._yindex = self._yindex
-        except AttributeError:
-            pass
-        return result
+    #def __array_wrap__(self, obj, context=None):
+    #    result = super(Array2D, self).__array_wrap__(obj, context=context)
+    #    try:
+    #        result._xindex = self._xindex
+    #    except AttributeError:
+    #        pass
+    #    try:
+    #        result._yindex = self._yindex
+    #    except AttributeError:
+    #        pass
+    #    return result
 
-    def copy(self, order='C'):
-        new = super(Array2D, self).copy(order=order)
-        try:
-            new._xindex = self._xindex.copy()
-        except AttributeError:
-            pass
-        try:
-            new._yindex = self._yindex.copy()
-        except AttributeError:
-            pass
-        return new
-    copy.__doc__ = Series.copy.__doc__
+    #def copy(self, order='C'):
+    #    new = super(Array2D, self).copy(order=order)
+    #    try:
+    #        new._xindex = self._xindex.copy()
+    #    except AttributeError:
+    #        pass
+    #    try:
+    #        new._yindex = self._yindex.copy()
+    #    except AttributeError:
+    #        pass
+    #    return new
+    #copy.__doc__ = Series.copy.__doc__

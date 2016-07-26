@@ -27,7 +27,9 @@ import numpy
 
 import scipy
 from scipy import signal
+
 from astropy import units
+from astropy.time import Time
 
 from ..detector import Channel
 from ..types import (Array2D, Series)
@@ -104,45 +106,51 @@ class Spectrogram(Array2D):
        ~Spectrogram.plot
        ~Spectrogram.zpk
     """
-    _metadata_slots = ['name', 'channel', 'epoch', 'dt', 'f0', 'df']
+    _metadata_slots = Series._metadata_slots + ['y0', 'dy', 'yindex']
     _default_xunit = TimeSeries._default_xunit
     _default_yunit = FrequencySeries._default_xunit
     _rowclass = TimeSeries
     _columnclass = FrequencySeries
 
-    def __new__(cls, data, unit=None, name=None, channel=None, epoch=None,
-                dt=None, times=None, f0=None, df=None, frequencies=None,
-                **kwargs):
+    def __new__(cls, data, unit=None, t0=None, dt=None, f0=None, df=None,
+                times=None, frequencies=None,
+                name=None, channel=None, **kwargs):
         """Generate a new Spectrogram.
         """
-        # parse Channel input
-        if isinstance(channel, Channel):
-            name = name or channel.name
-            unit = unit or channel.unit
-        # get axis-based params
-        if epoch is None:
-            epoch = kwargs.pop('x0', 0)
-        if dt is None:
-            dt = kwargs.pop('dx', 1)
-        if f0 is None:
-            f0 = kwargs.pop('y0', 0)
-        if df is None:
-            df = kwargs.pop('dy', 1)
-        if times is None:
-            times = kwargs.pop('xindex', None)
-        if frequencies is None:
-            frequencies = kwargs.pop('frequencies', None)
-        # generate Spectrogram
-        new = super(Spectrogram, cls).__new__(cls, data, unit=unit, name=name,
-                                              channel=channel, y0=f0, dx=dt,
-                                              dy=df, xindex=times,
-                                              yindex=frequencies, **kwargs)
-        if epoch is not None:
-            new.epoch = epoch
-        return new
+        # parse t0 or epoch
+        epoch = kwargs.pop('epoch', None)
+        if epoch is not None and t0 is not None:
+            raise ValueError("give only one of epoch or t0")
+        if epoch is None and dt is None:
+            kwargs.setdefault('x0', 0)
+        elif epoch is None:
+            kwargs['x0'] = t0
+        elif isinstance(epoch, Time):
+            kwargs['x0'] = epoch.gps
+        else:
+            kwargs['x0'] = epoch
 
-    # -------------------------------------------
-    # Spectrogram properties
+        # parse sample_rate or dt
+        if dt is not None:
+            kwargs['dx'] = dt
+
+        # parse times
+        if times is not None:
+            kwargs['xindex'] = times
+
+        # parse y-axis params
+        if f0 is not None:
+            kwargs['y0'] = f0
+        if df is not None:
+            kwargs['dy'] = df
+        if frequencies is not None:
+            kwargs['yindex'] = frequencies
+
+        # generate Spectrogram
+        return super(Spectrogram, cls).__new__(cls, data, unit=unit, name=name,
+                                               channel=channel, **kwargs)
+
+    # -- Spectrogram properties -----------------
 
     epoch = property(TimeSeries.epoch.__get__, TimeSeries.epoch.__set__,
                      TimeSeries.epoch.__delete__,
@@ -151,12 +159,12 @@ class Spectrogram(Array2D):
                      :type:`~gwpy.segments.Segment`
                      """)
 
-    span = property(TimeSeries.span.__get__, TimeSeries.span.__set__,
-                    TimeSeries.span.__delete__,
-                    """GPS [start, stop) span for this `Spectrogram`
+    t0 = property(TimeSeries.t0.__get__, TimeSeries.t0.__set__,
+                  TimeSeries.t0.__delete__,
+                  """GPS time of first time bin
 
-                    :type:`~gwpy.segments.Segment`
-                    """)
+                  :type:`~astropy.units.Quantity` in seconds
+                  """)
 
     dt = property(TimeSeries.dt.__get__, TimeSeries.dt.__set__,
                   TimeSeries.dt.__delete__,
@@ -164,6 +172,13 @@ class Spectrogram(Array2D):
 
                   :type:`~astropy.units.Quantity` in seconds
                   """)
+
+    span = property(TimeSeries.span.__get__, TimeSeries.span.__set__,
+                    TimeSeries.span.__delete__,
+                    """GPS [start, stop) span for this `Spectrogram`
+
+                    :type:`~gwpy.segments.Segment`
+                    """)
 
     f0 = property(Array2D.y0.__get__, Array2D.y0.__set__,
                   Array2D.y0.__delete__,
@@ -194,8 +209,7 @@ class Spectrogram(Array2D):
                     fdel=Array2D.yspan.__delete__,
                     doc="""Frequency band described by this `Spectrogram`""")
 
-    # -------------------------------------------
-    # Spectrogram methods
+    # -- Spectrogram methods --------------------
 
     def ratio(self, operand):
         """Calculate the ratio of this `Spectrogram` against a reference
@@ -449,8 +463,7 @@ class Spectrogram(Array2D):
             self, bins=bins, low=low, high=high, nbins=nbins, log=log,
             norm=norm, density=density)
 
-    # -------------------------------------------
-    # connectors
+    # -- Spectrogram connectors -----------------
 
     def is_compatible(self, other):
         """Check whether metadata attributes for self and other match.
@@ -527,8 +540,7 @@ class Spectrogram(Array2D):
         else:
             return self[:, idx0:idx1]
 
-    # -------------------------------------------
-    # ufunc modifier
+    # -- Spectrogram ufuncs ---------------------
 
     def _wrap_function(self, function, *args, **kwargs):
         out = super(Spectrogram, self)._wrap_function(

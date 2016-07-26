@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2013-2016)
 #
 # This file is part of GWpy.
 #
@@ -16,33 +16,33 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module provides an extension to the :class:`numpy.ndarray`
-data structure providing metadata
+"""This module provides the `Array`.
 
 The `Array` structure provides the core array-with-metadata environment
 with the standard array methods wrapped to return instances of itself.
+
+Each sub-class of `Array` should override the `Array._metadata_slots`
+attribute, giving a list of the valid properties for these data. This is
+critical to being able to view data with this class, used when copying and
+transforming instances of the class.
 """
 
-import warnings
-from copy import deepcopy
 
 import numpy
 
 from astropy.units import Quantity
-from ..io import (reader, writer)
 
+from ..io import (reader, writer)
 from ..detector import Channel
 from ..detector.units import parse_unit
 from ..time import (Time, to_gps)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__credits__ = "Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>"
 
 numpy.set_printoptions(threshold=200, linewidth=65)
 
 
-# -----------------------------------------------------------------------------
-# Core Array
+# -- core Array ---------------------------------------------------------------
 
 class Array(Quantity):
     """Array holding data with a unit, and other metadata
@@ -95,56 +95,101 @@ class Array(Quantity):
               channel: None)
 
     """
+    #: list of new attributes defined in this class
+    #
+    # this is used in __array_finalize__ to create new instances of this
+    # object [http://docs.scipy.org/doc/numpy/user/basics.subclassing.html]
     _metadata_slots = ['name', 'epoch', 'channel']
 
-    def __new__(cls, value, unit=None, dtype=None, copy=False, subok=True,
-                order=None, name=None, epoch=None, channel=None):
-        """Define a new `Array`, potentially from an existing one
+    def __new__(cls, value, unit=None,  # Quantity attrs
+                name=None, epoch=None, channel=None,  # new attrs
+                dtype=None, copy=False, subok=True,  # ndarray attrs
+                order=None, ndmin=0):
+        """Create a new `Array`
         """
+        # pick dtype from input array
         if dtype is None and isinstance(value, numpy.ndarray):
             dtype = value.dtype
 
-        unit = parse_unit(unit, parse_strict='warn')
-        new = super(Array, cls).__new__(cls, value, dtype=dtype, copy=copy,
-                                        subok=subok, order=order, unit=unit)
-        new.name = name
-        new.epoch = epoch
-        new.channel = channel
+        # parse unit with forgiveness
+        if unit is not None:
+            unit = parse_unit(unit, parse_strict='warn')
+
+        # create new array
+        new = super(Array, cls).__new__(cls, value, unit=unit, dtype=dtype,
+                                        copy=copy, order=order, subok=subok,
+                                        ndmin=ndmin)
+
+        # set new attributes
+        if name is not None:
+            new.name = name
+        if epoch is not None:
+            new.epoch = epoch
+        if channel is not None:
+            new.channel = channel
+
         return new
 
-    # -------------------------------------------
-    # array manipulations
+    # -- object creation ------------------------
+    # methods here handle how these objects are created,
+    # mainly to do with making sure metadata attributes get
+    # properly reassigned from old to new
 
     def _wrap_function(self, function, *args, **kwargs):
+        # if the output of the function is a scalar, return it as a Quantity
+        # not whatever class this is
         out = super(Array, self)._wrap_function(function, *args, **kwargs)
         if out.ndim == 0:
             return Quantity(out.value, out.unit)
         return out
 
     def __quantity_subclass__(self, unit):
+        # this is required to allow in-place ufunc operations to return
+        # things that aren't basic quantities
         return type(self), True
 
     def __array_finalize__(self, obj):
+        # format a new instance of this class starting from `obj`
+        if obj is None:
+            return
+
+        # call Quantity.__array_finalize__ to handle the units
         super(Array, self).__array_finalize__(obj)
+
+        # then update metadata
+        if isinstance(obj, Quantity):
+            self.__metadata_finalize__(obj, force=False)
+
+    def __metadata_finalize__(self, obj, force=False):
+        # apply metadata from obj to self if creating a new object
         for attr in self._metadata_slots:
-            setattr(self, attr, getattr(obj, attr, None))
+            _attr = '_%s' % attr  # use private attribute (not property)
+            # if attribute is unset, default it to None, then update
+            # from obj if desired
+            try:
+                getattr(self, _attr)
+            except AttributeError:
+                update = True
+            else:
+                update = force
+            if update:
+                try:
+                    val = getattr(obj, _attr)
+                except AttributeError:
+                    continue
+                else:
+                    if isinstance(val, Quantity):  # copy Quantities
+                        setattr(self, _attr, Quantity(val))
+                    else:
+                        setattr(self, _attr, val)
 
-    def __array_prepare__(self, obj, context=None):
-        return super(Array, self).__array_prepare__(obj, context=context)
+    def __getattr__(self, attr):
+        # stop Quantity from capturing AttributeErrors from _metadata_slots
+        if attr in self._metadata_slots:
+            return super(Array, self).__getattribute__(attr)
+        return super(Array, self).__getattr__(attr)
 
-    def __array_wrap__(self, obj, context=None):
-        return super(Array, self).__array_wrap__(obj, context=context)
-
-    def copy(self, order='C'):
-        new = super(Array, self).copy(order=order)
-        new.__dict__ = self.copy_metadata()
-        return new
-    copy.__doc__ = Quantity.copy.__doc__
-
-    def copy_metadata(self):
-        """Return a deepcopy of the metadata for this array
-        """
-        return deepcopy(self.__dict__)
+    # -- display --------------------------------
 
     def __repr__(self):
         """Return a representation of this object
@@ -157,7 +202,11 @@ class Array(Quantity):
         arrstr = numpy.array2string(self.view(numpy.ndarray), separator=',',
                                     prefix=prefixstr)
         metadatarepr = ['unit=%s' % repr(self.unit)]
-        for key in self._metadata_slots:
+        try:
+            attrs = self._print_slots
+        except AttributeError:
+            attrs = self._metadata_slots
+        for key in attrs:
             try:
                 val = getattr(self, key)
             except (AttributeError, KeyError):
@@ -180,20 +229,23 @@ class Array(Quantity):
         arrstr = numpy.array2string(self.view(numpy.ndarray), separator=',',
                                     prefix=prefixstr)
         metadatarepr = ['unit: %s' % repr(self.unit)]
-        for key in self._metadata_slots:
+        try:
+            attrs = self._print_slots
+        except AttributeError:
+            attrs = self._metadata_slots
+        for key in attrs:
             try:
                 val = getattr(self, key)
             except (AttributeError, KeyError):
                 val = None
             mindent = ' ' * (len(key) + 1)
-            rval = repr(val).replace('\n', '\n%s' % (indent+mindent))
+            rval = str(val).replace('\n', '\n%s' % (indent+mindent))
             metadatarepr.append('%s: %s' % (key.strip('_'), rval))
         metadata = (',\n%s' % indent).join(metadatarepr)
         return "{0}{1}\n{2}{3})".format(
             prefixstr, arrstr, indent, metadata)
 
-    # -------------------------------------------
-    # Pickle helpers
+    # -- Pickle helpers -------------------------
 
     def dumps(self, order='C'):
         return super(Quantity, self).dumps()
@@ -203,29 +255,20 @@ class Array(Quantity):
         return super(Quantity, self).tostring()
     tostring.__doc__ = numpy.ndarray.tostring.__doc__
 
-    # -------------------------------------------
-    # array methods
+    # -- new properties -------------------------
 
-    def median(self, axis=None, **kwargs):
-        return self._wrap_function(numpy.median, axis, **kwargs)
-    median.__doc__ = numpy.median.__doc__
-
-    @property
-    def data(self):
-        warnings.warn('Please use \'value\' instead of \'data\' for basic '
-                      'numpy.ndarray views', DeprecationWarning)
-        return self.value
-
-    # -------------------------------------------
-    # Array properties
-
+    # name
     @property
     def name(self):
         """Name for this data set
 
         :type: `str`
         """
-        return self._name
+        try:
+            return self._name
+        except AttributeError:
+            self._name = None
+            return self._name
 
     @name.setter
     def name(self, val):
@@ -234,17 +277,29 @@ class Array(Quantity):
         else:
             self._name = str(val)
 
+    @name.deleter
+    def name(self):
+        try:
+            del self._name
+        except AttributeError:
+            pass
+
+    # epoch
     @property
     def epoch(self):
         """GPS epoch associated with these data
 
         :type: `~astropy.time.Time`
         """
-        if self._epoch is None:
-            return None
-        else:
-            return Time(float(to_gps(self._epoch)),
-                        format='gps', scale='utc')
+        try:
+            if self._epoch is None:
+                return None
+            else:
+                return Time(float(to_gps(self._epoch)),
+                            format='gps', scale='utc')
+        except AttributeError:
+            self._epoch = None
+            return self._epoch
 
     @epoch.setter
     def epoch(self, epoch):
@@ -253,13 +308,25 @@ class Array(Quantity):
         else:
             self._epoch = to_gps(epoch)
 
+    @epoch.deleter
+    def epoch(self):
+        try:
+            del self._epoch
+        except AttributeError:
+            pass
+
+    # channel
     @property
     def channel(self):
         """Instrumental channel associated with these data
 
         :type: `~gwpy.detector.Channel`
         """
-        return self._channel
+        try:
+            return self._channel
+        except AttributeError:
+            self._channel = None
+            return self._channel
 
     @channel.setter
     def channel(self, ch):
@@ -270,6 +337,16 @@ class Array(Quantity):
         else:
             self._channel = Channel(ch)
 
+    @channel.deleter
+    def channel(self):
+        try:
+            del self._channel
+        except AttributeError:
+            pass
+
+    # unit - we override this to make the property less pedantic
+    #        astropy won't allow you to set a unit that it doesn't
+    #        recognise
     @property
     def unit(self):
         """The physical unit of these data
@@ -296,8 +373,16 @@ class Array(Quantity):
     def unit(self):
         del self._unit
 
-    # -------------------------------------------
-    # unit manipulations
+    # -- I/O methods ----------------------------
+
+    read = classmethod(reader())
+    write = writer()
+
+    # -- array methods --------------------------
+
+    def median(self, axis=None, **kwargs):
+        return self._wrap_function(numpy.median, axis, **kwargs)
+    median.__doc__ = numpy.median.__doc__
 
     def _to_own_unit(self, value, check_precision=True):
         if self.unit is None:
@@ -324,6 +409,9 @@ class Array(Quantity):
         ----------
         unit : `~astropy.units.Unit`, `str`
             the unit to force onto this array
+        parse_strict : `str`, optional
+            how to handle errors in the unit parsing, default is to
+            raise the underlying exception from `astropy.units`
 
         Raises
         ------

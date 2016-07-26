@@ -71,17 +71,22 @@ class TimeSeriesBase(Series):
     unit : `~astropy.units.Unit`, optional
         physical unit of these data
 
-    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+    t0 : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS epoch associated with these data,
         any input parsable by `~gwpy.time.to_gps` is fine
 
+    dt : `float`, `~astropy.units.Quantity`, optional, default: `1`
+        time between successive samples (seconds), can also be given inversely
+        via `sample_rate`
+
     sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
-        the rate of samples per second (Hertz)
+        the rate of samples per second (Hertz), can also be given inversely
+        via `dt`
 
     times : `array-like`
         the complete array of GPS times accompanying the data for this series.
-        This argument takes precedence over `epoch` and `sample_rate` so should
-        be given in place of these if relevant, not alongside
+        This argument takes precedence over `t0` and `dt` so should be given
+        in place of these if relevant, not alongside
 
     name : `str`, optional
         descriptive title for this array
@@ -99,66 +104,80 @@ class TimeSeriesBase(Series):
         allow passing of sub-classes by the array generator
     """
     _default_xunit = units.second
-    _metadata_slots = ['name', 'channel', 'x0', 'dx']
+    _print_slots = ['sample_rate', 'epoch', 'name', 'channel', '_times']
     DictClass = None
 
-    def __new__(cls, data, unit=None, times=None, epoch=None, channel=None,
-                sample_rate=None, name=None, **kwargs):
+    def __new__(cls, data, unit=None, t0=None, dt=None, sample_rate=None,
+                times=None, channel=None, name=None, **kwargs):
         """Generate a new `TimeSeriesBase`.
         """
-        # parse Channel input
-        if isinstance(channel, Channel):
-            name = name or channel.name
-            unit = unit or channel.unit
-            if sample_rate is None and times is None and 'dx' not in kwargs:
-                sample_rate = channel.sample_rate
-        if times is None and 'xindex' in kwargs:
-            times = kwargs.pop('xindex')
-        if sample_rate is None and times is None and 'dx' not in kwargs:
-            sample_rate = 1
-        if epoch is None and times is None and 'x0' not in kwargs:
-            epoch = 0
+        # parse t0 or epoch
+        epoch = kwargs.pop('epoch', None)
+        if epoch is not None and t0 is not None:
+            raise ValueError("give only one of epoch or t0")
+        if epoch is None and dt is not None:
+            kwargs['x0'] = t0
+        elif epoch is not None:
+            if isinstance(epoch, Time):
+                kwargs['x0'] = epoch.gps
+            else:
+                kwargs['x0'] = epoch
+        # parse sample_rate or dt
+        if sample_rate is not None and dt is not None:
+            raise ValueError("give only one of sample_rate or dt")
+        if sample_rate is None and dt is not None:
+            kwargs['dx'] = dt
+        # parse times
+        if times is not None:
+            kwargs['xindex'] = times
+
         # generate TimeSeries
         new = super(TimeSeriesBase, cls).__new__(cls, data, name=name,
-                                                 unit=unit, xindex=times,
-                                                 channel=channel, **kwargs)
-        if epoch is not None:
-            new.epoch = epoch
+                                                 unit=unit, channel=channel,
+                                                 **kwargs)
+
+        # manually set sample_rate if given
         if sample_rate is not None:
             new.sample_rate = sample_rate
+
         return new
 
-    # -------------------------------------------
-    # TimeSeries properties
+    # -- TimeSeries properties ------------------
 
+    # rename properties from the Series
+    t0 = Series.x0
     dt = Series.dx
     span = Series.xspan
+    times = Series.xindex
 
+    # -- epoch
+    # this gets redefined to attach to the t0 property
     @property
     def epoch(self):
         """GPS epoch for these data.
 
-        This attribute is stored internally by the `x0` attribute
+        This attribute is stored internally by the `t0` attribute
 
         :type: `~astropy.time.Time`
         """
-        if self.x0 is None:
+        try:
+            return Time(self.t0, format='gps', scale='utc')
+        except AttributeError:
             return None
-        else:
-            return Time(self.x0, format='gps', scale='utc')
 
     @epoch.setter
     def epoch(self, epoch):
         if epoch is None:
-            self.x0 = None
+            del self.t0
         elif isinstance(epoch, Time):
-            self.x0 = epoch.gps
+            self.t0 = epoch.gps
         else:
             try:
-                self.x0 = to_gps(epoch)
+                self.t0 = to_gps(epoch)
             except TypeError:
-                self.x0 = epoch
+                self.t0 = epoch
 
+    # -- sample_rate
     @property
     def sample_rate(self):
         """Data rate for this `TimeSeries` in samples per second (Hertz).
@@ -167,30 +186,27 @@ class TimeSeriesBase(Series):
 
         :type: `~astropy.units.Quantity` scalar
         """
-        return (1 / self.dx).to('Hertz')
+        return (1 / self.dt).to('Hertz')
 
     @sample_rate.setter
     def sample_rate(self, val):
         if val is None:
-            del self.dx
+            del self.dt
             return
-        self.dx = (1 / units.Quantity(val, units.Hertz)).to(self.xunit)
-        if numpy.isclose(self.dx.value, round(self.dx.value)):
-            self.dx = units.Quantity(round(self.dx.value), self.dx.unit)
+        self.dt = (1 / units.Quantity(val, units.Hertz)).to(self.xunit)
+        if numpy.isclose(self.dt.value, round(self.dt.value)):
+            self.dt = units.Quantity(round(self.dt.value), self.dt.unit)
 
+    # -- duration
     @property
     def duration(self):
         """Duration of this series in seconds
+
+        :type: `~astropy.units.Quantity` scalar
         """
         return units.Quantity(self.span[1] - self.span[0], self.xunit)
 
-    times = property(fget=Series.xindex.__get__,
-                     fset=Series.xindex.__set__,
-                     fdel=Series.xindex.__delete__,
-                     doc="""Series of GPS times for each sample""")
-
-    # -------------------------------------------
-    # TimeSeries accessors
+    # -- TimeSeries accessors -------------------
 
     @classmethod
     @with_import('nds2')
@@ -398,10 +414,15 @@ class TimeSeriesBase(Series):
         This classmethod requires the nds2-client package
         """
         # cast as TimeSeries and return
-        epoch = Time(buffer_.gps_seconds, buffer_.gps_nanoseconds,
-                     format='gps')
         channel = Channel.from_nds2(buffer_.channel)
-        return cls(buffer_.data, epoch=epoch, channel=channel, **metadata)
+        metadata.setdefault('channel', channel)
+        metadata.setdefault('epoch', Time(buffer_.gps_seconds,
+                                          buffer_.gps_nanoseconds,
+                                          format='gps'))
+        metadata.setdefault('sample_rate', channel.sample_rate)
+        metadata.setdefault('unit', channel.unit)
+        metadata.setdefault('name', str(channel))
+        return cls(buffer_.data, **metadata)
 
     @classmethod
     @with_import('lal')
@@ -415,8 +436,8 @@ class TimeSeriesBase(Series):
             unit = None
         channel = Channel(lalts.name, sample_rate=1/lalts.deltaT, unit=unit,
                           dtype=lalts.data.data.dtype)
-        out = cls(lalts.data.data, channel=channel, epoch=float(lalts.epoch),
-                  copy=False)
+        out = cls(lalts.data.data, channel=channel, t0=float(lalts.epoch),
+                  dt=lalts.deltaT, unit=unit, name=lalts.name, copy=False)
         if copy:
             return out.copy()
         else:
@@ -473,16 +494,13 @@ class TimeSeriesBase(Series):
             a PyCBC representation of this `TimeSeries`
         """
         return types.TimeSeries(self.data,
-                                delta_t=self.dx.to('s').value,
+                                delta_t=self.dt.to('s').value,
                                 epoch=self.epoch.gps, copy=copy)
 
-    # -------------------------------------------
-    # TimeSeries operations
+    # -- TimeSeries operations ------------------
 
     def __array_wrap__(self, obj, context=None):
-        """Wrap an array into a TimeSeries, or a StateTimeSeries if
-        dtype == bool.
-        """
+        # if output type is boolean, return a `StateTimeSeries`
         if obj.dtype == numpy.dtype(bool):
             from .statevector import StateTimeSeries
             ufunc = context[0]
@@ -495,11 +513,14 @@ class TimeSeriesBase(Series):
             result.name = '%s %s %s' % (obj.name, op_, value)
             if hasattr(obj, 'unit') and str(obj.unit):
                 result.name += ' %s' % str(obj.unit)
+        # otherwise, return a regular TimeSeries
         else:
             result = super(TimeSeriesBase, self).__array_wrap__(
                 obj, context=context)
         return result
 
+
+# -- ArrayTimeSeries ----------------------------------------------------------
 
 class ArrayTimeSeries(TimeSeriesBase, Array2D):
     _default_xunit = TimeSeriesBase._default_xunit
@@ -523,6 +544,8 @@ class ArrayTimeSeries(TimeSeriesBase, Array2D):
                               xindex=times, **kwargs)
         return new
 
+
+# -- TimeSeriesBaseDict -------------------------------------------------------
 
 def as_series_dict_class(seriesclass):
     """Decorate a `dict` class to declare itself as the `DictClass` for
@@ -1102,6 +1125,8 @@ class TimeSeriesBaseDict(OrderedDict):
         return plot_
 
 
+# -- TimeSeriesBaseList -------------------------------------------------------
+
 class TimeSeriesBaseList(list):
     """Fancy list representing a list of `TimeSeriesBase`
 
@@ -1156,7 +1181,7 @@ class TimeSeriesBaseList(list):
 
         This method implicitly sorts and potentially shortens the this list.
         """
-        self.sort(key=lambda ts: ts.x0.value)
+        self.sort(key=lambda ts: ts.t0.value)
         i = j = 0
         N = len(self)
         while j < N:

@@ -51,40 +51,32 @@ __all__ = ['StateTimeSeries',
            'StateVector', 'StateVectorDict', 'StateVectorList', 'Bits']
 
 
+# -- StateTimeSeries ----------------------------------------------------------
+
 class StateTimeSeries(TimeSeriesBase):
     """Boolean array representing a good/bad state determination
-    of some data.
 
     Parameters
     ----------
     value : array-like
         input data array
 
-    unit : `~astropy.units.Unit`, optional
-        physical unit of these data
+    t0 : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS epoch associated with these data,
+        any input parsable by `~gwpy.time.to_gps` is fine
+
+    dt : `float`, `~astropy.units.Quantity`, optional, default: `1`
+        time between successive samples (seconds), can also be given inversely
+        via `sample_rate`
 
     sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
-        the rate of samples per second (Hertz)
+        the rate of samples per second (Hertz), can also be given inversely
+        via `dt`
 
     times : `array-like`
         the complete array of GPS times accompanying the data for this series.
-        This argument takes precedence over `epoch` and `sample_rate` so should
-        be given in place of these if relevant, not alongside
-
-    x0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
-        the starting value for the x-axis of this array
-
-    dx : `float`, `~astropy.units.Quantity, optional, default: `1`
-        the step size for the x-axis of this array
-
-    xindex : `array-like`
-        the complete array of x-axis values for this array. This argument
-        takes precedence over `x0` and `dx` so should be
-        given in place of these if relevant, not alongside
-
-    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-        GPS epoch associated with these data,
-        any input parsable by `~gwpy.time.to_gps` is fine
+        This argument takes precedence over `t0` and `dt` so should be given
+        in place of these if relevant, not alongside
 
     name : `str`, optional
         descriptive title for this array
@@ -103,33 +95,28 @@ class StateTimeSeries(TimeSeriesBase):
 
     Notes
     -----
-    The input data array is cast to the `bool` data type upon creation of
-    this series.
+    Key methods
 
-    .. rubric:: Key methods
+    .. autosummary::
 
        ~StateTimeSeries.to_dqflag
-
     """
 
-    def __new__(cls, data, times=None, epoch=None, channel=None,
-                unit='dimensionless', sample_rate=None, name=None, **kwargs):
+    def __new__(cls, data, t0=None, dt=None, sample_rate=None, times=None,
+                unit='dimensionlss', channel=None, name=None, **kwargs):
         """Generate a new StateTimeSeries
         """
         if isinstance(data, (list, tuple)):
             data = numpy.asarray(data)
         if not isinstance(data, cls):
             data = data.astype(bool)
-        return super(StateTimeSeries, cls).__new__(cls, data, name=name,
-                                                   epoch=epoch,
-                                                   channel=channel,
-                                                   sample_rate=sample_rate,
-                                                   times=times, **kwargs)
+        return super(StateTimeSeries, cls).__new__(cls, data, t0=t0, dt=dt,
+                                                   sample_rate=sample_rate, times=times,
+                                                   name=name, channel=channel, **kwargs)
 
     def to_dqflag(self, name=None, minlen=1, dtype=float, round=False,
                   label=None, description=None):
-        """Convert this `StateTimeSeries` into a
-        `~gwpy.segments.DataQualityFlag`
+        """Convert this series into a `~gwpy.segments.DataQualityFlag`
 
         Each contiguous set of `True` values are grouped as a
         `~gwpy.segments.Segment` running from the GPS time the first
@@ -188,6 +175,8 @@ class StateTimeSeries(TimeSeriesBase):
         else:
             return super(StateTimeSeries, self).__getitem__(item)
 
+
+# -- Bits ---------------------------------------------------------------------
 
 class Bits(list):
     """Definition of the bits in a `StateVector`.
@@ -292,6 +281,8 @@ class Bits(list):
         return numpy.array([b or '' for b in self])
 
 
+# -- StateVector --------------------------------------------------------------
+
 class StateVector(TimeSeriesBase):
     """Binary array representing good/bad state determinations of some data.
 
@@ -307,28 +298,22 @@ class StateVector(TimeSeriesBase):
     bits : `Bits`, `list`, optional
         list of bits defining this `StateVector`
 
+    t0 : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS epoch associated with these data,
+        any input parsable by `~gwpy.time.to_gps` is fine
+
+    dt : `float`, `~astropy.units.Quantity`, optional, default: `1`
+        time between successive samples (seconds), can also be given inversely
+        via `sample_rate`
+
     sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
-        the rate of samples per second (Hertz)
+        the rate of samples per second (Hertz), can also be given inversely
+        via `dt`
 
     times : `array-like`
         the complete array of GPS times accompanying the data for this series.
-        This argument takes precedence over `epoch` and `sample_rate` so should
-        be given in place of these if relevant, not alongside
-
-    x0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
-        the starting value for the x-axis of this array
-
-    dx : `float`, `~astropy.units.Quantity, optional, default: `1`
-        the step size for the x-axis of this array
-
-    xindex : `array-like`
-        the complete array of x-axis values for this array. This argument
-        takes precedence over `x0` and `dx` so should be
-        given in place of these if relevant, not alongside
-
-    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-        GPS epoch associated with these data,
-        any input parsable by `~gwpy.time.to_gps` is fine
+        This argument takes precedence over `t0` and `dt` so should be given
+        in place of these if relevant, not alongside
 
     name : `str`, optional
         descriptive title for this array
@@ -360,21 +345,20 @@ class StateVector(TimeSeriesBase):
     """
     _metadata_slots = TimeSeriesBase._metadata_slots + ['bits']
 
-    def __new__(cls, data, bits=None, times=None, epoch=None, sample_rate=None,
-                channel=None, name=None, **kwargs):
+    def __new__(cls, data, bits=None, t0=None, dt=None, sample_rate=None,
+                times=None, channel=None, name=None, **kwargs):
         """Generate a new `StateVector`.
         """
-        new = super(StateVector, cls).__new__(cls, data, name=name,
-                                              epoch=epoch, channel=channel,
+        new = super(StateVector, cls).__new__(cls, data, t0=t0, dt=dt,
                                               sample_rate=sample_rate,
-                                              times=times,
-                                              **kwargs)
+                                              times=times, channel=channel,
+                                              name=name, **kwargs)
         new.bits = bits
         return new
 
-    # -------------------------------------------
-    # StateVector properties
+    # -- StateVector properties -----------------
 
+    # -- bits
     @property
     def bits(self):
         """The list of bit names for this `StateVector`.
@@ -412,6 +396,7 @@ class StateVector(TimeSeriesBase):
         except AttributeError:
             pass
 
+    # -- boolean
     @property
     def boolean(self):
         """A mapping of this `StateVector` to a 2-D array containing all
@@ -459,9 +444,6 @@ class StateVector(TimeSeriesBase):
                 self.value >> i & 1, name=bit, epoch=self.x0.value,
                 channel=self.channel, sample_rate=self.sample_rate)
         return self._bitseries
-
-    # -------------------------------------------
-    # StateVector methods
 
     # use input/output registry to allow multi-format reading
     read = classmethod(reader(doc="""Read data into a `StateVector`
@@ -829,7 +811,7 @@ class StateVector(TimeSeriesBase):
                 y[...] = numpy.sum([type_((x >> bit & 1).all() * (2 ** bit))
                                     for bit in bits], dtype=self.dtype)
             new = StateVector(it.operands[1], dtype=dtype)
-            new.__dict__ = self.copy_metadata()
+            new.__metadata_finalize__(self)
             new.sample_rate = rate2
             return new
         # error for non-integer resampling factors
