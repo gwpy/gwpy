@@ -162,8 +162,8 @@ class FrequencySeries(Series):
         This method applies the necessary normalisation such that the
         condition holds:
 
-            >>> timeseries = TimeSeries([1.0, 0.0, -1.0, 0.0], sample_rate=1.0)
-            >>> timeseries.fft().ifft() == timeseries
+        >>> timeseries = TimeSeries([1.0, 0.0, -1.0, 0.0], sample_rate=1.0)
+        >>> timeseries.fft().ifft() == timeseries
         """
         from ..timeseries import TimeSeries
         nout = (self.size - 1) * 2
