@@ -185,10 +185,13 @@ class Bits(list):
     ----------
     bits : `list`
         list of bit names
+
     channel : `Channel`, `str`, optional
         data channel associated with this Bits
+
     epoch : `float`, optional
         defining GPS epoch for this `Bits`
+
     description : `dict`, optional
         (bit, desc) `dict` of longer descriptions for each bit
     """
@@ -361,7 +364,7 @@ class StateVector(TimeSeriesBase):
     # -- bits
     @property
     def bits(self):
-        """The list of bit names for this `StateVector`.
+        """list of `Bits` for this `StateVector`
 
         :type: `Bits`
         """
@@ -414,20 +417,20 @@ class StateVector(TimeSeriesBase):
                                     x0=self.x0, dx=self.dx, y0=0, dy=1)
             return self.boolean
 
+    # -- StateVector methods --------------------
+
     def get_bit_series(self, bits=None):
         """Get the `StateTimeSeries` for each bit of this `StateVector`.
 
         Parameters
         ----------
         bits : `list`, optional
-            a list of bit indices or bit names, defaults to
-            `~StateVector.bits`
+            a list of bit indices or bit names, defaults to all bits
 
         Returns
         -------
-        bitseries : `TimeSeriesDict`
-            a `TimeSeriesDict` of `StateTimeSeries`, one for each given
-            bit
+        bitseries : `StateTimeSeriesDict`
+            a `dict` of `StateTimeSeries`, one for each given bit
         """
         if bits is None:
             bits = [b for b in self.bits if b is not None and b is not '']
@@ -460,8 +463,8 @@ class StateVector(TimeSeriesBase):
         channel : `str`, `~gwpy.detector.Channel`
             the name of the channel to read, or a `Channel` object.
 
-        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS start time of required data, defaults to start of data found;
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS start time of required data,
             any input parseable by `~gwpy.time.to_gps` is fine
 
         end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
@@ -560,7 +563,7 @@ class StateVector(TimeSeriesBase):
         Returns
         -------
         DataQualityFlag list : `list`
-            a list of :class:`~gwpy.segments.flag.DataQualityFlag`
+            a list of `~gwpy.segments.flag.DataQualityFlag`
             reprensentations for each bit in this `StateVector`
 
         See Also
@@ -608,7 +611,7 @@ class StateVector(TimeSeriesBase):
         verify : `bool`, optional, default: `True`
             check channels exist in database before asking for data
 
-        connection : :class:`~gwpy.io.nds.NDS2Connection`
+        connection : `nds2.connection`
             open NDS connection to use
 
         verbose : `bool`, optional
@@ -727,21 +730,23 @@ class StateVector(TimeSeriesBase):
             type of plot to make, either 'segments' to plot the
             SegmentList for each bit, or 'timeseries' to plot the raw
             data for this `StateVector`
+
         bits : `list`, optional
             a list of bit indices or bit names, defaults to
             `~StateVector.bits`. This argument is ignored if ``format`` is
             not ``'segments'``
+
         **kwargs
             other keyword arguments to be passed to either
-            :class:`~gwpy.plotter.segments.SegmentPlot` or
-            :class:`~gwpy.plotter.timeseries.TimeSeriesPlot`, depending
+            `~gwpy.plotter.segments.SegmentPlot` or
+            `~gwpy.plotter.TimeSeriesPlot`, depending
             on ``format``.
 
         Returns
         -------
-        plot : :class:`~gwpy.plotter.segments.SegmentPlot`, or
-               :class:`~gwpy.plotter.timeseries.TimeSeriesPlot`
-            output plot object, subclass of :class:`~gwpy.plotter.core.Plot`
+        plot : `~gwpy.plotter.segments.SegmentPlot`, or
+               `~gwpy.plotter.TimeSeriesPlot`
+            output plot object, subclass of `~gwpy.plotter.Plot`
         """
         if format == 'timeseries':
             return super(StateVector, self).plot(**kwargs)
@@ -772,7 +777,7 @@ class StateVector(TimeSeriesBase):
 
         Returns
         -------
-        vector : :class:`~gwpy.timeseries.statevector.StateVector`
+        vector : `StateVector`
             resampled version of the input `StateVector`
         """
         rate1 = self.sample_rate.value

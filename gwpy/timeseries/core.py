@@ -16,7 +16,25 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Array with metadata
+"""
+The TimeSeriesBase
+==================
+
+This module defines the following classes
+
+--------------------  ---------------------------------------------------------
+`TimeSeriesBase`      base of the `TimeSeries` and `StateVector` classes,
+                      provides the constructor and all common methods
+                      (mainly everything that isn't signal-processing related)
+`TimeSeriesBaseDict`  base of the `TimeSeriesDict`, this exists mainly so that
+                      the `TimeSeriesDict` and `StateVectorDict` can be
+                      distinct objects
+`TimeSeriesBaseList`  base of the `TimeSeriesList` and `StateVectorList`,
+                      same reason for living as the `TimeSeriesBaseDict`
+--------------------  ---------------------------------------------------------
+
+**None of these objects are really designed to be used other than as bases for
+user-facing objects.**
 """
 
 from __future__ import (division, print_function)
@@ -213,12 +231,12 @@ class TimeSeriesBase(Series):
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
               connection=None, verify=False, pad=None,
               type=NDS2_FETCH_TYPE_MASK, dtype=None):
-        """Fetch data from NDS into a `TimeSeries`.
+        """Fetch data from NDS
 
         Parameters
         ----------
         channel : `str`, `~gwpy.detector.Channel`
-            the name of the channel to read, or a `Channel` object.
+            the data channel for which to query
 
         start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
@@ -229,19 +247,20 @@ class TimeSeriesBase(Series):
             any input parseable by `~gwpy.time.to_gps` is fine
 
         host : `str`, optional
-            URL of NDS server to use, defaults to observatory site host
+            URL of NDS server to use, if blank will try any server
+            (in a relatively sensible order) to get the data
 
         port : `int`, optional
             port number for NDS server query, must be given with `host`
 
-        verify : `bool`, optional, default: `True`
+        verify : `bool`, optional, default: `False`
             check channels exist in database before asking for data
 
-        connection : :class:`~gwpy.io.nds.NDS2Connection`
+        connection : :nds2:`nds2.connection`, optional
             open NDS connection to use
 
         verbose : `bool`, optional
-            print verbose output about NDS progress
+            print verbose output about NDS progress, useful for debugging
 
         type : `int`, optional
             NDS2 channel type integer
@@ -356,16 +375,20 @@ class TimeSeriesBase(Series):
             any input parseable by `~gwpy.time.to_gps` is fine
 
         pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or ``gap='pad'`` is given
+            value with which to fill gaps in the source data, default to
+            'don't fill gaps'
+
         dtype : `numpy.dtype`, `str`, `type`, or `dict`
             numeric data type for returned data, e.g. `numpy.float`, or
             `dict` of (`channel`, `dtype`) pairs
+
         nproc : `int`, optional, default: `1`
             number of parallel processes to use, serial process by
             default.
+
         verbose : `bool`, optional
             print verbose output about NDS progress.
+
         **kwargs            other keyword arguments to pass to either
             :meth:`.find` (for direct GWF file access) or
             :meth:`.fetch` for remote NDS2 access
@@ -381,8 +404,7 @@ class TimeSeriesBase(Series):
             [channel], start, end, pad=pad, dtype=dtype, verbose=verbose,
             **kwargs)[str(channel)]
 
-    # -------------------------------------------
-    # Utilities
+    # -- utilities ------------------------------
 
     def plot(self, **kwargs):
         """Plot the data for this `TimeSeries`
@@ -583,16 +605,23 @@ class TimeSeriesBaseDict(OrderedDict):
         source : `str`, `~glue.lal.Cache`
             a single file path `str`, or a `~glue.lal.Cache` containing
             a contiguous list of files.
+
         channels : `~gwpy.detector.channel.ChannelList`, `list`
             a list of channels to read from the source.
-        start : `~gwpy.time.Time`, `float`, optional
-            GPS start time of required data.
-        end : `~gwpy.time.Time`, `float`, optional
-            GPS end time of required data.
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS start time of required data,
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, defaults to end of data found;
+            any input parseable by `~gwpy.time.to_gps` is fine
+
         format : `str`, optional
             source format identifier. If not given, the format will be
             detected if possible. See below for list of acceptable
             formats.
+
         nproc : `int`, optional, default: ``1``
             number of parallel processes to use, serial process by
             default.
@@ -618,11 +647,11 @@ class TimeSeriesBaseDict(OrderedDict):
         Returns
         -------
         dict : `TimeSeriesBaseDict`
-            a new `TimeSeriesBaseDict` containing data for the given channel.
+            a new dict of series containing data for the given channel
 
         Raises
         ------
-        Exception
+        astropy.io.registry.IORegistryError
             if no format could be automatically identified.
 
         Notes
@@ -668,10 +697,13 @@ class TimeSeriesBaseDict(OrderedDict):
 
         Parameters
         ----------
-        start : `Time`, `float`
-            GPS start time to crop `TimeSeries` at left
-        end : `Time`, `float`
-            GPS end time to crop `TimeSeries` at right
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS start time of required data,
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, defaults to end of data found;
+            any input parseable by `~gwpy.time.to_gps` is fine
 
         See Also
         --------
@@ -692,7 +724,8 @@ class TimeSeriesBaseDict(OrderedDict):
         rate : `dict`, `float`
             either a `dict` of (channel, `float`) pairs for key-wise
             resampling, or a single float/int to resample all items.
-        kwargs
+
+        **kwargs
              other keyword arguments to pass to each item's resampling
              method.
         """
@@ -713,22 +746,34 @@ class TimeSeriesBaseDict(OrderedDict):
         ----------
         channels : `list`
             required data channels.
-        start : `~gwpy.time.Time`, or float
-            GPS start time of data span.
-        end : `~gwpy.time.Time`, or float
-            GPS end time of data span.
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS start time of required data,
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, defaults to end of data found;
+            any input parseable by `~gwpy.time.to_gps` is fine
+
         host : `str`, optional
-            URL of NDS server to use, defaults to observatory site host.
+            URL of NDS server to use, if blank will try any server
+            (in a relatively sensible order) to get the data
+
         port : `int`, optional
             port number for NDS server query, must be given with `host`.
+
         verify : `bool`, optional, default: `True`
             check channels exist in database before asking for data
+
         verbose : `bool`, optional
             print verbose output about NDS progress.
-        connection : :class:`~gwpy.io.nds.NDS2Connection`
+
+        connection : `nds2.connection`, optional
             open NDS connection to use.
-        type : `int`, `str`,
+
+        type : `int`, `str`, optional
             NDS2 channel type integer or string name.
+
         dtype : `numpy.dtype`, `str`, `type`, or `dict`
             numeric data type for returned data, e.g. `numpy.float`, or
             `dict` of (`channel`, `dtype`) pairs
@@ -747,7 +792,7 @@ class TimeSeriesBaseDict(OrderedDict):
         istart = start.seconds
         iend = ceil(end)
 
-        # test S6 h(t) channel
+        # test S6 h(t) channel so that it gets ,rds appends
         if any(re.match('[HL]1:LDAS-STRAIN\Z', str(c)) for c in channels):
             verify = True
 
@@ -934,26 +979,37 @@ class TimeSeriesBaseDict(OrderedDict):
         ----------
         channels : `list`
             required data channels.
-        start : `~gwpy.time.Time`, or float
-            GPS start time of data span.
-        end : `~gwpy.time.Time`, or float
-            GPS end time of data span.
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS start time of required data,
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, defaults to end of data found;
+            any input parseable by `~gwpy.time.to_gps` is fine
+
         frametype : `str`, optional
             name of frametype in which this channel is stored, by default
             will search for all required frame types
+
         pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
+            value with which to fill gaps in the source data, defaults to
+            'don't fill gaps'
+
         dtype : `numpy.dtype`, `str`, `type`, or `dict`
             numeric data type for returned data, e.g. `numpy.float`, or
             `dict` of (`channel`, `dtype`) pairs
+
         nproc : `int`, optional, default: `1`
             number of parallel processes to use, serial process by
             default.
+
         verbose : `bool`, optional
             print verbose output about NDS progress.
+
         allow_tape : `bool`, optional, default: `True`
             allow reading from frames on tape
+
         **readargs
             any other keyword arguments to be passed to `.read()`
         """
@@ -1023,29 +1079,40 @@ class TimeSeriesBaseDict(OrderedDict):
         ----------
         channels : `list`
             required data channels.
-        start : `~gwpy.time.Time`, or float
-            GPS start time of data span.
-        end : `~gwpy.time.Time`, or float
-            GPS end time of data span.
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS start time of required data,
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, defaults to end of data found;
+            any input parseable by `~gwpy.time.to_gps` is fine
+
         frametype : `str`, optional
             name of frametype in which this channel is stored, by default
             will search for all required frame types
+
         pad : `float`, optional
             value with which to fill gaps in the source data, only used if
             gap is not given, or `gap='pad'` is given
+
         dtype : `numpy.dtype`, `str`, `type`, or `dict`
             numeric data type for returned data, e.g. `numpy.float`, or
             `dict` of (`channel`, `dtype`) pairs
+
         nproc : `int`, optional, default: `1`
             number of parallel processes to use, serial process by
             default.
+
         verbose : `bool`, optional
             print verbose output about NDS progress.
+
         allow_tape : `bool`, optional, default: `False`
             allow the use of frames that are held on tape, default is `False`
             to attempt to allow the `TimeSeries.fetch` method to
             intelligently select a server that doesn't use tapes for
             data storage (doesn't always work)
+
         **kwargs
             other keyword arguments to pass to either
             `TimeSeriesBaseDict.find` (for direct GWF file access) or
@@ -1211,6 +1278,7 @@ class TimeSeriesBaseList(list):
         ----------
         pad : `float`, optional, default: `0.0`
             value with which to pad gaps
+
         gap : `str`, optional, default: `'raise'`
             what to do in the event of a discontguity in the data, one of
 

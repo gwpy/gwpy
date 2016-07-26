@@ -208,7 +208,7 @@ class TimeSeries(TimeSeriesBase):
         -----
         This method, in constrast to the :meth:`numpy.fft.rfft` method
         it calls, applies the necessary normalisation such that the
-        amplitude of the output :class:`~gwpy.frequencyseries.FrequencySeries` is
+        amplitude of the output `~gwpy.frequencyseries.FrequencySeries` is
         correct.
         """
         from ..frequencyseries import FrequencySeries
@@ -319,11 +319,8 @@ class TimeSeries(TimeSeriesBase):
         overlap : `float`, optional, default: `None`
             number of seconds of overlap between FFTs, defaults to that of
             the relevant method.
-        window : `timeseries.Window`, optional
-            window function to apply to timeseries prior to FFT
-        plan : :lal:`REAL8FFTPlan`, optional
-            LAL FFT plan to use when generating average spectrum,
-            substitute type 'REAL8' as appropriate.
+        method : `str`, optional, default: `welch`
+            the name of the FFT-averaging method, see below for more details
 
         Returns
         -------
@@ -362,11 +359,8 @@ class TimeSeries(TimeSeriesBase):
         overlap : `float`, optional, default: `None`
             number of seconds of overlap between FFTs, defaults to that of
             the relevant method.
-        window : `timeseries.Window`, optional
-            window function to apply to timeseries prior to FFT
-        plan : :lal:`REAL8FFTPlan`, optional
-            LAL FFT plan to use when generating average spectrum,
-            substitute type 'REAL8' as appropriate.
+        method : `str`, optional, default: `welch`
+            the name of the FFT-averaging method, see below for more details
 
         Returns
         -------
@@ -387,16 +381,13 @@ class TimeSeries(TimeSeriesBase):
 
         Parameters
         ----------
+        other : `TimeSeries`
+            the second `TimeSeries` in this CSD calculation
         fftlength : `float`, default: :attr:`TimeSeries.duration`
             number of seconds in single FFT
         overlap : `float`, optional, default: `None`
             number of seconds of overlap between FFTs, defaults to that of
             the relevant method.
-        window : `timeseries.Window`, optional
-            window function to apply to timeseries prior to FFT
-        plan : :lal:`REAL8FFTPlan`, optional
-            LAL FFT plan to use when generating average spectrum,
-            substitute type 'REAL8' as appropriate.
 
         Returns
         -------
@@ -434,9 +425,6 @@ class TimeSeries(TimeSeriesBase):
 
         Parameters
         ----------
-        timeseries : `TimeSeries`
-            input time-series to process.
-
         stride : `float`
             number of seconds in single PSD (column of spectrogram).
 
@@ -453,12 +441,6 @@ class TimeSeries(TimeSeriesBase):
             window function to apply to timeseries prior to FFT,
             see `scipy.signal.get_window` for details on acceptable
             formats
-
-        plan : :lal:`REAL8FFTPlan`, optional
-            LAL FFT plan to use when generating average spectrum,
-            substitute type 'REAL8' as appropriate. This is only accepted
-            if you select `method` as one of 'median-mean', 'median', or
-            'lal-welch'
 
         nproc : `int`, default: ``1``
             number of CPUs to use in parallel processing of FFTs
@@ -844,11 +826,6 @@ class TimeSeries(TimeSeriesBase):
         overlap : `float`, optional, default: `None`
             number of seconds of overlap between FFTs, defaults to that of
             the relevant method.
-        window : `timeseries.Window`, optional
-            window function to apply to timeseries prior to FFT
-        plan : :lal:`REAL8FFTPlan`, optional
-            LAL FFT plan to use when generating average spectrum,
-            substitute type 'REAL8' as appropriate.
 
         Returns
         -------
@@ -880,26 +857,21 @@ class TimeSeries(TimeSeriesBase):
 
         Parameters
         ----------
-        timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
-            input time-series to process.
         stride : `float`
             number of seconds in single PSD (column of spectrogram).
         fftlength : `float`
             number of seconds in single FFT.
         overlap : `int`, optiona, default: fftlength
             number of seconds between FFTs.
-        window : `timeseries.window.Window`, optional, default: `None`
-            window function to apply to timeseries prior to FFT.
-        plan : :lal:`REAL8FFTPlan`, optional
-            LAL FFT plan to use when generating average spectrum,
-            substitute type 'REAL8' as appropriate.
+        window : `numpy.ndarray`, `str`, optional, default: `None`
+            window to apply to timeseries prior to FFT.
         nproc : `int`, default: ``1``
             maximum number of independent frame reading processes, default
             is set to single-process file reading.
 
         Returns
         -------
-        spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
+        spectrogram : `~gwpy.spectrogram.Spectrogram`
             time-frequency Rayleigh spectrogram as generated from the
             input time-series.
         """
@@ -916,28 +888,23 @@ class TimeSeries(TimeSeriesBase):
 
         Parameters
         ----------
-        timeseries : :class:`~gwpy.timeseries.core.TimeSeries`
-            input time-series to process.
-        other : :class:`~gwpy.timeseries.core.TimeSeries`
+        other : `~gwpy.timeseries.TimeSeries`
             second time-series for cross spectral density calculation
         stride : `float`
             number of seconds in single PSD (column of spectrogram).
         fftlength : `float`
             number of seconds in single FFT.
-        overlap : `int`, optiona, default: fftlength
+        overlap : `int`, optional, default: fftlength
             number of seconds between FFTs.
-        window : `timeseries.window.Window`, optional, default: `None`
-            window function to apply to timeseries prior to FFT.
-        plan : :lal:`REAL8FFTPlan`, optional
-            LAL FFT plan to use when generating average spectrum,
-            substitute type 'REAL8' as appropriate.
+        window : `numpy.ndarray`, `str`, optional, default: `None`
+            window to apply to timeseries prior to FFT.
         nproc : `int`, default: ``1``
             maximum number of independent frame reading processes, default
             is set to single-process file reading.
 
         Returns
         -------
-        spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
+        spectrogram : :class:`~gwpy.spectrogram.Spectrogram`
             time-frequency cross spectrogram as generated from the
             two input time-series.
         """
@@ -946,8 +913,7 @@ class TimeSeries(TimeSeriesBase):
                                      cross=other, nproc=nproc, **kwargs)
         return cspecgram
 
-    # -------------------------------------------
-    # TimeSeries filtering
+    # -- TimeSeries filtering -------------------
 
     def highpass(self, frequency, gpass=2, gstop=30, stop=None):
         """Filter this `TimeSeries` with a Butterworth high-pass filter.
@@ -1176,7 +1142,7 @@ class TimeSeries(TimeSeriesBase):
         To apply a zpk filter with file poles at 100 Hz, and five zeros at
         1 Hz (giving an overall DC gain of 1e-10)::
 
-            >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
+        >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
         """
         if not digital:
             # cast to arrays for ease
@@ -1446,6 +1412,8 @@ class TimeSeries(TimeSeriesBase):
 
         Parameters
         ----------
+        other : `TimeSeries`
+            the second `TimeSeries` in this CSD calculation
         stride : `float`
             number of seconds in single PSD (column of spectrogram)
         fftlength : `float`
@@ -1519,6 +1487,10 @@ class TimeSeries(TimeSeriesBase):
             name of the window function to use, or an array of length
             ``fftlength * TimeSeries.sample_rate`` to use as the window.
 
+        detrend : `str`, optional
+            type of detrending to do before FFT (see `~TimeSeries.detrend`
+            for more details)
+
         asd : `~gwpy.frequencyseries.FrequencySeries`
             the amplitude-spectral density using which to whiten the data
 
@@ -1563,10 +1535,10 @@ class TimeSeries(TimeSeriesBase):
         del out.times
         # loop over ffts and whiten each one
         for i in range(nsteps):
-             i0 = i * nstride
-             i1 = i0 + nfft
-             in_ = self[i0:i1].detrend(detrend) * window
-             out.value[i0:i1] += npfft.irfft(in_.fft().value * invasd)
+            i0 = i * nstride
+            i1 = i0 + nfft
+            in_ = self[i0:i1].detrend(detrend) * window
+            out.value[i0:i1] += npfft.irfft(in_.fft().value * invasd)
         return out
 
     def detrend(self, detrend='constant'):
