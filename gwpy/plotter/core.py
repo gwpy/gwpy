@@ -655,13 +655,6 @@ class Plot(figure.Figure):
                               **kwargs)
 
     @auto_refresh
-    def add_spectrum(self, *args, **kwargs):
-        warnings.warn("This method was renamed add_frequencyseries()",
-                      DeprecationWarning)
-        return self.add_frequencyseries(*args, **kwargs)
-    add_spectrum.__doc__ = add_frequencyseries.__doc__
-
-    @auto_refresh
     def add_spectrogram(self, spectrogram, projection='timeseries',
                         ax=None, newax=False, sharex=None, sharey=None,
                         **kwargs):
