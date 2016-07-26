@@ -34,7 +34,7 @@ from ..utils import with_import
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
-__all__ = ['FrequencySeries', 'Spectrum']
+__all__ = ['FrequencySeries']
 
 
 class FrequencySeries(Series):
@@ -383,11 +383,3 @@ class FrequencySeries(Series):
             epoch = self.epoch.gps
         return types.FrequencySeries(self.data, delta_f=self.df.to('Hz').value,
                                      epoch=epoch, copy=copy)
-
-
-class Spectrum(FrequencySeries):
-    def __new__(cls, *args, **kwargs):
-        warnings.warn("The gwpy.spectrum.Spectrum was renamed "
-                      "gwpy.frequencyseries.FrequencySeries",
-                      DeprecationWarning)
-        return super(Spectrum, cls).__new__(cls, *args, **kwargs)

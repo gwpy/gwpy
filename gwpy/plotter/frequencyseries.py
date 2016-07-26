@@ -278,25 +278,3 @@ class FrequencySeriesPlot(Plot):
             # set axis scales
             ax.set_xscale(xscale)
             ax.set_yscale(yscale)
-
-
-# -- deprecated classes
-
-class SpectrumPlot(FrequencySeriesPlot):
-    def __init__(self, *args, **kwargs):
-        warnings.warn("The SpectrumPlot object was replaced by the "
-                      "FrequencySeriesPlot, and will be removed in an "
-                      "upcoming release.", DeprecationWarning)
-        super(SpectrumPlot, self).__init__(*args, **kwargs)
-
-
-class SpectrumAxes(FrequencySeriesAxes):
-    name = 'spectrum'
-
-    def __init__(self, *args, **kwargs):
-        warnings.warn("The SpectrumAxes object was replaced by the "
-                      "FrequencySeriesAxes, and will be removed in an "
-                      "upcoming release.", DeprecationWarning)
-        super(SpectrumAxes, self).__init__(*args, **kwargs)
-
-register_projection(SpectrumAxes)
