@@ -165,7 +165,7 @@ class ChannelTests(unittest.TestCase):
         try:
             new = Channel.query_nds2(self.channel, host=NDSHOST,
                                      type=nds2.channel.CHANNEL_TYPE_RAW)
-        except IOError as e:
+        except (RuntimeError, IOError) as e:
             self.skipTest(str(e))
         self.assertTrue(str(new) == self.channel)
         self.assertTrue(new.ifo == self.channel.split(':', 1)[0])

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for data classes
+"""Unit test for gwpy.types classes
 """
 
 import abc
@@ -34,6 +34,7 @@ from astropy.time import Time
 
 from gwpy.types import (Array, Series, Array2D)
 from gwpy.detector import Channel
+from gwpy.time import LIGOTimeGPS
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -50,10 +51,11 @@ class CommonTests(object):
     tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_')
     EMPTY_ARRAY_ERROR = IndexError
 
-    def setUp(self, dtype=None):
+    @classmethod
+    def setUpClass(cls, dtype=None):
         numpy.random.seed(SEED)
-        self.data = (numpy.random.random(100) * 1e5).astype(dtype=dtype)
-        self.datasq = self.data ** 2
+        cls.data = (numpy.random.random(100) * 1e5).astype(dtype=dtype)
+        cls.datasq = cls.data ** 2
 
     @property
     def TEST_ARRAY(self):
@@ -82,7 +84,7 @@ class CommonTests(object):
                 self.assertEqual(a, b,
                     msg="%r attribute doesn't match: %s != %s" % (attr, a, b))
 
-    # -- test methods ---------------------------
+    # -- test basic construction ----------------
 
     def test_init(self):
         """Test Array creation
@@ -95,28 +97,53 @@ class CommonTests(object):
         nptest.assert_array_equal(array.value, self.data)
 
     def test_unit(self):
+        # test default unit is dimensionless
         array = self.create()
         self.assertEqual(array.unit, units.dimensionless_unscaled)
+        # test unit gets passed properly
         array = self.create(unit='m')
-        self.assertEquals(array.unit, units.m)
+        self.assertIs(array.unit, units.m)
+        # test unrecognised units
+        with pytest.warns(units.UnitsWarning):
+            array = self.create(unit='blah')
+        self.assertIsInstance(array.unit, units.UnrecognizedUnit)
+        self.assertEqual(str(array.unit), 'blah')
 
     def test_name(self):
-        array = self.create(name=None)
+        # test default is no name
+        array = self.create()
         self.assertIsNone(array.name)
+        # test simple name
         array = self.create(name='TEST CASE')
         self.assertEquals(array.name, 'TEST CASE')
 
     def test_epoch(self):
+        # test default is no epoch
         array = self.create()
         self.assertIsNone(array.epoch)
+        # test epoch gets parsed properly
         array = self.create(epoch=GPS_EPOCH)
+        self.assertIsInstance(array.epoch, Time)
         self.assertEquals(array.epoch, TIME_EPOCH)
+        # test epoch in different formats
+        array = self.create(epoch=LIGOTimeGPS(GPS_EPOCH))
+        self.assertEquals(array.epoch, TIME_EPOCH)
+        # test precision at high GPS times (to millisecond)
+        gps = LIGOTimeGPS(1234567890, 123456000)
+        array = self.create(epoch=gps)
+        self.assertEqual(array.epoch.gps, float(gps))
 
     def test_channel(self):
+        # test default channl is None
         array = self.create()
         self.assertIsNone(array.channel)
+        # test simple channel
         array = self.create(channel=CHANNEL_NAME)
+        self.assertIsInstance(array.channel, Channel)
         self.assertEquals(array.channel, CHANNEL)
+        # test existing channel doesn't get modified
+        array = self.create(channel=CHANNEL)
+        self.assertIs(array.channel, CHANNEL)
 
     def test_math(self):
         """Test Array math operations
@@ -377,11 +404,12 @@ class Array2DTestCase(CommonTests, unittest.TestCase):
     TEST_CLASS = Array2D
     EMPTY_ARRAY_ERROR = ValueError
 
-    def setUp(self, dtype=None):
+    @classmethod
+    def setUpClass(cls, dtype=None):
         numpy.random.seed(SEED)
-        self.data = (numpy.random.random(100)
+        cls.data = (numpy.random.random(100)
                      * 1e5).astype(dtype=dtype).reshape((10, 10))
-        self.datasq = self.data ** 2
+        cls.datasq = cls.data ** 2
 
     def test_getitem(self):
         a = self.create()
