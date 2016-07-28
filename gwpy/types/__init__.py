@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2013-2016)
 #
 # This file is part of GWpy.
 #
@@ -16,13 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Deprecated module name
+"""This module provides the core `Array` object and direct subclasses.
+
+These objects form the basic 1-D and 2-D arrays with metadata from which
+we can build specific data representations like the `TimeSeries`.
 """
 
-import warnings
 
-warnings.warn("The gwpy.spectrum module has been renamed "
-              "gwpy.frequencyseries, you should use that from now on.",
-              DeprecationWarning)
+from .array import *
+from .array2d import *
+from .series import *
+import io
 
-from .frequencyseries import *
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__all__ = ['Array', 'Series', 'Array2D']

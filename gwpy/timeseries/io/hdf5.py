@@ -19,7 +19,7 @@
 """This module attaches the HDF5 input output methods to the TimeSeries.
 """
 
-from ...data.io import hdf5
+from ...types.io import hdf5
 from .. import (TimeSeries, StateVector, StateTimeSeries)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

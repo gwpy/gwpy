@@ -39,13 +39,13 @@ use('agg')
 from astropy import units
 from astropy.io.registry import (get_reader, register_reader)
 
-from gwpy.time import Time
+from gwpy.time import (Time, LIGOTimeGPS)
 
 from gwpy.timeseries import (TimeSeries, StateVector, TimeSeriesDict,
                              StateVectorDict, TimeSeriesList)
 from gwpy.segments import (Segment, DataQualityFlag, DataQualityDict)
 from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
-from gwpy.data import Array2D
+from gwpy.types import Array2D
 from gwpy.spectrogram import Spectrogram
 from gwpy.io.cache import Cache
 from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
@@ -119,6 +119,18 @@ class TimeSeriesTestMixin(object):
         self.assertEqual(ts.channel.sample_rate, ts.sample_rate)
         self.assertEqual(ts.channel.unit, ts.unit)
         return ts
+
+    def test_ligotimegps(self):
+        # test that LIGOTimeGPS works
+        array = self.create(t0=LIGOTimeGPS(0))
+        self.assertEqual(array.t0.value, 0)
+        array.t0 = LIGOTimeGPS(10)
+        self.assertEqual(array.t0.value, 10)
+        array.x0 = LIGOTimeGPS(1000000000)
+        self.assertEqual(array.t0.value, 1000000000)
+        # check epoch access
+        array.epoch = LIGOTimeGPS(10)
+        self.assertEqual(array.t0.value, 10)
 
     def test_epoch(self):
         array = self.create()
@@ -232,13 +244,17 @@ class TimeSeriesTestMixin(object):
             self.skipTest(str(e))
         # test a few (channel, frametype) pairs
         for channel, target in [
-                ('H1:GDS-CALIB_STRAIN', 'H1_HOFT_C00'),
-                ('L1:IMC-ODC_CHANNEL_OUT_DQ', 'L1_R'),
-                ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend', 'H1_T'),
-                ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend', 'H1_M')]:
+                ('H1:GDS-CALIB_STRAIN',
+                    ['H1_HOFT_C00', 'H1_ER_C00_L1']),
+                ('L1:IMC-ODC_CHANNEL_OUT_DQ',
+                    ['L1_R']),
+                ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend',
+                    ['H1_T']),
+                ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend',
+                    ['H1_M'])]:
             ft = datafind.find_best_frametype(
                 channel, 1143504017, 1143504017+100)
-            self.assertEqual(ft, target)
+            self.assertIn(ft, target)
 
         # test that this works end-to-end as part of a TimeSeries.find
         try:
@@ -360,9 +376,10 @@ class TimeSeriesTestMixin(object):
 class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
     TEST_CLASS = TimeSeries
 
-    def setUp(self):
-        super(TimeSeriesTestCase, self).setUp()
-        self.random = self.TEST_CLASS(
+    @classmethod
+    def setUpClass(cls, dtype=None):
+        super(TimeSeriesTestCase, cls).setUpClass(dtype=dtype)
+        cls.random = cls.TEST_CLASS(
             numpy.random.normal(loc=1, size=16384 * 10), sample_rate=16384,
             epoch=-5)
 
@@ -442,7 +459,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(fs.unit, ts.unit ** 2 / units.Hertz)
         # test that self-CSD is equal to PSD
         sp = ts.psd()
-        nptest.assert_array_equal(fs.data, sp.data)
+        nptest.assert_array_equal(fs.value, sp.value)
         # test fftlength
         fs = ts.csd(ts, fftlength=0.5)
         self.assertEqual(fs.size, 0.5 * ts.sample_rate.value // 2 + 1)
@@ -464,7 +481,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(sg.span, ts.span)
         # check the same result as PSD
         psd = ts.psd()
-        nptest.assert_array_equal(sg.data[0], psd.data)
+        nptest.assert_array_equal(sg.value[0], psd.value)
         # test fftlength
         sg = ts.spectrogram(1, fftlength=0.5)
         self.assertEqual(sg.shape, (1, 0.5 * ts.size//2+1))
@@ -495,7 +512,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(sg.span, ts.span)
         # test the same result as spectrogam
         sg1 = ts.spectrogram(1)
-        nptest.assert_array_equal(sg.data, sg1.data)
+        nptest.assert_array_equal(sg.value, sg1.value)
         # test fftlength
         sg = ts.spectrogram2(0.5)
         self.assertEqual(sg.shape, (2, 0.5 * ts.size//2+1))
@@ -525,7 +542,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertNotAlmostEqual(tmax.value, -glitchtime)
         whitened = data.whiten(2, 1)
         self.assertEqual(noise.size, whitened.size)
-        self.assertAlmostEqual(whitened.mean(), 0.0, places=5)
+        self.assertAlmostEqual(whitened.mean().value, 0.0, places=4)
         tmax = whitened.times[whitened.argmax()]
         self.assertAlmostEqual(tmax.value, -glitchtime)
 
@@ -548,7 +565,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(sg.span, ts.span)
         # check the same result as CSD
         csd = ts.csd(ts)
-        nptest.assert_array_equal(sg.data[0], csd.data)
+        nptest.assert_array_equal(sg.value[0], csd.value)
         # test fftlength
         sg = ts.csd_spectrogram(ts, 1, fftlength=0.5)
         self.assertEqual(sg.shape, (1, 0.5 * ts.size//2+1))
@@ -601,8 +618,9 @@ class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
     """
     TEST_CLASS = StateVector
 
-    def setUp(self):
-        super(StateVectorTestCase, self).setUp(dtype='uint32')
+    @classmethod
+    def setUpClass(cls, dtype='uint32'):
+        super(StateVectorTestCase, cls).setUpClass(dtype=dtype)
 
     def _test_losc_inner(self, loscfile):
         ts = self.TEST_CLASS.read(loscfile, 'quality/simple', format='losc')

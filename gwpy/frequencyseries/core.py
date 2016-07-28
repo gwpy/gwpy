@@ -27,40 +27,56 @@ from scipy import signal
 
 from astropy import units
 
-from ..data import (Array, Series)
+from ..types import (Array, Series)
 from ..detector import Channel
 from ..utils import with_import
-from ..utils.docstring import interpolate_docstring
 
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
-__all__ = ['FrequencySeries', 'Spectrum']
-
-interpolate_docstring.update({
-    'frequency-axis': (
-        """f0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
-        starting frequency for these data
-    df : `float`, `~astropy.units.Quantity`, optional, default: `1`
-        frequency resolution for these data
-    frequencies : `array-like`
-        the complete array of frequencies indexing the data.
-        This argument takes precedence over `f0` and `df` so should
-        be given in place of these if relevant, not alongside"""),
-})
+__all__ = ['FrequencySeries']
 
 
-@interpolate_docstring
 class FrequencySeries(Series):
     """A data array holding some metadata to represent a frequency series
 
     Parameters
     ----------
-    %(Array1)s
+    value : array-like
+        input data array
 
-    %(frequency-axis)s
+    unit : `~astropy.units.Unit`, optional
+        physical unit of these data
 
-    %(Array2)s
+    f0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
+        starting frequency for these data
+
+    df : `float`, `~astropy.units.Quantity`, optional, default: `1`
+        frequency resolution for these data
+
+    frequencies : `array-like`
+        the complete array of frequencies indexing the data.
+        This argument takes precedence over `f0` and `df` so should
+        be given in place of these if relevant, not alongside
+
+    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS epoch associated with these data,
+        any input parsable by `~gwpy.time.to_gps` is fine
+
+    name : `str`, optional
+        descriptive title for this array
+
+    channel : `~gwpy.detector.Channel`, `str`, optional
+        source data stream for these data
+
+    dtype : `~numpy.dtype`, optional
+        input data type
+
+    copy : `bool`, optional, default: `False`
+        choose to copy the input data to new memory
+
+    subok : `bool`, optional, default: `True`
+        allow passing of sub-classes by the array generator
 
     Notes
     -----
@@ -73,32 +89,26 @@ class FrequencySeries(Series):
        ~FrequencySeries.plot
        ~FrequencySeries.zpk
     """
-    _metadata_slots = Array._metadata_slots + ['f0', 'df']
     _default_xunit = units.Unit('Hz')
+    _print_slots = ['f0', 'df', 'epoch', 'name', 'channel', '_frequencies']
 
-    def __new__(cls, data, unit=None, frequencies=None, name=None,
-                epoch=None, f0=0, df=1, channel=None,
-                **kwargs):
+    def __new__(cls, data, unit=None, f0=None, df=None, frequencies=None,
+                name=None, epoch=None, channel=None, **kwargs):
         """Generate a new FrequencySeries.
         """
-        # parse Channel input
-        if channel:
-            channel = (isinstance(channel, Channel) and channel or
-                       Channel(channel))
-            name = name or channel.name
-            unit = unit or channel.unit
-        if frequencies is None and 'xindex' in kwargs:
-            frequencies = kwargs.pop('xindex')
-        # allow use of x0 and dx
-        f0 = kwargs.pop('x0', f0)
-        df = kwargs.pop('dx', df)
+        if f0 is not None:
+            kwargs['x0'] = f0
+        if df is not None:
+            kwargs['dx'] = df
+        if frequencies is not None:
+            kwargs['xindex'] = frequencies
+
         # generate Spectrum
         return super(FrequencySeries, cls).__new__(
-            cls, data, name=name, unit=unit, channel=channel, x0=f0, dx=df,
-            epoch=epoch, xindex=frequencies, **kwargs)
+            cls, data, unit=unit, name=name, channel=channel,
+            epoch=epoch, **kwargs)
 
-    # -------------------------------------------
-    # FrequencySeries properties
+    # -- FrequencySeries properties -------------
 
     f0 = property(Series.x0.__get__, Series.x0.__set__, Series.x0.__delete__,
                   """Starting frequency for this `FrequencySeries`
@@ -117,8 +127,7 @@ class FrequencySeries(Series):
                            fdel=Series.xindex.__delete__,
                            doc="""Series of frequencies for each sample""")
 
-    # -------------------------------------------
-    # FrequencySeries methods
+    # -- FrequencySeries methods ----------------
 
     def plot(self, **kwargs):
         """Display this `FrequencySeries` in a figure
@@ -153,8 +162,8 @@ class FrequencySeries(Series):
         This method applies the necessary normalisation such that the
         condition holds:
 
-            >>> timeseries = TimeSeries([1.0, 0.0, -1.0, 0.0], sample_rate=1.0)
-            >>> timeseries.fft().ifft() == timeseries
+        >>> timeseries = TimeSeries([1.0, 0.0, -1.0, 0.0], sample_rate=1.0)
+        >>> timeseries.fft().ifft() == timeseries
         """
         from ..timeseries import TimeSeries
         nout = (self.size - 1) * 2
@@ -367,11 +376,3 @@ class FrequencySeries(Series):
             epoch = self.epoch.gps
         return types.FrequencySeries(self.data, delta_f=self.df.to('Hz').value,
                                      epoch=epoch, copy=copy)
-
-
-class Spectrum(FrequencySeries):
-    def __new__(cls, *args, **kwargs):
-        warnings.warn("The gwpy.spectrum.Spectrum was renamed "
-                      "gwpy.frequencyseries.FrequencySeries",
-                      DeprecationWarning)
-        return super(Spectrum, cls).__new__(cls, *args, **kwargs)

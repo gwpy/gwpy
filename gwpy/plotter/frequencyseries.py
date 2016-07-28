@@ -17,7 +17,7 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """This module defines plotting classes for the data series defined in
-`~gwpy.data`
+`~gwpy.frequencyseries`
 """
 
 import copy
@@ -106,10 +106,8 @@ class FrequencySeriesAxes(Axes):
         line = self.plot(spectrum.frequencies.value, spectrum.value, **kwargs)
         if len(self.lines) == 1:
             try:
-                self.set_xlim(spectrum.frequencies[0].value,
-                              spectrum.frequencies[-1].value +
-                              spectrum.df.value)
-            except IndexError:
+                self.set_xlim(*spectrum.xspan)
+            except ValueError:
                 pass
         if 'label' in kwargs:
             self.legend()
@@ -278,25 +276,3 @@ class FrequencySeriesPlot(Plot):
             # set axis scales
             ax.set_xscale(xscale)
             ax.set_yscale(yscale)
-
-
-# -- deprecated classes
-
-class SpectrumPlot(FrequencySeriesPlot):
-    def __init__(self, *args, **kwargs):
-        warnings.warn("The SpectrumPlot object was replaced by the "
-                      "FrequencySeriesPlot, and will be removed in an "
-                      "upcoming release.", DeprecationWarning)
-        super(SpectrumPlot, self).__init__(*args, **kwargs)
-
-
-class SpectrumAxes(FrequencySeriesAxes):
-    name = 'spectrum'
-
-    def __init__(self, *args, **kwargs):
-        warnings.warn("The SpectrumAxes object was replaced by the "
-                      "FrequencySeriesAxes, and will be removed in an "
-                      "upcoming release.", DeprecationWarning)
-        super(SpectrumAxes, self).__init__(*args, **kwargs)
-
-register_projection(SpectrumAxes)
