@@ -399,6 +399,19 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
             self.assertEqual(ts1.value_at(1500 * units.milliHertz),
                              4 * units.m)
 
+    def test_read_write_ascii(self):
+        a = self.TEST_CLASS([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], dx=.5, x0=10)
+        # assert explicit format works
+        with tempfile.NamedTemporaryFile(suffix='.txt') as f:
+            a.write(f.name, format='txt')
+            b = self.TEST_CLASS.read(f.name)
+        self.assertArraysEqual(a, b)
+        # assert auto-format works
+        with tempfile.NamedTemporaryFile(suffix='.txt') as f:
+            a.write(f.name)
+            b = self.TEST_CLASS.read(f.name)
+        self.assertArraysEqual(a, b)
+
 
 class Array2DTestCase(CommonTests, unittest.TestCase):
     TEST_CLASS = Array2D
