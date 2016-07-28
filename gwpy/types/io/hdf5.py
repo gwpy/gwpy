@@ -20,10 +20,10 @@
 """
 
 from astropy.units import Quantity, UnitBase
-from astropy.time import Time
 
 from ...detector import Channel
 from ...io import (hdf5 as hdf5io, registry)
+from ...time import (Time, LIGOTimeGPS)
 from ...utils.deps import with_import
 from .. import (Array, Series, Array2D)
 
@@ -144,21 +144,29 @@ def array_to_hdf5(array, output, name=None, group=None, compression='gzip',
 
         # store metadata
         for attr in ['unit'] + array._metadata_slots:
-            mdval = getattr(array, attr)
+            # get private attribute
+            mdval = getattr(array, '_%s' % attr, None)
             if mdval is None:
                 continue
+            # skip regular index arrays
+            if (isinstance(mdval, Quantity) and
+                    getattr(mdval, 'regular', False)):
+                continue
+            # set value based on type
             if isinstance(mdval, Quantity):
                 dset.attrs[attr] = mdval.value
             elif isinstance(mdval, Channel):
                 dset.attrs[attr] = mdval.ndsname
             elif isinstance(mdval, UnitBase):
                 dset.attrs[attr] = str(mdval)
+            elif isinstance(mdval, LIGOTimeGPS):
+                dset.attrs[attr] = str(mdval)
             elif isinstance(mdval, Time):
                 dset.attrs[attr] = mdval.utc.gps
             else:
                 try:
                     dset.attrs[attr] = mdval
-                except ValueError as e:
+                except (TypeError, ValueError, RuntimeError) as e:
                     e.args = ("Failed to store %s (%s) for %s: %s"
                               % (attr, type(mdval).__name__,
                                  type(array).__name__, str(e)),)

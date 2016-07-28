@@ -62,7 +62,7 @@ else:
 from ..types import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
 from ..io import (reader, writer, datafind)
-from ..time import (Time, to_gps)
+from ..time import (Time, LIGOTimeGPS, to_gps)
 from ..utils import (gprint, with_import)
 from ..utils.compat import OrderedDict
 
@@ -76,6 +76,14 @@ _UFUNC_STRING = {'less': '<',
                  'greater_equal': '>=',
                  'greater': '>',
                  }
+
+
+def _format_time(t):
+    if isinstance(t, LIGOTimeGPS):
+        return float(t)
+    if isinstance(t, Time):
+        return t.gps
+    return t
 
 
 class TimeSeriesBase(Series):
@@ -133,13 +141,10 @@ class TimeSeriesBase(Series):
         epoch = kwargs.pop('epoch', None)
         if epoch is not None and t0 is not None:
             raise ValueError("give only one of epoch or t0")
-        if epoch is None and dt is not None:
-            kwargs['x0'] = float(t0)  # cast to float to handle LIGOTimeGPS
+        if epoch is None and t0 is not None:
+            kwargs['x0'] = _format_time(t0)
         elif epoch is not None:
-            if isinstance(epoch, Time):
-                kwargs['x0'] = epoch.gps
-            else:
-                kwargs['x0'] = float(epoch)
+            kwargs['x0'] = _format_time(epoch)
         # parse sample_rate or dt
         if sample_rate is not None and dt is not None:
             raise ValueError("give only one of sample_rate or dt")
