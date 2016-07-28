@@ -106,10 +106,8 @@ class FrequencySeriesAxes(Axes):
         line = self.plot(spectrum.frequencies.value, spectrum.value, **kwargs)
         if len(self.lines) == 1:
             try:
-                self.set_xlim(spectrum.frequencies[0].value,
-                              spectrum.frequencies[-1].value +
-                              spectrum.df.value)
-            except IndexError:
+                self.set_xlim(*spectrum.xspan)
+            except ValueError:
                 pass
         if 'label' in kwargs:
             self.legend()

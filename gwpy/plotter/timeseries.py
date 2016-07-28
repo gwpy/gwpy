@@ -189,7 +189,7 @@ class TimeSeriesAxes(Axes):
             self.set_epoch(timeseries.x0)
         line = self.plot(timeseries.times.value, timeseries.value, **kwargs)
         if len(self.lines) == 1 and timeseries.size:
-            self.set_xlim(*timeseries.span)
+            self.set_xlim(*timeseries.xspan)
         return line
 
     @auto_refresh
