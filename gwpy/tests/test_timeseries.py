@@ -244,13 +244,17 @@ class TimeSeriesTestMixin(object):
             self.skipTest(str(e))
         # test a few (channel, frametype) pairs
         for channel, target in [
-                ('H1:GDS-CALIB_STRAIN', 'H1_HOFT_C00'),
-                ('L1:IMC-ODC_CHANNEL_OUT_DQ', 'L1_R'),
-                ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend', 'H1_T'),
-                ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend', 'H1_M')]:
+                ('H1:GDS-CALIB_STRAIN',
+                    ['H1_HOFT_C00', 'H1_ER_C00_L1']),
+                ('L1:IMC-ODC_CHANNEL_OUT_DQ',
+                    ['L1_R']),
+                ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend',
+                    ['H1_T']),
+                ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend',
+                    ['H1_M'])]:
             ft = datafind.find_best_frametype(
                 channel, 1143504017, 1143504017+100)
-            self.assertEqual(ft, target)
+            self.assertIn(ft, target)
 
         # test that this works end-to-end as part of a TimeSeries.find
         try:
