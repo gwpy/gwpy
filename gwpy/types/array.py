@@ -184,10 +184,7 @@ class Array(Quantity):
                         setattr(self, _attr, val)
 
     def __getattr__(self, attr):
-        # stop Quantity from capturing AttributeErrors from _metadata_slots
-        if attr in self._metadata_slots:
-            return super(Array, self).__getattribute__(attr)
-        return super(Array, self).__getattr__(attr)
+        return super(Array, self).__getattribute__(attr)
 
     # -- display --------------------------------
 
