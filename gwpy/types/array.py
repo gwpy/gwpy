@@ -368,7 +368,10 @@ class Array(Quantity):
 
     @unit.deleter
     def unit(self):
-        del self._unit
+        try:
+            del self._unit
+        except AttributeError:
+            pass
 
     # -- I/O methods ----------------------------
 
