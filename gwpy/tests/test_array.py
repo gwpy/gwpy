@@ -104,6 +104,10 @@ class CommonTests(object):
         # test default unit is dimensionless
         array = self.create()
         self.assertEqual(array.unit, units.dimensionless_unscaled)
+        # test deleter and recovery
+        del array.unit
+        del array.unit  # test twice to make sure Attribute Error isn't raised
+        self.assertIsNone(array.unit)
         # test unit gets passed properly
         array = self.create(unit='m')
         self.assertIs(array.unit, units.m)
@@ -112,10 +116,21 @@ class CommonTests(object):
             array = self.create(unit='blah')
         self.assertIsInstance(array.unit, units.UnrecognizedUnit)
         self.assertEqual(str(array.unit), 'blah')
+        # test setting unit doesn't work
+        def _set_unit():
+            array.unit = 'm'
+        self.assertRaises(AttributeError, _set_unit)
+        del array.unit
+        array.unit = 'm'
+        self.assertIs(array.unit, units.m)
 
     def test_name(self):
         # test default is no name
         array = self.create()
+        self.assertIsNone(array.name)
+        # test deleter and recovery
+        del array.name
+        del array.name
         self.assertIsNone(array.name)
         # test simple name
         array = self.create(name='TEST CASE')
@@ -124,6 +139,10 @@ class CommonTests(object):
     def test_epoch(self):
         # test default is no epoch
         array = self.create()
+        self.assertIsNone(array.epoch)
+        # test deleter and recovery
+        del array.epoch
+        del array.epoch
         self.assertIsNone(array.epoch)
         # test epoch gets parsed properly
         array = self.create(epoch=GPS_EPOCH)
@@ -141,6 +160,10 @@ class CommonTests(object):
         # test default channl is None
         array = self.create()
         self.assertIsNone(array.channel)
+        # test deleter and recovery
+        del array.channel
+        del array.channel
+        self.assertIsNone(array.channel)
         # test simple channel
         array = self.create(channel=CHANNEL_NAME)
         self.assertIsInstance(array.channel, Channel)
@@ -148,6 +171,9 @@ class CommonTests(object):
         # test existing channel doesn't get modified
         array = self.create(channel=CHANNEL)
         self.assertIs(array.channel, CHANNEL)
+        # test preserves None
+        array.channel = None
+        self.assertIsNone(array.channel)
 
     def test_math(self):
         """Test Array math operations
@@ -168,6 +194,25 @@ class CommonTests(object):
         array2 = array.copy()
         nptest.assert_array_equal(array.value, array2.value)
         self.assertEqual(array.unit, array2.unit)
+
+    def test_repr(self):
+        # just test that it runs
+        array = self.create()
+        repr(array)
+
+    def test_str(self):
+        # just test that it runs
+        array = self.create()
+        str(array)
+
+    def test_pickle(self):
+        """Check pickle-unpickle yields unchanged data
+        """
+        import cPickle
+        ts = self.create()
+        pickle = ts.dumps()
+        ts2 = cPickle.loads(pickle)
+        self.assertArraysEqual(ts, ts2)
 
     # -- test I/O -------------------------------
 
@@ -243,14 +288,6 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         nptest.assert_array_equal(
             series.xindex, numpy.arange(series.size) * series.dx + series.x0)
 
-    def test_pickle(self):
-        """Check pickle-unpickle yields unchanged data
-        """
-        import cPickle
-        ts = self.create()
-        pickle = ts.dumps()
-        ts2 = cPickle.loads(pickle)
-        self.assertArraysEqual(ts, ts2)
 
     def test_crop(self):
         """Test cropping `Series` by GPS times
