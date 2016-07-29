@@ -118,19 +118,33 @@ class Series(Array):
         # create new object
         new = super(Series, cls).__new__(cls, value, unit=unit, **kwargs)
 
-        # set new metadata
-        if xunit is None and isinstance(dx, Quantity):
-            xunit = dx.unit
-        elif xunit is None and isinstance(x0, Quantity):
-            xunit = x0.unit
-        elif xunit is None:
-            xunit = cls._default_xunit
-        if dx is not None:
-            new.dx = Quantity(dx, xunit)
-        if x0 is not None:
-            new.x0 = Quantity(x0, xunit)
+        # set x-axis metadata from xindex
         if xindex is not None:
+            # warn about duplicate settings
+            if dx is not None:
+                warn("xindex was given to %s(), dx will be ignored"
+                     % cls.__name__)
+            if x0 is not None:
+                warn("xindex was given to %s(), x0 will be ignored"
+                     % cls.__name__)
+            # get unit
+            if xunit is None and isinstance(xindex, Quantity):
+                xunit = xindex.unit
+            elif xunit is None:
+                xunit = cls._default_xunit
             new.xindex = Quantity(xindex, unit=xunit)
+        # or from x0 and dx
+        else:
+            if xunit is None and isinstance(dx, Quantity):
+                xunit = dx.unit
+            elif xunit is None and isinstance(x0, Quantity):
+                xunit = x0.unit
+            elif xunit is None:
+                xunit = cls._default_xunit
+            if dx is not None:
+                new.dx = Quantity(dx, xunit)
+            if x0 is not None:
+                new.x0 = Quantity(x0, xunit)
         return new
 
     # -- series creation ------------------------
