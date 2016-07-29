@@ -71,10 +71,14 @@ class CommonTests(object):
         kwargs.setdefault('copy', False)
         return self.TEST_CLASS(self.data, *args, **kwargs)
 
+    def assertQuantityEqual(self, q1, q2, *args):
+        nptest.assert_array_equal(q1.value, q2.value)
+        self.assertEqual(q1.unit, q2.unit)
+
     def assertArraysEqual(self, ts1, ts2, *args):
-        nptest.assert_array_equal(ts1.value, ts2.value)
+        self.assertQuantityEqual(ts1, ts2)
         if not args:
-            args = ['units'] + self.TEST_CLASS._metadata_slots
+            args = self.TEST_CLASS._metadata_slots
         for attr in args:
             a = getattr(ts1, attr, None)
             b = getattr(ts2, attr, None)
