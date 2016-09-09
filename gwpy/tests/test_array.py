@@ -34,6 +34,7 @@ from astropy.time import Time
 
 from gwpy.types import (Array, Series, Array2D)
 from gwpy.detector import Channel
+from gwpy.segments import Segment
 from gwpy.time import LIGOTimeGPS
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -71,10 +72,14 @@ class CommonTests(object):
         kwargs.setdefault('copy', False)
         return self.TEST_CLASS(self.data, *args, **kwargs)
 
+    def assertQuantityEqual(self, q1, q2, *args):
+        nptest.assert_array_equal(q1.value, q2.value)
+        self.assertEqual(q1.unit, q2.unit)
+
     def assertArraysEqual(self, ts1, ts2, *args):
-        nptest.assert_array_equal(ts1.value, ts2.value)
+        self.assertQuantityEqual(ts1, ts2)
         if not args:
-            args = ['units'] + self.TEST_CLASS._metadata_slots
+            args = self.TEST_CLASS._metadata_slots
         for attr in args:
             a = getattr(ts1, attr, None)
             b = getattr(ts2, attr, None)
@@ -100,6 +105,10 @@ class CommonTests(object):
         # test default unit is dimensionless
         array = self.create()
         self.assertEqual(array.unit, units.dimensionless_unscaled)
+        # test deleter and recovery
+        del array.unit
+        del array.unit  # test twice to make sure Attribute Error isn't raised
+        self.assertIsNone(array.unit)
         # test unit gets passed properly
         array = self.create(unit='m')
         self.assertIs(array.unit, units.m)
@@ -108,10 +117,21 @@ class CommonTests(object):
             array = self.create(unit='blah')
         self.assertIsInstance(array.unit, units.UnrecognizedUnit)
         self.assertEqual(str(array.unit), 'blah')
+        # test setting unit doesn't work
+        def _set_unit():
+            array.unit = 'm'
+        self.assertRaises(AttributeError, _set_unit)
+        del array.unit
+        array.unit = 'm'
+        self.assertIs(array.unit, units.m)
 
     def test_name(self):
         # test default is no name
         array = self.create()
+        self.assertIsNone(array.name)
+        # test deleter and recovery
+        del array.name
+        del array.name
         self.assertIsNone(array.name)
         # test simple name
         array = self.create(name='TEST CASE')
@@ -120,6 +140,10 @@ class CommonTests(object):
     def test_epoch(self):
         # test default is no epoch
         array = self.create()
+        self.assertIsNone(array.epoch)
+        # test deleter and recovery
+        del array.epoch
+        del array.epoch
         self.assertIsNone(array.epoch)
         # test epoch gets parsed properly
         array = self.create(epoch=GPS_EPOCH)
@@ -137,6 +161,10 @@ class CommonTests(object):
         # test default channl is None
         array = self.create()
         self.assertIsNone(array.channel)
+        # test deleter and recovery
+        del array.channel
+        del array.channel
+        self.assertIsNone(array.channel)
         # test simple channel
         array = self.create(channel=CHANNEL_NAME)
         self.assertIsInstance(array.channel, Channel)
@@ -144,6 +172,9 @@ class CommonTests(object):
         # test existing channel doesn't get modified
         array = self.create(channel=CHANNEL)
         self.assertIs(array.channel, CHANNEL)
+        # test preserves None
+        array.channel = None
+        self.assertIsNone(array.channel)
 
     def test_math(self):
         """Test Array math operations
@@ -164,6 +195,25 @@ class CommonTests(object):
         array2 = array.copy()
         nptest.assert_array_equal(array.value, array2.value)
         self.assertEqual(array.unit, array2.unit)
+
+    def test_repr(self):
+        # just test that it runs
+        array = self.create()
+        repr(array)
+
+    def test_str(self):
+        # just test that it runs
+        array = self.create()
+        str(array)
+
+    def test_pickle(self):
+        """Check pickle-unpickle yields unchanged data
+        """
+        import cPickle
+        ts = self.create()
+        pickle = ts.dumps()
+        ts2 = cPickle.loads(pickle)
+        self.assertArraysEqual(ts, ts2)
 
     # -- test I/O -------------------------------
 
@@ -215,38 +265,125 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         self.assertEqual(series.x0, units.Quantity(0, series._default_xunit))
         self.assertEqual(series.dx, units.Quantity(1, series._default_xunit))
 
+    # -- test properties ------------------------
+
+    def test_x0(self):
+        # test simple
+        series = self.create(x0=5)
+        self.assertEqual(series.x0,
+                         units.Quantity(5, self.TEST_CLASS._default_xunit))
+        # test deleter
+        del series.x0
+        del series.x0
+        self.assertEqual(series.x0,
+                         units.Quantity(0, self.TEST_CLASS._default_xunit))
+        # test quantity
+        series.x0 = units.Quantity(5, 'm')
+        self.assertEqual(series.x0, units.Quantity(5, 'm'))
+
+    def test_dx(self):
+        # test simple
+        series = self.create(dx=5)
+        self.assertEqual(series.dx,
+                         units.Quantity(5, self.TEST_CLASS._default_xunit))
+        # test deleter
+        del series.dx
+        del series.dx
+        self.assertEqual(series.dx,
+                         units.Quantity(1, self.TEST_CLASS._default_xunit))
+        # test quantity
+        series.dx = units.Quantity(5, 'm')
+        self.assertEqual(series.dx, units.Quantity(5, 'm'))
+
+    def test_xindex(self):
+        x = numpy.linspace(0, 100, num=self.data.shape[0])
+        # test simple
+        series = self.create(xindex=x)
+        self.assertQuantityEqual(
+            series.xindex, units.Quantity(x, self.TEST_CLASS._default_xunit))
+        # test deleter
+        del series.xindex
+        del series.xindex
+        x1 = series.x0.value + series.shape[0] * series.dx.value
+        x_default = numpy.linspace(series.x0.value, x1, num=series.shape[0],
+                                   endpoint=False)
+        self.assertQuantityEqual(
+            series.xindex,
+            units.Quantity(x_default, self.TEST_CLASS._default_xunit))
+        # test setting of x0 and dx
+        series = self.create(xindex=units.Quantity(x, 'Farad'))
+        self.assertEqual(series.x0, units.Quantity(x[0], 'Farad'))
+        self.assertEqual(series.dx, units.Quantity(x[1] - x[0], 'Farad'))
+        self.assertEqual(series.xunit, units.Farad)
+        self.assertEqual(series.xspan, (x[0], x[-1] + x[1] - x[0]))
+        # test that setting xindex warns about ignoring dx or x0
+        with pytest.warns(UserWarning):
+            series = self.create(xindex=units.Quantity(x, 'Farad'), dx=1)
+        with pytest.warns(UserWarning):
+            series = self.create(xindex=units.Quantity(x, 'Farad'), x0=0)
+        # test non-regular xindex
+        x = numpy.logspace(0, 2, num=self.data.shape[0])
+        series = self.create(xindex=units.Quantity(x, 'Mpc'))
+        def _get_dx():
+            series.dx
+        self.assertRaises(AttributeError, _get_dx)
+        self.assertEqual(series.x0, units.Quantity(1, 'Mpc'))
+        self.assertEqual(series.xspan, (x[0], x[-1] + x[-1] - x[-2]))
+
+    def test_xunit(self, unit=None):
+        if unit is None:
+            unit = self.TEST_CLASS._default_xunit
+        series = self.create(unit='Hz', dx=4*unit)
+        self.assertEqual(series.xunit, unit)
+        self.assertEqual(series.x0, 0*unit)
+        self.assertEqual(series.dx, 4*unit)
+        # for series only, test arbitrary xunit
+        if self.TEST_CLASS is Series:
+            series = self.create(unit='Hz', dx=4, xunit=units.m)
+            self.assertEqual(series.x0, 0*units.m)
+            self.assertEqual(series.dx, 4*units.m)
+
+    def test_xspan(self):
+        # test normal
+        series = self.create(x0=1, dx=1)
+        self.assertEqual(series.xspan, (1, 1 + 1 * series.shape[0]))
+        self.assertIsInstance(series.xspan, Segment)
+        # test from irregular xindex
+        x = numpy.logspace(0, 2, num=self.data.shape[0])
+        series = self.create(xindex=x)
+        self.assertEqual(series.xspan, (x[0], x[-1] + x[-1] - x[-2]))
+
+    # -- test methods ---------------------------
+
     def test_getitem(self):
         a = self.create()
         self.assertEqual(a[0].value, a.value[0])
         self.assertIsInstance(a[0], units.Quantity)
         self.assertEqual(a[0].unit, a.unit)
 
-    def test_xunit(self, unit=None):
-        if unit is None:
-            unit = self.TEST_CLASS._default_xunit
-        series = self.create(unit='Hz', dx=4*unit)
-        self.assertEqual(series.x0, 0*unit)
-        self.assertEqual(series.dx, 4*unit)
-        # for series only, test arbitrary xunit
-        if self.TEST_CLASS == Series:
-            series = self.create(unit='Hz', dx=4*units.m)
-            self.assertEqual(series.x0, 0*units.m)
-            self.assertEqual(series.dx, 4*units.m)
-
-    def test_index(self):
+    def test_zip(self):
         series = self.create()
-        self.assertFalse(hasattr(series, '_xindex'))
+        z = series.zip()
         nptest.assert_array_equal(
-            series.xindex, numpy.arange(series.size) * series.dx + series.x0)
+            z, numpy.column_stack((series.xindex.value, series.value)))
 
-    def test_pickle(self):
-        """Check pickle-unpickle yields unchanged data
-        """
-        import cPickle
-        ts = self.create()
-        pickle = ts.dumps()
-        ts2 = cPickle.loads(pickle)
-        self.assertArraysEqual(ts, ts2)
+    def test_diff(self):
+        # test simple
+        series = self.create()
+        d = series.diff()
+        d2 = self.TEST_CLASS(numpy.diff(series.value),
+                             x0=series.x0 + series.dx)
+        self.assertArraysEqual(d, d2)
+        d = series.diff(n=2)
+        d2 = self.TEST_CLASS(numpy.diff(series.value, n=2),
+                             x0=series.x0 + series.dx * 2)
+        self.assertArraysEqual(d, d2)
+        # test irregular xindex
+        x = numpy.logspace(0, 2, num=self.data.shape[0])
+        series = self.create(xindex=x)
+        d = series.diff(n=4)
+        d2 = self.TEST_CLASS(numpy.diff(series.value, n=4), x0=x[4])
+        self.assertArraysEqual(d, d2)
 
     def test_crop(self):
         """Test cropping `Series` by GPS times
@@ -271,6 +408,9 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         self.assertRaises(ValueError, ts1.is_compatible, ts3)
         ts4 = self.create(unit='m')
         self.assertRaises(ValueError, ts1.is_compatible, ts4)
+        x = numpy.logspace(0, 2, num=self.data.shape[0])
+        ts5 = self.create(xindex=x)
+        self.assertRaises(ValueError, ts1.is_compatible, ts5)
 
     def test_is_contiguous(self):
         """Test the `Series.is_contiguous` method
@@ -315,14 +455,21 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         del ts2.xindex
         ts3 = ts1.append(ts2, inplace=False, resize=False)
         self.assertEqual(ts3.x0, ts1.x0 + ts1.dx * ts2.size)
-        # test discontiguous appends
+        # test discontiguous appends - gap='raise'
         ts3 = self.create(x0=ts1.xspan[1] + 1)
         ts4 = ts1.copy()
         self.assertRaises(ValueError, ts1.append, ts3)
+        # gap='ignore'
         ts4.append(ts3, gap='ignore')
         self.assertEqual(ts4.shape[0], ts1.shape[0] + ts3.shape[0])
         nptest.assert_array_equal(
             ts4.value, numpy.concatenate((ts1.value, ts3.value)))
+        # gap='pad'
+        ts4 = ts1.copy()
+        ts4.append(ts3, gap='pad', pad=0)
+        self.assertEqual(ts4.shape[0], ts1.shape[0] + 1 + ts3.shape[0])
+        nptest.assert_array_equal(
+            ts4.value, numpy.concatenate((ts1.value, [0], ts3.value)))
 
     def test_prepend(self):
         """Test the `Series.prepend` method
