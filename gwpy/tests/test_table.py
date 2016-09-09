@@ -31,7 +31,7 @@ from astropy import units
 
 from gwpy.time import LIGOTimeGPS
 from gwpy.table import (lsctables, GWRecArray)
-from gwpy.table.io import (omega, trigfind)
+from gwpy.table.io import omega
 from gwpy.table.utils import (get_table_column, get_row_value)
 from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
 
@@ -117,11 +117,6 @@ class SnglBurstTableTestCase(TableTestMixin, unittest.TestCase):
                                   table2.get_column('snr'))
         nptest.assert_array_equal(table.get_column('central_freq'),
                                   table2.get_column('central_freq'))
-
-    def test_trigfind(self):
-        # test error
-        self.assertRaises(ValueError, trigfind.find_trigger_urls,
-                          'X1:CHANNEL', 'doesnt-exist', 0, 1)
 
     def test_read_omega(self):
         self.assertRaises(TypeError, self.TABLE_CLASS.read,
