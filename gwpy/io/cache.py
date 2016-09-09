@@ -25,6 +25,7 @@ from multiprocessing import (cpu_count, Process, Queue as ProcessQueue)
 from six import string_types
 import tempfile
 import warnings
+from gzip import GzipFile
 
 from numpy import recarray
 from numpy.lib import recfunctions
@@ -33,8 +34,6 @@ from glue.lal import (Cache, CacheEntry)
 from glue.ligolw.table import Table
 
 from astropy.io.registry import _get_valid_format
-
-from .utils import GzipFile
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
