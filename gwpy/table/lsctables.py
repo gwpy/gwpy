@@ -32,6 +32,7 @@ from glue.ligolw.ilwd import get_ilwdchar_class
 
 from ..io import reader
 from ..time import to_gps
+from ..utils.deps import with_import
 from .rec import GWRecArray
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -223,7 +224,8 @@ def _plot_factory():
 
 
 def _fetch_factory(table):
-    def fetch(cls, channel, etg, start, end, verbose=False, **kwargs):
+    @with_import('trigfind')
+    def fetch(cls, channel, etg, start, end, **kwargs):
         """Find and read events into a `{0}`.
 
         Event XML files are searched for only on the LIGO Data Grid
@@ -238,14 +240,16 @@ def _fetch_factory(table):
         ----------
         channel : `str`
             the name of the data channel to search for
+
         etg : `str`
             the name of the event trigger generator (ETG)
+
         start : `float`, `~gwpy.time.LIGOTimeGPS`
             the GPS start time of the search
+
         end : `float`, `~gwpy.time.LIGOTimeGPS`
             the GPS end time of the search
-        verbose : `bool`, optional
-            print verbose output, default: `False`
+
         **kwargs
             other keyword arguments to pass to :meth:`{0}.read`
 
@@ -267,12 +271,11 @@ def _fetch_factory(table):
             for documentation of the available keyword arguments
         """
         from gwpy.segments import Segment
-        from .io.trigfind import find_trigger_urls
         # check times
         start = to_gps(start)
         end = to_gps(end)
         # find files
-        cache = find_trigger_urls(channel, etg, start, end, verbose=verbose)
+        cache = trigfind.find_trigger_files(channel, etg, start, end)
         # construct filter
         infilt = kwargs.pop('filt', None)
         segment = Segment(float(start), float(end))
