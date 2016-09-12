@@ -31,9 +31,8 @@ from glue.ligolw.utils.ligolw_add import ligolw_add
 from astropy.time import Time
 
 from ...io import registry
-from ...io.utils import FILE_LIKE
 from ...io.ligolw import (identify_ligolw, GWpyContentHandler)
-from ...io.cache import file_list
+from ...io.cache import (file_list, FILE_LIKE)
 from ...segments import (Segment, DataQualityFlag, DataQualityDict)
 from ...table import lsctables
 
