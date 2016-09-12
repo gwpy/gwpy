@@ -31,9 +31,8 @@ from glue.ligolw.utils.ligolw_add import ligolw_add
 from astropy.time import Time
 
 from ...io import registry
-from ...io.utils import GzipFile
 from ...io.ligolw import (identify_ligolw, GWpyContentHandler)
-from ...io.cache import file_list
+from ...io.cache import (file_list, FILE_LIKE)
 from ...segments import (Segment, DataQualityFlag, DataQualityDict)
 from ...table import lsctables
 
@@ -67,8 +66,8 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
 
     # generate Document and populate
     xmldoc = Document()
-    files = [fp.name if isinstance(fp, (file, GzipFile))
-             else fp for fp in file_list(f)]
+    files = [fp.name if isinstance(fp, FILE_LIKE) else fp
+             for fp in file_list(f)]
     ligolw_add(xmldoc, files, non_lsc_tables_ok=True,
                contenthandler=contenthandler)
 

@@ -19,9 +19,9 @@
 """Utilities for unified input/output
 """
 
-from six import string_types
+import gzip
 
-from astropy.utils.compat.gzip import GzipFile
+from six import string_types
 
 from glue.lal import CacheEntry
 
@@ -51,6 +51,6 @@ def gopen(name, *args, **kwargs):
         `gzip.open` for files with a `name` ending in `.gz`
     """
     if name.endswith('.gz'):
-        return GzipFile(name, *args, **kwargs)
+        return gzip.open(name, *args, **kwargs)
     else:
         return open(name, *args, **kwargs)

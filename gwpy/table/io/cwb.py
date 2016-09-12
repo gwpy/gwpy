@@ -29,7 +29,7 @@ from .ascii import return_reassign_ids
 from ..lsctables import SnglBurstTable
 from ...io.registry import (register_reader, register_identifier)
 from ...io.cache import (file_list, read_cache)
-from ...io.utils import (gopen, GzipFile)
+from ...io.utils import gopen
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
