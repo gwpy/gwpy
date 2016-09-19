@@ -25,7 +25,7 @@ from ...detector import Channel
 from ...io import (hdf5 as hdf5io, registry)
 from ...time import (Time, LIGOTimeGPS)
 from ...utils.deps import with_import
-from .. import (Array, Series, Array2D)
+from .. import (Array, Series, Array2D, Index)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -149,8 +149,7 @@ def array_to_hdf5(array, output, name=None, group=None, compression='gzip',
             if mdval is None:
                 continue
             # skip regular index arrays
-            if (isinstance(mdval, Quantity) and
-                    getattr(mdval, 'regular', False)):
+            if isinstance(mdval, Index) and mdval.regular:
                 continue
             # set value based on type
             if isinstance(mdval, Quantity):

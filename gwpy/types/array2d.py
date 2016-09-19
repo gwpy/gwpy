@@ -23,7 +23,8 @@ import numpy
 
 from astropy.units import (Unit, Quantity)
 
-from .series import (Series, is_regular)
+from .series import Series
+from .index import Index
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -288,8 +289,8 @@ class Array2D(Series):
             return self._yindex
         except AttributeError:
             # create regular index on-the-fly
-            self._yindex = self.y0 + (
-                numpy.arange(self.shape[1]) * self.dy)
+            self._yindex = Index(
+                self.y0 + (numpy.arange(self.shape[1]) * self.dy), copy=False)
             return self._yindex
 
     @yindex.setter
@@ -297,10 +298,13 @@ class Array2D(Series):
         if index is None:
             del self.yindex
             return
-        if not isinstance(index, Quantity):
-            index = Quantity(index, unit=self._default_yunit, copy=False)
+        if not isinstance(index, Index):
+            try:
+                unit = index.unit
+            except AttributeError:
+                unit = self._default_yunit
+            index = Index(index, unit=unit, copy=False)
         self.y0 = index[0]
-        index.regular = is_regular(index.value)
         if index.regular:
             self.dy = index[1] - index[0]
         else:
