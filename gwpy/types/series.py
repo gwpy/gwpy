@@ -27,6 +27,7 @@ import numpy
 from astropy.units import (Unit, Quantity, dimensionless_unscaled)
 
 from .array import Array
+from .index import Index
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -255,8 +256,8 @@ class Series(Array):
             return self._xindex
         except AttributeError:
             # create regular index on-the-fly
-            self._xindex = self.x0 + (
-                numpy.arange(self.shape[0]) * self.dx)
+            self._xindex = Index(
+                self.x0 + (numpy.arange(self.shape[0]) * self.dx), copy=False)
             return self._xindex
 
     @xindex.setter
@@ -264,10 +265,13 @@ class Series(Array):
         if index is None:
             del self.xindex
             return
-        if not isinstance(index, Quantity):
-            index = Quantity(index, unit=self._default_xunit, copy=False)
+        if not isinstance(index, Index):
+            try:
+                unit = index.unit
+            except AttributeError:
+                unit = self._default_xunit
+            index = Index(index, unit=unit, copy=False)
         self.x0 = index[0]
-        index.regular = is_regular(index.value)
         if index.regular:
             self.dx = index[1] - index[0]
         else:
@@ -796,15 +800,3 @@ class Series(Array):
         # finally move the starting index based on the amount of left-padding
         new.x0 -= self.dx * pad_width[0]
         return new
-
-
-# -- utilities ----------------------------------------------------------------
-
-def is_regular(array):
-    """Determine whether an array contains linearly increasing samples
-
-    This also works for linear decrease
-    """
-    if array.size <= 1:
-        return False
-    return numpy.isclose(numpy.diff(array, n=2), 0).all()
