@@ -179,7 +179,7 @@ class Array(Quantity):
                     continue
                 else:
                     if isinstance(val, Quantity):  # copy Quantities
-                        setattr(self, _attr, Quantity(val))
+                        setattr(self, _attr, type(val)(val))
                     else:
                         setattr(self, _attr, val)
 
