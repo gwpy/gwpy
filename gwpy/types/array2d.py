@@ -400,10 +400,6 @@ class Array2D(Series):
     #def copy(self, order='C'):
     #    new = super(Array2D, self).copy(order=order)
     #    try:
-    #        new._xindex = self._xindex.copy()
-    #    except AttributeError:
-    #        pass
-    #    try:
     #        new._yindex = self._yindex.copy()
     #    except AttributeError:
     #        pass
