@@ -27,8 +27,6 @@ from math import ceil
 
 from numpy import zeros
 
-from astropy import units
-
 from .core import (Spectrogram, SpectrogramList)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -119,8 +117,6 @@ def from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
     # format FFT parameters
     if fftlength is None:
         fftlength = stride / 2.
-
-    sampling = min(ts1.sample_rate.value, ts2.sample_rate.value)
 
     # get size of spectrogram
     nsteps = int(ts1.size // (stride * ts1.sample_rate.value))

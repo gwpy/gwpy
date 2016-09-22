@@ -34,8 +34,6 @@ from astropy import units
 from ..io import (reader, writer)
 from ..segments import Segment
 from ..signal import (notch, sosfiltfilt)
-from ..utils import with_import
-from ..utils.compat import OrderedDict
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
 

@@ -27,6 +27,7 @@ critical to being able to view data with this class, used when copying and
 transforming instances of the class.
 """
 
+import warnings
 
 import numpy
 

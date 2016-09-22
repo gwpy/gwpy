@@ -19,8 +19,6 @@
 """Extension of the basic matplotlib Figure for GWpy
 """
 
-import warnings
-
 import numpy
 
 from matplotlib import (backends, figure, pyplot, colors as mcolors,

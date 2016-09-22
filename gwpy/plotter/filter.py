@@ -19,7 +19,6 @@
 """Definition of a BodePlot
 """
 
-import warnings
 from math import pi
 
 import numpy

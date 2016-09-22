@@ -27,9 +27,8 @@ if sys.version_info[0] < 3:
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-from ..types import (Quantity, Array, Array2D)
+from ..types import (Quantity, Array2D)
 from .core import FrequencySeries
-from ..detector import Channel
 
 __all__ = ['SpectralVariance']
 

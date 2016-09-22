@@ -19,12 +19,7 @@
 """An extension of the Plot class for handling Spectrograms
 """
 
-import re
-import numpy
-import math
 
-from ..time import Time
-from ..segments import SegmentList
 from .timeseries import TimeSeriesPlot
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

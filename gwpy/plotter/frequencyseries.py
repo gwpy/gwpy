@@ -20,16 +20,12 @@
 `~gwpy.frequencyseries`
 """
 
-import copy
-import warnings
-
 import numpy
 
 from matplotlib.projections import register_projection
-from matplotlib import (cm, colors)
+from matplotlib import colors
 
-from . import (tex, rcParams)
-from .utils import *
+from . import tex
 from .core import Plot
 from .axes import Axes
 from .decorators import auto_refresh

@@ -23,8 +23,6 @@ import gzip
 
 from six import string_types
 
-from glue.lal import CacheEntry
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 

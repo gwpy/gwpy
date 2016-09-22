@@ -376,7 +376,6 @@ def create_frame(tsdict, start=None, end=None):
     """
     if not start:
         starts = set([LIGOTimeGPS(tsdict[c].x0.value) for c in tsdict])
-        durations = set([tsdict[c].duration.value for c in tsdict])
         if len(starts) != 1:
             raise RuntimeError("Cannot write multiple TimeSeries to a single "
                                "frame with different start times, "

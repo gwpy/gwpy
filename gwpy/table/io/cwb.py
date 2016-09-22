@@ -23,8 +23,6 @@ import os.path
 import re
 import warnings
 
-from glue.lal import CacheEntry
-
 from .ascii import return_reassign_ids
 from ..lsctables import SnglBurstTable
 from ...io.registry import (register_reader, register_identifier)

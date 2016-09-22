@@ -1191,7 +1191,6 @@ class DataQualityDict(OrderedDict):
         from gwpy.table.lsctables import VetoDefTable
         if urlparse(fp).scheme in ['http', 'https']:
             response = request.urlopen(fp)
-            local = tempfile.NamedTemporaryFile()
             with tempfile.NamedTemporaryFile() as temp:
                 temp.write(response.read())
                 temp.flush()
