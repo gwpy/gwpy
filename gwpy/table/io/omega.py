@@ -19,18 +19,14 @@
 """Read events from an Omega-format ASCII file.
 """
 
-import sys
 from math import sqrt
 
 from six import string_types
-
-from numpy import loadtxt
 
 from astropy.io import registry
 
 from .ascii import table_from_ascii_factory
 from ..lsctables import (SnglBurstTable, SnglBurst)
-from ...io.cache import file_list
 from ...time import LIGOTimeGPS
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

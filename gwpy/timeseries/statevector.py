@@ -370,7 +370,7 @@ class StateVector(TimeSeriesBase):
         """
         try:
             return self._bits
-        except AttributeError as e:
+        except AttributeError:
             if self.dtype.name.startswith(('uint', 'int')):
                 nbits = self.itemsize * 8
                 self.bits = Bits(['Bit %d' % b for b in range(nbits)],

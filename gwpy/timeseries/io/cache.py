@@ -28,7 +28,6 @@ from multiprocessing import (Process, Queue as ProcessQueue)
 
 from glue.lal import Cache
 
-from ...io import registry
 from ...io.cache import (cache_segments, open_cache)
 from .. import (TimeSeries, TimeSeriesList, TimeSeriesDict,
                 StateVector, StateVectorList, StateVectorDict)

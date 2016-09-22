@@ -20,11 +20,9 @@
 """
 
 import re
-import datetime
 import numpy
-import copy
 
-from matplotlib import (pyplot, cm, colors)
+from matplotlib import (pyplot, colors)
 from matplotlib.projections import register_projection
 from matplotlib.artist import allow_rasterization
 from matplotlib.cbook import iterable
@@ -36,7 +34,7 @@ except ImportError:
 
 
 from ..time import LIGOTimeGPS
-from . import (gps, tex)
+from . import tex
 from .core import Plot
 from ..segments import SegmentList
 from ..time import Time

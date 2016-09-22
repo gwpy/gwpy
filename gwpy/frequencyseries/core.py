@@ -27,7 +27,7 @@ from scipy import signal
 
 from astropy import units
 
-from ..types import (Array, Series)
+from ..types import Series
 from ..detector import Channel
 from ..utils import with_import
 

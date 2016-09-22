@@ -22,7 +22,6 @@ All specific unified input/output for class objecst should be placed in
 an 'io' subdirectory of the containing directory for that class.
 """
 
-from glue.lal import CacheEntry
 from glue.ligolw.ligolw import (Document, LIGOLWContentHandler,
                                 PartialLIGOLWContentHandler)
 from glue.ligolw.table import CompareTableNames as compare_table_names

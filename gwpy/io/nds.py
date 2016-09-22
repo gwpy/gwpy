@@ -29,7 +29,7 @@ import warnings
 import nds2
 
 from ..time import to_gps
-from .kerberos import *
+from .kerberos import kinit
 from ..utils.compat import OrderedDict
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

@@ -22,6 +22,7 @@
 import inspect
 import warnings
 
+import numpy
 from numpy.lib import recfunctions
 
 import glue.segments
@@ -75,7 +76,6 @@ def to_recarray(self, columns=None, on_attributeerror='raise',
     dtypes = [(str(c), NUMPY_TYPE[self.validcolumns[c]])
               for c in columns]
     # create array
-    m = len(self)
     out = GWRecArray((len(self),), dtype=dtypes)
     # and fill it
     for column in columns:

@@ -19,7 +19,6 @@
 """Helper functions for plotting data with matplotlib and LAL
 """
 
-import numpy
 import itertools
 import re
 
