@@ -129,7 +129,7 @@ class TestCaseWithQueryMixin(object):
                 SystemExit) as e:
             self.skipTest(str(e))
         except URLError as e:
-            if e.code == 401:
+            if e.code in [401, 500]:
                 self.skipTest(str(e))
             else:
                 raise

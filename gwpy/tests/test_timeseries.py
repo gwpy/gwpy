@@ -182,22 +182,23 @@ class TimeSeriesTestMixin(object):
             f.delete = True
             b = self.TEST_CLASS.read(f.name, self.channel)
             self.assertArraysEqual(a, b)
-            b = self.TEST_CLASS.read(f, self.channel)
+            b = self.TEST_CLASS.read(open(f.name), self.channel)
             self.assertArraysEqual(a, b)
 
     def frame_write(self, format=None):
         try:
-            ts = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel)
+            ts = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel,
+                                      format=format)
+        except ImportError as e:
+            self.skipTest(str(e))
         except Exception as e:
             if 'No reader' in str(e):
                 self.skipTest(str(e))
             else:
                 raise
-        except ImportError as e:
-            self.skipTest(str(e))
         else:
             with tempfile.NamedTemporaryFile(suffix='.gwf') as f:
-                ts.write(f.name)
+                ts.write(f.name, format=format)
                 ts2 = self.TEST_CLASS.read(f.name, self.channel)
             self.assertArraysEqual(ts, ts2)
             for ctype in ['sim', 'proc', 'adc']:
@@ -206,7 +207,11 @@ class TimeSeriesTestMixin(object):
                     ts.write(f.name, format=format)
 
     def test_frame_write(self):
-        self.frame_write(format='gwf')
+        try:
+            self.frame_write(format='gwf')
+        except Exception as e:
+            if 'No writer' in str(e):
+                self.skipTest(str(e))
 
     def test_frame_write_framecpp(self):
         self.frame_write(format='framecpp')
@@ -682,13 +687,13 @@ class TimeSeriesDictTestCase(unittest.TestCase):
             try:
                 self._test_data = self.TEST_CLASS.read(
                     TEST_GWF_FILE, self.channels)
+            except ImportError as e:
+                self.skipTest(str(e))
             except Exception as e:
                 if 'No reader' in str(e):
                     self.skipTest(str(e))
                 else:
                     raise
-            except ImportError as e:
-                self.skipTest(str(e))
             else:
                 return self.read()
 
@@ -707,16 +712,20 @@ class TimeSeriesDictTestCase(unittest.TestCase):
     def test_frame_write(self):
         try:
             tsd = self.test_frame_read()
+        except ImportError as e:
+            self.skipTest(str(e))
         except Exception as e:
             if 'No reader' in str(e):
                 self.skipTest(str(e))
             else:
                 raise
-        except ImportError as e:
-            self.skipTest(str(e))
         else:
             with tempfile.NamedTemporaryFile(suffix='.gwf') as f:
-                tsd.write(f.name)
+                try:
+                    tsd.write(f.name)
+                except Exception as e:
+                    if 'No writer' in str(e):
+                        self.skipTest(str(e))
                 tsd2 = self.TEST_CLASS.read(f.name, tsd.keys())
             self.assertDictEqual(tsd, tsd2)
 
