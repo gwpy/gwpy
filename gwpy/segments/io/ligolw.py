@@ -22,7 +22,6 @@
 import datetime
 from six import string_types
 
-from glue.lal import LIGOTimeGPS
 from glue.ligolw.ligolw import (Document, LIGO_LW)
 from glue.ligolw.utils import (write_filename, write_fileobj)
 from glue.ligolw.utils.ligolw_add import ligolw_add
@@ -35,6 +34,7 @@ from ...io.ligolw import (identify_ligolw, GWpyContentHandler)
 from ...io.cache import (file_list, FILE_LIKE)
 from ...segments import (Segment, DataQualityFlag, DataQualityDict)
 from ...table import lsctables
+from ...time import LIGOTimeGPS
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
