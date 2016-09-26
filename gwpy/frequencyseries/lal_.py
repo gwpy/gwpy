@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Spectrum generation methods using LAL.
+"""FrequencySeries generation methods using LAL.
 """
 
 import re

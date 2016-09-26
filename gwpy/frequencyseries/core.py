@@ -103,7 +103,7 @@ class FrequencySeries(Series):
         if frequencies is not None:
             kwargs['xindex'] = frequencies
 
-        # generate Spectrum
+        # generate FrequencySeries
         return super(FrequencySeries, cls).__new__(
             cls, data, unit=unit, name=name, channel=channel,
             epoch=epoch, **kwargs)
@@ -145,7 +145,7 @@ class FrequencySeries(Series):
 
     def ifft(self):
         """Compute the one-dimensional discrete inverse Fourier
-        transform of this `Spectrum`.
+        transform of this `FrequencySeries`.
 
         Returns
         -------

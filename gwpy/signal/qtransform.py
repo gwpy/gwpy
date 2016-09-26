@@ -212,7 +212,7 @@ class QPlane(QBase):
 
         Parameters
         ----------
-        fseries : `~gwpy.spectrum.Spectrum`
+        fseries : `~gwpy.frequencyseries.FrequencySeries`
             the complex FFT of a time-series data set
         normalized : `bool`, optional
             normalize the energy of the output, if `False` the output
@@ -315,7 +315,7 @@ class QTile(QBase):
 
         Parameters
         ----------
-        fseries : `~gwpy.spectrum.Spectrum`
+        fseries : `~gwpy.frequencyseries.FrequencySeries`
             the complex FFT of a time-series data set
         normalized : `bool`, optional
             normalize the energy of the output, if `False` the output
