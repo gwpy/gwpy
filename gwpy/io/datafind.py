@@ -139,14 +139,13 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
             return ft
         elif inframe:
             found.append(ft)
-    if exclude_tape:
-        msg = "Cannot locate %r in any known frametype that isn't on tape"
-    else:
-        msg = "Cannot locate %r in any known frametype"
+    msg = "Cannot locate %r in any known frametype" % name
     if gpstime:
         msg += " at GPS=%d" % gpstime
+    if exclude_tape:
+        msg += " [those on tape have not been checked]"
     if len(found) == 0:
-        raise ValueError(msg % name)
+        raise ValueError(msg)
     else:
         return found
 
