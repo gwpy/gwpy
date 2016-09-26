@@ -348,6 +348,9 @@ class TimeSeriesBase(Series):
             numeric data type for returned data, e.g. `numpy.float`, or
             `dict` of (`channel`, `dtype`) pairs
 
+        allow_tape : `bool`, optional, default: `True`
+            allow reading from frame files on (slow) magnetic tape
+
         verbose : `bool`, optional
             print verbose output about NDS progress.
 
@@ -391,10 +394,17 @@ class TimeSeriesBase(Series):
             number of parallel processes to use, serial process by
             default.
 
+        allow_tape : `bool`, optional, default: `False`
+            allow the use of frames that are held on tape, default is `False`
+            to attempt to allow the `TimeSeries.fetch` method to
+            intelligently select a server that doesn't use tapes for
+            data storage (doesn't always work)
+
         verbose : `bool`, optional
             print verbose output about NDS progress.
 
-        **kwargs            other keyword arguments to pass to either
+        **kwargs
+            other keyword arguments to pass to either
             :meth:`.find` (for direct GWF file access) or
             :meth:`.fetch` for remote NDS2 access
 
@@ -1009,11 +1019,11 @@ class TimeSeriesBaseDict(OrderedDict):
             number of parallel processes to use, serial process by
             default.
 
+        allow_tape : `bool`, optional, default: `True`
+            allow reading from frame files on (slow) magnetic tape
+
         verbose : `bool`, optional
             print verbose output about NDS progress.
-
-        allow_tape : `bool`, optional, default: `True`
-            allow reading from frames on tape
 
         **readargs
             any other keyword arguments to be passed to `.read()`
@@ -1109,14 +1119,14 @@ class TimeSeriesBaseDict(OrderedDict):
             number of parallel processes to use, serial process by
             default.
 
-        verbose : `bool`, optional
-            print verbose output about NDS progress.
-
         allow_tape : `bool`, optional, default: `False`
             allow the use of frames that are held on tape, default is `False`
             to attempt to allow the `TimeSeries.fetch` method to
             intelligently select a server that doesn't use tapes for
             data storage (doesn't always work)
+
+        verbose : `bool`, optional
+            print verbose output about NDS progress.
 
         **kwargs
             other keyword arguments to pass to either
