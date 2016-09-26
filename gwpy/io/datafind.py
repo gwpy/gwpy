@@ -146,7 +146,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     if gpstime:
         msg += " at GPS=%d" % gpstime
     if exclude_tape:
-        msg += " [those on tape have not been checked]"
+        msg += " [those files on tape have not been checked]"
     if len(found) == 0:
         raise ValueError(msg)
     else:
