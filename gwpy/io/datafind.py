@@ -169,7 +169,11 @@ def num_channels(framefile):
     -----
     This method requires LALFrame
     """
-    frfile = lalframe.FrameUFrFileOpen(framefile, "r")
+    try:
+        frfile = lalframe.FrameUFrFileOpen(framefile, "r")
+    except RuntimeError as e:
+        e.args = ('Failed to read %r: %s' % (framefile, str(e)),)
+        raise
     frtoc = lalframe.FrameUFrTOCRead(frfile)
     return sum(
         getattr(lalframe, 'FrameUFrTOCQuery%sN' % type_.title())(frtoc) for
