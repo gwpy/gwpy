@@ -91,6 +91,9 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     from ..detector import Channel
     channel = Channel(channel)
     name = channel.name
+    if not channel.ifo:
+        raise ValueError("Cannot parse interferometer prefix from channel "
+                         "name %r, cannot proceed with find()" % name)
     if gpstime is not None:
         gpstime = to_gps(gpstime).seconds
     connection = connect(host, port)
