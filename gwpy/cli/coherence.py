@@ -149,7 +149,7 @@ class Coherence(CliProduct):
                                 if not cohs:
                                     self.plot = coh.plot()
                                 else:
-                                    self.plot.add_spectrum(coh)
+                                    self.plot.add_frequencyseries(coh)
 
                                 cohs.append(coh)
 
