@@ -61,7 +61,7 @@ def connect(host=None, port=None):
 
 
 def find_frametype(channel, gpstime=None, frametype_match=None,
-                   host=None, port=None, return_all=False, exclude_tape=False):
+                   host=None, port=None, return_all=False, allow_tape=False):
     """Find the frametype(s) that hold data for a given channel
 
     Parameters
@@ -77,7 +77,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
         port on datafind host to use
     return_all : `bool`, optional, default: `False`
         return all found types, default is to return to 'best' match
-    exclude_tape : `bool`, optional, default: `False`
+    allow_tape : `bool`, optional, default: `False`
         do not test types whose frame files are stored on tape (not on
         spinning disk)
 
@@ -113,7 +113,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
             continue
         else:
             if os.access(frame.path, os.R_OK) and (
-                    not exclude_tape or not on_tape(frame)):
+                    allow_tape or not on_tape(frame)):
                 frames.append((ft, frame.path))
     # sort frames by allocated block size and regular size
     # (to put frames on tape at the bottom of the list)
@@ -145,8 +145,9 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     msg = "Cannot locate %r in any known frametype" % name
     if gpstime:
         msg += " at GPS=%d" % gpstime
-    if exclude_tape:
-        msg += " [those files on tape have not been checked]"
+    if not allow_tape:
+        msg += (" [those files on tape have not been checked, use "
+                "allow_tape=True to perform a complete search]")
     if len(found) == 0:
         raise ValueError(msg)
     else:
@@ -255,7 +256,7 @@ def find_best_frametype(channel, start, end, urltype='file',
     start = to_gps(start).seconds
     end = to_gps(end).seconds
     frametype = find_frametype(channel, gpstime=start, host=host, port=port,
-                               exclude_tape=not allow_tape)
+                               allow_tape=allow_tape)
     connection = connect(host=host, port=port)
     try:
         cache = connection.find_frame_urls(channel[0], frametype,
@@ -265,7 +266,7 @@ def find_best_frametype(channel, start, end, urltype='file',
             raise RuntimeError()
     except RuntimeError:
         alltypes = find_frametype(channel, gpstime=start, host=host, port=port,
-                                  return_all=True, exclude_tape=not allow_tape)
+                                  return_all=True, allow_tape=allow_tape)
         cache = [(ft, connection.find_frame_urls(
             channel[0], ft, start, end, urltype=urltype,
             on_gaps='ignore')) for ft in alltypes]
