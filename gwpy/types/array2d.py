@@ -150,22 +150,27 @@ class Array2D(Series):
         else:
             new = new.view(type(self))
             #new.__dict__ = self.copy_metadata()
-        # update metadata
-        if isinstance(x, slice):
-            if x.start:
-                new.x0 = new.x0 + x.start * new.dx
-            if x.step:
-                new.dx = new.dx + x.step
-        if len(new.shape) == 1 and isinstance(y, slice):
-            if y.start:
-                new.x0 = new.x0 + y.start * new.dx
-            if y.step:
-                new.dx = new.dx * y.step
-        elif isinstance(y, slice):
-            if y.start:
-                new.y0 = new.y0 + y.start * new.dy
-            if y.step:
-                new.dy = new.dy * y.step
+        # update metadata (Series.__getitem__ has already done x slice)
+        if len(new.shape) == 1 and isinstance(y, slice):  # FrequencySeries
+            try:
+                self._xindex
+            except AttributeError:
+                if y.start:
+                    new.x0 = self.x0 + y.start * self.dx
+                if y.step:
+                    new.dx = self.dx * y.step
+            else:
+                new.xindex = self.xindex[y]
+        elif isinstance(y, slice):  # slice Array2D y-axis
+            try:
+                self._yindex
+            except AttributeError:
+                if y.start:
+                    new.y0 = new.y0 + y.start * new.dy
+                if y.step:
+                    new.dy = new.dy * y.step
+            else:
+                new.yindex = self.yindex[y]
         return new
 
     def __array_finalize__(self, obj):
