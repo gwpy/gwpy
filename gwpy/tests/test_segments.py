@@ -22,6 +22,7 @@
 import os.path
 import tempfile
 import StringIO
+from ssl import SSLError
 
 from six import PY3
 from six.moves.urllib.request import urlopen
@@ -126,7 +127,7 @@ class TestCaseWithQueryMixin(object):
         try:
             return cm(*args, **kwargs)
         except (ImportError, UnboundLocalError, LDBDClientException,
-                SystemExit) as e:
+                SystemExit, SSLError) as e:
             self.skipTest(str(e))
         except URLError as e:
             if e.code in [401, 500]:
