@@ -76,21 +76,31 @@ def get_table_column(table, column, dtype=numpy.dtype(float)):
         an array containing the data from the requested column
     """
     column = str(column).lower()
+    # if it has a special get_ method for this column, use it
     if hasattr(table, 'get_%s' % column):
         return numpy.asarray(getattr(table, 'get_%s' % column)()).astype(dtype)
-    elif column == 'time':
+    # otherwise if asked for 'time' and is a recarray
+    if column == 'time' and isinstance(table, numpy.recarray):
+        try:
+            return get_rec_time(table)
+        except ValueError:
+            pass
+    # otherwise if asked for 'time' and is a LIGO_LW table
+    if column == 'time' and type(table) in EVENT_TABLES:
         if re.match('(sngl_inspiral|multi_inspiral)', table.tableName, re.I):
             return numpy.asarray(table.get_end()).astype(dtype)
-        elif re.match('(sngl_burst|multi_burst)', table.tableName, re.I):
+        if re.match('(sngl_burst|multi_burst)', table.tableName, re.I):
             return numpy.asarray(table.get_peak()).astype(dtype)
-        elif re.match('(sngl_ring|multi_ring)', table.tableName, re.I):
+        if re.match('(sngl_ring|multi_ring)', table.tableName, re.I):
             return numpy.asarray(table.get_start()).astype(dtype)
-        elif re.match('sim_burst', table.tableName, re.I):
+        if re.match('sim_burst', table.tableName, re.I):
             return numpy.asarray(get_table_column(table, 'time_geocent_gps') +
                                  get_table_column(table, 'time_geocent_gps_ns')
                                  * 1e-9)
+    # try and use get_column
     if hasattr(table, 'get_column'):
         return numpy.asarray(table.get_column(column)).astype(dtype)
+    # otherwise use the LIGO_LW DOM API column getter
     else:
         return numpy.asarray(table.getColumnByName(column)).astype(dtype)
 
@@ -109,8 +119,14 @@ def get_row_value(row, attr):
     --------
     get_table_column : for details on the column-name logic
     """
+    # shortcut from recarray
+    if isinstance(row, numpy.void) and attr == 'time':
+        return get_rec_time(row)
+    if isinstance(row, numpy.void):
+        return row[attr]
+    # presume ligolw row instance
     attr = str(attr).lower()
-    cname = row.__class__.__name__
+    cname = type(row).__name__
     if hasattr(row, 'get_%s' % attr):
         return getattr(row, 'get_%s' % attr)()
     elif attr == 'time':
@@ -122,3 +138,18 @@ def get_row_value(row, attr):
             return row.get_start()
     else:
         return getattr(row, attr)
+
+
+def get_rec_time(table):
+    """Get the 'time' from a `numpy.recarray` or `numpy.record`
+    """
+    # if 'time' not present, try and get LIGO_LW-style INT+NS value
+    if 'time' not in table.dtype.fields:
+        if 'end_time' and 'end_time_ns' in table.dtype.fields:
+            return table['end_time'] + table['end_time_ns'] * 1e-9
+        if 'peak_time' and 'peak_time_ns' in table.dtype.fields:
+            return table['peak_time'] + table['peak_time_ns'] * 1e-9
+        if 'start_time' and 'start_time_ns' in table.dtype.fields:
+            return table['start_time'] + table['start_time_ns'] * 1e-9
+    # if that didn't work, just return time
+    return table['time']

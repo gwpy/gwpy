@@ -19,8 +19,6 @@
 """Extension of the basic matplotlib Figure for GWpy
 """
 
-import warnings
-
 import numpy
 
 from matplotlib import (backends, figure, pyplot, colors as mcolors,
@@ -655,13 +653,6 @@ class Plot(figure.Figure):
                               **kwargs)
 
     @auto_refresh
-    def add_spectrum(self, *args, **kwargs):
-        warnings.warn("This method was renamed add_frequencyseries()",
-                      DeprecationWarning)
-        return self.add_frequencyseries(*args, **kwargs)
-    add_spectrum.__doc__ = add_frequencyseries.__doc__
-
-    @auto_refresh
     def add_spectrogram(self, spectrogram, projection='timeseries',
                         ax=None, newax=False, sharex=None, sharey=None,
                         **kwargs):
@@ -694,11 +685,11 @@ class Plot(figure.Figure):
     @auto_refresh
     def add_array(self, array, projection, ax=None, newax=False,
                   sharex=None, sharey=None, **kwargs):
-        """Add a :class:`~gwpy.data.array.Array` to this plot
+        """Add a :class:`~gwpy.types.Array` to this plot
 
         Parameters
         ----------
-        array : :class:`~gwpy.data.array.Array`
+        array : :class:`~gwpy.types.Array`
             the `Array` to display
         projection : `str`
         ax : :class:`~gwpy.plotter.Axes`

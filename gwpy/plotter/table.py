@@ -34,7 +34,7 @@ from math import floor
 from six import string_types
 
 import numpy
-from matplotlib import (cm, collections, pyplot)
+from matplotlib import (collections, pyplot)
 from matplotlib.projections import register_projection
 
 from glue.ligolw.table import Table
@@ -389,7 +389,6 @@ class EventTablePlot(TimeSeriesPlot, FrequencySeriesPlot, Plot):
         args = list(args)
         tables = []
         columns = {}
-        tiles = False
         while len(args):
             arg = args[0]
             if isinstance(arg, string_types):
@@ -401,8 +400,6 @@ class EventTablePlot(TimeSeriesPlot, FrequencySeriesPlot, Plot):
                              "TablePlot(t1, t2, 'time', 'snr')")
         if len(args) in [3, 5]:
             kwargs.setdefault('color', args.pop(-1))
-        elif len(args) == 4:
-            tiles = True
         elif len(args) > 5:
             raise ValueError("No more than three column names should be given")
         if len(tables):

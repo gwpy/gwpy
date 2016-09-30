@@ -551,7 +551,7 @@ class Channel(object):
 
     def find_frametype(self, gpstime=None, frametype_match=None,
                        host=None, port=None, return_all=False,
-                       exclude_tape=False):
+                       allow_tape=True):
         """Find the containing frametype(s) for this `Channel`
 
         Parameters
@@ -568,8 +568,8 @@ class Channel(object):
         return_all: `bool`, default: `False`
             return all matched frame types, otherwise only the first match is
             returned
-        exclude_tape : `bool`, default: `False`
-            do not search frame files that appear to be on magnetic tape
+        allow_tape : `bool`, default: `True`
+            include frame files on (slow) magnetic tape in the search
 
         Returns
         -------
@@ -580,7 +580,7 @@ class Channel(object):
         return datafind.find_frametype(
             self, gpstime=gpstime, frametype_match=frametype_match,
             host=host, port=port, return_all=return_all,
-            exclude_tape=exclude_tape)
+            allow_tape=allow_tape)
 
     def copy(self):
         return type(self)(self.name, unit=self.unit,

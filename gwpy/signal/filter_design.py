@@ -28,7 +28,7 @@ from astropy.units import Quantity
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def create_notch(frequency, sample_rate, type='iir', **kwargs):
+def notch(frequency, sample_rate, type='iir', **kwargs):
     """Design a ZPK notch filter for the given frequency and sampling rate
 
     Parameters

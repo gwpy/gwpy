@@ -21,8 +21,6 @@
 
 import numpy
 
-from astropy import units
-
 from .core import FrequencySeries
 from .registry import register_method
 from ..utils import import_method_dependency

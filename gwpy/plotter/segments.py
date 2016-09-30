@@ -20,9 +20,6 @@
 """
 
 import operator
-import re
-
-import numpy
 
 from matplotlib.artist import allow_rasterization
 from matplotlib.ticker import (Formatter, MultipleLocator, NullLocator)
@@ -36,7 +33,7 @@ except ImportError:
 
 import glue.segments
 
-from ..segments import *
+from ..segments import (Segment, SegmentList, DataQualityFlag, DataQualityDict)
 from .timeseries import (TimeSeriesPlot, TimeSeriesAxes)
 from .decorators import auto_refresh
 from .utils import rUNDERSCORE
@@ -209,7 +206,7 @@ class SegmentAxes(TimeSeriesAxes):
         if y is None:
             y = self.get_next_y()
         # get flag name
-        name = kwargs.pop('label', flag.texname)
+        name = kwargs.pop('label', flag.name)
 
         # get epoch
         try:

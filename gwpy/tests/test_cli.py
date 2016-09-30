@@ -83,8 +83,8 @@ class CliTestMixin(object):
             product.timeseries = []
             product.time_groups = []
             product.start_list = []
-            for s in args.start:
-                product.start_list.append(int(s))
+            for s in map(int, args.start):
+                product.start_list.append(s)
                 product.time_groups.append([])
                 for c in args.chan:
                     product.timeseries.append(

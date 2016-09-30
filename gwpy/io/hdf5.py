@@ -19,8 +19,6 @@
 """Write GWpy objects to HDF5 files
 """
 
-from six import string_types
-
 try:
     import h5py
     HAVE_H5PY = True

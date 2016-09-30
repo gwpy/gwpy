@@ -21,13 +21,13 @@
 
 from six import string_types
 
-from glue.lal import (CacheEntry, Cache, LIGOTimeGPS)
 from glue import segmentsUtils
 
 from .. import (Segment, SegmentList, DataQualityFlag)
 from ...io import registry
 from ...io.utils import identify_factory
 from ...io.cache import file_list
+from ...time import LIGOTimeGPS
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2013-2016)
 #
 # This file is part of GWpy.
 #
@@ -27,14 +27,29 @@ import numpy
 from astropy.units import (Unit, Quantity, dimensionless_unscaled)
 
 from .array import Array
-from ..utils.docstring import interpolate_docstring
+from .index import Index
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-interpolate_docstring.update(
-    ArrayXaxis=(
-        """x0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
+class Series(Array):
+    """A one-dimensional data series
+
+    A `Series` is defined as an array of data indexed upon an axis, meaning
+    each sample maps to a position upon the axis. By convention the X axis
+    is used to define the index, with the `~Series.x0`, `~Series.dx`, and
+    `~Series.xindex` attributes allowing the positions of the data to be
+    well defined.
+
+    Parameters
+    ----------
+    value : array-like
+        input data array
+
+    unit : `~astropy.units.Unit`, optional
+        physical unit of these data
+
+    x0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
         the starting value for the x-axis of this array
 
     dx : `float`, `~astropy.units.Quantity, optional, default: `1`
@@ -43,101 +58,132 @@ interpolate_docstring.update(
     xindex : `array-like`
         the complete array of x-axis values for this array. This argument
         takes precedence over `x0` and `dx` so should be
-        given in place of these if relevant, not alongside"""),
-)
+        given in place of these if relevant, not alongside
 
+    xunit : `~astropy.units.Unit`, optional
+        the unit of the x-axis index. If not given explicitly, it will be
+        taken from any of `dx`, `x0`, or `xindex`, or set to a boring default
 
-@interpolate_docstring
-class Series(Array):
-    """A one-dimensional data series
+    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS epoch associated with these data,
+        any input parsable by `~gwpy.time.to_gps` is fine
 
-    Parameters
-    ----------
-    %(Array1)s
+    name : `str`, optional
+        descriptive title for this array
 
-    %(ArrayXaxis)s
+    channel : `~gwpy.detector.Channel`, `str`, optional
+        source data stream for these data
 
-    %(Array2)s
+    dtype : `~numpy.dtype`, optional
+        input data type
+
+    copy : `bool`, optional, default: `False`
+        choose to copy the input data to new memory
+
+    subok : `bool`, optional, default: `True`
+        allow passing of sub-classes by the array generator
 
     Returns
     -------
     series : `Series`
         a new `Series`
+
+    Examples
+    --------
+    To define a `Series` of displacements at a given input laser power,
+    for example:
+
+    >>> data = Series([1, 2, 3, 2, 4, 3], unit='nm', x0=0, dx=2, xunit='W')
+    >>> print(data)
+    Series([ 1., 2., 3., 2., 4., 3.]
+           unit: Unit("nm"),
+           name: None,
+           epoch: None,
+           channel: None,
+           x0: 0.0 W,
+           dx: 2.0 W,
+           xindex: [  0.   2.   4.   6.   8.  10.] W)
     """
-    _metadata_slots = Array._metadata_slots + ['x0', 'dx']
+    _metadata_slots = Array._metadata_slots + ['x0', 'dx', 'xindex']
     _default_xunit = Unit('')
     _ndim = 1
 
-    def __new__(cls, value, unit=None, xindex=None, x0=0, dx=1, **kwargs):
+    def __new__(cls, value, unit=None, x0=None, dx=None, xindex=None,
+                xunit=None, **kwargs):
+        # check input data dimensions are OK
         shape = numpy.shape(value)
         if len(shape) != cls._ndim:
             raise ValueError("Cannot generate %s with %d-dimensional data"
                              % (cls.__name__, len(shape)))
+
+        # create new object
         new = super(Series, cls).__new__(cls, value, unit=unit, **kwargs)
-        if isinstance(x0, Quantity):
-            xunit = x0.unit
-        elif isinstance(dx, Quantity):
-            xunit = dx.unit
+
+        # set x-axis metadata from xindex
+        if xindex is not None:
+            # warn about duplicate settings
+            if dx is not None:
+                warn("xindex was given to %s(), dx will be ignored"
+                     % cls.__name__)
+            if x0 is not None:
+                warn("xindex was given to %s(), x0 will be ignored"
+                     % cls.__name__)
+            # get unit
+            if xunit is None and isinstance(xindex, Quantity):
+                xunit = xindex.unit
+            elif xunit is None:
+                xunit = cls._default_xunit
+            new.xindex = Quantity(xindex, unit=xunit)
+        # or from x0 and dx
         else:
-            xunit = cls._default_xunit
-        new.x0 = Quantity(x0, xunit)
-        new.dx = Quantity(dx, xunit)
-        new.xindex = xindex
+            if xunit is None and isinstance(dx, Quantity):
+                xunit = dx.unit
+            elif xunit is None and isinstance(x0, Quantity):
+                xunit = x0.unit
+            elif xunit is None:
+                xunit = cls._default_xunit
+            if dx is not None:
+                new.dx = Quantity(dx, xunit)
+            if x0 is not None:
+                new.x0 = Quantity(x0, xunit)
         return new
+
+    # -- series creation ------------------------
+
+    def __array_finalize__(self, obj):
+        super(Series, self).__array_finalize__(obj)
+        # Array.__array_finalize__ might set _xindex to None, so delete it
+        if getattr(self, '_xindex', None) is None:
+            del self.xindex
 
     # -- series properties ----------------------
 
-    @property
-    def xindex(self):
-        """Positions of the data on the x-axis
-
-        :type: `~astropy.units.Quantity` array
-        """
-        try:
-            return self._xindex
-        except AttributeError:
-            self._xindex = self.x0 + (
-                numpy.arange(self.shape[0]) * self.dx)
-            return self._xindex
-
-    @xindex.setter
-    def xindex(self, index):
-        if index is None:
-            del self.xindex
-            return
-        elif not isinstance(index, Quantity):
-            index = Quantity(index, unit=self._default_xunit)
-        self.x0 = index[0]
-        if index.size:
-            self.dx = index[1] - index[0]
-        else:
-            self.dx = None
-        self._xindex = index
-
-    @xindex.deleter
-    def xindex(self):
-        try:
-            del self._xindex
-        except AttributeError:
-            pass
-
+    # x0
     @property
     def x0(self):
-        """X-axis value of the first data point
+        """X-axis coordinate of the first data point
 
         :type: `~astropy.units.Quantity` scalar
         """
-        return self._x0
+        try:
+            return self._x0
+        except AttributeError:
+            self._x0 = Quantity(0, self.xunit)
+            return self._x0
 
     @x0.setter
     def x0(self, value):
-        if not isinstance(value, Quantity) and value is not None:
+        if value is None:
+            del self.x0
+            return
+        if not isinstance(value, Quantity):
             try:
-                value = Quantity(value, self._default_xunit)
+                value = Quantity(value, self.xunit)
             except TypeError:
-                value = Quantity(float(value), self._default_xunit)
+                value = Quantity(float(value), self.xunit)
+        # if setting new x0, delete xindex
         try:
-            x0 = self.x0
+            x0 = self._x0
         except AttributeError:
             del self.xindex
         else:
@@ -147,22 +193,44 @@ class Series(Array):
 
     @x0.deleter
     def x0(self):
-        self._x0 = None
+        try:
+            del self._x0
+        except AttributeError:
+            pass
 
+    # dx
     @property
     def dx(self):
         """X-axis sample separation
 
         :type: `~astropy.units.Quantity` scalar
         """
-        return self._dx
+        try:
+            return self._dx
+        except AttributeError:
+            try:
+                self._xindex
+            except AttributeError:
+                self._dx = Quantity(1, self.xunit)
+            else:
+                if not self.xindex.regular:
+                    raise AttributeError("This series has an irregular x-axis "
+                                         "index, so 'dx' is not well defined")
+                self._dx = self.xindex[1] - self.xindex[0]
+            return self._dx
 
     @dx.setter
     def dx(self, value):
-        if not isinstance(value, Quantity) and value is not None:
+        # delete if None
+        if value is None:
+            del self.dx
+            return
+        # convert float to Quantity
+        if not isinstance(value, Quantity):
             value = Quantity(value).to(self.xunit)
+        # if value is changing, delete xindex
         try:
-            dx = self.dx
+            dx = self._dx
         except AttributeError:
             del self.xindex
         else:
@@ -172,15 +240,74 @@ class Series(Array):
 
     @dx.deleter
     def dx(self):
-        self._dx = None
+        try:
+            del self._dx
+        except AttributeError:
+            pass
 
+    # xindex
+    @property
+    def xindex(self):
+        """Positions of the data on the x-axis
+
+        :type: `~astropy.units.Quantity` array
+        """
+        try:
+            return self._xindex
+        except AttributeError:
+            # create regular index on-the-fly
+            self._xindex = Index(
+                self.x0 + (numpy.arange(self.shape[0]) * self.dx), copy=False)
+            return self._xindex
+
+    @xindex.setter
+    def xindex(self, index):
+        if index is None:
+            del self.xindex
+            return
+        if not isinstance(index, Index):
+            try:
+                unit = index.unit
+            except AttributeError:
+                unit = self._default_xunit
+            index = Index(index, unit=unit, copy=False)
+        self.x0 = index[0]
+        if index.regular:
+            self.dx = index[1] - index[0]
+        else:
+            del self.dx
+        self._xindex = index
+
+    @xindex.deleter
+    def xindex(self):
+        try:
+            del self._xindex
+        except AttributeError:
+            pass
+
+    # xunit
     @property
     def xunit(self):
         """Unit of x-axis index
 
         :type: `~astropy.units.Unit`
         """
-        return self.x0.unit
+        try:
+            return self._dx.unit
+        except AttributeError:
+            try:
+                return self._x0.unit
+            except AttributeError:
+                return self._default_xunit
+
+    @xunit.setter
+    def xunit(self, unit):
+        unit = Unit(unit)
+        try:  # set the index, if present
+            self.xindex = self._xindex.to(unit)
+        except AttributeError:  # or just set the start and step
+            self.dx = self.dx.to(unit)
+            self.x0 = self.x0.to(unit)
 
     @property
     def xspan(self):
@@ -190,14 +317,17 @@ class Series(Array):
         """
         from ..segments import Segment
         try:
-            self._xindex
-        except AttributeError:
-            x0 = self.x0.to(self._default_xunit).value
-            dx = self.dx.to(self._default_xunit).value
-            return Segment(x0, x0+self.shape[0]*dx)
+            dx = self.dx.to(self.xunit).value
+        except AttributeError:  # irregular xindex
+            try:
+                dx = self.xindex.value[-1] - self.xindex.value[-2]
+            except IndexError:
+                raise ValueError("Cannot determine x-axis stride (dx)"
+                                 "from a single data point")
+            return Segment(self.xindex.value[0], self.xindex.value[-1] + dx)
         else:
-            return Segment(self.xindex.value[0],
-                           self.xindex.value[-1] + self.dx.value)
+            x0 = self.x0.to(self.xunit).value
+            return Segment(x0, x0+self.shape[0]*dx)
 
     # -- series methods -------------------------
 
@@ -281,36 +411,40 @@ class Series(Array):
             for documentation on the underlying method
         """
         out = super(Array, self).diff(n=n, axis=axis)
-        out.x0 = self.x0 + self.dx * n
+        try:
+            out.x0 = self.x0 + self.dx * n
+        except AttributeError:  # irregular xindex
+            out.x0 = self.xindex[n]
         return out
-
-    diff.__doc__ = numpy.diff.__doc__
-
-    def __array_finalize__(self, obj):
-        super(Series, self).__array_finalize__(obj)
-        if hasattr(self, '_xindex'):
-            obj._xindex = self._xindex
 
     def __getslice__(self, i, j):
         new = super(Series, self).__getslice__(i, j)
-        new.__dict__ = self.copy_metadata()
-        new.x0 = self.x0 + i * self.dx
+        if i:
+            try:
+                new.x0 = self.x0 + i * self.dx
+            except AttributeError:  # irregular xindex
+                new.x0 = self.xindex[i]
         return new
 
     def __getitem__(self, item):
+        # if single value, convert to a simple Quantity
         if isinstance(item, (float, int)):
             return Quantity(self.value[item], unit=self.unit)
         new = super(Series, self).__getitem__(item)
-        if isinstance(item, slice):
-            if item.start:
-                new.x0 = self.x0 + item.start * self.dx
-            if item.step:
-                new.dx = self.dx * item.step
-        elif isinstance(item, numpy.ndarray):
+        # if we're slicing, update the x-axis properties
+        if isinstance(item, slice):  # slice
+            try:
+                self._xindex
+            except AttributeError:
+                if item.start:
+                    new.x0 = self.x0 + item.start * self.dx
+                if item.step:
+                    new.dx = self.dx * item.step
+            else:
+                self.xindex = self.xindex[item]
+        elif isinstance(item, numpy.ndarray):  # index array
             new.xindex = self.xindex[item]
         return new
-
-    # -- series manipulations ------------------
 
     def is_contiguous(self, other, tol=1/2.**18):
         """Check whether other is contiguous with self.
@@ -357,10 +491,16 @@ class Series(Array):
         `~Series.unit` match.
         """
         if isinstance(other, type(self)):
-            if not self.dx == other.dx:
-                raise ValueError("%s sample sizes do not match: "
-                                 "%s vs %s." % (type(self).__name__,
-                                                self.dx, other.dx))
+            # check step size, if possible
+            try:
+                if not self.dx == other.dx:
+                    raise ValueError("%s sample sizes do not match: "
+                                     "%s vs %s." % (type(self).__name__,
+                                                    self.dx, other.dx))
+            except AttributeError:
+                raise ValueError("Series with irregular xindexes cannot "
+                                 "be compatible")
+            # check units
             if not self.unit == other.unit and not (
                     self.unit in [dimensionless_unscaled, None] and
                     other.unit in [dimensionless_unscaled, None]):
@@ -368,6 +508,8 @@ class Series(Array):
                                  % (type(self).__name__, str(self.unit),
                                     str(other.unit)))
         else:
+            # assume an array-like object, and just check that the shape
+            # and dtype match
             arr = numpy.asarray(other)
             if arr.ndim != self.ndim:
                 raise ValueError("Dimensionality does not match")
@@ -647,10 +789,14 @@ class Series(Array):
         numpy.pad
             for details on the underlying functionality
         """
+        # format arguments
         kwargs.setdefault('mode', 'constant')
         if isinstance(pad_width, int):
             pad_width = (pad_width,)
-        new = numpy.pad(self.value, pad_width, **kwargs).view(type(self))
-        new.__dict__ = self.copy_metadata()
+        # form pad and view to this type
+        new = numpy.pad(self, pad_width, **kwargs).view(type(self))
+        # numpy.pad has stripped all metadata, so copy it over
+        new.__metadata_finalize__(self)
+        # finally move the starting index based on the amount of left-padding
         new.x0 -= self.dx * pad_width[0]
         return new

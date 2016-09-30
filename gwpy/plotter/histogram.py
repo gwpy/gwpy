@@ -34,7 +34,7 @@ from glue.ligolw.table import Table
 from ..table.utils import get_table_column
 from .axes import Axes
 from .core import Plot
-from ..data import Series
+from ..types import Series
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

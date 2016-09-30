@@ -19,7 +19,6 @@
 """Definition of a BodePlot
 """
 
-import warnings
 from math import pi
 
 import numpy
@@ -99,13 +98,13 @@ class BodePlot(Plot):
         super(BodePlot, self).__init__(**figargs)
 
         # delete the axes, and create two more
-        self.add_subplot(2, 1, 1, projection='spectrum')
-        self.add_subplot(2, 1, 2, projection='spectrum', sharex=self.maxes)
+        self.add_subplot(2, 1, 1, projection='frequencyseries')
+        self.add_subplot(2, 1, 2, projection='frequencyseries', sharex=self.maxes)
 
         # add filters
         for filter_ in filters:
             if isinstance(filter_, FrequencySeries):
-                self.add_spectrum(filter_, dB=dB, **kwargs)
+                self.add_frequencyseries(filter_, dB=dB, **kwargs)
             else:
                 self.add_filter(filter_, frequencies=frequencies,
                                 dB=dB, **kwargs)
@@ -225,8 +224,3 @@ class BodePlot(Plot):
         lm = self.maxes.plot(w, mag, **kwargs)
         lp = self.paxes.plot(w, phase, **kwargs)
         return lm, lp
-
-    def add_spectrum(self, *args, **kwargs):
-        warnings.warn("This method was renamed add_frequencyseries()",
-                      DeprecationWarning)
-        return self.add_frequencyseries(*args, **kwargs)

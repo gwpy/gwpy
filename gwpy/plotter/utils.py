@@ -19,7 +19,6 @@
 """Helper functions for plotting data with matplotlib and LAL
 """
 
-import numpy
 import itertools
 import re
 
@@ -27,7 +26,7 @@ from . import rcParams
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-rUNDERSCORE = re.compile(r'(?<!\\)_')
+rUNDERSCORE = re.compile(r'(?<!\\)_(?!.*{)')
 
 # groups of input parameters (for passing to Plot() and subclasses)
 FIGURE_PARAMS = [

@@ -27,9 +27,8 @@ if sys.version_info[0] < 3:
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-from ..data import (Quantity, Array, Array2D)
+from ..types import (Quantity, Array2D)
 from .core import FrequencySeries
-from ..detector import Channel
 
 __all__ = ['SpectralVariance']
 
@@ -40,27 +39,29 @@ class SpectralVariance(Array2D):
     """
     _metadata_slots = FrequencySeries._metadata_slots + ['bins']
     _default_xunit = FrequencySeries._default_xunit
+    _rowclass = FrequencySeries
 
-    def __new__(cls, data, bins, name=None, channel=None, epoch=None, unit=None,
-                f0=0, df=1, **kwargs):
-        """Generate a new SpectralVariance
+    def __new__(cls, data, bins, unit=None,
+                f0=None, df=None, frequencies=None,
+                name=None, channel=None, epoch=None, **kwargs):
+        """Generate a new SpectralVariance histogram
         """
-        # parse Channel input
-        if channel:
-            channel = Channel(channel)
-            name = name or channel.name
-            unit = unit or channel.unit
-        if unit is None and isinstance(data, Quantity):
-            unit = Quantity.unit
-        x0 = kwargs.pop('x0', f0)
-        dx = kwargs.pop('dx', df)
-        kwargs['y0'] = None
-        kwargs['dy'] = None
-        # generate Spectrogram
-        new = super(SpectralVariance, cls).__new__(
-            cls, data, name=name, channel=channel, epoch=epoch, unit=unit,
-            x0=x0, dx=dx, **kwargs)
+        # parse x-axis params
+        if f0 is not None:
+            kwargs['x0'] = f0
+        if df is not None:
+            kwargs['dx'] = df
+        if frequencies is not None:
+            kwargs['xindex'] = frequencies
+
+        # generate SpectralVariance using the Series constructor
+        new = super(Array2D, cls).__new__(cls, data, unit=unit, name=name,
+                                          channel=channel, epoch=epoch,
+                                          **kwargs)
+
+        # set bins
         new.bins = bins
+
         return new
 
     # -------------------------------------------
@@ -138,10 +139,21 @@ class SpectralVariance(Array2D):
     # SpectralVariance methods
 
     def __getitem__(self, item):
-        if isinstance(item, tuple) and len(item) == 2:
+        if isinstance(item, int):
+            out = self.value[item].view(self._columnclass)
+            out.unit = self.unit
+            try:
+                out.xindex = self.yindex
+            except AttributeError:
+                pass
+            return out
+        if isinstance(item, tuple) and item[0] == slice(None, None, None):
+            out = self.value.__getitem__(item).view(self._rowclass)
+            out.xindex = self.xindex
+            return out
+        if (isinstance(item, tuple) and len(item) == 2):
             return self[item[0]][item[1]]
-        else:
-            return super(SpectralVariance, self).__getitem__(item)
+        return super(SpectralVariance, self).__getitem__(item)
     __getitem__.__doc__ = Array2D.__getitem__.__doc__
 
     @classmethod

@@ -22,7 +22,6 @@
 from __future__ import division
 
 from ....io.cache import (CacheEntry, file_list)
-from ....time import to_gps
 from ....utils import (import_method_dependency, with_import)
 from ... import (TimeSeries, TimeSeriesDict)
 from . import channel_dict_kwarg
@@ -75,7 +74,6 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
     ValueError
         if reading from an unsorted, or discontiguous cache of files
     """
-    lal = import_method_dependency('lal.lal')
     from gwpy.utils.lal import to_lal_ligotimegps
     # parse input arguments (astropy insists on opening files)
     if isinstance(source, file):

@@ -25,13 +25,15 @@ from multiprocessing import (cpu_count, Process, Queue as ProcessQueue)
 from six import string_types
 import tempfile
 import warnings
+from gzip import GzipFile
+
+from numpy import recarray
+from numpy.lib import recfunctions
 
 from glue.lal import (Cache, CacheEntry)
 from glue.ligolw.table import Table
 
 from astropy.io.registry import _get_valid_format
-
-from .utils import GzipFile
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -194,6 +196,8 @@ def read_cache(cache, target, nproc, post, *args, **kwargs):
     queue = ProcessQueue(nproc)
     proclist = []
     for i, subcache in enumerate(subcaches):
+        if len(subcache) == 0:
+            continue
         process = Process(target=_read, args=(queue, subcache, i))
         process.daemon = True
         proclist.append(process)
@@ -211,15 +215,19 @@ def read_cache(cache, target, nproc, post, *args, **kwargs):
 
     # combine and return
     data = zip(*sorted(pout, key=lambda out: out[0]))[1]
-    try:
-        if issubclass(target, Table):
+    if issubclass(target, recarray):
+        out = recfunctions.stack_arrays(data, asrecarray=True,
+                                        usemask=False).view(target)
+    else:
+        try:
+            if issubclass(target, Table):
+                out = data[0]
+            else:
+                out = data[0].copy()
+        except AttributeError:
             out = data[0]
-        else:
-            out = data[0].copy()
-    except AttributeError:
-        out = data[0]
-    for datum in data[1:]:
-        out += datum
+        for datum in data[1:]:
+            out += datum
 
     if post:
         return post(out)

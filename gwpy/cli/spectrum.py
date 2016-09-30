@@ -110,7 +110,7 @@ class Spectrum(CliProduct):
                 if len(self.start_list) > 1:
                     label += ", %s" % self.timeseries[idx].epoch.gps
                 specb.name = label
-                self.plot.add_spectrum(specb)
+                self.plot.add_frequencyseries(specb)
         self.log(2, ('Frequency range: [%f, %f]' % (self.fmin, self.fmax)))
         # if the specified frequency limits adjust our ymin and ymax values
         # at this point self.ymin and self.ymax represent the full spectra

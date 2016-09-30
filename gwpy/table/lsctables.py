@@ -19,8 +19,13 @@
 """Drop in of :mod:`glue.ligolw.lsctables` to annotate Table classes.
 """
 
+import inspect
 import warnings
 
+import numpy
+from numpy.lib import recfunctions
+
+import glue.segments
 from glue.ligolw.lsctables import *
 from glue.ligolw.table import StripTableName as strip_table_name
 from glue.ligolw.types import ToNumPyType as NUMPY_TYPE
@@ -28,6 +33,8 @@ from glue.ligolw.ilwd import get_ilwdchar_class
 
 from ..io import reader
 from ..time import to_gps
+from ..utils.deps import with_import
+from .rec import GWRecArray
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = TableByName.keys()
@@ -35,8 +42,11 @@ __all__ = TableByName.keys()
 NUMPY_TYPE['ilwd:char'] = numpy.dtype(int).name
 NUMPY_TYPE['lstring'] = 'a20'
 
+INVALID_REC_TYPES = [glue.segments.segment]
 
-def to_recarray(self, columns=None, on_attributeerror='raise'):
+
+def to_recarray(self, columns=None, on_attributeerror='raise',
+                get_as_columns=False):
     """Convert this table to a structured `numpy.recarray`
 
     This returned `~numpy.recarray` is a blank data container, mapping
@@ -48,13 +58,17 @@ def to_recarray(self, columns=None, on_attributeerror='raise'):
     columns : `list` of `str`, optional
         the columns to populate, if not given, all columns present in the
         table are mapped
-    on_attributeerror : `str`
+
+    on_attributeerror : `str`, optional
         how to handle `AttributeError` when accessing rows, one of
 
         - 'raise' : raise normal exception
         - 'ignore' : skip over this column
         - 'warn' : print a warning instead of raising error
 
+    get_as_columns : `bool`, optional
+        convert all `get_xxx()` methods into fields in the
+        `~numpy.recarray`; the default is to _not_ do this.
     """
     # get numpy-type columns
     if columns is None:
@@ -62,8 +76,7 @@ def to_recarray(self, columns=None, on_attributeerror='raise'):
     dtypes = [(str(c), NUMPY_TYPE[self.validcolumns[c]])
               for c in columns]
     # create array
-    m = len(self)
-    out = numpy.recarray((len(self),), dtype=dtypes)
+    out = GWRecArray((len(self),), dtype=dtypes)
     # and fill it
     for column in columns:
         orig_type = self.validcolumns[column]
@@ -79,6 +92,39 @@ def to_recarray(self, columns=None, on_attributeerror='raise'):
                 warnings.warn('Caught %s: %s' % (type(e).__name__, str(e)))
             else:
                 raise
+    # fill out get_xxx columns
+    if get_as_columns:
+        getters = filter(lambda x: x[0].startswith('get_'),
+                         inspect.getmembers(self, predicate=inspect.ismethod))
+        new = []
+        for name, meth in getters:
+            column = name.split('_', 1)[1]
+            if column in columns:  # don't overwrite existing columns
+                continue
+            try:
+                array = meth()
+            except (AttributeError, ValueError, TypeError):
+                continue
+            else:
+                try:
+                    dtype = array.dtype
+                except AttributeError:
+                    try:
+                        dtype = type(array[0])
+                    except (TypeError, KeyError):
+                        continue
+                    except IndexError:
+                        dtype = None
+                if dtype == LIGOTimeGPS:
+                    dtype = numpy.float64
+                elif dtype in INVALID_REC_TYPES:
+                    continue
+                new.append((column, array, dtype))
+        names, data, dtypes = zip(*new)
+        if names:
+            out = recfunctions.rec_append_fields(
+                out, names, data, dtypes).view(type(out))
+
     return out
 
 
@@ -178,7 +224,8 @@ def _plot_factory():
 
 
 def _fetch_factory(table):
-    def fetch(cls, channel, etg, start, end, verbose=False, **kwargs):
+    @with_import('trigfind')
+    def fetch(cls, channel, etg, start, end, **kwargs):
         """Find and read events into a `{0}`.
 
         Event XML files are searched for only on the LIGO Data Grid
@@ -193,14 +240,16 @@ def _fetch_factory(table):
         ----------
         channel : `str`
             the name of the data channel to search for
+
         etg : `str`
             the name of the event trigger generator (ETG)
+
         start : `float`, `~gwpy.time.LIGOTimeGPS`
             the GPS start time of the search
+
         end : `float`, `~gwpy.time.LIGOTimeGPS`
             the GPS end time of the search
-        verbose : `bool`, optional
-            print verbose output, default: `False`
+
         **kwargs
             other keyword arguments to pass to :meth:`{0}.read`
 
@@ -222,12 +271,11 @@ def _fetch_factory(table):
             for documentation of the available keyword arguments
         """
         from gwpy.segments import Segment
-        from .io.trigfind import find_trigger_urls
         # check times
         start = to_gps(start)
         end = to_gps(end)
         # find files
-        cache = find_trigger_urls(channel, etg, start, end, verbose=verbose)
+        cache = trigfind.find_trigger_files(channel, etg, start, end)
         # construct filter
         infilt = kwargs.pop('filt', None)
         segment = Segment(float(start), float(end))

@@ -19,7 +19,7 @@
 """This module attaches the HDF5 input output methods to the Spectrogram.
 """
 
-from ...data.io import hdf5
+from ...types.io import hdf5
 from .. import Spectrogram
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
