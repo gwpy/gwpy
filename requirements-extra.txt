@@ -1,1 +1,1 @@
-MySQLdb
+MySQL-python
