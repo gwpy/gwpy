@@ -34,13 +34,12 @@ import datetime
 import os.path
 from dateutil.relativedelta import relativedelta
 
-import MySQLdb
-
 import numpy
 from numpy.lib import recfunctions
 
 from ...segments import Segment
 from ...time import (to_gps, from_gps)
+from ...utils.deps import with_import
 from .. import GWRecArray
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -196,6 +195,7 @@ def add_time_column(table, name='time', pop_start=True, pop_offset=True):
 
 # -- utilities ----------------------------------------------------------------
 
+@with_import('MySQLdb')
 def connect(db, host=HACR_DATABASE_SERVER, user=HACR_DATABASE_USER,
             passwd=HACR_DATABASE_PASSWD):
     """Connect to the given MySQL database
