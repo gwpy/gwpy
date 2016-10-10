@@ -40,7 +40,7 @@ from gwpy.timeseries import TimeSeriesDict
 
 # and then :meth:`~TimeSeriesDict.get` both data sets:
 data = TimeSeriesDict.get(['L1:LSC-SRCL_IN1_DQ', 'L1:LSC-CARM_IN1_DQ'],
-                           'Feb 13 2015', 'Feb 13 2015 00:15')
+                           'Feb 13 2015', 'Feb 13 2015 00:15', allow_tape=True)
 
 # We can then calculate the :meth:`~TimeSeries.coherence` of one
 # `TimeSeries` with respect to the other, using an 8-second Fourier
