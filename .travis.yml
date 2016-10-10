@@ -79,6 +79,9 @@ before_install:
 
 install:
   - pip install ${PRE} -r requirements.txt
+  # add extra dependencies for testing
+  - pip install ${PRE} -r requirements-extra.txt
+  # build
   - python setup.py build
 
 script:
