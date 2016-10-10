@@ -40,3 +40,6 @@ from .cwb import *
 
 # import PyCBC live I/O
 from .pycbc import *
+
+# import HACR db reader
+from .hacr import *
