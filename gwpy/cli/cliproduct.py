@@ -63,6 +63,7 @@ class CliProduct(object):
         self.secpfft = 1
         self.overlap = 0.5
         # describe the actual plotted limits
+        self.result = 0          # spectrum, or coherence what is plotted
         self.fmin = 0
         self.fmax = 1
         self.ymin = 0
@@ -657,7 +658,7 @@ class CliProduct(object):
                 title += t
         # info on the processing
         start = self.start_list[0]
-        startGPS = Time(start, format='gps')
+        startGPS = Time(start, format='gps', scale='utc')
         timeStr = "%s - %10d (%ds)" % (startGPS.iso, start, self.dur)
 
         # list the different sample rates available in all time series
