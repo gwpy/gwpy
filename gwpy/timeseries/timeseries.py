@@ -51,28 +51,22 @@ class TimeSeries(TimeSeriesBase):
     unit : `~astropy.units.Unit`, optional
         physical unit of these data
 
+    t0 : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS epoch associated with these data,
+        any input parsable by `~gwpy.time.to_gps` is fine
+
+    dt : `float`, `~astropy.units.Quantity`, optional, default: `1`
+        time between successive samples (seconds), can also be given inversely
+        via `sample_rate`
+
     sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
-        the rate of samples per second (Hertz)
+        the rate of samples per second (Hertz), can also be given inversely
+        via `dt`
 
     times : `array-like`
         the complete array of GPS times accompanying the data for this series.
-        This argument takes precedence over `epoch` and `sample_rate` so should
-        be given in place of these if relevant, not alongside
-
-    x0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
-        the starting value for the x-axis of this array
-
-    dx : `float`, `~astropy.units.Quantity, optional, default: `1`
-        the step size for the x-axis of this array
-
-    xindex : `array-like`
-        the complete array of x-axis values for this array. This argument
-        takes precedence over `x0` and `dx` so should be
-        given in place of these if relevant, not alongside
-
-    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-        GPS epoch associated with these data,
-        any input parsable by `~gwpy.time.to_gps` is fine
+        This argument takes precedence over `t0` and `dt` so should be given
+        in place of these if relevant, not alongside
 
     name : `str`, optional
         descriptive title for this array
@@ -109,7 +103,7 @@ class TimeSeries(TimeSeriesBase):
 
     .. autosummary::
 
-        ~TimeSeries.fetch
+        ~TimeSeries.get
         ~TimeSeries.read
         ~TimeSeries.write
         ~TimeSeries.plot
