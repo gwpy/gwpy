@@ -51,28 +51,22 @@ class TimeSeries(TimeSeriesBase):
     unit : `~astropy.units.Unit`, optional
         physical unit of these data
 
+    t0 : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS epoch associated with these data,
+        any input parsable by `~gwpy.time.to_gps` is fine
+
+    dt : `float`, `~astropy.units.Quantity`, optional, default: `1`
+        time between successive samples (seconds), can also be given inversely
+        via `sample_rate`
+
     sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
-        the rate of samples per second (Hertz)
+        the rate of samples per second (Hertz), can also be given inversely
+        via `dt`
 
     times : `array-like`
         the complete array of GPS times accompanying the data for this series.
-        This argument takes precedence over `epoch` and `sample_rate` so should
-        be given in place of these if relevant, not alongside
-
-    x0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
-        the starting value for the x-axis of this array
-
-    dx : `float`, `~astropy.units.Quantity, optional, default: `1`
-        the step size for the x-axis of this array
-
-    xindex : `array-like`
-        the complete array of x-axis values for this array. This argument
-        takes precedence over `x0` and `dx` so should be
-        given in place of these if relevant, not alongside
-
-    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-        GPS epoch associated with these data,
-        any input parsable by `~gwpy.time.to_gps` is fine
+        This argument takes precedence over `t0` and `dt` so should be given
+        in place of these if relevant, not alongside
 
     name : `str`, optional
         descriptive title for this array
@@ -109,7 +103,7 @@ class TimeSeries(TimeSeriesBase):
 
     .. autosummary::
 
-        ~TimeSeries.fetch
+        ~TimeSeries.get
         ~TimeSeries.read
         ~TimeSeries.write
         ~TimeSeries.plot
@@ -519,9 +513,9 @@ class TimeSeries(TimeSeriesBase):
                 ts.unit, kwargs.get('scaling', 'density'))
             dtype = numpy.float64 if cts is None else complex
             if epoch is None:
-                epoch = ts.epoch
+                epoch = ts.t0
             out = Spectrogram(numpy.zeros((nsteps_, nfreqs)), dtype=dtype,
-                              unit=unit, channel=ts.channel, epoch=epoch,
+                              unit=unit, channel=ts.channel, t0=epoch,
                               f0=0, df=df, dt=dt, copy=False)
 
             if not nsteps_:
@@ -673,7 +667,7 @@ class TimeSeries(TimeSeriesBase):
         dt = nstride * self.dt
         tmp = numpy.zeros((nsteps, nfreqs), dtype=self.dtype)
         out = Spectrogram(numpy.zeros((nsteps, nfreqs), dtype=self.dtype),
-                          epoch=self.epoch, channel=self.channel,
+                          t0=self.t0, channel=self.channel,
                           name=self.name, unit=unit, dt=dt, f0=0,
                           df=1/fftlength)
 
@@ -740,7 +734,7 @@ class TimeSeries(TimeSeriesBase):
         # generate output spectrogram
         dtype = numpy.complex
         out = Spectrogram(numpy.zeros((nsteps, nfreqs), dtype=dtype),
-                          name=self.name, epoch=self.epoch, f0=0, df=df,
+                          name=self.name, t0=self.t0, f0=0, df=df,
                           dt=dt, copy=False, unit=self.unit, dtype=dtype)
         # stride through TimeSeries, recording FFTs as columns of Spectrogram
         for step in range(nsteps):
@@ -1462,7 +1456,7 @@ class TimeSeries(TimeSeriesBase):
             rms_ = numpy.sqrt(numpy.mean(numpy.abs(stepseries.value)**2))
             data[step] = rms_
         name = '%s %.2f-second RMS' % (self.name, stride)
-        return self.__class__(data, channel=self.channel, epoch=self.epoch,
+        return self.__class__(data, channel=self.channel, t0=self.t0,
                               name=name, sample_rate=(1/float(stride)))
 
     def whiten(self, fftlength, overlap=0, method='welch', window='hanning',

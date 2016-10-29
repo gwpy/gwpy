@@ -86,11 +86,12 @@ class Coherence(CliProduct):
 
         self.log(3, 'Reference channel: ' + ref_name)
         # we don't want to compare the reference channel to itself
-        # at a different time
+        # at a different time this section checks that we have
+        # something to do
         next_ts = -1
         for idx in range(0, len(self.timeseries)):
             legend_text = self.timeseries[idx].channel.name
-            if legend_text != ref_name and self.timeseries[idx].min() != \
+            if not legend_text.startswith(ref_name) and self.timeseries[idx].min() != \
                     self.timeseries[idx].value.max():
                 next_ts = idx
                 break
@@ -105,7 +106,7 @@ class Coherence(CliProduct):
                 # find the reference channel in this group
                 for idx in range(0, len(time_group)):
                     idxp = time_group[idx]
-                    if self.timeseries[idxp].channel.name == ref_name:
+                    if self.timeseries[idxp].channel.name.startswith(ref_name):
                         ref_idx = idxp
 
                 maxfs = max(maxfs, self.timeseries[ref_idx].sample_rate)
@@ -140,8 +141,8 @@ class Coherence(CliProduct):
                                 legend_text = self.timeseries[next_ts].\
                                     channel.name
                                 if len(self.start_list) > 1:
-                                    legend_text += ", %s" % \
-                                                   snd_ts.times.epoch.gps
+                                    legend_text += ', %s' % \
+                                                   snd_ts.times[0]
                                 coh.name = legend_text
 
                                 # coh2 = 1 / (1-coh) : how to do alt scaler
