@@ -47,7 +47,10 @@ def recarray_from_file(source, ifo=None, columns=None, loudest=False):
     if isinstance(source, CacheEntry):
         source = source.path
     if isinstance(source, str):
-        source = h5py.File(source, 'r')
+        h5f = source = h5py.File(source, 'r')
+        opened = True
+    else:
+        opened = False
     # find group
     if isinstance(source, h5py.File):
         if ifo is None:
@@ -90,6 +93,8 @@ def recarray_from_file(source, ifo=None, columns=None, loudest=False):
     out = rec.fromarrays(data, names=map(str, names)).view(GWRecArray)
     if 'end_time' in columns:
         out.sort(order='end_time')
+    if opened:
+        h5f.close()
     return out
 
 
@@ -118,17 +123,14 @@ def filter_empty_files(files, ifo=None):
 def empty_hdf5_file(fp, ifo=None):
     if isinstance(fp, CacheEntry):
         fp = fp.path
-    if isinstance(fp, str):
-        h5f = h5py.File(fp, 'r')
-    elif isinstance(fp, h5py.File):
-        h5f = fp
-    else:
+    if not isinstance(fp, str):
         return  # default to something that will evaluate as false
-    if list(h5f) == []:
-        return True
-    if ifo is not None and (ifo not in h5f or list(h5f[ifo]) == ['psd']):
-        return True
-    return False
+    with h5py.File(fp, 'r') as h5f:
+        if list(h5f) == []:
+            return True
+        if ifo is not None and (ifo not in h5f or list(h5f[ifo]) == ['psd']):
+            return True
+        return False
 
 
 def identify_pycbc_live(origin, path, fileobj, *args, **kwargs):
