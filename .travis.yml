@@ -50,11 +50,15 @@ matrix:
     - python: 2.7  # python-only build
       env: MINIMAL=true
     - python: 3.5
+    - python: 3.5  # python-only build
+      env: MINIMAL=true
   allow_failures:
     - python: 2.6
     - python: 2.7
       env: STRICT=true PRE="--pre"
     - python: 3.5
+    - python: 3.5
+      env: MINIMAL=true
   fast_finish: true
 
 before_install:
