@@ -79,7 +79,7 @@ before_install:
 
 install:
   # install dependencies (using version-dependent requirements if needed)
-  - [ -f ./requirements-${TRAVIS_PYTHON_VERSION}.txt ] && pip install ${PRE} -r requirements-${TRAVIS_PYTHON_VERSION}.txt || pip install ${PRE} -r requirements.txt
+  - . .travis/install-requirements.sh
   # add extra dependencies for testing
   - pip install ${PRE} -r requirements-extra.txt
   # build
