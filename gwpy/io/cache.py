@@ -216,8 +216,8 @@ def read_cache(cache, target, nproc, post, *args, **kwargs):
     # combine and return
     data = zip(*sorted(pout, key=lambda out: out[0]))[1]
     if issubclass(target, recarray):
-        out = recfunctions.stack_arrays(data, asrecarray=True,
-                                        usemask=False).view(target)
+        out = recfunctions.stack_arrays(data, asrecarray=True, usemask=False,
+                                        autoconvert=True).view(target)
     else:
         try:
             if issubclass(target, Table):
