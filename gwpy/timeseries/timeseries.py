@@ -33,7 +33,7 @@ from astropy import units
 
 from ..io import (reader, writer)
 from ..segments import Segment
-from ..signal import (notch, sosfiltfilt)
+from ..signal import (filter_design, sosfiltfilt)
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
 
@@ -907,19 +907,30 @@ class TimeSeries(TimeSeriesBase):
 
     # -- TimeSeries filtering -------------------
 
-    def highpass(self, frequency, gpass=2, gstop=30, stop=None):
-        """Filter this `TimeSeries` with a Butterworth high-pass filter.
+    def highpass(self, frequency, gpass=2, gstop=30, fstop=None, type='iir',
+                filtfilt=True, **kwargs):
+        """Filter this `TimeSeries` with a high-pass filter.
 
         Parameters
         ----------
         frequency : `float`
-            minimum frequency for high-pass
+            high-pass corner frequency
+
         gpass : `float`
             the maximum loss in the passband (dB).
+
         gstop : `float`
             the minimum attenuation in the stopband (dB).
-        stop : `float`
-            stop-band edge frequency, defaults to `frequency/2`
+
+        fstop : `float`
+            stop-band edge frequency, defaults to `frequency * 1.5`
+
+        type : `str`
+            the filter type, either ``'iir'`` or ``'fir'``
+
+        **kwargs
+            other keyword arguments are passed to
+            :meth:`gwpy.signal.filter_design.highpass`
 
         Returns
         -------
@@ -928,9 +939,8 @@ class TimeSeries(TimeSeriesBase):
 
         See Also
         --------
-        scipy.signal.buttord
-        scipy.signal.butter
-            for details on how the filter is designed
+        gwpy.signal.filter_design.highpass
+            for details on the filter design
         TimeSeries.filter
             for details on how the filter is applied
 
@@ -940,34 +950,37 @@ class TimeSeries(TimeSeriesBase):
            unstable. With `scipy >= 0.16.0` higher-order filters are
            decomposed into second-order-sections, and so are much more stable.
         """
-
-        nyq = self.sample_rate.value / 2.
-        if stop is None:
-            stop = .5 * frequency
-        # convert to float in Hertz
-        cutoff = units.Quantity(frequency, 'Hz').value / nyq
-        stop = units.Quantity(stop, 'Hz').value / nyq
         # design filter
-        order, wn = signal.buttord(wp=cutoff, ws=stop, gpass=gpass,
-                                   gstop=gstop, analog=False)
-        zpk = signal.butter(order, wn, btype='high',
-                            analog=False, output='zpk')
+        filt = filter_design.highpass(frequency, self.sample_rate,
+                                      fstop=fstop, gpass=gpass, gstop=gstop,
+                                      analog=False, type=type, **kwargs)
         # apply filter
-        return self.filter(*zpk)
+        return self.filter(*filt, filtfilt=filtfilt)
 
-    def lowpass(self, frequency, gpass=2, gstop=30, stop=None):
+    def lowpass(self, frequency, gpass=2, gstop=30, fstop=None, type='iir',
+                filtfilt=True, **kwargs):
         """Filter this `TimeSeries` with a Butterworth low-pass filter.
 
         Parameters
         ----------
         frequency : `float`
             low-pass corner frequency
+
         gpass : `float`
             the maximum loss in the passband (dB).
+
         gstop : `float`
             the minimum attenuation in the stopband (dB).
-        stop: `float`
+
+        fstop : `float`
             stop-band edge frequency, defaults to `frequency * 1.5`
+
+        type : `str`
+            the filter type, either ``'iir'`` or ``'fir'``
+
+        **kwargs
+            other keyword arguments are passed to
+            :meth:`gwpy.signal.filter_design.lowpass`
 
         Returns
         -------
@@ -976,9 +989,8 @@ class TimeSeries(TimeSeriesBase):
 
         See Also
         --------
-        scipy.signal.buttord
-        scipy.signal.butter
-            for details on how the filter is designed
+        gwpy.signal.filter_design.lowpass
+            for details on the filter design
         TimeSeries.filter
             for details on how the filter is applied
 
@@ -988,34 +1000,40 @@ class TimeSeries(TimeSeriesBase):
            unstable. With `scipy >= 0.16.0` higher-order filters are
            decomposed into second-order-sections, and so are much more stable.
         """
-        nyq = self.sample_rate.value / 2.
-        if stop is None:
-            stop = 1.5 * frequency
-        # convert to float in Hertz
-        cutoff = units.Quantity(frequency, 'Hz').value / nyq
-        stop = units.Quantity(stop, 'Hz').value / nyq
         # design filter
-        order, wn = signal.buttord(wp=cutoff, ws=stop, gpass=gpass,
-                                   gstop=gstop, analog=False)
-        zpk = signal.butter(order, wn, btype='low', analog=False, output='zpk')
+        filt = filter_design.lowpass(frequency, self.sample_rate,
+                                     fstop=fstop, gpass=gpass, gstop=gstop,
+                                     analog=False, type=type, **kwargs)
         # apply filter
-        return self.filter(*zpk)
+        return self.filter(*filt, filtfilt=filtfilt)
 
-    def bandpass(self, flow, fhigh, gpass=2, gstop=30, stops=(None, None)):
-        """Filter this `TimeSeries` by applying low- and high-pass filters.
+    def bandpass(self, flow, fhigh, gpass=2, gstop=30, fstop=None, type='iir',
+                 filtfilt=True, **kwargs):
+        """Filter this `TimeSeries` with a band-pass filter.
 
         Parameters
         ----------
         flow : `float`
-            band-pass lower corner frequency
+            lower corner frequency of pass band
+
         fhigh : `float`
-            band-pass upper corner frequency
+            upper corner frequency of pass band
+
         gpass : `float`
-            the maximum loss in the pass band (dB).
+            the maximum loss in the passband (dB).
+
         gstop : `float`
-            the minimum attenuation in the stop band (dB).
-        stops: 2-`tuple` of `float`
-            stop-band edge frequencies, defaults to `[flow/2., fhigh*1.5]`
+            the minimum attenuation in the stopband (dB).
+
+        fstop : `tuple` of `float`, optional
+            `(low, high)` edge-frequencies of stop band
+
+        type : `str`
+            the filter type, either ``'iir'`` or ``'fir'``
+
+        **kwargs
+            other keyword arguments are passed to
+            :meth:`gwpy.signal.filter_design.bandpass`
 
         Returns
         -------
@@ -1024,9 +1042,8 @@ class TimeSeries(TimeSeriesBase):
 
         See Also
         --------
-        scipy.signal.buttord
-        scipy.signal.butter
-            for details on how the filter is designed
+        gwpy.signal.filter_design.bandpass
+            for details on the filter design
         TimeSeries.filter
             for details on how the filter is applied
 
@@ -1036,25 +1053,12 @@ class TimeSeries(TimeSeriesBase):
            unstable. With `scipy >= 0.16.0` higher-order filters are
            decomposed into second-order-sections, and so are much more stable.
         """
-        nyq = self.sample_rate.value / 2.
-        if stops is None:
-            stops = [None, None]
-        stops = list(stops)
-        if stops[0] is None:
-            stops[0] = flow * 0.5
-        if stops[1] is None:
-            stops[1] = fhigh * 1.5
-        # make sure all are in Hertz
-        low = units.Quantity(flow, 'Hz').value / nyq
-        high = units.Quantity(fhigh, 'Hz').value / nyq
-        stops = [units.Quantity(s, 'Hz').value / nyq for s in stops]
         # design filter
-        order, wn = signal.buttord(wp=[low, high], ws=stops, gpass=gpass,
-                                   gstop=gstop, analog=False)
-        zpk = signal.butter(order, wn, btype='band',
-                            analog=False, output='zpk')
+        filt = filter_design.bandpass(flow, fhigh, self.sample_rate,
+                                      fstop=fstop, gpass=gpass, gstop=gstop,
+                                      analog=False, type=type, **kwargs)
         # apply filter
-        return self.filter(*zpk)
+        return self.filter(*filt, filtfilt=filtfilt)
 
     def resample(self, rate, window='hamming', ftype='fir', n=None):
         """Resample this Series to a new rate
