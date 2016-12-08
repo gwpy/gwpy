@@ -33,7 +33,7 @@ try:
 except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
-from . import (axes, utils)
+from . import (axes, utils, rcParams)
 from .axes import Axes
 from .log import CombinedLogFormatterMathtext
 from .decorators import (auto_refresh, axes_method)
@@ -64,6 +64,10 @@ class Plot(figure.Figure):
     def __init__(self, *args, **kwargs):
         # pull non-standard keyword arguments
         auto_refresh = kwargs.pop('auto_refresh', False)
+
+        # dynamically set the subplot positions based on the figure size
+        figsize = kwargs.get('figsize', rcParams['figure.figsize'])
+        kwargs.setdefault('subplotpars', utils.get_subplot_params(figsize))
 
         # generated figure, with associated interactivity from pyplot
         super(Plot, self).__init__(*args, **kwargs)
