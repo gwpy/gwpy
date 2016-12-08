@@ -107,6 +107,20 @@ class FrequencySeriesAxes(Axes):
                 pass
         if 'label' in kwargs:
             self.legend()
+        if not self.get_xlabel():
+            if tex.USE_TEX:
+                ustr = tex.unit_to_latex(spectrum.xunit)
+            else:
+                ustr = spectrum.xunit.to_string()
+            if ustr:
+                self.set_xlabel('Frequency [%s]' % ustr)
+        if not self.get_ylabel():
+            if tex.USE_TEX:
+                ustr = tex.unit_to_latex(spectrum.unit)
+            else:
+                ustr = spectrum.unit.to_string()
+            if ustr:
+                self.set_ylabel('[%s]' % ustr)
         return line
 
     @auto_refresh
