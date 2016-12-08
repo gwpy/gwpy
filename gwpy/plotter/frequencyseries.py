@@ -20,6 +20,8 @@
 `~gwpy.frequencyseries`
 """
 
+import warnings
+
 import numpy
 
 from matplotlib.projections import register_projection
@@ -65,14 +67,14 @@ class FrequencySeriesAxes(Axes):
             for a full description of acceptable ``*args` and ``**kwargs``
         """
         if len(args) == 1 and isinstance(args[0], FrequencySeries):
-            return self.plot_spectrum(*args, **kwargs)
+            return self.plot_frequencyseries(*args, **kwargs)
         elif len(args) == 1 and isinstance(args[0], SpectralVariance):
             return self.plot_variance(*args, **kwargs)
         else:
             return super(FrequencySeriesAxes, self).plot(*args, **kwargs)
 
     @auto_refresh
-    def plot_spectrum(self, spectrum, **kwargs):
+    def plot_frequencyseries(self, spectrum, **kwargs):
         """Plot a :class:`~gwpy.frequencyseries.FrequencySeries` onto these axes
 
         Parameters
@@ -110,7 +112,15 @@ class FrequencySeriesAxes(Axes):
         return line
 
     @auto_refresh
-    def plot_spectrum_mmm(self, mean_, min_=None, max_=None, alpha=0.1,
+    def plot_spectrum(self, *args, **kwargs):
+        warnings.warn("{0}.plot_spectrum was renamed "
+                      "{0}.plot_frequencyseries, "
+                      "and will be removed in an upcoming release".format(
+                      type(self).__name__))
+        return self.plot_frequencyseries(*args, **kwargs)
+
+    @auto_refresh
+    def plot_frequencyseries_mmm(self, mean_, min_=None, max_=None, alpha=0.1,
                           **kwargs):
         """Plot a `FrequencySeries` onto these axes, with (min, max) shaded
         regions
@@ -147,7 +157,7 @@ class FrequencySeriesAxes(Axes):
             for a full description of acceptable ``*args` and ``**kwargs``
         """
         # plot mean
-        line1 = self.plot_spectrum(mean_, **kwargs)[0]
+        line1 = self.plot_frequencyseries(mean_, **kwargs)[0]
         # plot min and max
         kwargs.pop('label', None)
         color = kwargs.pop('color', line1.get_color())
@@ -175,6 +185,14 @@ class FrequencySeriesAxes(Axes):
         else:
             c = d = None
         return line1, a, b, c, d
+
+    @auto_refresh
+    def plot_spectrum_mmm(self, *args, **kwargs):
+        warnings.warn("{0}.plot_spectrum_mmm was renamed "
+                      "{0}.plot_frequencyseries_mmm, "
+                      "and will be removed in an upcoming release".format(
+                      type(self).__name__))
+        return self.plot_frequencyseries(*args, **kwargs)
 
     @auto_refresh
     def plot_variance(self, specvar, norm='log', **kwargs):
