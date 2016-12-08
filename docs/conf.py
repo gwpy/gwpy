@@ -98,6 +98,8 @@ autodoc_default_flags = ['show-inheritance', 'members', 'inherited-members']
 plot_rcparams = GWPY_PLOT_PARAMS
 plot_apply_rcparams = True
 plot_formats = ['png']
+plot_include_source = True
+plot_html_show_source_link = False
 
 # fix numpydoc autosummary
 numpydoc_show_class_members = False
