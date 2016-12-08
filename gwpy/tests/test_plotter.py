@@ -28,7 +28,7 @@ from numpy import testing as nptest
 
 from scipy import signal
 
-from matplotlib import use
+from matplotlib import (use, rc_context)
 use('agg')
 from matplotlib.legend import Legend
 from matplotlib.colors import LogNorm
@@ -123,10 +123,18 @@ class PlotTestCase(Mixin, unittest.TestCase):
         self.save_and_close(fig)
 
     def test_subplotpars(self):
+        # check that dynamic subplotpars gets applied
         fig, ax = self.new(figsize=(12, 4))
+        target = utils.SUBPLOT_POSITIONS[(12, 4)]
         sbp = fig.subplotpars
-        self.assertTupleEqual(utils.SUBPLOT_POSITIONS[(12, 4)],
+        self.assertTupleEqual(target,
                               (sbp.left, sbp.bottom, sbp.right, sbp.top))
+        # check that dynamic subplotpars doesn't get applied if the user
+        # overrides any of the settings
+        with rc_context(rc={'figure.subplot.left': target[0]*.1}):
+            fig, ax = self.new(figsize=(12, 4))
+            sbp = fig.subplotpars
+            self.assertEqual(sbp.left, target[0]*.1)
 
     # -- test axes_method decorators
     def test_axes_methods(self):
