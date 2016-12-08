@@ -1244,6 +1244,12 @@ class TimeSeries(TimeSeriesBase):
                 filt = filt
                 a = filt.den
                 b = filt.num
+            # detect ZPK
+            elif (isinstance(filt, (tuple, list)) and len(filt) == 3 and
+                      isinstance(filt[0], numpy.ndarray) and
+                      isinstance(filt[1], numpy.ndarray) and
+                      isinstance(filt[2], float)):
+                sos = signal.zpk2sos(*filt)
             # detect SOS
             elif isinstance(filt, numpy.ndarray) and filt.ndim == 2:
                 sos = filt
