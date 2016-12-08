@@ -1157,8 +1157,8 @@ class TimeSeries(TimeSeriesBase):
             # convert from Hz to rad/s if needed
             unit = units.Unit(unit)
             if unit == units.Unit('Hz'):
-                z *= -2 * pi
-                p *= -2 * pi
+                z = -2 * pi * z
+                p = -2 * pi * p
             elif unit != units.Unit('rad/s'):
                 raise ValueError("zpk can only be given with unit='Hz' "
                                  "or 'rad/s'")
