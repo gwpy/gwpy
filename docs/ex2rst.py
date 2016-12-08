@@ -53,16 +53,12 @@ header = []
 
 indoc = False
 incode = False
-
+reset = True
 
 for i,line in enumerate(lines):
     # skip file header
     if len(output) == 0 and line.startswith('#'):
         continue
-
-    # end on plot display
-    if line.startswith(('if __name__ == ', '# Show')):
-        break
 
     # hide lines
     if line.endswith('# hide'):
@@ -99,7 +95,13 @@ for i,line in enumerate(lines):
     # code
     else:
         if not incode:
-            output.extend(('', '.. code-block:: python', ''))
+            output.extend(('', '.. plot::', '   :include-source:'))
+            if reset:
+                output.append('   :context: reset')
+                reset = False
+            else:
+                output.append('   :context:')
+            output.append('')
         output.append('   %s' % line)
         incode = True
 
@@ -111,7 +113,6 @@ for i,line in enumerate(lines):
     if len(output) == 1:
         output.append('#'*len(output[0]))
 
-output.append('\n.. plot:: %s\n' % args.infile)
 output = header + output
 
 if args.outfile:
