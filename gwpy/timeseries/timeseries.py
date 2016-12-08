@@ -1584,7 +1584,7 @@ class TimeSeries(TimeSeriesBase):
         from ..plotter import TimeSeriesPlot
         return TimeSeriesPlot(self, **kwargs)
 
-    def notch(self, frequency, type='iir', **kwargs):
+    def notch(self, frequency, type='iir', filtfilt=True, **kwargs):
         """Notch out a frequency in a `TimeSeries`
 
         Parameters
@@ -1608,8 +1608,9 @@ class TimeSeries(TimeSeriesBase):
         scipy.signal.iirdesign
             for details on the IIR filter design method
         """
-        zpk = notch(frequency, self.sample_rate.value, type=type, **kwargs)
-        return self.filter(*zpk)
+        zpk = filter_design.notch(frequency, self.sample_rate.value,
+                                  type=type, **kwargs)
+        return self.filter(*zpk, filtfilt=filtfilt)
 
     def q_transform(self, qrange=(4, 64), frange=(0, numpy.inf),
                     gps=None, search=.5, tres=.001, fres=.5, outseg=None,
