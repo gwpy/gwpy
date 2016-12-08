@@ -188,6 +188,13 @@ class TimeSeriesAxes(Axes):
         line = self.plot(timeseries.times.value, timeseries.value, **kwargs)
         if len(self.lines) == 1 and timeseries.size:
             self.set_xlim(*timeseries.xspan)
+        if not self.get_ylabel():
+            if tex.USE_TEX:
+                ustr = tex.unit_to_latex(timeseries.unit)
+            else:
+                ustr = timeseries.unit.to_string()
+            if ustr:
+                self.set_ylabel('[%s]' % ustr)
         return line
 
     @auto_refresh
