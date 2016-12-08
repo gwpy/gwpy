@@ -101,7 +101,10 @@ def unit_to_latex(unit):
             else:
                 positives = format_unit_list(positives)
                 s += positives
-    return r'$\mathrm{{{0}}}$'.format(s)
+    if s:
+        return r'$\mathrm{{{0}}}$'.format(s)
+    else:
+        return ''
 
 
 def format_unit_list(unitlist, negative=False):
