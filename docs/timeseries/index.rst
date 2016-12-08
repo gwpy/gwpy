@@ -62,7 +62,7 @@ Local data access
 
 If you have direct access to one or more files of data, either on the LIGO Data Grid (where the ``gwf`` files are stored) or you have some files of your own, you can use the `TimeSeries.read` method:
 
-This method is an example of the unified input/output system provided by `astropy <https://astropy.org>`_, so should respond in the same way whether you give it a ``gwf`` file, or an `''hdf5''` file, or a simple `''txt''` file.:
+This method is an example of the unified input/output system provided by `astropy <https://astropy.org>`_, so should respond in the same way whether you give it a ``gwf`` file, or an `''hdf5''` file, or a simple `''txt''` file.::
 
     data = TimeSeries.read('mydata.gwf', 'L1:GDS-CALIB_STRAIN')
 
