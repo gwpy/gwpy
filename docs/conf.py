@@ -188,6 +188,7 @@ html_theme_options = {
     'navbar_sidebarrel': True,
     'navbar_pagenav': False,
     'bootswatch_theme': 'flatly',
+    'bootstrap_version': '3',
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
