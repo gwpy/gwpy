@@ -70,7 +70,7 @@ extensions = [
     'sphinx.ext.linkcode',
     'numpydoc',
     #'sphinxcontrib.epydoc',
-    'sphinxcontrib.doxylink',
+    #'sphinxcontrib.doxylink',
     'matplotlib.sphinxext.plot_directive',
     'gwpy.utils.sphinx.autoclassapi',
     'gwpy.utils.sphinx.directives',
@@ -87,12 +87,12 @@ autodoc_default_flags = ['show-inheritance', 'members', 'inherited-members']
 #    [r'glue(\.|$)'],
 #}
 
-# doxylink
-LALSUITE_DOCS = 'http://software.ligo.org/docs/lalsuite'
-doxylink = {
-    'lal': ('lal.tag', '%s/lal/' % LALSUITE_DOCS),
-    'lalframe': ('lalframe.tag', '%s/lalframe/' % LALSUITE_DOCS),
-}
+## doxylink
+#LALSUITE_DOCS = 'http://software.ligo.org/docs/lalsuite'
+#doxylink = {
+#    'lal': ('lal.tag', '%s/lal/' % LALSUITE_DOCS),
+#    'lalframe': ('lalframe.tag', '%s/lalframe/' % LALSUITE_DOCS),
+#}
 
 # matplotlib plot directive
 plot_rcparams = GWPY_PLOT_PARAMS
