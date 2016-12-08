@@ -50,6 +50,7 @@ from gwpy.plotter import (figure, rcParams, Plot, Axes,
                           HistogramPlot, HistogramAxes,
                           SegmentPlot, SegmentAxes,
                           SpectrogramPlot, BodePlot)
+from gwpy.plotter import utils
 from gwpy.plotter.gps import (GPSTransform, InvertedGPSTransform)
 from gwpy.plotter.html import map_data
 from gwpy.plotter.tex import (float_to_latex, label_to_latex,
@@ -73,12 +74,12 @@ class Mixin(object):
     FIGURE_CLASS = Plot
     AXES_CLASS = Axes
 
-    def new(self):
+    def new(self, **figkwargs):
         """Create a new `Figure` with some `Axes`
 
         Returns (fig, ax)
         """
-        fig = self.FIGURE_CLASS()
+        fig = self.FIGURE_CLASS(**figkwargs)
         return fig, fig.gca()
 
     @property
@@ -120,6 +121,12 @@ class PlotTestCase(Mixin, unittest.TestCase):
         fig = self.FIGURE_CLASS(auto_refresh=True)
         self.assertTrue(fig.get_auto_refresh())
         self.save_and_close(fig)
+
+    def test_subplotpars(self):
+        fig, ax = self.new(figsize=(12, 4))
+        sbp = fig.subplotpars
+        self.assertTupleEqual(utils.SUBPLOT_POSITIONS[(12, 4)],
+                              (sbp.left, sbp.bottom, sbp.right, sbp.top))
 
     # -- test axes_method decorators
     def test_axes_methods(self):
