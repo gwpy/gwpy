@@ -417,24 +417,24 @@ class FrequencySeriesPlotTestCase(FrequencySeriesMixin, PlotTestCase):
 
 
 class FrequencySeriesAxesTestCase(FrequencySeriesMixin, AxesTestCase):
-    def test_plot_spectrum(self):
+    def test_plot_frequencyseries(self):
         fig, ax = self.new()
-        l = ax.plot_spectrum(self.asd)[0]
+        l = ax.plot_frequencyseries(self.asd)[0]
         nptest.assert_array_equal(l.get_xdata(), self.asd.frequencies.value)
         nptest.assert_array_equal(l.get_ydata(), self.asd.value)
         self.save_and_close(fig)
 
-    def test_plot_spectrum_mmm(self):
+    def test_plot_frequencyseries_mmm(self):
         fig, ax = self.new()
         # test defaults
-        artists = ax.plot_spectrum_mmm(*self.mmm)
+        artists = ax.plot_frequencyseries_mmm(*self.mmm)
         self.assertEqual(len(artists), 5)
         self.assertEqual(len(ax.lines), 3)
         self.assertEqual(len(ax.collections), 2)
         self.save_and_close(fig)
         # test min only
         fig, ax = self.new()
-        artists = ax.plot_spectrum_mmm(self.mmm[0], min_=self.mmm[1])
+        artists = ax.plot_frequencyseries_mmm(self.mmm[0], min_=self.mmm[1])
         self.assertEqual(len(artists), 5)
         self.assertIsNone(artists[3])
         self.assertIsNone(artists[4])
@@ -443,7 +443,7 @@ class FrequencySeriesAxesTestCase(FrequencySeriesMixin, AxesTestCase):
         self.save_and_close(fig)
         # test max only
         fig, ax = self.new()
-        artists = ax.plot_spectrum_mmm(self.mmm[0], max_=self.mmm[2])
+        artists = ax.plot_frequencyseries_mmm(self.mmm[0], max_=self.mmm[2])
         self.assertEqual(len(artists), 5)
         self.assertIsNone(artists[1])
         self.assertIsNone(artists[2])
