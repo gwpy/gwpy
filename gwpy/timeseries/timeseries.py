@@ -1106,7 +1106,8 @@ class TimeSeries(TimeSeriesBase):
             new.sample_rate = rate
             return new
 
-    def zpk(self, zeros, poles, gain, digital=False, unit='Hz'):
+    def zpk(self, zeros, poles, gain, analog=True, unit='Hz',
+            **kwargs):
         """Filter this `TimeSeries` by applying a zero-pole-gain filter
 
         Parameters
@@ -1117,9 +1118,9 @@ class TimeSeries(TimeSeriesBase):
             list of pole frequencies
         gain : `float`
             DC gain of filter
-        digital : `bool`, optional, default: `False`
-            give `True` if zeros, poles, and gain are already in Z-domain
-            digital format, otherwise they will be converted
+        analog : `bool`, optional, default: `True`
+            type of ZPK being applied, if `analog=True` all parameters
+            will be converted in the Z-domain for digital filtering
         unit : `str`, `~astropy.units.Unit`, optional, default: `'Hz'`
             unit of zeros and poles, either 'Hz' or 'rad/s'
 
@@ -1140,11 +1141,19 @@ class TimeSeries(TimeSeriesBase):
 
         >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
         """
-        if not digital:
+        try:
+            analog &= not kwargs.pop('digital')
+        except KeyError:
+            pass
+        else:
+            warn("The 'digital' keyword argument to TimeSeries.zpk "
+                 "was renamed 'analog' for consistency', and will be "
+                 "removed in an upcoming release", DeprecationWarning)
+        if analog:
             # cast to arrays for ease
-            z = numpy.array(zeros, dtype=float)
-            p = numpy.array(poles, dtype=float)
-            k = float(gain)
+            z = numpy.array(zeros)
+            p = numpy.array(poles)
+            k = gain
             # convert from Hz to rad/s if needed
             unit = units.Unit(unit)
             if unit == units.Unit('Hz'):
@@ -1162,7 +1171,7 @@ class TimeSeries(TimeSeriesBase):
             zd = numpy.concatenate((zd, -numpy.ones(len(pd)-len(zd))))
             zeros, poles, gain = zd, pd, kd
         # apply filter
-        return self.filter(zeros, poles, gain)
+        return self.filter(zeros, poles, gain, **kwargs)
 
     def filter(self, *filt, **kwargs):
         """Apply the given filter to this `TimeSeries`.
