@@ -304,3 +304,8 @@ class FrequencySeriesPlot(Plot):
             # set axis scales
             ax.set_xscale(xscale)
             ax.set_yscale(yscale)
+            # set grid
+            if xscale == 'log':
+                ax.grid(True, axis='x', which='both')
+            if yscale == 'log':
+                ax.grid(True, axis='y', which='both')
