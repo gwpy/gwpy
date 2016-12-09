@@ -78,5 +78,8 @@ Similary to the :class:`~gwpy.timeseries.TimeSeries`, the `FrequencySeries` obje
 `FrequencySeries` reference
 ===========================
 
-.. autoclass:: FrequencySeries
-   :members:
+.. autosummary::
+   :toctree: ../api/
+
+   FrequencySeries
+   SpectralVariance

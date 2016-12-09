@@ -127,20 +127,10 @@ And similarly for the `TimeSeriesDict` (using `~TimeSeriesDict.plot`):
 Reference/API
 =============
 
-The `gwpy.timeseries` module provides the following `class` objects for handling instrumental data:
-
 .. autosummary::
+   :toctree: ../api/
    :nosignatures:
 
    TimeSeries
-   TimeSeriesList
    TimeSeriesDict
-
-.. autoclass:: TimeSeries
-
-.. autoclass:: TimeSeriesList
-   :no-inherited-members:
-
-.. autoclass:: TimeSeriesDict
-   :no-inherited-members:
-
+   TimeSeriesList

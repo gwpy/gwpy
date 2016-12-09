@@ -115,22 +115,16 @@ The `StateVector` fetched in the above example can then be parsed into a series 
                      version=None,
                      comment='H1:IFO-SV_STATE_VECTOR bit 0')>
 
-===============
-Class reference
-===============
+=============
+Reference/API
+=============
 
 This reference contains the following `Class` entries:
 
 .. autosummary::
+   :toctree: ../api/
    :nosignatures:
 
    StateVector
    StateTimeSeries
    StateVectorDict
-
-.. autoclass:: StateVector
-
-.. autoclass:: StateTimeSeries
-
-.. autoclass:: StateVectorDict
-
