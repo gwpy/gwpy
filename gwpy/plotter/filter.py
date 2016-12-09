@@ -148,7 +148,8 @@ class BodePlot(Plot):
         """
         return self.axes[1]
 
-    def add_filter(self, filter_, frequencies=None, dB=True, **kwargs):
+    def add_filter(self, filter_, frequencies=None, dB=True,
+                   analog=False, sample_rate=None, **kwargs):
         """Add a linear time-invariant filter to this BodePlot
 
         Parameters
@@ -163,9 +164,11 @@ class BodePlot(Plot):
 
         frequencies : `numpy.ndarray`, optional
             list of frequencies (in Hertz) at which to plot
+
         db : `bool`, optional, default: `True`
             if `True`, display magnitude in decibels, otherwise display
             amplitude.
+
         **kwargs
             any other keyword arguments accepted by
             :meth:`~matplotlib.axes.Axes.plot`
@@ -175,18 +178,45 @@ class BodePlot(Plot):
         mag, phase : `tuple` of `lines <matplotlib.lines.Line2D>`
             the lines drawn for the magnitude and phase of the filter.
         """
+        # validate arguments
+        if not analog and not sample_rate:
+            raise ValueError("Must give sample_rate frequency to display "
+                             "digital (analog=False) filter")
+        elif not analog:
+            try:
+                sample_rate = float(sample_rate)
+            except TypeError:  # Quantity
+                sample_rate = float(sample_rate.value)
+        # format array of frequencies
         if frequencies is None:
             w = None
-        else:
+        # convert to rad/s
+        elif isinstance(frequencies, numpy.ndarray) and analog:
             w = frequencies * 2. * pi
-        if not isinstance(filter_, signal.lti):
+        # convert to rad/sample
+        elif isinstance(frequencies, numpy.ndarray):
+            w = frequencies * 2. * pi / sample_rate
+        # if array, presume taps for FIR
+        if isinstance(filter_, numpy.ndarray):
+            filter_ = (filter_, [1])
+        # convert filter to LTI form (ba)
+        if analog and not isinstance(filter_, signal.lti):
             filter_ = signal.lti(*filter_)
-        w, h = signal.freqs(filter_.num, filter_.den, w)
-        w /= (2. * pi)
+        elif not isinstance(filter_, signal.lti):
+            filter_ = signal.dlti(*filter_)
+        # calculate frequency response
+        if analog:
+            w, h = signal.freqs(filter_.num, filter_.den, w)
+            w /= (2. * pi)  # convert back to Hertz
+        else:
+            w, h = signal.freqz(filter_.num, filter_.den, w)
+            w *= sample_rate / (2 * pi)  # convert back to Hertz
+        # calculate magnitude and phase
         mag = numpy.absolute(h)
         if dB:
             mag = 2 * to_db(mag)
         phase = numpy.degrees(numpy.unwrap(numpy.angle(h)))
+        # append to figure
         lm = self.maxes.plot(w, mag, **kwargs)
         lp = self.paxes.plot(w, phase, **kwargs)
         return lm, lp
