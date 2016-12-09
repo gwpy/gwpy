@@ -89,8 +89,8 @@ class BodePlot(Plot):
 
         # parse plotting arguments
         figargs = dict()
-        for key in ['figsize', 'dpi', 'facecolor', 'edgecolor', 'linewidth',
-                    'frameon', 'subplotpars', 'tight_layout']:
+        title = kwargs.pop('title', None)
+        for key in ['figsize', 'dpi', 'frameon', 'subplotpars', 'tight_layout']:
             if key in kwargs:
                 figargs[key] = kwargs.pop(key)
 
@@ -112,6 +112,10 @@ class BodePlot(Plot):
         # format plots
         if dB:
             self.maxes.set_ylabel('Magnitude [dB]')
+            ylim = self.maxes.get_ylim()
+            if ylim[1] == 0:
+                self.maxes.set_ybound(
+                    upper=ylim[1] + (ylim[1] - ylim[0]) * 0.1)
         else:
             self.maxes.set_yscale('log')
             self.maxes.set_ylabel('Amplitude')
@@ -120,7 +124,9 @@ class BodePlot(Plot):
         self.maxes.set_xscale('log')
         self.paxes.set_xscale('log')
         self.paxes.yaxis.set_major_locator(MultipleLocator(base=90))
-        self.paxes.set_ylim(-180, 180)
+        self.paxes.set_ylim(-185, 185)
+        if title:
+            self.maxes.set_title(title)
 
         # get xlim
         if (frequencies is None and len(filters) == 1 and
