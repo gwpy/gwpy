@@ -31,6 +31,12 @@ body {
 		padding-top: 20px;
 }
 
+/* -- navbar -------------------------------------------------------------- */
+
+.navbar {
+		background-color: #333;
+}
+
 /* -- banner image -------------------------------------------------------- */
 
 img[src*="https://gwpy.github.io/images/gwpy_docs_1200.png"] {
@@ -104,6 +110,10 @@ table a {
 }
 
 /* -- code formatting ----------------------------------------------------- */
+
+pre {
+		background-color: #333;
+}
 
 code {
 	padding: 0px
