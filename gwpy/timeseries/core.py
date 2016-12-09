@@ -280,7 +280,8 @@ class TimeSeriesBase(Series):
 
     @classmethod
     def fetch_open_data(cls, ifo, start, end, name='strain/Strain',
-                        sample_rate=4096, host='https://losc.ligo.org'):
+                        sample_rate=4096, host='https://losc.ligo.org',
+                        verbose=False):
         """Fetch open-access data from the LIGO Open Science Center
 
         Parameters
@@ -307,12 +308,16 @@ class TimeSeriesBase(Series):
             by LOSC at 4096 Hz, however there may be event-related
             data releases with a 16384 Hz rate
 
+        verbose : `bool`, optional, default: `False`
+            print verbose output while fetching data
+
         host : `str`, optional
             HTTP host name of LOSC server to access
         """
         from .io.losc import fetch_losc_data
         return fetch_losc_data(ifo, start, end, channel=name, cls=cls,
-                               sample_rate=sample_rate, host=host)
+                               sample_rate=sample_rate, host=host,
+                               verbose=verbose)
 
     @classmethod
     def find(cls, channel, start, end, frametype=None,
