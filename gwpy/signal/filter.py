@@ -26,6 +26,7 @@ from scipy.signal._arraytools import (axis_slice, axis_reverse, odd_ext,
                                       even_ext, const_ext)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['sosfiltfilt']
 
 
 def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=0):
