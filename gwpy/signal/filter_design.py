@@ -158,16 +158,22 @@ def lowpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
 
     Examples
     --------
-    To create a low-pass filter at 1000 Hz low-pass filter on 4096 Hz-sampled
-    data::
+    To create a low-pass filter at 1000 Hz for 4096 Hz-sampled data:
 
-        zpk = lowpass(1000, 4096)
+    .. plot::
+       :context: reset
 
-    To view the filter, you can use the `~gwpy.plotter.BodePlot`::
+       from gwpy.signal import lowpass
+       zpk = lowpass(1000, 4096)
 
-        from gwpy.plotter import BodePlot
-        plot = BodePlot(zpk)
-        plot.show()
+    To view the filter, you can use the `~gwpy.plotter.BodePlot`:
+
+    .. plot::
+       :context:
+
+       from gwpy.plotter import BodePlot
+       plot = BodePlot(zpk, sample_rate=4096)
+       plot.show()
 
     """
     sample_rate = _as_float(sample_rate)
@@ -216,6 +222,31 @@ def highpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
     filter
         the formatted filter. the output format for an IIR filter depends
         on the input arguments, default is a tuple of `(zeros, poles, gain)`
+
+    Notes
+    -----
+    By default a digital filter is returned, meaning the zeros and poles
+    are given in the Z-domain in units of radians/sample.
+
+    Examples
+    --------
+    To create a high-pass filter at 100 Hz for 4096 Hz-sampled data:
+
+    .. plot::
+       :context: reset
+
+       from gwpy.signal import highpass
+       zpk = highpass(100, 4096)
+
+    To view the filter, you can use the `~gwpy.plotter.BodePlot`:
+
+    .. plot::
+       :context:
+
+       from gwpy.plotter import BodePlot
+       plot = BodePlot(zpk, sample_rate=4096)
+       plot.show()
+
     """
     sample_rate = _as_float(sample_rate)
     frequency = _as_float(frequency)
@@ -266,6 +297,30 @@ def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
     filter
         the formatted filter. the output format for an IIR filter depends
         on the input arguments, default is a tuple of `(zeros, poles, gain)`
+
+    Notes
+    -----
+    By default a digital filter is returned, meaning the zeros and poles
+    are given in the Z-domain in units of radians/sample.
+
+    Examples
+    --------
+    To create a band-pass filter for 100-1000 Hz for 4096 Hz-sampled data:
+
+    .. plot::
+       :context: reset
+
+       from gwpy.signal import bandpass
+       zpk = bandpass(100, 1000, 4096)
+
+    To view the filter, you can use the `~gwpy.plotter.BodePlot`:
+
+    .. plot::
+       :context:
+
+       from gwpy.plotter import BodePlot
+       plot = BodePlot(zpk, sample_rate=4096)
+       plot.show()
     """
     sample_rate = _as_float(sample_rate)
     flow = _as_float(flow)
@@ -307,6 +362,30 @@ def notch(frequency, sample_rate, type='iir', **kwargs):
     --------
     scipy.signal.iirdesign
         for details on the IIR filter design method
+
+    Notes
+    -----
+    By default a digital filter is returned, meaning the zeros and poles
+    are given in the Z-domain in units of radians/sample.
+
+    Examples
+    --------
+    To create a low-pass filter at 1000 Hz for 4096 Hz-sampled data:
+
+    .. plot::
+       :context: reset
+
+       from gwpy.signal import notch
+       n = notch(100, 4096)
+
+    To view the filter, you can use the `~gwpy.plotter.BodePlot`:
+
+    .. plot::
+       :context:
+
+       from gwpy.plotter import BodePlot
+       plot = BodePlot(n, sample_rate=4096)
+       plot.show()
     """
     frequency = Quantity(frequency, 'Hz').value
     sample_rate = Quantity(sample_rate, 'Hz').value
@@ -345,6 +424,20 @@ def concatenate_zpks(*zpks):
         the concatenated array of poles
     gain : `float`
         the overall gain
+
+    Examples
+    --------
+    .. plot::
+       :context: reset
+
+       from gwpy.signal import (highpass, lowpass, concatenate_zpks)
+       hp = highpass(100, 4096)
+       lp = lowpass(1000, 4096)
+       zpk = concatenate_zpks(hp, lp)
+
+       from gwpy.plotter import BodePlot
+       plot = BodePlot(zpk, sample_rate=4096)
+       plot.show()
     """
     zs, ps, ks = zip(*zpks)
-    return concatenate(zs), contatenate(ps), reduce(operator.mul, ks, 1)
+    return concatenate(zs), concatenate(ps), reduce(operator.mul, ks, 1)
