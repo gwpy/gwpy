@@ -107,8 +107,6 @@ class FrequencySeriesAxes(Axes):
                 self.set_xlim(*spectrum.xspan)
             except ValueError:
                 pass
-        if 'label' in kwargs:
-            self.legend()
         if not self.get_xlabel():
             if tex.USE_TEX:
                 ustr = tex.unit_to_latex(spectrum.xunit)
