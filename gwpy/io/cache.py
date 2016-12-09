@@ -256,20 +256,13 @@ def read_cache_factory(target):
     return _read
 
 
-def cache_segments(*caches, **kwargs):
+def cache_segments(*caches):
     """Build a `SegmentList` of data availability for these `Caches`
 
     Parameters
     ----------
     *cache : `~glue.lal.Cache`
         one of more frame file caches describing files on disk
-    on_missing : `str`
-        what to do if files in a `Cache` are not found on disk, one of
-
-        - "warn": print a warning message saying how many files
-                  are missing out of the total checked [DEFAULT].
-        - "error": raise an exception if any are missing
-        - "ignore": do nothing
 
     Returns
     -------
@@ -277,12 +270,7 @@ def cache_segments(*caches, **kwargs):
         a list of segments for when data should be available
     """
     from ..segments import SegmentList
-    on_missing = kwargs.pop('on_missing', 'warn')
-    if kwargs:
-        raise TypeError("%r is an invalid keyword for cache_segments"
-                        % kwargs.keys()[0])
     out = SegmentList()
     for cache in caches:
-        found, _ = cache.checkfilesexist(on_missing=on_missing)
-        out.extend(e.segment for e in found)
+        out.extend(e.segment for e in cache)
     return out.coalesce()
