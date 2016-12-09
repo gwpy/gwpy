@@ -73,7 +73,6 @@ class Plot(figure.Figure):
             rcParams['figure.subplot.%s' % pos] ==
                 DEFAULT_RCPARAMS['figure.subplot.%s' % pos] for
             pos in ('left', 'bottom', 'right', 'top')])
-        print(use_subplotpars)
         if use_subplotpars:
             kwargs['subplotpars'] = subplotpars
 
