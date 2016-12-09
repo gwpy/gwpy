@@ -632,7 +632,7 @@ class StateVector(TimeSeriesBase):
 
     @classmethod
     def fetch_open_data(cls, ifo, start, end, name='quality/simple',
-                        host='https://losc.ligo.org'):
+                        host='https://losc.ligo.org', verbose=False):
         """Fetch open-access data from the LIGO Open Science Center
 
         Parameters
@@ -656,10 +656,14 @@ class StateVector(TimeSeriesBase):
 
         host : `str`, optional
             HTTP host name of LOSC server to access
+
+        verbose : `bool`, optional, default: `False`
+            print verbose output while fetching data
+
         """
         from .io.losc import fetch_losc_data
         return fetch_losc_data(ifo, start, end, channel=name, cls=cls,
-                               host=host)
+                               host=host, verbose=verbose)
 
     @classmethod
     def get(cls, channel, start, end, bits=None, **kwargs):
