@@ -671,7 +671,7 @@ class BodePlotTestCase(Mixin, unittest.TestCase):
         self.assertEqual(paxes.get_xlabel(), 'Frequency [Hz]')
         self.assertEqual(paxes.get_yscale(), 'linear')
         self.assertEqual(paxes.get_ylabel(), 'Phase [deg]')
-        self.assertTupleEqual(paxes.get_ylim(), (-180, 180))
+        self.assertTupleEqual(paxes.get_ylim(), (-185, 185))
 
     def test_add_filter(self):
         # test method 1
