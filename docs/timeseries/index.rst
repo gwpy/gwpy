@@ -18,12 +18,14 @@ Remote data access
 
 GWpy provides ways to download these data, one for authorised collaborators, and another for public data releases:
 
-============================  ===========  ===============================================
-Method                        Restricted?  Description
-============================  ===========  ===============================================
-`TimeSeries.get`              LIGO.ORG     Fetch data via NDS2 or `gw_data_find`
-`TimeSeries.fetch_open_data`  public       Fetch data from LIGO Open Science Center (LOSC)
-============================  ===========  ===============================================
+==================================  ===========  =========================
+Method                              Restricted?  Description
+==================================  ===========  =========================
+:meth:`TimeSeries.get`              LIGO.ORG     Fetch data via NDS2 or
+                                                 `gw_data_find`
+:meth:`TimeSeries.fetch_open_data`  public       Fetch data from LIGO Open
+                                                 Science Center (LOSC)
+==================================  ===========  =========================
 
 Public
 ------
