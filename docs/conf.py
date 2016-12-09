@@ -105,7 +105,7 @@ plot_html_show_source_link = False
 numpydoc_show_class_members = False
 
 # set autosummary
-autosummary_generate = False
+autosummary_generate = True
 
 # configure inheritance diagram
 inheritance_graph_attrs = dict(rankdir='TB')
