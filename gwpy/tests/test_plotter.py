@@ -61,8 +61,7 @@ from test_table import SnglBurstTableTestCase
 
 # design ZPK for BodePlot test
 ZPK = [100], [1], 1e-2
-FREQUENCIES, H = signal.freqresp(ZPK, n=200)
-FREQUENCIES /= 2. * pi
+FREQUENCIES, H = signal.freqresp(ZPK, n=100)
 MAGNITUDE = 20 * numpy.log10(numpy.absolute(H))
 PHASE = numpy.degrees(numpy.unwrap(numpy.angle(H)))
 
@@ -677,22 +676,22 @@ class BodePlotTestCase(Mixin, unittest.TestCase):
     def test_add_filter(self):
         # test method 1
         fig = self.FIGURE_CLASS()
-        fig.add_filter(ZPK)
+        fig.add_filter(ZPK, analog=True)
         lm = fig.maxes.get_lines()[0]
         lp = fig.paxes.get_lines()[0]
         nptest.assert_array_equal(lm.get_xdata(), FREQUENCIES)
         nptest.assert_array_equal(lm.get_ydata(), MAGNITUDE)
         nptest.assert_array_equal(lp.get_xdata(), FREQUENCIES)
-        nptest.assert_array_equal(lp.get_ydata(), PHASE)
+        nptest.assert_array_almost_equal(lp.get_ydata(), PHASE)
         self.save_and_close(fig)
         # test method 2
-        fig = self.FIGURE_CLASS(ZPK)
+        fig = self.FIGURE_CLASS(ZPK, analog=True)
         lm = fig.maxes.get_lines()[0]
         lp = fig.paxes.get_lines()[0]
         nptest.assert_array_equal(lm.get_xdata(), FREQUENCIES)
         nptest.assert_array_equal(lm.get_ydata(), MAGNITUDE)
         nptest.assert_array_equal(lp.get_xdata(), FREQUENCIES)
-        nptest.assert_array_equal(lp.get_ydata(), PHASE)
+        nptest.assert_array_almost_equal(lp.get_ydata(), PHASE)
 
 
 # -- gwpy.plotter.gps module tests --------------------------------------------
