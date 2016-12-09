@@ -142,9 +142,22 @@ dl.attribute > dd {
 }
 
 /* parameter lists */
-dl.class table.field-list blockquote {
+dl.class table.field-list,
+dl.method table.field-list {
+		margin-bottom: 0px;
+}
+
+dl.class table.field-list th,
+dl.method table.field-list th {
+		padding-left: 0px;
+}
+
+dl.class table.field-list blockquote,
+dl.method table.field-list blockquote {
 		border-left: none;
 		margin-bottom: 0px;
+		padding: 0px 20px 10px;
+		font-size: inherit;
 }
 
 /* table inside method */
@@ -155,4 +168,10 @@ dl.classmethod table {
 dl.classmethod table th:first-child,
 dl.classmethod table td:first-child, {
 		padding-left: 0px;
+}
+
+.class .rubric,
+.classmethod .rubric,
+.method .rubric {
+		margin-top: 10px;
 }
