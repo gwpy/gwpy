@@ -30,6 +30,7 @@ from scipy import signal
 from astropy.units import Quantity
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__all__ = ['lowpass', 'highpass', 'bandpass', 'notch', 'concatenate_zpks']
 
 def _as_float(x):
     try:
