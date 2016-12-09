@@ -191,10 +191,7 @@ class BodePlot(Plot):
         if frequencies is None:
             w = None
         # convert to rad/s
-        elif isinstance(frequencies, numpy.ndarray) and analog:
-            w = frequencies * 2. * pi
-        # convert to rad/sample
-        elif isinstance(frequencies, numpy.ndarray):
+        elif not analog and isinstance(frequencies, numpy.ndarray):
             w = frequencies * 2. * pi / sample_rate
         # if array, presume taps for FIR
         if isinstance(filter_, numpy.ndarray):
@@ -205,17 +202,9 @@ class BodePlot(Plot):
         elif not isinstance(filter_, signal.lti):
             filter_ = signal.dlti(*filter_)
         # calculate frequency response
-        if analog:
-            w, h = signal.freqs(filter_.num, filter_.den, w)
-            w /= (2. * pi)  # convert back to Hertz
-        else:
-            w, h = signal.freqz(filter_.num, filter_.den, w)
-            w *= sample_rate / (2 * pi)  # convert back to Hertz
-        # calculate magnitude and phase
-        mag = numpy.absolute(h)
-        if dB:
-            mag = 2 * to_db(mag)
-        phase = numpy.degrees(numpy.unwrap(numpy.angle(h)))
+        w, mag, phase = filter_.bode(w=w)
+        if not analog:
+            w *= sample_rate / (2. * pi)
         # append to figure
         lm = self.maxes.plot(w, mag, **kwargs)
         lp = self.paxes.plot(w, phase, **kwargs)
