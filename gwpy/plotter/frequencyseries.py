@@ -244,6 +244,10 @@ class FrequencySeriesAxes(Axes):
             self.set_yscale('log', nonposy='mask')
             self.set_xlim(x[0], x[-1])
             self.set_ylim(y[0], y[-1])
+            # fill in zeros
+            if isinstance(mesh.norm, colors.LogNorm):
+                cmap = mesh.get_cmap()
+                cmap.set_bad(cmap.colors[0])
         return mesh
 
 
