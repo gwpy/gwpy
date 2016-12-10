@@ -31,25 +31,43 @@ to produce a much more feature-rich output.
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.timeseries'
 
-# As with the other `~gwpy.spectrogram.Spectrogram` examples, we import the
-# `TimeSeries` class, and :meth:`~TimeSeries.get` the data, but in this
-# example we only need 5 seconds of datam,
+# To demonstrate this, we can download some data associated with the
+# gravitational-wave event GW510914:
+
 from gwpy.timeseries import TimeSeries
-gwdata = TimeSeries.get(
-    'L1:OAF-CAL_DARM_DQ', 'Feb 28 2015 06:02:05', 'Feb 28 2015 06:02:10')
+lho = TimeSeries.fetch_open_data('H1', 1126259458, 1126259467, verbose=True)
+
+# and can :meth:`~TimeSeries.highpass` and :meth:`~TimeSeries.whiten`
+# the remove low-frequency noise and try and enhance low-amplitude signals
+# across the middle of the frequency band:
+
+hp = lho.highpass(20)
+white = hp.whiten(4, 2).crop(1126259460, 1126259465)
+
+# .. note::
+#
+#    We chose to :meth:`~TimeSeries.crop` out the leading and trailing 2
+#    seconds of the the whitened data series here to remove any filtering
+#    artefacts that may have been introduced.
 
 # Now we can call the `~TimeSeries.spectrogram2` method of `gwdata` to
-# calculate our over-dense `~gwpy.spectrogram.Spectrogram`
-specgram = gwdata.spectrogram2(fftlength=0.15, overlap=0.14) ** (1/2.)
+# calculate our over-dense `~gwpy.spectrogram.Spectrogram`, using a
+# 1/16-second FFT length and high overlap:
 
-# To whiten the `specgram` we can use the :meth:`~Spectrogram.ratio` method
-# to divide by the overall median:
-medratio = specgram.ratio('median')
+specgram = white.spectrogram2(fftlength=1/16., overlap=15/256.)
 
 # Finally, we make a plot:
-plot = medratio.plot(norm='log', vmin=0.5, vmax=10)
-plot.set_yscale('log')
-plot.set_ylim(40, 8192)
-plot.add_colorbar(label='Amplitude relative to median')
-plot.set_title('L1 $h(t)$ with noise interference')
+
+plot = specgram.plot(norm='log', cmap='viridis')
+ax = plot.gca()
+ax.set_ylim(0, 500)
+ax.set_title('LIGO-Hanford strain data around GW150914')
+ax.set_epoch(1126259462.427)
+ax.set_xlim(1126259462.427-.5, 1126259462.427+.5)
 plot.show()
+
+# Here we can see the trace of a high-mass binary black hole system,
+# referred to as GW150914.
+# For more details on this signal, please see 
+# `Abbott et al. (2016) <https://doi.org/10.1103/PhysRevLett.116.061102>`_
+# (the joint LSC-Virgo publication announcing this detection).
