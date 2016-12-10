@@ -99,6 +99,6 @@ plot.show()
 # Congratulations, you have succesfully filtered LIGO data to uncover the
 # first ever directly-detected gravitational wave signal, GW150914!
 # The above filtering is (almost) the same as what was applied to LIGO data
-# to produce Figure 1 in `Abbott et al. #
-# (2016 <https://doi.org/10.1103/PhysRevLett.116.061102>`_
+# to produce Figure 1 in
+# `Abbott et al. (2016) <https://doi.org/10.1103/PhysRevLett.116.061102>`_
 # (the joint LSC-Virgo publication announcing this detection).
