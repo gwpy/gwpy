@@ -31,7 +31,7 @@ from scipy import signal
 from matplotlib import (use, rc_context)
 use('agg')
 from matplotlib.legend import Legend
-from matplotlib.colors import LogNorm
+from matplotlib.colors import (LogNorm, ColorConverter)
 from matplotlib.collections import (PathCollection, PatchCollection,
                                     PolyCollection)
 
@@ -65,6 +65,15 @@ ZPK = [100], [1], 1e-2
 FREQUENCIES, H = signal.freqresp(ZPK, n=100)
 MAGNITUDE = 20 * numpy.log10(numpy.absolute(H))
 PHASE = numpy.degrees(numpy.unwrap(numpy.angle(H)))
+
+# extract color cycle
+COLOR_CONVERTER = ColorConverter()
+try:
+    COLOR_CYCLE = rcParams['axes.prop_cycle'].by_key()['color']
+except KeyError:  # mpl < 1.5
+    COLOR0 = COLOR_CONVERTER.to_rgba('b')
+else:
+    COLOR0 = COLOR_CONVERTER.to_rgba(COLOR_CYCLE[0])
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -559,10 +568,11 @@ class SegmentAxesTestCase(SegmentMixin, AxesTestCase):
         self.assertTupleEqual(patch.get_xy(), (1.1, 9.6))
         self.assertAlmostEqual(patch.get_height(), 0.8)
         self.assertAlmostEqual(patch.get_width(), 1.3)
-        self.assertTupleEqual(patch.get_facecolor(), (0.0, 0.0, 1.0, 1.0))
+        self.assertTupleEqual(patch.get_facecolor(), COLOR0)
         # check kwarg passing
         patch = self.AXES_CLASS.build_segment((1.1, 2.4), 10, facecolor='red')
-        self.assertTupleEqual(patch.get_facecolor(), (1.0, 0.0, 0.0, 1.0))
+        self.assertTupleEqual(patch.get_facecolor(),
+                              COLOR_CONVERTER.to_rgba('red'))
         # check valign
         patch = self.AXES_CLASS.build_segment((1.1, 2.4), 10, valign='top')
         self.assertTupleEqual(patch.get_xy(), (1.1, 9.2))
