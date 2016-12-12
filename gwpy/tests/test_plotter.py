@@ -28,7 +28,7 @@ from numpy import testing as nptest
 
 from scipy import signal
 
-from matplotlib import (use, rc_context)
+from matplotlib import (use, rc_context, __version__ as mpl_version)
 use('agg')
 from matplotlib.legend import Legend
 from matplotlib.colors import (LogNorm, ColorConverter)
@@ -73,7 +73,10 @@ try:
 except KeyError:  # mpl < 1.5
     COLOR0 = COLOR_CONVERTER.to_rgba('b')
 else:
-    COLOR0 = COLOR_CONVERTER.to_rgba(COLOR_CYCLE[0])
+    if mpl_version >= '2.0':
+        COLOR0 = COLOR_CONVERTER.to_rgba(COLOR_CYCLE[0])
+    else:
+        COLOR0 = COLOR_CONVERTER.to_rgba('b')
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
