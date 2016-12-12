@@ -26,7 +26,7 @@ Available methods include:
    TimeSeries.filter
    TimeSeries.whiten
 
-For a worked example of how to filter LIGO data to discover a gravitational-wave signal, see the :doc:`GW150914 example <../examples/signal/gw150914>`.
+For a worked example of how to filter LIGO data to discover a gravitational-wave signal, see the example :ref:`example-signal-gw150914`.
 
 ==========================
 Frequency-domain filtering
@@ -45,6 +45,8 @@ Available methods include:
    TimeSeries.rayleigh_spectrum
    TimeSeries.rayleigh_spectrogram
 
+For a worked example of how to load data and calculate the Amplitude Spectral Density `~gwpy.frequencyseries.FrequencySeries`, see the example :ref:`example-frequencyseries-hoff`.
+
 =============
 Filter design
 =============
@@ -58,56 +60,11 @@ The :mod:`gwpy.signal` provides a number of filter design methods which, when co
    ~gwpy.signal.highpass
    ~gwpy.signal.bandpass
    ~gwpy.signal.notch
+   ~gwpy.signal.contatenate_zpks
 
-Each of these will return filter coefficients that can be pass directly into `~TimeSeries.zpk` (default for analogue filters) or `~TimeSeries.filter` (default for digital filters).
+Each of these will return filter coefficients that can be passed directly into `~TimeSeries.zpk` (default for analogue filters) or `~TimeSeries.filter` (default for digital filters).
 
-For example, you can easily create, view, and apply a band-pass filter to some gravitational-wave data by combining the above methods.
-
-We start by loading some data
-
-.. plot::
-   :context: reset
-   :nofigs:
-   :include-source:
-
-   from gwpy.timeseries import TimeSeries
-   data = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
-
-Now we can design and examine a bandpass filter to zone in on data between 40Hz nd 500Hz -- the main band of interest for a higher-mass binary black hole system (for example):
-
-.. plot::
-   :context:
-   :include-source:
-
-   from gwpy.signal import bandpass
-   from gwpy.plotter import BodePlot
-   f = bandpass(40, 1000, data.sample_rate)
-   plot = BodePlot(f, sample_rate=data.sample_rate,
-                   title='40-1000\,Hz bandpass filter')
-   plot.show()
-
-Next we can apply that filter to the `data` and look at the before-and-after `TimeSeries`:
-
-.. plot::
-   :context:
-   :include-source:
-
-   from gwpy.plotter import TimeSeriesPlot
-   bp = data.filter(f).crop(1126259446+2, 1126259446-2)
-   plot = TimeSeriesPlot(data.crop(1126259446+2, 1126259446-2), bp, sep=True)
-   plot.show()
-
-and can verify that the new `bp` series has the right spectral content:
-
-.. plot::
-   :context:
-   :include-source:
-
-   asd = data.asd(8, 4)
-   bpasd = bp.asd(8, 4)
-   plot = asd.plot(label='raw')
-   plot.add_frequencyseries(bpasd, label='bandpass')
-   plot.show()
+For a worked example of how to filter LIGO data to discover a gravitational-wave signal, see the example :ref:`example-signal-gw150914`.
 
 **Cross-channel correlations:**
 
@@ -117,9 +74,7 @@ and can verify that the new `bp` series has the right spectral content:
    TimeSeries.coherence
    TimeSeries.coherence_spectrogram
 
-For example:
-
-For more examples like this, see :ref:`examples`.
+For a worked example of how to compare channels like this, see the example :ref:`example-frequencyseries-coherence`.
 
 .. currentmodule:: gwpy.signal
 
