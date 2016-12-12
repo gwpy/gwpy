@@ -247,7 +247,11 @@ class FrequencySeriesAxes(Axes):
             # fill in zeros
             if isinstance(mesh.norm, colors.LogNorm):
                 cmap = mesh.get_cmap()
-                cmap.set_bad(cmap.colors[0])
+                try:
+                    # only listed colormaps have cmap.colors
+                    cmap.set_bad(cmap.colors[0])
+                except AttributeError:
+                    pass
         return mesh
 
 
