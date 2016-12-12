@@ -47,9 +47,11 @@ args = parser.parse_args()
 # -----------------------------------------------------------------------------
 # parse python file
 
+ref = '-'.join(os.path.splitext(args.infile)[0].split(os.path.sep)[-2:])
+
 lines = open(args.infile, 'rb').read().splitlines()
 output = []
-header = []
+header = ['.. _example-%s:\n' % ref]
 
 indoc = False
 incode = False
