@@ -1765,6 +1765,6 @@ class TimeSeriesDict(TimeSeriesBaseDict):
 
 
 class TimeSeriesList(TimeSeriesBaseList):
-    __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
+    __doc__ = TimeSeriesBaseList.__doc__.replace('TimeSeriesBase',
                                                  'TimeSeries')
     EntryClass = TimeSeries

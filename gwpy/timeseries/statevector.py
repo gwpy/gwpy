@@ -840,6 +840,8 @@ class StateTimeSeriesDict(TimeSeriesBaseDict):
 
 @as_series_dict_class(StateVector)
 class StateVectorDict(TimeSeriesBaseDict):
+    __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
+                                                 'StateVector')
     EntryClass = StateVector
     read = classmethod(reader(doc="""
         Read data for multiple bit vector channels into a `StateVectorDict`
@@ -904,4 +906,6 @@ class StateVectorDict(TimeSeriesBaseDict):
 
 
 class StateVectorList(TimeSeriesBaseList):
+    __doc__ = TimeSeriesBaseList.__doc__.replace('TimeSeriesBase',
+                                                 'StateVector')
     EntryClass = StateVector
