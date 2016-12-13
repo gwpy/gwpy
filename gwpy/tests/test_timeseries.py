@@ -295,6 +295,7 @@ class TimeSeriesTestMixin(object):
         ts1 = self.create(sample_rate=100)
         ts2 = ts1.resample(10, ftype='iir')
         self.assertEquals(ts2.sample_rate, ONE_HZ*10)
+        self.assertEqual(ts1.unit, ts2.unit)
         ts1.resample(10, ftype='fir', n=10)
 
     def test_to_from_lal(self):
@@ -671,7 +672,8 @@ class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
     def test_resample(self):
         ts1 = self.create(sample_rate=100)
         ts2 = ts1.resample(10)
-        self.assertEquals(ts2.sample_rate, ONE_HZ*10)
+        self.assertEqual(ts2.sample_rate, ONE_HZ*10)
+        self.assertEqual(ts1.unit, ts2.unit)
 
 
 # -- TimeSeriesDict tests ------------------------------------------------------
