@@ -136,10 +136,10 @@ class PlotTestCase(Mixin, unittest.TestCase):
     def test_subplotpars(self):
         # check that dynamic subplotpars gets applied
         fig, ax = self.new(figsize=(12, 4))
-        target = utils.SUBPLOT_POSITIONS[(12, 4)]
+        target = utils.SUBPLOT_WIDTH[12] + utils.SUBPLOT_HEIGHT[4]
         sbp = fig.subplotpars
         self.assertTupleEqual(target,
-                              (sbp.left, sbp.bottom, sbp.right, sbp.top))
+                              (sbp.left, sbp.right, sbp.bottom, sbp.top))
         # check that dynamic subplotpars doesn't get applied if the user
         # overrides any of the settings
         with rc_context(rc={'figure.subplot.left': target[0]*.1}):
