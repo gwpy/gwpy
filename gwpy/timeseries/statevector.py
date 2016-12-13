@@ -821,6 +821,7 @@ class StateVector(TimeSeriesBase):
                                     for bit in bits], dtype=self.dtype)
             new = StateVector(it.operands[1], dtype=dtype)
             new.__metadata_finalize__(self)
+            new._unit = self.unit
             new.sample_rate = rate2
             return new
         # error for non-integer resampling factors

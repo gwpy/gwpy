@@ -1103,6 +1103,7 @@ class TimeSeries(TimeSeriesBase):
             new = signal.resample(self.value, nsamp,
                                   window=window).view(self.__class__)
             new.__metadata_finalize__(self)
+            new._unit = self.unit
             new.sample_rate = rate
             return new
 
@@ -1288,6 +1289,7 @@ class TimeSeries(TimeSeriesBase):
             else:
                 new = signal.lfilter(b, a, self, axis=0, **kwargs).view(cls)
         new.__metadata_finalize__(self)
+        new._unit = self.unit
         return new
 
     def coherence(self, other, fftlength=None, overlap=None,
@@ -1543,6 +1545,7 @@ class TimeSeries(TimeSeriesBase):
         nsteps = 1 + int((self.size - nfft) / nstride)
         out = numpy.zeros(nsteps * nstride + noverlap).view(type(self))
         out.__metadata_finalize__(self)
+        out._unit = self.unit
         del out.times
         # loop over ffts and whiten each one
         for i in range(nsteps):
@@ -1576,6 +1579,7 @@ class TimeSeries(TimeSeriesBase):
         """
         data = signal.detrend(self.value, type=detrend).view(type(self))
         data.__metadata_finalize__(self)
+        data._unit = self.unit
         return data
 
     def plot(self, **kwargs):
