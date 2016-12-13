@@ -573,7 +573,7 @@ class SegmentAxesTestCase(SegmentMixin, AxesTestCase):
         fig, ax = self.new()
         c = ax.plot_segmentlist(self.segments)
         self.assertIsInstance(c, PatchCollection)
-        self.assertEqual(ax.dataLim.x0, 0.)
+        self.assertAlmostEqual(ax.dataLim.x0, 0.)
         self.assertAlmostEqual(ax.dataLim.x1, 7.)
         self.assertTupleEqual(ax.get_ylim(), (-1., 1.))
         self.assertEqual(len(c.get_paths()), len(self.segments))
