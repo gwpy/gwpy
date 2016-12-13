@@ -106,7 +106,7 @@ class Spectrogram(Array2D):
        ~Spectrogram.plot
        ~Spectrogram.zpk
     """
-    _metadata_slots = Series._metadata_slots + ['y0', 'dy', 'yindex']
+    _metadata_slots = Series._metadata_slots + ('y0', 'dy', 'yindex')
     _default_xunit = TimeSeries._default_xunit
     _default_yunit = FrequencySeries._default_xunit
     _rowclass = TimeSeries

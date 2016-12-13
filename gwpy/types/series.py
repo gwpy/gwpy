@@ -104,7 +104,7 @@ class Series(Array):
            dx: 2.0 W,
            xindex: [  0.   2.   4.   6.   8.  10.] W)
     """
-    _metadata_slots = Array._metadata_slots + ['x0', 'dx', 'xindex']
+    _metadata_slots = Array._metadata_slots + ('x0', 'dx', 'xindex')
     _default_xunit = Unit('')
     _ndim = 1
 
