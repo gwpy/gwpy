@@ -29,7 +29,7 @@ from compat import unittest
 from numpy import testing as nptest
 import numpy
 
-from astropy import units
+from astropy import (units, __version__ as astropy_version)
 from astropy.time import Time
 
 from gwpy.types import (Array, Series, Array2D)
@@ -50,7 +50,10 @@ class CommonTests(object):
     __metaclass_ = abc.ABCMeta
     TEST_CLASS = Array
     tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_')
-    EMPTY_ARRAY_ERROR = IndexError
+    if astropy_version >= '1.3':
+        EMPTY_ARRAY_ERROR = None
+    else:
+        EMPTY_ARRAY_ERROR = IndexError
 
     @classmethod
     def setUpClass(cls, dtype=None):
@@ -96,7 +99,8 @@ class CommonTests(object):
         """
         # test basic empty contructor
         self.assertRaises(TypeError, self.TEST_CLASS)
-        self.assertRaises(self.EMPTY_ARRAY_ERROR, self.TEST_CLASS, [])
+        if self.EMPTY_ARRAY_ERROR:
+            self.assertRaises(self.EMPTY_ARRAY_ERROR, self.TEST_CLASS, [])
         # test with some data
         array = self.create()
         nptest.assert_array_equal(array.value, self.data)
