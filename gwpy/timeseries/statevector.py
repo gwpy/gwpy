@@ -346,7 +346,7 @@ class StateVector(TimeSeriesBase):
         ~StateVector.plot
 
     """
-    _metadata_slots = TimeSeriesBase._metadata_slots + ['bits']
+    _metadata_slots = TimeSeriesBase._metadata_slots + ('bits',)
 
     def __new__(cls, data, bits=None, t0=None, dt=None, sample_rate=None,
                 times=None, channel=None, name=None, **kwargs):
