@@ -588,7 +588,6 @@ class SegmentAxesTestCase(SegmentMixin, AxesTestCase):
         self.assertIsInstance(c, PatchCollection)
         self.assertEqual(ax.dataLim.x0, 0.)
         self.assertAlmostEqual(ax.dataLim.x1, 7.)
-        self.assertTupleEqual(ax.get_ylim(), (-1., 1.))
         self.assertEqual(len(c.get_paths()), len(self.segments))
         self.assertEqual(ax.get_epoch(), self.segments[0][0])
         # test y
