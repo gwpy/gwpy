@@ -94,17 +94,32 @@ def marker_cycle(markers=None):
 
 # -- dynamic subplot positioning -----------------------------------------------
 
-SUBPLOT_POSITIONS = {
-    (8, 4): (.15, .2, .9, .85),
-    (8, 6): (.15, .12, .9, .9),
-    (12, 4): (.12, .2, .88, .85),
-    (12, 6): (.12, .15, .88, .88),
-    (12, 8): (.12, .1, .88, .92),
+SUBPLOT_WIDTH = {
+    8.: (.15, .88),
+    12.: (.1, .92),
+}
+SUBPLOT_HEIGHT = {
+    4.: (.2, .85),
+    6.: (.13, .9),
+    8.: (.1, .92),
 }
 
+
 def get_subplot_params(figsize):
+    """Return sensible default `SubplotParams` for a figure of the given size
+
+    Returns
+    -------
+    params : `~matplotlib.figure.SubplotParams`
+        formatted set of subplot parameters
+    """
+    w, h, = figsize
     try:
-        l, b, r, t = SUBPLOT_POSITIONS[tuple(figsize)]
+        l, r = SUBPLOT_WIDTH[w]
     except KeyError:
-        l = b = r = t = None
+        l = r = None
+    try:
+        b, t = SUBPLOT_HEIGHT[h]
+    except KeyError:
+        b = t = None
     return SubplotParams(**{'left': l, 'bottom': b, 'right': r, 'top': t})
