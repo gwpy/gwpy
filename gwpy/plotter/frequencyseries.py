@@ -204,7 +204,7 @@ class FrequencySeriesAxes(Axes):
                       "{0}.plot_frequencyseries_mmm, "
                       "and will be removed in an upcoming release".format(
                       type(self).__name__))
-        return self.plot_frequencyseries(*args, **kwargs)
+        return self.plot_frequencyseries_mmm(*args, **kwargs)
 
     @auto_refresh
     def plot_variance(self, specvar, norm='log', **kwargs):
