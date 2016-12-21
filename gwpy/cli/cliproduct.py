@@ -425,15 +425,15 @@ class CliProduct(object):
                     data = TimeSeries.fetch(chan, start, start+self.dur,
                                             verbose=verb)
 
-                if highpass > 0 & lowpass == 0:
+                if highpass > 0 and lowpass == 0:
                     data = data.highpass(highpass)
                     self.filter += "high pass (%.1f) " % highpass
-                elif lowpass > 0 & highpass == 0:
+                elif lowpass > 0 and highpass == 0:
                     data = data.lowpass(lowpass)
                     self.filter += "low pass (%.1f) " % lowpass
-                elif lowpass > 0 & highpass > 0:
+                elif lowpass > 0 and highpass > 0:
                     data = data.bandpass(highpass, lowpass)
-                    self.filter = "band pass (%.1f-%.1f)"
+                    self.filter = "band pass (%.1f-%.1f)" % (highpass, lowpass)
                 self.timeseries.append(data)
                 time_group.append(len(self.timeseries)-1)
             self.time_groups.append(time_group)
