@@ -164,8 +164,12 @@ class CliProduct(object):
                             help='use .gwf files in cache not NDS2,' +
                                  ' default use NDS2')
         parser.add_argument('--highpass',
-                            help='frequency for high pass butterworth,' +
+                            help='frequency for high pass filter,' +
                                  ' default no filter')
+        parser.add_argument('--lowpass',
+                            help='frequency for low pass filter,' +
+                                 ' default no filter')
+
         return
 
     def arg_chan1(self, parser):
@@ -399,7 +403,10 @@ class CliProduct(object):
         highpass = 0
         if arg_list.highpass:
             highpass = float(arg_list.highpass)
-            self.filter += "highpass(%.1f) " % highpass
+
+        lowpass = 0
+        if arg_list.lowpass:
+            lowpass = float(arg_list.lowpass)
 
         # Get the data from NDS or Frames
         # time_groups is a list of timeseries index grouped by
@@ -418,9 +425,15 @@ class CliProduct(object):
                     data = TimeSeries.fetch(chan, start, start+self.dur,
                                             verbose=verb)
 
-                if highpass > 0:
+                if highpass > 0 & lowpass == 0:
                     data = data.highpass(highpass)
-
+                    self.filter += "high pass (%.1f) " % highpass
+                elif lowpass > 0 & highpass == 0:
+                    data = data.lowpass(lowpass)
+                    self.filter += "low pass (%.1f) " % lowpass
+                elif lowpass > 0 & highpass > 0:
+                    data = data.bandpass(highpass, lowpass)
+                    self.filter = "band pass (%.1f-%.1f)"
                 self.timeseries.append(data)
                 time_group.append(len(self.timeseries)-1)
             self.time_groups.append(time_group)
