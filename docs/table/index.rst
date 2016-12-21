@@ -106,6 +106,7 @@ Class reference
 This reference includes the following `class` entries:
 
 .. autosummary::
+   :toctree: ../api/
    :nosignatures:
 
    CoincDefTable
@@ -139,97 +140,3 @@ This reference includes the following `class` entries:
    TimeSlideSegmentMapTable
    TimeSlideTable
    VetoDefTable
-
-.. autoclass:: CoincDefTable
-   :no-inherited-members:
-
-.. autoclass:: CoincTable
-   :no-inherited-members:
-
-.. autoclass:: CoincInspiralTable
-   :no-inherited-members:
-
-.. autoclass:: CoincRingdownTable
-   :no-inherited-members:
-
-.. autoclass:: ExperimentMapTable
-   :no-inherited-members:
-
-.. autoclass:: ExperimentSummaryTable
-   :no-inherited-members:
-
-.. autoclass:: ExperimentTable
-   :no-inherited-members:
-
-.. autoclass:: FilterTable
-   :no-inherited-members:
-
-.. autoclass:: GDSTriggerTable
-   :no-inherited-members:
-
-.. autoclass:: MultiBurstTable
-   :no-inherited-members:
-
-.. autoclass:: MultiInspiralTable
-   :no-inherited-members:
-
-.. autoclass:: ProcessTable
-   :no-inherited-members:
-
-.. autoclass:: ProcessParamsTable
-   :no-inherited-members:
-
-.. autoclass:: SearchSummaryTable
-   :no-inherited-members:
-
-.. autoclass:: SearchSummVarsTable
-   :no-inherited-members:
-
-.. autoclass:: SimBurstTable
-   :no-inherited-members:
-
-.. autoclass:: SimInspiralTable
-   :no-inherited-members:
-
-.. autoclass:: SimRingdownTable
-   :no-inherited-members:
-
-.. autoclass:: SnglBurstTable
-   :no-inherited-members:
-
-.. autoclass:: SnglInspiralTable
-   :no-inherited-members:
-
-.. autoclass:: SnglRingdownTable
-   :no-inherited-members:
-
-.. autoclass:: StochasticTable
-   :no-inherited-members:
-
-.. autoclass:: StochSummTable
-   :no-inherited-members:
-
-.. autoclass:: SummValueTable
-   :no-inherited-members:
-
-.. autoclass:: SegmentTable
-   :no-inherited-members:
-
-.. autoclass:: SegmentSumTable
-   :no-inherited-members:
-
-.. autoclass:: SegmentDefTable
-   :no-inherited-members:
-
-.. autoclass:: SummMimeTable
-   :no-inherited-members:
-
-.. autoclass:: TimeSlideSegmentMapTable
-   :no-inherited-members:
-
-.. autoclass:: TimeSlideTable
-   :no-inherited-members:
-
-.. autoclass:: VetoDefTable
-   :no-inherited-members:
-

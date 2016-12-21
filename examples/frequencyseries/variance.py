@@ -18,29 +18,47 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>
 
 """Calculating and plotting a `SpectralVariance` histogram
+
+The most common visualisation of the spectral content of a data series is
+via the power or amplitude spectral density calculations (PSD or ASD).
+However, these typically involve averaging of the data over a period, which
+can wash out transient noise (as is often desired).
+
+The `SpectralVariance` histogram provide by `gwpy.frequencyseries` allows
+us to look at the spectral sensitivity in a different manner, displaying
+which frequencies sit at which amplitude _most_ of the time, but also
+highlighting excursions from normal behaviour.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.frequencyseries'
 
-# In order to generate a `SpectralVariance` histogram we need to import the
-# `~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.get`
-# the data:
+# To demonstate this, we can load some data from the LIGO Livingston
+# intereferometer around the time of the GW151226 gravitational wave detection:
+
 from gwpy.timeseries import TimeSeries
-llo = TimeSeries.get(
-    'L1:LDAS-STRAIN,rds', 'August 1 2010', 'August 1 2010 00:10')
+llo = TimeSeries.fetch_open_data('L1', 1135136228, 1135140324, verbose=True)
 
 # We can then call the :meth:`~gwpy.timeseries.TimeSeries.spectral_variance`
-# method of the ``llo`` `~gwpy.timeseries.TimeSeries`:
-variance = llo.spectral_variance(1, log=True, low=1e-24, high=1e-19, nbins=100)
+# method of the ``llo`` `~gwpy.timeseries.TimeSeries` by calculating an ASD
+# every 5 seconds and counting the amount of time each frequency bin spends
+# at each ASD value:
+
+variance = llo.spectral_variance(5, fftlength=2, overlap=1, log=True,
+                                 low=1e-24, high=1e-19, nbins=100)
 
 # We can then :meth:`~SpectralVariance.plot` the `SpectralVariance`
-plot = variance.plot(norm='log', vmin=0.5, vmax=100)
+
+plot = variance.plot(norm='log', vmin=.5, cmap='plasma')
 ax = plot.gca()
 ax.grid()
-ax.set_xlim(40, 4096)
-ax.set_ylim(1e-24, 1e-19)
+ax.set_xlim(20, 1500)
+ax.set_ylim(1e-24, 1e-20)
 ax.set_xlabel('Frequency [Hz]')
-ax.set_ylabel(r'GW ASD [strain/\rtHz]')
-ax.set_title('LIGO Livingston Observatory sensitivity variance')
+ax.set_ylabel(r'[strain/\rtHz]')
+ax.set_title('LIGO-Livingston sensitivity variance')
 plot.show()
+
+# From this we see that in general the sensitivity varies a few parts in 
+# 10 :sup:`-23`, while many of the lines (narrow-band peaks in the spectrum)
+# are much more stationary.

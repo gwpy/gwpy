@@ -115,7 +115,7 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
         gap = 'pad'
     elif gap is None:
         gap = 'raise'
-    segs = cache_segments(cache, on_missing='ignore') & SegmentList([span])
+    segs = cache_segments(cache) & SegmentList([span])
     if len(segs) != 1 and gap.lower() == 'ignore' or gap.lower() == 'pad':
         pass
     elif len(segs) != 1:

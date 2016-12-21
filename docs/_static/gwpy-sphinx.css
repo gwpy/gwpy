@@ -20,6 +20,22 @@
  * This file contains sphinx-specific extensions to the core GWpy CSS
  */
 
+/* -- layout -------------------------------------------------------------- */
+
+body {
+		font-size: 15px;
+		font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+.navbar + .container {
+		padding-top: 20px;
+}
+
+/* -- navbar -------------------------------------------------------------- */
+
+.navbar {
+		background-color: #333;
+}
 
 /* -- banner image -------------------------------------------------------- */
 
@@ -38,11 +54,14 @@ body {
 		margin-bottom: 140px;
 }
 
-footer {
+.footer {
 		position: absolute;
 		bottom: 0;
 		width: 100%;
 		height: 100px;
+		background-color: #eee;
+		padding-top: 20px;
+		padding-bottom: 20px;
 }
 
 /* -- side-bar formatting ------------------------------------------------- */
@@ -54,13 +73,47 @@ footer {
 		border-right: 1px solid #eee;
 }
 
-/* -- table links --------------------------------------------------------- */
+/* -- links --------------------------------------------------------------- */
+
+a.external,
+a.external:hover,
+a.external:focus {
+		color: #337ab7;
+}
+
+.alert a.external,
+.alert a.external:hover,
+.alert a.external:focus {
+		color: inherit;
+		text-decoration: underline;
+}
+
+/* -- tables -------------------------------------------------------------- */
+
+table > thead > tr > th,
+.table > thead > tr > th,
+table > tbody > tr > th,
+.table > tbody > tr > th,
+table > tfoot > tr > th,
+.table > tfoot > tr > th,
+table > thead > tr > td,
+.table > thead > tr > td,
+table > tbody > tr > td,
+.table > tbody > tr > td,
+table > tfoot > tr > td,
+.table > tfoot > tr > td {
+		border-top: 1px solid #ecf0f1;
+}
 
 table a {
 		text-decoration: none !important;
 }
 
 /* -- code formatting ----------------------------------------------------- */
+
+pre {
+		background-color: #333;
+}
 
 code {
 	padding: 0px
@@ -89,9 +142,22 @@ dl.attribute > dd {
 }
 
 /* parameter lists */
-dl.class table.field-list blockquote {
+dl.class table.field-list,
+dl.method table.field-list {
+		margin-bottom: 0px;
+}
+
+dl.class table.field-list th,
+dl.method table.field-list th {
+		padding-left: 0px;
+}
+
+dl.class table.field-list blockquote,
+dl.method table.field-list blockquote {
 		border-left: none;
 		margin-bottom: 0px;
+		padding: 0px 20px 10px;
+		font-size: inherit;
 }
 
 /* table inside method */
@@ -102,4 +168,10 @@ dl.classmethod table {
 dl.classmethod table th:first-child,
 dl.classmethod table td:first-child, {
 		padding-left: 0px;
+}
+
+.class .rubric,
+.classmethod .rubric,
+.method .rubric {
+		margin-top: 10px;
 }

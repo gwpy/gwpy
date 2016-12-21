@@ -143,7 +143,7 @@ def array_to_hdf5(array, output, name=None, group=None, compression='gzip',
             raise
 
         # store metadata
-        for attr in ['unit'] + array._metadata_slots:
+        for attr in ('unit',) + array._metadata_slots:
             # get private attribute
             mdval = getattr(array, '_%s' % attr, None)
             if mdval is None:

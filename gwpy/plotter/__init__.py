@@ -23,7 +23,9 @@ all be easily visualised using the relevant plotting objects, with
 many configurable parameters both interactive, and in saving to disk.
 """
 
-from matplotlib import (rcParams, pyplot, __version__ as mpl_version)
+from matplotlib import (rcParams, rc_params, pyplot)
+
+DEFAULT_RCPARAMS = rc_params()
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -46,11 +48,8 @@ GWPY_PLOT_PARAMS = {
     "axes.axisbelow": False,
     "axes.formatter.limits": (-3, 4),
     "axes.labelsize": 22,
-    'axes.titlesize': 22,
-    'figure.subplot.bottom': 0.13,
-    'figure.subplot.left': 0.15,
-    'figure.subplot.right': 0.88,
-    'figure.subplot.top': 0.88,
+    "axes.titlesize": 26,
+    "grid.color": 'gray',
     "image.aspect": 'auto',
     "image.interpolation": 'nearest',
     "image.origin": 'lower',
@@ -75,13 +74,13 @@ GWPY_COLOR_CYCLE = [
 ]
 
 # set mpl version dependent stuff
-if mpl_version < '1.5':
-    GWPY_PLOT_PARAMS['axes.color_cycle'] = GWPY_COLOR_CYCLE
-else:
+try:
     from matplotlib import cycler
     GWPY_PLOT_PARAMS.update({
         'axes.prop_cycle': cycler('color', GWPY_COLOR_CYCLE),
     })
+except (ImportError, KeyError):  # mpl < 1.5
+    GWPY_PLOT_PARAMS['axes.color_cycle'] = GWPY_COLOR_CYCLE
 
 # set latex options
 if rcParams['text.usetex'] or USE_TEX:

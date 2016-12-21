@@ -346,7 +346,7 @@ class StateVector(TimeSeriesBase):
         ~StateVector.plot
 
     """
-    _metadata_slots = TimeSeriesBase._metadata_slots + ['bits']
+    _metadata_slots = TimeSeriesBase._metadata_slots + ('bits',)
 
     def __new__(cls, data, bits=None, t0=None, dt=None, sample_rate=None,
                 times=None, channel=None, name=None, **kwargs):
@@ -632,7 +632,7 @@ class StateVector(TimeSeriesBase):
 
     @classmethod
     def fetch_open_data(cls, ifo, start, end, name='quality/simple',
-                        host='https://losc.ligo.org'):
+                        host='https://losc.ligo.org', verbose=False):
         """Fetch open-access data from the LIGO Open Science Center
 
         Parameters
@@ -656,10 +656,14 @@ class StateVector(TimeSeriesBase):
 
         host : `str`, optional
             HTTP host name of LOSC server to access
+
+        verbose : `bool`, optional, default: `False`
+            print verbose output while fetching data
+
         """
         from .io.losc import fetch_losc_data
         return fetch_losc_data(ifo, start, end, channel=name, cls=cls,
-                               host=host)
+                               host=host, verbose=verbose)
 
     @classmethod
     def get(cls, channel, start, end, bits=None, **kwargs):
@@ -817,6 +821,7 @@ class StateVector(TimeSeriesBase):
                                     for bit in bits], dtype=self.dtype)
             new = StateVector(it.operands[1], dtype=dtype)
             new.__metadata_finalize__(self)
+            new._unit = self.unit
             new.sample_rate = rate2
             return new
         # error for non-integer resampling factors
@@ -836,6 +841,8 @@ class StateTimeSeriesDict(TimeSeriesBaseDict):
 
 @as_series_dict_class(StateVector)
 class StateVectorDict(TimeSeriesBaseDict):
+    __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
+                                                 'StateVector')
     EntryClass = StateVector
     read = classmethod(reader(doc="""
         Read data for multiple bit vector channels into a `StateVectorDict`
@@ -900,4 +907,6 @@ class StateVectorDict(TimeSeriesBaseDict):
 
 
 class StateVectorList(TimeSeriesBaseList):
+    __doc__ = TimeSeriesBaseList.__doc__.replace('TimeSeriesBase',
+                                                 'StateVector')
     EntryClass = StateVector

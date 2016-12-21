@@ -121,17 +121,10 @@ class CacheIoTestCase(unittest.TestCase):
         cache = Cache()
         for seg in [(0, 1), (1, 2), (4, 5)]:
             d = seg[1] - seg[0]
-            _, f = tempfile.mkstemp(prefix='A-',
-                                    suffix='-%d-%d.tmp' % (seg[0], d))
+            f = 'A-B-%d-%d.tmp' % (seg[0], d)
             cache.append(CacheEntry.from_T050017(f))
             segs.append(Segment(*seg))
         return cache, segs
-
-    @staticmethod
-    def destroy_cache(cache):
-        for f in cache.pfnlist():
-            if os.path.isfile(f):
-                os.remove(f)
 
     def test_cache_segments(self):
         # check empty input
@@ -139,27 +132,11 @@ class CacheIoTestCase(unittest.TestCase):
         self.assertIsInstance(sl, SegmentList)
         self.assertEquals(len(sl), 0)
         cache, segs = self.make_cache()
-        try:
-            # check good cache
-            sl = cache_segments(cache)
-            self.assertNotEquals(sl, segs)
-            self.assertEquals(sl, type(segs)(segs).coalesce())
-            # check bad cache
-            os.remove(cache[0].path)
-            sl = cache_segments(cache)
-            self.assertEquals(sl, segs[1:])
-            # check cache with no existing files
-            sl = cache_segments(cache[:1])
-            self.assertEquals(sl, SegmentList())
-            # check errors
-            self.assertRaises(TypeError, cache_segments, blah='blah')
-            self.assertRaises(ValueError, cache_segments, cache,
-                              on_missing='error')
-            self.assertRaises(ValueError, cache_segments, cache,
-                             on_missing='blah')
-        # clean up
-        finally:
-            self.destroy_cache(cache)
+        segs.coalesce()
+        sl = cache_segments(cache)
+        self.assertEquals(sl, segs)
+        sl = cache_segments(cache[:2], cache[2:])
+        self.assertEquals(sl, segs)
 
 
 class DataFindIoTestCase(unittest.TestCase):

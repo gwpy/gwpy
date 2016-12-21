@@ -104,7 +104,7 @@ class Series(Array):
            dx: 2.0 W,
            xindex: [  0.   2.   4.   6.   8.  10.] W)
     """
-    _metadata_slots = Array._metadata_slots + ['x0', 'dx', 'xindex']
+    _metadata_slots = Array._metadata_slots + ('x0', 'dx', 'xindex')
     _default_xunit = Unit('')
     _ndim = 1
 
@@ -797,6 +797,7 @@ class Series(Array):
         new = numpy.pad(self, pad_width, **kwargs).view(type(self))
         # numpy.pad has stripped all metadata, so copy it over
         new.__metadata_finalize__(self)
+        new._unit = self.unit
         # finally move the starting index based on the amount of left-padding
         new.x0 -= self.dx * pad_width[0]
         return new

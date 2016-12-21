@@ -21,50 +21,104 @@
 For more details, see https://losc.ligo.org
 """
 
+from __future__ import print_function
+
+import sys
+import json
 from tempfile import NamedTemporaryFile
 
 from six.moves.urllib.request import urlopen
 
-from glue.lal import CacheEntry
+from glue.lal import (Cache, CacheEntry)
 
 from astropy.io import registry
 from astropy.units import Quantity
 
-from gwpy.utils.compat import OrderedDict
-
-from .. import (StateVector, TimeSeries, TimeSeriesList)
+from .. import (StateVector, TimeSeries)
 from ...utils.deps import with_import
-from ...io.cache import file_list
+from ...io.cache import (file_list, cache_segments)
 from ...io.hdf5 import open_hdf5
 from ...detector.units import parse_unit
-from ...segments import Segment
-
-# -- document LOSC data sets
-# each set is keyed with (name, data-rate, file-duration)
-
-# science runs
-RUN_DATA = OrderedDict()
-RUN_DATA[('S5', 4096, 4096)] = Segment(815155213, 875232014)
-RUN_DATA[('S6', 4096, 4096)] = Segment(931035615, 971622015)
-
-# event data
-EVENT_DATA = OrderedDict()
-EVENT_DATA[('GW150914', 4096, 32)] = Segment(1126259446, 1126259478)
-EVENT_DATA[('GW150914', 4096, 4096)] = Segment(1126257414, 1126261510)
-EVENT_DATA[('GW150914', 16384, 32)] = Segment(1126259446, 1126259478)
-EVENT_DATA[('GW150914', 16384, 4096)] = Segment(1126257414, 1126261510)
-
-# all data (for convenience)
-AVAILABLE_DATA = OrderedDict()
-for k, v in EVENT_DATA.items() + RUN_DATA.items():
-    AVAILABLE_DATA[k] = v
+from ...segments import (Segment, SegmentList)
+from ...time import to_gps
 
 # default URL
 LOSC_URL = 'https://losc.ligo.org'
 
 
+# -- remote URL discovery -----------------------------------------------------
+
+def _fetch_losc_json(url):
+    # fetch the URL
+    try:
+        response = urlopen(url)
+    except (IOError, Exception) as e:
+        e.args = ("Failed to access LOSC metadata from %r: %s"
+                  % (url, str(e)),)
+        raise
+    # parse the JSON
+    try:
+        return json.loads(response.read())
+    except ValueError as e:
+        e.args = ("Failed to parse LOSC JSON from %r: %s"
+                  % (url, str(e)),)
+        raise
+
+
+def _losc_json_cache(metadata, detector, sample_rate=4096,
+                      format='hdf5', duration=4096):
+    """Parse a :class:`~glue.lal.Cache` from a LOSC metadata packet
+    """
+    urls = []
+    for fmd in metadata:  # loop over file metadata dicts
+        # skip over files we don't want
+        if (fmd['detector'] != detector or
+                fmd['sampling_rate'] != sample_rate or
+                fmd['format'] != format or
+                fmd['duration'] != duration):
+            continue
+        urls.append(fmd['url'])
+    return Cache.from_urls(urls)
+
+
+def fetch_losc_url_cache(detector, start, end, host=LOSC_URL,
+                         sample_rate=4096, format='hdf5'):
+    """Fetch the metadata from LOSC regarding a given GPS interval
+    """
+    start = int(start)
+    end = int(end)
+    span = SegmentList([Segment(start, end)])
+    # -- step 1: query the interval
+    url = '%s/archive/%d/%d/json/' % (host, start, end)
+    md = _fetch_losc_json(url)
+    # -- step 2: try and get data from an event (smaller files)
+    for dstype in ['events', 'runs']:
+        for dataset in md[dstype]:
+            # validate IFO is present
+            if detector not in md[dstype][dataset]['detectors']:
+                continue
+            # get metadata for this dataset
+            if dstype == 'events':
+                url = '%s/archive/%s/json/' % (host, dataset)
+            else:
+                url = ('%s/archive/links/%s/%s/%d/%d/json/'
+                       % (host, dataset, detector, start, end))
+            emd = _fetch_losc_json(url)
+            # get cache and sieve for our segment
+            for duration in [32, 4096]:  # try short files for events first
+                cache = _losc_json_cache(
+                    emd['strain'], detector, sample_rate=sample_rate,
+                    format=format, duration=duration).sieve(segmentlist=span)
+                # if full span covered, return now
+                if not span - cache_segments(cache):
+                    return cache
+    raise ValueError("Cannot find a LOSC dataset for %s covering [%d, %d)"
+                     % (detector, start, end))
+
+
 def fetch_losc_data(detector, start, end, host=LOSC_URL,
-                    channel='strain/Strain', sample_rate=4096, cls=TimeSeries):
+                    channel='strain/Strain', sample_rate=4096, cls=TimeSeries,
+                    verbose=False):
     """Fetch LOSC data for a given detector
 
     This function is for internal purposes only, all users should instead
@@ -72,62 +126,44 @@ def fetch_losc_data(detector, start, end, host=LOSC_URL,
     for `StateVector.fetch_open_data`).
     """
     sample_rate = Quantity(sample_rate, 'Hz').value
+    start = to_gps(start)
+    end = to_gps(end)
     span = Segment(start, end)
-    for dataset in AVAILABLE_DATA:
-        epoch, rate, duration = dataset
-        # first match rate
-        if sample_rate != rate:
-            continue
-        # then match availability
-        try:
-            inthisset = span & AVAILABLE_DATA[dataset] == span
-        except ValueError:  # overlap is zero or >1 segments
-            inthisset = False
-        # if not completely contained, try the next epoch
-        if not inthisset:
-            continue
-        # from here we should be able to get the data
-        if dataset in EVENT_DATA:
-            s = EVENT_DATA[dataset][0]
+    # get cache of URLS
+    cache = fetch_losc_url_cache(detector, start, end, host=host,
+                                 sample_rate=sample_rate)
+    if verbose:
+        print("Fetched list of %d URLs to read from %s for [%d .. %d)"
+              % (len(cache), host, int(start), int(end)))
+    # read data
+    out = None
+    for e in cache:
+        keep = e.segment & span
+        new = _fetch_losc_data_file(e.url, host=host, channel=channel, cls=cls,
+                                    verbose=verbose).crop(*keep, copy=False)
+        if out is None:
+            out = new.copy()
         else:
-            s = start & (0xFFFFFFFF - duration + 1)
-        out = None
-        # loop over all predicted file times, appending as we go
-        while s < end:
-            keep = Segment(s, s + duration) & span
-            new = _fetch_losc_data_file(
-                detector, s, dataset, host=host,
-                channel=channel, cls=cls).crop(*keep)
-            if out is None:
-                out = new
-            else:
-                out.append(new, resize=True, copy=False)
-            s += 4096
-        return out
+            out.append(new, resize=True)
+    return out
 
     # panic
     raise ValueError("%s data for %s not available in full from LOSC"
                      % (detector, span))
 
 
-def _fetch_losc_data_file(detector, gps, dataset, host=LOSC_URL,
-                          channel='strain/Strain', cls=TimeSeries):
+def _fetch_losc_data_file(url, host=LOSC_URL, channel='strain/Strain',
+                          cls=TimeSeries, verbose=False):
     """Internal function for fetching a single LOSC file and returning a Series
     """
-    epoch, rate, duration = dataset
-    ratestr = int(rate / 1024.)
-    filename = '%s-%s_LOSC_%s_V1-%s-%s.hdf5' % (
-        detector[0], detector, ratestr, gps, duration)
-    if dataset in RUN_DATA:
-        dgps = gps & 0xFFF00000  # GPS of directory start
-        url = '%s/archive/data/%s/%s/%s' % (host, epoch, dgps, filename)
-    elif dataset in EVENT_DATA:
-        url = '%s/s/events/%s/%s' % (host, epoch, filename)
-    else:
-        raise ValueError("Dataset %r not found" % dataset)
+    if verbose:
+        print("Reading %s..." % url, end=' ')
+        sys.stdout.flush()
     try:
         response = urlopen(url)
     except Exception as e:
+        if verbose:
+            print("")
         e.args = ("Failed to download LOSC data from %r: %s"
                   % (url, str(e)),)
         raise
@@ -137,10 +173,17 @@ def _fetch_losc_data_file(detector, gps, dataset, host=LOSC_URL,
         try:
             return cls.read(f.name, channel, format='losc')
         except Exception as e:
+            if verbose:
+                print("")
             e.args = ("Failed to read HDF-format LOSC data from %r: %s"
                       % (url, str(e)),)
             raise
+        finally:
+            if verbose:
+                print(" Done")
 
+
+# -- I/O ----------------------------------------------------------------------
 
 def read_losc_data(filename, channel, group=None, copy=False):
     """Read a `TimeSeries` from a LOSC-format HDF file.

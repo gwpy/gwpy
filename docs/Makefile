@@ -160,10 +160,7 @@ examples: $(addprefix examples/,$(EXAMPLES:py=rst))
 
 examples/%/index.rst: ../examples/%/index.rst
 	@mkdir -p examples/$*
-	@cp ../examples/$*/index.rst $@; \
-	for EX in $(shell cd ../examples/$* && ls *py); do \
-		echo "   $${EX%.py}" >> $@; \
-	done
+	@cp ../examples/$*/index.rst $@
 
 examples/index.rst:
 	@mkdir -p examples/

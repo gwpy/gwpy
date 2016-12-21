@@ -77,7 +77,9 @@ def label_to_latex(text):
 
 
 def unit_to_latex(unit):
-    if isinstance(unit, units.NamedUnit):
+    if unit is None:
+        return ''
+    elif isinstance(unit, units.NamedUnit):
         s = label_to_latex(unit.name)
     elif isinstance(unit, units.CompositeUnit):
         if unit.scale != 1:
@@ -101,7 +103,14 @@ def unit_to_latex(unit):
             else:
                 positives = format_unit_list(positives)
                 s += positives
-    return r'$\mathrm{{{0}}}$'.format(s)
+    elif isinstance(unit, units.UnitBase):
+        return s.to_string('latex_inline')
+    else:
+        s = str(unit)
+    if s:
+        return r'$\mathrm{{{0}}}$'.format(s)
+    else:
+        return ''
 
 
 def format_unit_list(unitlist, negative=False):

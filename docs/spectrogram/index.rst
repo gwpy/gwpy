@@ -74,10 +74,12 @@ We can extend the previous time-series example to include a plot:
 
    ../spectrum/filtering
 
-=======================
-`Spectrogram` reference
-=======================
+=============
+Reference/API
+=============
 
-.. autoclass:: Spectrogram
-   :members:
+.. autosummary::
+   :toctree: ../api/
+   :nosignatures:
 
+   Spectrogram
