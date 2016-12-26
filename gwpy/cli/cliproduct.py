@@ -478,8 +478,8 @@ class CliProduct(object):
         })
 
         # determine image dimensions (geometry)
-        self.width = 1200
-        self.height = 768
+        self.width = 1600
+        self.height = 900
         if arg_list.geometry:
             try:
                 self.width, self.height = map(float,
@@ -637,6 +637,7 @@ class CliProduct(object):
         object finish the process"""
         from astropy.time import Time
         from gwpy.plotter.tex import label_to_latex
+        import matplotlib
 
         self.ax = self.plot.gca()
         # set up axes
@@ -757,6 +758,8 @@ class CliProduct(object):
         self.log(3, ('xinch: %.2f, yinch: %.2f, dpi: %d' %
                      (self.xinch, self.yinch, self.dpi)))
 
+        self.fig = matplotlib.pyplot.gcf()
+        self.fig.set_size_inches(self.xinch, self.yinch)
         self.plot.savefig(out_file, edgecolor='white',
                           figsize=[self.xinch, self.yinch], dpi=self.dpi)
         self.log(3, ('wrote %s' % arg_list.out))
@@ -766,6 +769,8 @@ class CliProduct(object):
 # -----The one that does all the work
     def makePlot(self, args):
         """Make the plot, all actions are generally the same at this level"""
+
+
         if args.silent:
             self.verbose = 0
         else:
