@@ -234,7 +234,7 @@ class TimeSeriesBase(Series):
     @classmethod
     @with_import('nds2')
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
-              connection=None, verify=False, pad=None,
+              connection=None, verify=False, pad=None, allow_tape=None,
               type=NDS2_FETCH_TYPE_MASK, dtype=None):
         """Fetch data from NDS
 
@@ -274,9 +274,9 @@ class TimeSeriesBase(Series):
             identifier for desired output data type
         """
         return cls.DictClass.fetch(
-            [channel], start, end, host=host, port=port,
-            verbose=verbose, connection=connection, verify=verify,
-            pad=pad, type=type, dtype=dtype)[str(channel)]
+            [channel], start, end, host=host, port=port, verbose=verbose,
+            connection=connection, verify=verify, pad=pad,
+            allow_tape=allow_tape, type=type, dtype=dtype)[str(channel)]
 
     @classmethod
     def fetch_open_data(cls, ifo, start, end, name='strain/Strain',
@@ -759,7 +759,8 @@ class TimeSeriesBaseDict(OrderedDict):
     @with_import('nds2')
     def fetch(cls, channels, start, end, host=None, port=None,
               verify=False, verbose=False, connection=None,
-              pad=None, type=NDS2_FETCH_TYPE_MASK, dtype=None):
+              pad=None, allow_tape=None, type=NDS2_FETCH_TYPE_MASK,
+              dtype=None):
         """Fetch data from NDS for a number of channels.
 
         Parameters
@@ -790,6 +791,12 @@ class TimeSeriesBaseDict(OrderedDict):
 
         connection : `nds2.connection`, optional
             open NDS connection to use.
+
+        allow_tape : `bool`, optional
+            allow data access from slow tapes. If `host` or `connection` is
+            given, the default is to do whatever the server default is,
+            otherwise servers will be searched in logical order allowing tape
+            access if necessary to retrieve the data
 
         type : `int`, `str`, optional
             NDS2 channel type integer or string name.
@@ -847,24 +854,31 @@ class TimeSeriesBaseDict(OrderedDict):
             else:
                 ifo = None
             hostlist = ndsio.host_resolution_order(ifo, epoch=start)
-            for host, port in hostlist:
-                try:
-                    return cls.fetch(channels, start, end, host=host,
-                                     port=port, verbose=verbose, type=type,
-                                     verify=verify, dtype=dtype, pad=pad)
-                except (RuntimeError, ValueError) as e:
-                    if verbose:
-                        gprint('Something went wrong:', file=sys.stderr)
-                        # if error and user supplied their own server, raise
-                        warnings.warn(str(e), ndsio.NDSWarning)
+            if allow_tape is None:
+                tapes = [False, True]
+            else:
+                tapes = [allow_tape]
+            for allow_tape in tapes:
+                for host, port in hostlist:
+                    try:
+                        return cls.fetch(channels, start, end, host=host,
+                                         port=port, verbose=verbose, type=type,
+                                         verify=verify, dtype=dtype, pad=pad,
+                                         allow_tape=allow_tape)
+                    except (RuntimeError, ValueError) as e:
+                        if verbose:
+                            gprint('Something went wrong:', file=sys.stderr)
+                            # if error and user supplied their own server, raise
+                            warnings.warn(str(e), ndsio.NDSWarning)
 
-            # if we got this far, we can't get all of the channels in one go
-            if len(channels) > 1:
-                return cls(
-                    (c, cls.EntryClass.fetch(c, start, end, verbose=verbose,
-                                             type=type, verify=verify,
-                                             dtype=dtype.get(c), pad=pad))
-                    for c in channels)
+                # if we got this far, we can't get all of the channels in one go
+                if len(channels) > 1:
+                    return cls(
+                        (c, cls.EntryClass.fetch(c, start, end, verbose=verbose,
+                                                 type=type, verify=verify,
+                                                 dtype=dtype.get(c), pad=pad,
+                                                 allow_tape=allow_tape))
+                        for c in channels)
             e = "Cannot find all relevant data on any known server."
             if not verbose:
                 e += (" Try again using the verbose=True keyword argument to "
@@ -873,6 +887,9 @@ class TimeSeriesBaseDict(OrderedDict):
 
         # at this point we must have an open connection, so we can proceed
         # normally
+
+        if allow_tape is not None:
+            connection.set_parameter('ALLOW_DATA_ON_TAPE', str(allow_tape))
 
         # verify channels
         if verify:
@@ -954,24 +971,32 @@ class TimeSeriesBaseDict(OrderedDict):
                                       [c.ndsname for c in qchannels])
             nsteps = 0
             i = 0
-            for buffers in data:
-                for buffer_, c in zip(buffers, channels):
-                    ts = cls.EntryClass.from_nds2_buffer(
-                        buffer_, dtype=dtype.get(c))
-                    out.append({c: ts}, pad=pad,
-                               gap=pad is None and 'raise' or 'pad')
-                if not nsteps:
-                    if have_minute_trends:
-                        dur = buffer_.length * 60
-                    else:
-                        dur = buffer_.length / buffer_.channel.sample_rate
-                    nsteps = ceil((iend - istart) / dur)
-                i += 1
-                if verbose:
-                    gprint('Downloading data... %d%%' % (100 * i // nsteps),
-                           end='\r')
-                    if i == nsteps:
-                        gprint('')
+            try:
+                for buffers in data:
+                    for buffer_, c in zip(buffers, channels):
+                        ts = cls.EntryClass.from_nds2_buffer(
+                            buffer_, dtype=dtype.get(c))
+                        out.append({c: ts}, pad=pad,
+                                   gap=pad is None and 'raise' or 'pad')
+                    if not nsteps:
+                        if have_minute_trends:
+                            dur = buffer_.length * 60
+                        else:
+                            dur = buffer_.length / buffer_.channel.sample_rate
+                        nsteps = ceil((iend - istart) / dur)
+                    i += 1
+                    if verbose:
+                        gprint('Downloading data... %d%%' % (100 * i // nsteps),
+                               end='\r')
+                        if i == nsteps:
+                            gprint('')
+            except RuntimeError as e:
+                if 'Requested data is on tape' in str(e) and not allow_tape:
+                    e.args = ('Requested data are on tape, set allow_tape=True '
+                              'to allow access from tape. Please note that '
+                              'retrieving data from tape is slow, and may '
+                              'take several minutes or longer.',)
+                raise
 
         # pad to end of request if required
         if len(qsegs) and iend < float(end):
@@ -1163,7 +1188,7 @@ class TimeSeriesBaseDict(OrderedDict):
         kwargs.pop('observatory', None)
         try:
             return cls.fetch(channels, start, end, pad=pad, dtype=dtype,
-                             verbose=verbose, **kwargs)
+                             allow_tape=allow_tape, verbose=verbose, **kwargs)
         except RuntimeError as e:
             # if all else fails, try and get each channel individually
             if len(channels) == 1:
@@ -1175,6 +1200,7 @@ class TimeSeriesBaseDict(OrderedDict):
                            "group, trying individually:")
                 return cls(
                     (c, cls.EntryClass.get(c, start, end, pad=pad, dtype=dtype,
+                                           allow_tape=allow_tape,
                                            verbose=verbose, **kwargs))
                     for c in channels)
 
