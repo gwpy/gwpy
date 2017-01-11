@@ -31,11 +31,6 @@ from six.moves import StringIO
 
 import pytest
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
-
 from glue.segments import PosInfinity
 from glue.LDBDWClient import LDBDClientException
 
@@ -44,7 +39,7 @@ from gwpy.segments import (Segment, SegmentList,
 from gwpy.io.registry import identify_format
 from gwpy.plotter import (SegmentPlot, SegmentAxes)
 
-from compat import unittest
+from compat import (unittest, mock)
 import common
 import mockutils
 
