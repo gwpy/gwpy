@@ -888,7 +888,13 @@ class TimeSeriesBaseDict(OrderedDict):
         # normally
 
         if allow_tape is not None:
-            connection.set_parameter('ALLOW_DATA_ON_TAPE', str(allow_tape))
+            try:
+                connection.set_parameter('ALLOW_DATA_ON_TAPE', str(allow_tape))
+            except AttributeError:
+                warnings.warn("This version of the nds2-client does not "
+                              "support the allow_tape. This operation will "
+                              "continue using whatever default is set by the "
+                              "target NDS server", ndsio.NDSWarning)
 
         # verify channels
         if verify:
