@@ -458,9 +458,8 @@ class TimeSeriesBase(Series):
         # cast as TimeSeries and return
         channel = Channel.from_nds2(buffer_.channel)
         metadata.setdefault('channel', channel)
-        metadata.setdefault('epoch', Time(buffer_.gps_seconds,
-                                          buffer_.gps_nanoseconds,
-                                          format='gps'))
+        metadata.setdefault('epoch', LIGOTimeGPS(buffer_.gps_seconds,
+                                                 buffer_.gps_nanoseconds))
         metadata.setdefault('sample_rate', channel.sample_rate)
         metadata.setdefault('unit', channel.unit)
         metadata.setdefault('name', str(channel))
