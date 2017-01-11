@@ -144,6 +144,20 @@ class TestCaseWithQueryMixin(object):
                             mockutils.mock_query_times(result)):
                 return cm(*args, **kwargs)
 
+    def _mock_query_versionless(self, cm, result, *args, **kwargs):
+        """Query for segments using a mock of the dqsegdb API
+        """
+        try:
+            return cm(*args, **kwargs)
+        except (UnboundLocalError, AttributeError, URLError) as e:
+            warnings.warn("Test query failed with %s: %s, "
+                          "rerunning with mock..."
+                          % (type(e).__name__, str(e)))
+            with mock.patch('dqsegdb.apicalls.dqsegdbCascadedQuery',
+                            mockutils.mock_dqsegdb_cascaded_query(result)):
+                return cm(*args, **kwargs)
+
+
 
 class SegmentListTests(unittest.TestCase):
     """Unit tests for the `SegmentList` class
@@ -385,7 +399,7 @@ class DataQualityFlagTests(unittest.TestCase, TestCaseWithQueryMixin):
 
     def test_query_dqsegdb_versionless(self):
         flag = QUERY_FLAGS[0]
-        result = self._mock_query(
+        result = self._mock_query_versionless(
             DataQualityFlag.query, QUERY_RESULT,
             flag.rsplit(':', 1)[0], QUERY_START, QUERY_END, url=QUERY_URL)
         self.assertEqual(result.known, QUERY_RESULT[flag].known)

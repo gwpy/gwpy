@@ -42,3 +42,32 @@ def mock_query_times(result, deactivated=False,
         }, 'BOGUS_QUERY_STRING'
 
     return query_times
+
+
+def mock_dqsegdb_cascaded_query(result, deactivated=False,
+                                active_indicates_ifo_badness=False, **kwargs):
+    """Build a mock of `dqsegdb.apicalls.dqsegdbCascadedQuery` for testing
+    """
+
+    def cascaded_query(protocol, server, ifo, name, request, start, end):
+        # this is a bit hacky, but it's just for tests
+        flag = [x for x in result if
+                x.rsplit(':', 1)[0] == '%s:%s' % (ifo, name)][0]
+        version = int(flag.split(':')[-1])
+        return (
+            {'known': list(map(tuple, result[flag].known)),
+             'active': list(map(tuple, result[flag].active)),
+             'ifo': ifo,
+             'name': 'RESULT',
+             'version': 1},
+            [{'ifo': ifo,
+             'name': name,
+             'version': version,
+             'known': list(map(tuple, result[flag].known)),
+             'active': list(map(tuple, result[flag].active)),
+             'query_information': {},
+             'metadata': kwargs}],
+            {},
+        )
+
+    return cascaded_query
