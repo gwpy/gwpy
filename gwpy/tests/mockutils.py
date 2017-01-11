@@ -21,6 +21,10 @@
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+from gwpy.time import LIGOTimeGPS
+
+from compat import mock
+
 
 # -- DQSEGDB calls ------------------------------------------------------------
 
@@ -71,3 +75,35 @@ def mock_dqsegdb_cascaded_query(result, deactivated=False,
         )
 
     return cascaded_query
+
+
+# -- NDS2 ---------------------------------------------------------------------
+
+
+def mock_nds2_buffer(channel, data, epoch, sample_rate, unit):
+    import nds2
+    epoch = LIGOTimeGPS(epoch)
+    NdsBuffer = mock.create_autospec(nds2.buffer)
+    NdsBuffer.channel = mock_nds2_channel(channel, sample_rate, unit)
+    NdsBuffer.gps_seconds = epoch.gpsSeconds
+    NdsBuffer.gps_nanoseconds = epoch.gpsNanoSeconds
+    NdsBuffer.data = data
+    return NdsBuffer
+
+
+def mock_nds2_channel(name, sample_rate, unit):
+    import nds2
+    channel = mock.create_autospec(nds2.channel)
+    channel.name = name
+    channel.sample_rate = sample_rate
+    channel.signal_units = unit
+    channel.channel_type_to_string.return_value = 'raw'
+    return channel
+
+
+def mock_nds2_connection(buffers):
+    import nds2
+    NdsConnection = mock.create_autospec(nds2.connection)
+    NdsConnection.get_parameter.return_value = False
+    NdsConnection.iterate.return_value = [buffers]
+    return NdsConnection
