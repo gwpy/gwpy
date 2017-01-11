@@ -319,8 +319,11 @@ class TimeSeriesTestMixin(object):
         common.test_io_identify(self.TEST_CLASS, ['txt', 'hdf', 'gwf'])
 
     def test_fetch(self):
-        nds_buffer = mockutils.mock_nds2_buffer(
-            'X1:TEST', self.data, 1000000000, self.data.shape[0], 'm')
+        try:
+            nds_buffer = mockutils.mock_nds2_buffer(
+                'X1:TEST', self.data, 1000000000, self.data.shape[0], 'm')
+        except ImportError as e:
+            self.skipTest(str(e))
         nds_connection = mockutils.mock_nds2_connection([nds_buffer])
         with mock.patch('nds2.connection') as mock_connection, \
              mock.patch('nds2.buffer', nds_buffer):

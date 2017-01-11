@@ -104,6 +104,10 @@ def mock_nds2_channel(name, sample_rate, unit):
 def mock_nds2_connection(buffers):
     import nds2
     NdsConnection = mock.create_autospec(nds2.connection)
-    NdsConnection.get_parameter.return_value = False
+    try:
+        NdsConnection.get_parameter.return_value = False
+    except AttributeError:
+        # nds2-client < 0.12 doesn't have {get,set}_parameter
+        pass
     NdsConnection.iterate.return_value = [buffers]
     return NdsConnection
