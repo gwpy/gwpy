@@ -391,9 +391,11 @@ class DataQualityFlagTests(unittest.TestCase, TestCaseWithQueryMixin):
 
     def test_query_segdb(self):
         flag = QUERY_FLAGS[0]
-        result = self._mock_query(
-            DataQualityFlag.query_segdb, QUERY_RESULT,
-            flag, QUERY_START, QUERY_END, url=QUERY_URL_SEGDB)
+        try:
+            result = DataQualityFlag.query_segdb(flag, QUERY_START, QUERY_END,
+                                                 url=QUERY_URL_SEGDB)
+        except SystemExit as e:
+            self.skipTest(str(e))
         self.assertEqual(result.known, QUERY_RESULT[flag].known)
         self.assertEqual(result.active, QUERY_RESULT[flag].active)
 
@@ -562,9 +564,11 @@ class DataQualityDictTests(unittest.TestCase, TestCaseWithQueryMixin):
             self.assertEqual(result[flag].active, QUERY_RESULT[flag].active)
 
     def test_query_segdb(self):
-        result = self._mock_query(
-            DataQualityDict.query_segdb, QUERY_RESULT,
-            QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL_SEGDB)
+        try:
+            result = DataQualityDict.query_segdb(
+                QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL_SEGDB)
+        except SystemExit as e:
+            self.skipTest(str(e))
         self.assertListEqual(result.keys(), QUERY_FLAGS)
         for flag in result:
             self.assertEqual(result[flag].known, QUERY_RESULT[flag].known)
