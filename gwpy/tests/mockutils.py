@@ -84,6 +84,7 @@ def mock_nds2_buffer(channel, data, epoch, sample_rate, unit):
     import nds2
     epoch = LIGOTimeGPS(epoch)
     NdsBuffer = mock.create_autospec(nds2.buffer)
+    NdsBuffer.length = data.shape[0]
     NdsBuffer.channel = mock_nds2_channel(channel, sample_rate, unit)
     NdsBuffer.gps_seconds = epoch.gpsSeconds
     NdsBuffer.gps_nanoseconds = epoch.gpsNanoSeconds
