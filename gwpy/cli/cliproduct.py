@@ -242,9 +242,10 @@ class CliProduct(object):
                             help='do not display grid lines')
         # allow custom styling with a style file
         parser.add_argument(
-           '--style', help='path to custom matplotlib style sheet, see '
-                           'http://matplotlib.org/users/style_sheets.html'
-                           '#style-sheets for details of how to write one')
+           '--style', metavar='FILE',
+           help='path to custom matplotlib style sheet, see '
+                'http://matplotlib.org/users/style_sheets.html#style-sheets '
+                'for details of how to write one')
 
         return
 
