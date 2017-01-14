@@ -240,6 +240,11 @@ class CliProduct(object):
                             help='do not display legend')
         parser.add_argument('--nogrid', action='store_true',
                             help='do not display grid lines')
+        # allow custom styling with a style file
+        parser.add_argument(
+           '--style', help='path to custom matplotlib style sheet, see '
+                           'http://matplotlib.org/users/style_sheets.html'
+                           '#style-sheets for details of how to write one')
 
         return
 
@@ -468,18 +473,6 @@ class CliProduct(object):
     def config_plot(self, arg_list):
         """Configure global plot parameters"""
         from matplotlib import rcParams
-
-        # set rcParams
-        rcParams.update({
-            'figure.dpi': 100.,
-            'font.family': 'sans-serif',
-            'font.size': 16.,
-            'font.weight': 'book',
-            'legend.loc': 'best',
-            'lines.linewidth': 1.5,
-            'text.usetex': 'true',
-            'agg.path.chunksize': 10000,
-        })
 
         # determine image dimensions (geometry)
         self.width = 1600
