@@ -761,7 +761,7 @@ class CliProduct(object):
         self.fig = matplotlib.pyplot.gcf()
         self.fig.set_size_inches(self.xinch, self.yinch)
         self.plot.savefig(out_file, edgecolor='white',
-                          figsize=[self.xinch, self.yinch], dpi=self.dpi)
+                          figsize=[self.xinch, self.yinch], dpi=self.dpi, bbox_inches='tight')
         self.log(3, ('wrote %s' % arg_list.out))
 
         return
