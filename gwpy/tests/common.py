@@ -19,8 +19,11 @@
 """Common methods for GWpy unit tests
 """
 
+from functools import wraps
+
 from gwpy.io.cache import (Cache, CacheEntry)
 from gwpy.io.registry import identify_format
+from gwpy.utils.deps import import_method_dependency
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -43,3 +46,20 @@ def test_io_identify(cls, extensions, modes=['read', 'write']):
                                        "file-format %r in form %r"
                                        % (cls.__name__, mode, ext,
                                           type(path).__name__))
+
+
+def skip_missing_import(module):
+    """Decorator for `TestCase` methods to gracefully skip a missing import
+    """
+    modname = module.split('.')[-1]
+    def decorate_method(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            try:
+                func.func_globals[modname] = import_method_dependency(
+                    module, stacklevel=2)
+            except ImportError as e:
+                self.skipTest(str(e))
+            return func(self, *args, **kwargs)
+        return wrapper
+    return decorate_method
