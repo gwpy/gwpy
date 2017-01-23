@@ -23,7 +23,7 @@ import os
 import tempfile
 
 from common import skip_missing_import
-from compat import unittest
+from compat import (unittest, mock)
 
 from gwpy.io import datafind
 from gwpy.io.cache import (Cache, CacheEntry, cache_segments)
@@ -149,6 +149,10 @@ class CacheIoTestCase(unittest.TestCase):
 
 # -- gwpy.io.datafind ---------------------------------------------------------
 
+def mock_call(*args, **kwargs):
+    raise OSError("")
+
+
 class DataFindIoTestCase(unittest.TestCase):
     @skip_missing_import('lalframe')
     def test_iter_channel_names(self):
@@ -157,6 +161,10 @@ class DataFindIoTestCase(unittest.TestCase):
         names = datafind.iter_channel_names(TEST_GWF_FILE)
         self.assertIsInstance(names, GeneratorType)
         self.assertSequenceEqual(list(names), TEST_CHANNELS)
+        with mock.patch('gwpy.utils.shell.call', mock_call):
+            names = datafind.iter_channel_names(TEST_GWF_FILE)
+            self.assertIsInstance(names, GeneratorType)
+            self.assertSequenceEqual(list(names), TEST_CHANNELS)
 
     @skip_missing_import('lalframe')
     def test_get_channel_names(self):
