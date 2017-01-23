@@ -34,6 +34,8 @@ TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
                           'HLV-GW100916-968654552-1.gwf')
 
 
+# -- gwpy.io.nds --------------------------------------------------------------
+
 class NdsIoTestCase(unittest.TestCase):
     def test_nds2_host_order_none(self):
         """Test `host_resolution_order` with `None` IFO
@@ -114,6 +116,8 @@ class NdsIoTestCase(unittest.TestCase):
                   ('nds.ligo.caltech.edu', 31200)])
 
 
+# -- gwpy.io.cache ------------------------------------------------------------
+
 class CacheIoTestCase(unittest.TestCase):
     @staticmethod
     def make_cache():
@@ -138,6 +142,8 @@ class CacheIoTestCase(unittest.TestCase):
         sl = cache_segments(cache[:2], cache[2:])
         self.assertEquals(sl, segs)
 
+
+# -- gwpy.io.datafind ---------------------------------------------------------
 
 class DataFindIoTestCase(unittest.TestCase):
     def test_num_channels(self):
