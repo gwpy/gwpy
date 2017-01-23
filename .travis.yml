@@ -78,7 +78,7 @@ before_install:
   - travis_retry pip install -q ${PRE} --install-option="--no-cython-compile" Cython
 
   # install testing dependencies
-  - pip install -q ${PRE} coveralls "pytest>=2.8" unittest2
+  - pip install -q ${PRE} coveralls "pytest>=2.8" pytest-xdist unittest2
 
   # need to install astropy 1.1 specifically for py26
   - if [[ ${TRAVIS_PYTHON_VERSION} == '2.6' ]]; then pip install "astropy==1.1"; fi
