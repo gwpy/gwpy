@@ -43,6 +43,7 @@ def connect(host=None, port=None):
     ----------
     host : `str`
         name of datafind server to query
+
     port : `int`
         port of datafind server on host
 
@@ -65,18 +66,25 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     """Find the frametype(s) that hold data for a given channel
 
     Parameters
+    ----------
     channel : `str`, `~gwpy.detector.Channel`
         the channel to be found
+
     gpstime : `int`, optional
         target GPS time at which to find correct type
+
     frametype_match : `str`, optiona
         regular expression to use for frametype `str` matching
+
     host : `str`, optional
         name of datafind host to use
+
     port : `int`, optional
         port on datafind host to use
+
     return_all : `bool`, optional, default: `False`
         return all found types, default is to return to 'best' match
+
     allow_tape : `bool`, optional, default: `False`
         do not test types whose frame files are stored on tape (not on
         spinning disk)
@@ -171,17 +179,9 @@ def num_channels(framefile):
 
     Notes
     -----
-    This method requires LALFrame
+    This method requires LALFrame or FrameL to run
     """
-    try:
-        frfile = lalframe.FrameUFrFileOpen(framefile, "r")
-    except RuntimeError as e:
-        e.args = ('Failed to read %r: %s' % (framefile, str(e)),)
-        raise
-    frtoc = lalframe.FrameUFrTOCRead(frfile)
-    return sum(
-        getattr(lalframe, 'FrameUFrTOCQuery%sN' % type_.title())(frtoc) for
-        type_ in ['adc', 'proc', 'sim'])
+    return len(get_channel_names(framefile))
 
 
 @with_import('lalframe')
@@ -192,22 +192,26 @@ def get_channel_type(channel, framefile):
     ----------
     channel : `str`, `~gwpy.detector.Channel`
         name of data channel to find
+
     framefile : `str`
         path of GWF file in which to search
 
     Returns
     -------
     ctype : `str`
-        the type of the channel ('adc', 'sim', or 'proc') if the
-        channel exists in the table-of-contents for the given frame,
-        otherwise `False`
+        the type of the channel ('adc', 'sim', or 'proc')
+
+    Raises
+    ------
+    ValueError
+        if the channel is not found in the table-of-contents
     """
     name = str(channel)
     # read frame and table of contents
     frfile = lalframe.FrameUFrFileOpen(framefile, "r")
     frtoc = lalframe.FrameUFrTOCRead(frfile)
-    for type_ in ['sim', 'proc', 'adc']:
-        query = getattr(lalframe, 'FrameUFrTOCQuery%sName' % type_.title())
+    for type_ in ['Sim', 'Proc', 'Adc']:
+        query = getattr(lalframe, 'FrameUFrTOCQuery%sName' % type_)
         i = 0
         while True:
             try:
@@ -216,9 +220,10 @@ def get_channel_type(channel, framefile):
                 break
             else:
                 if c == name:
-                    return type_
+                    return type_.lower()
             i += 1
-    return False
+    raise ValueError("%s not found in table-of-contents for %s"
+                     % (name, framefile))
 
 
 def channel_in_frame(channel, framefile):
@@ -228,6 +233,7 @@ def channel_in_frame(channel, framefile):
     ----------
     channel : `str`
         name of channel to find
+
     framefile : `str`
         path of GWF file to test
 
@@ -237,16 +243,11 @@ def channel_in_frame(channel, framefile):
         whether this channel is included in the table of contents for
         the given framefile
     """
-    name = str(channel)
-    try:
-        out = shell.call(['FrChannels', framefile])[0]
-    except (OSError, shell.CalledProcessError):
-        return get_channel_type(channel, framefile) is not False
-    else:
-        for line in out.splitlines():
-            if line.split(' ')[0] == name:
-                return True
-        return False
+    channel = str(channel)
+    for name in iter_channel_names(framefile):
+        if channel == name:
+            return True
+    return False
 
 
 def find_best_frametype(channel, start, end, urltype='file',
@@ -303,3 +304,59 @@ def on_tape(*files):
         if os.stat(f).st_blocks == 0:
             return True
     return False
+
+
+def iter_channel_names(framefile):
+    """Iterate over the names of channels found in a GWF file
+
+    Parameters
+    ----------
+    framefile : `str`
+        path of frame file to read
+
+    Returns
+    -------
+    channels : `generator`
+        an iterator that will loop over the names of channels as read from
+        the table of contents of the given GWF file
+    """
+    try:
+        out = shell.call(['FrChannels', framefile])[0]
+    except (OSError, shell.CalledProcessError):
+        import lalframe
+        # read frame and table of contents
+        frfile = lalframe.FrameUFrFileOpen(framefile, "r")
+        frtoc = lalframe.FrameUFrTOCRead(frfile)
+        for ctype in ['Sim', 'Proc', 'Adc']:
+            query = getattr(lalframe, 'FrameUFrTOCQuery%sName' % ctype)
+            i = 0
+            while True:
+                try:
+                    yield query(frtoc, i)
+                except RuntimeError:
+                    break
+                i += 1
+    else:
+        for line in iter(out.splitlines()):
+            yield line.split(' ', 1)[0]
+
+
+def get_channel_names(framefile):
+    """Return a list of all channel names found in a GWF file
+
+    This method just returns
+
+    >>> list(iter_channel_names(framefile))
+
+    Parameters
+    ----------
+    framefile : `str`
+        path of frame file to read
+
+    Returns
+    -------
+    channels : `list` of `str`
+        a `list` of channel names as read from the table of contents of
+        the given GWF file
+    """
+    return list(iter_channel_names(framefile))
