@@ -22,6 +22,7 @@
 import os
 import tempfile
 
+from common import skip_missing_import
 from compat import unittest
 
 from gwpy.io import datafind
@@ -146,28 +147,23 @@ class CacheIoTestCase(unittest.TestCase):
 # -- gwpy.io.datafind ---------------------------------------------------------
 
 class DataFindIoTestCase(unittest.TestCase):
+    @skip_missing_import('lalframe')
     def test_num_channels(self):
-        try:
-            self.assertEqual(datafind.num_channels(TEST_GWF_FILE), 3)
-        except ImportError as e:
-            self.skipTest(str(e))
+        self.assertEqual(datafind.num_channels(TEST_GWF_FILE), 3)
 
+    @skip_missing_import('lalframe')
     def test_get_channel_type(self):
-        try:
-            self.assertEqual(datafind.get_channel_type(
-                'L1:LDAS-STRAIN', TEST_GWF_FILE), 'proc')
-        except ImportError as e:
-            self.skipTest(str(e))
+        self.assertEqual(datafind.get_channel_type(
+            'L1:LDAS-STRAIN', TEST_GWF_FILE), 'proc')
+        self.assertRaises(ValueError, datafind.get_channel_type,
+                          'X1:NOT-IN_FRAME', TEST_GWF_FILE)
 
+    @skip_missing_import('lalframe')
     def test_channel_in_frame(self):
-        try:
-            self.assertTrue(
-                datafind.channel_in_frame('L1:LDAS-STRAIN', TEST_GWF_FILE))
-        except ImportError as e:
-            self.skipTest(str(e))
-        else:
-            self.assertFalse(
-                datafind.channel_in_frame('X1:NOT-IN_FRAME', TEST_GWF_FILE))
+        self.assertTrue(
+            datafind.channel_in_frame('L1:LDAS-STRAIN', TEST_GWF_FILE))
+        self.assertFalse(
+            datafind.channel_in_frame('X1:NOT-IN_FRAME', TEST_GWF_FILE))
 
     def test_on_tape(self):
         self.assertFalse(datafind.on_tape(TEST_GWF_FILE))
