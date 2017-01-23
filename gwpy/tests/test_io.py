@@ -33,6 +33,9 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
                           'HLV-GW100916-968654552-1.gwf')
+TEST_CHANNELS = [
+    'H1:LDAS-STRAIN', 'L1:LDAS-STRAIN', 'V1:h_16384Hz',
+]
 
 
 # -- gwpy.io.nds --------------------------------------------------------------
@@ -147,6 +150,19 @@ class CacheIoTestCase(unittest.TestCase):
 # -- gwpy.io.datafind ---------------------------------------------------------
 
 class DataFindIoTestCase(unittest.TestCase):
+    @skip_missing_import('lalframe')
+    def test_iter_channel_names(self):
+        # maybe need something better?
+        from types import GeneratorType
+        names = datafind.iter_channel_names(TEST_GWF_FILE)
+        self.assertIsInstance(names, GeneratorType)
+        self.assertSequenceEqual(list(names), TEST_CHANNELS)
+
+    @skip_missing_import('lalframe')
+    def test_get_channel_names(self):
+        self.assertListEqual(datafind.get_channel_names(TEST_GWF_FILE),
+                             TEST_CHANNELS)
+
     @skip_missing_import('lalframe')
     def test_num_channels(self):
         self.assertEqual(datafind.num_channels(TEST_GWF_FILE), 3)
