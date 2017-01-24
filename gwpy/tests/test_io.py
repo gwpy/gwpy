@@ -20,7 +20,6 @@
 """
 
 import os
-import tempfile
 
 from common import skip_missing_import
 from compat import (unittest, mock)
