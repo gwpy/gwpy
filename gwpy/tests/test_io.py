@@ -24,6 +24,7 @@ import tempfile
 
 from common import skip_missing_import
 from compat import (unittest, mock)
+import mockutils
 
 from gwpy.io import datafind
 from gwpy.io.cache import (Cache, CacheEntry, cache_segments)
@@ -154,6 +155,8 @@ def mock_call(*args, **kwargs):
 
 
 class DataFindIoTestCase(unittest.TestCase):
+    MOCK_CONNECTION = mockutils.mock_datafind_connection(TEST_GWF_FILE)
+
     @skip_missing_import('lalframe')
     def test_iter_channel_names(self):
         # maybe need something better?
@@ -193,6 +196,37 @@ class DataFindIoTestCase(unittest.TestCase):
         self.assertFalse(datafind.on_tape(TEST_GWF_FILE))
         self.assertFalse(datafind.on_tape(
             CacheEntry.from_T050017(TEST_GWF_FILE)))
+
+    def test_connect(self):
+        with mock.patch('glue.datafind.GWDataFindHTTPConnection',
+                        self.MOCK_CONNECTION), \
+             mock.patch('glue.datafind.GWDataFindHTTPSConnection',
+                        self.MOCK_CONNECTION), \
+             mock.patch('glue.datafind.find_credential',
+                        mockutils.mock_find_credential):
+            datafind.connect()
+            datafind.connect('host', 443)
+
+    def test_find_frametype(self):
+        with mock.patch('glue.datafind.GWDataFindHTTPConnection') as \
+             mock_connection:
+            mock_connection.return_value = self.MOCK_CONNECTION
+            ft = datafind.find_frametype('L1:LDAS-STRAIN', allow_tape=True)
+            self.assertEqual(ft, 'GW100916')
+            ft = datafind.find_frametype('L1:LDAS-STRAIN', return_all=True)
+            self.assertListEqual(ft, ['GW100916'])
+            self.assertRaises(ValueError, datafind.find_frametype, 'X1:TEST')
+            self.assertRaises(ValueError, datafind.find_frametype,
+                              'bad channel name')
+
+    def test_find_best_frametype(self):
+        with mock.patch('glue.datafind.GWDataFindHTTPConnection') as \
+             mock_connection:
+            mock_connection.return_value = self.MOCK_CONNECTION
+            ft = datafind.find_best_frametype('L1:LDAS-STRAIN', 968654552,
+                                              968654553)
+            self.assertEqual(ft, 'GW100916')
+
 
 if __name__ == '__main__':
     unittest.main()

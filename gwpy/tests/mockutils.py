@@ -79,7 +79,6 @@ def mock_dqsegdb_cascaded_query(result, deactivated=False,
 
 # -- NDS2 ---------------------------------------------------------------------
 
-
 def mock_nds2_buffer(channel, data, epoch, sample_rate, unit):
     import nds2
     epoch = LIGOTimeGPS(epoch)
@@ -112,3 +111,22 @@ def mock_nds2_connection(buffers):
         pass
     NdsConnection.iterate.return_value = [buffers]
     return NdsConnection
+
+
+# -- glue.datafind ------------------------------------------------------------
+
+
+def mock_find_credential():
+    return '/mock/cert/path', '/mock/key/path'
+
+def mock_datafind_connection(framefile):
+    from glue.lal import CacheEntry
+    from glue import datafind
+    ce = CacheEntry.from_T050017(framefile)
+    frametype = ce.description
+    # create mock up of connection object
+    DatafindConnection = mock.create_autospec(datafind.GWDataFindHTTPConnection)
+    DatafindConnection.find_types.return_value = [frametype]
+    DatafindConnection.find_latest.return_value = [ce]
+    DatafindConnection.find_frame_urls.return_value = [ce]
+    return DatafindConnection
