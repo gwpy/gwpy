@@ -34,26 +34,26 @@ python:
   - '2.6'
   - '2.7'
   - '3.5'
-  - 'nightly'
 
 env:
-  - PIP_FLAGS="--quiet"
-  - PIP_FLAGS="--quiet --pre"  # use pre-release packages
-  - PYTEST_FLAGS="-v -r s"
-  - PYTEST_FLAGS="-v -r s -x --strict"  # fail on warnings (and fail fast)
+  # normal build, normal tests
+  - PIP_FLAGS="--quiet" PYTEST_FLAGS="-v -r s"
+  # normal build, pedantic tests
+  - PIP_FLAGS="--quiet" PYTEST_FLAGS="-v -r s --strict"
+  # pre-release build, pedantic tests
+  - PIP_FLAGS="--quiet --pre" PYTEST_FLAGS="-v -r s --strict"
 
 matrix:
   exclude:
     - python: '2.6'
-      env: PIP_FLAGS="--quiet --pre"
+      env: PIP_FLAGS="--quiet" PYTEST_FLAGS="-v -r s --strict"
     - python: '2.6'
-      env: PYTEST_FLAGS="-v -r s -x --strict"
-    - python: 'nightly'
-      env: PYTEST_FLAGS="-v -r s"
+      env: PIP_FLAGS="--quiet --pre" PYTEST_FLAGS="-v -r s --strict"
   allow_failures:
     - python: '2.6'
     - python: '3.5'
-    - python: 'nightly'
+    - python: '2.7'
+      env: PIP_FLAGS="--quiet --pre" PYTEST_FLAGS="-v -r s --strict"
   fast_finish: true
 
 before_install:
