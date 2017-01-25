@@ -23,6 +23,8 @@ addons:
       - libgsl0-dev  # for LAL
       - swig  # for LAL and LALFrame
       - bc  # for LAL
+      - libfftw3-double3  # for LAL
+      - libfftw3-single3  # for LAL
       - python-nds2-client
       - python-glue
       - python-dqsegdb
