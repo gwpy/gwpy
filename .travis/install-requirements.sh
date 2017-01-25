@@ -9,4 +9,4 @@ else
 fi
 
 # execute the install
-pip install ${PRE} -r ${_reqfile}
+pip install ${PIP_FLAGS} -r ${_reqfile}
