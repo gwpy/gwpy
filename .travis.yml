@@ -13,7 +13,6 @@ addons:
       - python-scipy
       - python-matplotlib
       - python-h5py
-      - python-astropy
       # matplotlib extras
       - texlive-latex-extra
       - texlive-fonts-recommended
