@@ -2,98 +2,90 @@ language: python
 
 addons:
   apt:
+    sources:
+      - sourceline: deb http://software.ligo.org/lscsoft/debian wheezy contrib
+        key_url: http://software.ligo.org/keys/deb/lscsoft.key
+      - sourceline: deb-src http://software.ligo.org/lscsoft/debian wheezy contrib
+        key_url: http://software.ligo.org/keys/deb/lscsoft.key
     packages:
-      # generic packages
-      - gcc
-      - gfortran
-      - libblas-dev
-      - liblapack-dev
-      # lal dependencies
-      - pkg-config
-      - zlib1g-dev
-      - libgsl0-dev
-      - swig
-      - bc
-      # nds2 dependencies
-      - libsasl2-2
-      # misc python dependencies
+      # basic dependencies
+      - python-numpy
+      - python-scipy
+      - python-matplotlib
+      - python-h5py
+      - python-astropy
+      # matplotlib extras
       - texlive-latex-extra
       - texlive-fonts-recommended
       - dvipng
-      - libhdf5-serial-dev
+      # GW extras
+      - pkg-config  # for LAL
+      - zlib1g-dev  # for LAL
+      - libgsl0-dev  # for LAL
+      - swig  # for LAL and LALFrame
+      - bc  # for LAL
+      - python-nds2-client
+      - python-glue
+      - python-dqsegdb
+      - libframe-dev  # for LALFrame
+      - ldas-tools-framecpp-python
+
+python:
+  - '2.6'
+  - '2.7'
+  - '3.5'
+  - 'nightly'
 
 env:
-  global:
-    - SWIG_VERSION="3.0.8"
-    - FFTW_VERSION="3.3.4"
-    - LAL_VERSION="6.15.0"
-    - LALFRAME_VERSION="1.3.0"
-    - LIBFRAME_VERSION="8.20"
-    - LDAS_TOOLS_AL_VERSION="2.5.5""
-    - FRAMECPP_VERSION="2.5.4"
-    - NDS2_CLIENT_VERSION="0.10.4"
-    # tarballs
-    - SWIG_="https://github.com/swig/swig/archive/rel-${SWIG_VERSION}.tar.gz"
-    - FFTW="http://www.fftw.org/fftw-${FFTW_VERSION}.tar.gz"
-    - LDAS_TOOLS_AL="http://software.ligo.org/lscsoft/source/ldas-tools-al-${LDAS_TOOLS_AL_VERSION}.tar.gz"
-    - FRAMECPP="http://software.ligo.org/lscsoft/source/ldas-tools-framecpp-${FRAMECPP_VERSION}.tar.gz"
-    - LIBFRAME="http://software.ligo.org/lscsoft/source/libframe-${LIBFRAME_VERSION}.tar.gz"
-    - LAL="http://software.ligo.org/lscsoft/source/lalsuite/lal-${LAL_VERSION}.tar.gz"
-    - LALFRAME="http://software.ligo.org/lscsoft/source/lalsuite/lalframe-${LALFRAME_VERSION}.tar.gz"
-    - NDS2_CLIENT="http://software.ligo.org/lscsoft/source/nds2-client-${NDS2_CLIENT_VERSION}.tar.gz"
+  - PIP_FLAGS="--quiet"
+  - PIP_FLAGS="--quiet --pre"  # use pre-release packages
+  - PYTEST_FLAGS="-v -r s"
+  - PYTEST_FLAGS="-v -r s -x --strict"  # fail on warnings (and fail fast)
 
 matrix:
-  include:
-    - python: 2.6
-    - python: 2.7
-      env: STRICT=false
-    - python: 2.7  # test latest release of upstream packages
-      env: STRICT=true PRE="--pre"
-    - python: 2.7  # python-only build
-      env: MINIMAL=true
-    - python: 3.5
-    - python: 3.5  # python-only build
-      env: MINIMAL=true
+  exclude:
+    - python: '2.6'
+      env: PIP_FLAGS="--quiet --pre"
   allow_failures:
-    - python: 2.6
-    - python: 2.7
-      env: STRICT=true PRE="--pre"
-    - python: 3.5
-    - python: 3.5
-      env: MINIMAL=true
+    - python: '2.6'
+    - python: '2.7'
+      env: PIP_FLAGS="--quiet --pre"
+    - python: '3.5'
+    - python: 'nightly'
   fast_finish: true
 
 before_install:
   # update pip
-  - pip install -q ${PRE} --upgrade pip
+  - pip install ${PIP_FLAGS} --upgrade pip
 
   # build and install numpy first
-  - pip install -q ${PRE} "numpy>=1.7"
+  - pip install ${PIP_FLAGS} "numpy>=1.7"
 
-  # build src packages and set 'latest' package versions (if required)
-  - source .travis/find-latest-releases.sh
-  - source .travis/build-src-dependencies.sh
+  # build LALSuite packages
+  - source .travis/build-lalsuite.sh
 
   # install cython to speed up scipy build
-  - travis_retry pip install -q ${PRE} --install-option="--no-cython-compile" Cython
+  - travis_retry pip install ${PIP_FLAGS} --install-option="--no-cython-compile" Cython
 
   # install testing dependencies
-  - pip install -q ${PRE} coveralls "pytest>=2.8" unittest2
+  - pip install ${PIP_FLAGS} coveralls "pytest>=2.8" unittest2
 
   # need to install astropy 1.1 specifically for py26
   - if [[ ${TRAVIS_PYTHON_VERSION} == '2.6' ]]; then pip install "astropy==1.1"; fi
 
-install:
   # install dependencies (using version-dependent requirements if needed)
   - . .travis/install-requirements.sh
+
   # add extra dependencies for testing
-  - pip install ${PRE} -r requirements-extra.txt
+  - pip install ${PIP_FLAGS} -r requirements-extra.txt
+
+install:
   # build
   - python setup.py build
 
 script:
-  - . .travis/run-tests.sh
-  - pip install . -vvv
+  - coverage run --source=gwpy --omit="gwpy/tests/*,gwpy/*version*,gwpy/utils/sphinx/*" -m py.test ${PYTEST_FLAGS} gwpy/
+  - pip install .
 
 after_success:
   - coveralls
@@ -107,13 +99,6 @@ cache:
   pip: true
   ccache: true
   directories:
-    # cache src builds
-    - ./swig-${SWIG_VERSION}
-    - ./fftw-${FFTW_VERSION}
-    - ./fftw-${FFTW_VERSION}-float
-    - ./ldas-tools-al-${LDAS_TOOLS_AL_VERSION}
-    - ./framecpp-${FRAMECPP_VERSION}
-    - ./libframe-${LIBFRAME_VERSION}
+    # cache LALSuite src builds
     - ./lal-${LAL_VERSION}
     - ./lalframe-${LALFRAME_VERSION}
-    - ./nds2-client-${NDS2_CLIENT_VERSION}
