@@ -47,10 +47,12 @@ matrix:
   exclude:
     - python: '2.6'
       env: PIP_FLAGS="--quiet --pre"
+    - python: '2.6'
+      env: PYTEST_FLAGS="-v -r s -x --strict"
+    - python: 'nightly'
+      env: PYTEST_FLAGS="-v -r s"
   allow_failures:
     - python: '2.6'
-    - python: '2.7'
-      env: PIP_FLAGS="--quiet --pre"
     - python: '3.5'
     - python: 'nightly'
   fast_finish: true
