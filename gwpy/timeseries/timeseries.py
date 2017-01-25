@@ -29,6 +29,8 @@ import numpy
 from numpy import fft as npfft
 from scipy import signal
 
+from scipy.io import wavfile
+
 from astropy import units
 
 from ..io import (reader, writer)
@@ -1759,6 +1761,101 @@ class TimeSeries(TimeSeriesBase):
             new.q = peakq
             return new
 
+    def crosswhiten(self, other, fftlength, overlap=0,method='welch', 
+                     window='hanning', detrend='constant', **kwargs):
+        """White this `TimeSeries` against the ASD of a 
+        different 'TimeSeries'
+        Parameters
+        ----------
+        fftlength : `float`
+            number of seconds in single FFT
+        overlap : `float`, optional, default: 0
+            numbers of seconds by which to overlap neighbouring FFTs,
+            by default, no overlap is used.
+        method : `str`, optional, default: `welch`
+            average spectrum method
+        window : `str`, :class:`numpy.ndarray`
+            name of the window function to use, or an array of length
+            ``fftlength * TimeSeries.sample_rate`` to use as the window.
+        detrend : `str`, optional
+            type of detrending to do before FFT (see `~TimeSeries.detrend`
+            for more details)
+        **kwargs
+            other keyword arguments are passed to the `TimeSeries.asd`
+            method to estimate the amplitude spectral density
+            `FrequencySeries` of this `TimeSeries.
+        Returns
+        -------
+        out : `TimeSeries`
+            a whitened version of the input data
+        See Also
+        --------
+        TimeSeries.whiten
+            for details on the whitening algorithm
+        TimeSeries.asd
+            for details on the ASD calculation
+        numpy.fft
+            for details on the Fourier transform algorithm used her
+        scipy.signal
+        """
+
+        other_asd = other.asd(fftlength,overlap)
+        out  = self.whiten(fftlength,overlap,asd=other_asd)
+
+        return out
+
+    def shift(self,fshift):
+        """Frequency shift the spectrum of the Timeseries.
+
+        Parameters
+        ----------
+        fshift:`float`  
+                size and sign of frequency shift in Hz. 
+         
+        """
+
+        data = self.value
+        samp_rate = self.sample_rate.value
+        time_length = len(data)/float(samp_rate)
+        df = 1.0/time_length
+        nbins = int(fshift/df)
+
+        freq_rep = npfft.rfft(data)
+        shifted_freq = numpy.zeros(len(freq_rep),dtype=complex)
+        for i in range(0,len(freq_rep)-1):
+                if 0<(i-nbins)<len(freq_rep):
+                       shifted_freq[i]=freq_rep[i-nbins]
+        output = npfft.irfft(shifted_freq)
+        out_real = numpy.real(output)
+
+        out = TimeSeries(out_real,sample_rate=samp_rate)
+
+        return out
+
+    def wavwrite(self,file_name,rate=4096,amp=.1):
+        """Prepares the timeseries for audio and writes 
+        to a .wav file.
+
+        Parameters
+        ----------
+        file_name: `str`
+            name of file to be written.
+        
+        rate: `float`, optional, default=4096
+            rate in Hz of the .wav file.
+        amp: `float`, optional, default=.1
+            maximum amplitude of .wav file.
+        See Also
+        --------
+        scipy.io.wavfile.write
+            for details on the write process. 
+        """
+
+        newrate = 4096
+        self_resamp = self.resample(newrate)
+        self_normal  = amp * self_resamp.value / (max(abs(self_resamp.value)))
+
+        wavfile.write(file_name,newrate,self_normal)
 
 @as_series_dict_class(TimeSeries)
 class TimeSeriesDict(TimeSeriesBaseDict):
