@@ -163,6 +163,9 @@ class CliProduct(object):
         parser.add_argument('-c', '--framecache',
                             help='use .gwf files in cache not NDS2,' +
                                  ' default use NDS2')
+        parser.add_argument('-n', '--nds2-server', metavar='HOSTNAME',
+                            help='name of nds2 server to use, default is to '
+                                 'try all of them')
         parser.add_argument('--highpass',
                             help='frequency for high pass filter,' +
                                  ' default no filter')
@@ -423,7 +426,8 @@ class CliProduct(object):
                                            end=start+self.dur)
                 else:
                     data = TimeSeries.fetch(chan, start, start+self.dur,
-                                            verbose=verb)
+                                            verbose=verb,
+                                            host=arg_list.nds2_server)
 
                 if highpass > 0 and lowpass == 0:
                     data = data.highpass(highpass)
