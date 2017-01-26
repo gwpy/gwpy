@@ -147,7 +147,7 @@ class CliProduct(object):
     def log(self, level, msg):
         """print log message if verbosity is set high enough"""
         if self.verbose >= level:
-            print msg
+            print(msg)
         return
 
 
@@ -409,8 +409,8 @@ class CliProduct(object):
             time_group = []
             for chan in self.chan_list:
                 if verb:
-                    print 'Fetching %s %d, %d using %s' % \
-                          (chan, start, self.dur, source)
+                    print('Fetching %s %d, %d using %s'
+                          % (chan, start, self.dur, source))
                 if frame_cache:
                     data = TimeSeries.read(frame_cache, chan, start=start,
                                            end=start+self.dur)
@@ -761,9 +761,9 @@ class CliProduct(object):
         self.log(3, ('Verbosity level: %d' % self.verbose))
 
         if self.verbose > 2:
-            print 'Arguments:'
+            print('Arguments:')
             for key, value in args.__dict__.iteritems():
-                print '%s = %s' % (key, value)
+                print('%s = %s' % (key, value))
 
         self.getTimeSeries(args)
 
