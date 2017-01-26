@@ -112,21 +112,21 @@ class Coherence(CliProduct):
                 maxfs = max(maxfs, self.timeseries[ref_idx].sample_rate)
                 if numpy.min(self.timeseries[ref_idx]) == \
                         numpy.max(self.timeseries[ref_idx]):
-                    print 'Channel %s at %d has min=max,it cannot be used ' \
-                          'as a reference channel' \
-                          % self.timeseries[ref_idx].channel.name, \
-                        self.timeseries[ref_idx].epoch.gps
+                    print('Channel %s at %d has min=max,it cannot be used '
+                          'as a reference channel'
+                          % (self.timeseries[ref_idx].channel.name,
+                             self.timeseries[ref_idx].epoch.gps))
                 else:
                     for idxp in range(0, len(time_group)):
                         next_ts = time_group[idxp]
                         if next_ts != ref_idx:
                             if numpy.min(self.timeseries[next_ts]) == \
                                     numpy.max(self.timeseries[next_ts]):
-                                print 'Channel %s at %d has min=max, ' \
-                                      'coherence with this channel will not ' \
-                                      'be calculated' \
-                                      % self.timeseries[next_ts].channel.name,\
-                                    self.timeseries[next_ts].epoch.gps
+                                print('Channel %s at %d has min=max, '
+                                      'coherence with this channel will not '
+                                      'be calculated'
+                                      % (self.timeseries[next_ts].channel.name,
+                                         self.timeseries[next_ts].epoch.gps))
                             else:
                                 maxfs = max(maxfs,
                                             self.timeseries[next_ts].
