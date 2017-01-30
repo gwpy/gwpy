@@ -1799,8 +1799,8 @@ class TimeSeries(TimeSeriesBase):
 
             dt = 1.0/samp_rate
             N = len(data)
-            t = np.arange(0, N)
-            out_real = (sig.hilbert(data)*np.exp(2j*np.pi*fshift*dt*t)).real
+            t = numpy.arange(0, N)
+            out_real = (signal.hilbert(data)*numpy.exp(2j*numpy.pi*fshift*dt*t)).real
 
         out = TimeSeries(out_real,sample_rate=samp_rate)
 
@@ -1828,7 +1828,7 @@ class TimeSeries(TimeSeriesBase):
         self_resamp = self.resample(rate)
         self_normal  = amp * self_resamp.value / (max(abs(self_resamp.value)))
 
-        wavfile.write(file_name,newrate,self_normal)
+        wavfile.write(file_name,rate,self_normal)
 
     def focus(self, central_freq, factor):
     
@@ -1838,7 +1838,7 @@ class TimeSeries(TimeSeriesBase):
         shift_factor = central_freq * (1.0 - 1.0 / factor)
         samp_rate_out = samp_rate * 1.0 / factor
         timeseries_expand = TimeSeries(data,sample_rate = samp_rate_out)
-        timeseries_out = shift(timeseries_expand,shift_factor)
+        timeseries_out = timeseries_expand.shift(shift_factor)
 
         return timeseries_out
 
