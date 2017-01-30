@@ -1762,12 +1762,12 @@ class TimeSeries(TimeSeriesBase):
             return new
 
 
-    def shift(self,fshift,method='roll'):
+    def fshift(self,shift_size,method='roll'):
         """Frequency shift the spectrum of the Timeseries.
 
         Parameters
         ----------
-        fshift:`float`  
+        shift_size:`float`  
                 size and sign of frequency shift in Hz. 
         method:'string', optional
                method to prefrom shift
@@ -1782,7 +1782,7 @@ class TimeSeries(TimeSeriesBase):
         if (method=='roll'):
             time_length = len(data)/float(samp_rate)
             df = 1.0/time_length
-            nbins = int(fshift/df)
+            nbins = int(shift_size/df)
 
             freq_rep = npfft.rfft(data)
             shifted_freq = numpy.zeros(len(freq_rep),dtype=complex)
@@ -1794,13 +1794,13 @@ class TimeSeries(TimeSeriesBase):
 
         if (method=='hilbert'):
             if (fshift < 0):
-                self_high = self.highpass( (fshift * -1.0) )
+                self_high = self.highpass( (shift_size * -1.0) )
                 data = self_high.value
 
             dt = 1.0/samp_rate
             N = len(data)
             t = numpy.arange(0, N)
-            out_real = (signal.hilbert(data)*numpy.exp(2j*numpy.pi*fshift*dt*t)).real
+            out_real = (signal.hilbert(data)*numpy.exp(2j*numpy.pi*shift_size*dt*t)).real
 
         out = TimeSeries(out_real,sample_rate=samp_rate)
 
@@ -1830,15 +1830,34 @@ class TimeSeries(TimeSeriesBase):
 
         wavfile.write(file_name,rate,self_normal)
 
-    def focus(self, central_freq, factor):
-    
+    def time_expand_central_freq(self,factor,central_freq=0.0):
+        """Changes the time length of  a timeseries while preserving
+           a specified frequency. Other frequencies will experience 
+           frequency modulation. 
+
+        Parameters
+        ----------
+        factor: 'float'
+            the factor that the timeseries will be 
+            lengthened in time.
+        central_freq: 'float',optional, default=0.0
+            the specified frequency to preserve during
+            the change in time frame.
+        See Also
+        --------
+        TimeSeries.fshift
+            for details on the frequency shifting  process. 
+        """    
+
+
         data = self.value
         samp_rate = self.sample_rate.value
 
-        shift_factor = central_freq * (1.0 - 1.0 / factor)
         samp_rate_out = samp_rate * 1.0 / factor
-        timeseries_expand = TimeSeries(data,sample_rate = samp_rate_out)
-        timeseries_out = timeseries_expand.shift(shift_factor)
+        timeseries_out = TimeSeries(data,sample_rate = samp_rate_out)
+        if central_freq != 0.0:
+            shift_factor = central_freq * (1.0 - 1.0 / factor)
+            timeseries_out = timeseries_out.fshift(shift_factor)
 
         return timeseries_out
 
