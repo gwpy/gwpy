@@ -169,7 +169,12 @@ class CliProduct(object):
         parser.add_argument('--lowpass',
                             help='frequency for low pass filter,' +
                                  ' default no filter')
-
+        parser.add_argument('--fshift',
+                            help='frequency to shift spectrum,' + 
+                                 ' default no shift')
+        parser.add_argument('-w','--whiten',
+                            help='whiten data using the inverse ASD,' + 
+                                 ' default no whitening')
         return
 
     def arg_chan1(self, parser):
@@ -408,6 +413,16 @@ class CliProduct(object):
         if arg_list.lowpass:
             lowpass = float(arg_list.lowpass)
 
+       whiten = False
+       if arg_list.whiten:
+            whiten = arg_list.whiten
+            self.filter += "whitening "            
+
+       fshift = 0
+       if arg_list.fshift:
+           fshift = float(arg_list.fshift)
+           self.filter += "fshift(%.1f) " % fshift
+
         # Get the data from NDS or Frames
         # time_groups is a list of timeseries index grouped by
         # start time for coherence like plots
@@ -434,6 +449,14 @@ class CliProduct(object):
                 elif lowpass > 0 and highpass > 0:
                     data = data.bandpass(highpass, lowpass)
                     self.filter = "band pass (%.1f-%.1f)" % (highpass, lowpass)
+                if whiten:
+                    if self.dur < 8:
+                        data = data.whiten(self.dur/2.0,self.dur/4.0)
+                    else:
+                        data = data.whiten(4,2)
+                if fshift != 0:
+                    data = data.shift(fshift)
+
                 self.timeseries.append(data)
                 time_group.append(len(self.timeseries)-1)
             self.time_groups.append(time_group)
