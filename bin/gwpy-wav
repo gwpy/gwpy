@@ -39,14 +39,15 @@ parser.add_argument('-w','--whiten',action='store_true',help='Whiten the data ag
 parser.add_argument('-l','--flow',type=float,default=20.,help='Low-frequency cutoff (Hz). Defaults to 20 Hz because that is the bottom of the human hearing range.')
 parser.add_argument('-u','--fhigh',type=float,help='High-frequency cutoff (Hz).')
 parser.add_argument('-r','--change-sample-rate',type=float,default=1.,help='Multiply sample rate by a factor to speed up the resulting sound.')
-#parser.add_argument('-p','--pitch-shift',type=float,description='Apply a linear pitch shift (Hz).')
+parser.add_argument('-p','--pitch-shift',type=float,help='Apply a linear pitch shift (Hz).')
+parser.add_argument('--pad',type=int,default=2,help='Padding in integer seconds of extra data to request in order to do the filtering. ASD used for whitening is twice this length. Longer values can also make bandpassing more effective.')
 parser.add_argument('-o','--output',type=str,default='output.wav',help='Name of output file')
 
 args=parser.parse_args()
 
 # Need to pad time series in order to apply filtering
 # Must be done by getting extra data on both sides
-pad=2
+pad=args.pad
 
 # Get data
 data=TimeSeries.get(args.chan,args.start-pad,args.start+args.duration+pad)
@@ -70,9 +71,7 @@ if args.whiten:
     invasd[:int(tfilt*f_min)]=0.
     invasd[int(tfilt*f_max):]=0.
     # Transform to TD, center the impulse response, and window
-    print invasd.shape, type(invasd)
     filt=irfft(invasd)
-    print filt.shape, type(filt)
     filt=roll(filt,-len(filt)/2)
     filt=hann(len(filt))*roll(filt,-len(filt)/2)
 else:
@@ -80,11 +79,14 @@ else:
     filt=firwin(filt_samps, [f_min,f_max],pass_zero=False,window='hann',nyq=nyq)
 
 filt.resize(len(data))
-print filt.shape, data.value.shape, type(filt), type(data.value)
 fd_data_filtered = abs(rfft(filt))*rfft(data.value)
 
-# FIXME: Implement pitch-shifting by shifting the FFT'ed data
-# Need to make sure the high-frequency junk doesn't roll down to low frequency
+# Linear pitch-shifting by shifting the FFT'ed data
+# Need to zero out any high-frequency junk that rolls to low frequency
+if args.pitch_shift:
+    shift_idx=int(args.pitch_shift*tfilt)
+    fd_data_filtered = roll(fd_data_filtered, shift_idx)
+    fd_data_filtered[:shift_idx]=0.
 
 output = irfft(fd_data_filtered)[int(pad*srate):-int(pad*srate)]
 scale = 1./max(abs(output))
