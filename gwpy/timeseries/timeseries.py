@@ -1825,8 +1825,7 @@ class TimeSeries(TimeSeriesBase):
             for details on the write process. 
         """
 
-        newrate = 4096
-        self_resamp = self.resample(newrate)
+        self_resamp = self.resample(rate)
         self_normal  = amp * self_resamp.value / (max(abs(self_resamp.value)))
 
         wavfile.write(file_name,newrate,self_normal)
