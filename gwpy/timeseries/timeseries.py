@@ -1762,7 +1762,7 @@ class TimeSeries(TimeSeriesBase):
             return new
 
 
-    def fshift(self,shift_size,method='roll'):
+    def fshift(self,shift_size,method='push'):
         """Frequency shift the spectrum of the Timeseries.
 
         Parameters
@@ -1779,7 +1779,7 @@ class TimeSeries(TimeSeriesBase):
         data = self.value
         samp_rate = self.sample_rate.value
  
-        if (method=='roll'):
+        if (method=='push'):
             time_length = len(data)/float(samp_rate)
             df = 1.0/time_length
             nbins = int(shift_size/df)
