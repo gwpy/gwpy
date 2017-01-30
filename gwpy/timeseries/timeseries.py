@@ -1761,72 +1761,46 @@ class TimeSeries(TimeSeriesBase):
             new.q = peakq
             return new
 
-    def crosswhiten(self, other, fftlength, overlap=0,method='welch', 
-                     window='hanning', detrend='constant', **kwargs):
-        """White this `TimeSeries` against the ASD of a 
-        different 'TimeSeries'
-        Parameters
-        ----------
-        fftlength : `float`
-            number of seconds in single FFT
-        overlap : `float`, optional, default: 0
-            numbers of seconds by which to overlap neighbouring FFTs,
-            by default, no overlap is used.
-        method : `str`, optional, default: `welch`
-            average spectrum method
-        window : `str`, :class:`numpy.ndarray`
-            name of the window function to use, or an array of length
-            ``fftlength * TimeSeries.sample_rate`` to use as the window.
-        detrend : `str`, optional
-            type of detrending to do before FFT (see `~TimeSeries.detrend`
-            for more details)
-        **kwargs
-            other keyword arguments are passed to the `TimeSeries.asd`
-            method to estimate the amplitude spectral density
-            `FrequencySeries` of this `TimeSeries.
-        Returns
-        -------
-        out : `TimeSeries`
-            a whitened version of the input data
-        See Also
-        --------
-        TimeSeries.whiten
-            for details on the whitening algorithm
-        TimeSeries.asd
-            for details on the ASD calculation
-        numpy.fft
-            for details on the Fourier transform algorithm used her
-        scipy.signal
-        """
 
-        other_asd = other.asd(fftlength,overlap)
-        out  = self.whiten(fftlength,overlap,asd=other_asd)
-
-        return out
-
-    def shift(self,fshift):
+    def shift(self,fshift,method='roll'):
         """Frequency shift the spectrum of the Timeseries.
 
         Parameters
         ----------
         fshift:`float`  
                 size and sign of frequency shift in Hz. 
-         
+        method:'string', optional
+               method to prefrom shift
+               default is push
+               other option is hilbert          
+
         """
 
         data = self.value
         samp_rate = self.sample_rate.value
-        time_length = len(data)/float(samp_rate)
-        df = 1.0/time_length
-        nbins = int(fshift/df)
+ 
+        if (method=='roll'):
+            time_length = len(data)/float(samp_rate)
+            df = 1.0/time_length
+            nbins = int(fshift/df)
 
-        freq_rep = npfft.rfft(data)
-        shifted_freq = numpy.zeros(len(freq_rep),dtype=complex)
-        for i in range(0,len(freq_rep)-1):
-                if 0<(i-nbins)<len(freq_rep):
-                       shifted_freq[i]=freq_rep[i-nbins]
-        output = npfft.irfft(shifted_freq)
-        out_real = numpy.real(output)
+            freq_rep = npfft.rfft(data)
+            shifted_freq = numpy.zeros(len(freq_rep),dtype=complex)
+            for i in range(0,len(freq_rep)-1):
+                    if 0<(i-nbins)<len(freq_rep):
+                           shifted_freq[i]=freq_rep[i-nbins]
+            output = npfft.irfft(shifted_freq)
+            out_real = numpy.real(output)
+
+        if (method=='hilbert'):
+            if (fshift < 0):
+                self_high = self.highpass( (fshift * -1.0) )
+                data = self_high.value
+
+            dt = 1.0/samp_rate
+            N = len(data)
+            t = np.arange(0, N)
+            out_real = (sig.hilbert(data)*np.exp(2j*np.pi*fshift*dt*t)).real
 
         out = TimeSeries(out_real,sample_rate=samp_rate)
 
@@ -1856,6 +1830,20 @@ class TimeSeries(TimeSeriesBase):
         self_normal  = amp * self_resamp.value / (max(abs(self_resamp.value)))
 
         wavfile.write(file_name,newrate,self_normal)
+
+    def focus(self, central_freq, factor):
+    
+        data = self.value
+        samp_rate = self.sample_rate.value
+
+        shift_factor = central_freq * (1.0 - 1.0 / factor)
+        samp_rate_out = samp_rate * 1.0 / factor
+        timeseries_expand = TimeSeries(data,sample_rate = samp_rate_out)
+        timeseries_out = shift(timeseries_expand,shift_factor)
+
+        return timeseries_out
+
+
 
 @as_series_dict_class(TimeSeries)
 class TimeSeriesDict(TimeSeriesBaseDict):
