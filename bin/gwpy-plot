@@ -49,8 +49,7 @@ PRODUCTS = [
         'Coherence',
         'Spectrum',
         'Spectrogram',
-        'Coherencegram',
-        'Audio'
+        'Coherencegram'
 ]
 
 parser = argparse.ArgumentParser(formatter_class=CliHelpFormatter,
