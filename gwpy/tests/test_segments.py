@@ -389,7 +389,7 @@ class DataQualityFlagTests(unittest.TestCase, TestCaseWithQueryMixin):
         try:
             result = DataQualityFlag.query_segdb(flag, QUERY_START, QUERY_END,
                                                  url=QUERY_URL_SEGDB)
-        except SystemExit as e:
+        except (SystemExit, LDBDClientException) as e:
             self.skipTest(str(e))
         self.assertEqual(result.known, QUERY_RESULT[flag].known)
         self.assertEqual(result.active, QUERY_RESULT[flag].active)
@@ -562,7 +562,7 @@ class DataQualityDictTests(unittest.TestCase, TestCaseWithQueryMixin):
         try:
             result = DataQualityDict.query_segdb(
                 QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL_SEGDB)
-        except SystemExit as e:
+        except (SystemExit, LDBDClientException) as e:
             self.skipTest(str(e))
         self.assertListEqual(result.keys(), QUERY_FLAGS)
         for flag in result:
