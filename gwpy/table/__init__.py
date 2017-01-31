@@ -16,47 +16,34 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module extends the functionality of the :mod:`glue.ligolw`
-library for reading/writing/manipulating LIGO_LW format XML tables.
+"""This module extends the functionality of the :mod:`astropy.table`
+library for reading/writing/manipulating hetergeneous data tables.
 
-The :mod:`glue.ligolw.lsctables` library defines a number of specific
-tables used in GW data analysis; this module extends their functionality
-with the unified input/output system (the .read() method).
+Importing the `~astropy.table.Table` object from here via
 
-Additionally, for event tables (burst, inspiral, and ringdown), methods
-to calculate event rate are also attached.
+    >>> from gwpy.table import Table
 
-Users can make the extensions available by either importing the
-:mod:`~glue.ligolw.lsctables` module from gwpy as follows::
+loads extra input/output definitions available for
+:meth:`~astropy.table.Table.read` and :meth:`~astropy.table.Table.write`.
 
-    >>> from gwpy.table import lsctables
-
-or simply importing the :mod:`gwpy.table` module at any point before
-using the lsctables module (even after importing it from glue)::
-
-    >>> from glue.ligolw import lsctables
-    >>> import gwpy.table
-
+Additionally, the `EventTable` object is provided to simplify working with
+tables of time-stamped GW (or other) events.
 """
 
-import warnings
-warnings.filterwarnings('ignore', 'column name', UserWarning)
-
-from glue.ligolw.ligolw import (Column, Document)
-from glue.ligolw.table import Table
-
-# import custom recarray
-from .rec import GWRecArray
-
-# import all tables
-from . import lsctables
+# load tables
+from astropy.table import (Column, Table)
+from .table import (EventColumn, EventTable)
 
 # attach unified I/O
-from .io import *
-
-# attach rate methods
-from .rate import (event_rate, binned_event_rates)
+from . import io
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__credits__ = 'Kipp Cannon <kipp.cannon@ligo.org>'
-__all__ = ['Column', 'Document', 'Table', 'lsctables', 'GWRecArray']
+
+
+# -----------------------------------------------------------------------------
+#
+# -- DEPRECATED - remove before 1.0 release -----------------------------------
+#
+# -----------------------------------------------------------------------------
+
+from .rec import GWRecArray

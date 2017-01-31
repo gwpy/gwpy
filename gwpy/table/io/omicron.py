@@ -19,6 +19,25 @@
 """Read events from an Omicron-format ROOT file.
 """
 
+from ...io import registry
+from .. import EventTable
+
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+
+def table_from_omicron(f, **kwargs):
+    return EventTable.read(f, 'triggers', *args, format='root', **kwargs)
+
+
+registry.register_reader('root.omicron', EventTable, table_from_omicron)
+
+
+# -----------------------------------------------------------------------------
+#
+# -- DEPRECATED - remove before 1.0 release -----------------------------------
+#
+# -----------------------------------------------------------------------------
+
 import sys
 
 if sys.version_info[0] < 3:
@@ -27,12 +46,9 @@ if sys.version_info[0] < 3:
 from glue.lal import (Cache, CacheEntry)
 
 from .. import lsctables
-from ...io import registry
 from ...io.cache import open_cache
 from ...time import LIGOTimeGPS
 from ...utils import with_import
-
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 OMICRON_COLUMNS = ['search', 'peak_time', 'peak_time_ns',
                    'start_time', 'start_time_ns',
@@ -105,7 +121,7 @@ def sngl_burst_from_root(tchain, columns=OMICRON_COLUMNS):
 
 
 @with_import('ROOT')
-def table_from_root(f, columns=OMICRON_COLUMNS, filt=None, nproc=1):
+def sngl_burst_table_from_root(f, columns=OMICRON_COLUMNS, filt=None, nproc=1):
     """Build a `SnglBurstTable` from events in an Omicron ROOT file.
 
     Parameters
@@ -178,6 +194,9 @@ def identify_omicron(origin, path, fileobj, *args, **kwargs):
         return False
 
 
-registry.register_reader('omicron', lsctables.SnglBurstTable, table_from_root)
+registry.register_reader('omicron', lsctables.SnglBurstTable,
+                         sngl_burst_table_from_root)
 registry.register_identifier('omicron', lsctables.SnglBurstTable,
                              identify_omicron)
+
+

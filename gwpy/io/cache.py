@@ -31,8 +31,8 @@ from numpy import recarray
 from numpy.lib import recfunctions
 
 from glue.lal import (Cache, CacheEntry)
-from glue.ligolw.table import Table
 
+from astropy.table import (Table, vstack as vstack_tables)
 from astropy.io.registry import _get_valid_format
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -172,7 +172,7 @@ def read_cache(cache, target, nproc, post, *args, **kwargs):
                                         None, (cache[0],), {}))
     # if empty, put anything, since it doesn't matter
     except IndexError:
-        kwargs.setdefault('format', 'ligolw')
+        kwargs.setdefault('format', 'ascii')
     except Exception:
         if 'format' not in kwargs:
             raise
@@ -215,12 +215,14 @@ def read_cache(cache, target, nproc, post, *args, **kwargs):
 
     # combine and return
     data = zip(*sorted(pout, key=lambda out: out[0]))[1]
-    if issubclass(target, recarray):
+    if issubclass(target, Table):  # astropy.table.Table
+        out = vstack_tables(data, join_type='exact')
+    elif issubclass(target, recarray):
         out = recfunctions.stack_arrays(data, asrecarray=True, usemask=False,
                                         autoconvert=True).view(target)
     else:
         try:
-            if issubclass(target, Table):
+            if hasattr(target, 'tableName'):  # glue.ligolw.table.Table
                 out = data[0]
             else:
                 out = data[0].copy()

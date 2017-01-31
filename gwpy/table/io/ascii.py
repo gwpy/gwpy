@@ -25,6 +25,12 @@ Each specific ASCII table format should define their own line parser
 (that generates each row of the table) and pass it to the factory method.
 """
 
+# -----------------------------------------------------------------------------
+#
+# -- DEPRECATED - remove before 1.0 release -----------------------------------
+#
+# -----------------------------------------------------------------------------
+
 from six import string_types
 
 from numpy import loadtxt

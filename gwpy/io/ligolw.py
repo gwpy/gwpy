@@ -107,6 +107,8 @@ def table_from_file(f, tablename, columns=None, filt=None,
                                contenthandler=contenthandler,
                                nproc=nproc, format='cache')
 
+    lsctables.use_in(contenthandler)
+
     # set columns to read
     if columns is not None:
         _oldcols = tableclass.loadcolumns

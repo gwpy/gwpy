@@ -19,27 +19,14 @@
 """Input/output methods for tabular data.
 """
 
-from glue.ligolw.ligolw import LIGOLWContentHandler
-
-from .. import lsctables
-lsctables.use_in(LIGOLWContentHandler)
+from . import (  # pylint: disable=unused-import
+    ligolw,  # glue.ligolw XML format
+    root,  # generic ROOT stuff
+    omicron,  # Omicron ROOT format
+    omega,  # Omega ASCII format
+    cwb,  # cWB ROOT and ASCII formats
+    pycbc,  # PyCBC (Live) HDF5
+    hacr,  # Hierarchichal Algorithm for Curves and Ridges
+)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-# import LIGO_LW I/O
-from .ligolw import *
-
-# try importing ROOT-based I/O
-from .omicron import *
-
-# import omega I/O
-from .omega import *
-
-# import cWB I/O
-from .cwb import *
-
-# import PyCBC live I/O
-from .pycbc import *
-
-# import HACR db reader
-from .hacr import *

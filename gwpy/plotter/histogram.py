@@ -21,6 +21,7 @@
 
 from __future__ import division
 
+import warnings
 from math import log10
 
 import numpy
@@ -28,13 +29,10 @@ import numpy
 from matplotlib.cbook import iterable
 from matplotlib.projections import register_projection
 
-from glue import iterutils
-from glue.ligolw.table import Table
-
-from ..table.utils import get_table_column
 from .axes import Axes
 from .core import Plot
 from ..types import Series
+from ..table import Table
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -62,22 +60,38 @@ class HistogramAxes(Axes):
         return self.hist(series.value, **kwargs)
 
     def hist_table(self, table, column, **kwargs):
-        """Add a histogram of the given :class:`~glue.ligolw.table.Table`.
+        """Add a histogram of the given `~astropy.table.Table`
 
         Parameters
         ----------
-        table : :class:`~glue.ligolw.table.Table`
-            LIGO_LW-format table of data to analyse.
+        table : `~astropy.table.Table`
+            data table to histogram
+
         column : `str`
             name of ``table`` column to histogram.
+
         **kwargs
             common histogram keyword arguments to pass to
             :meth:`~HistogramAxes.hist`.
 
         See Also
         --------
-        HistogramAxes.hist : for details on keyword arguments
+        HistogramAxes.hist
+            for details on keyword arguments
         """
+        try:
+            return self.hist(table[column], **kwargs)
+        except (TypeError, KeyError):
+            if hasattr(table, 'tableName'):  # glue.ligolw.table.Table
+                return self._hist_ligolw_table(table, column, **kwargs)
+            raise
+
+    def _hist_ligolw_table(self, table, column, **kwargs):
+        from ..table.utils import get_table_column
+        warnings.warn('Histogramming LIGO_LW tables has been deprecated and '
+                      'will likely be removed before the 1.0 release, please '
+                      'update all codes to use the astropy.table.Table or '
+                      'gwpy.table.EventTable objects')
         data = get_table_column(table, column)
         return self.hist(data, **kwargs)
 
@@ -126,6 +140,7 @@ class HistogramAxes(Axes):
         (min, max) : `float`
             2-tuple of common minimum and maximum over all datasets.
         """
+        from glue import iterutils
         if isinstance(datasets, numpy.ndarray) or not iterable(datasets[0]):
             datasets = [datasets]
         max_stat = max(list(iterutils.flatten(datasets)) + [-numpy.inf])
@@ -201,6 +216,9 @@ class HistogramPlot(Plot):
             if isinstance(dataset, Series):
                 ax.hist_series(dataset, **histargs)
             elif isinstance(dataset, Table):
+                column = data.pop()
+                ax.hist_table(dataset, column, **histargs)
+            elif hasattr(dataset, 'tableName'):  # deprecated
                 column = data.pop()
                 ax.hist_table(dataset, column, **histargs)
             else:
