@@ -40,7 +40,7 @@ from numpy.lib import recfunctions
 from ...segments import Segment
 from ...time import (to_gps, from_gps)
 from ...utils.deps import with_import
-from .. import GWRecArray
+from .. import EventTable
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -123,6 +123,7 @@ def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
 
     # get database names and loop over each on
     databases = get_database_names(start, end)
+    rows = []
     for db in databases:
         conn = connect(db, **connectkwargs)
         cursor = conn.cursor()
@@ -145,21 +146,9 @@ def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
             if n == 0:
                 continue
             # get new events, convert to recarray, and append to table
-            new = cursor.fetchall()
+            rows.extend(cursor.fetchall())
             dtype = [(c, type(x)) for c, x in zip(columns, new[0])]
-            tab = GWRecArray((n,), dtype=dtype)
-            for i, row in enumerate(new):
-                tab[i] = row
-            data.append(tab)
-    if data:
-        t = recfunctions.stack_arrays(data, asrecarray=True, usemask=False,
-                                      autoconvert=False)
-        if addtime:  # append time column if requested
-            t = add_time_column(t, name='time',
-                                pop_start=popstart, pop_offset=popoffset)
-        return t[ucolumns].view(GWRecArray)
-    else:
-        return GWRecArray((0,), dtype=[(c, float) for c in ucolumns])
+    return EventTable(rows=rows, names=columns)
 
 
 def add_time_column(table, name='time', pop_start=True, pop_offset=True):
@@ -167,7 +156,7 @@ def add_time_column(table, name='time', pop_start=True, pop_offset=True):
 
     Parameters
     ----------
-    table : `GWRecArray`
+    table : `EventTable`
         table of events to modify
     name : `str`, optional
         name of field to append, default: 'time'

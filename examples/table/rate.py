@@ -30,19 +30,27 @@ future, real signals.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.table.lsctables'
+__currentmodule__ = 'gwpy.table'
 
-# First, import the `SnglBurstTable`:
-from gwpy.table.lsctables import SnglBurstTable
+# First, we import the `EventTable` object and read in a set of events from
+# a LIGO_LW-format XML file containing a
+# :class:`sngl_burst <glue.ligolw.lsctables.SnglBurstTable>` table
+from gwpy.table import EventTable
+events = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz',
+                         format='ligolw.sngl_burst', columns=['time', 'snr'])
 
-# and read a table of (simulated) events:
-events = SnglBurstTable.read('../../gwpy/tests/data/'
-                             'H1-LDAS_STRAIN-968654552-10.xml.gz')
+# .. note::
+#
+#    Here we manually specify the `columns` to read in order to optimise
+#    the `read()` operation to parse only the data we actually need.
 
-# We can calculate the rate of events (in Hertz) using the :meth:`~SnglBurstTable.event_rate` method:
+# We can calculate the rate of events (in Hertz) using the
+# :meth:`~EventTable.event_rate` method:
 rate = events.event_rate(1, start=968654552, end=968654562)
 
-# The :meth:`~SnglBurstTable.event_rate` method has returned a :class:`~gwpy.timeseries.TimeSeries`, so we can display this using the :meth:`~gwpy.timeseries.TimeSeries.plot` method of that object:
+# The :meth:`~EventTable.event_rate` method has returned a
+# `~gwpy.timeseries.TimeSeries`, so we can display this using the
+# :meth:`~gwpy.timeseries.TimeSeries.plot` method of that object:
 plot = rate.plot()
 plot.set_xlim(968654552, 968654562)
 plot.set_ylabel('Event rate [Hz]')

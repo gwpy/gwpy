@@ -47,6 +47,14 @@ Working with data
    spectrum/index
    spectrogram/index
 
+**Working with tabular data and events**
+
+.. toctree::
+   :maxdepth: 2
+
+   table/index
+
+
 **Visualising data**
 
 .. toctree::

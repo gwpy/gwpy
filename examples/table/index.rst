@@ -1,7 +1,7 @@
-.. currentmodule:: gwpy.table.lsctables
+.. currentmodule:: gwpy.table
 
 #####################
-LIGO_LW data examples
+Tabular data examples
 #####################
 
 .. toctree::

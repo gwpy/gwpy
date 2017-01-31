@@ -30,14 +30,23 @@ future, real signals.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.table.lsctables'
+__currentmodule__ = 'gwpy.table'
 
+# First, we import the `EventTable` object and read in a set of events from
+# a LIGO_LW-format XML file containing a
+# :class:`sngl_burst <glue.ligolw.lsctables.SnglBurstTable>` table
+from gwpy.table import EventTable
+events = EventTable.read(
+    '../../gwpy/tests/data/H1-LDAS_STRAIN-968654552-10.xml.gz',
+    format='ligolw.sngl_burst', columns=['time', 'snr'])
 
-# First, we import the `SnglBurstTable` and read the events
-from gwpy.table.lsctables import SnglBurstTable
-events = SnglBurstTable.read('../../gwpy/tests/data/H1-LDAS_STRAIN-968654552-10.xml.gz')
+# .. note::
+#
+#    Here we manually specify the `columns` to read in order to optimise
+#    the `read()` operation to parse only the data we actually need.
 
-# Now we can use the :math:`~SnglBurstTable.binned_event_rates` method to calculated the event rate in a number of bins of SNR.
+# Now we can use the :meth:`~EventTable.binned_event_rates` method to
+# calculate the event rate in a number of bins of SNR.
 rates = events.binned_event_rates(1, 'snr', [2, 3, 5, 8], operator='>=',
                                   start=968654552, end=968654562)
 # .. note::

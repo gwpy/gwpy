@@ -43,6 +43,7 @@ from gwpy.segments import (DataQualityFlag,
                            Segment, SegmentList, SegmentListDict)
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.timeseries import TimeSeries
+from gwpy.table import EventTable
 from gwpy.plotter import (figure, rcParams, Plot, Axes,
                           TimeSeriesPlot, TimeSeriesAxes,
                           FrequencySeriesPlot, FrequencySeriesAxes,
@@ -58,7 +59,7 @@ from gwpy.plotter.tex import (float_to_latex, label_to_latex,
 from gwpy.plotter.table import get_column_string
 
 from test_timeseries import TEST_HDF_FILE
-from test_table import SnglBurstTableTestCase
+from test_table import TEST_OMEGA_FILE
 
 # design ZPK for BodePlot test
 ZPK = [100], [1], 1e-2
@@ -469,60 +470,62 @@ class EventTableMixin(object):
     AXES_CLASS = EventTableAxes
 
     def setUp(self):
-        self.table = SnglBurstTableTestCase.TABLE_CLASS.read(
-            SnglBurstTableTestCase.TEST_XML_FILE)
+        self.table = EventTable.read(TEST_OMEGA_FILE, format='ascii.omega')
 
 
 class EventTablePlotTestCase(EventTableMixin, PlotTestCase):
     def test_init_with_table(self):
-        self.FIGURE_CLASS(self.table, 'time', 'central_freq').close()
+        self.FIGURE_CLASS(self.table, 'time', 'frequency').close()
         self.assertRaises(ValueError, self.FIGURE_CLASS, self.table)
-        self.FIGURE_CLASS(self.table, 'time', 'central_freq', 'snr').close()
-        self.FIGURE_CLASS(self.table, 'time', 'central_freq', 'snr').close()
+        self.FIGURE_CLASS(
+            self.table, 'time', 'frequency', 'normalizedEnergy').close()
+        self.FIGURE_CLASS(
+            self.table, 'time', 'frequency', 'normalizedEnergy').close()
 
 
 class EventTableAxesTestCase(EventTableMixin, AxesTestCase):
     def test_plot_table(self):
         fig, ax = self.new()
-        snrs = self.table.get_column('snr')
+        snrs = self.table.get_column('normalizedEnergy')
         snrs.sort()
         # test with color
-        c = ax.plot_table(self.table, 'time', 'central_freq', 'snr')
+        c = ax.plot_table(self.table, 'time', 'frequency', 'normalizedEnergy')
         shape = c.get_offsets().shape
         self.assertIsInstance(c, PathCollection)
         self.assertEqual(shape[0], len(self.table))
         nptest.assert_array_equal(c.get_array(), snrs)
         # test with size_by
-        c = ax.plot_table(self.table, 'time', 'central_freq', size_by='snr')
+        c = ax.plot_table(self.table, 'time', 'frequency',
+                          size_by='normalizedEnergy')
         # test with color and size_by
-        c = ax.plot_table(self.table, 'time', 'central_freq', 'snr',
-                          size_by='snr')
+        c = ax.plot_table(self.table, 'time', 'frequency', 'normalizedEnergy',
+                          size_by='normalizedEnergy')
         nptest.assert_array_equal(c.get_array(), snrs)
         # test add_loudest
         ax.set_title('title')
-        ax.add_loudest(self.table, 'snr', 'time', 'central_freq')
+        ax.add_loudest(self.table, 'normalizedEnergy', 'time', 'frequency')
 
     def test_plot_tiles(self):
         fig, ax = self.new()
-        snrs = self.table.get_column('snr')
+        snrs = self.table.get_column('normalizedEnergy')
         snrs.sort()
         # test with color
-        c = ax.plot_tiles(self.table, 'time', 'central_freq', 'duration',
-                          'bandwidth', 'snr')
+        c = ax.plot_tiles(self.table, 'time', 'frequency', 'duration',
+                          'bandwidth', 'normalizedEnergy')
         shape = c.get_offsets().shape
         self.assertIsInstance(c, PolyCollection)
         # test other anchors
-        c = ax.plot_tiles(self.table, 'time', 'central_freq', 'duration',
-                          'bandwidth', 'snr', anchor='ll')
-        c = ax.plot_tiles(self.table, 'time', 'central_freq', 'duration',
-                          'bandwidth', 'snr', anchor='lr')
-        c = ax.plot_tiles(self.table, 'time', 'central_freq', 'duration',
-                          'bandwidth', 'snr', anchor='ul')
-        c = ax.plot_tiles(self.table, 'time', 'central_freq', 'duration',
-                          'bandwidth', 'snr', anchor='ur')
+        c = ax.plot_tiles(self.table, 'time', 'frequency', 'duration',
+                          'bandwidth', 'normalizedEnergy', anchor='ll')
+        c = ax.plot_tiles(self.table, 'time', 'frequency', 'duration',
+                          'bandwidth', 'normalizedEnergy', anchor='lr')
+        c = ax.plot_tiles(self.table, 'time', 'frequency', 'duration',
+                          'bandwidth', 'normalizedEnergy', anchor='ul')
+        c = ax.plot_tiles(self.table, 'time', 'frequency', 'duration',
+                          'bandwidth', 'normalizedEnergy', anchor='ur')
         self.assertRaises(ValueError, ax.plot_tiles, self.table, 'time',
-                          'central_freq', 'duration', 'bandwidth', 'snr',
-                          anchor='other')
+                          'frequency', 'duration', 'bandwidth',
+                          'normalizedEnergy', anchor='other')
 
     def test_get_column_string(self):
         rcParams['text.usetex'] = True
