@@ -127,6 +127,8 @@ if __name__ == '__main__':
     # If they requested interactive mode and run from ipython
     # this makes it easier
     if prod.is_interactive:
+        # import pyplot so that user has access to it
+        from matplotlib import pyplot as plt  # pylint: disable=unused-import
         plot = prod.plot
         # pull raw data and plotted results from product for their use
         timeseries = prod.timeseries
