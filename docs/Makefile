@@ -149,33 +149,9 @@ doctest:
 .PHONY: examples
 examples: $(addprefix examples/,$(EXAMPLES:py=rst))
 
-../examples/%/index.rst:
-	@echo "##############################" > $@
-	@echo "$* examples" >> $@
-	@echo "##############################" >> $@
-	@echo >> $@
-	@echo ".. toctree::" >> $@
-	@echo "   :maxdepth: 1" >> $@
-	@echo >> $@
-
 examples/%/index.rst: ../examples/%/index.rst
 	@mkdir -p examples/$*
 	@cp ../examples/$*/index.rst $@
-
-examples/index.rst:
-	@mkdir -p examples/
-	@echo 'making top-level index.rst for examples'
-	@echo "#############" > $@
-	@echo "GWpy examples" >> $@
-	@echo "#############" >> $@
-	@echo >> $@
-	@echo ".. toctree::" >> $@
-	@echo "   :maxdepth: 2" >> $@
-	@echo >> $@
-	for EXD in $(EXAMPLEDIRS); do \
-		echo "   $${EXD}index" >> $@; \
-		echo >> $@; \
-	done
 
 examples/%.rst: export INDEX=$(addprefix examples/,$(dir $*))index.rst
 examples/%.rst: ex2rst.py ../examples/%.py examples/index.rst
