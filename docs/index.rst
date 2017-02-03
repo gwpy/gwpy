@@ -55,6 +55,14 @@ Working with data
    plotter/index
    cli/index
 
+**Other utilities**
+
+.. toctree::
+   :maxdepth: 1
+
+   detector/channel
+   time/index
+
 .. ----------------------------------------------------------------
 .. other sections (not directly linked, but need for cross-linking)
 
