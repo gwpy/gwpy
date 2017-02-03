@@ -113,7 +113,7 @@ else:
 
 
 def to_lal_unit(aunit):
-    """Convert the input unit into a :lal:`LALUnit`
+    """Convert the input unit into a `LALUnit`
 
     For example::
 
@@ -128,7 +128,7 @@ def to_lal_unit(aunit):
 
     Returns
     -------
-    unit : :lal:`LALUnit`
+    unit : `LALUnit`
         the LALUnit representation of the input
 
     Raises
@@ -160,11 +160,11 @@ def to_lal_unit(aunit):
 
 
 def from_lal_unit(lunit):
-    """Convert a :lal`LALUnit` into a `~astropy.units.Unit`
+    """Convert a LALUnit` into a `~astropy.units.Unit`
 
     Parameters
     ----------
-    aunit : :lal:`LALUnit`
+    aunit : `LALUnit`
         the input unit
 
     Returns
@@ -197,7 +197,7 @@ def from_lal_unit(lunit):
 
 
 def to_lal_ligotimegps(gps):
-    """Convert the given GPS time to a :lal:`LIGOTimeGPS` object
+    """Convert the given GPS time to a `lal.LIGOTimeGPS` object
 
     Parameters
     ----------
@@ -206,8 +206,8 @@ def to_lal_ligotimegps(gps):
 
     Returns
     -------
-    ligotimegps : :lal:`LIGOTimeGPS`
-        a SWIG-LAL `LIGOTimeGPS` representation of the given GPS time
+    ligotimegps : `lal.LIGOTimeGPS`
+        a SWIG-LAL `~lal.LIGOTimeGPS` representation of the given GPS time
     """
     gps = to_gps(gps)
     return lal.LIGOTimeGPS(gps.seconds, gps.nanoseconds)
