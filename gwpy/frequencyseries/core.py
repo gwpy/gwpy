@@ -314,7 +314,7 @@ class FrequencySeries(Series):
         -------
         lalspec : `FrequencySeries`
             an XLAL-format FrequencySeries of a given type, e.g.
-            :lal:`REAL8FrequencySeries`
+            `REAL8FrequencySeries`
 
         Notes
         -----

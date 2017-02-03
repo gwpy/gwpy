@@ -42,13 +42,19 @@ def float_to_latex(x, format="%.2g"):
 
     In particular, scientific notation is handled gracefully: e -> 10^
 
-    Example:
-    @code
+    Parameters
+    ----------
+    x : `float`
+        the number to represent
+    Returns
+    -------
+    tex : `str`
+        a TeX representation of the input
+
+    Examples
+    --------
     >>> float_to_latex(2000)
     '2\times 10^{3}'
-    @endcode
-
-    @returns a string in latex mathmode
     """
     base_str = format % x
     if "e" not in base_str:

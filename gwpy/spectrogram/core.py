@@ -156,28 +156,28 @@ class Spectrogram(Array2D):
                      TimeSeries.epoch.__delete__,
                      """Starting GPS epoch for this `Spectrogram`
 
-                     :type:`~gwpy.segments.Segment`
+                     :type: `~gwpy.segments.Segment`
                      """)
 
     t0 = property(TimeSeries.t0.__get__, TimeSeries.t0.__set__,
                   TimeSeries.t0.__delete__,
                   """GPS time of first time bin
 
-                  :type:`~astropy.units.Quantity` in seconds
+                  :type: `~astropy.units.Quantity` in seconds
                   """)
 
     dt = property(TimeSeries.dt.__get__, TimeSeries.dt.__set__,
                   TimeSeries.dt.__delete__,
                   """Time-spacing for this `Spectrogram`
 
-                  :type:`~astropy.units.Quantity` in seconds
+                  :type: `~astropy.units.Quantity` in seconds
                   """)
 
     span = property(TimeSeries.span.__get__, TimeSeries.span.__set__,
                     TimeSeries.span.__delete__,
                     """GPS [start, stop) span for this `Spectrogram`
 
-                    :type:`~gwpy.segments.Segment`
+                    :type: `~gwpy.segments.Segment`
                     """)
 
     f0 = property(Array2D.y0.__get__, Array2D.y0.__set__,
