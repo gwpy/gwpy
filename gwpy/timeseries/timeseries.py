@@ -1803,6 +1803,9 @@ class TimeSeries(TimeSeriesBase):
             out_real = (signal.hilbert(data)*numpy.exp(2j*numpy.pi*shift_size*dt*t)).real
 
         out = TimeSeries(out_real,sample_rate=samp_rate)
+        out.__metadata_finalize__(self)
+        out._unit = self.unit
+        del out.times
 
         return out
 
@@ -1850,16 +1853,17 @@ class TimeSeries(TimeSeriesBase):
         """    
 
 
-        data = self.value
         samp_rate = self.sample_rate.value
-
         samp_rate_out = samp_rate * 1.0 / factor
-        timeseries_out = TimeSeries(data,sample_rate = samp_rate_out)
+
+        out = self
+        out.sample_rate = samp_rate_out
+        del out.times
         if central_freq != 0.0:
             shift_factor = central_freq * (1.0 - 1.0 / factor)
-            timeseries_out = timeseries_out.fshift(shift_factor)
+            out = out.fshift(shift_factor)
 
-        return timeseries_out
+        return out
 
 
 
