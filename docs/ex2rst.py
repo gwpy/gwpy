@@ -56,6 +56,7 @@ header = ['.. _example-%s:\n' % ref]
 indoc = False
 incode = False
 reset = True
+code = []
 
 for i,line in enumerate(lines):
     # skip file header
@@ -77,10 +78,12 @@ for i,line in enumerate(lines):
             output.append('')
         continue
 
-    # find code
+    # finish code block
     if incode and line.startswith(('"', '#', '__')):
         incode = False
-        output.append('')
+        if '   plot.show()' not in code:
+            code.insert(2, '   :nofigs:')
+        output.extend(code + [''])
 
     # comments
     if line.startswith('#'):
@@ -96,30 +99,38 @@ for i,line in enumerate(lines):
         output.append(line.strip('"').rstrip('"'))
     # code
     else:
-        if not incode:
-            output.extend(('', '.. plot::', '   :include-source:'))
+        if not incode:  # restart code block
+            code = []
+            code.extend(('', '.. plot::', '   :include-source:'))
             if reset:
-                output.append('   :context: reset')
+                code.append('   :context: reset')
                 reset = False
             else:
-                output.append('   :context:')
-            output.append('')
-        output.append('   %s' % line)
+                code.append('   :context:')
+            code.append('')
+        code.append('   %s' % line)
         incode = True
 
     # end block quote
-    if line.endswith('"""') and indoc:
+    if line == '"""' and indoc:
+        indoc = False
+    elif line.endswith('"""') and indoc:
         output.append('')
         indoc = False
 
     if len(output) == 1:
         output.append('#'*len(output[0]))
 
+if incode:
+    if '   plot.show()' not in code:
+        code.insert(2, '   :nofigs:')
+    output.extend(code + [''])
+
 output = header + output
+rst = '\n'.join(output).replace('\n\n\n', '\n\n')
 
 if args.outfile:
     with open(args.outfile, 'w') as f:
-        f.write('\n'.join(output))
+        f.write(rst)
 else:
-    print('\n'.join(output))
-
+    print(rst)
