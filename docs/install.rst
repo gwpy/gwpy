@@ -146,6 +146,21 @@ You can then, if you wish, install the package by running the ``setup.py`` scrip
       setenv LANG en_US.UTF-8
       setenv LC_ALL en_US.UTF-8
 
+==========
+Virtualenv
+==========
+
+The GWpy group provides a `virtualenv <https://virtualenv.pypa.io/>`_ helper called `GWpySoft <https://github.com/gwpy/gwpysoft/>`_ to simplify installing GWpy and its dependencies as part of a stand-alone virtualenv installation.
+To install using this solution you just need to clone the repo and run the `gwpysoft-init` script:
+
+.. code-block:: bash
+
+   $ git clone https://github.com/gwpy/gwpysoft
+   $ cd gwpysoft
+   $ ./gwpysoft-init ~/opt/gwpysoft ./packages.txt
+
+The ``~/opt/gwpysoft`` argument is the target directory for the `virtualenv` and can be replaced with anything you like, similarly ``./packages.txt`` contains the list of packages to install in the pip requirements.txt format.
+
 ***********************
 Available installations
 ***********************
