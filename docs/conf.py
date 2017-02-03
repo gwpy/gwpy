@@ -69,30 +69,12 @@ extensions = [
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.linkcode',
     'numpydoc',
-    #'sphinxcontrib.epydoc',
-    #'sphinxcontrib.doxylink',
     'matplotlib.sphinxext.plot_directive',
-    'gwpy.utils.sphinx.autoclassapi',
-    'gwpy.utils.sphinx.directives',
 ]
 
 # customise autodoc
 autoclass_content = 'class'
 autodoc_default_flags = ['show-inheritance', 'members', 'inherited-members']
-
-## Epydoc extension config for GLUE
-## Can de-comment when GLUE is actually referenced in the documentation
-#epydoc_mapping = {
-#    'https://www.lsc-group.phys.uwm.edu/daswg/projects/glue/doc/':
-#    [r'glue(\.|$)'],
-#}
-
-## doxylink
-#LALSUITE_DOCS = 'http://software.ligo.org/docs/lalsuite'
-#doxylink = {
-#    'lal': ('lal.tag', '%s/lal/' % LALSUITE_DOCS),
-#    'lalframe': ('lalframe.tag', '%s/lalframe/' % LALSUITE_DOCS),
-#}
 
 # matplotlib plot directive
 plot_rcparams = GWPY_PLOT_PARAMS
