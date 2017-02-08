@@ -21,7 +21,6 @@
 """
 
 from glue.ligolw.lsctables import *
-from glue.ligolw.table import StripTableName as strip_table_name
 
 from ..io import reader
 
@@ -111,7 +110,6 @@ from numpy.lib import recfunctions
 
 import glue.segments
 from glue.ligolw.lsctables import *
-from glue.ligolw.table import StripTableName as strip_table_name
 from glue.ligolw.types import ToNumPyType as NUMPY_TYPE
 from glue.ligolw.ilwd import get_ilwdchar_class
 
@@ -233,7 +231,7 @@ def from_recarray(cls, array, columns=None):
     if columns is None:
         columns = list(array.dtype.names)
     out = New(cls, columns=columns)
-    tblname = strip_table_name(out.tableName)
+    tblname = out.TableName(out.tableName)
     ilwdchar = dict((col, get_ilwdchar_class(tblname, col))
                     for (col, llwtype) in zip(out.columnnames, out.columntypes)
                     if llwtype == 'ilwd:char')

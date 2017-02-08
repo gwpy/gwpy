@@ -25,7 +25,6 @@ import warnings
 import numpy
 
 import glue.segments
-from glue.ligolw.table import StripTableName as strip
 from glue.ligolw.lsctables import (TableByName, LIGOTimeGPS)
 
 from ...io import registry
@@ -156,7 +155,7 @@ def read_table_factory(table_):
         return table_from_file(f, table_.tableName, *args, **kwargs)
 
     def _read_table(f, *args, **kwargs):
-        tablename = strip(table_.tableName)
+        tablename = table_.TableName(table_.tableName)
         # handle multiprocessing
         nproc = kwargs.pop('nproc', 1)
         if nproc > 1:
@@ -219,7 +218,7 @@ def read_table_factory(table_):
 
 # register reader and auto-id for LIGO_LW
 for table in TableByName.itervalues():
-    name = 'ligolw.%s' % strip(table.tableName)
+    name = 'ligolw.%s' % table.TableName(table.tableName)
 
     # build readers for this table
     llwfunc, recfunc = read_table_factory(table)

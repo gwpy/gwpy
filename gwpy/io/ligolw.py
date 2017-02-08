@@ -95,7 +95,7 @@ def table_from_file(f, tablename, columns=None, filt=None,
         `Table` of data with given columns filled
     """
     # find table class
-    tableclass = lsctables.TableByName[table.StripTableName(tablename)]
+    tableclass = lsctables.TableByName[table.Table.TableName(tablename)]
 
     # get content handler
     if contenthandler is None:
