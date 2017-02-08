@@ -169,6 +169,9 @@ class CliProduct(object):
         parser.add_argument('--lowpass',
                             help='frequency for low pass filter,' +
                                  ' default no filter')
+        parser.add_argument('--fshift',
+                            help='frequency to shift spectrum,' + 
+                                 ' default no shift')
         return
 
     def arg_chan1(self, parser):
@@ -192,6 +195,19 @@ class CliProduct(object):
 
         return
 
+    def arg_white(self,parser):
+        """Arguments for whitening with timeseries defaults"""
+        parser.add_argument('-w','--whiten',action='store_true',
+                            help='whiten data using the inverse ASD,' +
+                                 ' default no whitening')
+        parser.add_argument('--secpfft', default='1.0',
+                            help='length of fft in seconds ' +
+                                 'for each whitening calculation, ' +
+                                 'default = 1.0')
+        parser.add_argument('--overlap', default='0.5',
+                            help='Overlap as fraction [0-1), default=0.5')
+        return
+
     def arg_freq(self, parser):
         """Parameters for FFT based plots, with Spectral defaults"""
         self.is_freq_plot = True
@@ -211,6 +227,19 @@ class CliProduct(object):
         parser.add_argument('--overlap', default='0.9',
                             help='Overlap as fraction [0-1), default=0.9')
         return
+
+    def arg_audio(self,parser):
+        """Arguments that are audio specific"""
+        parser.add_argument('--out',
+                            help='output filename, type=ext (png, pdf, ' +
+                                 'jpg), default=gwpy.wav')
+        parser.add_argument('--samp_rate', default = 4096,
+                            help='sample rate of the audio file, ' + 
+                                 'default=4096 Hz')
+        parser.add_argument('--amp', default = .1,
+                            help='amplitude of output file, ' +
+                                 'default=.1')
+        return 
 
     def arg_plot(self, parser):
         """Add arguments common to all plots"""
@@ -407,6 +436,16 @@ class CliProduct(object):
         if arg_list.lowpass:
             lowpass = float(arg_list.lowpass)
 
+        fshift = 0
+        if arg_list.fshift:
+            fshift = float(arg_list.fshift)
+            self.filter += "fshift(%.1f) " % fshift
+
+        if arg_list.whiten:
+            sec_fft = float(arg_list.secpfft)
+            sec_overlap = sec_fft * float(arg_list.overlap)
+            self.filter += "whitening "   
+
         # Get the data from NDS or Frames
         # time_groups is a list of timeseries index grouped by
         # start time for coherence like plots
@@ -433,6 +472,11 @@ class CliProduct(object):
                 elif lowpass > 0 and highpass > 0:
                     data = data.bandpass(highpass, lowpass)
                     self.filter = "band pass (%.1f-%.1f)" % (highpass, lowpass)
+
+                if arg_list.whiten:
+                    data = data.whiten(sec_fft,sec_overlap)
+                if fshift != 0:
+                    data = data.fshift(fshift)
 
                 self.timeseries.append(data)
                 time_group.append(len(self.timeseries)-1)
@@ -798,3 +842,23 @@ class CliProduct(object):
                         'image should be available.')
             self.plot.show()
             self.is_interactive = True
+
+    def makeAudio(self,args):
+        """Make the audio file, with the correct outputs.
+           Represses plot-specific functions.
+        """
+        if args.silent:
+            self.verbose = 0
+        else:
+            self.verbose = args.verbose
+
+        self.log(3, ('Verbosity level: %d' % self.verbose))
+
+        if self.verbose > 2:
+            print 'Arguments:'
+            for key, value in args.__dict__.iteritems():
+                print '%s = %s' % (key, value)
+
+        self.getTimeSeries(args)
+ 
+        self.gen_plot(args)
