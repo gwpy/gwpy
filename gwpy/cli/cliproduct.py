@@ -172,6 +172,16 @@ class CliProduct(object):
         parser.add_argument('--fshift',
                             help='frequency to shift spectrum,' + 
                                  ' default no shift')
+        parser.add_argument('-w','--whiten',action='store_true',
+                            help='whiten data using the inverse ASD,' +
+                                 ' default no whitening')
+        parser.add_argument('--secpfftw', default='1.0',
+                            help='length of fft in seconds ' +
+                                 'for each whitening calculation, ' +
+                                 'default = 1.0')
+        parser.add_argument('--overlapw', default='0.5',
+                            help='Overlap as fraction [0-1) for ' +
+                                  'the whitening ffts, default=0.5')
         return
 
     def arg_chan1(self, parser):
@@ -193,19 +203,6 @@ class CliProduct(object):
 
         self.arg_chan(parser)
 
-        return
-
-    def arg_white(self,parser):
-        """Arguments for whitening with timeseries defaults"""
-        parser.add_argument('-w','--whiten',action='store_true',
-                            help='whiten data using the inverse ASD,' +
-                                 ' default no whitening')
-        parser.add_argument('--secpfft', default='1.0',
-                            help='length of fft in seconds ' +
-                                 'for each whitening calculation, ' +
-                                 'default = 1.0')
-        parser.add_argument('--overlap', default='0.5',
-                            help='Overlap as fraction [0-1), default=0.5')
         return
 
     def arg_freq(self, parser):
@@ -442,8 +439,8 @@ class CliProduct(object):
             self.filter += "fshift(%.1f) " % fshift
 
         if arg_list.whiten:
-            sec_fft = float(arg_list.secpfft)
-            sec_overlap = sec_fft * float(arg_list.overlap)
+            sec_fft = float(arg_list.secpfftw)
+            sec_overlap = sec_fft * float(arg_list.overlapw)
             self.filter += "whitening "   
 
         # Get the data from NDS or Frames
