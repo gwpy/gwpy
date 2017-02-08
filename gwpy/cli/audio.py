@@ -35,7 +35,6 @@ class Audio(CliProduct):
         """Set up the argument list for this product"""
         self.arg_chan1(parser)
         self.arg_audio(parser)
-        self.arg_white(parser)
         return
 
     def get_max_datasets(self):
