@@ -113,7 +113,7 @@ def table_from_pycbc_live(source, ifo=None, columns=None, nproc=1, **kwargs):
     source = file_list(source)
     if nproc > 1:
         from ...io.cache import read_cache
-        return read_cache(source, GWRecArray, nproc, None,
+        return read_cache(source, EventTable, nproc, None,
                           ifo=ifo, columns=columns, format='pycbc_live',
                           **kwargs)
 
