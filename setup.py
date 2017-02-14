@@ -66,7 +66,7 @@ install_requires = [
     'numpy>=1.7',
     'scipy>=0.16.0',
     'matplotlib>=1.3.0',
-    'astropy>=1.0',
+    'astropy>=1.2',
     'six>=1.5'
 ]
 extras_require = {
