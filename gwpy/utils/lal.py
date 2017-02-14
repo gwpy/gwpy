@@ -21,6 +21,7 @@
 
 from __future__ import absolute_import
 
+from collections import OrderedDict
 from six import string_types
 
 import numpy
@@ -211,3 +212,9 @@ def to_lal_ligotimegps(gps):
     """
     gps = to_gps(gps)
     return lal.LIGOTimeGPS(gps.seconds, gps.nanoseconds)
+
+
+# -- detectors ----------------------------------------------------------------
+
+LAL_DETECTORS = OrderedDict((ifo.frDetector.prefix, ifo.frDetector) for ifo in
+                            lal.CachedDetectors)

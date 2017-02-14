@@ -43,7 +43,6 @@ from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 BUILTIN_LIBRARIES = [
-    'lalframe',
     'framecpp',
 ]
 

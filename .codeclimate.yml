@@ -4,3 +4,4 @@ exclude_paths:
   - "gwpy/tests/data/*"
   - "docs/*"
   - "examples/*"
+  - "gwpy/timeseries/io/gwf/*"
