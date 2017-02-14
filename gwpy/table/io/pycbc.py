@@ -34,6 +34,8 @@ from .. import EventTable
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Nitz <alex.nitz@ligo.org>'
 
+PYCBC_LIVE_FORMAT = 'hdf5.pycbc_live'
+
 INVALID_COLUMNS = ['psd', 'loudest']
 PYCBC_FILENAME = re.compile('([A-Z][0-9])+-Live-[0-9.]+-[0-9.]+.hdf')
 
@@ -114,7 +116,7 @@ def table_from_pycbc_live(source, ifo=None, columns=None, nproc=1, **kwargs):
     if nproc > 1:
         from ...io.cache import read_cache
         return read_cache(source, EventTable, nproc, None,
-                          ifo=ifo, columns=columns, format='pycbc_live',
+                          ifo=ifo, columns=columns, format=PYCBC_LIVE_FORMAT,
                           **kwargs)
 
     source = filter_empty_files(source, ifo=ifo)
@@ -156,8 +158,8 @@ def identify_pycbc_live(origin, path, fileobj, *args, **kwargs):
     return False
 
 # register for unified I/O
-register_identifier('hdf5.pycbc_live', EventTable, identify_pycbc_live)
-register_reader('hdf5.pycbc_live', EventTable, table_from_pycbc_live)
+register_identifier(PYCBC_LIVE_FORMAT, EventTable, identify_pycbc_live)
+register_reader(PYCBC_LIVE_FORMAT, EventTable, table_from_pycbc_live)
 
 # -- processed columns --------------------------------------------------------
 #
