@@ -21,6 +21,7 @@
 
 from __future__ import division
 import __builtin__
+import warnings
 
 import numpy
 
@@ -130,6 +131,9 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
     ValueError
         if reading from an unsorted, or discontiguous cache of files
     """
+    warnings.warn("Reading GWFs with format='frameCPP' is deprecated and will "
+                  "be removed before the GWpy 1.0 release, please use "
+                  "format='gwf' in all read() calls", DeprecationWarning)
     frametype = None
     # parse input source
     filelist = file_list(source)
@@ -345,6 +349,9 @@ def write_timeseriesdict(tsdict, outfile, start=None, end=None):
         the desired GPS end time of the output data
         (defaults to end of given data)
     """
+    warnings.warn("Writing GWFs with format='framecpp' is deprecated and will "
+                  "be removed before the GWpy 1.0 release, please use "
+                  "format='gwf' in all write() calls", DeprecationWarning)
     stream = frameCPP.OFrameFStream(outfile)
     frame = create_frame(tsdict, start=start, end=end)
     stream.WriteFrame(

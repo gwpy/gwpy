@@ -137,40 +137,17 @@ class TimeSeriesTestMixin(object):
         array = self.create()
         self.assertEquals(array.epoch.gps, array.x0.value)
 
-    def _test_frame_read_format(self, format):
+    def test_frame_read(self):
         # test with specific format
         try:
-            self.frame_read(format=format)
+            self.frame_read(format='gwf')
         except ImportError as e:
             self.skipTest(str(e))
-        else:
-            # test again with no format argument
-            # but we need to move other readers out of the way first
-            try:
-                read_ = get_reader('gwf', TimeSeries)
-            except Exception:
-                pass
-            else:
-                register_reader('gwf', TimeSeries,
-                                get_reader(format, TimeSeries),
-                                force=True)
-                try:
-                    self.frame_read()
-                finally:
-                    register_reader('gwf', TimeSeries, read_, force=True)
-            # test empty Cache()
-            self.assertRaises(ValueError, self.TEST_CLASS.read, Cache(),
-                              self.channel, format=format)
-
-            # test cache method with `nproc=2`
-            c = Cache.from_urls([TEST_GWF_FILE])
-            ts = self.TEST_CLASS.read(c, self.channel, nproc=2, format=format)
-
-    def test_frame_read_lalframe(self):
-        return self._test_frame_read_format('lalframe')
-
-    def test_frame_read_framecpp(self):
-        return self._test_frame_read_format('framecpp')
+        # try again with no format argument
+        self.frame_read()
+        # test cache method with `nproc=2`
+        c = Cache.from_urls([TEST_GWF_FILE])
+        ts = self.TEST_CLASS.read(c, self.channel, nproc=2)
 
     def test_frame_read_cache(self):
         try:
@@ -178,44 +155,34 @@ class TimeSeriesTestMixin(object):
         except Exception as e:  # don't care why this fails for this test
             self.skipTest(str(e))
         c = Cache.from_urls([TEST_GWF_FILE])
-        with tempfile.NamedTemporaryFile(suffix='.lcf', delete=False) as f:
-            c.tofile(f)
-            f.delete = True
-            b = self.TEST_CLASS.read(f.name, self.channel)
-            self.assertArraysEqual(a, b)
-            b = self.TEST_CLASS.read(open(f.name), self.channel)
-            self.assertArraysEqual(a, b)
-
-    def frame_write(self, format=None):
         try:
-            ts = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel,
-                                      format=format)
-        except ImportError as e:
-            self.skipTest(str(e))
-        except Exception as e:
-            if 'No reader' in str(e):
-                self.skipTest(str(e))
-            else:
-                raise
-        else:
-            with tempfile.NamedTemporaryFile(suffix='.gwf') as f:
-                ts.write(f.name, format=format)
-                ts2 = self.TEST_CLASS.read(f.name, self.channel)
-            self.assertArraysEqual(ts, ts2)
-            for ctype in ['sim', 'proc', 'adc']:
-                ts.channel._ctype = ctype
-                with tempfile.NamedTemporaryFile(suffix='.gwf') as f:
-                    ts.write(f.name, format=format)
+            with tempfile.NamedTemporaryFile(suffix='.lcf', delete=False) as f:
+                c.tofile(f)
+                b = self.TEST_CLASS.read(f.name, self.channel)
+                self.assertArraysEqual(a, b)
+                b = self.TEST_CLASS.read(open(f.name), self.channel)
+                self.assertArraysEqual(a, b)
+        finally:
+            if os.path.isfile(f.name):
+                os.remove(f.name)
 
     def test_frame_write(self):
+        # test frame write
         try:
-            self.frame_write(format='gwf')
-        except Exception as e:
-            if 'No writer' in str(e):
-                self.skipTest(str(e))
-
-    def test_frame_write_framecpp(self):
-        self.frame_write(format='framecpp')
+            ts = self.TEST_CLASS.read(
+                TEST_GWF_FILE, self.channel, format='gwf')
+        except ImportError as e:
+            self.skipTest(str(e))
+        try:
+            with tempfile.NamedTemporaryFile(suffix='.gwf') as f:
+                ts.write(f.name, format='gwf')
+                ts2 = self.TEST_CLASS.read(f.name, self.channel)
+        finally:
+            if os.path.isfile(f.name):
+                os.remove(f.name)
+        self.assertArraysEqual(ts, ts2)
+        # test again with no format argument
+        ts.write(f.name)
 
     def test_find(self):
         try:
@@ -741,13 +708,17 @@ class TimeSeriesDictTestCase(unittest.TestCase):
             else:
                 raise
         else:
-            with tempfile.NamedTemporaryFile(suffix='.gwf') as f:
-                try:
-                    tsd.write(f.name)
-                except Exception as e:
-                    if 'No writer' in str(e):
-                        self.skipTest(str(e))
-                tsd2 = self.TEST_CLASS.read(f.name, tsd.keys())
+            try:
+                with tempfile.NamedTemporaryFile(suffix='.gwf') as f:
+                    try:
+                        tsd.write(f.name)
+                    except Exception as e:
+                        if 'No writer' in str(e):
+                            self.skipTest(str(e))
+                    tsd2 = self.TEST_CLASS.read(f.name, tsd.keys())
+            finally:
+                if os.path.isfile(f.name):
+                    os.remove(f.name)
             self.assertDictEqual(tsd, tsd2)
 
     def test_plot(self):
