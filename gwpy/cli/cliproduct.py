@@ -80,6 +80,7 @@ class CliProduct(object):
         self.dpi = 100
 
         self.is_freq_plot = False
+        self.is_time_plot = False
         self.n_datasets = 0
         self.filter = ''        # string for annotation if we filtered data
         self.plot = 0           # plot object
@@ -172,16 +173,6 @@ class CliProduct(object):
         parser.add_argument('--fshift',
                             help='frequency to shift spectrum,' + 
                                  ' default no shift')
-        parser.add_argument('-w','--whiten',action='store_true',
-                            help='whiten data using the inverse ASD,' +
-                                 ' default no whitening')
-        parser.add_argument('--secpfftw', default='1.0',
-                            help='length of fft in seconds ' +
-                                 'for each whitening calculation, ' +
-                                 'default = 1.0')
-        parser.add_argument('--overlapw', default='0.5',
-                            help='Overlap as fraction [0-1) for ' +
-                                  'the whitening ffts, default=0.5')
         return
 
     def arg_chan1(self, parser):
@@ -203,6 +194,19 @@ class CliProduct(object):
 
         self.arg_chan(parser)
 
+        return
+
+    def arg_time(self, parser):
+        """Parameters for timeseries based plots, with TimeSeries defaults"""
+        self.is_time_plot = True
+        parser.add_argument('-w','--whiten',action='store_true',
+                            help='whiten data using the inverse ASD,' +
+                                 ' default no whitening')
+        parser.add_argument('--secpfft', default='1.0',
+                            help='length of fft in seconds ' +
+                                 'for each calculation, default = 1.0')
+        parser.add_argument('--overlap', default='0.5',
+                            help='Overlap as fraction [0-1), default=0.5')
         return
 
     def arg_freq(self, parser):
@@ -437,11 +441,11 @@ class CliProduct(object):
         if arg_list.fshift:
             fshift = float(arg_list.fshift)
             self.filter += "fshift(%.1f) " % fshift
-
-        if arg_list.whiten:
-            sec_fft = float(arg_list.secpfftw)
-            sec_overlap = sec_fft * float(arg_list.overlapw)
-            self.filter += "whitening "   
+        if self.is_time_plot:
+            if arg_list.whiten:
+                sec_fft = float(arg_list.secpfft)
+                sec_overlap = sec_fft * float(arg_list.overlap)
+                self.filter += "whitening "   
 
         # Get the data from NDS or Frames
         # time_groups is a list of timeseries index grouped by
@@ -460,6 +464,10 @@ class CliProduct(object):
                     data = TimeSeries.fetch(chan, start, start+self.dur,
                                             verbose=verb)
 
+                if self.is_time_plot:
+                    if arg_list.whiten:
+                        data = data.whiten(sec_fft,sec_overlap)
+
                 if highpass > 0 and lowpass == 0:
                     data = data.highpass(highpass)
                     self.filter += "high pass (%.1f) " % highpass
@@ -470,8 +478,6 @@ class CliProduct(object):
                     data = data.bandpass(highpass, lowpass)
                     self.filter = "band pass (%.1f-%.1f)" % (highpass, lowpass)
 
-                if arg_list.whiten:
-                    data = data.whiten(sec_fft,sec_overlap)
                 if fshift != 0:
                     data = data.fshift(fshift)
 

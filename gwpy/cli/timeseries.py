@@ -36,6 +36,7 @@ class TimeSeries(CliProduct):
         self.arg_ax_linx(parser)
         self.arg_ax_liny(parser)
         self.arg_plot(parser)
+        self.arg_time(parser)
         return
 
     def get_ylabel(self, args):
