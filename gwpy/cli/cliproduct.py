@@ -447,11 +447,6 @@ class CliProduct(object):
                 sec_overlap = sec_fft * float(arg_list.overlap)
                 self.filter += "whitening "   
 
-        if arg_list.whiten:
-            sec_fft = float(arg_list.secpfftw)
-            sec_overlap = sec_fft * float(arg_list.overlapw)
-            self.filter += "whitening "   
-
         # Get the data from NDS or Frames
         # time_groups is a list of timeseries index grouped by
         # start time for coherence like plots
