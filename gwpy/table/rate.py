@@ -17,7 +17,24 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Methods to calculate a rate TimeSeries from a LIGO_LW Table.
+
+.. warning::
+
+   This module has been totally deprecated in favour of the
+    `EventTable` object and the methods provided with it.
+
+   This module will be removed before the 1.0 release.
 """
+
+import warnings
+warnings.warn('The gwpy.table.rate module has been deprecated and will be '
+              'removed prior to the 1.0 release.', DeprecationWarning)
+
+# -----------------------------------------------------------------------------
+#
+# -- DEPRECATED - remove before 1.0 release -----------------------------------
+#
+# -----------------------------------------------------------------------------
 
 import operator as _operator
 from math import ceil

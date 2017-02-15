@@ -66,15 +66,14 @@ install_requires = [
     'numpy>=1.7',
     'scipy>=0.16.0',
     'matplotlib>=1.3.0',
-    'astropy>=1.0',
+    'astropy>=1.2',
     'six>=1.5'
 ]
 extras_require = {
     'nds': ['nds2-client'],
     'gwf': ['ldas-tools'],
-    'doc': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme',
-            'sphinxcontrib-doxylink', 'sphinxcontrib-epydoc',
-            'sphinxcontrib-programoutput'],
+    'docs': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme',
+             'sphinxcontrib-programoutput'],
     'hdf5': ['h5py'],
 }
 

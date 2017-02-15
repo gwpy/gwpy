@@ -22,6 +22,8 @@
 import itertools
 import re
 
+from matplotlib.figure import SubplotParams
+
 from . import rcParams
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -88,3 +90,36 @@ def marker_cycle(markers=None):
         return itertools.cycle(markers)
     else:
         return itertools.cycle(('o', 'x', '+', '^', 'D', 'H', '1'))
+
+
+# -- dynamic subplot positioning -----------------------------------------------
+
+SUBPLOT_WIDTH = {
+    8.: (.15, .88),
+    12.: (.1, .92),
+}
+SUBPLOT_HEIGHT = {
+    4.: (.2, .85),
+    6.: (.13, .9),
+    8.: (.1, .92),
+}
+
+
+def get_subplot_params(figsize):
+    """Return sensible default `SubplotParams` for a figure of the given size
+
+    Returns
+    -------
+    params : `~matplotlib.figure.SubplotParams`
+        formatted set of subplot parameters
+    """
+    w, h, = figsize
+    try:
+        l, r = SUBPLOT_WIDTH[w]
+    except KeyError:
+        l = r = None
+    try:
+        b, t = SUBPLOT_HEIGHT[h]
+    except KeyError:
+        b = t = None
+    return SubplotParams(**{'left': l, 'bottom': b, 'right': r, 'top': t})

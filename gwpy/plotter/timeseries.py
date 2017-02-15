@@ -84,13 +84,16 @@ class TimeSeriesAxes(Axes):
     def auto_gps_label(self):
         scale = self.xaxis._scale
         epoch = scale.get_epoch()
+        if int(epoch) == epoch:
+            epoch = int(epoch)
         if epoch is None:
             self.set_xlabel('GPS Time')
         else:
             unit = scale.get_unit_name()
             utc = re.sub('\.0+', '',
                          Time(epoch, format='gps', scale='utc').iso)
-            self.set_xlabel('Time [%s] from %s UTC (%s)' % (unit, utc, epoch))
+            self.set_xlabel('Time [%s] from %s UTC (%s)'
+                            % (unit, utc, repr(epoch)))
 
     def auto_gps_scale(self):
         """Automagically set the GPS scale for the time-axis of this plot
@@ -188,6 +191,13 @@ class TimeSeriesAxes(Axes):
         line = self.plot(timeseries.times.value, timeseries.value, **kwargs)
         if len(self.lines) == 1 and timeseries.size:
             self.set_xlim(*timeseries.xspan)
+        if not self.get_ylabel():
+            if tex.USE_TEX:
+                ustr = tex.unit_to_latex(timeseries.unit)
+            else:
+                ustr = timeseries.unit.to_string()
+            if ustr:
+                self.set_ylabel('[%s]' % ustr)
         return line
 
     @auto_refresh

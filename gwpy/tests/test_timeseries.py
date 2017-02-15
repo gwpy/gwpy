@@ -26,7 +26,7 @@ import tempfile
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.error import URLError
 
-from compat import unittest
+from compat import (unittest, mock)
 
 import numpy
 from numpy import testing as nptest
@@ -52,6 +52,7 @@ from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
 
 from test_array import SeriesTestCase
 import common
+import mockutils
 
 SEED = 1
 numpy.random.seed(SEED)
@@ -295,6 +296,7 @@ class TimeSeriesTestMixin(object):
         ts1 = self.create(sample_rate=100)
         ts2 = ts1.resample(10, ftype='iir')
         self.assertEquals(ts2.sample_rate, ONE_HZ*10)
+        self.assertEqual(ts1.unit, ts2.unit)
         ts1.resample(10, ftype='fir', n=10)
 
     def test_to_from_lal(self):
@@ -315,6 +317,24 @@ class TimeSeriesTestMixin(object):
 
     def test_io_identify(self):
         common.test_io_identify(self.TEST_CLASS, ['txt', 'hdf', 'gwf'])
+
+    def test_fetch(self):
+        try:
+            nds_buffer = mockutils.mock_nds2_buffer(
+                'X1:TEST', self.data, 1000000000, self.data.shape[0], 'm')
+        except ImportError as e:
+            self.skipTest(str(e))
+        nds_connection = mockutils.mock_nds2_connection([nds_buffer])
+        with mock.patch('nds2.connection') as mock_connection, \
+             mock.patch('nds2.buffer', nds_buffer):
+            mock_connection.return_value = nds_connection
+            # use verbose=True to hit more lines
+            ts = TimeSeries.fetch('X1:TEST', 1000000000, 1000000001,
+                                  verbose=True)
+        nptest.assert_array_equal(ts.value, self.data)
+        self.assertEqual(ts.sample_rate, self.data.shape[0] * units.Hz)
+        self.assertTupleEqual(ts.span, (1000000000, 1000000001))
+        self.assertEqual(ts.unit, units.meter)
 
     def fetch_open_data(self):
         try:
@@ -671,7 +691,8 @@ class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
     def test_resample(self):
         ts1 = self.create(sample_rate=100)
         ts2 = ts1.resample(10)
-        self.assertEquals(ts2.sample_rate, ONE_HZ*10)
+        self.assertEqual(ts2.sample_rate, ONE_HZ*10)
+        self.assertEqual(ts1.unit, ts2.unit)
 
 
 # -- TimeSeriesDict tests ------------------------------------------------------

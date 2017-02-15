@@ -42,13 +42,19 @@ def float_to_latex(x, format="%.2g"):
 
     In particular, scientific notation is handled gracefully: e -> 10^
 
-    Example:
-    @code
+    Parameters
+    ----------
+    x : `float`
+        the number to represent
+    Returns
+    -------
+    tex : `str`
+        a TeX representation of the input
+
+    Examples
+    --------
     >>> float_to_latex(2000)
     '2\times 10^{3}'
-    @endcode
-
-    @returns a string in latex mathmode
     """
     base_str = format % x
     if "e" not in base_str:
@@ -77,7 +83,9 @@ def label_to_latex(text):
 
 
 def unit_to_latex(unit):
-    if isinstance(unit, units.NamedUnit):
+    if unit is None:
+        return ''
+    elif isinstance(unit, units.NamedUnit):
         s = label_to_latex(unit.name)
     elif isinstance(unit, units.CompositeUnit):
         if unit.scale != 1:
@@ -101,7 +109,14 @@ def unit_to_latex(unit):
             else:
                 positives = format_unit_list(positives)
                 s += positives
-    return r'$\mathrm{{{0}}}$'.format(s)
+    elif isinstance(unit, units.UnitBase):
+        return s.to_string('latex_inline')
+    else:
+        s = str(unit)
+    if s:
+        return r'$\mathrm{{{0}}}$'.format(s)
+    else:
+        return ''
 
 
 def format_unit_list(unitlist, negative=False):

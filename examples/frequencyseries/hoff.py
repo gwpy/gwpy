@@ -19,37 +19,32 @@
 
 """Calculating and plotting a `FrequencySeries`
 
-I'm interested in the level of ground motion surrounding a particular time
-during commissioning of the Advanced LIGO Livingston Observatory. I don't
-have access to the frame files on disk, so I'll need to use NDS.
+The LIGO Laboratory has publicly released the strain data around the time of
+the GW150914 gravitational-wave detection; we can use these to calculate
+and display the spectral sensitivity of each of the detectors at that time.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.frequencyseries'
 
 # In order to generate a `FrequencySeries` we need to import the
-# `~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.get`
-# the data:
+# `~gwpy.timeseries.TimeSeries` and use
+# :meth:`~gwpy.timeseries.TimeSeries.fetch_open_data` to download the strain
+# records:
+
 from gwpy.timeseries import TimeSeries
-lho = TimeSeries.get(
-    'H1:LDAS-STRAIN,rds', 'August 1 2010', 'August 1 2010 00:02')
-llo = TimeSeries.get(
-    'L1:LDAS-STRAIN,rds', 'August 1 2010', 'August 1 2010 00:02')
+lho = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+llo = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
 
 # We can then call the :meth:`~gwpy.timeseries.TimeSeries.asd` method to
 # calculated the amplitude spectral density for each
 # `~gwpy.timeseries.TimeSeries`:
-lhoasd = lho.asd(2, 1)
-lloasd = llo.asd(2, 1)
+lhoasd = lho.asd(4, 2)
+lloasd = llo.asd(4, 2)
 
 # We can then :meth:`~FrequencySeries.plot` the spectra
-plot = lhoasd.plot(color='b', label='LHO')
-ax = plot.gca()
-ax.plot(lloasd, color='g', label='LLO')
-ax.set_xlim(40, 4096)
-ax.set_ylim(1e-23, 7.5e-21)
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
-ax.get_xaxis().tick_bottom()
-ax.get_yaxis().tick_right()
+plot = lhoasd.plot(color='#ee0000', label='LIGO-Hanford')
+plot.add_frequencyseries(lloasd, color='#4ba6ff', label='LIGO-Livingston')
+plot.set_xlim(10, 2000)
+plot.set_ylim(5e-24, 1e-21)
 plot.show()

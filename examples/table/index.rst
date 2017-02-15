@@ -1,9 +1,15 @@
-.. currentmodule:: gwpy.table.lsctables
+.. currentmodule:: gwpy.table
 
 #####################
-LIGO_LW data examples
+Tabular data examples
 #####################
 
 .. toctree::
    :maxdepth: 1
+   :numbered:
 
+   scatter
+   histogram
+   tiles
+   rate
+   rate_binned

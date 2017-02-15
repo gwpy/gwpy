@@ -31,8 +31,8 @@ from numpy import recarray
 from numpy.lib import recfunctions
 
 from glue.lal import (Cache, CacheEntry)
-from glue.ligolw.table import Table
 
+from astropy.table import (Table, vstack as vstack_tables)
 from astropy.io.registry import _get_valid_format
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -172,7 +172,7 @@ def read_cache(cache, target, nproc, post, *args, **kwargs):
                                         None, (cache[0],), {}))
     # if empty, put anything, since it doesn't matter
     except IndexError:
-        kwargs.setdefault('format', 'ligolw')
+        kwargs.setdefault('format', 'ascii')
     except Exception:
         if 'format' not in kwargs:
             raise
@@ -215,12 +215,14 @@ def read_cache(cache, target, nproc, post, *args, **kwargs):
 
     # combine and return
     data = zip(*sorted(pout, key=lambda out: out[0]))[1]
-    if issubclass(target, recarray):
-        out = recfunctions.stack_arrays(data, asrecarray=True,
-                                        usemask=False).view(target)
+    if issubclass(target, Table):  # astropy.table.Table
+        out = vstack_tables(data, join_type='exact')
+    elif issubclass(target, recarray):
+        out = recfunctions.stack_arrays(data, asrecarray=True, usemask=False,
+                                        autoconvert=True).view(target)
     else:
         try:
-            if issubclass(target, Table):
+            if hasattr(target, 'tableName'):  # glue.ligolw.table.Table
                 out = data[0]
             else:
                 out = data[0].copy()
@@ -256,20 +258,13 @@ def read_cache_factory(target):
     return _read
 
 
-def cache_segments(*caches, **kwargs):
+def cache_segments(*caches):
     """Build a `SegmentList` of data availability for these `Caches`
 
     Parameters
     ----------
     *cache : `~glue.lal.Cache`
         one of more frame file caches describing files on disk
-    on_missing : `str`
-        what to do if files in a `Cache` are not found on disk, one of
-
-        - "warn": print a warning message saying how many files
-                  are missing out of the total checked [DEFAULT].
-        - "error": raise an exception if any are missing
-        - "ignore": do nothing
 
     Returns
     -------
@@ -277,12 +272,7 @@ def cache_segments(*caches, **kwargs):
         a list of segments for when data should be available
     """
     from ..segments import SegmentList
-    on_missing = kwargs.pop('on_missing', 'warn')
-    if kwargs:
-        raise TypeError("%r is an invalid keyword for cache_segments"
-                        % kwargs.keys()[0])
     out = SegmentList()
     for cache in caches:
-        found, _ = cache.checkfilesexist(on_missing=on_missing)
-        out.extend(e.segment for e in found)
+        out.extend(e.segment for e in cache)
     return out.coalesce()

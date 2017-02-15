@@ -7,11 +7,11 @@ GWpy examples
 
    timeseries/index
 
+   signal/index
+
    frequencyseries/index
 
    spectrogram/index
 
    table/index
-
-   miscellaneous/index
 

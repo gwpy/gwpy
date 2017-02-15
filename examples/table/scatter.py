@@ -29,19 +29,35 @@ future, real signals.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.table.lsctables'
+__currentmodule__ = 'gwpy.table'
 
-# First, we import the `SnglBurstTable`
-from gwpy.table.lsctables import SnglBurstTable
+# First, we import the `EventTable` object and read in a set of events from
+# a LIGO_LW-format XML file containing a
+# :class:`sngl_burst <glue.ligolw.lsctables.SnglBurstTable>` table
+from gwpy.table import EventTable
+events = EventTable.read(
+    'H1-LDAS_STRAIN-968654552-10.xml.gz', format='ligolw.sngl_burst',
+    columns=['time', 'central_freq', 'snr'])
 
-# and read a set of events
-events = SnglBurstTable.read('../../gwpy/tests/data/H1-LDAS_STRAIN-968654552-10.xml.gz')
+# .. note::
+#
+#    Here we manually specify the `columns` to read in order to optimise
+#    the `read()` operation to parse only the data we actually need.
 
-# We can now make a scatter plot by specifying the x- and y-axis columns, and (optionally) the colour:
-plot = events.plot('time', 'central_freq', color='snr', edgecolor='none', epoch=968654552)
-plot.set_xlim(968654552, 968654552+10)
-plot.set_ylabel('Frequency [Hz]')
-plot.set_yscale('log')
-plot.set_title('LIGO Hanford Observatory event triggers for GW100916')
-plot.add_colorbar(clim=[1, 5], label='Signal-to-noise ratio', cmap='hot_r')
+# We can now make a scatter plot by specifying the x- and y-axis columns,
+# and (optionally) the colour:
+plot = events.plot('time', 'central_freq', color='snr')
+ax = plot.gca()
+ax.set_yscale('log')
+ax.set_ylabel('Frequency [Hz]')
+ax.set_epoch(968654552)
+ax.set_xlim(968654552, 968654552+10)
+ax.set_title('LIGO-Hanford event triggers for HW100916')
+plot.add_colorbar(clim=[1, 10], cmap='YlGnBu',
+                  label='Signal-to-noise ratio (SNR)')
 plot.show()
+
+# This shows the central time and frequency of each event trigger (row
+# in the ``events`` table). Alternatively we can visualise each trigger
+# as a two-dimensional tile on the time-frequency plane - for more details
+# see the example :ref:`example-table-tiles`.

@@ -6,4 +6,10 @@
 
 .. toctree::
    :maxdepth: 1
+   :numbered:
 
+   hoff
+   variance
+   coherence
+   transfer_function
+   rayleigh

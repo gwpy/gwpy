@@ -22,7 +22,8 @@
 import os
 import tempfile
 
-from compat import unittest
+from common import skip_missing_import
+from compat import (unittest, mock)
 
 from gwpy.io import datafind
 from gwpy.io.cache import (Cache, CacheEntry, cache_segments)
@@ -32,7 +33,12 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
                           'HLV-GW100916-968654552-1.gwf')
+TEST_CHANNELS = [
+    'H1:LDAS-STRAIN', 'L1:LDAS-STRAIN', 'V1:h_16384Hz',
+]
 
+
+# -- gwpy.io.nds --------------------------------------------------------------
 
 class NdsIoTestCase(unittest.TestCase):
     def test_nds2_host_order_none(self):
@@ -114,6 +120,8 @@ class NdsIoTestCase(unittest.TestCase):
                   ('nds.ligo.caltech.edu', 31200)])
 
 
+# -- gwpy.io.cache ------------------------------------------------------------
+
 class CacheIoTestCase(unittest.TestCase):
     @staticmethod
     def make_cache():
@@ -121,17 +129,10 @@ class CacheIoTestCase(unittest.TestCase):
         cache = Cache()
         for seg in [(0, 1), (1, 2), (4, 5)]:
             d = seg[1] - seg[0]
-            _, f = tempfile.mkstemp(prefix='A-',
-                                    suffix='-%d-%d.tmp' % (seg[0], d))
+            f = 'A-B-%d-%d.tmp' % (seg[0], d)
             cache.append(CacheEntry.from_T050017(f))
             segs.append(Segment(*seg))
         return cache, segs
-
-    @staticmethod
-    def destroy_cache(cache):
-        for f in cache.pfnlist():
-            if os.path.isfile(f):
-                os.remove(f)
 
     def test_cache_segments(self):
         # check empty input
@@ -139,52 +140,54 @@ class CacheIoTestCase(unittest.TestCase):
         self.assertIsInstance(sl, SegmentList)
         self.assertEquals(len(sl), 0)
         cache, segs = self.make_cache()
-        try:
-            # check good cache
-            sl = cache_segments(cache)
-            self.assertNotEquals(sl, segs)
-            self.assertEquals(sl, type(segs)(segs).coalesce())
-            # check bad cache
-            os.remove(cache[0].path)
-            sl = cache_segments(cache)
-            self.assertEquals(sl, segs[1:])
-            # check cache with no existing files
-            sl = cache_segments(cache[:1])
-            self.assertEquals(sl, SegmentList())
-            # check errors
-            self.assertRaises(TypeError, cache_segments, blah='blah')
-            self.assertRaises(ValueError, cache_segments, cache,
-                              on_missing='error')
-            self.assertRaises(ValueError, cache_segments, cache,
-                             on_missing='blah')
-        # clean up
-        finally:
-            self.destroy_cache(cache)
+        segs.coalesce()
+        sl = cache_segments(cache)
+        self.assertEquals(sl, segs)
+        sl = cache_segments(cache[:2], cache[2:])
+        self.assertEquals(sl, segs)
+
+
+# -- gwpy.io.datafind ---------------------------------------------------------
+
+def mock_call(*args, **kwargs):
+    raise OSError("")
 
 
 class DataFindIoTestCase(unittest.TestCase):
+    @skip_missing_import('lalframe')
+    def test_iter_channel_names(self):
+        # maybe need something better?
+        from types import GeneratorType
+        names = datafind.iter_channel_names(TEST_GWF_FILE)
+        self.assertIsInstance(names, GeneratorType)
+        self.assertSequenceEqual(list(names), TEST_CHANNELS)
+        with mock.patch('gwpy.utils.shell.call', mock_call):
+            names = datafind.iter_channel_names(TEST_GWF_FILE)
+            self.assertIsInstance(names, GeneratorType)
+            self.assertSequenceEqual(list(names), TEST_CHANNELS)
+
+    @skip_missing_import('lalframe')
+    def test_get_channel_names(self):
+        self.assertListEqual(datafind.get_channel_names(TEST_GWF_FILE),
+                             TEST_CHANNELS)
+
+    @skip_missing_import('lalframe')
     def test_num_channels(self):
-        try:
-            self.assertEqual(datafind.num_channels(TEST_GWF_FILE), 3)
-        except ImportError as e:
-            self.skipTest(str(e))
+        self.assertEqual(datafind.num_channels(TEST_GWF_FILE), 3)
 
+    @skip_missing_import('lalframe')
     def test_get_channel_type(self):
-        try:
-            self.assertEqual(datafind.get_channel_type(
-                'L1:LDAS-STRAIN', TEST_GWF_FILE), 'proc')
-        except ImportError as e:
-            self.skipTest(str(e))
+        self.assertEqual(datafind.get_channel_type(
+            'L1:LDAS-STRAIN', TEST_GWF_FILE), 'proc')
+        self.assertRaises(ValueError, datafind.get_channel_type,
+                          'X1:NOT-IN_FRAME', TEST_GWF_FILE)
 
+    @skip_missing_import('lalframe')
     def test_channel_in_frame(self):
-        try:
-            self.assertTrue(
-                datafind.channel_in_frame('L1:LDAS-STRAIN', TEST_GWF_FILE))
-        except ImportError as e:
-            self.skipTest(str(e))
-        else:
-            self.assertFalse(
-                datafind.channel_in_frame('X1:NOT-IN_FRAME', TEST_GWF_FILE))
+        self.assertTrue(
+            datafind.channel_in_frame('L1:LDAS-STRAIN', TEST_GWF_FILE))
+        self.assertFalse(
+            datafind.channel_in_frame('X1:NOT-IN_FRAME', TEST_GWF_FILE))
 
     def test_on_tape(self):
         self.assertFalse(datafind.on_tape(TEST_GWF_FILE))

@@ -33,7 +33,7 @@ from astropy import units
 
 from ..io import (reader, writer)
 from ..segments import Segment
-from ..signal import (notch, sosfiltfilt)
+from ..signal import (filter_design, sosfiltfilt)
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
 
@@ -51,28 +51,22 @@ class TimeSeries(TimeSeriesBase):
     unit : `~astropy.units.Unit`, optional
         physical unit of these data
 
+    t0 : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS epoch associated with these data,
+        any input parsable by `~gwpy.time.to_gps` is fine
+
+    dt : `float`, `~astropy.units.Quantity`, optional, default: `1`
+        time between successive samples (seconds), can also be given inversely
+        via `sample_rate`
+
     sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
-        the rate of samples per second (Hertz)
+        the rate of samples per second (Hertz), can also be given inversely
+        via `dt`
 
     times : `array-like`
         the complete array of GPS times accompanying the data for this series.
-        This argument takes precedence over `epoch` and `sample_rate` so should
-        be given in place of these if relevant, not alongside
-
-    x0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
-        the starting value for the x-axis of this array
-
-    dx : `float`, `~astropy.units.Quantity, optional, default: `1`
-        the step size for the x-axis of this array
-
-    xindex : `array-like`
-        the complete array of x-axis values for this array. This argument
-        takes precedence over `x0` and `dx` so should be
-        given in place of these if relevant, not alongside
-
-    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-        GPS epoch associated with these data,
-        any input parsable by `~gwpy.time.to_gps` is fine
+        This argument takes precedence over `t0` and `dt` so should be given
+        in place of these if relevant, not alongside
 
     name : `str`, optional
         descriptive title for this array
@@ -109,7 +103,7 @@ class TimeSeries(TimeSeriesBase):
 
     .. autosummary::
 
-        ~TimeSeries.fetch
+        ~TimeSeries.get
         ~TimeSeries.read
         ~TimeSeries.write
         ~TimeSeries.plot
@@ -519,9 +513,9 @@ class TimeSeries(TimeSeriesBase):
                 ts.unit, kwargs.get('scaling', 'density'))
             dtype = numpy.float64 if cts is None else complex
             if epoch is None:
-                epoch = ts.epoch
+                epoch = ts.t0
             out = Spectrogram(numpy.zeros((nsteps_, nfreqs)), dtype=dtype,
-                              unit=unit, channel=ts.channel, epoch=epoch,
+                              unit=unit, channel=ts.channel, t0=epoch,
                               f0=0, df=df, dt=dt, copy=False)
 
             if not nsteps_:
@@ -673,7 +667,7 @@ class TimeSeries(TimeSeriesBase):
         dt = nstride * self.dt
         tmp = numpy.zeros((nsteps, nfreqs), dtype=self.dtype)
         out = Spectrogram(numpy.zeros((nsteps, nfreqs), dtype=self.dtype),
-                          epoch=self.epoch, channel=self.channel,
+                          t0=self.t0, channel=self.channel,
                           name=self.name, unit=unit, dt=dt, f0=0,
                           df=1/fftlength)
 
@@ -740,7 +734,7 @@ class TimeSeries(TimeSeriesBase):
         # generate output spectrogram
         dtype = numpy.complex
         out = Spectrogram(numpy.zeros((nsteps, nfreqs), dtype=dtype),
-                          name=self.name, epoch=self.epoch, f0=0, df=df,
+                          name=self.name, t0=self.t0, f0=0, df=df,
                           dt=dt, copy=False, unit=self.unit, dtype=dtype)
         # stride through TimeSeries, recording FFTs as columns of Spectrogram
         for step in range(nsteps):
@@ -913,19 +907,30 @@ class TimeSeries(TimeSeriesBase):
 
     # -- TimeSeries filtering -------------------
 
-    def highpass(self, frequency, gpass=2, gstop=30, stop=None):
-        """Filter this `TimeSeries` with a Butterworth high-pass filter.
+    def highpass(self, frequency, gpass=2, gstop=30, fstop=None, type='iir',
+                filtfilt=True, **kwargs):
+        """Filter this `TimeSeries` with a high-pass filter.
 
         Parameters
         ----------
         frequency : `float`
-            minimum frequency for high-pass
+            high-pass corner frequency
+
         gpass : `float`
             the maximum loss in the passband (dB).
+
         gstop : `float`
             the minimum attenuation in the stopband (dB).
-        stop : `float`
-            stop-band edge frequency, defaults to `frequency/2`
+
+        fstop : `float`
+            stop-band edge frequency, defaults to `frequency * 1.5`
+
+        type : `str`
+            the filter type, either ``'iir'`` or ``'fir'``
+
+        **kwargs
+            other keyword arguments are passed to
+            :meth:`gwpy.signal.filter_design.highpass`
 
         Returns
         -------
@@ -934,9 +939,8 @@ class TimeSeries(TimeSeriesBase):
 
         See Also
         --------
-        scipy.signal.buttord
-        scipy.signal.butter
-            for details on how the filter is designed
+        gwpy.signal.filter_design.highpass
+            for details on the filter design
         TimeSeries.filter
             for details on how the filter is applied
 
@@ -946,34 +950,37 @@ class TimeSeries(TimeSeriesBase):
            unstable. With `scipy >= 0.16.0` higher-order filters are
            decomposed into second-order-sections, and so are much more stable.
         """
-
-        nyq = self.sample_rate.value / 2.
-        if stop is None:
-            stop = .5 * frequency
-        # convert to float in Hertz
-        cutoff = units.Quantity(frequency, 'Hz').value / nyq
-        stop = units.Quantity(stop, 'Hz').value / nyq
         # design filter
-        order, wn = signal.buttord(wp=cutoff, ws=stop, gpass=gpass,
-                                   gstop=gstop, analog=False)
-        zpk = signal.butter(order, wn, btype='high',
-                            analog=False, output='zpk')
+        filt = filter_design.highpass(frequency, self.sample_rate,
+                                      fstop=fstop, gpass=gpass, gstop=gstop,
+                                      analog=False, type=type, **kwargs)
         # apply filter
-        return self.filter(*zpk)
+        return self.filter(*filt, filtfilt=filtfilt)
 
-    def lowpass(self, frequency, gpass=2, gstop=30, stop=None):
+    def lowpass(self, frequency, gpass=2, gstop=30, fstop=None, type='iir',
+                filtfilt=True, **kwargs):
         """Filter this `TimeSeries` with a Butterworth low-pass filter.
 
         Parameters
         ----------
         frequency : `float`
             low-pass corner frequency
+
         gpass : `float`
             the maximum loss in the passband (dB).
+
         gstop : `float`
             the minimum attenuation in the stopband (dB).
-        stop: `float`
+
+        fstop : `float`
             stop-band edge frequency, defaults to `frequency * 1.5`
+
+        type : `str`
+            the filter type, either ``'iir'`` or ``'fir'``
+
+        **kwargs
+            other keyword arguments are passed to
+            :meth:`gwpy.signal.filter_design.lowpass`
 
         Returns
         -------
@@ -982,9 +989,8 @@ class TimeSeries(TimeSeriesBase):
 
         See Also
         --------
-        scipy.signal.buttord
-        scipy.signal.butter
-            for details on how the filter is designed
+        gwpy.signal.filter_design.lowpass
+            for details on the filter design
         TimeSeries.filter
             for details on how the filter is applied
 
@@ -994,34 +1000,40 @@ class TimeSeries(TimeSeriesBase):
            unstable. With `scipy >= 0.16.0` higher-order filters are
            decomposed into second-order-sections, and so are much more stable.
         """
-        nyq = self.sample_rate.value / 2.
-        if stop is None:
-            stop = 1.5 * frequency
-        # convert to float in Hertz
-        cutoff = units.Quantity(frequency, 'Hz').value / nyq
-        stop = units.Quantity(stop, 'Hz').value / nyq
         # design filter
-        order, wn = signal.buttord(wp=cutoff, ws=stop, gpass=gpass,
-                                   gstop=gstop, analog=False)
-        zpk = signal.butter(order, wn, btype='low', analog=False, output='zpk')
+        filt = filter_design.lowpass(frequency, self.sample_rate,
+                                     fstop=fstop, gpass=gpass, gstop=gstop,
+                                     analog=False, type=type, **kwargs)
         # apply filter
-        return self.filter(*zpk)
+        return self.filter(*filt, filtfilt=filtfilt)
 
-    def bandpass(self, flow, fhigh, gpass=2, gstop=30, stops=(None, None)):
-        """Filter this `TimeSeries` by applying low- and high-pass filters.
+    def bandpass(self, flow, fhigh, gpass=2, gstop=30, fstop=None, type='iir',
+                 filtfilt=True, **kwargs):
+        """Filter this `TimeSeries` with a band-pass filter.
 
         Parameters
         ----------
         flow : `float`
-            band-pass lower corner frequency
+            lower corner frequency of pass band
+
         fhigh : `float`
-            band-pass upper corner frequency
+            upper corner frequency of pass band
+
         gpass : `float`
-            the maximum loss in the pass band (dB).
+            the maximum loss in the passband (dB).
+
         gstop : `float`
-            the minimum attenuation in the stop band (dB).
-        stops: 2-`tuple` of `float`
-            stop-band edge frequencies, defaults to `[flow/2., fhigh*1.5]`
+            the minimum attenuation in the stopband (dB).
+
+        fstop : `tuple` of `float`, optional
+            `(low, high)` edge-frequencies of stop band
+
+        type : `str`
+            the filter type, either ``'iir'`` or ``'fir'``
+
+        **kwargs
+            other keyword arguments are passed to
+            :meth:`gwpy.signal.filter_design.bandpass`
 
         Returns
         -------
@@ -1030,9 +1042,8 @@ class TimeSeries(TimeSeriesBase):
 
         See Also
         --------
-        scipy.signal.buttord
-        scipy.signal.butter
-            for details on how the filter is designed
+        gwpy.signal.filter_design.bandpass
+            for details on the filter design
         TimeSeries.filter
             for details on how the filter is applied
 
@@ -1042,25 +1053,12 @@ class TimeSeries(TimeSeriesBase):
            unstable. With `scipy >= 0.16.0` higher-order filters are
            decomposed into second-order-sections, and so are much more stable.
         """
-        nyq = self.sample_rate.value / 2.
-        if stops is None:
-            stops = [None, None]
-        stops = list(stops)
-        if stops[0] is None:
-            stops[0] = flow * 0.5
-        if stops[1] is None:
-            stops[1] = fhigh * 1.5
-        # make sure all are in Hertz
-        low = units.Quantity(flow, 'Hz').value / nyq
-        high = units.Quantity(fhigh, 'Hz').value / nyq
-        stops = [units.Quantity(s, 'Hz').value / nyq for s in stops]
         # design filter
-        order, wn = signal.buttord(wp=[low, high], ws=stops, gpass=gpass,
-                                   gstop=gstop, analog=False)
-        zpk = signal.butter(order, wn, btype='band',
-                            analog=False, output='zpk')
+        filt = filter_design.bandpass(flow, fhigh, self.sample_rate,
+                                      fstop=fstop, gpass=gpass, gstop=gstop,
+                                      analog=False, type=type, **kwargs)
         # apply filter
-        return self.filter(*zpk)
+        return self.filter(*filt, filtfilt=filtfilt)
 
     def resample(self, rate, window='hamming', ftype='fir', n=None):
         """Resample this Series to a new rate
@@ -1105,10 +1103,12 @@ class TimeSeries(TimeSeriesBase):
             new = signal.resample(self.value, nsamp,
                                   window=window).view(self.__class__)
             new.__metadata_finalize__(self)
+            new._unit = self.unit
             new.sample_rate = rate
             return new
 
-    def zpk(self, zeros, poles, gain, digital=False, unit='Hz'):
+    def zpk(self, zeros, poles, gain, analog=True, unit='Hz',
+            **kwargs):
         """Filter this `TimeSeries` by applying a zero-pole-gain filter
 
         Parameters
@@ -1119,9 +1119,9 @@ class TimeSeries(TimeSeriesBase):
             list of pole frequencies
         gain : `float`
             DC gain of filter
-        digital : `bool`, optional, default: `False`
-            give `True` if zeros, poles, and gain are already in Z-domain
-            digital format, otherwise they will be converted
+        analog : `bool`, optional, default: `True`
+            type of ZPK being applied, if `analog=True` all parameters
+            will be converted in the Z-domain for digital filtering
         unit : `str`, `~astropy.units.Unit`, optional, default: `'Hz'`
             unit of zeros and poles, either 'Hz' or 'rad/s'
 
@@ -1142,16 +1142,24 @@ class TimeSeries(TimeSeriesBase):
 
         >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
         """
-        if not digital:
+        try:
+            analog &= not kwargs.pop('digital')
+        except KeyError:
+            pass
+        else:
+            warn("The 'digital' keyword argument to TimeSeries.zpk "
+                 "was renamed 'analog' for consistency', and will be "
+                 "removed in an upcoming release", DeprecationWarning)
+        if analog:
             # cast to arrays for ease
-            z = numpy.array(zeros, dtype=float)
-            p = numpy.array(poles, dtype=float)
-            k = float(gain)
+            z = numpy.array(zeros)
+            p = numpy.array(poles)
+            k = gain
             # convert from Hz to rad/s if needed
             unit = units.Unit(unit)
             if unit == units.Unit('Hz'):
-                z *= -2 * pi
-                p *= -2 * pi
+                z = -2 * pi * z
+                p = -2 * pi * p
             elif unit != units.Unit('rad/s'):
                 raise ValueError("zpk can only be given with unit='Hz' "
                                  "or 'rad/s'")
@@ -1164,7 +1172,7 @@ class TimeSeries(TimeSeriesBase):
             zd = numpy.concatenate((zd, -numpy.ones(len(pd)-len(zd))))
             zeros, poles, gain = zd, pd, kd
         # apply filter
-        return self.filter(zeros, poles, gain)
+        return self.filter(zeros, poles, gain, **kwargs)
 
     def filter(self, *filt, **kwargs):
         """Apply the given filter to this `TimeSeries`.
@@ -1237,6 +1245,12 @@ class TimeSeries(TimeSeriesBase):
                 filt = filt
                 a = filt.den
                 b = filt.num
+            # detect ZPK
+            elif (isinstance(filt, (tuple, list)) and len(filt) == 3 and
+                      isinstance(filt[0], numpy.ndarray) and
+                      isinstance(filt[1], numpy.ndarray) and
+                      isinstance(filt[2], float)):
+                sos = signal.zpk2sos(*filt)
             # detect SOS
             elif isinstance(filt, numpy.ndarray) and filt.ndim == 2:
                 sos = filt
@@ -1275,6 +1289,7 @@ class TimeSeries(TimeSeriesBase):
             else:
                 new = signal.lfilter(b, a, self, axis=0, **kwargs).view(cls)
         new.__metadata_finalize__(self)
+        new._unit = self.unit
         return new
 
     def coherence(self, other, fftlength=None, overlap=None,
@@ -1462,7 +1477,7 @@ class TimeSeries(TimeSeriesBase):
             rms_ = numpy.sqrt(numpy.mean(numpy.abs(stepseries.value)**2))
             data[step] = rms_
         name = '%s %.2f-second RMS' % (self.name, stride)
-        return self.__class__(data, channel=self.channel, epoch=self.epoch,
+        return self.__class__(data, channel=self.channel, t0=self.t0,
                               name=name, sample_rate=(1/float(stride)))
 
     def whiten(self, fftlength, overlap=0, method='welch', window='hanning',
@@ -1530,6 +1545,7 @@ class TimeSeries(TimeSeriesBase):
         nsteps = 1 + int((self.size - nfft) / nstride)
         out = numpy.zeros(nsteps * nstride + noverlap).view(type(self))
         out.__metadata_finalize__(self)
+        out._unit = self.unit
         del out.times
         # loop over ffts and whiten each one
         for i in range(nsteps):
@@ -1563,6 +1579,7 @@ class TimeSeries(TimeSeriesBase):
         """
         data = signal.detrend(self.value, type=detrend).view(type(self))
         data.__metadata_finalize__(self)
+        data._unit = self.unit
         return data
 
     def plot(self, **kwargs):
@@ -1571,7 +1588,7 @@ class TimeSeries(TimeSeriesBase):
         from ..plotter import TimeSeriesPlot
         return TimeSeriesPlot(self, **kwargs)
 
-    def notch(self, frequency, type='iir', **kwargs):
+    def notch(self, frequency, type='iir', filtfilt=True, **kwargs):
         """Notch out a frequency in a `TimeSeries`
 
         Parameters
@@ -1595,8 +1612,9 @@ class TimeSeries(TimeSeriesBase):
         scipy.signal.iirdesign
             for details on the IIR filter design method
         """
-        zpk = notch(frequency, self.sample_rate.value, type=type, **kwargs)
-        return self.filter(*zpk)
+        zpk = filter_design.notch(frequency, self.sample_rate.value,
+                                  type=type, **kwargs)
+        return self.filter(*zpk, filtfilt=filtfilt)
 
     def q_transform(self, qrange=(4, 64), frange=(0, numpy.inf),
                     gps=None, search=.5, tres=.001, fres=.5, outseg=None,
@@ -1751,6 +1769,6 @@ class TimeSeriesDict(TimeSeriesBaseDict):
 
 
 class TimeSeriesList(TimeSeriesBaseList):
-    __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
+    __doc__ = TimeSeriesBaseList.__doc__.replace('TimeSeriesBase',
                                                  'TimeSeries')
     EntryClass = TimeSeries

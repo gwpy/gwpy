@@ -72,13 +72,14 @@ Groups of `DataQualityFlags <DataQualityFlag>` can be collected into a `DataQual
 The most immediate utility of this group class is a bulk query of the segment database, using the :meth:`DataQualityDict.query` `classmethod`.
 This method is what is actually called by the :meth:`DataQualityFlag.query` `classmethod` anyway.
 
-===============
-Class reference
-===============
+=============
+Reference/API
+=============
 
 This reference includes the following `class` entries:
 
 .. autosummary::
+   :toctree: ../api/
    :nosignatures:
 
    DataQualityFlag
@@ -86,13 +87,3 @@ This reference includes the following `class` entries:
    Segment
    SegmentList
    SegmentListDict
-
-.. autoclass:: DataQualityFlag
-
-.. autoclass:: DataQualityDict
-
-.. autoclass:: Segment
-
-.. autoclass:: SegmentList
-
-.. autoclass:: SegmentListDict

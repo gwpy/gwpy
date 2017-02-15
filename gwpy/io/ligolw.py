@@ -24,7 +24,6 @@ an 'io' subdirectory of the containing directory for that class.
 
 from glue.ligolw.ligolw import (Document, LIGOLWContentHandler,
                                 PartialLIGOLWContentHandler)
-from glue.ligolw.table import CompareTableNames as compare_table_names
 from glue.ligolw.utils.ligolw_add import ligolw_add
 from glue.ligolw import (table, lsctables)
 
@@ -55,15 +54,12 @@ def get_partial_contenthandler(table):
         a subclass of `~glue.ligolw.ligolw.PartialLIGOLWContentHandler` to
         read only the given `table`
     """
-    def _filter_func(name, attrs):
-        if name == table.tagName and attrs.has_key('Name'):
-            return compare_table_names(attrs.get('Name'), table.tableName) == 0
-        else:
-            return False
+    def _element_filter(name, attrs):
+        return table.CheckProperties(name, attrs)
 
     class _ContentHandler(PartialLIGOLWContentHandler):
         def __init__(self, document):
-            super(_ContentHandler, self).__init__(document, _filter_func)
+            super(_ContentHandler, self).__init__(document, _element_filter)
 
     return _ContentHandler
 
@@ -99,7 +95,7 @@ def table_from_file(f, tablename, columns=None, filt=None,
         `Table` of data with given columns filled
     """
     # find table class
-    tableclass = lsctables.TableByName[table.StripTableName(tablename)]
+    tableclass = lsctables.TableByName[table.Table.TableName(tablename)]
 
     # get content handler
     if contenthandler is None:
@@ -110,6 +106,8 @@ def table_from_file(f, tablename, columns=None, filt=None,
         return tableclass.read(f, columns=columns,
                                contenthandler=contenthandler,
                                nproc=nproc, format='cache')
+
+    lsctables.use_in(contenthandler)
 
     # set columns to read
     if columns is not None:

@@ -94,7 +94,7 @@ class Array2D(Series):
     array : `Array`
         a new array, with a view of the data, and all associated metadata
     """
-    _metadata_slots = Series._metadata_slots + ['y0', 'dy', 'yindex']
+    _metadata_slots = Series._metadata_slots + ('y0', 'dy', 'yindex')
     _default_xunit = Unit('')
     _default_yunit = Unit('')
     _rowclass = Series

@@ -28,10 +28,10 @@ from numpy import testing as nptest
 
 from scipy import signal
 
-from matplotlib import use
+from matplotlib import (use, rc_context, __version__ as mpl_version)
 use('agg')
 from matplotlib.legend import Legend
-from matplotlib.colors import LogNorm
+from matplotlib.colors import (LogNorm, ColorConverter)
 from matplotlib.collections import (PathCollection, PatchCollection,
                                     PolyCollection)
 
@@ -43,6 +43,7 @@ from gwpy.segments import (DataQualityFlag,
                            Segment, SegmentList, SegmentListDict)
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.timeseries import TimeSeries
+from gwpy.table import EventTable
 from gwpy.plotter import (figure, rcParams, Plot, Axes,
                           TimeSeriesPlot, TimeSeriesAxes,
                           FrequencySeriesPlot, FrequencySeriesAxes,
@@ -50,6 +51,7 @@ from gwpy.plotter import (figure, rcParams, Plot, Axes,
                           HistogramPlot, HistogramAxes,
                           SegmentPlot, SegmentAxes,
                           SpectrogramPlot, BodePlot)
+from gwpy.plotter import utils
 from gwpy.plotter.gps import (GPSTransform, InvertedGPSTransform)
 from gwpy.plotter.html import map_data
 from gwpy.plotter.tex import (float_to_latex, label_to_latex,
@@ -57,14 +59,25 @@ from gwpy.plotter.tex import (float_to_latex, label_to_latex,
 from gwpy.plotter.table import get_column_string
 
 from test_timeseries import TEST_HDF_FILE
-from test_table import SnglBurstTableTestCase
+from test_table import TEST_OMEGA_FILE
 
 # design ZPK for BodePlot test
 ZPK = [100], [1], 1e-2
-FREQUENCIES, H = signal.freqresp(ZPK, n=200)
-FREQUENCIES /= 2. * pi
+FREQUENCIES, H = signal.freqresp(ZPK, n=100)
 MAGNITUDE = 20 * numpy.log10(numpy.absolute(H))
 PHASE = numpy.degrees(numpy.unwrap(numpy.angle(H)))
+
+# extract color cycle
+COLOR_CONVERTER = ColorConverter()
+try:
+    COLOR_CYCLE = rcParams['axes.prop_cycle'].by_key()['color']
+except KeyError:  # mpl < 1.5
+    COLOR0 = COLOR_CONVERTER.to_rgba('b')
+else:
+    if mpl_version >= '2.0':
+        COLOR0 = COLOR_CONVERTER.to_rgba(COLOR_CYCLE[0])
+    else:
+        COLOR0 = COLOR_CONVERTER.to_rgba('b')
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -73,12 +86,12 @@ class Mixin(object):
     FIGURE_CLASS = Plot
     AXES_CLASS = Axes
 
-    def new(self):
+    def new(self, **figkwargs):
         """Create a new `Figure` with some `Axes`
 
         Returns (fig, ax)
         """
-        fig = self.FIGURE_CLASS()
+        fig = self.FIGURE_CLASS(**figkwargs)
         return fig, fig.gca()
 
     @property
@@ -120,6 +133,20 @@ class PlotTestCase(Mixin, unittest.TestCase):
         fig = self.FIGURE_CLASS(auto_refresh=True)
         self.assertTrue(fig.get_auto_refresh())
         self.save_and_close(fig)
+
+    def test_subplotpars(self):
+        # check that dynamic subplotpars gets applied
+        fig, ax = self.new(figsize=(12, 4))
+        target = utils.SUBPLOT_WIDTH[12] + utils.SUBPLOT_HEIGHT[4]
+        sbp = fig.subplotpars
+        self.assertTupleEqual(target,
+                              (sbp.left, sbp.right, sbp.bottom, sbp.top))
+        # check that dynamic subplotpars doesn't get applied if the user
+        # overrides any of the settings
+        with rc_context(rc={'figure.subplot.left': target[0]*.1}):
+            fig, ax = self.new(figsize=(12, 4))
+            sbp = fig.subplotpars
+            self.assertEqual(sbp.left, target[0]*.1)
 
     # -- test axes_method decorators
     def test_axes_methods(self):
@@ -402,24 +429,24 @@ class FrequencySeriesPlotTestCase(FrequencySeriesMixin, PlotTestCase):
 
 
 class FrequencySeriesAxesTestCase(FrequencySeriesMixin, AxesTestCase):
-    def test_plot_spectrum(self):
+    def test_plot_frequencyseries(self):
         fig, ax = self.new()
-        l = ax.plot_spectrum(self.asd)[0]
+        l = ax.plot_frequencyseries(self.asd)[0]
         nptest.assert_array_equal(l.get_xdata(), self.asd.frequencies.value)
         nptest.assert_array_equal(l.get_ydata(), self.asd.value)
         self.save_and_close(fig)
 
-    def test_plot_spectrum_mmm(self):
+    def test_plot_frequencyseries_mmm(self):
         fig, ax = self.new()
         # test defaults
-        artists = ax.plot_spectrum_mmm(*self.mmm)
+        artists = ax.plot_frequencyseries_mmm(*self.mmm)
         self.assertEqual(len(artists), 5)
         self.assertEqual(len(ax.lines), 3)
         self.assertEqual(len(ax.collections), 2)
         self.save_and_close(fig)
         # test min only
         fig, ax = self.new()
-        artists = ax.plot_spectrum_mmm(self.mmm[0], min_=self.mmm[1])
+        artists = ax.plot_frequencyseries_mmm(self.mmm[0], min_=self.mmm[1])
         self.assertEqual(len(artists), 5)
         self.assertIsNone(artists[3])
         self.assertIsNone(artists[4])
@@ -428,7 +455,7 @@ class FrequencySeriesAxesTestCase(FrequencySeriesMixin, AxesTestCase):
         self.save_and_close(fig)
         # test max only
         fig, ax = self.new()
-        artists = ax.plot_spectrum_mmm(self.mmm[0], max_=self.mmm[2])
+        artists = ax.plot_frequencyseries_mmm(self.mmm[0], max_=self.mmm[2])
         self.assertEqual(len(artists), 5)
         self.assertIsNone(artists[1])
         self.assertIsNone(artists[2])
@@ -443,60 +470,62 @@ class EventTableMixin(object):
     AXES_CLASS = EventTableAxes
 
     def setUp(self):
-        self.table = SnglBurstTableTestCase.TABLE_CLASS.read(
-            SnglBurstTableTestCase.TEST_XML_FILE)
+        self.table = EventTable.read(TEST_OMEGA_FILE, format='ascii.omega')
 
 
 class EventTablePlotTestCase(EventTableMixin, PlotTestCase):
     def test_init_with_table(self):
-        self.FIGURE_CLASS(self.table, 'time', 'central_freq').close()
+        self.FIGURE_CLASS(self.table, 'time', 'frequency').close()
         self.assertRaises(ValueError, self.FIGURE_CLASS, self.table)
-        self.FIGURE_CLASS(self.table, 'time', 'central_freq', 'snr').close()
-        self.FIGURE_CLASS(self.table, 'time', 'central_freq', 'snr').close()
+        self.FIGURE_CLASS(
+            self.table, 'time', 'frequency', 'normalizedEnergy').close()
+        self.FIGURE_CLASS(
+            self.table, 'time', 'frequency', 'normalizedEnergy').close()
 
 
 class EventTableAxesTestCase(EventTableMixin, AxesTestCase):
     def test_plot_table(self):
         fig, ax = self.new()
-        snrs = self.table.get_column('snr')
+        snrs = self.table.get_column('normalizedEnergy')
         snrs.sort()
         # test with color
-        c = ax.plot_table(self.table, 'time', 'central_freq', 'snr')
+        c = ax.plot_table(self.table, 'time', 'frequency', 'normalizedEnergy')
         shape = c.get_offsets().shape
         self.assertIsInstance(c, PathCollection)
         self.assertEqual(shape[0], len(self.table))
         nptest.assert_array_equal(c.get_array(), snrs)
         # test with size_by
-        c = ax.plot_table(self.table, 'time', 'central_freq', size_by='snr')
+        c = ax.plot_table(self.table, 'time', 'frequency',
+                          size_by='normalizedEnergy')
         # test with color and size_by
-        c = ax.plot_table(self.table, 'time', 'central_freq', 'snr',
-                          size_by='snr')
+        c = ax.plot_table(self.table, 'time', 'frequency', 'normalizedEnergy',
+                          size_by='normalizedEnergy')
         nptest.assert_array_equal(c.get_array(), snrs)
         # test add_loudest
         ax.set_title('title')
-        ax.add_loudest(self.table, 'snr', 'time', 'central_freq')
+        ax.add_loudest(self.table, 'normalizedEnergy', 'time', 'frequency')
 
     def test_plot_tiles(self):
         fig, ax = self.new()
-        snrs = self.table.get_column('snr')
+        snrs = self.table.get_column('normalizedEnergy')
         snrs.sort()
         # test with color
-        c = ax.plot_tiles(self.table, 'time', 'central_freq', 'duration',
-                          'bandwidth', 'snr')
+        c = ax.plot_tiles(self.table, 'time', 'frequency', 'duration',
+                          'bandwidth', 'normalizedEnergy')
         shape = c.get_offsets().shape
         self.assertIsInstance(c, PolyCollection)
         # test other anchors
-        c = ax.plot_tiles(self.table, 'time', 'central_freq', 'duration',
-                          'bandwidth', 'snr', anchor='ll')
-        c = ax.plot_tiles(self.table, 'time', 'central_freq', 'duration',
-                          'bandwidth', 'snr', anchor='lr')
-        c = ax.plot_tiles(self.table, 'time', 'central_freq', 'duration',
-                          'bandwidth', 'snr', anchor='ul')
-        c = ax.plot_tiles(self.table, 'time', 'central_freq', 'duration',
-                          'bandwidth', 'snr', anchor='ur')
+        c = ax.plot_tiles(self.table, 'time', 'frequency', 'duration',
+                          'bandwidth', 'normalizedEnergy', anchor='ll')
+        c = ax.plot_tiles(self.table, 'time', 'frequency', 'duration',
+                          'bandwidth', 'normalizedEnergy', anchor='lr')
+        c = ax.plot_tiles(self.table, 'time', 'frequency', 'duration',
+                          'bandwidth', 'normalizedEnergy', anchor='ul')
+        c = ax.plot_tiles(self.table, 'time', 'frequency', 'duration',
+                          'bandwidth', 'normalizedEnergy', anchor='ur')
         self.assertRaises(ValueError, ax.plot_tiles, self.table, 'time',
-                          'central_freq', 'duration', 'bandwidth', 'snr',
-                          anchor='other')
+                          'frequency', 'duration', 'bandwidth',
+                          'normalizedEnergy', anchor='other')
 
     def test_get_column_string(self):
         rcParams['text.usetex'] = True
@@ -545,10 +574,11 @@ class SegmentAxesTestCase(SegmentMixin, AxesTestCase):
         self.assertTupleEqual(patch.get_xy(), (1.1, 9.6))
         self.assertAlmostEqual(patch.get_height(), 0.8)
         self.assertAlmostEqual(patch.get_width(), 1.3)
-        self.assertTupleEqual(patch.get_facecolor(), (0.0, 0.0, 1.0, 1.0))
+        self.assertTupleEqual(patch.get_facecolor(), COLOR0)
         # check kwarg passing
         patch = self.AXES_CLASS.build_segment((1.1, 2.4), 10, facecolor='red')
-        self.assertTupleEqual(patch.get_facecolor(), (1.0, 0.0, 0.0, 1.0))
+        self.assertTupleEqual(patch.get_facecolor(),
+                              COLOR_CONVERTER.to_rgba('red'))
         # check valign
         patch = self.AXES_CLASS.build_segment((1.1, 2.4), 10, valign='top')
         self.assertTupleEqual(patch.get_xy(), (1.1, 9.2))
@@ -559,9 +589,8 @@ class SegmentAxesTestCase(SegmentMixin, AxesTestCase):
         fig, ax = self.new()
         c = ax.plot_segmentlist(self.segments)
         self.assertIsInstance(c, PatchCollection)
-        self.assertEqual(ax.dataLim.x0, 0.)
+        self.assertAlmostEqual(ax.dataLim.x0, 0.)
         self.assertAlmostEqual(ax.dataLim.x1, 7.)
-        self.assertTupleEqual(ax.get_ylim(), (-1., 1.))
         self.assertEqual(len(c.get_paths()), len(self.segments))
         self.assertEqual(ax.get_epoch(), self.segments[0][0])
         # test y
@@ -672,27 +701,27 @@ class BodePlotTestCase(Mixin, unittest.TestCase):
         self.assertEqual(paxes.get_xlabel(), 'Frequency [Hz]')
         self.assertEqual(paxes.get_yscale(), 'linear')
         self.assertEqual(paxes.get_ylabel(), 'Phase [deg]')
-        self.assertTupleEqual(paxes.get_ylim(), (-180, 180))
+        self.assertTupleEqual(paxes.get_ylim(), (-185, 185))
 
     def test_add_filter(self):
         # test method 1
         fig = self.FIGURE_CLASS()
-        fig.add_filter(ZPK)
+        fig.add_filter(ZPK, analog=True)
         lm = fig.maxes.get_lines()[0]
         lp = fig.paxes.get_lines()[0]
         nptest.assert_array_equal(lm.get_xdata(), FREQUENCIES)
         nptest.assert_array_equal(lm.get_ydata(), MAGNITUDE)
         nptest.assert_array_equal(lp.get_xdata(), FREQUENCIES)
-        nptest.assert_array_equal(lp.get_ydata(), PHASE)
+        nptest.assert_array_almost_equal(lp.get_ydata(), PHASE)
         self.save_and_close(fig)
         # test method 2
-        fig = self.FIGURE_CLASS(ZPK)
+        fig = self.FIGURE_CLASS(ZPK, analog=True)
         lm = fig.maxes.get_lines()[0]
         lp = fig.paxes.get_lines()[0]
         nptest.assert_array_equal(lm.get_xdata(), FREQUENCIES)
         nptest.assert_array_equal(lm.get_ydata(), MAGNITUDE)
         nptest.assert_array_equal(lp.get_xdata(), FREQUENCIES)
-        nptest.assert_array_equal(lp.get_ydata(), PHASE)
+        nptest.assert_array_almost_equal(lp.get_ydata(), PHASE)
 
 
 # -- gwpy.plotter.gps module tests --------------------------------------------

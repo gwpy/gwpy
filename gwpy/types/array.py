@@ -100,7 +100,7 @@ class Array(Quantity):
     #
     # this is used in __array_finalize__ to create new instances of this
     # object [http://docs.scipy.org/doc/numpy/user/basics.subclassing.html]
-    _metadata_slots = ['name', 'epoch', 'channel']
+    _metadata_slots = ('name', 'epoch', 'channel')
 
     def __new__(cls, value, unit=None,  # Quantity attrs
                 name=None, epoch=None, channel=None,  # new attrs

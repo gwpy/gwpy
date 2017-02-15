@@ -69,41 +69,25 @@ extensions = [
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.linkcode',
     'numpydoc',
-    'sphinxcontrib.epydoc',
-    'sphinxcontrib.doxylink',
     'matplotlib.sphinxext.plot_directive',
-    'gwpy.utils.sphinx.autoclassapi',
-    'gwpy.utils.sphinx.directives',
 ]
 
 # customise autodoc
 autoclass_content = 'class'
 autodoc_default_flags = ['show-inheritance', 'members', 'inherited-members']
 
-# Epydoc extension config for GLUE
-# Can de-comment when GLUE is actually referenced in the documentation
-epydoc_mapping = {
-    'https://www.lsc-group.phys.uwm.edu/daswg/projects/glue/doc/':
-    [r'glue(\.|$)'],
-}
-
-# doxylink
-LALSUITE_DOCS = 'http://software.ligo.org/docs/lalsuite'
-doxylink = {
-    'lal': ('lal.tag', '%s/lal/' % LALSUITE_DOCS),
-    'lalframe': ('lalframe.tag', '%s/lalframe/' % LALSUITE_DOCS),
-}
-
 # matplotlib plot directive
 plot_rcparams = GWPY_PLOT_PARAMS
 plot_apply_rcparams = True
 plot_formats = ['png']
+plot_include_source = True
+plot_html_show_source_link = False
 
 # fix numpydoc autosummary
 numpydoc_show_class_members = False
 
 # set autosummary
-autosummary_generate = False
+autosummary_generate = True
 
 # configure inheritance diagram
 inheritance_graph_attrs = dict(rankdir='TB')
@@ -163,7 +147,7 @@ default_role = 'obj'
 #show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = 'monokai'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
@@ -188,6 +172,7 @@ html_theme_options = {
     'navbar_sidebarrel': True,
     'navbar_pagenav': False,
     'bootswatch_theme': 'flatly',
+    'bootstrap_version': '3',
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
@@ -266,12 +251,12 @@ htmlhelp_basename = 'GWpydoc'
 
 # Intersphinx
 intersphinx_mapping = {
-    'python': ('http://docs.python.org/', None),
-    'numpy': ('http://docs.scipy.org/doc/numpy/', None),
-    'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
-    'matplotlib': ('http://matplotlib.sourceforge.net/', None),
+    'python': ('https://docs.python.org/', None),
+    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
+    'matplotlib': ('http://matplotlib.org/', None),
     'astropy': ('http://docs.astropy.org/en/stable/', None),
-    'pycbc': ('http://ligo-cbc.github.io/pycbc/latest/html/', None),
+    'pycbc': ('https://ligo-cbc.github.io/pycbc/latest/html/', None),
 }
 
 

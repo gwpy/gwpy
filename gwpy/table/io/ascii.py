@@ -25,11 +25,17 @@ Each specific ASCII table format should define their own line parser
 (that generates each row of the table) and pass it to the factory method.
 """
 
+# -----------------------------------------------------------------------------
+#
+# -- DEPRECATED - remove before 1.0 release -----------------------------------
+#
+# -----------------------------------------------------------------------------
+
 from six import string_types
 
 from numpy import loadtxt
 
-from glue.ligolw.table import (reassign_ids, StripTableName)
+from glue.ligolw.table import reassign_ids
 
 from ..lsctables import (New, TableByName)
 from ..utils import TIME_COLUMN
@@ -183,7 +189,7 @@ def row_from_ascii_factory(table, delimiter):
         ------
         AttributeError
             if any column is not recognised
-        """.format(RowType.__name__, StripTableName(name))
+        """.format(RowType.__name__, table.TableName(table.tableName))
         row = table.RowType()
         if isinstance(line, str):
             line = line.rstrip('\n').split(delimiter)

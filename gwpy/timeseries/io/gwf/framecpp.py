@@ -100,9 +100,9 @@ def read_timeseriesdict(source, channels, start=None, end=None, type=None,
 
     channels : `list`
         list of channel names (or `Channel` objects) to read from frame.
-    start : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+    start : `Time`, `LIGOTimeGPS`, optional
         start GPS time of desired data.
-    end : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+    end : `Time`, `LIGOTimeGPS`, optional
         end GPS time of desired data.
     type : `str`
         type of channel, one of ``'adc'`` or ``'proc'``.
@@ -205,9 +205,9 @@ def _read_frame(framefile, channels, start=None, end=None, ctype=None,
         path to GWF-format frame file on disk.
     channels : `list`
         list of channels to read.
-    start : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+    start : `Time`, `LIGOTimeGPS`, optional
         start GPS time of desired data.
-    end : `Time`, :lalsuite:`LIGOTimeGPS`, optional
+    end : `Time`, `LIGOTimeGPS`, optional
         end GPS time of desired data.
     ctype : `str`, optional
         channel data type to read, one of: ``'adc'``, ``'proc'``.

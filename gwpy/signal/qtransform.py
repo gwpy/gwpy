@@ -36,6 +36,7 @@ from ..timeseries import TimeSeries
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Scott Coughlin <scott.coughlin@ligo.org>'
+__all__ = ['QTiling', 'QPlane', 'QTile']
 
 
 class QObject(object):

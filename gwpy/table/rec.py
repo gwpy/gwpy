@@ -19,6 +19,11 @@
 """Custom `numpy.recarray` for reading tabular data
 """
 
+import warnings
+warnings.warn('The gwpy.table.rec module has been deprecated and will be '
+              'removed prior to the 1.0 release.', DeprecationWarning)
+
+
 from numpy import recarray
 
 from ..io import (reader, writer)
@@ -34,6 +39,13 @@ class GWRecArray(recarray):
     numpy.recarray
         for documentation of how to create a new `GWRecArray`
     """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn('The GWRecArray has been deprecated in favour of '
+                      'gwpy.table.EventTable, and will be removed prior '
+                      'to the 1.0 release', DeprecationWarning)
+        return super(GWRecArray, self).__init__(*args, **kwargs)
+
     read = classmethod(reader(doc="""
         Read data into a `GWRecArray`
 

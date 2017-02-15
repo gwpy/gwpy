@@ -21,12 +21,13 @@
 
 import os.path
 import tempfile
-import StringIO
+import warnings
 from ssl import SSLError
 
 from six import PY3
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.error import URLError
+from six.moves import StringIO
 
 import pytest
 
@@ -38,8 +39,9 @@ from gwpy.segments import (Segment, SegmentList,
 from gwpy.io.registry import identify_format
 from gwpy.plotter import (SegmentPlot, SegmentAxes)
 
-from compat import unittest
+from compat import (unittest, mock)
 import common
+import mockutils
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -123,22 +125,33 @@ VETO_DEFINER_TEST_SEGMENTS = SegmentList([Segment(1117411216, 1117497616)])
 
 
 class TestCaseWithQueryMixin(object):
-    def _query(self, cm, *args, **kwargs):
+
+    def _mock_query(self, cm, result, *args, **kwargs):
+        """Query for segments using a mock of the dqsegdb API
+        """
         try:
             return cm(*args, **kwargs)
-        except (ImportError, UnboundLocalError, LDBDClientException,
-                SystemExit, SSLError) as e:
-            self.skipTest(str(e))
-        except URLError as e:
-            if e.code in [401, 500]:
-                self.skipTest(str(e))
-            else:
-                raise
-        except AttributeError as e:
-            if 'PKCS5_SALT_LEN' in str(e):
-                self.skipTest(str(e))
-            else:
-                raise
+        except (UnboundLocalError, AttributeError, URLError) as e:
+            warnings.warn("Test query failed with %s: %s, "
+                          "rerunning with mock..."
+                          % (type(e).__name__, str(e)))
+            with mock.patch('dqsegdb.apicalls.dqsegdbQueryTimes',
+                            mockutils.mock_query_times(result)):
+                return cm(*args, **kwargs)
+
+    def _mock_query_versionless(self, cm, result, *args, **kwargs):
+        """Query for segments using a mock of the dqsegdb API
+        """
+        try:
+            return cm(*args, **kwargs)
+        except (UnboundLocalError, AttributeError, URLError) as e:
+            warnings.warn("Test query failed with %s: %s, "
+                          "rerunning with mock..."
+                          % (type(e).__name__, str(e)))
+            with mock.patch('dqsegdb.apicalls.dqsegdbCascadedQuery',
+                            mockutils.mock_dqsegdb_cascaded_query(result)):
+                return cm(*args, **kwargs)
+
 
 
 class SegmentListTests(unittest.TestCase):
@@ -303,7 +316,7 @@ class DataQualityFlagTests(unittest.TestCase, TestCaseWithQueryMixin):
 
     def test_fail_write_segwizard(self):
         flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
-        self.assertRaises(ValueError, flag.write, StringIO.StringIO,
+        self.assertRaises(ValueError, flag.write, StringIO,
                           format='segwizard')
 
     def test_read_ligolw(self):
@@ -357,29 +370,35 @@ class DataQualityFlagTests(unittest.TestCase, TestCaseWithQueryMixin):
 
     def test_query(self):
         flag = QUERY_FLAGS[0]
-        result = self._query(DataQualityFlag.query,
-                             flag, QUERY_START, QUERY_END, url=QUERY_URL)
+        result = self._mock_query(
+            DataQualityFlag.query, QUERY_RESULT,
+            flag, QUERY_START, QUERY_END, url=QUERY_URL)
         self.assertEqual(result.known, QUERY_RESULT[flag].known)
         self.assertEqual(result.active, QUERY_RESULT[flag].active)
 
     def test_query_dqsegdb(self):
         flag = QUERY_FLAGS[0]
-        result = self._query(DataQualityFlag.query_dqsegdb,
-                             flag, QUERY_START, QUERY_END, url=QUERY_URL)
+        result = self._mock_query(
+            DataQualityFlag.query_dqsegdb, QUERY_RESULT,
+            flag, QUERY_START, QUERY_END, url=QUERY_URL)
         self.assertEqual(result.known, QUERY_RESULT[flag].known)
         self.assertEqual(result.active, QUERY_RESULT[flag].active)
 
     def test_query_segdb(self):
         flag = QUERY_FLAGS[0]
-        result = self._query(DataQualityFlag.query_segdb,
-                             flag, QUERY_START, QUERY_END, url=QUERY_URL_SEGDB)
+        try:
+            result = DataQualityFlag.query_segdb(flag, QUERY_START, QUERY_END,
+                                                 url=QUERY_URL_SEGDB)
+        except (SystemExit, LDBDClientException) as e:
+            self.skipTest(str(e))
         self.assertEqual(result.known, QUERY_RESULT[flag].known)
         self.assertEqual(result.active, QUERY_RESULT[flag].active)
 
     def test_query_dqsegdb_versionless(self):
         flag = QUERY_FLAGS[0]
-        result = self._query(DataQualityFlag.query, flag.rsplit(':', 1)[0],
-                             QUERY_START, QUERY_END, url=QUERY_URL)
+        result = self._mock_query_versionless(
+            DataQualityFlag.query, QUERY_RESULT,
+            flag.rsplit(':', 1)[0], QUERY_START, QUERY_END, url=QUERY_URL)
         self.assertEqual(result.known, QUERY_RESULT[flag].known)
         self.assertEqual(result.active, QUERY_RESULT[flag].active)
 
@@ -389,7 +408,9 @@ class DataQualityFlagTests(unittest.TestCase, TestCaseWithQueryMixin):
         segs = SegmentList([Segment(QUERY_START, querymid),
                             Segment(querymid, QUERY_END)])
         flag = QUERY_FLAGS[0]
-        result = self._query(DataQualityFlag.query, flag, segs, url=QUERY_URL)
+        result = self._mock_query(
+            DataQualityFlag.query, QUERY_RESULT,
+            flag, segs, url=QUERY_URL)
         self.assertEqual(result.known, QUERY_RESULT[flag].known)
         self.assertEqual(result.active, QUERY_RESULT[flag].active)
 
@@ -520,25 +541,29 @@ class DataQualityDictTests(unittest.TestCase, TestCaseWithQueryMixin):
         vdf.populate(segments=VETO_DEFINER_TEST_SEGMENTS, on_error='ignore')
 
     def test_query(self):
-        result = self._query(DataQualityDict.query,
-                             QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL)
+        result = self._mock_query(
+            DataQualityDict.query, QUERY_RESULT,
+            QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL)
         self.assertListEqual(result.keys(), QUERY_FLAGS)
         for flag in result:
             self.assertEqual(result[flag].known, QUERY_RESULT[flag].known)
             self.assertEqual(result[flag].active, QUERY_RESULT[flag].active)
 
     def test_query_dqsegdb(self):
-        result = self._query(DataQualityDict.query_dqsegdb,
-                             QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL)
+        result = self._mock_query(
+            DataQualityDict.query_dqsegdb, QUERY_RESULT,
+            QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL)
         self.assertListEqual(result.keys(), QUERY_FLAGS)
         for flag in result:
             self.assertEqual(result[flag].known, QUERY_RESULT[flag].known)
             self.assertEqual(result[flag].active, QUERY_RESULT[flag].active)
 
     def test_query_segdb(self):
-        result = self._query(DataQualityDict.query_segdb,
-                             QUERY_FLAGS, QUERY_START, QUERY_END,
-                             url=QUERY_URL_SEGDB)
+        try:
+            result = DataQualityDict.query_segdb(
+                QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL_SEGDB)
+        except (SystemExit, LDBDClientException) as e:
+            self.skipTest(str(e))
         self.assertListEqual(result.keys(), QUERY_FLAGS)
         for flag in result:
             self.assertEqual(result[flag].known, QUERY_RESULT[flag].known)
