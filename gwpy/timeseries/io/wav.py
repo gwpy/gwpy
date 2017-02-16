@@ -19,7 +19,7 @@
 """This module attaches the WAV input output methods to the TimeSeries.
 """
 
-from ...types.io import wav
+from ...io import wav
 from .. import (TimeSeries)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
