@@ -194,6 +194,7 @@ def read_table_factory(table_):
                                  "doesn't supply it or have a good proxy "
                                  "(e.g. 'peak_time')")
             # replace 'time' with get_xxx method name
+            reckwargs['columns'] = list(reckwargs['columns'])
             idx = reckwargs['columns'].index('time')
             reckwargs['columns'].insert(idx, tname)
             reckwargs['columns'].pop(idx+1)
