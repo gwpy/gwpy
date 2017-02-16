@@ -17,14 +17,16 @@ target=`python -c "import sys; print(sys.prefix)"`
 echo "Will install into ${target}"
 echo "Building into $builddir"
 
-# dont rebuild from scratch if not required
-if [ -f $builddir/configure ]; then
+# check for existing file
+if [ -f $builddir/.travis-src-file ] && [ `cat $builddir/.travis-src-file` == "$tarball" ]; then
     echo "Cached build directory found, not downloading tarball"
 else
     echo "New build requested, downloading tarball..."
+    rm -rf $builddir/
     mkdir -p $builddir
     wget $tarball -O `basename $tarball`
-    tar -zxf `basename $tarball` -C $builddir --strip-components=1
+    tar -xf `basename $tarball` -C $builddir --strip-components=1
+    echo $tarball > $builddir/.travis-src-file
 fi
 
 # always install and return
