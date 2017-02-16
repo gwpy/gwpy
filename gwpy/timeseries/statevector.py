@@ -717,14 +717,6 @@ class StateVector(TimeSeriesBase):
             new.bits = bits
         return new
 
-    def to_lal(self, *args, **kwargs):
-        """Bogus function inherited from superclass, do not use.
-        """
-        raise NotImplementedError("The to_lal method, inherited from the "
-                                  "TimeSeries, cannot be used with the "
-                                  "StateTimeSeries because LAL has no "
-                                  "BooleanTimeSeries structure")
-
     def plot(self, format='segments', bits=None, **kwargs):
         """Plot the data for this `StateVector`
 
