@@ -173,8 +173,8 @@ def read_table_factory(table_):
         for key in reckwargs:
             if key in kwargs:
                 reckwargs[key] = kwargs.pop(key)
-        reckwargs['columns'] = list(kwargs.pop('columns', llwcolumns))
-        kwargs['columns'] = list(llwcolumns)
+        reckwargs['columns'] = kwargs.pop('columns', llwcolumns)
+        kwargs['columns'] = llwcolumns
         if reckwargs['rename'] is None:
             reckwargs['rename'] = {}
 
