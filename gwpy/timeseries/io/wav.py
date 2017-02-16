@@ -25,5 +25,5 @@ from .. import (TimeSeries)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 for array_type in (TimeSeries):
-    wav.register_wav_array_io(array_type)
-    wav.register_wav_array_io(array_type, format='wav', identify=False)
+    wav.register_wav(array_type)
+    wav.register_wav(array_type, format='wav', identify=False)
