@@ -691,6 +691,8 @@ class TimeSeriesDictTestCase(unittest.TestCase):
     def test_frame_read(self):
         try:
             return self.TEST_CLASS.read(TEST_GWF_FILE, self.channels)
+        except ImportError as e:
+            self.skipTest(str(e))
         except Exception as e:
             if 'No reader' in str(e):
                 self.skipTest(str(e))
