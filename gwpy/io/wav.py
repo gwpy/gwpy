@@ -24,8 +24,6 @@ from numpy import (savetxt, loadtxt)
 
 from scipy.io import wavfile
 
-
-from ..types import TimeSeries
 from .registry import (register_reader, register_writer, register_identifier)
 from .utils import identify_factory
 
