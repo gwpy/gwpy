@@ -31,8 +31,8 @@ __email__ = 'joseph.areeda@ligo.org'
 
 VERBOSE = 3     # 0 = errors only, 1 = Warnings, 2 = INFO, >2 DEBUG >=5 ALL
 
-if sys.version < '2.6':
-    raise ImportError("Python versions older than 2.6 are not supported.")
+if sys.version < '2.7':
+    raise ImportError("Python versions older than 2.7 are not supported.")
 
 
 # ---needed to generate help messages---
