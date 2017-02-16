@@ -32,9 +32,9 @@ addons:
       - libhdf5-serial-dev
 
 python:
-  - '2.6'
   - '2.7'
   - '3.5'
+  - 'nightly'
 
 env:
   # minimal build, normal tests
@@ -47,18 +47,11 @@ env:
   - PIP_FLAGS="--quiet --pre" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
 
 matrix:
-  exclude:
-    - python: '2.6'
-      env: PIP_FLAGS="--quiet" MINIMAL=false PYTEST_FLAGS="-v -r s"
-    - python: '2.6'
-      env: PIP_FLAGS="--quiet" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
-    - python: '2.6'
-      env: PIP_FLAGS="--quiet --pre" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
   allow_failures:
-    - python: '2.6'
-    - python: '3.5'
     - python: '2.7'
       env: PIP_FLAGS="--quiet --pre" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
+    - python: '3.5'
+    - python: 'nightly'
   fast_finish: true
 
 before_install:
@@ -76,9 +69,6 @@ before_install:
 
   # install testing dependencies
   - pip install ${PIP_FLAGS} coveralls "pytest>=2.8" unittest2
-
-  # need to install astropy 1.1 specifically for py26
-  - if [[ ${TRAVIS_PYTHON_VERSION} == '2.6' ]]; then pip install "astropy==1.1"; fi
 
 install:
   # install dependencies (using version-dependent requirements if needed)
