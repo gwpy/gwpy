@@ -2,13 +2,11 @@
 #
 # Set environment for src builds for the GWpy travis-ci runner
 
-if [[ "${PRE}" == "--pre" ]]; then  # open conditional
-
 # -- utilities
 
 pip install --quiet bs4 six
 find_latest_version() {
-    python .travis/find-latest-release.py -o version $@
+    python .travis/find-latest-release.py $@
 }
 
 get_requirements_version() {
@@ -32,34 +30,28 @@ LALSUITE_URL="${LSCSOFT_URL}/lalsuite"
 
 # -- non-pure-python packages
 
-LIBFRAME_VERSION=`find_latest_version ${LSCSOFT_URL} libframe`
-LIBFRAME="${LSCSOFT_URL}/libframe-${LIBFRAME_VERSION}.tar.gz"
+echo "Querying for latest versions of LSCSoft packages:"
 
-NDS2_CLIENT_VERSION=`find_latest_version ${LSCSOFT_URL} nds2-client`
-NDS2_CLIENT="${LSCSOFT_URL}/nds2-client-${NDS2_CLIENT_VERSION}.tar.gz"
+read NDS2_CLIENT_VERSION NDS2_CLIENT < <(python .travis/find-latest-release.py ${LSCSOFT_URL} nds2-client)
+echo "   nds2-client: ${NDS2_CLIENT_VERSION}"
 
-LDAS_TOOLS_VERSION=`find_latest_version ${LSCSOFT_URL} ldas-tools`
-LDAS_TOOLS="${LSCSOFT_URL}/ldas-tools-${LDAS_TOOLS_VERSION}.tar.gz"
+read FRAMECPP_VERSION FRAMECPP < <(python .travis/find-latest-release.py ${LSCSOFT_URL} ldas-tools-framecpp)
+echo "   frameCPP:    ${FRAMECPP_VERSION}"
 
-LAL_VERSION=`find_latest_version ${LALSUITE_URL} lal`
-LAL="${LALSUITE_URL}/lal-${LAL_VERSION}.tar.gz"
+read LAL_VERSION LAL < <(python .travis/find-latest-release.py ${LALSUITE_URL} lal)
+echo "   lal:         ${LAL_VERSION}"
 
-LALFRAME_VERSION=`find_latest_version ${LALSUITE_URL} lalframe`
-LALFRAME="${LALSUITE_URL}/lalframe-${LALFRAME_VERSION}.tar.gz"
+read LALFRAME_VERSION LALFRAME < <(python .travis/find-latest-release.py ${LALSUITE_URL} lalframe)
+echo "   lalframe:    ${LALFRAME_VERSION}"
 
 # -- python packages
 
 OLD_GLUE_VERSION=`get_requirements_version glue`
-GLUE="${LSCSOFT_URL}/glue-${GLUE_VERSION}.tar.gz"
-GLUE_VERSION=`find_latest_version ${LSCSOFT_URL} glue`
+read GLUE_VERSION GLUE < <(python .travis/find-latest-release.py ${LSCSOFT_URL} glue)
+echo "   glue:        ${GLUE_VERSION}"
 sedx 's/glue-'${OLD_GLUE_VERSION}'/glue-'${GLUE_VERSION}'/g' requirements.txt
 
 OLD_DQSEGDB_VERSION=`get_requirements_version dqsegdb`
-DQSEGDB="${LSCSOFT_URL}/dqsegdb-${DQSEGDB_VERSION}.tar.gz"
-DQSEGDB_VERSION=`find_latest_version ${LSCSOFT_URL} dqsegdb`
+read DQSEGDB_VERSION DQSEGDB < <(python .travis/find-latest-release.py ${LSCSOFT_URL} dqsegdb)
+echo "   dqsegdb:     ${DQSEGDB_VERSION}"
 sedx 's/dqsegdb-'${OLD_DQSEGDB_VERSION}'/dqsegdb-'${DQSEGDB_VERSION}'/g' requirements.txt
-
-# -- clean up
-
-fi  # close conditional
-
