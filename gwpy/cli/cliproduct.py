@@ -120,7 +120,7 @@ class CliProduct(object):
     def get_max_datasets(self):
         """Override if plot has a maximum number of datasets.
         eg: spectrogram only handles 1"""
-        return 50  # arbitrary max
+        return 77  # arbitrary max
 
     def is_image(self):
         """Override if plot is image type, eg: spectrogram"""
