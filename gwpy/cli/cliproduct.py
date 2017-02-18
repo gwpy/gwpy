@@ -120,7 +120,7 @@ class CliProduct(object):
     def get_max_datasets(self):
         """Override if plot has a maximum number of datasets.
         eg: spectrogram only handles 1"""
-        return 16  # arbitrary max
+        return 50  # arbitrary max
 
     def is_image(self):
         """Override if plot is image type, eg: spectrogram"""
@@ -380,9 +380,9 @@ class CliProduct(object):
                 'supplied' % (self.get_min_datasets(), self.n_datasets))
 
         if self.n_datasets > self.get_max_datasets():
-            raise ArgumentError(
-                'A maximum of %d datasets allowed for this plot but %d '
-                'specified' % (self.get_max_datasets(), self.n_datasets))
+            msg = 'A maximum of %d datasets allowed for this plot but %d '
+            'specified.' % (self.get_max_datasets(), self.n_datasets)
+            raise ValueError(msg)
 
         if arg_list.duration:
             self.dur = int(arg_list.duration)
