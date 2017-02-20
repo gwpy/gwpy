@@ -246,17 +246,19 @@ def read_stream(stream, channels, start=None, end=None,
     import lal
     from gwpy.utils import lal as lalutils
 
-    # parse times
+    # parse times and restrict to available data
     epoch = lal.LIGOTimeGPS(stream.epoch.gpsSeconds,
                             stream.epoch.gpsNanoSeconds)
+    streamdur = get_stream_duration(stream)
     if start is None:
         start = epoch
     else:
-        start = lalutils.to_lal_ligotimegps(start)
+        start = max(epoch, lalutils.to_lal_ligotimegps(start))
     if end is None:
         offset = float(start - epoch)
-        duration = get_stream_duration(stream) - offset
+        duration = streamdur - offset
     else:
+        end = min(epoch + streamdur, end)
         duration = float(end - start)
 
     # read data
