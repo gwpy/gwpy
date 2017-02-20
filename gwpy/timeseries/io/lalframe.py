@@ -123,7 +123,8 @@ def get_stream_duration(stream):
 # -- read ---------------------------------------------------------------------
 
 def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
-                        resample=None, nproc=1, series_class=TimeSeries):
+                        resample=None, nproc=1, series_class=TimeSeries,
+                        **kwargs):
     """Read the data for a list of channels from a GWF data source.
 
     Parameters
@@ -153,6 +154,23 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
     resample : `float`, optional
         rate of samples per second at which to resample input TimeSeries.
 
+    gap : `str`, optional
+        how to handle gaps in the cache, one of
+
+        - 'ignore': do nothing, let the undelying reader method handle it
+        - 'warn': do nothing except print a warning to the screen
+        - 'raise': raise an exception upon finding a gap (default)
+        - 'pad': insert a value to fill the gaps
+
+    pad : `float`, optional
+        value with which to fill gaps in the source data, only used if
+        gap is not given, or `gap='pad'` is given
+
+    .. note::
+
+       `gap` and `pad` keyword arguments are only valid when passing a
+       cache of frames (or a cachefile) as the input `source`
+
     Returns
     -------
     dict : :class:`~gwpy.timeseries.TimeSeriesDict`
@@ -169,11 +187,11 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
     ValueError
         if reading from an unsorted, or discontiguous cache of files
     """
-    if nproc > 1:
+    if nproc > 1 or kwargs:
         return read_cache(source, series_class.DictClass, nproc, None,
                           channels, format='gwf', start=start, end=end,
                           dtype=dtype, resample=resample,
-                          series_class=series_class)
+                          series_class=series_class, **kwargs)
 
     # parse output format kwargs
     if not isinstance(resample, dict):
@@ -244,7 +262,7 @@ def read_stream(stream, channels, start=None, end=None,
     out = series_class.DictClass()
     for name in channels:
         out[name] = series_class.from_lal(
-            _read_channel(stream, name, start=start, duration=duration),
+            _read_channel(stream, str(name), start=start, duration=duration),
             copy=False)
         lalframe.FrStreamSeek(stream, epoch)
     return out
