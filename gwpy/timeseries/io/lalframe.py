@@ -37,9 +37,9 @@ except ImportError:
 from ...io.registry import (register_reader, register_writer,
                             register_identifier)
 from ...io.utils import identify_factory
-from ...io.cache import read_cache
 from ...utils import import_method_dependency
 from .. import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
+from .cache import read_cache
 
 
 # -- utilities ----------------------------------------------------------------
@@ -188,10 +188,10 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
         if reading from an unsorted, or discontiguous cache of files
     """
     if nproc > 1 or kwargs:
-        return read_cache(source, series_class.DictClass, nproc, None,
-                          channels, format='gwf', start=start, end=end,
-                          dtype=dtype, resample=resample,
-                          series_class=series_class, **kwargs)
+        return read_cache(source, channels, start=start, end=end,
+                           resample=resample, dtype=dtype, nproc=nproc,
+                           format='gwf', target=series_class.DictClass,
+                           **kwargs)
 
     # parse output format kwargs
     if not isinstance(resample, dict):
