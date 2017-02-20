@@ -44,6 +44,7 @@ class CliHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
 
 # Products are classes that implement a specific plot
 # This is a list of those class names, module names
+# Only has one class currently
 PRODUCTS = [
         'Audio'
 ]
