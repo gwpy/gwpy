@@ -209,9 +209,10 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
         out.append(read_stream(stream, channels, start=start, end=end,
                                series_class=series_class))
     for name in out:
-        if resample[name] and resample[name] != out[name].sample_rate.value:
+        if (resample.get(name) and
+                resample[name] != out[name].sample_rate.value):
             out[name] = out[name].resample(resample[name])
-        if dtype[name] and numpy.dtype(dtype[name]) != out[name].dtype:
+        if dtype.get(name) and numpy.dtype(dtype[name]) != out[name].dtype:
             out[name] = out[name].astype(dtype[name])
     return out
 
@@ -264,6 +265,7 @@ def read_stream(stream, channels, start=None, end=None,
         out[name] = series_class.from_lal(
             _read_channel(stream, str(name), start=start, duration=duration),
             copy=False)
+        out[name].channel = name  # ``name`` might be a `Channel`
         lalframe.FrStreamSeek(stream, epoch)
     return out
 
