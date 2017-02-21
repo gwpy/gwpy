@@ -95,3 +95,7 @@ cache:
     - ./python-${TRAVIS_PYTHON_VERSION}-lal/
     - ./python-${TRAVIS_PYTHON_VERSION}-lalframe/
     - ./python-${TRAVIS_PYTHON_VERSION}-nds2-client/
+before_cache:
+  - rm -f ./python-${TRAVIS_PYTHON_VERSION}-lal/config.log
+  - rm -f ./python-${TRAVIS_PYTHON_VERSION}-lalframe/config.log
+  - rm -f ./python-${TRAVIS_PYTHON_VERSION}-nds2-client/config.log
