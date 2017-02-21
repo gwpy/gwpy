@@ -20,6 +20,7 @@ echo "Building into $builddir"
 # check for existing file
 if [ -f $builddir/.travis-src-file ] && [ `cat $builddir/.travis-src-file` == "$tarball" ]; then
     echo "Cached build directory found, skippping to make..."
+    cd $builddir
 else
     # download tarball
     echo "New build requested, downloading tarball..."
@@ -40,7 +41,7 @@ else
 fi
 
 # configure if the makefile still doesn't exist
-if [ ! -f $builddir/Makefile ]; then
+if [ ! -f ./Makefile ]; then
     ./configure --enable-silent-rules --prefix=$target $@
 fi
 
