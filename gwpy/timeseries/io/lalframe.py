@@ -36,6 +36,7 @@ except ImportError:
 
 from ...io.registry import (register_reader, register_writer,
                             register_identifier)
+from ...io.cache import (find_contiguous)
 from ...io.utils import identify_factory
 from ...utils import import_method_dependency
 from .. import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
@@ -123,8 +124,8 @@ def get_stream_duration(stream):
 # -- read ---------------------------------------------------------------------
 
 def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
-                        resample=None, nproc=1, series_class=TimeSeries,
-                        **kwargs):
+                        resample=None, gap=None, pad=None, nproc=1,
+                        series_class=TimeSeries):
     """Read the data for a list of channels from a GWF data source.
 
     Parameters
@@ -154,22 +155,9 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
     resample : `float`, optional
         rate of samples per second at which to resample input TimeSeries.
 
-    gap : `str`, optional
-        how to handle gaps in the cache, one of
-
-        - 'ignore': do nothing, let the undelying reader method handle it
-        - 'warn': do nothing except print a warning to the screen
-        - 'raise': raise an exception upon finding a gap (default)
-        - 'pad': insert a value to fill the gaps
-
     pad : `float`, optional
-        value with which to fill gaps in the source data, only used if
-        gap is not given, or `gap='pad'` is given
-
-    .. note::
-
-       `gap` and `pad` keyword arguments are only valid when passing a
-       cache of frames (or a cachefile) as the input `source`
+        value with which to fill gaps in the source data, if not
+        given gaps will result in an exception being raised
 
     Returns
     -------
@@ -187,11 +175,11 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
     ValueError
         if reading from an unsorted, or discontiguous cache of files
     """
-    if nproc > 1 or kwargs:
+    if nproc > 1:
         return read_cache(source, channels, start=start, end=end,
-                           resample=resample, dtype=dtype, nproc=nproc,
-                           format='gwf', target=series_class.DictClass,
-                           **kwargs)
+                          gap=gap, pad=pad, resample=resample, dtype=dtype,
+                          nproc=nproc, format='gwf',
+                          target=series_class.DictClass)
 
     # parse output format kwargs
     if not isinstance(resample, dict):
@@ -199,15 +187,30 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
     if not isinstance(dtype, dict):
         dtype = dict((c, dtype) for c in channels)
 
-    # read data for each input source
+    # format gap handling
+    if gap is None and pad is not None:
+        gap = 'pad'
+    elif gap is None:
+        gap = 'raise'
+
+    # read cache file up-front
+    if (isinstance(source, string_types) and
+        source.endswith(('.lcf', '.cache'))):
+        source = read_cache(source)
+    # separate cache into contiguous segments
+    if isinstance(source, GlueCache):
+        source = list(find_contiguous(source))
+    # convert everything else into a list if needed
     if (not isinstance(source, (list, tuple)) or
             isinstance(source, GlueCache)):
         source = [source]
+
+    # now read the data
     out = series_class.DictClass()
     for src in source:
         stream = open_data_source(src)
         out.append(read_stream(stream, channels, start=start, end=end,
-                               series_class=series_class))
+                               series_class=series_class), gap=gap, pad=pad)
     for name in out:
         if (resample.get(name) and
                 resample[name] != out[name].sample_rate.value):
