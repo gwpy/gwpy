@@ -198,7 +198,10 @@ class TimeSeriesTestMixin(object):
                     os.remove(f.name)
 
     def test_read_write_gwf(self):
-        self._test_read_write('gwf', exclude=['channel'])
+        try:
+            self._test_read_write('gwf', exclude=['channel'])
+        except ImportError as e:
+            self.skipTest(str(e))
         self._test_read_cache('gwf')
 
     def test_find(self):
