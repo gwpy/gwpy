@@ -366,7 +366,7 @@ def write_timeseriesdict(tsdict, outfile, start=None, end=None,
         for series in tsdict.values():
             idx = list(lalutils.LAL_DETECTORS.keys()).index(series.channel.ifo)
             detectors |= 2**idx
-    except KeyError:
+    except (KeyError, AttributeError):
         detectors = lal.LALDETECTORTYPE_ABSENT
 
     # create new frame
