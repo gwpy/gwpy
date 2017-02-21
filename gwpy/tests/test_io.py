@@ -26,7 +26,8 @@ from common import skip_missing_import
 from compat import (unittest, mock)
 
 from gwpy.io import (datafind, gwf)
-from gwpy.io.cache import (Cache, CacheEntry, cache_segments)
+from gwpy.io.cache import (Cache, CacheEntry, cache_segments,
+                           flatten, find_contiguous)
 from gwpy.segments import (Segment, SegmentList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -145,6 +146,24 @@ class CacheIoTestCase(unittest.TestCase):
         self.assertEquals(sl, segs)
         sl = cache_segments(cache[:2], cache[2:])
         self.assertEquals(sl, segs)
+
+    def test_flatten(self):
+        # check flattened version of single cache is unchanged
+        a, _ = self.make_cache()
+        self.assertListEqual(flatten(a), a)
+        self.assertListEqual(flatten(a, a), a)
+        # check two caches get concatenated properly
+        b, _ = self.make_cache()
+        for e in b:
+            e.segment = e.segment.shift(10)
+        c = a + b
+        self.assertListEqual(flatten(a, b), c)
+
+    def test_find_contiguous(self):
+        a, segs = self.make_cache()
+        segs.coalesce()
+        for i, cache in enumerate(find_contiguous(a)):
+            self.assertEqual(cache.to_segmentlistdict()['A'].extent(), segs[i])
 
 
 # -- gwpy.io.gwf --------------------------------------------------------------
