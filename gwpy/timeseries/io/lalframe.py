@@ -270,7 +270,6 @@ def read_stream(stream, channels, start=None, end=None,
         out[name] = series_class.from_lal(
             _read_channel(stream, str(name), start=start, duration=duration),
             copy=False)
-        out[name].channel = name  # ``name`` might be a `Channel`
         lalframe.FrStreamSeek(stream, epoch)
     return out
 
