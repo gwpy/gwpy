@@ -21,8 +21,6 @@ addons:
       - bc
       - libfftw3-dev
       - libframe-dev
-      # framecpp dependencies
-      - ldas-tools-al-dev
       # nds2 dependencies
       - libsasl2-2
       # misc python dependencies
@@ -95,6 +93,5 @@ cache:
   ccache: true
   directories:
     - ./python-${TRAVIS_PYTHON_VERSION}-lal/
-    - ./python-${TRAVIS_PYTHON_VERSION}-framecpp/
     - ./python-${TRAVIS_PYTHON_VERSION}-lalframe/
     - ./python-${TRAVIS_PYTHON_VERSION}-nds2-client/
