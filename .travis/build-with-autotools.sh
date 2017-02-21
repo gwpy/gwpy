@@ -39,6 +39,11 @@ else
     ./configure --enable-silent-rules --prefix=$target $@
 fi
 
+# configure if the makefile still doesn't exist
+if [ ! -f $builddir/Makefile ]; then
+    ./configure --enable-silent-rules --prefix=$target $@
+fi
+
 # make and install
 make --silent
 make install --silent
