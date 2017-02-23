@@ -26,6 +26,8 @@ import warnings
 from math import ceil
 from multiprocessing import (Process, Queue as ProcessQueue)
 
+import numpy
+
 from glue.lal import Cache
 
 from ...io.cache import (cache_segments, open_cache)
@@ -148,6 +150,11 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
                              target=cls, **kwargs)
             if out is None:
                 out = new
+                if issubclass(cls, dict):
+                    for key in out:
+                        out[key] = numpy.require(out[key], requirements=['O'])
+                else:
+                    out = numpy.require(out, requirements=['O'])
             else:
                 # if we get here, we know user chose to pad gaps
                 out.append(new, gap='pad', pad=pad)
