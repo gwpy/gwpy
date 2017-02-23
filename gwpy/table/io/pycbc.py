@@ -46,65 +46,73 @@ def _table_from_file(source, ifo=None, columns=None, loudest=False):
 
     This method is for internal use only.
     """
+    close = False  # do we need to close the file when we're done
+
     # read HDF5 file
     if isinstance(source, CacheEntry):
         source = source.path
     if isinstance(source, str):
-        source = h5py.File(source, 'r')
-    # find group
-    if isinstance(source, h5py.File):
-        if ifo is None:
+        h5file = source = h5py.File(source, 'r')
+        close = True
+
+    try:
+        # find group
+        if isinstance(source, h5py.File):
+            if ifo is None:
+                try:
+                    ifo, = [key for key in list(source) if key != 'background']
+                except ValueError as e:
+                    e.args = ("PyCBC live HDF5 file contains multiple IFO "
+                              "groups, please select ifo manually",)
+                    raise
             try:
-                ifo, = [key for key in list(source) if key != 'background']
-            except ValueError as e:
-                e.args = ("PyCBC live HDF5 file contains multiple IFO groups, "
-                          "please select ifo manually",)
+                source = source[ifo]
+            except KeyError as e:
+                e.args = ("No group for ifo %r in PyCBC live HDF5 file" % ifo,)
                 raise
+        # at this stage, 'source' should be an HDF5 group in pycbc_live format
+        if columns is None:
+            columns = [c for c in source if c not in INVALID_COLUMNS]
+
+        # set up meta dict
+        meta = {'ifo': ifo}
+
+        # record loudest in meta
         try:
-            source = source[ifo]
-        except KeyError as e:
-            e.args = ("No group for ifo %r in PyCBC live HDF5 file" % ifo,)
-            raise
-    # at this stage, 'source' should be an HDF5 group in the pycbc live format
-    if columns is None:
-        columns = [c for c in source if c not in INVALID_COLUMNS]
-
-    # set up meta dict
-    meta = {'ifo': ifo}
-
-    # record loudest in meta
-    try:
-        meta['loudest'] = source['loudest'][:]
-    except KeyError:
-        if loudest:
-            raise
-
-    # record PSD in meta
-    try:
-        psd = source['psd']
-    except KeyError:
-        pass
-    else:
-        from gwpy.frequencyseries import FrequencySeries
-        df = psd.attrs['delta_f']
-        meta['psd'] = FrequencySeries(
-            psd[:], f0=0, df=df, name='pycbc_live')
-
-    # map data to columns
-    data = []
-    get_ = []
-    for c in columns:
-        # convert hdf5 dataset into Column
-        try:
-            arr = source[c][:]
+            meta['loudest'] = source['loudest'][:]
         except KeyError:
-            if c in GET_COLUMN:
-                arr = GET_COLUMN[c](source)
-            else:
+            if loudest:
                 raise
-        if loudest:
-            arr = arr[meta['loudest']]
-        data.append(EventTable.Column(arr, name=c))
+
+        # record PSD in meta
+        try:
+            psd = source['psd']
+        except KeyError:
+            pass
+        else:
+            from gwpy.frequencyseries import FrequencySeries
+            df = psd.attrs['delta_f']
+            meta['psd'] = FrequencySeries(
+                psd[:], f0=0, df=df, name='pycbc_live')
+
+        # map data to columns
+        data = []
+        get_ = []
+        for c in columns:
+            # convert hdf5 dataset into Column
+            try:
+                arr = source[c][:]
+            except KeyError:
+                if c in GET_COLUMN:
+                    arr = GET_COLUMN[c](source)
+                else:
+                    raise
+            if loudest:
+                arr = arr[meta['loudest']]
+            data.append(EventTable.Column(arr, name=c))
+    finally:
+        if close:
+            h5file.close()
 
     return EventTable(data, meta=meta)
 
@@ -137,17 +145,12 @@ def empty_hdf5_file(fp, ifo=None):
     """
     if isinstance(fp, CacheEntry):
         fp = fp.path
-    if isinstance(fp, str):
-        h5f = h5py.File(fp, 'r')
-    elif isinstance(fp, h5py.File):
-        h5f = fp
-    else:
-        return  # default to something that will evaluate as false
-    if list(h5f) == []:
-        return True
-    if ifo is not None and list(h5f[ifo]) == ['psd']:
-        return True
-    return False
+    with h5py.File(fp, 'r') as h5f:
+        if list(h5f) == []:
+            return True
+        if ifo is not None and list(h5f[ifo]) == ['psd']:
+            return True
+        return False
 
 
 def identify_pycbc_live(origin, path, fileobj, *args, **kwargs):
