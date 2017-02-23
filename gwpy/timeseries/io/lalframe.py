@@ -36,7 +36,7 @@ except ImportError:
 
 from ...io.registry import (register_reader, register_writer,
                             register_identifier)
-from ...io.cache import (find_contiguous)
+from ...io.cache import (FILE_LIKE, open_cache, find_contiguous)
 from ...io.utils import identify_factory
 from ...utils import import_method_dependency
 from .. import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
@@ -195,8 +195,10 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
 
     # read cache file up-front
     if (isinstance(source, string_types) and
-        source.endswith(('.lcf', '.cache'))):
-        source = read_cache(source)
+            source.endswith(('.lcf', '.cache'))) or (
+            isinstance(source, FILE_LIKE) and
+            source.name.endswith(('.lcf', '.cache'))):
+        source = open_cache(source)
     # separate cache into contiguous segments
     if isinstance(source, GlueCache):
         source = list(find_contiguous(source))
