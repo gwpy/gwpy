@@ -86,7 +86,20 @@ class EventColumn(Column):
 
 
 class EventTable(Table):
-    """Container for a table of events
+    """A container for a table of events
+
+    This differs from the basic `~astropy.table.Table` in two ways
+
+    - GW-specific file formats are registered to use with
+      `EventTable.read` and `EventTable.write`
+    - columns of this table are of the `EventColumn` type, which provides
+      methods for filtering based on a `~gwpy.segments.SegmentList` (not
+      specifically time segments)
+
+    See also
+    --------
+    astropy.table.Table
+        for details on parameters for creating an `EventTable`
     """
     Column = EventColumn
 
@@ -127,8 +140,7 @@ class EventTable(Table):
         Notes
         -----""", mp_flattener=vstack))
 
-    write = writer(doc="""
-        write this table to a file
+    write = writer(doc="""Write this table to a file
 
         parameters
         ----------
