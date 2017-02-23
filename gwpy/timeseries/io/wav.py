@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Ryan Fisher, Derek Davis (2017)
 #
 # This file is part of GWpy.
 #
@@ -16,30 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Input/Output routines for the TimeSeries and its sub-classes.
+"""This module attaches the WAV input output methods to the TimeSeries.
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+from ...types.io import wav
+from .. import (TimeSeries)
 
-from .. import (TimeSeries, StateVector, StateTimeSeries)
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-# register ASCII
-from ...io.ascii import register_ascii
-for classobj in (TimeSeries, StateVector, StateTimeSeries):
-    register_ascii(classobj)
-
-# register GWF
-from . import gwf  #  DEPRECATED -- remove before 1.0 release
-from . import lalframe
-
-# register generic Cache
-from . import cache
-
-# register HDF5
-from . import hdf5
-
-# register LOSC
-from . import losc
-
-# register WAV
-from . import wav
+for array_type in (TimeSeries):
+    wav.register_wav_array_io(array_type)
+    wav.register_wav_array_io(array_type, format='wav', identify=False)
