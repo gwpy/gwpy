@@ -135,6 +135,25 @@ def table_from_pycbc_live(source, ifo=None, columns=None, nproc=1, **kwargs):
 
 def filter_empty_files(files, ifo=None):
     """Remove empty PyCBC-HDF5 files from a list
+
+    Parameters
+    ----------
+    files : `list` of `str`, :class:`~glue.lal.Cache`
+        a list of file paths to test
+
+    ifo : `str`, optional
+        prefix for the interferometer of interest (e.g. ``'L1'``),
+        include this for a more robust test of 'emptiness'
+
+    Returns
+    -------
+    nonempty : `list`
+        the subset of the input ``files`` that are considered not empty
+
+    See also
+    --------
+    empty_hdf5_file
+        for details of the 'emptiness' test
     """
     return [f for f in files if not empty_hdf5_file(f, ifo=ifo)]
 
@@ -142,6 +161,23 @@ def filter_empty_files(files, ifo=None):
 @with_import('h5py')
 def empty_hdf5_file(fp, ifo=None):
     """Determine whether PyCBC-HDF5 file is empty
+
+    A file is considered empty if it contains no groups at the base level,
+    or if the ``ifo`` group contains only the ``psd`` dataset.
+
+    Parameters
+    ----------
+    fp : `str`
+        path of the pycbc_live file to test
+
+    ifo : `str`, optional
+        prefix for the interferometer of interest (e.g. ``'L1'``),
+        include this for a more robust test of 'emptiness'
+
+    Returns
+    -------
+    empty : `bool`
+        `True` if the file looks to have no content, otherwise `False`
     """
     if isinstance(fp, CacheEntry):
         fp = fp.path
