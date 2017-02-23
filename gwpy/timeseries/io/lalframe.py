@@ -210,7 +210,8 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
     for src in source:
         stream = open_data_source(src)
         out.append(read_stream(stream, channels, start=start, end=end,
-                               series_class=series_class), gap=gap, pad=pad)
+                               series_class=series_class),
+                   gap=gap, pad=pad, copy=False)
     for name in out:
         if (resample.get(name) and
                 resample[name] != out[name].sample_rate.value):
