@@ -29,13 +29,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 @with_import('root_numpy')
-def table_from_root(f, tree, columns=None, nproc=1, **kwargs):
-    # allow multiprocessing
-    if nproc != 1:
-        return read_cache(f, Table, nproc, columns=columns,
-                          format='omicron')
-
-    # read single file
+def table_from_root(f, tree, columns=None, **kwargs):
     return Table(root_numpy.root2array(file_list(f), tree,
                                             branches=columns, **kwargs))
 

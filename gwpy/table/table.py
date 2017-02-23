@@ -24,7 +24,7 @@ from math import ceil
 
 import numpy
 
-from astropy.table import (Table, Column)
+from astropy.table import (Table, Column, vstack)
 
 from ..io import (reader, writer)
 
@@ -92,8 +92,7 @@ class EventTable(Table):
 
     # -- i/o ------------------------------------
 
-    read = classmethod(reader(doc="""
-        read data into an `eventtable`
+    read = classmethod(reader(doc="""Read data into an `EventTable`
 
         Parameters
         ----------
@@ -107,6 +106,9 @@ class EventTable(Table):
         columns : `list` of `str`, optional
             list of column names ro read; should represent a sub-set of
             all available columns
+
+        nproc : `int`, optional, default: 1
+            number of CPUs to use for parallel file reading
 
         .. note::
 
@@ -123,7 +125,7 @@ class EventTable(Table):
             if the `format` cannot be automatically identified
 
         Notes
-        -----"""))
+        -----""", mp_flattener=vstack))
 
     write = writer(doc="""
         write this table to a file

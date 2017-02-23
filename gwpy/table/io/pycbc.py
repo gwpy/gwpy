@@ -117,16 +117,10 @@ def _table_from_file(source, ifo=None, columns=None, loudest=False):
     return EventTable(data, meta=meta)
 
 
-def table_from_pycbc_live(source, ifo=None, columns=None, nproc=1, **kwargs):
+def table_from_pycbc_live(source, ifo=None, columns=None, **kwargs):
     """Read a `GWRecArray` from one or more PyCBC live files
     """
     source = file_list(source)
-    if nproc > 1:
-        from ...io.cache import read_cache
-        return read_cache(source, EventTable, nproc, None,
-                          ifo=ifo, columns=columns, format=PYCBC_LIVE_FORMAT,
-                          **kwargs)
-
     source = filter_empty_files(source, ifo=ifo)
     return vstack_tables(
         [_table_from_file(x, ifo=ifo, columns=columns, **kwargs)
