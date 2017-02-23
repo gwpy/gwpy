@@ -210,13 +210,13 @@ def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
     # now read the data
     out = series_class.DictClass()
     for i, src in enumerate(source):
+        if i == 1:  # force data into fresh memory so that append works
+            for name in out:
+                out[name] = numpy.require(out[name], requirements=['O'])
         stream = open_data_source(src)
         out.append(read_stream(stream, channels, start=start, end=end,
                                series_class=series_class),
                    gap=gap, pad=pad, copy=False)
-        if i == 0:  # force data into fresh memory if needed
-            for name in out:
-                out[name] = numpy.require(out[name], requirements=['O'])
     for name in out:
         if (resample.get(name) and
                 resample[name] != out[name].sample_rate.value):
