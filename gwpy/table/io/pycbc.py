@@ -155,7 +155,7 @@ def filter_empty_files(files, ifo=None):
     empty_hdf5_file
         for details of the 'emptiness' test
     """
-    return [f for f in files if not empty_hdf5_file(f, ifo=ifo)]
+    return type(files)([f for f in files if not empty_hdf5_file(f, ifo=ifo)])
 
 
 @with_import('h5py')
