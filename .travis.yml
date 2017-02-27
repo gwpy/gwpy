@@ -97,10 +97,14 @@ cache:
   ccache: true
   directories:
     - ./python-${TRAVIS_PYTHON_VERSION}-lal/
+    - ./python-${TRAVIS_PYTHON_VERSION}-framecpp/
+    - ./python-${TRAVIS_PYTHON_VERSION}-ldas-tools-al/
     - ./python-${TRAVIS_PYTHON_VERSION}-lalframe/
     - ./python-${TRAVIS_PYTHON_VERSION}-nds2-client/
 before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log
   - rm -f ./python-${TRAVIS_PYTHON_VERSION}-lal/config.log
+  - rm -f ./python-${TRAVIS_PYTHON_VERSION}-ldas-tools-al/config.log
+  - rm -f ./python-${TRAVIS_PYTHON_VERSION}-framecpp/config.log
   - rm -f ./python-${TRAVIS_PYTHON_VERSION}-lalframe/config.log
   - rm -f ./python-${TRAVIS_PYTHON_VERSION}-nds2-client/config.log
