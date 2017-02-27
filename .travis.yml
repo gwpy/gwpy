@@ -7,6 +7,7 @@ addons:
         key_url: http://software.ligo.org/keys/deb/lscsoft.key
       - sourceline: deb-src http://software.ligo.org/lscsoft/debian wheezy contrib
         key_url: http://software.ligo.org/keys/deb/lscsoft.key
+      - ubuntu-toolchain-r-test
     packages:
       # generic packages
       - gcc
@@ -23,6 +24,7 @@ addons:
       # lalframe dependencies
       - libframe-dev
       # framecpp dependencies
+      - g++-4.7
       - ldas-tools-al-dev
       # nds2 dependencies
       - libsasl2-2
