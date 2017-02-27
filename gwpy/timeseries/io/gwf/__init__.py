@@ -114,7 +114,7 @@ def import_gwf_library(library, package=__package__):
     try:
         return importlib.import_module('.%s' % library, package=package)
     except ImportError as e:
-        e.args = ('Cannot %s frame API: %s' % (library, str(e)),)
+        e.args = ('Cannot import %s frame API: %s' % (library, str(e)),)
         raise
 
 
