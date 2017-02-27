@@ -23,7 +23,7 @@ addons:
       # lalframe dependencies
       - libframe-dev
       # framecpp dependencies
-      - ldas-tools-al
+      - ldas-tools-al-dev
       # nds2 dependencies
       - libsasl2-2
       # misc python dependencies
