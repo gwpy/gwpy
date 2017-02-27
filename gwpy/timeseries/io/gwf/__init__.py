@@ -104,9 +104,23 @@ def channel_dict_kwarg(value, channels, types=None, astype=None):
         return out
 
 
+def import_gwf_library(library, package=__package__):
+    """Utility method to import the relevant timeseries.io.gwf frame API
+
+    This is just a wrapper around :meth:`importlib.import_module` with
+    a slightly nicer error message
+    """
+    # import the frame library here to have any ImportErrors occur early
+    try:
+        return importlib.import_module('.%s' % library, package=package)
+    except ImportError as e:
+        e.args = ('Cannot %s frame API: %s' % (library, str(e)),)
+        raise
+
+
 # -- generic I/O methods ------------------------------------------------------
 
-def register_gwf_api(library, package='gwpy.timeseries.io.gwf'):
+def register_gwf_api(library):
     """Register a full set of GWF I/O methods for the given library
 
     The given frame library must define the following methods
@@ -121,7 +135,7 @@ def register_gwf_api(library, package='gwpy.timeseries.io.gwf'):
     """
     # import library to get details (don't require library to importable)
     try:
-        lib = importlib.import_module('.%s' % library, package=package)
+        lib = import_gwf_library(library)
     except ImportError:
         pass  # means any reads will fail at run-time
     else:
@@ -177,11 +191,7 @@ def register_gwf_api(library, package='gwpy.timeseries.io.gwf'):
             dict of (channel, `TimeSeries`) data pairs
         """
         # import the frame library here to have any ImportErrors occur early
-        try:
-            importlib.import_module('.%s' % library, package=package)
-        except ImportError as e:
-            e.args = ('Cannot %s frame API: %s' % (library, str(e)),)
-            raise
+        import_gwf_library(library)
 
         if nproc > 1:
             return read_cache(source, channels, start=start, end=end,
@@ -294,11 +304,7 @@ def register_gwf_api(library, package='gwpy.timeseries.io.gwf'):
             run number to write into frame header
         """
         # import the frame library here to have any ImportErrors occur early
-        try:
-            importlib.import_module('.%s' % library, package=package)
-        except ImportError as e:
-            e.args = ('Cannot %s frame API: %s' % (library, str(e)),)
-            raise
+        import_gwf_library(library)
 
         return libwrite_(data, outfile, start=start, end=end,
                          name=name, run=run)
