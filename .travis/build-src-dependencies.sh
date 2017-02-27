@@ -23,6 +23,10 @@ FAILURES=""
 # -- framecpp -----------------------------------------------------------------
 
 bash .travis/build-with-autotools.sh \
+    python-${TRAVIS_PYTHON_VERSION}-ldas-tools-al \
+    ${LDAS_TOOLS_AL} --enable-python || FAILURES="$FAILURES ldas-tools-al"
+
+bash .travis/build-with-autotools.sh \
     python-${TRAVIS_PYTHON_VERSION}-framecpp \
     ${FRAMECPP} --enable-python || FAILURES="$FAILURES framecpp"
 

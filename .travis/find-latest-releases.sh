@@ -33,16 +33,19 @@ LALSUITE_URL="${LSCSOFT_URL}/lalsuite"
 echo "Querying for latest versions of LSCSoft packages:"
 
 read NDS2_CLIENT_VERSION NDS2_CLIENT < <(python .travis/find-latest-release.py ${LSCSOFT_URL} nds2-client)
-echo "   nds2-client: ${NDS2_CLIENT_VERSION}"
+echo "   nds2-client:  ${NDS2_CLIENT_VERSION}"
+
+read LDAS_TOOLS_AL_VERSION LDAS_TOOLS_AL < <(python .travis/find-latest-release.py ${LSCSOFT_URL} ldas-tools-al)
+echo "   ldas-tools-l: ${LDAS_TOOLS_AL_VERSION}"
 
 read FRAMECPP_VERSION FRAMECPP < <(python .travis/find-latest-release.py ${LSCSOFT_URL} ldas-tools-framecpp)
-echo "   frameCPP:    ${FRAMECPP_VERSION}"
+echo "   frameCPP:     ${FRAMECPP_VERSION}"
 
 read LAL_VERSION LAL < <(python .travis/find-latest-release.py ${LALSUITE_URL} lal)
-echo "   lal:         ${LAL_VERSION}"
+echo "   lal:          ${LAL_VERSION}"
 
 read LALFRAME_VERSION LALFRAME < <(python .travis/find-latest-release.py ${LALSUITE_URL} lalframe)
-echo "   lalframe:    ${LALFRAME_VERSION}"
+echo "   lalframe:     ${LALFRAME_VERSION}"
 
 # -- python packages
 

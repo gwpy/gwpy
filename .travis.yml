@@ -25,7 +25,6 @@ addons:
       - libframe-dev
       # framecpp dependencies
       - g++-4.7
-      - ldas-tools-al-dev
       # nds2 dependencies
       - libsasl2-2
       # misc python dependencies
