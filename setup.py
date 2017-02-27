@@ -71,7 +71,6 @@ install_requires = [
 ]
 extras_require = {
     'nds': ['nds2-client'],
-    'gwf': ['lalframe'],
     'docs': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme',
              'sphinxcontrib-programoutput'],
     'hdf5': ['h5py'],

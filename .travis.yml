@@ -20,7 +20,10 @@ addons:
       - swig
       - bc
       - libfftw3-dev
+      # lalframe dependencies
       - libframe-dev
+      # framecpp dependencies
+      - ldas-tools-al
       # nds2 dependencies
       - libsasl2-2
       # misc python dependencies

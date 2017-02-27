@@ -16,6 +16,12 @@ bash -e .travis/build-with-autotools.sh \
 
 FAILURES=""
 
+# -- framecpp -----------------------------------------------------------------
+
+bash .travis/build-with-autotools.sh \
+    python-${TRAVIS_PYTHON_VERSION}-framecpp \
+    ${FRAMECPP} --enable-swig-python || FAILURES="$FAILURES framecpp"
+
 # -- lalframe -----------------------------------------------------------------
 
 bash .travis/build-with-autotools.sh \

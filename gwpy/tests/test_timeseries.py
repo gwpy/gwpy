@@ -28,6 +28,8 @@ from six.moves.urllib.error import URLError
 
 from compat import (unittest, mock)
 
+import pytest
+
 import numpy
 from numpy import testing as nptest
 
@@ -116,9 +118,6 @@ class TimeSeriesTestMixin(object):
         self.assertEqual(ts.epoch, Time(968654552, format='gps', scale='utc'))
         self.assertEqual(ts.sample_rate, units.Quantity(16384, 'Hz'))
         self.assertEqual(ts.unit, units.Unit('strain'))
-        # check that channel carries the correct parameters
-        self.assertEqual(ts.channel.sample_rate, ts.sample_rate)
-        self.assertEqual(ts.channel.unit, ts.unit)
         return ts
 
     def test_ligotimegps(self):
@@ -139,11 +138,12 @@ class TimeSeriesTestMixin(object):
 
     # -- test I/O -------------------------------
 
-    def _test_read_cache(self, format, exclude=['channel']):
-        ext = '.%s' % format
+    def _test_read_cache(self, format, extension=None, exclude=['channel']):
+        if extension is None:
+            extension = format
         # make array
         a = self.create(name='test', t0=0, sample_rate=self.data.shape[0])
-        exta = '-%d-%d.%s' % (a.span[0], a.span[1], format)
+        exta = '-%d-%d.%s' % (a.span[0], a.span[1], extension)
 
         # write it to a file, so we can read it again later
         with tempfile.NamedTemporaryFile(prefix='tmp-', suffix=exta,
@@ -169,7 +169,7 @@ class TimeSeriesTestMixin(object):
 
         # create second array with a gap
         b = self.create(name='test', t0=a.xspan[1]+1, dt=a.dt)
-        extb = '-%d-%d.%s' % (b.span[0], b.span[1], format)
+        extb = '-%d-%d.%s' % (b.span[0], b.span[1], extension)
         try:
             with tempfile.NamedTemporaryFile(prefix='tmp-', suffix=extb,
                                              delete=False) as f2:
@@ -203,6 +203,24 @@ class TimeSeriesTestMixin(object):
         except ImportError as e:
             self.skipTest(str(e))
         self._test_read_cache('gwf')
+
+    def read_write_gwf_api(self, api):
+        fmt = 'gwf.%s' % api
+        try:
+            self._test_read_write(fmt, extension='gwf', exclude=['channel'],
+                                  auto=True)#False)
+        except ImportError as e:
+            self.skipTest(str(e))
+        self._test_read_cache(fmt, extension='gwf')
+        # check old format prints a deprecation warning
+        with pytest.warns(DeprecationWarning):
+            self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format=api)
+
+    def test_read_write_gwf_lalframe(self):
+        return self.read_write_gwf_api('lalframe')
+
+    def test_read_write_gwf_framecpp(self):
+        return self.read_write_gwf_api('framecpp')
 
     def test_find(self):
         try:

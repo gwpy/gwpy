@@ -243,7 +243,7 @@ class CommonTests(object):
                 self.assertArraysEqual(self.TEST_ARRAY, b, exclude=exclude)
         finally:
             if os.path.exists(f.name):
-               os.remove(f.name)
+                os.remove(f.name)
 
     def test_read_write_hdf5(self):
         for format in ('hdf5', 'hdf'):

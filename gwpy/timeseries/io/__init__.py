@@ -29,8 +29,7 @@ for classobj in (TimeSeries, StateVector, StateTimeSeries):
     register_ascii(classobj)
 
 # register GWF
-from . import gwf  #  DEPRECATED -- remove before 1.0 release
-from . import lalframe
+from . import gwf
 
 # register generic Cache
 from . import cache
