@@ -193,11 +193,14 @@ def register_gwf_api(library):
         # import the frame library here to have any ImportErrors occur early
         import_gwf_library(library)
 
+        # run with multiprocessing
         if nproc > 1:
             return read_cache(source, channels, start=start, end=end,
                               gap=gap, pad=pad, resample=resample, dtype=dtype,
                               nproc=nproc, format=fmt,
                               target=series_class.DictClass)
+
+        # -- from here read data
 
         if start:
             start = float(to_gps(start))
@@ -240,6 +243,7 @@ def register_gwf_api(library):
                                 series_class=series_class),
                        gap=gap, pad=pad, copy=False)
 
+        # apply resampling and dtype-casting
         for name in out:
             if (resample.get(name) and
                     resample[name] != out[name].sample_rate.value):
@@ -306,6 +310,7 @@ def register_gwf_api(library):
         # import the frame library here to have any ImportErrors occur early
         import_gwf_library(library)
 
+        # then write using the relevant API
         return libwrite_(data, outfile, start=start, end=end,
                          name=name, run=run)
 
