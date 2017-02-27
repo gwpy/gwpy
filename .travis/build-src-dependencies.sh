@@ -20,7 +20,7 @@ FAILURES=""
 
 bash .travis/build-with-autotools.sh \
     python-${TRAVIS_PYTHON_VERSION}-framecpp \
-    ${FRAMECPP} --enable-swig-python || FAILURES="$FAILURES framecpp"
+    ${FRAMECPP} --enable-python || FAILURES="$FAILURES framecpp"
 
 # -- lalframe -----------------------------------------------------------------
 
