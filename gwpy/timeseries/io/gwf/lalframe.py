@@ -16,113 +16,180 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read gravitational-wave frame (GWF) files using the LALFrame API.
+"""Read gravitational-wave frame (GWF) files using the LALFrame API
+
+The frame format is defined in LIGO-T970130 available from dcc.ligo.org.
 """
 
-from __future__ import division
+from __future__ import (absolute_import, division)
 
-from ....io.cache import (CacheEntry, file_list)
-from ....utils import (import_method_dependency, with_import)
-from ... import (TimeSeries, TimeSeriesDict)
-from . import channel_dict_kwarg
+import os.path
+import tempfile
 
-DEPENDS = 'lalframe.frread'
+from six import string_types
+
+# import in this order so that lalframe throws the ImportError
+# to give the user a bit more information
+import lalframe
+import lal
+
+from ....io.cache import (FILE_LIKE, Cache as GlueCache,
+                          CacheEntry as GlueCacheEntry)
+from ....utils import lal as lalutils
+from ... import TimeSeries
+
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+FRAME_LIBRARY = 'lalframe'
 
 
-@with_import(DEPENDS)
-def read_timeseriesdict(source, channels, start=None, end=None, dtype=None,
-                        resample=None, verbose=False, _SeriesClass=TimeSeries):
-    """Read the data for a list of channels from a GWF data source.
+# -- utilities ----------------------------------------------------------------
+
+def open_data_source(source):
+    """Open a GWF file source into a `lalframe.XLALFrStream` object
 
     Parameters
     ----------
-    source : `str`, :class:`glue.lal.Cache`, `list`
-        data source object, one of:
-
-        - `str` : frame file path
-        - :class:`glue.lal.Cache`, `list` : contiguous list of frame paths
-
-    channels : `list`
-        list of channel names (or `Channel` objects) to read from frame.
-    start : `Time`, :lalsuite:`LIGOTimeGPS`, optional
-        start GPS time of desired data.
-    end : `Time`, :lalsuite:`LIGOTimeGPS`, optional
-        end GPS time of desired data.
-    type : `str`
-        type of channel, one of ``'adc'`` or ``'proc'``.
-    dtype : `numpy.dtype`, `str`, `type`, or `dict`
-        numeric data type for returned data, e.g. `numpy.float`, or
-        `dict` of (`channel`, `dtype`) pairs
-    resample : `float`, optional
-        rate of samples per second at which to resample input TimeSeries.
-    verbose : `bool`, optional
-        print verbose output.
+    source : `str`, `file`, `lal.Cache`, `glue.lal.Cache`
+        data source to read
 
     Returns
     -------
-    dict : :class:`~gwpy.timeseries.TimeSeriesDict`
-        dict of (channel, `TimeSeries`) data pairs
-
-    Notes
-    -----
-    If reading from a list, or cache, or framefiles, the frames contained
-    must be contiguous and sorted in chronological order for this function
-    to return without exception.
+    stream : `lalframe.FrStream`
+        an open `FrStream`
 
     Raises
     ------
     ValueError
-        if reading from an unsorted, or discontiguous cache of files
+        if the input format cannot be identified
     """
-    from gwpy.utils.lal import to_lal_ligotimegps
-    # parse input arguments (astropy insists on opening files)
-    if isinstance(source, file):
+    if isinstance(source, FILE_LIKE):
         source = source.name
-    filelist = file_list(source)
-    try:
-        frametype = CacheEntry.from_T050017(filelist[0]).description
-    except ValueError:
-        frametype = None
-    # set times
-    if start is not None:
-        start = to_lal_ligotimegps(start)
-    if end is not None:
-        end = to_lal_ligotimegps(end)
-    if start and end:
-        duration = float(end - start)
-    elif end:
-        raise ValueError("If `end` is given, `start` must also be given")
+    if isinstance(source, GlueCacheEntry):
+        source = source.path
+
+    # read single file
+    if isinstance(source, string_types) and source.endswith('.gwf'):
+        return lalframe.FrStreamOpen(*os.path.split(source))
+    # read cache file
+    elif (isinstance(source, string_types) and
+          source.endswith(('.lcf', '.cache'))):
+        return lalframe.FrStreamCacheOpen(lal.CacheImport(source))
+    # read glue cache object
+    elif isinstance(source, GlueCache):
+        cache = lal.Cache()
+        for entry in source:
+            cache = lal.CacheMerge(
+                cache, lal.CacheGlob(*os.path.split(entry.path)))
+        return lalframe.FrStreamCacheOpen(cache)
+    elif isinstance(source, lal.Cache):
+        return lalframe.FrStreamCacheOpen(source)
+
+    raise ValueError("Don't know how to open data source of type %r"
+                     % type(source))
+
+
+def get_stream_duration(stream):
+    """Find the duration of time stored in a frame stream
+
+    Parameters
+    ----------
+    stream : `lal.FrStream`
+        stream of data to search
+
+    Returns
+    -------
+    duration : `float`
+        the duration (seconds) of the data for this channel
+    """
+    epoch = lal.LIGOTimeGPS(stream.epoch.gpsSeconds,
+                            stream.epoch.gpsNanoSeconds)
+    # loop over each file in the stream cache and query its duration
+    nfile = stream.cache.length
+    duration = 0
+    for dummy_i in range(nfile):
+        for dummy_j in range(lalframe.FrFileQueryNFrame(stream.file)):
+            duration += lalframe.FrFileQueryDt(stream.file, 0)
+            lalframe.FrStreamNext(stream)
+    # rewind stream and return
+    lalframe.FrStreamSeek(stream, epoch)
+    return duration
+
+
+# -- read ---------------------------------------------------------------------
+
+def read(source, channels, start=None, end=None, series_class=TimeSeries):
+    """Read data from one or more GWF files using the LALFrame API
+    """
+    stream = open_data_source(source)
+
+    # parse times and restrict to available data
+    epoch = lal.LIGOTimeGPS(stream.epoch.gpsSeconds,
+                            stream.epoch.gpsNanoSeconds)
+    streamdur = get_stream_duration(stream)
+    if start is None:
+        start = epoch
     else:
-        duration = None
-    # parse resampling
-    resample = channel_dict_kwarg(resample, channels, (int,))
-    if resample is None:
-        raise ValueError("Cannot parse resample request, please review "
-                         "documentation for that argument")
-    # parse dtype
-    dtype = channel_dict_kwarg(dtype, channels, (str, type))
-    if dtype is None:
-        raise ValueError("Cannot parse dtype request, please review "
-                         "documentation for that argument")
+        start = max(epoch, lalutils.to_lal_ligotimegps(start))
+    if end is None:
+        offset = float(start - epoch)
+        duration = streamdur - offset
+    else:
+        end = min(epoch + streamdur, end)
+        duration = float(end - start)
 
     # read data
-    try:
-        laldata = frread.read_timeseries(source, map(str, channels),
-                                         start=start, duration=duration,
-                                         verbose=verbose)
-    # if old version of lalframe.frread
-    except TypeError:
-        laldata = [frread.read_timeseries(source, str(c), start=start,
-                                          duration=duration, verbose=verbose)
-                   for c in channels]
-    # convert to native objects and return
-    out = TimeSeriesDict()
-    for channel, lalts in zip(channels, laldata):
-        ts = _SeriesClass.from_lal(lalts)
-        ts.channel.frametype = frametype
-        if channel in dtype:
-            ts = ts.astype(dtype[channel])
-        if channel in resample:
-            ts = ts.resample(resample[channel])
-        out[channel] = ts
+    out = series_class.DictClass()
+    for name in channels:
+        out[name] = series_class.from_lal(
+            _read_channel(stream, str(name), start=start, duration=duration),
+            copy=False)
+        lalframe.FrStreamSeek(stream, epoch)
     return out
+
+
+def _read_channel(stream, channel, start, duration):
+    dtype = lalframe.FrStreamGetTimeSeriesType(channel, stream)
+    typestr = lalutils.LAL_TYPE_STR[dtype]
+    reader = getattr(lalframe, 'FrStreamRead%sTimeSeries' % typestr)
+    return reader(stream, channel, start, duration, 0)
+
+
+# -- write --------------------------------------------------------------------
+
+def write(tsdict, outfile, start=None, end=None,
+          name='gwpy', run=0):
+    """Write data to a GWF file using the LALFrame API
+    """
+    if not start:
+        start = tsdict.values()[0].xspan[0]
+    if not end:
+        end = tsdict.values()[0].xspan[1]
+    duration = end - start
+
+    # get ifos list
+    detectors = 0
+    for series in tsdict.values():
+        try:
+            idx = list(lalutils.LAL_DETECTORS.keys()).index(series.channel.ifo)
+            detectors |= 2**idx
+        except (KeyError, AttributeError):
+            continue
+
+    # create new frame
+    frame = lalframe.FrameNew(start, duration, name, run, 0, detectors)
+
+    for series in tsdict.values():
+        # convert to LAL
+        lalseries = series.to_lal()
+
+        # find adder
+        laltype = lalutils.LAL_TYPE_FROM_NUMPY[series.dtype.type]
+        typestr = lalutils.LAL_TYPE_STR[laltype]
+        add_ = getattr(lalframe, 'FrameAdd%sTimeSeriesProcData' % typestr)
+
+        # add time series to frame
+        add_(frame, lalseries)
+
+    # write frame
+    lalframe.FrameWrite(frame, outfile)

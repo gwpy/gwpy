@@ -21,8 +21,8 @@
 """
 
 import sys
-if sys.version < '2.6':
-    raise ImportError("Python versions older than 2.6 are not supported.")
+if sys.version < '2.7':
+    raise ImportError("Python versions older than 2.7 are not supported.")
 
 import glob
 import hashlib
@@ -71,7 +71,6 @@ install_requires = [
 ]
 extras_require = {
     'nds': ['nds2-client'],
-    'gwf': ['ldas-tools'],
     'docs': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme',
              'sphinxcontrib-programoutput'],
     'hdf5': ['h5py'],

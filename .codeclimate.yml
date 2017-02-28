@@ -19,6 +19,7 @@ ratings:
   - "**.py"
 
 exclude_paths:
+- gwpy/tests/*
 - gwpy/tests/data/*
 - docs/*
 - examples/*

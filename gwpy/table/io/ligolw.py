@@ -28,7 +28,6 @@ import glue.segments
 from glue.ligolw.lsctables import (TableByName, LIGOTimeGPS)
 
 from ...io import registry
-from ...io.cache import (read_cache, file_list)
 from ...io.ligolw import (table_from_file, identify_ligolw)
 from .. import (Table, EventTable)
 from ..lsctables import EVENT_TABLES
@@ -156,12 +155,6 @@ def read_table_factory(table_):
 
     def _read_table(f, *args, **kwargs):
         tablename = table_.TableName(table_.tableName)
-        # handle multiprocessing
-        nproc = kwargs.pop('nproc', 1)
-        if nproc > 1:
-            kwargs['format'] = 'ligolw.%s' % tablename
-            return read_cache(file_list(f), Table, nproc, None,
-                              *args, **kwargs)
 
         # set up keyword arguments
         llwcolumns = kwargs.pop('ligolw_columns', kwargs.get('columns', None))
@@ -194,6 +187,7 @@ def read_table_factory(table_):
                                  "doesn't supply it or have a good proxy "
                                  "(e.g. 'peak_time')")
             # replace 'time' with get_xxx method name
+            reckwargs['columns'] = list(reckwargs['columns'])
             idx = reckwargs['columns'].index('time')
             reckwargs['columns'].insert(idx, tname)
             reckwargs['columns'].pop(idx+1)

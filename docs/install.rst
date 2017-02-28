@@ -29,7 +29,7 @@ You can also run the following to install a number of optional dependencies - pa
 
 .. code-block:: bash
 
-   sudo port install py27-ipython nds2-client kerberos5 py27-pykerberos py27-h5py py27-lal py27-lalframe
+   sudo port install py27-ipython nds2-client kerberos5 py27-pykerberos py27-h5py py27-lal py27-ldas-tools-framecpp
 
 Once you have at least the required dependencies installed, you can :ref:`install GWpy using pip <install-pip>`.
 

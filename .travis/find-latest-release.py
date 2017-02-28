@@ -18,16 +18,16 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('url', help='URL of package host')
 parser.add_argument('package', help='name of package to match, used to build '
                                     'regex as \'<package>-*.tar.gz\'')
-parser.add_argument('-x', '--extension', default='tar.gz',
-                    help='extension of package files hosted at URL, '
-                         'default: %(default)')
-parser.add_argument('-o', '--output-format', default='url',
-                    choices=['url', 'version', 'filename'],
-                    help='output format')
+parser.add_argument('-x', '--extension', default=['tar.gz', 'tar.xz'],
+                    action='append',
+                    help='extension(s) of package files hosted at URL, '
+                         'default: %(default)s')
 args = parser.parse_args()
 
 listing = BeautifulSoup(urlopen(args.url), 'html.parser')
-match = re.compile('%s-(?P<version>([0-9]+.[0-9]+(.*))).%s' % (args.package, args.extension))
+extensions = '(%s)' % '|'.join(set(args.extension))
+match = re.compile('%s-(?P<version>([0-9]+.[0-9]+(.*))).%s\Z'
+                   % (args.package, extensions))
 
 latest = LooseVersion('0.0.0')
 
@@ -38,9 +38,4 @@ for a in listing.find_all('a', text=match):
         latest = version
         target = os.path.join(args.url, filename)
 
-if args.output_format == 'url':
-    print(target)
-elif args.output_format == 'filename':
-    print(os.path.basename(target))
-else:
-    print(latest)
+print('%s %s' % (latest, target))

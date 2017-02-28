@@ -17,26 +17,39 @@ target=`python -c "import sys; print(sys.prefix)"`
 echo "Will install into ${target}"
 echo "Building into $builddir"
 
-# dont rebuild from scratch if not required
-if [ -f $builddir/configure ]; then
-    echo "Cached build directory found, not downloading tarball"
+# check for existing file
+if [ -f $builddir/.travis-src-file ] && [ `cat $builddir/.travis-src-file` == "$tarball" ]; then
+    echo "Cached build directory found, skippping to make..."
+    cd $builddir
 else
+    # download tarball
     echo "New build requested, downloading tarball..."
+    rm -rf $builddir/
     mkdir -p $builddir
     wget $tarball -O `basename $tarball`
-    tar -zxf `basename $tarball` -C $builddir --strip-components=1
+    tar -xf `basename $tarball` -C $builddir --strip-components=1
+    echo $tarball > $builddir/.travis-src-file
+
+    # boot and configure
+    cd $builddir
+    if [ -f ./00boot ]; then
+        ./00boot
+    elif [ -f ./autogen.sh ]; then
+        ./autogen.sh
+    fi
+    ./configure --enable-silent-rules --prefix=$target $@
 fi
 
-# always install and return
-cd $builddir
-if [ -f ./00boot ]; then
-    ./00boot
-elif [ -f ./autogen.sh ]; then
-    ./autogen.sh
+# configure if the makefile still doesn't exist
+if [ ! -f ./Makefile ]; then
+    ./configure --enable-silent-rules --prefix=$target $@
 fi
-./configure --enable-silent-rules --prefix=$target $@
-make -j 2 --silent || make --silent
+
+# make and install
+make --silent
 make install --silent
+
+# finish
 cd -
 echo "----------------------------------------------------------------------"
 echo "Successfully installed `basename ${tarball}`"

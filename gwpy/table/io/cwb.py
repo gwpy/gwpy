@@ -29,7 +29,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # -- ROOT ---------------------------------------------------------------------
 
-def table_from_cwb(f, **kwargs):
+def table_from_cwb(f, *args, **kwargs):
     return EventTable.read(f, 'waveburst', *args, format='root', **kwargs)
 
 registry.register_reader('root.cwb', EventTable, table_from_cwb)

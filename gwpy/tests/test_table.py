@@ -65,14 +65,28 @@ class TableTests(unittest.TestCase):
                                        format='ligolw.sngl_burst')
         self.assertEqual(len(table2), 4104)
         self.assertEqual(table2[0]['snr'], table2[2052]['snr'])
-        # try with nproc
-        table3 = self.TABLE_CLASS.read([TEST_XML_FILE, TEST_XML_FILE],
-                                       nproc=2, format='ligolw.sngl_burst')
-        self.assertTableEqual(table2, table3)
+        # try with columns
+        table4 = self.TABLE_CLASS.read(
+            TEST_XML_FILE, format='ligolw.sngl_burst',
+            columns=['time', 'snr', 'central_freq'])
+        self.assertListEqual(sorted(table4.dtype.names),
+                             ['central_freq', 'snr', 'time'])
+        self.assertEqual(
+            table[0]['peak_time'] + table[0]['peak_time_ns'] * 1e-9,
+            table4[0]['time'])
 
 
 class EventTableTests(TableTests):
     TABLE_CLASS = EventTable
+
+    def test_read_ligolw(self):
+        table = super(EventTableTests, self).test_read_ligolw()
+        # try with nproc
+        table = self.TABLE_CLASS.read([TEST_XML_FILE, TEST_XML_FILE],
+                                      format='ligolw.sngl_burst')
+        table2 = self.TABLE_CLASS.read([TEST_XML_FILE, TEST_XML_FILE],
+                                       nproc=2, format='ligolw.sngl_burst')
+        self.assertTableEqual(table, table2)
 
     def test_read_omega(self):
         table = self.TABLE_CLASS.read(TEST_OMEGA_FILE, format='ascii.omega')
