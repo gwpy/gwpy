@@ -22,9 +22,11 @@
 from functools import wraps
 
 from astropy.io.registry import *
-astropy_register_identifier = register_identifier
 
 from .cache import file_list
+
+# record astropy origin registry_identifier
+astropy_register_identifier = register_identifier
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

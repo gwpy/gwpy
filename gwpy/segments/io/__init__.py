@@ -19,8 +19,6 @@
 """
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
 from .ligolw import *
 from .segwizard import *
 
@@ -28,3 +26,5 @@ try:
     from .hdf5 import *
 except ImportError:
     pass
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

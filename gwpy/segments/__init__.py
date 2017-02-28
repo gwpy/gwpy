@@ -23,12 +23,11 @@ The core of this module is adapted from the :mod:`Grid LIGO User Environment
 (GLUE) package <glue.segments>`.
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
 from .segments import (Segment, SegmentList, SegmentListDict)
 from .flag import *
 from .io import *
 
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = [
     'Segment',
     'SegmentList',

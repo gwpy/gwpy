@@ -52,7 +52,8 @@ from .segments import Segment, SegmentList
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['DataQualityFlag', 'DataQualityDict']
 
-re_IFO_TAG_VERSION = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+):(?P<version>\d+)\Z")
+re_IFO_TAG_VERSION = re.compile(
+    r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+):(?P<version>\d+)\Z")
 re_IFO_TAG = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+)\Z")
 re_TAG_VERSION = re.compile(r"\A(?P<tag>[^/]+):(?P<version>\d+)\Z")
 

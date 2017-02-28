@@ -186,8 +186,9 @@ class QPlane(QBase):
         fstepmin = 1 / self.duration
         # for each frequency, yield a QTile
         for i in xrange(nfreq):
-            yield (minf * exp(2 / (2 + self.q**2)**(1/2.) * (i + .5) * fstep)
-                 // fstepmin * fstepmin)
+            yield (minf *
+                   exp(2 / (2 + self.q**2)**(1/2.) * (i + .5) * fstep) //
+                   fstepmin * fstepmin)
         raise StopIteration()
 
     @property
@@ -257,7 +258,7 @@ class QTile(QBase):
 
         :type: `float`
         """
-        return 2 * pi ** (1/2.) * self.frequency / self.q;
+        return 2 * pi ** (1/2.) * self.frequency / self.q
 
     @property
     def ntiles(self):
@@ -341,8 +342,8 @@ class QTile(QBase):
         if epoch is None:
             epoch = fseries.epoch
         tdenergy = npfft.ifft(wenergy)
-        cenergy = TimeSeries(tdenergy, x0=epoch, dx=self.duration/tdenergy.size,
-                             copy=False)
+        cenergy = TimeSeries(tdenergy, x0=epoch,
+                             dx=self.duration/tdenergy.size, copy=False)
         if normalized:
             energy = type(cenergy)(
                 cenergy.value.real ** 2. + cenergy.value.imag ** 2.,

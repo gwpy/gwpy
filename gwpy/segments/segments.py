@@ -22,14 +22,14 @@ gravitational-wave laser interferometer was operating in a specific
 configuration.
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__credits__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-
 from glue.segments import (segment as _Segment,
                            segmentlist as _SegmentList,
                            segmentlistdict as _SegmentListDict)
 
 from ..io import (reader, writer)
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__credits__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 
 
 def _update_docstring(doc):
