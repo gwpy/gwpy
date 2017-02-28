@@ -19,6 +19,9 @@ ratings:
   - "**.py"
 
 exclude_paths:
+- ez_setup.py
+- versioneer.py
+- gwpy/_version.py
 - gwpy/tests/*
 - gwpy/tests/data/*
 - docs/*
