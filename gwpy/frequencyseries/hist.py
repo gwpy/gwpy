@@ -22,14 +22,12 @@
 import numpy
 import sys
 
-if sys.version_info[0] < 3:
-    range = xrange
-
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+from six.moves import xrange
 
 from ..types import (Quantity, Array2D)
 from .core import FrequencySeries
 
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['SpectralVariance']
 
 
@@ -234,7 +232,7 @@ class SpectralVariance(Array2D):
 
         # loop over frequencies
         out = numpy.zeros((data.shape[1], nbins))
-        for i in range(data.shape[1]):
+        for i in xrange(data.shape[1]):
             out[i, :], bins = numpy.histogram(data[:, i], bins,
                                               density=density)
             if norm and out[i, :].sum():
@@ -266,7 +264,7 @@ class SpectralVariance(Array2D):
         rows, columns = self.shape
         out = numpy.zeros(rows)
         # Loop over frequencies
-        for i in range(rows):
+        for i in xrange(rows):
             # Calculate cumulative sum for array
             cumsumvals = numpy.cumsum(self.value[i, :])
 
