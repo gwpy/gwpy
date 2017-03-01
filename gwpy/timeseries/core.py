@@ -368,7 +368,7 @@ class TimeSeriesBase(Series):
 
     @classmethod
     def get(cls, channel, start, end, pad=None, dtype=None, verbose=False,
-            **kwargs):
+            allow_tape=None, **kwargs):
         """Get data for this channel from frames or NDS
 
         This method dynamically accesses either frames on disk, or a
@@ -399,11 +399,12 @@ class TimeSeriesBase(Series):
             number of parallel processes to use, serial process by
             default.
 
-        allow_tape : `bool`, optional, default: `False`
-            allow the use of frames that are held on tape, default is `False`
+        allow_tape : `bool`, optional, default: `None`
+            allow the use of frames that are held on tape, default is `None`
             to attempt to allow the `TimeSeries.fetch` method to
             intelligently select a server that doesn't use tapes for
-            data storage (doesn't always work)
+            data storage (doesn't always work), but to eventually allow
+            retrieving data from tape if required
 
         verbose : `bool`, optional
             print verbose output about NDS progress.
@@ -1119,7 +1120,7 @@ class TimeSeriesBaseDict(OrderedDict):
 
     @classmethod
     def get(cls, channels, start, end, pad=None, dtype=None, verbose=False,
-            allow_tape=False, **kwargs):
+            allow_tape=None, **kwargs):
         """Retrieve data for multiple channels from frames or NDS
 
         This method dynamically accesses either frames on disk, or a
@@ -1154,11 +1155,12 @@ class TimeSeriesBaseDict(OrderedDict):
             number of parallel processes to use, serial process by
             default.
 
-        allow_tape : `bool`, optional, default: `False`
-            allow the use of frames that are held on tape, default is `False`
+        allow_tape : `bool`, optional, default: `None`
+            allow the use of frames that are held on tape, default is `None`
             to attempt to allow the `TimeSeries.fetch` method to
             intelligently select a server that doesn't use tapes for
-            data storage (doesn't always work)
+            data storage (doesn't always work), but to eventually allow
+            retrieving data from tape if required
 
         verbose : `bool`, optional
             print verbose output about NDS progress.
@@ -1181,7 +1183,8 @@ class TimeSeriesBaseDict(OrderedDict):
                 gprint("Attempting to access data from frames...")
             try:
                 return cls.find(channels, start, end, pad=pad, dtype=dtype,
-                                verbose=verbose, allow_tape=allow_tape,
+                                verbose=verbose,
+                                allow_tape=allow_tape or False,
                                 **kwargs)
             except (ImportError, RuntimeError, ValueError) as e:
                 if verbose:
