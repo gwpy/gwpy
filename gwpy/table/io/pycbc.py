@@ -22,6 +22,15 @@
 import re
 from os.path import basename
 
+from six import string_types
+
+try:
+    import h5py
+except ImportError:
+    HAS_H5PY = False
+else:
+    HAS_H5PY = True
+
 from glue.lal import CacheEntry
 
 from astropy.table import vstack as vstack_tables
@@ -186,7 +195,9 @@ def empty_hdf5_file(fp, ifo=None):
 def identify_pycbc_live(origin, path, fileobj, *args, **kwargs):
     """Identify a PyCBC Live file from its basename
     """
-    if path is not None and PYCBC_FILENAME.match(basename(path)):
+    if HAS_H5PY and isinstance(path, h5py.HLObject):
+        path = path.file.name
+    if isinstance(path, string_types) and PYCBC_FILENAME.match(basename(path)):
         return True
     return False
 
