@@ -22,7 +22,7 @@
 import os.path
 import tempfile
 
-from numpy import (may_share_memory, testing as nptest)
+from numpy import (may_share_memory, testing as nptest, random)
 
 from astropy import units
 
@@ -121,3 +121,19 @@ class EventTableTests(TableTests):
         table = self.TABLE_CLASS.read(TEST_OMEGA_FILE, format='ascii.omega')
         nptest.assert_array_equal(table.get_column('normalizedEnergy'),
                                   table['normalizedEnergy'])
+
+    def test_read_hdf5_mp(self):
+        try:
+            import h5py
+        except ImportError as e:
+            self.skipTest(str(e))
+        t = self.TABLE_CLASS(random.random((10, 10)))
+        fp = tempfile.mktemp(suffix='.hdf')
+        try:
+            t.write(fp, format='hdf5', path='/test')
+            h5file = h5py.File(fp, 'r')
+            h5dset = h5file['/test']
+            t2 = self.TABLE_CLASS.read(h5dset, format='hdf5')
+        finally:
+            if os.path.exists(fp):
+                os.remove(fp)
