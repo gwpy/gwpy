@@ -51,8 +51,6 @@ def identify_with_list(identifier):
                 else:
                     if len(files):
                         path = files[0]
-            else:
-                raise
         except IndexError:
             pass
         return identifier(origin, path, fileobj, *args, **kwargs)
