@@ -137,3 +137,49 @@ class EventTableTests(TableTests):
         finally:
             if os.path.exists(fp):
                 os.remove(fp)
+
+    def test_read_pycbc_live(self):
+        try:
+            import h5py
+        except ImportError as e:
+            self.skipTest(str(e))
+        table = self.TABLE_CLASS(random.random((10, 10)),
+                                 names=['a', 'b', 'c', 'chisq', 'd', 'e', 'f',
+                                        'mass1', 'mass2', 'snr'])
+        table.meta['ifo'] = 'X1'
+        fp = os.path.join(tempfile.mkdtemp(), 'X1-Live-0-0.hdf')
+        try:
+            # write table in pycbc_live format
+            h5file = h5py.File(fp, 'w')
+            group = h5file.create_group('X1')
+            for col in table.columns:
+                dataset = group.create_dataset(data=table[col], name=col)
+            h5file.close()
+            # assert reading works
+            table2 = self.TABLE_CLASS.read(fp)
+            self.assertTableEqual(table, table2)
+            # assert keyword arguments result in same table
+            table2 = self.TABLE_CLASS.read(fp, format='hdf5.pycbc_live')
+            self.assertTableEqual(table, table2)
+            table2 = self.TABLE_CLASS.read(fp, format='hdf5.pycbc_live',
+                                           ifo='X1')
+            self.assertTableEqual(table, table2)
+            # add another IFO, then assert that reading the table without
+            # specifying the IFO fails
+            h5file = h5py.File(fp)
+            h5file.create_group('Z1')
+            with self.assertRaises(ValueError) as exc:
+                self.TABLE_CLASS.read(fp)
+            self.assertTrue(str(exc.exception).startswith(
+                'PyCBC live HDF5 file contains dataset groups'))
+            table2 = self.TABLE_CLASS.read(fp, format='hdf5.pycbc_live',
+                                           ifo='X1')
+            # assert processed colums works
+            table2 = self.TABLE_CLASS.read(fp, ifo='X1',
+                                           columns=['mchirp', 'new_snr'])
+            mchirp = (table['mass1'] * table['mass2']) ** (3/5.) / (
+                table['mass1'] + table['mass2']) ** (1/5.)
+            nptest.assert_array_equal(table2['mchirp'], mchirp)
+        finally:
+            if os.path.exists(fp):
+                os.remove(fp)
