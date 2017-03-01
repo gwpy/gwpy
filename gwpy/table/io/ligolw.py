@@ -37,6 +37,9 @@ __all__ = []
 
 INVALID_REC_TYPES = [glue.segments.segment]
 
+# methods to exclude from get_as_columns conversions
+GET_AS_EXCLUDE = ['get_column', 'get_table']
+
 
 # -- read ---------------------------------------------------------------------
 
@@ -108,7 +111,7 @@ def _table_from_ligolw(llwtable, target, copy, columns=None,
     # fill out get_xxx columns
     if get_as_columns:
         getters = filter(
-            lambda x: x[0].startswith('get_'),
+            lambda x: x[0].startswith('get_') and x[0] not in GET_AS_EXCLUDE,
             inspect.getmembers(llwtable, predicate=inspect.ismethod))
         for name, meth in getters:
             column = name.split('_', 1)[1]
