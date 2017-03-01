@@ -42,7 +42,10 @@ def with_nproc(reader, flatten):
         if isinstance(source, list):
             files = source
         else:
-            files = file_list(source)
+            try:  # try and map to a list of file-like objects
+                files = file_list(source)
+            except ValueError:  # otherwise treat as single
+                files = [source]
 
         # determine input format
         if kwargs.get('format', None) is None:
