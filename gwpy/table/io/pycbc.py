@@ -71,8 +71,10 @@ def _table_from_file(source, ifo=None, columns=None, loudest=False):
                 try:
                     ifo, = [key for key in list(source) if key != 'background']
                 except ValueError as e:
-                    e.args = ("PyCBC live HDF5 file contains multiple IFO "
-                              "groups, please select ifo manually",)
+                    e.args = ("PyCBC live HDF5 file contains dataset groups "
+                              "for multiple interferometers, please specify "
+                              "the prefix of the relevant interferometer via "
+                              "the `ifo` keyword argument, e.g: `ifo=G1`",)
                     raise
             try:
                 source = source[ifo]
