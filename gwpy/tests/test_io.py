@@ -243,6 +243,11 @@ class DataFindIoTestCase(unittest.TestCase):
             self.assertRaises(ValueError, datafind.find_frametype, 'X1:TEST')
             self.assertRaises(ValueError, datafind.find_frametype,
                               'bad channel name')
+            # test trend sorting ends up with an error
+            self.assertRaises(ValueError, datafind.find_frametype,
+                              'X1:TEST.rms,s-trend')
+            self.assertRaises(ValueError, datafind.find_frametype,
+                              'X1:TEST.rms,m-trend')
 
     def test_find_best_frametype(self):
         with mock.patch('glue.datafind.GWDataFindHTTPConnection') as \
