@@ -19,6 +19,8 @@
 """Read events from ROOT trees into Tables
 """
 
+import warnings
+
 from ...io import registry
 from ...io.utils import identify_factory
 from ...io.cache import (file_list, read_cache)
@@ -29,9 +31,33 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 @with_import('root_numpy')
-def table_from_root(f, tree, columns=None, **kwargs):
-    return Table(root_numpy.root2array(file_list(f), tree,
-                                            branches=columns, **kwargs))
+def table_from_root(f, treename=None, include_names=None, **kwargs):
+    if include_names is None:
+        try:
+            include_names = kwargs.pop('columns')
+        except KeyError:
+            pass
+        else:
+            warnings.warn("Keyword argument `columns` has been renamed to "
+                          "`include_names` to better match default "
+                          "astropy.table.Table.read kwargs, please update "
+                          "your call.", DeprecationWarning)
+
+    files = file_list(f)
+    if treename is None:
+        trees = root_numpy.list_trees(files[0])
+        if len(trees) == 1:
+            treename = trees[0]
+        elif len(trees) == 0:
+            raise ValueError("No trees found in %s" % files[0])
+        else:
+            raise ValueError("Multiple trees found in %s, please select on "
+                             "via the `treename` keyword argument, e.g. "
+                             "`treename='events'`. Available trees are: %s."
+                             % (files[0], ', '.join(map(repr, trees))))
+
+    return Table(root_numpy.root2array(files, treename, branches=include_names,
+                                       **kwargs))
 
 
 @with_import('root_numpy')
