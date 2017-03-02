@@ -20,10 +20,10 @@
 """
 
 import os
-import tempfile
 
 from common import skip_missing_import
 from compat import (unittest, mock)
+import mockutils
 
 from gwpy.io import (datafind, gwf)
 from gwpy.io.cache import (Cache, CacheEntry, cache_segments,
@@ -171,7 +171,6 @@ class CacheIoTestCase(unittest.TestCase):
 def mock_call(*args, **kwargs):
     raise OSError("")
 
-
 class GwfIoTestCase(unittest.TestCase):
 
     @skip_missing_import('lalframe')
@@ -213,10 +212,54 @@ class GwfIoTestCase(unittest.TestCase):
 # -- gwpy.io.datafind ---------------------------------------------------------
 
 class DataFindIoTestCase(unittest.TestCase):
+    MOCK_CONNECTION = mockutils.mock_datafind_connection(TEST_GWF_FILE)
+
     def test_on_tape(self):
         self.assertFalse(datafind.on_tape(TEST_GWF_FILE))
         self.assertFalse(datafind.on_tape(
             CacheEntry.from_T050017(TEST_GWF_FILE)))
+
+    def test_connect(self):
+        with mock.patch('glue.datafind.GWDataFindHTTPConnection',
+                        self.MOCK_CONNECTION), \
+             mock.patch('glue.datafind.GWDataFindHTTPSConnection',
+                        self.MOCK_CONNECTION), \
+             mock.patch('glue.datafind.find_credential',
+                        mockutils.mock_find_credential):
+            datafind.connect()
+            datafind.connect('host', 443)
+
+    def test_find_frametype(self):
+        with mock.patch('glue.datafind.GWDataFindHTTPConnection') as \
+                 mock_connection, \
+                 mock.patch('gwpy.io.datafind.num_channels', lambda x: 1), \
+                 mock.patch('gwpy.io.gwf.iter_channel_names',
+                            lambda x: ['L1:LDAS-STRAIN']):
+            mock_connection.return_value = self.MOCK_CONNECTION
+            ft = datafind.find_frametype('L1:LDAS-STRAIN', allow_tape=True)
+            self.assertEqual(ft, 'GW100916')
+            ft = datafind.find_frametype('L1:LDAS-STRAIN', return_all=True)
+            self.assertListEqual(ft, ['GW100916'])
+            self.assertRaises(ValueError, datafind.find_frametype, 'X1:TEST')
+            self.assertRaises(ValueError, datafind.find_frametype,
+                              'bad channel name')
+            # test trend sorting ends up with an error
+            self.assertRaises(ValueError, datafind.find_frametype,
+                              'X1:TEST.rms,s-trend')
+            self.assertRaises(ValueError, datafind.find_frametype,
+                              'X1:TEST.rms,m-trend')
+
+    def test_find_best_frametype(self):
+        with mock.patch('glue.datafind.GWDataFindHTTPConnection') as \
+                 mock_connection, \
+                 mock.patch('gwpy.io.datafind.num_channels', lambda x: 1), \
+                 mock.patch('gwpy.io.gwf.iter_channel_names',
+                            lambda x: ['L1:LDAS-STRAIN']):
+            mock_connection.return_value = self.MOCK_CONNECTION
+            ft = datafind.find_best_frametype('L1:LDAS-STRAIN', 968654552,
+                                              968654553)
+            self.assertEqual(ft, 'GW100916')
+
 
 if __name__ == '__main__':
     unittest.main()
