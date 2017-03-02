@@ -20,6 +20,7 @@
 """
 
 import os.path
+import shutil
 import tempfile
 
 from numpy import (may_share_memory, testing as nptest, random)
@@ -75,6 +76,29 @@ class TableTests(unittest.TestCase):
         self.assertEqual(
             table[0]['peak_time'] + table[0]['peak_time_ns'] * 1e-9,
             table4[0]['time'])
+
+    def test_read_write_root(self):
+        table = self.TABLE_CLASS.read(
+           TEST_XML_FILE, format='ligolw.sngl_burst',
+           columns=['peak_time', 'peak_time_ns', 'snr', 'peak_frequency'])
+        tempdir = tempfile.mkdtemp()
+        try:
+            fp = tempfile.mktemp(suffix='.root', dir=tempdir)
+            # test read
+            table.write(fp)
+            # test read gives back same table
+            table2 = self.TABLE_CLASS.read(fp)
+            self.assertTableEqual(table, table2, meta=False)
+            # test writing a second table then reading without tree= raises
+            # ValueError
+            table.write(fp, treename='test')
+            with self.assertRaises(ValueError) as exc:
+                self.TABLE_CLASS.read(fp)
+            self.assertTrue(str(exc.exception).startswith(
+                "Multiple trees found"))
+        finally:
+            if os.path.isdir(tempdir):
+                shutil.rmtree(tempdir)
 
 
 class EventTableTests(TableTests):
