@@ -231,7 +231,10 @@ class DataFindIoTestCase(unittest.TestCase):
 
     def test_find_frametype(self):
         with mock.patch('glue.datafind.GWDataFindHTTPConnection') as \
-             mock_connection:
+                 mock_connection, \
+                 mock.patch('gwpy.io.datafind.num_channels', lambda x: 1), \
+                 mock.patch('gwpy.io.gwf.iter_channel_names',
+                            lambda x: ['L1:LDAS-STRAIN']):
             mock_connection.return_value = self.MOCK_CONNECTION
             ft = datafind.find_frametype('L1:LDAS-STRAIN', allow_tape=True)
             self.assertEqual(ft, 'GW100916')
@@ -243,7 +246,10 @@ class DataFindIoTestCase(unittest.TestCase):
 
     def test_find_best_frametype(self):
         with mock.patch('glue.datafind.GWDataFindHTTPConnection') as \
-             mock_connection:
+                 mock_connection, \
+                 mock.patch('gwpy.io.datafind.num_channels', lambda x: 1), \
+                 mock.patch('gwpy.io.gwf.iter_channel_names',
+                            lambda x: ['L1:LDAS-STRAIN']):
             mock_connection.return_value = self.MOCK_CONNECTION
             ft = datafind.find_best_frametype('L1:LDAS-STRAIN', 968654552,
                                               968654553)
