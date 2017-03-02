@@ -1745,8 +1745,8 @@ class TimeSeries(TimeSeriesBase):
             out[:, i] = interp(out.times.value)
 
         # then interpolate the spectrogram to increase the frequency resolution
-        # XXX: this is done because duncan doesn't like interpolated images,
-        #      because they don't support log scaling
+        # --- this is done because duncan doesn't like interpolated images
+        #     because they don't support log scaling
         if fres is None:  # unless user tells us not to
             return out
         else:

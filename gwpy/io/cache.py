@@ -31,8 +31,8 @@ from numpy import recarray
 from numpy.lib import recfunctions
 
 from glue.lal import (Cache, CacheEntry)
-from glue.ligolw.table import Table
 
+from astropy.table import (Table, vstack as vstack_tables)
 from astropy.io.registry import _get_valid_format
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -172,7 +172,7 @@ def read_cache(cache, target, nproc, post, *args, **kwargs):
                                         None, (cache[0],), {}))
     # if empty, put anything, since it doesn't matter
     except IndexError:
-        kwargs.setdefault('format', 'ligolw')
+        kwargs.setdefault('format', 'ascii')
     except Exception:
         if 'format' not in kwargs:
             raise
@@ -215,12 +215,14 @@ def read_cache(cache, target, nproc, post, *args, **kwargs):
 
     # combine and return
     data = zip(*sorted(pout, key=lambda out: out[0]))[1]
-    if issubclass(target, recarray):
+    if issubclass(target, Table):  # astropy.table.Table
+        out = vstack_tables(data, join_type='exact')
+    elif issubclass(target, recarray):
         out = recfunctions.stack_arrays(data, asrecarray=True, usemask=False,
                                         autoconvert=True).view(target)
     else:
         try:
-            if issubclass(target, Table):
+            if hasattr(target, 'tableName'):  # glue.ligolw.table.Table
                 out = data[0]
             else:
                 out = data[0].copy()
@@ -274,3 +276,42 @@ def cache_segments(*caches):
     for cache in caches:
         out.extend(e.segment for e in cache)
     return out.coalesce()
+
+
+def flatten(*caches):
+    """Flatten a list of :class:`Caches <glue.lal.Cache>` into a single cache
+
+    Parameters
+    ----------
+    *caches
+        one or more :class:`~glue.lal.Cache` objects
+
+    Returns
+    -------
+    flat : :class:`~glue.lal.Cache`
+        a single cache containing the unique set of entries across
+        each input
+    """
+    cache_type = type(caches[0])
+    return cache_type([e for c in caches for e in c]).unique()
+
+
+def find_contiguous(*caches):
+    """Separate one or more caches into sets of contiguous caches
+
+    Parameters
+    ----------
+    *caches
+        one or more :class:`~glue.lal.Cache` objects
+
+    Returns
+    -------
+    caches : `iter` of :class:`~glue.lal.Cache`
+        an interable yielding each contiguous cache
+    """
+    try:
+        flat = flatten(*caches)
+    except IndexError:
+        flat = Cache()
+    for segment in cache_segments(flat):
+        yield flat.sieve(segment=segment)

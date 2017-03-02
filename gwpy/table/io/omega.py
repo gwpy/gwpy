@@ -19,14 +19,88 @@
 """Read events from an Omega-format ASCII file.
 """
 
+import re
+
+from astropy.io.ascii import core
+
+from ...io import registry
+from .. import (Table, EventTable)
+
+
+class OmegaHeader(core.BaseHeader):
+    """Read a multi-line column-definition header
+    """
+
+    def get_cols(self, lines):
+        """Initialize Column objects from a multi-line ASCII header
+
+        Parameters
+        ----------
+        lines : `list`
+            List of table lines
+        """
+        re_name_def = re.compile("^\s*%\s+(?P<colname>\w+)")
+        self.names = []
+        for line in lines:
+            if not line.startswith('%'):
+                break  # End of header lines
+            else:
+                match = re_name_def.search(line)
+                if match:
+                    self.names.append(match.group('colname'))
+
+        if not self.names:
+            raise core.InconsistentTableError(
+                'No column names found in Omega header')
+
+        self.cols = []
+        for n in self.names:
+            col = core.Column(name=n)
+            self.cols.append(col)
+
+    def write(self, lines):
+        for name in self.colnames:
+            lines.append('%% %s' % name)
+
+
+class OmegaData(core.BaseData):
+    comment = '%'
+
+
+class Omega(core.BaseReader):
+    """Read an Omega file
+    """
+    _format_name = 'omega'
+    _io_registry_can_write = True
+    _description = 'Omega format table'
+
+    header_class = OmegaHeader
+    data_class = OmegaData
+
+
+# register ascii.omega for EventTable
+registry.register_reader(
+    'ascii.omega', EventTable, registry.get_reader('ascii.omega', Table))
+
+
+# -----------------------------------------------------------------------------
+#
+# -- DEPRECATED - remove before 1.0 release -----------------------------------
+#
+# -----------------------------------------------------------------------------
+
+import sys
 from math import sqrt
 
 from six import string_types
+
+from numpy import loadtxt
 
 from astropy.io import registry
 
 from .ascii import table_from_ascii_factory
 from ..lsctables import (SnglBurstTable, SnglBurst)
+from ...io.cache import file_list
 from ...time import LIGOTimeGPS
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

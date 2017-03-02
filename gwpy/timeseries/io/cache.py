@@ -26,6 +26,8 @@ import warnings
 from math import ceil
 from multiprocessing import (Process, Queue as ProcessQueue)
 
+import numpy
+
 from glue.lal import Cache
 
 from ...io.cache import (cache_segments, open_cache)
@@ -91,57 +93,50 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     if isinstance(cache, (unicode, str, file)):
         cache = open_cache(cache)
 
-    # fudge empty cache
+    # force single-process for empty cache (since its a null-op anyway)
     if len(cache) == 0:
-        return cls([], channel=channel, epoch=start)
+        nproc = 1
+        segs = [(None, None)]
 
-    # use cache to get start end times
-    cache.sort(key=lambda ce: ce.segment[0])
-    if start is None:
-        start = cache[0].segment[0]
-    if end is None:
-        end = cache[-1].segment[1]
+    # if multi-processing, work out the segments over which to loop
+    if nproc > 1:
 
-    # get span
-    span = Segment(start, end)
-    if cls not in (StateVector, StateVectorDict) and resample:
-        cache = cache.sieve(segment=span.protract(8))
-    else:
-        cache = cache.sieve(segment=span)
-    cspan = Segment(cache[0].segment[0], cache[-1].segment[1])
+        # use cache to get start end times
+        cache.sort(key=lambda ce: ce.segment[0])
+        if start is None:
+            start = cache[0].segment[0]
+        if end is None:
+            end = cache[-1].segment[1]
 
-    # check for gaps
-    if gap is None and pad is not None:
-        gap = 'pad'
-    elif gap is None:
-        gap = 'raise'
-    segs = cache_segments(cache) & SegmentList([span])
-    if len(segs) != 1 and gap.lower() == 'ignore' or gap.lower() == 'pad':
-        pass
-    elif len(segs) != 1:
-        gaps = SegmentList([cspan]) - segs
-        msg = ("The cache given to %s.read has gaps in it in the "
-               "following segments:\n    %s"
-               % (cls.__name__, '\n    '.join(map(str, gaps))))
-        if gap.lower() == 'warn':
-            warnings.warn(msg)
+        # get span
+        span = Segment(start, end)
+        if cls not in (StateVector, StateVectorDict) and resample:
+            cache = cache.sieve(segment=span.protract(8))
         else:
-            raise ValueError(msg)
-        segs = type(segs)([span])
+            cache = cache.sieve(segment=span)
+        cspan = Segment(cache[0].segment[0], cache[-1].segment[1])
 
-    # if reading a small number of channels, try to use lalframe, its faster
-    if format is None and (
-            isinstance(channel, str) or (isinstance(channel, (list, tuple)) and
-            len(channel) <= MAX_LALFRAME_CHANNELS)):
-        try:
-            from lalframe import frread
-        except ImportError:
-            format = 'gwf'
-        else:
-            kwargs.pop('type', None)
-            format = 'lalframe'
-    # otherwise use the file extension as the format
-    elif format is None:
+        # check for gaps
+        if gap is None and pad is not None:
+            gap = 'pad'
+        elif gap is None:
+            gap = 'raise'
+        segs = cache_segments(cache) & SegmentList([span])
+        if len(segs) != 1 and gap.lower() == 'ignore' or gap.lower() == 'pad':
+            pass
+        elif len(segs) != 1:
+            gaps = SegmentList([cspan]) - segs
+            msg = ("The cache given to %s.read has gaps in it in the "
+                   "following segments:\n    %s"
+                   % (cls.__name__, '\n    '.join(map(str, gaps))))
+            if gap.lower() == 'warn':
+                warnings.warn(msg)
+            else:
+                raise ValueError(msg)
+            segs = type(segs)([span])
+
+    # use the file extension as the default underlying format
+    if format is None:
         format = os.path.splitext(cache[0].path)[1][1:]
 
     # -- process multiple cache segments --------
@@ -155,7 +150,13 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
                              target=cls, **kwargs)
             if out is None:
                 out = new
+                if issubclass(cls, dict):
+                    for key in out:
+                        out[key] = numpy.require(out[key], requirements=['O'])
+                else:
+                    out = numpy.require(out, requirements=['O'])
             else:
+                # if we get here, we know user chose to pad gaps
                 out.append(new, gap='pad', pad=pad)
         return out
 
@@ -167,9 +168,9 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     # single-process
     if nproc <= 1:
         return cls.read(cache, channel, format=format, start=start, end=end,
-                        resample=resample, **kwargs)
+                        resample=resample, gap=gap, pad=pad, **kwargs)
 
-    # define how to read each frame
+    # define how to read each chunk
     def _read(q, pstart, pend):
         try:
             # don't go beyond the requested limits

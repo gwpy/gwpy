@@ -30,17 +30,30 @@ detection of future, real signals.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.table.lsctables'
+__currentmodule__ = 'gwpy.table'
 
-# First, we import the `SnglBurstTable`, an XML-based data holder for single-detector ('Sngl') gravitational-wave burst-like events:
-from gwpy.table.lsctables import SnglBurstTable
+# First, we import the `EventTable` object and read in a set of events from
+# a LIGO_LW-format XML file containing a
+# :class:`sngl_burst <glue.ligolw.lsctables.SnglBurstTable>` table
+from gwpy.table import EventTable
+events = EventTable.read(
+    '../../gwpy/tests/data/H1-LDAS_STRAIN-968654552-10.xml.gz',
+    format='ligolw.sngl_burst', columns=['time', 'snr'])
 
-# We can read a set of events using the :meth:`~SnglBurstTable.read` method:
-events = SnglBurstTable.read('../../gwpy/tests/data/H1-LDAS_STRAIN-968654552-10.xml.gz')
+# .. note::
+#
+#    Here we manually specify the `columns` to read in order to optimise
+#    the `read()` operation to parse only the data we actually need.
 
-# and can generate a new `~gwpy.plotter.HistogramPlot` using the :meth:`~SnglBurstTable.hist` instance method
-plot = events.hist('snr', weights=1/10., log=True, logbins=True, histtype='stepfilled', cumulative=-1)
-plot.set_xlabel('Signal-to-noise ratio (SNR)')
-plot.set_ylabel('Rate [Hz]')
-plot.set_title('LHO event triggers for GW100916')
+# and can generate a new `~gwpy.plotter.HistogramPlot` using the
+# :meth:`~EventTable.hist` instance method using `weights=1/10.`
+#  to convert the counts from the histogram into a rate in Hertz
+
+plot = events.hist('snr', weights=1/10., logbins=True,
+                   bins=50, histtype='stepfilled')
+ax = plot.gca()
+ax.set_xlabel('Signal-to-noise ratio (SNR)')
+ax.set_ylabel('Rate [Hz]')
+ax.set_title('LHO event triggers for GW100916')
+ax.autoscale(axis='x', tight=True)
 plot.show()

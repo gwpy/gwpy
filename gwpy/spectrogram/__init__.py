@@ -19,8 +19,8 @@
 """Create, manipulate, read, and write spectrogram data
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
 from .core import *
 
 from .io import *
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

@@ -19,13 +19,13 @@
 """Input/Output routines for the FrequencySeries.
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
 from ..core import FrequencySeries
+
+# register HDF5
+from . import hdf5
 
 # register ASCII
 from ...io.ascii import register_ascii
 register_ascii(FrequencySeries)
 
-# register HDF5
-from . import hdf5
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

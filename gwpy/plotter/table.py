@@ -16,19 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Plot data from a LIGO_LW-format XML event table.
+"""Plot data from a :ref:`data table <table>`.
 
-The :mod:`glue.ligolw` library provides a complete set of tools to read,
-write, and manipulate data tables using the LIGO_LW XML schema, the
-standard for storing transient event triggers generated from many
-gravitational-wave search algorithms.
-
-This modules provides a set of Axes and a Plot wrapper in order to
+This modules provides a set of `Axes` and a `Plot` wrapper in order to
 display these tables in x-y format, with optional colouring.
 """
 
 from __future__ import division
 
+import warnings
 import re
 from math import floor
 from six import string_types
@@ -37,25 +33,22 @@ import numpy
 from matplotlib import (collections, pyplot)
 from matplotlib.projections import register_projection
 
-from glue.ligolw.table import Table
-
+from ..table import Table
 from ..time import LIGOTimeGPS
 from .core import Plot
 from .timeseries import (TimeSeriesAxes, TimeSeriesPlot)
 from .frequencyseries import FrequencySeriesPlot
 from .utils import float_to_latex
-from ..table.utils import (get_table_column, get_row_value)
 
 __all__ = ['EventTableAxes', 'EventTablePlot']
 
 
 class EventTableAxes(TimeSeriesAxes):
-    """Custom `Axes` for an :class:`~gwpy.plotter.EventTablePlot`.
+    """Custom `Axes` for an ~gwpy.plotter.EventTablePlot`.
 
-    The `EventTableAxes` inherit from
-    :class:`~gwpy.plotter.TimeSeriesAxes` as a convenience to
-    optionally displaying a time-column. That choice has no effect on the
-    rest of the `Axes` functionality.
+    The `EventTableAxes` inherit from ~gwpy.plotter.TimeSeriesAxes`
+    as a convenience to optionally displaying a time-column.
+    That choice has no effect on the rest of the `Axes` functionality.
     """
     name = 'triggers'
 
@@ -74,20 +67,169 @@ class EventTableAxes(TimeSeriesAxes):
         Parameters
         ----------
         *args
-            a single :class:`~glue.ligolw.table.Table` (or sub-class)
-            or anything valid for
-            :meth:`~gwpy.plotter.TimeSeriesPlot.plot`.
+            a single ~astropy.tableTable` (or sub-class)
+            or anything valid for :meth:`~gwpy.plotter.TimeSeriesAxes.plot`
+
         **kwargs
             keyword arguments applicable to
             :meth:`~matplotlib.axes.Axes.plot`
         """
-        if isinstance(args[0], Table):
+        if isinstance(args[0], Table):  # astropy.table.Table
             return self.plot_table(*args, **kwargs)
-        else:
+        elif hasattr(args[0], 'tableName'):  # glue.ligolw.table.Table
+            return self._plot_ligolw_table(*args, **kwargs)
+        else:  # other
             return super(EventTableAxes, self).plot(*args, **kwargs)
 
-    def plot_table(self, table, x, y, color=None, size_by=None,
-                   size_by_log=None, size_range=None, **kwargs):
+    def plot_table(self, table, x, y, color=None, edgecolor='none',
+                   size_by=None, size_by_log=None, size_range=None,
+                   **kwargs):
+        """Plot a LIGO_LW-format event `Table` onto these `Axes`
+
+        Parameters
+        ----------
+        table : `~astropy.table.Table`, `~gwpy.table.EventTable`
+            data table to plot
+
+        x : `str`
+            name of column to display on the X-axis
+
+        y : `str`
+            name of column to display on the Y-axis
+
+        color : `str`, optional
+            name of column by which to colour the data
+
+        **kwargs
+            any other arguments applicable to
+            :meth:`~matplotlib.axes.Axes.scatter`
+
+        Returns
+        -------
+        collection
+        """
+        if size_by is not None and size_by_log is not None:
+            raise ValueError("size_by_color and size_by_log_color are "
+                             "mutually exclusive options, please select one")
+        # get x-y data
+        xdata = table[x]
+        ydata = table[y]
+
+        # rank data by size or colour
+        sizecol = size_by or size_by_log or (size_range and color)
+        if color:
+            cdata = table[color]
+        if sizecol:
+            sdata = table[sizecol]
+        if color and sizecol:
+            zipped = zip(xdata, ydata, cdata, sdata)
+            zipped.sort(key=lambda row: row[2])
+            try:
+                xdata, ydata, cdata, sdata = map(numpy.asarray, zip(*zipped))
+            except ValueError:
+                pass
+        elif sizecol:
+            zipped = zip(xdata, ydata, sdata)
+            zipped.sort(key=lambda row: row[-1])
+            try:
+                xdata, ydata, sdata = map(numpy.asarray, zip(*zipped))
+            except ValueError:
+                pass
+        elif color:
+            zipped = zip(xdata, ydata, cdata)
+            zipped.sort(key=lambda row: row[-1])
+            try:
+                xdata, ydata, cdata = map(numpy.asarray, zip(*zipped))
+            except ValueError:
+                pass
+
+        # work out sizing
+        if sizecol:
+            if size_range is None and sdata.size:
+                size_range = [sdata.min(), sdata.max()]
+            if size_range:
+                # convert color value into a size between the given min and max
+                s = kwargs.pop('s', 20)
+                sizes = [s/10., s]
+                sp = (sdata - size_range[0]) / (size_range[1] - size_range[0])
+                sp[sp < 0] = 0
+                sp[sp > 1] = 1
+                if size_by_log is None:
+                    sarray = sizes[0] + sp * (sizes[1] - sizes[0])
+                else:
+                    logsizes = numpy.log10(sizes)
+                    sarray = 10 ** (
+                        logsizes[0] + sp * (logsizes[1] - logsizes[0]))
+                kwargs.setdefault('s', sarray)
+
+        kwargs['edgecolor'] = edgecolor
+        if color:
+            return self.scatter(xdata, ydata, c=cdata, **kwargs)
+        else:
+            return self.scatter(xdata, ydata, **kwargs)
+
+    def plot_tiles(self, table, x, y, width, height, color=None,
+                   anchor='center', edgecolors='face', linewidth=0.8,
+                   **kwargs):
+        if not isinstance(table, Table) and hasattr(table, 'tableName'):
+            return self._plot_ligolw_tiles(
+                table, x, y, width, height, color=color, anchor=anchor,
+                edgecolors=edgecolors, linewidth=linewidth, **kwargs)
+
+        # get x/y data
+        xdata = table[x]
+        ydata = table[y]
+        wdata = table[width]
+        hdata = table[height]
+
+        # get color and sort
+        if color:
+            cdata = table[color]
+            zipped = zip(xdata, ydata, wdata, hdata, cdata)
+            zipped.sort(key=lambda row: row[-1])
+            try:
+                xdata, ydata, wdata, hdata, cdata = map(numpy.asarray,
+                                                        zip(*zipped))
+            except ValueError:
+                pass
+
+        # construct vertices
+        if anchor == 'll':
+            verts = [((x, y), (x, y+height), (x+width, y+height),
+                      (x+width, y)) for (x, y, width, height) in
+                     zip(xdata, ydata, wdata, hdata)]
+        elif anchor == 'lr':
+            verts = [((x-width, y), (x-width, y+height), (x, y+height),
+                      (x, y)) for (x, y, width, height) in
+                     zip(xdata, ydata, wdata, hdata)]
+        elif anchor == 'ul':
+            verts = [((x, y-height), (x, y), (x+width, y),
+                      (x+width, y-height)) for (x, y, width, height) in
+                     zip(xdata, ydata, wdata, hdata)]
+        elif anchor == 'ur':
+            verts = [((x-width, y-height), (x-width, y), (x, y),
+                      (x, y-height)) for (x, y, width, height) in
+                     zip(xdata, ydata, wdata, hdata)]
+        elif anchor == 'center':
+            verts = [((x-width/2., y-height/2.), (x-width/2., y+height/2.),
+                      (x+width/2., y+height/2.), (x+width/2., y-height/2.))
+                     for (x, y, width, height) in
+                     zip(xdata, ydata, wdata, hdata)]
+        else:
+            raise ValueError("Unrecognised tile anchor '%s'." % anchor)
+
+        # build collection
+        cmap = kwargs.pop('cmap', pyplot.rcParams['image.cmap'])
+        coll = collections.PolyCollection(verts, edgecolors=edgecolors,
+                                          linewidth=linewidth, **kwargs)
+        if color:
+            coll.set_array(cdata)
+            coll.set_cmap(cmap)
+
+        return self.add_collection(coll)
+
+    def _plot_ligolw_table(self, table, x, y, color=None, size_by=None,
+                           size_by_log=None, size_range=None, **kwargs):
         """Plot a LIGO_LW-format event `Table` onto these `Axes`
 
         Parameters
@@ -108,6 +250,12 @@ class EventTableAxes(TimeSeriesAxes):
         -------
         collection
         """
+        from ..table.utils import (get_table_column, get_row_value)
+        warnings.warn('Plotting LIGO_LW tables has been deprecated and '
+                      'will likely be removed before the 1.0 release, please '
+                      'update all codes to use the astropy.table.Table or '
+                      'gwpy.table.EventTable objects')
+
         if size_by is not None and size_by_log is not None:
             raise ValueError("size_by_color and size_by_log_color are "
                              "mutually exclusive options, please select one")
@@ -167,9 +315,16 @@ class EventTableAxes(TimeSeriesAxes):
         else:
             return self.scatter(xdata, ydata, **kwargs)
 
-    def plot_tiles(self, table, x, y, width, height, color=None,
-                   anchor='center', edgecolors='face', linewidth=0.8,
-                   **kwargs):
+    def _plot_ligolw_tiles(self, table, x, y, width, height, color=None,
+                           anchor='center', edgecolors='face', linewidth=0.8,
+                           **kwargs):
+        from ..table.utils import (get_table_column, get_row_value)
+        warnings.warn('Plotting LIGO_LW tables has been deprecated and '
+                      'will likely be removed before the 1.0 release, please '
+                      'update all codes to use the astropy.table.Table or '
+                      'gwpy.table.EventTable objects')
+
+        from ..table.utils import (get_table_column, get_row_value)
         # get x/y data
         xdata = get_table_column(table, x)
         ydata = get_table_column(table, y)
@@ -231,17 +386,21 @@ class EventTableAxes(TimeSeriesAxes):
 
         Parameters
         ----------
-        table : `~glue.ligolw.table.Table`
-            LIGO_LW-format XML event table in which to find the loudest
-            event
+        table : `EventTable`
+            event table in which to find the loudest event
+
         rank : `str`
             name of column to use for ranking
+
         x : `str`
             name of column to display on the X-axis
+
         y : `str`
             name of column to display on the Y-axis
+
         color : `str`, optional
             name of column by which to colour the data
+
         **kwargs
             any other arguments applicable to
             :meth:`~matplotlib.axes.Axes.text`
@@ -252,7 +411,22 @@ class EventTableAxes(TimeSeriesAxes):
             (`collection`, `text`) tuple of items added to the `Axes`
         """
         ylim = self.get_ylim()
-        row = table[get_table_column(table, rank).argmax()]
+        try:
+            idx = table[rank].argmax()
+        except TypeError:
+            if hasattr(table, 'tableName'):  # glue.ligolw.table.Table
+                from gwpy.table.utils import (get_table_column, get_row_value)
+                warnings.warn('EventTableAxes.add_loudest will stop '
+                              'supporting glue.ligolw.table.Table objects '
+                              'before the 1.0 release of GWpy, please move '
+                              'to using the gwpy.table.EventTable')
+                use_ligolw = True
+                idx = get_table_column(table, rank).argmax()
+            else:
+                raise
+        else:
+            use_ligolw = False
+        row = table[idx]
         disp = "Loudest event:"
         columns = [x, y, rank] + list(columns)
         scat = []
@@ -261,7 +435,13 @@ class EventTableAxes(TimeSeriesAxes):
                 continue
             if i:
                 disp += ','
-            val = get_row_value(row, column)
+            try:
+                val = row[column]
+            except TypeError:
+                if use_ligolw:  # DEPRECATED - remove before 1.0 release
+                    val = get_row_value(row, column)
+                else:
+                    raise
             if i < 2:
                 scat.append([float(val)])
             column = get_column_string(column)
@@ -429,32 +609,6 @@ class EventTablePlot(TimeSeriesPlot, FrequencySeriesPlot, Plot):
             # set auto-scale
             for ax in self.axes:
                 ax.autoscale(axis='both', tight=True)
-            # set individual epoch for TimeSeriesAxes
-            if isinstance(self, TimeSeriesPlot) and sep:
-                for ax, table in zip(self.axes, tables):
-                    axepoch = epoch
-                    if axepoch is None:
-                        tcol = numpy.asarray(get_table_column(table,
-                                                              columns['x']))
-                        m = int(floor(tcol.min()))
-                        if epoch is None:
-                            epoch = m
-                        else:
-                            epoch = min(epoch, m)
-                    ax.set_epoch(epoch)
-            # set global epoch for TimeSeriesPlot
-            elif isinstance(self, TimeSeriesPlot):
-                ax = self.axes[0]
-                if epoch is None:
-                    for table in tables:
-                        tcol = numpy.asarray(get_table_column(table,
-                                                              columns['x']))
-                        m = int(floor(tcol.min()))
-                        if epoch is None:
-                            epoch = m
-                        else:
-                            epoch = min(epoch, m)
-                ax.set_epoch(epoch)
             # remove labels
             if sep:
                 for ax in self.axes[:-1]:
@@ -505,7 +659,7 @@ class EventTablePlot(TimeSeriesPlot, FrequencySeriesPlot, Plot):
                 newax = True
         if newax:
             ax = self._add_new_axes(projection=projection)
-        return ax.plot_table(table, x, y, color=color, **kwargs)
+        return ax.plot(table, x, y, color=color, **kwargs)
 
     def add_tiles(self, table, x, y, width, height, color=None,
                   anchor='center', projection='triggers', ax=None,

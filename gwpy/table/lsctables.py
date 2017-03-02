@@ -16,8 +16,91 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Drop in of :mod:`glue.ligolw.lsctables` to annotate Table classes.
+"""Drop in of :mod:`glue.ligolw.lsctables` to annotate
+:class:`~glue.ligolw.table.Table` objects.
 """
+
+from glue.ligolw.lsctables import *
+
+from ..io import reader
+
+# sub-list of tables that hold events
+EVENT_TABLES = (
+    SnglBurstTable, MultiBurstTable,
+    SnglInspiralTable, MultiInspiralTable,
+    SnglRingdownTable,
+)
+
+# annotate lsctables with new methods
+for table in TableByName.values():
+    # define the read classmethod with docstring
+    table.read = classmethod(reader(doc="""
+        Read data into a :class:`~glue.ligolw.lsctables.{0}`.
+
+        Parameters
+        ----------
+        f : `file`, `str`, `~glue.lal.CacheEntry`, `list`, `~glue.lal.Cache`
+            object representing one or more files. One of
+
+                - an open `file`
+                - a `str` pointing to a file path on disk
+                - a formatted `~glue.lal.CacheEntry` representing one file
+                - a `list` of `str` file paths
+                - a formatted `~glue.lal.Cache` representing many files
+
+        columns : `list`, optional
+            list of column name strings to read, default all.
+
+        ifo : `str`, optional
+            prefix of IFO to read
+
+            .. warning::
+
+               the ``ifo`` keyword argument is only applicable (but is
+               required) when reading single-interferometer data from
+               a multi-interferometer file
+
+        filt : `function`, optional
+            function by which to `filter` events. The callable must
+            accept as input a row of the table event and return
+            `True`/`False`.
+
+        nproc : `int`, optional, default: ``1``
+            number of parallel processes with which to distribute file I/O,
+            default: serial process.
+
+            .. warning::
+
+               The ``nproc`` keyword argument is only applicable when
+               reading a `list` (or `~glue.lal.Cache`) of files.
+
+        contenthandler : `~glue.ligolw.ligolw.LIGOLWContentHandler`
+            SAX content handler for parsing ``LIGO_LW`` documents.
+
+            .. warning::
+
+               The ``contenthandler`` keyword argument is only applicable
+               when reading from ``LIGO_LW`` documents.
+
+        **loadtxtkwargs
+            when reading from ASCII, all other keyword arguments are passed
+            directly to `numpy.loadtxt`
+
+        Returns
+        -------
+        table : :class:`~glue.ligolw.lsctables.{0}`
+            `{0}` of data with given columns filled
+
+        Notes
+        -----
+        """.format(table.__name__)))
+
+
+# -----------------------------------------------------------------------------
+#
+# -- DEPRECATED - remove before 1.0 release -----------------------------------
+#
+# -----------------------------------------------------------------------------
 
 import inspect
 import warnings
@@ -27,7 +110,6 @@ from numpy.lib import recfunctions
 
 import glue.segments
 from glue.ligolw.lsctables import *
-from glue.ligolw.table import StripTableName as strip_table_name
 from glue.ligolw.types import ToNumPyType as NUMPY_TYPE
 from glue.ligolw.ilwd import get_ilwdchar_class
 
@@ -36,8 +118,10 @@ from ..time import to_gps
 from ..utils.deps import with_import
 from .rec import GWRecArray
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__all__ = TableByName.keys()
+import warnings
+warnings.filterwarnings('ignore', 'column name', UserWarning)
+
+__credits__ = 'Kipp Cannon <kipp.cannon@ligo.org>'
 
 NUMPY_TYPE['ilwd:char'] = numpy.dtype(int).name
 NUMPY_TYPE['lstring'] = 'a20'
@@ -147,7 +231,7 @@ def from_recarray(cls, array, columns=None):
     if columns is None:
         columns = list(array.dtype.names)
     out = New(cls, columns=columns)
-    tblname = strip_table_name(out.tableName)
+    tblname = out.TableName(out.tableName)
     ilwdchar = dict((col, get_ilwdchar_class(tblname, col))
                     for (col, llwtype) in zip(out.columnnames, out.columntypes)
                     if llwtype == 'ilwd:char')

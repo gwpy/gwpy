@@ -32,6 +32,7 @@ from astropy.units import Quantity
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['lowpass', 'highpass', 'bandpass', 'notch', 'concatenate_zpks']
 
+
 def _as_float(x):
     try:
         return float(x.value)
@@ -116,6 +117,7 @@ def num_taps(sample_rate, transitionwidth, gpass, gstop):
     return int(2/3. * log10(1 / (10 * gpass * gstop)) *
                sample_rate / transitionwidth)
 
+
 # -- user methods -------------------------------------------------------------
 
 def lowpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
@@ -179,7 +181,7 @@ def lowpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
     """
     sample_rate = _as_float(sample_rate)
     frequency = _as_float(frequency)
-    nyq = sample_rate/ 2.
+    nyq = sample_rate / 2.
     if fstop is None:
         fstop = min(frequency * 1.5, sample_rate/2.)
     if type == 'iir':
@@ -326,7 +328,7 @@ def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
     sample_rate = _as_float(sample_rate)
     flow = _as_float(flow)
     fhigh = _as_float(fhigh)
-    nyq = sample_rate/ 2.
+    nyq = sample_rate / 2.
     if fstop is None:
         fstop = (flow * 2/3.,
                  min(fhigh * 1.5, sample_rate/2.))

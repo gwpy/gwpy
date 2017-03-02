@@ -22,11 +22,12 @@
 from types import FunctionType
 
 from .registry import (read, write)
+from .mp import with_nproc
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def reader(name=None, doc=None):
+def reader(name=None, doc=None, mp_flattener=False):
     """Construct a new unified input/output reader.
 
     This method is required to create a new copy of the
@@ -35,14 +36,24 @@ def reader(name=None, doc=None):
     Returns
     -------
     read : `function`
-        A copy of the :func:`astropy.io.registry.read` function
+        a copy of the :func:`astropy.io.registry.read` function
+
+    doc : `str`
+        custom docstring for this reader
+
+    mp_flattener : `function`
+        the function to flatten multiple instances of the parent object,
+        enabling multiprocessed reading via the `nproc` argument
     """
     func = FunctionType(read.func_code, read.func_globals,
                         name or read.func_name, read.func_defaults,
                         read.func_closure)
     if doc is not None:
         func.__doc__ = doc.strip('\n ')
-    return func
+    if mp_flattener:
+        return with_nproc(func, mp_flattener)
+    else:
+        return func
 
 
 def writer(doc=None):

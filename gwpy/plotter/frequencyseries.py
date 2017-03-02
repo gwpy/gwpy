@@ -128,12 +128,12 @@ class FrequencySeriesAxes(Axes):
         warnings.warn("{0}.plot_spectrum was renamed "
                       "{0}.plot_frequencyseries, "
                       "and will be removed in an upcoming release".format(
-                      type(self).__name__))
+                          type(self).__name__))
         return self.plot_frequencyseries(*args, **kwargs)
 
     @auto_refresh
     def plot_frequencyseries_mmm(self, mean_, min_=None, max_=None, alpha=0.1,
-                          **kwargs):
+                                 **kwargs):
         """Plot a `FrequencySeries` onto these axes, with (min, max) shaded
         regions
 
@@ -203,7 +203,7 @@ class FrequencySeriesAxes(Axes):
         warnings.warn("{0}.plot_spectrum_mmm was renamed "
                       "{0}.plot_frequencyseries_mmm, "
                       "and will be removed in an upcoming release".format(
-                      type(self).__name__))
+                          type(self).__name__))
         return self.plot_frequencyseries_mmm(*args, **kwargs)
 
     @auto_refresh

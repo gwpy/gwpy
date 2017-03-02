@@ -52,7 +52,8 @@ from .segments import Segment, SegmentList
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['DataQualityFlag', 'DataQualityDict']
 
-re_IFO_TAG_VERSION = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+):(?P<version>\d+)\Z")
+re_IFO_TAG_VERSION = re.compile(
+    r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+):(?P<version>\d+)\Z")
 re_IFO_TAG = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+)\Z")
 re_TAG_VERSION = re.compile(r"\A(?P<tag>[^/]+):(?P<version>\d+)\Z")
 
@@ -364,12 +365,14 @@ class DataQualityFlag(object):
 
         Parameters
         ----------
-        flag : str
+        flag : `str`
             The name of the flag for which to query
+
         *args
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
+
         url : `str`, optional, default: ``'https://segments.ligo.org'``
             URL of the segment database
 
@@ -398,12 +401,14 @@ class DataQualityFlag(object):
 
         Parameters
         ----------
-        flag : str
+        flag : `str`
             The name of the flag for which to query
+
         *args
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
+
         url : `str`, optional, default: ``'https://segments.ligo.org'``
             URL of the segment database
 
@@ -449,12 +454,14 @@ class DataQualityFlag(object):
 
         Parameters
         ----------
-        flag : str
+        flag : `str`
             The name of the flag for which to query
+
         *args
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
+
         url : `str`, optional, default: ``'https://segments.ligo.org'``
             URL of the segment database
 
@@ -933,10 +940,12 @@ class DataQualityDict(OrderedDict):
         ----------
         flags : `iterable`
             A list of flag names for which to query.
+
         *args
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
+
         url : `str`, optional, default: ``'https://segments.ligo.org'``
             URL of the segment database
 
@@ -976,7 +985,7 @@ class DataQualityDict(OrderedDict):
 
         Returns
         -------
-        flagdict : `DataQualityDict
+        flagdict : `DataQualityDict`
             An ordered `DataQualityDict` of (name, `DataQualityFlag`)
             pairs.
         """
@@ -1064,10 +1073,12 @@ class DataQualityDict(OrderedDict):
         ----------
         flags : `iterable`
             A list of flag names for which to query.
+
         *args
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments.
+
         on_error : `str`
             how to handle an error querying for one flag, one of
 
@@ -1080,7 +1091,7 @@ class DataQualityDict(OrderedDict):
 
         Returns
         -------
-        flagdict : `DataQualityDict
+        flagdict : `DataQualityDict`
             An ordered `DataQualityDict` of (name, `DataQualityFlag`)
             pairs.
         """
