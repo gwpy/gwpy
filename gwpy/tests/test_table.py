@@ -43,10 +43,11 @@ TEST_OMEGA_FILE = os.path.join(TEST_DATA_DIR, 'omega.txt')
 class TableTests(unittest.TestCase):
     TABLE_CLASS = Table
 
-    def assertTableEqual(self, a, b, copy=None):
+    def assertTableEqual(self, a, b, copy=None, meta=False):
         assert a.colnames == b.colnames
         nptest.assert_array_equal(a.as_array(), b.as_array())
-        assert a.meta == b.meta
+        if meta:
+            assert a.meta == b.meta
         for col, col2 in zip(a.columns.values(), b.columns.values()):
             if copy:
                 assert not may_share_memory(col, col2)
