@@ -25,7 +25,7 @@ from ...io import registry
 from ...io.utils import identify_factory
 from ...io.cache import (file_list, read_cache)
 from ...utils import with_import
-from .. import Table
+from .. import (Table, EventTable)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -66,6 +66,8 @@ def table_to_root(table, filename, **kwargs):
 
 
 # register I/O
-registry.register_reader('root', Table, table_from_root)
-registry.register_writer('root', Table, table_to_root)
-registry.register_identifier('root', Table, identify_factory('.root'))
+_identifier = identify_factory('.root')
+for table_class in (Table, EventTable):
+    registry.register_reader('root', table_class, table_from_root)
+    registry.register_writer('root', table_class, table_to_root)
+    registry.register_identifier('root', table_class, _identifier)
