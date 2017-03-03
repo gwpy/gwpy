@@ -96,6 +96,8 @@ class TableTests(unittest.TestCase):
                 self.TABLE_CLASS.read(fp)
             self.assertTrue(str(exc.exception).startswith(
                 "Multiple trees found"))
+        except ImportError as e:
+            self.skipTest(str(e))
         finally:
             if os.path.isdir(tempdir):
                 shutil.rmtree(tempdir)
