@@ -55,7 +55,7 @@ class TableTests(unittest.TestCase):
             elif copy is False:
                 assert may_share_memory(col, col2)
 
-    def test_read_ligolw(self):
+    def test_read_write_ligolw(self):
         table = self.TABLE_CLASS.read(TEST_XML_FILE,
                                       format='ligolw.sngl_burst')
         self.assertIsInstance(table, self.TABLE_CLASS)
@@ -76,6 +76,43 @@ class TableTests(unittest.TestCase):
         self.assertEqual(
             table[0]['peak_time'] + table[0]['peak_time_ns'] * 1e-9,
             table4[0]['time'])
+
+        # test write
+        tempdir = tempfile.mkdtemp()
+        try:
+            fp = tempfile.mktemp(suffix='.xml', dir=tempdir)
+            # write fresh
+            table.write(fp, format='ligolw.sngl_burst')
+            table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
+            self.assertTableEqual(table, table5)
+            # append=True
+            table.write(fp, format='ligolw.sngl_burst')
+            table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
+            self.assertTableEqual(table2, table5)
+            # append=False
+            table.write(fp, format='ligolw.sngl_burst', append=False)
+            table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
+            self.assertTableEqual(table, table5)
+            # overwrite=True
+            table.write(fp, format='ligolw.sngl_burst', append=True,
+                        overwrite=True)
+            table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
+            self.assertTableEqual(table, table5)
+            # append a different table and check we still have the first
+            p = self.TABLE_CLASS.read(TEST_XML_FILE, format='ligolw.process')
+            p.write(fp, format='ligolw.process')
+            table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
+            self.assertTableEqual(table, table5)
+            # append=False and check we don't still have the first
+            p.write(fp, format='ligolw.process', append=False)
+            with self.assertRaises(ValueError) as exc:
+                self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
+            self.assertEqual(
+                str(exc.exception),
+                'document must contain exactly one sngl_burst table')
+        finally:
+            if os.path.isdir(tempdir):
+                shutil.rmtree(tempdir)
 
     def test_read_write_root(self):
         table = self.TABLE_CLASS.read(
