@@ -1,0 +1,8 @@
+.. |root_numpy| replace:: `root_numpy`
+.. _root_numpy: https://rootpy.github.io/root_numpy/
+
+.. |h5py| replace:: `h5py`
+.. _h5py: http://docs.h5py.org/en/latest/
+
+.. |glue.ligolw| replace:: `glue.ligolw`
+.. _glue.ligolw: http://software.ligo.org/docs/glue/glue.ligolw-module.html
