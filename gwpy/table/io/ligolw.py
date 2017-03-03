@@ -21,6 +21,7 @@
 
 import inspect
 import warnings
+import os.path
 
 from six import string_types
 
@@ -156,18 +157,23 @@ def _table_from_ligolw(llwtable, target, copy, columns=None,
 # -- write --------------------------------------------------------------------
 
 def table_to_ligolw_file(table, f, tablename,
-                         append=True, overwrite=False, **kwargs):
+                         append=False, overwrite=False, **kwargs):
     """Write an `astropy.table.Table` to file in LIGO_LW format
     """
     from glue.ligolw.ligolw import (Document, LIGO_LW, LIGOLWContentHandler)
     from glue.ligolw import utils as ligolw_utils
 
-    if isinstance(f, (Document, LIGO_LW)):  # allow writing directly to XML
+    # allow writing directly to XML
+    if isinstance(f, (Document, LIGO_LW)):
         xmldoc = f
-    elif append:  # open existing document, if possible
+    # open existing document, if possible
+    elif append and not overwrite:
         xmldoc = open_xmldoc(f, append=append,
                              contenthandler=kwargs.pop('contenthandler',
                                                        LIGOLWContentHandler))
+    # fail on existing document and not overwriting
+    elif not overwrite and isinstance(f, string_types) and os.path.isfile(f):
+        raise IOError("File exists: %s" % f)
     else:  # or create a new document
         xmldoc = Document()
 
