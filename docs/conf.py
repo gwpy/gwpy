@@ -257,6 +257,8 @@ intersphinx_mapping = {
     'matplotlib': ('http://matplotlib.org/', None),
     'astropy': ('http://docs.astropy.org/en/stable/', None),
     'pycbc': ('https://ligo-cbc.github.io/pycbc/latest/html/', None),
+    'root_numpy': ('https://rootpy.github.io/root_numpy/', None),
+    'h5py': ('http://docs.h5py.org/en/latest/', None),
 }
 
 
