@@ -147,9 +147,9 @@ class TableTests(unittest.TestCase):
 class EventTableTests(TableTests):
     TABLE_CLASS = EventTable
 
-    def test_read_ligolw(self):
-        table = super(EventTableTests, self).test_read_ligolw()
-        # try with nproc
+    def test_read_write_ligolw(self):
+        table = super(EventTableTests, self).test_read_write_ligolw()
+        # try reading with nproc
         table = self.TABLE_CLASS.read([TEST_XML_FILE, TEST_XML_FILE],
                                       format='ligolw.sngl_burst')
         table2 = self.TABLE_CLASS.read([TEST_XML_FILE, TEST_XML_FILE],
