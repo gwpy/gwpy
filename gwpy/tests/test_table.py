@@ -85,26 +85,30 @@ class TableTests(unittest.TestCase):
             table.write(fp, format='ligolw.sngl_burst')
             table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
             self.assertTableEqual(table, table5)
-            # append=True
-            table.write(fp, format='ligolw.sngl_burst')
-            table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
-            self.assertTableEqual(table2, table5)
-            # append=False
-            table.write(fp, format='ligolw.sngl_burst', append=False)
+            # assert existing file raises IOError
+            with self.assertRaises(IOError) as exc:
+                table.write(fp, format='ligolw.sngl_burst')
+            self.assertEqual(str(exc.exception), 'File exists: %s' % fp)
+            # overwrite=True, append=False
+            table.write(fp, format='ligolw.sngl_burst', overwrite=True)
             table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
             self.assertTableEqual(table, table5)
-            # overwrite=True
+            # overwrite=False, append=True
+            table.write(fp, format='ligolw.sngl_burst', append=True)
+            table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
+            self.assertTableEqual(table2, table5)
+            # overwrite=True, append=True
             table.write(fp, format='ligolw.sngl_burst', append=True,
                         overwrite=True)
             table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
             self.assertTableEqual(table, table5)
             # append a different table and check we still have the first
             p = self.TABLE_CLASS.read(TEST_XML_FILE, format='ligolw.process')
-            p.write(fp, format='ligolw.process')
+            p.write(fp, format='ligolw.process', append=True)
             table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
             self.assertTableEqual(table, table5)
             # append=False and check we don't still have the first
-            p.write(fp, format='ligolw.process', append=False)
+            p.write(fp, format='ligolw.process', append=False, overwrite=True)
             with self.assertRaises(ValueError) as exc:
                 self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
             self.assertEqual(
