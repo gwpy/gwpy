@@ -286,7 +286,7 @@ class FrequencySeriesPlot(Plot):
             ax = self._add_new_axes(**axargs)
             for fs in data:
                 ax.plot(fs, **plotargs)
-            x0.append(min([fs.df.value for fs in data]))
+            x0.append(min([fs.f0.value for fs in data]))
             if 'sharex' not in axargs and sharex is True:
                 axargs['sharex'] = ax
             if 'sharey' not in axargs and sharey is True:
