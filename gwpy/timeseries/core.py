@@ -130,7 +130,7 @@ class TimeSeriesBase(Series):
         allow passing of sub-classes by the array generator
     """
     _default_xunit = units.second
-    _print_slots = ['sample_rate', 'epoch', 'name', 'channel', '_times']
+    _print_slots = ['t0', 'dt', 'name', 'channel']
     DictClass = None
 
     def __new__(cls, data, unit=None, t0=None, dt=None, sample_rate=None,
