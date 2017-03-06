@@ -6,3 +6,12 @@
 
 .. |glue.ligolw| replace:: `glue.ligolw`
 .. _glue.ligolw: http://software.ligo.org/docs/glue/glue.ligolw-module.html
+
+.. |LDAStools.frameCPP| replace:: `LDAStools.frameCPP`
+.. _LDAStools.frameCPP: https://ldas-jobs.ligo.caltech.edu/~emaros/share/doc/ldas-tools/framecpp/html/
+
+.. |lalframe| replace:: `lalframe`
+.. _lalframe: https://software.ligo.org/docs/lalsuite/lalframe/
+
+.. |nds2| replace:: `nds2`
+.. _nds2: https://www.lsc-group.phys.uwm.edu/daswg/projects/nds-client/doc/manual/
