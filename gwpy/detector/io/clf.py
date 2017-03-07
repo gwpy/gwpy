@@ -71,6 +71,8 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
+from six import string_types
+
 from numpy import inf
 
 from ...io import registry
@@ -82,9 +84,9 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 CHANNEL_DEFINITION = re.compile(
     "(?P<name>[a-zA-Z0-9:_-]+)"
-    "(?P<important>\*)?"
     "(?:\s+(?P<sample_rate>[0-9.]+))?"
-    "(?:\s+(?P<safe>(safe|unsafe)))?"
+    "(?:\s+(?P<safe>(safe|unsafe|unsafeabove2kHz|unknown)))?"
+    "(?:\s+(?P<fidelity>(clean|flat|glitchy|unknown)))?"
 )
 
 
@@ -108,7 +110,7 @@ def read_channel_list_file(*source):
         if 'flow' in params or 'fhigh' in params:
             lo = params.pop('flow', 0)
             hi = params.pop('fhigh', inf)
-            if isinstance(hi, str) and hi.lower() == 'nyquist':
+            if isinstance(hi, string_types) and hi.lower() == 'nyquist':
                 hi = inf
             frange = float(lo), float(hi)
         else:
@@ -119,14 +121,16 @@ def read_channel_list_file(*source):
             except AttributeError as e:
                 e.args = ('Cannot parse %r as channel list entry' % channel,)
                 raise
+            # remove Nones from match
+            match = dict((k, v) for k, v in match.items() if v is not None)
+            match.setdefault('safe', 'safe')
+            match.setdefault('fidelity', 'clean')
             # create channel and copy group params
-            if match['safe']:
-                match['safe'] = match.pop('safe', 'safe').lower() != 'unsafe'
-            important = bool(match.pop('important', False))
+            safe = match.get('safe', 'safe').lower() != 'unsafe'
             channel = Channel(match.pop('name'), frequency_range=frange,
-                              **match)
+                              safe=safe, sample_rate=match.pop('sample_rate'))
             channel.params = params.copy()
-            channel.params['important'] = important
+            channel.params.update(match)
             channel.group = group
             # extract those params for which the Channel has an attribute
             for key in ['frametype']:
@@ -150,6 +154,8 @@ def write_channel_list_file(channels, fobj):
                                str(channel.sample_rate.to('Hz').value))
         else:
             entry = str(channel)
+        entry += ' %s' % channel.params.get('safe', 'safe')
+        entry += ' %s' % channel.params.get('fidelity', 'clean')
         try:
             cl = out.get(group, 'channels')
         except configparser.NoOptionError:
