@@ -21,9 +21,6 @@
 
 import inspect
 import warnings
-import os.path
-
-from six import string_types
 
 import numpy
 
@@ -31,8 +28,8 @@ import glue.segments
 from glue.ligolw.lsctables import (TableByName, LIGOTimeGPS)
 
 from ...io import registry
-from ...io.cache import FILE_LIKE
-from ...io.ligolw import (table_from_file, identify_ligolw)
+from ...io.ligolw import (identify_ligolw, table_from_file,
+                          write_tables)
 from .. import (Table, EventTable)
 from ..lsctables import EVENT_TABLES
 
@@ -156,70 +153,6 @@ def _table_from_ligolw(llwtable, target, copy, columns=None,
 
 # -- write --------------------------------------------------------------------
 
-def table_to_ligolw_file(table, f, tablename,
-                         append=False, overwrite=False, **kwargs):
-    """Write an `astropy.table.Table` to file in LIGO_LW format
-    """
-    from glue.ligolw.ligolw import (Document, LIGO_LW, LIGOLWContentHandler)
-    from glue.ligolw import utils as ligolw_utils
-
-    # allow writing directly to XML
-    if isinstance(f, (Document, LIGO_LW)):
-        xmldoc = f
-    # open existing document, if possible
-    elif append and not overwrite:
-        xmldoc = open_xmldoc(f, append=append,
-                             contenthandler=kwargs.pop('contenthandler',
-                                                       LIGOLWContentHandler))
-    # fail on existing document and not overwriting
-    elif not overwrite and isinstance(f, string_types) and os.path.isfile(f):
-        raise IOError("File exists: %s" % f)
-    else:  # or create a new document
-        xmldoc = Document()
-
-    # convert table to format
-    table_to_ligolw_document(table, xmldoc, tablename, overwrite=overwrite)
-
-    # write file
-    if isinstance(f, string_types):
-        kwargs.setdefault('gz', f.endswith('.gz'))
-        ligolw_utils.write_filename(xmldoc, f, **kwargs)
-    elif not isinstance(f, Document):
-        kwargs.setdefault('gz', f.name.endswith('.gz'))
-        ligolw_utils.write_fileobj(xmldoc, f, **kwargs)
-
-
-def table_to_ligolw_document(table, xmldoc, tablename, overwrite=False):
-    """Write the given `Table` into a LIGO_LW :class:`Document`
-    """
-    from glue.ligolw.ligolw import LIGO_LW
-    from glue.ligolw import lsctables
-
-    # find or create LIGO_LW tag
-    try:
-        llw = get_ligolw_element(xmldoc)
-    except ValueError:
-        llw = LIGO_LW()
-        xmldoc.appendChild(llw)
-
-    # convert Table to LIGO_LW format
-    new = table_to_ligolw(table, tablename)
-
-    try:  # append new data to existing table
-        llwtable = lsctables.TableByName[tablename].get_table(xmldoc)
-    except ValueError:  # or create a new table
-        return llw.appendChild(new)
-    else:
-        if overwrite:
-            llw.removeChild(llwtable)
-            llwtable.unlink()
-            llw.appendChild(new)
-        else:
-            llwtable.extend(new)
-
-    return xmldoc
-
-
 def table_to_ligolw(table, tablename):
     """Convert a `astropy.table.Table` to a :class:`glue.ligolw.table.Table`
     """
@@ -246,45 +179,6 @@ def table_to_ligolw(table, tablename):
         llwtable.append(llwrow)
 
     return llwtable
-
-
-def open_xmldoc(f, append=True, **kwargs):
-    """Try and open an existing LIGO_LW-format file, or create a new Document
-    """
-    from glue.ligolw.lsctables import use_in
-    from glue.ligolw.ligolw import Document
-    from glue.ligolw.utils import load_filename, load_fileobj
-    use_in(kwargs['contenthandler'])
-    try:  # try and load existing file
-        if isinstance(f, string_types):
-            return load_filename(f, **kwargs)
-        if isinstance(f, FILE_LIKE):
-            return load_fileobj(f, **kwargs)[0]
-    except (OSError, IOError):  # or just create a new Document
-        return Document()
-
-
-def create_ligolw_table_for_table(table, tablename):
-    """Create a new :class:`~glue.ligolw.table.Table` for this `Table`
-    """
-    from glue.ligolw import lsctables
-
-    columns = table.columns.keys()
-    table_class = lsctables.TableByName[tablename]
-    return lsctables.New(table_class, columns=columns)
-
-
-def get_ligolw_element(xmldoc):
-    """Find an existing <LIGO_LW> element in this XML Document
-    """
-    from glue.ligolw.ligolw import LIGO_LW
-    if isinstance(xmldoc, LIGO_LW):
-        return xmldoc
-    else:
-        for node in xmldoc.childNodes:
-            if isinstance(node, LIGO_LW):
-                return node
-    raise ValueError("Cannot find LIGO_LW element in XML Document")
 
 
 # -- I/O factory --------------------------------------------------------------
@@ -344,7 +238,8 @@ def ligolw_io_factory(table_):
         return Table(llw, **reckwargs)
 
     def _write_table(table, f, *args, **kwargs):
-        return table_to_ligolw_file(table, f, tablename, *args, **kwargs)
+        return write_tables(f, [table_to_ligolw(table, tablename)],
+                            *args, **kwargs)
 
     return _read_ligolw, _read_table, _write_table
 
