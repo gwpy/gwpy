@@ -246,8 +246,7 @@ class CommonTests(object):
                 os.remove(f.name)
 
     def test_read_write_hdf5(self):
-        for format in ('hdf5', 'hdf'):
-            self._test_read_write(format)
+        self._test_read_write('hdf5')
 
 
 class ArrayTestCase(CommonTests, unittest.TestCase):
