@@ -37,7 +37,9 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 class GWpyContentHandler(LIGOLWContentHandler):
     """Empty sub-class of `~glue.ligolw.ligolw.LIGOLWContentHandler`
     """
-    pass
+    warnings.warn("GWpyContentHandler has been deprecated and will be removed "
+                  "in an upcoming release, please use "
+                  "glue.ligolw.ligolw.LIGOLWContentHandler or similar")
 
 
 def get_partial_contenthandler(table):
