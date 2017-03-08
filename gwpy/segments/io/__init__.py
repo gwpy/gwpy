@@ -23,6 +23,7 @@ from . import (  # pylint: disable=unused-import
     ligolw,  # LIGO_LW XML
     segwizard,  # LIGO SegWizard ASCII
     hdf5,  # HDF5
+    json,  # segments-web.ligo.org JSON
 )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
