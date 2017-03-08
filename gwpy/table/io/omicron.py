@@ -182,12 +182,12 @@ def sngl_burst_table_from_root(f, columns=OMICRON_COLUMNS, filt=None, nproc=1):
     return out
 
 
-def identify_omicron(origin, path, fileobj, *args, **kwargs):
+def identify_omicron(origin, filepath, fileobj, *args, **kwargs):
     """Determine an input object as an Omicron-format ROOT file.
     """
     # identify string
-    if (isinstance(path, (unicode, str)) and
-            path.endswith('.root') and 'omicron' in path.lower()):
+    if (isinstance(filepath, (unicode, str)) and
+            filepath.endswith('.root') and 'omicron' in filepath.lower()):
         return True
         # identify cache object
     else:

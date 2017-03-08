@@ -194,12 +194,13 @@ def empty_hdf5_file(fp, ifo=None):
         return False
 
 
-def identify_pycbc_live(origin, path, fileobj, *args, **kwargs):
+def identify_pycbc_live(origin, filepath, fileobj, *args, **kwargs):
     """Identify a PyCBC Live file from its basename
     """
-    if HAS_H5PY and isinstance(path, h5py.HLObject):
-        path = path.file.name
-    if isinstance(path, string_types) and PYCBC_FILENAME.match(basename(path)):
+    if HAS_H5PY and isinstance(filepath, h5py.HLObject):
+        filepath = filepath.file.name
+    if (isinstance(filepath, string_types) and
+            PYCBC_FILENAME.match(basename(filepath))):
         return True
     return False
 
