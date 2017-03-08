@@ -25,31 +25,21 @@ try:
 except ImportError:
     HAVE_H5PY = False
 
+from astropy.io.misc.hdf5 import is_hdf5 as identify_hdf5
+
 from ..utils.deps import with_import
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-@with_import('h5py')
-def open_hdf5(filename):
+def open_hdf5(filename, mode='r'):
     """Wrapper to open a :class:`h5py.File` from disk, gracefully
     handling a few corner cases
     """
+    import h5py
     if isinstance(filename, (h5py.Group, h5py.Dataset)):
         return filename
     elif isinstance(filename, file):
-        return h5py.File(filename.name, 'r')
+        return h5py.File(filename.name, mode)
     else:
-        return h5py.File(filename, 'r')
-
-
-def identify_hdf5(origin, path, fileobj, *args, **kwargs):
-    """Identify an input file as LOSC HDF based on its filename
-    """
-    if isinstance(path, (unicode, str)) and path.endswith(('hdf', 'hdf5')):
-        return True
-    elif (HAVE_H5PY and len(args) and
-          isinstance(args[0], (h5py.Group, h5py.Dataset))):
-        return True
-    else:
-        return False
+        return h5py.File(filename, mode)
