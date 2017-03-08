@@ -39,21 +39,21 @@ def identify_with_list(identifier):
     identifier for comparison.
     """
     @wraps(identifier)
-    def decorated_func(origin, path, fileobj, *args, **kwargs):
+    def decorated_func(origin, filepath, fileobj, *args, **kwargs):
         try:
-            path = file_list(path)[0]
+            filepath = file_list(filepath)[0]
         except ValueError:
-            if path is None:
+            if filepath is None:
                 try:
                     files = file_list(args[0])
                 except (IndexError, ValueError):
                     pass
                 else:
                     if len(files):
-                        path = files[0]
+                        filepath = files[0]
         except IndexError:
             pass
-        return identifier(origin, path, fileobj, *args, **kwargs)
+        return identifier(origin, filepath, fileobj, *args, **kwargs)
     return decorated_func
 
 
