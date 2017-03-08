@@ -16,22 +16,23 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Input/output utilities for the `Array`
+"""Basic HDF5 I/O methods for Array and sub-classes
 """
 
-from astropy.units import Quantity, UnitBase
+from astropy.units import (Quantity, UnitBase)
 
 from ...detector import Channel
-from ...io import (hdf5 as hdf5io, registry)
+from ...io import (hdf5 as io_hdf5, registry as io_registry)
 from ...time import (Time, LIGOTimeGPS)
-from ...utils.deps import with_import
-from .. import (Array, Series, Array2D, Index)
+from .. import (Array, Index)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-@with_import('h5py')
-def array_from_hdf5(f, name=None, array_type=Array):
+# -- read ---------------------------------------------------------------------
+
+@io_hdf5.with_read_hdf5
+def read_hdf5_array(f, path=None, array_type=Array):
     """Read an `Array` from the given HDF5 object
 
     Parameters
@@ -39,161 +40,89 @@ def array_from_hdf5(f, name=None, array_type=Array):
     f : `str`, :class:`h5py.HLObject`
         path to HDF file on disk, or open `h5py.HLObject`.
 
-    type_ : `type`
-        target class to read
-
-    name : `str`
+    path : `str`
         path in HDF hierarchy of dataset.
+
+    array_type : `type`
+        desired return type
     """
-    h5file = hdf5io.open_hdf5(f)
+    dataset = io_hdf5.find_dataset(f, path=path)
+    return array_type(dataset[()], **dict(dataset.attrs))
 
-    if name is None and not isinstance(h5file, h5py.Dataset):
-        if len(h5file) == 1:
-            name = h5file.keys()[0]
-        else:
-            raise ValueError("Multiple data sets found in HDF structure, "
-                             "please give name='...' to specify")
 
+# -- write --------------------------------------------------------------------
+
+def create_array_dataset(h5g, array, path=None, compression='gzip', **kwargs):
+    """Write the ``array` to an `h5py.Dataset`
+    """
+    if path is None:
+        path = array.name
+    if path is None:
+        raise ValueError("Cannot determine HDF5 path for %s, "
+                         "please set ``name`` attribute, or pass ``path=`` "
+                         "keyword when writing" % type(array).__name__)
     try:
-        # find dataset
-        if isinstance(h5file, h5py.Dataset):
-            dataset = h5file
+        dset = h5g.create_dataset(path, data=array.value,
+                                  compression=compression, **kwargs)
+    except ValueError as e:
+        if 'Name already exists' in str(e):
+            e.args = (str(e) + ': %s' % (name or array.name),)
+        raise
+
+    # store metadata
+    for attr in ('unit',) + array._metadata_slots:
+        # get private attribute
+        mdval = getattr(array, '_%s' % attr, None)
+        if mdval is None:
+            continue
+
+        # skip regular index arrays
+        if isinstance(mdval, Index) and mdval.regular:
+            continue
+
+        # set value based on type
+        if isinstance(mdval, Quantity):
+            dset.attrs[attr] = mdval.value
+        elif isinstance(mdval, Channel):
+            dset.attrs[attr] = mdval.ndsname
+        elif isinstance(mdval, UnitBase):
+            dset.attrs[attr] = str(mdval)
+        elif isinstance(mdval, LIGOTimeGPS):
+            dset.attrs[attr] = str(mdval)
+        elif isinstance(mdval, Time):
+            dset.attrs[attr] = mdval.utc.gps
         else:
             try:
-                dataset = h5file[name]
-            except KeyError:
-                if name.startswith('/'):
-                    raise
-                name2 = '/%s/%s' % (array_type.__name__.lower(), name)
-                if name2 in h5file:
-                    dataset = h5file[name2]
-                else:
-                    raise
-
-        # read array, close file, and return
-        out = array_type(dataset[()], **dict(dataset.attrs))
-    finally:
-        if not isinstance(f, (h5py.Dataset, h5py.Group)):
-            h5file.close()
-
-    return out
+                dset.attrs[attr] = mdval
+            except (TypeError, ValueError, RuntimeError) as e:
+                e.args = ("Failed to store %s (%s) for %s: %s"
+                          % (attr, type(mdval).__name__,
+                             type(array).__name__, str(e)),)
+                raise
 
 
-@with_import('h5py')
-def array_to_hdf5(array, output, name=None, group=None, compression='gzip',
-                  array_type=Array, **kwargs):
-    """Convert this array to a :class:`h5py.Dataset`.
-
-    This allows writing to an HDF5-format file.
-
-    Parameters
-    ----------
-    output : `str`, :class:`h5py.Group`
-        path to new output file, or open h5py `Group` to write to.
-
-    name : `str`, optional
-        custom name for this `Array` in the HDF hierarchy, defaults
-        to the `name` attribute of the `Array`.
-
-    group : `str`, optional
-        group to create for this time-series.
-
-    compression : `str`, optional
-        name of compression filter to use
-
-    **kwargs
-        other keyword arguments passed to
-        :meth:`h5py.Group.create_dataset`.
-
-    Returns
-    -------
-    dset : :class:`h5py.Dataset`
-        HDF dataset containing these data.
+def write_hdf5_array(array, output, path=None, compression='gzip', **kwargs):
+    """Write this array to HDF5
     """
-    # create output object
-    if isinstance(output, h5py.Group):
-        h5file = output
-    else:
-        h5file = h5py.File(output, 'w')
+    return io_hdf5.write_object_dataset(output, array, create_array_dataset,
+                                        path=path, compression=compression,
+                                        **kwargs)
 
-    try:
-        # if group
-        if group:
-            try:
-                h5group = h5file[group]
-            except KeyError:
-                h5group = h5file.create_group(group)
-        else:
-            h5group = h5file
 
-        # create dataset
-        name = name or array.name
-        if name is None:
-            raise ValueError("Cannot store %s without a name. "
-                             "Either assign the name attribute of the "
-                             "array itarray, or given name= as a keyword "
-                             "argument to write()." % type(array).__name__)
-        try:
-            dset = h5group.create_dataset(
-                name or array.name, data=array.value,
-                compression=compression, **kwargs)
-        except ValueError as e:
-            if 'Name already exists' in str(e):
-                e.args = (str(e) + ': %s' % (name or array.name),)
-            raise
-
-        # store metadata
-        for attr in ('unit',) + array._metadata_slots:
-            # get private attribute
-            mdval = getattr(array, '_%s' % attr, None)
-            if mdval is None:
-                continue
-            # skip regular index arrays
-            if isinstance(mdval, Index) and mdval.regular:
-                continue
-            # set value based on type
-            if isinstance(mdval, Quantity):
-                dset.attrs[attr] = mdval.value
-            elif isinstance(mdval, Channel):
-                dset.attrs[attr] = mdval.ndsname
-            elif isinstance(mdval, UnitBase):
-                dset.attrs[attr] = str(mdval)
-            elif isinstance(mdval, LIGOTimeGPS):
-                dset.attrs[attr] = str(mdval)
-            elif isinstance(mdval, Time):
-                dset.attrs[attr] = mdval.utc.gps
-            else:
-                try:
-                    dset.attrs[attr] = mdval
-                except (TypeError, ValueError, RuntimeError) as e:
-                    e.args = ("Failed to store %s (%s) for %s: %s"
-                              % (attr, type(mdval).__name__,
-                                 type(array).__name__, str(e)),)
-                    raise
-
-    finally:
-        if not isinstance(output, h5py.Group):
-            h5file.close()
-
-    return dset
-
+# -- register -----------------------------------------------------------------
 
 def register_hdf5_array_io(array_type, format='hdf5', identify=True):
     """Registry read() and write() methods for the HDF5 format
     """
     def from_hdf5(*args, **kwargs):
         kwargs.setdefault('array_type', array_type)
-        return array_from_hdf5(*args, **kwargs)
+        return read_hdf5_array(*args, **kwargs)
+
     def to_hdf5(*args, **kwargs):
-        kwargs.setdefault('array_type', array_type)
-        return array_to_hdf5(*args, **kwargs)
-    registry.register_reader(format, array_type, from_hdf5)
-    registry.register_writer(format, array_type, to_hdf5)
+        return write_hdf5_array(*args, **kwargs)
+
+    io_registry.register_reader(format, array_type, from_hdf5)
+    io_registry.register_writer(format, array_type, to_hdf5)
     if identify:
-        registry.register_identifier(format, array_type, hdf5io.identify_hdf5)
-
-
-# register for basic types
-for array_type in (Array, Series, Array2D):
-    register_hdf5_array_io(array_type)
-    register_hdf5_array_io(array_type, format='hdf', identify=False)
+        io_registry.register_identifier(format, array_type,
+                                        io_hdf5.identify_hdf5)

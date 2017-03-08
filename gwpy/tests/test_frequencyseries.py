@@ -19,7 +19,8 @@
 """Unit test for frequencyseries module
 """
 
-from tempfile import NamedTemporaryFile
+import os.path
+import tempfile
 
 from numpy import (testing as nptest, arange, linspace)
 
@@ -107,10 +108,13 @@ class FrequencySeriesTestCase(SeriesTestCase):
         if not extension.startswith('.'):
             extension = '.%s' % extension
         array = self.create(**metadata)
-        with NamedTemporaryFile(suffix=extension, delete=True) as f:
-            array.write(f.name, format=fmt)
-            f.seek(0)
-            array2 = self.TEST_CLASS.read(f.name, format=fmt)
+        fp = tempfile.mktemp(suffix=extension)
+        try:
+            array.write(fp, format=fmt)
+            array2 = self.TEST_CLASS.read(fp, format=fmt)
+        finally:
+            if os.path.exists(fp):
+                os.remove(fp)
         self.assertArraysEqual(array, array2)
 
     def test_read_write_hdf5(self):

@@ -227,26 +227,26 @@ class CommonTests(object):
 
     # -- test I/O -------------------------------
 
-    def _test_read_write(self, format, extension=None, auto=True, exclude=[]):
+    def _test_read_write(self, format, extension=None, auto=True, exclude=[],
+                         readkwargs={}, writekwargs={}):
         if extension is None:
-            extension=format
+            extension = format
+        extension = '.%s' % extension.lstrip('.')
         try:
-            with tempfile.NamedTemporaryFile(suffix='.%s' % extension,
-                                             delete=False) as f:
-                self.TEST_ARRAY.write(f.name, format=format)
-                if auto:
-                    self.TEST_ARRAY.write(f.name)
-                b = self.TEST_ARRAY.read(f.name, self.TEST_ARRAY.name,
-                                         format=format)
-                if auto:
-                    self.TEST_ARRAY.read(f.name, self.TEST_ARRAY.name)
-                self.assertArraysEqual(self.TEST_ARRAY, b, exclude=exclude)
+            fp = tempfile.mktemp(suffix=extension)
+            self.TEST_ARRAY.write(fp, format=format, **writekwargs)
+            if auto:
+                self.TEST_ARRAY.write(fp, **writekwargs)
+            b = self.TEST_ARRAY.read(fp, self.TEST_ARRAY.name,
+                                     format=format, **readkwargs)
+            if auto:
+                self.TEST_ARRAY.read(fp, self.TEST_ARRAY.name,
+                                     **readkwargs)
+            self.assertArraysEqual(self.TEST_ARRAY, b, exclude=exclude)
+            return b
         finally:
-            if os.path.exists(f.name):
-                os.remove(f.name)
-
-    def test_read_write_hdf5(self):
-        self._test_read_write('hdf5')
+            if os.path.exists(fp):
+                os.remove(fp)
 
 
 class ArrayTestCase(CommonTests, unittest.TestCase):
