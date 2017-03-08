@@ -305,7 +305,7 @@ class TimeSeriesTestMixin(object):
         self.assertIs(ts2.unit, units.dimensionless_unscaled)
 
     def test_io_identify(self):
-        common.test_io_identify(self.TEST_CLASS, ['txt', 'hdf', 'gwf'])
+        common.test_io_identify(self.TEST_CLASS, ['txt', 'hdf5', 'gwf'])
 
     def test_fetch(self):
         try:
