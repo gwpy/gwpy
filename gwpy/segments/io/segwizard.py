@@ -19,6 +19,8 @@
 """Read SegmentLists from seg-wizard format ASCII files
 """
 
+import warnings
+
 from six import string_types
 
 from glue import segmentsUtils
@@ -31,6 +33,8 @@ from ...time import LIGOTimeGPS
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+
+# -- read ---------------------------------------------------------------------
 
 def from_segwizard(f, coalesce=True, gpstype=LIGOTimeGPS, strict=True,
                    nproc=1):
@@ -54,8 +58,13 @@ def from_segwizard(f, coalesce=True, gpstype=LIGOTimeGPS, strict=True,
     return segs
 
 
+# DEPRECATED - remove prior to 1.0 release
 def flag_from_segwizard(filename, flag=None, coalesce=True, gpstype=float,
                         strict=True, nproc=1):
+    warnings.warn("Reading DataQualityFlags from ASCII files has been "
+                  "deprecated, and will be removed prior to the 1.0 "
+                  "release of GWpy. Please move to using a structured "
+                  "file-format, e.g. HDF5 or JSON", DeprecationWarning)
     if isinstance(flag, DataQualityFlag):
         out = flag
     else:
@@ -65,6 +74,8 @@ def flag_from_segwizard(filename, flag=None, coalesce=True, gpstype=float,
     out.known = out.active
     return out
 
+
+# -- write --------------------------------------------------------------------
 
 def to_segwizard(segs, fobj, header=True, coltype=int):
     """Write the given `SegmentList` to the file object fobj
@@ -96,6 +107,7 @@ def to_segwizard(segs, fobj, header=True, coltype=int):
         fobj.close()
 
 
+# DEPRECATED - remove prior to 1.0 release
 def flag_to_segwizard(flag, fobj, header=True, coltype=int):
     """Write the given `DataQualityFlag` to the file object fobj
 
@@ -129,6 +141,10 @@ def flag_to_segwizard(flag, fobj, header=True, coltype=int):
         for definition of the segwizard format, and the to/from functions
         used in this GWpy module
     """
+    warnings.warn("Writing DataQualityFlags to ASCII files has been "
+                  "deprecated, and will be removed prior to the 1.0 "
+                  "release of GWpy. Please move to using a structured "
+                  "file-format, e.g. HDF5 or JSON", DeprecationWarning)
     if flag.known and flag.known != flag.active:
         raise ValueError("This DataQualityFlag has known segments that do not "
                          "simply match the active ones, meaning the SegWizard "
@@ -139,12 +155,17 @@ def flag_to_segwizard(flag, fobj, header=True, coltype=int):
     to_segwizard(flag.active, fobj, header=header, coltype=coltype)
 
 
+# -- identify -----------------------------------------------------------------
+
 identify_segwizard = identify_factory('txt', 'dat')
 
-registry.register_reader('segwizard', DataQualityFlag, flag_from_segwizard)
-registry.register_writer('segwizard', DataQualityFlag, flag_to_segwizard)
-registry.register_identifier('segwizard', DataQualityFlag, identify_segwizard)
+# -- register -----------------------------------------------------------------
 
 registry.register_reader('segwizard', SegmentList, from_segwizard)
 registry.register_writer('segwizard', SegmentList, to_segwizard)
 registry.register_identifier('segwizard', SegmentList, identify_segwizard)
+
+# DEPRECATED - remove prior to 1.0 release
+registry.register_reader('segwizard', DataQualityFlag, flag_from_segwizard)
+registry.register_writer('segwizard', DataQualityFlag, flag_to_segwizard)
+registry.register_identifier('segwizard', DataQualityFlag, identify_segwizard)
