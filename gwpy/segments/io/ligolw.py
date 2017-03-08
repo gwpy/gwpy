@@ -33,7 +33,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 # -- read ---------------------------------------------------------------------
 
 def read_ligolw_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
-                   contenthandler=None, nproc=1):
+                     contenthandler=None, nproc=1):
     """Read segments for the given flag from the LIGO_LW XML file.
 
     Parameters
@@ -60,7 +60,6 @@ def read_ligolw_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
     from glue.ligolw import lsctables
     from glue.ligolw.ligolw import (Document, LIGOLWContentHandler)
     from glue.ligolw.utils.ligolw_add import ligolw_add
-
 
     if contenthandler is None:
         contenthandler = LIGOLWContentHandler

@@ -85,6 +85,7 @@ def find_flag_groups(h5group, strict=True):
             continue
     return names
 
+
 # -- read ---------------------------------------------------------------------
 
 def read_hdf5_flag(f, path=None, gpstype=LIGOTimeGPS, coalesce=False,
@@ -202,7 +203,7 @@ def write_hdf5_flag_group(flag, h5group, **kwargs):
 
 
 def write_hdf5_dict(flags, output, path=None, append=False, overwrite=False,
-                   **kwargs):
+                    **kwargs):
     """Write this `DataQualityFlag` to a `h5py.Group`.
 
     This allows writing to an HDF5-format file.
