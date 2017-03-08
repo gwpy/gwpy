@@ -198,11 +198,18 @@ class TimeSeriesTestMixin(object):
                     os.remove(f.name)
 
     def test_read_write_gwf(self):
+        # test basic read
         try:
             self._test_read_write('gwf', exclude=['channel'])
         except ImportError as e:
             self.skipTest(str(e))
+        # test cache read
         self._test_read_cache('gwf')
+        # check reading with start/end works
+        start, end = TEST_SEGMENT.contract(.25)
+        t = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format='gwf',
+                                 start=start, end=end)
+        self.assertTupleEqual(t.span, (start, end))
 
     def read_write_gwf_api(self, api):
         fmt = 'gwf.%s' % api
@@ -292,6 +299,8 @@ class TimeSeriesTestMixin(object):
             ts = self.TEST_CLASS.get(FIND_CHANNEL, FIND_GPS, FIND_GPS+1)
         except (ImportError, RuntimeError) as e:
             self.skipTest(str(e))
+
+    # -- methods --------------------------------
 
     def test_resample(self):
         """Test the `TimeSeries.resample` method
