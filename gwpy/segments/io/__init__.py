@@ -16,15 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
+"""Input/output routines for the `gwpy.segments` classes
 """
 
-from .ligolw import *
-from .segwizard import *
-
-try:
-    from .hdf5 import *
-except ImportError:
-    pass
+from . import (  # pylint: disable=unused-import
+    ligolw,  # LIGO_LW XML
+    segwizard,  # LIGO SegWizard ASCII
+    hdf5,  # HDF5
+)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
