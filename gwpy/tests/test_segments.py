@@ -22,12 +22,9 @@
 import os.path
 import tempfile
 import warnings
-from ssl import SSLError
 
-from six import PY3
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.error import URLError
-from six.moves import StringIO
 
 import pytest
 
@@ -36,7 +33,6 @@ from glue.LDBDWClient import LDBDClientException
 
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
-from gwpy.io.registry import identify_format
 from gwpy.plotter import (SegmentPlot, SegmentAxes)
 
 from compat import (unittest, mock)
@@ -124,7 +120,49 @@ VETO_DEFINER_FILE = ('https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/'
 VETO_DEFINER_TEST_SEGMENTS = SegmentList([Segment(1117411216, 1117497616)])
 
 
-class TestCaseWithQueryMixin(object):
+class SegmentClassTestsMixin(object):
+    def _test_read_write(self, format, extension=None, auto=True,
+                         writekwargs={}, readkwargs={}):
+        if extension is None:
+            extension = '.%s' % format
+        try:
+            fp = tempfile.mktemp(suffix=extension)
+            self.TEST_DATA.write(fp, format=format, **writekwargs)
+            if auto:  # repeat write with auto-identify
+                self.TEST_DATA.write(fp, **writekwargs)
+            data = self.TEST_CLASS.read(fp, format=format, **readkwargs)
+            if auto:  # repeat read with auto-identify
+                data = self.TEST_CLASS.read(fp, **readkwargs)
+        finally:
+            if os.path.exists(fp):
+                os.remove(fp)
+        self.assertSegmentClassEqual(data, self.TEST_DATA)
+        return data
+
+    def assertSegmentListEqual(self, a, b):
+        return self.assertListEqual(a, b)
+
+    def assertDataQualityFlagEqual(
+            self, a, b, attrs=['name', 'ifo', 'tag', 'version']):
+        self.assertListEqual(a.active, b.active)
+        self.assertListEqual(a.known, b.known)
+        for attr in attrs:
+            self.assertEqual(getattr(a, attr), getattr(b, attr))
+
+    def assertDataQualityDictEqual(
+            self, a, b, attrs=['name', 'ifo', 'tag', 'version']):
+        self.assertListEqual(sorted(list(a.keys())), sorted(list(b.keys())))
+        for key in a:
+            self.assertDataQualityFlagEqual(a[key], b[key])
+
+    def assertSegmentClassEqual(self, a, b):
+        if isinstance(a, SegmentList):
+            return self.assertSegmentListEqual(a, b)
+        elif isinstance(a, DataQualityFlag):
+            return self.assertDataQualityFlagEqual(a, b)
+        elif isinstance(a, DataQualityDict):
+            return self.assertDataQualityDictEqual(a, b)
+        return self.assertEqual(a, b)
 
     def _mock_query(self, cm, result, *args, **kwargs):
         """Query for segments using a mock of the dqsegdb API
@@ -153,38 +191,61 @@ class TestCaseWithQueryMixin(object):
                 return cm(*args, **kwargs)
 
 
+# -- Segment ------------------------------------------------------------------
 
-class SegmentListTests(unittest.TestCase):
+class SegmentTests(unittest.TestCase):
+    TEST_CLASS = Segment
+
+    def test_properties(self):
+        s = self.TEST_CLASS(1, 2)
+        self.assertEqual(s.start, 1.)
+        self.assertEqual(s.end, 2.)
+
+
+# -- SegmentList --------------------------------------------------------------
+
+class SegmentListTests(unittest.TestCase, SegmentClassTestsMixin):
     """Unit tests for the `SegmentList` class
     """
+    TEST_CLASS = SegmentList
+    TEST_DATA = ACTIVE
     tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_segmentlist')
 
-    def test_read_segwizard(self):
-        active = SegmentList.read(SEGWIZ, coalesce=False)
-        self.assertTrue(active == ACTIVE,
-                        'SegmentList.read(segwizard) mismatch:\n\n%s\n\n%s'
-                        % (ACTIVE, active))
+    def test_read_write_segwizard(self):
+        return self._test_read_write('segwizard', extension='txt', auto=True)
 
-    def test_write_segwizard(self):
-        tmpfile = self.tmpfile % 'txt'
-        ACTIVE.write(tmpfile)
-        self.assertTrue(open(tmpfile, 'r').read() == open(SEGWIZ, 'r').read(),
-                        'SegmentList.write(segwizard) mismatch, %s '
-                        'differs from %s' % (tmpfile, SEGWIZ))
-        os.remove(tmpfile)
+    def test_read_write_hdf5(self):
+        self._test_read_write('hdf5', auto=False,
+                              writekwargs={'path': 'test-segmentlist'},
+                              readkwargs={'path': 'test-segmentlist'})
+        self._test_read_write('hdf5', auto=True,
+                              writekwargs={'path': 'test-segmentlist',
+                                           'overwrite': True},
+                              readkwargs={'path': 'test-segmentlist'})
+        with self.assertRaises(ValueError) as exc:
+            self._test_read_write('hdf5', auto=True)
+        self.assertIn('Please specify the HDF5 path', str(exc.exception))
 
-    def test_io_identify(self):
-        common.test_io_identify(SegmentList, ['txt', 'hdf', 'hdf5'])
+    def test_coalesce(self):
+        l = self.TEST_CLASS([Segment(1, 4), Segment(4, 5)])
+        c = l.coalesce()
+        self.assertIsInstance(c, self.TEST_CLASS)
+        self.assertSegmentListEqual(c, self.TEST_CLASS([Segment(1, 5)]))
+        self.assertIsInstance(c[0], Segment)
 
 
-class DataQualityFlagTests(unittest.TestCase, TestCaseWithQueryMixin):
+# -- DataQualityFlag ----------------------------------------------------------
+
+class DataQualityFlagTests(unittest.TestCase, SegmentClassTestsMixin):
     """Unit tests for the `DataQualityFlag` class
     """
+    TEST_CLASS = DataQualityFlag
+    TEST_DATA = QUERY_RESULT.values()[0]
     tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_dqflag')
 
     def test_properties(self):
-        empty = DataQualityFlag()
-        flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN,
+        empty = self.TEST_CLASS()
+        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN,
                                padding=(-4, 8))
         # name
         self.assertEqual(empty.name, None)
@@ -210,7 +271,7 @@ class DataQualityFlagTests(unittest.TestCase, TestCaseWithQueryMixin):
 
     def test_deprecated(self):
         with pytest.warns(DeprecationWarning):
-            flag = DataQualityFlag(FLAG1, active=ACTIVE, valid=KNOWN)
+            flag = self.TEST_CLASS(FLAG1, active=ACTIVE, valid=KNOWN)
         with pytest.warns(DeprecationWarning):
             flag.valid
         with pytest.warns(DeprecationWarning):
@@ -219,42 +280,42 @@ class DataQualityFlagTests(unittest.TestCase, TestCaseWithQueryMixin):
             del flag.valid
 
     def test_plot(self):
-        flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
+        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN)
         plot = flag.plot()
         self.assertIsInstance(plot, SegmentPlot)
         self.assertIsInstance(plot.gca(), SegmentAxes)
         self.assertEqual(plot.gca().get_epoch(), flag.known[0][0])
 
     def test_parse_name(self):
-        flag = DataQualityFlag(None)
+        flag = self.TEST_CLASS(None)
         self.assertIsNone(flag.name)
         self.assertIsNone(flag.ifo)
         self.assertIsNone(flag.tag)
         self.assertIsNone(flag.version)
-        flag = DataQualityFlag('test')
+        flag = self.TEST_CLASS('test')
         self.assertEqual(flag.name, 'test')
         self.assertIsNone(flag.ifo)
         self.assertIsNone(flag.tag)
         self.assertIsNone(flag.version)
-        flag = DataQualityFlag('L1:test')
+        flag = self.TEST_CLASS('L1:test')
         self.assertEqual(flag.name, 'L1:test')
         self.assertEqual(flag.ifo, 'L1')
         self.assertEqual(flag.tag, 'test')
         self.assertIsNone(flag.version)
-        flag = DataQualityFlag('L1:test:1')
+        flag = self.TEST_CLASS('L1:test:1')
         self.assertEqual(flag.name, 'L1:test:1')
         self.assertEqual(flag.ifo, 'L1')
         self.assertEqual(flag.tag, 'test')
         self.assertEqual(flag.version, 1)
-        flag = DataQualityFlag('test:1')
+        flag = self.TEST_CLASS('test:1')
         self.assertEqual(flag.name, 'test:1')
         self.assertIsNone(flag.ifo)
         self.assertEqual(flag.tag, 'test')
         self.assertEqual(flag.version, 1)
 
     def test_math(self):
-        flag1 = DataQualityFlag(FLAG1, active=ACTIVE[:2], known=KNOWN)
-        flag2 = DataQualityFlag(FLAG1, active=ACTIVE[2:], known=KNOWN)
+        flag1 = self.TEST_CLASS(FLAG1, active=ACTIVE[:2], known=KNOWN)
+        flag2 = self.TEST_CLASS(FLAG1, active=ACTIVE[2:], known=KNOWN)
         # and
         x = flag1 & flag2
         self.assertListEqual(x.active, [])
@@ -269,7 +330,7 @@ class DataQualityFlagTests(unittest.TestCase, TestCaseWithQueryMixin):
         self.assertListEqual(x.known, KNOWN)
 
     def test_coalesce(self):
-        flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
+        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN)
         self.assertFalse(flag.regular,
                          'flag.regular test failed (should be False)')
         flag.coalesce()
@@ -280,98 +341,75 @@ class DataQualityFlagTests(unittest.TestCase, TestCaseWithQueryMixin):
                         'flag.regular test failed (should be True)')
 
     def test_contract(self):
-        flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
+        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN)
         flag.contract(.1)
         self.assertListEqual(flag.active, ACTIVE_CONTRACTED)
 
     def test_protract(self):
-        flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
+        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN)
         flag.protract(.1)
         self.assertListEqual(flag.active, ACTIVE_PROTRACTED)
 
     def test_round(self):
-        flag = DataQualityFlag(FLAG1, active=ACTIVE_CONTRACTED, known=KNOWN)
+        flag = self.TEST_CLASS(FLAG1, active=ACTIVE_CONTRACTED, known=KNOWN)
         flag2 = flag.round()
         self.assertListEqual(flag2.active, ACTIVE & KNOWN)
 
     def test_repr_str(self):
-        flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
+        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN)
         repr(flag)
         str(flag)
 
-    def test_read_segwizard(self):
-        flag = DataQualityFlag.read(SEGWIZ, FLAG1, coalesce=False)
-        self.assertTrue(flag.active == ACTIVE,
-                        'DataQualityFlag.read(segwizard) mismatch:\n\n%s\n\n%s'
-                        % (ACTIVE, flag.active))
-        self.assertTrue(flag.known == flag.active)
+    def test_pad(self):
+        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN)
+        # test without arguments (and no padding)
+        padded = flag.pad()
+        self.assertListEqual(padded.known, flag.known)
+        self.assertListEqual(padded.active, flag.active)
+        # test without arguments (and no padding)
+        flag.padding = PADDING
+        padded = flag.pad()
+        self.assertListEqual(padded.known, KNOWNPAD)
+        self.assertListEqual(padded.active, ACTIVEPAD)
+        # test with arguments
+        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN)
+        padded = flag.pad(*PADDING)
+        self.assertListEqual(padded.known, KNOWNPAD)
+        self.assertListEqual(padded.active, ACTIVEPAD)
+        # test coalesce
+        padded.coalesce()
+        self.assertListEqual(padded.active, ACTIVEPADC)
+        # test in-place
+        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN)
+        padded = flag.pad(*PADDING)
+        self.assertIsNot(flag, padded)
+        padded = flag.pad(*PADDING, inplace=True)
+        self.assertIs(flag, padded)
+        # test other kwargs fail
+        self.assertRaises(TypeError, flag.pad, *PADDING, kwarg='test')
 
-    def test_write_segwizard(self):
-        tmpfile = self.tmpfile % 'txt'
-        DataQualityFlag(FLAG1, active=ACTIVE).write(tmpfile)
-        self.assertTrue(open(tmpfile, 'r').read() == open(SEGWIZ, 'r').read(),
-                        'DataQualityFlag.write(segwizard) mismatch, %s '
-                        'differs from %s' % (tmpfile, SEGWIZ))
-        os.remove(tmpfile)
+    # -- I/O ------------------------------------
 
-    def test_fail_write_segwizard(self):
-        flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
-        self.assertRaises(ValueError, flag.write, StringIO,
-                          format='segwizard')
+    def test_read_write_ligolw(self):
+        self._test_read_write('ligolw', extension='xml', auto=True,
+                              writekwargs={'overwrite': True})
 
-    def test_read_ligolw(self):
-        flag = DataQualityFlag.read(SEGXML, FLAG1, coalesce=False)
-        self.assertTrue(flag.active == ACTIVE,
-                        'DataQualityFlag.read(ligol) mismatch:\n\n%s\n\n%s'
-                        % (ACTIVE, flag.active))
-        self.assertTrue(flag.known == KNOWN,
-                        'DataQualityFlag.read(ligol) mismatch:\n\n%s\n\n%s'
-                        % (KNOWN, flag.known))
+    def test_read_write_hdf5(self):
+        kwargs = {'writekwargs': {'path': 'test-dqflag'},
+                  'readkwargs': {'path': 'test-dqflag'}}
+        self._test_read_write('hdf5', auto=False, **kwargs)
+        kwargs['writekwargs']['overwrite'] = True
+        self._test_read_write('hdf5', auto=True, **kwargs)
 
-    def test_write_ligolw(self):
-        if PY3:
-            types = [str]
-        else:
-            types = [str, unicode]
-        for type_ in types:
-            tmpfile = type_(self.tmpfile % 'xml.gz')
-            try:
-                DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN).write(tmpfile)
-            finally:
-                os.remove(tmpfile)
+    def test_read_write_json(self):
+        self._test_read_write('json', auto=True)
 
-    def test_write_hdf5(self, delete=True):
-        flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
-        hdfout = self.tmpfile % 'hdf'
-        try:
-            flag.write(hdfout)
-        except ImportError as e:
-            self.skipTest(str(e))
-        else:
-            if delete:
-                os.remove(hdfout)
-        return hdfout
-
-
-    def test_read_hdf5(self):
-        try:
-            hdfout = self.test_write_hdf5(delete=False)
-        except ImportError as e:
-            self.skipTest(str(e))
-        else:
-            flag = DataQualityFlag.read(hdfout)
-            os.remove(hdfout)
-            self.assertTrue(flag.active == ACTIVE,
-                            'DataQualityFlag.read(hdf5) mismatch:\n\n%s\n\n%s'
-                            % (ACTIVE, flag.active))
-            self.assertTrue(flag.known == KNOWN,
-                            'DataQualityFlag.read(hdf5) mismatch:\n\n%s\n\n%s'
-                            % (KNOWN, flag.known))
+    # -- segment queries ------------------------
 
     def test_query(self):
         flag = QUERY_FLAGS[0]
         result = self._mock_query(
-            DataQualityFlag.query, QUERY_RESULT,
+            self.TEST_CLASS.query, QUERY_RESULT,
             flag, QUERY_START, QUERY_END, url=QUERY_URL)
         self.assertEqual(result.known, QUERY_RESULT[flag].known)
         self.assertEqual(result.active, QUERY_RESULT[flag].active)
@@ -379,7 +417,7 @@ class DataQualityFlagTests(unittest.TestCase, TestCaseWithQueryMixin):
     def test_query_dqsegdb(self):
         flag = QUERY_FLAGS[0]
         result = self._mock_query(
-            DataQualityFlag.query_dqsegdb, QUERY_RESULT,
+            self.TEST_CLASS.query_dqsegdb, QUERY_RESULT,
             flag, QUERY_START, QUERY_END, url=QUERY_URL)
         self.assertEqual(result.known, QUERY_RESULT[flag].known)
         self.assertEqual(result.active, QUERY_RESULT[flag].active)
@@ -387,7 +425,7 @@ class DataQualityFlagTests(unittest.TestCase, TestCaseWithQueryMixin):
     def test_query_segdb(self):
         flag = QUERY_FLAGS[0]
         try:
-            result = DataQualityFlag.query_segdb(flag, QUERY_START, QUERY_END,
+            result = self.TEST_CLASS.query_segdb(flag, QUERY_START, QUERY_END,
                                                  url=QUERY_URL_SEGDB)
         except (SystemExit, LDBDClientException) as e:
             self.skipTest(str(e))
@@ -397,7 +435,7 @@ class DataQualityFlagTests(unittest.TestCase, TestCaseWithQueryMixin):
     def test_query_dqsegdb_versionless(self):
         flag = QUERY_FLAGS[0]
         result = self._mock_query_versionless(
-            DataQualityFlag.query, QUERY_RESULT,
+            self.TEST_CLASS.query, QUERY_RESULT,
             flag.rsplit(':', 1)[0], QUERY_START, QUERY_END, url=QUERY_URL)
         self.assertEqual(result.known, QUERY_RESULT[flag].known)
         self.assertEqual(result.active, QUERY_RESULT[flag].active)
@@ -409,44 +447,17 @@ class DataQualityFlagTests(unittest.TestCase, TestCaseWithQueryMixin):
                             Segment(querymid, QUERY_END)])
         flag = QUERY_FLAGS[0]
         result = self._mock_query(
-            DataQualityFlag.query, QUERY_RESULT,
+            self.TEST_CLASS.query, QUERY_RESULT,
             flag, segs, url=QUERY_URL)
         self.assertEqual(result.known, QUERY_RESULT[flag].known)
         self.assertEqual(result.active, QUERY_RESULT[flag].active)
 
-    def test_pad(self):
-        flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
-        # test without arguments (and no padding)
-        padded = flag.pad()
-        self.assertListEqual(padded.known, flag.known)
-        self.assertListEqual(padded.active, flag.active)
-        # test without arguments (and no padding)
-        flag.padding = PADDING
-        padded = flag.pad()
-        self.assertListEqual(padded.known, KNOWNPAD)
-        self.assertListEqual(padded.active, ACTIVEPAD)
-        # test with arguments
-        flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
-        padded = flag.pad(*PADDING)
-        self.assertListEqual(padded.known, KNOWNPAD)
-        self.assertListEqual(padded.active, ACTIVEPAD)
-        # test coalesce
-        padded.coalesce()
-        self.assertListEqual(padded.active, ACTIVEPADC)
-        # test in-place
-        flag = DataQualityFlag(FLAG1, active=ACTIVE, known=KNOWN)
-        padded = flag.pad(*PADDING)
-        self.assertIsNot(flag, padded)
-        padded = flag.pad(*PADDING, inplace=True)
-        self.assertIs(flag, padded)
-        # test other kwargs fail
-        self.assertRaises(TypeError, flag.pad, *PADDING, kwarg='test')
 
-    def test_io_identify(self):
-        common.test_io_identify(DataQualityFlag, ['xml', 'xml.gz', 'txt'])
+# -- DataQualityDict ----------------------------------------------------------
 
-
-class DataQualityDictTests(unittest.TestCase, TestCaseWithQueryMixin):
+class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
+    TEST_CLASS = DataQualityDict
+    TEST_DATA = QUERY_RESULT
     tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_dqdict')
     VETO_DEFINER = tmpfile % 'vdf.xml'
 
@@ -461,15 +472,17 @@ class DataQualityDictTests(unittest.TestCase, TestCaseWithQueryMixin):
             os.remove(self.VETO_DEFINER)
 
     def create(self):
-        flgd = DataQualityDict()
+        flgd = self.TEST_CLASS()
         flgd['flag1'] = DataQualityFlag(name='flag1', active=ACTIVE,
                                         known=KNOWN)
         flgd['flag2'] = DataQualityFlag(name='flag2', active=ACTIVE2,
                                         known=KNOWN2)
         return flgd
 
+    # -- I/O ------------------------------------
+
     def test_from_veto_definer_file(self):
-        vdf = DataQualityDict.from_veto_definer_file(self.VETO_DEFINER)
+        vdf = self.TEST_CLASS.from_veto_definer_file(self.VETO_DEFINER)
         self.assertNotEqual(len(vdf.keys()), 0)
         # test missing h(t) flag
         self.assertIn('H1:DCH-MISSING_H1_HOFT_C00:1', vdf)
@@ -481,37 +494,24 @@ class DataQualityDictTests(unittest.TestCase, TestCaseWithQueryMixin):
         # test injections padding
         self.assertEquals(vdf['H1:ODC-INJECTION_CBC:1'].padding, Segment(-8, 8))
         # test download URL
-        vdf2 = DataQualityDict.from_veto_definer_file(VETO_DEFINER_FILE)
+        vdf2 = self.TEST_CLASS.from_veto_definer_file(VETO_DEFINER_FILE)
         self.assertEqual(len(vdf.keys()), len(vdf2.keys()))
 
-    def test_read_ligolw(self):
-        flags = DataQualityDict.read(SEGXML)
-        self.assertEquals(len(flags.keys()), 2)
-        self.assertIn(FLAG1, flags)
-        self.assertIn(FLAG2, flags)
-        flags = DataQualityDict.read(SEGXML, [FLAG2])
-        self.assertEquals(len(flags.keys()), 1)
-        self.assertEquals(flags[FLAG2].known, KNOWN2)
-        self.assertEquals(flags[FLAG2].active, ACTIVE2)
+    def test_read_write_ligolw(self):
+        return self._test_read_write('ligolw', extension='xml', auto=True,
+                                     writekwargs={'overwrite': True})
 
-    def test_write_ligolw(self):
-        tmpfile = self.tmpfile % 'xml.gz'
-        try:
-            flags = DataQualityDict.read(SEGXML)
-        except Exception as e:
-            self.skipTest(str(e))
-        try:
-            flags.write(tmpfile)
-        finally:
-            os.remove(tmpfile)
+    def test_read_write_hdf5(self):
+        self._test_read_write('hdf5', auto=False)
+        self._test_read_write('hdf5', auto=True,
+                              writekwargs={'overwrite': True})
 
-    def test_io_identify(self):
-        common.test_io_identify(DataQualityDict, ['xml', 'xml.gz'])
+    # -- segment queries ------------------------
 
     def test_populate(self):
         # read veto definer
         start, end = VETO_DEFINER_TEST_SEGMENTS[0]
-        vdf = DataQualityDict.from_veto_definer_file(
+        vdf = self.TEST_CLASS.from_veto_definer_file(
             VETO_DEFINER_FILE, ifo='H1', start=start, end=end)
         # test query that should fail with 404
         try:
@@ -528,7 +528,7 @@ class DataQualityDictTests(unittest.TestCase, TestCaseWithQueryMixin):
         else:
             raise AssertionError("URLError not raised")
         # check reduction to warning
-        vdf = DataQualityDict.from_veto_definer_file(
+        vdf = self.TEST_CLASS.from_veto_definer_file(
             VETO_DEFINER_FILE, ifo='H1', start=start, end=end)
         with pytest.warns(UserWarning):
             vdf.populate(url='https://segments.ligo.org', on_error='warn')
@@ -536,13 +536,13 @@ class DataQualityDictTests(unittest.TestCase, TestCaseWithQueryMixin):
         self.assertEqual(
             len(vdf['H1:HVT-ER7_A_RND17:1'].active), 36)
         # check use of specific segments
-        vdf = DataQualityDict.from_veto_definer_file(
+        vdf = self.TEST_CLASS.from_veto_definer_file(
             VETO_DEFINER_FILE, ifo='H1')
         vdf.populate(segments=VETO_DEFINER_TEST_SEGMENTS, on_error='ignore')
 
     def test_query(self):
         result = self._mock_query(
-            DataQualityDict.query, QUERY_RESULT,
+            self.TEST_CLASS.query, QUERY_RESULT,
             QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL)
         self.assertListEqual(result.keys(), QUERY_FLAGS)
         for flag in result:
@@ -551,7 +551,7 @@ class DataQualityDictTests(unittest.TestCase, TestCaseWithQueryMixin):
 
     def test_query_dqsegdb(self):
         result = self._mock_query(
-            DataQualityDict.query_dqsegdb, QUERY_RESULT,
+            self.TEST_CLASS.query_dqsegdb, QUERY_RESULT,
             QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL)
         self.assertListEqual(result.keys(), QUERY_FLAGS)
         for flag in result:
@@ -560,7 +560,7 @@ class DataQualityDictTests(unittest.TestCase, TestCaseWithQueryMixin):
 
     def test_query_segdb(self):
         try:
-            result = DataQualityDict.query_segdb(
+            result = self.TEST_CLASS.query_segdb(
                 QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL_SEGDB)
         except (SystemExit, LDBDClientException) as e:
             self.skipTest(str(e))
@@ -568,6 +568,8 @@ class DataQualityDictTests(unittest.TestCase, TestCaseWithQueryMixin):
         for flag in result:
             self.assertEqual(result[flag].known, QUERY_RESULT[flag].known)
             self.assertEqual(result[flag].active, QUERY_RESULT[flag].active)
+
+    # -- methods --------------------------------
 
     def test_union(self):
         flgd = self.create()
@@ -589,6 +591,3 @@ class DataQualityDictTests(unittest.TestCase, TestCaseWithQueryMixin):
         self.assertIsInstance(plot, SegmentPlot)
         self.assertIsInstance(plot.gca(), SegmentAxes)
         self.assertEqual(len(plot.gca().collections), len(flgd) * 2)
-
-if __name__ == '__main__':
-    unittest.main()
