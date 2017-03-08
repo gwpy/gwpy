@@ -30,6 +30,7 @@ from ..io import (reader, writer)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Kipp Cannon <kipp.cannon@ligo.org>"
+__all__ = ['Segment', 'SegmentList', 'SegmentListDict']
 
 
 def _update_docstring(doc):
@@ -130,49 +131,9 @@ class SegmentList(_SegmentList):
     :attr:`~DataQualityFlag.known` `SegmentList` will simply represent
     the extent of the :attr:`~DataQualityFlag.active` `SegmentList`.
     """))
+
     write = writer()
 
 
 class SegmentListDict(_SegmentListDict):
     __doc__ = _update_docstring(_SegmentListDict.__doc__)
-
-    read = classmethod(reader(doc="""
-    Read segments from file into a `SegmentListDict`.
-
-    Parameters
-    ----------
-    filename : `str`
-        path of file to read
-
-    format : `str`, optional
-        source format identifier. If not given, the format will be
-        detected if possible. See below for list of acceptable
-        formats.
-
-    flags : `list`, optional, default: read all flags
-        name of flag to read from file.
-
-    gpstype : `type`, optional, default: `float`
-        datatype to force for segment GPS times
-
-    strict : `bool`, optional, default: `True`
-        require segment start and stop times match printed duration,
-        only valid for ``format='segwizard'``.
-
-    Returns
-    -------
-    dqflag : `DataQualityFlag`
-        formatted `DataQualityFlag` containing the active and known
-        segments read from file.
-
-    Notes
-    -----
-    When reading with ``format='segwizard'`` the
-    :attr:`~DataQualityFlag.known` `SegmentList` will simply represent
-    the extent of the :attr:`~DataQualityFlag.active` `SegmentList`.
-    """))
-    write = writer()
-
-del _Segment
-del _SegmentList
-del _SegmentListDict
