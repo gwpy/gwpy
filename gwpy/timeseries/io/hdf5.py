@@ -19,11 +19,40 @@
 """This module attaches the HDF5 input output methods to the TimeSeries.
 """
 
-from ...types.io import hdf5
-from .. import (TimeSeries, StateVector, StateTimeSeries)
+from ...io import registry as io_registry
+from ...io.hdf5 import identify_hdf5
+from ...types.io.hdf5 import (read_hdf5_array, write_hdf5_array)
+from .. import (TimeSeries, StateVector)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-for array_type in (TimeSeries, StateVector, StateTimeSeries):
-    hdf5.register_hdf5_array_io(array_type)
-    hdf5.register_hdf5_array_io(array_type, format='hdf', identify=False)
+
+# -- read ---------------------------------------------------------------------
+
+def read_hdf5_timeseries(f, path=None, start=None, end=None, **kwargs):
+    # read data
+    kwargs.setdefault('array_type', TimeSeries)
+    ts = read_hdf5_array(f, path=path, **kwargs)
+    # crop if needed
+    if start is not None or end is not None:
+        return ts.crop(start, end)
+    else:
+        return ts
+
+
+def read_hdf5_statevector(*args, **kwargs):
+    kwargs['array_type'] = StateVector
+    return read_hdf5_timeseries(*args, **kwargs)
+
+
+# -- register -----------------------------------------------------------------
+
+# TimeSeries
+io_registry.register_reader('hdf5', TimeSeries, read_hdf5_timeseries)
+io_registry.register_writer('hdf5', TimeSeries, write_hdf5_array)
+io_registry.register_identifier('hdf5', TimeSeries, identify_hdf5)
+
+# StateVector
+io_registry.register_reader('hdf5', StateVector, read_hdf5_statevector)
+io_registry.register_writer('hdf5', StateVector, write_hdf5_array)
+io_registry.register_identifier('hdf5', StateVector, identify_hdf5)

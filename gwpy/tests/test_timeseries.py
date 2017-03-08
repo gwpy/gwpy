@@ -222,6 +222,20 @@ class TimeSeriesTestMixin(object):
     def test_read_write_gwf_framecpp(self):
         return self.read_write_gwf_api('framecpp')
 
+    def test_read_write_hdf5(self):
+        # test basic read
+        try:
+            self._test_read_write('hdf5', exclude=['channel'], auto=False)
+        except ImportError as e:
+            self.skipTest(str(e))
+        self._test_read_write('hdf5', exclude=['channel'], auto=True,
+                              writekwargs={'overwrite': True})
+        # check reading with start/end works
+        start, end = TEST_SEGMENT.contract(.25)
+        t = self.TEST_CLASS.read(TEST_HDF_FILE, self.channel, format='hdf5',
+                                 start=start, end=end)
+        self.assertTupleEqual(t.span, (start, end))
+
     def test_find(self):
         try:
             ts = self.TEST_CLASS.find(FIND_CHANNEL, FIND_GPS, FIND_GPS+1,
