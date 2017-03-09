@@ -382,7 +382,7 @@ class CliProduct(object):
         if self.n_datasets > self.get_max_datasets():
             msg = 'A maximum of %d datasets allowed for this plot but %d '
             'specified.' % (self.get_max_datasets(), self.n_datasets)
-            raise ValueError(msg)
+            raise ArgumentError(msg)
 
         if arg_list.duration:
             self.dur = int(arg_list.duration)
