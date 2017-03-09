@@ -31,7 +31,7 @@ from astropy.table import Table
 from astropy.units import (UnitBase, Quantity)
 
 from ...io.cache import FILE_LIKE
-from ...io.hdf5 import identify_hdf5
+from ...io import hdf5 as io_hdf5
 from ...io.registry import (register_reader, register_writer,
                             register_identifier)
 from ...time import LIGOTimeGPS
@@ -41,19 +41,6 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 # -- utilities ----------------------------------------------------------------
-
-def find_hdf5_dataset(h5o, path=None):
-    import h5py
-    # find dataset
-    if isinstance(h5o, h5py.Dataset):
-        return h5o
-    elif path is None and len(h5o) == 1:
-        path = h5o.keys()[0]
-    elif path is None:
-        raise ValueError("Please specify the HDF5 path via the "
-                         "``path=`` keyword argument")
-    return h5o[path]
-
 
 def find_flag_groups(h5group, strict=True):
     """Returns all HDF5 Groups under the given group that contain a flag
@@ -88,6 +75,7 @@ def find_flag_groups(h5group, strict=True):
 
 # -- read ---------------------------------------------------------------------
 
+@io_hdf5.with_read_hdf5
 def read_hdf5_flag(f, path=None, gpstype=LIGOTimeGPS, coalesce=False,
                    **kwargs):
     """Read a `DataQualityFlag` object from an HDF5 file or group.
@@ -96,16 +84,6 @@ def read_hdf5_flag(f, path=None, gpstype=LIGOTimeGPS, coalesce=False,
     if path is None:
         raise ValueError("Please specify the HDF5 path via the "
                          "``path=`` keyword argument")
-    import h5py
-
-    # open HDF5 file
-    if not isinstance(f, h5py.HLObject):
-        if isinstance(f, FILE_LIKE):
-            f = f.name
-        with h5py.File(f, 'r') as h5f:
-            return read_hdf5_flag(h5f, path=path, gpstype=gpstype, **kwargs)
-
-    # -- here we know `f` is an HDF5 object
 
     # get default path as only child of file
     dataset = f[path]
@@ -122,21 +100,12 @@ def read_hdf5_flag(f, path=None, gpstype=LIGOTimeGPS, coalesce=False,
     return DataQualityFlag(active=active, known=known, **dict(dataset.attrs))
 
 
+@io_hdf5.with_read_hdf5
 def read_hdf5_segmentlist(f, path=None, gpstype=LIGOTimeGPS, **kwargs):
     """Read a `SegmentList` object from an HDF5 file or group.
     """
-    import h5py
-    if not isinstance(f, h5py.HLObject):
-        if isinstance(f, FILE_LIKE):
-            f = f.name
-        with h5py.File(f, 'r') as h5f:
-            return read_hdf5_segmentlist(h5f, path=path, gpstype=gpstype,
-                                         **kwargs)
-
-    # -- here we know `f` is an HDF5 object
-
     # find dataset
-    dataset = find_hdf5_dataset(f, path=path)
+    dataset = io_hdf5.find_dataset(f, path=path)
 
     segtable = Table.read(dataset, format='hdf5')
     return SegmentList([Segment(
@@ -145,18 +114,10 @@ def read_hdf5_segmentlist(f, path=None, gpstype=LIGOTimeGPS, **kwargs):
         for row in segtable])
 
 
+@io_hdf5.with_read_hdf5
 def read_hdf5_dict(f, names=None, **kwargs):
     """Read a `DataQualityDict` from an HDF5 file
     """
-    import h5py
-
-    # open HDF5 file
-    if not isinstance(f, h5py.HLObject):
-        if isinstance(f, FILE_LIKE):
-            f = f.name
-        with h5py.File(f, 'r') as h5f:
-            return read_hdf5_dict(h5f, names=names, **kwargs)
-
     # try and get list of names automatically
     if names is None:
         try:
@@ -202,6 +163,7 @@ def write_hdf5_flag_group(flag, h5group, **kwargs):
     return h5group
 
 
+@io_hdf5.with_write_hdf5
 def write_hdf5_dict(flags, output, path=None, append=False, overwrite=False,
                     **kwargs):
     """Write this `DataQualityFlag` to a `h5py.Group`.
@@ -231,19 +193,6 @@ def write_hdf5_dict(flags, output, path=None, append=False, overwrite=False,
         for details on acceptable keyword arguments when writing a
         :class:`~astropy.table.Table` to HDF5
     """
-    # create output object
-    import h5py
-
-    # write file path
-    if not isinstance(output, h5py.HLObject):
-        if os.path.exists(output) and not (overwrite or append):
-            raise IOError("File exists: %s" % output)
-        with h5py.File(output, 'a' if append else 'w') as f:
-            return write_hdf5_dict(flags, f, path=path, overwrite=overwrite,
-                                  append=append, **kwargs)
-
-    # -- here we know output is an HDF5 object
-
     if path:
         try:
             parent = output[path]
@@ -319,12 +268,12 @@ def write_hdf5_segmentlist(seglist, output, path=None, **kwargs):
 
 register_reader('hdf5', SegmentList, read_hdf5_segmentlist)
 register_writer('hdf5', SegmentList, write_hdf5_segmentlist)
-register_identifier('hdf5', SegmentList, identify_hdf5)
+register_identifier('hdf5', SegmentList, io_hdf5.identify_hdf5)
 
 register_reader('hdf5', DataQualityFlag, read_hdf5_flag)
 register_writer('hdf5', DataQualityFlag, write_hdf5_flag)
-register_identifier('hdf5', DataQualityFlag, identify_hdf5)
+register_identifier('hdf5', DataQualityFlag, io_hdf5.identify_hdf5)
 
 register_reader('hdf5', DataQualityDict, read_hdf5_dict)
 register_writer('hdf5', DataQualityDict, write_hdf5_dict)
-register_identifier('hdf5', DataQualityDict, identify_hdf5)
+register_identifier('hdf5', DataQualityDict, io_hdf5.identify_hdf5)
