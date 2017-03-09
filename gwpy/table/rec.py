@@ -26,7 +26,7 @@ warnings.warn('The gwpy.table.rec module has been deprecated and will be '
 
 from numpy import recarray
 
-from ..io import registry as io_registry
+from astropy.io import registry as io_registry
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

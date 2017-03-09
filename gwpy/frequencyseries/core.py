@@ -26,8 +26,8 @@ from numpy import fft as npfft
 from scipy import signal
 
 from astropy import units
+from astropy.io import registry as io_registry
 
-from ..io import registry as io_registry
 from ..types import Series
 from ..detector import Channel
 from ..utils import with_import

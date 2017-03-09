@@ -24,8 +24,9 @@ import sys
 
 from six.moves import xrange
 
+from astropy.io import registry as io_registry
+
 from ..types import (Quantity, Array2D)
-from ..io import registry as io_registry
 from .core import FrequencySeries
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
