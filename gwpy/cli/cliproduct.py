@@ -120,7 +120,7 @@ class CliProduct(object):
     def get_max_datasets(self):
         """Override if plot has a maximum number of datasets.
         eg: spectrogram only handles 1"""
-        return 50  # arbitrary max
+        return 77  # arbitrary max
 
     def is_image(self):
         """Override if plot is image type, eg: spectrogram"""
@@ -471,7 +471,6 @@ class CliProduct(object):
             'font.family': 'sans-serif',
             'font.size': 16.,
             'font.weight': 'book',
-            'legend.loc': 'best',
             'lines.linewidth': 1.5,
             'text.usetex': 'true',
             'agg.path.chunksize': 10000,
@@ -655,13 +654,22 @@ class CliProduct(object):
 
         # image plots don't have legends
         if not self.is_image():
-            leg = self.ax.legend(prop={'size': 10})
+            leg = self.plot.gca().legend(prop={'size': 8})
             # if only one series is plotted hide legend
             if self.n_datasets == 1 and leg:
                 try:
                     leg.remove()
                 except NotImplementedError:
                     leg.set_visible(False)
+            elif self.n_datasets <= 5 and leg:
+                self.plot.gca().legend(loc='best')
+            elif self.n_datasets > 5 and leg:
+                self.plot.subplots_adjust(right=0.75)
+                #self.plot.gca().legend(bbox_to_anchor=(1.0, 1.0))
+                self.plot.gca().legend(bbox_to_anchor=(1.5, 1), loc='right', borderaxespad=0.)
+                self.plot.gca().legend(prop={'size': 6})
+
+            self.plot.refresh()
 
         # add titles
         title = ''
