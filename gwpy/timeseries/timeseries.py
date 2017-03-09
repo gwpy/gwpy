@@ -30,8 +30,8 @@ from numpy import fft as npfft
 from scipy import signal
 
 from astropy import units
+from astropy.io import registry as io_registry
 
-from ..io import (reader, writer)
 from ..segments import Segment
 from ..signal import (filter_design, sosfiltfilt)
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
@@ -109,8 +109,13 @@ class TimeSeries(TimeSeriesBase):
         ~TimeSeries.plot
 
     """
-    read = classmethod(reader(
-        doc="""Read data into a `TimeSeries`
+    @classmethod
+    def read(cls, source, *args, **kwargs):
+        """Read data into a `TimeSeries`
+
+        Arguments and keywords depend on the output format, see the
+        online documentation for full details for each format, the parameters
+        below are common to most formats.
 
         Parameters
         ----------
@@ -121,7 +126,7 @@ class TimeSeries(TimeSeriesBase):
             - `str` path of LAL-format cache file
             - `~glue.lal.Cache` describing one or more data files,
 
-        channel : `str`, `~gwpy.detector.Channel`
+        name : `str`, `~gwpy.detector.Channel`
             the name of the channel to read, or a `Channel` object.
 
         start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
@@ -160,19 +165,25 @@ class TimeSeries(TimeSeriesBase):
             gap is not given, or `gap='pad'` is given
 
         Notes
-        -----"""))
+        -----"""
+        return io_registry.read(cls, source, *args, **kwargs)
 
-    write = writer(
-        doc="""Write this `TimeSeries` to a file
+    def write(self, target, *args, **kwargs):
+        """Write this `TimeSeries` to a file
 
         Parameters
         ----------
-        outfile : `str`
+        target : `str`
             path of output file
 
+        format : `str`, optional
+            output format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+
         Notes
-        -----
-        """)
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
 
     def fft(self, nfft=None):
         """Compute the one-dimensional discrete Fourier transform of
@@ -1765,7 +1776,84 @@ class TimeSeriesDict(TimeSeriesBaseDict):
     __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
                                                  'TimeSeries')
     EntryClass = TimeSeries
-    read = classmethod(reader(doc=TimeSeriesBaseDict.read.__doc__))
+
+    @classmethod
+    def read(cls, source, *args, **kwargs):
+        """Read data for multiple channels into a `TimeSeriesDict`
+
+        Parameters
+        ----------
+        source : `str`, `~glue.lal.Cache`
+            a single file path `str`, or a `~glue.lal.Cache` containing
+            a contiguous list of files.
+
+        channels : `~gwpy.detector.channel.ChannelList`, `list`
+            a list of channels to read from the source.
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str` optional
+            GPS start time of required data, anything parseable by
+            :meth:`~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, anything parseable by
+            :meth:`~gwpy.time.to_gps` is fine
+
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+
+        nproc : `int`, optional, default: ``1``
+            number of parallel processes to use, serial process by
+            default.
+
+            .. note::
+
+               Parallel frame reading, via the ``nproc`` keyword argument,
+               is only available when giving a :class:`~glue.lal.Cache` of
+               frames, or using the ``format='cache'`` keyword argument.
+
+        gap : `str`, optional
+            how to handle gaps in the cache, one of
+
+            - 'ignore': do nothing, let the undelying reader method handle it
+            - 'warn': do nothing except print a warning to the screen
+            - 'raise': raise an exception upon finding a gap (default)
+            - 'pad': insert a value to fill the gaps
+
+        pad : `float`, optional
+            value with which to fill gaps in the source data, only used if
+            gap is not given, or `gap='pad'` is given
+
+        Returns
+        -------
+        tsdict : `TimeSeriesDict`
+            a `TimeSeriesDict` of (`channel`, `TimeSeries`) pairs. The keys
+            are guaranteed to be the ordered list `channels` as given.
+
+        Notes
+        -----"""
+        return io_registry.read(cls, source, *args, **kwargs)
+
+    def write(self, target, *args, **kwargs):
+        """Write this `TimeSeriesDict` to a file
+
+        Arguments and keywords depend on the output format, see the
+        online documentation for full details for each format.
+
+        Parameters
+        ----------
+        target : `str`
+            output filename
+
+        format : `str`, optional
+            output format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+
+        Notes
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
 
 
 class TimeSeriesList(TimeSeriesBaseList):
