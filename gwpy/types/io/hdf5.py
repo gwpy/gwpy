@@ -104,7 +104,7 @@ def create_array_dataset(h5g, array, path=None, compression='gzip', **kwargs):
 def write_hdf5_array(array, output, path=None, compression='gzip', **kwargs):
     """Write this array to HDF5
     """
-    return io_hdf5.write_object_dataset(output, array, create_array_dataset,
+    return io_hdf5.write_object_dataset(array, output, create_array_dataset,
                                         path=path, compression=compression,
                                         **kwargs)
 

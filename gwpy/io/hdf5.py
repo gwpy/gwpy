@@ -44,6 +44,9 @@ def open_hdf5(filename, mode='r'):
 
 def with_read_hdf5(func):
     """Decorate an HDF5-reading function to open a filepath if needed
+
+    ``func`` should be written to presume an `h5py.Group` as the first
+    positional argument.
     """
     @wraps(func)
     def decorated_func(f, *args, **kwargs):
@@ -99,8 +102,20 @@ def find_dataset(h5o, path=None):
 # -- writing utilities --------------------------------------------------------
 
 def with_write_hdf5(func):
+    """Decorate an HDF5-writing function to open a filepath if needed
+
+    ``func`` should be written to take the object to be written as the
+    first argument, and then presume an `h5py.Group` as the second.
+
+    This method uses keywords ``append`` and ``overwrite`` as follows if
+    the output file already exists:
+
+    - ``append=False, overwrite=False``: raise `~exceptions.IOError`
+    - ``append=True``: open in mode ``a``
+    - ``append=False, overwrite=True``: open in mode ``w``
+    """
     @wraps(func)
-    def decorated_func(f, *args, **kwargs):
+    def decorated_func(obj, f, *args, **kwargs):
         import h5py
         if not isinstance(f, h5py.HLObject):
             append = kwargs.get('append', False)
@@ -108,14 +123,14 @@ def with_write_hdf5(func):
             if os.path.exists(f) and not (overwrite or append):
                 raise IOError("File exists: %s" % f)
             with h5py.File(f, 'a' if append else 'w') as h5f:
-                return func(h5f, *args, **kwargs)
-        return func(f, *args, **kwargs)
+                return func(obj, h5f, *args, **kwargs)
+        return func(obj, f, *args, **kwargs)
 
     return decorated_func
 
 
 @with_write_hdf5
-def write_object_dataset(f, obj, create_func, append=False, overwrite=False,
+def write_object_dataset(obj, f, create_func, append=False, overwrite=False,
                          **kwargs):
     """Write the given dataset to the file
 
