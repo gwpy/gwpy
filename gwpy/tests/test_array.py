@@ -545,12 +545,14 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
 
     # -- test I/O -------------------------------
 
-    def test_read_write_ascii(self):
+    def _test_read_write_ascii(self, format='txt'):
+        extension = '.%s' % format.lstrip('.')
         try:
-            with tempfile.NamedTemporaryFile(suffix='.txt', delete=False) as f:
-                self.TEST_ARRAY.write(f.name, format='txt')
+            with tempfile.NamedTemporaryFile(suffix=extension,
+                                             delete=False) as f:
+                self.TEST_ARRAY.write(f.name, format=format)
                 self.TEST_ARRAY.write(f.name)
-                b = self.TEST_ARRAY.read(f.name, format='txt')
+                b = self.TEST_ARRAY.read(f.name, format=format)
                 self.TEST_ARRAY.read(f.name)
                 nptest.assert_array_equal(self.TEST_ARRAY.value, b.value)
         finally:

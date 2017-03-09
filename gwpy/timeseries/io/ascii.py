@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2017)
 #
 # This file is part of GWpy.
 #
@@ -16,12 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Input/Output routines for gwpy.frequencyseries
+"""ASCII I/O registrations for gwpy.timeseries objects
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+from ...types.io.ascii import register_ascii_series_io
+from .. import (TimeSeries, StateVector)
 
-from . import (  # pylint: disable=unused-import
-    ascii,
-    hdf5,
-)
+# -- registration -------------------------------------------------------------
+
+register_ascii_series_io(TimeSeries, format='txt')
+register_ascii_series_io(TimeSeries, format='csv', delimiter=',')
+register_ascii_series_io(StateVector, format='txt')
+register_ascii_series_io(StateVector, format='csv', delimiter=',')

@@ -108,6 +108,12 @@ class FrequencySeriesTestCase(SeriesTestCase):
                               writekwargs={'overwrite': True})
         self._test_read_write('hdf', auto=False)
 
+    def test_read_write_ascii(self):
+        return self._test_read_write_ascii(format='txt')
+
+    def test_read_write_csv(self):
+        return self._test_read_write_ascii(format='csv')
+
 
 class SpectralVarianceTestCase(Array2DTestCase):
     TEST_CLASS = SpectralVariance
