@@ -19,13 +19,9 @@
 """Input/Output routines for the Array and its sub-classes.
 """
 
-from .. import Series
-
-# register ASCII
-from ...io.ascii import register_ascii
-register_ascii(Series)
-
-# register HDF5
-from . import hdf5
+from . import (  # pylint: disable=unused-import
+    hdf5,
+    ascii,
+)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

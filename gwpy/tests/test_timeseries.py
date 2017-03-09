@@ -243,6 +243,12 @@ class TimeSeriesTestMixin(object):
                                  start=start, end=end)
         self.assertTupleEqual(t.span, (start, end))
 
+    def test_read_write_ascii(self):
+        return self._test_read_write_ascii(format='txt')
+
+    def test_read_write_csv(self):
+        return self._test_read_write_ascii(format='csv')
+
     def test_find(self):
         try:
             ts = self.TEST_CLASS.find(FIND_CHANNEL, FIND_GPS, FIND_GPS+1,

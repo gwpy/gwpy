@@ -21,21 +21,10 @@
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-from .. import (TimeSeries, StateVector, StateTimeSeries)
-
-# register ASCII
-from ...io.ascii import register_ascii
-for classobj in (TimeSeries, StateVector, StateTimeSeries):
-    register_ascii(classobj)
-
-# register GWF
-from . import gwf
-
-# register generic Cache
-from . import cache
-
-# register HDF5
-from . import hdf5
-
-# register LOSC
-from . import losc
+from . import (  # pylint: disable=unused-import
+    ascii,
+    gwf,
+    cache,
+    hdf5,
+    losc,
+)
