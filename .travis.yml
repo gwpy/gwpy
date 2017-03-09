@@ -81,6 +81,7 @@ install:
   - python setup.py build
 
 script:
+  - pip list installed
   - . .travis/run-tests.sh
   - pip install . -vvv
 
