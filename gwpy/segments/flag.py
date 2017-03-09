@@ -1161,9 +1161,9 @@ class DataQualityDict(OrderedDict):
         Returns
         -------
         flagdict : `DataQualityDict`
-            a new `DataQualityDict` of `DataQualityFlag` entries with ``active``
-            and ``known`` segments seeded from the XML tables in the given
-            file.
+            a new `DataQualityDict` of `DataQualityFlag` entries with
+            ``active`` and ``known`` segments seeded from the XML tables
+            in the given file.
 
         Notes
         -----"""
