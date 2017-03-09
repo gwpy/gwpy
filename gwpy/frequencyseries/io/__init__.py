@@ -19,9 +19,9 @@
 """Input/Output routines for gwpy.frequencyseries
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
 from . import (  # pylint: disable=unused-import
     ascii,
     hdf5,
 )
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
