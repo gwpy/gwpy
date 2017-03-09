@@ -19,10 +19,9 @@
 """This module attaches the HDF5 input output methods to the Spectrogram.
 """
 
-from ...types.io import hdf5
+from ...types.io.hdf5 import register_hdf5_array_io
 from .. import Spectrogram
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-hdf5.register_hdf5_array_io(Spectrogram)
-hdf5.register_hdf5_array_io(Spectrogram, format='hdf', identify=False)
+register_hdf5_array_io(Spectrogram)

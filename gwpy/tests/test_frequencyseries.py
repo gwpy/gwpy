@@ -106,7 +106,6 @@ class FrequencySeriesTestCase(SeriesTestCase):
         self._test_read_write('hdf5', auto=False)
         self._test_read_write('hdf5', auto=True,
                               writekwargs={'overwrite': True})
-        self._test_read_write('hdf', auto=False)
 
 
 class SpectralVarianceTestCase(Array2DTestCase):
