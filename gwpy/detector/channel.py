@@ -29,6 +29,7 @@ import sys
 from math import log
 
 from astropy import units
+from astropy.io import registry as io_registry
 
 try:
     from ..io.nds import (NDS2_CHANNEL_TYPE, NDS2_CHANNEL_TYPESTR)
@@ -46,7 +47,7 @@ except ImportError:
     NDS2_CHANNEL_TYPE = dict((val, key) for (key, val) in
                              NDS2_CHANNEL_TYPESTR.iteritems())
 
-from ..io import (reader, writer, datafind)
+from ..io import datafind
 from ..time import to_gps
 from ..utils.deps import with_import
 from .units import parse_unit
@@ -623,8 +624,9 @@ class ChannelList(list):
         """
         return set([c.ifo for c in self])
 
-    read = classmethod(reader(
-        doc="""Read a `ChannelList` from a file
+    @classmethod
+    def read(cls, source, *args, **kwargs):
+        """Read a `ChannelList` from a file
 
         Parameters
         ----------
@@ -632,9 +634,15 @@ class ChannelList(list):
             either an open file object, or a file name path to read
 
         Notes
-        -----"""))
+        -----"""
+        return io_registry.read(cls, source, *args, **kwargs)
 
-    write = writer()
+    def write(self, target, *args, **kwargs):
+        """Write a `ChannelList` to a file
+
+        Notes
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
 
     @classmethod
     def from_names(cls, *names):
