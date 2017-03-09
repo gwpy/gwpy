@@ -24,7 +24,7 @@ from math import ceil
 
 import numpy
 
-from astropy.table import (Table, Column)
+from astropy.table import (Table, Column, vstack)
 
 from ..io import (reader, writer)
 
@@ -86,14 +86,26 @@ class EventColumn(Column):
 
 
 class EventTable(Table):
-    """Container for a table of events
+    """A container for a table of events
+
+    This differs from the basic `~astropy.table.Table` in two ways
+
+    - GW-specific file formats are registered to use with
+      `EventTable.read` and `EventTable.write`
+    - columns of this table are of the `EventColumn` type, which provides
+      methods for filtering based on a `~gwpy.segments.SegmentList` (not
+      specifically time segments)
+
+    See also
+    --------
+    astropy.table.Table
+        for details on parameters for creating an `EventTable`
     """
     Column = EventColumn
 
     # -- i/o ------------------------------------
 
-    read = classmethod(reader(doc="""
-        read data into an `eventtable`
+    read = classmethod(reader(doc="""Read data into an `EventTable`
 
         Parameters
         ----------
@@ -107,6 +119,9 @@ class EventTable(Table):
         columns : `list` of `str`, optional
             list of column names ro read; should represent a sub-set of
             all available columns
+
+        nproc : `int`, optional, default: 1
+            number of CPUs to use for parallel file reading
 
         .. note::
 
@@ -123,10 +138,9 @@ class EventTable(Table):
             if the `format` cannot be automatically identified
 
         Notes
-        -----"""))
+        -----""", mp_flattener=vstack))
 
-    write = writer(doc="""
-        write this table to a file
+    write = writer(doc="""Write this table to a file
 
         parameters
         ----------

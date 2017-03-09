@@ -29,7 +29,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # -- ROOT ---------------------------------------------------------------------
 
-def table_from_cwb(f, **kwargs):
+def table_from_cwb(f, *args, **kwargs):
     return EventTable.read(f, 'waveburst', *args, format='root', **kwargs)
 
 registry.register_reader('root.cwb', EventTable, table_from_cwb)
@@ -334,7 +334,7 @@ def sngl_burst_from_cwb(f, *args, **kwargs):
                      "extensions: %s" % ", ".join(extensions))
 
 
-def identify_cwb_ascii(origin, path, fileobj, *args, **kwargs):
+def identify_cwb_ascii(origin, filepath, fileobj, *args, **kwargs):
     """Automatically identify a fileobj as 'cwb-ascii' format
 
     Notes
@@ -349,13 +349,13 @@ def identify_cwb_ascii(origin, path, fileobj, *args, **kwargs):
     `format='cwb-ascii'`.
     """
     # identify by name
-    if path is None or (
-            os.path.basename(path) in ['EVENTS.txt', 'EVENTS.txt.gz']):
+    if filepath is None or (
+            os.path.basename(filepath) in ['EVENTS.txt', 'EVENTS.txt.gz']):
         return False
     # verify contents
     if fileobj is None:
         try:
-            fileobj = open(path, 'rb')
+            fileobj = open(filepath, 'rb')
         except IOError:
             return False
         close = True

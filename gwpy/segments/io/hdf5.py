@@ -23,64 +23,150 @@ this module attaches them to the unified I/O registry, making it a bit
 cleaner.
 """
 
-import h5py
-import numpy
-from distutils.version import LooseVersion
+import os.path
 
+import numpy
+
+from astropy.table import Table
 from astropy.units import (UnitBase, Quantity)
 
-from ...io.hdf5 import (open_hdf5, identify_hdf5)
+from ...io.cache import FILE_LIKE
+from ...io import hdf5 as io_hdf5
 from ...io.registry import (register_reader, register_writer,
                             register_identifier)
 from ...time import LIGOTimeGPS
-from ..flag import DataQualityFlag
-from ..segments import (SegmentList, Segment)
+from .. import (DataQualityFlag, DataQualityDict, Segment, SegmentList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-def flag_from_hdf5(f, name=None, gpstype=LIGOTimeGPS, coalesce=True, nproc=1):
+# -- utilities ----------------------------------------------------------------
+
+def find_flag_groups(h5group, strict=True):
+    """Returns all HDF5 Groups under the given group that contain a flag
+
+    The check is just that the sub-group has a ``'name'`` attribute, so its
+    not fool-proof by any means.
+
+    Parameters
+    ----------
+    h5group : `h5py.Group`
+        the parent group in which to search
+
+    strict : `bool`, optional, default: `True`
+        if `True` raise an exception for any sub-group that doesn't have a
+        name, otherwise just return all of those that do
+
+    Raises
+    ------
+    KeyError
+        if a sub-group doesn't have a ``'name'`` attribtue and ``strict=True``
+    """
+    names = []
+    for group in h5group:
+        try:
+            names.append(h5group[group].attrs['name'])
+        except KeyError as e:
+            if strict:
+                raise
+            continue
+    return names
+
+
+# -- read ---------------------------------------------------------------------
+
+@io_hdf5.with_read_hdf5
+def read_hdf5_flag(f, path=None, gpstype=LIGOTimeGPS, coalesce=False,
+                   **kwargs):
     """Read a `DataQualityFlag` object from an HDF5 file or group.
     """
-    # hook multiprocessing
-    if nproc != 1:
-        return DataQualityFlag.read(f, name, coalesce=coalesce,
-                                    gpstype=gpstype, format='cache')
+    # verify path is given
+    if path is None:
+        raise ValueError("Please specify the HDF5 path via the "
+                         "``path=`` keyword argument")
 
-    # open file is needed
-    h5file = open_hdf5(f)
+    # get default path as only child of file
+    dataset = f[path]
 
+    active = SegmentList.read(dataset['active'])
     try:
-        # find dataset
-        if name:
-            dqfgroup = h5file[name]
-        elif isinstance(h5file, h5py.File) and len(h5file) == 1:
-            dqfgroup = h5file.values()[0]
-        else:
-            dqfgroup = h5file
-
-        active = SegmentList.read(dqfgroup['active'])
+        known = SegmentList.read(dataset['known'])
+    except KeyError as e:
         try:
-            known = SegmentList.read(dqfgroup['known'])
-        except KeyError as e:
-            try:
-                known = SegmentList.read(dqfgroup['valid'])
-            except KeyError:
-                raise e
+            known = SegmentList.read(dataset['valid'])
+        except KeyError:
+            raise e
 
-        # read array, close file, and return
-        out = DataQualityFlag(active=active, known=known,
-                              **dict(dqfgroup.attrs))
-    finally:
-        if not isinstance(f, (h5py.Dataset, h5py.Group)):
-            h5file.close()
+    return DataQualityFlag(active=active, known=known, **dict(dataset.attrs))
+
+
+@io_hdf5.with_read_hdf5
+def read_hdf5_segmentlist(f, path=None, gpstype=LIGOTimeGPS, **kwargs):
+    """Read a `SegmentList` object from an HDF5 file or group.
+    """
+    # find dataset
+    dataset = io_hdf5.find_dataset(f, path=path)
+
+    segtable = Table.read(dataset, format='hdf5')
+    return SegmentList([Segment(
+        LIGOTimeGPS(row['start_time'], row['start_time_ns']),
+        LIGOTimeGPS(row['end_time'], row['end_time_ns']))
+        for row in segtable])
+
+
+@io_hdf5.with_read_hdf5
+def read_hdf5_dict(f, names=None, **kwargs):
+    """Read a `DataQualityDict` from an HDF5 file
+    """
+    # try and get list of names automatically
+    if names is None:
+        try:
+            names = find_flag_groups(f, strict=True)
+        except KeyError:
+            names = None
+        if not names:
+            raise ValueError("Failed to automatically parse available flag "
+                             "names from HDF5, please give a list of names "
+                             "to read via the ``names=`` keyword")
+
+    # read data
+    out = DataQualityDict()
+    for name in names:
+        out[name] = read_hdf5_flag(f, name, **kwargs)
 
     return out
 
 
-def flag_to_hdf5(flag, output, name=None, group=None, compression='gzip',
-                 **kwargs):
-    """Write this `DataQualityFlag` to a :class:`h5py.Group`.
+# -- write --------------------------------------------------------------------
+
+def write_hdf5_flag_group(flag, h5group, **kwargs):
+    """Write a `DataQualityFlag` into the given HDF5 group
+    """
+    # write segmentlists
+    flag.active.write(h5group, 'active', **kwargs)
+    kwargs['append'] = True
+    flag.known.write(h5group, 'known', **kwargs)
+
+    # store metadata
+    for attr in ['name', 'label', 'category', 'description', 'isgood',
+                 'padding']:
+        value = getattr(flag, attr)
+        if value is None:
+            continue
+        elif isinstance(value, Quantity):
+            h5group.attrs[attr] = value.value
+        elif isinstance(value, UnitBase):
+            h5group.attrs[attr] = str(value)
+        else:
+            h5group.attrs[attr] = value
+
+    return h5group
+
+
+@io_hdf5.with_write_hdf5
+def write_hdf5_dict(flags, output, path=None, append=False, overwrite=False,
+                    **kwargs):
+    """Write this `DataQualityFlag` to a `h5py.Group`.
 
     This allows writing to an HDF5-format file.
 
@@ -88,164 +174,106 @@ def flag_to_hdf5(flag, output, name=None, group=None, compression='gzip',
     ----------
     output : `str`, :class:`h5py.Group`
         path to new output file, or open h5py `Group` to write to.
-    name : `str`, optional
-        custom name for this `Array` in the HDF hierarchy, defaults
-        to the `name` attribute of the `Array`.
-    group : `str`, optional
-        parent group to create for this time-series.
-    compression : `str`, optional
-        name of compression filter to use
+
+    path : `str`
+        the HDF5 group path in which to write a new group for this flag
+
     **kwargs
-        other keyword arguments passed to
-        :meth:`h5py.Group.create_dataset`.
+        other keyword arguments passed to :meth:`h5py.Group.create_dataset`
 
     Returns
     -------
     dqfgroup : :class:`h5py.Group`
         HDF group containing these data. This group contains 'active'
         and 'known' datasets, and metadata attrs.
+
+    See also
+    --------
+    astropy.io
+        for details on acceptable keyword arguments when writing a
+        :class:`~astropy.table.Table` to HDF5
     """
-    # create output object
-    import h5py
-    if isinstance(output, h5py.Group):
-        h5file = output
-    else:
-        h5file = h5py.File(output, 'w')
-
-    try:
-        # if group
-        if group:
-            try:
-                h5group = h5file[group]
-            except KeyError:
-                h5group = h5file.create_group(group)
-        else:
-            h5group = h5file
-
-        # create dataset
-        name = name or flag.name
-        if name is None:
-            raise ValueError("Cannot store DataQualityFlag without a name. "
-                             "Either assign the name attribute of the flag "
-                             "itself, or given name= as a keyword argument to "
-                             "write().")
-        dqfgroup = h5group.create_group(name)
-
-        flag.active.write(dqfgroup, 'active', compression=compression,
-                          **kwargs)
-        flag.known.write(dqfgroup, 'known', compression=compression,
-                         **kwargs)
-
-        # store metadata
-        for attr in ['name', 'label', 'category', 'description', 'isgood',
-                     'padding']:
-            value = getattr(flag, attr)
-            if value is None:
-                continue
-            elif isinstance(value, Quantity):
-                dqfgroup.attrs[attr] = value.value
-            elif isinstance(value, UnitBase):
-                dqfgroup.attrs[attr] = str(value)
-            else:
-                dqfgroup.attrs[attr] = value
-
-    finally:
-        if not isinstance(output, (h5py.Dataset, h5py.Group)):
-            h5file.close()
-
-    return dqfgroup
-
-
-def segmentlist_from_hdf5(f, name=None, gpstype=LIGOTimeGPS):
-    """Read a `SegmentList` object from an HDF5 file or group.
-    """
-    h5file = open_hdf5(f)
-
-    try:
-        # find dataset
-        if isinstance(h5file, h5py.Dataset):
-            dataset = h5file
-        else:
-            dataset = h5file[name]
-
+    if path:
         try:
-            data = dataset[()]
-        except ValueError:
-            data = []
-
-        out = SegmentList()
-        for row in data:
-            row = map(int, row)
-            # extract as LIGOTimeGPS
-            start = LIGOTimeGPS(*row[:2])
-            end = LIGOTimeGPS(*row[2:])
-            # convert to user type
-            try:
-                start = gpstype(start)
-            except TypeError:
-                start = gpstype(float(start))
-            try:
-                end = gpstype(end)
-            except TypeError:
-                end = gpstype(float(end))
-            out.append(Segment(start, end))
-    finally:
-        if not isinstance(f, (h5py.Dataset, h5py.Group)):
-            h5file.close()
-
-    return out
-
-
-def segmentlist_to_hdf5(seglist, output, name, group=None,
-                        compression='gzip', **kwargs):
-    """Write a `SegmentList`
-    """
-    # create output object
-    import h5py
-    if isinstance(output, h5py.Group):
-        h5file = output
+            parent = output[path]
+        except KeyError:
+            parent = output.create_group(group)
     else:
-        h5file = h5py.File(output, 'w')
+        parent = output
 
-    try:
-        # if group
-        if group:
-            try:
-                h5group = h5file[group]
-            except KeyError:
-                h5group = h5file.create_group(group)
-        else:
-            h5group = h5file
-
-        # create dataset
-        data = numpy.zeros((len(seglist), 4), dtype=int)
-        for i, seg in enumerate(seglist):
-            start, end = map(LIGOTimeGPS, seg)
-            data[i, :] = (start.seconds, start.nanoseconds,
-                          end.seconds, end.nanoseconds)
-        if (not len(seglist) and
-                LooseVersion(h5py.version.version).version[0] < 2):
-            kwargs.setdefault('maxshape', (None, 4))
-            kwargs.setdefault('chunks', (1, 1))
-        dset = h5group.create_dataset(name, data=data,
-                                      compression=compression, **kwargs)
-    finally:
-        if not isinstance(output, h5py.Group):
-            h5file.close()
-
-    return dset
+    for name in flags:
+        # handle existing group
+        if name in parent:
+            if not (overwrite and append):
+                raise IOError("Group '%s' already exists, give ``append=True, "
+                              "overwrite=True`` to overwrite it"
+                              % os.path.join(parent.name, name))
+            del parent[name]
+        # create group
+        group = parent.create_group(name)
+        # write flag
+        write_hdf5_flag_group(flags[name], group, **kwargs)
 
 
-# register HDF5 format
-register_reader('hdf5', SegmentList, segmentlist_from_hdf5)
-register_writer('hdf5', SegmentList, segmentlist_to_hdf5)
-register_identifier('hdf5', SegmentList, identify_hdf5)
-register_reader('hdf5', DataQualityFlag, flag_from_hdf5)
-register_writer('hdf5', DataQualityFlag, flag_to_hdf5)
-register_identifier('hdf5', DataQualityFlag, identify_hdf5)
+def write_hdf5_flag(flag, output, path=None, **kwargs):
+    """Write a `DataQualityFlag` to an HDF5 file/group
+    """
+    # verify path (default to flag name)
+    if path is None:
+        path = flag.name
+    if path is None:
+        raise ValueError("Cannot determine target group name for flag in HDF5 "
+                         "structure, please set `name` for each flag, or "
+                         "specify the ``path`` keyword when writing")
 
-# register generic HDF format to HDF5
-register_reader('hdf', SegmentList, segmentlist_from_hdf5)
-register_writer('hdf', SegmentList, segmentlist_to_hdf5)
-register_reader('hdf', DataQualityFlag, flag_from_hdf5)
-register_writer('hdf', DataQualityFlag, flag_to_hdf5)
+    return write_hdf5_dict({path: flag}, output, **kwargs)
+
+
+def write_hdf5_segmentlist(seglist, output, path=None, **kwargs):
+    """Write a `SegmentList` to an HDF5 file/group
+
+    Parameters
+    ----------
+    seglist : :class:`~glue.segments.segmentlist`
+        data to write
+
+    output : `str`, `h5py.File`, `h5py.Group`
+        filename or HDF5 object to write to
+
+    path : `str`
+        path to which to write inside the HDF5 file, relative to ``output``
+
+    **kwargs
+        other keyword arguments are passed to
+        :meth:`~astropy.table.Table.write`
+    """
+    if path is None:
+        raise ValueError("Please specify the HDF5 path via the "
+                         "``path=`` keyword argument")
+
+    # convert segmentlist to Table
+    data = numpy.zeros((len(seglist), 4), dtype=int)
+    for i, seg in enumerate(seglist):
+        start, end = map(LIGOTimeGPS, seg)
+        data[i, :] = (start.gpsSeconds, start.gpsNanoSeconds,
+                      end.gpsSeconds, end.gpsNanoSeconds)
+    segtable = Table(data, names=['start_time', 'start_time_ns',
+                                  'end_time', 'end_time_ns'])
+
+    # write table to HDF5
+    return segtable.write(output, path=path, format='hdf5', **kwargs)
+
+
+# -- register -----------------------------------------------------------------
+
+register_reader('hdf5', SegmentList, read_hdf5_segmentlist)
+register_writer('hdf5', SegmentList, write_hdf5_segmentlist)
+register_identifier('hdf5', SegmentList, io_hdf5.identify_hdf5)
+
+register_reader('hdf5', DataQualityFlag, read_hdf5_flag)
+register_writer('hdf5', DataQualityFlag, write_hdf5_flag)
+register_identifier('hdf5', DataQualityFlag, io_hdf5.identify_hdf5)
+
+register_reader('hdf5', DataQualityDict, read_hdf5_dict)
+register_writer('hdf5', DataQualityDict, write_hdf5_dict)
+register_identifier('hdf5', DataQualityDict, io_hdf5.identify_hdf5)

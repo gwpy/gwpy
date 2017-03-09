@@ -147,7 +147,7 @@ class CliProduct(object):
     def log(self, level, msg):
         """print log message if verbosity is set high enough"""
         if self.verbose >= level:
-            print msg
+            print(msg)
         return
 
 
@@ -163,6 +163,9 @@ class CliProduct(object):
         parser.add_argument('-c', '--framecache',
                             help='use .gwf files in cache not NDS2,' +
                                  ' default use NDS2')
+        parser.add_argument('-n', '--nds2-server', metavar='HOSTNAME',
+                            help='name of nds2 server to use, default is to '
+                                 'try all of them')
         parser.add_argument('--highpass',
                             help='frequency for high pass filter,' +
                                  ' default no filter')
@@ -416,14 +419,15 @@ class CliProduct(object):
             time_group = []
             for chan in self.chan_list:
                 if verb:
-                    print 'Fetching %s %d, %d using %s' % \
-                          (chan, start, self.dur, source)
+                    print('Fetching %s %d, %d using %s'
+                          % (chan, start, self.dur, source))
                 if frame_cache:
                     data = TimeSeries.read(frame_cache, chan, start=start,
                                            end=start+self.dur)
                 else:
                     data = TimeSeries.fetch(chan, start, start+self.dur,
-                                            verbose=verb)
+                                            verbose=verb,
+                                            host=arg_list.nds2_server)
 
                 if highpass > 0 and lowpass == 0:
                     data = data.highpass(highpass)
@@ -787,9 +791,9 @@ class CliProduct(object):
         self.log(3, ('Verbosity level: %d' % self.verbose))
 
         if self.verbose > 2:
-            print 'Arguments:'
+            print('Arguments:')
             for key, value in args.__dict__.iteritems():
-                print '%s = %s' % (key, value)
+                print('%s = %s' % (key, value))
 
         self.getTimeSeries(args)
 

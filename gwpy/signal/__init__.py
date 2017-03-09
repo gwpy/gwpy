@@ -21,7 +21,7 @@ extend the functionality of `scipy.signal` (and others) for specific GW data
 applications.
 """
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
 from .filter_design import *
 from .filter import *
+
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

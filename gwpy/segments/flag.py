@@ -26,10 +26,14 @@ The `DataQualityDict` is just a `dict` of flags, provided as a convenience
 for handling multiple flags over the same global time interval.
 """
 
+from __future__ import absolute_import
+
+import json
 import operator
 import re
 import warnings
 import tempfile
+from io import BytesIO
 from urlparse import urlparse
 from copy import (copy as shallowcopy, deepcopy)
 from math import (floor, ceil)
@@ -52,7 +56,8 @@ from .segments import Segment, SegmentList
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['DataQualityFlag', 'DataQualityDict']
 
-re_IFO_TAG_VERSION = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+):(?P<version>\d+)\Z")
+re_IFO_TAG_VERSION = re.compile(
+    r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+):(?P<version>\d+)\Z")
 re_IFO_TAG = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+)\Z")
 re_TAG_VERSION = re.compile(r"\A(?P<tag>[^/]+):(?P<version>\d+)\Z")
 
@@ -502,7 +507,7 @@ class DataQualityFlag(object):
                 data, versions, _ = apicalls.dqsegdbCascadedQuery(
                     protocol, server, out.ifo, out.tag, request,
                     start, end)
-                metadata = versions[-1]['metadata']
+                data['metadata'] = versions[-1]['metadata']
             else:
                 try:
                     data, _ = apicalls.dqsegdbQueryTimes(
@@ -511,19 +516,16 @@ class DataQualityFlag(object):
                 except URLError as e:
                     e.args = ('Error querying for %s: %s' % (flag, e),)
                     raise
-                metadata = data['metadata']
-            new = cls(name=flag)
-            for s2 in data['active']:
-                new.active.append(Segment(*s2))
-            for s2 in data['known']:
-                new.known.append(Segment(*s2))
+            # read from json buffer
+            new = cls.read(BytesIO(json.dumps(data)), format='json')
+            # restrict to query segments
             segl = SegmentList([Segment(start, end)])
             new.known &= segl
             new.active &= segl
             out += new
-            out.description = metadata.get('flag_description', None)
-            out.isgood = not metadata.get(
-                'active_indicates_ifo_badness', False)
+            # replace metadata
+            out.description = new.description
+            out.isgood = new.isgood
 
         return out
 

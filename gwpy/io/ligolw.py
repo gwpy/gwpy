@@ -18,26 +18,32 @@
 
 """Basic utilities for reading/writing LIGO_LW-format XML files.
 
-All specific unified input/output for class objecst should be placed in
+All specific unified input/output for class objects should be placed in
 an 'io' subdirectory of the containing directory for that class.
 """
 
-from glue.ligolw.ligolw import (Document, LIGOLWContentHandler,
-                                PartialLIGOLWContentHandler)
-from glue.ligolw.utils.ligolw_add import ligolw_add
-from glue.ligolw import (table, lsctables)
+import os.path
+import warnings
+
+from six import string_types
 
 from ..utils import gprint
-from .cache import file_list
+from .cache import (file_list, FILE_LIKE)
 from .utils import identify_factory
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+# -- content handling ---------------------------------------------------------
+
+from glue.ligolw.ligolw import LIGOLWContentHandler
 
 
 class GWpyContentHandler(LIGOLWContentHandler):
     """Empty sub-class of `~glue.ligolw.ligolw.LIGOLWContentHandler`
     """
-    pass
+    warnings.warn("GWpyContentHandler has been deprecated and will be removed "
+                  "in an upcoming release, please use "
+                  "glue.ligolw.ligolw.LIGOLWContentHandler or similar")
 
 
 def get_partial_contenthandler(table):
@@ -54,6 +60,8 @@ def get_partial_contenthandler(table):
         a subclass of `~glue.ligolw.ligolw.PartialLIGOLWContentHandler` to
         read only the given `table`
     """
+    from glue.ligolw.ligolw import PartialLIGOLWContentHandler
+
     def _element_filter(name, attrs):
         return table.CheckProperties(name, attrs)
 
@@ -63,6 +71,8 @@ def get_partial_contenthandler(table):
 
     return _ContentHandler
 
+
+# -- reading ------------------------------------------------------------------
 
 def table_from_file(f, tablename, columns=None, filt=None,
                     contenthandler=None, nproc=1, verbose=False):
@@ -94,6 +104,10 @@ def table_from_file(f, tablename, columns=None, filt=None,
     table : `~glue.ligolw.table.Table`
         `Table` of data with given columns filled
     """
+    from glue.ligolw.ligolw import Document
+    from glue.ligolw import (table, lsctables)
+    from glue.ligolw.utils.ligolw_add import ligolw_add
+
     # find table class
     tableclass = lsctables.TableByName[table.Table.TableName(tablename)]
 
@@ -144,5 +158,127 @@ def table_from_file(f, tablename, columns=None, filt=None,
 
     return out
 
+
+# -- writing ------------------------------------------------------------------
+
+def open_xmldoc(f, **kwargs):
+    """Try and open an existing LIGO_LW-format file, or create a new Document
+    """
+    from glue.ligolw.lsctables import use_in
+    from glue.ligolw.ligolw import Document
+    from glue.ligolw.utils import load_filename, load_fileobj
+    use_in(kwargs['contenthandler'])
+    try:  # try and load existing file
+        if isinstance(f, string_types):
+            return load_filename(f, **kwargs)
+        if isinstance(f, FILE_LIKE):
+            return load_fileobj(f, **kwargs)[0]
+    except (OSError, IOError):  # or just create a new Document
+        return Document()
+
+
+def get_ligolw_element(xmldoc):
+    """Find an existing <LIGO_LW> element in this XML Document
+    """
+    from glue.ligolw.ligolw import LIGO_LW
+    if isinstance(xmldoc, LIGO_LW):
+        return xmldoc
+    else:
+        for node in xmldoc.childNodes:
+            if isinstance(node, LIGO_LW):
+                return node
+    raise ValueError("Cannot find LIGO_LW element in XML Document")
+
+
+def write_tables_to_document(xmldoc, tables, overwrite=False):
+    """Write the given LIGO_LW table into a :class:`Document`
+
+    Parameters
+    ----------
+    xmldoc : :class:`~glue.ligolw.ligolw.Document`
+        the document to write into
+
+    tables : `list` of :class:`~glue.ligolw.table.Table`
+        the set of tables to write
+
+    overwrite : `bool`, optional, default: `False`
+        if `True`, delete an existing instance of the table type, otherwise
+        append new rows
+    """
+    from glue.ligolw.ligolw import LIGO_LW
+    from glue.ligolw import lsctables
+
+    # find or create LIGO_LW tag
+    try:
+        llw = get_ligolw_element(xmldoc)
+    except ValueError:
+        llw = LIGO_LW()
+        xmldoc.appendChild(llw)
+
+    for table in tables:
+        try:  # append new data to existing table
+            old = lsctables.TableByName[
+                table.TableName(table.tableName)].get_table(xmldoc)
+        except ValueError:  # or create a new table
+            llw.appendChild(table)
+        else:
+            if overwrite:
+                llw.removeChild(old)
+                old.unlink()
+                llw.appendChild(table)
+            else:
+                old.extend(table)
+
+    return xmldoc
+
+
+def write_tables(f, tables, append=False, overwrite=False, **kwargs):
+    """Write an LIGO_LW table to file
+
+    Parameters
+    ----------
+    f : `str`, `file`, :class:`~glue.ligolw.ligolw.Document`
+        the file or document to write into
+
+    tables : `list` of :class:`~glue.ligolw.table.Table`
+        the tables to write
+
+    append : `bool`, optional, default: `False`
+        if `True`, append to an existing file/table, otherwise `overwrite`
+
+    overwrite : `bool`, optional, default: `False`
+        if `True`, delete an existing instance of the table type, otherwise
+        append new rows
+    """
+    from glue.ligolw.ligolw import (Document, LIGO_LW, LIGOLWContentHandler)
+    from glue.ligolw import utils as ligolw_utils
+
+    # allow writing directly to XML
+    if isinstance(f, (Document, LIGO_LW)):
+        xmldoc = f
+    # open existing document, if possible
+    elif append and not overwrite:
+        xmldoc = open_xmldoc(
+            f, contenthandler=kwargs.pop('contenthandler',
+                                         LIGOLWContentHandler))
+    # fail on existing document and not overwriting
+    elif not overwrite and isinstance(f, string_types) and os.path.isfile(f):
+        raise IOError("File exists: %s" % f)
+    else:  # or create a new document
+        xmldoc = Document()
+
+    # convert table to format
+    write_tables_to_document(xmldoc, tables, overwrite=overwrite)
+
+    # write file
+    if isinstance(f, string_types):
+        kwargs.setdefault('gz', f.endswith('.gz'))
+        ligolw_utils.write_filename(xmldoc, f, **kwargs)
+    elif not isinstance(f, Document):
+        kwargs.setdefault('gz', f.name.endswith('.gz'))
+        ligolw_utils.write_fileobj(xmldoc, f, **kwargs)
+
+
+# -- identify -----------------------------------------------------------------
 
 identify_ligolw = identify_factory('xml', 'xml.gz')

@@ -19,7 +19,8 @@
 """Unit test for frequencyseries module
 """
 
-from tempfile import NamedTemporaryFile
+import os.path
+import tempfile
 
 from numpy import (testing as nptest, arange, linspace)
 
@@ -101,26 +102,11 @@ class FrequencySeriesTestCase(SeriesTestCase):
         array2 = type(array).from_pycbc(pycbcarray)
         self.assertArraysEqual(array, array2, 'units', 'df', 'f0')
 
-    def _test_read_write(self, extension, fmt=None, **metadata):
-        if fmt is None:
-            fmt = extension.strip('.')
-        if not extension.startswith('.'):
-            extension = '.%s' % extension
-        array = self.create(**metadata)
-        with NamedTemporaryFile(suffix=extension, delete=True) as f:
-            array.write(f.name, format=fmt)
-            f.seek(0)
-            array2 = self.TEST_CLASS.read(f.name, format=fmt)
-        self.assertArraysEqual(array, array2)
-
     def test_read_write_hdf5(self):
-        self.assertRaises(ValueError, self._test_read_write, 'hdf', fmt='hdf')
-        self._test_read_write('hdf', fmt='hdf', name='Array name')
-        self._test_read_write('hdf', name='Array name')
-
-    def test_read_write_txt(self):
-        self._test_read_write('txt', fmt='txt')
-        self._test_read_write('txt')
+        self._test_read_write('hdf5', auto=False)
+        self._test_read_write('hdf5', auto=True,
+                              writekwargs={'overwrite': True})
+        self._test_read_write('hdf', auto=False)
 
 
 class SpectralVarianceTestCase(Array2DTestCase):

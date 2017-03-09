@@ -92,7 +92,7 @@ def marker_cycle(markers=None):
         return itertools.cycle(('o', 'x', '+', '^', 'D', 'H', '1'))
 
 
-# -- dynamic subplot positioning -----------------------------------------------
+# -- dynamic subplot positioning ----------------------------------------------
 
 SUBPLOT_WIDTH = {
     8.: (.15, .88),

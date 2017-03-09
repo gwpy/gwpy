@@ -276,3 +276,42 @@ def cache_segments(*caches):
     for cache in caches:
         out.extend(e.segment for e in cache)
     return out.coalesce()
+
+
+def flatten(*caches):
+    """Flatten a list of :class:`Caches <glue.lal.Cache>` into a single cache
+
+    Parameters
+    ----------
+    *caches
+        one or more :class:`~glue.lal.Cache` objects
+
+    Returns
+    -------
+    flat : :class:`~glue.lal.Cache`
+        a single cache containing the unique set of entries across
+        each input
+    """
+    cache_type = type(caches[0])
+    return cache_type([e for c in caches for e in c]).unique()
+
+
+def find_contiguous(*caches):
+    """Separate one or more caches into sets of contiguous caches
+
+    Parameters
+    ----------
+    *caches
+        one or more :class:`~glue.lal.Cache` objects
+
+    Returns
+    -------
+    caches : `iter` of :class:`~glue.lal.Cache`
+        an interable yielding each contiguous cache
+    """
+    try:
+        flat = flatten(*caches)
+    except IndexError:
+        flat = Cache()
+    for segment in cache_segments(flat):
+        yield flat.sieve(segment=segment)

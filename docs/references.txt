@@ -1,0 +1,26 @@
+.. |root_numpy| replace:: `root_numpy`
+.. _root_numpy: https://rootpy.github.io/root_numpy/
+
+.. |h5py| replace:: `h5py`
+.. _h5py: http://docs.h5py.org/en/latest/
+
+.. |glue| replace:: `glue`
+.. _glue: http://software.ligo.org/docs/glue/
+
+.. |glue.ligolw| replace:: `glue.ligolw`
+.. _glue.ligolw: http://software.ligo.org/docs/glue/glue.ligolw-module.html
+
+.. |glue.segments| replace:: `glue.segments`
+.. _glue.segments: http://software.ligo.org/docs/glue/glue.segments-module.html
+
+.. |LDAStools.frameCPP| replace:: `LDAStools.frameCPP`
+.. _LDAStools.frameCPP: https://ldas-jobs.ligo.caltech.edu/~emaros/share/doc/ldas-tools/framecpp/html/
+
+.. |lalframe| replace:: `lalframe`
+.. _lalframe: https://software.ligo.org/docs/lalsuite/lalframe/
+
+.. |nds2| replace:: `nds2`
+.. _nds2: https://www.lsc-group.phys.uwm.edu/daswg/projects/nds-client/doc/manual/
+
+.. |dqsegdb| replace:: `dqsegdb`
+.. _dqsegdb: https://wiki.ligo.org/DASWG/DQSEGDB

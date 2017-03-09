@@ -20,26 +20,20 @@
 """
 
 import datetime
-from six import string_types
 
-from glue.lal import LIGOTimeGPS
-from glue.ligolw import lsctables
-from glue.ligolw.ligolw import (Document, LIGO_LW)
-from glue.ligolw.utils import (write_filename, write_fileobj)
-from glue.ligolw.utils.ligolw_add import ligolw_add
-
-from astropy.time import Time
-
+from ...time import (LIGOTimeGPS, to_gps)
 from ...io import registry
-from ...io.ligolw import (identify_ligolw, GWpyContentHandler)
+from ...io.ligolw import (identify_ligolw, write_tables)
 from ...io.cache import (file_list, FILE_LIKE)
 from ...segments import (Segment, DataQualityFlag, DataQualityDict)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
-                   contenthandler=GWpyContentHandler, nproc=1):
+# -- read ---------------------------------------------------------------------
+
+def read_ligolw_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
+                     contenthandler=None, nproc=1):
     """Read segments for the given flag from the LIGO_LW XML file.
 
     Parameters
@@ -62,6 +56,13 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
                                     gpstype=gpstype,
                                     contenthandler=contenthandler,
                                     format='cache', nproc=nproc)
+
+    from glue.ligolw import lsctables
+    from glue.ligolw.ligolw import (Document, LIGOLWContentHandler)
+    from glue.ligolw.utils.ligolw_add import ligolw_add
+
+    if contenthandler is None:
+        contenthandler = LIGOLWContentHandler
 
     lsctables.use_in(contenthandler)
 
@@ -134,108 +135,109 @@ def read_flag_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
     return out
 
 
-def read_flag(fp, flag=None, **kwargs):
+def read_ligolw_flag(fp, flag=None, **kwargs):
     """Read a single `DataQualityFlag` from a LIGO_LW XML file
     """
-    return read_flag_dict(fp, flags=flag, **kwargs).values()[0]
+    return read_ligolw_dict(fp, flags=flag, **kwargs).values()[0]
 
 
-def write_ligolw(flag, fobj, **kwargs):
-    """Write this `DataQualityFlag` to XML in LIGO_LW format
+# -- write --------------------------------------------------------------------
+
+def dqdict_to_ligolw_tables(dqdict):
+    """Convert a `DataQualityDict` into LIGO_LW segment tables
+
+    Parameters
+    ----------
+    dqdict : `~gwpy.segments.DataQualityDict`
+        the dict of flags to write
+
+    Returns
+    -------
+    segdeftab : :class:`~glue.ligolw.lsctables.SegmentDefTable`
+        the ``segment_definer`` table defining each flag
+    segsumtab : :class:`~glue.ligolw.lsctables.SegmentSumTable`
+        the ``segment_summary`` table containing the known segments
+    segtab : :class:`~glue.ligolw.lsctables.SegmentTable`
+        the ``segment`` table containing the active segments
     """
-    # if given a Document, just add data
-    if isinstance(fobj, Document):
-        return write_to_xmldoc(flag, fobj, **kwargs)
-    # otherwise build a new Document
-    xmldoc = Document()
-    xmldoc.appendChild(LIGO_LW())
-    # TODO: add process information
-    write_to_xmldoc(flag, xmldoc)
-    # and write
-    if isinstance(fobj, string_types):
-        return write_filename(xmldoc, fobj, gz=fobj.endswith('.gz'))
-    else:
-        return write_fileobj(xmldoc, fobj, gz=fobj.name.endswith('.gz'))
+    from glue.ligolw import lsctables
 
-
-def write_to_xmldoc(flags, xmldoc, process_id=None):
-    """Write this `DataQualityFlag` to the given LIGO_LW Document
-    """
-    if isinstance(flags, DataQualityFlag):
-        flags = {flags.name: flags}
-
-    # write SegmentDefTable
-    try:
-        segdeftab = lsctables.SegmentDefTable.get_table(xmldoc)
-    except ValueError:
-        segdeftab = lsctables.New(lsctables.SegmentDefTable,
-                                  columns=['ifos', 'name', 'version',
-                                           'comment', 'insertion_time',
-                                           'segment_def_id', 'process_id'])
-        xmldoc.childNodes[-1].appendChild(segdeftab)
-    # make SegmentSumTable
-    try:
-        segsumtab = lsctables.SegmentSumTable.get_table(xmldoc)
-    except ValueError:
-        segsumtab = lsctables.New(lsctables.SegmentSumTable,
-                                  columns=['segment_def_id', 'start_time',
-                                           'start_time_ns', 'end_time',
-                                           'end_time_ns', 'comment',
-                                           'segment_sum_id', 'process_id'])
-        xmldoc.childNodes[-1].appendChild(segsumtab)
-    # write SegmentTable
-    try:
-        segtab = lsctables.SegmentTable.get_table(xmldoc)
-    except ValueError:
-        segtab = lsctables.New(lsctables.SegmentTable,
-                               columns=['process_id', 'segment_id',
-                                        'segment_def_id', 'start_time',
-                                        'start_time_ns', 'end_time',
-                                        'end_time_ns'])
-        xmldoc.childNodes[-1].appendChild(segtab)
+    segdeftab = lsctables.New(lsctables.SegmentDefTable)
+    segsumtab = lsctables.New(lsctables.SegmentSumTable)
+    segtab = lsctables.New(lsctables.SegmentTable)
 
     # write flags to tables
-    for flag in flags.itervalues():
+    for flag in dqdict.values():
         # segment definer
-        segdef = lsctables.SegmentDef()
+        segdef = segdeftab.RowType()
+        for col in segdeftab.columnnames:  # default all columns to None
+            setattr(segdef, col, None)
         segdef.set_ifos([flag.ifo])
         segdef.name = flag.tag
         segdef.version = flag.version
         segdef.comment = flag.description
-        segdef.insertion_time = int(Time(datetime.datetime.now(),
-                                         scale='utc').gps)
+        segdef.insertion_time = to_gps(datetime.datetime.now()).gpsSeconds
         segdef.segment_def_id = lsctables.SegmentDefTable.get_next_id()
-        segdef.process_id = process_id
         segdeftab.append(segdef)
 
         # write segment summary (known segments)
         for vseg in flag.known:
-            segsum = lsctables.SegmentSum()
+            segsum = segsumtab.RowType()
+            for col in segsumtab.columnnames:  # default all columns to None
+                setattr(segsum, col, None)
             segsum.segment_def_id = segdef.segment_def_id
             segsum.set(map(LIGOTimeGPS, map(float, vseg)))
             segsum.comment = None
             segsum.segment_sum_id = lsctables.SegmentSumTable.get_next_id()
-            segsum.process_id = process_id
             segsumtab.append(segsum)
 
         # write segment table (active segments)
         for aseg in flag.active:
-            seg = lsctables.Segment()
+            seg = segtab.RowType()
+            for col in segtab.columnnames:  # default all columns to None
+                setattr(seg, col, None)
             seg.segment_def_id = segdef.segment_def_id
             seg.set(map(LIGOTimeGPS, map(float, aseg)))
             seg.segment_id = lsctables.SegmentTable.get_next_id()
-            seg.process_id = process_id
             segtab.append(seg)
 
-    return xmldoc
+    return segdeftab, segsumtab, segtab
 
+
+def write_ligolw(flags, f, **kwargs):
+    """Write this `DataQualityFlag` to the given LIGO_LW Document
+
+    Parameters
+    ----------
+    flags : `DataQualityFlag`, `DataQualityDict`
+        `gwpy.segments` object to wriet
+
+    f : `str`, `file`, :class:`~glue.ligolw.ligolw.Document`
+        the file or document to write into
+
+    **kwargs
+        keyword arguments to use when writing
+
+    See also
+    --------
+    gwpy.io.ligolw.write_ligolw_tables
+        for details of acceptabled keyword arguments
+    """
+    if isinstance(flags, DataQualityFlag):
+        flags = {flags.name: flags}
+
+    llwtables = dqdict_to_ligolw_tables(flags)
+    return write_tables(f, llwtables, **kwargs)
+
+
+# -- register -----------------------------------------------------------------
 
 # register methods for DataQualityDict
-registry.register_reader('ligolw', DataQualityFlag, read_flag)
+registry.register_reader('ligolw', DataQualityFlag, read_ligolw_flag)
 registry.register_writer('ligolw', DataQualityFlag, write_ligolw)
 registry.register_identifier('ligolw', DataQualityFlag, identify_ligolw)
 
 # register methods for DataQualityDict
-registry.register_reader('ligolw', DataQualityDict, read_flag_dict)
+registry.register_reader('ligolw', DataQualityDict, read_ligolw_dict)
 registry.register_writer('ligolw', DataQualityDict, write_ligolw)
 registry.register_identifier('ligolw', DataQualityDict, identify_ligolw)

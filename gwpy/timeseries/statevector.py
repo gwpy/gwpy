@@ -33,14 +33,15 @@ import sys
 import numpy
 
 from glue.segmentsUtils import from_bitstream
+
 from astropy.units import Quantity
+from astropy.io import registry as io_registry
 
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    NDS2_FETCH_TYPE_MASK, as_series_dict_class)
 from ..types import Array2D
 from ..detector import Channel
 from ..time import Time
-from ..io import (reader, writer)
 
 if sys.version_info[0] < 3:
     range = xrange
@@ -448,8 +449,9 @@ class StateVector(TimeSeriesBase):
                 channel=self.channel, sample_rate=self.sample_rate)
         return self._bitseries
 
-    # use input/output registry to allow multi-format reading
-    read = classmethod(reader(doc="""Read data into a `StateVector`
+    @classmethod
+    def read(cls, source, *args, **kwargs):
+        """Read data into a `StateVector`
 
         Parameters
         ----------
@@ -529,19 +531,20 @@ class StateVector(TimeSeriesBase):
         before any further operations.
 
         Notes
-        -----"""))
+        -----"""
+        return io_registry.read(cls, source, *args, **kwargs)
 
-    write = writer(
-        doc="""Write this `StateVector` to a file
+    def write(self, target, *args, **kwargs):
+        """Write this `StateVector` to a file
 
         Parameters
         ----------
-        outfile : `str`
-            path of output file
+        target : `str`
+            output filename
 
         Notes
-        -----
-        """)
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
 
     def to_dqflags(self, bits=None, minlen=1, dtype=float, round=False):
         """Convert this `StateVector` into a `~gwpy.segments.DataQualityDict`
@@ -717,14 +720,6 @@ class StateVector(TimeSeriesBase):
             new.bits = bits
         return new
 
-    def to_lal(self, *args, **kwargs):
-        """Bogus function inherited from superclass, do not use.
-        """
-        raise NotImplementedError("The to_lal method, inherited from the "
-                                  "TimeSeries, cannot be used with the "
-                                  "StateTimeSeries because LAL has no "
-                                  "BooleanTimeSeries structure")
-
     def plot(self, format='segments', bits=None, **kwargs):
         """Plot the data for this `StateVector`
 
@@ -836,7 +831,6 @@ class StateVector(TimeSeriesBase):
 @as_series_dict_class(StateTimeSeries)
 class StateTimeSeriesDict(TimeSeriesBaseDict):
     EntryClass = StateTimeSeries
-    read = classmethod(reader(doc=TimeSeriesBaseDict.read.__doc__))
 
 
 @as_series_dict_class(StateVector)
@@ -844,8 +838,10 @@ class StateVectorDict(TimeSeriesBaseDict):
     __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
                                                  'StateVector')
     EntryClass = StateVector
-    read = classmethod(reader(doc="""
-        Read data for multiple bit vector channels into a `StateVectorDict`
+
+    @classmethod
+    def read(cls, source, *args, **kwargs):
+        """Read data for multiple bit vector channels into a `StateVectorDict`
 
         Parameters
         ----------
@@ -902,8 +898,23 @@ class StateVectorDict(TimeSeriesBaseDict):
             are guaranteed to be the ordered list `channels` as given.
 
         Notes
-        -----
-        """))
+        -----"""
+        return io_registry.read(cls, source, *args, **kwargs)
+
+    def write(self, target, *args, **kwargs):
+        """Write this `StateVectorDict` to a file
+
+        Arguments and keywords depend on the output format, see the
+        online documentation for full details for each format.
+
+        Parameters
+        ----------
+        target : `str`
+            output filename
+
+        Notes
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
 
 
 class StateVectorList(TimeSeriesBaseList):

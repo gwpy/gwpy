@@ -20,13 +20,14 @@
 """
 
 import os
-import tempfile
 
 from common import skip_missing_import
 from compat import (unittest, mock)
+import mockutils
 
-from gwpy.io import datafind
-from gwpy.io.cache import (Cache, CacheEntry, cache_segments)
+from gwpy.io import (datafind, gwf)
+from gwpy.io.cache import (Cache, CacheEntry, cache_segments,
+                           flatten, find_contiguous)
 from gwpy.segments import (Segment, SegmentList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -146,53 +147,119 @@ class CacheIoTestCase(unittest.TestCase):
         sl = cache_segments(cache[:2], cache[2:])
         self.assertEquals(sl, segs)
 
+    def test_flatten(self):
+        # check flattened version of single cache is unchanged
+        a, _ = self.make_cache()
+        self.assertListEqual(flatten(a), a)
+        self.assertListEqual(flatten(a, a), a)
+        # check two caches get concatenated properly
+        b, _ = self.make_cache()
+        for e in b:
+            e.segment = e.segment.shift(10)
+        c = a + b
+        self.assertListEqual(flatten(a, b), c)
 
-# -- gwpy.io.datafind ---------------------------------------------------------
+    def test_find_contiguous(self):
+        a, segs = self.make_cache()
+        segs.coalesce()
+        for i, cache in enumerate(find_contiguous(a)):
+            self.assertEqual(cache.to_segmentlistdict()['A'].extent(), segs[i])
+
+
+# -- gwpy.io.gwf --------------------------------------------------------------
 
 def mock_call(*args, **kwargs):
     raise OSError("")
 
+class GwfIoTestCase(unittest.TestCase):
 
-class DataFindIoTestCase(unittest.TestCase):
     @skip_missing_import('lalframe')
     def test_iter_channel_names(self):
         # maybe need something better?
         from types import GeneratorType
-        names = datafind.iter_channel_names(TEST_GWF_FILE)
+        names = gwf.iter_channel_names(TEST_GWF_FILE)
         self.assertIsInstance(names, GeneratorType)
         self.assertSequenceEqual(list(names), TEST_CHANNELS)
         with mock.patch('gwpy.utils.shell.call', mock_call):
-            names = datafind.iter_channel_names(TEST_GWF_FILE)
+            names = gwf.iter_channel_names(TEST_GWF_FILE)
             self.assertIsInstance(names, GeneratorType)
             self.assertSequenceEqual(list(names), TEST_CHANNELS)
 
     @skip_missing_import('lalframe')
     def test_get_channel_names(self):
-        self.assertListEqual(datafind.get_channel_names(TEST_GWF_FILE),
+        self.assertListEqual(gwf.get_channel_names(TEST_GWF_FILE),
                              TEST_CHANNELS)
 
     @skip_missing_import('lalframe')
     def test_num_channels(self):
-        self.assertEqual(datafind.num_channels(TEST_GWF_FILE), 3)
+        self.assertEqual(gwf.num_channels(TEST_GWF_FILE), 3)
 
     @skip_missing_import('lalframe')
     def test_get_channel_type(self):
-        self.assertEqual(datafind.get_channel_type(
+        self.assertEqual(gwf.get_channel_type(
             'L1:LDAS-STRAIN', TEST_GWF_FILE), 'proc')
-        self.assertRaises(ValueError, datafind.get_channel_type,
+        self.assertRaises(ValueError, gwf.get_channel_type,
                           'X1:NOT-IN_FRAME', TEST_GWF_FILE)
 
     @skip_missing_import('lalframe')
     def test_channel_in_frame(self):
         self.assertTrue(
-            datafind.channel_in_frame('L1:LDAS-STRAIN', TEST_GWF_FILE))
+            gwf.channel_in_frame('L1:LDAS-STRAIN', TEST_GWF_FILE))
         self.assertFalse(
-            datafind.channel_in_frame('X1:NOT-IN_FRAME', TEST_GWF_FILE))
+            gwf.channel_in_frame('X1:NOT-IN_FRAME', TEST_GWF_FILE))
+
+
+# -- gwpy.io.datafind ---------------------------------------------------------
+
+class DataFindIoTestCase(unittest.TestCase):
+    MOCK_CONNECTION = mockutils.mock_datafind_connection(TEST_GWF_FILE)
 
     def test_on_tape(self):
         self.assertFalse(datafind.on_tape(TEST_GWF_FILE))
         self.assertFalse(datafind.on_tape(
             CacheEntry.from_T050017(TEST_GWF_FILE)))
+
+    def test_connect(self):
+        with mock.patch('glue.datafind.GWDataFindHTTPConnection',
+                        self.MOCK_CONNECTION), \
+             mock.patch('glue.datafind.GWDataFindHTTPSConnection',
+                        self.MOCK_CONNECTION), \
+             mock.patch('glue.datafind.find_credential',
+                        mockutils.mock_find_credential):
+            datafind.connect()
+            datafind.connect('host', 443)
+
+    def test_find_frametype(self):
+        with mock.patch('glue.datafind.GWDataFindHTTPConnection') as \
+                 mock_connection, \
+                 mock.patch('gwpy.io.datafind.num_channels', lambda x: 1), \
+                 mock.patch('gwpy.io.gwf.iter_channel_names',
+                            lambda x: ['L1:LDAS-STRAIN']):
+            mock_connection.return_value = self.MOCK_CONNECTION
+            ft = datafind.find_frametype('L1:LDAS-STRAIN', allow_tape=True)
+            self.assertEqual(ft, 'GW100916')
+            ft = datafind.find_frametype('L1:LDAS-STRAIN', return_all=True)
+            self.assertListEqual(ft, ['GW100916'])
+            self.assertRaises(ValueError, datafind.find_frametype, 'X1:TEST')
+            self.assertRaises(ValueError, datafind.find_frametype,
+                              'bad channel name')
+            # test trend sorting ends up with an error
+            self.assertRaises(ValueError, datafind.find_frametype,
+                              'X1:TEST.rms,s-trend')
+            self.assertRaises(ValueError, datafind.find_frametype,
+                              'X1:TEST.rms,m-trend')
+
+    def test_find_best_frametype(self):
+        with mock.patch('glue.datafind.GWDataFindHTTPConnection') as \
+                 mock_connection, \
+                 mock.patch('gwpy.io.datafind.num_channels', lambda x: 1), \
+                 mock.patch('gwpy.io.gwf.iter_channel_names',
+                            lambda x: ['L1:LDAS-STRAIN']):
+            mock_connection.return_value = self.MOCK_CONNECTION
+            ft = datafind.find_best_frametype('L1:LDAS-STRAIN', 968654552,
+                                              968654553)
+            self.assertEqual(ft, 'GW100916')
+
 
 if __name__ == '__main__':
     unittest.main()

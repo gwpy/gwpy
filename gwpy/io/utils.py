@@ -27,10 +27,11 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 def identify_factory(*extensions):
-    def identify(origin, path, fileobj, *args, **kwargs):
+    def identify(origin, filepath, fileobj, *args, **kwargs):
         """Identify the given extensions in a file object/path
         """
-        if isinstance(path, string_types) and path.endswith(extensions):
+        if (isinstance(filepath, string_types) and
+                filepath.endswith(extensions)):
             return True
         else:
             return False

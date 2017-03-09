@@ -42,7 +42,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 SEED = 1
 GPS_EPOCH = 12345
 TIME_EPOCH = Time(12345, format='gps', scale='utc')
-CHANNEL_NAME = 'X1:TEST-CHANNEL'
+CHANNEL_NAME = 'G1:TEST-CHANNEL'
 CHANNEL = Channel(CHANNEL_NAME)
 
 
@@ -66,9 +66,9 @@ class CommonTests(object):
         try:
             return self._TEST_ARRAY
         except AttributeError:
-            self._TEST_ARRAY = self.create(name='test', unit='meter',
+            self._TEST_ARRAY = self.create(name=CHANNEL_NAME, unit='meter',
                                            channel=CHANNEL_NAME,
-                                           epoch=TIME_EPOCH)
+                                           epoch=GPS_EPOCH)
             return self.TEST_ARRAY
 
     def create(self, *args, **kwargs):
@@ -79,18 +79,24 @@ class CommonTests(object):
         nptest.assert_array_equal(q1.value, q2.value)
         self.assertEqual(q1.unit, q2.unit)
 
-    def assertArraysEqual(self, ts1, ts2, *args):
+    def assertArraysEqual(self, ts1, ts2, *args, **kwargs):
+        exclude = kwargs.pop('exclude', [])
+        if kwargs:
+            raise TypeError("assertArraysEqual has no keyword argument %r"
+                            % list(kwargs.keys())[0])
         self.assertQuantityEqual(ts1, ts2)
         if not args:
             args = self.TEST_CLASS._metadata_slots
         for attr in args:
+            if attr in exclude:
+                continue
             a = getattr(ts1, attr, None)
             b = getattr(ts2, attr, None)
+            msg="%r attribute doesn't match: %r != %r" % (attr, a, b)
             if isinstance(a, numpy.ndarray) and isinstance(b, numpy.ndarray):
-                nptest.assert_array_equal(a, b)
+                nptest.assert_array_equal(a, b, err_msg=msg)
             else:
-                self.assertEqual(a, b,
-                    msg="%r attribute doesn't match: %s != %s" % (attr, a, b))
+                self.assertEqual(a, b, msg=msg)
 
     # -- test basic construction ----------------
 
@@ -221,39 +227,26 @@ class CommonTests(object):
 
     # -- test I/O -------------------------------
 
-    def test_hdf5_write(self, delete=True, format=[None, 'hdf5', 'hdf']):
-        if isinstance(format, (list, tuple)):
-            formats = format
-        else:
-            formats = [format]
-        hdfout = self.tmpfile % 'hdf'
-        for format in formats:
-            try:
-                self.TEST_ARRAY.write(hdfout, format=format)
-            except ImportError as e:
-                self.skipTest(str(e))
-            finally:
-                if delete and os.path.isfile(hdfout):
-                    os.remove(hdfout)
-        return hdfout
-
-    def test_hdf5_read(self, format=[None, 'hdf5', 'hdf']):
+    def _test_read_write(self, format, extension=None, auto=True, exclude=[],
+                         readkwargs={}, writekwargs={}):
+        if extension is None:
+            extension = format
+        extension = '.%s' % extension.lstrip('.')
         try:
-            hdfout = self.test_hdf5_write(delete=False, format='hdf5')
-        except ImportError as e:
-            self.skipTest(str(e))
-        else:
-            if isinstance(format, (list, tuple)):
-                formats = format
-            else:
-                formats = [format]
-            try:
-                for format in formats:
-                    ts = self.TEST_CLASS.read(hdfout, format=format)
-                    self.assertArraysEqual(self.TEST_ARRAY, ts)
-            finally:
-                if os.path.isfile(hdfout):
-                    os.remove(hdfout)
+            fp = tempfile.mktemp(suffix=extension)
+            self.TEST_ARRAY.write(fp, format=format, **writekwargs)
+            if auto:
+                self.TEST_ARRAY.write(fp, **writekwargs)
+            b = self.TEST_ARRAY.read(fp, self.TEST_ARRAY.name,
+                                     format=format, **readkwargs)
+            if auto:
+                self.TEST_ARRAY.read(fp, self.TEST_ARRAY.name,
+                                     **readkwargs)
+            self.assertArraysEqual(self.TEST_ARRAY, b, exclude=exclude)
+            return b
+        finally:
+            if os.path.exists(fp):
+                os.remove(fp)
 
 
 class ArrayTestCase(CommonTests, unittest.TestCase):
@@ -550,18 +543,19 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
             self.assertEqual(ts1.value_at(1500 * units.milliHertz),
                              4 * units.m)
 
+    # -- test I/O -------------------------------
+
     def test_read_write_ascii(self):
-        a = self.TEST_CLASS([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], dx=.5, x0=10)
-        # assert explicit format works
-        with tempfile.NamedTemporaryFile(suffix='.txt') as f:
-            a.write(f.name, format='txt')
-            b = self.TEST_CLASS.read(f.name)
-        self.assertArraysEqual(a, b)
-        # assert auto-format works
-        with tempfile.NamedTemporaryFile(suffix='.txt') as f:
-            a.write(f.name)
-            b = self.TEST_CLASS.read(f.name)
-        self.assertArraysEqual(a, b)
+        try:
+            with tempfile.NamedTemporaryFile(suffix='.txt', delete=False) as f:
+                self.TEST_ARRAY.write(f.name, format='txt')
+                self.TEST_ARRAY.write(f.name)
+                b = self.TEST_ARRAY.read(f.name, format='txt')
+                self.TEST_ARRAY.read(f.name)
+                nptest.assert_array_equal(self.TEST_ARRAY.value, b.value)
+        finally:
+            if os.path.exists(f.name):
+               os.remove(f.name)
 
 
 class Array2DTestCase(CommonTests, unittest.TestCase):

@@ -1,6 +1,28 @@
-languages:
-  Python: true
+engines:
+  duplication:
+    enabled: true
+    config:
+      languages:
+      - python
+  fixme:
+    enabled: true
+    config:
+      strings:
+      - FIXME
+      - XXX
+  pep8:
+    enabled: true
+  radon:
+    enabled: true
+ratings:
+  paths:
+  - "**.py"
+
 exclude_paths:
-  - "gwpy/tests/data/*"
-  - "docs/*"
-  - "examples/*"
+- ez_setup.py
+- versioneer.py
+- gwpy/_version.py
+- gwpy/tests/*
+- gwpy/tests/data/*
+- docs/*
+- examples/*

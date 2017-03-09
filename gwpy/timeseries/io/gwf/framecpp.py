@@ -20,213 +20,78 @@
 """
 
 from __future__ import division
-import __builtin__
 
 import numpy
 
-from ....io.cache import (CacheEntry, file_list)
-from ....time import LIGOTimeGPS
+try:
+    from LDAStools import frameCPP
+except ImportError:
+    import frameCPP
+    FRAME_LIBRARY = 'frameCPP'
+else:
+    FRAME_LIBRARY = 'LDAStools.frameCPP'
+
+from ....detector import Channel
+from ....io.cache import (Cache, CacheEntry, file_list)
 from ....segments import Segment
-from ....utils import (gprint, with_import)
+from ....time import LIGOTimeGPS
 from ... import (TimeSeries, TimeSeriesDict)
 
 from . import channel_dict_kwarg
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-# get frameCPP path
-try:
-    from LDAStools.frameCPP import FrVect
-except ImportError:
-    DEPENDS = 'frameCPP'
-    try:
-        from frameCPP import FrVect
-    except ImportError:
-        FrVect = None
-else:
-    DEPENDS = 'LDAStools.frameCPP'
-
 # get frameCPP type mapping
-if FrVect is not None:
-    NUMPY_TYPE_FROM_FRVECT = {
-        FrVect.FR_VECT_C: numpy.int8,
-        FrVect.FR_VECT_2S: numpy.int16,
-        FrVect.FR_VECT_8R: numpy.float64,
-        FrVect.FR_VECT_4R: numpy.float32,
-        FrVect.FR_VECT_4S: numpy.int32,
-        FrVect.FR_VECT_8S: numpy.int64,
-        FrVect.FR_VECT_8C: numpy.complex64,
-        FrVect.FR_VECT_16C: numpy.complex128,
-        FrVect.FR_VECT_STRING: numpy.string_,
-        FrVect.FR_VECT_2U: numpy.uint16,
-        FrVect.FR_VECT_4U: numpy.uint32,
-        FrVect.FR_VECT_8U: numpy.uint64,
-    }
-# default to LDASTools v2.2.1
-else:
-    NUMPY_TYPE_FROM_FRVECT = {
-        0: numpy.int8,
-        1: numpy.int16,
-        2: numpy.float64,
-        3: numpy.float32,
-        4: numpy.int32,
-        5: numpy.int64,
-        6: numpy.complex64,
-        7: numpy.complex128,
-        8: numpy.string_,
-        9: numpy.uint16,
-        10: numpy.uint32,
-        11: numpy.uint64,
-        12: numpy.uint8,
-    }
+NUMPY_TYPE_FROM_FRVECT = {
+    frameCPP.FrVect.FR_VECT_C: numpy.int8,
+    frameCPP.FrVect.FR_VECT_2S: numpy.int16,
+    frameCPP.FrVect.FR_VECT_8R: numpy.float64,
+    frameCPP.FrVect.FR_VECT_4R: numpy.float32,
+    frameCPP.FrVect.FR_VECT_4S: numpy.int32,
+    frameCPP.FrVect.FR_VECT_8S: numpy.int64,
+    frameCPP.FrVect.FR_VECT_8C: numpy.complex64,
+    frameCPP.FrVect.FR_VECT_16C: numpy.complex128,
+    frameCPP.FrVect.FR_VECT_STRING: numpy.string_,
+    frameCPP.FrVect.FR_VECT_2U: numpy.uint16,
+    frameCPP.FrVect.FR_VECT_4U: numpy.uint32,
+    frameCPP.FrVect.FR_VECT_8U: numpy.uint64,
+}
 
 FRVECT_TYPE_FROM_NUMPY = dict(
     (v, k) for k, v in NUMPY_TYPE_FROM_FRVECT.items())
 
 
-@with_import(DEPENDS)
-def read_timeseriesdict(source, channels, start=None, end=None, type=None,
-                        dtype=None, resample=None, verbose=False,
-                        _SeriesClass=TimeSeries):
-    """Read the data for a list of channels from a GWF data source.
+# -- read ---------------------------------------------------------------------
 
-    Parameters
-    ----------
-    source : `str`, :class:`glue.lal.Cache`, `list`
-        data source object, one of:
-
-        - `str` : frame file path
-        - :class:`glue.lal.Cache`, `list` : contiguous list of frame paths
-
-    channels : `list`
-        list of channel names (or `Channel` objects) to read from frame.
-    start : `Time`, `LIGOTimeGPS`, optional
-        start GPS time of desired data.
-    end : `Time`, `LIGOTimeGPS`, optional
-        end GPS time of desired data.
-    type : `str`
-        type of channel, one of ``'adc'`` or ``'proc'``.
-    dtype : `numpy.dtype`, `str`, `type`, or `dict`
-        numeric data type for returned data, e.g. `numpy.float`, or
-        `dict` of (`channel`, `dtype`) pairs
-    resample : `float`, optional
-        rate of samples per second at which to resample input TimeSeries.
-    verbose : `bool`, optional
-        print verbose output.
-
-    Returns
-    -------
-    dict : :class:`~gwpy.timeseries.TimeSeriesDict`
-        dict of (channel, `TimeSeries`) data pairs
-
-    Notes
-    -----
-    If reading from a list, or cache, or framefiles, the frames contained
-    must be contiguous and sorted in chronological order for this function
-    to return without exception.
-
-    Raises
-    ------
-    ValueError
-        if reading from an unsorted, or discontiguous cache of files
-    """
-    frametype = None
+def read(source, channels, start=None, end=None, type=None,
+         series_class=TimeSeries):
     # parse input source
-    filelist = file_list(source)
-    try:
-        frametype = CacheEntry.from_T050017(filelist[0]).description
-    except ValueError:
-        frametype = None
-    # parse resampling
-    resample = channel_dict_kwarg(resample, channels, (int,))
-    if resample is None:
-        raise ValueError("Cannot parse `resample` request, please review "
-                         "documentation for that argument")
+    if not isinstance(source, Cache):
+        source = file_list(source)
+
     # parse type
-    type = channel_dict_kwarg(type, channels, (str,))
-    if resample is None:
-        raise ValueError("Cannot parse channel `type` request, please review "
-                         "documentation for that argument")
-    # parse dtype
-    dtype = channel_dict_kwarg(dtype, channels, (str, __builtin__.type),
-                               astype=numpy.dtype)
-    if dtype is None:
-        raise ValueError("Cannot parse `dtype` request, please review "
-                         "documentation for that argument")
+    ctype = channel_dict_kwarg(type, channels, (str,))
+
     # read each individually and append
-    N = len(filelist)
-    if verbose:
-        if not isinstance(verbose, (unicode, str)):
-            verbose = ''
-        gprint("%sReading %d channels from frames... 0/%d (0.00%%)\r"
-               % (verbose, len(channels), N), end='')
-    out = TimeSeriesDict()
-    for i, fp in enumerate(filelist):
+    out = series_class.DictClass()
+    for i, fp in enumerate(source):
+        if i == 1:  # force data into fresh memory so that append works
+            for name in out:
+                out[name] = numpy.require(out[name], requirements=['O'])
         # read frame
-        new = _read_frame(fp, channels, start=start, end=end, ctype=type,
-                          dtype=dtype, _SeriesClass=_SeriesClass)
-        # get channel type for next frame (means we only query the TOC once)
-        if not i:
-            for channel, ts in new.iteritems():
-                type[channel] = ts.channel._ctype
-        # store
-        out.append(new, copy=False)
-        if verbose is not False:
-            gprint("%sReading %d channels from frames... %d/%d (%.1f%%)\r"
-                   % (verbose, len(channels), i+1, N, (i+1)/N * 100), end='')
-    if verbose is not False:
-        gprint("%sReading %d channels from frames... %d/%d (100.0%%)"
-               % (verbose, len(channels), N, N))
-    # finalise
-    for channel, ts in out.iteritems():
-        ts.channel.sample_rate = ts.sample_rate
-        ts.channel.unit = ts.unit
-        ts.channel.frametype = frametype
-        # resample data
-        if resample is not None and channel in resample:
-            out[channel] = out[channel].resample(resample[channel])
-        # crop data
-        if start is not None or end is not None:
-            out[channel] = out[channel].crop(start=start, end=end)
-        # copy into fresh memory if needed
-        out[channel] = numpy.require(out[channel], requirements=['O'])
+        out.append(_read_framefile(fp, channels, start=start, end=end,
+                                   ctype=ctype, series_class=series_class),
+                   copy=False)
     return out
 
 
-def _read_frame(framefile, channels, start=None, end=None, ctype=None,
-                dtype=None, _SeriesClass=TimeSeries):
+def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
+                    series_class=TimeSeries):
     """Internal function to read data from a single frame.
-
-    All users should be using the wrapper `read_timeseriesdict`.
-
-    Parameters
-    ----------
-    framefile : `str`, :class:`~glue.lal.CacheEntry`
-        path to GWF-format frame file on disk.
-    channels : `list`
-        list of channels to read.
-    start : `Time`, `LIGOTimeGPS`, optional
-        start GPS time of desired data.
-    end : `Time`, `LIGOTimeGPS`, optional
-        end GPS time of desired data.
-    ctype : `str`, optional
-        channel data type to read, one of: ``'adc'``, ``'proc'``.
-    dtype : `numpy.dtype`, `str`, `type`, `dict`
-    _SeriesClass : `type`, optional
-        class object to use as the data holder for a single channel,
-        default is :class:`~gwpy.timeseries.TimeSeries`
-
-    Returns
-    -------
-    dict : :class:`~gwpy.timeseries.TimeSeriesDict`
-        dict of (channel, `TimeSeries`) data pairs
     """
-    if isinstance(channels, (unicode, str)):
-        channels = channels.split(',')
-
     # construct span segment
-    span = Segment(start is not None and start or -numpy.inf,
-                   end is not None and end or numpy.inf)
+    span = Segment(start is not None and start or 0,
+                   end is not None and end or 0)
 
     # open file
     if isinstance(framefile, CacheEntry):
@@ -235,51 +100,54 @@ def _read_frame(framefile, channels, start=None, end=None, ctype=None,
         fp = framefile
     stream = frameCPP.IFrameFStream(fp)
 
-    # interpolate frame epochs from CacheEntry
+    # get number of frames in file
     try:
         nframe = int(stream.GetNumberOfFrames())
     except (AttributeError, ValueError):
         nframe = None
-    if isinstance(framefile, CacheEntry) and nframe == 1:
-        epochs = [float(framefile.segment[0])]
+
+    # if single frame, trust filename to provide GPS epoch of data
+    # as required by the file-naming convention
+    epochs = None
+    try:
+        ce = CacheEntry.from_T050017(fp)
+    except ValueError:
+        pass
     else:
-        epochs = None
-
-    # load table of contents if needed
-    if epochs is None or not ctype:
-        toc = stream.GetTOC()
-    # get list of frame epochs
+        if nframe == 1:
+            epochs = [float(ce.segment[0])]
     if epochs is None:
-        epochs = toc.GTimeS
-    # work out channel types
-    if not ctype:
-        try:
-            adcs = toc.GetADC().keys()
-        except AttributeError:
-            adcs = toc.GetADC()
-        try:
-            procs = toc.GetProc().keys()
-        except AttributeError:
-            procs = toc.GetProc()
-        ctype = {}
-        for channel in channels:
-            name = str(channel)
-            if name in adcs:
-                ctype[channel] = 'adc'
-            elif name in procs:
-                ctype[channel] = 'proc'
-            else:
-                raise ValueError("Channel %s not found in frame table of "
-                                 "contents" % name)
+        toc = stream.GetTOC()
+        epochs = [LIGOTimeGPS(s, n) for s, n in zip(toc.GTimeS, toc.GTimeN)]
 
-    # set output
-    out = TimeSeriesDict()
+    toclist = {}  # only get names once
     for channel in channels:
+        # if ctype not declared, find it from the table-of-contents
+        if not ctype.get(channel, None):
+            toc = stream.GetTOC()
+            for typename in ['Sim', 'Proc', 'ADC']:
+                if not typename in toclist:
+                    get_ = getattr(toc, 'Get%s' % typename)
+                    try:
+                        toclist[typename] = get_().keys()
+                    except AttributeError:
+                        toclist[typename] = get_()
+                if str(channel) in toclist[typename]:
+                    ctype[channel] = typename.lower()
+                    break
+        # if still not found, channel isn't in the frame
+        if not ctype.get(channel, None):
+           raise ValueError("Channel %s not found in frame table of contents"
+                            % str(channel))
+
+    # find channels
+    out = series_class.DictClass()
+    for channel in channels:
+
         name = str(channel)
         read_ = getattr(stream, 'ReadFr%sData' % ctype[channel].title())
         ts = None
         i = 0
-        dtype_ = dtype.get(channel, None)
         while True:
             try:
                 data = read_(i, name)
@@ -289,33 +157,41 @@ def _read_frame(framefile, channels, start=None, end=None, ctype=None,
                 else:  # some other problem (likely channel not present)
                     raise
             offset = data.GetTimeOffset()
-            thisepoch = epochs[i] + offset
-            try:
-                thisspan = Segment(thisepoch, thisepoch + data.GetTRange())
-            except AttributeError:
-                pass
-            else:
-                if not thisspan.intersects(span):
-                    i += 1
-                    continue
-            for vect in data.data:
+            datastart = epochs[i] + offset
+            for vect in data.data:  # loop hopefully over single vector
+                # decompress data
                 arr = vect.GetDataArray()
+                dim = vect.GetDim(0)
+                dx = dim.dx
+                sx = dim.startX
                 if isinstance(arr, buffer):
                     arr = numpy.frombuffer(
                         arr, dtype=NUMPY_TYPE_FROM_FRVECT[vect.GetType()])
-                dx = vect.GetDim(0).dx
+                # crop to required subset
+                dimstart = datastart + sx
+                dimend = dimstart + arr.size * dx
+                a = int(max(0., float(span[0]-dimstart)) / dx)
+                if span[1]:
+                    b = arr.size - int(max(0., float(dimend-span[1])) / dx)
+                else:
+                    b = None
+                if a >= arr.size or b is not None and b <= a:
+                    raise ValueError("Span %s not covered by FrVect for %r "
+                                     "in %s" % (span, name, fp))
+                if a or b:
+                    arr = arr[a:b]
+                # cast as series or append
                 if ts is None:
-                    # create array
+                    # get unit
                     unit = vect.GetUnitY() or None
+                    # create array - need require() to prevent segfault
                     ts = numpy.require(
-                        _SeriesClass(arr, epoch=thisepoch, dx=dx, name=name,
-                                     channel=channel, unit=unit, dtype=dtype_,
-                                     copy=False), requirements=['O'])
-                    if not ts.channel.dtype:
-                        ts.channel.dtype = arr.dtype
-                    ts.channel._ctype = ctype[channel]
-                elif arr.dtype != ts.dtype:
-                    ts.append(arr.astype(dtype_))
+                        series_class(arr, t0=dimstart+a*dx, dt=dx, name=name,
+                                     channel=channel, unit=unit, copy=False),
+                        requirements=['O'])
+                    # add information to channel
+                    ts.channel.sample_rate = ts.sample_rate.value
+                    ts.channel.unit = unit
                 else:
                     ts.append(arr)
             i += 1
@@ -328,25 +204,13 @@ def _read_frame(framefile, channels, start=None, end=None, ctype=None,
     return out
 
 
-@with_import(DEPENDS)
-def write_timeseriesdict(tsdict, outfile, start=None, end=None):
-    """Write a GWF file containing data from a `TimeSeriesDict`
+# -- write --------------------------------------------------------------------
 
-    Parameters
-    ----------
-    tsdict : `TimeSeriesDict`
-        data to write
-    outfile : `str`
-        the output file path to write to
-    start : `~gwpy.time.LIGOTimeGPS`, optional
-        the desired GPS start time of the output data
-        (defaults to start of given data)
-    end : `~gwpy.time.LIGOTimeGPS`, optional
-        the desired GPS end time of the output data
-        (defaults to end of given data)
+def write(tsdict, outfile, start=None, end=None, name='gwpy', run=0):
+    """Write data to a GWF file using the frameCPP API
     """
     stream = frameCPP.OFrameFStream(outfile)
-    frame = create_frame(tsdict, start=start, end=end)
+    frame = create_frame(tsdict, start=start, end=end, name=name, run=run)
     stream.WriteFrame(
         frame,  # frame to write
         frameCPP.FrVect.RAW,  # compression scheme
@@ -354,25 +218,9 @@ def write_timeseriesdict(tsdict, outfile, start=None, end=None):
     )
 
 
-@with_import(DEPENDS)
-def create_frame(tsdict, start=None, end=None):
+def create_frame(tsdict, start=None, end=None,
+                 name='gwpy', run=0):
     """Create a new `~frameCPP.FrameH` and fill it with data
-
-    Parameters
-    ----------
-    tsdict : `TimeSeriesDict`
-        a `dict` of `(key, timeseries)` pairs
-    start : `~gwpy.time.LIGOTimeGPS`, optional
-        the desired GPS start time of the output data
-        (defaults to start of given data)
-    end : `~gwpy.time.LIGOTimeGPS`, optional
-        the desired GPS end time of the output data
-        (defaults to end of given data)
-
-    Returns
-    -------
-    frame : `~frameCPP.FrameH`
-        a new frame filled with data
     """
     if not start:
         starts = set([LIGOTimeGPS(tsdict[c].x0.value) for c in tsdict])
@@ -389,46 +237,67 @@ def create_frame(tsdict, start=None, end=None):
                                "please write into different frames")
         end = list(ends)[0]
     duration = end - start
+    lstart = LIGOTimeGPS(start)
+    start = frameCPP.GPSTime(lstart.gpsSeconds, lstart.gpsNanoSeconds)
+
     # create frame
     frame = frameCPP.FrameH()
-    # set start time
-    start = LIGOTimeGPS(start)
-    frame.SetGTime(frameCPP.GPSTime(start.seconds, start.nanoseconds))
-    # set duration
+
+    # append detectors
+    for prefix in set([
+            ts.channel.ifo for ts in tsdict.values() if
+            ts.channel and ts.channel.ifo]):
+        try:
+            idx = getattr(frameCPP, 'DETECTOR_LOCATION_%s' % prefix)
+        except AttributeError:
+            continue
+        #frame.appendFrDetector(frameCPP.GetDetector(idx, start))
+
+    # set header metadata
+    frame.SetGTime(start)
     frame.SetDt(float(duration))
+    frame.SetName(name)
+    frame.SetRun(run)
+
     # append channels
     for i, c in enumerate(tsdict):
         try:
             ctype = tsdict[c].channel._ctype or 'proc'
         except AttributeError:
             ctype = 'proc'
-        append_to_frame(frame, tsdict[c].crop(start, end),
+        append_to_frame(frame, tsdict[c].crop(lstart, end),
                         type=ctype, channelid=i)
     return frame
 
 
-@with_import(DEPENDS)
-def append_to_frame(frame, timeseries, type='proc',
-                    channelid=0, channelgroup=0):
+def append_to_frame(frame, timeseries, type='proc', channelid=0):
     """Append data from a `TimeSeries` to a `~frameCPP.FrameH`
 
     Parameters
     ----------
     frame : `~frameCPP.FrameH`
         frame object to append to
+
     timeseries : `TimeSeries`
         the timeseries to append
+
     type : `str`
         the type of the channel, one of 'adc', 'proc', 'sim'
-    channelgroup : `int`, optional
-        the ID of the group for this channel
+
     channelid : `int`, optional
-        the ID of the channel within the group
+        the ID of the channel within the group (only used for ADC channels)
     """
+    if timeseries.channel:
+        channel = str(timeseries.channel)
+    else:
+        channel = str(timeseries.name)
+
+    offset = timeseries.t0.value - float(LIGOTimeGPS(*frame.GetGTime()))
+
     # create the data container
     if type.lower() == 'adc':
         frdata = frameCPP.FrAdcData(
-            str(timeseries.channel),
+            channel,
             0,  # channel group
             channelid,  # channel number in group
             16,  # number of bits in ADC
@@ -437,11 +306,11 @@ def append_to_frame(frame, timeseries, type='proc',
         append = frame.AppendFrAdcData
     elif type.lower() == 'proc':
         frdata = frameCPP.FrProcData(
-            str(timeseries.channel),  # channel name
+            channel,  # channel name
             str(timeseries.name),  # comment
             frameCPP.FrProcData.TIME_SERIES,  # ID as time-series
             frameCPP.FrProcData.UNKNOWN_SUB_TYPE,  # empty sub-type (fseries)
-            0.,  # offset of first sample relative to frame start
+            offset,  # offset of first sample relative to frame start
             abs(timeseries.span),  # duration of data
             0.,  # heterodyne frequency
             0.,  # phase of heterodyne
@@ -454,7 +323,7 @@ def append_to_frame(frame, timeseries, type='proc',
             str(timeseries.channel),  # channel name
             str(timeseries.name),  # comment
             timeseries.sample_rate.value,  # sample rate
-            0.,  # time offset of first sample
+            offset,  # time offset of first sample
             0.,  # heterodyne frequency
             0.,  # phase of heterodyne
         )
@@ -467,7 +336,6 @@ def append_to_frame(frame, timeseries, type='proc',
     append(frdata)
 
 
-@with_import(DEPENDS)
 def create_frvect(timeseries):
     """Create a `~frameCPP.FrVect` from a `TimeSeries`
 
@@ -487,7 +355,7 @@ def create_frvect(timeseries):
     # create timing dimension
     dims = frameCPP.Dimension(
         timeseries.size, timeseries.dx.value,
-        str(timeseries.dx.unit), timeseries.x0.value)
+        str(timeseries.dx.unit), 0)
     # create FrVect
     vect = frameCPP.FrVect(
         timeseries.name or '', FRVECT_TYPE_FROM_NUMPY[timeseries.dtype.type],

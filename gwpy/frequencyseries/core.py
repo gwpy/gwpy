@@ -273,8 +273,8 @@ class FrequencySeries(Series):
         # parse keyword args
         inplace = kwargs.pop('inplace', False)
         if kwargs:
-            raise TypeError("FrequencySeries.filter() got an unexpected keyword "
-                            "argument '%s'" % list(kwargs.keys())[0])
+            raise TypeError("FrequencySeries.filter() got an unexpected "
+                            "keyword argument '%s'" % list(kwargs.keys())[0])
         fresp = abs(signal.freqs(b, a, self.frequencies.value)[1])
         if inplace:
             self.value *= fresp
@@ -286,8 +286,8 @@ class FrequencySeries(Series):
 
     def filterba(self, *args, **kwargs):
         warnings.warn("filterba will be removed soon, please use "
-                      "FrequencySeries.filter instead, with the same arguments",
-                      DeprecationWarning)
+                      "FrequencySeries.filter instead, with the same "
+                      "arguments", DeprecationWarning)
         return self.filter(*args, **kwargs)
 
     @classmethod

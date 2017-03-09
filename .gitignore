@@ -44,7 +44,7 @@ pip-delete-this-directory.txt
 # Examples output
 /examples/*.png
 /examples/*/*.png
-/docs/examples/*/*
+/docs/examples/*/*.rst
 
 # Patches
 /*.patch
