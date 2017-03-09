@@ -39,18 +39,18 @@ python:
 
 env:
   # minimal build, normal tests
-  - PIP_FLAGS="--quiet" MINIMAL=true PYTEST_FLAGS="-v -r s"
+  - PIP_FLAGS="--upgrade" MINIMAL=true PYTEST_FLAGS="-v -r s"
   # normal build, normal tests
-  - PIP_FLAGS="--quiet" MINIMAL=false PYTEST_FLAGS="-v -r s"
+  - PIP_FLAGS="--upgrade" MINIMAL=false PYTEST_FLAGS="-v -r s"
   # normal build, pedantic tests
-  - PIP_FLAGS="--quiet" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
+  - PIP_FLAGS="--upgrade" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
   # pre-release build, pedantic tests
-  - PIP_FLAGS="--quiet --pre" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
+  - PIP_FLAGS="--upgrade --pre" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
 
 matrix:
   allow_failures:
     - python: '2.7'
-      env: PIP_FLAGS="--quiet --pre" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
+      env: PIP_FLAGS="--upgrade --pre" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
     - python: '3.5'
   fast_finish: true
 
