@@ -25,8 +25,8 @@ from math import floor
 import numpy
 
 from astropy.units import (Unit, Quantity, dimensionless_unscaled)
+from astropy.io import registry as io_registry
 
-from ..io import registry as io_registry
 from .array import Array
 from .index import Index
 

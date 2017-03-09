@@ -46,7 +46,8 @@ from glue.ligolw.lsctables import *
 from glue.ligolw.types import ToNumPyType as NUMPY_TYPE
 from glue.ligolw.ilwd import get_ilwdchar_class
 
-from ..io import registry as io_registry
+from astropy.io import registry as io_registry
+
 from ..time import to_gps
 from ..utils.deps import with_import
 from .rec import GWRecArray

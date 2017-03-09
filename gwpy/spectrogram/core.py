@@ -29,10 +29,10 @@ import scipy
 from scipy import signal
 
 from astropy import units
+from astropy.io import registry as io_registry
 from astropy.time import Time
 
 from ..detector import Channel
-from ..io import registry as io_registry
 from ..types import (Array2D, Series)
 from ..segments import Segment
 from ..timeseries import (TimeSeries, TimeSeriesList)
