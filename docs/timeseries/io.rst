@@ -81,6 +81,10 @@ When reading multiple files, the ``nproc`` keyword argument can be used to distr
 
 The above command will separate the input list of 4 file paths into two sets of 2 files, combining the results into a single `TimeSeries` before returning.
 
+The ``start`` and ``end`` keyword arguments can be used to downselect data to a specific ``[start, end)`` time segment when reading::
+
+    >>> data = TimeSeries.read('HLV-GW100916-968654552-1.gwf', 'L1:LDAS-STRAIN', start=968654552.5, end=968654553)
+
 Additionally, the following keyword arguments can be passed to manipulate the data on-the-fly when reading:
 
 ============  =======  ==========================================
@@ -141,6 +145,10 @@ Reading
 To read `TimeSeries` or `StateVector` data held in HDF5 files pass the filename (or filenames) or the source, and the path of the data inside the HDF5 file::
 
    >>> data = TimeSeries.read('HLV-GW100916-968654552-1.hdf', 'L1:LDAS-STRAIN')
+
+As with GWF, the ``start`` and ``end`` keyword arguments can be used to downselect data to a specific ``[start, end)`` time segment when reading::
+
+    >>> data = TimeSeries.read('HLV-GW100916-968654552-1.hdf', 'L1:LDAS-STRAIN', start=968654552.5, end=968654553)
 
 Writing
 -------
