@@ -102,29 +102,11 @@ class FrequencySeriesTestCase(SeriesTestCase):
         array2 = type(array).from_pycbc(pycbcarray)
         self.assertArraysEqual(array, array2, 'units', 'df', 'f0')
 
-    def _test_read_write(self, extension, fmt=None, **metadata):
-        if fmt is None:
-            fmt = extension.strip('.')
-        if not extension.startswith('.'):
-            extension = '.%s' % extension
-        array = self.create(**metadata)
-        fp = tempfile.mktemp(suffix=extension)
-        try:
-            array.write(fp, format=fmt)
-            array2 = self.TEST_CLASS.read(fp, format=fmt)
-        finally:
-            if os.path.exists(fp):
-                os.remove(fp)
-        self.assertArraysEqual(array, array2)
-
     def test_read_write_hdf5(self):
-        self.assertRaises(ValueError, self._test_read_write, 'hdf', fmt='hdf')
-        self._test_read_write('hdf', fmt='hdf', name='Array name')
-        self._test_read_write('hdf', name='Array name')
-
-    def test_read_write_txt(self):
-        self._test_read_write('txt', fmt='txt')
-        self._test_read_write('txt')
+        self._test_read_write('hdf5', auto=False)
+        self._test_read_write('hdf5', auto=True,
+                              writekwargs={'overwrite': True})
+        self._test_read_write('hdf', auto=False)
 
 
 class SpectralVarianceTestCase(Array2DTestCase):
