@@ -47,10 +47,11 @@ from numpy import inf
 
 from glue.segments import PosInfinity
 
+from astropy.io import registry as io_registry
+
 from ..time import to_gps
 from ..utils.deps import with_import
 from ..utils.compat import OrderedDict
-from ..io import (reader, writer)
 from .segments import Segment, SegmentList
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -529,40 +530,40 @@ class DataQualityFlag(object):
 
         return out
 
-    # use input/output registry to allow multi-format reading
-    read = classmethod(reader(doc="""
-    Read segments from file into a `DataQualityFlag`.
+    @classmethod
+    def read(cls, source, *args, **kwargs):
+        """Read segments from file into a `DataQualityFlag`.
 
-    Parameters
-    ----------
-    filename : `str`
-        path of file to read
-    format : `str`, optional
-        source format identifier. If not given, the format will be
-        detected if possible. See below for list of acceptable
-        formats.
-    flag : `str`, optional, default: read all segments
-        name of flag to read from file.
-    coltype : `type`, optional, default: `float`
-        datatype to force for segment times, only valid for
-        ``format='segwizard'``.
-    strict : `bool`, optional, default: `True`
-        require segment start and stop times match printed duration,
-        only valid for ``format='segwizard'``.
+        Parameters
+        ----------
+        filename : `str`
+            path of file to read
 
+        flag : `str`, optional, default: read all segments
+            name of flag to read from file.
 
-    Returns
-    -------
-    dqflag : `DataQualityFlag`
-        formatted `DataQualityFlag` containing the active and known
-        segments read from file.
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
 
-    Notes
-    -----
-    When reading with ``format='segwizard'`` the
-    :attr:`~DataQualityFlag.known` `SegmentList` will simply represent
-    the extent of the :attr:`~DataQualityFlag.active` `SegmentList`.
-    """))
+        coltype : `type`, optional, default: `float`
+            datatype to force for segment times, only valid for
+            ``format='segwizard'``.
+
+        strict : `bool`, optional, default: `True`
+            require segment start and stop times match printed duration,
+            only valid for ``format='segwizard'``.
+
+        Returns
+        -------
+        dqflag : `DataQualityFlag`
+            formatted `DataQualityFlag` containing the active and known
+            segments read from file.
+
+        Notes
+        -----"""
+        return io_registry.read(cls, source, *args, **kwargs)
 
     @classmethod
     def from_veto_def(cls, veto):
@@ -583,7 +584,12 @@ class DataQualityFlag(object):
     # -------------------------------------------------------------------------
     # instance methods
 
-    write = writer()
+    def write(self, target, *args, **kwargs):
+        """Write this `DataQualityFlag` to file
+
+        Notes
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
 
     def populate(self, source='https://segments.ligo.org', segments=None,
                  pad=True, **kwargs):
@@ -1132,33 +1138,37 @@ class DataQualityDict(OrderedDict):
                 new[flag] = result
         return new
 
-    # use input/output registry to allow multi-format reading
-    read = classmethod(reader(doc="""
-    Read segments from file into a `DataQualityDict`.
+    @classmethod
+    def read(cls, source, flags=None, format=None, **kwargs):
+        """Read segments from file into a `DataQualityDict`
 
-    Parameters
-    ----------
-    filename : `str`
-        path of file to read
-    format : `str`, optional
-        source format identifier. If not given, the format will be
-        detected if possible. See below for list of acceptable
-        formats.
-    flags : `list`, optional, default: read all flags found
-        list of flags to read, by default all flags are read separately.
-    coalesce : `bool`, optional, default: `True`
-        coalesce all `SegmentLists` before returning.
+        Parameters
+        ----------
+        source : `str`
+            path of file to read
 
-    Returns
-    -------
-    flagdict : `DataQualityDict`
-        a new `DataQualityDict` of `DataQualityFlag` entries with ``active``
-        and ``known`` segments seeded from the XML tables in the given
-        file.
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
 
-    Notes
-    -----
-    """))
+        flags : `list`, optional, default: read all flags found
+            list of flags to read, by default all flags are read separately.
+
+        coalesce : `bool`, optional, default: `True`
+            coalesce all `SegmentLists` before returning.
+
+        Returns
+        -------
+        flagdict : `DataQualityDict`
+            a new `DataQualityDict` of `DataQualityFlag` entries with ``active``
+            and ``known`` segments seeded from the XML tables in the given
+            file.
+
+        Notes
+        -----"""
+        return io_registry.read(cls, source, flags=flags, format=format,
+                                **kwargs)
 
     @classmethod
     def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None,
@@ -1235,7 +1245,12 @@ class DataQualityDict(OrderedDict):
     # -----------------------------------------------------------------------
     # instance methods
 
-    write = writer()
+    def write(self, target, *args, **kwargs):
+        """Write this `DataQualityDict` to file
+
+        Notes
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
 
     def populate(self, source='https://segments.ligo.org',
                  segments=None, pad=True, on_error='raise', **kwargs):

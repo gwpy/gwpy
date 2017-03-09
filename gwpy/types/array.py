@@ -33,7 +33,6 @@ import numpy
 
 from astropy.units import Quantity
 
-from ..io import (reader, writer)
 from ..detector import Channel
 from ..detector.units import parse_unit
 from ..time import (Time, to_gps)
@@ -374,11 +373,6 @@ class Array(Quantity):
         except AttributeError:
             pass
 
-    # -- I/O methods ----------------------------
-
-    read = classmethod(reader())
-    write = writer()
-
     # -- array methods --------------------------
 
     def median(self, axis=None, **kwargs):
@@ -420,42 +414,3 @@ class Array(Quantity):
             if a `str` cannot be parsed as a valid unit
         """
         self._unit = parse_unit(unit, parse_strict=parse_strict)
-
-    # -------------------------------------------
-    # extras
-
-    # use input/output registry to allow multi-format reading
-    read = classmethod(reader())
-    write = writer()
-
-    def to_hdf5(self, *args, **kwargs):
-        """Convert this array to a :class:`h5py.Dataset`.
-
-        This method has been deprecated in favour of the unified I/O method:
-
-        Class.write(..., format='hdf5')
-        """
-        warnings.warn("The {0}.to_hdf5 and {0}.from_hdf5 methods have been "
-                      "deprecated and will be removed in an upcoming release. "
-                      "Please use the unified I/O methods {0}.read() and "
-                      "{0}.write() with the `format='hdf5'` keyword "
-                      "argument".format(type(self).__name__),
-                      DeprecationWarning)
-        kwargs.setdefault('format', 'hdf5')
-        return self.write(*args, **kwargs)
-
-    @classmethod
-    def from_hdf5(cls, *args, **kwargs):
-        """Read an array from the given HDF file.
-
-        This method has been deprecated in favour of the unified I/O method:
-
-        Class.write(..., format='hdf5')
-        """
-        warnings.warn("The {0}.to_hdf5 and {0}.from_hdf5 methods have been "
-                      "deprecated and will be removed in an upcoming release. "
-                      "Please use the unified I/O methods {0}.read() and "
-                      "{0}.write() with the `format='hdf5'` keyword "
-                      "argument".format(cls.__name__), DeprecationWarning)
-        kwargs.setdefault('format', 'hdf5')
-        return cls.read(*args, **kwargs)
