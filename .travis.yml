@@ -36,7 +36,6 @@ addons:
 python:
   - '2.7'
   - '3.5'
-  - 'nightly'
 
 env:
   # minimal build, normal tests
@@ -53,7 +52,6 @@ matrix:
     - python: '2.7'
       env: PIP_FLAGS="--quiet --pre" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
     - python: '3.5'
-    - python: 'nightly'
   fast_finish: true
 
 before_install:
