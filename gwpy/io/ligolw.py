@@ -41,10 +41,12 @@ from glue.ligolw.ligolw import LIGOLWContentHandler
 class GWpyContentHandler(LIGOLWContentHandler):
     """Empty sub-class of `~glue.ligolw.ligolw.LIGOLWContentHandler`
     """
-    warnings.warn("GWpyContentHandler has been deprecated and will be removed "
-                  "in an upcoming release, please use "
-                  "glue.ligolw.ligolw.LIGOLWContentHandler or similar",
-                  DeprecationWarning)
+    def __init__(self, *args, **kwargs):
+        warnings.warn("GWpyContentHandler has been deprecated and will be "
+                      "removed in an upcoming release, please use "
+                      "glue.ligolw.ligolw.LIGOLWContentHandler or similar",
+                      DeprecationWarning)
+        return super(GWpyContentHandler).__init__(self, *args, **kwargs)
 
 
 def get_partial_contenthandler(table):
