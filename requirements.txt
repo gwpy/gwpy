@@ -1,5 +1,5 @@
 six>=1.5
-numpy>=1.7
+numpy>=1.10
 scipy>=0.16
 astropy>=1.2
 matplotlib>=1.4.1

@@ -59,7 +59,7 @@ before_install:
   - pip install ${PIP_FLAGS} --upgrade pip
 
   # build and install numpy first
-  - pip install ${PIP_FLAGS} "numpy>=1.7"
+  - pip install ${PIP_FLAGS} "numpy>=1.10"
 
   # build src packages and set 'latest' package versions (if required)
   - source .travis/build-src-dependencies.sh

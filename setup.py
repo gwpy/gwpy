@@ -63,7 +63,7 @@ setup_requires = [
 ]
 install_requires = [
     'python-dateutil',
-    'numpy>=1.7',
+    'numpy>=1.10',
     'scipy>=0.16.0',
     'matplotlib>=1.3.0',
     'astropy>=1.2',
