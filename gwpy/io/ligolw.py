@@ -43,7 +43,8 @@ class GWpyContentHandler(LIGOLWContentHandler):
     """
     warnings.warn("GWpyContentHandler has been deprecated and will be removed "
                   "in an upcoming release, please use "
-                  "glue.ligolw.ligolw.LIGOLWContentHandler or similar")
+                  "glue.ligolw.ligolw.LIGOLWContentHandler or similar",
+                  DeprecationWarning)
 
 
 def get_partial_contenthandler(table):
