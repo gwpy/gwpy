@@ -25,12 +25,30 @@ import tempfile
 
 from compat import unittest
 
+import scipy
+
 from astropy import units
 
 from gwpy import astro
 from gwpy.timeseries import TimeSeries
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+# something changed in scyip 0.19, something FFT-related
+if scipy.__version__ < '0.19':
+    TEST_RESULTS = {
+        'inspiral_range': 19.63704209223392,
+        'inspiral_range_psd': 7.915847068684727,
+        'burst_range': 13.813232309724613,
+        'burst_range_spectrum': 35.19303454822539,
+    }
+else:
+    TEST_RESULTS = {
+        'inspiral_range': 19.63872448570372,
+        'inspiral_range_psd': 7.92640311063505,
+        'burst_range': 13.815456279746522,
+        'burst_range_spectrum': 35.216492263916535,
+    }
 
 
 class AstroTests(unittest.TestCase):
@@ -49,26 +67,27 @@ class AstroTests(unittest.TestCase):
     def test_inspiral_range(self):
         r = astro.inspiral_range(self.psd, fmin=40)
         self.assertEqual(r.unit, units.Mpc)
-        self.assertAlmostEqual(r.value, 19.63704209223392)
+        self.assertAlmostEqual(r.value, TEST_RESULTS['inspiral_range'])
         return r
 
     def test_inspiral_range_psd(self):
         r = astro.inspiral_range_psd(self.psd)
         self.assertEqual(r.unit, units.Mpc ** 2 / units.Hertz)
-        self.assertAlmostEqual(r.max().value, 7.915847068684727)
+        self.assertAlmostEqual(r.max().value, TEST_RESULTS['inspiral_range_psd'])
         return r
 
     def test_burst_range(self):
         r = astro.burst_range(self.psd[self.psd.frequencies.value < 1000])
         self.assertEqual(r.unit, units.Mpc)
-        self.assertAlmostEqual(r.value, 13.813232309724613)
+        self.assertAlmostEqual(r.value, TEST_RESULTS['burst_range'])
         return r
 
     def test_burst_range_spectrum(self):
         r = astro.burst_range_spectrum(
             self.psd[self.psd.frequencies.value < 1000])
         self.assertEqual(r.unit, units.Mpc)
-        self.assertAlmostEqual(r.max().value, 35.19303454822539)
+        self.assertAlmostEqual(r.max().value,
+                               TEST_RESULTS['burst_range_spectrum'])
         return r
 
 
