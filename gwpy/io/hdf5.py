@@ -36,7 +36,7 @@ def open_hdf5(filename, mode='r'):
     import h5py
     if isinstance(filename, (h5py.Group, h5py.Dataset)):
         return filename
-    elif isinstance(filename, file):
+    elif isinstance(filename, FILE_LIKE):
         return h5py.File(filename.name, mode)
     else:
         return h5py.File(filename, mode)

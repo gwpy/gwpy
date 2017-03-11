@@ -37,10 +37,16 @@ from glue.lal import (Cache, CacheEntry)
 from astropy.table import (Table, vstack as vstack_tables)
 from astropy.io.registry import _get_valid_format
 
+from ..time import LIGOTimeGPS
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # build list of file-like types
-FILE_LIKE = [file, GzipFile]
+try:  # python2.x
+    FILE_LIKE = [file, GzipFile]
+except NameError:  # python3.x
+    from io import IOBase
+    FILE_LIKE = [IOBase, GzipFile]
 try:  # protect against private member being removed
     FILE_LIKE.append(tempfile._TemporaryFileWrapper)
 except AttributeError:
