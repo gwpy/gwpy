@@ -28,6 +28,8 @@ import subprocess
 import sys
 from math import log
 
+from six import string_types
+
 from astropy import units
 from astropy.io import registry as io_registry
 
@@ -828,7 +830,7 @@ class ChannelList(list):
             names = [names]
         for name in names:
             # format channel query
-            if (type and (isinstance(type, (unicode, str)) or
+            if (type and (isinstance(type, string_types) or
                           (isinstance(type, int) and
                            log(type, 2).is_integer()))):
                 channel = Channel(name, type=type)

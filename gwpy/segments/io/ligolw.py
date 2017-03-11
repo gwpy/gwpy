@@ -21,6 +21,8 @@
 
 import datetime
 
+from six import string_types
+
 from ...time import (LIGOTimeGPS, to_gps)
 from ...io import registry
 from ...io.ligolw import (identify_ligolw, write_tables)
@@ -77,7 +79,7 @@ def read_ligolw_dict(f, flags=None, gpstype=LIGOTimeGPS, coalesce=False,
     seg_def_table = lsctables.SegmentDefTable.get_table(xmldoc)
 
     # find flags
-    if isinstance(flags, (unicode, str)):
+    if isinstance(flags, string_types):
         flags = flags.split(',')
     out = DataQualityDict()
     id_ = dict()

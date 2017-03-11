@@ -21,6 +21,8 @@
 
 import operator
 
+from six import string_types
+
 from matplotlib.artist import allow_rasterization
 from matplotlib.ticker import (Formatter, MultipleLocator, NullLocator)
 from matplotlib.projections import register_projection
@@ -558,7 +560,7 @@ class SegmentPlot(TimeSeriesPlot):
         # format mask as a binary string and work out how many bits to set
         if isinstance(mask, int):
             mask = bin(mask)
-        elif isinstance(mask, (unicode, str)) and 'x' in mask:
+        elif isinstance(mask, string_types) and 'x' in mask:
             mask = bin(int(mask, 16))
         maskint = int(mask, 2)
         if topdown:

@@ -22,6 +22,8 @@
 import operator as _operator
 from math import ceil
 
+from six import string_types
+
 import numpy
 
 from astropy.table import (Table, Column, vstack)
@@ -292,7 +294,7 @@ class EventTable(Table):
             for i, bin_ in enumerate(bins[:-1]):
                 bins2.append((bin_, bins[i+1]))
             bins = bins2
-        elif isinstance(operator, (unicode, str)):
+        elif isinstance(operator, string_types):
             op = OPERATORS[operator]
         else:
             op = operator
