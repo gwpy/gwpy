@@ -216,6 +216,13 @@ class TimeSeriesTestMixin(object):
         t = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format='gwf',
                                  end=end)
         self.assertTupleEqual(t.span, (TEST_SEGMENT[0], end))
+        # check errors
+        self.assertRaises((ValueError, RuntimeError), self.TEST_CLASS.read,
+                          TEST_GWF_FILE, self.channel, format='gwf',
+                          start=TEST_SEGMENT[1])
+        self.assertRaises((ValueError, RuntimeError), self.TEST_CLASS.read,
+                          TEST_GWF_FILE, self.channel, format='gwf',
+                          end=TEST_SEGMENT[0])
 
     def read_write_gwf_api(self, api):
         fmt = 'gwf.%s' % api
