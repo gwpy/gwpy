@@ -27,6 +27,8 @@ import tempfile
 import warnings
 from gzip import GzipFile
 
+from six import string_types
+
 from numpy import recarray
 from numpy.lib import recfunctions
 
@@ -153,7 +155,7 @@ def read_cache(cache, target, nproc, post, *args, **kwargs):
        of this feature.
     """
     # read the cache
-    if isinstance(cache, (file, unicode, str)):
+    if isinstance(cache, FILE_LIKE + string_types):
         cache = open_cache(cache)
     if isinstance(cache, Cache):
         cache.sort(key=lambda ce: ce.segment[0])

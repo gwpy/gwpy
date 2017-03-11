@@ -40,6 +40,7 @@ from math import (floor, ceil)
 from threading import Thread
 from Queue import Queue
 
+from six import string_types
 from six.moves.urllib import request
 from six.moves.urllib.error import URLError
 
@@ -1015,7 +1016,7 @@ class DataQualityDict(OrderedDict):
             raise TypeError("DataQualityDict.query_segdb has no keyword "
                             "argument '%s'" % list(kwargs.keys()[0]))
         # parse flags
-        if isinstance(flags, (str, unicode)):
+        if isinstance(flags, string_types):
             flags = flags.split(',')
         else:
             flags = flags
