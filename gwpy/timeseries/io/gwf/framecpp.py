@@ -158,6 +158,20 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                     raise
             offset = data.GetTimeOffset()
             datastart = epochs[i] + offset
+            i += 1  # increment frame index before any 'continue'
+            # check overlap with user-requested span
+            if end and datastart >= end and nframe == 1:
+                raise ValueError("Cannot read %s from FrVect in %s "
+                                 "ending at %s" % (name, fp, end))
+            elif end and datastart >= end: # don't need this frame
+                continue
+            try:
+                dataend = datastart + data.GetTRange()
+            except AttributeError:  # not proc channel
+                pass
+            else:
+                if start and dataend < start:  # don't need this frame
+                    continue
             for vect in data.data:  # loop hopefully over single vector
                 # decompress data
                 arr = vect.GetDataArray()
@@ -175,7 +189,12 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                     b = arr.size - int(max(0., float(dimend-end)) / dx)
                 else:
                     b = None
-                if a >= arr.size or b is not None and b <= a:  # skip frame
+                # if file only has ony frame, error on overlap problems
+                if a >= arr.size and nframe == 1:  # start too large
+                    raise ValueError("Cannot read %s from FrVect in %s "
+                                     "starting at %s" % (name, fp, start))
+                # otherwise just skip to the next frame
+                if a >= arr.size:  # skip frame
                     continue
                 if a or b:
                     arr = arr[a:b]
@@ -193,9 +212,8 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                     ts.channel.unit = unit
                 else:
                     ts.append(arr)
-            i += 1
         if ts is None:
-            raise ValueError("Channel '%s' not found in frame '%s'"
+            raise ValueError("Failed to read '%s' from file '%s'"
                              % (str(channel), fp))
         else:
             out[channel] = ts
