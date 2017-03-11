@@ -28,10 +28,7 @@ object.
 
 from astropy.time import Time
 
-try:
-    from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
-except ImportError:
-    from glue.lal import LIGOTimeGPS
+from lal import LIGOTimeGPS
 
 from ._tconvert import *
 
