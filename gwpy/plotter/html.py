@@ -19,7 +19,7 @@
 """Construct HTML maps on top of images.
 """
 
-from itertools import izip
+from six.moves import zip
 
 import numpy
 
@@ -238,7 +238,7 @@ def _map(data, axes, filename, href='#', mapname='points', popup=None,
     # build map
     areas = []
     for i, (datum, pixel, href) in enumerate(
-            izip(data[::-1], pixels[::-1], hrefs[::-1])):
+            zip(data[::-1], pixels[::-1], hrefs[::-1])):
         if callable(popup):
             alt = popup(*datum)
         elif popup is None:

@@ -1123,8 +1123,8 @@ class DataQualityDict(OrderedDict):
         inq.join()
         outq.join()
         new = cls()
-        results = zip(*sorted([outq.get() for i in range(len(flags))],
-                              key=lambda x: x[0]))[1]
+        results = list(zip(*sorted([outq.get() for i in range(len(flags))],
+                                   key=lambda x: x[0])))[1]
         for result, flag in zip(results, flags):
             if isinstance(result, Exception):
                 new[flag] = cls._EntryClass(name=flag)
