@@ -750,7 +750,7 @@ class TimeSeriesBaseDict(OrderedDict):
         # parse times
         start = to_gps(start)
         end = to_gps(end)
-        istart = start.seconds
+        istart = start.gpsSeconds
         iend = ceil(end)
 
         # test S6 h(t) channel so that it gets ,rds appends

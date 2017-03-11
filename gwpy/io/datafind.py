@@ -104,7 +104,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
         raise ValueError("Cannot parse interferometer prefix from channel "
                          "name %r, cannot proceed with find()" % name)
     if gpstime is not None:
-        gpstime = to_gps(gpstime).seconds
+        gpstime = to_gps(gpstime).gpsSeconds
     connection = connect(host, port)
     types = connection.find_types(channel.ifo[0], match=frametype_match)
     # get reference frame for all types
@@ -167,8 +167,8 @@ def find_best_frametype(channel, start, end, urltype='file',
                         host=None, port=None, allow_tape=True):
     """Intelligently select the best frametype from which to read this channel
     """
-    start = to_gps(start).seconds
-    end = to_gps(end).seconds
+    start = to_gps(start).gpsSeconds
+    end = to_gps(end).gpsSeconds
     frametype = find_frametype(channel, gpstime=start, host=host, port=port,
                                allow_tape=allow_tape)
     connection = connect(host=host, port=port)
