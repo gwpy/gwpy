@@ -784,7 +784,7 @@ class CliProduct(object):
 
         if self.verbose > 2:
             print('Arguments:')
-            for key, value in args.__dict__.iteritems():
+            for key, value in args.__dict__.items():
                 print('%s = %s' % (key, value))
 
         self.getTimeSeries(args)

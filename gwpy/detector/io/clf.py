@@ -147,7 +147,7 @@ def write_channel_list_file(channels, fobj):
         group = channel.group
         if not out.has_section(group):
             out.add_section(group)
-        for param, value in channel.params.iteritems():
+        for param, value in channel.params.items():
             out.set(group, param, value)
         if channel.sample_rate:
             entry = '%s %s' % (str(channel),

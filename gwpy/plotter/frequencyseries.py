@@ -299,7 +299,7 @@ class FrequencySeriesPlot(Plot):
 
         for i, ax in enumerate(self.axes):
             # format axes
-            for key, val in axargs.iteritems():
+            for key, val in axargs.items():
                 getattr(ax, 'set_%s' % key)(val)
             # fix log frequency scale with f0 = DC
             if xscale in ['log']:

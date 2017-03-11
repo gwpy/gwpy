@@ -310,7 +310,7 @@ def _fetch_factory(table):
     return classmethod(fetch)
 
 # annotate lsctables with new methods
-for table in TableByName.itervalues():
+for table in TableByName.values():
 
     def read(cls, source, *args, **kwargs):
         """Read data into a :class:`~glue.ligolw.lsctables.{0}`
