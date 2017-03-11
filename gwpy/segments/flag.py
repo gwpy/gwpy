@@ -507,13 +507,13 @@ class DataQualityFlag(object):
             if out.version is None:
                 data, versions, _ = apicalls.dqsegdbCascadedQuery(
                     protocol, server, out.ifo, out.tag, request,
-                    start, end)
+                    int(start), int(end))
                 data['metadata'] = versions[-1]['metadata']
             else:
                 try:
                     data, _ = apicalls.dqsegdbQueryTimes(
                         protocol, server, out.ifo, out.tag, out.version,
-                        request, start, end)
+                        request, int(start), int(end))
                 except URLError as e:
                     e.args = ('Error querying for %s: %s' % (flag, e),)
                     raise
