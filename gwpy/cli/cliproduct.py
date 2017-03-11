@@ -39,7 +39,7 @@ import re
 
 from argparse import ArgumentError
 
-from gwpy.timeseries import TimeSeries
+from ..timeseries import TimeSeries
 
 
 class CliProduct(object):

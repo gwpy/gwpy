@@ -21,7 +21,7 @@
 
 """ Coherence plots
 """
-from cliproduct import CliProduct
+from .cliproduct import CliProduct
 
 
 class Spectrogram(CliProduct):

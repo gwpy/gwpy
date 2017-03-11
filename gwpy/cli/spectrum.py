@@ -21,7 +21,7 @@
 
 """ Spectrum plots
 """
-from cliproduct import CliProduct
+from .cliproduct import CliProduct
 
 
 class Spectrum(CliProduct):
