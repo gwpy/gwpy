@@ -33,7 +33,6 @@ else:
 
 from ....detector import Channel
 from ....io.cache import (Cache, CacheEntry, file_list)
-from ....segments import Segment
 from ....time import LIGOTimeGPS
 from ... import (TimeSeries, TimeSeriesDict)
 
@@ -89,9 +88,10 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                     series_class=TimeSeries):
     """Internal function to read data from a single frame.
     """
-    # construct span segment
-    span = Segment(start is not None and start or 0,
-                   end is not None and end or 0)
+    if not start:
+        start = 0
+    if not end:
+        end = 0
 
     # open file
     if isinstance(framefile, CacheEntry):
@@ -170,14 +170,13 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                 # crop to required subset
                 dimstart = datastart + sx
                 dimend = dimstart + arr.size * dx
-                a = int(max(0., float(span[0]-dimstart)) / dx)
-                if span[1]:
-                    b = arr.size - int(max(0., float(dimend-span[1])) / dx)
+                a = int(max(0., float(start-dimstart)) / dx)
+                if end:
+                    b = arr.size - int(max(0., float(dimend-end)) / dx)
                 else:
                     b = None
-                if a >= arr.size or b is not None and b <= a:
-                    raise ValueError("Span %s not covered by FrVect for %r "
-                                     "in %s" % (span, name, fp))
+                if a >= arr.size or b is not None and b <= a:  # skip frame
+                    continue
                 if a or b:
                     arr = arr[a:b]
                 # cast as series or append
