@@ -21,7 +21,7 @@
 
 """ Time Series plots
 """
-from cliproduct import CliProduct
+from .cliproduct import CliProduct
 
 
 class TimeSeries(CliProduct):
