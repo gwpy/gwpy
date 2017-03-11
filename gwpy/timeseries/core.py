@@ -621,12 +621,12 @@ class TimeSeriesBaseDict(OrderedDict):
 
     def copy(self):
         new = self.__class__()
-        for key, val in self.iteritems():
+        for key, val in self.items():
             new[key] = val.copy()
         return new
 
     def append(self, other, copy=True, **kwargs):
-        for key, ts in other.iteritems():
+        for key, ts in other.items():
             if key in self:
                 self[key].append(ts, **kwargs)
             elif copy:
@@ -636,7 +636,7 @@ class TimeSeriesBaseDict(OrderedDict):
         return self
 
     def prepend(self, other, **kwargs):
-        for key, ts in other.iteritems():
+        for key, ts in other.items():
             if key in self:
                 self[key].prepend(ts, **kwargs)
             else:
@@ -664,7 +664,7 @@ class TimeSeriesBaseDict(OrderedDict):
         TimeSeries.crop
             for more details
         """
-        for key, val in self.iteritems():
+        for key, val in self.items():
             self[key] = val.crop(start=start, end=end, copy=copy)
         return self
 
@@ -685,7 +685,7 @@ class TimeSeriesBaseDict(OrderedDict):
         """
         if not isinstance(rate, dict):
             rate = dict((c, rate) for c in self)
-        for key, resamp in rate.iteritems():
+        for key, resamp in rate.items():
             self[key] = self[key].resample(resamp, **kwargs)
         return self
 
@@ -1014,12 +1014,12 @@ class TimeSeriesBaseDict(OrderedDict):
                 gprint("Determined %d frametypes to read" % len(frametypes))
             elif verbose:
                 gprint("Determined best frametype as %r"
-                       % frametypes.keys()[0])
+                       % list(frametypes.keys()[0]))
         else:
             frametypes = {frametype: channels}
         # -- read data
         out = cls()
-        for ft, clist in frametypes.iteritems():
+        for ft, clist in frametypes.items():
             if verbose:
                 gprint("Reading data from %s frames..." % ft, end=' ')
             # parse as a ChannelList
@@ -1171,7 +1171,7 @@ class TimeSeriesBaseDict(OrderedDict):
                 figargs[key] = kwargs.pop(key)
         plot_ = TimeSeriesPlot(**figargs)
         ax = plot_.gca()
-        for lab, ts in self.iteritems():
+        for lab, ts in self.items():
             if label.lower() == 'name':
                 lab = ts.name
             elif label.lower() != 'key':

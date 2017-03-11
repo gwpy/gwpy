@@ -209,7 +209,7 @@ def row_from_ascii_factory(table, delimiter):
     return row_from_ascii
 
 # register generic ASCII parsing for all tables
-for table in TableByName.itervalues():
+for table in TableByName.values():
     # register whitespace-delimited ASCII
     register_reader(
         'ascii', table, table_from_ascii_factory(

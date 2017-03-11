@@ -92,7 +92,7 @@ def find_dataset(h5o, path=None):
     if isinstance(h5o, h5py.Dataset):
         return h5o
     elif path is None and len(h5o) == 1:
-        path = h5o.keys()[0]
+        path = list(h5o.keys())[0]
     elif path is None:
         raise ValueError("Please specify the HDF5 path via the "
                          "``path=`` keyword argument")

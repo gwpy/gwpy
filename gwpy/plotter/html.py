@@ -93,7 +93,7 @@ def html_area(x, y, href='#', alt=None, shape='circle', **kwargs):
         alt = '(%s, %s)' % (x, y)
     out = ('<area shape="{shape}" coords="{x:d},{y:d},5" href="{href}" '
            'alt="{alt}" '.format(shape=shape, x=x, y=y, href=href, alt=alt))
-    for attr, value in kwargs.iteritems():
+    for attr, value in kwargs.items():
         out += '%s="%s" ' % (attr, value)
     out += '/>'
     return out

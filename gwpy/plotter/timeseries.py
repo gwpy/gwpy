@@ -367,7 +367,7 @@ class TimeSeriesPlot(Plot):
             flatdata = [ts for data in axesdata for ts in data]
             span = SegmentList([ts.span for ts in flatdata]).extent()
             for ax in self.axes:
-                for key, val in axargs.iteritems():
+                for key, val in axargs.items():
                     getattr(ax, 'set_%s' % key)(val)
                 if epoch is not None:
                     ax.set_epoch(epoch)

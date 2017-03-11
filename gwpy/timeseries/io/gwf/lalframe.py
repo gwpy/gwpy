@@ -162,9 +162,9 @@ def write(tsdict, outfile, start=None, end=None,
     """Write data to a GWF file using the LALFrame API
     """
     if not start:
-        start = tsdict.values()[0].xspan[0]
+        start = list(tsdict.values())[0].xspan[0]
     if not end:
-        end = tsdict.values()[0].xspan[1]
+        end = list(tsdict.values())[0].xspan[1]
     duration = end - start
 
     # get ifos list

@@ -275,7 +275,7 @@ def register_gwf_api(library):
         kwargs.setdefault('series_class', StateVector)
         svd = StateVectorDict(
             read_timeseriesdict(source, channels, *args, **kwargs))
-        for (channel, bits) in bitss.iteritems():
+        for (channel, bits) in bitss.items():
             svd[channel].bits = bits
         return svd
 

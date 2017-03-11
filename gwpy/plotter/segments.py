@@ -166,7 +166,7 @@ class SegmentAxes(TimeSeriesAxes):
             list of `~matplotlib.patches.Rectangle` patches
         """
         out = []
-        for lab, flag in flags.iteritems():
+        for lab, flag in flags.items():
             if label.lower() == 'name':
                 lab = flag.name
             elif label.lower() != 'key':
@@ -335,7 +335,7 @@ class SegmentAxes(TimeSeriesAxes):
         if y is None:
             y = self.get_next_y()
         collections = []
-        for name, segmentlist in segmentlistdict.iteritems():
+        for name, segmentlist in segmentlistdict.items():
             collections.append(self.plot_segmentlist(segmentlist, y=y,
                                                      label=name, **kwargs))
             y += dy

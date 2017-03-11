@@ -578,7 +578,7 @@ class StateVector(TimeSeriesBase):
         from ..segments import DataQualityDict
         out = DataQualityDict()
         bitseries = self.get_bit_series(bits=bits)
-        for bit, sts in bitseries.iteritems():
+        for bit, sts in bitseries.items():
             out[bit] = sts.to_dqflag(name=bit, minlen=minlen, round=round,
                                      dtype=dtype,
                                      description=self.bits.description[bit])

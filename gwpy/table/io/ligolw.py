@@ -246,7 +246,7 @@ def ligolw_io_factory(table_):
 # -- register -----------------------------------------------------------------
 
 # register reader and auto-id for LIGO_LW
-for table in TableByName.itervalues():
+for table in TableByName.values():
     name = 'ligolw.%s' % table.TableName(table.tableName)
 
     # build readers for this table

@@ -45,7 +45,7 @@ except ImportError:
          128: 'rds',
     }
     NDS2_CHANNEL_TYPE = dict((val, key) for (key, val) in
-                             NDS2_CHANNEL_TYPESTR.iteritems())
+                             NDS2_CHANNEL_TYPESTR.items())
 
 from ..io import datafind
 from ..time import to_gps
@@ -123,7 +123,7 @@ class Channel(object):
             self.name = str(name)
         else:
             self.name = str(name).split(',')[0]
-            for key, val in parts.iteritems():
+            for key, val in parts.items():
                 try:
                     setattr(self, key, val)
                 except AttributeError:
@@ -662,7 +662,7 @@ class ChannelList(list):
             namestr = namestr.strip('\' \n')
             if ',' not in namestr:
                 break
-            for nds2type in NDS2_CHANNEL_TYPE.keys() + ['']:
+            for nds2type in list(NDS2_CHANNEL_TYPE.keys()) + ['']:
                 if nds2type and ',%s' % nds2type in namestr:
                     try:
                         channel, ctype, namestr = namestr.split(',', 2)
@@ -748,7 +748,7 @@ class ChannelList(list):
             c = [entry for entry in c if
                  sample_range[0] <= entry.sample_rate.value <=
                  sample_range[1]]
-        for attr, val in others.iteritems():
+        for attr, val in others.items():
             if val is not None:
                 c = [entry for entry in c if
                      (hasattr(entry, attr) and getattr(entry, attr) == val)]

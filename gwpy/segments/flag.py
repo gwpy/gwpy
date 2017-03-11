@@ -716,7 +716,7 @@ class DataQualityFlag(object):
             new = self.copy()
         if kwargs:
             raise TypeError("unexpected keyword argument %r"
-                            % kwargs.keys()[0])
+                            % list(kwargs.keys())[0])
         new.known = [(s[0]+start, s[1]+end) for s in self.known]
         new.active = [(s[0]+start, s[1]+end) for s in self.active]
         return new
@@ -1013,7 +1013,7 @@ class DataQualityDict(OrderedDict):
                           "on_error keyword argument")
         if kwargs.keys():
             raise TypeError("DataQualityDict.query_segdb has no keyword "
-                            "argument '%s'" % kwargs.keys()[0])
+                            "argument '%s'" % list(kwargs.keys()[0]))
         # parse flags
         if isinstance(flags, (str, unicode)):
             flags = flags.split(',')
@@ -1336,7 +1336,7 @@ class DataQualityDict(OrderedDict):
         return self
 
     def __iand__(self, other):
-        for key, value in other.iteritems():
+        for key, value in other.items():
             if key in self:
                 self[key] &= value
             else:
@@ -1350,7 +1350,7 @@ class DataQualityDict(OrderedDict):
         return other.copy().__iand__(self)
 
     def __ior__(self, other):
-        for key, value in other.iteritems():
+        for key, value in other.items():
             if key in self:
                 self[key] |= value
             else:
@@ -1367,7 +1367,7 @@ class DataQualityDict(OrderedDict):
     __add__ = __or__
 
     def __isub__(self, other):
-        for key, value in other.iteritems():
+        for key, value in other.items():
             if key in self:
                 self[key] -= value
         return self
@@ -1376,7 +1376,7 @@ class DataQualityDict(OrderedDict):
         return self.copy().__isub__(other)
 
     def __ixor__(self, other):
-        for key, value in other.iteritems():
+        for key, value in other.items():
             if key in self:
                 self[key] ^= value
             else:
@@ -1404,8 +1404,8 @@ class DataQualityDict(OrderedDict):
             a new `DataQualityFlag` who's active and known segments
             are the union of those of the values of this dict
         """
-        usegs = reduce(operator.or_, self.itervalues())
-        usegs.name = ' | '.join(self.iterkeys())
+        usegs = reduce(operator.or_, self.values())
+        usegs.name = ' | '.join(self.keys())
         return usegs
 
     def intersection(self):
@@ -1417,8 +1417,8 @@ class DataQualityDict(OrderedDict):
             a new `DataQualityFlag` who's active and known segments
             are the intersection of those of the values of this dict
         """
-        isegs = reduce(operator.and_, self.itervalues())
-        isegs.name = ' & '.join(self.iterkeys())
+        isegs = reduce(operator.and_, self.values())
+        isegs.name = ' & '.join(self.keys())
         return isegs
 
     def plot(self, label='key', **kwargs):

@@ -186,7 +186,7 @@ def print_omega_channel(channel, file=sys.stdout):
     for key in ['channelName', 'frameType']:
         if key not in params:
             raise KeyError("No %r defined for %s" % (key, str(channel)))
-    for key, value in params.iteritems():
+    for key, value in params.items():
         key = '%s:' % str(key)
         if isinstance(value, tuple):
             value = '[%s]' % ' '.join(map(str, value))

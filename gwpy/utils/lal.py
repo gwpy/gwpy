@@ -59,7 +59,7 @@ except AttributeError:
                     lal.C_TYPE_CODE: 'COMPLEX8',
                     lal.Z_TYPE_CODE: 'COMPLEX16'}
 
-LAL_TYPE_FROM_STR = dict((v, k) for k, v in LAL_TYPE_STR.iteritems())
+LAL_TYPE_FROM_STR = dict((v, k) for k, v in LAL_TYPE_STR.items())
 
 # map numpy dtypes to LAL type codes
 try:
@@ -86,7 +86,7 @@ except AttributeError:
                            numpy.complex128: lal.Z_TYPE_CODE}
 
 LAL_TYPE_STR_FROM_NUMPY = dict((key, LAL_TYPE_STR[value]) for (key, value) in
-                               LAL_TYPE_FROM_NUMPY.iteritems())
+                               LAL_TYPE_FROM_NUMPY.items())
 
 try:
     LAL_UNIT_INDEX = [lal.lalMeterUnit,
