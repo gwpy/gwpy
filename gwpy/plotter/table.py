@@ -122,21 +122,21 @@ class EventTableAxes(TimeSeriesAxes):
         if sizecol:
             sdata = table[sizecol]
         if color and sizecol:
-            zipped = zip(xdata, ydata, cdata, sdata)
+            zipped = list(zip(xdata, ydata, cdata, sdata))
             zipped.sort(key=lambda row: row[2])
             try:
                 xdata, ydata, cdata, sdata = map(numpy.asarray, zip(*zipped))
             except ValueError:
                 pass
         elif sizecol:
-            zipped = zip(xdata, ydata, sdata)
+            zipped = list(zip(xdata, ydata, sdata))
             zipped.sort(key=lambda row: row[-1])
             try:
                 xdata, ydata, sdata = map(numpy.asarray, zip(*zipped))
             except ValueError:
                 pass
         elif color:
-            zipped = zip(xdata, ydata, cdata)
+            zipped = list(zip(xdata, ydata, cdata))
             zipped.sort(key=lambda row: row[-1])
             try:
                 xdata, ydata, cdata = map(numpy.asarray, zip(*zipped))
@@ -185,7 +185,7 @@ class EventTableAxes(TimeSeriesAxes):
         # get color and sort
         if color:
             cdata = table[color]
-            zipped = zip(xdata, ydata, wdata, hdata, cdata)
+            zipped = list(zip(xdata, ydata, wdata, hdata, cdata))
             zipped.sort(key=lambda row: row[-1])
             try:
                 xdata, ydata, wdata, hdata, cdata = map(numpy.asarray,
@@ -270,21 +270,21 @@ class EventTableAxes(TimeSeriesAxes):
         if sizecol:
             sdata = get_table_column(table, sizecol)
         if color and sizecol:
-            zipped = zip(xdata, ydata, cdata, sdata)
+            zipped = list(zip(xdata, ydata, cdata, sdata))
             zipped.sort(key=lambda row: row[2])
             try:
                 xdata, ydata, cdata, sdata = map(numpy.asarray, zip(*zipped))
             except ValueError:
                 pass
         elif sizecol:
-            zipped = zip(xdata, ydata, sdata)
+            zipped = list(zip(xdata, ydata, sdata))
             zipped.sort(key=lambda row: row[-1])
             try:
                 xdata, ydata, sdata = map(numpy.asarray, zip(*zipped))
             except ValueError:
                 pass
         elif color:
-            zipped = zip(xdata, ydata, cdata)
+            zipped = list(zip(xdata, ydata, cdata))
             zipped.sort(key=lambda row: row[-1])
             try:
                 xdata, ydata, cdata = map(numpy.asarray, zip(*zipped))
@@ -334,7 +334,7 @@ class EventTableAxes(TimeSeriesAxes):
         # get color and sort
         if color:
             cdata = get_table_column(table, color)
-            zipped = zip(xdata, ydata, wdata, hdata, cdata)
+            zipped = list(zip(xdata, ydata, wdata, hdata, cdata))
             zipped.sort(key=lambda row: row[-1])
             try:
                 xdata, ydata, wdata, hdata, cdata = map(numpy.asarray,
