@@ -163,7 +163,7 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
             if end and datastart >= end and nframe == 1:
                 raise ValueError("Cannot read %s from FrVect in %s "
                                  "ending at %s" % (name, fp, end))
-            elif end and datastart >= end: # don't need this frame
+            elif end and datastart >= end:  # don't need this frame
                 continue
             try:
                 dataend = datastart + data.GetTRange()
