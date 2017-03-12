@@ -395,7 +395,7 @@ class TimeSeriesTestMixin(object):
         _, tmpfile = tempfile.mkstemp(prefix='GWPY-TEST_LOSC_', suffix='.hdf')
         try:
             response = urlopen(LOSC_HDF_FILE)
-            with open(tmpfile, 'w') as f:
+            with open(tmpfile, 'wb') as f:
                 f.write(response.read())
             self._test_losc_inner(tmpfile)  # actually run test here
         except (URLError, ImportError) as e:
@@ -590,9 +590,9 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertAlmostEqual(tmax.value, -glitchtime)
 
     def test_detrend(self):
-        self.assertNotAlmostEqual(self.random.mean(), 0.0)
+        self.assertNotAlmostEqual(self.random.value.mean(), 0.0)
         detrended = self.random.detrend()
-        self.assertAlmostEqual(detrended.mean(), 0.0)
+        self.assertAlmostEqual(detrended.value.mean(), 0.0)
 
     def test_csd_spectrogram(self):
         ts = self._read()
