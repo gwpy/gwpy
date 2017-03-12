@@ -27,16 +27,16 @@ import warnings
 
 from six import string_types
 
+from glue.ligolw.ligolw import LIGOLWContentHandler
+
 from ..utils import gprint
 from .cache import (file_list, FILE_LIKE)
 from .utils import identify_factory
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+
 # -- content handling ---------------------------------------------------------
-
-from glue.ligolw.ligolw import LIGOLWContentHandler
-
 
 class GWpyContentHandler(LIGOLWContentHandler):
     """Empty sub-class of `~glue.ligolw.ligolw.LIGOLWContentHandler`

@@ -38,13 +38,13 @@ try:
 except ImportError:
     NDS2_CHANNEL_TYPESTR = {
         1: 'online',
-         2: 'raw',
-         4: 'reduced',
-         8: 's-trend',
-         16: 'm-trend',
-         32: 'test-pt',
-         64: 'static',
-         128: 'rds',
+        2: 'raw',
+        4: 'reduced',
+        8: 's-trend',
+        16: 'm-trend',
+        32: 'test-pt',
+        64: 'static',
+        128: 'rds',
     }
     NDS2_CHANNEL_TYPE = dict((val, key) for (key, val) in
                              NDS2_CHANNEL_TYPESTR.items())
@@ -92,11 +92,11 @@ class Channel(object):
     """
     MATCH = re.compile(
         r'((?:(?P<ifo>[A-Z]\d))?|[\w-]+):'  # match IFO prefix
-         '(?:(?P<system>[a-zA-Z0-9]+))?'  # match system
-         '(?:[-_](?P<subsystem>[a-zA-Z0-9]+))?'  # match subsystem
-         '(?:[-_](?P<signal>[a-zA-Z0-9_-]+?))?'  # match signal
-         '(?:[\.-](?P<trend>[a-z]+))?'  # match trend type
-         '(?:,(?P<type>([a-z]-)?[a-z]+))?$'  # match channel type
+        '(?:(?P<system>[a-zA-Z0-9]+))?'  # match system
+        '(?:[-_](?P<subsystem>[a-zA-Z0-9]+))?'  # match subsystem
+        '(?:[-_](?P<signal>[a-zA-Z0-9_-]+?))?'  # match signal
+        '(?:[\.-](?P<trend>[a-z]+))?'  # match trend type
+        '(?:,(?P<type>([a-z]-)?[a-z]+))?$'  # match channel type
     )
 
     def __init__(self, name, sample_rate=None, unit=None, frequency_range=None,

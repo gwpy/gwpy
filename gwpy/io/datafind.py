@@ -186,8 +186,9 @@ def find_best_frametype(channel, start, end, urltype='file',
             on_gaps='ignore')) for ft in alltypes]
         if not allow_tape:
             cache = [ftc for ftc in cache if not on_tape(*ftc[1])]
-        cache.sort(key=lambda x:
-            len(x[1]) and -abs(x[1].to_segmentlistdict().values()[0]) or 0)
+        cache.sort(
+            key=lambda x: len(x[1]) and
+                          -abs(x[1].to_segmentlistdict().values()[0]) or 0)
         try:
             return cache[0][0]
         except IndexError:

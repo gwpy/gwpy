@@ -80,7 +80,7 @@ def read_omega_scan_config(source):
                                    % line)
     finally:
         if close:
-           source.close()
+            source.close()
     return out
 
 
@@ -174,7 +174,8 @@ def print_omega_channel(channel, file=sys.stdout):
     if channel.frametype:
         params.setdefault('frameType', channel.frametype)
     if channel.sample_rate:
-        params.setdefault('sampleFrequency', channel.sample_rate.to('Hz').value)
+        params.setdefault('sampleFrequency',
+                          channel.sample_rate.to('Hz').value)
     if channel.frequency_range:
         low, hi = channel.frequency_range.to('Hz').value
         params.setdefault('searchFrequencyRange', (low, hi))

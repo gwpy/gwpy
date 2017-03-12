@@ -765,7 +765,8 @@ class CliProduct(object):
         self.fig = matplotlib.pyplot.gcf()
         self.fig.set_size_inches(self.xinch, self.yinch)
         self.plot.savefig(out_file, edgecolor='white',
-                          figsize=[self.xinch, self.yinch], dpi=self.dpi, bbox_inches='tight')
+                          figsize=[self.xinch, self.yinch],
+                          dpi=self.dpi, bbox_inches='tight')
         self.log(3, ('wrote %s' % arg_list.out))
 
         return
@@ -773,8 +774,6 @@ class CliProduct(object):
 # -----The one that does all the work
     def makePlot(self, args):
         """Make the plot, all actions are generally the same at this level"""
-
-
         if args.silent:
             self.verbose = 0
         else:

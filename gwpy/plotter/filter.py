@@ -53,7 +53,7 @@ class BodePlot(Plot):
 
     Parameters
     ----------
-    *filters : `~scipy.signal.lti`, `~gwpy.frequencyseries.FrequencySeries`, `tuple`
+    *filters : `~scipy.signal.lti`, `~gwpy.frequencyseries.FrequencySeries`
         any number of the following:
 
         - linear time-invariant filters, either
@@ -62,8 +62,8 @@ class BodePlot(Plot):
              - 3: (zeros, poles, gain)
              - 4: (A, B, C, D)
 
-        - complex-valued `spectra <gwpy.frequencyseries.FrequencySeries>` representing
-          a transfer function
+        - complex-valued `spectra <gwpy.frequencyseries.FrequencySeries>`
+          representing a transfer function
 
     frequencies : `numpy.ndarray`, optional
         list of frequencies (in Hertz) at which to plot
@@ -90,7 +90,8 @@ class BodePlot(Plot):
         # parse plotting arguments
         figargs = dict()
         title = kwargs.pop('title', None)
-        for key in ['figsize', 'dpi', 'frameon', 'subplotpars', 'tight_layout']:
+        for key in ['figsize', 'dpi', 'frameon', 'subplotpars',
+                    'tight_layout']:
             if key in kwargs:
                 figargs[key] = kwargs.pop(key)
 
@@ -99,7 +100,8 @@ class BodePlot(Plot):
 
         # delete the axes, and create two more
         self.add_subplot(2, 1, 1, projection='frequencyseries')
-        self.add_subplot(2, 1, 2, projection='frequencyseries', sharex=self.maxes)
+        self.add_subplot(2, 1, 2, projection='frequencyseries',
+                         sharex=self.maxes)
 
         # add filters
         for filter_ in filters:

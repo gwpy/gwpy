@@ -226,7 +226,7 @@ class TimeSeries(TimeSeriesBase):
         try:
             new.frequencies = npfft.rfftfreq(nfft, d=self.dx.value)
         except AttributeError:
-            new.frequencies = numpy.arange(0, new.size) / (nfft * self.dx.value)
+            new.frequencies = numpy.arange(new.size) / (nfft * self.dx.value)
         return new
 
     def average_fft(self, fftlength=None, overlap=0, window=None):
@@ -921,7 +921,7 @@ class TimeSeries(TimeSeriesBase):
     # -- TimeSeries filtering -------------------
 
     def highpass(self, frequency, gpass=2, gstop=30, fstop=None, type='iir',
-                filtfilt=True, **kwargs):
+                 filtfilt=True, **kwargs):
         """Filter this `TimeSeries` with a high-pass filter.
 
         Parameters
@@ -1260,9 +1260,9 @@ class TimeSeries(TimeSeriesBase):
                 b = filt.num
             # detect ZPK
             elif (isinstance(filt, (tuple, list)) and len(filt) == 3 and
-                      isinstance(filt[0], numpy.ndarray) and
-                      isinstance(filt[1], numpy.ndarray) and
-                      isinstance(filt[2], float)):
+                  isinstance(filt[0], numpy.ndarray) and
+                  isinstance(filt[1], numpy.ndarray) and
+                  isinstance(filt[2], float)):
                 sos = signal.zpk2sos(*filt)
             # detect SOS
             elif isinstance(filt, numpy.ndarray) and filt.ndim == 2:

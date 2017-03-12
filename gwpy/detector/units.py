@@ -19,9 +19,9 @@
 """This module registers a number of custom units used in GW astronomy.
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
 from astropy import units
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # enable imperial units
 units.add_enabled_units(units.imperial)

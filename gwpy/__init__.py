@@ -30,15 +30,16 @@ with easy-to-follow tutorials at each step.
 
 import warnings
 
+from ._version import get_versions
+
 # filter out some annoying, but harmless warnings
 warnings.filterwarnings("ignore", "Module (.*) was already import from")
 warnings.filterwarnings("ignore", "The oldnumeric module",
                         DeprecationWarning)
 
+# set package metadata
+__version__ = get_versions()['version']
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "The LIGO Scientific Collaboration and the Virgo Collaboration"
 
-# get version information
-from ._version import get_versions
-__version__ = get_versions()['version']
 del get_versions

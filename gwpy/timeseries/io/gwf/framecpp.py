@@ -126,7 +126,7 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
         if not ctype.get(channel, None):
             toc = stream.GetTOC()
             for typename in ['Sim', 'Proc', 'ADC']:
-                if not typename in toclist:
+                if typename not in toclist:
                     get_ = getattr(toc, 'Get%s' % typename)
                     try:
                         toclist[typename] = get_().keys()
@@ -137,8 +137,8 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                     break
         # if still not found, channel isn't in the frame
         if not ctype.get(channel, None):
-           raise ValueError("Channel %s not found in frame table of contents"
-                            % str(channel))
+            raise ValueError("Channel %s not found in frame table of contents"
+                             % str(channel))
 
     # find channels
     out = series_class.DictClass()
@@ -268,7 +268,7 @@ def create_frame(tsdict, start=None, end=None,
             idx = getattr(frameCPP, 'DETECTOR_LOCATION_%s' % prefix)
         except AttributeError:
             continue
-        #frame.appendFrDetector(frameCPP.GetDetector(idx, start))
+        frame.appendFrDetector(frameCPP.GetDetector(idx, start))
 
     # set header metadata
     frame.SetGTime(start)
