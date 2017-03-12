@@ -50,7 +50,10 @@ def parse_unit(name, parse_strict='warn'):
     """
     if name is None or isinstance(name, units.UnitBase):
         return name
-    name = str(name)
+    if isinstance(name, bytes):
+        name = name.decode('utf-8')
+    else:
+        name = str(name)
     # try simple parse
     try:
         return units.Unit(name)

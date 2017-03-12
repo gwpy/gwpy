@@ -33,7 +33,7 @@ import operator
 import re
 import warnings
 import tempfile
-from io import BytesIO
+from io import StringIO
 from urlparse import urlparse
 from copy import (copy as shallowcopy, deepcopy)
 from math import (floor, ceil)
@@ -519,7 +519,14 @@ class DataQualityFlag(object):
                     e.args = ('Error querying for %s: %s' % (flag, e),)
                     raise
             # read from json buffer
-            new = cls.read(BytesIO(json.dumps(data)), format='json')
+            try:
+                new = cls.read(StringIO(json.dumps(data)), format='json')
+            except TypeError as e:
+                if 'initial_value must be unicode' in str(e):  # python2
+                    new = cls.read(StringIO(json.dumps(data).decode('utf-8')),
+                                   format='json')
+                else:
+                    raise
             # restrict to query segments
             segl = SegmentList([Segment(start, end)])
             new.known &= segl
