@@ -54,15 +54,15 @@ except AttributeError:
 FILE_LIKE = tuple(FILE_LIKE)
 
 
-def open_cache(lcf):
+def open_cache(lcf, coltype=LIGOTimeGPS):
     """Read a LAL-format cache file into memory as a
     :class:`glue.lal.Cache`.
     """
-    if isinstance(lcf, file):
-        return Cache.fromfile(lcf)
+    if isinstance(lcf, FILE_LIKE):
+        return Cache.fromfile(lcf, coltype=coltype)
     else:
         with open(lcf, 'r') as f:
-            return Cache.fromfile(f)
+            return Cache.fromfile(f, coltype=coltype)
 
 
 def file_list(flist):

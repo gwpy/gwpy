@@ -110,7 +110,7 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
     # as required by the file-naming convention
     epochs = None
     try:
-        ce = CacheEntry.from_T050017(fp)
+        ce = CacheEntry.from_T050017(fp, coltype=LIGOTimeGPS)
     except ValueError:
         pass
     else:

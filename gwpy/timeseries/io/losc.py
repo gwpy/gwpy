@@ -40,7 +40,7 @@ from ...io.cache import (file_list, cache_segments)
 from ...io.hdf5 import open_hdf5
 from ...detector.units import parse_unit
 from ...segments import (Segment, SegmentList)
-from ...time import to_gps
+from ...time import (to_gps, LIGOTimeGPS)
 
 # default URL
 LOSC_URL = 'https://losc.ligo.org'
@@ -81,7 +81,7 @@ def _losc_json_cache(metadata, detector, sample_rate=4096,
                 fmd['duration'] != duration):
             continue
         urls.append(fmd['url'])
-    return Cache.from_urls(urls)
+    return Cache.from_urls(urls, coltype=LIGOTimeGPS)
 
 
 def fetch_losc_url_cache(detector, start, end, host=LOSC_URL,
@@ -316,7 +316,7 @@ def read_losc_state(filename, channel, group=None, start=None, end=None,
         epoch = dataset.attrs['Xstart']
     except KeyError:
         try:
-            ce = CacheEntry.from_T050017(h5file.filename)
+            ce = CacheEntry.from_T050017(h5file.filename, coltype=LIGOTimeGPS)
         except ValueError:
             epoch = None
         else:

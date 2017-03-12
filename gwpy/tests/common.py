@@ -32,7 +32,7 @@ def test_io_identify(cls, extensions, modes=['read', 'write']):
     for mode in modes:
         for ext in extensions:
             p = 'X-TEST_CACHE_ENTRY-0-1.%s' % ext
-            c = Cache([CacheEntry.from_T050017(p)])
+            c = Cache([CacheEntry.from_T050017(p, coltype=int)])
             for path in [p, [p], c[0], c]:
                 formats = identify_format(
                     mode, cls, path, None, [], {})

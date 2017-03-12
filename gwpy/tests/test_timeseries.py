@@ -151,7 +151,7 @@ class TimeSeriesTestMixin(object):
             a.write(f1.name)
 
         # test reading it from the cache
-        cache = Cache.from_urls([f1.name])
+        cache = Cache.from_urls([f1.name], coltype=int)
         b = self.TEST_CLASS.read(cache, a.name)
         self.assertArraysEqual(a, b, exclude=exclude)
 
