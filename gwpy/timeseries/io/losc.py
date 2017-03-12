@@ -310,7 +310,7 @@ def read_losc_state(filename, channel, group=None, start=None, end=None,
     maskset = _find_dataset(h5file, '%s/DQDescriptions' % channel)
     # read data
     nddata = dataset.value
-    bits = list(maskset.value)
+    bits = list(map(lambda b: bytes.decode(bytes(b), 'utf-8'), maskset.value))
     # read metadata
     try:
         epoch = dataset.attrs['Xstart']
