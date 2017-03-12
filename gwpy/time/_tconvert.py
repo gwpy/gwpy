@@ -57,7 +57,7 @@ def tconvert(gpsordate='now'):
     # convert from GPS into datetime
     try:
         gps = LIGOTimeGPS(gpsordate)
-    except (ValueError, TypeError):
+    except (TypeError, RuntimeError):
         if hasattr(gpsordate, 'gpsSeconds'):
             return from_gps(gpsordate)
         else:
