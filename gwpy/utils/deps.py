@@ -75,8 +75,12 @@ def with_import(module):
     def decorate_method(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            func.func_globals[modname] = import_method_dependency(module,
-                                                                  stacklevel=2)
+            try:  # python3.x
+                func.__globals__[modname] = import_method_dependency(
+                    module, stacklevel=2)
+            except AttributeError:  # python2.x
+                func.func_globals[modname] = import_method_dependency(
+                    module, stacklevel=2)
             return func(*args, **kwargs)
         return wrapper
     return decorate_method
