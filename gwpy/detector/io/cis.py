@@ -20,9 +20,10 @@
 """
 
 import json
-import numpy
 
-from urllib2 import HTTPError
+from six.moves.urllib.error import HTTPError
+
+import numpy
 
 from ...utils import auth
 from .. import (Channel, ChannelList)

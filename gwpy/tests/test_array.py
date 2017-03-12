@@ -22,6 +22,7 @@
 import abc
 import os
 import tempfile
+import pickle
 
 import pytest
 from compat import unittest
@@ -219,10 +220,9 @@ class CommonTests(object):
     def test_pickle(self):
         """Check pickle-unpickle yields unchanged data
         """
-        import cPickle
         ts = self.create()
-        pickle = ts.dumps()
-        ts2 = cPickle.loads(pickle)
+        pkl = ts.dumps()
+        ts2 = pickle.loads(pkl)
         self.assertArraysEqual(ts, ts2)
 
     # -- test I/O -------------------------------

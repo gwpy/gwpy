@@ -25,6 +25,8 @@ from warnings import warn
 from math import (ceil, pi)
 from multiprocessing import (Process, Queue as ProcessQueue)
 
+from six.moves import range
+
 import numpy
 from numpy import fft as npfft
 from scipy import signal
@@ -689,7 +691,7 @@ class TimeSeries(TimeSeriesBase):
             window = signal.get_window(window, nfft)
 
         # calculate overlapping periodograms
-        for i in xrange(nsteps):
+        for i in range(nsteps):
             idx = i * nstride
             # don't proceed past end of data, causes artefacts
             if idx+nfft > self.size:
@@ -701,7 +703,7 @@ class TimeSeries(TimeSeriesBase):
         # normalize for over-dense grid
         density = nfft//nstride
         weights = signal.triang(density)
-        for i in xrange(nsteps):
+        for i in range(nsteps):
             # get indices of overlapping columns
             x0 = max(0, i+1-density)
             x1 = min(i+1, nsteps-density+1)

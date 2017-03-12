@@ -34,15 +34,16 @@ import re
 import warnings
 import tempfile
 from io import StringIO
-from urlparse import urlparse
 from copy import (copy as shallowcopy, deepcopy)
 from math import (floor, ceil)
 from threading import Thread
-from Queue import Queue
 
 from six import string_types
+from six.moves import reduce
 from six.moves.urllib import request
 from six.moves.urllib.error import URLError
+from six.moves.urllib.parse import urlparse
+from six.moves.queue import Queue
 
 from numpy import inf
 
