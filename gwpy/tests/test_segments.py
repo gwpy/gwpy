@@ -28,6 +28,9 @@ from six.moves.urllib.error import URLError
 
 import pytest
 
+from matplotlib import use
+use('agg')
+
 from glue.segments import PosInfinity
 from glue.LDBDWClient import LDBDClientException
 
