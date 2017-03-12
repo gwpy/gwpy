@@ -108,10 +108,15 @@ def read_hdf5_segmentlist(f, path=None, gpstype=LIGOTimeGPS, **kwargs):
     dataset = io_hdf5.find_dataset(f, path=path)
 
     segtable = Table.read(dataset, format='hdf5')
-    return SegmentList([Segment(
-        LIGOTimeGPS(row['start_time'], row['start_time_ns']),
-        LIGOTimeGPS(row['end_time'], row['end_time_ns']))
-        for row in segtable])
+    out = SegmentList()
+    for row in segtable:
+        start = LIGOTimeGPS(int(row['start_time']), int(row['start_time_ns']))
+        end = LIGOTimeGPS(int(row['end_time']), int(row['end_time_ns']))
+        if gpstype is LIGOTimeGPS:
+            out.append(Segment(start, end))
+        else:
+            out.append(Segment(gpstype(start), gpstype(end)))
+    return out
 
 
 @io_hdf5.with_read_hdf5
