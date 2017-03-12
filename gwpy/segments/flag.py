@@ -429,9 +429,10 @@ class DataQualityFlag(object):
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
         elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(map(to_gps, args[0])))
+            qsegs = SegmentList(Segment(to_gps(args[0][0]),
+                                        to_gps(args[0][1])))
         elif len(args) == 2:
-            qsegs = SegmentList([Segment(map(to_gps, args))])
+            qsegs = SegmentList([Segment(to_gps(args[0]), to_gps(args[1]))])
         else:
             raise ValueError("DataQualityFlag.query must be called with a "
                              "flag name, and either GPS start and stop times, "
@@ -482,9 +483,10 @@ class DataQualityFlag(object):
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
         elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(map(to_gps, args[0])))
+            qsegs = SegmentList(Segment(to_gps(args[0][0]),
+                                        to_gps(args[0][1])))
         elif len(args) == 2:
-            qsegs = SegmentList([Segment(map(to_gps, args))])
+            qsegs = SegmentList([Segment(to_gps(args[0]), to_gps(args[1]))])
         else:
             raise ValueError("DataQualityFlag.query must be called with a "
                              "flag name, and either GPS start and stop times, "
@@ -1009,9 +1011,10 @@ class DataQualityDict(OrderedDict):
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
         elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(map(to_gps, args[0])))
+            qsegs = SegmentList(Segment(to_gps(args[0][0]),
+                                        to_gps(args[0][1])))
         elif len(args) == 2:
-            qsegs = SegmentList([Segment(map(to_gps, args))])
+            qsegs = SegmentList([Segment(to_gps(args[0]), to_gps(args[1]))])
         else:
             raise ValueError("DataQualityDict.query_segdb must be called with "
                              "a list of flag names, and either GPS start and "
