@@ -28,4 +28,3 @@ from . import (  # pylint: disable=unused-import
 )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
