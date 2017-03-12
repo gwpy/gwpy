@@ -25,6 +25,9 @@ import tempfile
 
 from numpy import (may_share_memory, testing as nptest, random)
 
+from matplotlib import use
+use('agg')
+
 from astropy import units
 
 from gwpy.table import (Table, EventTable)
