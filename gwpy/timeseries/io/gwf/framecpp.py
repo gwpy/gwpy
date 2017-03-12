@@ -268,7 +268,7 @@ def create_frame(tsdict, start=None, end=None,
             idx = getattr(frameCPP, 'DETECTOR_LOCATION_%s' % prefix)
         except AttributeError:
             continue
-        frame.appendFrDetector(frameCPP.GetDetector(idx, start))
+        frame.AppendFrDetector(frameCPP.GetDetector(idx, start))
 
     # set header metadata
     frame.SetGTime(start)
