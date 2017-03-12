@@ -80,7 +80,7 @@ def _losc_json_cache(metadata, detector, sample_rate=4096,
                 fmd['format'] != format or
                 fmd['duration'] != duration):
             continue
-        urls.append(fmd['url'])
+        urls.append(str(fmd['url']))
     return Cache.from_urls(urls, coltype=LIGOTimeGPS)
 
 
