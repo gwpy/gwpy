@@ -57,8 +57,11 @@ def _fetch_losc_json(url):
                   % (url, str(e)),)
         raise
     # parse the JSON
+    data = response.read()
+    if isinstance(data, bytes):
+        data = data.decode('utf-8')
     try:
-        return json.loads(response.read())
+        return json.loads(data)
     except ValueError as e:
         e.args = ("Failed to parse LOSC JSON from %r: %s"
                   % (url, str(e)),)

@@ -465,7 +465,10 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
         # download veto definer
         vdffile = urlopen(VETO_DEFINER_FILE)
         with open(self.VETO_DEFINER, 'w') as f:
-            f.write(vdffile.read())
+            try:
+                f.write(vdffile.read().decode('utf-8'))
+            except AttributeError:
+                f.write(vdffile.read())
 
     def tearDown(self):
         if os.path.isfile(self.VETO_DEFINER):

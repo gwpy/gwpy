@@ -145,7 +145,7 @@ def iter_channel_names(framefile):
                 i += 1
     else:
         for line in iter(out.splitlines()):
-            yield line.split(' ', 1)[0]
+            yield line.split(b' ', 1)[0].decode('utf-8')
 
 
 def get_channel_names(framefile):
