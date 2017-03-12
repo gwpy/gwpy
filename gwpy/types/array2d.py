@@ -149,7 +149,6 @@ class Array2D(Series):
         # unwrap a Spectrogram
         else:
             new = new.view(type(self))
-            #new.__dict__ = self.copy_metadata()
         # update metadata (Series.__getitem__ has already done x slice)
         if len(new.shape) == 1 and isinstance(y, slice):  # FrequencySeries
             try:
@@ -393,24 +392,3 @@ class Array2D(Series):
                           channel=out.channel, epoch=self.epoch, xindex=xindex,
                           name='%s %s' % (self.name, function.__name__))
         return out
-
-    #def __array_wrap__(self, obj, context=None):
-    #    result = super(Array2D, self).__array_wrap__(obj, context=context)
-    #    try:
-    #        result._xindex = self._xindex
-    #    except AttributeError:
-    #        pass
-    #    try:
-    #        result._yindex = self._yindex
-    #    except AttributeError:
-    #        pass
-    #    return result
-
-    #def copy(self, order='C'):
-    #    new = super(Array2D, self).copy(order=order)
-    #    try:
-    #        new._yindex = self._yindex.copy()
-    #    except AttributeError:
-    #        pass
-    #    return new
-    #copy.__doc__ = Series.copy.__doc__

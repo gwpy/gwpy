@@ -25,10 +25,6 @@ many configurable parameters both interactive, and in saving to disk.
 
 from matplotlib import (rcParams, rc_params, pyplot)
 
-DEFAULT_RCPARAMS = rc_params()
-
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
 from .tex import (USE_TEX, MACROS)
 from .gps import *
 from .log import *
@@ -41,6 +37,11 @@ from .segments import *
 from .filter import *
 from .table import *
 from .histogram import *
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+# record matplotlib's original rcParams
+DEFAULT_RCPARAMS = rc_params()
 
 # set default params
 GWPY_PLOT_PARAMS = {

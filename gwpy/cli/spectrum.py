@@ -134,8 +134,10 @@ class Spectrum(CliProduct):
                         stop = t[0][0]
                     else:
                         stop = spectra[idx].frequencies.size - 1
-                    mymin = min(mymin, numpy.min(spectra[idx].value[strt:stop]))
-                    mymax = max(mymax, numpy.max(spectra[idx].value[strt:stop]))
+                    mymin = min(mymin,
+                                numpy.min(spectra[idx].value[strt:stop]))
+                    mymax = max(mymax,
+                                numpy.max(spectra[idx].value[strt:stop]))
 
             self.ymin = mymin
             self.ymax = mymax

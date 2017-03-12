@@ -19,8 +19,6 @@
 """Input/Output routines for the TimeSeries and its sub-classes.
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
 from . import (  # pylint: disable=unused-import
     ascii,
     gwf,
@@ -28,3 +26,6 @@ from . import (  # pylint: disable=unused-import
     hdf5,
     losc,
 )
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+

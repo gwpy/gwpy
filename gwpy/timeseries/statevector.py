@@ -111,9 +111,9 @@ class StateTimeSeries(TimeSeriesBase):
             data = numpy.asarray(data)
         if not isinstance(data, cls):
             data = data.astype(bool)
-        return super(StateTimeSeries, cls).__new__(cls, data, t0=t0, dt=dt,
-                                                   sample_rate=sample_rate, times=times,
-                                                   name=name, channel=channel, **kwargs)
+        return super(StateTimeSeries, cls).__new__(
+            cls, data, t0=t0, dt=dt, sample_rate=sample_rate, times=times,
+            name=name, channel=channel, **kwargs)
 
     def to_dqflag(self, name=None, minlen=1, dtype=float, round=False,
                   label=None, description=None):

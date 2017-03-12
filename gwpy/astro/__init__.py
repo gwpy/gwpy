@@ -40,6 +40,6 @@ Each of the above methods has been given default parameters corresponding to
 the standard usage by the LIGO project.
 """
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
 from .range import *
+
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

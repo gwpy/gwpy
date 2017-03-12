@@ -253,7 +253,7 @@ def highpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
     """
     sample_rate = _as_float(sample_rate)
     frequency = _as_float(frequency)
-    nyq = sample_rate/ 2.
+    nyq = sample_rate / 2.
     if fstop is None:
         fstop = frequency * 2/3.
     if type == 'iir':

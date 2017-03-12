@@ -21,9 +21,6 @@
 """
 
 import sys
-if sys.version < '2.7':
-    raise ImportError("Python versions older than 2.7 are not supported.")
-
 import glob
 import hashlib
 import os.path
@@ -41,6 +38,10 @@ finally:
 from distutils.dist import Distribution
 from distutils.cmd import Command
 from distutils.command.clean import (clean, log, remove_tree)
+
+# check python version
+if sys.version < '2.7':
+    raise ImportError("Python versions older than 2.7 are not supported.")
 
 # set basic metadata
 PACKAGENAME = 'gwpy'

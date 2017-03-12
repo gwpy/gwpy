@@ -69,7 +69,7 @@ def _fetch_losc_json(url):
 
 
 def _losc_json_cache(metadata, detector, sample_rate=4096,
-                      format='hdf5', duration=4096):
+                     format='hdf5', duration=4096):
     """Parse a :class:`~glue.lal.Cache` from a LOSC metadata packet
     """
     urls = []

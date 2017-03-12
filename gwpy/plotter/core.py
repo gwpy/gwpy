@@ -71,7 +71,7 @@ class Plot(figure.Figure):
         subplotpars = utils.get_subplot_params(figsize)
         use_subplotpars = 'subplotpars' not in kwargs and all([
             rcParams['figure.subplot.%s' % pos] ==
-                DEFAULT_RCPARAMS['figure.subplot.%s' % pos] for
+            DEFAULT_RCPARAMS['figure.subplot.%s' % pos] for
             pos in ('left', 'bottom', 'right', 'top')])
         if use_subplotpars:
             kwargs['subplotpars'] = subplotpars

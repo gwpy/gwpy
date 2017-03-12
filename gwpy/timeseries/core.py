@@ -802,14 +802,15 @@ class TimeSeriesBaseDict(OrderedDict):
                     except (RuntimeError, ValueError) as e:
                         if verbose:
                             gprint('Something went wrong:', file=sys.stderr)
-                            # if error and user supplied their own server, raise
+                            # if user supplied their own server, raise
                             warnings.warn(str(e), ndsio.NDSWarning)
 
-                # if we got this far, we can't get all of the channels in one go
+                # if we got this far, we can't get all channels in one go
                 if len(channels) > 1:
                     return cls(
-                        (c, cls.EntryClass.fetch(c, start, end, verbose=verbose,
-                                                 type=type, verify=verify,
+                        (c, cls.EntryClass.fetch(c, start, end,
+                                                 verbose=verbose, type=type,
+                                                 verify=verify,
                                                  dtype=dtype.get(c), pad=pad,
                                                  allow_tape=allow_tape))
                         for c in channels)
@@ -926,16 +927,16 @@ class TimeSeriesBaseDict(OrderedDict):
                         nsteps = ceil((iend - istart) / dur)
                     i += 1
                     if verbose:
-                        gprint('Downloading data... %d%%' % (100 * i // nsteps),
-                               end='\r')
+                        gprint('Downloading data... %d%%'
+                               % (100 * i // nsteps), end='\r')
                         if i == nsteps:
                             gprint('')
             except RuntimeError as e:
                 if 'Requested data is on tape' in str(e) and not allow_tape:
-                    e.args = ('Requested data are on tape, set allow_tape=True '
-                              'to allow access from tape. Please note that '
-                              'retrieving data from tape is slow, and may '
-                              'take several minutes or longer.',)
+                    e.args = ('Requested data are on tape, set allow_tape=True'
+                              ' to allow access from tape. Please note that'
+                              ' retrieving data from tape is slow, and may'
+                              ' take several minutes or longer.',)
                 raise
 
         # pad to end of request if required

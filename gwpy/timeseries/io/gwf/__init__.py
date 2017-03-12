@@ -252,7 +252,6 @@ def register_gwf_api(library):
                 out[name] = out[name].astype(dtype[name])
         return out
 
-
     def read_timeseries(source, channel, *args, **kwargs):
         """Read `TimeSeries` from GWF source
         """
@@ -337,7 +336,8 @@ def register_gwf_api(library):
     register_writer(fmt, StateVector, write_timeseries)
 
     # register depreacated format - DEPRECATED
-    for container in (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict):
+    for container in (TimeSeries, TimeSeriesDict,
+                      StateVector, StateVectorDict):
         register_library_format(container, library)
 
 
