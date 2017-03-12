@@ -248,7 +248,7 @@ class ChannelListTestCase(unittest.TestCase):
 
     def test_from_names(self):
         cl = ChannelList.from_names(*self.NAMES)
-        self.assertListEqual(cl, map(Channel, self.NAMES))
+        self.assertListEqual(cl, list(map(Channel, self.NAMES)))
         cl2 = ChannelList.from_names(','.join(self.NAMES))
         self.assertListEqual(cl, cl2)
 
