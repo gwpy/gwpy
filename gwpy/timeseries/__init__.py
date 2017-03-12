@@ -25,4 +25,3 @@ from .statevector import *
 from .io import *
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
