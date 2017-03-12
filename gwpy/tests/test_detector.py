@@ -136,6 +136,10 @@ class ChannelTests(unittest.TestCase):
             if 'No JSON object could be decoded' in str(e):
                 self.skipTest(str(e))
             raise
+        except RuntimeError as e:
+            if 'redirected' in str(e):
+                self.skipTest(str(e))
+            raise
         except Exception as e:
             try:
                 import kerberos
