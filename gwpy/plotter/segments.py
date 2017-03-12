@@ -22,6 +22,7 @@
 import operator
 
 from six import string_types
+from six.moves import reduce
 
 from matplotlib.artist import allow_rasterization
 from matplotlib.ticker import (Formatter, MultipleLocator, NullLocator)

@@ -19,7 +19,7 @@
 """Unit test for detector module
 """
 
-from urllib2 import URLError
+from six.moves.urllib.error import URLError
 
 import pytest
 
