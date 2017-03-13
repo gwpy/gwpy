@@ -44,7 +44,7 @@ from astropy.io.registry import (get_reader, register_reader)
 from gwpy.detector import Channel
 from gwpy.time import (Time, LIGOTimeGPS)
 from gwpy.timeseries import (TimeSeries, StateVector, TimeSeriesDict,
-                             StateVectorDict, TimeSeriesList)
+                             StateVectorDict, TimeSeriesList, StateTimeSeries)
 from gwpy.segments import (Segment, DataQualityFlag, DataQualityDict)
 from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.types import Array2D
@@ -667,6 +667,14 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
             self.assertTupleEqual(qspecgram.shape, (32000, 2560))
             self.assertAlmostEqual(qspecgram.q, 11.31370849898476)
             self.assertAlmostEqual(qspecgram.value.max(), 37.035843858490509)
+
+    def test_boolean_statetimeseries(self):
+        comp = self.TEST_ARRAY >= 100 * self.TEST_ARRAY.unit
+        self.assertIsInstance(comp, StateTimeSeries)
+        self.assertEqual(comp.unit, units.Unit(''))
+        self.assertEqual(
+            comp.name,
+            '%s >= 100.0 %s' % (self.TEST_ARRAY.name, self.TEST_ARRAY.unit))
 
 
 class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
