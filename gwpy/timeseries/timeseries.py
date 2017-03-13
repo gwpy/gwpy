@@ -1478,13 +1478,13 @@ class TimeSeries(TimeSeriesBase):
         rms : `TimeSeries`
             a new `TimeSeries` containing the RMS value with dt=stride
         """
-        stridesamp = stride * self.sample_rate.value
+        stridesamp = int(stride * self.sample_rate.value)
         nsteps = int(self.size // stridesamp)
         # stride through TimeSeries, recording RMS
         data = numpy.zeros(nsteps)
         for step in range(nsteps):
             # find step TimeSeries
-            idx = stridesamp * step
+            idx = int(stridesamp * step)
             idx_end = idx + stridesamp
             stepseries = self[idx:idx_end]
             rms_ = numpy.sqrt(numpy.mean(numpy.abs(stepseries.value)**2))
