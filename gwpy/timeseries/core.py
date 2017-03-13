@@ -552,9 +552,8 @@ class TimeSeriesBase(Series):
             except KeyError:
                 op_ = ufunc.__name__
             result = obj.view(StateTimeSeries)
+            result.override_unit('')
             result.name = '%s %s %s' % (obj.name, op_, value)
-            if hasattr(obj, 'unit') and str(obj.unit):
-                result.name += ' %s' % str(obj.unit)
         # otherwise, return a regular TimeSeries
         else:
             result = super(TimeSeriesBase, self).__array_wrap__(
