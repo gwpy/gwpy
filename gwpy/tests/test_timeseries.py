@@ -676,6 +676,10 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
             comp.name,
             '%s >= 100.0 %s' % (self.TEST_ARRAY.name, self.TEST_ARRAY.unit))
 
+    def test_rms(self):
+        rms = self.TEST_ARRAY.rms(1.)
+        self.assertQuantityEqual(rms.sample_rate, 1 * units.Hertz)
+
 
 class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
     """`~unittest.TestCase` for the `~gwpy.timeseries.StateVector` object
