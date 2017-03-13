@@ -1,3 +1,5 @@
+.. _gwpy-frequencyseries-filter:
+
 ###############################
 Filtering frequency-domain data
 ###############################

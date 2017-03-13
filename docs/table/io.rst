@@ -1,6 +1,8 @@
 .. include:: ../references.txt
 .. currentmodule:: gwpy.table
 
+.. _gwpy-table-io:
+
 ####################################################
 Reading and writing `Table` and `EventTable` objects
 ####################################################
@@ -20,15 +22,15 @@ In the most general case you can read a table of data as follows::
 
 GWpy extends the Astropy functionality with readers for the following file formats:
 
-- :ref:`table-io-ligolw`
-- :ref:`table-io-ascii-cwb`
-- :ref:`table-io-root`
-- :ref:`table-io-pycbc_live`
+- :ref:`gwpy-table-io-ligolw`
+- :ref:`gwpy-table-io-ascii-cwb`
+- :ref:`gwpy-table-io-root`
+- :ref:`gwpy-table-io-pycbc_live`
 
 Each of the sub-sections below outlines how to read and write in these file formats, include the custom keyword arguments to pass to :meth:`EventTable.read` and :meth:`EventTable.write`.
 
 
-.. _table-io-ligolw:
+.. _gwpy-table-io-ligolw:
 
 ===============
 ``LIGO_LW`` XML
@@ -169,7 +171,7 @@ Table name                Format name
 ========================  =================================
 
 
-.. _table-io-ascii-cwb:
+.. _gwpy-table-io-ascii-cwb:
 
 ============================================
 Coherence WaveBurst ASCII (aka `EVENTS.txt`)
@@ -196,7 +198,7 @@ To write a table using the cWB ASCII format:
 
 [the output file name is not required to be ``'EVENTS.txt'``, this is simply the convention used in the cWB analysis.]
 
-.. _table-io-root:
+.. _gwpy-table-io-root:
 
 ====
 ROOT
@@ -234,7 +236,7 @@ By default, an existing file with an existing tree of the given name will be app
 
 Any other keyword arguments will be passed directly to :func:`root_numpy.array2root`.
 
-.. _table-io-pycbc_live:
+.. _gwpy-table-io-pycbc_live:
 
 =================
 PyCBC Live (HDF5)
@@ -256,7 +258,7 @@ To restrict the returned columns, use the ``columns`` keyword argument::
 
    >>> t = EventTable.read('H1-Live-1234567890-4.hdf', format='hdf5.pycbc_live', columns=['end_time', 'snr', 'chisq'])
 
-Similarly to the :ref:`table-io-ligolw` format, some processed columns can be specified that are not included in the HDF5 files, but are created on-the-fly.
+Similarly to the :ref:`gwpy-table-io-ligolw` format, some processed columns can be specified that are not included in the HDF5 files, but are created on-the-fly.
 Supported processed columns are:
 
 - ``mchirp``

@@ -1,5 +1,7 @@
 .. currentmodule:: gwpy.table
 
+.. _gwpy-table-rate:
+
 ##############################
 Calculating event trigger rate
 ##############################
@@ -31,7 +33,7 @@ event rate on a 1-second stride:
    >>> ax.set_title('LIGO Hanford Observatory event rate for GW100916')
    >>> plot.show()
 
-This code is a snippet of the example :ref:`example-table-rate`.
+This code is a snippet of the example :ref:`gwpy-example-table-rate`.
 
 =================
 Binned event rate
@@ -58,4 +60,4 @@ signal-to-noise ratio (SNR) above some threshold, for the same table as above.
    >>> ax.set_title('LIGO Hanford Observatory event rate for GW100916')
    >>> plot.show()
 
-This code is a snippet of the example on :ref:`example-table-rate_binned`.
+This code is a snippet of the example on :ref:`gwpy-example-table-rate_binned`.

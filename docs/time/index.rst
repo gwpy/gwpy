@@ -1,6 +1,6 @@
-.. _time:
-
 .. currentmodule:: gwpy.time
+
+.. _gwpy-time:
 
 ####################
 Times and timestamps

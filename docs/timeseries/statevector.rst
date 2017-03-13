@@ -1,5 +1,7 @@
 .. currentmodule:: gwpy.timeseries
 
+.. _gwpy-statevector:
+
 #####################################################
 The :class:`StateTimeSeries` and :class:`StateVector`
 #####################################################

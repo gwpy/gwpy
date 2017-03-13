@@ -1,13 +1,13 @@
 .. currentmodule:: gwpy.timeseries
 .. include:: ../references.txt
 
-.. _timeseries-remote-access:
+.. _gwpy-timeseries-remote:
 
 ##################
 Remote data access
 ##################
 
-The LIGO Laboratory archives instrumental data in GWF files hosted on the LIGO Data Grid (see :ref:`timeseries-datafind` for more details), however, remote access tools have been developed to simplify loading data.
+The LIGO Laboratory archives instrumental data in GWF files hosted on the LIGO Data Grid (see :ref:`gwpy-timeseries-datafind` for more details), however, remote access tools have been developed to simplify loading data.
 GWpy provides two methods for remote data access, one for public data releases, and another for authenticated access to the complete data archive:
 
 ==================================  ===========  =========================
@@ -19,7 +19,7 @@ Method                              Restricted?  Description
                                                  or NDS2
 ==================================  ===========  =========================
 
-.. _timeseries-remote-public:
+.. _gwpy-timeseries-remote-public:
 
 ==================
 Open data releases
@@ -52,9 +52,9 @@ You can then trivially plot these data:
    >>> plot = data.plot()
    >>> plot.show()
 
-For more details on plotting a `TimeSeries`, see :ref:`timeseries-plot`.
+For more details on plotting a `TimeSeries`, see :ref:`gwpy-timeseries-plot`.
 
-.. _timeseries-remote-nds2:
+.. _gwpy-timeseries-remote-nds2:
 
 =============================
 Restricted full data archives

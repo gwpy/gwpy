@@ -1,16 +1,16 @@
-.. _install:
+.. _gwpy-install:
 
-***************
+###############
 Installing GWpy
-***************
+###############
 
 GWpy can be installed on the following platforms
 
-- :ref:`mac-os-x`
-- :ref:`linux`
+- :ref:`gwpy-install-macos`
+- :ref:`gwpy-install-linux`
 
 
-.. _mac-os-x:
+.. _gwpy-install-macos:
 
 ========
 Mac OS X
@@ -31,9 +31,9 @@ You can also run the following to install a number of optional dependencies - pa
 
    sudo port install py27-ipython nds2-client kerberos5 py27-pykerberos py27-h5py py27-lal py27-ldas-tools-framecpp
 
-Once you have at least the required dependencies installed, you can :ref:`install GWpy using pip <install-pip>`.
+Once you have at least the required dependencies installed, you can :ref:`install GWpy using pip <gwpy-install-pip>`.
 
-.. _linux:
+.. _gwpy-install-linux:
 
 =====
 Linux
@@ -55,9 +55,9 @@ You can also install the following optional dependencies - packages that, when p
 * `lal <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ and `lalframe <https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html>`_ (same URL)
 * `NDS2 <https://www.lsc-group.phys.uwm.edu/daswg/projects/nds-client.html>`_ (including SWIG-wrappings for python)
 
-Once you have at least the required dependencies installed, you can :ref:`install GWpy using pip <install-pip>`.
+Once you have at least the required dependencies installed, you can :ref:`install GWpy using pip <gwpy-install-pip>`.
 
-.. _install-pip:
+.. _gwpy-install-pip:
 
 ===
 Pip
@@ -69,9 +69,8 @@ Once you have pip installed:
 
 .. code-block:: bash
 
-   pip install --pre --user gwpy
+   pip install --user gwpy
 
-Currently, GWpy is only in a pre-release phase, and so ``pip`` requires the ``--pre`` option to install GWpy.
 The ``--user`` option tells the installer to copy codes into the standard user library path, on linux machines this is
 
 .. code-block:: bash
@@ -91,6 +90,8 @@ For either operating system, python will automatically know about these director
 
    GWpy is still under major version ``0``, meaning a completely stable state has no been reached. Until that time, backwards-incompatible changes may be made without much warning, but developers will strive to keep these events to a minimum.
 
+.. _gwpy-install-github:
+
 ======
 GitHub
 ======
@@ -104,6 +105,8 @@ Any user can install the latest development version of GWpy by directing ``pip``
 .. warning::
 
    The latest developments are not guaranteed to be free of bugs, and so you should only install from GitHub if you really need to.
+
+.. _gwpy-install-source:
 
 ======
 Source
@@ -146,6 +149,8 @@ You can then, if you wish, install the package by running the ``setup.py`` scrip
       setenv LANG en_US.UTF-8
       setenv LC_ALL en_US.UTF-8
 
+.. _gwpy-install-virtualenv:
+
 ==========
 Virtualenv
 ==========
@@ -161,9 +166,11 @@ To install using this solution you just need to clone the repo and run the `gwpy
 
 The ``~/opt/gwpysoft`` argument is the target directory for the `virtualenv` and can be replaced with anything you like, similarly ``./packages.txt`` contains the list of packages to install in the pip requirements.txt format.
 
-***********************
+.. _gwpy-install-available:
+
+#######################
 Available installations
-***********************
+#######################
 
 If you are a member of the LIGO Scientific Collaboration, a `virtualenv <https://virtualenv.pypa.io/en/latest/>`_ is available for you to use on the LIGO Data Grid, providing an isolated environment including GWpy and its dependencies.
 

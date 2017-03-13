@@ -1,6 +1,6 @@
-.. _channel:
-
 .. currentmodule:: gwpy.detector
+
+.. _gwpy-channel:
 
 ####################
 The :class:`Channel`

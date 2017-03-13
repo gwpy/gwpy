@@ -1,3 +1,5 @@
+.. _gwpy-introduction:
+
 #############
 What is GWpy?
 #############

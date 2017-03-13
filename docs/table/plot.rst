@@ -1,8 +1,12 @@
 .. currentmodule:: gwpy.table
 
+.. _gwpy-table-plot:
+
 #####################
 Plotting tabular data
 #####################
+
+.. _gwpy-table-plot-scatter:
 
 =======================
 Plotting event triggers
@@ -25,6 +29,8 @@ x-axis, y-axis, and optionally colouring:
    >>> ax.set_ylabel('Frequency [Hz]')
    >>> plot.add_colorbar(clim=[1, 10], cmap='YlGnBu', log=True, label='Signal-to-noise ratio (SNR)')
 
+.. _gwpy-table-plot-tiles:
+
 ====================
 Plotting event tiles
 ====================
@@ -45,5 +51,4 @@ These tiles can be plotted in a similar manner to simple triggers.
    >>> plot.add_colorbar(clim=[1, 10], cmap='YlGnBu', log=True, label='Signal-to-noise ratio (SNR)')
 
 
-These code snippets are part of the GWpy example on
-:doc:`plotting events as 2-d tiles <../examples/table/tiles>`.
+These code snippets are part of the example :ref:`gwpy-example-table-tiles`.

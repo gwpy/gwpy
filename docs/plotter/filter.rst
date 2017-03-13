@@ -1,5 +1,7 @@
 .. currentmodule:: gwpy.plotter
 
+.. _gwpy-plotter-bode:
+
 #######################################
 Visualising filters (:class:`BodePlot`)
 #######################################

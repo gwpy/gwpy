@@ -1,8 +1,10 @@
+.. currentmodule:: gwpy.plotter
+
+.. _gwpy-plotter-api:
+
 ############
 Plotting API
 ############
-
-.. currentmodule:: gwpy.plotter
 
 This document provides a reference for the following :class:`~matplotlib.figure.Figure` `class` objects:
 
