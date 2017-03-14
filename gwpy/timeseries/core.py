@@ -474,7 +474,8 @@ class TimeSeriesBase(Series):
         from ..utils.lal import from_lal_unit
         try:
             unit = from_lal_unit(lalts.sampleUnits)
-        except TypeError:
+        except (TypeError, ValueError) as e:
+            warnings.warn("%s, defaulting to 'dimensionless'" % str(e))
             unit = None
         channel = Channel(lalts.name, sample_rate=1/lalts.deltaT, unit=unit,
                           dtype=lalts.data.data.dtype)
@@ -493,7 +494,8 @@ class TimeSeriesBase(Series):
         typestr = LAL_TYPE_STR_FROM_NUMPY[self.dtype.type]
         try:
             unit = to_lal_unit(self.unit)
-        except (TypeError, AttributeError):
+        except ValueError as e:
+            warnings.warn("%s, defaulting to lal.DimensionlessUnit" % str(e))
             try:
                 unit = lal.DimensionlessUnit
             except AttributeError:

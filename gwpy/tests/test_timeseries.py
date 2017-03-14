@@ -336,14 +336,18 @@ class TimeSeriesTestMixin(object):
             lalts = ts.to_lal()
         except (NotImplementedError, ImportError) as e:
             self.skipTest(str(e))
+        import lal
         ts2 = type(ts).from_lal(lalts)
         self.assertEqual(ts, ts2)
         # test copy=False
         ts2 = type(ts).from_lal(lalts, copy=False)
         self.assertEqual(ts, ts2)
-        # test no unit
-        ts.override_unit(None)
-        ts2 = type(ts).from_lal(lalts, copy=False)
+        # test bad unit
+        ts.override_unit('undef')
+        with pytest.warns(UserWarning):
+            lalts = ts.to_lal()
+        self.assertEqual(lalts.sampleUnits, lal.DimensionlessUnit)
+        ts2 = self.TEST_CLASS.from_lal(lalts)
         self.assertIs(ts2.unit, units.dimensionless_unscaled)
 
     def test_io_identify(self):
