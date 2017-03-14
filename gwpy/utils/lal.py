@@ -166,7 +166,7 @@ def from_lal_unit(lunit):
 
     Parameters
     ----------
-    aunit : `LALUnit`
+    lunit : `lal.Unit`
         the input unit
 
     Returns
@@ -176,6 +176,8 @@ def from_lal_unit(lunit):
 
     Raises
     ------
+    TypeError
+        if ``lunit`` cannot be converted to `lal.Unit`
     ValueError
         if Astropy doesn't understand the base units for the input
     """
