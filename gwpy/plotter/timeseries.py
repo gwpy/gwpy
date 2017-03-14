@@ -451,14 +451,12 @@ class TimeSeriesPlot(Plot):
                              "'bottom'.")
         segax = divider.append_axes(location, height, pad=pad,
                                     axes_class=SegmentAxes, sharex=ax)
-        segax.set_xscale(ax.get_xscale())
+        segax.set_xlim(*ax.get_xlim())
+        segax.set_xlabel(ax.get_xlabel())
+        ax.set_xlabel("")
 
-        # plot segments and set axes properties
+        # plot segments
         segax.plot(segments, **plotargs)
         segax.grid(b=False, which='both', axis='y')
         segax.autoscale(axis='y', tight=True)
-        # set ticks and label
-        segax.set_xlabel(ax.get_xlabel())
-        ax.set_xlabel("")
-        segax.set_xlim(*ax.get_xlim())
         return segax
