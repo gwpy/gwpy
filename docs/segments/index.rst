@@ -1,7 +1,7 @@
 .. currentmodule:: gwpy.segments
 .. include:: ../references.txt
 
-.. _segments:
+.. _gwpy-segments:
 
 #####################
 Data-quality segments
