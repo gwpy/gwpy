@@ -1,0 +1,25 @@
+-r requirements.txt
+
+# dependencies for glue
+M2Crypto
+pykerberos
+python-cjson
+pyRXP
+
+# extras
+h5py>=1.3
+MySQL-python
+http://software.ligo.org/lscsoft/source/dqsegdb-1.4.0.tar.gz
+https://github.com/ligovirgo/trigfind/archive/v0.4.tar.gz
+
+# docs
+sphinx
+numpydoc
+sphinx-bootstrap-them
+sphinxcontrib-programoutput
+
+# tests
+pytest>=2.8
+coveralls
+unittest2
+mock

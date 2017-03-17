@@ -63,18 +63,17 @@ cmdclass.update(versioneer.get_cmdclass())
 setup_requires = [
 ]
 install_requires = [
-    'python-dateutil',
     'numpy>=1.10',
     'scipy>=0.16.0',
-    'matplotlib>=1.3.0',
+    'matplotlib>=1.4.1',
     'astropy>=1.2',
-    'six>=1.5'
+    'six>=1.5',
 ]
 extras_require = {
     'nds': ['nds2-client'],
     'docs': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme',
              'sphinxcontrib-programoutput'],
-    'hdf5': ['h5py'],
+    'hdf5': ['h5py>=1.3'],
 }
 
 # test for OrderedDict
