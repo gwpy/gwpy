@@ -15,7 +15,7 @@ https://github.com/ligovirgo/trigfind/archive/v0.4.tar.gz
 # docs
 sphinx
 numpydoc
-sphinx-bootstrap-them
+sphinx-bootstrap-theme
 sphinxcontrib-programoutput
 
 # tests
