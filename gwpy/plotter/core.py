@@ -33,7 +33,7 @@ try:
 except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
-from . import (axes, utils)
+from . import utils
 from .rc import (rcParams, DEFAULT_RCPARAMS)
 from .axes import Axes
 from .log import CombinedLogFormatterMathtext
@@ -176,7 +176,7 @@ class Plot(figure.Figure):
     @auto_refresh
     def add_colorbar(self, mappable=None, ax=None, location='right',
                      width=0.2, pad=0.1, log=None, label="", clim=None,
-                     cmap=None, clip=None, visible=True, axes_class=axes.Axes,
+                     cmap=None, clip=None, visible=True, axes_class=Axes,
                      **kwargs):
         """Add a colorbar to the current `Axes`
 
@@ -781,13 +781,13 @@ class Plot(figure.Figure):
     @axes_method
     def get_xlim(self):
         pass
-    get_xlim.__doc__ = axes.Axes.get_xlim.__doc__
+    get_xlim.__doc__ = Axes.get_xlim.__doc__
 
     @auto_refresh
     @axes_method
     def set_xlim(self, *args, **kwargs):
         pass
-    set_xlim.__doc__ = axes.Axes.set_xlim.__doc__
+    set_xlim.__doc__ = Axes.set_xlim.__doc__
 
     xlim = property(fget=get_xlim, fset=set_xlim,
                     doc='x-axis limits for the current axes')
@@ -795,13 +795,13 @@ class Plot(figure.Figure):
     @axes_method
     def get_ylim(self):
         pass
-    get_ylim.__doc__ = axes.Axes.get_ylim.__doc__
+    get_ylim.__doc__ = Axes.get_ylim.__doc__
 
     @auto_refresh
     @axes_method
     def set_ylim(self, *args, **kwargs):
         pass
-    set_ylim.__doc__ = axes.Axes.set_ylim.__doc__
+    set_ylim.__doc__ = Axes.set_ylim.__doc__
 
     ylim = property(fget=get_ylim, fset=set_ylim,
                     doc='y-axis limits for the current axes')
@@ -809,13 +809,13 @@ class Plot(figure.Figure):
     @axes_method
     def get_xlabel(self):
         pass
-    get_xlabel.__doc__ = axes.Axes.get_xlabel.__doc__
+    get_xlabel.__doc__ = Axes.get_xlabel.__doc__
 
     @axes_method
     @auto_refresh
     def set_xlabel(self, *args, **kwargs):
         pass
-    set_xlabel.__doc__ = axes.Axes.set_xlabel.__doc__
+    set_xlabel.__doc__ = Axes.set_xlabel.__doc__
 
     xlabel = property(fget=get_xlabel, fset=set_xlabel,
                       doc='x-axis label for the current axes')
@@ -823,13 +823,13 @@ class Plot(figure.Figure):
     @axes_method
     def get_ylabel(self):
         pass
-    get_ylabel.__doc__ = axes.Axes.get_ylabel.__doc__
+    get_ylabel.__doc__ = Axes.get_ylabel.__doc__
 
     @auto_refresh
     @axes_method
     def set_ylabel(self, *args, **kwargs):
         pass
-    set_ylabel.__doc__ = axes.Axes.set_ylabel.__doc__
+    set_ylabel.__doc__ = Axes.set_ylabel.__doc__
 
     ylabel = property(fget=get_ylabel, fset=set_ylabel,
                       doc='y-axis label for the current axes')
@@ -837,13 +837,13 @@ class Plot(figure.Figure):
     @axes_method
     def get_title(self):
         pass
-    get_title.__doc__ = axes.Axes.get_title.__doc__
+    get_title.__doc__ = Axes.get_title.__doc__
 
     @auto_refresh
     @axes_method
     def set_title(self, *args, **kwargs):
         pass
-    set_title.__doc__ = axes.Axes.set_title.__doc__
+    set_title.__doc__ = Axes.set_title.__doc__
 
     title = property(fget=get_title, fset=set_title,
                      doc='title for the current axes')
@@ -851,13 +851,13 @@ class Plot(figure.Figure):
     @axes_method
     def get_xscale(self):
         pass
-    get_xscale.__doc__ = axes.Axes.get_xscale.__doc__
+    get_xscale.__doc__ = Axes.get_xscale.__doc__
 
     @auto_refresh
     @axes_method
     def set_xscale(self, *args, **kwargs):
         pass
-    set_xscale.__doc__ = axes.Axes.set_xscale.__doc__
+    set_xscale.__doc__ = Axes.set_xscale.__doc__
 
     @property
     def logx(self):
@@ -876,13 +876,13 @@ class Plot(figure.Figure):
     @axes_method
     def get_yscale(self):
         pass
-    get_yscale.__doc__ = axes.Axes.get_yscale.__doc__
+    get_yscale.__doc__ = Axes.get_yscale.__doc__
 
     @auto_refresh
     @axes_method
     def set_yscale(self, *args, **kwargs):
         pass
-    set_yscale.__doc__ = axes.Axes.set_yscale.__doc__
+    set_yscale.__doc__ = Axes.set_yscale.__doc__
 
     @property
     def logy(self):
@@ -901,7 +901,7 @@ class Plot(figure.Figure):
     @axes_method
     def html_map(self, filename, data=None, **kwargs):
         pass
-    html_map.__doc__ = axes.Axes.html_map.__doc__
+    html_map.__doc__ = Axes.html_map.__doc__
 
     # -----------------------------------------------
     # utilies
