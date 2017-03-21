@@ -67,11 +67,12 @@ GWPY_COLOR_CYCLE = [
 # set mpl version dependent stuff
 try:
     from matplotlib import cycler
+except (ImportError, KeyError):  # mpl < 1.5
+    GWPY_PLOT_PARAMS['axes.color_cycle'] = GWPY_COLOR_CYCLE
+else:
     GWPY_PLOT_PARAMS.update({
         'axes.prop_cycle': cycler('color', GWPY_COLOR_CYCLE),
     })
-except (ImportError, KeyError):  # mpl < 1.5
-    GWPY_PLOT_PARAMS['axes.color_cycle'] = GWPY_COLOR_CYCLE
 
 # set latex options
 if rcParams['text.usetex'] or USE_TEX:
