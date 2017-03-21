@@ -33,7 +33,8 @@ try:
 except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
-from . import (axes, utils, rcParams, DEFAULT_RCPARAMS)
+from . import (axes, utils)
+from .rc import (rcParams, DEFAULT_RCPARAMS)
 from .axes import Axes
 from .log import CombinedLogFormatterMathtext
 from .decorators import (auto_refresh, axes_method)
