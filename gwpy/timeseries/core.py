@@ -1016,7 +1016,7 @@ class TimeSeriesBaseDict(OrderedDict):
                 gprint("Determined %d frametypes to read" % len(frametypes))
             elif verbose:
                 gprint("Determined best frametype as %r"
-                       % list(frametypes.keys()[0]))
+                       % list(frametypes.keys())[0])
         else:
             frametypes = {frametype: channels}
         # -- read data
