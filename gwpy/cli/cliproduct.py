@@ -33,7 +33,7 @@ Implemented methods (used by multiple products):
     arg_plot(parser) - add plot annotations (labels, legends..)
 """
 
-import abc
+import abc      # abstract base class
 import sys
 import re
 
@@ -537,7 +537,7 @@ class CliProduct(object):
 
                 if epoch is not None:
                     # note zero is also false
-                    if epoch > 0 and epoch < 1e8:
+                    if 0 < epoch < 1999999999:
                         epoch += self.xmin       # specified as seconds
                         self.ax.set_epoch(epoch)
                     elif epoch == 0:
