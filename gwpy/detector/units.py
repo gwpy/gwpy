@@ -19,9 +19,9 @@
 """This module registers a number of custom units used in GW astronomy.
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
 from astropy import units
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # enable imperial units
 units.add_enabled_units(units.imperial)
@@ -50,7 +50,10 @@ def parse_unit(name, parse_strict='warn'):
     """
     if name is None or isinstance(name, units.UnitBase):
         return name
-    name = str(name)
+    if isinstance(name, bytes):
+        name = name.decode('utf-8')
+    else:
+        name = str(name)
     # try simple parse
     try:
         return units.Unit(name)

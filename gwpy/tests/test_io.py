@@ -131,7 +131,7 @@ class CacheIoTestCase(unittest.TestCase):
         for seg in [(0, 1), (1, 2), (4, 5)]:
             d = seg[1] - seg[0]
             f = 'A-B-%d-%d.tmp' % (seg[0], d)
-            cache.append(CacheEntry.from_T050017(f))
+            cache.append(CacheEntry.from_T050017(f, coltype=int))
             segs.append(Segment(*seg))
         return cache, segs
 
@@ -217,7 +217,7 @@ class DataFindIoTestCase(unittest.TestCase):
     def test_on_tape(self):
         self.assertFalse(datafind.on_tape(TEST_GWF_FILE))
         self.assertFalse(datafind.on_tape(
-            CacheEntry.from_T050017(TEST_GWF_FILE)))
+            CacheEntry.from_T050017(TEST_GWF_FILE, coltype=int)))
 
     def test_connect(self):
         with mock.patch('glue.datafind.GWDataFindHTTPConnection',

@@ -21,7 +21,7 @@
 
 """ Coherence plots
 """
-from cliproduct import CliProduct
+from .cliproduct import CliProduct
 
 
 class Coherence(CliProduct):
@@ -91,8 +91,9 @@ class Coherence(CliProduct):
         next_ts = -1
         for idx in range(0, len(self.timeseries)):
             legend_text = self.timeseries[idx].channel.name
-            if not legend_text.startswith(ref_name) and self.timeseries[idx].min() != \
-                    self.timeseries[idx].value.max():
+            if (not legend_text.startswith(ref_name) and
+                    self.timeseries[idx].min() !=
+                    self.timeseries[idx].value.max()):
                 next_ts = idx
                 break
         if next_ts == -1:

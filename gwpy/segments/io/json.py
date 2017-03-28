@@ -41,7 +41,10 @@ def read_json_flag(f):
         f = open(f, 'r')
 
     with f:
-        data = json.load(f)
+        txt = f.read()
+        if isinstance(txt, bytes):
+            txt = txt.decode('utf-8')
+        data = json.loads(txt)
     name = '{ifo}:{name}:{version}'.format(**data)
     out = DataQualityFlag(name, active=data['active'],
                           known=data['known'])

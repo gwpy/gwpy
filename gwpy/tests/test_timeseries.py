@@ -44,7 +44,7 @@ from astropy.io.registry import (get_reader, register_reader)
 from gwpy.detector import Channel
 from gwpy.time import (Time, LIGOTimeGPS)
 from gwpy.timeseries import (TimeSeries, StateVector, TimeSeriesDict,
-                             StateVectorDict, TimeSeriesList)
+                             StateVectorDict, TimeSeriesList, StateTimeSeries)
 from gwpy.segments import (Segment, DataQualityFlag, DataQualityDict)
 from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.types import Array2D
@@ -151,7 +151,7 @@ class TimeSeriesTestMixin(object):
             a.write(f1.name)
 
         # test reading it from the cache
-        cache = Cache.from_urls([f1.name])
+        cache = Cache.from_urls([f1.name], coltype=int)
         b = self.TEST_CLASS.read(cache, a.name)
         self.assertArraysEqual(a, b, exclude=exclude)
 
@@ -210,6 +210,19 @@ class TimeSeriesTestMixin(object):
         t = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format='gwf',
                                  start=start, end=end)
         self.assertTupleEqual(t.span, (start, end))
+        t = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format='gwf',
+                                 start=start)
+        self.assertTupleEqual(t.span, (start, TEST_SEGMENT[1]))
+        t = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format='gwf',
+                                 end=end)
+        self.assertTupleEqual(t.span, (TEST_SEGMENT[0], end))
+        # check errors
+        self.assertRaises((ValueError, RuntimeError), self.TEST_CLASS.read,
+                          TEST_GWF_FILE, self.channel, format='gwf',
+                          start=TEST_SEGMENT[1])
+        self.assertRaises((ValueError, RuntimeError), self.TEST_CLASS.read,
+                          TEST_GWF_FILE, self.channel, format='gwf',
+                          end=TEST_SEGMENT[0])
 
     def read_write_gwf_api(self, api):
         fmt = 'gwf.%s' % api
@@ -242,6 +255,12 @@ class TimeSeriesTestMixin(object):
         t = self.TEST_CLASS.read(TEST_HDF_FILE, self.channel, format='hdf5',
                                  start=start, end=end)
         self.assertTupleEqual(t.span, (start, end))
+
+    def test_read_write_ascii(self):
+        return self._test_read_write_ascii(format='txt')
+
+    def test_read_write_csv(self):
+        return self._test_read_write_ascii(format='csv')
 
     def test_find(self):
         try:
@@ -317,14 +336,18 @@ class TimeSeriesTestMixin(object):
             lalts = ts.to_lal()
         except (NotImplementedError, ImportError) as e:
             self.skipTest(str(e))
+        import lal
         ts2 = type(ts).from_lal(lalts)
         self.assertEqual(ts, ts2)
         # test copy=False
         ts2 = type(ts).from_lal(lalts, copy=False)
         self.assertEqual(ts, ts2)
-        # test no unit
-        ts.override_unit(None)
-        ts2 = type(ts).from_lal(lalts, copy=False)
+        # test bad unit
+        ts.override_unit('undef')
+        with pytest.warns(UserWarning):
+            lalts = ts.to_lal()
+        self.assertEqual(lalts.sampleUnits, lal.DimensionlessUnit)
+        ts2 = self.TEST_CLASS.from_lal(lalts)
         self.assertIs(ts2.unit, units.dimensionless_unscaled)
 
     def test_io_identify(self):
@@ -389,7 +412,7 @@ class TimeSeriesTestMixin(object):
         _, tmpfile = tempfile.mkstemp(prefix='GWPY-TEST_LOSC_', suffix='.hdf')
         try:
             response = urlopen(LOSC_HDF_FILE)
-            with open(tmpfile, 'w') as f:
+            with open(tmpfile, 'wb') as f:
                 f.write(response.read())
             self._test_losc_inner(tmpfile)  # actually run test here
         except (URLError, ImportError) as e:
@@ -584,9 +607,9 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertAlmostEqual(tmax.value, -glitchtime)
 
     def test_detrend(self):
-        self.assertNotAlmostEqual(self.random.mean(), 0.0)
+        self.assertNotAlmostEqual(self.random.value.mean(), 0.0)
         detrended = self.random.detrend()
-        self.assertAlmostEqual(detrended.mean(), 0.0)
+        self.assertAlmostEqual(detrended.value.mean(), 0.0)
 
     def test_csd_spectrogram(self):
         ts = self._read()
@@ -648,6 +671,18 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
             self.assertTupleEqual(qspecgram.shape, (32000, 2560))
             self.assertAlmostEqual(qspecgram.q, 11.31370849898476)
             self.assertAlmostEqual(qspecgram.value.max(), 37.035843858490509)
+
+    def test_boolean_statetimeseries(self):
+        comp = self.TEST_ARRAY >= 100 * self.TEST_ARRAY.unit
+        self.assertIsInstance(comp, StateTimeSeries)
+        self.assertEqual(comp.unit, units.Unit(''))
+        self.assertEqual(
+            comp.name,
+            '%s >= 100.0 %s' % (self.TEST_ARRAY.name, self.TEST_ARRAY.unit))
+
+    def test_rms(self):
+        rms = self.TEST_ARRAY.rms(1.)
+        self.assertQuantityEqual(rms.sample_rate, 1 * units.Hertz)
 
 
 class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):

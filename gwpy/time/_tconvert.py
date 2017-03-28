@@ -57,7 +57,7 @@ def tconvert(gpsordate='now'):
     # convert from GPS into datetime
     try:
         gps = LIGOTimeGPS(gpsordate)
-    except (ValueError, TypeError):
+    except (TypeError, RuntimeError):
         if hasattr(gpsordate, 'gpsSeconds'):
             return from_gps(gpsordate)
         else:
@@ -99,9 +99,9 @@ def to_gps(t, *args, **kwargs):
     # allow Time conversion to override type-checking
     if args or kwargs:
         return Time(t, *args, **kwargs).utc.gps
-    # if lal.LIGOTimeGPS
-    if hasattr(t, 'gpsSeconds'):
-        return LIGOTimeGPS(t.gpsSeconds, t.gpsNanoSeconds)
+    # if lal.LIGOTimeGPS, just return it
+    if isinstance(t, LIGOTimeGPS):
+        return t
     # or convert numeric string to float (e.g. '123.456')
     try:
         t = float(t)
@@ -154,11 +154,11 @@ def from_gps(gps):
     try:
         from lal import GPSToUTC
     except ImportError:
-        dt = Time(gps.seconds, gps.nanoseconds * 1e-9,
+        dt = Time(gps.gpsSeconds, gps.gpsNanoSeconds * 1e-9,
                   format='gps', scale='utc').datetime
     else:
-        dt = datetime.datetime(*GPSToUTC(gps.seconds)[:6])
-        dt += datetime.timedelta(seconds=gps.nanoseconds * 1e-9)
+        dt = datetime.datetime(*GPSToUTC(gps.gpsSeconds)[:6])
+        dt += datetime.timedelta(seconds=gps.gpsNanoSeconds * 1e-9)
     if float(gps).is_integer():
         return dt.replace(microsecond=0)
     else:

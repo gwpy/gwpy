@@ -21,8 +21,12 @@ ratings:
 exclude_paths:
 - ez_setup.py
 - versioneer.py
+- docs/*
+- examples/*
 - gwpy/_version.py
 - gwpy/tests/*
 - gwpy/tests/data/*
-- docs/*
-- examples/*
+- gwpy/table/rate.py
+- gwpy/table/rec.py
+- gwpy/table/utils.py
+- gwpy/table/io/ascii.py

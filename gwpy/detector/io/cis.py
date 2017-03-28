@@ -20,9 +20,10 @@
 """
 
 import json
-import numpy
 
-from urllib2 import HTTPError
+from six.moves.urllib.error import HTTPError
+
+import numpy
 
 from ...utils import auth
 from .. import (Channel, ChannelList)
@@ -68,13 +69,25 @@ def query(name, debug=False, timeout=None):
 def _get(url, debug=False, timeout=None):
     """Perform a GET query against the CIS
     """
+    # perform query
     try:
         response = auth.request(url, debug=debug, timeout=timeout)
     except HTTPError:
         raise ValueError("Channel not found at URL %s "
                          "Information System. Please double check the "
                          "name and try again." % url)
-    return json.loads(response.read())
+
+    # decode response
+    data = response.read()
+    if isinstance(data, bytes):
+        data = data.decode('utf-8')
+
+    # check for HTML data (authentication failure)
+    if data.startswith('<!DOCTYPE'):
+        raise RuntimeError("CIS query redirected to login prompt, "
+                           "authentication failed")
+
+    return json.loads(data)
 
 
 def parse_json(data):

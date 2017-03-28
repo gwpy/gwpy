@@ -45,8 +45,8 @@ GET_AS_EXCLUDE = ['get_column', 'get_table']
 # -- read ---------------------------------------------------------------------
 
 def _table_from_ligolw(llwtable, target, copy, columns=None,
-                      on_attributeerror='raise', get_as_columns=False,
-                      rename={}):
+                       on_attributeerror='raise', get_as_columns=False,
+                       rename={}):
     """Convert this `~glue.ligolw.table.Table` to an `~astropy.tableTable`
 
         Parameters
@@ -138,7 +138,7 @@ def _table_from_ligolw(llwtable, target, copy, columns=None,
             names.append(column)
             try:
                 data.append(target.Column(name=rename[column], data=arr,
-                                       dtype=dtype))
+                                          dtype=dtype))
             except KeyError:
                 data.append(target.Column(name=column, data=arr, dtype=dtype))
 
@@ -210,7 +210,7 @@ def ligolw_io_factory(table_):
         # handle requests for 'time' as a special case
         needtime = (reckwargs['columns'] is not None and
                     'time' in reckwargs['columns'] and
-                    not 'time' in table_.validcolumns)
+                    'time' not in table_.validcolumns)
         if needtime:
             if tablename.endswith('_burst'):
                 tname = 'peak'
@@ -246,7 +246,7 @@ def ligolw_io_factory(table_):
 # -- register -----------------------------------------------------------------
 
 # register reader and auto-id for LIGO_LW
-for table in TableByName.itervalues():
+for table in TableByName.values():
     name = 'ligolw.%s' % table.TableName(table.tableName)
 
     # build readers for this table

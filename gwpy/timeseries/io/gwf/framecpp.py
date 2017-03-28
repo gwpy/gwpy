@@ -33,7 +33,6 @@ else:
 
 from ....detector import Channel
 from ....io.cache import (Cache, CacheEntry, file_list)
-from ....segments import Segment
 from ....time import LIGOTimeGPS
 from ... import (TimeSeries, TimeSeriesDict)
 
@@ -89,9 +88,10 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                     series_class=TimeSeries):
     """Internal function to read data from a single frame.
     """
-    # construct span segment
-    span = Segment(start is not None and start or 0,
-                   end is not None and end or 0)
+    if not start:
+        start = 0
+    if not end:
+        end = 0
 
     # open file
     if isinstance(framefile, CacheEntry):
@@ -110,7 +110,7 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
     # as required by the file-naming convention
     epochs = None
     try:
-        ce = CacheEntry.from_T050017(fp)
+        ce = CacheEntry.from_T050017(fp, coltype=LIGOTimeGPS)
     except ValueError:
         pass
     else:
@@ -126,7 +126,7 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
         if not ctype.get(channel, None):
             toc = stream.GetTOC()
             for typename in ['Sim', 'Proc', 'ADC']:
-                if not typename in toclist:
+                if typename not in toclist:
                     get_ = getattr(toc, 'Get%s' % typename)
                     try:
                         toclist[typename] = get_().keys()
@@ -137,8 +137,8 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                     break
         # if still not found, channel isn't in the frame
         if not ctype.get(channel, None):
-           raise ValueError("Channel %s not found in frame table of contents"
-                            % str(channel))
+            raise ValueError("Channel %s not found in frame table of contents"
+                             % str(channel))
 
     # find channels
     out = series_class.DictClass()
@@ -158,6 +158,20 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                     raise
             offset = data.GetTimeOffset()
             datastart = epochs[i] + offset
+            i += 1  # increment frame index before any 'continue'
+            # check overlap with user-requested span
+            if end and datastart >= end and nframe == 1:
+                raise ValueError("Cannot read %s from FrVect in %s "
+                                 "ending at %s" % (name, fp, end))
+            elif end and datastart >= end:  # don't need this frame
+                continue
+            try:
+                dataend = datastart + data.GetTRange()
+            except AttributeError:  # not proc channel
+                pass
+            else:
+                if start and dataend < start:  # don't need this frame
+                    continue
             for vect in data.data:  # loop hopefully over single vector
                 # decompress data
                 arr = vect.GetDataArray()
@@ -170,14 +184,18 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                 # crop to required subset
                 dimstart = datastart + sx
                 dimend = dimstart + arr.size * dx
-                a = int(max(0., float(span[0]-dimstart)) / dx)
-                if span[1]:
-                    b = arr.size - int(max(0., float(dimend-span[1])) / dx)
+                a = int(max(0., float(start-dimstart)) / dx)
+                if end:
+                    b = arr.size - int(max(0., float(dimend-end)) / dx)
                 else:
                     b = None
-                if a >= arr.size or b is not None and b <= a:
-                    raise ValueError("Span %s not covered by FrVect for %r "
-                                     "in %s" % (span, name, fp))
+                # if file only has ony frame, error on overlap problems
+                if a >= arr.size and nframe == 1:  # start too large
+                    raise ValueError("Cannot read %s from FrVect in %s "
+                                     "starting at %s" % (name, fp, start))
+                # otherwise just skip to the next frame
+                if a >= arr.size:  # skip frame
+                    continue
                 if a or b:
                     arr = arr[a:b]
                 # cast as series or append
@@ -194,9 +212,8 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                     ts.channel.unit = unit
                 else:
                     ts.append(arr)
-            i += 1
         if ts is None:
-            raise ValueError("Channel '%s' not found in frame '%s'"
+            raise ValueError("Failed to read '%s' from file '%s'"
                              % (str(channel), fp))
         else:
             out[channel] = ts
@@ -251,7 +268,7 @@ def create_frame(tsdict, start=None, end=None,
             idx = getattr(frameCPP, 'DETECTOR_LOCATION_%s' % prefix)
         except AttributeError:
             continue
-        #frame.appendFrDetector(frameCPP.GetDetector(idx, start))
+        frame.AppendFrDetector(frameCPP.GetDetector(idx, start))
 
     # set header metadata
     frame.SetGTime(start)

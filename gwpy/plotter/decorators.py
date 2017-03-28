@@ -38,15 +38,20 @@ def auto_refresh(func):
         try:
             return func(artist, *args, **kwargs)
         finally:
-            if isinstance(artist, Axes):
-                if refresh or artist.figure.get_auto_refresh():
-                    artist.figure.refresh()
-            elif isinstance(artist, Figure):
-                if refresh or artist.get_auto_refresh():
-                    artist.refresh()
+            try:
+                refresh |= artist.figure.get_auto_refresh()
+            except AttributeError:
+                pass
             else:
-                raise TypeError("Cannot determine containing Figure for "
-                                "auto_refresh() decorator")
+                if not refresh:
+                    pass
+                elif isinstance(artist, Axes):
+                    artist.figure.refresh()
+                elif isinstance(artist, Figure):
+                    artist.refresh()
+                else:
+                    raise TypeError("Cannot determine containing Figure for "
+                                    "auto_refresh() decorator")
     return wrapper
 
 

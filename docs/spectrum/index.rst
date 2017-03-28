@@ -1,5 +1,7 @@
 .. currentmodule:: gwpy.frequencyseries
 
+.. _gwpy-frequencyseries:
+
 ############################
 The :class:`FrequencySeries`
 ############################
@@ -47,12 +49,14 @@ The frequency-spectrum of a :class:`TimeSeries` can be calculated using either o
    TimeSeries.psd
    TimeSeries.asd
 
-In this example we expand the :ref:`previous example <plotting-a-timeseries>`, by calculating the amplitude-spectral density of the gravitational-wave strain data from LHO:
+In this example we expand upon plotting a :class:`~gwpy.timeseries.TimeSeries`, by calculating the amplitude-spectral density of the gravitational-wave strain data from LHO:
 
 .. literalinclude:: spectrum_plot.py
    :lines: 1-3
 
 where the result is an average spectrum calculated using the `Welch method <https://en.wikipedia.org/wiki/Welch_method>`_.
+
+.. _gwpy-frequencyseries-plot:
 
 ============================
 Plotting a `FrequencySeries`

@@ -26,7 +26,7 @@ from glue.segments import (segment as _Segment,
                            segmentlist as _SegmentList,
                            segmentlistdict as _SegmentListDict)
 
-from ..io import (reader, writer)
+from astropy.io import registry as io_registry
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -97,42 +97,45 @@ class SegmentList(_SegmentList):
     def __str__(self):
         return "[%s]" % "\n ".join(map(str, self))
 
-    read = classmethod(reader(doc="""
-    Read segments from file into a `SegmentList`.
+    # -- i/o ------------------------------------
 
-    Parameters
-    ----------
-    filename : `str`
-        path of file to read
+    @classmethod
+    def read(cls, source, format=None, **kwargs):
+        """Read segments from file into a `SegmentList`
 
-    format : `str`, optional
-        source format identifier. If not given, the format will be
-        detected if possible. See below for list of acceptable
-        formats.
+        Parameters
+        ----------
+        filename : `str`
+            path of file to read
 
-    flag : `str`, optional, default: read all segments
-        name of flag to read from file.
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
 
-    gpstype : `type`, optional, default: `float`
-        datatype to force for segment GPS times
+        Returns
+        -------
+        segmentlist : `SegmentList`
+            `SegmentList` active and known segments read from file.
 
-    strict : `bool`, optional, default: `True`
-        require segment start and stop times match printed duration,
-        only valid for ``format='segwizard'``.
+        Notes
+        -----"""
+        return io_registry.read(cls, source, format=format, **kwargs)
 
-    Returns
-    -------
-    segmentlist : `SegmentList`
-        `SegmentList` active and known segments read from file.
+    def write(self, target, *args, **kwargs):
+        """Write this `SegmentList` to a file
 
-    Notes
-    -----
-    When reading with ``format='segwizard'`` the
-    :attr:`~DataQualityFlag.known` `SegmentList` will simply represent
-    the extent of the :attr:`~DataQualityFlag.active` `SegmentList`.
-    """))
+        Arguments and keywords depend on the output format, see the
+        online documentation for full details for each format.
 
-    write = writer()
+        Parameters
+        ----------
+        target : `str`
+            output filename
+
+        Notes
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
 
 
 class SegmentListDict(_SegmentListDict):

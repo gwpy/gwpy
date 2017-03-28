@@ -36,7 +36,7 @@ def open_hdf5(filename, mode='r'):
     import h5py
     if isinstance(filename, (h5py.Group, h5py.Dataset)):
         return filename
-    elif isinstance(filename, file):
+    elif isinstance(filename, FILE_LIKE):
         return h5py.File(filename.name, mode)
     else:
         return h5py.File(filename, mode)
@@ -92,7 +92,7 @@ def find_dataset(h5o, path=None):
     if isinstance(h5o, h5py.Dataset):
         return h5o
     elif path is None and len(h5o) == 1:
-        path = h5o.keys()[0]
+        path = list(h5o.keys())[0]
     elif path is None:
         raise ValueError("Please specify the HDF5 path via the "
                          "``path=`` keyword argument")

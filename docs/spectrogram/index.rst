@@ -1,8 +1,10 @@
 .. currentmodule:: gwpy.spectrogram
 
-########################
+.. _gwpy-spectrogram:
+
+#################
 The `Spectrogram`
-########################
+#################
 
 While the `~gwpy.timeseries.TimeSeries` allows us to study how the amplitude of a signal changes over time, and the `~gwpy.frequencyseries.FrequencySeries` allows us to study how that amplitude changes over frequency, the time-frequency `~gwpy.spectrogram.Spectrogram` allows us to track the evolution of the `~gwpy.frequencyseries.FrequencySeries` over over time.
 
@@ -50,10 +52,12 @@ Calculating a `Spectrogram` from a `~gwpy.timeseries.TimeSeries`
 ================================================================
 
 The time-frequency `Spectrogram` of a `~gwpy.timeseries.TimeSeries` can be calculated using the :meth:`~gwpy.timeseries.TimeSeries.spectrogram`.
-We can extend the original :ref:`time-series example <timeseries-plot>` with calculation of a `Spectrogram` with a 20-second stride:
+We can extend previous examples of plotting a `~gwpy.timeseries.TimeSeries` with calculation of a `Spectrogram` with a 20-second stride:
 
 .. literalinclude:: spectrogram_plot.py
    :lines: 1-4
+
+.. _gwpy-spectrogram-plot:
 
 ========================
 Plotting a `Spectrogram`

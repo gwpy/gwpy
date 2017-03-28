@@ -1,7 +1,7 @@
 .. currentmodule:: gwpy.segments
 .. include:: ../references.txt
 
-.. _segments-dqsegdb:
+.. _gwpy-segments-dqsegdb:
 
 ####################
 The Segment Database

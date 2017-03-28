@@ -28,6 +28,9 @@ from six.moves.urllib.error import URLError
 
 import pytest
 
+from matplotlib import use
+use('agg')
+
 from glue.segments import PosInfinity
 from glue.LDBDWClient import LDBDClientException
 
@@ -240,7 +243,7 @@ class DataQualityFlagTests(unittest.TestCase, SegmentClassTestsMixin):
     """Unit tests for the `DataQualityFlag` class
     """
     TEST_CLASS = DataQualityFlag
-    TEST_DATA = QUERY_RESULT.values()[0]
+    TEST_DATA = list(QUERY_RESULT.values())[0]
     tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_dqflag')
 
     def test_properties(self):
@@ -465,7 +468,10 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
         # download veto definer
         vdffile = urlopen(VETO_DEFINER_FILE)
         with open(self.VETO_DEFINER, 'w') as f:
-            f.write(vdffile.read())
+            try:
+                f.write(vdffile.read().decode('utf-8'))
+            except AttributeError:
+                f.write(vdffile.read())
 
     def tearDown(self):
         if os.path.isfile(self.VETO_DEFINER):
@@ -544,7 +550,7 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
         result = self._mock_query(
             self.TEST_CLASS.query, QUERY_RESULT,
             QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL)
-        self.assertListEqual(result.keys(), QUERY_FLAGS)
+        self.assertListEqual(list(result.keys()), QUERY_FLAGS)
         for flag in result:
             self.assertEqual(result[flag].known, QUERY_RESULT[flag].known)
             self.assertEqual(result[flag].active, QUERY_RESULT[flag].active)
@@ -553,7 +559,7 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
         result = self._mock_query(
             self.TEST_CLASS.query_dqsegdb, QUERY_RESULT,
             QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL)
-        self.assertListEqual(result.keys(), QUERY_FLAGS)
+        self.assertListEqual(list(result.keys()), QUERY_FLAGS)
         for flag in result:
             self.assertEqual(result[flag].known, QUERY_RESULT[flag].known)
             self.assertEqual(result[flag].active, QUERY_RESULT[flag].active)
@@ -564,7 +570,7 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
                 QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL_SEGDB)
         except (SystemExit, LDBDClientException) as e:
             self.skipTest(str(e))
-        self.assertListEqual(result.keys(), QUERY_FLAGS)
+        self.assertListEqual(list(result.keys()), QUERY_FLAGS)
         for flag in result:
             self.assertEqual(result[flag].known, QUERY_RESULT[flag].known)
             self.assertEqual(result[flag].active, QUERY_RESULT[flag].active)

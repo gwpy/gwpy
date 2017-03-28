@@ -28,25 +28,28 @@ import subprocess
 import sys
 from math import log
 
+from six import string_types
+
 from astropy import units
+from astropy.io import registry as io_registry
 
 try:
     from ..io.nds import (NDS2_CHANNEL_TYPE, NDS2_CHANNEL_TYPESTR)
 except ImportError:
     NDS2_CHANNEL_TYPESTR = {
         1: 'online',
-         2: 'raw',
-         4: 'reduced',
-         8: 's-trend',
-         16: 'm-trend',
-         32: 'test-pt',
-         64: 'static',
-         128: 'rds',
+        2: 'raw',
+        4: 'reduced',
+        8: 's-trend',
+        16: 'm-trend',
+        32: 'test-pt',
+        64: 'static',
+        128: 'rds',
     }
     NDS2_CHANNEL_TYPE = dict((val, key) for (key, val) in
-                             NDS2_CHANNEL_TYPESTR.iteritems())
+                             NDS2_CHANNEL_TYPESTR.items())
 
-from ..io import (reader, writer, datafind)
+from ..io import datafind
 from ..time import to_gps
 from ..utils.deps import with_import
 from .units import parse_unit
@@ -89,11 +92,11 @@ class Channel(object):
     """
     MATCH = re.compile(
         r'((?:(?P<ifo>[A-Z]\d))?|[\w-]+):'  # match IFO prefix
-         '(?:(?P<system>[a-zA-Z0-9]+))?'  # match system
-         '(?:[-_](?P<subsystem>[a-zA-Z0-9]+))?'  # match subsystem
-         '(?:[-_](?P<signal>[a-zA-Z0-9_-]+?))?'  # match signal
-         '(?:[\.-](?P<trend>[a-z]+))?'  # match trend type
-         '(?:,(?P<type>([a-z]-)?[a-z]+))?$'  # match channel type
+        '(?:(?P<system>[a-zA-Z0-9]+))?'  # match system
+        '(?:[-_](?P<subsystem>[a-zA-Z0-9]+))?'  # match subsystem
+        '(?:[-_](?P<signal>[a-zA-Z0-9_-]+?))?'  # match signal
+        '(?:[\.-](?P<trend>[a-z]+))?'  # match trend type
+        '(?:,(?P<type>([a-z]-)?[a-z]+))?$'  # match channel type
     )
 
     def __init__(self, name, sample_rate=None, unit=None, frequency_range=None,
@@ -122,7 +125,7 @@ class Channel(object):
             self.name = str(name)
         else:
             self.name = str(name).split(',')[0]
-            for key, val in parts.iteritems():
+            for key, val in parts.items():
                 try:
                     setattr(self, key, val)
                 except AttributeError:
@@ -623,8 +626,9 @@ class ChannelList(list):
         """
         return set([c.ifo for c in self])
 
-    read = classmethod(reader(
-        doc="""Read a `ChannelList` from a file
+    @classmethod
+    def read(cls, source, *args, **kwargs):
+        """Read a `ChannelList` from a file
 
         Parameters
         ----------
@@ -632,9 +636,15 @@ class ChannelList(list):
             either an open file object, or a file name path to read
 
         Notes
-        -----"""))
+        -----"""
+        return io_registry.read(cls, source, *args, **kwargs)
 
-    write = writer()
+    def write(self, target, *args, **kwargs):
+        """Write a `ChannelList` to a file
+
+        Notes
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
 
     @classmethod
     def from_names(cls, *names):
@@ -654,7 +664,7 @@ class ChannelList(list):
             namestr = namestr.strip('\' \n')
             if ',' not in namestr:
                 break
-            for nds2type in NDS2_CHANNEL_TYPE.keys() + ['']:
+            for nds2type in list(NDS2_CHANNEL_TYPE.keys()) + ['']:
                 if nds2type and ',%s' % nds2type in namestr:
                     try:
                         channel, ctype, namestr = namestr.split(',', 2)
@@ -740,7 +750,7 @@ class ChannelList(list):
             c = [entry for entry in c if
                  sample_range[0] <= entry.sample_rate.value <=
                  sample_range[1]]
-        for attr, val in others.iteritems():
+        for attr, val in others.items():
             if val is not None:
                 c = [entry for entry in c if
                      (hasattr(entry, attr) and getattr(entry, attr) == val)]
@@ -820,7 +830,7 @@ class ChannelList(list):
             names = [names]
         for name in names:
             # format channel query
-            if (type and (isinstance(type, (unicode, str)) or
+            if (type and (isinstance(type, string_types) or
                           (isinstance(type, int) and
                            log(type, 2).is_integer()))):
                 channel = Channel(name, type=type)

@@ -1,7 +1,7 @@
 .. currentmodule:: gwpy.segments
 .. include:: ../references.txt
 
-.. _segments-io:
+.. _gwpy-segments-io:
 
 ##################################
 Reading/writing segments and flags
@@ -12,11 +12,11 @@ As with other classes in GWpy, the ``format`` keyword argument can be used to ma
 
 The :meth:`read` and :meth:`write` methods take different arguments and keywords based on the input/output file format, see the following sections for details on reading/writing for each of the built-in formats. Those formats are:
 
-- :ref:`segments-io-ligolw`
-- :ref:`segments-io-hdf5`
-- :ref:`segments-io-json`
+- :ref:`gwpy-segments-io-ligolw`
+- :ref:`gwpy-segments-io-hdf5`
+- :ref:`gwpy-segments-io-json`
 
-.. _segments-io-ligolw:
+.. _gwpy-segments-io-ligolw:
 
 ===============
 ``LIGO_LW`` XML
@@ -69,7 +69,7 @@ To write a `DataQualityFlag` to file in ``LIGO_LW`` format, use the :meth:`~Data
 
    >>> f.write('new-segments.xml')
 
-As with :ref:`writing tables <table-io-ligolw>`, if the target file already exists, an :class:`~exceptions.IOError` will be raised, use ``overwrite=True`` to force a new file to be written.
+As with :ref:`writing tables <gwpy-table-io-ligolw>`, if the target file already exists, an :class:`~exceptions.IOError` will be raised, use ``overwrite=True`` to force a new file to be written.
 
 To write a table to an existing file, use ``append=True``::
 
@@ -90,7 +90,7 @@ Identical arguments should be used relative to the :meth:`DataQualityFlag.write`
 
     >>> fdict.write('new-segments.xml')
 
-.. _segments-io-hdf5:
+.. _gwpy-segments-io-hdf5:
 
 ====
 HDF5
@@ -131,7 +131,7 @@ Identical arguments should be used relative to the :meth:`DataQualityFlag.write`
 
     >>> fdict.write('new-segments.hdf5')
 
-.. _segments-io-json:
+.. _gwpy-segments-io-json:
 
 ====
 JSON

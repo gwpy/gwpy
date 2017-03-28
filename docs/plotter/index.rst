@@ -1,8 +1,10 @@
+.. currentmodule:: gwpy.plotter
+
+.. _gwpy-plotter:
+
 #################################
 Plotting in GWpy (`gwpy.plotter`)
 #################################
-
-.. currentmodule:: gwpy.plotter
 
 Visualisation of the data produced by gravitational-wave detectors is
 obviously a key part of understanding their sensitivity, and studying the

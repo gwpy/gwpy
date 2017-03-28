@@ -55,7 +55,7 @@ for ctype in (nds2.channel.CHANNEL_TYPE_RAW,
     NDS2_CHANNEL_TYPESTR[ctype] = nds2.channel_channel_type_to_string(ctype)
 NDS2_CHANNEL_TYPESTR[max(NDS2_CHANNEL_TYPESTR.keys()) * 2] = 'rds'
 NDS2_CHANNEL_TYPE = dict((val, key) for (key, val) in
-                         NDS2_CHANNEL_TYPESTR.iteritems())
+                         NDS2_CHANNEL_TYPESTR.items())
 # manually add RDS
 
 

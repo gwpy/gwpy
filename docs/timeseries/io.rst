@@ -1,6 +1,7 @@
-.. _timeseries-io:
 .. currentmodule:: gwpy.timeseries
 .. include:: ../references.txt
+
+.. _gwpy-timeseries-io:
 
 ####################################
 Reading and writing time-domain data
@@ -16,11 +17,11 @@ The ``format`` keyword argument can be used to manually identify the input file-
 The :meth:`~TimeSeries.read` and :meth:`~TimeSeries.write` methods take different arguments and keywords based on the input/output file format, see the following sections for details on reading/writing for each of the built-in formats.
 Those formats are:
 
-- :ref:`timeseries-io-ascii`
-- :ref:`timeseries-io-gwf`
-- :ref:`timeseries-io-hdf5`
+- :ref:`gwpy-timeseries-io-ascii`
+- :ref:`gwpy-timeseries-io-gwf`
+- :ref:`gwpy-timeseries-io-hdf5`
 
-.. _timeseries-io-ascii:
+.. _gwpy-timeseries-io-ascii:
 
 =====
 ASCII
@@ -46,7 +47,7 @@ To write a `TimeSeries` to ASCII::
 
 See :func:`numpy.savetxt` for keyword argument options.
 
-.. _timeseries-io-gwf:
+.. _gwpy-timeseries-io-gwf:
 
 ===============================
 Gravitational-wave frames (GWF)
@@ -125,7 +126,7 @@ To write data held in any of the :mod:`gwpy.timeseries` classes to a GWF file, s
 
 **If the output file already exists it will be overwritten.**
 
-.. _timeseries-io-hdf5:
+.. _gwpy-timeseries-io-hdf5:
 
 ====
 HDF5

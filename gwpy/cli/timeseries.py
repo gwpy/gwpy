@@ -21,7 +21,7 @@
 
 """ Time Series plots
 """
-from cliproduct import CliProduct
+from .cliproduct import CliProduct
 
 
 class TimeSeries(CliProduct):
@@ -107,8 +107,10 @@ class TimeSeries(CliProduct):
 
                 if e >= self.timeseries[idx].size:
                     e = self.timeseries[idx].size - 1
-                new_ymin = min(new_ymin, npmin(self.timeseries[idx].value[b:e]))
-                new_ymax = max(new_ymax, npmax(self.timeseries[idx].value[b:e]))
+                new_ymin = min(new_ymin,
+                               npmin(self.timeseries[idx].value[b:e]))
+                new_ymax = max(new_ymax,
+                               npmax(self.timeseries[idx].value[b:e]))
             self.ymin = new_ymin
             self.ymax = new_ymax
         if self.yscale_factor > 1:

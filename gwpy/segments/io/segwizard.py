@@ -48,8 +48,6 @@ def from_segwizard(f, coalesce=True, gpstype=LIGOTimeGPS, strict=True,
     files = file_list(f)
     segs = SegmentList()
     for fp in files:
-        if isinstance(fp, file):
-            fp = fp.name
         with open(fp, 'r') as fobj:
             segs += SegmentList(map(Segment, segmentsUtils.fromsegwizard(
                 fobj, coltype=gpstype, strict=strict)))

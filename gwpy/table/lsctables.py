@@ -22,79 +22,12 @@
 
 from glue.ligolw.lsctables import *
 
-from ..io import reader
-
 # sub-list of tables that hold events
 EVENT_TABLES = (
     SnglBurstTable, MultiBurstTable,
     SnglInspiralTable, MultiInspiralTable,
     SnglRingdownTable,
 )
-
-# annotate lsctables with new methods
-for table in TableByName.values():
-    # define the read classmethod with docstring
-    table.read = classmethod(reader(doc="""
-        Read data into a :class:`~glue.ligolw.lsctables.{0}`.
-
-        Parameters
-        ----------
-        f : `file`, `str`, `~glue.lal.CacheEntry`, `list`, `~glue.lal.Cache`
-            object representing one or more files. One of
-
-                - an open `file`
-                - a `str` pointing to a file path on disk
-                - a formatted `~glue.lal.CacheEntry` representing one file
-                - a `list` of `str` file paths
-                - a formatted `~glue.lal.Cache` representing many files
-
-        columns : `list`, optional
-            list of column name strings to read, default all.
-
-        ifo : `str`, optional
-            prefix of IFO to read
-
-            .. warning::
-
-               the ``ifo`` keyword argument is only applicable (but is
-               required) when reading single-interferometer data from
-               a multi-interferometer file
-
-        filt : `function`, optional
-            function by which to `filter` events. The callable must
-            accept as input a row of the table event and return
-            `True`/`False`.
-
-        nproc : `int`, optional, default: ``1``
-            number of parallel processes with which to distribute file I/O,
-            default: serial process.
-
-            .. warning::
-
-               The ``nproc`` keyword argument is only applicable when
-               reading a `list` (or `~glue.lal.Cache`) of files.
-
-        contenthandler : `~glue.ligolw.ligolw.LIGOLWContentHandler`
-            SAX content handler for parsing ``LIGO_LW`` documents.
-
-            .. warning::
-
-               The ``contenthandler`` keyword argument is only applicable
-               when reading from ``LIGO_LW`` documents.
-
-        **loadtxtkwargs
-            when reading from ASCII, all other keyword arguments are passed
-            directly to `numpy.loadtxt`
-
-        Returns
-        -------
-        table : :class:`~glue.ligolw.lsctables.{0}`
-            `{0}` of data with given columns filled
-
-        Notes
-        -----
-        """.format(table.__name__)))
-
 
 # -----------------------------------------------------------------------------
 #
@@ -113,7 +46,8 @@ from glue.ligolw.lsctables import *
 from glue.ligolw.types import ToNumPyType as NUMPY_TYPE
 from glue.ligolw.ilwd import get_ilwdchar_class
 
-from ..io import reader
+from astropy.io import registry as io_registry
+
 from ..time import to_gps
 from ..utils.deps import with_import
 from .rec import GWRecArray
@@ -376,14 +310,14 @@ def _fetch_factory(table):
     return classmethod(fetch)
 
 # annotate lsctables with new methods
-for table in TableByName.itervalues():
-    # define the read classmethod with docstring
-    table.read = classmethod(reader(doc="""
-        Read data into a `{0}`.
+for table in TableByName.values():
+
+    def read(cls, source, *args, **kwargs):
+        """Read data into a :class:`~glue.ligolw.lsctables.{0}`
 
         Parameters
         ----------
-        f : `file`, `str`, `~glue.lal.CacheEntry`, `list`, `~glue.lal.Cache`
+        source : `file`, `str`, `~glue.lal.Cache`
             object representing one or more files. One of
 
                 - an open `file`
@@ -432,12 +366,15 @@ for table in TableByName.itervalues():
 
         Returns
         -------
-        table : :class:`{0}`
+        table : :class:`~glue.ligolw.lsctables.{0}`
             `{0}` of data with given columns filled
 
         Notes
-        -----
-        """.format(table.__name__)))
+        -----"""
+        return io_registry.read(cls, source, *args, **kwargs)
+
+    read.__doc__ = read.__doc__.format(table.__name__)
+    table.read = classmethod(read)
 
     table.to_recarray = to_recarray
     table.from_recarray = classmethod(from_recarray)

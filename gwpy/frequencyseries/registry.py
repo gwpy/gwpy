@@ -54,7 +54,10 @@ def register_method(func, name=None, force=False, scaling='density'):
             suffix = lines.pop(-1)
         else:
             suffix = ''
-        obj.__func__.__doc__ = '\n'.join(lines + [newdoc, suffix])
+        try:
+            obj.__doc__ = '\n'.join(lines + [newdoc, suffix])
+        except AttributeError:  # python 2.x
+            obj.__func__.__doc__ = '\n'.join(lines + [newdoc, suffix])
 
     # determine spectrum method type, and append doc
     if scaling == 'density':

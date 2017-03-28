@@ -25,6 +25,9 @@ import tempfile
 
 from numpy import (may_share_memory, testing as nptest, random)
 
+from matplotlib import use
+use('agg')
+
 from astropy import units
 
 from gwpy.table import (Table, EventTable)
@@ -120,8 +123,8 @@ class TableTests(unittest.TestCase):
 
     def test_read_write_root(self):
         table = self.TABLE_CLASS.read(
-           TEST_XML_FILE, format='ligolw.sngl_burst',
-           columns=['peak_time', 'peak_time_ns', 'snr', 'peak_frequency'])
+            TEST_XML_FILE, format='ligolw.sngl_burst',
+            columns=['peak_time', 'peak_time_ns', 'snr', 'peak_frequency'])
         tempdir = tempfile.mkdtemp()
         try:
             fp = tempfile.mktemp(suffix='.root', dir=tempdir)

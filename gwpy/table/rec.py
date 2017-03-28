@@ -26,7 +26,7 @@ warnings.warn('The gwpy.table.rec module has been deprecated and will be '
 
 from numpy import recarray
 
-from ..io import (reader, writer)
+from astropy.io import registry as io_registry
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -46,8 +46,9 @@ class GWRecArray(recarray):
                       'to the 1.0 release', DeprecationWarning)
         return super(GWRecArray, self).__init__(*args, **kwargs)
 
-    read = classmethod(reader(doc="""
-        Read data into a `GWRecArray`
+    @classmethod
+    def read(cls, source, *args, **kwargs):
+        """Read data into a `GWRecArray`
 
         Parameters
         ----------
@@ -59,9 +60,13 @@ class GWRecArray(recarray):
             list of column names to read, default reads all available data
 
         Notes
-        -----"""))
+        -----"""
+        return io_registry.read(cls, source, *args, **kwargs)
 
-    write = writer()
+    def write(self, target, *args, **kwargs):
+        """Write this `GWRecArray` to file
+        """
+        return io_registry.write(cls, source, *args, **kwargs)
 
     # -- ligolw compatibility -------------------
 

@@ -21,6 +21,9 @@
 
 import operator
 
+from six import string_types
+from six.moves import reduce
+
 from matplotlib.artist import allow_rasterization
 from matplotlib.ticker import (Formatter, MultipleLocator, NullLocator)
 from matplotlib.projections import register_projection
@@ -166,7 +169,7 @@ class SegmentAxes(TimeSeriesAxes):
             list of `~matplotlib.patches.Rectangle` patches
         """
         out = []
-        for lab, flag in flags.iteritems():
+        for lab, flag in flags.items():
             if label.lower() == 'name':
                 lab = flag.name
             elif label.lower() != 'key':
@@ -335,7 +338,7 @@ class SegmentAxes(TimeSeriesAxes):
         if y is None:
             y = self.get_next_y()
         collections = []
-        for name, segmentlist in segmentlistdict.iteritems():
+        for name, segmentlist in segmentlistdict.items():
             collections.append(self.plot_segmentlist(segmentlist, y=y,
                                                      label=name, **kwargs))
             y += dy
@@ -558,7 +561,7 @@ class SegmentPlot(TimeSeriesPlot):
         # format mask as a binary string and work out how many bits to set
         if isinstance(mask, int):
             mask = bin(mask)
-        elif isinstance(mask, (unicode, str)) and 'x' in mask:
+        elif isinstance(mask, string_types) and 'x' in mask:
             mask = bin(int(mask, 16))
         maskint = int(mask, 2)
         if topdown:

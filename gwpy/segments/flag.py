@@ -33,24 +33,27 @@ import operator
 import re
 import warnings
 import tempfile
-from io import BytesIO
-from urlparse import urlparse
+from io import StringIO
 from copy import (copy as shallowcopy, deepcopy)
 from math import (floor, ceil)
 from threading import Thread
-from Queue import Queue
 
+from six import string_types
+from six.moves import reduce
 from six.moves.urllib import request
 from six.moves.urllib.error import URLError
+from six.moves.urllib.parse import urlparse
+from six.moves.queue import Queue
 
 from numpy import inf
 
 from glue.segments import PosInfinity
 
+from astropy.io import registry as io_registry
+
 from ..time import to_gps
 from ..utils.deps import with_import
 from ..utils.compat import OrderedDict
-from ..io import (reader, writer)
 from .segments import Segment, SegmentList
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -426,9 +429,10 @@ class DataQualityFlag(object):
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
         elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(map(to_gps, args[0])))
+            qsegs = SegmentList(Segment(to_gps(args[0][0]),
+                                        to_gps(args[0][1])))
         elif len(args) == 2:
-            qsegs = SegmentList([Segment(map(to_gps, args))])
+            qsegs = SegmentList([Segment(to_gps(args[0]), to_gps(args[1]))])
         else:
             raise ValueError("DataQualityFlag.query must be called with a "
                              "flag name, and either GPS start and stop times, "
@@ -479,9 +483,10 @@ class DataQualityFlag(object):
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
         elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(map(to_gps, args[0])))
+            qsegs = SegmentList(Segment(to_gps(args[0][0]),
+                                        to_gps(args[0][1])))
         elif len(args) == 2:
-            qsegs = SegmentList([Segment(map(to_gps, args))])
+            qsegs = SegmentList([Segment(to_gps(args[0]), to_gps(args[1]))])
         else:
             raise ValueError("DataQualityFlag.query must be called with a "
                              "flag name, and either GPS start and stop times, "
@@ -506,18 +511,25 @@ class DataQualityFlag(object):
             if out.version is None:
                 data, versions, _ = apicalls.dqsegdbCascadedQuery(
                     protocol, server, out.ifo, out.tag, request,
-                    start, end)
+                    int(start), int(end))
                 data['metadata'] = versions[-1]['metadata']
             else:
                 try:
                     data, _ = apicalls.dqsegdbQueryTimes(
                         protocol, server, out.ifo, out.tag, out.version,
-                        request, start, end)
+                        request, int(start), int(end))
                 except URLError as e:
                     e.args = ('Error querying for %s: %s' % (flag, e),)
                     raise
             # read from json buffer
-            new = cls.read(BytesIO(json.dumps(data)), format='json')
+            try:
+                new = cls.read(StringIO(json.dumps(data)), format='json')
+            except TypeError as e:
+                if 'initial_value must be unicode' in str(e):  # python2
+                    new = cls.read(StringIO(json.dumps(data).decode('utf-8')),
+                                   format='json')
+                else:
+                    raise
             # restrict to query segments
             segl = SegmentList([Segment(start, end)])
             new.known &= segl
@@ -529,40 +541,40 @@ class DataQualityFlag(object):
 
         return out
 
-    # use input/output registry to allow multi-format reading
-    read = classmethod(reader(doc="""
-    Read segments from file into a `DataQualityFlag`.
+    @classmethod
+    def read(cls, source, *args, **kwargs):
+        """Read segments from file into a `DataQualityFlag`.
 
-    Parameters
-    ----------
-    filename : `str`
-        path of file to read
-    format : `str`, optional
-        source format identifier. If not given, the format will be
-        detected if possible. See below for list of acceptable
-        formats.
-    flag : `str`, optional, default: read all segments
-        name of flag to read from file.
-    coltype : `type`, optional, default: `float`
-        datatype to force for segment times, only valid for
-        ``format='segwizard'``.
-    strict : `bool`, optional, default: `True`
-        require segment start and stop times match printed duration,
-        only valid for ``format='segwizard'``.
+        Parameters
+        ----------
+        filename : `str`
+            path of file to read
 
+        flag : `str`, optional, default: read all segments
+            name of flag to read from file.
 
-    Returns
-    -------
-    dqflag : `DataQualityFlag`
-        formatted `DataQualityFlag` containing the active and known
-        segments read from file.
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
 
-    Notes
-    -----
-    When reading with ``format='segwizard'`` the
-    :attr:`~DataQualityFlag.known` `SegmentList` will simply represent
-    the extent of the :attr:`~DataQualityFlag.active` `SegmentList`.
-    """))
+        coltype : `type`, optional, default: `float`
+            datatype to force for segment times, only valid for
+            ``format='segwizard'``.
+
+        strict : `bool`, optional, default: `True`
+            require segment start and stop times match printed duration,
+            only valid for ``format='segwizard'``.
+
+        Returns
+        -------
+        dqflag : `DataQualityFlag`
+            formatted `DataQualityFlag` containing the active and known
+            segments read from file.
+
+        Notes
+        -----"""
+        return io_registry.read(cls, source, *args, **kwargs)
 
     @classmethod
     def from_veto_def(cls, veto):
@@ -583,7 +595,12 @@ class DataQualityFlag(object):
     # -------------------------------------------------------------------------
     # instance methods
 
-    write = writer()
+    def write(self, target, *args, **kwargs):
+        """Write this `DataQualityFlag` to file
+
+        Notes
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
 
     def populate(self, source='https://segments.ligo.org', segments=None,
                  pad=True, **kwargs):
@@ -710,7 +727,7 @@ class DataQualityFlag(object):
             new = self.copy()
         if kwargs:
             raise TypeError("unexpected keyword argument %r"
-                            % kwargs.keys()[0])
+                            % list(kwargs.keys())[0])
         new.known = [(s[0]+start, s[1]+end) for s in self.known]
         new.active = [(s[0]+start, s[1]+end) for s in self.active]
         return new
@@ -994,9 +1011,10 @@ class DataQualityDict(OrderedDict):
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
         elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(map(to_gps, args[0])))
+            qsegs = SegmentList(Segment(to_gps(args[0][0]),
+                                        to_gps(args[0][1])))
         elif len(args) == 2:
-            qsegs = SegmentList([Segment(map(to_gps, args))])
+            qsegs = SegmentList([Segment(to_gps(args[0]), to_gps(args[1]))])
         else:
             raise ValueError("DataQualityDict.query_segdb must be called with "
                              "a list of flag names, and either GPS start and "
@@ -1007,9 +1025,9 @@ class DataQualityDict(OrderedDict):
                           "on_error keyword argument")
         if kwargs.keys():
             raise TypeError("DataQualityDict.query_segdb has no keyword "
-                            "argument '%s'" % kwargs.keys()[0])
+                            "argument '%s'" % list(kwargs.keys()[0]))
         # parse flags
-        if isinstance(flags, (str, unicode)):
+        if isinstance(flags, string_types):
             flags = flags.split(',')
         else:
             flags = flags
@@ -1116,8 +1134,8 @@ class DataQualityDict(OrderedDict):
         inq.join()
         outq.join()
         new = cls()
-        results = zip(*sorted([outq.get() for i in range(len(flags))],
-                              key=lambda x: x[0]))[1]
+        results = list(zip(*sorted([outq.get() for i in range(len(flags))],
+                                   key=lambda x: x[0])))[1]
         for result, flag in zip(results, flags):
             if isinstance(result, Exception):
                 new[flag] = cls._EntryClass(name=flag)
@@ -1132,33 +1150,37 @@ class DataQualityDict(OrderedDict):
                 new[flag] = result
         return new
 
-    # use input/output registry to allow multi-format reading
-    read = classmethod(reader(doc="""
-    Read segments from file into a `DataQualityDict`.
+    @classmethod
+    def read(cls, source, flags=None, format=None, **kwargs):
+        """Read segments from file into a `DataQualityDict`
 
-    Parameters
-    ----------
-    filename : `str`
-        path of file to read
-    format : `str`, optional
-        source format identifier. If not given, the format will be
-        detected if possible. See below for list of acceptable
-        formats.
-    flags : `list`, optional, default: read all flags found
-        list of flags to read, by default all flags are read separately.
-    coalesce : `bool`, optional, default: `True`
-        coalesce all `SegmentLists` before returning.
+        Parameters
+        ----------
+        source : `str`
+            path of file to read
 
-    Returns
-    -------
-    flagdict : `DataQualityDict`
-        a new `DataQualityDict` of `DataQualityFlag` entries with ``active``
-        and ``known`` segments seeded from the XML tables in the given
-        file.
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
 
-    Notes
-    -----
-    """))
+        flags : `list`, optional, default: read all flags found
+            list of flags to read, by default all flags are read separately.
+
+        coalesce : `bool`, optional, default: `True`
+            coalesce all `SegmentLists` before returning.
+
+        Returns
+        -------
+        flagdict : `DataQualityDict`
+            a new `DataQualityDict` of `DataQualityFlag` entries with
+            ``active`` and ``known`` segments seeded from the XML tables
+            in the given file.
+
+        Notes
+        -----"""
+        return io_registry.read(cls, source, flags=flags, format=format,
+                                **kwargs)
 
     @classmethod
     def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None,
@@ -1235,7 +1257,12 @@ class DataQualityDict(OrderedDict):
     # -----------------------------------------------------------------------
     # instance methods
 
-    write = writer()
+    def write(self, target, *args, **kwargs):
+        """Write this `DataQualityDict` to file
+
+        Notes
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
 
     def populate(self, source='https://segments.ligo.org',
                  segments=None, pad=True, on_error='raise', **kwargs):
@@ -1321,7 +1348,7 @@ class DataQualityDict(OrderedDict):
         return self
 
     def __iand__(self, other):
-        for key, value in other.iteritems():
+        for key, value in other.items():
             if key in self:
                 self[key] &= value
             else:
@@ -1335,7 +1362,7 @@ class DataQualityDict(OrderedDict):
         return other.copy().__iand__(self)
 
     def __ior__(self, other):
-        for key, value in other.iteritems():
+        for key, value in other.items():
             if key in self:
                 self[key] |= value
             else:
@@ -1352,7 +1379,7 @@ class DataQualityDict(OrderedDict):
     __add__ = __or__
 
     def __isub__(self, other):
-        for key, value in other.iteritems():
+        for key, value in other.items():
             if key in self:
                 self[key] -= value
         return self
@@ -1361,7 +1388,7 @@ class DataQualityDict(OrderedDict):
         return self.copy().__isub__(other)
 
     def __ixor__(self, other):
-        for key, value in other.iteritems():
+        for key, value in other.items():
             if key in self:
                 self[key] ^= value
             else:
@@ -1389,8 +1416,8 @@ class DataQualityDict(OrderedDict):
             a new `DataQualityFlag` who's active and known segments
             are the union of those of the values of this dict
         """
-        usegs = reduce(operator.or_, self.itervalues())
-        usegs.name = ' | '.join(self.iterkeys())
+        usegs = reduce(operator.or_, self.values())
+        usegs.name = ' | '.join(self.keys())
         return usegs
 
     def intersection(self):
@@ -1402,8 +1429,8 @@ class DataQualityDict(OrderedDict):
             a new `DataQualityFlag` who's active and known segments
             are the intersection of those of the values of this dict
         """
-        isegs = reduce(operator.and_, self.itervalues())
-        isegs.name = ' & '.join(self.iterkeys())
+        isegs = reduce(operator.and_, self.values())
+        isegs.name = ' & '.join(self.keys())
         return isegs
 
     def plot(self, label='key', **kwargs):

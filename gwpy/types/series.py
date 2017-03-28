@@ -25,6 +25,7 @@ from math import floor
 import numpy
 
 from astropy.units import (Unit, Quantity, dimensionless_unscaled)
+from astropy.io import registry as io_registry
 
 from .array import Array
 from .index import Index
@@ -329,6 +330,57 @@ class Series(Array):
             x0 = self.x0.to(self.xunit).value
             return Segment(x0, x0+self.shape[0]*dx)
 
+    # -- series i/o -----------------------------
+
+    @classmethod
+    def read(cls, source, *args, **kwargs):
+        """Read data into a `Series`
+
+        Arguments and keywords depend on the output format, see the
+        online documentation for full details for each format, the
+        parameters below are common to most formats.
+
+        Parameters
+        ----------
+        source : `str`, `~glue.lal.Cache`
+            source of data, any of the following:
+
+            - `str` path of single data file
+            - `str` path of LAL-format cache file
+            - `~glue.lal.Cache` describing one or more data files,
+
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats
+
+        Returns
+        -------
+        data : `Series`
+        """
+        return io_registry.read(cls, source, *args, **kwargs)
+
+    def write(self, target, *args, **kwargs):
+        """Write this `Series` to a file
+
+        Arguments and keywords depend on the output format, see the
+        online documentation for full details for each format, the
+        parameters below are common to most formats.
+
+        Parameters
+        ----------
+        target : `str`
+            output filename
+
+        format : `str`, optional
+            output format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+
+        Notes
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
+
     # -- series methods -------------------------
 
     def value_at(self, x):
@@ -613,6 +665,7 @@ class Series(Array):
             N = min(self.shape[0], other.shape[0])
 
         # if units are the same, can shortcut
+        # NOTE: why not use isinstance here?
         if type(other) == type(self) and other.unit == self.unit:
             self.value[-N:] = other.value[-N:]
         # otherwise if its just a numpy array

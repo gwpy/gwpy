@@ -25,6 +25,8 @@ from warnings import warn
 from math import (ceil, pi)
 from multiprocessing import (Process, Queue as ProcessQueue)
 
+from six.moves import range
+
 import numpy
 from numpy import fft as npfft
 from scipy import signal
@@ -224,7 +226,7 @@ class TimeSeries(TimeSeriesBase):
         try:
             new.frequencies = npfft.rfftfreq(nfft, d=self.dx.value)
         except AttributeError:
-            new.frequencies = numpy.arange(0, new.size) / (nfft * self.dx.value)
+            new.frequencies = numpy.arange(new.size) / (nfft * self.dx.value)
         return new
 
     def average_fft(self, fftlength=None, overlap=0, window=None):
@@ -689,7 +691,7 @@ class TimeSeries(TimeSeriesBase):
             window = signal.get_window(window, nfft)
 
         # calculate overlapping periodograms
-        for i in xrange(nsteps):
+        for i in range(nsteps):
             idx = i * nstride
             # don't proceed past end of data, causes artefacts
             if idx+nfft > self.size:
@@ -701,7 +703,7 @@ class TimeSeries(TimeSeriesBase):
         # normalize for over-dense grid
         density = nfft//nstride
         weights = signal.triang(density)
-        for i in xrange(nsteps):
+        for i in range(nsteps):
             # get indices of overlapping columns
             x0 = max(0, i+1-density)
             x1 = min(i+1, nsteps-density+1)
@@ -919,7 +921,7 @@ class TimeSeries(TimeSeriesBase):
     # -- TimeSeries filtering -------------------
 
     def highpass(self, frequency, gpass=2, gstop=30, fstop=None, type='iir',
-                filtfilt=True, **kwargs):
+                 filtfilt=True, **kwargs):
         """Filter this `TimeSeries` with a high-pass filter.
 
         Parameters
@@ -1258,9 +1260,9 @@ class TimeSeries(TimeSeriesBase):
                 b = filt.num
             # detect ZPK
             elif (isinstance(filt, (tuple, list)) and len(filt) == 3 and
-                      isinstance(filt[0], numpy.ndarray) and
-                      isinstance(filt[1], numpy.ndarray) and
-                      isinstance(filt[2], float)):
+                  isinstance(filt[0], numpy.ndarray) and
+                  isinstance(filt[1], numpy.ndarray) and
+                  isinstance(filt[2], float)):
                 sos = signal.zpk2sos(*filt)
             # detect SOS
             elif isinstance(filt, numpy.ndarray) and filt.ndim == 2:
@@ -1476,13 +1478,13 @@ class TimeSeries(TimeSeriesBase):
         rms : `TimeSeries`
             a new `TimeSeries` containing the RMS value with dt=stride
         """
-        stridesamp = stride * self.sample_rate.value
+        stridesamp = int(stride * self.sample_rate.value)
         nsteps = int(self.size // stridesamp)
         # stride through TimeSeries, recording RMS
         data = numpy.zeros(nsteps)
         for step in range(nsteps):
             # find step TimeSeries
-            idx = stridesamp * step
+            idx = int(stridesamp * step)
             idx_end = idx + stridesamp
             stepseries = self[idx:idx_end]
             rms_ = numpy.sqrt(numpy.mean(numpy.abs(stepseries.value)**2))

@@ -172,7 +172,7 @@ class QPlane(QBase):
         # for each frequency, yield a QTile
         for f in self._iter_frequencies():
             yield QTile(self.q, f, self.duration, self.sampling,
-                       mismatch=self.mismatch)
+                        mismatch=self.mismatch)
         raise StopIteration()
 
     def _iter_frequencies(self):

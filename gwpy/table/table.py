@@ -22,11 +22,14 @@
 import operator as _operator
 from math import ceil
 
+from six import string_types
+
 import numpy
 
 from astropy.table import (Table, Column, vstack)
+from astropy.io.registry import write as io_write
 
-from ..io import (reader, writer)
+from ..io.mp import read_multi as io_read_multi
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['EventColumn', 'EventTable']
@@ -105,7 +108,9 @@ class EventTable(Table):
 
     # -- i/o ------------------------------------
 
-    read = classmethod(reader(doc="""Read data into an `EventTable`
+    @classmethod
+    def read(cls, source, format=None, nproc=1, **kwargs):
+        """Read data into an `EventTable`
 
         Parameters
         ----------
@@ -115,10 +120,6 @@ class EventTable(Table):
         format : `str`, optional
             the format of the given source files; if not given, an attempt
             will be made to automatically identify the format
-
-        columns : `list` of `str`, optional
-            list of column names ro read; should represent a sub-set of
-            all available columns
 
         nproc : `int`, optional, default: 1
             number of CPUs to use for parallel file reading
@@ -138,11 +139,14 @@ class EventTable(Table):
             if the `format` cannot be automatically identified
 
         Notes
-        -----""", mp_flattener=vstack))
+        -----"""
+        return io_read_multi(vstack, cls, source, format=format,
+                             nproc=nproc, **kwargs)
 
-    write = writer(doc="""Write this table to a file
+    def write(self, target, format=None, **kwargs):
+        """Write this table to a file
 
-        parameters
+        Parameters
         ----------
         target: `str`
             filename for output data file
@@ -156,13 +160,14 @@ class EventTable(Table):
             other keyword arguments will be passed directly to the
             underlying writer method for the given format
 
-        raises
+        Raises
         ------
-        astropy.io.registry.ioregistryerror
+        astropy.io.registry.IORegistryError
             if the `format` cannot be automatically identified
 
-        notes
-        -----""")
+        Notes
+        -----"""
+        return io_write(self, target, format=format, **kwargs)
 
     # -- ligolw compatibility -------------------
 
@@ -289,7 +294,7 @@ class EventTable(Table):
             for i, bin_ in enumerate(bins[:-1]):
                 bins2.append((bin_, bins[i+1]))
             bins = bins2
-        elif isinstance(operator, (unicode, str)):
+        elif isinstance(operator, string_types):
             op = OPERATORS[operator]
         else:
             op = operator

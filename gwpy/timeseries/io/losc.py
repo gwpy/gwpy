@@ -40,7 +40,7 @@ from ...io.cache import (file_list, cache_segments)
 from ...io.hdf5 import open_hdf5
 from ...detector.units import parse_unit
 from ...segments import (Segment, SegmentList)
-from ...time import to_gps
+from ...time import (to_gps, LIGOTimeGPS)
 
 # default URL
 LOSC_URL = 'https://losc.ligo.org'
@@ -57,8 +57,11 @@ def _fetch_losc_json(url):
                   % (url, str(e)),)
         raise
     # parse the JSON
+    data = response.read()
+    if isinstance(data, bytes):
+        data = data.decode('utf-8')
     try:
-        return json.loads(response.read())
+        return json.loads(data)
     except ValueError as e:
         e.args = ("Failed to parse LOSC JSON from %r: %s"
                   % (url, str(e)),)
@@ -66,7 +69,7 @@ def _fetch_losc_json(url):
 
 
 def _losc_json_cache(metadata, detector, sample_rate=4096,
-                      format='hdf5', duration=4096):
+                     format='hdf5', duration=4096):
     """Parse a :class:`~glue.lal.Cache` from a LOSC metadata packet
     """
     urls = []
@@ -77,8 +80,8 @@ def _losc_json_cache(metadata, detector, sample_rate=4096,
                 fmd['format'] != format or
                 fmd['duration'] != duration):
             continue
-        urls.append(fmd['url'])
-    return Cache.from_urls(urls)
+        urls.append(str(fmd['url']))
+    return Cache.from_urls(urls, coltype=LIGOTimeGPS)
 
 
 def fetch_losc_url_cache(detector, start, end, host=LOSC_URL,
@@ -307,13 +310,13 @@ def read_losc_state(filename, channel, group=None, start=None, end=None,
     maskset = _find_dataset(h5file, '%s/DQDescriptions' % channel)
     # read data
     nddata = dataset.value
-    bits = list(maskset.value)
+    bits = list(map(lambda b: bytes.decode(bytes(b), 'utf-8'), maskset.value))
     # read metadata
     try:
         epoch = dataset.attrs['Xstart']
     except KeyError:
         try:
-            ce = CacheEntry.from_T050017(h5file.filename)
+            ce = CacheEntry.from_T050017(h5file.filename, coltype=LIGOTimeGPS)
         except ValueError:
             epoch = None
         else:

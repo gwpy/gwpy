@@ -21,12 +21,14 @@
 
 import os
 import stat
-import urllib2
-import cookielib
 import warnings
 import tempfile
 import getpass
 import socket
+
+from six.moves import http_cookiejar
+from six.moves.urllib import request as http_request
+from six.moves.urllib.error import HTTPError
 
 from glue.auth.saml import HTTPNegotiateAuthHandler
 
@@ -56,10 +58,10 @@ def request(url, debug=False, timeout=None):
     debug = int(debug)
 
     # need an instance of HTTPS handler to do HTTPS
-    httpshandler = urllib2.HTTPSHandler(debuglevel=debug)
+    httpshandler = http_request.HTTPSHandler(debuglevel=debug)
 
     # use a cookie jar to store session cookies
-    jar = cookielib.LWPCookieJar()
+    jar = http_cookiejar.LWPCookieJar()
 
     # if a cookie jar exists open it and read the cookies
     # and make sure it has the right permissions
@@ -68,13 +70,13 @@ def request(url, debug=False, timeout=None):
         # set ignore_discard so that session cookies are preserved
         try:
             jar.load(COOKIE_JAR, ignore_discard=True)
-        except cookielib.LoadError as e:
-            warnings.warn('cookielib.LoadError caught: %s' % str(e))
+        except http_cookiejar.LoadError as e:
+            warnings.warn('LoadError caught: %s' % str(e))
 
     # create a cookie handler from the cookie jar
-    cookiehandler = urllib2.HTTPCookieProcessor(jar)
+    cookiehandler = http_request.HTTPCookieProcessor(jar)
     # need a redirect handler to follow redirects
-    redirecthandler = urllib2.HTTPRedirectHandler()
+    redirecthandler = http_request.HTTPRedirectHandler()
 
     # need an auth handler that can do negotiation.
     # input parameter is the Kerberos service principal.
@@ -82,11 +84,11 @@ def request(url, debug=False, timeout=None):
         service_principal='HTTP@%s' % LIGO_LOGIN_URL)
 
     # create the opener.
-    opener = urllib2.build_opener(auth_handler, cookiehandler, httpshandler,
-                                  redirecthandler)
+    opener = http_request.build_opener(auth_handler, cookiehandler,
+                                       httpshandler, redirecthandler)
 
     # prepare the request object
-    req = urllib2.Request(url)
+    req = http_request.Request(url)
 
     # use the opener and the request object to make the request.
     if timeout is None:

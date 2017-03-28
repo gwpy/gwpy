@@ -19,7 +19,7 @@
 """Unit test for detector module
 """
 
-from urllib2 import URLError
+from six.moves.urllib.error import URLError
 
 import pytest
 
@@ -136,6 +136,10 @@ class ChannelTests(unittest.TestCase):
             if 'No JSON object could be decoded' in str(e):
                 self.skipTest(str(e))
             raise
+        except RuntimeError as e:
+            if 'redirected' in str(e):
+                self.skipTest(str(e))
+            raise
         except Exception as e:
             try:
                 import kerberos
@@ -248,7 +252,7 @@ class ChannelListTestCase(unittest.TestCase):
 
     def test_from_names(self):
         cl = ChannelList.from_names(*self.NAMES)
-        self.assertListEqual(cl, map(Channel, self.NAMES))
+        self.assertListEqual(cl, list(map(Channel, self.NAMES)))
         cl2 = ChannelList.from_names(','.join(self.NAMES))
         self.assertListEqual(cl, cl2)
 

@@ -1,5 +1,7 @@
 .. currentmodule:: gwpy.table
 
+.. _gwpy-table:
+
 ############
 Tabular data
 ############

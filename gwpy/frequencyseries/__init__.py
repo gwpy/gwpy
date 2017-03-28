@@ -19,8 +19,6 @@
 """Create, manipulate, read, and write spectrum data
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
 # import objects
 from .core import *
 from .hist import *
@@ -31,3 +29,5 @@ from .io import *
 # setup spectrum generation method registrations
 from .scipy_ import *
 from .lal_ import *
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

@@ -19,9 +19,9 @@
 """Create, manipulate, read, and write time-series data
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
 from .core import *
 from .timeseries import *
 from .statevector import *
 from .io import *
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

@@ -27,6 +27,8 @@ import tempfile
 import warnings
 from gzip import GzipFile
 
+from six import string_types
+
 from numpy import recarray
 from numpy.lib import recfunctions
 
@@ -35,10 +37,16 @@ from glue.lal import (Cache, CacheEntry)
 from astropy.table import (Table, vstack as vstack_tables)
 from astropy.io.registry import _get_valid_format
 
+from ..time import LIGOTimeGPS
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # build list of file-like types
-FILE_LIKE = [file, GzipFile]
+try:  # python2.x
+    FILE_LIKE = [file, GzipFile]
+except NameError:  # python3.x
+    from io import IOBase
+    FILE_LIKE = [IOBase, GzipFile]
 try:  # protect against private member being removed
     FILE_LIKE.append(tempfile._TemporaryFileWrapper)
 except AttributeError:
@@ -46,15 +54,15 @@ except AttributeError:
 FILE_LIKE = tuple(FILE_LIKE)
 
 
-def open_cache(lcf):
+def open_cache(lcf, coltype=LIGOTimeGPS):
     """Read a LAL-format cache file into memory as a
     :class:`glue.lal.Cache`.
     """
-    if isinstance(lcf, file):
-        return Cache.fromfile(lcf)
+    if isinstance(lcf, FILE_LIKE):
+        return Cache.fromfile(lcf, coltype=coltype)
     else:
         with open(lcf, 'r') as f:
-            return Cache.fromfile(f)
+            return Cache.fromfile(f, coltype=coltype)
 
 
 def file_list(flist):
@@ -153,7 +161,7 @@ def read_cache(cache, target, nproc, post, *args, **kwargs):
        of this feature.
     """
     # read the cache
-    if isinstance(cache, (file, unicode, str)):
+    if isinstance(cache, FILE_LIKE + string_types):
         cache = open_cache(cache)
     if isinstance(cache, Cache):
         cache.sort(key=lambda ce: ce.segment[0])

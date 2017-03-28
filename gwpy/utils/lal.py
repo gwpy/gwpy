@@ -20,6 +20,7 @@
 """
 
 from __future__ import absolute_import
+import warnings
 
 from collections import OrderedDict
 from six import string_types
@@ -59,7 +60,7 @@ except AttributeError:
                     lal.C_TYPE_CODE: 'COMPLEX8',
                     lal.Z_TYPE_CODE: 'COMPLEX16'}
 
-LAL_TYPE_FROM_STR = dict((v, k) for k, v in LAL_TYPE_STR.iteritems())
+LAL_TYPE_FROM_STR = dict((v, k) for k, v in LAL_TYPE_STR.items())
 
 # map numpy dtypes to LAL type codes
 try:
@@ -86,7 +87,7 @@ except AttributeError:
                            numpy.complex128: lal.Z_TYPE_CODE}
 
 LAL_TYPE_STR_FROM_NUMPY = dict((key, LAL_TYPE_STR[value]) for (key, value) in
-                               LAL_TYPE_FROM_NUMPY.iteritems())
+                               LAL_TYPE_FROM_NUMPY.items())
 
 try:
     LAL_UNIT_INDEX = [lal.lalMeterUnit,
@@ -165,7 +166,7 @@ def from_lal_unit(lunit):
 
     Parameters
     ----------
-    aunit : `LALUnit`
+    lunit : `lal.Unit`
         the input unit
 
     Returns
@@ -175,6 +176,8 @@ def from_lal_unit(lunit):
 
     Raises
     ------
+    TypeError
+        if ``lunit`` cannot be converted to `lal.Unit`
     ValueError
         if Astropy doesn't understand the base units for the input
     """
@@ -210,8 +213,10 @@ def to_lal_ligotimegps(gps):
     ligotimegps : `lal.LIGOTimeGPS`
         a SWIG-LAL `~lal.LIGOTimeGPS` representation of the given GPS time
     """
-    gps = to_gps(gps)
-    return lal.LIGOTimeGPS(gps.seconds, gps.nanoseconds)
+    warnings.warn("to_lal_ligotimegps has been deprecated in favour of "
+                  "gwpy.time.to_gps, which returns a `lal.LIGOTimeGPS` object",
+                  DeprecationWarning)
+    return to_gps(gps)
 
 
 # -- detectors ----------------------------------------------------------------

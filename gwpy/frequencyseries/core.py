@@ -26,6 +26,7 @@ from numpy import fft as npfft
 from scipy import signal
 
 from astropy import units
+from astropy.io import registry as io_registry
 
 from ..types import Series
 from ..detector import Channel
@@ -127,6 +128,57 @@ class FrequencySeries(Series):
                            fdel=Series.xindex.__delete__,
                            doc="""Series of frequencies for each sample""")
 
+    # -- FrequencySeries i/o --------------------
+
+    @classmethod
+    def read(cls, source, *args, **kwargs):
+        """Read data into a `FrequencySeries`
+
+        Arguments and keywords depend on the output format, see the
+        online documentation for full details for each format, the
+        parameters below are common to most formats.
+
+        Parameters
+        ----------
+        source : `str`, `~glue.lal.Cache`
+            source of data, any of the following:
+
+            - `str` path of single data file
+            - `str` path of LAL-format cache file
+            - `~glue.lal.Cache` describing one or more data files,
+
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats
+
+        Returns
+        -------
+        series : `FrequencySeries`
+        """
+        return io_registry.read(cls, source, *args, **kwargs)
+
+    def write(self, target, *args, **kwargs):
+        """Write this `FrequencySeries` to a file
+
+        Arguments and keywords depend on the output format, see the
+        online documentation for full details for each format, the
+        parameters below are common to most formats.
+
+        Parameters
+        ----------
+        target : `str`
+            output filename
+
+        format : `str`, optional
+            output format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+
+        Notes
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
+
     # -- FrequencySeries methods ----------------
 
     def plot(self, **kwargs):
@@ -173,7 +225,7 @@ class FrequencySeries(Series):
         dift = npfft.irfft(self.value * nout)
         dift[1:] /= 2
         new = TimeSeries(dift, epoch=self.epoch, channel=self.channel,
-                       unit=self.unit * units.Hertz, dx=1/self.dx/nout)
+                         unit=self.unit * units.Hertz, dx=1/self.dx/nout)
         return new
 
     def zpk(self, zeros, poles, gain):

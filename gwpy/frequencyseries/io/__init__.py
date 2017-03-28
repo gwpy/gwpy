@@ -16,16 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Input/Output routines for the FrequencySeries.
+"""Input/Output routines for gwpy.frequencyseries
 """
 
-from ..core import FrequencySeries
-
-# register HDF5
-from . import hdf5
-
-# register ASCII
-from ...io.ascii import register_ascii
-register_ascii(FrequencySeries)
+from . import (  # pylint: disable=unused-import
+    ascii,
+    hdf5,
+)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

@@ -1,3 +1,5 @@
+.. _gwpy-examples:
+
 #############
 GWpy examples
 #############

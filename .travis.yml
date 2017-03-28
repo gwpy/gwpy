@@ -58,8 +58,8 @@ before_install:
   # update pip
   - pip install ${PIP_FLAGS} --upgrade pip
 
-  # build and install numpy first
-  - pip install ${PIP_FLAGS} "numpy>=1.7"
+  # build and install numpy first (for SWIG bindings)
+  - pip install ${PIP_FLAGS} "numpy>=1.10"
 
   # build src packages and set 'latest' package versions (if required)
   - source .travis/build-src-dependencies.sh
@@ -67,21 +67,17 @@ before_install:
   # install cython to speed up scipy build
   - travis_retry pip install ${PIP_FLAGS} --install-option="--no-cython-compile" Cython
 
-  # install testing dependencies
-  - pip install ${PIP_FLAGS} coveralls "pytest>=2.8" unittest2
+  # install dependencies
+  - pip install ${PIP_FLAGS} -r requirements-dev.txt
 
 install:
-  # install dependencies (using version-dependent requirements if needed)
-  - . .travis/install-requirements.sh
-  # add extra dependencies for testing
-  - pip install ${PIP_FLAGS} -r requirements-extra.txt
-  # build
-  - python setup.py build
+  - pip install .
+
+before_script:
+  - pip list installed
 
 script:
-  - pip list installed
   - . .travis/run-tests.sh
-  - pip install . -vvv
 
 after_success:
   - coveralls

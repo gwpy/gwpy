@@ -51,7 +51,7 @@ ref = '-'.join(os.path.splitext(args.infile)[0].split(os.path.sep)[-2:])
 
 lines = open(args.infile, 'rb').read().splitlines()
 output = []
-header = ['.. _example-%s:\n' % ref]
+header = ['.. _gwpy-example-%s:\n' % ref]
 
 indoc = False
 incode = False

@@ -1,4 +1,4 @@
-.. _timeseries:
+.. _gwpy-timeseries:
 
 .. currentmodule:: gwpy.timeseries
 

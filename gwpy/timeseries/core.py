@@ -474,7 +474,8 @@ class TimeSeriesBase(Series):
         from ..utils.lal import from_lal_unit
         try:
             unit = from_lal_unit(lalts.sampleUnits)
-        except TypeError:
+        except (TypeError, ValueError) as e:
+            warnings.warn("%s, defaulting to 'dimensionless'" % str(e))
             unit = None
         channel = Channel(lalts.name, sample_rate=1/lalts.deltaT, unit=unit,
                           dtype=lalts.data.data.dtype)
@@ -493,7 +494,8 @@ class TimeSeriesBase(Series):
         typestr = LAL_TYPE_STR_FROM_NUMPY[self.dtype.type]
         try:
             unit = to_lal_unit(self.unit)
-        except (TypeError, AttributeError):
+        except ValueError as e:
+            warnings.warn("%s, defaulting to lal.DimensionlessUnit" % str(e))
             try:
                 unit = lal.DimensionlessUnit
             except AttributeError:
@@ -552,9 +554,8 @@ class TimeSeriesBase(Series):
             except KeyError:
                 op_ = ufunc.__name__
             result = obj.view(StateTimeSeries)
+            result.override_unit('')
             result.name = '%s %s %s' % (obj.name, op_, value)
-            if hasattr(obj, 'unit') and str(obj.unit):
-                result.name += ' %s' % str(obj.unit)
         # otherwise, return a regular TimeSeries
         else:
             result = super(TimeSeriesBase, self).__array_wrap__(
@@ -621,12 +622,12 @@ class TimeSeriesBaseDict(OrderedDict):
 
     def copy(self):
         new = self.__class__()
-        for key, val in self.iteritems():
+        for key, val in self.items():
             new[key] = val.copy()
         return new
 
     def append(self, other, copy=True, **kwargs):
-        for key, ts in other.iteritems():
+        for key, ts in other.items():
             if key in self:
                 self[key].append(ts, **kwargs)
             elif copy:
@@ -636,7 +637,7 @@ class TimeSeriesBaseDict(OrderedDict):
         return self
 
     def prepend(self, other, **kwargs):
-        for key, ts in other.iteritems():
+        for key, ts in other.items():
             if key in self:
                 self[key].prepend(ts, **kwargs)
             else:
@@ -664,7 +665,7 @@ class TimeSeriesBaseDict(OrderedDict):
         TimeSeries.crop
             for more details
         """
-        for key, val in self.iteritems():
+        for key, val in self.items():
             self[key] = val.crop(start=start, end=end, copy=copy)
         return self
 
@@ -685,7 +686,7 @@ class TimeSeriesBaseDict(OrderedDict):
         """
         if not isinstance(rate, dict):
             rate = dict((c, rate) for c in self)
-        for key, resamp in rate.iteritems():
+        for key, resamp in rate.items():
             self[key] = self[key].resample(resamp, **kwargs)
         return self
 
@@ -750,7 +751,7 @@ class TimeSeriesBaseDict(OrderedDict):
         # parse times
         start = to_gps(start)
         end = to_gps(end)
-        istart = start.seconds
+        istart = start.gpsSeconds
         iend = ceil(end)
 
         # test S6 h(t) channel so that it gets ,rds appends
@@ -802,14 +803,15 @@ class TimeSeriesBaseDict(OrderedDict):
                     except (RuntimeError, ValueError) as e:
                         if verbose:
                             gprint('Something went wrong:', file=sys.stderr)
-                            # if error and user supplied their own server, raise
+                            # if user supplied their own server, raise
                             warnings.warn(str(e), ndsio.NDSWarning)
 
-                # if we got this far, we can't get all of the channels in one go
+                # if we got this far, we can't get all channels in one go
                 if len(channels) > 1:
                     return cls(
-                        (c, cls.EntryClass.fetch(c, start, end, verbose=verbose,
-                                                 type=type, verify=verify,
+                        (c, cls.EntryClass.fetch(c, start, end,
+                                                 verbose=verbose, type=type,
+                                                 verify=verify,
                                                  dtype=dtype.get(c), pad=pad,
                                                  allow_tape=allow_tape))
                         for c in channels)
@@ -926,16 +928,16 @@ class TimeSeriesBaseDict(OrderedDict):
                         nsteps = ceil((iend - istart) / dur)
                     i += 1
                     if verbose:
-                        gprint('Downloading data... %d%%' % (100 * i // nsteps),
-                               end='\r')
+                        gprint('Downloading data... %d%%'
+                               % (100 * i // nsteps), end='\r')
                         if i == nsteps:
                             gprint('')
             except RuntimeError as e:
                 if 'Requested data is on tape' in str(e) and not allow_tape:
-                    e.args = ('Requested data are on tape, set allow_tape=True '
-                              'to allow access from tape. Please note that '
-                              'retrieving data from tape is slow, and may '
-                              'take several minutes or longer.',)
+                    e.args = ('Requested data are on tape, set allow_tape=True'
+                              ' to allow access from tape. Please note that'
+                              ' retrieving data from tape is slow, and may'
+                              ' take several minutes or longer.',)
                 raise
 
         # pad to end of request if required
@@ -1014,12 +1016,12 @@ class TimeSeriesBaseDict(OrderedDict):
                 gprint("Determined %d frametypes to read" % len(frametypes))
             elif verbose:
                 gprint("Determined best frametype as %r"
-                       % frametypes.keys()[0])
+                       % list(frametypes.keys())[0])
         else:
             frametypes = {frametype: channels}
         # -- read data
         out = cls()
-        for ft, clist in frametypes.iteritems():
+        for ft, clist in frametypes.items():
             if verbose:
                 gprint("Reading data from %s frames..." % ft, end=' ')
             # parse as a ChannelList
@@ -1171,7 +1173,7 @@ class TimeSeriesBaseDict(OrderedDict):
                 figargs[key] = kwargs.pop(key)
         plot_ = TimeSeriesPlot(**figargs)
         ax = plot_.gca()
-        for lab, ts in self.iteritems():
+        for lab, ts in self.items():
             if label.lower() == 'name':
                 lab = ts.name
             elif label.lower() != 'key':
@@ -1296,4 +1298,3 @@ class TimeSeriesBaseList(list):
 
     def __getslice__(self, i, j):
         return type(self)(*super(TimeSeriesBaseList, self).__getslice__(i, j))
-    __getslice__.__doc__ = list.__getslice__.__doc__

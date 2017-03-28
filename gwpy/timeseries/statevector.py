@@ -111,9 +111,9 @@ class StateTimeSeries(TimeSeriesBase):
             data = numpy.asarray(data)
         if not isinstance(data, cls):
             data = data.astype(bool)
-        return super(StateTimeSeries, cls).__new__(cls, data, t0=t0, dt=dt,
-                                                   sample_rate=sample_rate, times=times,
-                                                   name=name, channel=channel, **kwargs)
+        return super(StateTimeSeries, cls).__new__(
+            cls, data, t0=t0, dt=dt, sample_rate=sample_rate, times=times,
+            name=name, channel=channel, **kwargs)
 
     def to_dqflag(self, name=None, minlen=1, dtype=float, round=False,
                   label=None, description=None):
@@ -578,7 +578,7 @@ class StateVector(TimeSeriesBase):
         from ..segments import DataQualityDict
         out = DataQualityDict()
         bitseries = self.get_bit_series(bits=bits)
-        for bit, sts in bitseries.iteritems():
+        for bit, sts in bitseries.items():
             out[bit] = sts.to_dqflag(name=bit, minlen=minlen, round=round,
                                      dtype=dtype,
                                      description=self.bits.description[bit])

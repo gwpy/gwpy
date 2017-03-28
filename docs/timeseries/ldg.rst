@@ -1,19 +1,19 @@
 .. currentmodule:: gwpy.timeseries
 
-.. _timeseries-datafind:
+.. _gwpy-timeseries-datafind:
 
 ####################################
 Data-discovery on the LIGO Data Grid
 ####################################
 
-.. _timeseries-datafind-discovery:
+.. _gwpy-timeseries-datafind-discovery:
 
 Data discovery
 --------------
 
 The LIGO Data Grid consists of a trio of large-scale high-throughput computing (HTC) facilities operated by the LIGO Laboratory, and serves as the primary host of the data recorded from the observatories.
 
-The observatories record ~30 MBytes/second of 'raw' data that are continuously written to GWF-format files (see :ref:`timeseries-io-gwf` for more details on the GWF format), as well as the processed strain data produced in real-time for low-latency gravitational-wave searches.
+The observatories record ~30 MBytes/second of 'raw' data that are continuously written to GWF-format files (see :ref:`gwpy-timeseries-io-gwf` for more details on the GWF format), as well as the processed strain data produced in real-time for low-latency gravitational-wave searches.
 A data discovery service named `datafind` is available allowing any authenticated user to query for the locations of GWF files by specifying the observatory, the frame type, and a time interval.
 
 The `TimeSeries.find` method leverages that discovery service to enable users to automatically locate and read data from these files in a convenient manner.
@@ -25,7 +25,7 @@ This method will search through all available data to find the correct files to 
 
     >>> data = TimeSeries.find('L1:ISI-GND_STS_ITMY_Z_DQ', 'Jan 1 2016', 'Jan 1 2016 01:00', frametype='L1_R')
 
-.. _timeseries-datafind-frametypes:
+.. _gwpy-timeseries-datafind-frametypes:
 
 Frametypes
 ----------

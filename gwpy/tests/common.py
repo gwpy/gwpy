@@ -32,7 +32,7 @@ def test_io_identify(cls, extensions, modes=['read', 'write']):
     for mode in modes:
         for ext in extensions:
             p = 'X-TEST_CACHE_ENTRY-0-1.%s' % ext
-            c = Cache([CacheEntry.from_T050017(p)])
+            c = Cache([CacheEntry.from_T050017(p, coltype=int)])
             for path in [p, [p], c[0], c]:
                 formats = identify_format(
                     mode, cls, path, None, [], {})
@@ -55,10 +55,13 @@ def skip_missing_import(module):
     def decorate_method(func):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            try:
+            try:  # python3.x
+                func.__globals__[modname] = import_method_dependency(
+                    module, stacklevel=2)
+            except AttributeError:  # python2.x
                 func.func_globals[modname] = import_method_dependency(
                     module, stacklevel=2)
-            except ImportError as e:
+            except ImportError as e:  # will strike before attributeerror
                 self.skipTest(str(e))
             return func(self, *args, **kwargs)
         return wrapper

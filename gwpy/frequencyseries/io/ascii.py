@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2017)
 #
 # This file is part of GWpy.
 #
@@ -16,12 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module attaches the HDF5 input output methods to the Spectrogram.
+"""ASCII I/O registrations for gwpy.frequencyseries objects
 """
 
-from ...types.io.hdf5 import register_hdf5_array_io
-from .. import Spectrogram
+from ...types.io.ascii import register_ascii_series_io
+from .. import FrequencySeries
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+# -- registration -------------------------------------------------------------
 
-register_hdf5_array_io(Spectrogram)
+register_ascii_series_io(FrequencySeries, format='txt')
+register_ascii_series_io(FrequencySeries, format='csv', delimiter=',')

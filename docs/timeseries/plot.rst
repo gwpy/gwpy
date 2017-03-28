@@ -7,7 +7,7 @@
 
    >>> from gwpy.timeseries import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
 
-.. _timeseries-plot:
+.. _gwpy-timeseries-plot:
 
 #########################
 Plotting time-domain data
@@ -18,7 +18,7 @@ Plotting one `TimeSeries`
 =========================
 
 The `TimeSeries` class includes a :meth:`~TimeSeries.plot` method to trivialise visualisation of the contained data.
-Reproducing the example from :ref:`timeseries-remote-access`:
+Reproducing the example from :ref:`gwpy-timeseries-remote`:
 
 .. plot::
    :include-source:
