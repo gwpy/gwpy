@@ -42,12 +42,12 @@ from astropy.io.registry import (get_formats, IORegistryError)
 
 from ....time import to_gps
 from ....utils.deps import import_method_dependency
+from ....io.gwf import identify_gwf
 from ....io.cache import (Cache, CacheEntry, FILE_LIKE, open_cache,
                           find_contiguous)
 from ....io.registry import (register_reader,
                              register_writer,
                              register_identifier)
-from ....io.utils import identify_factory
 from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
 from ..cache import read_cache
 
@@ -377,7 +377,7 @@ def register_gwf_format(container):
                           "data. Please install one of the third-party GWF "
                           "libraries and try again")
 
-    register_identifier('gwf', container, identify_factory('gwf'))
+    register_identifier('gwf', container, identify_gwf)
     register_reader('gwf', container, read_)
     register_writer('gwf', container, write_)
 
