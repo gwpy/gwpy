@@ -48,18 +48,12 @@ def row_from_frevent(frevent, columns=None, row_class=Row):
     if columns is None:
         columns = get_columns_from_frevent(frevent)
     params = dict(frevent.GetParam())
-    if 'time' in columns:
-        params['time'] = float(LIGOTimeGPS(*frevent.GetGTime()))
-    if 'amplitude' in columns:
-        params['amplitude'] = frevent.GetAmplitude()
-    if 'probability' in columns:
-        params['probability'] = frevent.GetProbability()
-    if 'timeBefore' in columns:
-        params['timeBefore'] = frevent.GetTimeBefore()
-    if 'timeAfter' in columns:
-        params['timeAfter'] = frevent.GetTimeAfter()
-    if 'comment' in columns:
-        params['comment'] = frevent.GetComment()
+    params['time'] = float(LIGOTimeGPS(*frevent.GetGTime()))
+    params['amplitude'] = frevent.GetAmplitude()
+    params['probability'] = frevent.GetProbability()
+    params['timeBefore'] = frevent.GetTimeBefore()
+    params['timeAfter'] = frevent.GetTimeAfter()
+    params['comment'] = frevent.GetComment()
     return [params[c] for c in columns]
 
 
