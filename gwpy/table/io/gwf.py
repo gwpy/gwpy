@@ -102,7 +102,7 @@ def table_from_gwf(filename, name, columns=None):
 
 # -- write --------------------------------------------------------------------
 
-def table_to_gwf(table, filename, name, start=None, duration=None,
+def table_to_gwf(table, filename, name, start=0, duration=None,
                  run=0, ifos=[], compression=257, compression_level=6):
     """Create a new `~frameCPP.FrameH` and fill it with data
     """
