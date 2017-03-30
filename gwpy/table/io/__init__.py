@@ -27,6 +27,7 @@ from . import (  # pylint: disable=unused-import
     cwb,  # cWB ROOT and ASCII formats
     pycbc,  # PyCBC (Live) HDF5
     hacr,  # Hierarchichal Algorithm for Curves and Ridges
+    gwf,  # GWF FrEvents (e.g. MBTA)
 )
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

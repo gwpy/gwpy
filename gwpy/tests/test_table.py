@@ -58,6 +58,13 @@ class TableTests(unittest.TestCase):
             elif copy is False:
                 assert may_share_memory(col, col2)
 
+    def assertTableEqualTypeless(self, a, b, copy=None, meta=False):
+        assert a.colnames == b.colnames
+        for col, col2 in zip(a.columns.values(), b.columns.values()):
+            nptest.assert_array_equal(col, col2.astype(col.dtype))
+        if meta:
+            assert a.meta == b.meta
+
     def test_read_write_ligolw(self):
         table = self.TABLE_CLASS.read(TEST_XML_FILE,
                                       format='ligolw.sngl_burst')
@@ -146,6 +153,30 @@ class TableTests(unittest.TestCase):
             if os.path.isdir(tempdir):
                 shutil.rmtree(tempdir)
 
+    def test_read_write_gwf(self):
+        table = self.TABLE_CLASS.read(
+            TEST_XML_FILE, format='ligolw.sngl_burst',
+            columns=['peak_time', 'peak_time_ns', 'snr', 'peak_frequency'])
+        # add expected columns for GWF
+        time = table['peak_time'] + table['peak_time_ns'] * 1e-9
+        time.name = 'time'
+        table.add_column(time)
+        # test read/write
+        columns = table.dtype.names
+        tempdir = tempfile.mkdtemp()
+        try:
+            fp = tempfile.mktemp(suffix='.gwf', dir=tempdir)
+            # test read
+            table.write(fp, 'test_read_write_gwf')
+            # test read gives back same table
+            table2 = self.TABLE_CLASS.read(fp, 'test_read_write_gwf',
+                                           columns=columns)
+            self.assertTableEqualTypeless(table, table2, meta=False)
+        except ImportError as e:
+            self.skipTest(str(e))
+        finally:
+            if os.path.isdir(tempdir):
+                shutil.rmtree(tempdir)
 
 class EventTableTests(TableTests):
     TABLE_CLASS = EventTable
