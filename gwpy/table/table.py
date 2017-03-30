@@ -109,13 +109,17 @@ class EventTable(Table):
     # -- i/o ------------------------------------
 
     @classmethod
-    def read(cls, source, format=None, nproc=1, **kwargs):
+    def read(cls, source, *args, **kwargs):
         """Read data into an `EventTable`
 
         Parameters
         ----------
         source : `str`, `list`, :class:`~glue.lal.Cache`
             file or list of files from which to read events
+
+        *args
+            other positional arguments will be passed directly to the
+            underlying reader method for the given format
 
         format : `str`, optional
             the format of the given source files; if not given, an attempt
@@ -140,16 +144,19 @@ class EventTable(Table):
 
         Notes
         -----"""
-        return io_read_multi(vstack, cls, source, format=format,
-                             nproc=nproc, **kwargs)
+        return io_read_multi(vstack, cls, source, *args, **kwargs)
 
-    def write(self, target, format=None, **kwargs):
+    def write(self, target, *args, **kwargs):
         """Write this table to a file
 
         Parameters
         ----------
         target: `str`
             filename for output data file
+
+        *args
+            other positional arguments will be passed directly to the
+            underlying writer method for the given format
 
         format : `str`, optional
             format for output data; if not given, an attempt will be made
@@ -167,7 +174,7 @@ class EventTable(Table):
 
         Notes
         -----"""
-        return io_write(self, target, format=format, **kwargs)
+        return io_write(self, target, *args, **kwargs)
 
     # -- ligolw compatibility -------------------
 
