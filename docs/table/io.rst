@@ -26,6 +26,7 @@ GWpy extends the Astropy functionality with readers for the following file forma
 - :ref:`gwpy-table-io-ascii-cwb`
 - :ref:`gwpy-table-io-root`
 - :ref:`gwpy-table-io-pycbc_live`
+- :ref:`gwpy-table-io-gwf`
 
 Each of the sub-sections below outlines how to read and write in these file formats, include the custom keyword arguments to pass to :meth:`EventTable.read` and :meth:`EventTable.write`.
 
@@ -270,6 +271,47 @@ Writing
 -------
 
 Writing tables in PyCBC Live HDF5 format is not supported at this time.
+
+.. _gwpy-table-io-gwf:
+
+===
+GWF
+===
+
+**Additional dependencies:** |LDAStools.frameCPP|_
+
+The Gravitational-Wave Frame file format supports tabular data via ``FrEvent`` structures, which allow storage of arbitrary event information.
+
+Reading
+-------
+
+To read an `EventTable` from a ``GWF``-format file, specify the filename and the ``name`` of the FrEvent structures to read::
+
+   >>> t = EventTable.read('events.gwf', 'my-event-name')
+
+To restrict the returned columns, use the ``columns`` keyword argument::
+
+   >>> t = EventTable.read('events.gwf', 'my-event-name', columns=['time', 'amplitude'])
+
+All ``FrEvent`` structures contain the following columns, any other columns are use-specific:
+
+---------------  ---------------------------------------------------------------
+Column name      Description (from
+                 `LIGO-T970130 <https://dcc.ligo.org/LIGO-T970130/public>`_)
+---------------  ---------------------------------------------------------------
+``time``         Reference time of event, as defined by the search algorithm
+``amplitude``    Continuous output amplitude returned by event
+``probability``  Likelihood estimate of event, if available (probability = -1 if
+                 cannot be estimated)
+``timeBefore``   Signal duration before reference time (seconds)
+``timeAfter``    Signal duration after reference time (seconds)
+``comment``      Descriptor of event
+---------------  ---------------------------------------------------------------
+
+Writing
+-------
+
+Writing tables in GWF format is not supported at this time.
 
 ======================
 Available file formats
