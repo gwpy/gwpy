@@ -232,8 +232,7 @@ def register_gwf_api(library):
                 source = source.sieve(segment=Segment(start, end))
             source = list(find_contiguous(source))
         # convert everything else into a list if needed
-        if (not isinstance(source, (list, tuple)) or
-                isinstance(source, Cache)):
+        if not isinstance(source, (list, tuple)):
             source = [source]
 
         # now read the data
