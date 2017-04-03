@@ -40,6 +40,7 @@ import numpy
 
 from astropy.io.registry import (get_formats, IORegistryError)
 
+from ....segments import Segment
 from ....time import to_gps
 from ....utils.deps import import_method_dependency
 from ....io.gwf import identify_gwf
@@ -227,6 +228,8 @@ def register_gwf_api(library):
             source = open_cache(source)
         # separate cache into contiguous segments
         if isinstance(source, Cache):
+            if start is not None and end is not None:
+                source = source.sieve(segment=Segment(start, end))
             source = list(find_contiguous(source))
         # convert everything else into a list if needed
         if (not isinstance(source, (list, tuple)) or
