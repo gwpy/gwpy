@@ -21,6 +21,7 @@ from __future__ import (division, absolute_import)
 from functools import wraps
 from math import ceil
 from multiprocessing import (Process, Queue as ProcessQueue)
+from xml.sax import SAXException
 
 from .cache import (FILE_LIKE, file_list)
 
@@ -73,7 +74,10 @@ def read_multi(flatten, cls, source, *args, **kwargs):
         try:
             q.put((index, io_read(cls, chunk, *args, **kwargs)))
         except Exception as e:
-            q.put(e)
+            if isinstance(e, SAXException):
+                q.put(e.getException())
+            else:
+                q.put(e)
 
     # split source into parts
     numperproc = int(ceil(num / nproc))
