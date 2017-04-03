@@ -199,7 +199,7 @@ def register_gwf_api(library):
             return read_cache(source, channels, start=start, end=end,
                               gap=gap, pad=pad, resample=resample, dtype=dtype,
                               nproc=nproc, format=fmt,
-                              target=series_class.DictClass)
+                              target=series_class.DictClass, **kwargs)
 
         # -- from here read data
 
