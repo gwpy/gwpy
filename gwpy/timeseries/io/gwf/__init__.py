@@ -152,7 +152,7 @@ def register_gwf_api(library):
     def read_timeseriesdict(source, channels, start=None, end=None,
                             dtype=None, resample=None,
                             gap=None, pad=None, nproc=1,
-                            series_class=TimeSeries):
+                            series_class=TimeSeries, **kwargs):
         """Read the data for a list of channels from a GWF data source
 
         Parameters
@@ -242,7 +242,7 @@ def register_gwf_api(library):
                 for name in out:
                     out[name] = numpy.require(out[name], requirements=['O'])
             out.append(libread_(src, channels, start=start, end=end,
-                                series_class=series_class),
+                                series_class=series_class, **kwargs),
                        gap=gap, pad=pad, copy=False)
 
         # apply resampling and dtype-casting
