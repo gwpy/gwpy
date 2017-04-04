@@ -299,3 +299,20 @@ class EventTableTests(TableTests):
         finally:
             if os.path.exists(fp):
                 os.remove(fp)
+
+    def test_filter(self):
+        table = self.TABLE_CLASS.read(TEST_OMEGA_FILE, format='ascii.omega')
+        # check simple filter
+        lowf = table.filter('frequency < 1000')
+        self.assertIsInstance(lowf, type(table))
+        self.assertEqual(len(lowf), 45)
+        self.assertLess(lowf['frequency'].max(), 1000)
+        # check filtering everything returns an empty table
+        self.assertEqual(
+            len(table.filter('frequency < 1000', 'frequency>=1000')), 0)
+        # check compounding works
+        loud = table.filter('normalizedEnergy>5000')
+        lowfloud = table.filter('frequency < 1000', 'normalizedEnergy>5000')
+        brute = type(table)(rows=[row for row in lowf if row in loud],
+                            names=table.dtype.names)
+        self.assertTableEqual(brute, lowfloud)

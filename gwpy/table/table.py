@@ -30,13 +30,10 @@ from astropy.table import (Table, Column, vstack)
 from astropy.io.registry import write as io_write
 
 from ..io.mp import read_multi as io_read_multi
+from .filter import (filter_table, parse_operator)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['EventColumn', 'EventTable']
-
-OPERATORS = {'<': _operator.lt, '<=': _operator.le, '=': _operator.eq,
-             '>=': _operator.ge, '>': _operator.gt, '==': _operator.is_,
-             '!=': _operator.is_not}
 
 
 class EventColumn(Column):
@@ -302,7 +299,7 @@ class EventTable(Table):
                 bins2.append((bin_, bins[i+1]))
             bins = bins2
         elif isinstance(operator, string_types):
-            op = OPERATORS[operator]
+            op = parse_operator(operator)
         else:
             op = operator
 
@@ -383,3 +380,21 @@ class EventTable(Table):
         """
         from gwpy.plotter import HistogramPlot
         return HistogramPlot(self, column, **kwargs)
+
+    def filter(self, *column_filters):
+        """Apply one or more column slice filters to this `EventTable`
+
+        Multiple column filters can be given, and will be applied
+        concurrently
+
+        Parameters
+        ----------
+        column_filter : `str`
+            a column slice filter definition, e.g. ``'snr > 10``
+
+        Returns
+        -------
+        table : `EventTable`
+            a new table with only those rows matching the filters
+        """
+        return filter_table(self, *column_filters)
