@@ -301,17 +301,15 @@ class FrequencySeriesPlot(Plot):
             # format axes
             for key, val in axargs.items():
                 getattr(ax, 'set_%s' % key)(val)
-            # fix log frequency scale with f0 = DC
-            if xscale in ['log']:
+            # set axis scales
+            ax.set_xscale(xscale)
+            ax.set_yscale(yscale)
+            # format log scales
+            if ax.get_xscale() in ['log']:
                 xlim = list(ax.get_xlim())
                 if not xlim[0]:
                     xlim[0] = x0[i]
                 ax.set_xlim(*xlim)
-            # set axis scales
-            ax.set_xscale(xscale)
-            ax.set_yscale(yscale)
-            # set grid
-            if xscale == 'log':
                 ax.grid(True, axis='x', which='both')
-            if yscale == 'log':
+            if ax.get_yscale() in ['log']:
                 ax.grid(True, axis='y', which='both')
