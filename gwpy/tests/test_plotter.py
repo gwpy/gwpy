@@ -406,7 +406,7 @@ class TimeSeriesAxesTestCase(TimeSeriesMixin, AxesTestCase):
         self.save_and_close(fig)
 
 
-# -- FrequencySeries plotters --------------------------------------------------------
+# -- FrequencySeries plotters -------------------------------------------------
 
 class FrequencySeriesMixin(object):
     FIGURE_CLASS = FrequencySeriesPlot
