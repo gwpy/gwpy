@@ -21,7 +21,8 @@
 
 The standard coherence calculation outputs a frequency series
 (`~gwpy.frequencyseries.FrequencySeries`) giving a time-averaged measure
-of coherence.
+of coherence. See :ref:`gwpy-example-frequencyseries-coherence` for an
+example.
 
 The `TimeSeries` method :meth:`~TimeSeries.coherence_spectrogram` performs the
 same coherence calculation every ``stride``, giving a time-varying coherence
@@ -35,16 +36,19 @@ __currentmodule__ = 'gwpy.timeseries'
 # First, we import the `TimeSeriesDict`
 from gwpy.timeseries import TimeSeriesDict
 
-# and then :meth:`~TimeSeriesDict.get` both data sets:
-data = TimeSeriesDict.get(['L1:LSC-SRCL_IN1_DQ', 'L1:LSC-CARM_IN1_DQ'],
-                           'Feb 13 2015', 'Feb 13 2015 00:15')
+# and then :meth:`~TimeSeriesDict.get` the data for the strain output
+# (``H1:GDS-CALIB_STRAIN``) and the PSL periscope accelerometer
+# (``H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ``):
+data = TimeSeriesDict.get(['H1:GDS-CALIB_STRAIN',
+                           'H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ'],
+                           1126260017, 1126260617)
+hoft = data['H1:GDS-CALIB_STRAIN']
+acc = data['H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ']
 
-# We can then use the :meth:`~TimeSeries.coherence_spectrogram` method
-# of one `TimeSeries` to calcululate the time-varying coherence with
-# respect to the other, using a 0.5-second FFT length, with a
-# 0.45-second (90%) overlap, with a 8-second stride:
-coh = data['L1:LSC-SRCL_IN1_DQ'].coherence_spectrogram(
-    data['L1:LSC-CARM_IN1_DQ'], 8, 0.5, 0.45)
+# We can then calculate the :meth:`~TimeSeries.coherence` of one
+# `TimeSeries` with respect to the other, using an 2-second Fourier
+# transform length, with a 1-second (50%) overlap:
+coh = hoft.coherence_spectrogram(acc, 10, fftlength=.5, overlap=.25)
 
 # Finally, we can :meth:`~gwpy.spectrogram.Spectrogram.plot` the
 # resulting data
@@ -53,7 +57,7 @@ ax = plot.gca()
 ax.set_ylabel('Frequency [Hz]')
 ax.set_yscale('log')
 ax.set_ylim(10, 8000)
-ax.set_title('Coherence between SRCL and CARM for L1')
+ax.set_title('Coherence between PSL periscope motion and LIGO-Hanford strain data')
 ax.grid(True, 'both', 'both')
-plot.add_colorbar(label='Coherence', clim=[0, 1])
+plot.add_colorbar(label='Coherence', clim=[0, 1], cmap='plasma')
 plot.show()
