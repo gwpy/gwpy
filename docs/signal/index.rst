@@ -26,7 +26,7 @@ Available methods include:
    TimeSeries.filter
    TimeSeries.whiten
 
-For a worked example of how to filter LIGO data to discover a gravitational-wave signal, see the example :ref:`gwpy-.example-signal-gw150914`.
+For a worked example of how to filter LIGO data to discover a gravitational-wave signal, see the example :ref:`gwpy-example-signal-gw150914`.
 
 ==========================
 Frequency-domain filtering
