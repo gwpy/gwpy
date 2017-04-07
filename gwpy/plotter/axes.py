@@ -219,6 +219,7 @@ class Axes(_Axes):
         if legend is not None:
             lframe = legend.get_frame()
             lframe.set_alpha(alpha)
+            lframe.set_linewidth(rcParams['axes.linewidth'])
             [l.set_linewidth(linewidth) for l in legend.get_lines()]
         return legend
     legend.__doc__ = _Axes.legend.__doc__
