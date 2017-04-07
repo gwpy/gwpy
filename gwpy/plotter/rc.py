@@ -16,11 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module provides plotting utilities for visualising GW data
-
-The standard data types (`TimeSeries`, `Table`, `DataQualityFlag`, ...) can
-all be easily visualised using the relevant plotting objects, with
-many configurable parameters both interactive, and in saving to disk.
+"""Custom default figure configuration
 """
 
 from matplotlib import (rcParams, rc_params)
@@ -32,6 +28,8 @@ from .tex import (USE_TEX, MACROS as TEX_MACROS)
 DEFAULT_RCPARAMS = rc_params()
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+# -- custom rc ----------------------------------------------------------------
 
 # set default params
 GWPY_PLOT_PARAMS = {
