@@ -41,3 +41,22 @@ if mpl_version < '2.0':
     ]
 else:  # just in case anyone expects DEFAULT_COLORS to exist for mpl 2
     DEFAULT_COLORS = rcParams['axes.prop_cycle'].by_key()['color']
+
+# -- recommended defaults for current Gravitational-Wave Observatories --------
+# the below colours are designed to work well for the colour-blind, as well
+# as in grayscale, so are good for recommended for publications
+
+GW_OBSERVATORY_COLORS = {
+    # GEO-600
+    'G1': '#222222',  # dark gray
+    # LIGO-Hanford
+    'H1': '#ee0000',  # red
+    # LIGO-India
+    'I1': '#b0dd8b',  # light green
+    # KAGRA
+    'K1': '#ffb200',  # yellow/orange
+    # LIGO-Livingston
+    'L1': '#4ba6ff',  # blue
+    # Virgo
+    'V1': '#9b59b6',  # magenta/purple
+}
