@@ -34,7 +34,7 @@ except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
 from . import utils
-from .rc import (rcParams, DEFAULT_RCPARAMS)
+from .rc import (rcParams, DEFAULT_RCPARAMS, get_subplot_params)
 from .axes import Axes
 from .log import CombinedLogFormatterMathtext
 from .decorators import (auto_refresh, axes_method)
@@ -69,7 +69,7 @@ class Plot(figure.Figure):
         # dynamically set the subplot positions based on the figure size
         # -- only if the user hasn't customised the subplot params
         figsize = kwargs.get('figsize', rcParams['figure.figsize'])
-        subplotpars = utils.get_subplot_params(figsize)
+        subplotpars = get_subplot_params(figsize)
         use_subplotpars = 'subplotpars' not in kwargs and all([
             rcParams['figure.subplot.%s' % pos] ==
             DEFAULT_RCPARAMS['figure.subplot.%s' % pos] for
