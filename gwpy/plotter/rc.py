@@ -23,6 +23,7 @@ from matplotlib import (rcParams, rc_params, __version__ as mpl_version)
 from matplotlib.figure import SubplotParams
 
 from .tex import (USE_TEX, MACROS as TEX_MACROS)
+from .colors import DEFAULT_COLORS
 
 # record matplotlib's original rcParams
 MPL_RCPARAMS = rc_params()
@@ -58,20 +59,6 @@ if rcParams['text.usetex'] or USE_TEX:
 
 # build better default colour cycle for matplotlib < 2
 if mpl_version < '2.0':
-    DEFAULT_COLORS = [
-        '#1f77b4',  # blue
-        '#ffb200',  # yellow(ish)
-        '#33cc33',  # green
-        '#ff0000',  # red
-        '#8000bf',  # magenta
-        '#808080',  # gray
-        '#4cb2ff',  # light blue
-        '#ffc0cb',  # pink
-        '#232c16',  # dark green
-        '#ff7fe0',  # orange
-        '#8b4513',  # saddlebrown
-        '#000080',  # navy
-    ]
     try:
         from matplotlib import cycler
     except (ImportError, KeyError):  # mpl < 1.5
