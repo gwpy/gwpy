@@ -26,7 +26,7 @@ many configurable parameters both interactive, and in saving to disk.
 from matplotlib import pyplot
 
 # utilities
-from .rc import GWPY_PLOT_PARAMS
+from .rc import DEFAULT_PARAMS as GWPY_PLOT_PARAMS
 from .gps import *
 from .log import *
 

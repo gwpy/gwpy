@@ -25,14 +25,14 @@ from matplotlib.figure import SubplotParams
 from .tex import (USE_TEX, MACROS as TEX_MACROS)
 
 # record matplotlib's original rcParams
-DEFAULT_RCPARAMS = rc_params()
+MPL_RCPARAMS = rc_params()
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # -- custom rc ----------------------------------------------------------------
 
 # set default params
-GWPY_PLOT_PARAMS = {
+DEFAULT_PARAMS = {
     'axes.grid': True,
     'axes.axisbelow': False,
     'axes.formatter.limits': (-3, 4),
@@ -48,7 +48,7 @@ GWPY_PLOT_PARAMS = {
 }
 
 # construct new default color cycle
-GWPY_COLOR_CYCLE = [
+DEFAULT_COLORS = [
     '#0066ff',  # blue
     '#ff0000',  # red
     '#33cc33',  # green
@@ -67,15 +67,15 @@ GWPY_COLOR_CYCLE = [
 try:
     from matplotlib import cycler
 except (ImportError, KeyError):  # mpl < 1.5
-    GWPY_PLOT_PARAMS['axes.color_cycle'] = GWPY_COLOR_CYCLE
+    DEFAULT_PARAMS['axes.color_cycle'] = DEFAULT_COLORS
 else:
-    GWPY_PLOT_PARAMS.update({
-        'axes.prop_cycle': cycler('color', GWPY_COLOR_CYCLE),
+    DEFAULT_PARAMS.update({
+        'axes.prop_cycle': cycler('color', DEFAULT_COLORS),
     })
 
 # set latex options
 if rcParams['text.usetex'] or USE_TEX:
-    GWPY_PLOT_PARAMS.update({
+    DEFAULT_PARAMS.update({
         "text.usetex": True,
         "font.family": "serif",
         "font.serif": ["Computer Modern"],
@@ -83,11 +83,7 @@ if rcParams['text.usetex'] or USE_TEX:
     })
 
 # update matplotlib rcParams with new settings
-rcParams.update(GWPY_PLOT_PARAMS)
-
-# fix matplotlib issue #3470
-if rcParams['font.family'] == 'serif':
-    rcParams['font.family'] = u'serif'
+rcParams.update(DEFAULT_PARAMS)
 
 # -- dynamic subplot positioning ----------------------------------------------
 
