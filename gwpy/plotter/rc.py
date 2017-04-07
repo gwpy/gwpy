@@ -22,7 +22,7 @@
 from matplotlib import (rcParams, rc_params, __version__ as mpl_version)
 from matplotlib.figure import SubplotParams
 
-from .tex import (USE_TEX, MACROS as TEX_MACROS)
+from . import tex
 from .colors import DEFAULT_COLORS
 
 # record matplotlib's original rcParams
@@ -49,13 +49,10 @@ DEFAULT_PARAMS = {
 }
 
 # set latex options
-if rcParams['text.usetex'] or USE_TEX:
-    DEFAULT_PARAMS.update({
-        "text.usetex": True,
-        "font.family": "serif",
-        "font.serif": ["Computer Modern"],
-        "text.latex.preamble": TEX_MACROS,
-    })
+rcParams['text.latex.preamble'].extend(tex.MACROS)
+if rcParams['text.usetex'] or tex.HAS_TEX:
+    DEFAULT_PARAMS['text.usetex'] = True
+    DEFAULT_PARAMS['font.family'] = 'serif'
 
 # build better default colour cycle for matplotlib < 2
 if mpl_version < '2.0':
