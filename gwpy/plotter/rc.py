@@ -19,7 +19,7 @@
 """Custom default figure configuration
 """
 
-from matplotlib import (rcParams, rc_params)
+from matplotlib import (rcParams, rc_params, __version__ as mpl_version)
 from matplotlib.figure import SubplotParams
 
 from .tex import (USE_TEX, MACROS as TEX_MACROS)
@@ -47,32 +47,6 @@ DEFAULT_PARAMS = {
     'ytick.labelsize': 20,
 }
 
-# construct new default color cycle
-DEFAULT_COLORS = [
-    '#0066ff',  # blue
-    '#ff0000',  # red
-    '#33cc33',  # green
-    '#ffb200',  # yellow(ish)
-    '#8000bf',  # magenta
-    '#808080',  # gray
-    '#4cb2ff',  # light blue
-    '#ffc0cb',  # pink
-    '#232c16',  # dark green
-    '#ff6600',  # orange
-    '#8b4513',  # saddlebrown
-    '#000080',  # navy
-]
-
-# set mpl version dependent stuff
-try:
-    from matplotlib import cycler
-except (ImportError, KeyError):  # mpl < 1.5
-    DEFAULT_PARAMS['axes.color_cycle'] = DEFAULT_COLORS
-else:
-    DEFAULT_PARAMS.update({
-        'axes.prop_cycle': cycler('color', DEFAULT_COLORS),
-    })
-
 # set latex options
 if rcParams['text.usetex'] or USE_TEX:
     DEFAULT_PARAMS.update({
@@ -81,6 +55,31 @@ if rcParams['text.usetex'] or USE_TEX:
         "font.serif": ["Computer Modern"],
         "text.latex.preamble": TEX_MACROS,
     })
+
+# build better default colour cycle for matplotlib < 2
+if mpl_version < '2.0':
+    DEFAULT_COLORS = [
+        '#1f77b4',  # blue
+        '#ffb200',  # yellow(ish)
+        '#33cc33',  # green
+        '#ff0000',  # red
+        '#8000bf',  # magenta
+        '#808080',  # gray
+        '#4cb2ff',  # light blue
+        '#ffc0cb',  # pink
+        '#232c16',  # dark green
+        '#ff7fe0',  # orange
+        '#8b4513',  # saddlebrown
+        '#000080',  # navy
+    ]
+    try:
+        from matplotlib import cycler
+    except (ImportError, KeyError):  # mpl < 1.5
+        DEFAULT_PARAMS['axes.color_cycle'] = DEFAULT_COLORS
+    else:  # mpl >= 1.5
+        DEFAULT_PARAMS.update({
+            'axes.prop_cycle': cycler('color', DEFAULT_COLORS),
+        })
 
 # update matplotlib rcParams with new settings
 rcParams.update(DEFAULT_PARAMS)
