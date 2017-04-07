@@ -22,7 +22,7 @@
 import re
 import numpy
 
-from matplotlib import (pyplot, colors)
+from matplotlib import (pyplot, colors, rcParams)
 from matplotlib.projections import register_projection
 from matplotlib.artist import allow_rasterization
 from matplotlib.cbook import iterable
@@ -182,7 +182,7 @@ class TimeSeriesAxes(Axes):
         :meth:`matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
-        if tex.USE_TEX:
+        if rcParams['text.usetex']:
             kwargs.setdefault('label', tex.label_to_latex(timeseries.name))
         else:
             kwargs.setdefault('label', timeseries.name)
@@ -192,7 +192,7 @@ class TimeSeriesAxes(Axes):
         if len(self.lines) == 1 and timeseries.size:
             self.set_xlim(*timeseries.xspan)
         if not self.get_ylabel():
-            if tex.USE_TEX:
+            if rcParams['text.usetex']:
                 ustr = tex.unit_to_latex(timeseries.unit)
             else:
                 ustr = timeseries.unit.to_string()

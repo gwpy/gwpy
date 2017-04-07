@@ -25,7 +25,7 @@ import warnings
 import numpy
 
 from matplotlib.projections import register_projection
-from matplotlib import colors
+from matplotlib import (colors, rcParams)
 
 from . import tex
 from .core import Plot
@@ -95,7 +95,7 @@ class FrequencySeriesAxes(Axes):
         :meth:`matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
-        if tex.USE_TEX:
+        if rcParams['text.usetex']:
             kwargs.setdefault('label', tex.label_to_latex(spectrum.name))
         else:
             kwargs.setdefault('label', spectrum.name)
@@ -108,14 +108,14 @@ class FrequencySeriesAxes(Axes):
             except ValueError:
                 pass
         if not self.get_xlabel():
-            if tex.USE_TEX:
+            if rcParams['text.usetex']:
                 ustr = tex.unit_to_latex(spectrum.xunit)
             else:
                 ustr = spectrum.xunit.to_string()
             if ustr:
                 self.set_xlabel('Frequency [%s]' % ustr)
         if not self.get_ylabel():
-            if tex.USE_TEX:
+            if rcParams['text.usetex']:
                 ustr = tex.unit_to_latex(spectrum.unit)
             else:
                 ustr = spectrum.unit.to_string()
