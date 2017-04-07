@@ -49,18 +49,18 @@ GWPY_PLOT_PARAMS = {
 
 # construct new default color cycle
 GWPY_COLOR_CYCLE = [
-    (0.0, 0.4, 1.0),  # blue
-    'r',              # red
-    (0.2, 0.8, 0.2),  # green
-    (1.0, 0.7, 0.0),  # yellow(ish)
-    (0.5, 0., 0.75),  # magenta
-    'gray',
-    (0.3, 0.7, 1.0),  # light blue
-    'pink',
-    (0.13671875, 0.171875, 0.0859375),  # dark green
-    (1.0, 0.4, 0.0),  # orange
-    'saddlebrown',
-    'navy',
+    '#0066ff',  # blue
+    '#ff0000',  # red
+    '#33cc33',  # green
+    '#ffb200',  # yellow(ish)
+    '#8000bf',  # magenta
+    '#808080',  # gray
+    '#4cb2ff',  # light blue
+    '#ffc0cb',  # pink
+    '#232c16',  # dark green
+    '#ff6600',  # orange
+    '#8b4513',  # saddlebrown
+    '#000080',  # navy
 ]
 
 # set mpl version dependent stuff
