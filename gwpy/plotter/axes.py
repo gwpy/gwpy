@@ -48,11 +48,6 @@ class Axes(_Axes):
     """
     projection = 'rectilinear'
 
-    def __init__(self, *args, **kwargs):
-        super(Axes, self).__init__(*args, **kwargs)
-        self.xaxis.labelpad = 10
-    __init__.__doc__ = _Axes.__init__.__doc__
-
     # -----------------------------------------------
     # text properties
 
