@@ -101,6 +101,11 @@ SUBPLOT_HEIGHT = {
 def get_subplot_params(figsize):
     """Return sensible default `SubplotParams` for a figure of the given size
 
+    Parameters
+    ----------
+    figsize : `tuple` of `float`
+         the ``(width, height)`` figure size (inches)
+
     Returns
     -------
     params : `~matplotlib.figure.SubplotParams`
