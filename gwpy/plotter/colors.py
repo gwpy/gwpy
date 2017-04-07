@@ -19,7 +19,7 @@
 """Colour customisations for visualisation in GWpy
 """
 
-from matplotlib import __version__ as mpl_version
+from matplotlib import (__version__ as mpl_version, rcParams)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
