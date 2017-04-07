@@ -71,11 +71,13 @@ rcParams.update(DEFAULT_PARAMS)
 # -- dynamic subplot positioning ----------------------------------------------
 
 SUBPLOT_WIDTH = {
+    6.4: (.17, .88),
     8.: (.15, .88),
     12.: (.1, .92),
 }
 SUBPLOT_HEIGHT = {
     4.: (.2, .85),
+    4.8: (.15, .87),
     6.: (.13, .9),
     8.: (.11, .92),
 }
