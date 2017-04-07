@@ -23,18 +23,19 @@ from __future__ import division
 
 import os
 
-from astropy import units
-from astropy.units.format import (latex as ulatex, utils as uutils)
-
 __author__ = "Duncan M. Macleod <duncan.macleod@ligo.org>"
 
-USE_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
-
-LATEX_CONTROL_CHARS = ["%", "\\", "_", "~", "&"]
+# -- tex configuration --------------------------------------------------------
 
 MACROS = [
     r'\def\rtHz{\ensuremath{\sqrt{\mathrm{Hz}}}}',  # \sqrt{Hz} label
 ]
+
+HAS_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
+
+# -- tex formatting -----------------------------------------------------------
+
+LATEX_CONTROL_CHARS = ["%", "\\", "_", "~", "&"]
 
 
 def float_to_latex(x, format="%.2g"):
@@ -83,6 +84,9 @@ def label_to_latex(text):
 
 
 def unit_to_latex(unit):
+    from astropy import units
+    from astropy.units.format import utils as unit_utils
+
     if unit is None:
         return ''
     elif isinstance(unit, units.NamedUnit):
@@ -93,7 +97,7 @@ def unit_to_latex(unit):
         else:
             s = ''
         if len(unit.bases):
-            positives, negatives = uutils.get_grouped_by_powers(
+            positives, negatives = unit_utils.get_grouped_by_powers(
                 unit.bases, unit.powers)
             if len(negatives) == 1:
                 negatives = format_unit_list(negatives)
@@ -120,8 +124,10 @@ def unit_to_latex(unit):
 
 
 def format_unit_list(unitlist, negative=False):
+    from astropy.units.format import latex
+
     out = []
-    texformatter = ulatex.Latex()
+    texformatter = latex.Latex()
     for base, power in unitlist:
         if power == 1 and not negative:
             out.append(texformatter._get_unit_name(base))

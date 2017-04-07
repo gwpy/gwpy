@@ -55,7 +55,7 @@ from gwpy.plotter import utils
 from gwpy.plotter.gps import (GPSTransform, InvertedGPSTransform)
 from gwpy.plotter.html import map_data
 from gwpy.plotter.tex import (float_to_latex, label_to_latex,
-                              unit_to_latex, USE_TEX)
+                              unit_to_latex)
 from gwpy.plotter.table import get_column_string
 
 from test_timeseries import TEST_HDF_FILE
