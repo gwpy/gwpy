@@ -175,7 +175,7 @@ class Plot(figure.Figure):
 
     @auto_refresh
     def add_colorbar(self, mappable=None, ax=None, location='right',
-                     width=0.2, pad=0.1, log=None, label="", clim=None,
+                     width=0.15, pad=0.08, log=None, label="", clim=None,
                      cmap=None, clip=None, visible=True, axes_class=Axes,
                      **kwargs):
         """Add a colorbar to the current `Axes`
