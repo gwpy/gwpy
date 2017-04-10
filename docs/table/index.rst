@@ -6,7 +6,7 @@
 Tabular data
 ############
 
-Alongside the :ref:`timeseries <timeseries>` data produced continuously at the
+Alongside the :ref:`timeseries <gwpy-timeseries>` data produced continuously at the
 laboratories, a number of different sets of tabular data are generated, typically
 recording significant noise transients (glitches) or gravitational-wave events found
 in the data.

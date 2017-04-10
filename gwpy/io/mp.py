@@ -21,8 +21,9 @@ from __future__ import (division, absolute_import)
 from functools import wraps
 from math import ceil
 from multiprocessing import (Process, Queue as ProcessQueue)
+from xml.sax import SAXException
 
-from .cache import file_list
+from .cache import (FILE_LIKE, file_list)
 
 from astropy.table import vstack
 from astropy.io.registry import (_get_valid_format as get_format,
@@ -48,8 +49,12 @@ def read_multi(flatten, cls, source, *args, **kwargs):
 
     # determine input format
     if kwargs.get('format', None) is None:
+        if isinstance(source, FILE_LIKE):
+            fileobj = source
+        else:
+            fileobj = None
         kwargs['format'] = get_format(
-            'read', cls, files[0], source, args, kwargs)
+            'read', cls, files[0], fileobj, args, kwargs)
 
     # calculate maximum number of processes
     nproc = kwargs.pop('nproc', 1)
@@ -69,7 +74,10 @@ def read_multi(flatten, cls, source, *args, **kwargs):
         try:
             q.put((index, io_read(cls, chunk, *args, **kwargs)))
         except Exception as e:
-            q.put(e)
+            if isinstance(e, SAXException):
+                q.put(e.getException())
+            else:
+                q.put(e)
 
     # split source into parts
     numperproc = int(ceil(num / nproc))

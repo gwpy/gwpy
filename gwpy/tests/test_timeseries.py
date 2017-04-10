@@ -428,6 +428,8 @@ class TimeSeriesTestMixin(object):
         ts = self.create()
         plot = ts.plot()
         self.assertIsInstance(plot, TimeSeriesPlot)
+        with tempfile.NamedTemporaryFile(suffix='.png') as f:
+            plot.save(f.name)
         return plot
 
 
@@ -794,6 +796,8 @@ class TimeSeriesDictTestCase(unittest.TestCase):
         plot = tsd.plot()
         self.assertIsInstance(plot, TimeSeriesPlot)
         self.assertEqual(len(plot.gca().lines), 2)
+        with tempfile.NamedTemporaryFile(suffix='.png') as f:
+            plot.save(f.name)
 
     def test_resample(self):
         tsd = self.read()
@@ -833,6 +837,8 @@ class StateVectorDictTestCase(TimeSeriesDictTestCase):
         tsd = self.read()
         plot = tsd.plot()
         self.assertIsInstance(plot, TimeSeriesPlot)
+        with tempfile.NamedTemporaryFile(suffix='.png') as f:
+            plot.save(f.name)
 
 
 # -- TimeSeriesList tests -----------------------------------------------------

@@ -60,4 +60,4 @@ plot.show()
 # This shows the central time and frequency of each event trigger (row
 # in the ``events`` table). Alternatively we can visualise each trigger
 # as a two-dimensional tile on the time-frequency plane - for more details
-# see the example :ref:`example-table-tiles`.
+# see the example :ref:`gwpy-example-table-tiles`.

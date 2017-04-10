@@ -53,7 +53,7 @@ class GWpyLogFormatterMathtext(LogFormatterMathtext):
                 return '$%s$' % x
             else:
                 return '$\mathdefault{%s}$' % x
-        elif usetex and abs(log10(x)) > 2:
+        elif usetex and abs(x) > 100:
             return '$%s$' % float_to_latex(x, '%.2e')
         elif usetex:
             return '$%s$' % float_to_latex(x, '%.2g')

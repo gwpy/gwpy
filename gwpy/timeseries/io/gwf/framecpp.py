@@ -32,6 +32,7 @@ else:
     FRAME_LIBRARY = 'LDAStools.frameCPP'
 
 from ....detector import Channel
+from ....io import gwf as io_gwf
 from ....io.cache import (Cache, CacheEntry, file_list)
 from ....time import LIGOTimeGPS
 from ... import (TimeSeries, TimeSeriesDict)
@@ -223,22 +224,11 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
 
 # -- write --------------------------------------------------------------------
 
-def write(tsdict, outfile, start=None, end=None, name='gwpy', run=0):
+def write(tsdict, outfile, start=None, end=None, name='gwpy', run=0,
+          compression=257, compression_level=6):
     """Write data to a GWF file using the frameCPP API
     """
-    stream = frameCPP.OFrameFStream(outfile)
-    frame = create_frame(tsdict, start=start, end=end, name=name, run=run)
-    stream.WriteFrame(
-        frame,  # frame to write
-        frameCPP.FrVect.RAW,  # compression scheme
-        0,  # compession level
-    )
-
-
-def create_frame(tsdict, start=None, end=None,
-                 name='gwpy', run=0):
-    """Create a new `~frameCPP.FrameH` and fill it with data
-    """
+    # set frame header metadata
     if not start:
         starts = set([LIGOTimeGPS(tsdict[c].x0.value) for c in tsdict])
         if len(starts) != 1:
@@ -254,27 +244,14 @@ def create_frame(tsdict, start=None, end=None,
                                "please write into different frames")
         end = list(ends)[0]
     duration = end - start
-    lstart = LIGOTimeGPS(start)
-    start = frameCPP.GPSTime(lstart.gpsSeconds, lstart.gpsNanoSeconds)
+    start = LIGOTimeGPS(start)
+    ifos = set([ts.channel.ifo for ts in tsdict.values() if
+                ts.channel and ts.channel.ifo and
+                hasattr(frameCPP, 'DETECTOR_LOCATION_%s' % ts.channel.ifo)])
 
     # create frame
-    frame = frameCPP.FrameH()
-
-    # append detectors
-    for prefix in set([
-            ts.channel.ifo for ts in tsdict.values() if
-            ts.channel and ts.channel.ifo]):
-        try:
-            idx = getattr(frameCPP, 'DETECTOR_LOCATION_%s' % prefix)
-        except AttributeError:
-            continue
-        frame.AppendFrDetector(frameCPP.GetDetector(idx, start))
-
-    # set header metadata
-    frame.SetGTime(start)
-    frame.SetDt(float(duration))
-    frame.SetName(name)
-    frame.SetRun(run)
+    frame = io_gwf.create_frame(time=start, duration=duration, name=name,
+                                run=run, ifos=ifos)
 
     # append channels
     for i, c in enumerate(tsdict):
@@ -282,9 +259,12 @@ def create_frame(tsdict, start=None, end=None,
             ctype = tsdict[c].channel._ctype or 'proc'
         except AttributeError:
             ctype = 'proc'
-        append_to_frame(frame, tsdict[c].crop(lstart, end),
+        append_to_frame(frame, tsdict[c].crop(start, end),
                         type=ctype, channelid=i)
-    return frame
+
+    # write frame to file
+    io_gwf.write_frames(outfile, [frame], compression=compression,
+                        compression_level=compression_level)
 
 
 def append_to_frame(frame, timeseries, type='proc', channelid=0):

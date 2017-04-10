@@ -59,6 +59,8 @@ class FrequencySeriesTestCase(SeriesTestCase):
         array = self.create()
         plot = array.plot()
         self.assertIsInstance(plot, FrequencySeriesPlot)
+        with tempfile.NamedTemporaryFile(suffix='.png') as f:
+            plot.save(f.name)
 
     def test_filter(self):
         array = self.create()
@@ -138,6 +140,8 @@ class SpectralVarianceTestCase(Array2DTestCase):
     def test_plot(self):
         plot = self.create().plot()
         self.assertIsInstance(plot, FrequencySeriesPlot)
+        with tempfile.NamedTemporaryFile(suffix='.png') as f:
+            plot.save(f.name)
 
     def test_value_at(self):
         ts1 = self.create(dx=.5, unit='m')

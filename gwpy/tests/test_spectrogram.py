@@ -19,6 +19,8 @@
 """Unit test for spectrogram module
 """
 
+import tempfile
+
 import pytest
 
 import numpy
@@ -96,6 +98,11 @@ class SpectrogramTestCase(Array2DTestCase):
             array.crop_frequencies(array.yspan[0]-1, array.yspan[1])
         with pytest.warns(UserWarning):
             array.crop_frequencies(array.yspan[0], array.yspan[1]+1)
+
+    def test_plot(self):
+        plot = self.TEST_ARRAY.plot()
+        with tempfile.NamedTemporaryFile(suffix='.png') as f:
+            plot.save(f.name)
 
 
 if __name__ == '__main__':

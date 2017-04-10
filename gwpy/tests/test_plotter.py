@@ -264,7 +264,9 @@ class AxesTestCase(Mixin, unittest.TestCase):
         ax = fig.add_subplot(111, projection=self.AXES_CLASS.name)
         ax.plot([1, 2, 3, 4], label='Plot')
         leg = ax.legend()
-        self.assertEqual(leg.get_frame().get_alpha(), 0.8)
+        legframe = leg.get_frame()
+        self.assertEqual(legframe.get_alpha(), 0.8)
+        self.assertEqual(legframe.get_linewidth(), rcParams['axes.linewidth'])
         for l in leg.get_lines():
             self.assertEqual(l.get_linewidth(), 8)
         self.save_and_close(fig)
@@ -406,7 +408,7 @@ class TimeSeriesAxesTestCase(TimeSeriesMixin, AxesTestCase):
         self.save_and_close(fig)
 
 
-# -- FrequencySeries plotters --------------------------------------------------------
+# -- FrequencySeries plotters -------------------------------------------------
 
 class FrequencySeriesMixin(object):
     FIGURE_CLASS = FrequencySeriesPlot

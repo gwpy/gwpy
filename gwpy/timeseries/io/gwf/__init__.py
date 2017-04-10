@@ -40,14 +40,15 @@ import numpy
 
 from astropy.io.registry import (get_formats, IORegistryError)
 
+from ....segments import Segment
 from ....time import to_gps
 from ....utils.deps import import_method_dependency
+from ....io.gwf import identify_gwf
 from ....io.cache import (Cache, CacheEntry, FILE_LIKE, open_cache,
                           find_contiguous)
 from ....io.registry import (register_reader,
                              register_writer,
                              register_identifier)
-from ....io.utils import identify_factory
 from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
 from ..cache import read_cache
 
@@ -151,7 +152,7 @@ def register_gwf_api(library):
     def read_timeseriesdict(source, channels, start=None, end=None,
                             dtype=None, resample=None,
                             gap=None, pad=None, nproc=1,
-                            series_class=TimeSeries):
+                            series_class=TimeSeries, **kwargs):
         """Read the data for a list of channels from a GWF data source
 
         Parameters
@@ -198,7 +199,7 @@ def register_gwf_api(library):
             return read_cache(source, channels, start=start, end=end,
                               gap=gap, pad=pad, resample=resample, dtype=dtype,
                               nproc=nproc, format=fmt,
-                              target=series_class.DictClass)
+                              target=series_class.DictClass, **kwargs)
 
         # -- from here read data
 
@@ -227,10 +228,11 @@ def register_gwf_api(library):
             source = open_cache(source)
         # separate cache into contiguous segments
         if isinstance(source, Cache):
+            if start is not None and end is not None:
+                source = source.sieve(segment=Segment(start, end))
             source = list(find_contiguous(source))
         # convert everything else into a list if needed
-        if (not isinstance(source, (list, tuple)) or
-                isinstance(source, Cache)):
+        if not isinstance(source, (list, tuple)):
             source = [source]
 
         # now read the data
@@ -240,7 +242,7 @@ def register_gwf_api(library):
                 for name in out:
                     out[name] = numpy.require(out[name], requirements=['O'])
             out.append(libread_(src, channels, start=start, end=end,
-                                series_class=series_class),
+                                series_class=series_class, **kwargs),
                        gap=gap, pad=pad, copy=False)
 
         # apply resampling and dtype-casting
@@ -377,7 +379,7 @@ def register_gwf_format(container):
                           "data. Please install one of the third-party GWF "
                           "libraries and try again")
 
-    register_identifier('gwf', container, identify_factory('gwf'))
+    register_identifier('gwf', container, identify_gwf)
     register_reader('gwf', container, read_)
     register_writer('gwf', container, write_)
 
