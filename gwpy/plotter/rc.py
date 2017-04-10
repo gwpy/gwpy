@@ -44,6 +44,10 @@ DEFAULT_PARAMS = {
     'image.aspect': 'auto',
     'image.interpolation': 'nearest',
     'image.origin': 'lower',
+    'legend.edgecolor': 'inherit',
+    'legend.handlelength': 1,
+    'legend.fontsize': 'large',
+    'legend.fancybox': False,
     'xtick.labelsize': 18,
     'ytick.labelsize': 18,
 }
