@@ -37,15 +37,15 @@ DEFAULT_PARAMS = {
     'axes.grid': True,
     'axes.axisbelow': False,
     'axes.formatter.limits': (-3, 4),
-    'axes.labelsize': 22,
-    'axes.titlesize': 26,
+    'axes.labelsize': 20,
+    'axes.titlesize': 24,
     'grid.linestyle': ':',
     'grid.linewidth': .5,
     'image.aspect': 'auto',
     'image.interpolation': 'nearest',
     'image.origin': 'lower',
-    'xtick.labelsize': 20,
-    'ytick.labelsize': 20,
+    'xtick.labelsize': 18,
+    'ytick.labelsize': 18,
 }
 
 # set latex options
