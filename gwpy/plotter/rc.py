@@ -62,6 +62,8 @@ rcParams['text.latex.preamble'].extend(tex.MACROS)
 if rcParams['text.usetex'] or tex.HAS_TEX:
     DEFAULT_PARAMS['text.usetex'] = True
     DEFAULT_PARAMS['font.family'] = 'serif'
+    if mpl_version < '2.0':
+        DEFAULT_PARAMS['font.serif'] = ['Computer Modern']
 
 # build better default colour cycle for matplotlib < 2
 if mpl_version < '2.0':
