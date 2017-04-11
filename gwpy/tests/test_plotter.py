@@ -783,12 +783,10 @@ class TextTestCase(Mixin, unittest.TestCase):
             self.assertEqual(to_string('test'), 'test')
             self.assertEqual(to_string(4.0), '4.0')
             self.assertEqual(to_string(8), '8')
-            self.assertEqual(to_string(units.Hz), 'Hz')
         with rc_context(rc={'text.usetex': True}):
             self.assertEqual(to_string('test'), 'test')
             self.assertEqual(to_string(2000), r'2\!\!\times\!\!10^{3}')
             self.assertEqual(to_string(8), '8')
-            self.assertEqual(to_string(units.Hz), '$\mathrm{Hz}$')
 
     def test_unit_as_label(self):
         # just test basics, latex formatting is tested elsewhere

@@ -31,19 +31,9 @@ def to_string(input_):
     """Format an input for representation as text
 
     This method is just a convenience that handles default LaTeX formatting
-    for the following objects
-
-    - `~astropy.units.Unit`
-    - `float` and `int` (with scientific notation)
-
-    everything else is just cast to `str`
     """
     usetex = rcParams['text.usetex']
-    if isinstance(input_, units.UnitBase) and usetex:
-        return tex.unit_to_latex(input_)
-    elif isinstance(input_, units.UnitBase):
-        return input_.to_string()
-    elif isinstance(input_, (float, int)) and usetex:
+    if isinstance(input_, (float, int)) and usetex:
         return tex.float_to_latex(input_)
     elif usetex:
         return tex.label_to_latex(input_)
@@ -71,8 +61,11 @@ def unit_as_label(unit):
     >>> unit_as_label(Unit('m / s'))
     '[\mathrm{m}/\mathrm{s}]'
     """
+    if rcParams['text.usetex']:
+        ustr = tex.unit_to_latex(unit)
+    elif isinstance(unit, units.UnitBase):
+        ustr = unit.to_string()
     if unit.physical_type and unit.physical_type != 'unknown':
-        return '%s [%s]' % (to_string(unit.physical_type.title()),
-                            to_string(unit))
+        return '%s [%s]' % (to_string(unit.physical_type.title()), ustr)
     else:
-        return '[%s]' % to_string(unit)
+        return '[%s]' % ustr
