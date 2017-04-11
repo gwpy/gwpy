@@ -44,6 +44,7 @@ DEFAULT_PARAMS = {
     'image.aspect': 'auto',
     'image.interpolation': 'nearest',
     'image.origin': 'lower',
+    'legend.numpoints': 2,
     'legend.edgecolor': 'inherit',
     'legend.handlelength': 1,
     'legend.fontsize': 'large',
