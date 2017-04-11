@@ -88,4 +88,3 @@ def marker_cycle(markers=None):
         return itertools.cycle(markers)
     else:
         return itertools.cycle(('o', 'x', '+', '^', 'D', 'H', '1'))
-
