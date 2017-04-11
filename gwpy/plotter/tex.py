@@ -47,6 +47,10 @@ def float_to_latex(x, format="%.2g"):
     ----------
     x : `float`
         the number to represent
+
+    format : `str`, optional
+        the output string format
+
     Returns
     -------
     tex : `str`

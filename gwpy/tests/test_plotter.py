@@ -54,6 +54,7 @@ from gwpy.plotter import (figure, rcParams, Plot, Axes,
 from gwpy.plotter import utils
 from gwpy.plotter.gps import (GPSTransform, InvertedGPSTransform)
 from gwpy.plotter.html import map_data
+from gwpy.plotter.text import (to_string, unit_as_label)
 from gwpy.plotter.tex import (float_to_latex, label_to_latex,
                               unit_to_latex)
 from gwpy.plotter.table import get_column_string
@@ -771,6 +772,30 @@ class InverseGpsTransformTestCase(GpsTransformTestCase):
     A = 290.0
     B = 11400.0
     C = 11500.0
+
+
+# -- gwpy.plotter.text module tests -------------------------------------------
+
+class TextTestCase(Mixin, unittest.TestCase):
+    def test_to_string(self):
+        # test without latex
+        with rc_context(rc={'text.usetex': False}):
+            self.assertEqual(to_string('test'), 'test')
+            self.assertEqual(to_string(4.0), '4.0')
+            self.assertEqual(to_string(8), '8')
+            self.assertEqual(to_string(units.Hz), 'Hz')
+        with rc_context(rc={'text.usetex': True}):
+            self.assertEqual(to_string('test'), 'test')
+            self.assertEqual(to_string(2000), r'2\!\!\times\!\!10^{3}')
+            self.assertEqual(to_string(8), '8')
+            self.assertEqual(to_string(units.Hz), '$\mathrm{Hz}$')
+
+    def test_unit_as_label(self):
+        # just test basics, latex formatting is tested elsewhere
+        with rc_context(rc={'text.usetex': False}):
+            self.assertEqual(unit_as_label(units.Hz), 'Frequency [Hz]')
+            self.assertEqual(unit_as_label(units.Volt),
+                             'Electrical Potential [V]')
 
 
 # -- gwpy.plotter.tex module tests --------------------------------------------

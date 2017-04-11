@@ -27,7 +27,7 @@ import numpy
 from matplotlib.projections import register_projection
 from matplotlib import (colors, rcParams)
 
-from . import tex
+from . import (tex, text)
 from .core import Plot
 from .axes import Axes
 from .decorators import auto_refresh
@@ -95,10 +95,7 @@ class FrequencySeriesAxes(Axes):
         :meth:`matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
-        if rcParams['text.usetex']:
-            kwargs.setdefault('label', tex.label_to_latex(spectrum.name))
-        else:
-            kwargs.setdefault('label', spectrum.name)
+        kwargs.setdefault('label', text.to_string(spectrum.name))
         if not kwargs.get('label', True):
             kwargs.pop('label')
         line = self.plot(spectrum.frequencies.value, spectrum.value, **kwargs)
@@ -108,19 +105,9 @@ class FrequencySeriesAxes(Axes):
             except ValueError:
                 pass
         if not self.get_xlabel():
-            if rcParams['text.usetex']:
-                ustr = tex.unit_to_latex(spectrum.xunit)
-            else:
-                ustr = spectrum.xunit.to_string()
-            if ustr:
-                self.set_xlabel('Frequency [%s]' % ustr)
+            self.set_xlabel(text.unit_as_label(spectrum.xunit))
         if not self.get_ylabel():
-            if rcParams['text.usetex']:
-                ustr = tex.unit_to_latex(spectrum.unit)
-            else:
-                ustr = spectrum.unit.to_string()
-            if ustr:
-                self.set_ylabel('[%s]' % ustr)
+            self.set_ylabel(text.unit_as_label(spectrum.unit))
         return line
 
     @auto_refresh
