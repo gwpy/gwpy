@@ -34,6 +34,8 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # set default params
 DEFAULT_PARAMS = {
+    # axes boundary colours
+    'axes.edgecolor': 'gray',
     # grid
     'axes.grid': True,
     'axes.axisbelow': False,
