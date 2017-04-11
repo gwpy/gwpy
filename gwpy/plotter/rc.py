@@ -34,23 +34,27 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # set default params
 DEFAULT_PARAMS = {
+    # grid
     'axes.grid': True,
     'axes.axisbelow': False,
-    'axes.formatter.limits': (-3, 4),
-    'axes.labelsize': 20,
-    'axes.titlesize': 24,
     'grid.linestyle': ':',
     'grid.linewidth': .5,
+    # ticks
+    'axes.formatter.limits': (-3, 4),
+    # fonts
+    'axes.titlesize': 24,
+    'axes.labelsize': 20,
+    'xtick.labelsize': 18,
+    'ytick.labelsize': 18,
+    # image
     'image.aspect': 'auto',
     'image.interpolation': 'nearest',
     'image.origin': 'lower',
+    # legend (revert to mpl 1.5 formatting in parts)
     'legend.numpoints': 2,
     'legend.edgecolor': 'inherit',
     'legend.handlelength': 1,
-    'legend.fontsize': 'large',
     'legend.fancybox': False,
-    'xtick.labelsize': 18,
-    'ytick.labelsize': 18,
 }
 
 # set latex options
