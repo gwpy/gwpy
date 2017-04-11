@@ -188,21 +188,6 @@ class Axes(_Axes):
         """
         return super(Axes, self).set_position(pos, which=which)
 
-    @auto_refresh
-    def add_label_unit(self, unit, axis='x'):
-        label = getattr(self, 'get_%slabel' % axis)()
-        if not label:
-            label = unit.__doc__
-        if rcParams.get("text.usetex", False):
-            unitstr = tex.unit_to_latex(unit)
-        else:
-            unitstr = unit.to_string()
-        set_ = getattr(self, 'set_%slabel' % axis)
-        if label:
-            set_("%s [%s]" % (label, unitstr))
-        else:
-            set_(unitstr)
-
     def legend(self, *args, **kwargs):
         # set kwargs
         alpha = kwargs.pop("alpha", 0.8)
