@@ -665,7 +665,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         end = start + duration
         try:
             ts = self.TEST_CLASS.fetch_open_data('H1', start, end)
-        except (ImportError, RuntimeError) as e:
+        except (ImportError, RuntimeError, URLError) as e:
             self.skipTest(str(e))
         else:
             qspecgram = ts.q_transform(method='welch')
