@@ -51,7 +51,7 @@ from gwpy.plotter import (figure, rcParams, Plot, Axes,
                           HistogramPlot, HistogramAxes,
                           SegmentPlot, SegmentAxes,
                           SpectrogramPlot, BodePlot)
-from gwpy.plotter import utils
+from gwpy.plotter.rc import (SUBPLOT_WIDTH, SUBPLOT_HEIGHT)
 from gwpy.plotter.gps import (GPSTransform, InvertedGPSTransform)
 from gwpy.plotter.html import map_data
 from gwpy.plotter.text import (to_string, unit_as_label)
@@ -138,7 +138,7 @@ class PlotTestCase(Mixin, unittest.TestCase):
     def test_subplotpars(self):
         # check that dynamic subplotpars gets applied
         fig, ax = self.new(figsize=(12, 4))
-        target = utils.SUBPLOT_WIDTH[12] + utils.SUBPLOT_HEIGHT[4]
+        target = SUBPLOT_WIDTH[12] + SUBPLOT_HEIGHT[4]
         sbp = fig.subplotpars
         self.assertTupleEqual(target,
                               (sbp.left, sbp.right, sbp.bottom, sbp.top))
