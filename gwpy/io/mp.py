@@ -16,94 +16,131 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import (division, absolute_import)
-
-from functools import wraps
-from math import ceil
-from multiprocessing import (Process, Queue as ProcessQueue)
+import sys
+import multiprocessing
 from xml.sax import SAXException
+
+from six import string_types
+
+from astropy.io.registry import (_get_valid_format as get_format,
+                                 read as io_read)
+from astropy.utils.data import get_readable_fileobj
 
 from .cache import (FILE_LIKE, file_list)
 
-from astropy.table import vstack
-from astropy.io.registry import (_get_valid_format as get_format,
-                                 get_reader, read as io_read)
-
 
 def read_multi(flatten, cls, source, *args, **kwargs):
-    """Decorate a Class.read `classmethod` with multiprocessing
+    """Read sources into a `cls` with multiprocessing
 
-    This method adds the `nproc` keyword argument to the `reader` method
-    which enables splitting an input list of files into chunks and
-    reading each chunk in parallel, using `flatten` to combine the
-    chunked data into a single object of the correct type
+    This method should be called by `cls.read` and uses the `nproc`
+    keyword to enable and handle pool-based multiprocessing of
+    multiple source files, using `flatten` to combine the
+    chunked data into a single object of the correct type.
+
+    Parameters
+    ----------
+    flatten : `callable`
+        a method to take a list of ``cls`` instances, and combine them
+        into a single ``cls`` instance
+
+    cls : `type`
+        the object type to read
+
+    source : `str`, `list` of `str`, ...
+        the input data source, can be of in many different forms
+
+    *args
+        positional arguments to pass to the reader
+
+    **kwargs
+        keyword arguments to pass to the reader
     """
     # parse input as a list of files
-    if isinstance(source, list):
-        files = source
-    else:
-        try:  # try and map to a list of file-like objects
-            files = file_list(source)
-        except ValueError:  # otherwise treat as single
-            files = [source]
+    try:  # try and map to a list of file-like objects
+        files = file_list(source)
+    except ValueError:  # otherwise treat as single file
+        files = [source]
 
-    # determine input format
+    # determine input format (so we don't have to do it multiple times)
+    # -- this is basically harvested from astropy.io.registry.read()
     if kwargs.get('format', None) is None:
+        ctx = None
         if isinstance(source, FILE_LIKE):
             fileobj = source
-        else:
-            fileobj = None
+        elif isinstance(source, string_types):
+            try:
+                ctx = get_readable_fileobj(files[0], encoding='binary')
+                fileobj = ctx.__enter__()
+            except IOError:
+                raise
+            except Exception:
+                fileobj = None
         kwargs['format'] = get_format(
             'read', cls, files[0], fileobj, args, kwargs)
+        if ctx is not None:
+            ctx.__exit__(*sys.exc_info())
 
     # calculate maximum number of processes
     nproc = kwargs.pop('nproc', 1)
     num = len(files)
     nproc = min(nproc, num)
 
-    # read single file or single process
-    if num == 1:
-        return io_read(cls, files[0], *args, **kwargs)
-    if nproc == 1:
-        return io_read(cls, source, *args, **kwargs)
-
     # define multiprocessing method
-    def _read_chunk(q, chunk, index):
-        if len(chunk) == 1:
-            chunk = chunk[0]
+    def _read_single_file(f):
         try:
-            q.put((index, io_read(cls, chunk, *args, **kwargs)))
+            return f, io_read(cls, f, *args, **kwargs)
         except Exception as e:
-            if isinstance(e, SAXException):
-                q.put(e.getException())
+            if nproc == 1:
+                raise
+            elif isinstance(e, SAXException):  # SAXExceptions don't pickle
+                return f, e.getException()
             else:
-                q.put(e)
+                return f, e
 
-    # split source into parts
-    numperproc = int(ceil(num / nproc))
-    chunks = [type(files)(files[i:i+numperproc]) for i in
-              range(0, num, numperproc)]
+    # read single file
+    if nproc == 1:
+        output = map(_read_single_file, files)
 
-    # process
-    queue = ProcessQueue(nproc)
-    processes = []
-    for i, chunk in enumerate(chunks):
-        if len(chunk) == 0:
-            continue
-        process = Process(target=_read_chunk, args=(queue, chunk, i))
-        process.daemon = True
-        process.start()
-        processes.append(process)
+    # read multiple files
+    else:
+        # create input and output queues
+        q_in = multiprocessing.Queue(1)
+        q_out = multiprocessing.Queue()
 
-    # get data and block
-    output = []
-    for i in range(len(processes)):
-        result = queue.get()
-        if isinstance(result, Exception):
-            raise result
-        output.append(result)
-    for process in processes:
-        process.join()
+        # create child processes and start
+        proc = [multiprocessing.Process(target=_read_from_queue,
+                                        args=(_read_single_file, q_in, q_out))
+                for _ in range(nproc)]
+        for p in proc:
+            p.daemon = True
+            p.start()
 
-    # return chunks sorted into input order
-    return flatten(zip(*sorted(output, key=lambda out: out[0]))[1])
+        # populate queue
+        sent = [q_in.put((i, f)) for i, f in enumerate(files)]
+        [q_in.put((None, None)) for _ in range(nproc)]  # queue is full
+
+        # get results
+        res = [q_out.get() for _ in range(len(sent))]
+
+        # close processes and sort output
+        [p.join() for p in proc]
+        output = [table for i, table in sorted(res)]
+
+        # raise exceptions
+        for f, x in output:
+            if isinstance(x, Exception):
+                x.args = ('Failed to read %s: %s' % (f, str(x)),)
+                raise x
+
+    # return combined object
+    return flatten(zip(*output)[1])
+
+
+def _read_from_queue(f, q_in, q_out):
+    while True:
+        # pick item out of input wqueue
+        i, x = q_in.get()
+        if i is None:
+            break
+        # execute method and put the result in the output queue
+        q_out.put((i, f(x)))
