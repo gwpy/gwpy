@@ -62,21 +62,14 @@ def table_from_gwf(filename, name, columns=None):
 
     Parameters
     ----------
-    filename : `str`, `list` of `str`
-        path of GWF file (or files) to read
+    filename : `str`
+        path of GWF file to read
 
     name : `str`
         name associated with the `FrEvent` structures
 
     columns : `
     """
-    # read list of files
-    if isinstance(filename, list):
-        return vstack_tables([table_from_gwf(f, name, columns=columns) for
-                              f in filename])
-
-    # -- read single file from here --
-
     from LDAStools import frameCPP
 
     # open frame file
