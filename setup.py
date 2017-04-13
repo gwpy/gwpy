@@ -68,6 +68,7 @@ install_requires = [
     'matplotlib>=1.4.1',
     'astropy>=1.2',
     'six>=1.5',
+    'lscsoft-glue>=1.55.2',
 ]
 extras_require = {
     'nds': ['nds2-client'],
