@@ -29,7 +29,9 @@ from tempfile import NamedTemporaryFile
 
 from six.moves.urllib.request import urlopen
 
-from glue.lal import (Cache, CacheEntry)
+from lal.utils import CacheEntry
+
+from glue.lal import Cache
 
 from astropy.io import registry
 from astropy.units import Quantity
