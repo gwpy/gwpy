@@ -24,7 +24,7 @@ from os.path import basename
 
 from six import string_types
 
-from glue.lal import CacheEntry
+from lal.utils import CacheEntry
 
 from ...io.hdf5 import (identify_hdf5, with_read_hdf5)
 from ...io.registry import (register_reader, register_identifier)
@@ -215,7 +215,7 @@ import numpy
 from numpy import rec
 from numpy.lib import recfunctions
 
-from glue.lal import CacheEntry
+from lal.utils import CacheEntry
 
 from ...utils.deps import with_import
 from ...io.cache import file_list

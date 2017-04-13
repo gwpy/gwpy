@@ -32,7 +32,9 @@ from six import string_types
 from numpy import recarray
 from numpy.lib import recfunctions
 
-from glue.lal import (Cache, CacheEntry)
+from lal.utils import CacheEntry
+
+from glue.lal import Cache
 
 from astropy.table import (Table, vstack as vstack_tables)
 from astropy.io.registry import _get_valid_format
@@ -76,7 +78,7 @@ def file_list(flist):
 
         - `str` representing a single file path (or comma-separated collection)
         - open `file` or `~gzip.GzipFile` object
-        - `~glue.lal.CacheEntry`
+        - `~lal.utils.CacheEntry`
         - `~glue.lal.Cache` object or `str` with '.cache' or '.lcf extension
         - simple `list` or `tuple` of `str` paths
 
