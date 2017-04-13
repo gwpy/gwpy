@@ -6,4 +6,4 @@ numpy>=1.10
 scipy>=0.16
 astropy>=1.2
 matplotlib>=1.4.1
-http://software.ligo.org/lscsoft/source/glue-1.53.0.tar.gz
+lscsoft-glue>=1.55.2
