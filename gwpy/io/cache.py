@@ -273,8 +273,8 @@ def cache_segments(*caches):
 
     Parameters
     ----------
-    *cache : `~glue.lal.Cache`
-        one of more frame file caches describing files on disk
+    *cache : `~glue.lal.Cache`, `list`
+        one of more `Cache` objects (or simple `list`)
 
     Returns
     -------
