@@ -96,10 +96,10 @@ setup_requires.append('pytest-runner')
 tests_require = [
     'pytest',
 ]
+if sys.version < '3':
+    tests_require.append('mock')
 if sys.version < '2.7':
     tests_require.append('unittest2')
-if 'ordereddict>=1.1' in install_requires:
-    tests_require.append('ordereddict>=1.1')
 
 
 # -- custom clean command -----------------------------------------------------
