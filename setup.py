@@ -69,6 +69,7 @@ install_requires = [
     'astropy>=1.2.1',
     'six>=1.5',
     'lscsoft-glue>=1.55.2',
+    'python-dateutil',
 ]
 extras_require = {
     'nds': ['nds2-client'],
