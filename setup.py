@@ -72,11 +72,16 @@ install_requires = [
     'python-dateutil',
 ]
 extras_require = {
-    'nds': ['nds2-client'],
+    'hdf5': ['h5py>=1.3'],
+    'root': ['root_numpy'],
+    'segments': ['dqsegdb'],
     'docs': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme',
              'sphinxcontrib-programoutput'],
-    'hdf5': ['h5py>=1.3'],
 }
+
+# define 'all' as the intersection of all extras
+extras_require['all'] = set(p for extra in extras_require.values()
+                            for p in extra)
 
 # test for OrderedDict
 try:
