@@ -37,7 +37,7 @@ from matplotlib.collections import (PathCollection, PatchCollection,
 
 from astropy import units
 
-from compat import unittest
+from compat import (unittest, HAS_H5PY)
 
 from gwpy.segments import (DataQualityFlag,
                            Segment, SegmentList, SegmentListDict)
@@ -288,6 +288,7 @@ class TimeSeriesMixin(object):
     FIGURE_CLASS = TimeSeriesPlot
     AXES_CLASS = TimeSeriesAxes
 
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def setUp(self):
         self.ts = TimeSeries.read(TEST_HDF_FILE, 'H1:LDAS-STRAIN')
         self.sg = self.ts.spectrogram2(0.5, 0.49)
@@ -415,6 +416,7 @@ class FrequencySeriesMixin(object):
     FIGURE_CLASS = FrequencySeriesPlot
     AXES_CLASS = FrequencySeriesAxes
 
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def setUp(self):
         self.ts = TimeSeries.read(TEST_HDF_FILE, 'H1:LDAS-STRAIN')
         self.asd = self.ts.asd(1)
@@ -645,6 +647,7 @@ class HistogramMixin(object):
     FIGURE_CLASS = HistogramPlot
     AXES_CLASS = HistogramAxes
 
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def setUp(self):
         self.ts = TimeSeries.read(TEST_HDF_FILE, 'H1:LDAS-STRAIN')
 

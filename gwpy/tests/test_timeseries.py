@@ -26,7 +26,7 @@ import tempfile
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.error import URLError
 
-from compat import (unittest, mock)
+from compat import (unittest, mock, HAS_H5PY)
 
 import pytest
 
@@ -371,6 +371,7 @@ class TimeSeriesTestMixin(object):
         self.assertTupleEqual(ts.span, (1000000000, 1000000001))
         self.assertEqual(ts.unit, units.meter)
 
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def fetch_open_data(self):
         try:
             return self._open_data
@@ -408,6 +409,7 @@ class TimeSeriesTestMixin(object):
         self.assertRaises(ValueError, self.TEST_CLASS.fetch_open_data,
                           self.channel[:2], 0, 1)
 
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def test_losc(self):
         _, tmpfile = tempfile.mkstemp(prefix='GWPY-TEST_LOSC_', suffix='.hdf')
         try:
@@ -445,6 +447,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
             numpy.random.normal(loc=1, size=16384 * 10), sample_rate=16384,
             epoch=-5)
 
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def _read(self):
         return self.TEST_CLASS.read(TEST_HDF_FILE, self.channel)
 
@@ -652,6 +655,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         # test breaks when you try and 'fir' notch
         self.assertRaises(NotImplementedError, ts.notch, 10, type='fir')
 
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def _test_losc_inner(self, loscfile):
         ts = self.TEST_CLASS.read(loscfile, 'Strain', format='losc')
         self.assertEqual(ts.x0, units.Quantity(931069952, 's'))
