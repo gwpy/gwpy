@@ -66,7 +66,7 @@ install_requires = [
     'numpy>=1.10',
     'scipy>=0.16.0',
     'matplotlib>=1.4.1',
-    'astropy>=1.2',
+    'astropy>=1.2.1',
     'six>=1.5',
     'lscsoft-glue>=1.55.2',
 ]
