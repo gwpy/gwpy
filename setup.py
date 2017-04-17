@@ -39,9 +39,15 @@ from distutils.dist import Distribution
 from distutils.cmd import Command
 from distutils.command.clean import (clean, log, remove_tree)
 
-# check python version
-if sys.version < '2.7':
-    raise ImportError("Python versions older than 2.7 are not supported.")
+# check LAL
+try:
+    import lal
+except ImportError as e:
+    e.args = ('%s. LAL is required by GWpy, please install before '
+              'continuing, see '
+              'https://gwpy.github.io/docs/stable/install/lal.html '
+              'for details' % str(e),)
+    raise
 
 # set basic metadata
 PACKAGENAME = 'gwpy'
