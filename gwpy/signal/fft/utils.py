@@ -16,22 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilities for `FrequencySeries` calculation.
+"""Utilities for FFT routines
 """
 
 from astropy import units
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
-
-def safe_import(module, method):
-    """Import the given module, with a more useful `ImportError` message.
-    """
-    try:
-        return __import__(module, fromlist=[''])
-    except ImportError:
-        raise ImportError("The '%s' FrequencySeries method requires the %s "
-                          "module." % (method, module))
 
 
 def scale_timeseries_units(tsunit, scaling='density'):

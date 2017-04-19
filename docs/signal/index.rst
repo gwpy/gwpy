@@ -9,6 +9,13 @@ Signal processing
 In a wide-array of applications, the original `TimeSeries` recorded from a digital system must be manipulated in order to extract the greatest amount of information.
 GWpy provides a suite of functions to simplify and extend the excellent digital signal processing suite in :mod:`scipy.signal`.
 
+===============
+Fourier methods
+===============
+
+The `TimeSeries` object comes with a number of Fourier methods to calculate a `~gwpy.frequencyseries.FrequencySeries` or `~gwpy.spectrogram.Spectrogram` by calculating and averaging FFTs.
+See :ref:`gwpy-signal-fft` for more details.
+
 =====================
 Time-domain filtering
 =====================
