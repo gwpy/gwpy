@@ -44,7 +44,7 @@ LAL_FFTPLAN_LEVEL = 1
 
 # -- utilities ----------------------------------------------------------------
 
-def generate_fft_plan(length, level=None, dtype='float64'):
+def generate_fft_plan(length, level=None, dtype='float64', forward=True):
     """Build a `REAL8FFTPlan` for a fast Fourier transform.
 
     Parameters
@@ -59,6 +59,9 @@ def generate_fft_plan(length, level=None, dtype='float64'):
     dtype : :class:`numpy.dtype`, str, optional
         numeric type of data to plan for
 
+    forward : bool, optional, default: `True`
+        whether to create a forward or reverse FFT plan
+
     Returns
     -------
     plan : `REAL8FFTPlan` or similar
@@ -69,17 +72,17 @@ def generate_fft_plan(length, level=None, dtype='float64'):
 
     # generate key for caching plan
     laltype = LAL_TYPE_STR_FROM_NUMPY[numpy.dtype(dtype).type]
-    key = (length, laltype)
+    key = (length, bool(forward), laltype)
 
     # find existing plan
     try:
         return LAL_FFTPLANS[key]
     # or create one
     except KeyError:
-        create = getattr(lal, 'CreateForward%sFFTPlan' % laltype)
+        create = getattr(lal, 'Create%sFFTPlan' % laltype)
         if level is None:
             level = LAL_FFTPLAN_LEVEL
-        LAL_FFTPLANS[key] = create(length, level)
+        LAL_FFTPLANS[key] = create(length, int(bool(forward)), level)
         return LAL_FFTPLANS[key]
 
 
