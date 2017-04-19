@@ -494,15 +494,13 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         ts.psd(fftlength=0.4, overlap=0.2)
         # test methods
         ts.psd(fftlength=0.4, overlap=0.2, method='welch')
-        try:
-            ts.psd(fftlength=0.4, overlap=0.2, method='lal-welch')
-        except ImportError as e:
-            pass
-        else:
-            ts.psd(fftlength=0.4, overlap=0.2, method='median-mean')
-            ts.psd(fftlength=0.4, overlap=0.2, method='median')
-            # test check for at least two averages
-            self.assertRaises(ValueError, ts.psd, method='median-mean')
+        ts.psd(fftlength=0.4, method='bartlett')
+        ts.psd(fftlength=0.4, overlap=0.2, method='lal-welch')
+        ts.psd(fftlength=0.4, method='lal-bartlett')
+        ts.psd(fftlength=0.4, overlap=0.2, method='median-mean')
+        ts.psd(fftlength=0.4, overlap=0.2, method='median')
+        # test check for at least two averages (defaults to single FFT)
+        self.assertRaises(ValueError, ts.psd, method='median-mean')
 
     def test_asd(self):
         ts = self._read()
