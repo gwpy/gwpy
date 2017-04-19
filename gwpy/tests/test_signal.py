@@ -31,7 +31,7 @@ from astropy import units
 import lal
 
 from gwpy import signal as gwpy_signal
-from gwpy.signal.fft import lal as fft_lal
+from gwpy.signal.fft import (lal as fft_lal, utils as fft_utils)
 
 ONE_HZ = units.Quantity(1, 'Hz')
 
@@ -58,6 +58,30 @@ class FilterDesignTestCase(unittest.TestCase):
         zpk2 = gwpy_signal.notch(60 * ONE_HZ, 16384 * ONE_HZ)
         for a, b in zip(zpk, zpk2):
             nptest.assert_array_almost_equal(a, b)
+
+
+# -- gwpy.signal.fft.utils ----------------------------------------------------
+
+class FFTUtilsTests(unittest.TestCase):
+    def test_scale_timeseries_units(self):
+        u = units.Unit('m')
+        # check default
+        self.assertEqual(fft_utils.scale_timeseries_units(u),
+                         units.Unit('m^2/Hz'))
+        # check scaling='density'
+        self.assertEqual(
+            fft_utils.scale_timeseries_units(u, scaling='density'),
+            units.Unit('m^2/Hz'))
+        # check scaling='spectrum'
+        self.assertEqual(
+            fft_utils.scale_timeseries_units(u, scaling='spectrum'),
+            units.Unit('m^2'))
+        # check anything else raises an exception
+        self.assertRaises(ValueError, fft_utils.scale_timeseries_units,
+                          u, scaling='other')
+        # check null unit
+        self.assertEqual(fft_utils.scale_timeseries_units(None),
+                         units.Unit('Hz^-1'))
 
 
 # -- gwpy.signal.fft.lal ------------------------------------------------------
