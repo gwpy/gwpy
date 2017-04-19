@@ -28,7 +28,10 @@ from scipy import signal
 
 from astropy import units
 
+import lal
+
 from gwpy import signal as gwpy_signal
+from gwpy.signal.fft import lal as fft_lal
 
 ONE_HZ = units.Quantity(1, 'Hz')
 
@@ -41,7 +44,7 @@ NOTCH_60HZ = (
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-# -----------------------------------------------------------------------------
+# -- gwpy.signal.filter_design ------------------------------------------------
 
 class FilterDesignTestCase(unittest.TestCase):
     """`~unittest.TestCase` for the `gwpy.signal.filter_design` module
@@ -55,3 +58,42 @@ class FilterDesignTestCase(unittest.TestCase):
         zpk2 = gwpy_signal.notch(60 * ONE_HZ, 16384 * ONE_HZ)
         for a, b in zip(zpk, zpk2):
             nptest.assert_array_almost_equal(a, b)
+
+
+# -- gwpy.signal.fft.lal ------------------------------------------------------
+
+class LALFftTests(unittest.TestCase):
+    def test_generate_window(self):
+        # test default arguments
+        w = fft_lal.generate_window(128)
+        self.assertIsInstance(w, lal.REAL8Window)
+        self.assertEqual(w.data.data.size, 128)
+        self.assertEqual(w.sum, 32.31817089602309)
+        # test generating the same window again returns the same object
+        self.assertIs(fft_lal.generate_window(128), w)
+        # test dtype works
+        w = fft_lal.generate_window(128, dtype='float32')
+        self.assertIsInstance(w, lal.REAL4Window)
+        self.assertEqual(w.sum, 32.31817089602309)
+        # test errors
+        self.assertRaises(AttributeError, fft_lal.generate_window,
+                          128, 'unknown')
+        self.assertRaises(AttributeError, fft_lal.generate_window,
+                          128, dtype=int)
+
+    def test_generate_fft_plan(self):
+        # test default arguments
+        plan = fft_lal.generate_fft_plan(128)
+        self.assertIsInstance(plan, lal.REAL8FFTPlan)
+        # test generating the same fft_plan again returns the same object
+        self.assertIs(fft_lal.generate_fft_plan(128), plan)
+        # test dtype works
+        plan = fft_lal.generate_fft_plan(128, dtype='float32')
+        self.assertIsInstance(plan, lal.REAL4FFTPlan)
+        # test forward/backward works
+        rvrs = fft_lal.generate_fft_plan(128, forward=False)
+        self.assertIsInstance(rvrs, lal.REAL8FFTPlan)
+        self.assertIsNot(rvrs, plan)
+        # test errors
+        self.assertRaises(AttributeError, fft_lal.generate_fft_plan,
+                          128, dtype=int)
