@@ -502,6 +502,8 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         ts.psd(fftlength=0.4, method='lal-bartlett')
         ts.psd(fftlength=0.4, overlap=0.2, method='median-mean')
         ts.psd(fftlength=0.4, overlap=0.2, method='median')
+        # test LAL method with window specification
+        ts.psd(fftlength=0.4, overlap=0.2, method='median-mean', window='hann')
         # test check for at least two averages (defaults to single FFT)
         self.assertRaises(ValueError, ts.psd, method='median-mean')
 
