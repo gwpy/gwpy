@@ -6,7 +6,7 @@
 Tabular data
 ############
 
-Alongside the :ref:`timeseries <timeseries>` data produced continuously at the
+Alongside the :ref:`timeseries <gwpy-timeseries>` data produced continuously at the
 laboratories, a number of different sets of tabular data are generated, typically
 recording significant noise transients (glitches) or gravitational-wave events found
 in the data.
@@ -25,14 +25,14 @@ GWpy provides two classes for handling tabular data.
 
 .. note::
 
-   The `Table` object is just an import of the
-   :mod:`astropy.table.Table <astropy.table>` object, provided for
+   The `Table` is just an import of the
+   :mod:`astropy.table.Table <astropy.table>`, provided for
    import convenience, see the Astropy documentation for full details on
    that (excellent) object).
 
-The `EventTable` object extends the functionality of the regular
-`~astropy.table.Table` with utilities for processing and plotting tables of
-events that contain GPS timestamps.
+The `EventTable` extends the functionality of the regular
+`~astropy.table.Table` with multi-file input routines, and utilities for
+processing and plotting tables of events that contain GPS timestamps.
 
 See the :mod:`astropy.table` documentation for examples of how to create custom tables, and much more.
 

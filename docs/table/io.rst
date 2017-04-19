@@ -9,7 +9,7 @@ Reading and writing `Table` and `EventTable` objects
 
 .. note::
 
-   This document complements the upstream Astropy documentation on reading/writing :class:`~astropy.table.Table` objects, please refer to http://docs.astropy.org/en/stable/table/io.html.
+   This document complements the upstream Astropy documentation on reading/writing :class:`~astropy.table.Table` objects, please refer to :any:`astropy:read_write_tables`.
 
 Astropy provides an excellent unified input/output system for the
 `~astropy.table.Table` object, and GWpy extends upon that to include common
@@ -29,6 +29,15 @@ GWpy extends the Astropy functionality with readers for the following file forma
 - :ref:`gwpy-table-io-gwf`
 
 Each of the sub-sections below outlines how to read and write in these file formats, include the custom keyword arguments to pass to :meth:`EventTable.read` and :meth:`EventTable.write`.
+
+============================
+Multi-processed file reading
+============================
+
+The :meth:`EventTable.read` method accepts the ``nproc``
+keyword argument, allowing multi-processed reading of lists of files.
+This argument can be used with any file-format, not just those defined below,
+but is **not** backported to for use with :meth:`Table.read`.
 
 
 .. _gwpy-table-io-ligolw:
@@ -321,6 +330,6 @@ For a full list of available file formats, see the documentation for the `Table.
 
 .. automethod:: Table.read
 
-The `EventTable.read` method can understand *all* of the above file formats (auto-identify is **not** inherited), and the following::
+The `EventTable.read` method can understand *all* of the above file formats (auto-identify is **not** inherited), and the following:
 
 .. automethod:: EventTable.read

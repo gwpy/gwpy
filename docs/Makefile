@@ -46,6 +46,7 @@ clean:
 	-rm -rf examples/*/
 	-rm -rf $(BUILDDIR)
 	-rm -rf _generated
+	-rm -rf api/
 	-rm -f lal*.tag
 
 apidoc:

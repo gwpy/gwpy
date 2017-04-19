@@ -39,8 +39,7 @@ import glue.segments
 from ..segments import (Segment, SegmentList, DataQualityFlag, DataQualityDict)
 from .timeseries import (TimeSeriesPlot, TimeSeriesAxes)
 from .decorators import auto_refresh
-from .utils import rUNDERSCORE
-from . import rcParams
+from .text import to_string
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -174,8 +173,7 @@ class SegmentAxes(TimeSeriesAxes):
                 lab = flag.name
             elif label.lower() != 'key':
                 lab = label
-            out.append(self.plot(flag, label=rUNDERSCORE.sub(r'\_', lab),
-                       **kwargs))
+            out.append(self.plot(flag, label=to_string(lab), **kwargs))
         return out
 
     @auto_refresh
@@ -301,9 +299,7 @@ class SegmentAxes(TimeSeriesAxes):
             #   this point
             if label is None:
                 label = coll.get_label()
-            if rcParams['text.usetex']:
-                label = rUNDERSCORE.sub(r'\_', str(label))
-            coll.set_label(label)
+            coll.set_label(to_string(label))
         else:
             out = []
             for p in patches:

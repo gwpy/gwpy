@@ -24,21 +24,11 @@ from os.path import basename
 
 from six import string_types
 
-try:
-    import h5py
-except ImportError:
-    HAS_H5PY = False
-else:
-    HAS_H5PY = True
+from lal.utils import CacheEntry
 
-from glue.lal import CacheEntry
-
-from astropy.table import vstack as vstack_tables
-
-from ...utils.deps import with_import
-from ...io.cache import file_list
+from ...io.hdf5 import (identify_hdf5, with_read_hdf5)
 from ...io.registry import (register_reader, register_identifier)
-from .. import EventTable
+from .. import (Table, EventTable)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Nitz <alex.nitz@ligo.org>'
@@ -49,93 +39,71 @@ INVALID_COLUMNS = ['psd', 'loudest']
 PYCBC_FILENAME = re.compile('([A-Z][0-9])+-Live-[0-9.]+-[0-9.]+.hdf')
 
 
-@with_import('h5py')
-def _table_from_file(source, ifo=None, columns=None, loudest=False):
-    """Read a `Table` from a single PyCBC live HDF5 file
-
-    This method is for internal use only.
+@with_read_hdf5
+def table_from_file(source, ifo=None, columns=None, loudest=False):
+    """Read a `Table` from a PyCBC live HDF5 file
     """
-    close = False  # do we need to close the file when we're done
+    import h5py
 
-    # read HDF5 file
-    if isinstance(source, CacheEntry):
-        source = source.path
-    if isinstance(source, str):
-        h5file = source = h5py.File(source, 'r')
-        close = True
+    # find group
+    if isinstance(source, h5py.File):
+        if ifo is None:
+            try:
+                ifo, = [key for key in list(source) if key != 'background']
+            except ValueError as e:
+                e.args = ("PyCBC live HDF5 file contains dataset groups "
+                          "for multiple interferometers, please specify "
+                          "the prefix of the relevant interferometer via "
+                          "the `ifo` keyword argument, e.g: `ifo=G1`",)
+                raise
+        try:
+            source = source[ifo]
+        except KeyError as e:
+            e.args = ("No group for ifo %r in PyCBC live HDF5 file" % ifo,)
+            raise
 
+    # at this stage, 'source' should be an HDF5 group in pycbc_live format
+    if columns is None:
+        columns = [c for c in source if c not in INVALID_COLUMNS]
+
+    # set up meta dict
+    meta = {'ifo': ifo}
+
+    # record loudest in meta
     try:
-        # find group
-        if isinstance(source, h5py.File):
-            if ifo is None:
-                try:
-                    ifo, = [key for key in list(source) if key != 'background']
-                except ValueError as e:
-                    e.args = ("PyCBC live HDF5 file contains dataset groups "
-                              "for multiple interferometers, please specify "
-                              "the prefix of the relevant interferometer via "
-                              "the `ifo` keyword argument, e.g: `ifo=G1`",)
-                    raise
-            try:
-                source = source[ifo]
-            except KeyError as e:
-                e.args = ("No group for ifo %r in PyCBC live HDF5 file" % ifo,)
-                raise
-        # at this stage, 'source' should be an HDF5 group in pycbc_live format
-        if columns is None:
-            columns = [c for c in source if c not in INVALID_COLUMNS]
+        meta['loudest'] = source['loudest'][:]
+    except KeyError:
+        if loudest:
+            raise
 
-        # set up meta dict
-        meta = {'ifo': ifo}
+    # record PSD in meta
+    try:
+        psd = source['psd']
+    except KeyError:
+        pass
+    else:
+        from gwpy.frequencyseries import FrequencySeries
+        df = psd.attrs['delta_f']
+        meta['psd'] = FrequencySeries(
+            psd[:], f0=0, df=df, name='pycbc_live')
 
-        # record loudest in meta
+    # map data to columns
+    data = []
+    get_ = []
+    for c in columns:
+        # convert hdf5 dataset into Column
         try:
-            meta['loudest'] = source['loudest'][:]
+            arr = source[c][:]
         except KeyError:
-            if loudest:
+            if c in GET_COLUMN:
+                arr = GET_COLUMN[c](source)
+            else:
                 raise
+        if loudest:
+            arr = arr[meta['loudest']]
+        data.append(Table.Column(arr, name=c))
 
-        # record PSD in meta
-        try:
-            psd = source['psd']
-        except KeyError:
-            pass
-        else:
-            from gwpy.frequencyseries import FrequencySeries
-            df = psd.attrs['delta_f']
-            meta['psd'] = FrequencySeries(
-                psd[:], f0=0, df=df, name='pycbc_live')
-
-        # map data to columns
-        data = []
-        get_ = []
-        for c in columns:
-            # convert hdf5 dataset into Column
-            try:
-                arr = source[c][:]
-            except KeyError:
-                if c in GET_COLUMN:
-                    arr = GET_COLUMN[c](source)
-                else:
-                    raise
-            if loudest:
-                arr = arr[meta['loudest']]
-            data.append(EventTable.Column(arr, name=c))
-    finally:
-        if close:
-            h5file.close()
-
-    return EventTable(data, meta=meta)
-
-
-def table_from_pycbc_live(source, ifo=None, columns=None, **kwargs):
-    """Read a `GWRecArray` from one or more PyCBC live files
-    """
-    source = file_list(source)
-    source = filter_empty_files(source, ifo=ifo)
-    return vstack_tables(
-        [_table_from_file(x, ifo=ifo, columns=columns, **kwargs)
-         for x in source])
+    return Table(data, meta=meta)
 
 
 def filter_empty_files(files, ifo=None):
@@ -163,8 +131,8 @@ def filter_empty_files(files, ifo=None):
     return type(files)([f for f in files if not empty_hdf5_file(f, ifo=ifo)])
 
 
-@with_import('h5py')
-def empty_hdf5_file(fp, ifo=None):
+@with_read_hdf5
+def empty_hdf5_file(h5f, ifo=None):
     """Determine whether PyCBC-HDF5 file is empty
 
     A file is considered empty if it contains no groups at the base level,
@@ -172,7 +140,7 @@ def empty_hdf5_file(fp, ifo=None):
 
     Parameters
     ----------
-    fp : `str`
+    h5f : `str`
         path of the pycbc_live file to test
 
     ifo : `str`, optional
@@ -184,29 +152,27 @@ def empty_hdf5_file(fp, ifo=None):
     empty : `bool`
         `True` if the file looks to have no content, otherwise `False`
     """
-    if isinstance(fp, CacheEntry):
-        fp = fp.path
-    with h5py.File(fp, 'r') as h5f:
-        if list(h5f) == []:
-            return True
-        if ifo is not None and list(h5f[ifo]) == ['psd']:
-            return True
-        return False
+    # the decorator opens the HDF5 file for us, so h5f is guaranteed to
+    # be an h5py.Group object
+    h5f = h5f.file
+    if list(h5f) == []:
+        return True
+    if ifo is not None and list(h5f[ifo]) == ['psd']:
+        return True
+    return False
 
 
 def identify_pycbc_live(origin, filepath, fileobj, *args, **kwargs):
-    """Identify a PyCBC Live file from its basename
+    """Identify a PyCBC Live file as an HDF5 with the correct name
     """
-    if HAS_H5PY and isinstance(filepath, h5py.HLObject):
-        filepath = filepath.file.name
-    if (isinstance(filepath, string_types) and
-            PYCBC_FILENAME.match(basename(filepath))):
+    if identify_hdf5(origin, filepath, fileobj, *args, **kwargs) and (
+            filepath is not None and PYCBC_FILENAME.match(basename(filepath))):
         return True
     return False
 
 # register for unified I/O
 register_identifier(PYCBC_LIVE_FORMAT, EventTable, identify_pycbc_live)
-register_reader(PYCBC_LIVE_FORMAT, EventTable, table_from_pycbc_live)
+register_reader(PYCBC_LIVE_FORMAT, EventTable, table_from_file)
 
 # -- processed columns --------------------------------------------------------
 #
@@ -249,7 +215,7 @@ import numpy
 from numpy import rec
 from numpy.lib import recfunctions
 
-from glue.lal import CacheEntry
+from lal.utils import CacheEntry
 
 from ...utils.deps import with_import
 from ...io.cache import file_list

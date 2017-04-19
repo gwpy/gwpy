@@ -30,8 +30,6 @@ from six.moves import http_cookiejar
 from six.moves.urllib import request as http_request
 from six.moves.urllib.error import HTTPError
 
-from glue.auth.saml import HTTPNegotiateAuthHandler
-
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 COOKIE_JAR = os.path.join(tempfile.gettempdir(), getpass.getuser())
@@ -54,6 +52,8 @@ def request(url, debug=False, timeout=None):
     debug : `bool`, optional
         Query in verbose debugging mode, default `False`
     """
+    from glue.auth.saml import HTTPNegotiateAuthHandler
+
     # set debug to 1 to see all HTTP(s) traffic
     debug = int(debug)
 

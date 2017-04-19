@@ -41,12 +41,12 @@ Linux
 
 The GWpy package has the following build-time dependencies (i.e. required for installation):
 
-* `glue <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_ >= 1.48
+* `glue <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_ >= 1.53
 * `python-dateutil <https://pypi.python.org/pypi/python-dateutil/>`_
-* `NumPy <http://www.numpy.org>`_ >= 1.5
+* `NumPy <http://www.numpy.org>`_ >= 1.10
 * `SciPy <http://www.scipy.org>`_ >= 0.16
-* `Matplotlib <http://matplotlib.org>`_ >= 1.3.0
-* `Astropy <http://astropy.org>`_ >= 1.0
+* `Matplotlib <http://matplotlib.org>`_ >= 1.4.1
+* `Astropy <http://astropy.org>`_ >= 1.2.1
 
 You should install these packages on your system using the instructions provided by their authors.
 

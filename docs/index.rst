@@ -18,7 +18,7 @@ First steps
    :maxdepth: 1
 
    What is GWpy? <overview>
-   How do I install GWpy? <install>
+   How do I install GWpy? <install/index>
 
 Working with data
 ~~~~~~~~~~~~~~~~~

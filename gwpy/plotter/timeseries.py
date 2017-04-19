@@ -22,7 +22,7 @@
 import re
 import numpy
 
-from matplotlib import (pyplot, colors)
+from matplotlib import (pyplot, colors, rcParams)
 from matplotlib.projections import register_projection
 from matplotlib.artist import allow_rasterization
 from matplotlib.cbook import iterable
@@ -33,11 +33,10 @@ except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
 
-from ..time import LIGOTimeGPS
-from . import tex
-from .core import Plot
+from ..time import (Time, LIGOTimeGPS)
 from ..segments import SegmentList
-from ..time import Time
+from . import text
+from .core import Plot
 from .axes import Axes
 from .decorators import auto_refresh
 
@@ -182,22 +181,14 @@ class TimeSeriesAxes(Axes):
         :meth:`matplotlib.axes.Axes.plot`
             for a full description of acceptable ``*args` and ``**kwargs``
         """
-        if tex.USE_TEX:
-            kwargs.setdefault('label', tex.label_to_latex(timeseries.name))
-        else:
-            kwargs.setdefault('label', timeseries.name)
+        kwargs.setdefault('label', text.to_string(timeseries.name))
         if not self.epoch:
             self.set_epoch(timeseries.x0)
         line = self.plot(timeseries.times.value, timeseries.value, **kwargs)
         if len(self.lines) == 1 and timeseries.size:
             self.set_xlim(*timeseries.xspan)
         if not self.get_ylabel():
-            if tex.USE_TEX:
-                ustr = tex.unit_to_latex(timeseries.unit)
-            else:
-                ustr = timeseries.unit.to_string()
-            if ustr:
-                self.set_ylabel('[%s]' % ustr)
+            self.set_ylabel(text.unit_as_label(timeseries.unit))
         return line
 
     @auto_refresh
@@ -302,7 +293,7 @@ class TimeSeriesAxes(Axes):
             self.set_xlim(*spectrogram.span)
             self.set_ylim(*spectrogram.band)
         if not self.get_ylabel():
-            self.add_label_unit(spectrogram.yunit, axis='y')
+            self.set_ylabel(text.unit_as_label(spectrogram.yunit))
 
         # reset grid
         if grid[0]:

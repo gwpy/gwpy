@@ -48,11 +48,6 @@ class Axes(_Axes):
     """
     projection = 'rectilinear'
 
-    def __init__(self, *args, **kwargs):
-        super(Axes, self).__init__(*args, **kwargs)
-        self.xaxis.labelpad = 10
-    __init__.__doc__ = _Axes.__init__.__doc__
-
     # -----------------------------------------------
     # text properties
 
@@ -193,21 +188,6 @@ class Axes(_Axes):
         """
         return super(Axes, self).set_position(pos, which=which)
 
-    @auto_refresh
-    def add_label_unit(self, unit, axis='x'):
-        label = getattr(self, 'get_%slabel' % axis)()
-        if not label:
-            label = unit.__doc__
-        if rcParams.get("text.usetex", False):
-            unitstr = tex.unit_to_latex(unit)
-        else:
-            unitstr = unit.to_string()
-        set_ = getattr(self, 'set_%slabel' % axis)
-        if label:
-            set_("%s [%s]" % (label, unitstr))
-        else:
-            set_(unitstr)
-
     def legend(self, *args, **kwargs):
         # set kwargs
         alpha = kwargs.pop("alpha", 0.8)
@@ -219,6 +199,7 @@ class Axes(_Axes):
         if legend is not None:
             lframe = legend.get_frame()
             lframe.set_alpha(alpha)
+            lframe.set_linewidth(rcParams['axes.linewidth'])
             [l.set_linewidth(linewidth) for l in legend.get_lines()]
         return legend
     legend.__doc__ = _Axes.legend.__doc__

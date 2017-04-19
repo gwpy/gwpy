@@ -22,7 +22,7 @@
 import os.path
 import re
 
-from glue.lal import CacheEntry
+from lal.utils import CacheEntry
 
 from ..time import to_gps
 from ..utils import with_import
@@ -203,7 +203,7 @@ def on_tape(*files):
 
     Parameters
     ----------
-    *files : `str`, `~glue.lal.CacheEntry`
+    *files : `str`, `~lal.utils.CacheEntry`
         one or more paths to GWF files
 
     Returns

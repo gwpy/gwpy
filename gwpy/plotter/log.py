@@ -53,7 +53,7 @@ class GWpyLogFormatterMathtext(LogFormatterMathtext):
                 return '$%s$' % x
             else:
                 return '$\mathdefault{%s}$' % x
-        elif usetex and abs(log10(x)) > 2:
+        elif usetex and abs(x) > 100:
             return '$%s$' % float_to_latex(x, '%.2e')
         elif usetex:
             return '$%s$' % float_to_latex(x, '%.2g')
@@ -115,9 +115,6 @@ class GWpyLogScale(LogScale):
     for major and minor ticks.
     """
     def set_default_locators_and_formatters(self, axis):
-        if isinstance(axis, XAxis):
-            axis.set_tick_params(which='both', pad=7)
-            axis.labelpad = 8
         axis.set_major_locator(LogLocator(self.base))
         axis.set_major_formatter(GWpyLogFormatterMathtext(self.base))
         axis.set_minor_locator(LogLocator(self.base, self.subs))
