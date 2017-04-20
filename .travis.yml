@@ -114,4 +114,4 @@ before_cache:
   - rm -f ./python-${TRAVIS_PYTHON_VERSION}-ldas-tools-al/config.log
   - rm -f ./python-${TRAVIS_PYTHON_VERSION}-framecpp/config.log
   - rm -f ./python-${TRAVIS_PYTHON_VERSION}-lalframe/config.log
-  - rm -f ./python-${TRAVIS_PYTHON_VERSION}-nds2-client/config.log
+  - rm -f ./python-${TRAVIS_PYTHON_VERSION}-nds2-client/CMakeFiles/CMakeError.log ./python-${TRAVIS_PYTHON_VERSION}-nds2-client/CMakeFiles/CMakeOutput.log
