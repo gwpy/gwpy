@@ -47,7 +47,7 @@ events = EventTable.read(
 
 # and can generate a new `~gwpy.plotter.HistogramPlot` using the
 # :meth:`~EventTable.hist` instance method using `weights=1/10.`
-#  to convert the counts from the histogram into a rate in Hertz
+# to convert the counts from the histogram into a rate in Hertz
 
 plot = events.hist('snr', weights=1/10., logbins=True,
                    bins=50, histtype='stepfilled')
