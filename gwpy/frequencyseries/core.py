@@ -152,10 +152,8 @@ class FrequencySeries(Series):
             detected if possible. See below for list of acceptable
             formats
 
-        Returns
-        -------
-        series : `FrequencySeries`
-        """
+        Notes
+        -----"""
         return io_registry.read(cls, source, *args, **kwargs)
 
     def write(self, target, *args, **kwargs):

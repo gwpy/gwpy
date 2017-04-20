@@ -237,7 +237,9 @@ class Spectrogram(Array2D):
         Returns
         -------
         specgram : `Spectrogram`
-        """
+
+        Notes
+        -----"""
         return io_registry.read(cls, source, *args, **kwargs)
 
     def write(self, target, *args, **kwargs):
