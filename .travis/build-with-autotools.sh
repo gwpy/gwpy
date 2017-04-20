@@ -37,11 +37,17 @@ else
     elif [ -f ./autogen.sh ]; then
         ./autogen.sh
     fi
-    ./configure --enable-silent-rules --prefix=$target $@
+    if [ -f ./CMakeLists.txt ]; then
+        cmake . -DCMAKE_INSTALL_PREFIX=$target $@
+    else
+        ./configure --enable-silent-rules --prefix=$target $@
+    fi
 fi
 
 # configure if the makefile still doesn't exist
-if [ ! -f ./Makefile ]; then
+if [ ! -f ./Makefile ] && [ -f ./CMakeLists.txt ]; then
+    cmake . -DCMAKE_INSTALL_PREFIX=$target $@
+elif [ ! -f ./Makefile ]; then
     ./configure --enable-silent-rules --prefix=$target $@
 fi
 
