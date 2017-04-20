@@ -173,6 +173,8 @@ $(CLIEXAMPLEDIR):
 	@echo "building cli examples"
 	@mkdir -p $(CLIEXAMPLEDIR)/
 
+$(CLIEXAMPLEDIR)/cli-%.png: export MPLBACKEND = agg
+
 $(CLIEXAMPLEDIR)/cli-01.png: $(CLIEXAMPLEDIR)
 	@if [ ! -e $@ ];  then \
 		echo "cli-01.png"; \
