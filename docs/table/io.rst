@@ -327,7 +327,9 @@ Available file formats
 For a full list of available file formats, see the documentation for the `Table.read` method:
 
 .. automethod:: Table.read
+   :noindex:
 
 The `EventTable.read` method can understand *all* of the above file formats (auto-identify is **not** inherited), and the following:
 
 .. automethod:: EventTable.read
+   :noindex:
