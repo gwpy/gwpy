@@ -91,18 +91,19 @@ def update_doc(obj, scaling='density'):
     doc = obj.__doc__
 
     # work out indent
-    lines = doc.splitlines()
     try:
         for line in doc.splitlines()[1:]:
             if line:
                 break
-    except IndexError:
+    except AttributeError:
         line = ''
     indent = ' ' * (len(line) - len(line.lstrip(' ')))
 
     # strip out existing methods table
     try:
         maindoc, _ = doc.split(header, 1)
+    except AttributeError:  # None
+        maindoc = ''
     except ValueError:
         maindoc = doc
 
@@ -123,9 +124,10 @@ def update_doc(obj, scaling='density'):
     newdoc.extend(['', 'See :ref:`gwpy-signal-fft` for more details'])
 
     # re-write docstring
-    doc = maindoc + header
+    doc = '%s\n%s' % (maindoc.rstrip('\n'), header)
     for line in newdoc:
         doc += '%s%s\n' % (indent, line)
+    doc = doc.lstrip('\n')
     try:
         obj.__doc__ = doc
     except AttributeError:  # python 2.x
