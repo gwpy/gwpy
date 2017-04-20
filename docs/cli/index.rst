@@ -51,7 +51,7 @@ one channel and one start time, some plots like coherence require two channels. 
 
 Will produce a image file called gwpy.png in the current directory that looks like:
 
-.. image:: /../cli_examples/cli-01.png
+.. image:: cli-01.png
     :align: center
     :alt: sample time series no parameters specified
 
@@ -99,7 +99,7 @@ The figure below is a spectrum that was generated with the command line:
 
     gwpy-plot spectrum --chan L1:OAF-CAL_DARM_DQ --start 1102766451 1102766651 --out spectrum.png
 
-.. image:: /../cli_examples/cli-02.png
+.. image:: cli-02.png
     :align: center
     :alt: sample spectrum
 

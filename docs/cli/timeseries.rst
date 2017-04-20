@@ -19,7 +19,7 @@ It is created with the following command line
     gwpy-plot timeseries --chan LVE-EX:X3_810BTORR.mean,m-trend --start 1072539420 \
         --dur 36000 --logy
 
-.. image:: /../cli_examples/cli-ts-02.png
+.. image:: cli-ts-02.png
     :align: center
     :alt: HVEA pressure during pump down
 
@@ -32,7 +32,7 @@ It is created with the following command line:
         --xmax 1107936100.25 --epoch 0.225 --duration 1
 
 
-.. image:: /../cli_examples/cli-ts-01.png
+.. image:: cli-ts-01.png
     :align: center
     :alt: sample spectrum
 

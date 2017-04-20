@@ -23,7 +23,7 @@ OAF-CAL_DARM from the 2014-02-14 lock at LLO:
 
     gwpy-plot spectrum --chan L1:OAF-CAL_DARM_DQ --start 1107936067 --duration 120  --secpfft 10
 
-.. image:: /../cli_examples/cli-sp-01.png
+.. image:: cli-sp-01.png
     :align: center
     :alt: Spectrum of OAF-CAL_DARM
 
@@ -34,7 +34,7 @@ To zoom in on the lines between 500 and 700 Hz we could use the following:
     gwpy-plot spectrum --chan L1:OAF-CAL_DARM_DQ --start 1107936067 --duration 120 \
      --secpfft 10.000 --overlap 0.90 --nologf --fmin 500 --fmax 700
 
-.. image:: /../cli_examples/cli-sp-02.png
+.. image:: cli-sp-02.png
     :align: center
     :alt: Zoom into spectrum of OAF-CAL_DARM
 

@@ -35,6 +35,7 @@ pip-delete-this-directory.txt
 /docs/lal*.tag
 /docs/*.inv
 /docs/api/
+/docs/cli/*.png
 
 # OS/editor files
 *.swp
