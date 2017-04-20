@@ -270,9 +270,9 @@ class Spectrogram(Array2D):
 
         Parameters
         ----------
-        operand : `str`, `~gwpy.frequencyseries.FrequencySeries`,
-                  `~astropy.units.Quantity`
-            `FrequencySeries` or `Quantity` to weight against, or one of
+        operand : `str`, `FrequencySeries`, `Quantity`
+            a `~gwpy.frequencyseries.FrequencySeries` or
+            `~astropy.units.Quantity` to weight against, or one of
 
             - ``'mean'`` : weight against the mean of each spectrum
               in this Spectrogram
@@ -283,6 +283,11 @@ class Spectrogram(Array2D):
         -------
         spectrogram : `Spectrogram`
             a new `Spectrogram`
+
+        Raises
+        ------
+        ValueError
+            if ``operand`` is given as a `str` that isn't supported
         """
         if isinstance(operand, string_types):
             if operand == 'mean':
