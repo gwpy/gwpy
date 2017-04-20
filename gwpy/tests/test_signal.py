@@ -31,7 +31,8 @@ from astropy import units
 import lal
 
 from gwpy import signal as gwpy_signal
-from gwpy.signal.fft import (lal as fft_lal, utils as fft_utils)
+from gwpy.signal.fft import (lal as fft_lal, utils as fft_utils,
+                             registry as fft_registry)
 
 ONE_HZ = units.Quantity(1, 'Hz')
 
@@ -59,6 +60,59 @@ class FilterDesignTestCase(unittest.TestCase):
         for a, b in zip(zpk, zpk2):
             nptest.assert_array_almost_equal(a, b)
 
+
+# -- gwpy.signal.fft.registry -------------------------------------------------
+
+class FFTRegistryTests(unittest.TestCase):
+    def tearDown(self):
+        # remove test methods from registry
+        # otherwise they will impact other tests, and test ordering
+        # is annoying to predict
+        for scaling in fft_registry.METHODS:
+            fft_registry.METHODS[scaling].pop('fake_method', '')
+
+    def test_registry(self):
+        def fake_method():
+            pass
+
+        # test register
+        fft_registry.register_method(fake_method)
+        self.assertIn('fake_method', fft_registry.METHODS['density'])
+        self.assertRaises(KeyError, fft_registry.register_method, fake_method)
+        fft_registry.register_method(fake_method, force=True)
+        self.assertIn('fake_method', fft_registry.METHODS['density'])
+        fft_registry.register_method(fake_method, scaling='spectrum')
+        self.assertIn('fake_method', fft_registry.METHODS['spectrum'])
+        self.assertRaises(KeyError, fft_registry.register_method,
+                          fake_method, scaling='unknown')
+        # test get
+        f = fft_registry.get_method('fake_method')
+        self.assertIs(f, fake_method)
+        self.assertRaises(KeyError, fft_registry.get_method, 'unregistered')
+        self.assertRaises(KeyError, fft_registry.get_method, 'fake_method',
+                          scaling='unknown')
+
+    def test_update_doc(self):
+        def fake_caller():
+            pass
+
+        self.assertEqual(fake_caller.__doc__, None)
+        fft_registry.update_doc(fake_caller)
+        self.assertEqual(
+            fake_caller.__doc__,
+            'The available methods are:\n\n'
+            '============ =================================\n'
+            'Method name               Function            \n'
+            '============ =================================\n'
+            'lal_bartlett    `gwpy.signal.fft.lal.bartlett`\n'
+            ' median_mean `gwpy.signal.fft.lal.median_mean`\n'
+            '      median      `gwpy.signal.fft.lal.median`\n'
+            '   lal_welch       `gwpy.signal.fft.lal.welch`\n'
+            '    bartlett  `gwpy.signal.fft.scipy.bartlett`\n'
+            '       welch     `gwpy.signal.fft.scipy.welch`\n'
+            '============ =================================\n\n'
+            'See :ref:`gwpy-signal-fft` for more details\n',
+        )
 
 # -- gwpy.signal.fft.utils ----------------------------------------------------
 
