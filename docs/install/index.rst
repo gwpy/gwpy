@@ -2,6 +2,12 @@
 
 .. _gwpy-install:
 
+.. toctree::
+   :hidden:
+
+   lal
+
+
 ############
 Installation
 ############
