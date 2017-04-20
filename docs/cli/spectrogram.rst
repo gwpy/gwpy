@@ -13,7 +13,7 @@ The following command line shows what happens at the end of a lock to a single c
 
     gwpy-plot spectrogram --chan L1:LSC-SRCL_IN1_DQ --start 1107937307 --dur 240
 
-.. image:: /../cli_examples/cli-spg-01.png
+.. image:: cli-spg-01.png
     :align: center
     :alt: SRCL: end of lock spectrogram
 

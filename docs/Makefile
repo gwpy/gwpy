@@ -17,7 +17,7 @@ EXAMPLES := $(shell cd ../examples/ && ls */*py)
 EXAMPLEDIRS := $(shell cd ../examples/ && ls -d */)
 
 CLIPROG       = ../bin/gwpy-plot
-CLIEXAMPLEDIR = $(BUILDDIR)/cli_examples
+CLIEXAMPLEDIR = ./cli
 .PHONY: help clean apidoc html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest
 
 #This is needed with git because git doesn't create a dir if it's empty
@@ -44,6 +44,7 @@ help:
 
 clean:
 	-rm -rf examples/*/*.rst
+	-rm -rf $(CLIEXAMPLEDIR)/*.png
 	-rm -rf $(BUILDDIR)
 	-rm -rf _generated
 	-rm -rf api/
@@ -53,13 +54,11 @@ apidoc:
 	sphinx-apidoc -o _generated ../gwpy
 
 html: cli-examples examples lal.tag lalframe.tag
-	@cp -r $(BUILDDIR)/cli_examples $(BUILDDIR)/html
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
 dirhtml:
-	@cp -r $(BUILDDIR)/cli_examples $(BUILDDIR)/dirhtml
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/dirhtml."

@@ -15,14 +15,14 @@ For example to create a spectrum from the command line in interactive mode, one 
 
 Resulting in:
 
-.. image:: ./interactive-01.png
+.. image:: interactive-01.png
     :align: center
     :alt: sample spectrum
 
 Notice the toolbar at the bottom of the image.  Besides resizing the image in the normal dragging
 of the edges there are several tools that allow simple manipulation of the image:
 
-.. image:: ./interactive-02.png
+.. image:: interactive-02.png
     :align: center
     :alt: toolbar for interactive images
 
