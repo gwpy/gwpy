@@ -1,4 +1,4 @@
-.. image:: https://gwpy.github.io/images/gwpy_docs_1200.png
+.. image:: gwpy-docs-logo.png
 
 .. title:: Docs
 
