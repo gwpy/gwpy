@@ -743,9 +743,8 @@ class StateVector(TimeSeriesBase):
 
         Returns
         -------
-        plot : `~gwpy.plotter.segments.SegmentPlot`, or
-               `~gwpy.plotter.TimeSeriesPlot`
-            output plot object, subclass of `~gwpy.plotter.Plot`
+        plot : `~gwpy.plotter.SegmentPlot`, or `~gwpy.plotter.TimeSeriesPlot`
+            output plot object, some subclass of `~gwpy.plotter.Plot`
         """
         if format == 'timeseries':
             return super(StateVector, self).plot(**kwargs)

@@ -1509,7 +1509,7 @@ class TimeSeries(TimeSeriesBase):
         method : `str`, optional, default: `welch`
             average spectrum method
 
-        window : `str`, :class:`numpy.ndarray`
+        window : `str`, `numpy.ndarray`
             name of the window function to use, or an array of length
             ``fftlength * TimeSeries.sample_rate`` to use as the window.
 
@@ -1523,7 +1523,7 @@ class TimeSeries(TimeSeriesBase):
         **kwargs
             other keyword arguments are passed to the `TimeSeries.asd`
             method to estimate the amplitude spectral density
-            `FrequencySeries` of this `TimeSeries.
+            `FrequencySeries` of this `TimeSeries`
 
         Returns
         -------

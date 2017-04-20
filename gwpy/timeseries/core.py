@@ -261,7 +261,7 @@ class TimeSeriesBase(Series):
         verify : `bool`, optional, default: `False`
             check channels exist in database before asking for data
 
-        connection : :nds2:`nds2.connection`, optional
+        connection : `nds2.connection`, optional
             open NDS connection to use
 
         verbose : `bool`, optional
