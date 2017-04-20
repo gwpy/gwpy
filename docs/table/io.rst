@@ -304,18 +304,16 @@ To restrict the returned columns, use the ``columns`` keyword argument::
 
 All ``FrEvent`` structures contain the following columns, any other columns are use-specific:
 
----------------  ---------------------------------------------------------------
-Column name      Description (from
-                 `LIGO-T970130 <https://dcc.ligo.org/LIGO-T970130/public>`_)
----------------  ---------------------------------------------------------------
+---------------  ------------------------------------------------------------------------------------
+Column name      Description (from `LIGO-T970130 <https://dcc.ligo.org/LIGO-T970130/public>`_)
+---------------  ------------------------------------------------------------------------------------
 ``time``         Reference time of event, as defined by the search algorithm
 ``amplitude``    Continuous output amplitude returned by event
-``probability``  Likelihood estimate of event, if available (probability = -1 if
-                 cannot be estimated)
+``probability``  Likelihood estimate of event, if available (probability = -1 if cannot be estimated)
 ``timeBefore``   Signal duration before reference time (seconds)
 ``timeAfter``    Signal duration after reference time (seconds)
 ``comment``      Descriptor of event
----------------  ---------------------------------------------------------------
+---------------  ------------------------------------------------------------------------------------
 
 Writing
 -------
