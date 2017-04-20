@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Extension of the :class:`~matplotlib.axes.Axes` class with
+"""Extension of the `~matplotlib.axes.Axes` class with
 user-friendly attributes
 """
 
@@ -33,7 +33,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 class Axes(_Axes):
-    """An extension of the core matplotlib :class:`~matplotlib.axes.Axes`.
+    """An extension of the core matplotlib `~matplotlib.axes.Axes`.
 
     These custom `Axes` provide only some simpler attribute accessors.
 
@@ -43,20 +43,19 @@ class Axes(_Axes):
 
         >>> plot.add_subplots(111, projection='xxx')
 
-    where plot is a :class:`~gwpy.plotter.Plot` figure, and ``'xxx'``
+    where ``plot`` is a `~gwpy.plotter.Plot`, and ``'xxx'``
     is the name of the `Axes` you want to add.
     """
     projection = 'rectilinear'
 
-    # -----------------------------------------------
-    # text properties
+    # -- text properties ------------------------
 
     # x-axis label
     @property
     def xlabel(self):
         """Label for the x-axis
 
-        :type: :class:`~matplotlib.text.Text`
+        :type: `~matplotlib.text.Text`
         """
         return self.xaxis.label
 
@@ -78,7 +77,7 @@ class Axes(_Axes):
     def ylabel(self):
         """Label for the y-axis
 
-        :type: :class:`~matplotlib.text.Text`
+        :type: `~matplotlib.text.Text`
         """
         return self.yaxis.label
 
@@ -95,8 +94,7 @@ class Axes(_Axes):
     def ylabel(self):
         self.set_ylabel("")
 
-    # -----------------------------------------------
-    # limit properties
+    # -- limit properties -----------------------
 
     @property
     def xlim(self):
@@ -135,8 +133,7 @@ class Axes(_Axes):
         self.relim()
         self.autoscale_view(scalex=False, scaley=True)
 
-    # -----------------------------------------------
-    # scale properties
+    # -- scale properties -----------------------
 
     @property
     def logx(self):
@@ -170,17 +167,16 @@ class Axes(_Axes):
         elif self.logy and not log:
             self.set_yscale('linear')
 
-    # -------------------------------------------
-    # Axes methods
+    # -- Axes methods ---------------------------
 
     @auto_refresh
     def resize(self, pos, which='both'):
         """Set the axes position with::
 
-            pos = [left, bottom, width, height]
+        >>> pos = [left, bottom, width, height]
 
         in relative 0,1 coords, or *pos* can be a
-        :class:`~matplotlib.transforms.Bbox`
+        `~matplotlib.transforms.Bbox`
 
         There are two position variables: one which is ultimately
         used, but which may be modified by :meth:`apply_aspect`, and a
@@ -212,19 +208,25 @@ class Axes(_Axes):
         data : `~matplotlib.artist.Artist`, `~gwpy.types.Series`, `array-like`
             data to map, one of an `Artist` already drawn on these axes (
             via :meth:`plot` or :meth:`scatter`, for example) or a data set
+
         imagefile : `str`
             path to image file on disk for the containing `Figure`
+
         mapname : `str`, optional
             ID to connect <img> tag and <map> tags, default: ``'points'``. This
             should be unique if multiple maps are to be written to a single
             HTML file.
+
         shape : `str`, optional
             shape for <area> tag, default: ``'circle'``
+
         standalone : `bool`, optional
             wrap map HTML with required HTML5 header and footer tags,
             default: `True`
+
         title : `str`, optional
             title name for standalone HTML page
+
         jquery : `str`, optional
             URL of jquery script, defaults to googleapis.com URL
 

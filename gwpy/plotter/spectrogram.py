@@ -27,7 +27,7 @@ __all__ = ['SpectrogramPlot']
 
 
 class SpectrogramPlot(TimeSeriesPlot):
-    """`Figure` for displaying a :class:`~gwpy.spectrogram.Spectrogram`.
+    """`Figure` for displaying a `~gwpy.spectrogram.Spectrogram`.
     """
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('sep', True)

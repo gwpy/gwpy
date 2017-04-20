@@ -47,8 +47,9 @@ class HistogramAxes(Axes):
 
         Parameters
         ----------
-        series : :class:`~gwpy.data.series.Series`
+        series : `~gwpy.data.series.Series`
             1-dimensional `Series` of data.
+
         **kwargs
             common histogram keyword arguments to pass to
             :meth:`~HistogramAxes.hist`.
@@ -130,8 +131,10 @@ class HistogramAxes(Axes):
         ----------
         datasets : `iterable`
             list (or any other iterable) of data arrays to analyse.
+
         default_min : `float`, optional
             fall-back minimum value if datasets are all empty.
+
         default_max : `float`, optional
             fall-back maximum value if datasets are all empty.
 
@@ -163,18 +166,21 @@ class HistogramAxes(Axes):
         lower : `float`
             minimum boundary for bins. This value will be the first
             element of the returned bins array.
+
         upper : `float`
             maximum boundary for bins. This value will be the last
             element of the returned bins array.
+
         num : `int`
             number of bins to generate
+
         log : `bool`, optional, default: `False`
             if `True` generate logarithmically-spaced bins, else
             generate linearly-spaced bins.
 
         Returns
         -------
-        bins : :class:`~numpy.ndarray`
+        bins : `~numpy.ndarray`
             array of bins (length ``len(num)`` + 1).
         """
         if log:
