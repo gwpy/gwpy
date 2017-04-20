@@ -41,11 +41,10 @@ From left to right the icons represent:
    the margins.
 #. The rightmost, Floppy icon allows you to save the image.  The format is determined by the
    extension.
-  * .png (Portable Network Graphics) uses lossless compression for the best representation of what's
-    on the screen.
-  * .jpg (Join Photographic Experts Graphics) uses a lossy compress for usually the smallest image.
-  * .pdf (Portable Document Format) uses vector graphics which often looks best in documents that
-    are scalable.
+   * ``.png`` (Portable Network Graphics) uses lossless compression for the best representation of what's on the screen.
+   * ``.jpg`` (Join Photographic Experts Graphics) uses a lossy compress for usually the smallest image.
+   * ``.pdf`` (Portable Document Format) uses vector graphics which often looks best in documents that are scalable.
+
 
 Using ipython for even more control
 =====================================
