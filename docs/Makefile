@@ -43,7 +43,7 @@ help:
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 
 clean:
-	-rm -rf examples/*/
+	-rm -rf examples/*/*.rst
 	-rm -rf $(BUILDDIR)
 	-rm -rf _generated
 	-rm -rf api/
