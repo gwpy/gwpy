@@ -118,7 +118,8 @@ class SegmentList(segmentlist):
     >>> print(x)
     [Segment(-10, -5), Segment(5, 10), Segment(20, 30)]
     >>> print(~x)
-    [Segment(-infinity, -10), Segment(-5, 5), Segment(10, 20), Segment(30, infinity)]
+    [Segment(-infinity, -10), Segment(-5, 5), Segment(10, 20),
+     Segment(30, infinity)]
     """
 
     def __repr__(self):
