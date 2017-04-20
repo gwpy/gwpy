@@ -40,7 +40,8 @@ class GWpyLogFormatterMathtext(LogFormatterMathtext):
     """Format values for log axis.
 
     This `Formatter` extends the standard
-    :class:`~matplotlib.ticker.LogFormatterMathtext` to print numbers
+    :`~matplotlib.ticker.LogFormatterMathtext` to print numbers
+
     in the range [0.01, 1000) normally, and all others via the
     `LogFormatterMathtext` output.
     """

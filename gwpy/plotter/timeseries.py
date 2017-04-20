@@ -45,7 +45,7 @@ __all__ = ['TimeSeriesPlot', 'TimeSeriesAxes']
 
 
 class TimeSeriesAxes(Axes):
-    """Custom `Axes` for a :class:`~gwpy.plotter.TimeSeriesPlot`.
+    """Custom `Axes` for a `~gwpy.plotter.TimeSeriesPlot`.
     """
     name = 'timeseries'
 
@@ -134,20 +134,21 @@ class TimeSeriesAxes(Axes):
         Parameters
         ----------
         args
-            a single :class:`~gwpy.timeseries.TimeSeries` (or sub-class)
+            a single `~gwpy.timeseries.TimeSeries` (or sub-class)
             or standard (x, y) data arrays
+
         kwargs
             keyword arguments applicable to :meth:`~matplotib.axens.Axes.plot`
 
         Returns
         -------
         Line2D
-            the :class:`~matplotlib.lines.Line2D` for this line layer
+            the `~matplotlib.lines.Line2D` for this line layer
 
         See Also
         --------
-        :meth:`matplotlib.axes.Axes.plot`
-            for a full description of acceptable ``*args` and ``**kwargs``
+        matplotlib.axes.Axes.plot
+            for a full description of acceptable ``*args`` and ``**kwargs``
         """
         from ..timeseries import TimeSeries
         from ..spectrogram import Spectrogram
@@ -160,26 +161,27 @@ class TimeSeriesAxes(Axes):
 
     @auto_refresh
     def plot_timeseries(self, timeseries, **kwargs):
-        """Plot a :class:`~gwpy.timeseries.TimeSeries` onto these
+        """Plot a `~gwpy.timeseries.TimeSeries` onto these
         axes
 
         Parameters
         ----------
-        timeseries : :class:`~gwpy.timeseries.TimeSeries`
+        timeseries : `~gwpy.timeseries.TimeSeries`
             data to plot
+
         **kwargs
             any other keyword arguments acceptable for
             :meth:`~matplotlib.Axes.plot`
 
         Returns
         -------
-        Line2D
-            the :class:`~matplotlib.lines.Line2D` for this line layer
+        line : `~matplotlib.lines.Line2D`
+            the newly added line
 
         See Also
         --------
-        :meth:`matplotlib.axes.Axes.plot`
-            for a full description of acceptable ``*args` and ``**kwargs``
+        matplotlib.axes.Axes.plot
+            for a full description of acceptable ``*args`` and ``**kwargs``
         """
         kwargs.setdefault('label', text.to_string(timeseries.name))
         if not self.epoch:
@@ -193,21 +195,23 @@ class TimeSeriesAxes(Axes):
 
     @auto_refresh
     def plot_timeseries_mmm(self, mean_, min_=None, max_=None, **kwargs):
-        """Plot a `TimeSeries` onto these axes, with (min, max) shaded
-        regions
+        """Plot a `TimeSeries` onto these axes, with shaded regions
 
-        The `mean_` `TimeSeries` is plotted normally, while the `min_`
-        and `max_ `TimeSeries` are plotted lightly below and above,
-        with a fill between them and the mean_.
+        The ``mean_`` `TimeSeries` is plotted normally, while the ``min_``
+        and ``max_`` `TimeSeries` are plotted lightly below and above,
+        with a fill between them and the ``mean_``.
 
         Parameters
         ----------
-        mean_ : :class:`~gwpy.timeseries.TimeSeries`
+        mean_ : `~gwpy.timeseries.TimeSeries`
             data to plot normally
-        min_ : :class:`~gwpy.timeseries.TimeSeries`
-            first data set to shade to mean_
-        max_ : :class:`~gwpy.timeseries.TimeSeries`
-            second data set to shade to mean_
+
+        min_ : `~gwpy.timeseries.TimeSeries`
+            first data set to shade to ``mean_``
+
+        max_ : `~gwpy.timeseries.TimeSeries`
+            second data set to shade to ``mean_``
+
         **kwargs
             any other keyword arguments acceptable for
             :meth:`~matplotlib.Axes.plot`
@@ -215,14 +219,18 @@ class TimeSeriesAxes(Axes):
         Returns
         -------
         artists : `tuple`
-            a 5-tuple containing (Line2d for mean_, `Line2D` for min_,
-            `PolyCollection` for min_ shading, `Line2D` for max_, and
-            `PolyCollection` for max_ shading)
+            a 5-tuple containing:
+
+            - `~matplotlib.lines.Line2d` for ``mean_``,
+            - `~matplotlib.lines.Line2D` for ``min_``,
+            - `~matplotlib.collections.PolyCollection` for ``min_`` shading,
+            - `~matplotlib.lines.Line2D` for ``max_``, and
+            - `~matplitlib.collections.PolyCollection` for ``max_`` shading
 
         See Also
         --------
-        :meth:`matplotlib.axes.Axes.plot`
-            for a full description of acceptable ``*args` and ``**kwargs``
+        matplotlib.axes.Axes.plot
+            for a full description of acceptable ``*args`` and ``**kwargs``
         """
         # plot mean
         line1 = self.plot_timeseries(mean_, **kwargs)[0]
@@ -250,13 +258,14 @@ class TimeSeriesAxes(Axes):
 
     @auto_refresh
     def plot_spectrogram(self, spectrogram, **kwargs):
-        """Plot a :class:`~gwpy.spectrogram.core.Spectrogram` onto
+        """Plot a `~gwpy.spectrogram.core.Spectrogram` onto
         these axes
 
         Parameters
         ----------
-        spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
+        spectrogram : `~gwpy.spectrogram.core.Spectrogram`
             data to plot
+
         **kwargs
             any other keyword arguments acceptable for
             :meth:`~matplotlib.Axes.plot`
@@ -264,12 +273,12 @@ class TimeSeriesAxes(Axes):
         Returns
         -------
         Line2D
-            the :class:`~matplotlib.lines.Line2D` for this line layer
+            the `~matplotlib.lines.Line2D` for this line layer
 
         See Also
         --------
-        :meth:`matplotlib.axes.Axes.plot`
-            for a full description of acceptable ``*args` and ``**kwargs``
+        matplotlib.axes.Axes.plot
+            for a full description of acceptable ``*args`` and ``**kwargs``
         """
         # rescue grid settings
         grid = (self.xaxis._gridOnMajor, self.xaxis._gridOnMinor,
@@ -310,16 +319,17 @@ register_projection(TimeSeriesAxes)
 
 
 class TimeSeriesPlot(Plot):
-    """`Figure` for displaying a :class:`~gwpy.timeseries.TimeSeries`.
+    """`Figure` for displaying a `~gwpy.timeseries.TimeSeries`.
 
     Parameters
     ----------
     *series : `TimeSeries`
-        any number of :class:`~gwpy.timeseries.TimeSeries` to
+        any number of `~gwpy.timeseries.TimeSeries` to
         display on the plot
+
     **kwargs
         other keyword arguments as applicable for the
-        :class:`~gwpy.plotter.Plot`
+        `~gwpy.plotter.Plot`
     """
     _DefaultAxesClass = TimeSeriesAxes
 
@@ -415,11 +425,13 @@ class TimeSeriesPlot(Plot):
 
         Parameters
         ----------
-        segments : :class:`~gwpy.segments.flag.DataQualityFlag`
+        segments : `~gwpy.segments.flag.DataQualityFlag`
             A data-quality flag, or `SegmentList` denoting state segments
             about this Plot
+
         ax : `Axes`
             specific Axes set against which to anchor new segment Axes
+
         plotargs
             keyword arguments passed to
             :meth:`~gwpy.plotter.SegmentAxes.plot`

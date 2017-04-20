@@ -54,7 +54,7 @@ def interactive_backend():
 
 
 class Plot(figure.Figure):
-    """An extension of the core matplotlib :class:`~matplotlib.figure.Figure`.
+    """An extension of the core matplotlib `~matplotlib.figure.Figure`
 
     The `Plot` provides a number of methods to simplify generating
     figures from GWpy data objects, and modifying them on-the-fly in
@@ -97,8 +97,7 @@ class Plot(figure.Figure):
         self.colorbars = []
         self._coloraxes = []
 
-    # -----------------------------------------------
-    # core plot operations
+    # -- Plot methods ---------------------------
 
     def get_auto_refresh(self):
         """Return this `Plot`s auto-refresh setting
@@ -134,6 +133,7 @@ class Plot(figure.Figure):
             open the figure as a detached window. If `block=None`, GWpy
             will block if using an interactive backend and not in an
             ipython session.
+
         warn : `bool`, default: `True`
             if `block=False` is given, print a warning if matplotlib is
             not running in an interactive backend and cannot display the
@@ -170,8 +170,7 @@ class Plot(figure.Figure):
             ax.cla()
         pyplot.close(self)
 
-    # -----------------------------------------------
-    # colour-bar
+    # -- colour bars ----------------------------
 
     @auto_refresh
     def add_colorbar(self, mappable=None, ax=None, location='right',
@@ -184,33 +183,42 @@ class Plot(figure.Figure):
         ----------
         mappable : matplotlib data collection
             collection against which to map the colouring
-        ax : :class:`~matplotlib.axes.Axes`
+
+        ax : `~matplotlib.axes.Axes`
             axes from which to steal space for the colour-bar
+
         location : `str`, optional, default: 'right'
             position of the colorbar
+
         width : `float`, optional default: 0.2
             width of the colorbar as a fraction of the axes
+
         pad : `float`, optional, default: 0.1
             gap between the axes and the colorbar as a fraction of the axes
+
         log : `bool`, optional, default: `False`
             display the colorbar with a logarithmic scale
+
         label : `str`, optional, default: '' (no label)
             label for the colorbar
+
         clim : pair of floats, optional
             (lower, upper) limits for the colorbar scale, values outside
             of these limits will be clipped to the edges
+
         visible : `bool`, optional, default: `True`
             make the colobar visible on the figure, this is useful to
             make two plots, each with and without a colorbar, but
             guarantee that the axes will be the same size
+
         **kwargs
             other keyword arguments to be passed to the
             :meth:`~matplotlib.figure.Figure.colorbar` generator
 
         Returns
         -------
-        Colorbar
-            the :class:`~matplotlib.colorbar.Colorbar` added to this plot
+        cbar : `~matplotlib.colorbar.Colorbar`
+            the newly added `Colorbar`
         """
         # find default layer
         if mappable is None and ax is not None and len(ax.collections):
@@ -302,9 +310,7 @@ class Plot(figure.Figure):
         self.colorbars.append(colorbar)
         return colorbar
 
-    # -------------------------------------------
-    # GWpy data adding
-    #
+    # -- gwpy data plotting ---------------------
     # These methods try to guess which axes to add to, otherwise generate
     # a new one
 
@@ -399,7 +405,7 @@ class Plot(figure.Figure):
             y positions of the line points (in axis coordinates)
         projection : `str`, optional, default: `'timeseries'`
             name of the Axes projection on which to plot
-        ax : :class:`~gwpy.plotter.Axes`
+        ax : `~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
@@ -411,8 +417,8 @@ class Plot(figure.Figure):
 
         Returns
         -------
-        Line2D
-            the :class:`~matplotlib.lines.Line2D` for this line layer
+        line : `~matplotlib.lines.Line2D`
+            the newly added line
         """
         # get axes options
         projection = kwargs.pop('projection', None)
@@ -441,32 +447,35 @@ class Plot(figure.Figure):
     @auto_refresh
     def _scatter(self, x, y, projection=None, ax=None, newax=False,
                  **kwargs):
-        """Internal `Plot` method to scatter onto the most
-        favourable `Axes`
+        """Internal method to scatter onto the most favourable `Axes`
 
         Parameters
         ----------
         x : array-like
             x positions of the line points (in axis coordinates)
+
         y : array-like
             y positions of the line points (in axis coordinates)
+
         projection : `str`, optional, default: `None`
             name of the Axes projection on which to plot
-        ax : :class:`~gwpy.plotter.Axes`
+
+        ax : `~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
+
         newax : `bool`, optional, default: `False`
             force data to plot on a fresh set of `Axes`
-        **kwargs.
+
+        **kwargs
             other keyword arguments passed to the
             :meth:`matplotlib.axes.Axes.scatter` function
 
         Returns
         -------
-        Collection
-            the :class:`~matplotlib.collections.Collection` for this
-            scatter layer
+        collection : `~matplotlib.collections.Collection`
+            the `Collection` for this new scatter
         """
         # set kwargs
         kwargs.setdefault("s", 20)
@@ -487,31 +496,35 @@ class Plot(figure.Figure):
 
     @auto_refresh
     def _imshow(self, image, projection=None, ax=None, newax=False, **kwargs):
-        """Internal `Plot` method to imshow onto the most
-        favourable `Axes`
+        """Internal method to imshow onto the most favourable `Axes`
 
         Parameters
         ----------
         x : array-like
             x positions of the line points (in axis coordinates)
+
         y : array-like
             y positions of the line points (in axis coordinates)
+
         projection : `str`, optional, default: `None`
             name of the Axes projection on which to plot
-        ax : :class:`~gwpy.plotter.Axes`
+
+        ax : `~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
+
         newax : `bool`, optional, default: `False`
             force data to plot on a fresh set of `Axes`
-        **kwargs.
+
+        **kwargs
             other keyword arguments passed to the
             :meth:`matplotlib.axes.Axes.imshow` function
 
         Returns
         -------
-        Collection
-            the :class:`~matplotlib.image.AxesImage` for this image
+        collection : `~matplotlib.collections.Collection`
+            the newly added `AxesImage`
         """
         sharex = kwargs.pop('sharex', None)
         sharey = kwargs.pop('sharey', None)
@@ -535,24 +548,29 @@ class Plot(figure.Figure):
         ----------
         x : array-like
             x positions of the line points (in axis coordinates)
+
         y : array-like
             y positions of the line points (in axis coordinates)
+
         projection : `str`, optional, default: `None`
             name of the Axes projection on which to plot
-        ax : :class:`~gwpy.plotter.Axes`
+
+        ax : `~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
+
         newax : `bool`, optional, default: `False`
             force data to plot on a fresh set of `Axes`
+
         **kwargs
             additional keyword arguments passed directly on to
             the axes :meth:`~matplotlib.axes.Axes.plot` method.
 
         Returns
         -------
-        Line2D
-            the :class:`~matplotlib.lines.Line2D` for this line layer
+        line : `~matplotlib.lines.Line2D`
+            the newly added line
         """
         return self._plot(x, y, *args, **kwargs)
 
@@ -564,25 +582,29 @@ class Plot(figure.Figure):
         ----------
         x : array-like
             x-axis data points
+
         y : array-like
             y-axis data points
+
         projection : `str`, optional, default: `None`
             name of the Axes projection on which to plot
-        ax : :class:`~gwpy.plotter.Axes`
+
+        ax : `~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
+
         newax : `bool`, optional, default: `False`
             force data to plot on a fresh set of `Axes`
+
         **kwargs.
             other keyword arguments passed to the
             :meth:`matplotlib.axes.Axes.scatter` function
 
         Returns
         -------
-        Collection
-            the :class:`~matplotlib.collections.Collection` for this
-            scatter layer
+        collection : `~matplotlib.collections.Collection`
+            the `Collection` for this new scatter
         """
         return self._scatter(x, y, **kwargs)
 
@@ -595,13 +617,15 @@ class Plot(figure.Figure):
         ----------
         image : `numpy.ndarray`
             2-D array of data for the image
+
         **kwargs
             other keyword arguments are passed to the
             :meth:`matplotlib.axes.Axes.imshow` function
 
         Returns
         -------
-        image : :class:`~matplotlib.image.AxesImage`
+        image : `~matplotlib.image.AxesImage`
+            the newly added image
         """
         return self._imshow(image, projection=projection, ax=ax, newax=newax,
                             **kwargs)
@@ -610,27 +634,31 @@ class Plot(figure.Figure):
     def add_timeseries(self, timeseries, projection='timeseries',
                        ax=None, newax=False, sharex=None, sharey=None,
                        **kwargs):
-        """Add a :class:`~gwpy.timeseries.TimeSeries` trace to this plot
+        """Add a `~gwpy.timeseries.TimeSeries` trace to this plot
 
         Parameters
         ----------
-        timeseries : :class:`~gwpy.timeseries.TimeSeries`
+        timeseries : `~gwpy.timeseries.TimeSeries`
             the TimeSeries to display
-        projection : `str`, optional, default: `'timeseries'`
+
+        projection : `str`, optional, default: ``'timeseries'``
             name of the Axes projection on which to plot
-        ax : :class:`~gwpy.plotter.Axes`
+
+        ax : `~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
+
         newax : `bool`, optional, default: `False`
             force data to plot on a fresh set of `Axes`
+
         **kwargs
-            other keyword arguments for the `Plot.add_line` function
+            other keyword arguments for the `Plot.add_array` function
 
         Returns
         -------
-        Line2D
-            the :class:`~matplotlib.lines.Line2D` for this line layer
+        line : `~matplotlib.lines.Line2D`
+            the newly added line object
         """
         return self.add_array(timeseries, 'timeseries', ax=ax, newax=newax,
                               sharex=sharex, sharey=sharey, **kwargs)
@@ -644,21 +672,25 @@ class Plot(figure.Figure):
         ----------
         spectrum : `~gwpy.frequencyseries.FrequencySeries`
             the `FrequencySeries` to display
+
         projection : `str`, optional, default: `'frequencyseries'`
             name of the Axes projection on which to plot
-        ax : :class:`~gwpy.plotter.Axes`
+
+        ax : `~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
+
         newax : `bool`, optional, default: `False`
             force data to plot on a fresh set of `Axes`
+
         **kwargs
             other keyword arguments for the `Plot.add_line` function
 
         Returns
         -------
-        Line2D
-            the :class:`~matplotlib.lines.Line2D` for this line layer
+        line : `~matplotlib.lines.Line2D`
+            the newly added line
         """
         return self.add_array(spectrum, 'frequencyseries', ax=ax,
                               newax=newax, sharex=sharex, sharey=sharey,
@@ -668,28 +700,31 @@ class Plot(figure.Figure):
     def add_spectrogram(self, spectrogram, projection='timeseries',
                         ax=None, newax=False, sharex=None, sharey=None,
                         **kwargs):
-        """Add a :class:`~gwpy.spectrogram.core.Spectrogram` trace to
-        this plot
+        """Add a `~gwpy.spectrogram.Spectrogram` to this plot
 
         Parameters
         ----------
-        spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
+        spectrogram : `~gwpy.spectrogram.core.Spectrogram`
             the `Spectrogram` to display
+
         projection : `str`, optional, default: `timeseries`
             name of the Axes projection on which to plot
-        ax : :class:`~gwpy.plotter.Axes`
+
+        ax : `~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
+
         newax : `bool`, optional, default: `False`
             force data to plot on a fresh set of `Axes`
+
         **kwargs
             other keyword arguments for the `Plot.add_line` function
 
         Returns
         -------
-        Line2D
-            the :class:`~matplotlib.lines.Line2D` for this line layer
+        qm : `~matplotlib.collections.QuadMesh`
+            the new `QuadMesh` layer representing the spectrogram display
         """
         return self.add_array(spectrogram, 'timeseries', ax=ax, newax=newax,
                               sharex=sharex, sharey=sharey, **kwargs)
@@ -697,25 +732,30 @@ class Plot(figure.Figure):
     @auto_refresh
     def add_array(self, array, projection, ax=None, newax=False,
                   sharex=None, sharey=None, **kwargs):
-        """Add a :class:`~gwpy.types.Array` to this plot
+        """Add a `~gwpy.types.Array` to this plot
 
         Parameters
         ----------
-        array : :class:`~gwpy.types.Array`
+        array : `~gwpy.types.Array`
             the `Array` to display
+
         projection : `str`
-        ax : :class:`~gwpy.plotter.Axes`
+            name of the Axes projection on which to plot
+
+        ax : `~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
+
         newax : `bool`, optional, default: `False`
             force data to plot on a fresh set of `Axes`
+
         **kwargs
             other keyword arguments for the `Plot.add_line` function
 
         Returns
         -------
-        Artist : :class:`~matplotlib.artist.Artist`
+        artist : `~matplotlib.artist.Artist`
             the layer return from the relevant plotting function
         """
         # find relevant axes
@@ -732,13 +772,31 @@ class Plot(figure.Figure):
 
     def add_dataqualityflag(self, flag, projection=None, ax=None, newax=False,
                             sharex=None, sharey=None, **kwargs):
-        """Add a :class:`~gwpy.segments.flag.DataQualityFlag` to this plot
+        """Add a `~gwpy.segments.flag.DataQualityFlag` to this plot
 
         Parameters
         ----------
-        flag : :class:`~gwpy.segments.flag.DataQualityFlag`
+        flag : `~gwpy.segments.flag.DataQualityFlag`
             the `DataQualityFlag` to display
 
+        projection : `str`
+            name of the Axes projection on which to plot
+
+        ax : `~gwpy.plotter.Axes`
+            the `Axes` on which to add these data, if this is not given,
+            a guess will be made as to the best `Axes` to use. If no
+            appropriate axes are found, new `Axes` will be created
+
+        newax : `bool`, optional, default: `False`
+            force data to plot on a fresh set of `Axes`
+
+        **kwargs
+            other keyword arguments for the `Plot.add_line` function
+
+        Returns
+        -------
+        collection : `~gwpy.collection.Collection`
+            the newly added patch collection
         """
         # find relevant axes
         if ax is None and not newax:
@@ -752,8 +810,7 @@ class Plot(figure.Figure):
         # plot on axes
         return ax.plot(flag, **kwargs)
 
-    # -------------------------------------------
-    # Plot legend
+    # -- legends --------------------------------
 
     @auto_refresh
     def add_legend(self, *args, **kwargs):
@@ -764,17 +821,15 @@ class Plot(figure.Figure):
 
         Returns
         -------
-        Legend
-            the :class:`~matplotlib.legend.Legend` for this plot
+        legend : `~matplotlib.legend.Legend`
+            the new legend
         """
         ax = kwargs.pop('ax', None)
         if ax is None:
             ax = self._find_axes()
         return ax.legend(*args, **kwargs)
 
-    # -------------------------------------------
-    # Convenience methods for single-axes plots
-    #
+    # -- convenience methods --------------------
     # The majority of methods in this section are decorated to call the
     # equivalent method of the current Axes, and so contain no actual code
 
@@ -903,8 +958,7 @@ class Plot(figure.Figure):
         pass
     html_map.__doc__ = Axes.html_map.__doc__
 
-    # -----------------------------------------------
-    # utilies
+    # -- utilities ------------------------------
 
     @staticmethod
     def _get_axes_data(inputs, sep=False):
@@ -914,6 +968,7 @@ class Plot(figure.Figure):
         ----------
         inputs : `list` of array-like data sets
             a list of data arrays, or a list of lists of data sets
+
         sep : `bool`, optional
             plot each set of data on a separate `Axes`
 

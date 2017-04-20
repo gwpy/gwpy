@@ -145,6 +145,7 @@ class SegmentAxes(TimeSeriesAxes):
         ----------
         flags : `~gwpy.segments.DataQualityDict`
             data-quality dict to display
+
         label : `str`, optional
             labelling system to use, or fixed label for all `DataQualityFlags`.
             Special values include
@@ -154,10 +155,12 @@ class SegmentAxes(TimeSeriesAxes):
               `DataQualityFlag`
 
             If anything else, that fixed label will be used for all lines.
+
         known : `str`, `dict`, `None`, default: '/'
             display `known` segments with the given hatching, or give a
             dict of keyword arguments to pass to
             :meth:`~SegmentAxes.plot_segmentlist`, or `None` to hide.
+
         **kwargs
             any other keyword arguments acceptable for
             `~matplotlib.patches.Rectangle`
@@ -186,14 +189,18 @@ class SegmentAxes(TimeSeriesAxes):
         ----------
         flag : `~gwpy.segments.DataQualityFlag`
             data-quality flag to display
+
         y : `float`, optional
             y-axis value for new segments
+
         height : `float`, optional, default: 0.8
             height for each segment block
+
         known : `str`, `dict`, `None`, default: '/'
             display `known` segments with the given hatching, or give a
             dict of keyword arguments to pass to
             :meth:`~SegmentAxes.plot_segmentlist`, or `None` to hide.
+
         **kwargs
             any other keyword arguments acceptable for
             `~matplotlib.patches.Rectangle`
@@ -255,14 +262,18 @@ class SegmentAxes(TimeSeriesAxes):
         ----------
         segmentlist : `~gwpy.segments.SegmentList`
             list of segments to display
+
         y : `float`, optional
             y-axis value for new segments
+
         collection : `bool`, default: `True`
             add all patches as a
             `~matplotlib.collections.PatchCollection`, doesn't seem
             to work for hatched rectangles
+
         label : `str`, optional
             custom descriptive name to print as y-axis tick label
+
         **kwargs
             any other keyword arguments acceptable for
             `~matplotlib.patches.Rectangle`
@@ -319,8 +330,10 @@ class SegmentAxes(TimeSeriesAxes):
         ----------
         segmentlistdict : `~gwpy.segments.SegmentListDict`
             (name, `~gwpy.segments.SegmentList`) dict
+
         y : `float`, optional
             starting y-axis value for new segmentlists
+
         **kwargs
             any other keyword arguments acceptable for
             `~matplotlib.patches.Rectangle`
@@ -348,14 +361,18 @@ class SegmentAxes(TimeSeriesAxes):
         Parameters
         ----------
         segment : `~gwpy.segments.Segment`
-            [start, stop) GPS segment
+            ``[start, stop)`` GPS segment
+
         y : `float`
             y-axis position for segment
+
         height : `float`, optional, default: 1
             height (in y-axis units) for segment
+
         valign : `str`
             alignment of segment on y-axis value:
             `top`, `center`, or `bottom`
+
         **kwargs
             any other keyword arguments acceptable for
             `~matplotlib.patches.Rectangle`
@@ -472,9 +489,11 @@ class SegmentPlot(TimeSeriesPlot):
     *flags : `DataQualityFlag`
         any number of `~gwpy.segments.DataQualityFlag` to
         display on the plot
+
     insetlabels : `bool`, default: `False`
         display segment labels inside the axes. Prevents very long segment
         names from getting squeezed off the end of a standard figure
+
     **kwargs
         other keyword arguments as applicable for the `~gwpy.plotter.Plot`
     """
