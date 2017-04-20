@@ -40,7 +40,7 @@ bash .travis/build-with-autotools.sh \
 
 bash .travis/build-with-autotools.sh \
     python-${TRAVIS_PYTHON_VERSION}-nds2-client \
-    ${NDS2_CLIENT} --disable-swig-java --disable-mex-matlab || FAILURES="$FAILURES nds2-client"
+    ${NDS2_CLIENT} -DENABLE_SWIG_JAVA=false -DENABLE_SWIG_MATLAB=false || FAILURES="$FAILURES nds2-client"
 
 # -- exit ---------------------------------------------------------------------
 
