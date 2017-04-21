@@ -96,13 +96,13 @@ class Spectrogram(CliProduct):
                                                       overlap=ovlp_sec)
             self.log(3, ('Spectrogram calc, stride: %.2fs, fftlength: %.2f, '
                          'overlap: %.2f, #fft: %d' %
-                         (stride_sec, secpfft, ovlp_sec, snr_nfft)))
+                         (stride_sec, secpfft, ovlp_sec, nfft)))
         else:
             specgram = self.timeseries[0].spectrogram2(fftlength=secpfft,
                                                        overlap=ovlp_sec)
             self.log(3, ('HR-Spectrogram calc, stride: %.2fs, fftlength: %.2f,'
                          ' overlap: %.2f, #fft: %d' %
-                         (stride_sec, secpfft, ovlp_sec, snr_nfft)))
+                         (stride_sec, secpfft, ovlp_sec, nfft)))
         specgram = specgram ** (1/2.)   # ASD
 
         norm = False
