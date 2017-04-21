@@ -1,11 +1,9 @@
 Spectrogram
 ===========
 
-The spectrogram is a standard way to show changes in frequency distribution over time.  This plot
-product calculates Amplitude Spectral Density and by default, the frequency axis is on a log scale.
-the time axis linear, and the intensity log.  It may be
-customized by changing the FFT parameters (``--secpfft``, ``--overlap``), the log scale of the
- Frequency axis (``--nologf``) and the log scale of the Intensity axes (``--nologi``).
+The spectrogram is a standard way to show changes in frequency distribution over time.
+This plot product calculates Amplitude Spectral Density and by default, the frequency axis is on a log scale, the time axis linear, and the intensity log.
+It may be customized by changing the FFT parameters (``--secpfft``, ``--overlap``), the log scale of the Frequency axis (``--nologf``) and the log scale of the Intensity axes (``--nologi``).
 
 The following command line shows what happens at the end of a lock to a single channel:
 
@@ -13,7 +11,7 @@ The following command line shows what happens at the end of a lock to a single c
 
     gwpy-plot spectrogram --chan L1:LSC-SRCL_IN1_DQ --start 1107937307 --dur 240
 
-.. image:: /../cli_examples/cli-spg-01.png
+.. image:: cli-spg-01.png
     :align: center
     :alt: SRCL: end of lock spectrogram
 

@@ -37,12 +37,6 @@ body {
 		background-color: #333;
 }
 
-/* -- banner image -------------------------------------------------------- */
-
-img[src*="https://gwpy.github.io/images/gwpy_docs_1200.png"] {
-    max-width: 600px;
-}
-
 /* -- footer -------------------------------------------------------------- */
 
 html {

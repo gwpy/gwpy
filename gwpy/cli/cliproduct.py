@@ -33,7 +33,7 @@ Implemented methods (used by multiple products):
     arg_plot(parser) - add plot annotations (labels, legends..)
 """
 
-import abc      # abstract base class
+import abc
 import sys
 import re
 
@@ -63,7 +63,7 @@ class CliProduct(object):
         self.secpfft = 1
         self.overlap = 0.5
         # describe the actual plotted limits
-        self.result = None          # spectrum, or coherence what is plotted
+        self.result = 0          # spectrum, or coherence what is plotted
         self.fmin = 0
         self.fmax = 1
         self.ymin = 0
@@ -120,7 +120,7 @@ class CliProduct(object):
     def get_max_datasets(self):
         """Override if plot has a maximum number of datasets.
         eg: spectrogram only handles 1"""
-        return 77  # arbitrary max
+        return 16  # arbitrary max
 
     def is_image(self):
         """Override if plot is image type, eg: spectrogram"""
@@ -240,6 +240,12 @@ class CliProduct(object):
                             help='do not display legend')
         parser.add_argument('--nogrid', action='store_true',
                             help='do not display grid lines')
+        # allow custom styling with a style file
+        parser.add_argument(
+           '--style', metavar='FILE',
+           help='path to custom matplotlib style sheet, see '
+                'http://matplotlib.org/users/style_sheets.html#style-sheets '
+                'for details of how to write one')
 
         return
 
@@ -383,9 +389,9 @@ class CliProduct(object):
                 'supplied' % (self.get_min_datasets(), self.n_datasets))
 
         if self.n_datasets > self.get_max_datasets():
-            msg = 'A maximum of %d datasets allowed for this plot but %d '
-            'specified.' % (self.get_max_datasets(), self.n_datasets)
-            raise ArgumentError(msg)
+            raise ArgumentError(
+                'A maximum of %d datasets allowed for this plot but %d '
+                'specified' % (self.get_max_datasets(), self.n_datasets))
 
         if arg_list.duration:
             self.dur = int(arg_list.duration)
@@ -469,17 +475,6 @@ class CliProduct(object):
         """Configure global plot parameters"""
         from matplotlib import rcParams
 
-        # set rcParams
-        rcParams.update({
-            'figure.dpi': 100.,
-            'font.family': 'sans-serif',
-            'font.size': 16.,
-            'font.weight': 'book',
-            'lines.linewidth': 1.5,
-            'text.usetex': 'true',
-            'agg.path.chunksize': 10000,
-        })
-
         # determine image dimensions (geometry)
         self.width = 1600
         self.height = 900
@@ -537,7 +532,7 @@ class CliProduct(object):
 
                 if epoch is not None:
                     # note zero is also false
-                    if 0 < epoch < 1999999999:
+                    if epoch > 0 and epoch < 1e8:
                         epoch += self.xmin       # specified as seconds
                         self.ax.set_epoch(epoch)
                     elif epoch == 0:
@@ -658,22 +653,13 @@ class CliProduct(object):
 
         # image plots don't have legends
         if not self.is_image():
-            leg = self.plot.gca().legend(prop={'size': 8})
+            leg = self.ax.legend(prop={'size': 10})
             # if only one series is plotted hide legend
             if self.n_datasets == 1 and leg:
                 try:
                     leg.remove()
                 except NotImplementedError:
                     leg.set_visible(False)
-            elif self.n_datasets <= 5 and leg:
-                self.plot.gca().legend(loc='best')
-            elif self.n_datasets > 5 and leg:
-                self.plot.subplots_adjust(right=0.75)
-                #self.plot.gca().legend(bbox_to_anchor=(1.0, 1.0))
-                self.plot.gca().legend(bbox_to_anchor=(1.5, 1), loc='right', borderaxespad=0.)
-                self.plot.gca().legend(prop={'size': 6})
-
-            self.plot.refresh()
 
         # add titles
         title = ''

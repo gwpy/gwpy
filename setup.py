@@ -39,9 +39,15 @@ from distutils.dist import Distribution
 from distutils.cmd import Command
 from distutils.command.clean import (clean, log, remove_tree)
 
-# check python version
-if sys.version < '2.7':
-    raise ImportError("Python versions older than 2.7 are not supported.")
+# check LAL
+try:
+    import lal
+except ImportError as e:
+    e.args = ('%s. LAL is required by GWpy, please install before '
+              'continuing, see '
+              'https://gwpy.github.io/docs/stable/install/lal.html '
+              'for details' % str(e),)
+    raise
 
 # set basic metadata
 PACKAGENAME = 'gwpy'
@@ -66,15 +72,22 @@ install_requires = [
     'numpy>=1.10',
     'scipy>=0.16.0',
     'matplotlib>=1.4.1',
-    'astropy>=1.2',
+    'astropy>=1.2.1',
     'six>=1.5',
+    'lscsoft-glue>=1.55.2',
+    'python-dateutil',
 ]
 extras_require = {
-    'nds': ['nds2-client'],
+    'hdf5': ['h5py>=1.3'],
+    'root': ['root_numpy'],
+    'segments': ['dqsegdb'],
     'docs': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme',
              'sphinxcontrib-programoutput'],
-    'hdf5': ['h5py>=1.3'],
 }
+
+# define 'all' as the intersection of all extras
+extras_require['all'] = set(p for extra in extras_require.values()
+                            for p in extra)
 
 # test for OrderedDict
 try:
@@ -94,10 +107,10 @@ setup_requires.append('pytest-runner')
 tests_require = [
     'pytest',
 ]
+if sys.version < '3':
+    tests_require.append('mock')
 if sys.version < '2.7':
     tests_require.append('unittest2')
-if 'ordereddict>=1.1' in install_requires:
-    tests_require.append('ordereddict>=1.1')
 
 
 # -- custom clean command -----------------------------------------------------

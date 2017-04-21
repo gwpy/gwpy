@@ -357,7 +357,9 @@ class Series(Array):
         Returns
         -------
         data : `Series`
-        """
+
+        Notes
+        -----"""
         return io_registry.read(cls, source, *args, **kwargs)
 
     def write(self, target, *args, **kwargs):

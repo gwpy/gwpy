@@ -40,7 +40,8 @@ class GWpyLogFormatterMathtext(LogFormatterMathtext):
     """Format values for log axis.
 
     This `Formatter` extends the standard
-    :class:`~matplotlib.ticker.LogFormatterMathtext` to print numbers
+    :`~matplotlib.ticker.LogFormatterMathtext` to print numbers
+
     in the range [0.01, 1000) normally, and all others via the
     `LogFormatterMathtext` output.
     """
@@ -115,9 +116,6 @@ class GWpyLogScale(LogScale):
     for major and minor ticks.
     """
     def set_default_locators_and_formatters(self, axis):
-        if isinstance(axis, XAxis):
-            axis.set_tick_params(which='both', pad=7)
-            axis.labelpad = 8
         axis.set_major_locator(LogLocator(self.base))
         axis.set_major_formatter(GWpyLogFormatterMathtext(self.base))
         axis.set_minor_locator(LogLocator(self.base, self.subs))

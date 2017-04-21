@@ -1,4 +1,4 @@
-.. image:: https://gwpy.github.io/images/gwpy_docs_1200.png
+.. image:: gwpy-docs-logo.png
 
 .. title:: Docs
 
@@ -18,7 +18,7 @@ First steps
    :maxdepth: 1
 
    What is GWpy? <overview>
-   How do I install GWpy? <install>
+   How do I install GWpy? <install/index>
 
 Working with data
 ~~~~~~~~~~~~~~~~~

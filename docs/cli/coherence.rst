@@ -14,7 +14,7 @@ The following parameters will produce the plot below:
         --start 1107820816 --duration 900 \
         --ref L1:LSC-SRCL_IN1_DQ --secpfft 8.0 --overlap 0.50
 
-.. image:: /../cli_examples/cli-coh-01.png
+.. image:: cli-coh-01.png
     :align: center
     :alt: SRCL, CARM coherence
 

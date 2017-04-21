@@ -25,11 +25,9 @@ time-series data.
 
 In LIGO, the coherence is a crucial indicator of how noise sources couple into
 the main differential arm-length readout.
-
-In this example we calculate the coherence between two length-sensing
-degrees of freedom, the Signal-Recycling Cavity length (SRCL), and the
-Common-Arm motion (CARM).
-
+Here we use use the :meth:`TimeSeries.coherence` method to highlight coupling
+of motion of a beam periscope attached to the main laser table into the
+strain output of the LIGO-Hanford interferometer.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -38,21 +36,31 @@ __currentmodule__ = 'gwpy.timeseries'
 # First, we import the `TimeSeriesDict`
 from gwpy.timeseries import TimeSeriesDict
 
-# and then :meth:`~TimeSeriesDict.get` both data sets:
-data = TimeSeriesDict.get(['L1:LSC-SRCL_IN1_DQ', 'L1:LSC-CARM_IN1_DQ'],
-                           'Feb 13 2015', 'Feb 13 2015 00:15', allow_tape=True)
+# and then :meth:`~TimeSeriesDict.get` the data for the strain output
+# (``H1:GDS-CALIB_STRAIN``) and the PSL periscope accelerometer
+# (``H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ``):
+data = TimeSeriesDict.get(['H1:GDS-CALIB_STRAIN',
+                           'H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ'],
+                           1126260017, 1126260617)
+hoft = data['H1:GDS-CALIB_STRAIN']
+acc = data['H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ']
 
 # We can then calculate the :meth:`~TimeSeries.coherence` of one
-# `TimeSeries` with respect to the other, using an 8-second Fourier
-# transform length, with a 4-second (50%) overlap:
-coh = data['L1:LSC-SRCL_IN1_DQ'].coherence(data['L1:LSC-CARM_IN1_DQ'], 8, 4)
+# `TimeSeries` with respect to the other, using an 2-second Fourier
+# transform length, with a 1-second (50%) overlap:
+coh = hoft.coherence(acc, fftlength=2, overlap=1)
 
 # Finally, we can :meth:`~gwpy.frequencyseries.FrequencySeries.plot` the resulting data:
 plot = coh.plot(figsize=[12, 6], label=None)
 ax = plot.gca()
-ax.set_yscale('linear')
 ax.set_xlabel('Frequency [Hz]')
 ax.set_ylabel('Coherence')
-ax.set_title('Coherence between SRCL and CARM for L1')
-ax.grid(True, 'both', 'both')
+ax.set_yscale('linear')
+ax.set_ylim(0, 1)
+ax.set_title('Coherence between PSL periscope motion and LIGO-Hanford strain data')
 plot.show()
+
+# We can clearly see the correlation between the periscope motion and the
+# strain data between 100 Hz and 1000 Hz. Once this was discovered the
+# motion was damped by modifying the structure of the periscope itself,
+# reducing the coupling into the gravitational-wave strain output.

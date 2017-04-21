@@ -25,9 +25,9 @@ import warnings
 import numpy
 
 from matplotlib.projections import register_projection
-from matplotlib import colors
+from matplotlib import (colors, rcParams)
 
-from . import tex
+from . import (tex, text)
 from .core import Plot
 from .axes import Axes
 from .decorators import auto_refresh
@@ -37,7 +37,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 class FrequencySeriesAxes(Axes):
-    """Custom `Axes` for a :class:`~gwpy.plotter.FrequencySeriesPlot`.
+    """Custom `Axes` for a `~gwpy.plotter.FrequencySeriesPlot`.
     """
     name = 'frequencyseries'
 
@@ -51,7 +51,7 @@ class FrequencySeriesAxes(Axes):
         Parameters
         ----------
         args
-            a single :class:`~gwpy.frequencyseries.FrequencySeries`
+            a single `~gwpy.frequencyseries.FrequencySeries`
             (or sub-class) or standard (x, y) data arrays
         kwargs
             keyword arguments applicable to :meth:`~matplotib.axes.Axes.plot`
@@ -59,12 +59,12 @@ class FrequencySeriesAxes(Axes):
         Returns
         -------
         Line2D
-            the :class:`~matplotlib.lines.Line2D` for this line layer
+            the `~matplotlib.lines.Line2D` for this line layer
 
         See Also
         --------
-        :meth:`matplotlib.axes.Axes.plot`
-            for a full description of acceptable ``*args` and ``**kwargs``
+        matplotlib.axes.Axes.plot
+            for a full description of acceptable ``*args`` and ``**kwargs``
         """
         if len(args) == 1 and isinstance(args[0], FrequencySeries):
             return self.plot_frequencyseries(*args, **kwargs)
@@ -75,30 +75,27 @@ class FrequencySeriesAxes(Axes):
 
     @auto_refresh
     def plot_frequencyseries(self, spectrum, **kwargs):
-        """Plot a :class:`~gwpy.frequencyseries.FrequencySeries` onto these axes
+        """Plot a `~gwpy.frequencyseries.FrequencySeries` onto these axes
 
         Parameters
         ----------
-        spectrum : :class:`~gwpy.frequencyseries.FrequencySeries`
+        spectrum : `~gwpy.frequencyseries.FrequencySeries`
             data to plot
+
         **kwargs
-            any other keyword arguments acceptable for
-            :meth:`~matplotlib.Axes.plot`
+            any other keyword arguments acceptable for `~matplotlib.Axes.plot`
 
         Returns
         -------
-        Line2D
-            the :class:`~matplotlib.lines.Line2D` for this line layer
+        line : `~matplotlib.lines.Line2D`
+            the newly added line
 
         See Also
         --------
-        :meth:`matplotlib.axes.Axes.plot`
-            for a full description of acceptable ``*args` and ``**kwargs``
+        matplotlib.axes.Axes.plot
+            for a full description of acceptable ``*args`` and ``**kwargs``
         """
-        if tex.USE_TEX:
-            kwargs.setdefault('label', tex.label_to_latex(spectrum.name))
-        else:
-            kwargs.setdefault('label', spectrum.name)
+        kwargs.setdefault('label', text.to_string(spectrum.name))
         if not kwargs.get('label', True):
             kwargs.pop('label')
         line = self.plot(spectrum.frequencies.value, spectrum.value, **kwargs)
@@ -108,19 +105,9 @@ class FrequencySeriesAxes(Axes):
             except ValueError:
                 pass
         if not self.get_xlabel():
-            if tex.USE_TEX:
-                ustr = tex.unit_to_latex(spectrum.xunit)
-            else:
-                ustr = spectrum.xunit.to_string()
-            if ustr:
-                self.set_xlabel('Frequency [%s]' % ustr)
+            self.set_xlabel(text.unit_as_label(spectrum.xunit))
         if not self.get_ylabel():
-            if tex.USE_TEX:
-                ustr = tex.unit_to_latex(spectrum.unit)
-            else:
-                ustr = spectrum.unit.to_string()
-            if ustr:
-                self.set_ylabel('[%s]' % ustr)
+            self.set_ylabel(text.unit_as_label(spectrum.unit))
         return line
 
     @auto_refresh
@@ -134,24 +121,27 @@ class FrequencySeriesAxes(Axes):
     @auto_refresh
     def plot_frequencyseries_mmm(self, mean_, min_=None, max_=None, alpha=0.1,
                                  **kwargs):
-        """Plot a `FrequencySeries` onto these axes, with (min, max) shaded
-        regions
+        """Plot a `FrequencySeries` onto these axes, with shaded regions
 
-        The `mean_` `FrequencySeries` is plotted normally, while the `min_`
-        and `max_ spectra are plotted lightly below and above,
-        with a fill between them and the mean_.
+        The ``mean_`` `FrequencySeries` is plotted normally, while the
+        ``min_`` and ``max_`` series are plotted lightly below and above,
+        with a fill between them and ``mean_``.
 
         Parameters
         ----------
-        mean_ : :class:`~gwpy.frequencyseries.FrequencySeries
+        mean_ : `~gwpy.frequencyseries.FrequencySeries`
             data to plot normally
-        min_ : :class:`~gwpy.frequencyseries.FrequencySeries
-            first data set to shade to mean_
-        max_ : :class:`~gwpy.frequencyseries.FrequencySeries
-            second data set to shade to mean_
+
+        min_ : `~gwpy.frequencyseries.FrequencySeries`
+            first data set to shade to ``mean_``
+
+        max_ : `~gwpy.frequencyseries.FrequencySeries`
+            second data set to shade to ``mean_``
+
         alpha : `float`, optional
             weight of filled region, ``0.0`` for transparent through ``1.0``
             opaque
+
         **kwargs
             any other keyword arguments acceptable for
             :meth:`~matplotlib.Axes.plot`
@@ -159,14 +149,18 @@ class FrequencySeriesAxes(Axes):
         Returns
         -------
         artists : `tuple`
-            a 5-tuple containing (Line2d for mean_, `Line2D` for min_,
-            `PolyCollection` for min_ shading, `Line2D` for max_, and
-            `PolyCollection` for max_ shading)
+            a 5-tuple containing:
+
+            - `~matplotlib.lines.Line2d` for ``mean_``,
+            - `~matplotlib.lines.Line2D` for ``min_``,
+            - `~matplotlib.collections.PolyCollection` for ``min_`` shading,
+            - `~matplotlib.lines.Line2D` for ``max_``, and
+            - `~matplitlib.collections.PolyCollection` for ``max_`` shading
 
         See Also
         --------
-        :meth:`matplotlib.axes.Axes.plot`
-            for a full description of acceptable ``*args` and ``**kwargs``
+        matplotlib.axes.Axes.plot
+            for a full description of acceptable ``*args`` and ``**kwargs``
         """
         # plot mean
         line1 = self.plot_frequencyseries(mean_, **kwargs)[0]
@@ -208,7 +202,7 @@ class FrequencySeriesAxes(Axes):
 
     @auto_refresh
     def plot_variance(self, specvar, norm='log', **kwargs):
-        """Plot a :class:`~gwpy.frequencyseries.SpectralVariance` onto
+        """Plot a `~gwpy.frequencyseries.SpectralVariance` onto
         these axes
 
         Parameters
@@ -221,13 +215,13 @@ class FrequencySeriesAxes(Axes):
 
         Returns
         -------
-        MeshGrid
-            the :class:`~matplotlib.collections.MeshGridD` for this layer
+        mesh : `~matplotlib.collections.MeshGrid`
+            the collection that has just been added
 
         See Also
         --------
-        :meth:`matplotlib.axes.Axes.pcolormesh`
-            for a full description of acceptable ``*args` and ``**kwargs``
+        matplotlib.axes.Axes.pcolormesh
+            for a full description of acceptable ``*args`` and ``**kwargs``
         """
         if norm == 'log':
             vmin = kwargs.pop('vmin', None)

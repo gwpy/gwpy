@@ -37,7 +37,7 @@ from matplotlib.collections import (PathCollection, PatchCollection,
 
 from astropy import units
 
-from compat import unittest
+from compat import (unittest, HAS_H5PY)
 
 from gwpy.segments import (DataQualityFlag,
                            Segment, SegmentList, SegmentListDict)
@@ -51,11 +51,12 @@ from gwpy.plotter import (figure, rcParams, Plot, Axes,
                           HistogramPlot, HistogramAxes,
                           SegmentPlot, SegmentAxes,
                           SpectrogramPlot, BodePlot)
-from gwpy.plotter import utils
+from gwpy.plotter.rc import (SUBPLOT_WIDTH, SUBPLOT_HEIGHT)
 from gwpy.plotter.gps import (GPSTransform, InvertedGPSTransform)
 from gwpy.plotter.html import map_data
+from gwpy.plotter.text import (to_string, unit_as_label)
 from gwpy.plotter.tex import (float_to_latex, label_to_latex,
-                              unit_to_latex, USE_TEX)
+                              unit_to_latex)
 from gwpy.plotter.table import get_column_string
 
 from test_timeseries import TEST_HDF_FILE
@@ -137,7 +138,7 @@ class PlotTestCase(Mixin, unittest.TestCase):
     def test_subplotpars(self):
         # check that dynamic subplotpars gets applied
         fig, ax = self.new(figsize=(12, 4))
-        target = utils.SUBPLOT_WIDTH[12] + utils.SUBPLOT_HEIGHT[4]
+        target = SUBPLOT_WIDTH[12] + SUBPLOT_HEIGHT[4]
         sbp = fig.subplotpars
         self.assertTupleEqual(target,
                               (sbp.left, sbp.right, sbp.bottom, sbp.top))
@@ -287,6 +288,7 @@ class TimeSeriesMixin(object):
     FIGURE_CLASS = TimeSeriesPlot
     AXES_CLASS = TimeSeriesAxes
 
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def setUp(self):
         self.ts = TimeSeries.read(TEST_HDF_FILE, 'H1:LDAS-STRAIN')
         self.sg = self.ts.spectrogram2(0.5, 0.49)
@@ -414,6 +416,7 @@ class FrequencySeriesMixin(object):
     FIGURE_CLASS = FrequencySeriesPlot
     AXES_CLASS = FrequencySeriesAxes
 
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def setUp(self):
         self.ts = TimeSeries.read(TEST_HDF_FILE, 'H1:LDAS-STRAIN')
         self.asd = self.ts.asd(1)
@@ -644,6 +647,7 @@ class HistogramMixin(object):
     FIGURE_CLASS = HistogramPlot
     AXES_CLASS = HistogramAxes
 
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def setUp(self):
         self.ts = TimeSeries.read(TEST_HDF_FILE, 'H1:LDAS-STRAIN')
 
@@ -771,6 +775,28 @@ class InverseGpsTransformTestCase(GpsTransformTestCase):
     A = 290.0
     B = 11400.0
     C = 11500.0
+
+
+# -- gwpy.plotter.text module tests -------------------------------------------
+
+class TextTestCase(Mixin, unittest.TestCase):
+    def test_to_string(self):
+        # test without latex
+        with rc_context(rc={'text.usetex': False}):
+            self.assertEqual(to_string('test'), 'test')
+            self.assertEqual(to_string(4.0), '4.0')
+            self.assertEqual(to_string(8), '8')
+        with rc_context(rc={'text.usetex': True}):
+            self.assertEqual(to_string('test'), 'test')
+            self.assertEqual(to_string(2000), r'2\!\!\times\!\!10^{3}')
+            self.assertEqual(to_string(8), '8')
+
+    def test_unit_as_label(self):
+        # just test basics, latex formatting is tested elsewhere
+        with rc_context(rc={'text.usetex': False}):
+            self.assertEqual(unit_as_label(units.Hz), 'Frequency [Hz]')
+            self.assertEqual(unit_as_label(units.Volt),
+                             'Electrical Potential [V]')
 
 
 # -- gwpy.plotter.tex module tests --------------------------------------------

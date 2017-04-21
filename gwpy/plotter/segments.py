@@ -39,8 +39,7 @@ import glue.segments
 from ..segments import (Segment, SegmentList, DataQualityFlag, DataQualityDict)
 from .timeseries import (TimeSeriesPlot, TimeSeriesAxes)
 from .decorators import auto_refresh
-from .utils import rUNDERSCORE
-from . import rcParams
+from .text import to_string
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -146,6 +145,7 @@ class SegmentAxes(TimeSeriesAxes):
         ----------
         flags : `~gwpy.segments.DataQualityDict`
             data-quality dict to display
+
         label : `str`, optional
             labelling system to use, or fixed label for all `DataQualityFlags`.
             Special values include
@@ -155,10 +155,12 @@ class SegmentAxes(TimeSeriesAxes):
               `DataQualityFlag`
 
             If anything else, that fixed label will be used for all lines.
+
         known : `str`, `dict`, `None`, default: '/'
             display `known` segments with the given hatching, or give a
             dict of keyword arguments to pass to
             :meth:`~SegmentAxes.plot_segmentlist`, or `None` to hide.
+
         **kwargs
             any other keyword arguments acceptable for
             `~matplotlib.patches.Rectangle`
@@ -174,8 +176,7 @@ class SegmentAxes(TimeSeriesAxes):
                 lab = flag.name
             elif label.lower() != 'key':
                 lab = label
-            out.append(self.plot(flag, label=rUNDERSCORE.sub(r'\_', lab),
-                       **kwargs))
+            out.append(self.plot(flag, label=to_string(lab), **kwargs))
         return out
 
     @auto_refresh
@@ -188,14 +189,18 @@ class SegmentAxes(TimeSeriesAxes):
         ----------
         flag : `~gwpy.segments.DataQualityFlag`
             data-quality flag to display
+
         y : `float`, optional
             y-axis value for new segments
+
         height : `float`, optional, default: 0.8
             height for each segment block
+
         known : `str`, `dict`, `None`, default: '/'
             display `known` segments with the given hatching, or give a
             dict of keyword arguments to pass to
             :meth:`~SegmentAxes.plot_segmentlist`, or `None` to hide.
+
         **kwargs
             any other keyword arguments acceptable for
             `~matplotlib.patches.Rectangle`
@@ -257,14 +262,18 @@ class SegmentAxes(TimeSeriesAxes):
         ----------
         segmentlist : `~gwpy.segments.SegmentList`
             list of segments to display
+
         y : `float`, optional
             y-axis value for new segments
+
         collection : `bool`, default: `True`
             add all patches as a
             `~matplotlib.collections.PatchCollection`, doesn't seem
             to work for hatched rectangles
+
         label : `str`, optional
             custom descriptive name to print as y-axis tick label
+
         **kwargs
             any other keyword arguments acceptable for
             `~matplotlib.patches.Rectangle`
@@ -301,9 +310,7 @@ class SegmentAxes(TimeSeriesAxes):
             #   this point
             if label is None:
                 label = coll.get_label()
-            if rcParams['text.usetex']:
-                label = rUNDERSCORE.sub(r'\_', str(label))
-            coll.set_label(label)
+            coll.set_label(to_string(label))
         else:
             out = []
             for p in patches:
@@ -323,8 +330,10 @@ class SegmentAxes(TimeSeriesAxes):
         ----------
         segmentlistdict : `~gwpy.segments.SegmentListDict`
             (name, `~gwpy.segments.SegmentList`) dict
+
         y : `float`, optional
             starting y-axis value for new segmentlists
+
         **kwargs
             any other keyword arguments acceptable for
             `~matplotlib.patches.Rectangle`
@@ -352,14 +361,18 @@ class SegmentAxes(TimeSeriesAxes):
         Parameters
         ----------
         segment : `~gwpy.segments.Segment`
-            [start, stop) GPS segment
+            ``[start, stop)`` GPS segment
+
         y : `float`
             y-axis position for segment
+
         height : `float`, optional, default: 1
             height (in y-axis units) for segment
+
         valign : `str`
             alignment of segment on y-axis value:
             `top`, `center`, or `bottom`
+
         **kwargs
             any other keyword arguments acceptable for
             `~matplotlib.patches.Rectangle`
@@ -476,9 +489,11 @@ class SegmentPlot(TimeSeriesPlot):
     *flags : `DataQualityFlag`
         any number of `~gwpy.segments.DataQualityFlag` to
         display on the plot
+
     insetlabels : `bool`, default: `False`
         display segment labels inside the axes. Prevents very long segment
         names from getting squeezed off the end of a standard figure
+
     **kwargs
         other keyword arguments as applicable for the `~gwpy.plotter.Plot`
     """

@@ -49,7 +49,7 @@ def to_db(a):
 
 
 class BodePlot(Plot):
-    """A `Plot` class for visualising transfer functions.
+    """A `Plot` class for visualising transfer functions
 
     Parameters
     ----------
@@ -58,18 +58,20 @@ class BodePlot(Plot):
 
         - linear time-invariant filters, either
           `~scipy.signal.lti` or `tuple` of the following length and form:
-             - 2: (numerator, denominator)
-             - 3: (zeros, poles, gain)
-             - 4: (A, B, C, D)
+          - 2: (numerator, denominator)
+          - 3: (zeros, poles, gain)
+          - 4: (A, B, C, D)
 
         - complex-valued `spectra <gwpy.frequencyseries.FrequencySeries>`
           representing a transfer function
 
     frequencies : `numpy.ndarray`, optional
         list of frequencies (in Hertz) at which to plot
+
     db : `bool`, optional, default: `True`
         if `True`, display magnitude in decibels, otherwise display
         amplitude.
+
     **kwargs
         other keyword arguments as applicable for `Plot` or
         :meth:`~FrequencySeriesAxes.plot`
@@ -219,14 +221,17 @@ class BodePlot(Plot):
         ----------
         spectrum : `~gwpy.frequencyseries.FrequencySeries`
             the (complex-valued) `FrequencySeries` to display
+
         db : `bool`, optional, default: `True`
             if `True`, display magnitude in decibels, otherwise display
             amplitude.
+
         power : `bool`, optional, default: `False`
-            given `True` to incidate that ``spectrum`` holds power values,
+            give `True` to incidate that ``spectrum`` holds power values,
             so ``dB = 10 * log(abs(spectrum))``, otherwise
             ``db = 20 * log(abs(spectrum))``. This argument is ignored if
             ``db=False``.
+
         **kwargs
             any other keyword arguments accepted by
             :meth:`~matplotlib.axes.Axes.plot`

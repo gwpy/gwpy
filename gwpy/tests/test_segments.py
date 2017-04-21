@@ -38,7 +38,7 @@ from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 from gwpy.plotter import (SegmentPlot, SegmentAxes)
 
-from compat import (unittest, mock)
+from compat import (unittest, mock, HAS_H5PY, HAS_DQSEGDB)
 import common
 import mockutils
 
@@ -167,6 +167,7 @@ class SegmentClassTestsMixin(object):
             return self.assertDataQualityDictEqual(a, b)
         return self.assertEqual(a, b)
 
+    @unittest.skipUnless(HAS_DQSEGDB, 'No module named dqsegdb')
     def _mock_query(self, cm, result, *args, **kwargs):
         """Query for segments using a mock of the dqsegdb API
         """
@@ -180,6 +181,7 @@ class SegmentClassTestsMixin(object):
                             mockutils.mock_query_times(result)):
                 return cm(*args, **kwargs)
 
+    @unittest.skipUnless(HAS_DQSEGDB, 'No module named dqsegdb')
     def _mock_query_versionless(self, cm, result, *args, **kwargs):
         """Query for segments using a mock of the dqsegdb API
         """
@@ -217,6 +219,7 @@ class SegmentListTests(unittest.TestCase, SegmentClassTestsMixin):
     def test_read_write_segwizard(self):
         return self._test_read_write('segwizard', extension='txt', auto=True)
 
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def test_read_write_hdf5(self):
         self._test_read_write('hdf5', auto=False,
                               writekwargs={'path': 'test-segmentlist'},
@@ -397,6 +400,7 @@ class DataQualityFlagTests(unittest.TestCase, SegmentClassTestsMixin):
         self._test_read_write('ligolw', extension='xml', auto=True,
                               writekwargs={'overwrite': True})
 
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def test_read_write_hdf5(self):
         kwargs = {'writekwargs': {'path': 'test-dqflag'},
                   'readkwargs': {'path': 'test-dqflag'}}
@@ -430,7 +434,7 @@ class DataQualityFlagTests(unittest.TestCase, SegmentClassTestsMixin):
         try:
             result = self.TEST_CLASS.query_segdb(flag, QUERY_START, QUERY_END,
                                                  url=QUERY_URL_SEGDB)
-        except (SystemExit, LDBDClientException) as e:
+        except (SystemExit, LDBDClientException, ImportError) as e:
             self.skipTest(str(e))
         self.assertEqual(result.known, QUERY_RESULT[flag].known)
         self.assertEqual(result.active, QUERY_RESULT[flag].active)
@@ -507,6 +511,7 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
         return self._test_read_write('ligolw', extension='xml', auto=True,
                                      writekwargs={'overwrite': True})
 
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def test_read_write_hdf5(self):
         self._test_read_write('hdf5', auto=False)
         self._test_read_write('hdf5', auto=True,
@@ -568,7 +573,7 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
         try:
             result = self.TEST_CLASS.query_segdb(
                 QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL_SEGDB)
-        except (SystemExit, LDBDClientException) as e:
+        except (SystemExit, LDBDClientException, ImportError) as e:
             self.skipTest(str(e))
         self.assertListEqual(list(result.keys()), QUERY_FLAGS)
         for flag in result:

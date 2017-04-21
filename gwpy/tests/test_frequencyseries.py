@@ -105,7 +105,12 @@ class FrequencySeriesTestCase(SeriesTestCase):
         self.assertArraysEqual(array, array2, 'units', 'df', 'f0')
 
     def test_read_write_hdf5(self):
-        self._test_read_write('hdf5', auto=False)
+        try:
+            self._test_read_write('hdf5', auto=False)
+        except ImportError as e:
+            if str(e) == 'No module named h5py':
+                self.skipTest(str(e))
+            raise
         self._test_read_write('hdf5', auto=True,
                               writekwargs={'overwrite': True})
 

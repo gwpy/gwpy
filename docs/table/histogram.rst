@@ -10,6 +10,7 @@ The `EventTable` object comes with a :meth:`~EventTable.hist` method, allowing
 trivial generation of histograms using any column as the counter:
 
 .. automethod:: EventTable.hist
+   :noindex:
 
 Using the above method we can generate a histogram as follows
 

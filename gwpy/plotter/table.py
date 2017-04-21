@@ -236,12 +236,16 @@ class EventTableAxes(TimeSeriesAxes):
         ----------
         table : :class:`~glue.ligolw.table.Table`
             LIGO_LW-format XML event `Table` to display
+
         x : `str`
             name of column to display on the X-axis
+
         y : `str`
             name of column to display on the Y-axis
+
         c : `str`, optional
             name of column by which to colour the data
+
         **kwargs
             any other arguments applicable to
             :meth:`~matplotlib.axes.Axes.scatter`
@@ -469,7 +473,7 @@ register_projection(EventTableAxes)
 
 
 class _EventTableMetaPlot(type):
-    """Meta-class for generating a new :class:`EventTablePlot`.
+    """Meta-class for generating a new `EventTablePlot`.
 
     This object allows the choice of parent class for the
     `EventTablePlot` to be made at runtime, dependent on the given
@@ -515,19 +519,23 @@ class EventTablePlot(TimeSeriesPlot, FrequencySeriesPlot, Plot):
     ----------
     table : :class:`~glue.ligolw.table.Table`
         LIGO_LW-format XML event `Table` to display
+
     x : `str`
         name of column to display on the X-axis
+
     y : `str`
         name of column to display on the Y-axis
+
     c : `str`, optional
         name of column by which to colour the data
+
     **kwargs
         any other arguments applicable to the `Plot` constructor, and
         the `Table` plotter.
 
     Returns
     -------
-    plot : :class:`EventTablePlot`
+    plot : `EventTablePlot`
         new plot for displaying tabular data.
 
     Notes
@@ -542,11 +550,11 @@ class EventTablePlot(TimeSeriesPlot, FrequencySeriesPlot, Plot):
     class for the output.
 
     If the input x-column (the first string argument) ends with 'time'
-    the output is a child of the :class:`~gwpy.plotter.TimeSeriesPlot`,
+    the output is a child of the `~gwpy.plotter.TimeSeriesPlot`,
     allowing easy formatting of GPS times, while if the x-column ends with
     'frequency', the output comes from the
-    :class:`~gwpy.plotter.FrequencySeriesPlot`, otherwise the parent is
-    the core :class:`~gwpy.plotter.Plot`.
+    `~gwpy.plotter.FrequencySeriesPlot`, otherwise the parent is
+    the core `~gwpy.plotter.Plot`.
     """
     _DefaultAxesClass = EventTableAxes
     __metaclass__ = _EventTableMetaPlot
@@ -622,27 +630,34 @@ class EventTablePlot(TimeSeriesPlot, FrequencySeriesPlot, Plot):
         ----------
         table : :class:`~glue.ligolw.table.Table`
             LIGO_LW-format XML event `Table` to display
+
         x : `str`
             name of column to display on the X-axis
+
         y : `str`
             name of column to display on the Y-axis
+
         c : `str`, optional
             name of column by which to colour the data
+
         projection : `str`, optiona, default: ``'triggers'``
             name of the Axes projection on which to plot data
-        ax : :class:`~gwpy.plotter.Axes`, optional
+
+        ax : `~gwpy.plotter.Axes`, optional
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
+
         newax : `bool`, optional, default: `False`
             force data to plot on a fresh set of `Axes`
+
         **kwargs.
             other keyword arguments passed to the
             :meth:`EventTableAxes.plot_table` method
 
         Returns
         -------
-        scatter : :class:`~matplotlib.collections.Collection`
+        scatter : `~matplotlib.collections.Collection`
             the displayed collection for this `Table`
 
         See Also
@@ -670,34 +685,44 @@ class EventTablePlot(TimeSeriesPlot, FrequencySeriesPlot, Plot):
         ----------
         table : :class:`~glue.ligolw.table.Table`
             LIGO_LW-format XML event `Table` to display
+
         x : `str`
             name of column for tile x-anchor
+
         y : `str`
             name of column for tile y-anchor
+
         width : `str`
             name of column for tile width
+
         height : `str`
             name of column for tile height
+
         color : `str`, optional
             name of column by which to colour the data
+
         anchor : `str`, optional, default: ``'center'``
             position of (x, y) vertex on tile, default 'center'.
             Other options: 'll', 'lr', 'ul', 'ur'.
+
         projection : `str`, optiona, default: ``'triggers'``
             name of the Axes projection on which to plot data
-        ax : :class:`~gwpy.plotter.Axes`, optional
+
+        ax : `~gwpy.plotter.Axes`, optional
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
+
         newax : `bool`, optional, default: `False`
             force data to plot on a fresh set of `Axes`
+
         **kwargs.
             other keyword arguments passed to the
             :meth:`EventTableAxes.plot_table` method
 
         Returns
         -------
-        scatter : :class:`~matplotlib.collections.Collection`
+        scatter : `~matplotlib.collections.Collection`
             the displayed collection for this `Table`
 
         See Also

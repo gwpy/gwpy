@@ -19,14 +19,14 @@ The following parameters will produce the sample image below:
         --start 1107820816 --duration 900 \
         --ref L1:LSC-SRCL_IN1_DQ --secpfft 0.500 --overlap 0.90
 
-.. image:: /../cli_examples/cli-cohg-01.png
+.. image:: cli-cohg-01.png
     :align: center
     :alt: SRCL, CARM coherencegram
 
 Compare that image with the line plot of coherence over the entire interval at much higher frequency
 resolution:
 
-.. image:: /../cli_examples/cli-coh-01.png
+.. image:: cli-coh-01.png
     :align: center
     :alt: SRCL, CARM coherence
 

@@ -23,7 +23,7 @@ import os
 import os.path
 import tempfile
 
-from compat import unittest
+from compat import (unittest, HAS_H5PY)
 
 import scipy
 
@@ -58,6 +58,7 @@ class AstroTests(unittest.TestCase):
                              'HLV-GW100916-968654552-1.hdf')
     tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_')
 
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def setUp(self):
         # read data
         self.data = TimeSeries.read(self.framefile, 'L1:LDAS-STRAIN')

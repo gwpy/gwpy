@@ -19,28 +19,46 @@
 
 """Plotting a `Spectrogram`
 
-I would like to study the gravitational wave strain spectrogram around the time of an interesting simulated signal during the last science run (S6).
+One of the most useful methods of visualising gravitational-wave data is to
+use a spectrogram, highlighting the frequency-domain content of some data
+over a number of time steps.
+
+For this example we can use the public data around the GW150914 detection.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.spectrogram'
+__currentmodule__ = 'gwpy.timeseries'
 
-# First, we import the :class:`~gwpy.timeseries.TimeSeries` and :meth:`~gwpy.timeseries.TimeSeries.get` the data:
+# First, we import the `TimeSeries` and call
+# :meth:`TimeSeries.fetch_open_data` the download the strain
+# data for the LIGO-Hanford interferometer
 from gwpy.timeseries import TimeSeries
-gwdata = TimeSeries.get(
-    'H1:LDAS-STRAIN', 'September 16 2010 06:40', 'September 16 2010 06:50',
-    verbose=True)
+data = TimeSeries.fetch_open_data(
+    'H1', 'Sep 14 2015 09:45', 'Sep 14 2015 09:55')
 
-# Next, we can calculate a `Spectrogram` using the 
-# :meth:`~gwpy.timeseries.TimeSeries.spectrogram` method of the #
-# `~gwpy.timeseries.TimeSeries` and a 5-second stride with a 2-second FFT and 
-# 1-second overlap (50%):
-specgram = gwdata.spectrogram(5, fftlength=2, overlap=1) ** (1/2.)
+# Next, we can calculate a `~gwpy.spectrogram.Spectrogram` using the
+# :meth:`spectrogram` method of the `TimeSeries` over a 2-second stride
+# with a 1-second FFT and # .5-second overlap (50%):
+specgram = data.spectrogram(2, fftlength=1, overlap=.5) ** (1/2.)
 
-# and can make a plot using the :meth:`~Spectrogram.plot` method
-plot = specgram.plot(norm='log', vmin=1e-23, vmax=1e-19)
-plot.set_yscale('log')
-plot.set_ylim(40, 4000)
+# .. note::
+#    :meth:`TimeSeries.spectrogram` returns a Power Spectral Density (PSD)
+#    `~gwpy.spectrogram.Spectrogram` by default, so we use the ``** (1/2.)``
+#    to convert this into a (more familiar) Amplitude Spectral Density.
+
+# Finally, we can make a plot using the
+# :meth:`~gwpy.spectrogram.Spectrogram.plot` method
+plot = specgram.plot(norm='log', vmin=5e-24, vmax=1e-19)
+ax = plot.gca()
+ax.set_yscale('log')
+ax.set_ylim(10, 2000)
 plot.add_colorbar(
     label=r'Gravitational-wave amplitude [strain/$\sqrt{\mathrm{Hz}}$]')
 plot.show()
+
+# This shows the relative stability of the interferometer sensitivity over
+# the ten-minute span. Despite there being a gravitational-wave signal in the
+# data, the resolution (and dynamic range) of the spectrogram make it
+# impossible to see. The :ref:`next example <gwpy-example-spectrogram-ratio>`
+# shows you how to normalise a `~gwpy.spectrogram.Spectrogram` to better
+# see features in the most sensitive frequency band.

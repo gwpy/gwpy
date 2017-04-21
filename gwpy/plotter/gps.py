@@ -211,9 +211,9 @@ class GPSAutoLocator(GPSLocatorMixin, ticker.MaxNLocator):
         """
         # steps for a week scale are dynamically set in tick_values()
         if not steps and unit == units.hour:
-            steps = [1, 2, 4, 5, 6, 8, 10, 12, 24]
+            steps = [1, 2, 4, 5, 6, 8, 10]
         elif not steps and unit == units.year:
-            steps = [1, 2, 4, 6, 12]
+            steps = [1, 2, 4, 6]
         elif not steps:
             steps = [1, 2, 5, 10]
         super(GPSAutoLocator, self).__init__(epoch=epoch, unit=unit,

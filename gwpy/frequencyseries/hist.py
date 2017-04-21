@@ -160,10 +160,8 @@ class SpectralVariance(Array2D):
             detected if possible. See below for list of acceptable
             formats
 
-        Returns
-        -------
-        variance : `SpectralVariance`
-        """
+        Notes
+        -----"""
         return io_registry.read(cls, source, *args, **kwargs)
 
     def write(self, target, *args, **kwargs):

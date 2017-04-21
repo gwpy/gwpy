@@ -120,7 +120,7 @@ def mock_find_credential():
     return '/mock/cert/path', '/mock/key/path'
 
 def mock_datafind_connection(framefile):
-    from glue.lal import CacheEntry
+    from lal.utils import CacheEntry
     from glue import datafind
     ce = CacheEntry.from_T050017(framefile)
     frametype = ce.description

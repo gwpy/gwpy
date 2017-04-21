@@ -22,46 +22,50 @@ gravitational-wave laser interferometer was operating in a specific
 configuration.
 """
 
-from glue.segments import (segment as _Segment,
-                           segmentlist as _SegmentList,
-                           segmentlistdict as _SegmentListDict)
-
 from astropy.io import registry as io_registry
+
+from glue.segments import (segment, segmentlist, segmentlistdict)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __all__ = ['Segment', 'SegmentList', 'SegmentListDict']
 
 
-def _update_docstring(doc):
-    """Update the docstring of the given class from glue to match
-    the new naming for GWpy matching PEP-8.
+class Segment(segment):
+    """A tuple defining a semi-open interval ``[start, end)``
+
+    Each `Segment` represents the range of values in a given interval, with
+    general arithmetic supported for combining/comparing overlapping segments.
 
     Parameters
     ----------
-    doc : `str`
-        input docstring to modify
+    start : `float`
+        the start value of this `Segment`
 
-    Returns
-    -------
-    newdoc : `str`
-        the updated docstring with all references to the
-        glue segments.segment* classes modified for GWpy with sphinx
-        scope
+    end : `float`
+        the end value of this `Segment`
+
+    Examples
+    --------
+    >>> Segment(0, 10) & Segment(5, 15)
+    Segment(5, 10)
+    >>> Segment(0, 10) | Segment(5, 15)
+    Segment(0, 15)
+    >>> Segment(0, 10) - Segment(5, 15)
+    Segment(0, 5)
+    >>> Segment(0, 10) < Segment(5, 15)
+    True
+    >>> Segment(1, 2) in Segment(0, 10)
+    True
+    >>> Segment(1, 11) in Segment(0, 10)
+    False
+    >>> Segment(0, 1)
+    Segment(0, 1)
+    >>> Segment(1, 0)
+    Segment(0, 1)
+    >>> bool(Segment(0, 1))
+    True
     """
-    doc = doc.replace('segmentlistdicts',
-                      '`SegmentListDicts <SegmentListDict>`')
-    doc = doc.replace('segmentlistdict', '`SegmentListDict`')
-    doc = doc.replace('Segmentlists', '`SegmentLists <SegmentList>`')
-    doc = doc.replace('segmentlist', '`SegmentList`')
-    doc = doc.replace('segments', '`Segments <Segment>`')
-    doc = doc.replace('segment', '`Segment`')
-    return doc
-
-
-class Segment(_Segment):
-    __doc__ = _update_docstring(_Segment.__doc__)
-
     @property
     def start(self):
         """The GPS start time of this segment
@@ -81,8 +85,42 @@ class Segment(_Segment):
         return "[%s ... %s)" % (self[0], self[1])
 
 
-class SegmentList(_SegmentList):
-    __doc__ = _update_docstring(_SegmentList.__doc__)
+class SegmentList(segmentlist):
+    """A `list` of `Segments <Segment>`
+
+    The `SegmentList` provides additional methods that assist in the
+    manipulation of lists of `Segments <Segment>`. In particular,
+    arithmetic operations such as union and intersection are provided.
+    Unlike the `Segment`, the `SegmentList` is closed under all supported
+    arithmetic operations.
+
+    All standard Python sequence-like operations are supported, like
+    slicing, iteration and so on, but the arithmetic and other methods
+    in this class generally expect the `SegmentList` to be in what is
+    refered to as a "coalesced" state - consisting solely of disjoint
+    `Segments <Segment>` listed in ascending order. Using the standard Python
+    sequence-like operations, a `SegmentList` can be easily constructed
+    that is not in this state;  for example by simply appending a
+    `Segment` to the end of the list that overlaps some other `Segment`
+    already in the list. The class provides a :meth:`~SegmentList.coalesce`
+    method that can be called to put it in the coalesced state. Following
+    application of the coalesce method, all arithmetic operations will
+    function reliably. All arithmetic methods themselves return
+    coalesced results, so there is never a need to call the coalesce
+    method when manipulating a `SegmentList` exclusively via the
+    arithmetic operators.
+
+    Examples
+    --------
+    >>> x = SegmentList([Segment(-10, 10)])
+    >>> x |= SegmentList([Segment(20, 30)])
+    >>> x -= SegmentList([Segment(-5, 5)])
+    >>> print(x)
+    [Segment(-10, -5), Segment(5, 10), Segment(20, 30)]
+    >>> print(~x)
+    [Segment(-infinity, -10), Segment(-5, 5), Segment(10, 20),
+     Segment(30, infinity)]
+    """
 
     def __repr__(self):
         return "<SegmentList([%s])>" % "\n              ".join(map(repr, self))
@@ -92,7 +130,7 @@ class SegmentList(_SegmentList):
         for i, s in enumerate(self):
             self[i] = Segment(s[0], s[1])
         return self
-    coalesce.__doc__ = _SegmentList.coalesce.__doc__
+    coalesce.__doc__ = segmentlist.coalesce.__doc__
 
     def __str__(self):
         return "[%s]" % "\n ".join(map(str, self))
@@ -138,5 +176,47 @@ class SegmentList(_SegmentList):
         return io_registry.write(self, target, *args, **kwargs)
 
 
-class SegmentListDict(_SegmentListDict):
-    __doc__ = _update_docstring(_SegmentListDict.__doc__)
+class SegmentListDict(segmentlistdict):
+    """A `dict` of `SegmentLists <SegmentList>`
+
+    This class implements a standard mapping interface, with additional
+    features added to assist with the manipulation of a collection of
+    `SegmentList` objects. In particular, methods for taking unions and
+    intersections of the lists in the dictionary are available, as well
+    as the ability to record and apply numeric offsets to the
+    boundaries of the `Segments <Segment>` in each list.
+
+    The numeric offsets are stored in the "offsets" attribute, which
+    itself is a dictionary, associating a number with each key in the
+    main dictionary. Assigning to one of the entries of the offsets
+    attribute has the effect of shifting the corresponding `SegmentList`
+    from its original position (not its current position) by the given
+    amount.
+
+    Examples
+    --------
+    >>> x = SegmentListDict()
+    >>> x["H1"] = SegmentList([Segment(0, 10)])
+    >>> print(x)
+    {'H1': [Segment(0, 10)]}
+    >>> x.offsets["H1"] = 6
+    >>> print(x)
+    {'H1': [Segment(6.0, 16.0)]}
+    >>> x.offsets.clear()
+    >>> print(x)
+    {'H1': [Segment(0.0, 10.0)]}
+    >>> x["H2"] = SegmentList([Segment(5, 15)])
+    >>> x.intersection(["H1", "H2"])
+    [Segment(5, 10.0)]
+    >>> x.offsets["H1"] = 6
+    >>> x.intersection(["H1", "H2"])
+    [Segment(6.0, 15)]
+    >>> c = x.extract_common(["H1", "H2"])
+    >>> c.offsets.clear()
+    >>> c
+    {'H2': [Segment(6.0, 15)], 'H1': [Segment(0.0, 9.0)]}
+    """
+    pass
+
+# clean up the namespace
+del segment, segmentlist, segmentlistdict

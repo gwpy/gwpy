@@ -88,7 +88,7 @@ def table_from_file(f, tablename, columns=None, filt=None,
 
         - an open `file`
         - a `str` pointing to a file path on disk
-        - a formatted `~glue.lal.CacheEntry` representing one file
+        - a formatted `~lal.utils.CacheEntry` representing one file
         - a `list` of `str` file paths
         - a formatted `~glue.lal.Cache` representing many files
 

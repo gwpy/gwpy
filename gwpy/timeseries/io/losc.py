@@ -29,7 +29,9 @@ from tempfile import NamedTemporaryFile
 
 from six.moves.urllib.request import urlopen
 
-from glue.lal import (Cache, CacheEntry)
+from lal.utils import CacheEntry
+
+from glue.lal import Cache
 
 from astropy.io import registry
 from astropy.units import Quantity
@@ -128,6 +130,14 @@ def fetch_losc_data(detector, start, end, host=LOSC_URL,
     use the interface provided by `TimeSeries.fetch_open_data` (and similar
     for `StateVector.fetch_open_data`).
     """
+    # check for h5py upfront, to prevent downloading data first
+    # when read() will fail anyway
+    try:
+        import h5py
+    except ImportError as e:
+        e.args = ('%s, h5py is required to read LOSC HDF5 files' % str(e),)
+        raise
+
     sample_rate = Quantity(sample_rate, 'Hz').value
     start = to_gps(start)
     end = to_gps(end)
