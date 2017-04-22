@@ -430,10 +430,13 @@ class CliProduct(object):
                 if frame_cache:
                     data = TimeSeries.read(frame_cache, chan, start=start,
                                            end=start+self.dur)
-                else:
+                elif arg_list.nds2_server:
                     data = TimeSeries.fetch(chan, start, start+self.dur,
                                             verbose=verb,
                                             host=arg_list.nds2_server)
+                else:
+                    data = TimeSeries.fetch(chan, start, start+self.dur,
+                                            verbose=verb)
 
                 if highpass > 0 and lowpass == 0:
                     data = data.highpass(highpass)

@@ -123,21 +123,31 @@ class Spectrogram(CliProduct):
         # set intensity (color) limits
         if arg_list.imin:
             lo = float(arg_list.imin)
+        elif arg_list.nopct:
+            lo = specgram.min()
+            lo = lo.value
         else:
             lo = .01
+
         if norm or arg_list.nopct:
             imin = lo
         else:
-            imin = percentile(specgram, lo*100)
+            imin = percentile(specgram, lo)
 
         if arg_list.imax:
             up = float(arg_list.imax)
+        elif arg_list.nopct:
+            up = specgram.max()
+            up = up.value
         else:
             up = 100
         if arg_list.nopct:
             imax = up
         else:
             imax = percentile(specgram, up)
+
+        self.log(3, 'Intensity (colorbar) limits %.3g - %.3g' %
+                 (imin, imax))
 
         if norm:
             self.plot = specgram.plot(norm='log', vmin=imin, vmax=imax)
