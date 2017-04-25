@@ -26,7 +26,7 @@ import numpy
 import scipy.signal
 
 from ...frequencyseries import FrequencySeries
-from .utils import scale_timeseries_units
+from .utils import scale_timeseries_unit
 from . import registry as fft_registry
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -60,8 +60,8 @@ def welch(timeseries, segmentlength, noverlap=None, **kwargs):
                                  fs=timeseries.sample_rate.decompose().value,
                                  nperseg=segmentlength, **kwargs)
     # generate FrequencySeries and return
-    unit = scale_timeseries_units(timeseries.unit,
-                                  kwargs.get('scaling', 'density'))
+    unit = scale_timeseries_unit(timeseries.unit,
+                                 kwargs.get('scaling', 'density'))
     return FrequencySeries(psd_, unit=unit, frequencies=f,
                            name=timeseries.name, epoch=timeseries.epoch,
                            channel=timeseries.channel)
@@ -171,8 +171,8 @@ def csd(timeseries, other, segmentlength, noverlap=None, **kwargs):
                                fs=timeseries.sample_rate.decompose().value,
                                nperseg=segmentlength, **kwargs)
     # generate FrequencySeries and return
-    unit = scale_timeseries_units(timeseries.unit,
-                                  kwargs.get('scaling', 'density'))
+    unit = scale_timeseries_unit(timeseries.unit,
+                                 kwargs.get('scaling', 'density'))
     return FrequencySeries(
        csd_, unit=unit, frequencies=f,
        name=str(timeseries.name)+'---'+str(other.name),

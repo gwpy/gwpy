@@ -205,7 +205,7 @@ def spectrogram(timeseries, *args, **kwargs):
     data[:len(psds)] = psds
 
     # create output spectrogram
-    unit = fft_utils.scale_timeseries_units(
+    unit = fft_utils.scale_timeseries_unit(
         timeseries.unit, scaling=kwargs.get('scaling', 'density'))
     out = Spectrogram(numpy.empty((nt, nf), dtype=timeseries.dtype),
                       copy=False, dt=nstride * timeseries.dt, t0=timeseries.t0,

@@ -31,7 +31,7 @@ import warnings
 import numpy
 
 from ...frequencyseries import FrequencySeries
-from .utils import scale_timeseries_units
+from .utils import scale_timeseries_unit
 from . import registry as fft_registry
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -227,7 +227,7 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
     # format and return
     spec = FrequencySeries.from_lal(lalfs)
     spec.channel = timeseries.channel
-    spec.override_unit(scale_timeseries_units(
+    spec.override_unit(scale_timeseries_unit(
         timeseries.unit, scaling='density'))
     return spec
 
