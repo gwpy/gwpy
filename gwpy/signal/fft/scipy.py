@@ -129,6 +129,7 @@ def rayleigh(timeseries, segmentlength, noverlap=0):
     std = tmpdata.std(axis=0)
     mean = tmpdata.mean(axis=0)
     return FrequencySeries(std/mean, unit='', copy=False, f0=0,
+                           epoch=timeseries.epoch,
                            df=timeseries.sample_rate.value/segmentlength,
                            channel=timeseries.channel,
                            name='Rayleigh spectrum of %s' % timeseries.name)
