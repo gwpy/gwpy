@@ -36,7 +36,7 @@ from astropy.io import registry as io_registry
 
 from ..segments import Segment
 from ..signal import (filter_design, sosfiltfilt)
-from ..signal.fft import registry as fft_registry
+from ..signal.fft import (registry as fft_registry, ui as fft_ui)
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
 
@@ -358,16 +358,9 @@ class TimeSeries(TimeSeriesBase):
         scaling = kwargs.get('scaling', 'density')
         method_func = fft_registry.get_method(method, scaling=scaling)
 
-        # type-cast arguments
-        if fftlength is None:
-            fftlength = self.duration
-        nfft = int((fftlength * self.sample_rate).decompose().value)
-        if overlap is not None:
-            kwargs['noverlap'] = int(
-                (overlap * self.sample_rate).decompose().value)
-
-        # calculate PSD
-        return method_func(self, nfft, **kwargs)
+        # calculate PSD using UI method
+        return fft_ui.psd(self, method_func, fftlength=fftlength,
+                          overlap=overlap, **kwargs)
 
     @_update_doc_with_fft_methods
     def asd(self, fftlength=None, overlap=None, method='welch', **kwargs):
@@ -399,9 +392,8 @@ class TimeSeries(TimeSeriesBase):
         The available methods are:
 
         """
-        asd_ = self.psd(method=method, fftlength=fftlength,
-                        overlap=overlap, **kwargs) ** (1/2.)
-        return asd_
+        return self.psd(method=method, fftlength=fftlength, overlap=overlap,
+                        **kwargs) ** (1/2.)
 
     def csd(self, other, fftlength=None, overlap=None, **kwargs):
         """Calculate the CSD `FrequencySeries` for two `TimeSeries`
@@ -486,170 +478,38 @@ class TimeSeries(TimeSeriesBase):
         Notes
         -----
         """
-        from ..signal.fft.utils import scale_timeseries_units
-        from ..spectrogram import (Spectrogram, SpectrogramList)
+        # get method
+        scaling = kwargs.get('scaling', 'density')
+        method_func = fft_registry.get_method(method, scaling=scaling)
 
-        # format FFT parameters
-        if fftlength is None:
-            fftlength = stride
-        if overlap is None:
-            overlap = 0
-        fftlength = units.Quantity(fftlength, 's').value
-        overlap = units.Quantity(overlap, 's').value
+        # calculate PSD using UI method
+        return fft_ui.average_spectrogram(self, method_func, stride,
+                                          fftlength=fftlength, overlap=overlap,
+                                          **kwargs)
 
-        # sanity check parameters
-        if stride > abs(self.span):
-            raise ValueError("stride cannot be greater than the duration of "
-                             "this TimeSeries")
-        if fftlength > stride:
-            raise ValueError("fftlength cannot be greater than stride")
-        if overlap >= fftlength:
-            raise ValueError("overlap must be less than fftlength")
-
-        # get size of spectrogram
-        nsamp = int((stride * self.sample_rate).decompose().value)
-        nfft = int((fftlength * self.sample_rate).decompose().value)
-        noverlap = int((overlap * self.sample_rate).decompose().value)
-        nsteps = int(self.size // nsamp)
-        nproc = min(nsteps, nproc)
-        noverlap2 = int(noverlap // 2.)
-
-        # generate window and plan if needed
-        method_func = fft_registry.get_method(
-            method, scaling=kwargs.get('scaling', 'density'))
-        if method_func.__module__.endswith('.lal') and cross is None:
-            from ..signal.fft.lal import (generate_fft_plan, generate_window)
-            if kwargs.get('window', None) is None:
-                kwargs['window'] = generate_window(nfft, dtype=self.dtype)
-            if kwargs.get('plan', None) is None:
-                kwargs['plan'] = generate_fft_plan(nfft, dtype=self.dtype)
-        else:
-            if window is None:
-                window = 'hanning'
-            if isinstance(window, str) or type(window) is tuple:
-                window = signal.get_window(window, nfft)
-            kwargs['window'] = window
-
-        # set up single process Spectrogram generation
-        def _from_timeseries(ts, cts, epoch=None):
-            """Generate a `Spectrogram` from a `TimeSeries`.
-            """
-            # calculate specgram parameters
-            dt = stride
-            df = 1 / fftlength
-
-            # get size of spectrogram
-            nsteps_ = int(ts.size // nsamp)
-            nfreqs = int(fftlength * ts.sample_rate.value // 2 + 1)
-
-            # generate output spectrogram
-            unit = scale_timeseries_units(
-                ts.unit, kwargs.get('scaling', 'density'))
-            dtype = numpy.float64 if cts is None else complex
-            if epoch is None:
-                epoch = ts.t0
-            out = Spectrogram(numpy.zeros((nsteps_, nfreqs)), dtype=dtype,
-                              unit=unit, channel=ts.channel, t0=epoch,
-                              f0=0, df=df, dt=dt, copy=False)
-
-            if not nsteps_:
-                return out
-
-            # stride through TimeSeries, calculating PSDs or CSDs
-            if cts is not None and method not in (None, 'welch'):
-                warn("Cannot calculate cross spectral density using "
-                     "the %r method. Using 'welch' instead..." % method)
-            for step in range(nsteps_):
-                # find step TimeSeries with overlap
-                idx = max(0, nsamp * step - noverlap2)
-                idx_end = min(ts.size, idx + nsamp + noverlap)
-                stepseries = ts[idx:idx_end]
-                if cts is None:
-                    stepsd = stepseries.psd(fftlength=fftlength,
-                                            overlap=overlap,
-                                            method=method, **kwargs)
-                else:
-                    otherstepseries = cts[idx:idx_end]
-                    stepsd = stepseries.csd(otherstepseries,
-                                            fftlength=fftlength,
-                                            overlap=overlap, **kwargs)
-                out.value[step, :] = stepsd.value
-            return out
-
-        # single-process return
-        if nsteps == 0 or nproc == 1:
-            return _from_timeseries(self, cross)
-
-        # wrap spectrogram generator
-        def _specgram(q, *args, **kwargs):
-            try:
-                q.put(_from_timeseries(*args, **kwargs))
-            except Exception as e:
-                q.put(e)
-
-        # otherwise build process list
-        stepperproc = int(ceil(nsteps / nproc))
-        nsampperproc = stepperproc * nsamp
-        queue = ProcessQueue(nproc)
-        processlist = []
-        for i in range(nproc):
-            # index of un-overlapped time-series and epoch
-            a = i * nsampperproc
-            t = self.x0 + self.dx * a
-            # overlapped indices for FFT
-            ao = max(0, a - noverlap2)
-            bo = min(self.size, a + nsampperproc + noverlap)
-            tsamp = self[ao:bo]
-            if cross is None:
-                csamp = None
-            else:
-                csamp = cross[ao:bo]
-            # process this chunk
-            process = Process(target=_specgram, args=(queue, tsamp, csamp),
-                              kwargs={'epoch': t})
-            process.daemon = True
-            processlist.append(process)
-            process.start()
-            if ((i + 1) * nsampperproc) >= self.size:
-                break
-
-        # get data
-        data = []
-        for process in processlist:
-            result = queue.get()
-            if isinstance(result, Exception):
-                raise result
-            else:
-                data.append(result)
-        # and block
-        for process in processlist:
-            process.join()
-
-        # format and return
-        out = SpectrogramList(*data)
-        out.sort(key=lambda spec: spec.epoch.gps)
-        return out.join()
-
-    def spectrogram2(self, fftlength, overlap=0, window='hanning',
-                     scaling='density', **kwargs):
+    def spectrogram2(self, fftlength, overlap=0, **kwargs):
         """Calculate the non-averaged power `Spectrogram` of this `TimeSeries`
 
         Parameters
         ----------
         fftlength : `float`
             number of seconds in single FFT.
+
         overlap : `float`, optional
             number of seconds between FFTs.
+
         window : `str` or `tuple` or `array-like`, optional
             desired window to use. See `~scipy.signal.get_window` for a list
             of windows and required parameters. If `window` is array_like it
             will be used directly as the window.
+
         scaling : [ 'density' | 'spectrum' ], optional
             selects between computing the power spectral density ('density')
             where the `Spectrogram` has units of V**2/Hz if the input is
             measured in V and computing the power spectrum ('spectrum')
             where the `Spectrogram` has units of V**2 if the input is
             measured in V. Defaults to 'density'.
+
         **kwargs
             other parameters to be passed to `scipy.signal.periodogram` for
             each column of the `Spectrogram`
@@ -673,71 +533,8 @@ class TimeSeries(TimeSeriesBase):
         a triangular window centred on that chunk which most overlaps the
         given `Spectrogram` time sample.
         """
-        from ..spectrogram import Spectrogram
-        from ..signal.fft.utils import scale_timeseries_units
-        # get parameters
-        sampling = units.Quantity(self.sample_rate, 'Hz').value
-        if isinstance(fftlength, units.Quantity):
-            fftlength = units.Quantity(fftlength, 's').value
-        if isinstance(overlap, units.Quantity):
-            overlap = units.Quantity(overlap, 's').value
-
-        # sanity check
-        if fftlength > abs(self.span):
-            raise ValueError("fftlength cannot be greater than the duration "
-                             "of this TimeSeries")
-        if overlap >= fftlength:
-            raise ValueError("overlap must be less than fftlength")
-
-        # convert to samples
-        nfft = int(fftlength * sampling)  # number of points per FFT
-        noverlap = int(overlap * sampling)  # number of points of overlap
-        nstride = nfft - noverlap  # number of points between FFTs
-
-        # create output object
-        nsteps = 1 + int((self.size - nstride) / nstride)  # number of columns
-        nfreqs = int(nfft / 2 + 1)  # number of rows
-        unit = scale_timeseries_units(self.unit, scaling)
-        dt = nstride * self.dt
-        tmp = numpy.zeros((nsteps, nfreqs), dtype=self.dtype)
-        out = Spectrogram(numpy.zeros((nsteps, nfreqs), dtype=self.dtype),
-                          t0=self.t0, channel=self.channel,
-                          name=self.name, unit=unit, dt=dt, f0=0,
-                          df=1/fftlength)
-
-        # get window
-        if window is None:
-            window = 'boxcar'
-        if isinstance(window, (str, tuple)):
-            window = signal.get_window(window, nfft)
-
-        # calculate overlapping periodograms
-        for i in range(nsteps):
-            idx = i * nstride
-            # don't proceed past end of data, causes artefacts
-            if idx+nfft > self.size:
-                break
-            ts = self.value[idx:idx+nfft]
-            tmp[i, :] = signal.periodogram(ts, fs=sampling, window=window,
-                                           nfft=nfft, scaling=scaling,
-                                           **kwargs)[1]
-        # normalize for over-dense grid
-        density = nfft//nstride
-        weights = signal.triang(density)
-        for i in range(nsteps):
-            # get indices of overlapping columns
-            x0 = max(0, i+1-density)
-            x1 = min(i+1, nsteps-density+1)
-            if x0 == 0:
-                w = weights[-x1:]
-            elif x1 == nsteps - density + 1:
-                w = weights[:x1-x0]
-            else:
-                w = weights
-            # calculate weighted average
-            out.value[i, :] = numpy.average(tmp[x0:x1], axis=0, weights=w)
-
-        return out
+        return fft_ui.spectrogram(self, fftlength=fftlength, overlap=overlap,
+                                  **kwargs)
 
     def fftgram(self, stride):
         """Calculate the Fourier-gram of this `TimeSeries`.
@@ -858,7 +655,7 @@ class TimeSeries(TimeSeriesBase):
         return specgram.variance(bins=bins, low=low, high=high, nbins=nbins,
                                  log=log, norm=norm, density=density)
 
-    def rayleigh_spectrum(self, fftlength=None, overlap=None, **kwargs):
+    def rayleigh_spectrum(self, fftlength=None, overlap=None):
         """Calculate the Rayleigh `FrequencySeries` for this `TimeSeries`.
 
         Parameters
@@ -875,19 +672,9 @@ class TimeSeries(TimeSeriesBase):
         psd :  :class:`~gwpy.frequencyseries.FrequencySeries`
             a data series containing the PSD.
         """
-        # get method
         method_func = fft_registry.get_method('rayleigh', scaling='other')
-
-        # type-cast arguments
-        if fftlength is None:
-            fftlength = self.duration
-        nfft = int((fftlength * self.sample_rate).decompose().value)
-        if overlap is not None:
-            kwargs['noverlap'] = int(
-                (overlap * self.sample_rate).decompose().value)
-
-        # calculate and return spectrum
-        return method_func(self, nfft, **kwargs)
+        return fft_ui.psd(self, method_func, fftlength=fftlength,
+                          overlap=overlap)
 
     def rayleigh_spectrogram(self, stride, fftlength=None, overlap=0,
                              window=None, nproc=1, **kwargs):
@@ -913,11 +700,12 @@ class TimeSeries(TimeSeriesBase):
             time-frequency Rayleigh spectrogram as generated from the
             input time-series.
         """
-        rspecgram = self.spectrogram(stride, method='rayleigh',
-                                     fftlength=fftlength, overlap=overlap,
-                                     window=window, nproc=nproc, **kwargs)
-        rspecgram.override_unit('')
-        return rspecgram
+        method_func = fft_registry.get_method('rayleigh', scaling='other')
+        sg = fft_ui.average_spectrogram(self, method_func, stride,
+                                        fftlength=fftlength, overlap=overlap,
+                                        window=window, nproc=nproc, **kwargs)
+        sg.override_unit('')
+        return sg
 
     def csd_spectrogram(self, other, stride, fftlength=None, overlap=0,
                         window=None, nproc=1, **kwargs):
@@ -946,10 +734,11 @@ class TimeSeries(TimeSeriesBase):
             time-frequency cross spectrogram as generated from the
             two input time-series.
         """
-        cspecgram = self.spectrogram(stride, fftlength=fftlength,
-                                     overlap=overlap, window=window,
-                                     cross=other, nproc=nproc, **kwargs)
-        return cspecgram
+        method_func = fft_registry.get_method('csd', scaling='other')
+        sg = fft_ui.average_spectrogram(self, method_func, stride, other,
+                                        fftlength=fftlength, overlap=overlap,
+                                        window=window, nproc=nproc, **kwargs)
+        return sg
 
     # -- TimeSeries filtering -------------------
 
