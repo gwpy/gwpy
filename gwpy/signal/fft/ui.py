@@ -37,6 +37,7 @@ from ...utils import mp as mp_utils
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+
 def seconds_to_samples(x, rate):
     return int((Quantity(x, 's') * rate).decompose().value)
 
