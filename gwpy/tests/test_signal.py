@@ -118,24 +118,24 @@ class FFTRegistryTests(unittest.TestCase):
 # -- gwpy.signal.fft.utils ----------------------------------------------------
 
 class FFTUtilsTests(unittest.TestCase):
-    def test_scale_timeseries_units(self):
+    def test_scale_timeseries_unit(self):
         u = units.Unit('m')
         # check default
-        self.assertEqual(fft_utils.scale_timeseries_units(u),
+        self.assertEqual(fft_utils.scale_timeseries_unit(u),
                          units.Unit('m^2/Hz'))
         # check scaling='density'
         self.assertEqual(
-            fft_utils.scale_timeseries_units(u, scaling='density'),
+            fft_utils.scale_timeseries_unit(u, scaling='density'),
             units.Unit('m^2/Hz'))
         # check scaling='spectrum'
         self.assertEqual(
-            fft_utils.scale_timeseries_units(u, scaling='spectrum'),
+            fft_utils.scale_timeseries_unit(u, scaling='spectrum'),
             units.Unit('m^2'))
         # check anything else raises an exception
-        self.assertRaises(ValueError, fft_utils.scale_timeseries_units,
+        self.assertRaises(ValueError, fft_utils.scale_timeseries_unit,
                           u, scaling='other')
         # check null unit
-        self.assertEqual(fft_utils.scale_timeseries_units(None),
+        self.assertEqual(fft_utils.scale_timeseries_unit(None),
                          units.Unit('Hz^-1'))
 
 

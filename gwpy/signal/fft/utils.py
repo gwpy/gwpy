@@ -24,7 +24,7 @@ from astropy import units
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def scale_timeseries_units(tsunit, scaling='density'):
+def scale_timeseries_unit(tsunit, scaling='density'):
     """Scale the unit of a `TimeSeries` to match that of a `FrequencySeries`
 
     Parameters
