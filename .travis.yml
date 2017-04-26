@@ -54,7 +54,7 @@ matrix:
     - python: '3.5'
   fast_finish: true
 
-before_install:
+install:
   # update pip
   - pip install ${PIP_FLAGS} --upgrade pip
 
@@ -70,13 +70,11 @@ before_install:
   # install dependencies
   - pip install ${PIP_FLAGS} -r requirements-dev.txt
 
-install:
+script:
+  # build and install
   - pip install .
-
-before_script:
   - pip list installed
 
-script:
   - . .travis/run-tests.sh
 
 after_success:
