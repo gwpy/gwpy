@@ -9,11 +9,13 @@ addons:
         key_url: http://software.ligo.org/keys/deb/lscsoft.key
       - ubuntu-toolchain-r-test
     packages:
-      # generic packages
+      # generic dependencies
       - gcc
       - gfortran
       - libblas-dev
       - liblapack-dev
+      # bdist_rpm dependencies
+      - rpm
       # lal dependencies
       - pkg-config
       - zlib1g-dev
@@ -75,6 +77,12 @@ script:
   - pip install .
   - pip list installed
 
+  # build distributions (just to check that we can)
+  - python setup.py bdist_egg
+  - python setup.py bdist_wheel
+  - python setup.py bdist_rpm
+
+  # run test suite
   - . .travis/run-tests.sh
 
 after_success:
