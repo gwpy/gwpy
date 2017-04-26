@@ -23,6 +23,7 @@ addons:
       - swig
       - bc
       - libfftw3-dev
+      - lal  # for bdist_rpm builds
       # lalframe dependencies
       - libframe-dev
       # framecpp dependencies
