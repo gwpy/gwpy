@@ -133,8 +133,11 @@ class Channel(object):
         # set metadata
         if type is not None:
             self.type = type
+        try:
+            self.unit = unit
+        except ValueError:
+            self.unit = None
         self.sample_rate = sample_rate
-        self.unit = unit
         self.frequency_range = frequency_range
         self.safe = safe
         self.dtype = dtype
