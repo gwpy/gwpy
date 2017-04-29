@@ -38,12 +38,3 @@ from .table import (EventColumn, EventTable)
 from . import io
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-
-# -----------------------------------------------------------------------------
-#
-# -- DEPRECATED - remove before 1.0 release -----------------------------------
-#
-# -----------------------------------------------------------------------------
-
-from .rec import GWRecArray

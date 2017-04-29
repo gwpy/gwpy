@@ -28,8 +28,7 @@ import glue.segments
 from glue.ligolw.lsctables import (TableByName, LIGOTimeGPS)
 
 from ...io import registry
-from ...io.ligolw import (identify_ligolw, table_from_file,
-                          write_tables)
+from ...io.ligolw import (table_from_file, write_tables)
 from .. import (Table, EventTable)
 from ..lsctables import EVENT_TABLES
 
@@ -188,9 +187,6 @@ def ligolw_io_factory(table_):
     """
     tablename = table_.TableName(table_.tableName)
 
-    def _read_ligolw(f, *args, **kwargs):
-        return table_from_file(f, tablename, *args, **kwargs)
-
     def _read_table(f, *args, **kwargs):
         # set up keyword arguments
         llwcolumns = kwargs.pop('ligolw_columns', kwargs.get('columns', None))
@@ -241,7 +237,7 @@ def ligolw_io_factory(table_):
         return write_tables(f, [table_to_ligolw(table, tablename)],
                             *args, **kwargs)
 
-    return _read_ligolw, _read_table, _write_table
+    return _read_table, _write_table
 
 # -- register -----------------------------------------------------------------
 
@@ -250,13 +246,7 @@ for table in TableByName.values():
     name = 'ligolw.%s' % table.TableName(table.tableName)
 
     # build readers for this table
-    read_llw, read_, write_, = ligolw_io_factory(table)
-
-    # register generic reader and table-specific reader for LIGO_LW
-    # DEPRECATED - remove before 1.0 release
-    registry.register_reader(name, table, read_llw)
-    registry.register_reader('ligolw', table, read_llw)
-    registry.register_identifier('ligolw', table, identify_ligolw)
+    read_, write_, = ligolw_io_factory(table)
 
     # register conversion from LIGO_LW to astropy Table
     table.__astropy_table__ = _table_from_ligolw
