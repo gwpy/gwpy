@@ -47,8 +47,6 @@ from six.moves.queue import Queue
 
 from numpy import inf
 
-from glue.segments import PosInfinity
-
 from astropy.io import registry as io_registry
 
 from ..time import to_gps
@@ -506,7 +504,7 @@ class DataQualityFlag(object):
 
         # process query
         for start, end in qsegs:
-            if end == PosInfinity or float(end) == +inf:
+            if float(end) == +inf:
                 end = to_gps('now').seconds
             if out.version is None:
                 data, versions, _ = apicalls.dqsegdbCascadedQuery(
@@ -586,7 +584,7 @@ class DataQualityFlag(object):
         except TypeError:
             pass
         if veto.end_time == 0:
-            veto.end_time = PosInfinity
+            veto.end_time = +inf
         known = Segment(veto.start_time, veto.end_time)
         pad = (veto.start_pad, veto.end_pad)
         return cls(name=name, known=[known], category=veto.category,
@@ -1046,7 +1044,7 @@ class DataQualityDict(OrderedDict):
             else:
                 vers = dqflag.version
             for gpsstart, gpsend in qsegs:
-                if gpsend == PosInfinity or float(gpsend) == +inf:
+                if float(gpsend) == +inf:
                     gpsend = to_gps('now').seconds
                 gpsstart = float(gpsstart)
                 if not gpsstart.is_integer():

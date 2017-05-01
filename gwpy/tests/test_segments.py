@@ -23,6 +23,11 @@ import os.path
 import tempfile
 import warnings
 
+try:
+    from math import inf
+except ImportError:  # python<3.5
+    from numpy import inf
+
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.error import URLError
 
@@ -31,7 +36,6 @@ import pytest
 from matplotlib import use
 use('agg')
 
-from glue.segments import PosInfinity
 from glue.LDBDWClient import LDBDClientException
 
 from gwpy.segments import (Segment, SegmentList,
@@ -499,7 +503,7 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
         self.assertEquals(vdf['H1:DCH-MISSING_H1_HOFT_C00:1'].known[0][0],
                           1073779216)
         self.assertEquals(vdf['H1:DCH-MISSING_H1_HOFT_C00:1'].known[0][-1],
-                          PosInfinity)
+                          +inf)
         self.assertEquals(vdf['H1:DCH-MISSING_H1_HOFT_C00:1'].category, 1)
         # test injections padding
         self.assertEquals(vdf['H1:ODC-INJECTION_CBC:1'].padding, Segment(-8, 8))
