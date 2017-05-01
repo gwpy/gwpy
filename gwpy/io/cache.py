@@ -20,6 +20,8 @@
 """
 
 from __future__ import division
+
+import os.path
 from math import ceil
 from multiprocessing import (cpu_count, Process, Queue as ProcessQueue)
 from six import string_types
@@ -109,6 +111,36 @@ def file_list(flist):
         return flist
     raise ValueError("Could not parse input %r as one or more "
                      "file-like objects" % flist)
+
+
+def file_segment(filename):
+    """Return the data segment for a filename following T050017
+
+    Parameters
+    ---------
+    filename : `str`, `~lal.utils.CacheEntry`
+        the path name of a file
+
+    Returns
+    -------
+    segment : `~gwpy.segments.Segment`
+        the ``[start, stop)`` GPS segment covered by the given file
+
+    Notes
+    -----
+    `LIGO-T050017 <https://dcc.ligo.org/LIGO-T050017/public>`_ declares
+    a filenaming convention that includes documenting the GPS start integer
+    and integer duration of a file, see that document for more details.
+    """
+    try:  # filename object provides its own segment information
+        return filename.segment
+    except AttributeError:  # otherwise parse from T050017 spec
+        from ..segments import Segment
+        base = os.path.basename(filename)
+        _, _, s, e = base.split('-')
+        s = int(s)
+        e = int(e.split('.')[0])
+        return Segment(s, s+e)
 
 
 # ----------------------------------------------------------------------------
