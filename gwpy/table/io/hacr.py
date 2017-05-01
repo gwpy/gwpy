@@ -30,11 +30,9 @@ These can also be given directly to the connection function as keyword
 arguments
 """
 
-import datetime
 import os.path
 from dateutil.relativedelta import relativedelta
 
-import numpy
 from numpy.lib import recfunctions
 
 from ...segments import Segment
