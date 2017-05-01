@@ -241,14 +241,15 @@ def ligolw_io_factory(table_):
 # -- register -----------------------------------------------------------------
 
 EVENT_TABLES = (
-    SnglBurstTable, MultiBurstTable,
-    SnglInspiralTable, MultiInspiralTable,
-    SnglRingdownTable,
+    'sngl_burst', 'multi_burst',
+    'sngl_inspiral', 'multi_inspiral',
+    'sngl_ringdown',
 )
 
 # register reader and auto-id for LIGO_LW
 for table in TableByName.values():
-    name = 'ligolw.%s' % table.TableName(table.tableName)
+    tname = table.TableName(table.tableName)
+    name = 'ligolw.%s' % tname
 
     # build readers for this table
     read_, write_, = ligolw_io_factory(table)
@@ -260,7 +261,7 @@ for table in TableByName.values():
     registry.register_reader(name, Table, read_)
     registry.register_writer(name, Table, write_)
 
-    if table in EVENT_TABLES:
+    if tname in EVENT_TABLES:
         # this is done explicitly so that the docstring for table.read()
         # shows the format
         registry.register_reader(name, EventTable, read_)
