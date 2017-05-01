@@ -25,7 +25,11 @@ import warnings
 import numpy
 
 import glue.segments
-from glue.ligolw.lsctables import (TableByName, LIGOTimeGPS)
+
+try:
+    from glue.ligolw.lsctables import TableByName
+except ImportError:
+    TableByName = dict()
 
 from ...io import registry
 from ...io.ligolw import (table_from_file, write_tables)
@@ -77,6 +81,8 @@ def _table_from_ligolw(llwtable, target, copy, columns=None,
         table : `EventTable`
             a view of the original data
     """
+    from glue.ligolw.lsctables import LIGOTimeGPS
+
     if rename is None:
         rename = {}
     # create table
