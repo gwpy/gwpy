@@ -32,8 +32,6 @@ import sys
 
 import numpy
 
-from glue.segmentsUtils import from_bitstream
-
 from astropy.units import Quantity
 from astropy.io import registry as io_registry
 
@@ -147,7 +145,9 @@ class StateTimeSeries(TimeSeriesBase):
             defines the `known` segments, while the contiguous `True`
             sets defined each of the `active` segments
         """
+        from glue.segmentsUtils import from_bitstream
         from ..segments import (Segment, SegmentList, DataQualityFlag)
+
         start = self.x0.value
         dt = self.dx.value
         active = from_bitstream(self.value, start, dt, minlen=int(minlen))
