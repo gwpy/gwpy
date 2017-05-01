@@ -146,7 +146,6 @@ def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
                 continue
             # get new events, convert to recarray, and append to table
             rows.extend(cursor.fetchall())
-            dtype = [(c, type(x)) for c, x in zip(columns, new[0])]
     return EventTable(rows=rows, names=columns)
 
 
