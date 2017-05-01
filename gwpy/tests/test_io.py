@@ -216,8 +216,6 @@ class DataFindIoTestCase(unittest.TestCase):
 
     def test_on_tape(self):
         self.assertFalse(datafind.on_tape(TEST_GWF_FILE))
-        self.assertFalse(datafind.on_tape(
-            CacheEntry.from_T050017(TEST_GWF_FILE, coltype=int)))
 
     def test_connect(self):
         with mock.patch('glue.datafind.GWDataFindHTTPConnection',
