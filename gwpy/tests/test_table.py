@@ -29,6 +29,7 @@ from matplotlib import use
 use('agg')
 
 from astropy import units
+from astropy.io.ascii import InconsistentTableError
 
 from gwpy.table import (Table, EventTable)
 from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
@@ -190,12 +191,24 @@ class EventTableTests(TableTests):
                                        nproc=2, format='ligolw.sngl_burst')
         self.assertTableEqual(table, table2)
 
-    def test_read_omega(self):
-        table = self.TABLE_CLASS.read(TEST_OMEGA_FILE, format='ascii.omega')
-        self.assertIsInstance(table, self.TABLE_CLASS)
-        self.assertIsInstance(table['frequency'], self.TABLE_CLASS.Column)
-        self.assertEqual(len(table), 92)
-        self.assertAlmostEqual(table[0]['frequency'], 962.609375)
+    def test_read_write_omega(self):
+        # read canonical table
+        table = self.TABLE_CLASS.read(
+            TEST_XML_FILE, format='ligolw.sngl_burst',
+            columns=['peak_time', 'peak_time_ns', 'snr', 'peak_frequency'])
+        # test read/write
+        with tempfile.NamedTemporaryFile(suffix='.txt') as f:
+            # test read
+            table.write(f, format='ascii.omega')
+            f.seek(0)
+            # test read gives back same table
+            table2 = self.TABLE_CLASS.read(f, format='ascii.omega')
+            self.assertTableEqualTypeless(table, table2, meta=False)
+        with tempfile.NamedTemporaryFile(suffix='.txt') as f:
+            # assert reading blank file doesn't work with column name error
+            with self.assertRaises(InconsistentTableError) as exc:
+                self.TABLE_CLASS.read(f, format='ascii.omega')
+            self.assertTrue('No column names found in Omega header')
 
     def test_event_rates(self):
         # test event_rate
