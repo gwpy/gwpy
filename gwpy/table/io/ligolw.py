@@ -30,7 +30,6 @@ from glue.ligolw.lsctables import (TableByName, LIGOTimeGPS)
 from ...io import registry
 from ...io.ligolw import (table_from_file, write_tables)
 from .. import (Table, EventTable)
-from ..lsctables import EVENT_TABLES
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = []
@@ -240,6 +239,12 @@ def ligolw_io_factory(table_):
     return _read_table, _write_table
 
 # -- register -----------------------------------------------------------------
+
+EVENT_TABLES = (
+    SnglBurstTable, MultiBurstTable,
+    SnglInspiralTable, MultiInspiralTable,
+    SnglRingdownTable,
+)
 
 # register reader and auto-id for LIGO_LW
 for table in TableByName.values():
