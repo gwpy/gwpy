@@ -28,7 +28,12 @@ object.
 
 from astropy.time import Time
 
-from lal import LIGOTimeGPS
+# try and import LIGOTimeGPS from LAL, otherwise use the pure-python backup
+# provided by the ligotimegps package, its slower, but works
+try:
+    from lal import LIGOTimeGPS
+except ImportError:
+    from ligotimegps import LIGOTimeGPS
 
 from ._tconvert import *
 
