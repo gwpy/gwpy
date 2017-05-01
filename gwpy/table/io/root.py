@@ -23,7 +23,7 @@ import warnings
 
 from ...io import registry
 from ...io.utils import identify_factory
-from ...io.cache import (file_list, read_cache)
+from ...io.cache import file_list
 from .. import (Table, EventTable)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
