@@ -22,9 +22,7 @@
 import re
 from os.path import basename
 
-from six import string_types
-
-from lal.utils import CacheEntry
+import numpy
 
 from ...io.hdf5 import (identify_hdf5, with_read_hdf5)
 from ...io.registry import (register_reader, register_identifier)
@@ -89,7 +87,6 @@ def table_from_file(source, ifo=None, columns=None, loudest=False):
 
     # map data to columns
     data = []
-    get_ = []
     for c in columns:
         # convert hdf5 dataset into Column
         try:
@@ -182,6 +179,10 @@ register_reader(PYCBC_LIVE_FORMAT, EventTable, table_from_file)
 # Each method should take in an `~h5py.Group` and return a `numpy.ndarray`
 
 GET_COLUMN = {}
+
+
+def _new_snr_scale(snr, redx2, q=6., n=2.):
+    return (.5 * (1. + redx2 ** (q/n))) ** (-1./q)
 
 
 def get_new_snr(h5group, q=6., n=2.):
