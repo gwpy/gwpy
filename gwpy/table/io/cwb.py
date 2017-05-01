@@ -19,6 +19,8 @@
 """Read events from Coherent Wave-Burst (cWB)-format ROOT files.
 """
 
+import re
+
 from astropy.io.ascii import core
 
 from ...io import registry
