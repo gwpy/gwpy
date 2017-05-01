@@ -1198,8 +1198,7 @@ class DataQualityDict(OrderedDict):
         ifo : `str`, optional
             interferometer prefix whose flags you want to read
         format : `str`, optional
-            format of file to read (passed to `VetoDefTable.read`),
-            currently only 'ligolw' is supported
+            format of file to read, currently only 'ligolw' is supported
 
         Returns
         -------
@@ -1217,20 +1216,28 @@ class DataQualityDict(OrderedDict):
         >>> flags.populate()
 
         """
+        from glue.ligolw.lsctables import VetoDefTable
+        from ..io.ligolw import table_from_file
+
+        if format != 'ligolw':
+            raise NotImplementedError("Reading veto definer from non-ligolw "
+                                      "format file is not currently "
+                                      "supported")
+
         if start is not None:
             start = to_gps(start)
         if end is not None:
             end = to_gps(end)
+
         # read veto definer file
-        from gwpy.table.lsctables import VetoDefTable
         if urlparse(fp).scheme in ['http', 'https']:
             response = request.urlopen(fp)
             with tempfile.NamedTemporaryFile() as temp:
                 temp.write(response.read())
                 temp.flush()
-                veto_def_table = VetoDefTable.read(temp.name, format=format)
+                veto_def_table = table_from_file(temp.name, 'veto_definer')
         else:
-            veto_def_table = VetoDefTable.read(fp, format=format)
+            veto_def_table = table_from_file(fp, 'veto_definer')
         # parse flag definitions
         out = cls()
         for row in veto_def_table:
