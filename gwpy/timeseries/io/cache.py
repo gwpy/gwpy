@@ -30,8 +30,6 @@ from six import string_types
 
 import numpy
 
-from glue.lal import Cache
-
 from ...io.cache import (FILE_LIKE, cache_segments, open_cache)
 from .. import (TimeSeries, TimeSeriesList, TimeSeriesDict,
                 StateVector, StateVectorList, StateVectorDict)
@@ -89,6 +87,7 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
         a new `TimeSeries` containing the data read from disk
     """
     from gwpy.segments import (Segment, SegmentList)
+    from glue.lal import Cache
 
     cls = kwargs.pop('target', TimeSeries)
     # open cache from file if given
