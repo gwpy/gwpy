@@ -9,11 +9,13 @@ addons:
         key_url: http://software.ligo.org/keys/deb/lscsoft.key
       - ubuntu-toolchain-r-test
     packages:
-      # generic packages
+      # generic dependencies
       - gcc
       - gfortran
       - libblas-dev
       - liblapack-dev
+      # bdist_rpm dependencies
+      - rpm
       # lal dependencies
       - pkg-config
       - zlib1g-dev
@@ -21,6 +23,7 @@ addons:
       - swig
       - bc
       - libfftw3-dev
+      - lal  # for bdist_rpm builds
       # lalframe dependencies
       - libframe-dev
       # framecpp dependencies
@@ -54,7 +57,7 @@ matrix:
     - python: '3.5'
   fast_finish: true
 
-before_install:
+install:
   # update pip
   - pip install ${PIP_FLAGS} --upgrade pip
 
@@ -70,13 +73,17 @@ before_install:
   # install dependencies
   - pip install ${PIP_FLAGS} -r requirements-dev.txt
 
-install:
+script:
+  # build and install
   - pip install .
-
-before_script:
   - pip list installed
 
-script:
+  # build distributions (just to check that we can)
+  - python setup.py bdist_egg
+  - python setup.py bdist_wheel
+  - python setup.py bdist_rpm
+
+  # run test suite
   - . .travis/run-tests.sh
 
 after_success:
