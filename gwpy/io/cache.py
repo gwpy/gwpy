@@ -34,9 +34,13 @@ from six import string_types
 from numpy import recarray
 from numpy.lib import recfunctions
 
-from lal.utils import CacheEntry
-
-from glue.lal import Cache
+try:
+    from glue.lal import Cache
+except ImportError:  # no lal
+    HAS_CACHE = False
+else:
+    HAS_CACHE = True
+    from lal.utils import CacheEntry
 
 from astropy.table import (Table, vstack as vstack_tables)
 from astropy.io.registry import _get_valid_format
@@ -59,9 +63,23 @@ FILE_LIKE = tuple(FILE_LIKE)
 
 
 def open_cache(lcf, coltype=LIGOTimeGPS):
-    """Read a LAL-format cache file into memory as a
-    :class:`glue.lal.Cache`.
+    """Read a LAL-format cache file into memory as a `Cache`
+
+    Parameters
+    ----------
+    lcf : `str`, `file`
+        input file or file path to read
+
+    coltype : `LIGOTimeGPS`, `int`, optional
+        `type` for GPS times
+
+    Returns
+    -------
+    cache : :class:`glue.lal.Cache`
+        a cache object, representing each line in the file as a
+        :class:`~lal.utils.CacheEntry`
     """
+    from glue.lal import Cache
     if isinstance(lcf, FILE_LIKE):
         return Cache.fromfile(lcf, coltype=coltype)
     else:
@@ -98,14 +116,14 @@ def file_list(flist):
     if isinstance(flist, FILE_LIKE):
         flist = flist.name
     # then format list of file paths
-    if isinstance(flist, CacheEntry):
+    if HAS_LAL and isinstance(flist, CacheEntry):
         return [flist.path]
     elif (isinstance(flist, string_types) and
           flist.endswith(('.cache', '.lcf'))):
         return open_cache(flist).pfnlist()
     elif isinstance(flist, string_types):
         return flist.split(',')
-    elif isinstance(flist, Cache):
+    elif HAS_LAL and isinstance(flist, Cache):
         return flist.pfnlist()
     elif isinstance(flist, (list, tuple)):
         return flist
@@ -197,7 +215,7 @@ def read_cache(cache, target, nproc, post, *args, **kwargs):
     # read the cache
     if isinstance(cache, FILE_LIKE + string_types):
         cache = open_cache(cache)
-    if isinstance(cache, Cache):
+    if HAS_CACHE and isinstance(cache, Cache):
         cache.sort(key=lambda ce: ce.segment[0])
 
     # force one file per process minimum
@@ -316,7 +334,7 @@ def cache_segments(*caches):
     from ..segments import SegmentList
     out = SegmentList()
     for cache in caches:
-        out.extend(e.segment for e in cache)
+        out.extend(file_segment(e) for e in cache)
     return out.coalesce()
 
 
@@ -351,6 +369,7 @@ def find_contiguous(*caches):
     caches : `iter` of :class:`~glue.lal.Cache`
         an interable yielding each contiguous cache
     """
+    from glue.lal import Cache
     try:
         flat = flatten(*caches)
     except IndexError:
