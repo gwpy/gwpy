@@ -39,16 +39,6 @@ from distutils.dist import Distribution
 from distutils.cmd import Command
 from distutils.command.clean import (clean, log, remove_tree)
 
-# check LAL
-try:
-    import lal
-except ImportError as e:
-    e.args = ('%s. LAL is required by GWpy, please install before '
-              'continuing, see '
-              'https://gwpy.github.io/docs/stable/install/lal.html '
-              'for details' % str(e),)
-    raise
-
 # set basic metadata
 PACKAGENAME = 'gwpy'
 AUTHOR = 'Duncan Macleod'
@@ -88,6 +78,12 @@ extras_require = {
 # define 'all' as the intersection of all extras
 extras_require['all'] = set(p for extra in extras_require.values()
                             for p in extra)
+
+# test for LAL
+try:
+    import lal
+except ImportError as e:
+    install_requires.append('ligotimegps')
 
 # test for OrderedDict
 try:
