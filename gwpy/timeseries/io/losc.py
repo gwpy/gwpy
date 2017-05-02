@@ -29,16 +29,12 @@ from tempfile import NamedTemporaryFile
 
 from six.moves.urllib.request import urlopen
 
-from lal.utils import CacheEntry
-
-from glue.lal import Cache
-
 from astropy.io import registry
 from astropy.units import Quantity
 
 from .. import (StateVector, TimeSeries)
 from ...utils.deps import with_import
-from ...io.cache import (file_list, cache_segments)
+from ...io.cache import (file_list, cache_segments, file_segment)
 from ...io.hdf5 import open_hdf5
 from ...detector.units import parse_unit
 from ...segments import (Segment, SegmentList)
@@ -72,7 +68,7 @@ def _fetch_losc_json(url):
 
 def _losc_json_cache(metadata, detector, sample_rate=4096,
                      format='hdf5', duration=4096):
-    """Parse a :class:`~glue.lal.Cache` from a LOSC metadata packet
+    """Parse a list of file URLs from a LOSC metadata packet
     """
     urls = []
     for fmd in metadata:  # loop over file metadata dicts
@@ -83,7 +79,7 @@ def _losc_json_cache(metadata, detector, sample_rate=4096,
                 fmd['duration'] != duration):
             continue
         urls.append(str(fmd['url']))
-    return Cache.from_urls(urls, coltype=LIGOTimeGPS)
+    return urls
 
 
 def fetch_losc_url_cache(detector, start, end, host=LOSC_URL,
@@ -113,7 +109,9 @@ def fetch_losc_url_cache(detector, start, end, host=LOSC_URL,
             for duration in [32, 4096]:  # try short files for events first
                 cache = _losc_json_cache(
                     emd['strain'], detector, sample_rate=sample_rate,
-                    format=format, duration=duration).sieve(segmentlist=span)
+                    format=format, duration=duration)
+                cache = [u for u in cache if
+                         file_segment(u).intersects(span[0])]
                 # if full span covered, return now
                 if not span - cache_segments(cache):
                     return cache
@@ -150,9 +148,10 @@ def fetch_losc_data(detector, start, end, host=LOSC_URL,
               % (len(cache), host, int(start), int(end)))
     # read data
     out = None
-    for e in cache:
-        keep = e.segment & span
-        new = _fetch_losc_data_file(e.url, host=host, channel=channel, cls=cls,
+    for url in cache:
+        keep = file_segment(url) & span
+        print(url)
+        new = _fetch_losc_data_file(url, host=host, channel=channel, cls=cls,
                                     verbose=verbose).crop(*keep, copy=False)
         if out is None:
             out = new.copy()
@@ -322,15 +321,7 @@ def read_losc_state(filename, channel, group=None, start=None, end=None,
     nddata = dataset.value
     bits = list(map(lambda b: bytes.decode(bytes(b), 'utf-8'), maskset.value))
     # read metadata
-    try:
-        epoch = dataset.attrs['Xstart']
-    except KeyError:
-        try:
-            ce = CacheEntry.from_T050017(h5file.filename, coltype=LIGOTimeGPS)
-        except ValueError:
-            epoch = None
-        else:
-            epoch = ce.segment[0]
+    epoch = dataset.attrs['Xstart']
     try:
         dt = dataset.attrs['Xspacing']
     except KeyError:
@@ -347,7 +338,7 @@ def read_losc_state_cache(*args, **kwargs):
 
     Parameters
     ----------
-    source : `str`, `list`, :class:`glue.lal.Cache`
+    source : `str`, `list`
         path to LOSC-format HDF5 file to read or cache of many files.
     channel : `str`
         name of HDF5 dataset to read.
