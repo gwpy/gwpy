@@ -35,7 +35,7 @@ from gwpy.table import (Table, EventTable)
 from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
 
 import common
-from compat import unittest
+from compat import (unittest, HAS_LAL)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -66,6 +66,7 @@ class TableTests(unittest.TestCase):
         if meta:
             assert a.meta == b.meta
 
+    @unittest.skipUnless(HAS_LAL, 'No module named lal')
     def test_read_write_ligolw(self):
         table = self.TABLE_CLASS.read(TEST_XML_FILE,
                                       format='ligolw.sngl_burst')

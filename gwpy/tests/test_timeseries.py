@@ -41,13 +41,6 @@ use('agg')
 from astropy import units
 from astropy.io.registry import (get_reader, register_reader)
 
-try:
-    from glue.lal import Cache
-except ImportError:  # no lal
-    HAS_CACHE = False
-else:
-    HAS_CACHE = True
-
 from gwpy.detector import Channel
 from gwpy.time import (Time, LIGOTimeGPS)
 from gwpy.timeseries import (TimeSeries, StateVector, TimeSeriesDict,
@@ -59,6 +52,7 @@ from gwpy.spectrogram import Spectrogram
 from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
 
 from test_array import SeriesTestCase
+from compat import HAS_LAL
 import common
 import mockutils
 
@@ -144,8 +138,10 @@ class TimeSeriesTestMixin(object):
 
     # -- test I/O -------------------------------
 
-    @unittest.skipUnless(HAS_CACHE, "No module named lal")
+    @unittest.skipUnless(HAS_LAL, "No module named lal")
     def _test_read_cache(self, format, extension=None, exclude=['channel']):
+        from glue.lal import Cache
+
         if extension is None:
             extension = format
         # make array

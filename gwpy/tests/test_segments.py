@@ -42,7 +42,7 @@ from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 from gwpy.plotter import (SegmentPlot, SegmentAxes)
 
-from compat import (unittest, mock, HAS_H5PY, HAS_DQSEGDB)
+from compat import (unittest, mock, HAS_H5PY, HAS_LAL, HAS_DQSEGDB)
 import common
 import mockutils
 
@@ -220,6 +220,7 @@ class SegmentListTests(unittest.TestCase, SegmentClassTestsMixin):
     TEST_DATA = ACTIVE
     tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_segmentlist')
 
+    @unittest.skipUnless(HAS_LAL, 'No module named lal')
     def test_read_write_segwizard(self):
         return self._test_read_write('segwizard', extension='txt', auto=True)
 
@@ -400,6 +401,7 @@ class DataQualityFlagTests(unittest.TestCase, SegmentClassTestsMixin):
 
     # -- I/O ------------------------------------
 
+    @unittest.skipUnless(HAS_LAL, 'No module named lal')
     def test_read_write_ligolw(self):
         self._test_read_write('ligolw', extension='xml', auto=True,
                               writekwargs={'overwrite': True})
@@ -495,6 +497,7 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
 
     # -- I/O ------------------------------------
 
+    @unittest.skipUnless(HAS_LAL, 'No module named lal')
     def test_from_veto_definer_file(self):
         vdf = self.TEST_CLASS.from_veto_definer_file(self.VETO_DEFINER)
         self.assertNotEqual(len(vdf.keys()), 0)
@@ -511,6 +514,7 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
         vdf2 = self.TEST_CLASS.from_veto_definer_file(VETO_DEFINER_FILE)
         self.assertEqual(len(vdf.keys()), len(vdf2.keys()))
 
+    @unittest.skipUnless(HAS_LAL, 'No module named lal')
     def test_read_write_ligolw(self):
         return self._test_read_write('ligolw', extension='xml', auto=True,
                                      writekwargs={'overwrite': True})
@@ -523,6 +527,7 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
 
     # -- segment queries ------------------------
 
+    @unittest.skipUnless(HAS_LAL, 'No module named lal')
     def test_populate(self):
         # read veto definer
         start, end = VETO_DEFINER_TEST_SEGMENTS[0]
