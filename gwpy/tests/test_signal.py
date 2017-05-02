@@ -19,7 +19,7 @@
 """Unit test for signal module
 """
 
-from compat import unittest
+from compat import (unittest, HAS_LAL)
 
 import numpy
 from numpy import testing as nptest
@@ -28,7 +28,8 @@ from scipy import signal
 
 from astropy import units
 
-import lal
+if HAS_LAL:
+    import lal
 
 from gwpy import signal as gwpy_signal
 from gwpy.signal.fft import (lal as fft_lal, utils as fft_utils,
@@ -140,6 +141,7 @@ class FFTUtilsTests(unittest.TestCase):
 
 # -- gwpy.signal.fft.lal ------------------------------------------------------
 
+@unittest.skipUnless(HAS_LAL, 'No module named lal')
 class LALFftTests(unittest.TestCase):
     def test_generate_window(self):
         # test default arguments

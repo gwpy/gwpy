@@ -39,6 +39,13 @@ else:
     HAS_H5PY = True
 
 try:
+    import lal
+except ImportError:
+    HAS_LAL = False
+else:
+    HAS_LAL = True
+
+try:
     import dqsegdb
 except ImportError:
     HAS_DQSEGDB = False

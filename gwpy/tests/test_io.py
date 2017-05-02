@@ -22,12 +22,11 @@
 import os
 
 from common import skip_missing_import
-from compat import (unittest, mock)
+from compat import (unittest, mock, HAS_LAL)
 import mockutils
 
 from gwpy.io import (datafind, gwf)
-from gwpy.io.cache import (Cache, CacheEntry, cache_segments,
-                           flatten, find_contiguous)
+from gwpy.io.cache import (cache_segments, flatten, find_contiguous)
 from gwpy.segments import (Segment, SegmentList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -125,7 +124,11 @@ class NdsIoTestCase(unittest.TestCase):
 
 class CacheIoTestCase(unittest.TestCase):
     @staticmethod
+    @unittest.skipUnless(HAS_LAL, 'No module named lal')
     def make_cache():
+        from lal.utils import CacheEntry
+        from glue.lal import Cache
+
         segs = SegmentList()
         cache = Cache()
         for seg in [(0, 1), (1, 2), (4, 5)]:
@@ -212,7 +215,11 @@ class GwfIoTestCase(unittest.TestCase):
 # -- gwpy.io.datafind ---------------------------------------------------------
 
 class DataFindIoTestCase(unittest.TestCase):
-    MOCK_CONNECTION = mockutils.mock_datafind_connection(TEST_GWF_FILE)
+
+    @classmethod
+    @unittest.skipUnless(HAS_LAL, 'No module named lal')
+    def setUpClass(cls):
+        cls.MOCK_CONNECTION = mockutils.mock_datafind_connection(TEST_GWF_FILE)
 
     def test_on_tape(self):
         self.assertFalse(datafind.on_tape(TEST_GWF_FILE))
