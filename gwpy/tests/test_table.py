@@ -132,8 +132,8 @@ class TableTests(unittest.TestCase):
 
     def test_read_write_root(self):
         table = self.TABLE_CLASS.read(
-            TEST_XML_FILE, format='ligolw.sngl_burst',
-            columns=['peak_time', 'peak_time_ns', 'snr', 'peak_frequency'])
+            TEST_OMEGA_FILE, format='ascii.omega',
+            include_names=['time', 'normalizedEnergy', 'frequency'])
         tempdir = tempfile.mkdtemp()
         try:
             fp = tempfile.mktemp(suffix='.root', dir=tempdir)
@@ -157,12 +157,8 @@ class TableTests(unittest.TestCase):
 
     def test_read_write_gwf(self):
         table = self.TABLE_CLASS.read(
-            TEST_XML_FILE, format='ligolw.sngl_burst',
-            columns=['peak_time', 'peak_time_ns', 'snr', 'peak_frequency'])
-        # add expected columns for GWF
-        time = table['peak_time'] + table['peak_time_ns'] * 1e-9
-        time.name = 'time'
-        table.add_column(time)
+            TEST_OMEGA_FILE, format='ascii.omega',
+            include_names=['time', 'normalizedEnergy', 'frequency'])
         # test read/write
         columns = table.dtype.names
         tempdir = tempfile.mkdtemp()
@@ -193,14 +189,16 @@ class EventTableTests(TableTests):
         self.assertTableEqual(table, table2)
 
     def test_read_write_omega(self):
+        formats = {'time': '%.18f', 'normalizedEnergy': '%.18f',
+                   'frequency': '%.18f'}
         # read canonical table
         table = self.TABLE_CLASS.read(
-            TEST_XML_FILE, format='ligolw.sngl_burst',
-            columns=['peak_time', 'peak_time_ns', 'snr', 'peak_frequency'])
+            TEST_OMEGA_FILE, format='ascii.omega',
+            include_names=['time', 'normalizedEnergy', 'frequency'])
         # test read/write
         with tempfile.NamedTemporaryFile(suffix='.txt') as f:
             # test read
-            table.write(f, format='ascii.omega')
+            table.write(f, format='ascii.omega', formats=formats)
             f.seek(0)
             # test read gives back same table
             table2 = self.TABLE_CLASS.read(f, format='ascii.omega')
@@ -214,16 +212,18 @@ class EventTableTests(TableTests):
     def test_event_rates(self):
         # test event_rate
         table = self.TABLE_CLASS.read(
-            TEST_XML_FILE, format='ligolw.sngl_burst',
-            columns=['time', 'snr'])
+            TEST_OMEGA_FILE, format='ascii.omega',
+            include_names=['time', 'normalizedEnergy'])
         rate = table.event_rate(1)
         self.assertIsInstance(rate, TimeSeries)
         self.assertEqual(rate.sample_rate, 1 * units.Hz)
         # test binned_event_rates
-        rates = table.binned_event_rates(1, 'snr', [2, 4, 6])
+        rates = table.binned_event_rates(1, 'normalizedEnergy', [2, 4, 6])
         self.assertIsInstance(rates, TimeSeriesDict)
-        table.binned_event_rates(1, 'snr', [2, 4, 6], operator='in')
-        table.binned_event_rates(1, 'snr', [(0, 2), (2, 4), (4, 6)])
+        table.binned_event_rates(1, 'normalizedEnergy', [2, 4, 6],
+                                 operator='in')
+        table.binned_event_rates(1, 'normalizedEnergy',
+                                 [(0, 2), (2, 4), (4, 6)])
 
     def test_plot(self):
         table = self.TABLE_CLASS.read(TEST_OMEGA_FILE, format='ascii.omega')
