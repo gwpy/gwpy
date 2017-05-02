@@ -24,8 +24,6 @@ import warnings
 
 import numpy
 
-import glue.segments
-
 try:
     from glue.ligolw.lsctables import TableByName
 except ImportError:
@@ -37,8 +35,6 @@ from .. import (Table, EventTable)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = []
-
-INVALID_REC_TYPES = [glue.segments.segment]
 
 # methods to exclude from get_as_columns conversions
 GET_AS_EXCLUDE = ['get_column', 'get_table']
@@ -136,9 +132,6 @@ def _table_from_ligolw(llwtable, target, copy, columns=None,
                     dtype = None
             if dtype == LIGOTimeGPS:
                 dtype = numpy.float64
-            elif dtype in INVALID_REC_TYPES:
-                raise TypeError("Cannot store data of type %s in %s"
-                                % (dtype, target.__name__))
             names.append(column)
             try:
                 data.append(target.Column(name=rename[column], data=arr,
