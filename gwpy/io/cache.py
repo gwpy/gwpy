@@ -116,14 +116,14 @@ def file_list(flist):
     if isinstance(flist, FILE_LIKE):
         flist = flist.name
     # then format list of file paths
-    if HAS_LAL and isinstance(flist, CacheEntry):
+    if HAS_CACHE and isinstance(flist, CacheEntry):
         return [flist.path]
     elif (isinstance(flist, string_types) and
           flist.endswith(('.cache', '.lcf'))):
         return open_cache(flist).pfnlist()
     elif isinstance(flist, string_types):
         return flist.split(',')
-    elif HAS_LAL and isinstance(flist, Cache):
+    elif HAS_CACHE and isinstance(flist, Cache):
         return flist.pfnlist()
     elif isinstance(flist, (list, tuple)):
         return flist
