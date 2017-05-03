@@ -51,3 +51,10 @@ except ImportError:
     HAS_DQSEGDB = False
 else:
     HAS_DQSEGDB = True
+
+try:
+    import m2crypto
+except ImportError:
+    HAS_M2CRYPTO = False
+else:
+    HAS_M2CRYPTO = True
