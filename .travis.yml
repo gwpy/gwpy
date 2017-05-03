@@ -78,7 +78,8 @@ before_script:
   - pip list installed
 
 script:
-  - pip install coverage
+  # need to install pytest here to avoid version conflict later
+  - pip install coverage "pytest>=2.8"
   - coverage run ./setup.py test ${TEST_FLAGS}
 
 after_success:
