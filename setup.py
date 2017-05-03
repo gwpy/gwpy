@@ -102,7 +102,7 @@ except ImportError:
 
 setup_requires.append('pytest-runner')
 tests_require = [
-    'pytest',
+    'pytest>=2.8',
 ]
 if sys.version < '3':
     tests_require.append('mock')
