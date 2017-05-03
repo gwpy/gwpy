@@ -1,44 +1,62 @@
-.. |numpy| replace:: `numpy`
-.. _numpy: //numpy.org/
-
-.. |scipy| replace:: `scipy`
-.. _scipy: //www.scipy.org/
-
-.. |matplotlib| replace:: `matplotlib`
-.. _matplotlib: //matplotlib.org/
-
 .. |astropy| replace:: `astropy`
-.. _astropy: //astropy.org/
+.. _astropy: http://www.astropy.org/
 
 .. |dateutil| replace:: `dateutil`
-.. _dateutil: //pypi.python.org/pypi/python-dateutil/
-
-.. |root_numpy| replace:: `root_numpy`
-.. _root_numpy: //rootpy.github.io/root_numpy/
-
-.. |h5py| replace:: `h5py`
-.. _h5py: //docs.h5py.org/en/latest/
-
-.. |glue| replace:: `glue`
-.. _glue: //software.ligo.org/docs/glue/
-
-.. |glue.ligolw| replace:: `glue.ligolw`
-.. _glue.ligolw: //software.ligo.org/docs/glue/glue.ligolw-module.html
-
-.. |glue.segments| replace:: `glue.segments`
-.. _glue.segments: //software.ligo.org/docs/glue/glue.segments-module.html
-
-.. |LDAStools.frameCPP| replace:: `LDAStools.frameCPP`
-.. _LDAStools.frameCPP: //ldas-jobs.ligo.caltech.edu/~emaros/share/doc/ldas-tools/framecpp/html/
-
-.. |lal| replace:: `lal`
-.. _lal: //software.ligo.org/docs/lalsuite/lal/
-
-.. |lalframe| replace:: `lalframe`
-.. _lalframe: //software.ligo.org/docs/lalsuite/lalframe/
-
-.. |nds2| replace:: `nds2`
-.. _nds2: //www.lsc-group.phys.uwm.edu/daswg/projects/nds-client/doc/manual/
+.. _dateutil: https://pypi.python.org/pypi/python-dateutil/
 
 .. |dqsegdb| replace:: `dqsegdb`
-.. _dqsegdb: //wiki.ligo.org/DASWG/DQSEGDB
+.. _dqsegdb: https://wiki.ligo.org/DASWG/DQSEGDB
+
+.. |glue| replace:: `glue`
+.. _glue: http://software.ligo.org/docs/glue/
+
+.. |glue.ligolw| replace:: `glue.ligolw`
+.. _glue.ligolw: http://software.ligo.org/docs/glue/glue.ligolw-module.html
+
+.. |glue.segments| replace:: `glue.segments`
+.. _glue.segments: http://software.ligo.org/docs/glue/glue.segments-module.html
+
+.. |h5py| replace:: `h5py`
+.. _h5py: http://docs.h5py.org/en/latest/
+
+.. |LDAStools.frameCPP| replace:: `LDAStools.frameCPP`
+.. _LDAStools.frameCPP: https://ldas-jobs.ligo.caltech.edu/~emaros/share/doc/ldas-tools/framecpp/html/
+
+.. |lal| replace:: `lal`
+.. _lal: http://software.ligo.org/docs/lalsuite/lal/
+
+.. |lalframe| replace:: `lalframe`
+.. _lalframe: http://software.ligo.org/docs/lalsuite/lalframe/
+
+.. |ligotimegps| replace:: `ligotimegps`
+.. _ligotimegps: https://github.com/lscsoft/ligotimegps/
+
+.. |matplotlib| replace:: `matplotlib`
+.. _matplotlib: https://matplotlib.org/
+
+.. |MySQLdb| replace:: `MySQLdb`
+.. _MySQLdb: http://mysql-python.sourceforge.net/
+
+.. |nds2| replace:: `nds2`
+.. _nds2: https://www.lsc-group.phys.uwm.edu/daswg/projects/nds-client/doc/manual/
+
+.. |numpy| replace:: `numpy`
+.. _numpy: http://numpy.org/
+
+.. |numpydoc| replace:: `numpydoc`
+.. _numpydoc: https://pypi.python.org/pypi/numpydoc
+
+.. |root_numpy| replace:: `root_numpy`
+.. _root_numpy: https://rootpy.github.io/root_numpy/
+
+.. |scipy| replace:: `scipy`
+.. _scipy: http://www.scipy.org/
+
+.. |sphinx| replace:: `sphinx`
+.. _sphinx: http://www.sphinx-doc.org/
+
+.. |sphinx-bootstrap-theme| replace:: `sphinx-bootstrap-theme`
+.. _sphinx-bootstrap-theme: http://sphinx-bootstrap-theme.readthedocs.io/
+
+.. |sphinxcontrib-programoutput| replace:: `sphinx-programoutput`
+.. _sphinxcontrib-programoutput: https://pythonhosted.org/sphinxcontrib-programoutput/
