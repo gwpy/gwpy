@@ -75,9 +75,11 @@ before_script:
   - pip list installed
 
 script:
+  - pip install coverage
   - coverage run -m python setup.py test
 
 after_success:
+  - pip install coveralls
   - coveralls
 
 deploy:
