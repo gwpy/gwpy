@@ -74,7 +74,7 @@ before_script:
   - pip list installed
 
 script:
-  - . .travis/run-tests.sh
+  - coverage run -m python setup.py test
 
 after_success:
   - coveralls
