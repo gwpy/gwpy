@@ -76,7 +76,7 @@ before_script:
 
 script:
   - pip install coverage
-  - coverage run -m python setup.py test
+  - coverage run ./setup.py test
 
 after_success:
   - pip install coveralls
