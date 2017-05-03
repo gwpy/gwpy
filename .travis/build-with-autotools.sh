@@ -17,7 +17,7 @@ echo "Will install into ${target}"
 echo "Building into $builddir"
 
 # check for existing file
-if [ -f $builddir/.travis-src-file ] && [ `cat $builddir/.travis-src-file` == "$tarball $@" ]; then
+if [ -f $builddir/.travis-src-file ] && [ "`cat $builddir/.travis-src-file`" == "$tarball $@" ]; then
     echo "Cached build directory found, skippping to make..."
     cd $builddir
 else
