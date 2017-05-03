@@ -80,7 +80,7 @@ before_script:
 script:
   # need to install pytest here to avoid version conflict later
   - pip install coverage "pytest>=2.8"
-  - coverage run ./setup.py test --addopts gwpy/tests/ ${TEST_FLAGS}
+  - coverage run ./setup.py test --addopts "gwpy/tests/ ${TEST_FLAGS}"
 
 after_success:
   - pip install coveralls
