@@ -32,6 +32,7 @@ from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.plotter import FrequencySeriesPlot
 
 from test_array import (SeriesTestCase, Array2DTestCase)
+from compat import (unittest, HAS_H5PY)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -104,6 +105,7 @@ class FrequencySeriesTestCase(SeriesTestCase):
         array2 = type(array).from_pycbc(pycbcarray)
         self.assertArraysEqual(array, array2, 'units', 'df', 'f0')
 
+    @unittest.skipUnless(HAS_H5PY, "No module named h5py")
     def test_read_write_hdf5(self):
         try:
             self._test_read_write('hdf5', auto=False)
