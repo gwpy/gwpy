@@ -39,18 +39,21 @@ python:
 
 env:
   # minimal build, normal tests
-  - PIP_FLAGS="--upgrade" MINIMAL=true PYTEST_FLAGS="-v -r s"
+  - PIP_FLAGS="--upgrade" MINIMAL=true TEST_FLAGS=""
+
   # normal build, normal tests
-  - PIP_FLAGS="--upgrade" MINIMAL=false PYTEST_FLAGS="-v -r s"
+  - PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS=""
+
   # normal build, pedantic tests
-  - PIP_FLAGS="--upgrade" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
+  - PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS="--addopts --strict"
+
   # pre-release build, pedantic tests
-  - PIP_FLAGS="--upgrade --pre" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
+  - PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--addopts --strict"
 
 matrix:
   allow_failures:
     - python: '2.7'
-      env: PIP_FLAGS="--upgrade --pre" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
+      env: PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--addopts --strict"
     - python: '3.5'
   fast_finish: true
 
@@ -76,7 +79,7 @@ before_script:
 
 script:
   - pip install coverage
-  - coverage run ./setup.py test
+  - coverage run ./setup.py test ${TEST_FLAGS}
 
 after_success:
   - pip install coveralls
