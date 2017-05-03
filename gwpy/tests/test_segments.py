@@ -36,13 +36,12 @@ import pytest
 from matplotlib import use
 use('agg')
 
-from glue.LDBDWClient import LDBDClientException
 
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 from gwpy.plotter import (SegmentPlot, SegmentAxes)
 
-from compat import (unittest, mock, HAS_H5PY, HAS_LAL, HAS_DQSEGDB)
+from compat import (unittest, mock, HAS_H5PY, HAS_LAL, HAS_DQSEGDB, HAS_M2CRYPTO)
 import common
 import mockutils
 
@@ -435,7 +434,9 @@ class DataQualityFlagTests(unittest.TestCase, SegmentClassTestsMixin):
         self.assertEqual(result.known, QUERY_RESULT[flag].known)
         self.assertEqual(result.active, QUERY_RESULT[flag].active)
 
+    @unittest.skipUnless(HAS_M2CRYPTO, "No module named m2crypto")
     def test_query_segdb(self):
+        from glue.LDBDWClient import LDBDClientException
         flag = QUERY_FLAGS[0]
         try:
             result = self.TEST_CLASS.query_segdb(flag, QUERY_START, QUERY_END,
@@ -578,7 +579,9 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
             self.assertEqual(result[flag].known, QUERY_RESULT[flag].known)
             self.assertEqual(result[flag].active, QUERY_RESULT[flag].active)
 
+    @unittest.skipUnless(HAS_M2CRYPTO, "No module named m2crypto")
     def test_query_segdb(self):
+        from glue.LDBDWClient import LDBDClientException
         try:
             result = self.TEST_CLASS.query_segdb(
                 QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL_SEGDB)
