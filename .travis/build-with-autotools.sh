@@ -39,7 +39,7 @@ else
     if [ -f ./CMakeLists.txt ]; then
         cmake . -DCMAKE_INSTALL_PREFIX=$target $@
     else
-        ./configure --enable-silent-rules --prefix=$target $@
+        ./configure --prefix=$target $@
     fi
 fi
 
@@ -47,7 +47,7 @@ fi
 if [ ! -f ./Makefile ] && [ -f ./CMakeLists.txt ]; then
     cmake . -DCMAKE_INSTALL_PREFIX=$target $@
 elif [ ! -f ./Makefile ]; then
-    ./configure --enable-silent-rules --prefix=$target $@
+    ./configure --prefix=$target $@
 fi
 
 # make and install
