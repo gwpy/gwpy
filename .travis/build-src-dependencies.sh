@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# build and install numpy first
+pip install ${PIP_FLAGS} "numpy>=1.10"
+
 # set paths for PKG_CONFIG
 export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${VIRTUAL_ENV}/lib/pkgconfig
 
@@ -10,15 +13,12 @@ echo "Set CXX=${CXX}"
 # get latest version of packages
 . .travis/find-latest-releases.sh
 
+FAILURES=""
+
 # -- LAL ----------------------------------------------------------------------
 
 bash -e .travis/build-with-autotools.sh \
     python-${TRAVIS_PYTHON_VERSION}-lal ${LAL} --enable-swig-python
-
-# stop here if doing a minimal build
-[[ "$MINIMAL" = true ]] && return
-
-FAILURES=""
 
 # -- framecpp -----------------------------------------------------------------
 
