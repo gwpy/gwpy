@@ -7,7 +7,6 @@ set -e
 builddir=$1
 tarball=$2
 shift 2
-configargs="$@"
 
 echo "----------------------------------------------------------------------"
 echo "Installing from ${tarball}"
@@ -18,7 +17,7 @@ echo "Will install into ${target}"
 echo "Building into $builddir"
 
 # check for existing file
-if [ -f $builddir/.travis-src-file ] && [ `cat $builddir/.travis-src-file` == "$tarball" ]; then
+if [ -f $builddir/.travis-src-file ] && [ `cat $builddir/.travis-src-file` == "$tarball $@" ]; then
     echo "Cached build directory found, skippping to make..."
     cd $builddir
 else
@@ -28,7 +27,7 @@ else
     mkdir -p $builddir
     wget $tarball -O `basename $tarball`
     tar -xf `basename $tarball` -C $builddir --strip-components=1
-    echo $tarball > $builddir/.travis-src-file
+    echo "$tarball $@" > $builddir/.travis-src-file
 
     # boot and configure
     cd $builddir
