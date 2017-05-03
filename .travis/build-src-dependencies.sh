@@ -18,29 +18,38 @@ FAILURES=""
 # -- LAL ----------------------------------------------------------------------
 
 bash -e .travis/build-with-autotools.sh \
-    python-${TRAVIS_PYTHON_VERSION}-lal ${LAL} --enable-swig-python
+    python-${TRAVIS_PYTHON_VERSION}-lal ${LAL} \
+    --quiet --enable-silent-rules \
+    --enable-swig-python --disable-swig-octave --disable-doxygen \
+    --with-hdf5=no || FAILURES="$FAILURES lal"
 
 # -- framecpp -----------------------------------------------------------------
 
 bash .travis/build-with-autotools.sh \
-    python-${TRAVIS_PYTHON_VERSION}-ldas-tools-al \
-    ${LDAS_TOOLS_AL} --enable-python || FAILURES="$FAILURES ldas-tools-al"
+    python-${TRAVIS_PYTHON_VERSION}-ldas-tools-al ${LDAS_TOOLS_AL} \
+    --quiet --enable-silent-rules \
+    --enable-python || FAILURES="$FAILURES ldas-tools-al"
 
 bash .travis/build-with-autotools.sh \
-    python-${TRAVIS_PYTHON_VERSION}-framecpp \
-    ${FRAMECPP} --enable-python || FAILURES="$FAILURES framecpp"
+    python-${TRAVIS_PYTHON_VERSION}-framecpp ${FRAMECPP} \
+    --quiet --enable-silent-rules \
+    --enable-python --disable-latex \
+    --enable-fast-install || FAILURES="$FAILURES framecpp"
 
 # -- lalframe -----------------------------------------------------------------
 
 bash .travis/build-with-autotools.sh \
-    python-${TRAVIS_PYTHON_VERSION}-lalframe \
-    ${LALFRAME} --enable-swig-python || FAILURES="$FAILURES lalframe"
+    python-${TRAVIS_PYTHON_VERSION}-lalframe ${LALFRAME} \
+    --quiet --enable-silent-rules \
+    --enable-swig-python --disable-swig-octave --disable-doxygen \
+    || FAILURES="$FAILURES lalframe"
 
 # -- NDS2 ---------------------------------------------------------------------
 
 bash .travis/build-with-autotools.sh \
-    python-${TRAVIS_PYTHON_VERSION}-nds2-client \
-    ${NDS2_CLIENT} -DENABLE_SWIG_JAVA=false -DENABLE_SWIG_MATLAB=false || FAILURES="$FAILURES nds2-client"
+    python-${TRAVIS_PYTHON_VERSION}-nds2-client ${NDS2_CLIENT} \
+    -DENABLE_SWIG_JAVA=false -DENABLE_SWIG_MATLAB=false \
+    || FAILURES="$FAILURES nds2-client"
 
 # -- exit ---------------------------------------------------------------------
 
