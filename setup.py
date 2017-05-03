@@ -71,7 +71,7 @@ extras_require = {
     'hdf5': ['h5py>=1.3'],
     'root': ['root_numpy'],
     'segments': ['dqsegdb'],
-    'hacr': ['MySQL-python'],
+    'hacr': ['mysqlclient'],
     'docs': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme',
              'sphinxcontrib-programoutput'],
 }
