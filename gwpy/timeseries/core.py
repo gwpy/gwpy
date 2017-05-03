@@ -522,7 +522,6 @@ class TimeSeriesBase(Series):
         """
         return cls(ts.data, epoch=ts.start_time, sample_rate=1/ts.delta_t)
 
-    @with_import('pycbc.types')
     def to_pycbc(self, copy=True):
         """Convert this `TimeSeries` into a PyCBC
         `~pycbc.types.timeseries.TimeSeries`
@@ -537,7 +536,8 @@ class TimeSeriesBase(Series):
         timeseries : `~pycbc.types.timeseries.TimeSeries`
             a PyCBC representation of this `TimeSeries`
         """
-        return types.TimeSeries(self.data,
+        from pycbc import types
+        return types.TimeSeries(self.value,
                                 delta_t=self.dt.to('s').value,
                                 epoch=self.epoch.gps, copy=copy)
 

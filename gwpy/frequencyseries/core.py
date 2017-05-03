@@ -405,10 +405,9 @@ class FrequencySeries(Series):
         """
         return cls(fs.data, f0=0, df=fs.delta_f, epoch=fs.epoch)
 
-    @with_import('pycbc.types')
     def to_pycbc(self, copy=True):
         """Convert this `FrequencySeries` into a
-        `pycbc.types.frequencyseries.FrequencySeries`
+        `~pycbc.types.frequencyseries.FrequencySeries`
 
         Parameters
         ----------
@@ -420,9 +419,12 @@ class FrequencySeries(Series):
         frequencyseries : `pycbc.types.frequencyseries.FrequencySeries`
             a PyCBC representation of this `FrequencySeries`
         """
+        from pycbc import types
+
         if self.epoch is None:
             epoch = None
         else:
             epoch = self.epoch.gps
-        return types.FrequencySeries(self.data, delta_f=self.df.to('Hz').value,
+        return types.FrequencySeries(self.value,
+                                     delta_f=self.df.to('Hz').value,
                                      epoch=epoch, copy=copy)
