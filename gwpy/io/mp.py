@@ -133,7 +133,8 @@ def read_multi(flatten, cls, source, *args, **kwargs):
                 raise x
 
     # return combined object
-    return flatten(zip(*output)[1])
+    _, out = zip(*output)
+    return flatten(out)
 
 
 def _read_from_queue(f, q_in, q_out):
