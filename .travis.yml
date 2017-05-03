@@ -66,7 +66,7 @@ before_install:
     if [ "${MINIMAL}" != true ]; then
         source .travis/build-src-dependencies.sh;
         pip install ${PIP_FLAGS} -r requirements-dev.txt;
-    done
+    fi
 
 install:
   - pip install .
