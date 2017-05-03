@@ -45,15 +45,15 @@ env:
   - PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS=""
 
   # normal build, pedantic tests
-  - PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS="--addopts --strict"
+  - PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS="--strict"
 
   # pre-release build, pedantic tests
-  - PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--addopts --strict"
+  - PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--strict"
 
 matrix:
   allow_failures:
     - python: '2.7'
-      env: PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--addopts --strict"
+      env: PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--strict"
     - python: '3.5'
   fast_finish: true
 
@@ -80,7 +80,7 @@ before_script:
 script:
   # need to install pytest here to avoid version conflict later
   - pip install coverage "pytest>=2.8"
-  - coverage run ./setup.py test ${TEST_FLAGS}
+  - coverage run ./setup.py test --addopts gwpy/tests/ ${TEST_FLAGS}
 
 after_success:
   - pip install coveralls
