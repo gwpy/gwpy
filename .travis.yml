@@ -58,11 +58,8 @@ before_install:
   # update pip
   - pip install ${PIP_FLAGS} --upgrade pip
 
-  # build and install numpy first (for SWIG bindings)
-  - pip install ${PIP_FLAGS} "numpy>=1.10"
-
   # build src packages and set 'latest' package versions (if required)
-  - source .travis/build-src-dependencies.sh
+  - [ "${MINIMAL}" != true ] && source .travis/build-src-dependencies.sh
 
   # install cython to speed up scipy build
   - travis_retry pip install ${PIP_FLAGS} --install-option="--no-cython-compile" Cython
