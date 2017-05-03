@@ -64,8 +64,8 @@ before_install:
   # install cython to speed up scipy build
   - travis_retry pip install ${PIP_FLAGS} --install-option="--no-cython-compile" Cython
 
-  # install dependencies
-  - pip install ${PIP_FLAGS} -r requirements-dev.txt
+  # install dependencies (if required)
+  - [ "${MINIMAL}" != true ] && pip install ${PIP_FLAGS} -r requirements-dev.txt
 
 install:
   - pip install .
