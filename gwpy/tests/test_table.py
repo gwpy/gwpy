@@ -196,7 +196,7 @@ class EventTableTests(TableTests):
             TEST_OMEGA_FILE, format='ascii.omega',
             include_names=['time', 'normalizedEnergy', 'frequency'])
         # test read/write
-        with tempfile.NamedTemporaryFile(suffix='.txt') as f:
+        with tempfile.NamedTemporaryFile(suffix='.txt', mode='w') as f:
             # test read
             table.write(f, format='ascii.omega', formats=formats)
             f.seek(0)
