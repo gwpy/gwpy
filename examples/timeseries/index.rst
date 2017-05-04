@@ -14,3 +14,4 @@
    blrms
    statevector
    qscan
+   pycbc-snr
