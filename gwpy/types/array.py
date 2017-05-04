@@ -375,6 +375,10 @@ class Array(Quantity):
 
     # -- array methods --------------------------
 
+    def abs(self, axis=None, **kwargs):
+        return self._wrap_function(numpy.abs, axis, **kwargs)
+    abs.__doc__ = numpy.abs.__doc__
+
     def median(self, axis=None, **kwargs):
         return self._wrap_function(numpy.median, axis, **kwargs)
     median.__doc__ = numpy.median.__doc__
