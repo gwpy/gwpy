@@ -31,7 +31,7 @@ from compat import (unittest, mock, HAS_H5PY)
 import pytest
 
 import numpy
-from numpy import testing as nptest
+from numpy import (may_share_memory, testing as nptest)
 
 from scipy import signal
 
@@ -352,6 +352,31 @@ class TimeSeriesTestMixin(object):
         self.assertEqual(lalts.sampleUnits, lal.DimensionlessUnit)
         ts2 = self.TEST_CLASS.from_lal(lalts)
         self.assertIs(ts2.unit, units.dimensionless_unscaled)
+
+    def test_to_from_pycbc(self):
+        try:
+            from pycbc.types import TimeSeries as PyCBCTimeSeries
+        except ImportError as e:
+            self.skipTest(str(e))
+        ts = self.create()
+        # test default conversion
+        pycbcts = ts.to_pycbc()
+        self.assertIsInstance(pycbcts, PyCBCTimeSeries)
+        nptest.assert_array_equal(ts.value, pycbcts.data)
+        self.assertEqual(ts.t0.value, pycbcts.start_time)
+        self.assertEqual(ts.dt.value, pycbcts.delta_t)
+        # go back and check we get back what we put in in the first place
+        ts2 = type(ts).from_pycbc(pycbcts)
+        nptest.assert_array_equal(ts.value, ts2.value)
+        self.assertQuantityEqual(ts.t0, ts2.t0)
+        self.assertQuantityEqual(ts.dt, ts2.dt)
+        self.assertIs(ts2.unit, units.dimensionless_unscaled)
+        # test copy=False
+        pycbcts = ts.to_pycbc(copy=False)
+        assert may_share_memory(ts.value, pycbcts.data)
+        ts2 = type(ts).from_pycbc(pycbcts, copy=False)
+        assert may_share_memory(ts.value, ts2.value)
+        assert may_share_memory(ts2.value, pycbcts.data)
 
     def test_io_identify(self):
         common.test_io_identify(self.TEST_CLASS, ['txt', 'hdf5', 'gwf'])
