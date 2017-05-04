@@ -265,7 +265,7 @@ def welch(timeseries, segmentlength, noverlap=None, window=None, plan=None):
                          method='welch', window=window, plan=plan)
 
 
-def bartlett(timeseries, segmentlength, window=None, plan=None):
+def bartlett(timeseries, segmentlength, noverlap=None, window=None, plan=None):
     """Calculate an PSD of this `TimeSeries` using Bartlett's method
 
     Parameters
@@ -294,6 +294,9 @@ def bartlett(timeseries, segmentlength, window=None, plan=None):
     --------
     lal.REAL8AverageSpectrumWelch
     """
+    if noverlap:
+        raise TypeError("bartlett() got an unexpected keyword argument "
+                        "'noverlap'")
     return _lal_spectrum(timeseries, segmentlength, noverlap=0,
                          method='welch', window=window, plan=plan)
 
