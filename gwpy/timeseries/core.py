@@ -507,7 +507,7 @@ class TimeSeriesBase(Series):
         return lalts
 
     @classmethod
-    def from_pycbc(cls, ts):
+    def from_pycbc(cls, ts, copy=True):
         """Convert a `pycbc.types.timeseries.TimeSeries` into a `TimeSeries`
 
         Parameters
@@ -515,12 +515,15 @@ class TimeSeriesBase(Series):
         ts : `pycbc.types.timeseries.TimeSeries`
             the input PyCBC `~pycbc.types.timeseries.TimeSeries` array
 
+        copy : `bool`, optional, default: `True`
+            if `True`, copy these data to a new array
+
         Returns
         -------
         timeseries : `TimeSeries`
             a GWpy version of the input timeseries
         """
-        return cls(ts.data, epoch=ts.start_time, sample_rate=1/ts.delta_t)
+        return cls(ts.data, t0=ts.start_time, dt=ts.delta_t, copy=copy)
 
     def to_pycbc(self, copy=True):
         """Convert this `TimeSeries` into a PyCBC

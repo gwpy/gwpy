@@ -388,7 +388,7 @@ class FrequencySeries(Series):
         return lalfs
 
     @classmethod
-    def from_pycbc(cls, fs):
+    def from_pycbc(cls, fs, copy=True):
         """Convert a `pycbc.types.frequencyseries.FrequencySeries` into
         a `FrequencySeries`
 
@@ -398,12 +398,15 @@ class FrequencySeries(Series):
             the input PyCBC `~pycbc.types.frequencyseries.FrequencySeries`
             array
 
+        copy : `bool`, optional, default: `True`
+            if `True`, copy these data to a new array
+
         Returns
         -------
         spectrum : `FrequencySeries`
             a GWpy version of the input frequency series
         """
-        return cls(fs.data, f0=0, df=fs.delta_f, epoch=fs.epoch)
+        return cls(fs.data, f0=0, df=fs.delta_f, epoch=fs.epoch, copy=copy)
 
     def to_pycbc(self, copy=True):
         """Convert this `FrequencySeries` into a
