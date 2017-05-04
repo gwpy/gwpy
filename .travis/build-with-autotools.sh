@@ -51,7 +51,7 @@ elif [ ! -f ./Makefile ]; then
 fi
 
 # make and install
-make --silent
+make --silent -j2 || { echo "Parallel build failed, retrying serial build..."; make --silent; }
 make install --silent
 
 # finish
