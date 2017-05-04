@@ -495,7 +495,7 @@ class Series(Array):
                 if item.step:
                     new.dx = self.dx * item.step
             else:
-                self.xindex = self.xindex[item]
+                new.xindex = self.xindex[item]
         elif isinstance(item, numpy.ndarray):  # index array
             new.xindex = self.xindex[item]
         return new
