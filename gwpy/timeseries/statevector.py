@@ -791,7 +791,7 @@ class StateVector(TimeSeriesBase):
         elif (rate1 / rate2).is_integer():
             factor = int(rate1 / rate2)
             # reshape incoming data to one column per new sample
-            newsize = self.size / factor
+            newsize = int(self.size / factor)
             old = self.value.reshape((newsize, self.size // newsize))
             # work out number of bits
             if self.bits is not None and len(self.bits):
