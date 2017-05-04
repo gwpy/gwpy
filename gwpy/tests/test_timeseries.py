@@ -707,7 +707,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         # actually test properly
         ray = ts.rayleigh_spectrum(.5)  # no overlap
         self.assertEqual(ray.df, 2 * units.Hz)
-        self.assertEqual(ray.max().value, 0.9997307802003135)
+        self.assertAlmostEqual(ray.max().value, 0.9997307802003135)
         self.assertEqual(ray.frequencies[ray.argmax()], 5362 * units.Hz)
         ray = ts.rayleigh_spectrum(.5, .25)  # 50 % overlap
         self.assertEqual(ray.max().value, 1.3967672286018407)
