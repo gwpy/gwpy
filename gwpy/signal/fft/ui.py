@@ -131,7 +131,7 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
     chunks = []
     x = y = 0
     dx = nstride - halfoverlap
-    while x + nstride < timeseries.size:
+    while x + nstride <= timeseries.size:
         y = min(timeseries.size, x + nstride + noverlap)
         chunks.append((x, y))
         x += dx
