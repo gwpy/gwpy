@@ -610,6 +610,12 @@ class Channel(object):
                 return False
         return True
 
+    def __hash__(self):
+        hash_ = 0
+        for attr in ['name', 'sample_rate', 'unit', 'url', 'type', 'dtype']:
+            hash_ += hash(getattr(self, attr))
+        return hash_
+
 
 _re_ifo = re.compile("[A-Z]\d:")
 _re_cchar = re.compile("[-_]")
