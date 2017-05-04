@@ -121,7 +121,9 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
         """Calculate a single PSD for a spectrogram
         """
         try:
-            return psd(ts, method_func, *args, **kwargs)
+            psd_ = psd(ts, method_func, *args, **kwargs)
+            del psd_.epoch  # fixes Segmentation fault (no idea why it faults)
+            return psd_
         except Exception as e:
             if nproc == 1:
                 raise
