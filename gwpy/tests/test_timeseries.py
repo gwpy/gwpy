@@ -683,16 +683,14 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(sg.df, 2 * units.Hertz)
         self.assertEqual(sg.dt, 1 * units.second)
         # test overlap
-        sg = ts.csd_spectrogram(ts, 0.5, fftlength=0.2, overlap=0.1)
-        self.assertEqual(sg.shape, (2, 0.2 * ts.size//2 + 1))
-        self.assertEqual(sg.df, 5 * units.Hertz)
+        sg = ts.csd_spectrogram(ts, 0.5, fftlength=0.25, overlap=0.125)
+        self.assertEqual(sg.shape, (2, 0.25 * ts.size//2 + 1))
+        self.assertEqual(sg.df, 4 * units.Hertz)
         self.assertEqual(sg.dt, 0.5 * units.second)
         # test multiprocessing
-        sg2 = ts.csd_spectrogram(ts, 0.5, fftlength=0.2, overlap=0.1, nproc=2)
+        sg2 = ts.csd_spectrogram(ts, 0.5, fftlength=0.25,
+                                 overlap=0.125, nproc=2)
         self.assertArraysEqual(sg, sg2)
-        # test method not 'welch' raises warning
-        with pytest.warns(UserWarning):
-           ts.csd_spectrogram(ts, 0.5, method='median-mean')
 
     def test_rayleigh_spectrum(self):
         ts = self._read()
@@ -704,10 +702,11 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(ray.epoch, ts.epoch)
         self.assertIs(ray.channel, ts.channel)
         self.assertEqual(ray.f0, 0 * units.Hz)
-        self.assertEqual(ray.df, 2 * units.Hz)
+        self.assertEqual(ray.df, 1 * units.Hz)
         self.assertEqual(ray.sum().value, 0)
         # actually test properly
         ray = ts.rayleigh_spectrum(.5)  # no overlap
+        self.assertEqual(ray.df, 2 * units.Hz)
         self.assertEqual(ray.max().value, 0.9997307802003135)
         self.assertEqual(ray.frequencies[ray.argmax()], 5362 * units.Hz)
         ray = ts.rayleigh_spectrum(.5, .25)  # 50 % overlap
