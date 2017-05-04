@@ -34,7 +34,8 @@ bash .travis/build-with-autotools.sh \
     python-${TRAVIS_PYTHON_VERSION}-framecpp ${FRAMECPP} \
     --quiet --enable-silent-rules \
     --enable-python --disable-latex \
-    --enable-fast-install || FAILURES="$FAILURES framecpp"
+    --enable-fast-install --with-optimization=none \
+    || FAILURES="$FAILURES framecpp"
 
 # -- lalframe -----------------------------------------------------------------
 
