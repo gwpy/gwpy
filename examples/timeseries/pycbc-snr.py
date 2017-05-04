@@ -69,7 +69,7 @@ import numpy
 from pycbc.filter import matched_filter
 snr = matched_filter(hp, zoom.to_pycbc(), psd=psd.to_pycbc(),
                      low_frequency_cutoff=15)
-snrts = numpy.abs(TimeSeries.from_pycbc(snr))
+snrts = TimeSeries.from_pycbc(snr).abs()
 
 # We can plot the SNR `TimeSeries` around the region of interest:
 plot = snrts.plot()
