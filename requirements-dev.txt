@@ -12,6 +12,7 @@ h5py>=1.3
 MySQL-python
 dqsegdb
 https://github.com/ligovirgo/trigfind/archive/v0.4.tar.gz
+pycbc
 
 # docs
 sphinx
