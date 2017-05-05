@@ -710,7 +710,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertAlmostEqual(ray.max().value, 0.9997307802003135)
         self.assertEqual(ray.frequencies[ray.argmax()], 5362 * units.Hz)
         ray = ts.rayleigh_spectrum(.5, .25)  # 50 % overlap
-        self.assertEqual(ray.max().value, 1.3967672286018407)
+        self.assertAlmostEqual(ray.max().value, 1.3967672286018407)
         self.assertEqual(ray.frequencies[ray.argmax()], 3088 * units.Hz)
 
     def test_notch(self):
