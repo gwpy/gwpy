@@ -160,7 +160,8 @@ class TimeSeriesTestMixin(object):
 
         # write a cache file and read that
         try:
-            with tempfile.NamedTemporaryFile(suffix='.lcf', delete=False) as f:
+            with tempfile.NamedTemporaryFile(suffix='.lcf', delete=False,
+                                             mode='w') as f:
                 cache.tofile(f)
                 b = self.TEST_CLASS.read(f.name, a.name)
                 self.assertArraysEqual(a, b, exclude=exclude)
