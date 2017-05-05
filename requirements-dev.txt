@@ -2,9 +2,7 @@
 -r requirements.txt
 
 # dependencies for glue
-M2Crypto
 pykerberos
-python-cjson
 pyRXP
 
 # extras
