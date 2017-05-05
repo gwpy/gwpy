@@ -198,8 +198,8 @@ def spectrogram(timeseries, *args, **kwargs):
     tschunks = (timeseries.value[i:j] for i, j in chunks)
 
     # calculate PSDs with multiprocessing
-    psds = list(mp_utils.multiprocess_with_queues(nproc, _psd, tschunks,
-                                                  raise_exceptions=True))
+    psds = mp_utils.multiprocess_with_queues(nproc, _psd, tschunks,
+                                             raise_exceptions=True)
 
     # convert PSDs to array with spacing for averages
     nt = 1 + int((timeseries.size - nstride) / nstride)
