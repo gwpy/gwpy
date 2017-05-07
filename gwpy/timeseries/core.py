@@ -42,22 +42,11 @@ from __future__ import (division, print_function)
 import os
 import sys
 import warnings
-import re
 from math import ceil
 
 import numpy
 
 from astropy import units
-
-try:
-    import nds2
-except ImportError:
-    NDS2_FETCH_TYPE_MASK = None
-else:
-    NDS2_FETCH_TYPE_MASK = (nds2.channel.CHANNEL_TYPE_RAW |
-                            nds2.channel.CHANNEL_TYPE_RDS |
-                            nds2.channel.CHANNEL_TYPE_TEST_POINT |
-                            nds2.channel.CHANNEL_TYPE_STATIC)
 
 from ..types import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
@@ -235,7 +224,7 @@ class TimeSeriesBase(Series):
     @with_import('nds2')
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
               connection=None, verify=False, pad=None, allow_tape=None,
-              type=NDS2_FETCH_TYPE_MASK, dtype=None):
+              type=None, dtype=None):
         """Fetch data from NDS
 
         Parameters
@@ -697,7 +686,7 @@ class TimeSeriesBaseDict(OrderedDict):
     @with_import('nds2')
     def fetch(cls, channels, start, end, host=None, port=None,
               verify=False, verbose=False, connection=None,
-              pad=None, allow_tape=None, type=NDS2_FETCH_TYPE_MASK,
+              pad=None, allow_tape=None, type=None,
               dtype=None):
         """Fetch data from NDS for a number of channels.
 
@@ -749,49 +738,25 @@ class TimeSeriesBaseDict(OrderedDict):
             a new `TimeSeriesBaseDict` of (`str`, `TimeSeries`) pairs fetched
             from NDS.
         """
-        from ..segments import (Segment, SegmentList)
-        from ..io import nds as ndsio
-        # parse times
-        start = to_gps(start)
-        end = to_gps(end)
-        istart = start.gpsSeconds
-        iend = ceil(end)
+        from ..io import nds2 as io_nds2
+        from .io.nds2 import (print_verbose, fetch)
 
-        # test S6 h(t) channel so that it gets ,rds appends
-        if any(re.match('[HL]1:LDAS-STRAIN\Z', str(c)) for c in channels):
-            verify = True
+        # -- open a connection ------------------
 
-        # parse dtype
-        if isinstance(dtype, (tuple, list)):
-            dtype = [numpy.dtype(r) if r is not None else None for r in dtype]
-            dtype = dict(zip(channels, dtype))
-        elif not isinstance(dtype, dict):
-            if dtype is not None:
-                dtype = numpy.dtype(dtype)
-            dtype = dict((channel, dtype) for channel in channels)
-
-        # open connection for specific host
-        if host and not port and re.match('[a-z]1nds[0-9]\Z', host):
-            port = 8088
-        elif host and not port:
-            port = 31200
-        if host is not None and port is not None and connection is None:
-            if verbose:
-                gprint("Connecting to %s:%s..." % (host, port), end=' ')
-            connection = ndsio.auth_connect(host, port)
-            if verbose:
-                gprint("Connected.")
-        elif connection is not None and verbose:
-            gprint("Received connection to %s:%d."
-                   % (connection.get_host(), connection.get_port()))
+        # open connection to specific host
+        if host is not None and connection is None:
+            print_verbose("Opening new connection to {0}...".format(host),
+                          end=' ', verbose=verbose)
+            connection = io_nds2.auth_connect(host, port)
+            print_verbose('connected', verbose=verbose)
         # otherwise cycle through connections in logical order
-        if connection is None:
+        elif connection is None:
             ifos = set([Channel(channel).ifo for channel in channels])
             if len(ifos) == 1:
                 ifo = list(ifos)[0]
             else:
                 ifo = None
-            hostlist = ndsio.host_resolution_order(ifo, epoch=start)
+            hostlist = io_nds2.host_resolution_order(ifo, epoch=start)
             if allow_tape is None:
                 tapes = [False, True]
             else:
@@ -801,13 +766,14 @@ class TimeSeriesBaseDict(OrderedDict):
                     try:
                         return cls.fetch(channels, start, end, host=host,
                                          port=port, verbose=verbose, type=type,
-                                         verify=verify, dtype=dtype, pad=pad,
+                                         dtype=dtype, pad=pad,
                                          allow_tape=allow_tape)
                     except (RuntimeError, ValueError) as e:
                         if verbose:
-                            gprint('Something went wrong:', file=sys.stderr)
+                            print_verbose('something went wrong:',
+                                          file=sys.stderr, verbose=verbose)
                             # if user supplied their own server, raise
-                            warnings.warn(str(e), ndsio.NDSWarning)
+                            warnings.warn(str(e), io_nds2.NDSWarning)
 
                 # if we got this far, we can't get all channels in one go
                 if len(channels) > 1:
@@ -824,140 +790,17 @@ class TimeSeriesBaseDict(OrderedDict):
                       "see detailed failures.")
             raise RuntimeError(e)
 
-        # at this point we must have an open connection, so we can proceed
-        # normally
+        # -- at this point we have an open connection, so perform fetch
 
-        if allow_tape is not None:
-            try:
-                connection.set_parameter('ALLOW_DATA_ON_TAPE', str(allow_tape))
-            except AttributeError:
-                warnings.warn("This version of the nds2-client does not "
-                              "support the allow_tape. This operation will "
-                              "continue using whatever default is set by the "
-                              "target NDS server", ndsio.NDSWarning)
+        start = to_gps(start)
+        end = to_gps(end)
+        istart = int(start)
+        iend = int(ceil(end))
 
-        # verify channels
-        if verify:
-            if verbose:
-                gprint("Checking channels against the NDS database...",
-                       end=' ')
-            else:
-                warnings.filterwarnings('ignore', category=ndsio.NDSWarning,
-                                        append=False)
-            try:
-                qchannels = ChannelList.query_nds2(channels,
-                                                   connection=connection,
-                                                   type=type, unique=True)
-            except ValueError as e:
-                try:
-                    channels2 = ['%s*' % c for c in map(str, channels)]
-                    qchannels = ChannelList.query_nds2(channels2,
-                                                       connection=connection,
-                                                       type=type, unique=True)
-                except ValueError:
-                    raise e
-            if verbose:
-                gprint("Complete.")
-            else:
-                warnings.filters.pop(0)
-        else:
-            qchannels = ChannelList(map(Channel, channels))
-
-        # test for minute trends
-        if (any([c.type == 'm-trend' for c in qchannels]) and
-                (start % 60 or end % 60)):
-            warnings.warn("Requested at least one minute trend, but "
-                          "start and stop GPS times are not modulo "
-                          "60-seconds (from GPS epoch). Times will be "
-                          "expanded outwards to compensate")
-            if start % 60:
-                start = int(start) // 60 * 60
-                istart = start
-            if end % 60:
-                end = int(end) // 60 * 60 + 60
-                iend = end
-            have_minute_trends = True
-        else:
-            have_minute_trends = False
-
-        # get segments for data
-        allsegs = SegmentList([Segment(istart, iend)])
-        qsegs = SegmentList([Segment(istart, iend)])
-        if pad is not None:
-            from subprocess import CalledProcessError
-            try:
-                segs = ChannelList.query_nds2_availability(
-                    channels, istart, iend, host=connection.get_host())
-            except (RuntimeError, CalledProcessError) as e:
-                warnings.warn(str(e), ndsio.NDSWarning)
-            else:
-                for channel in segs:
-                    try:
-                        csegs = sorted(segs[channel].values(),
-                                       key=lambda x: abs(x))[-1]
-                    except IndexError:
-                        csegs = SegmentList([])
-                    qsegs &= csegs
-
-            if verbose:
-                gprint('Found %d viable segments of data with %.2f%% coverage'
-                       % (len(qsegs), abs(qsegs) / abs(allsegs) * 100))
-
-        out = cls()
-        for (istart, iend) in qsegs:
-            istart = int(istart)
-            iend = int(iend)
-            # fetch data
-            if verbose:
-                gprint('Downloading data... ', end='\r')
-
-            # determine buffer duration
-            data = connection.iterate(istart, iend,
-                                      [c.ndsname for c in qchannels])
-            nsteps = 0
-            i = 0
-            try:
-                for buffers in data:
-                    for buffer_, c in zip(buffers, channels):
-                        ts = cls.EntryClass.from_nds2_buffer(
-                            buffer_, dtype=dtype.get(c))
-                        out.append({c: ts}, pad=pad,
-                                   gap=pad is None and 'raise' or 'pad')
-                    if not nsteps:
-                        if have_minute_trends:
-                            dur = buffer_.length * 60
-                        else:
-                            dur = buffer_.length / buffer_.channel.sample_rate
-                        nsteps = ceil((iend - istart) / dur)
-                    i += 1
-                    if verbose:
-                        gprint('Downloading data... %d%%'
-                               % (100 * i // nsteps), end='\r')
-                        if i == nsteps:
-                            gprint('')
-            except RuntimeError as e:
-                if 'Requested data is on tape' in str(e) and not allow_tape:
-                    e.args = ('Requested data are on tape, set allow_tape=True'
-                              ' to allow access from tape. Please note that'
-                              ' retrieving data from tape is slow, and may'
-                              ' take several minutes or longer.',)
-                raise
-
-        # pad to end of request if required
-        if len(qsegs) and iend < float(end):
-            dt = float(end) - float(iend)
-            for channel in out:
-                nsamp = dt * out[channel].sample_rate.value
-                out[channel].append(
-                    numpy.ones(nsamp, dtype=out[channel].dtype) * pad)
-        # match request exactly
-        for channel in out:
-            if istart > start or iend < end:
-                out[channel] = out[channel].crop(start, end)
-
-        if verbose:
-            gprint('Success.')
-        return out
+        return fetch(channels, istart, iend, host=host,
+                     port=port, verbose=verbose, type=type,
+                     dtype=dtype, pad=pad,
+                     allow_tape=allow_tape).crop(start, end)
 
     @classmethod
     def find(cls, channels, start, end, frametype=None,
