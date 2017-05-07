@@ -30,16 +30,13 @@ These can also be given directly to the connection function as keyword
 arguments
 """
 
-import datetime
 import os.path
 from dateutil.relativedelta import relativedelta
 
-import numpy
 from numpy.lib import recfunctions
 
 from ...segments import Segment
 from ...time import (to_gps, from_gps)
-from ...utils.deps import with_import
 from .. import EventTable
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -147,7 +144,6 @@ def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
                 continue
             # get new events, convert to recarray, and append to table
             rows.extend(cursor.fetchall())
-            dtype = [(c, type(x)) for c, x in zip(columns, new[0])]
     return EventTable(rows=rows, names=columns)
 
 
@@ -184,11 +180,11 @@ def add_time_column(table, name='time', pop_start=True, pop_offset=True):
 
 # -- utilities ----------------------------------------------------------------
 
-@with_import('MySQLdb')
 def connect(db, host=HACR_DATABASE_SERVER, user=HACR_DATABASE_USER,
             passwd=HACR_DATABASE_PASSWD):
     """Connect to the given MySQL database
     """
+    import MySQLdb
     return MySQLdb.connect(host=host, user=user, passwd=passwd, db=db)
 
 

@@ -22,8 +22,6 @@
 import os.path
 import re
 
-from lal.utils import CacheEntry
-
 from ..time import to_gps
 from ..utils import with_import
 from .gwf import (num_channels, channel_in_frame)
@@ -122,7 +120,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
             continue
         else:
             if os.access(frame.path, os.R_OK) and (
-                    allow_tape or not on_tape(frame)):
+                    allow_tape or not on_tape(frame.path)):
                 frames.append((ft, frame.path))
     # sort frames by allocated block size and regular size
     # (to put frames on tape at the bottom of the list)
@@ -176,7 +174,7 @@ def find_best_frametype(channel, start, end, urltype='file',
         cache = connection.find_frame_urls(channel[0], frametype,
                                            start, end, urltype=urltype,
                                            on_gaps='error')
-        if not allow_tape and on_tape(*cache):
+        if not allow_tape and on_tape(*cache.pfnlist()):
             raise RuntimeError()
     except RuntimeError:
         alltypes = find_frametype(channel, gpstime=start, host=host, port=port,
@@ -185,7 +183,7 @@ def find_best_frametype(channel, start, end, urltype='file',
             channel[0], ft, start, end, urltype=urltype,
             on_gaps='ignore')) for ft in alltypes]
         if not allow_tape:
-            cache = [ftc for ftc in cache if not on_tape(*ftc[1])]
+            cache = [ftc for ftc in cache if not on_tape(*ftc[1].pfnlist())]
         cache.sort(
             key=lambda x:
             len(x[1]) and -abs(x[1].to_segmentlistdict().values()[0]) or 0)
@@ -203,7 +201,7 @@ def on_tape(*files):
 
     Parameters
     ----------
-    *files : `str`, `~lal.utils.CacheEntry`
+    *files : `str`
         one or more paths to GWF files
 
     Returns
@@ -213,8 +211,6 @@ def on_tape(*files):
         otherwise `False`
     """
     for f in files:
-        if isinstance(f, CacheEntry):
-            f = f.path
         if os.stat(f).st_blocks == 0:
             return True
     return False

@@ -388,7 +388,7 @@ class FrequencySeries(Series):
         return lalfs
 
     @classmethod
-    def from_pycbc(cls, fs):
+    def from_pycbc(cls, fs, copy=True):
         """Convert a `pycbc.types.frequencyseries.FrequencySeries` into
         a `FrequencySeries`
 
@@ -398,17 +398,19 @@ class FrequencySeries(Series):
             the input PyCBC `~pycbc.types.frequencyseries.FrequencySeries`
             array
 
+        copy : `bool`, optional, default: `True`
+            if `True`, copy these data to a new array
+
         Returns
         -------
         spectrum : `FrequencySeries`
             a GWpy version of the input frequency series
         """
-        return cls(fs.data, f0=0, df=fs.delta_f, epoch=fs.epoch)
+        return cls(fs.data, f0=0, df=fs.delta_f, epoch=fs.epoch, copy=copy)
 
-    @with_import('pycbc.types')
     def to_pycbc(self, copy=True):
         """Convert this `FrequencySeries` into a
-        `pycbc.types.frequencyseries.FrequencySeries`
+        `~pycbc.types.frequencyseries.FrequencySeries`
 
         Parameters
         ----------
@@ -420,9 +422,12 @@ class FrequencySeries(Series):
         frequencyseries : `pycbc.types.frequencyseries.FrequencySeries`
             a PyCBC representation of this `FrequencySeries`
         """
+        from pycbc import types
+
         if self.epoch is None:
             epoch = None
         else:
             epoch = self.epoch.gps
-        return types.FrequencySeries(self.data, delta_f=self.df.to('Hz').value,
+        return types.FrequencySeries(self.value,
+                                     delta_f=self.df.to('Hz').value,
                                      epoch=epoch, copy=copy)

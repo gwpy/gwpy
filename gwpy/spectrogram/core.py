@@ -331,7 +331,7 @@ class Spectrogram(Array2D):
         constructor must be the same length.
         """
         data = numpy.vstack([s.value for s in spectra])
-        s1 = spectra[0]
+        s1 = list(spectra)[0]
         if not all(s.f0 == s1.f0 for s in spectra):
             raise ValueError("Cannot stack spectra with different f0")
         if not all(s.df == s1.df for s in spectra):

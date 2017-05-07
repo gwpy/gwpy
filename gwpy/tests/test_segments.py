@@ -23,6 +23,11 @@ import os.path
 import tempfile
 import warnings
 
+try:
+    from math import inf
+except ImportError:  # python<3.5
+    from numpy import inf
+
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.error import URLError
 
@@ -31,14 +36,12 @@ import pytest
 from matplotlib import use
 use('agg')
 
-from glue.segments import PosInfinity
-from glue.LDBDWClient import LDBDClientException
 
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 from gwpy.plotter import (SegmentPlot, SegmentAxes)
 
-from compat import (unittest, mock, HAS_H5PY, HAS_DQSEGDB)
+from compat import (unittest, mock, HAS_H5PY, HAS_LAL, HAS_DQSEGDB, HAS_M2CRYPTO)
 import common
 import mockutils
 
@@ -216,6 +219,7 @@ class SegmentListTests(unittest.TestCase, SegmentClassTestsMixin):
     TEST_DATA = ACTIVE
     tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_segmentlist')
 
+    @unittest.skipUnless(HAS_LAL, 'No module named lal')
     def test_read_write_segwizard(self):
         return self._test_read_write('segwizard', extension='txt', auto=True)
 
@@ -396,6 +400,7 @@ class DataQualityFlagTests(unittest.TestCase, SegmentClassTestsMixin):
 
     # -- I/O ------------------------------------
 
+    @unittest.skipUnless(HAS_LAL, 'No module named lal')
     def test_read_write_ligolw(self):
         self._test_read_write('ligolw', extension='xml', auto=True,
                               writekwargs={'overwrite': True})
@@ -429,7 +434,9 @@ class DataQualityFlagTests(unittest.TestCase, SegmentClassTestsMixin):
         self.assertEqual(result.known, QUERY_RESULT[flag].known)
         self.assertEqual(result.active, QUERY_RESULT[flag].active)
 
+    @unittest.skipUnless(HAS_M2CRYPTO, "No module named m2crypto")
     def test_query_segdb(self):
+        from glue.LDBDWClient import LDBDClientException
         flag = QUERY_FLAGS[0]
         try:
             result = self.TEST_CLASS.query_segdb(flag, QUERY_START, QUERY_END,
@@ -491,6 +498,7 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
 
     # -- I/O ------------------------------------
 
+    @unittest.skipUnless(HAS_LAL, 'No module named lal')
     def test_from_veto_definer_file(self):
         vdf = self.TEST_CLASS.from_veto_definer_file(self.VETO_DEFINER)
         self.assertNotEqual(len(vdf.keys()), 0)
@@ -499,7 +507,7 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
         self.assertEquals(vdf['H1:DCH-MISSING_H1_HOFT_C00:1'].known[0][0],
                           1073779216)
         self.assertEquals(vdf['H1:DCH-MISSING_H1_HOFT_C00:1'].known[0][-1],
-                          PosInfinity)
+                          +inf)
         self.assertEquals(vdf['H1:DCH-MISSING_H1_HOFT_C00:1'].category, 1)
         # test injections padding
         self.assertEquals(vdf['H1:ODC-INJECTION_CBC:1'].padding, Segment(-8, 8))
@@ -507,6 +515,7 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
         vdf2 = self.TEST_CLASS.from_veto_definer_file(VETO_DEFINER_FILE)
         self.assertEqual(len(vdf.keys()), len(vdf2.keys()))
 
+    @unittest.skipUnless(HAS_LAL, 'No module named lal')
     def test_read_write_ligolw(self):
         return self._test_read_write('ligolw', extension='xml', auto=True,
                                      writekwargs={'overwrite': True})
@@ -519,6 +528,7 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
 
     # -- segment queries ------------------------
 
+    @unittest.skipUnless(HAS_LAL, 'No module named lal')
     def test_populate(self):
         # read veto definer
         start, end = VETO_DEFINER_TEST_SEGMENTS[0]
@@ -569,7 +579,9 @@ class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
             self.assertEqual(result[flag].known, QUERY_RESULT[flag].known)
             self.assertEqual(result[flag].active, QUERY_RESULT[flag].active)
 
+    @unittest.skipUnless(HAS_M2CRYPTO, "No module named m2crypto")
     def test_query_segdb(self):
+        from glue.LDBDWClient import LDBDClientException
         try:
             result = self.TEST_CLASS.query_segdb(
                 QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL_SEGDB)

@@ -39,36 +39,42 @@ python:
 
 env:
   # minimal build, normal tests
-  - PIP_FLAGS="--upgrade" MINIMAL=true PYTEST_FLAGS="-v -r s"
+  - PIP_FLAGS="--upgrade" MINIMAL=true TEST_FLAGS=""
+
   # normal build, normal tests
-  - PIP_FLAGS="--upgrade" MINIMAL=false PYTEST_FLAGS="-v -r s"
+  - PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS=""
+
   # normal build, pedantic tests
-  - PIP_FLAGS="--upgrade" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
+  - PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS="--strict"
+
   # pre-release build, pedantic tests
-  - PIP_FLAGS="--upgrade --pre" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
+  - PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--strict"
 
 matrix:
   allow_failures:
     - python: '2.7'
-      env: PIP_FLAGS="--upgrade --pre" MINIMAL=false PYTEST_FLAGS="-v -r s --strict"
+      env: PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--strict"
     - python: '3.5'
+      env: PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS=""
+    - python: '3.5'
+      env: PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS="--strict"
+    - python: '3.5'
+      env: PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--strict"
   fast_finish: true
 
 before_install:
   # update pip
   - pip install ${PIP_FLAGS} --upgrade pip
 
-  # build and install numpy first (for SWIG bindings)
-  - pip install ${PIP_FLAGS} "numpy>=1.10"
-
-  # build src packages and set 'latest' package versions (if required)
-  - source .travis/build-src-dependencies.sh
-
   # install cython to speed up scipy build
   - travis_retry pip install ${PIP_FLAGS} --install-option="--no-cython-compile" Cython
 
-  # install dependencies
-  - pip install ${PIP_FLAGS} -r requirements-dev.txt
+  # install full dependency list if not minimal build
+  - >
+    if [ "${MINIMAL}" != true ]; then
+        travis_wait source .travis/build-src-dependencies.sh;
+        pip install ${PIP_FLAGS} -r requirements-dev.txt;
+    fi
 
 install:
   - pip install .
@@ -77,9 +83,12 @@ before_script:
   - pip list installed
 
 script:
-  - . .travis/run-tests.sh
+  # need to install pytest here to avoid version conflict later
+  - pip install coverage "pytest>=2.8"
+  - coverage run ./setup.py test --addopts "gwpy/tests/ ${TEST_FLAGS}"
 
 after_success:
+  - pip install coveralls
   - coveralls
 
 deploy:

@@ -22,7 +22,7 @@
 import os.path
 import tempfile
 
-from numpy import (testing as nptest, arange, linspace)
+from numpy import (testing as nptest, arange, linspace, may_share_memory)
 
 from scipy import signal
 
@@ -32,6 +32,7 @@ from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.plotter import FrequencySeriesPlot
 
 from test_array import (SeriesTestCase, Array2DTestCase)
+from compat import (unittest, HAS_H5PY)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -90,20 +91,30 @@ class FrequencySeriesTestCase(SeriesTestCase):
         self.assertArraysEqual(array, array2, 'units', 'df', 'f0')
 
     def test_to_from_pycbc(self):
-        array = self.create()
         try:
-            pycbcarray = array.to_pycbc()
-        except (ValueError, ImportError) as e:
-            # catch dodgy error on missing dependency
-            if isinstance(e, ValueError) and (
-                'insecure string pickle' not in str(e)):
-                raise
-            else:
-                self.skipTest(str(e))
-        nptest.assert_array_equal(pycbcarray.data, array.value)
-        array2 = type(array).from_pycbc(pycbcarray)
-        self.assertArraysEqual(array, array2, 'units', 'df', 'f0')
+            from pycbc.types import FrequencySeries as PyCBCFrequencySeries
+        except ImportError as e:
+            self.skipTest(str(e))
+        fs = self.create()
+        # test default conversion
+        pycbcfs = fs.to_pycbc()
+        self.assertIsInstance(pycbcfs, PyCBCFrequencySeries)
+        nptest.assert_array_equal(fs.value, pycbcfs.data)
+        self.assertEqual(fs.df.value, pycbcfs.delta_f)
+        # go back and check we get back what we put in in the first place
+        fs2 = type(fs).from_pycbc(pycbcfs)
+        nptest.assert_array_equal(fs.value, fs2.value)
+        self.assertQuantityEqual(fs.f0, fs2.f0)
+        self.assertQuantityEqual(fs.df, fs2.df)
+        self.assertIs(fs2.unit, units.dimensionless_unscaled)
+        # test copy=False
+        pycbcfs = fs.to_pycbc(copy=False)
+        assert may_share_memory(fs.value, pycbcfs.data)
+        fs2 = type(fs).from_pycbc(pycbcfs, copy=False)
+        assert may_share_memory(fs.value, fs2.value)
+        assert may_share_memory(fs2.value, pycbcfs.data)
 
+    @unittest.skipUnless(HAS_H5PY, "No module named h5py")
     def test_read_write_hdf5(self):
         try:
             self._test_read_write('hdf5', auto=False)

@@ -23,15 +23,15 @@ import warnings
 
 from ...io import registry
 from ...io.utils import identify_factory
-from ...io.cache import (file_list, read_cache)
-from ...utils import with_import
+from ...io.cache import file_list
 from .. import (Table, EventTable)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-@with_import('root_numpy')
 def table_from_root(f, treename=None, include_names=None, **kwargs):
+    import root_numpy
+
     if include_names is None:
         try:
             include_names = kwargs.pop('columns')
@@ -60,8 +60,8 @@ def table_from_root(f, treename=None, include_names=None, **kwargs):
                                        **kwargs))
 
 
-@with_import('root_numpy')
 def table_to_root(table, filename, **kwargs):
+    import root_numpy
     root_numpy.array2root(table.as_array(), filename, **kwargs)
 
 

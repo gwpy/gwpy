@@ -80,21 +80,7 @@ class HistogramAxes(Axes):
         HistogramAxes.hist
             for details on keyword arguments
         """
-        try:
-            return self.hist(table[column], **kwargs)
-        except (TypeError, KeyError):
-            if hasattr(table, 'tableName'):  # glue.ligolw.table.Table
-                return self._hist_ligolw_table(table, column, **kwargs)
-            raise
-
-    def _hist_ligolw_table(self, table, column, **kwargs):
-        from ..table.utils import get_table_column
-        warnings.warn('Histogramming LIGO_LW tables has been deprecated and '
-                      'will likely be removed before the 1.0 release, please '
-                      'update all codes to use the astropy.table.Table or '
-                      'gwpy.table.EventTable objects')
-        data = get_table_column(table, column)
-        return self.hist(data, **kwargs)
+        return self.hist(table[column], **kwargs)
 
     def hist(self, x, **kwargs):
         if iterable(x) and len(x) == 0:
@@ -222,9 +208,6 @@ class HistogramPlot(Plot):
             if isinstance(dataset, Series):
                 ax.hist_series(dataset, **histargs)
             elif isinstance(dataset, Table):
-                column = data.pop()
-                ax.hist_table(dataset, column, **histargs)
-            elif hasattr(dataset, 'tableName'):  # deprecated
                 column = data.pop()
                 ax.hist_table(dataset, column, **histargs)
             else:

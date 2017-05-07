@@ -29,12 +29,13 @@ from matplotlib import use
 use('agg')
 
 from astropy import units
+from astropy.io.ascii import InconsistentTableError
 
 from gwpy.table import (Table, EventTable)
 from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
 
 import common
-from compat import unittest
+from compat import (unittest, HAS_LAL)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -65,6 +66,7 @@ class TableTests(unittest.TestCase):
         if meta:
             assert a.meta == b.meta
 
+    @unittest.skipUnless(HAS_LAL, 'No module named lal')
     def test_read_write_ligolw(self):
         table = self.TABLE_CLASS.read(TEST_XML_FILE,
                                       format='ligolw.sngl_burst')
@@ -130,8 +132,8 @@ class TableTests(unittest.TestCase):
 
     def test_read_write_root(self):
         table = self.TABLE_CLASS.read(
-            TEST_XML_FILE, format='ligolw.sngl_burst',
-            columns=['peak_time', 'peak_time_ns', 'snr', 'peak_frequency'])
+            TEST_OMEGA_FILE, format='ascii.omega',
+            include_names=['time', 'normalizedEnergy', 'frequency'])
         tempdir = tempfile.mkdtemp()
         try:
             fp = tempfile.mktemp(suffix='.root', dir=tempdir)
@@ -155,12 +157,8 @@ class TableTests(unittest.TestCase):
 
     def test_read_write_gwf(self):
         table = self.TABLE_CLASS.read(
-            TEST_XML_FILE, format='ligolw.sngl_burst',
-            columns=['peak_time', 'peak_time_ns', 'snr', 'peak_frequency'])
-        # add expected columns for GWF
-        time = table['peak_time'] + table['peak_time_ns'] * 1e-9
-        time.name = 'time'
-        table.add_column(time)
+            TEST_OMEGA_FILE, format='ascii.omega',
+            include_names=['time', 'normalizedEnergy', 'frequency'])
         # test read/write
         columns = table.dtype.names
         tempdir = tempfile.mkdtemp()
@@ -190,26 +188,42 @@ class EventTableTests(TableTests):
                                        nproc=2, format='ligolw.sngl_burst')
         self.assertTableEqual(table, table2)
 
-    def test_read_omega(self):
-        table = self.TABLE_CLASS.read(TEST_OMEGA_FILE, format='ascii.omega')
-        self.assertIsInstance(table, self.TABLE_CLASS)
-        self.assertIsInstance(table['frequency'], self.TABLE_CLASS.Column)
-        self.assertEqual(len(table), 92)
-        self.assertAlmostEqual(table[0]['frequency'], 962.609375)
+    def test_read_write_omega(self):
+        formats = {'time': '%.18f', 'normalizedEnergy': '%.18f',
+                   'frequency': '%.18f'}
+        # read canonical table
+        table = self.TABLE_CLASS.read(
+            TEST_OMEGA_FILE, format='ascii.omega',
+            include_names=['time', 'normalizedEnergy', 'frequency'])
+        # test read/write
+        with tempfile.NamedTemporaryFile(suffix='.txt', mode='w') as f:
+            # test read
+            table.write(f, format='ascii.omega', formats=formats)
+            f.seek(0)
+            # test read gives back same table
+            table2 = self.TABLE_CLASS.read(f, format='ascii.omega')
+            self.assertTableEqualTypeless(table, table2, meta=False)
+        with tempfile.NamedTemporaryFile(suffix='.txt') as f:
+            # assert reading blank file doesn't work with column name error
+            with self.assertRaises(InconsistentTableError) as exc:
+                self.TABLE_CLASS.read(f, format='ascii.omega')
+            self.assertTrue('No column names found in Omega header')
 
     def test_event_rates(self):
         # test event_rate
         table = self.TABLE_CLASS.read(
-            TEST_XML_FILE, format='ligolw.sngl_burst',
-            columns=['time', 'snr'])
+            TEST_OMEGA_FILE, format='ascii.omega',
+            include_names=['time', 'normalizedEnergy'])
         rate = table.event_rate(1)
         self.assertIsInstance(rate, TimeSeries)
         self.assertEqual(rate.sample_rate, 1 * units.Hz)
         # test binned_event_rates
-        rates = table.binned_event_rates(1, 'snr', [2, 4, 6])
+        rates = table.binned_event_rates(1, 'normalizedEnergy', [2, 4, 6])
         self.assertIsInstance(rates, TimeSeriesDict)
-        table.binned_event_rates(1, 'snr', [2, 4, 6], operator='in')
-        table.binned_event_rates(1, 'snr', [(0, 2), (2, 4), (4, 6)])
+        table.binned_event_rates(1, 'normalizedEnergy', [2, 4, 6],
+                                 operator='in')
+        table.binned_event_rates(1, 'normalizedEnergy',
+                                 [(0, 2), (2, 4), (4, 6)])
 
     def test_plot(self):
         table = self.TABLE_CLASS.read(TEST_OMEGA_FILE, format='ascii.omega')

@@ -54,5 +54,5 @@ class UtilsTestCase(unittest.TestCase):
         except Exception as e:
             self.skipTest(str(e))
         else:
-            result = result.decode('utf-8').rstrip('\n')
+            result = result.rstrip('\n')
         self.assertEqual(shell.which('true'), result)

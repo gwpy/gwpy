@@ -23,8 +23,6 @@ import warnings
 
 from six import string_types
 
-from glue import segmentsUtils
-
 from .. import (Segment, SegmentList, DataQualityFlag)
 from ...io import registry
 from ...io.utils import identify_factory
@@ -40,6 +38,8 @@ def from_segwizard(f, coalesce=True, gpstype=LIGOTimeGPS, strict=True,
                    nproc=1):
     """Read segments from a segwizard format file into a `SegmentList`
     """
+    from glue import segmentsUtils
+
     if nproc != 1:
         return SegmentList.read(f, coalesce=coalesce, gpstype=gpstype,
                                 strict=strict, nproc=nproc, format='cache')
@@ -91,10 +91,12 @@ def to_segwizard(segs, fobj, header=True, coltype=int):
 
     See Also
     --------
-    :mod:`glue.segmentsUtils`
+    glue.segmentsUtils
         for definition of the segwizard format, and the to/from functions
         used in this GWpy module
     """
+    from glue import segmentsUtils
+
     if isinstance(fobj, string_types):
         close = True
         fobj = open(fobj, 'w')
@@ -135,7 +137,7 @@ def flag_to_segwizard(flag, fobj, header=True, coltype=int):
 
     See Also
     --------
-    :mod:`glue.segmentsUtils`
+    glue.segmentsUtils
         for definition of the segwizard format, and the to/from functions
         used in this GWpy module
     """
