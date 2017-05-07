@@ -449,6 +449,7 @@ def _get_nds2_name(channel):
     else:
         return str(channel)
 
+
 def _get_nds2_names(channels):
     return map(_get_nds2_names, channels)
 
