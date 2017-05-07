@@ -24,19 +24,17 @@ import warnings
 
 import numpy
 
-import glue.segments
-from glue.ligolw.lsctables import (TableByName, LIGOTimeGPS)
+try:
+    from glue.ligolw.lsctables import TableByName
+except ImportError:
+    TableByName = dict()
 
 from ...io import registry
-from ...io.ligolw import (identify_ligolw, table_from_file,
-                          write_tables)
+from ...io.ligolw import (table_from_file, write_tables)
 from .. import (Table, EventTable)
-from ..lsctables import EVENT_TABLES
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = []
-
-INVALID_REC_TYPES = [glue.segments.segment]
 
 # methods to exclude from get_as_columns conversions
 GET_AS_EXCLUDE = ['get_column', 'get_table']
@@ -79,6 +77,8 @@ def _table_from_ligolw(llwtable, target, copy, columns=None,
         table : `EventTable`
             a view of the original data
     """
+    from glue.ligolw.lsctables import LIGOTimeGPS
+
     if rename is None:
         rename = {}
     # create table
@@ -132,9 +132,6 @@ def _table_from_ligolw(llwtable, target, copy, columns=None,
                     dtype = None
             if dtype == LIGOTimeGPS:
                 dtype = numpy.float64
-            elif dtype in INVALID_REC_TYPES:
-                raise TypeError("Cannot store data of type %s in %s"
-                                % (dtype, target.__name__))
             names.append(column)
             try:
                 data.append(target.Column(name=rename[column], data=arr,
@@ -188,9 +185,6 @@ def ligolw_io_factory(table_):
     """
     tablename = table_.TableName(table_.tableName)
 
-    def _read_ligolw(f, *args, **kwargs):
-        return table_from_file(f, tablename, *args, **kwargs)
-
     def _read_table(f, *args, **kwargs):
         # set up keyword arguments
         llwcolumns = kwargs.pop('ligolw_columns', kwargs.get('columns', None))
@@ -241,22 +235,23 @@ def ligolw_io_factory(table_):
         return write_tables(f, [table_to_ligolw(table, tablename)],
                             *args, **kwargs)
 
-    return _read_ligolw, _read_table, _write_table
+    return _read_table, _write_table
 
 # -- register -----------------------------------------------------------------
 
+EVENT_TABLES = (
+    'sngl_burst', 'multi_burst',
+    'sngl_inspiral', 'multi_inspiral',
+    'sngl_ringdown',
+)
+
 # register reader and auto-id for LIGO_LW
 for table in TableByName.values():
-    name = 'ligolw.%s' % table.TableName(table.tableName)
+    tname = table.TableName(table.tableName)
+    name = 'ligolw.%s' % tname
 
     # build readers for this table
-    read_llw, read_, write_, = ligolw_io_factory(table)
-
-    # register generic reader and table-specific reader for LIGO_LW
-    # DEPRECATED - remove before 1.0 release
-    registry.register_reader(name, table, read_llw)
-    registry.register_reader('ligolw', table, read_llw)
-    registry.register_identifier('ligolw', table, identify_ligolw)
+    read_, write_, = ligolw_io_factory(table)
 
     # register conversion from LIGO_LW to astropy Table
     table.__astropy_table__ = _table_from_ligolw
@@ -265,7 +260,7 @@ for table in TableByName.values():
     registry.register_reader(name, Table, read_)
     registry.register_writer(name, Table, write_)
 
-    if table in EVENT_TABLES:
+    if tname in EVENT_TABLES:
         # this is done explicitly so that the docstring for table.read()
         # shows the format
         registry.register_reader(name, EventTable, read_)

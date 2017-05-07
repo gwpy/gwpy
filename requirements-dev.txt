@@ -2,16 +2,15 @@
 -r requirements.txt
 
 # dependencies for glue
-M2Crypto
 pykerberos
-python-cjson
 pyRXP
 
 # extras
 h5py>=1.3
-MySQL-python
+mysqlclient
 dqsegdb
 https://github.com/ligovirgo/trigfind/archive/v0.4.tar.gz
+pycbc
 
 # docs
 sphinx

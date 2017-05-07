@@ -31,7 +31,7 @@ import warnings
 import numpy
 
 from ...frequencyseries import FrequencySeries
-from .utils import scale_timeseries_units
+from .utils import scale_timeseries_unit
 from . import registry as fft_registry
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -227,7 +227,7 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
     # format and return
     spec = FrequencySeries.from_lal(lalfs)
     spec.channel = timeseries.channel
-    spec.override_unit(scale_timeseries_units(
+    spec.override_unit(scale_timeseries_unit(
         timeseries.unit, scaling='density'))
     return spec
 
@@ -265,7 +265,7 @@ def welch(timeseries, segmentlength, noverlap=None, window=None, plan=None):
                          method='welch', window=window, plan=plan)
 
 
-def bartlett(timeseries, segmentlength, window=None, plan=None):
+def bartlett(timeseries, segmentlength, noverlap=None, window=None, plan=None):
     """Calculate an PSD of this `TimeSeries` using Bartlett's method
 
     Parameters
@@ -294,6 +294,9 @@ def bartlett(timeseries, segmentlength, window=None, plan=None):
     --------
     lal.REAL8AverageSpectrumWelch
     """
+    if noverlap:
+        raise TypeError("bartlett() got an unexpected keyword argument "
+                        "'noverlap'")
     return _lal_spectrum(timeseries, segmentlength, noverlap=0,
                          method='welch', window=window, plan=plan)
 

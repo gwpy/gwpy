@@ -31,7 +31,7 @@ from compat import (unittest, mock, HAS_H5PY)
 import pytest
 
 import numpy
-from numpy import testing as nptest
+from numpy import (may_share_memory, testing as nptest)
 
 from scipy import signal
 
@@ -49,10 +49,10 @@ from gwpy.segments import (Segment, DataQualityFlag, DataQualityDict)
 from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.types import Array2D
 from gwpy.spectrogram import Spectrogram
-from gwpy.io.cache import Cache
 from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
 
 from test_array import SeriesTestCase
+from compat import HAS_LAL
 import common
 import mockutils
 
@@ -138,7 +138,10 @@ class TimeSeriesTestMixin(object):
 
     # -- test I/O -------------------------------
 
+    @unittest.skipUnless(HAS_LAL, "No module named lal")
     def _test_read_cache(self, format, extension=None, exclude=['channel']):
+        from glue.lal import Cache
+
         if extension is None:
             extension = format
         # make array
@@ -157,7 +160,8 @@ class TimeSeriesTestMixin(object):
 
         # write a cache file and read that
         try:
-            with tempfile.NamedTemporaryFile(suffix='.lcf', delete=False) as f:
+            with tempfile.NamedTemporaryFile(suffix='.lcf', delete=False,
+                                             mode='w') as f:
                 cache.tofile(f)
                 b = self.TEST_CLASS.read(f.name, a.name)
                 self.assertArraysEqual(a, b, exclude=exclude)
@@ -349,6 +353,31 @@ class TimeSeriesTestMixin(object):
         self.assertEqual(lalts.sampleUnits, lal.DimensionlessUnit)
         ts2 = self.TEST_CLASS.from_lal(lalts)
         self.assertIs(ts2.unit, units.dimensionless_unscaled)
+
+    def test_to_from_pycbc(self):
+        try:
+            from pycbc.types import TimeSeries as PyCBCTimeSeries
+        except ImportError as e:
+            self.skipTest(str(e))
+        ts = self.create()
+        # test default conversion
+        pycbcts = ts.to_pycbc()
+        self.assertIsInstance(pycbcts, PyCBCTimeSeries)
+        nptest.assert_array_equal(ts.value, pycbcts.data)
+        self.assertEqual(ts.t0.value, pycbcts.start_time)
+        self.assertEqual(ts.dt.value, pycbcts.delta_t)
+        # go back and check we get back what we put in in the first place
+        ts2 = type(ts).from_pycbc(pycbcts)
+        nptest.assert_array_equal(ts.value, ts2.value)
+        self.assertQuantityEqual(ts.t0, ts2.t0)
+        self.assertQuantityEqual(ts.dt, ts2.dt)
+        self.assertIs(ts2.unit, units.dimensionless_unscaled)
+        # test copy=False
+        pycbcts = ts.to_pycbc(copy=False)
+        assert may_share_memory(ts.value, pycbcts.data)
+        ts2 = type(ts).from_pycbc(pycbcts, copy=False)
+        assert may_share_memory(ts.value, ts2.value)
+        assert may_share_memory(ts2.value, pycbcts.data)
 
     def test_io_identify(self):
         common.test_io_identify(self.TEST_CLASS, ['txt', 'hdf5', 'gwf'])
@@ -553,15 +582,34 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(sg.df, 2 * units.Hertz)
         self.assertEqual(sg.dt, 1 * units.second)
         # test overlap
-        sg = ts.spectrogram(0.5, fftlength=0.2, overlap=0.1)
-        self.assertEqual(sg.shape, (2, 0.2 * ts.size//2 + 1))
-        self.assertEqual(sg.df, 5 * units.Hertz)
+        sg = ts.spectrogram(0.5, fftlength=0.25, overlap=0.125)
+        self.assertEqual(sg.shape, (2, 0.25 * ts.size//2 + 1))
+        self.assertEqual(sg.df, 4 * units.Hertz)
         self.assertEqual(sg.dt, 0.5 * units.second)
         # test multiprocessing
-        sg2 = ts.spectrogram(0.5, fftlength=0.2, overlap=0.1, nproc=2)
+        sg2 = ts.spectrogram(0.5, fftlength=0.25, overlap=0.125, nproc=2)
         self.assertArraysEqual(sg, sg2)
         # test methods
-        ts.spectrogram(0.5, fftlength=0.2, method='bartlett')
+        ts.spectrogram(0.5, fftlength=0.25, method='welch')
+        self.assertEqual(sg.shape, (2, 0.25 * ts.size//2 + 1))
+        self.assertEqual(sg.df, 4 * units.Hertz)
+        self.assertEqual(sg.dt, 0.5 * units.second)
+        ts.spectrogram(0.5, fftlength=0.25, method='bartlett')
+        self.assertEqual(sg.shape, (2, 0.25 * ts.size//2 + 1))
+        self.assertEqual(sg.df, 4 * units.Hertz)
+        self.assertEqual(sg.dt, 0.5 * units.second)
+        ts.spectrogram(0.5, fftlength=0.25, method='lal-welch')
+        self.assertEqual(sg.shape, (2, 0.25 * ts.size//2 + 1))
+        self.assertEqual(sg.df, 4 * units.Hertz)
+        self.assertEqual(sg.dt, 0.5 * units.second)
+        ts.spectrogram(0.5, fftlength=0.25, method='median-mean')
+        self.assertEqual(sg.shape, (2, 0.25 * ts.size//2 + 1))
+        self.assertEqual(sg.df, 4 * units.Hertz)
+        self.assertEqual(sg.dt, 0.5 * units.second)
+        ts.spectrogram(0.5, fftlength=0.25, method='median')
+        self.assertEqual(sg.shape, (2, 0.25 * ts.size//2 + 1))
+        self.assertEqual(sg.df, 4 * units.Hertz)
+        self.assertEqual(sg.dt, 0.5 * units.second)
 
     def test_spectrogram2(self):
         ts = self._read()
@@ -571,7 +619,6 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(sg.f0, 0*units.Hertz)
         self.assertEqual(sg.df, 1 / ts.duration)
         self.assertIsInstance(sg, Spectrogram)
-        self.assertIs(sg.channel, ts.channel)
         self.assertEqual(sg.unit, ts.unit ** 2 / units.Hertz)
         self.assertEqual(sg.epoch, ts.epoch)
         self.assertEqual(sg.span, ts.span)
@@ -584,9 +631,9 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(sg.df, 2 * units.Hertz)
         self.assertEqual(sg.dt, 0.5 * units.second)
         # test overlap
-        sg = ts.spectrogram2(fftlength=0.2, overlap=0.19)
-        self.assertEqual(sg.shape, (99, 0.2 * ts.size//2 + 1))
-        self.assertEqual(sg.df, 5 * units.Hertz)
+        sg = ts.spectrogram2(fftlength=0.25, overlap=0.24)
+        self.assertEqual(sg.shape, (99, 0.25 * ts.size//2 + 1))
+        self.assertEqual(sg.df, 4 * units.Hertz)
         # note: bizarre stride length because 16384/100 gets rounded
         self.assertEqual(sg.dt, 0.010009765625 * units.second)
 
@@ -637,16 +684,35 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(sg.df, 2 * units.Hertz)
         self.assertEqual(sg.dt, 1 * units.second)
         # test overlap
-        sg = ts.csd_spectrogram(ts, 0.5, fftlength=0.2, overlap=0.1)
-        self.assertEqual(sg.shape, (2, 0.2 * ts.size//2 + 1))
-        self.assertEqual(sg.df, 5 * units.Hertz)
+        sg = ts.csd_spectrogram(ts, 0.5, fftlength=0.25, overlap=0.125)
+        self.assertEqual(sg.shape, (2, 0.25 * ts.size//2 + 1))
+        self.assertEqual(sg.df, 4 * units.Hertz)
         self.assertEqual(sg.dt, 0.5 * units.second)
         # test multiprocessing
-        sg2 = ts.csd_spectrogram(ts, 0.5, fftlength=0.2, overlap=0.1, nproc=2)
+        sg2 = ts.csd_spectrogram(ts, 0.5, fftlength=0.25,
+                                 overlap=0.125, nproc=2)
         self.assertArraysEqual(sg, sg2)
-        # test method not 'welch' raises warning
-        with pytest.warns(UserWarning):
-           ts.csd_spectrogram(ts, 0.5, method='median-mean')
+
+    def test_rayleigh_spectrum(self):
+        ts = self._read()
+        # assert single FFT creates Rayleigh of 0
+        ray = ts.rayleigh_spectrum()
+        self.assertIsInstance(ray, FrequencySeries)
+        self.assertEqual(ray.unit, units.Unit(''))
+        self.assertEqual(ray.name, 'Rayleigh spectrum of %s' % ts.name)
+        self.assertEqual(ray.epoch, ts.epoch)
+        self.assertIs(ray.channel, ts.channel)
+        self.assertEqual(ray.f0, 0 * units.Hz)
+        self.assertEqual(ray.df, 1 * units.Hz)
+        self.assertEqual(ray.sum().value, 0)
+        # actually test properly
+        ray = ts.rayleigh_spectrum(.5)  # no overlap
+        self.assertEqual(ray.df, 2 * units.Hz)
+        self.assertAlmostEqual(ray.max().value, 0.9997307802003135)
+        self.assertEqual(ray.frequencies[ray.argmax()], 5362 * units.Hz)
+        ray = ts.rayleigh_spectrum(.5, .25)  # 50 % overlap
+        self.assertAlmostEqual(ray.max().value, 1.3967672286018407)
+        self.assertEqual(ray.frequencies[ray.argmax()], 3088 * units.Hz)
 
     def test_notch(self):
         # test notch runs end-to-end

@@ -47,8 +47,6 @@ from six.moves.queue import Queue
 
 from numpy import inf
 
-from glue.segments import PosInfinity
-
 from astropy.io import registry as io_registry
 
 from ..time import to_gps
@@ -506,7 +504,7 @@ class DataQualityFlag(object):
 
         # process query
         for start, end in qsegs:
-            if end == PosInfinity or float(end) == +inf:
+            if float(end) == +inf:
                 end = to_gps('now').seconds
             if out.version is None:
                 data, versions, _ = apicalls.dqsegdbCascadedQuery(
@@ -586,7 +584,7 @@ class DataQualityFlag(object):
         except TypeError:
             pass
         if veto.end_time == 0:
-            veto.end_time = PosInfinity
+            veto.end_time = +inf
         known = Segment(veto.start_time, veto.end_time)
         pad = (veto.start_pad, veto.end_pad)
         return cls(name=name, known=[known], category=veto.category,
@@ -1046,7 +1044,7 @@ class DataQualityDict(OrderedDict):
             else:
                 vers = dqflag.version
             for gpsstart, gpsend in qsegs:
-                if gpsend == PosInfinity or float(gpsend) == +inf:
+                if float(gpsend) == +inf:
                     gpsend = to_gps('now').seconds
                 gpsstart = float(gpsstart)
                 if not gpsstart.is_integer():
@@ -1198,8 +1196,7 @@ class DataQualityDict(OrderedDict):
         ifo : `str`, optional
             interferometer prefix whose flags you want to read
         format : `str`, optional
-            format of file to read (passed to `VetoDefTable.read`),
-            currently only 'ligolw' is supported
+            format of file to read, currently only 'ligolw' is supported
 
         Returns
         -------
@@ -1217,20 +1214,28 @@ class DataQualityDict(OrderedDict):
         >>> flags.populate()
 
         """
+        from glue.ligolw.lsctables import VetoDefTable
+        from ..io.ligolw import table_from_file
+
+        if format != 'ligolw':
+            raise NotImplementedError("Reading veto definer from non-ligolw "
+                                      "format file is not currently "
+                                      "supported")
+
         if start is not None:
             start = to_gps(start)
         if end is not None:
             end = to_gps(end)
+
         # read veto definer file
-        from gwpy.table.lsctables import VetoDefTable
         if urlparse(fp).scheme in ['http', 'https']:
             response = request.urlopen(fp)
             with tempfile.NamedTemporaryFile() as temp:
                 temp.write(response.read())
                 temp.flush()
-                veto_def_table = VetoDefTable.read(temp.name, format=format)
+                veto_def_table = table_from_file(temp.name, 'veto_definer')
         else:
-            veto_def_table = VetoDefTable.read(fp, format=format)
+            veto_def_table = table_from_file(fp, 'veto_definer')
         # parse flag definitions
         out = cls()
         for row in veto_def_table:

@@ -19,14 +19,13 @@
 """Read events from GWF FrEvent structures into a Table
 """
 
-from astropy.table import (Table, Row, vstack as vstack_tables)
+from astropy.table import (Table, Row)
 from astropy.io import registry as io_registry
 
 from ...table import EventTable
 from ...time import LIGOTimeGPS
 from ...io import gwf as io_gwf
 from ...io.cache import FILE_LIKE
-from ...io.utils import identify_factory
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -83,7 +82,7 @@ def table_from_gwf(filename, name, columns=None):
     while True:
         try:
             frevent = stream.ReadFrEvent(i, name)
-        except IndexError as e:
+        except IndexError:
             break
         if columns is None:  # read first event to get column names
             columns = get_columns_from_frevent(frevent)

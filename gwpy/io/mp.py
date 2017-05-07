@@ -17,7 +17,6 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-import multiprocessing
 from xml.sax import SAXException
 
 from six import string_types
@@ -27,6 +26,7 @@ from astropy.io.registry import (_get_valid_format as get_format,
 from astropy.utils.data import get_readable_fileobj
 
 from .cache import (FILE_LIKE, file_list)
+from ..utils import mp as mp_utils
 
 
 def read_multi(flatten, cls, source, *args, **kwargs):
@@ -81,9 +81,7 @@ def read_multi(flatten, cls, source, *args, **kwargs):
             ctx.__exit__(*sys.exc_info())
 
     # calculate maximum number of processes
-    nproc = kwargs.pop('nproc', 1)
-    num = len(files)
-    nproc = min(nproc, num)
+    nproc = min(kwargs.pop('nproc', 1), len(files))
 
     # define multiprocessing method
     def _read_single_file(f):
@@ -97,50 +95,16 @@ def read_multi(flatten, cls, source, *args, **kwargs):
             else:
                 return f, e
 
-    # read single file
-    if nproc == 1:
-        output = map(_read_single_file, files)
+    # read files
+    output = mp_utils.multiprocess_with_queues(
+        nproc, _read_single_file, files, raise_exceptions=False)
 
-    # read multiple files
-    else:
-        # create input and output queues
-        q_in = multiprocessing.Queue(1)
-        q_out = multiprocessing.Queue()
-
-        # create child processes and start
-        proc = [multiprocessing.Process(target=_read_from_queue,
-                                        args=(_read_single_file, q_in, q_out))
-                for _ in range(nproc)]
-        for p in proc:
-            p.daemon = True
-            p.start()
-
-        # populate queue
-        sent = [q_in.put((i, f)) for i, f in enumerate(files)]
-        [q_in.put((None, None)) for _ in range(nproc)]  # queue is full
-
-        # get results
-        res = [q_out.get() for _ in range(len(sent))]
-
-        # close processes and sort output
-        [p.join() for p in proc]
-        output = [table for i, table in sorted(res)]
-
-        # raise exceptions
-        for f, x in output:
-            if isinstance(x, Exception):
-                x.args = ('Failed to read %s: %s' % (f, str(x)),)
-                raise x
+    # raise exceptions (from multiprocessing, single process raises inline)
+    for f, x in output:
+        if isinstance(x, Exception):
+            x.args = ('Failed to read %s: %s' % (f, str(x)),)
+            raise x
 
     # return combined object
-    return flatten(zip(*output)[1])
-
-
-def _read_from_queue(f, q_in, q_out):
-    while True:
-        # pick item out of input wqueue
-        i, x = q_in.get()
-        if i is None:
-            break
-        # execute method and put the result in the output queue
-        q_out.put((i, f(x)))
+    _, out = zip(*output)
+    return flatten(out)

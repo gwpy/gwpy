@@ -19,7 +19,7 @@
 """Unit test for signal module
 """
 
-from compat import unittest
+from compat import (unittest, HAS_LAL)
 
 import numpy
 from numpy import testing as nptest
@@ -28,7 +28,8 @@ from scipy import signal
 
 from astropy import units
 
-import lal
+if HAS_LAL:
+    import lal
 
 from gwpy import signal as gwpy_signal
 from gwpy.signal.fft import (lal as fft_lal, utils as fft_utils,
@@ -117,29 +118,30 @@ class FFTRegistryTests(unittest.TestCase):
 # -- gwpy.signal.fft.utils ----------------------------------------------------
 
 class FFTUtilsTests(unittest.TestCase):
-    def test_scale_timeseries_units(self):
+    def test_scale_timeseries_unit(self):
         u = units.Unit('m')
         # check default
-        self.assertEqual(fft_utils.scale_timeseries_units(u),
+        self.assertEqual(fft_utils.scale_timeseries_unit(u),
                          units.Unit('m^2/Hz'))
         # check scaling='density'
         self.assertEqual(
-            fft_utils.scale_timeseries_units(u, scaling='density'),
+            fft_utils.scale_timeseries_unit(u, scaling='density'),
             units.Unit('m^2/Hz'))
         # check scaling='spectrum'
         self.assertEqual(
-            fft_utils.scale_timeseries_units(u, scaling='spectrum'),
+            fft_utils.scale_timeseries_unit(u, scaling='spectrum'),
             units.Unit('m^2'))
         # check anything else raises an exception
-        self.assertRaises(ValueError, fft_utils.scale_timeseries_units,
+        self.assertRaises(ValueError, fft_utils.scale_timeseries_unit,
                           u, scaling='other')
         # check null unit
-        self.assertEqual(fft_utils.scale_timeseries_units(None),
+        self.assertEqual(fft_utils.scale_timeseries_unit(None),
                          units.Unit('Hz^-1'))
 
 
 # -- gwpy.signal.fft.lal ------------------------------------------------------
 
+@unittest.skipUnless(HAS_LAL, 'No module named lal')
 class LALFftTests(unittest.TestCase):
     def test_generate_window(self):
         # test default arguments

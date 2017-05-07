@@ -110,4 +110,4 @@ def call(cmd, stdout=PIPE, stderr=PIPE, on_error='raise', **kwargs):
             warnings.warn(str(e))
         else:
             raise CalledProcessError(proc.returncode, cmdstr)
-    return out, err
+    return out.decode('utf-8'), err.decode('utf-8')

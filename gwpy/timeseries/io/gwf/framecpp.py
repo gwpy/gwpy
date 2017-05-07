@@ -33,7 +33,7 @@ else:
 
 from ....detector import Channel
 from ....io import gwf as io_gwf
-from ....io.cache import (Cache, CacheEntry, file_list)
+from ....io.cache import (file_list, file_segment)
 from ....time import LIGOTimeGPS
 from ... import (TimeSeries, TimeSeriesDict)
 
@@ -66,8 +66,7 @@ FRVECT_TYPE_FROM_NUMPY = dict(
 def read(source, channels, start=None, end=None, type=None,
          series_class=TimeSeries):
     # parse input source
-    if not isinstance(source, Cache):
-        source = file_list(source)
+    source = file_list(source)
 
     # parse type
     ctype = channel_dict_kwarg(type, channels, (str,))
@@ -95,11 +94,7 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
         end = 0
 
     # open file
-    if isinstance(framefile, CacheEntry):
-        fp = framefile.path
-    else:
-        fp = framefile
-    stream = frameCPP.IFrameFStream(fp)
+    stream = frameCPP.IFrameFStream(framefile)
 
     # get number of frames in file
     try:
@@ -111,12 +106,10 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
     # as required by the file-naming convention
     epochs = None
     try:
-        ce = CacheEntry.from_T050017(fp, coltype=LIGOTimeGPS)
+        if nframe == 1:
+            epochs = [file_segment(framefile)[0]]
     except ValueError:
         pass
-    else:
-        if nframe == 1:
-            epochs = [float(ce.segment[0])]
     if epochs is None:
         toc = stream.GetTOC()
         epochs = [LIGOTimeGPS(s, n) for s, n in zip(toc.GTimeS, toc.GTimeN)]
@@ -163,7 +156,7 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
             # check overlap with user-requested span
             if end and datastart >= end and nframe == 1:
                 raise ValueError("Cannot read %s from FrVect in %s "
-                                 "ending at %s" % (name, fp, end))
+                                 "ending at %s" % (name, framefile, end))
             elif end and datastart >= end:  # don't need this frame
                 continue
             try:
@@ -193,7 +186,8 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                 # if file only has ony frame, error on overlap problems
                 if a >= arr.size and nframe == 1:  # start too large
                     raise ValueError("Cannot read %s from FrVect in %s "
-                                     "starting at %s" % (name, fp, start))
+                                     "starting at %s"
+                                     % (name, framefile, start))
                 # otherwise just skip to the next frame
                 if a >= arr.size:  # skip frame
                     continue
@@ -215,7 +209,7 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                     ts.append(arr)
         if ts is None:
             raise ValueError("Failed to read '%s' from file '%s'"
-                             % (str(channel), fp))
+                             % (str(channel), framefile))
         else:
             out[channel] = ts
 

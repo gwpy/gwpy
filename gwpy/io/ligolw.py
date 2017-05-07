@@ -27,8 +27,6 @@ import warnings
 
 from six import string_types
 
-from glue.ligolw.ligolw import LIGOLWContentHandler
-
 from ..utils import gprint
 from .cache import (file_list, FILE_LIKE)
 from .utils import identify_factory
@@ -37,17 +35,6 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 # -- content handling ---------------------------------------------------------
-
-class GWpyContentHandler(LIGOLWContentHandler):
-    """Empty sub-class of `~glue.ligolw.ligolw.LIGOLWContentHandler`
-    """
-    def __init__(self, *args, **kwargs):
-        warnings.warn("GWpyContentHandler has been deprecated and will be "
-                      "removed in an upcoming release, please use "
-                      "glue.ligolw.ligolw.LIGOLWContentHandler or similar",
-                      DeprecationWarning)
-        return super(GWpyContentHandler).__init__(self, *args, **kwargs)
-
 
 def get_partial_contenthandler(table):
     """Build a `~glue.ligolw.ligolw.PartialLIGOLWContentHandler` for this table

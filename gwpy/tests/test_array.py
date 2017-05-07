@@ -225,6 +225,12 @@ class CommonTests(object):
         ts2 = pickle.loads(pkl)
         self.assertArraysEqual(ts, ts2)
 
+    # -- test methods ---------------------------
+
+    def test_abs(self):
+        arr = self.create()
+        self.assertArraysEqual(arr.abs(), numpy.abs(arr))
+
     # -- test I/O -------------------------------
 
     def _test_read_write(self, format, extension=None, auto=True, exclude=[],

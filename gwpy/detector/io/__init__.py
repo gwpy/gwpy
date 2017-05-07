@@ -16,9 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Input/Output routines for Channel and ChannelList
 """
-"""
+
+from . import (  # pylint: disable=unused-import
+    cis,  # querying Channel Information System (cis.ligo.org)
+    clf,  # LIGO Channel List File (clf) format
+    omega,  # Omega pipeline scan configurations
+)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
-from . import (cis, clf, omega)

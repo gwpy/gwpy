@@ -19,15 +19,23 @@
 """Common methods for GWpy unit tests
 """
 
+import unittest
 from functools import wraps
 
-from gwpy.io.cache import (Cache, CacheEntry)
+try:
+    from glue.lal import (Cache, CacheEntry)
+except ImportError:  # no lal
+    HAS_CACHE = False
+else:
+    HAS_CACHE = True
+
 from gwpy.io.registry import identify_format
 from gwpy.utils.deps import import_method_dependency
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
+@unittest.skipUnless(HAS_CACHE, "No module named lal")
 def test_io_identify(cls, extensions, modes=['read', 'write']):
     for mode in modes:
         for ext in extensions:
