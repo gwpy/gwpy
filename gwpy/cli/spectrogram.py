@@ -19,7 +19,7 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-""" Coherence plots
+""" Spectrogram plots
 """
 from .cliproduct import CliProduct
 
