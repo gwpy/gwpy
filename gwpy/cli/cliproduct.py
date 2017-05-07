@@ -39,6 +39,8 @@ import re
 
 from argparse import ArgumentError
 
+from dateutil.parser import parser
+
 from ..timeseries import TimeSeries
 
 
@@ -96,6 +98,10 @@ class CliProduct(object):
         """Set up the argument list for this product"""
         return
 
+    def post_arg(self,args):
+        """After  argument parsing products can derive other args"""
+        return
+
     @abc.abstractmethod
     def gen_plot(self, args):
         """Generate the plot from time series and arguments"""
@@ -151,7 +157,46 @@ class CliProduct(object):
         return
 
 
-# ------Argparse methods
+# ------Argparse methods.  These methods add parameters to the
+# parser in groups.  Individual products use these to maximize
+# consistency.
+
+    def arg_qxform(self, parser):
+        """Q transform is a bit different"""
+        parser.add_argument('--chan',
+                            required=True, help='Channel name.')
+        parser.add_argument('--gps', required=True,
+                            help='Event time (float)')
+        parser.add_argument('--outdir', required=True,
+                            help='Directory for output images')
+        parser.add_argument('--search', help='Seconds analyzed',
+                            default='64')
+        parser.add_argument('--sample_freq', help='Downsample freq',
+                            default=2048)
+        parser.add_argument('--plot', nargs='+',
+                            help='One or more times to plot')
+        parser.add_argument('--frange', nargs=2, help='Frequency ' +
+                            'range to plot')
+        parser.add_argument('--erange', nargs=2, help='Normalized ' +
+                            'energy range')
+        parser.add_argument('--srange', nargs=2, help='Search ' +
+                            'frequency range')
+        parser.add_argument('--qrange', nargs=2, help='Search Q ' +
+                            'range')
+
+        parser.add_argument('--nowhiten', action='store_true',
+                            help='do not whiten input ' +
+                                 'before transform')
+        self.arg_datasoure(parser)
+
+    def arg_datasoure(self, parser):
+        parser.add_argument('-c', '--framecache',
+                            help='use .gwf files in cache not NDS2,' +
+                                 ' default use NDS2')
+        parser.add_argument('-n', '--nds2-server', metavar='HOSTNAME',
+                            help='name of nds2 server to use, default is to '
+                                 'try all of them')
+
 
     def arg_chan(self, parser):
         """Allow user to specify list of channel names,
@@ -160,12 +205,7 @@ class CliProduct(object):
                             help='Starting GPS times(required)')
         parser.add_argument('--duration', default=10,
                             help='Duration (seconds) [10]')
-        parser.add_argument('-c', '--framecache',
-                            help='use .gwf files in cache not NDS2,' +
-                                 ' default use NDS2')
-        parser.add_argument('-n', '--nds2-server', metavar='HOSTNAME',
-                            help='name of nds2 server to use, default is to '
-                                 'try all of them')
+        self.arg_datasoure(parser)
         parser.add_argument('--highpass',
                             help='frequency for high pass filter,' +
                                  ' default no filter')
@@ -780,8 +820,8 @@ class CliProduct(object):
 
         if self.verbose > 2:
             print('Arguments:')
-            for key, value in args.__dict__.items():
-                print('%s = %s' % (key, value))
+            for key in sorted(args.__dict__):
+                print('%s = %s' % (key, args.__dict__[key]))
 
         self.getTimeSeries(args)
 

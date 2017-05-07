@@ -44,12 +44,14 @@ class CliHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
 
 # Products are classes that implement a specific plot
 # This is a list of those class names, module names
+# This is the only list of all products
 PRODUCTS = [
         'TimeSeries',
         'Coherence',
         'Spectrum',
         'Spectrogram',
-        'Coherencegram'
+        'Coherencegram',
+        'Qtransform'
 ]
 
 parser = argparse.ArgumentParser(formatter_class=CliHelpFormatter,
@@ -94,46 +96,58 @@ for product in PRODUCTS:
 # Run
 
 if __name__ == '__main__':
-    import os
-    # if we're launched with minimum or no environment
-    # variables make some guesses
-    if len(os.getenv('HOME', '')) == 0:
-        os.environ['HOME'] = '/tmp/'
-    # if launched from a terminal with no display
-    if len(os.getenv('DISPLAY', '')) == 0:
-        import matplotlib
-        matplotlib.use('Agg')
+    try:
+        import os
+        # if we're launched with minimum or no environment
+        # variables make some guesses
+        if len(os.getenv('HOME', '')) == 0:
+            os.environ['HOME'] = '/tmp/'
+        # if launched from a terminal with no display
+        if len(os.getenv('DISPLAY', '')) == 0:
+            import matplotlib
+            matplotlib.use('Agg')
 
-    # parse the command line
-    args = parser.parse_args()
-    if args.silent:
-        VERBOSE = 0
-    else:
-        VERBOSE = args.verbose
-    if not args.mode:
-        raise RuntimeError("Must specify action. "
-                           "Please try again with --help.")
-    prod = actions[args.func]
-    prod.log(2, ('%s called' % args.func))
+        # parse the command line
+        args = parser.parse_args()
+        if args.silent:
+            VERBOSE = 0
+        else:
+            VERBOSE = args.verbose
+        if not args.mode:
+            raise RuntimeError("Must specify action. "
+                               "Please try again with --help.")
+        prod = actions[args.func]
+        prod.log(2, ('%s called' % args.func))
 
-    # apply custom styling
-    if args.style:
-        from matplotlib import pyplot
-        pyplot.style.use(args.style)
+        # apply custom styling
+        if args.style:
+            from matplotlib import pyplot
+            pyplot.style.use(args.style)
 
-    # generate the plot
-    result_code = prod.makePlot(args)
+        # Products get a chance to massage args
+        # eg: q-transform takes gps & search to provide
+        #     start, duration and epoch, xmin...
+        prod.post_arg(args)
 
-    # If they requested interactive mode and run from ipython
-    # this makes it easier
-    if prod.is_interactive:
-        # import pyplot so that user has access to it
-        from matplotlib import pyplot as plt  # pylint: disable=unused-import
-        plot = prod.plot
-        # pull raw data and plotted results from product for their use
-        timeseries = prod.timeseries
-        result = prod.result
-        print('Raw data is in "timeseries", plotted data is in "result"')
-        ax = plot.gca()
-    else:
-        sys.exit(result_code)
+        # generate the plot
+        result_code = prod.makePlot(args)
+
+        # If they requested interactive mode and run from ipython
+        # this makes it easier
+        if prod.is_interactive:
+            # import pyplot so that user has access to it
+            from matplotlib import pyplot as plt  # pylint: disable=unused-import
+            plot = prod.plot
+            # pull raw data and plotted results from product for their use
+            timeseries = prod.timeseries
+            result = prod.result
+            print('Raw data is in "timeseries", plotted data is in "result"')
+            ax = plot.gca()
+        else:
+            sys.exit(result_code)
+    except:
+        # standard exception reporting wasn't working
+        typ, msg, trcbk = sys.exc_info()
+        import traceback
+        traceback.print_tb(trcbk)
+        print ('Error: %s, %s' % (typ, msg))
