@@ -313,7 +313,7 @@ def set_parameter(connection, key, value):
     """
     try:
         return connection.set_parameter(key, str(value))
-    except AttributeError as e:
+    except AttributeError:
         warnings.warn("This version of the NDS2 client does not "
                       "support the {0} parameter".format(key), NDSWarning)
 
