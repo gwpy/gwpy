@@ -66,7 +66,8 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
 
     # set allow_tape parameter in connection
     if allow_tape is not None:
-        io_nds2.set_parameter(connection, 'ALLOW_DATA_ON_TAPE', str(allow_tape))
+        io_nds2.set_parameter(connection, 'ALLOW_DATA_ON_TAPE',
+                              str(allow_tape))
 
     type = parse_nds_enum_dict_param(channels, 'type', type)
     dtype = parse_nds_enum_dict_param(channels, 'dtype', dtype)
@@ -77,8 +78,8 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
     utype = reduce(operator.or_, type.values())  # logical OR of types
     udtype = reduce(operator.or_, dtype.values())
     ndschannels = io_nds2.find_channels(channels, connection=connection,
-                                       type=utype, dtype=udtype, unique=True,
-                                       epoch=(start, end))
+                                        type=utype, dtype=udtype, unique=True,
+                                        epoch=(start, end))
     names = ['%s,%s' % (c.name, c.channel_type_to_string(c.channel_type)) for
              c in ndschannels]
     print_verbose('done', verbose=verbose)
