@@ -119,9 +119,6 @@ class ChannelTests(unittest.TestCase):
         new.type = 'm-trend'
         self.assertEqual(new.ndstype, 16)
         self.assertEqual(new.type, 'm-trend')
-        new.ndstype = 's-trend'
-        self.assertEqual(new.ndstype, 8)
-        self.assertEqual(new.type, 's-trend')
 
     def test_query(self):
         try:

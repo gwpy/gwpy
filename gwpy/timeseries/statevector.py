@@ -36,7 +36,7 @@ from astropy.units import Quantity
 from astropy.io import registry as io_registry
 
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
-                   NDS2_FETCH_TYPE_MASK, as_series_dict_class)
+                   as_series_dict_class)
 from ..types import Array2D
 from ..detector import Channel
 from ..time import Time
@@ -586,7 +586,7 @@ class StateVector(TimeSeriesBase):
 
     @classmethod
     def fetch(cls, channel, start, end, bits=None, host=None, port=None,
-              verbose=False, connection=None, type=NDS2_FETCH_TYPE_MASK):
+              verbose=False, connection=None, type=None):
         """Fetch data from NDS into a `StateVector`.
 
         Parameters

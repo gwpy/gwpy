@@ -25,6 +25,7 @@ from . import (  # pylint: disable=unused-import
     cache,
     hdf5,
     losc,
+    nds2,
 )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
