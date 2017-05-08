@@ -28,6 +28,7 @@ import os
 import re
 import sys
 import warnings
+from functools import wraps
 
 import numpy
 
@@ -257,3 +258,104 @@ def auth_connect(host, port=None):
         else:
             raise
     return connection
+
+
+def open_connection(func):
+    """Decorate a function to create a `nds2.connection` if required
+    """
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        if kwargs.get('connection', None) is None:
+            try:
+                host = kwargs.pop('host')
+            except KeyError:
+                raise TypeError("one of `connection` or `host` is required "
+                                "to query NDS2 server")
+            kwargs['connection'] = auth_connect(host, kwargs.pop('port', None))
+        return func(*args, **kwargs)
+    return wrapped_func
+
+
+def parse_nds2_enums(func):
+    """Decorate a function to translate a type string into an integer
+    """
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        for kw, enum_ in (('type', Nds2ChannelType),
+                          ('dtype', Nds2DataType)):
+            kwargs.setdefault(kw, enum_.any())
+            if not isinstance(kwargs[kw], int):
+                kwargs[kw] = enum_.find(kwargs[kw]).value
+        return func(*args, **kwargs)
+    return wrapped_func
+
+
+# -- query methods ------------------------------------------------------------
+
+@open_connection
+@parse_nds2_enums
+def find_channels(channels, connection=None, host=None, port=None,
+                  sample_rate=None, type=Nds2ChannelType.any(),
+                  dtype=Nds2DataType.any(), unique=False, epoch=None):
+    """Query an NDS2 server for channel information
+
+    Parameters
+    ----------
+    channels : `list` of `str`
+        list of channel names to query, each can include bash-style globs
+
+    connection : `nds2.connection`, optional
+        open NDS2 connection to use for query
+
+    host : `str`, optional
+        name of NDS2 server to query, required if ``connection`` is not
+        given
+
+    port : `int`, optional
+        port number on host to use for NDS2 connection
+
+    sample_rate : `int`, `float`, `tuple`, optional
+        a single number, representing a specific sample rate to match,
+        or a tuple representing a ``(low, high)` interval to match
+
+    type : `int`, optional
+        the NDS2 channel type to match
+
+    dtype : `int`, optional
+        the NDS2 data type to match
+
+    unique : `bool`, optional, default: `False`
+        require one (and only one) match per channel
+
+    Returns
+    -------
+    channels : `list` of `nds2.channel`
+        list of NDS2 channel objects
+
+    See also
+    --------
+    nds2.connection.find_channels
+        for documentation on the underlying query method
+    """
+    # set epoch
+    if isinstance(epoch, tuple):
+        connection.set_epoch(*epoch)
+    elif epoch is not None:
+        connection.set_epoch(epoch)
+
+    # query for channels
+    out = []
+    if isinstance(sample_rate, (int, float)):
+        sample_rate = (sample_rate, sample_rate)
+    elif sample_rate is None:
+        sample_rate = tuple()
+    qargs = (type, dtype) + sample_rate
+
+    for name in map(str, channels):
+        found = connection.find_channels(name, *qargs)
+        if unique and len(found) != 1:
+            raise ValueError("unique NDS2 channel match not found for %r"
+                             % name)
+        out.extend(found)
+
+    return out

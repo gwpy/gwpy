@@ -769,9 +769,8 @@ class ChannelList(list):
         return cis.query(name, debug=debug, timeout=timeout)
 
     @classmethod
-    @with_import('nds2')
     def query_nds2(cls, names, host=None, port=None, connection=None,
-                   type=None, unique=False):
+                   type=io_nds2.Nds2ChannelType.any(), unique=False):
         """Query an NDS server for channel information
 
         Parameters
@@ -807,50 +806,10 @@ class ChannelList(list):
 
            A `host` is required if an open `connection` is not given
         """
-        from ..io.nds2 import (auth_connect, NDSWarning)
-        out = cls()
-        # connect
-        if connection is None:
-            if host is None:
-                raise ValueError("Please given either an open nds2.connection,"
-                                 " or the name of the host to connect to")
-            connection = auth_connect(host, port)
-        if isinstance(names, str):
-            names = [names]
-        for name in names:
-            # format channel query
-            if (type and (isinstance(type, string_types) or
-                          (isinstance(type, int) and
-                           log(type, 2).is_integer()))):
-                channel = Channel(name, type=type)
-            else:
-                channel = Channel(name)
-            if channel.ndstype is not None:
-                found = connection.find_channels(
-                    channel.ndsname, channel.ndstype)
-            elif type is not None:
-                found = connection.find_channels(channel.name, type)
-            else:
-                found = connection.find_channels(channel.name)
-            found = ChannelList(map(Channel.from_nds2, found))
-            _names = set([c.ndsname for c in found])
-            if unique and len(_names) == 0:
-                raise ValueError("No match for channel %r in NDS database"
-                                 % name)
-            if unique and len(_names) > 1:
-                raise ValueError(
-                    "Multiple matches for channel '%s' in NDS database, "
-                    "ambiguous request:\n    %s"
-                    % (name, '\n    '.join(['%s (%s, %s)'
-                       % (str(c), c.type, c.sample_rate) for c in found])))
-            elif unique and len(found) > 1:
-                warnings.warn('Multiple instances of %r found with different '
-                              'parameters, returning first.' % name,
-                              NDSWarning)
-                out.append(found[0])
-            else:
-                out.extend(found)
-        return out
+        ndschannels = io_nds2.find_channels(names, host=host, port=port,
+                                            connection=connection, type=type,
+                                            unique=unique)
+        return cls(map(Channel.from_nds2, ndschannels))
 
     @classmethod
     @with_import('nds2')
