@@ -750,7 +750,7 @@ class TimeSeriesBaseDict(OrderedDict):
             from NDS.
         """
         from ..segments import (Segment, SegmentList)
-        from ..io import nds as ndsio
+        from ..io import nds2 as io_nds2
         # parse times
         start = to_gps(start)
         end = to_gps(end)
@@ -778,7 +778,7 @@ class TimeSeriesBaseDict(OrderedDict):
         if host is not None and port is not None and connection is None:
             if verbose:
                 gprint("Connecting to %s:%s..." % (host, port), end=' ')
-            connection = ndsio.auth_connect(host, port)
+            connection = io_nds2.auth_connect(host, port)
             if verbose:
                 gprint("Connected.")
         elif connection is not None and verbose:
@@ -791,7 +791,7 @@ class TimeSeriesBaseDict(OrderedDict):
                 ifo = list(ifos)[0]
             else:
                 ifo = None
-            hostlist = ndsio.host_resolution_order(ifo, epoch=start)
+            hostlist = io_nds2.host_resolution_order(ifo, epoch=start)
             if allow_tape is None:
                 tapes = [False, True]
             else:
@@ -807,7 +807,7 @@ class TimeSeriesBaseDict(OrderedDict):
                         if verbose:
                             gprint('Something went wrong:', file=sys.stderr)
                             # if user supplied their own server, raise
-                            warnings.warn(str(e), ndsio.NDSWarning)
+                            warnings.warn(str(e), io_nds2.NDSWarning)
 
                 # if we got this far, we can't get all channels in one go
                 if len(channels) > 1:
@@ -834,7 +834,7 @@ class TimeSeriesBaseDict(OrderedDict):
                 warnings.warn("This version of the nds2-client does not "
                               "support the allow_tape. This operation will "
                               "continue using whatever default is set by the "
-                              "target NDS server", ndsio.NDSWarning)
+                              "target NDS server", io_nds2.NDSWarning)
 
         # verify channels
         if verify:
@@ -842,7 +842,7 @@ class TimeSeriesBaseDict(OrderedDict):
                 gprint("Checking channels against the NDS database...",
                        end=' ')
             else:
-                warnings.filterwarnings('ignore', category=ndsio.NDSWarning,
+                warnings.filterwarnings('ignore', category=io_nds2.NDSWarning,
                                         append=False)
             try:
                 qchannels = ChannelList.query_nds2(channels,
@@ -889,7 +889,7 @@ class TimeSeriesBaseDict(OrderedDict):
                 segs = ChannelList.query_nds2_availability(
                     channels, istart, iend, host=connection.get_host())
             except (RuntimeError, CalledProcessError) as e:
-                warnings.warn(str(e), ndsio.NDSWarning)
+                warnings.warn(str(e), io_nds2.NDSWarning)
             else:
                 for channel in segs:
                     try:

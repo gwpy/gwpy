@@ -34,7 +34,7 @@ from astropy import units
 from astropy.io import registry as io_registry
 
 try:
-    from ..io.nds import (NDS2_CHANNEL_TYPE, NDS2_CHANNEL_TYPESTR)
+    from ..io.nds2 import (NDS2_CHANNEL_TYPE, NDS2_CHANNEL_TYPESTR)
 except ImportError:
     NDS2_CHANNEL_TYPESTR = {
         1: 'online',
@@ -824,7 +824,7 @@ class ChannelList(list):
 
            A `host` is required if an open `connection` is not given
         """
-        from ..io.nds import (auth_connect, NDSWarning)
+        from ..io.nds2 import (auth_connect, NDSWarning)
         out = cls()
         # connect
         if connection is None:
