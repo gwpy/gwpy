@@ -47,6 +47,8 @@ DEFAULT_HOSTS = OrderedDict([
     ('C1', ('nds40.ligo.caltech.edu', 31200)),
     ('C0', ('nds40.ligo.caltech.edu', 31200))])
 
+# -- enums --------------------------------------------------------------------
+
 class Nds2Enum(enum.Enum):
     """`~enum.Enum` providing `any` property with logical OR of members
     """
@@ -136,6 +138,8 @@ class Nds2DataType(Nds2Enum):
     UINT32 = 64
 
 
+# -- warning suppression ------------------------------------------------------
+
 class NDSOutputContext(object):
     def __init__(self, stdout=sys.stdout, stderr=sys.stderr):
         self._stdout = stdout or sys.stdout
@@ -160,6 +164,8 @@ class NDSWarning(UserWarning):
 
 warnings.simplefilter('always', NDSWarning)
 
+
+# -- connection utilities -----------------------------------------------------
 
 def host_resolution_order(ifo, env='NDSSERVER', epoch='now',
                           lookback=14*86400):
