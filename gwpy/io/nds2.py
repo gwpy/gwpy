@@ -25,6 +25,7 @@ from __future__ import (absolute_import, print_function)
 import enum
 import operator
 import os
+import re
 import sys
 import warnings
 
@@ -37,6 +38,8 @@ from .kerberos import kinit
 from ..utils.compat import OrderedDict
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+NDS1_HOSTNAME = re.compile('[a-z]1nds[0-9]\Z')
 
 DEFAULT_HOSTS = OrderedDict([
     (None, ('nds.ligo.caltech.edu', 31200)),
@@ -233,6 +236,10 @@ def auth_connect(host, port=None):
     port : `int`, optional
         connection port
     """
+    # set default port for NDS1 connections (required, I think)
+    if port is None and NDS1_HOSTNAME.match(host):
+        port = 8088
+
     if port is None:
         def _connect():
             return nds2.connection(host)
