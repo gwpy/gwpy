@@ -33,23 +33,7 @@ from six import string_types
 from astropy import units
 from astropy.io import registry as io_registry
 
-try:
-    from ..io.nds2 import (NDS2_CHANNEL_TYPE, NDS2_CHANNEL_TYPESTR)
-except ImportError:
-    NDS2_CHANNEL_TYPESTR = {
-        1: 'online',
-        2: 'raw',
-        4: 'reduced',
-        8: 's-trend',
-        16: 'm-trend',
-        32: 'test-pt',
-        64: 'static',
-        128: 'rds',
-    }
-    NDS2_CHANNEL_TYPE = dict((val, key) for (key, val) in
-                             NDS2_CHANNEL_TYPESTR.items())
-
-from ..io import datafind
+from ..io import (datafind, nds2 as io_nds2)
 from ..time import to_gps
 from ..utils.deps import with_import
 from .units import parse_unit
@@ -269,12 +253,10 @@ class Channel(object):
     def type(self, type_):
         if type_ is None:
             self._type = None
-        elif type_ in NDS2_CHANNEL_TYPESTR:
-            self._type = NDS2_CHANNEL_TYPESTR[type_]
-        elif type_.lower() in NDS2_CHANNEL_TYPE:
-            self._type = type_.lower()
+        elif isinstance(type_, int):
+            self._type = io_nds2.Nds2ChannelType(type_).name
         else:
-            raise ValueError("Channel type '%s' not understood." % type_)
+            self._type = io_nds2.Nds2ChannelType.find(type_).name
 
     @property
     def ndstype(self):
@@ -282,7 +264,8 @@ class Channel(object):
 
         This property is mapped to the `Channel.type` string.
         """
-        return NDS2_CHANNEL_TYPE.get(self.type)
+        if self.type is not None:
+            return io_nds2.Nds2ChannelType.find(self.type).value
 
     @ndstype.setter
     def ndstype(self, type_):
@@ -670,7 +653,7 @@ class ChannelList(list):
             namestr = namestr.strip('\' \n')
             if ',' not in namestr:
                 break
-            for nds2type in list(NDS2_CHANNEL_TYPE.keys()) + ['']:
+            for nds2type in io_nds2.Nds2ChannelType.names() + ['']:
                 if nds2type and ',%s' % nds2type in namestr:
                     try:
                         channel, ctype, namestr = namestr.split(',', 2)
