@@ -761,13 +761,9 @@ class TimeSeriesBaseDict(OrderedDict):
             dtype = dict((channel, dtype) for channel in channels)
 
         # open connection for specific host
-        if host and not port and re.match('[a-z]1nds[0-9]\Z', host):
-            port = 8088
-        elif host and not port:
-            port = 31200
-        if host is not None and port is not None and connection is None:
+        if connection is None and host is not None:
             if verbose:
-                gprint("Connecting to %s:%s..." % (host, port), end=' ')
+                gprint("Connecting to %s..." % host, end=' ')
             connection = io_nds2.auth_connect(host, port)
             if verbose:
                 gprint("Connected.")
