@@ -45,20 +45,20 @@ class NdsIoTestCase(unittest.TestCase):
         """Test `host_resolution_order` with `None` IFO
         """
         try:
-            from gwpy.io import nds
+            from gwpy.io import nds2 as io_nds2
         except ImportError as e:
             self.skipTest(str(e))
-        hro = nds.host_resolution_order(None, env=None)
+        hro = io_nds2.host_resolution_order(None, env=None)
         self.assertListEqual(hro, [('nds.ligo.caltech.edu', 31200)])
 
     def test_nds2_host_order_ifo(self):
         """Test `host_resolution_order` with `ifo` argument
         """
         try:
-            from gwpy.io import nds
+            from gwpy.io import nds2 as io_nds2
         except ImportError as e:
             self.skipTest(str(e))
-        hro = nds.host_resolution_order('L1', env=None)
+        hro = io_nds2.host_resolution_order('L1', env=None)
         self.assertListEqual(
             hro, [('nds.ligo-la.caltech.edu', 31200),
                   ('nds.ligo.caltech.edu', 31200)])
@@ -67,15 +67,15 @@ class NdsIoTestCase(unittest.TestCase):
         """Test `host_resolution_order` with default env set
         """
         try:
-            from gwpy.io import nds
+            from gwpy.io import nds2 as io_nds2
         except ImportError as e:
             self.skipTest(str(e))
         os.environ['NDSSERVER'] = 'test1.ligo.org:80,test2.ligo.org:43'
-        hro = nds.host_resolution_order(None)
+        hro = io_nds2.host_resolution_order(None)
         self.assertListEqual(
             hro, [('test1.ligo.org', 80), ('test2.ligo.org', 43),
                   ('nds.ligo.caltech.edu', 31200)])
-        hro = nds.host_resolution_order('L1')
+        hro = io_nds2.host_resolution_order('L1')
         self.assertListEqual(
             hro, [('test1.ligo.org', 80), ('test2.ligo.org', 43),
                   ('nds.ligo-la.caltech.edu', 31200),
@@ -85,11 +85,11 @@ class NdsIoTestCase(unittest.TestCase):
         """Test `host_resolution_order` with non-default env set
         """
         try:
-            from gwpy.io import nds
+            from gwpy.io import nds2 as io_nds2
         except ImportError as e:
             self.skipTest(str(e))
         os.environ['TESTENV'] = 'test1.ligo.org:80,test2.ligo.org:43'
-        hro = nds.host_resolution_order(None, env='TESTENV')
+        hro = io_nds2.host_resolution_order(None, env='TESTENV')
         self.assertListEqual(
             hro, [('test1.ligo.org', 80), ('test2.ligo.org', 43),
                   ('nds.ligo.caltech.edu', 31200)])
@@ -98,22 +98,22 @@ class NdsIoTestCase(unittest.TestCase):
         """Test `host_resolution_order` with old GPS epoch
         """
         try:
-            from gwpy.io import nds
+            from gwpy.io import nds2 as io_nds2
         except ImportError as e:
             self.skipTest(str(e))
         # test kwarg doesn't change anything
-        hro = nds.host_resolution_order('L1', epoch='now', env=None)
+        hro = io_nds2.host_resolution_order('L1', epoch='now', env=None)
         self.assertListEqual(
             hro, [('nds.ligo-la.caltech.edu', 31200),
                   ('nds.ligo.caltech.edu', 31200)])
         # test old epoch puts CIT ahead of LLO
-        hro = nds.host_resolution_order('L1', epoch='Jan 1 2015', env=None)
+        hro = io_nds2.host_resolution_order('L1', epoch='Jan 1 2015', env=None)
         self.assertListEqual(
             hro, [('nds.ligo.caltech.edu', 31200),
                   ('nds.ligo-la.caltech.edu', 31200)])
         # test epoch doesn't operate with env
         os.environ['TESTENV'] = 'test1.ligo.org:80,test2.ligo.org:43'
-        hro = nds.host_resolution_order('L1', epoch='now', env='TESTENV')
+        hro = io_nds2.host_resolution_order('L1', epoch='now', env='TESTENV')
         self.assertListEqual(
             hro, [('test1.ligo.org', 80), ('test2.ligo.org', 43),
                   ('nds.ligo-la.caltech.edu', 31200),
