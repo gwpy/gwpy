@@ -49,19 +49,9 @@ import numpy
 
 from astropy import units
 
-try:
-    import nds2
-except ImportError:
-    NDS2_FETCH_TYPE_MASK = None
-else:
-    NDS2_FETCH_TYPE_MASK = (nds2.channel.CHANNEL_TYPE_RAW |
-                            nds2.channel.CHANNEL_TYPE_RDS |
-                            nds2.channel.CHANNEL_TYPE_TEST_POINT |
-                            nds2.channel.CHANNEL_TYPE_STATIC)
-
 from ..types import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
-from ..io import datafind
+from ..io import (datafind, nds2 as io_nds2)
 from ..time import (Time, LIGOTimeGPS, to_gps)
 from ..utils import (gprint, with_import)
 from ..utils.compat import OrderedDict
@@ -235,7 +225,7 @@ class TimeSeriesBase(Series):
     @with_import('nds2')
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
               connection=None, verify=False, pad=None, allow_tape=None,
-              type=NDS2_FETCH_TYPE_MASK, dtype=None):
+              type=io_nds2.Nds2ChannelType.any(), dtype=None):
         """Fetch data from NDS
 
         Parameters
@@ -697,7 +687,7 @@ class TimeSeriesBaseDict(OrderedDict):
     @with_import('nds2')
     def fetch(cls, channels, start, end, host=None, port=None,
               verify=False, verbose=False, connection=None,
-              pad=None, allow_tape=None, type=NDS2_FETCH_TYPE_MASK,
+              pad=None, allow_tape=None, type=io_nds2.Nds2ChannelType.any(),
               dtype=None):
         """Fetch data from NDS for a number of channels.
 

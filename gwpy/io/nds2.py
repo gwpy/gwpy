@@ -22,9 +22,13 @@ to LIGO data.
 
 from __future__ import (absolute_import, print_function)
 
+import enum
+import operator
 import os
 import sys
 import warnings
+
+import numpy
 
 import nds2
 
@@ -43,20 +47,93 @@ DEFAULT_HOSTS = OrderedDict([
     ('C1', ('nds40.ligo.caltech.edu', 31200)),
     ('C0', ('nds40.ligo.caltech.edu', 31200))])
 
-# set type dicts
-NDS2_CHANNEL_TYPESTR = {}
-for ctype in (nds2.channel.CHANNEL_TYPE_RAW,
-              nds2.channel.CHANNEL_TYPE_ONLINE,
-              nds2.channel.CHANNEL_TYPE_RDS,
-              nds2.channel.CHANNEL_TYPE_STREND,
-              nds2.channel.CHANNEL_TYPE_MTREND,
-              nds2.channel.CHANNEL_TYPE_STATIC,
-              nds2.channel.CHANNEL_TYPE_TEST_POINT):
-    NDS2_CHANNEL_TYPESTR[ctype] = nds2.channel_channel_type_to_string(ctype)
-NDS2_CHANNEL_TYPESTR[max(NDS2_CHANNEL_TYPESTR.keys()) * 2] = 'rds'
-NDS2_CHANNEL_TYPE = dict((val, key) for (key, val) in
-                         NDS2_CHANNEL_TYPESTR.items())
-# manually add RDS
+class Nds2Enum(enum.Enum):
+    """`~enum.Enum` providing `any` property with logical OR of members
+    """
+    @classmethod
+    def any(cls):
+        return reduce(operator.or_, (x.value for x in cls))
+
+
+NDS2_TYPE_NAME = {
+    0: 'unknown',
+    1: 'online',
+    2: 'raw',
+    4: 'reduced',
+    8: 's-trend',
+    16: 'm-trend',
+    32: 'test-pt',
+    64: 'static',
+}
+
+class Nds2ChannelType(Nds2Enum):
+    """`~enum.Enum` of NDS2 channel types
+    """
+    @property
+    def name(self):
+        return NDS2_TYPE_NAME[self.value]
+
+    @classmethod
+    def names(cls):
+        return [x.name for x in cls]
+
+    @classmethod
+    def find(cls, name):
+        try:
+            return cls._member_map_[name]
+        except KeyError as e:
+            for ctype in cls._member_map_.values():
+                if ctype.name == name:
+                    return ctype
+            raise e
+
+    UNKNOWN = 0
+    ONLINE = 1
+    RAW = 2
+    RDS = 4
+    STREND = 8
+    MTREND = 16
+    TEST_POINT = 32
+    STATIC = 64
+
+
+NUMPY_DTYPE = {
+    1: numpy.int16,
+    2: numpy.int32,
+    4: numpy.int64,
+    8: numpy.float32,
+    16: numpy.float64,
+    32: numpy.complex64,
+    64: numpy.uint32,
+}
+
+
+class Nds2DataType(Nds2Enum):
+    """`~enum.Enum` of NDS2 data types
+    """
+    @property
+    def numpy_dtype(self):
+        return NUMPY_DTYPE[self.value]
+
+    @classmethod
+    def find(cls, dtype):
+        try:
+            return cls._member_map_[dtype]
+        except KeyError as e:
+            dtype = numpy.dtype(dtype).type
+            for ndstype in cls._member_map_.values():
+                if ndstype.numpy_dtype is dtype:
+                    return ndstype
+            raise e
+
+    UNKNOWN = 0
+    INT16 = 1
+    INT32 = 2
+    INT64 = 4
+    FLOAT32 = 8
+    FLOAT64 = 16
+    COMPLEX32 = 32
+    UINT32 = 64
 
 
 class NDSOutputContext(object):

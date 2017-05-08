@@ -98,6 +98,12 @@ try:
 except ImportError:
     install_requires.append('importlib>=1.0.3')
 
+# enum34 required for python < 3.4
+try:
+    import enum
+except ImportError:
+    install_requires.append('enum34')
+
 # -- set test dependencies ----------------------------------------------------
 
 setup_requires.append('pytest-runner')
