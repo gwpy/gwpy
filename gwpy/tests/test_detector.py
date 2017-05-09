@@ -31,6 +31,7 @@ from astropy import units
 
 from gwpy.detector import (Channel, ChannelList)
 from gwpy.detector.units import parse_unit
+from gwpy.segments import (Segment, SegmentList, SegmentListDict)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -286,6 +287,30 @@ class ChannelListTestCase(unittest.TestCase):
         except IOError as e:
             self.skipTest(str(e))
         self.assertEqual(len(cl), 5)
+
+    def test_query_nds2_availability(self):
+        try:
+            import nds2
+        except ImportError as e:
+            self.skipTest(str(e))
+        try:
+            from gwpy.io import kerberos
+            kerberos.which('kinit')
+        except ValueError as e:
+            self.skipTest(str(e))
+        try:
+            avail = ChannelList.query_nds2_availability(
+                self.REAL_CHANNELS[:1], 'Jan 1 2017', 'Jan 2 2017',
+                host=NDSHOST)
+        except RuntimeError as e:
+            self.skipTest(str(e))
+        self.assertIsInstance(avail, SegmentListDict)
+        self.assertListEqual(list(avail.values())[0],
+                             SegmentList([Segment(1167264018, 1167350418)]))
+        avail = ChannelList.query_nds2_availability(
+            self.REAL_CHANNELS[:1], 'Jan 1 2017', 'Jan 2 2017',
+            host=NDSHOST, ctype=1)
+        self.assertListEqual(list(avail.values())[0], SegmentList())
 
 
 if __name__ == '__main__':

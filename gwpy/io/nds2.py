@@ -165,8 +165,23 @@ class NDSOutputContext(object):
 class NDSWarning(UserWarning):
     pass
 
-
 warnings.simplefilter('always', NDSWarning)
+
+
+# -- query utilities ----------------------------------------------------------
+
+def _get_nds2_name(channel):
+    if hasattr(channel, 'ndsname'):  # gwpy.detector.Channel
+        return channel.ndsname
+    elif hasattr(channel, 'channel_type'):  # nds2.channel
+        return '%s,%s' % (channel.name,
+                          channel.channel_type_to_string(channel.channel_type))
+    else:
+        return str(channel)
+
+
+def _get_nds2_names(channels):
+    return map(_get_nds2_name, channels)
 
 
 # -- connection utilities -----------------------------------------------------
@@ -358,4 +373,53 @@ def find_channels(channels, connection=None, host=None, port=None,
                              % name)
         out.extend(found)
 
+    return out
+
+
+@open_connection
+def get_availability(channels, start, end,
+                     connection=None, host=None, port=None):
+    """Query an NDS2 server for data availability
+
+    Parameters
+    ----------
+    channels : `list` of `str`
+        list of channel names to query, each name should be of the form
+        ``name,type``, e.g. ``L1:GDS-CALIB_STRAIN,reduced`` in order to
+        match results
+
+    start : `int`
+        GPS start time of query
+
+    end : `int`
+        GPS end time of query
+
+    connection : `nds2.connection`, optional
+        open NDS2 connection to use for query
+
+    host : `str`, optional
+        name of NDS2 server to query, required if ``connection`` is not
+        given
+
+    port : `int`, optional
+        port number on host to use for NDS2 connection
+
+    Returns
+    -------
+    segdict : `~gwpy.segments.SegmentListDict`
+        dict of ``(name, SegmentList)`` pairs
+
+    See also
+    --------
+    nds2.connection.get_availability
+        for documentation on the underlying query method
+    """
+    from ..segments import (Segment, SegmentList, SegmentListDict)
+    connection.set_epoch(start, end)
+    names = _get_nds2_names(channels)
+    result = connection.get_availability(names)
+    out = SegmentListDict()
+    for name, result in zip(_get_nds2_names(channels), result):
+        out[name] = SegmentList([Segment(s.gps_start, s.gps_stop) for s in
+                                 result.simple_list()])
     return out
