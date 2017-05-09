@@ -32,7 +32,12 @@ from functools import wraps
 
 import numpy
 
-import nds2
+try:
+    import nds2
+except ImportError:
+    HAS_NDS2 = False
+else:
+    HAS_NDS2 = True
 
 from ..time import to_gps
 from .kerberos import kinit
@@ -254,6 +259,9 @@ def auth_connect(host, port=None):
     port : `int`, optional
         connection port
     """
+    if not HAS_NDS2:
+        raise ImportError("No module named nds2")
+
     # set default port for NDS1 connections (required, I think)
     if port is None and NDS1_HOSTNAME.match(host):
         port = 8088
