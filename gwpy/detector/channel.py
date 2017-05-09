@@ -26,7 +26,7 @@ import numpy
 import warnings
 import subprocess
 import sys
-from math import log
+from math import (log, ceil)
 
 from six import string_types
 
@@ -812,89 +812,44 @@ class ChannelList(list):
         return cls(map(Channel.from_nds2, ndschannels))
 
     @classmethod
-    @with_import('nds2')
-    def query_nds2_availability(cls, channels, start, end,
-                                host, port=None):
+    @io_nds2.open_connection
+    def query_nds2_availability(cls, channels, start, end, ctype=126,
+                                connection=None, host=None, port=None):
         """Query for when data are available for these channels in NDS2
 
         Parameters
         ----------
         channels : `list`
             list of `Channel` or `str` for which to search
+
         start : `int`
             GPS start time of search, or any acceptable input to
             :meth:`~gwpy.time.to_gps`
+
         end : `int`
             GPS end time of search, or any acceptable input to
             :meth:`~gwpy.time.to_gps`
-        host : `str`
-            name of NDS server
+
+        connection : `nds2.connection`, optional
+            open connection to an NDS(2) server, if not given, one will be
+            created based on ``host`` and ``port`` keywords
+
+        host : `str`, optional
+            name of NDS server host
+
         port : `int`, optional
             port number for NDS connection
 
         Returns
         -------
-        nested dict
-            a `dict` of (channel, `dict`) pairs where the nested `dict`
-            is over (frametype, SegmentList) segment-availability pairs
+        segdict : `~gwpy.segments.SegmentListDict`
+            dict of ``(name, SegmentList)`` pairs
         """
-        from ..segments import (Segment, SegmentList, SegmentListDict)
-        names = []
-        for c in channels:
-            name = str(c)
-            if isinstance(c, Channel) and c.sample_rate:
-                name += '%%%d' % c.sample_rate.value
-            names.append(name)
-
-        span = Segment(int(to_gps(start)), int(to_gps(end)))
-        # build nds2_channel_source call
-        cmd = ['nds2_channel_source', '-a',
-               '-s', str(span[0]),
-               '-n', host]
-        if port is not None:
-            cmd.extend(['-p', str(port)])
-        cmd.extend(names)
-        # call
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-        out, err = proc.communicate()
-        retcode = proc.poll()
-        if retcode:
-            print(err, file=sys.stderr)
-            raise subprocess.CalledProcessError(retcode, ' '.join(cmd),
-                                                output=out)
-
-        # parse output
-        re_seg = re.compile('\A(?P<obs>[A-Z])-(?P<type>\w+):'
-                            '(?P<start>\d+)-(?P<end>(\d+|inf))\Z')
-        segs = {}
-        i = 0
-        for line in out.splitlines():
-            if line.startswith('Requested source list:'):
-                continue
-            elif line.startswith('Error in daq'):
-                raise RuntimeError(line)
-            elif not line.startswith(re.split('[,%]', names[i])[0]):
-                raise RuntimeError("Error parsing nds2_channel_source output")
-            chan = channels[i]
-            i += 1
-            segs[chan] = SegmentListDict()
-            for seg in line.split(' ', 1)[1].strip('{').rstrip('}').split(' '):
-                try:
-                    m = re_seg.search(seg).groupdict()
-                except AttributeError:
-                    if not seg:
-                        continue
-                    raise RuntimeError("Error parsing nds2_channel_source "
-                                       "output:\n%s" % line)
-                ftype = m['type']
-                try:
-                    seg = Segment(float(m['start']), float(m['end'])) & span
-                except ValueError:
-                    continue
-                if ftype in segs[chan]:
-                    segs[chan][ftype].append(seg)
-                else:
-                    segs[chan][ftype] = SegmentList([seg])
-            segs[chan].coalesce()
-        return segs
+        start = int(to_gps(start))
+        end = int(ceil(to_gps(end)))
+        chans = io_nds2.find_channels(channels, connection=connection,
+                                      unique=True, epoch=(start, end),
+                                      type=ctype)
+        availability = io_nds2.get_availability(chans, start, end,
+                                                connection=connection)
+        return type(availability)(zip(chans, availability.values()))
