@@ -265,7 +265,7 @@ def auth_connect(host, port=None):
     try:
         connection = _connect()
     except RuntimeError as e:
-        if str(e).startswith('Request SASL authentication'):
+        if 'Request SASL authentication' in str(e):
             print('\nError authenticating against %s' % host,
                   file=sys.stderr)
             kinit()
