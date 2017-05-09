@@ -30,6 +30,8 @@ import sys
 import warnings
 from functools import wraps
 
+from six.moves import reduce
+
 import numpy
 
 try:
