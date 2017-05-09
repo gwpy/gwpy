@@ -51,6 +51,7 @@ DEFAULT_HOSTS = OrderedDict([
     ('C1', ('nds40.ligo.caltech.edu', 31200)),
     ('C0', ('nds40.ligo.caltech.edu', 31200))])
 
+
 # -- enums --------------------------------------------------------------------
 
 class Nds2Enum(enum.Enum):
@@ -71,6 +72,7 @@ NDS2_TYPE_NAME = {
     32: 'test-pt',
     64: 'static',
 }
+
 
 class Nds2ChannelType(Nds2Enum):
     """`~enum.Enum` of NDS2 channel types
