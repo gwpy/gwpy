@@ -153,24 +153,6 @@ class Nds2DataType(Nds2Enum):
 
 # -- warning suppression ------------------------------------------------------
 
-class NDSOutputContext(object):
-    def __init__(self, stdout=sys.stdout, stderr=sys.stderr):
-        self._stdout = stdout or sys.stdout
-        self._stderr = stderr or sys.stderr
-
-    def __enter__(self):
-        self.old_stdout, self.old_stderr = sys.stdout, sys.stderr
-        self.old_stdout.flush()
-        self.old_stderr.flush()
-        sys.stdout, sys.stderr = self._stdout, self._stderr
-
-    def __exit__(self, *args):
-        self._stdout.flush()
-        self._stderr.flush()
-        sys.stdout = self.old_stdout
-        sys.stderr = self.old_stderr
-
-
 class NDSWarning(UserWarning):
     pass
 
