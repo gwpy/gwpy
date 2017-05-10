@@ -117,7 +117,7 @@ class NdsIoTestCase(unittest.TestCase):
                   ('nds.ligo-la.caltech.edu', 31200),
                   ('nds.ligo.caltech.edu', 31200)])
 
-    unittest.skipUnless(HAS_NDS2, 'No module named nds2')
+    @unittest.skipUnless(HAS_NDS2, 'No module named nds2')
     def test_connect(self):
         import nds2
         nds_connection = mockutils.mock_nds2_connection(host='nds.test.gwpy')
