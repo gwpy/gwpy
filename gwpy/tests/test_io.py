@@ -62,20 +62,12 @@ class NdsIoTestCase(unittest.TestCase):
     def test_nds2_host_order_none(self):
         """Test `host_resolution_order` with `None` IFO
         """
-        try:
-            from gwpy.io import nds2 as io_nds2
-        except ImportError as e:
-            self.skipTest(str(e))
         hro = io_nds2.host_resolution_order(None, env=None)
         self.assertListEqual(hro, [('nds.ligo.caltech.edu', 31200)])
 
     def test_nds2_host_order_ifo(self):
         """Test `host_resolution_order` with `ifo` argument
         """
-        try:
-            from gwpy.io import nds2 as io_nds2
-        except ImportError as e:
-            self.skipTest(str(e))
         hro = io_nds2.host_resolution_order('L1', env=None)
         self.assertListEqual(
             hro, [('nds.ligo-la.caltech.edu', 31200),
@@ -84,10 +76,6 @@ class NdsIoTestCase(unittest.TestCase):
     def test_nds2_host_order_ndsserver(self):
         """Test `host_resolution_order` with default env set
         """
-        try:
-            from gwpy.io import nds2 as io_nds2
-        except ImportError as e:
-            self.skipTest(str(e))
         os.environ['NDSSERVER'] = 'test1.ligo.org:80,test2.ligo.org:43'
         hro = io_nds2.host_resolution_order(None)
         self.assertListEqual(
@@ -102,10 +90,6 @@ class NdsIoTestCase(unittest.TestCase):
     def test_nds2_host_order_env(self):
         """Test `host_resolution_order` with non-default env set
         """
-        try:
-            from gwpy.io import nds2 as io_nds2
-        except ImportError as e:
-            self.skipTest(str(e))
         os.environ['TESTENV'] = 'test1.ligo.org:80,test2.ligo.org:43'
         hro = io_nds2.host_resolution_order(None, env='TESTENV')
         self.assertListEqual(
@@ -115,10 +99,6 @@ class NdsIoTestCase(unittest.TestCase):
     def test_nds2_host_order_epoch(self):
         """Test `host_resolution_order` with old GPS epoch
         """
-        try:
-            from gwpy.io import nds2 as io_nds2
-        except ImportError as e:
-            self.skipTest(str(e))
         # test kwarg doesn't change anything
         hro = io_nds2.host_resolution_order('L1', epoch='now', env=None)
         self.assertListEqual(
