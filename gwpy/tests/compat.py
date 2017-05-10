@@ -58,3 +58,10 @@ except ImportError:
     HAS_M2CRYPTO = False
 else:
     HAS_M2CRYPTO = True
+
+try:
+    import nds2
+except ImportError:
+    HAS_NDS2 = False
+else:
+    HAS_NDS2 = True

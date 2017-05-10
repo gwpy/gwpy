@@ -22,10 +22,10 @@
 import os
 
 from common import skip_missing_import
-from compat import (unittest, mock, HAS_LAL)
+from compat import (unittest, mock, HAS_LAL, HAS_NDS2)
 import mockutils
 
-from gwpy.io import (datafind, gwf)
+from gwpy.io import (datafind, gwf, nds2 as io_nds2)
 from gwpy.io.cache import (cache_segments, flatten, find_contiguous)
 from gwpy.segments import (Segment, SegmentList)
 
@@ -137,6 +137,22 @@ class NdsIoTestCase(unittest.TestCase):
                   ('nds.ligo-la.caltech.edu', 31200),
                   ('nds.ligo.caltech.edu', 31200)])
 
+    unittest.skipUnless(HAS_NDS2, 'No module named nds2')
+    def test_connect(self):
+        import nds2
+        nds_connection = mockutils.mock_nds2_connection(host='nds.test.gwpy')
+        with mock.patch('nds2.connection') as mock_connection:
+            mock_connection.return_value = nds_connection
+            conn = io_nds2.connect('nds.test.gwpy')
+            self.assertEqual(conn.get_host(), 'nds.test.gwpy')
+            self.assertEqual(conn.get_port(), 31200)
+        nds_connection = mockutils.mock_nds2_connection(host='nds2.test.gwpy',
+                                                        port=8088)
+        with mock.patch('nds2.connection') as mock_connection:
+            mock_connection.return_value = nds_connection
+            conn = io_nds2.connect('nds2.test.gwpy')
+            self.assertEqual(conn.get_host(), 'nds2.test.gwpy')
+            self.assertEqual(conn.get_port(), 8088)
 
 # -- gwpy.io.cache ------------------------------------------------------------
 
