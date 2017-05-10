@@ -103,7 +103,7 @@ def mock_nds2_channel(name, sample_rate, unit):
     return channel
 
 
-def mock_nds2_connection(buffers):
+def mock_nds2_connection(host='nds.test.gwpy', port=31200, buffers=[]):
     import nds2
     NdsConnection = mock.create_autospec(nds2.connection)
     try:
@@ -111,7 +111,8 @@ def mock_nds2_connection(buffers):
     except AttributeError:
         # nds2-client < 0.12 doesn't have {get,set}_parameter
         pass
-    NdsConnection.get_host.return_value = 'nds.test.gwpy'
+    NdsConnection.get_host.return_value = host
+    NdsConnection.get_port.return_value = int(port)
     NdsConnection.iterate.return_value = [buffers]
     NdsConnection.find_channels.return_value = [b.channel for b in buffers]
     return NdsConnection

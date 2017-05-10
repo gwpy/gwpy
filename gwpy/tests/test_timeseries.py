@@ -388,7 +388,7 @@ class TimeSeriesTestMixin(object):
                 'X1:TEST', self.data, 1000000000, self.data.shape[0], 'm')
         except ImportError as e:
             self.skipTest(str(e))
-        nds_connection = mockutils.mock_nds2_connection([nds_buffer])
+        nds_connection = mockutils.mock_nds2_connection(buffers=[nds_buffer])
         with mock.patch('nds2.connection') as mock_connection, \
              mock.patch('nds2.buffer', nds_buffer):
             mock_connection.return_value = nds_connection

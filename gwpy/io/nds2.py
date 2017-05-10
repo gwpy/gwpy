@@ -270,18 +270,46 @@ def host_resolution_order(ifo, env='NDSSERVER', epoch='now',
     return list(hosts)
 
 
-def auth_connect(host, port=None):
-    """Open a connection to the given host and port
-
-    This method will catch exceptions related to kerberos authentication,
-    and execute a kinit() for the user before connecting again
+def connect(host, port=None):
+    """Open an `nds2.connection` to a given host and port
 
     Parameters
     ----------
     host : `str`
         name of server with which to connect
+
     port : `int`, optional
         connection port
+
+    Returns
+    -------
+    connection : `nds2.connection`
+        a new open connection to the given NDS host
+    """
+    if port is None:
+        return nds2.connection(host)
+    else:
+        return nds2.connection(host, port)
+
+
+def auth_connect(host, port=None):
+    """Open an `nds2.connection` handling simple authentication errors
+
+    This method will catch exceptions related to kerberos authentication,
+    and execute a kinit() for the user before attempting to connect again.
+
+    Parameters
+    ----------
+    host : `str`
+        name of server with which to connect
+
+    port : `int`, optional
+        connection port
+
+    Returns
+    -------
+    connection : `nds2.connection`
+        a new open connection to the given NDS host
     """
     if not HAS_NDS2:
         raise ImportError("No module named nds2")
@@ -290,23 +318,16 @@ def auth_connect(host, port=None):
     if port is None and NDS1_HOSTNAME.match(host):
         port = 8088
 
-    if port is None:
-        def _connect():
-            return nds2.connection(host)
-    else:
-        def _connect():
-            return nds2.connection(host, port)
     try:
-        connection = _connect()
+        return connect(host, port)
     except RuntimeError as e:
         if 'Request SASL authentication' in str(e):
             print('\nError authenticating against %s' % host,
                   file=sys.stderr)
             kinit()
-            connection = _connect()
+            return connect(host, port)
         else:
             raise
-    return connection
 
 
 def open_connection(func):
