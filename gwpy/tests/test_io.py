@@ -41,6 +41,24 @@ TEST_CHANNELS = [
 # -- gwpy.io.nds --------------------------------------------------------------
 
 class NdsIoTestCase(unittest.TestCase):
+
+    def test_parse_nds_env(self):
+        os.environ['NDSSERVER'] = 'test1.ligo.org:80,test2.ligo.org:43'
+        hosts = io_nds2.parse_nds_env()
+        self.assertListEqual(
+            hosts, [('test1.ligo.org', 80), ('test2.ligo.org', 43)])
+        os.environ['NDSSERVER'] = ('test1.ligo.org:80,test2.ligo.org:43,'
+                                   'test.ligo.org,test2.ligo.org:43')
+        hosts = io_nds2.parse_nds_env()
+        self.assertListEqual(
+            hosts, [('test1.ligo.org', 80), ('test2.ligo.org', 43),
+                    ('test.ligo.org', None)])
+
+        os.environ['TESTENV'] = 'test1.ligo.org:80,test2.ligo.org:43'
+        hosts = io_nds2.parse_nds_env('TESTENV')
+        self.assertListEqual(
+            hosts, [('test1.ligo.org', 80), ('test2.ligo.org', 43)])
+
     def test_nds2_host_order_none(self):
         """Test `host_resolution_order` with `None` IFO
         """
