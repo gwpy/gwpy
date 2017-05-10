@@ -195,6 +195,36 @@ def _get_nds2_names(channels):
 
 # -- connection utilities -----------------------------------------------------
 
+def parse_nds_env(env='NDSSERVER'):
+    """Parse the NDSSERVER environment variable into a list of hosts
+
+    Parameters
+    ----------
+    env : `str`, optional
+        environment variable name to use for server order,
+        default ``'NDSSERVER'``. The contents of this variable should
+        be a comma-separated list of `host:port` strings, e.g.
+        ``'nds1.server.com:80,nds2.server.com:80'``
+
+    Returns
+    -------
+    hostiter : `list` of `tuple`
+        a list of (unique) ``(str, int)`` tuples for each host:port
+        pair
+    """
+    hosts = []
+    for host in os.getenv(env).split(','):
+        try:
+            host, port = host.rsplit(':', 1)
+        except ValueError:
+            port = None
+        else:
+            port = int(port)
+        if (host, port) not in hosts:
+            hosts.append((host, port))
+    return hosts
+
+
 def host_resolution_order(ifo, env='NDSSERVER', epoch='now',
                           lookback=14*86400):
     """Generate a logical ordering of NDS (host, port) tuples for this IFO
@@ -223,15 +253,7 @@ def host_resolution_order(ifo, env='NDSSERVER', epoch='now',
     # if given environment variable exists, it will contain a
     # comma-separated list of host:port strings giving the logical ordering
     if env and os.getenv(env):
-        for host in os.getenv(env).split(','):
-            try:
-                host, port = host.rsplit(':', 1)
-            except ValueError:
-                port = None
-            else:
-                port = int(port)
-            if (host, port) not in hosts:
-                hosts.append((host, port))
+        hosts = parse_nds_env(env)
     # If that host fails, return the server for this IFO and the backup at CIT
     if to_gps('now') - to_gps(epoch) > lookback:
         ifolist = [None, ifo]
