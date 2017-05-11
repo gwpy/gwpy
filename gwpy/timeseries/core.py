@@ -769,11 +769,9 @@ class TimeSeriesBaseDict(OrderedDict):
                                          dtype=dtype, pad=pad,
                                          allow_tape=allow_tape)
                     except (RuntimeError, ValueError) as e:
-                        if verbose:
-                            print_verbose('something went wrong:',
-                                          file=sys.stderr, verbose=verbose)
-                            # if user supplied their own server, raise
-                            warnings.warn(str(e), io_nds2.NDSWarning)
+                        print_verbose('something went wrong:',
+                                      file=sys.stderr, verbose=verbose)
+                        warnings.warn(str(e), io_nds2.NDSWarning)
 
                 # if we got this far, we can't get all channels in one go
                 if len(channels) > 1:
