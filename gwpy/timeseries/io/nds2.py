@@ -67,8 +67,7 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
     # set allow_tape parameter in connection
     if allow_tape is not None:
         try:
-            io_nds2.set_parameter(connection, 'ALLOW_DATA_ON_TAPE',
-                                  str(allow_tape))
+            connection.set_parameter('ALLOW_DATA_ON_TAPE', str(allow_tape))
         except AttributeError:
             warnings.warn("This version of the nds2-client does not "
                           "support the allow_tape. This operation will "
