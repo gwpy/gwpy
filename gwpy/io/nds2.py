@@ -96,11 +96,11 @@ class Nds2ChannelType(Nds2Enum):
     def find(cls, name):
         try:
             return cls._member_map_[name]
-        except KeyError as e:
+        except KeyError:
             for ctype in cls._member_map_.values():
                 if ctype.name == name:
                     return ctype
-            raise e
+            raise
 
     UNKNOWN = 0
     ONLINE = 1
@@ -137,7 +137,7 @@ class Nds2DataType(Nds2Enum):
         except KeyError as e:
             dtype = numpy.dtype(dtype).type
             for ndstype in cls._member_map_.values():
-                if ndstype.numpy_dtype is dtype:
+                if ndstype.value and ndstype.numpy_dtype is dtype:
                     return ndstype
             raise e
 

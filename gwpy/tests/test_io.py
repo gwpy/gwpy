@@ -42,6 +42,20 @@ TEST_CHANNELS = [
 
 class NdsIoTestCase(unittest.TestCase):
 
+    def test_channel_type_find(self):
+        self.assertIs(io_nds2.Nds2ChannelType.find('m-trend'),
+                      io_nds2.Nds2ChannelType.MTREND)
+        self.assertIs(io_nds2.Nds2ChannelType.find('MTREND'),
+                      io_nds2.Nds2ChannelType.MTREND)
+        self.assertRaises(KeyError, io_nds2.Nds2ChannelType.find, 'blah')
+
+    def test_data_type_find(self):
+        self.assertIs(io_nds2.Nds2DataType.find(float),
+                      io_nds2.Nds2DataType.FLOAT64)
+        self.assertIs(io_nds2.Nds2DataType.find('uint32'),
+                      io_nds2.Nds2DataType.UINT32)
+        self.assertRaises(TypeError, io_nds2.Nds2DataType.find, 'blah')
+
     def test_parse_nds_env(self):
         os.environ['NDSSERVER'] = 'test1.ligo.org:80,test2.ligo.org:43'
         hosts = io_nds2.parse_nds_env()
