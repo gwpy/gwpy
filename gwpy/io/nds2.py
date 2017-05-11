@@ -395,21 +395,26 @@ def find_channels(channels, connection=None, host=None, port=None,
     elif epoch is not None:
         connection.set_epoch(epoch)
 
-    # query for channels
-    out = []
+    # format sample_rate as tuple for find_channels call
     if isinstance(sample_rate, (int, float)):
         sample_rate = (sample_rate, sample_rate)
     elif sample_rate is None:
         sample_rate = tuple()
-    qargs = (type, dtype) + sample_rate
 
-    for name in map(str, channels):
-        found = connection.find_channels(name, *qargs)
+    # query for channels
+    out = []
+    for name in _get_nds2_names(channels):
+        try:
+            name, ctype = name.rsplit(',', 1)
+        except ValueError:
+            ctype = type
+        else:
+            ctype = Nds2ChannelType.find(ctype).value
+        found = connection.find_channels(name, ctype, dtype, *sample_rate)
         if unique and len(found) != 1:
             raise ValueError("unique NDS2 channel match not found for %r"
                              % name)
         out.extend(found)
-
     return out
 
 
