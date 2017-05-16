@@ -107,7 +107,7 @@ class GPSMixin(object):
                 raise e
         # decompose and check that it's actually a time unit
         u = unit.decompose()
-        if u._bases != [units.second]:
+        if u.bases != [units.second]:
             raise ValueError("Cannot set GPS unit to %s" % unit)
         # check equivalent units
         for other in TIME_UNITS:
