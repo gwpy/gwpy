@@ -1,6 +1,8 @@
 <img src="https://gwpy.github.io/images/gwpy_1200.png" alt="GWpy logo" width="400" />
 
 [![PyPI version](https://badge.fury.io/py/gwpy.svg)](http://badge.fury.io/py/gwpy) 
+[![DOI](https://zenodo.org/badge/9979119.svg)](https://zenodo.org/badge/latestdoi/9979119) 
+
 [![Build Status](https://travis-ci.org/gwpy/gwpy.svg?branch=master)](https://travis-ci.org/gwpy/gwpy) 
 [![Coverage Status](https://coveralls.io/repos/gwpy/gwpy/badge.svg)](https://coveralls.io/r/gwpy/gwpy) 
 [![Research software impact](http://depsy.org/api/package/pypi/gwpy/badge.svg)](http://depsy.org/package/python/gwpy) 
