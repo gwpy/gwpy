@@ -731,16 +731,22 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         duration = 32
         start = int(round(gps - duration/2.))
         end = start + duration
+        # load data, skip on missing h5py
         try:
             ts = self.TEST_CLASS.fetch_open_data('H1', start, end)
         except (ImportError, RuntimeError, URLError) as e:
             self.skipTest(str(e))
-        else:
-            qspecgram = ts.q_transform(method='welch')
-            self.assertIsInstance(qspecgram, Spectrogram)
-            self.assertTupleEqual(qspecgram.shape, (32000, 2560))
-            self.assertAlmostEqual(qspecgram.q, 11.31370849898476)
-            self.assertAlmostEqual(qspecgram.value.max(), 37.035843858490509)
+        # test simple q-transform
+        qspecgram = ts.q_transform(method='welch')
+        self.assertIsInstance(qspecgram, Spectrogram)
+        self.assertTupleEqual(qspecgram.shape, (32000, 2560))
+        self.assertAlmostEqual(qspecgram.q, 11.31370849898476)
+        self.assertAlmostEqual(qspecgram.value.max(), 37.035843858490509)
+        # make sure frequency too high presents warning
+        with pytest.warns(UserWarning):
+            qspecgram = ts.q_transform(method='welch', frange=(0, 10000))
+            self.assertAlmostEqual(qspecgram.yspan[1], 1291.25395395)
+
 
     def test_boolean_statetimeseries(self):
         comp = self.TEST_ARRAY >= 100 * self.TEST_ARRAY.unit
