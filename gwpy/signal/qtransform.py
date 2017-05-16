@@ -25,6 +25,7 @@ authors.
 
 from __future__ import division
 
+import warnings
 from math import (log, ceil, pi, isinf, exp)
 
 from six.moves import xrange
@@ -103,8 +104,14 @@ class QTiling(QObject):
         qs = list(self._iter_qs())
         if self.frange[0] == 0:  # set non-zero lower frequency
             self.frange[0] = 50 * max(qs) / (2 * pi * self.duration)
-        if isinf(self.frange[1]):  # set non-infinite upper frequency
-            self.frange[1] = self.sampling / 2 / (1 + 11**(1/2.) / min(qs))
+        maxf = self.sampling / 2 / (1 + 11**(1/2.) / min(qs))
+        if isinf(self.frange[1]):
+            self.frange[1] = maxf
+        elif self.frange[1] > maxf:  # truncate upper frequency to maximum
+            warnings.warn('upper frequency of %.2f is too high for the given '
+                          'Q range, resetting to %.2f'
+                          % (self.frange[1], maxf))
+            self.frange[1] = maxf
 
     @property
     def qs(self):
