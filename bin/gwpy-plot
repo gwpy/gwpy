@@ -19,10 +19,13 @@
 #
 """Command line interface to GWpy plotting functions
 """
+import time
+prog_start = time.time()    # verbose enough times major ops
+
 import sys
 from importlib import import_module
 import argparse
-
+import os
 from gwpy import __version__
 
 __author__ = 'joseph areeda'
@@ -97,7 +100,6 @@ for product in PRODUCTS:
 
 if __name__ == '__main__':
     try:
-        import os
         # if we're launched with minimum or no environment
         # variables make some guesses
         if len(os.getenv('HOME', '')) == 0:
@@ -129,6 +131,9 @@ if __name__ == '__main__':
         #     start, duration and epoch, xmin...
         prod.post_arg(args)
 
+        setup_time = time.time() - prog_start
+        prod.log(2,'Setup time %.1f sec' % setup_time)
+
         # generate the plot
         result_code = prod.makePlot(args)
 
@@ -143,11 +148,16 @@ if __name__ == '__main__':
             result = prod.result
             print('Raw data is in "timeseries", plotted data is in "result"')
             ax = plot.gca()
-        else:
+        run_time = time.time() - prog_start
+        prod.log(1, 'Program run time: %.1f' % run_time)
+        if result_code > 0:
             sys.exit(result_code)
     except:
         # standard exception reporting wasn't working
         typ, msg, trcbk = sys.exc_info()
         import traceback
-        traceback.print_tb(trcbk)
-        print ('Error: %s, %s' % (typ, msg))
+
+        if 'SystemExit' not in str(typ):
+            traceback.print_tb(trcbk)
+            print ('Error: %s, %s' % (typ, msg))
+        sys.exit(3)
