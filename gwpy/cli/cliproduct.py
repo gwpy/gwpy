@@ -34,10 +34,14 @@ Implemented methods (used by multiple products):
 """
 
 import abc
+import math
 import sys
 import re
+import time
 
 from argparse import ArgumentError
+
+from dateutil.parser import parser
 
 from ..timeseries import TimeSeries
 
@@ -48,11 +52,13 @@ class CliProduct(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self):
+
         self.min_timeseries = 1     # datasets needed for this product
         self.xaxis_type = 'uk'      # scaling hints, set by individual actions
         self.xaxis_is_freq = False  # x is going to be frequency or time
         self.yaxis_type = 'uk'      # x and y axis types must be set
         self.iaxis_type = None      # intensity axis (colors) may be missing
+        self.scaleText = None       # text label of colorbar
         self.chan_list = []         # list of channel names
         self.start_list = []        # list of start times as GPS seconds
         self.dur = 0                # one duration in secs for all start times
@@ -85,6 +91,10 @@ class CliProduct(object):
         self.plot = 0           # plot object
         self.ax = 0             # current axis object from plot
 
+        # custom labeling
+        self.title = None
+        self.title2 = None
+
 # ------Abstract metods------------
     @abc.abstractmethod
     def get_action(self):
@@ -94,6 +104,11 @@ class CliProduct(object):
     @abc.abstractmethod
     def init_cli(self, parser):
         """Set up the argument list for this product"""
+        return
+
+    def post_arg(self, args):
+        """After  argument parsing products can derive other args"""
+        self.verbose = args.verbose
         return
 
     @abc.abstractmethod
@@ -151,7 +166,45 @@ class CliProduct(object):
         return
 
 
-# ------Argparse methods
+# ------Argparse methods.  These methods add parameters to the
+# parser in groups.  Individual products use these to maximize
+# consistency.
+
+    def arg_qxform(self, parser):
+        """Q transform is a bit different"""
+        parser.add_argument('--chan',
+                            required=True, help='Channel name.')
+        parser.add_argument('--gps', required=True,
+                            help='Event time (float)')
+        parser.add_argument('--outdir', required=True,
+                            help='Directory for output images')
+        parser.add_argument('--search', help='Seconds analyzed',
+                            default='64')
+        parser.add_argument('--sample_freq', help='Downsample freq',
+                            default=2048)
+        parser.add_argument('--plot', nargs='*',
+                            help='One or more times to plot')
+        parser.add_argument('--frange', nargs=2, help='Frequency ' +
+                            'range to plot')
+        parser.add_argument('--erange', nargs=2, help='Normalized ' +
+                            'energy range')
+        parser.add_argument('--srange', nargs=2, help='Search ' +
+                            'frequency range')
+        parser.add_argument('--qrange', nargs=2, help='Search Q ' +
+                            'range')
+
+        parser.add_argument('--nowhiten', action='store_true',
+                            help='do not whiten input ' +
+                                 'before transform')
+        self.arg_datasoure(parser)
+
+    def arg_datasoure(self, parser):
+        parser.add_argument('-c', '--framecache',
+                            help='use .gwf files in cache not NDS2,' +
+                                 ' default use NDS2')
+        parser.add_argument('-n', '--nds2-server', metavar='HOSTNAME',
+                            help='name of nds2 server to use, default is to '
+                                 'try all of them')
 
     def arg_chan(self, parser):
         """Allow user to specify list of channel names,
@@ -160,12 +213,7 @@ class CliProduct(object):
                             help='Starting GPS times(required)')
         parser.add_argument('--duration', default=10,
                             help='Duration (seconds) [10]')
-        parser.add_argument('-c', '--framecache',
-                            help='use .gwf files in cache not NDS2,' +
-                                 ' default use NDS2')
-        parser.add_argument('-n', '--nds2-server', metavar='HOSTNAME',
-                            help='name of nds2 server to use, default is to '
-                                 'try all of them')
+        self.arg_datasoure(parser)
         parser.add_argument('--highpass',
                             help='frequency for high pass filter,' +
                                  ' default no filter')
@@ -290,6 +338,9 @@ class CliProduct(object):
                             help='min pixel value in resulting image')
         parser.add_argument('--imax',
                             help='max pixek value in resulting image')
+        parser.add_argument('--cmap', default='viridis', help='Colormap. Options are:' 
+                            'viridis, jet, hot, copper, bone... for more options see '
+                            'https://matplotlib.org/examples/color/colormaps_reference.html')
         return
 
     def arg_ax_intlin(self, parser):
@@ -496,7 +547,7 @@ class CliProduct(object):
         rcParams['figure.figsize'] = (self.xinch, self.yinch)
         return
 
-    def setup_xaxis(self, arg_list):
+    def setup_xaxis(self, args):
         """Handle scale and limits of X-axis by type"""
 
         xmin = 0        # these will be set by x min, max or f min, max
@@ -506,17 +557,17 @@ class CliProduct(object):
             # handle time on X-axis
             xmin = self.xmin
             xmax = self.xmax
-            if arg_list.xmin:
-                al_xmin = float(arg_list.xmin)
+            if args.xmin:
+                al_xmin = float(args.xmin)
                 if self.xaxis_is_freq:
                     xmin = al_xmin      # frequency specified
                 elif al_xmin <= 1e8:
                     xmin = self.xmin + al_xmin     # time specified as
                     # seconds relative to start GPS
                 else:
-                    xmin = al_xmin      # time specified as absolute GPS
-            if arg_list.xmax:
-                al_xmax = float(arg_list.xmax)
+                    xmin = al_xmin     # absolute GPS
+            if args.xmax:
+                al_xmax = float(args.xmax)
                 if self.xaxis_is_freq:
                     xmax = al_xmax
                 elif al_xmax <= 9e8:
@@ -526,36 +577,38 @@ class CliProduct(object):
 
             if self.xaxis_type == 'linx':
                 epoch = None
-                if arg_list.epoch:
-                    epoch = float(arg_list.epoch)
-                    self.log(3, ('Epoch set to %.2f' % epoch))
+                if args.epoch:
+                    epoch = float(args.epoch)
 
-                scale = False
-                self.ax.set_xscale('auto-gps')
+                scale = 'auto-gps'
 
-                if epoch is not None:
+                if epoch:
                     # note zero is also false
                     if epoch > 0 and epoch < 1e8:
                         epoch += self.xmin       # specified as seconds
                         self.ax.set_epoch(epoch)
                     elif epoch == 0:
-                        self.ax.set_xscale('gps')
+                        scale = 'gps'
                         self.ax.set_epoch(0)
-                if arg_list.logx:
+                    else:
+                        scale='auto-gps'
+                        self.ax.set_epoch(epoch)
+
+                if args.logx:
                     scale = 'log'
-                elif not (self.get_xlabel() or arg_list.xlabel):
+                elif not (self.get_xlabel() or args.xlabel):
                     # duplicate default label except use parens not brackets
-                    xscale = self.ax.xaxis._scale
-                    if self.ax.get_xscale() == 'auto-gps':
-                        epoch = xscale.get_epoch()
+                    scale = self.ax.get_xscale()
+                    if scale == 'auto-gps':
+                        epoch = self.ax.get_epoch()
                         if epoch is None:
-                            arg_list.xlabel = 'GPS Time'
+                            args.xlabel = 'GPS Time'
                 if self.ax.get_xscale() == 'gps':
                     for l in self.ax.xaxis.get_ticklabels():
                         l.set_rotation(25)
                         l.set_ha('right')
             elif self.xaxis_type == 'logx':
-                if arg_list.nologx:
+                if args.nologx:
                     scale = 'linear'
                 else:
                     scale = 'log'
@@ -565,21 +618,24 @@ class CliProduct(object):
             xmax = self.fmax
 
             scale = 'log'
-            if arg_list.nologf:
+            if args.nologf:
                 scale = 'linear'
-            if arg_list.fmin:
-                xmin = float(arg_list.fmin)
-            if arg_list.fmax:
-                xmax = float(arg_list.fmax)
+            if args.fmin:
+                xmin = float(args.fmin)
+            if args.fmax:
+                xmax = float(args.fmax)
         else:
             raise AssertionError('X-axis type [%s] is unknown' %
                                  self.xaxis_type)
 
         if scale:
             self.ax.set_xscale(scale)
+        if epoch:
+            self.ax.set_epoch(epoch)
         self.ax.set_xlim(xmin, xmax)
-        self.log(3, ('X-axis limits are [ %f, %f], scale: %s' %
-                     (xmin, xmax, scale)))
+
+        self.log(2, 'X-min: %.3f, Epoch: %.3f, X-max: %.3f, Scale: %s' %
+                 (xmin, epoch, xmax, scale))
         return
 
     def setup_yaxis(self, arg_list):
@@ -633,7 +689,7 @@ class CliProduct(object):
             raise AssertionError('Unknown intensity axis scale')
         return
 
-    def annotate_save_plot(self, arg_list):
+    def annotate_save_plot(self, args):
         """After the derived class generated a plot
         object finish the process"""
         from astropy.time import Time
@@ -642,12 +698,12 @@ class CliProduct(object):
 
         self.ax = self.plot.gca()
         # set up axes
-        self.setup_xaxis(arg_list)
-        self.setup_yaxis(arg_list)
-        self.setup_iaxis(arg_list)
+        self.setup_xaxis(args)
+        self.setup_yaxis(args)
+        self.setup_iaxis(args)
 
         if self.is_image():
-            if arg_list.nocolorbar:
+            if args.nocolorbar:
                 self.plot.add_colorbar(visible=False)
             else:
                 self.plot.add_colorbar(label=self.get_color_label())
@@ -666,8 +722,8 @@ class CliProduct(object):
 
         # add titles
         title = ''
-        if arg_list.title:
-            for t in arg_list.title:
+        if args.title:
+            for t in args.title:
                 if len(title) > 0:
                     title += "\n"
                 title += t
@@ -699,37 +755,40 @@ class CliProduct(object):
         spec += ", " + self.filter
         if len(title) > 0:
             title += "\n"
-        title += spec
+        if self.title2:
+            title += self.title2
+        else:
+            title += spec
 
         title = label_to_latex(title)
         self.plot.set_title(title, fontsize=12)
         self.log(3, ('Title is: %s' % title))
 
-        if arg_list.xlabel:
-            xlabel = label_to_latex(arg_list.xlabel)
+        if args.xlabel:
+            xlabel = label_to_latex(args.xlabel)
         else:
             xlabel = self.get_xlabel()
         if xlabel:
             self.plot.set_xlabel(xlabel)
             self.log(3, ('X-axis label is: %s' % xlabel))
 
-        if arg_list.ylabel:
-            ylabel = label_to_latex(arg_list.ylabel)
+        if args.ylabel:
+            ylabel = label_to_latex(args.ylabel)
         else:
-            ylabel = self.get_ylabel(arg_list)
+            ylabel = self.get_ylabel(args)
 
         if ylabel:
             self.plot.set_ylabel(ylabel)
             self.log(3, ('Y-axis label is: %s' % ylabel))
 
-        if not arg_list.nogrid:
+        if not args.nogrid:
             self.ax.grid(b=True, which='major', color='k', linestyle='solid')
             self.ax.grid(b=True, which='minor', color='0.06',
                          linestyle='dotted')
 
         # info on the channel
-        if arg_list.suptitle:
-            sup_title = arg_list.suptitle
+        if args.suptitle:
+            sup_title = args.suptitle
         else:
             sup_title = self.get_sup_title()
         sup_title = label_to_latex(sup_title)
@@ -740,19 +799,20 @@ class CliProduct(object):
 
         # change the label for GPS time so Josh is happy
         if self.ax.get_xscale() == 'auto-gps':
-            xscale = self.ax.xaxis._scale
-            epoch = xscale.get_epoch()
-            unit = xscale.get_unit_name()
+            epoch = self.ax.get_epoch()
+            unit = self.ax.xaxis._scale.get_unit_name()
             utc = re.sub('\.0+', '',
                          Time(epoch, format='gps', scale='utc').iso)
-            self.plot.set_xlabel('Time (%s) from %s (%s)' % (unit, utc, epoch))
-            self.ax.xaxis._set_scale(unit, epoch=epoch)
+            # self.plot.set_xlabel('Time (%s) from %s (%s)' % (unit, utc, epoch))
+            # self.ax.xaxis._set_scale(unit, epoch=epoch)
 
         # if they specified an output file write it
         # save the figure. Note type depends on extension of
         # output filename (png, jpg, pdf)
-        if arg_list.out:
-            out_file = arg_list.out
+        if args.out:
+            out_file = args.out
+        elif 'outdir' in args:
+            out_file = args.outdir + '/gwpy.png'
         else:
             out_file = "./gwpy.png"
 
@@ -764,13 +824,14 @@ class CliProduct(object):
         self.plot.savefig(out_file, edgecolor='white',
                           figsize=[self.xinch, self.yinch],
                           dpi=self.dpi, bbox_inches='tight')
-        self.log(3, ('wrote %s' % arg_list.out))
+        self.log(3, ('wrote %s' % out_file))
 
         return
 
 # -----The one that does all the work
     def makePlot(self, args):
         """Make the plot, all actions are generally the same at this level"""
+        tstart = time.time()
         if args.silent:
             self.verbose = 0
         else:
@@ -780,17 +841,28 @@ class CliProduct(object):
 
         if self.verbose > 2:
             print('Arguments:')
-            for key, value in args.__dict__.items():
-                print('%s = %s' % (key, value))
+            for key in sorted(args.__dict__):
+                print('%s = %s' % (key, args.__dict__[key]))
 
         self.getTimeSeries(args)
+
+        step_time = time.time() - tstart
+        tstart = time.time()
+        self.log(2,'Get timseries took %.1f sec' % step_time)
 
         self.config_plot(args)
 
         # this one is in the derived class
         self.gen_plot(args)
+        step_time = time.time() - tstart
+        tstart = time.time()
+        self.log(2,'Generate plot took %.1f sec' % step_time)
 
         self.annotate_save_plot(args)
+
+        step_time = time.time() - tstart
+        tstart = time.time()
+        self.log(2,'Annotate and save took %.1f sec' % step_time)
 
         self.is_interactive = False
         if args.interactive:

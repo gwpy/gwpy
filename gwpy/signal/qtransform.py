@@ -103,8 +103,9 @@ class QTiling(QObject):
         qs = list(self._iter_qs())
         if self.frange[0] == 0:  # set non-zero lower frequency
             self.frange[0] = 50 * max(qs) / (2 * pi * self.duration)
-        if isinf(self.frange[1]):  # set non-infinite upper frequency
-            self.frange[1] = self.sampling / 2 / (1 + 11**(1/2.) / min(qs))
+        tfr = self.sampling / 2 / (1 + 11**(1/2.) / min(qs))
+        if self.frange[1] > tfr:  # set non-infinite upper frequency
+            self.frange[1] = tfr
 
     @property
     def qs(self):
