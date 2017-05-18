@@ -22,10 +22,10 @@
 import os
 
 from common import skip_missing_import
-from compat import (unittest, mock, HAS_LAL)
+from compat import (unittest, mock, HAS_LAL, HAS_NDS2)
 import mockutils
 
-from gwpy.io import (datafind, gwf)
+from gwpy.io import (datafind, gwf, nds2 as io_nds2)
 from gwpy.io.cache import (cache_segments, flatten, find_contiguous)
 from gwpy.segments import (Segment, SegmentList)
 
@@ -41,24 +41,48 @@ TEST_CHANNELS = [
 # -- gwpy.io.nds --------------------------------------------------------------
 
 class NdsIoTestCase(unittest.TestCase):
+
+    def test_channel_type_find(self):
+        self.assertIs(io_nds2.Nds2ChannelType.find('m-trend'),
+                      io_nds2.Nds2ChannelType.MTREND)
+        self.assertIs(io_nds2.Nds2ChannelType.find('MTREND'),
+                      io_nds2.Nds2ChannelType.MTREND)
+        self.assertRaises(KeyError, io_nds2.Nds2ChannelType.find, 'blah')
+
+    def test_data_type_find(self):
+        self.assertIs(io_nds2.Nds2DataType.find(float),
+                      io_nds2.Nds2DataType.FLOAT64)
+        self.assertIs(io_nds2.Nds2DataType.find('uint32'),
+                      io_nds2.Nds2DataType.UINT32)
+        self.assertRaises(TypeError, io_nds2.Nds2DataType.find, 'blah')
+
+    def test_parse_nds_env(self):
+        os.environ['NDSSERVER'] = 'test1.ligo.org:80,test2.ligo.org:43'
+        hosts = io_nds2.parse_nds_env()
+        self.assertListEqual(
+            hosts, [('test1.ligo.org', 80), ('test2.ligo.org', 43)])
+        os.environ['NDSSERVER'] = ('test1.ligo.org:80,test2.ligo.org:43,'
+                                   'test.ligo.org,test2.ligo.org:43')
+        hosts = io_nds2.parse_nds_env()
+        self.assertListEqual(
+            hosts, [('test1.ligo.org', 80), ('test2.ligo.org', 43),
+                    ('test.ligo.org', None)])
+
+        os.environ['TESTENV'] = 'test1.ligo.org:80,test2.ligo.org:43'
+        hosts = io_nds2.parse_nds_env('TESTENV')
+        self.assertListEqual(
+            hosts, [('test1.ligo.org', 80), ('test2.ligo.org', 43)])
+
     def test_nds2_host_order_none(self):
         """Test `host_resolution_order` with `None` IFO
         """
-        try:
-            from gwpy.io import nds
-        except ImportError as e:
-            self.skipTest(str(e))
-        hro = nds.host_resolution_order(None, env=None)
+        hro = io_nds2.host_resolution_order(None, env=None)
         self.assertListEqual(hro, [('nds.ligo.caltech.edu', 31200)])
 
     def test_nds2_host_order_ifo(self):
         """Test `host_resolution_order` with `ifo` argument
         """
-        try:
-            from gwpy.io import nds
-        except ImportError as e:
-            self.skipTest(str(e))
-        hro = nds.host_resolution_order('L1', env=None)
+        hro = io_nds2.host_resolution_order('L1', env=None)
         self.assertListEqual(
             hro, [('nds.ligo-la.caltech.edu', 31200),
                   ('nds.ligo.caltech.edu', 31200)])
@@ -66,16 +90,12 @@ class NdsIoTestCase(unittest.TestCase):
     def test_nds2_host_order_ndsserver(self):
         """Test `host_resolution_order` with default env set
         """
-        try:
-            from gwpy.io import nds
-        except ImportError as e:
-            self.skipTest(str(e))
         os.environ['NDSSERVER'] = 'test1.ligo.org:80,test2.ligo.org:43'
-        hro = nds.host_resolution_order(None)
+        hro = io_nds2.host_resolution_order(None)
         self.assertListEqual(
             hro, [('test1.ligo.org', 80), ('test2.ligo.org', 43),
                   ('nds.ligo.caltech.edu', 31200)])
-        hro = nds.host_resolution_order('L1')
+        hro = io_nds2.host_resolution_order('L1')
         self.assertListEqual(
             hro, [('test1.ligo.org', 80), ('test2.ligo.org', 43),
                   ('nds.ligo-la.caltech.edu', 31200),
@@ -84,12 +104,8 @@ class NdsIoTestCase(unittest.TestCase):
     def test_nds2_host_order_env(self):
         """Test `host_resolution_order` with non-default env set
         """
-        try:
-            from gwpy.io import nds
-        except ImportError as e:
-            self.skipTest(str(e))
         os.environ['TESTENV'] = 'test1.ligo.org:80,test2.ligo.org:43'
-        hro = nds.host_resolution_order(None, env='TESTENV')
+        hro = io_nds2.host_resolution_order(None, env='TESTENV')
         self.assertListEqual(
             hro, [('test1.ligo.org', 80), ('test2.ligo.org', 43),
                   ('nds.ligo.caltech.edu', 31200)])
@@ -97,28 +113,40 @@ class NdsIoTestCase(unittest.TestCase):
     def test_nds2_host_order_epoch(self):
         """Test `host_resolution_order` with old GPS epoch
         """
-        try:
-            from gwpy.io import nds
-        except ImportError as e:
-            self.skipTest(str(e))
         # test kwarg doesn't change anything
-        hro = nds.host_resolution_order('L1', epoch='now', env=None)
+        hro = io_nds2.host_resolution_order('L1', epoch='now', env=None)
         self.assertListEqual(
             hro, [('nds.ligo-la.caltech.edu', 31200),
                   ('nds.ligo.caltech.edu', 31200)])
         # test old epoch puts CIT ahead of LLO
-        hro = nds.host_resolution_order('L1', epoch='Jan 1 2015', env=None)
+        hro = io_nds2.host_resolution_order('L1', epoch='Jan 1 2015', env=None)
         self.assertListEqual(
             hro, [('nds.ligo.caltech.edu', 31200),
                   ('nds.ligo-la.caltech.edu', 31200)])
         # test epoch doesn't operate with env
         os.environ['TESTENV'] = 'test1.ligo.org:80,test2.ligo.org:43'
-        hro = nds.host_resolution_order('L1', epoch='now', env='TESTENV')
+        hro = io_nds2.host_resolution_order('L1', epoch='now', env='TESTENV')
         self.assertListEqual(
             hro, [('test1.ligo.org', 80), ('test2.ligo.org', 43),
                   ('nds.ligo-la.caltech.edu', 31200),
                   ('nds.ligo.caltech.edu', 31200)])
 
+    @unittest.skipUnless(HAS_NDS2, 'No module named nds2')
+    def test_connect(self):
+        import nds2
+        nds_connection = mockutils.mock_nds2_connection(host='nds.test.gwpy')
+        with mock.patch('nds2.connection') as mock_connection:
+            mock_connection.return_value = nds_connection
+            conn = io_nds2.connect('nds.test.gwpy')
+            self.assertEqual(conn.get_host(), 'nds.test.gwpy')
+            self.assertEqual(conn.get_port(), 31200)
+        nds_connection = mockutils.mock_nds2_connection(host='nds2.test.gwpy',
+                                                        port=8088)
+        with mock.patch('nds2.connection') as mock_connection:
+            mock_connection.return_value = nds_connection
+            conn = io_nds2.connect('nds2.test.gwpy')
+            self.assertEqual(conn.get_host(), 'nds2.test.gwpy')
+            self.assertEqual(conn.get_port(), 8088)
 
 # -- gwpy.io.cache ------------------------------------------------------------
 

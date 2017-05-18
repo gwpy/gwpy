@@ -26,7 +26,7 @@ import tempfile
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.error import URLError
 
-from compat import (unittest, mock, HAS_H5PY)
+from compat import (unittest, mock, HAS_H5PY, HAS_NDS2)
 
 import pytest
 
@@ -382,13 +382,11 @@ class TimeSeriesTestMixin(object):
     def test_io_identify(self):
         common.test_io_identify(self.TEST_CLASS, ['txt', 'hdf5', 'gwf'])
 
+    @unittest.skipUnless(HAS_NDS2, 'No module named nds2')
     def test_fetch(self):
-        try:
-            nds_buffer = mockutils.mock_nds2_buffer(
-                'X1:TEST', self.data, 1000000000, self.data.shape[0], 'm')
-        except ImportError as e:
-            self.skipTest(str(e))
-        nds_connection = mockutils.mock_nds2_connection([nds_buffer])
+        nds_buffer = mockutils.mock_nds2_buffer(
+            'X1:TEST', self.data, 1000000000, self.data.shape[0], 'm')
+        nds_connection = mockutils.mock_nds2_connection(buffers=[nds_buffer])
         with mock.patch('nds2.connection') as mock_connection, \
              mock.patch('nds2.buffer', nds_buffer):
             mock_connection.return_value = nds_connection
@@ -733,16 +731,22 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         duration = 32
         start = int(round(gps - duration/2.))
         end = start + duration
+        # load data, skip on missing h5py
         try:
             ts = self.TEST_CLASS.fetch_open_data('H1', start, end)
         except (ImportError, RuntimeError, URLError) as e:
             self.skipTest(str(e))
-        else:
-            qspecgram = ts.q_transform(method='welch')
-            self.assertIsInstance(qspecgram, Spectrogram)
-            self.assertTupleEqual(qspecgram.shape, (32000, 2560))
-            self.assertAlmostEqual(qspecgram.q, 11.31370849898476)
-            self.assertAlmostEqual(qspecgram.value.max(), 37.035843858490509)
+        # test simple q-transform
+        qspecgram = ts.q_transform(method='welch')
+        self.assertIsInstance(qspecgram, Spectrogram)
+        self.assertTupleEqual(qspecgram.shape, (32000, 2560))
+        self.assertAlmostEqual(qspecgram.q, 11.31370849898476)
+        self.assertAlmostEqual(qspecgram.value.max(), 37.035843858490509)
+        # make sure frequency too high presents warning
+        with pytest.warns(UserWarning):
+            qspecgram = ts.q_transform(method='welch', frange=(0, 10000))
+            self.assertAlmostEqual(qspecgram.yspan[1], 1291.25395395)
+
 
     def test_boolean_statetimeseries(self):
         comp = self.TEST_ARRAY >= 100 * self.TEST_ARRAY.unit
