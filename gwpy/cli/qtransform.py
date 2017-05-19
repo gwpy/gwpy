@@ -120,7 +120,7 @@ class Qtransform(CliProduct):
         kwargs['gps'] = float(args.gps)
         kwargs['fres'] = 0.5
         kwargs['tres'] = 0.002
-        self.title2 = ' central time % .3f ' % float(args.gps)
+        self.title2 += ' central time % .3f ' % float(args.gps)
 
         new_fs = float(args.sample_freq)
         cur_fs = my_ts.sample_rate.value
