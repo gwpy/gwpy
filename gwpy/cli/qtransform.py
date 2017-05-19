@@ -106,10 +106,12 @@ class Qtransform(CliProduct):
         kwargs['search'] = my_ts.dt.value * len(my_ts)
         if args.qrange:
             kwargs['qrange'] = (float(args.qrange[0]), float(args.qrange[1]))
-            self.title2 += (' q-range [%.1f, %.1f] ' % (kwargs['qrange'][0], kwargs['qrange'][1]))
+            self.title2 += (' q-range [%.1f, %.1f] ' %
+                            (kwargs['qrange'][0], kwargs['qrange'][1]))
         if args.frange:
             kwargs['frange'] = (float(args.frange[0]), float(args.frange[1]))
-            self.title2 += (' f-range [%.0f, %.0f] ' % (kwargs['frange'][0], kwargs['frange'][1]))
+            self.title2 += (' f-range [%.0f, %.0f] ' %
+                            (kwargs['frange'][0], kwargs['frange'][1]))
         if args.nowhiten:
             kwargs['whiten'] = False
             self.title2 += 'not whitened'
@@ -127,7 +129,7 @@ class Qtransform(CliProduct):
             my_ts = my_ts.resample(new_fs)
             self.title2 = (' %.0f Hz resampled to %.0f. ' %
                            (cur_fs, new_fs)) + self.title2
-            self.log(3,'Resampled input to %d Hz' % new_fs)
+            self.log(3, 'Resampled input to %d Hz' % new_fs)
         else:
             new_fs = cur_fs
 
@@ -141,9 +143,10 @@ class Qtransform(CliProduct):
             pprint(kwargs)
 
         self.result = my_ts.q_transform(**kwargs)
-        self.log(2, 'Result shape: %dx%d' % (self.result.shape[0], self.result.shape[1]))
+        self.log(2, 'Result shape: %dx%d' %
+                 (self.result.shape[0], self.result.shape[1]))
 
-        pltargs=dict()
+        pltargs = dict()
         if args.cmap:
             pltargs['cmap'] = args.cmap
         # weirdness because we allow 2 ways to specify intensity range
@@ -169,7 +172,7 @@ class Qtransform(CliProduct):
         self.plot = self.result.plot(**pltargs)
         self.scaleText = 'Normalized energy'
 
-
         self.fmax = int(self.result.frequencies.max().value)
         self.fmin = math.ceil(self.result.frequencies.min().value)
-        self.log(2, 'Frequncy range of result: %.2f - %.2f' % (self.fmin, self.fmax))
+        self.log(2, 'Frequncy range of result: %.2f - %.2f' %
+                 (self.fmin, self.fmax))

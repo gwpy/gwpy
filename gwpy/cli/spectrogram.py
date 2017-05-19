@@ -149,7 +149,7 @@ class Spectrogram(CliProduct):
         self.log(3, 'Intensity (colorbar) limits %.3g - %.3g' %
                  (imin, imax))
 
-        pltargs=dict()
+        pltargs = dict()
         if args.cmap:
             pltargs['cmap'] = args.cmap
 

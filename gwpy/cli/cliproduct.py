@@ -338,9 +338,12 @@ class CliProduct(object):
                             help='min pixel value in resulting image')
         parser.add_argument('--imax',
                             help='max pixek value in resulting image')
-        parser.add_argument('--cmap', default='viridis', help='Colormap. Options are:' 
-                            'viridis, jet, hot, copper, bone... for more options see '
-                            'https://matplotlib.org/examples/color/colormaps_reference.html')
+        parser.add_argument('--cmap', default='viridis',
+                            help='Colormap. Options are:'
+                            'viridis, jet, hot, copper, bone... '
+                            'for more options see '
+                            'https://matplotlib.org/examples/color/'
+                            'colormaps_reference.html')
         return
 
     def arg_ax_intlin(self, parser):
@@ -591,7 +594,7 @@ class CliProduct(object):
                         scale = 'gps'
                         self.ax.set_epoch(0)
                     else:
-                        scale='auto-gps'
+                        scale = 'auto-gps'
                         self.ax.set_epoch(epoch)
 
                 if args.logx:
@@ -803,7 +806,8 @@ class CliProduct(object):
             unit = self.ax.xaxis._scale.get_unit_name()
             utc = re.sub('\.0+', '',
                          Time(epoch, format='gps', scale='utc').iso)
-            # self.plot.set_xlabel('Time (%s) from %s (%s)' % (unit, utc, epoch))
+            # self.plot.set_xlabel('Time (%s) from %s (%s)' %
+            #                       (unit, utc, epoch))
             # self.ax.xaxis._set_scale(unit, epoch=epoch)
 
         # if they specified an output file write it
@@ -848,7 +852,7 @@ class CliProduct(object):
 
         step_time = time.time() - tstart
         tstart = time.time()
-        self.log(2,'Get timseries took %.1f sec' % step_time)
+        self.log(2, 'Get timseries took %.1f sec' % step_time)
 
         self.config_plot(args)
 
@@ -856,13 +860,13 @@ class CliProduct(object):
         self.gen_plot(args)
         step_time = time.time() - tstart
         tstart = time.time()
-        self.log(2,'Generate plot took %.1f sec' % step_time)
+        self.log(2, 'Generate plot took %.1f sec' % step_time)
 
         self.annotate_save_plot(args)
 
         step_time = time.time() - tstart
         tstart = time.time()
-        self.log(2,'Annotate and save took %.1f sec' % step_time)
+        self.log(2, 'Annotate and save took %.1f sec' % step_time)
 
         self.is_interactive = False
         if args.interactive:
