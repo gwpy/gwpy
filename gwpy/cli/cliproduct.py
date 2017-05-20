@@ -90,6 +90,7 @@ class CliProduct(object):
         self.filter = ''        # string for annotation if we filtered data
         self.plot = 0           # plot object
         self.ax = 0             # current axis object from plot
+        self.plot_num = 0       #
 
         # custom labeling
         self.title = None
@@ -864,6 +865,10 @@ class CliProduct(object):
 
         self.annotate_save_plot(args)
 
+        while self.has_more_plots(args):
+            self.prep_next_plot(args)
+            self.annotate_save_plot(args)
+
         step_time = time.time() - tstart
         tstart = time.time()
         self.log(2, 'Annotate and save took %.1f sec' % step_time)
@@ -874,3 +879,13 @@ class CliProduct(object):
                         'image should be available.')
             self.plot.show()
             self.is_interactive = True
+
+    def has_more_plots(self, args):
+        """override if product needs multiple annotate and saves"""
+        return False
+
+    def prep_next_plot(self, args):
+        """Override when product needs multiple saves
+        """
+        raise NotImplementedError('prep_next_plot must be overriden '
+                                  'if has_more_plots returns true')

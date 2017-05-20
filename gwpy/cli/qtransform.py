@@ -22,7 +22,7 @@
 """ Q-transform plots
 """
 
-
+import re
 from .cliproduct import CliProduct
 import types
 import math
@@ -62,15 +62,6 @@ class Qtransform(CliProduct):
         args.chan = [[args.chan]]
         args.highpass = None
         args.lowpass = None
-        prng = args.plot
-        if isinstance(prng, types.ListType):
-            prange = float(prng[0])
-        elif prng:
-            prange = float(prng)
-        else:
-            prange = 0.5
-        args.xmin = ('%.3f' % (epoch - prange / 2))
-        args.xmax = ('%.3f' % (epoch + prange / 2))
         self.verbose = args.verbose
 
     def get_ylabel(self, args):
@@ -110,17 +101,16 @@ class Qtransform(CliProduct):
                             (kwargs['qrange'][0], kwargs['qrange'][1]))
         if args.frange:
             kwargs['frange'] = (float(args.frange[0]), float(args.frange[1]))
-            self.title2 += (' f-range [%.0f, %.0f] ' %
-                            (kwargs['frange'][0], kwargs['frange'][1]))
+
         if args.nowhiten:
             kwargs['whiten'] = False
             self.title2 += 'not whitened'
         else:
             self.title2 += 'whitened '
+
         kwargs['gps'] = float(args.gps)
         kwargs['fres'] = 0.5
         kwargs['tres'] = 0.002
-        self.title2 += ' central time % .3f ' % float(args.gps)
 
         new_fs = float(args.sample_freq)
         cur_fs = my_ts.sample_rate.value
@@ -146,9 +136,9 @@ class Qtransform(CliProduct):
         self.log(2, 'Result shape: %dx%d' %
                  (self.result.shape[0], self.result.shape[1]))
 
-        pltargs = dict()
+        self.pltargs = dict()
         if args.cmap:
-            pltargs['cmap'] = args.cmap
+            self.pltargs['cmap'] = args.cmap
         # weirdness because we allow 2 ways to specify intensity range
         imin = None
         imax = None
@@ -161,18 +151,50 @@ class Qtransform(CliProduct):
             imax = float(args.erange[1])
 
         if imin:
-            pltargs['vmin'] = imin
+            self.pltargs['vmin'] = imin
         if imax:
-            pltargs['vmax'] = imax
+            self.pltargs['vmax'] = imax
 
         if self.verbose >= 3:
             print ('Plot args:')
-            pprint(pltargs)
+            pprint(self.pltargs)
 
-        self.plot = self.result.plot(**pltargs)
+        self.plot = self.result.plot(**self.pltargs)
         self.scaleText = 'Normalized energy'
 
         self.fmax = int(self.result.frequencies.max().value)
         self.fmin = math.ceil(self.result.frequencies.min().value)
-        self.log(2, 'Frequncy range of result: %.2f - %.2f' %
+        self.log(2, 'Frequency range of result: %.2f - %.2f' %
                  (self.fmin, self.fmax))
+        self.title2 += (' calc f-range [%.1f, %.f] ' %
+                        (self.fmin, self.fmax))
+        self.plot_num = 0
+        self.qx_plot_setup(args)
+
+    def qx_plot_setup(self, args):
+        prng = args.plot
+        if isinstance(prng, types.ListType):
+            prange = float(prng[self.plot_num])
+        elif prng:
+            prange = float(prng)
+        else:
+            prange = 0.5
+        epoch = float(args.epoch)
+        args.xmin = ('%.3f' % (epoch - prange / 2))
+        args.xmax = ('%.3f' % (epoch + prange / 2))
+
+        args.out = ('%s/%s-%.3f-%05.2f.png' % (args.outdir,
+                    re.sub(':', '-', self.timeseries[0].channel.name),
+                    float(args.gps), prange))
+
+    def has_more_plots(self, args):
+        """any ranges left to plot?"""
+        self.plot_num += 1
+        ret = self.plot_num < len(args.plot)
+        return ret
+
+    def prep_next_plot(self, args):
+        """Override when product needs multiple saves
+        """
+        self.qx_plot_setup(args)
+        self.plot = self.result.plot(**self.pltargs)
