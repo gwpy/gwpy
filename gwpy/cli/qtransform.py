@@ -156,7 +156,7 @@ class Qtransform(CliProduct):
             self.pltargs['vmax'] = imax
 
         if self.verbose >= 3:
-            print ('Plot args:')
+            print('Plot args:')
             pprint(self.pltargs)
 
         self.plot = self.result.plot(**self.pltargs)
