@@ -557,6 +557,8 @@ class CliProduct(object):
         xmin = 0        # these will be set by x min, max or f min, max
         xmax = 1
         scale = 'linear'
+        epoch = None
+
         if self.xaxis_type == 'linx' or self.xaxis_type == 'logx':
             # handle time on X-axis
             xmin = self.xmin
@@ -580,7 +582,6 @@ class CliProduct(object):
                     xmax = al_xmax
 
             if self.xaxis_type == 'linx':
-                epoch = None
                 if args.epoch:
                     epoch = float(args.epoch)
 
@@ -638,7 +639,7 @@ class CliProduct(object):
             self.ax.set_epoch(epoch)
         self.ax.set_xlim(xmin, xmax)
 
-        self.log(2, 'X-min: %.3f, Epoch: %.3f, X-max: %.3f, Scale: %s' %
+        self.log(2, 'X-min: %.3f, Epoch: %s, X-max: %.3f, Scale: %s' %
                  (xmin, epoch, xmax, scale))
         return
 
