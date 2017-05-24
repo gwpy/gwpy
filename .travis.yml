@@ -95,7 +95,7 @@ deploy:
   - provider: pypi
     user: duncanmmacleod
     password:
-      secure: AWHqZruQMW9uHIhXLlKwgdfWBHZIgwLtvkP7D+al4zYG/wSOvZDTT7ZsxOhFogYxIXWzwcBIPYgUGplkMOlb+N0Wl45OPL6U2tN5EtUEtWnTd/OxrDzA/DJJbgdfy4VqFSj0fY7FTBNJCeCciZ+TmtBrcWSFbHorrLyF5oOW7VQ=
+      secure: GAcOK9Pq/Wue8CZ24KLWcibAcslCfjREk/trARVJdB2VjESF0bFcHgLcdQBIGJg2UweHdc0gsucPo6J4uRhR54s/gl2z47yx6tQ8O3cogvMTQfkhD6TYlh2tzquZz8t5KkuCWQhXBsSxiCGMLlFtzV2kbF7ksbiXbFbvNudqjj4=
     on:
       branch: master
       tags: true
