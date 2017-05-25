@@ -97,16 +97,16 @@ class Qtransform(CliProduct):
         kwargs['search'] = my_ts.dt.value * len(my_ts)
         if args.qrange:
             kwargs['qrange'] = (float(args.qrange[0]), float(args.qrange[1]))
-            self.title2 += (' q-range [%.1f, %.1f] ' %
+            self.title2 += (' q-range [%.1f, %.1f], ' %
                             (kwargs['qrange'][0], kwargs['qrange'][1]))
         if args.frange:
             kwargs['frange'] = (float(args.frange[0]), float(args.frange[1]))
 
         if args.nowhiten:
             kwargs['whiten'] = False
-            self.title2 += 'not whitened'
+            self.title2 += 'not whitened, '
         else:
-            self.title2 += 'whitened '
+            self.title2 += 'whitened, '
 
         kwargs['gps'] = float(args.gps)
         kwargs['fres'] = 0.5
@@ -117,11 +117,12 @@ class Qtransform(CliProduct):
 
         if cur_fs > new_fs:
             my_ts = my_ts.resample(new_fs)
-            self.title2 = (' %.0f Hz resampled to %.0f. ' %
+            self.title2 = (' %.0f resampled to %.0f Hz, ' %
                            (cur_fs, new_fs)) + self.title2
             self.log(3, 'Resampled input to %d Hz' % new_fs)
         else:
             new_fs = cur_fs
+            self.title2 = (' %.0f Hz, ' % cur_fs) + self.title2
 
         # if 'frange' in kwargs:
         #     nyq = new_fs / 2
@@ -162,12 +163,20 @@ class Qtransform(CliProduct):
         self.plot = self.result.plot(**self.pltargs)
         self.scaleText = 'Normalized energy'
 
-        self.fmax = int(self.result.frequencies.max().value)
-        self.fmin = math.ceil(self.result.frequencies.min().value)
+        fmax = self.result.frequencies.max().value
+        fmin = self.result.frequencies.min().value
         self.log(2, 'Frequency range of result: %.2f - %.2f' %
-                 (self.fmin, self.fmax))
-        self.title2 += (' calc f-range [%.1f, %.f] ' %
-                        (self.fmin, self.fmax))
+                 (fmin, fmax))
+        self.title2 += (' calc f-range [%.1f, %.1f], ' %
+                        (fmin, fmax))
+        self.fmin = fmin
+        self.fmax = fmax
+
+        emin = self.result.min()
+        emax = self.result.max()
+        self.title2 += (' calc e-range [%.1f, %.1f] ' %
+                        (emin, emax))
+
         self.plot_num = 0
         self.qx_plot_setup(args)
 
