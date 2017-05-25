@@ -151,7 +151,7 @@ class Qtransform(CliProduct):
             imin = float(args.erange[0])
             imax = float(args.erange[1])
 
-        if imin:
+        if imin is not None:
             self.pltargs['vmin'] = imin
         if imax:
             self.pltargs['vmax'] = imax
