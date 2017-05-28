@@ -27,10 +27,22 @@ from .cliproduct import CliProduct
 import types
 import math
 from pprint import pprint
+import gc
+from time import time
+import psutil
 
 
 class Qtransform(CliProduct):
     """Derived class to calculate Q-transform"""
+    start_time = None
+    qxfrm_args = None
+    my_ts = None
+    title_save = None
+
+    def __init__(self):
+        self.start_time = time()
+        self.qxfrm_args = dict( )
+        super(Qtransform,self).__init__()
 
     def get_action(self):
         """Return the string used as "action" on command line."""
@@ -91,32 +103,32 @@ class Qtransform(CliProduct):
         """Generate the plot from time series and arguments"""
         self.is_freq_plot = False   # not fft based
 
-        my_ts = self.timeseries[0]
+        self.my_ts = self.timeseries[0]
         self.title2 = ''
-        kwargs = dict()     # optional args passed to qxfrm
-        kwargs['search'] = my_ts.dt.value * len(my_ts)
+
+        self.qxfrm_args['search'] = self.my_ts.dt.value * len(self.my_ts)
         if args.qrange:
-            kwargs['qrange'] = (float(args.qrange[0]), float(args.qrange[1]))
+            self.qxfrm_args['qrange'] = (float(args.qrange[0]), float(args.qrange[1]))
             self.title2 += (' q-range [%.1f, %.1f], ' %
-                            (kwargs['qrange'][0], kwargs['qrange'][1]))
+                            (self.qxfrm_args['qrange'][0], self.qxfrm_args['qrange'][1]))
         if args.frange:
-            kwargs['frange'] = (float(args.frange[0]), float(args.frange[1]))
+            self.qxfrm_args['frange'] = (float(args.frange[0]), float(args.frange[1]))
 
         if args.nowhiten:
-            kwargs['whiten'] = False
+            self.qxfrm_args['whiten'] = False
             self.title2 += 'not whitened, '
         else:
             self.title2 += 'whitened, '
 
-        kwargs['gps'] = float(args.gps)
-        kwargs['fres'] = 0.5
-        kwargs['tres'] = 0.002
+        self.qxfrm_args['gps'] = float(args.gps)
+        self.qxfrm_args['fres'] = 0.5
+        self.qxfrm_args['tres'] = 0.002
 
         new_fs = float(args.sample_freq)
-        cur_fs = my_ts.sample_rate.value
+        cur_fs = self.my_ts.sample_rate.value
 
         if cur_fs > new_fs:
-            my_ts = my_ts.resample(new_fs)
+            self.my_ts = self.my_ts.resample(new_fs)
             self.title2 = (' %.0f resampled to %.0f Hz, ' %
                            (cur_fs, new_fs)) + self.title2
             self.log(3, 'Resampled input to %d Hz' % new_fs)
@@ -124,16 +136,15 @@ class Qtransform(CliProduct):
             new_fs = cur_fs
             self.title2 = (' %.0f Hz, ' % cur_fs) + self.title2
 
-        # if 'frange' in kwargs:
-        #     nyq = new_fs / 2
-        #     if kwargs['frange'][1] > nyq:
-        #         kwargs['frange'] = (kwargs['frange'][0], nyq-24)
+        prange = self.get_plot_range(args)
+        epoch = float(args.epoch)
+        self.qxfrm_args['outseg'] = (epoch-prange, epoch+prange)
 
         if self.verbose >= 3:
             print ('Q-transform args:')
-            pprint(kwargs)
+            pprint(self.qxfrm_args)
 
-        self.result = my_ts.q_transform(**kwargs)
+        self.result = self.my_ts.q_transform(**self.qxfrm_args)
         self.log(2, 'Result shape: %dx%d' %
                  (self.result.shape[0], self.result.shape[1]))
 
@@ -177,17 +188,14 @@ class Qtransform(CliProduct):
         self.title2 += (' calc e-range [%.1f, %.1f] ' %
                         (emin, emax))
 
+        self.title_save = self.title2
+        self.title2 = (' Q = %.1f ' % self.result.q) + self.title_save
         self.plot_num = 0
         self.qx_plot_setup(args)
 
     def qx_plot_setup(self, args):
-        prng = args.plot
-        if isinstance(prng, types.ListType):
-            prange = float(prng[self.plot_num])
-        elif prng:
-            prange = float(prng)
-        else:
-            prange = 0.5
+        """Next plot has different display (time) range"""
+        prange = self.get_plot_range(args)
         epoch = float(args.epoch)
         args.xmin = ('%.3f' % (epoch - prange / 2))
         args.xmax = ('%.3f' % (epoch + prange / 2))
@@ -195,15 +203,32 @@ class Qtransform(CliProduct):
         args.out = ('%s/%s-%.3f-%05.2f.png' % (args.outdir,
                     re.sub(':', '-', self.timeseries[0].channel.name),
                     float(args.gps), prange))
+        self.qxfrm_args['outseg'] = (epoch-prange, epoch+prange)
+
+    def get_plot_range(self,args):
+        prng = args.plot
+        if isinstance(prng, types.ListType):
+            prange = float(prng[self.plot_num])
+        elif prng:
+            prange = float(prng)
+        else:
+            prange = 0.5
+
+        return prange
 
     def has_more_plots(self, args):
         """any ranges left to plot?"""
         self.plot_num += 1
         ret = self.plot_num < len(args.plot)
+        if not ret:
+            run_time = time() - self.start_time
+            self.log(2,'Q-transform run time: %.1f  sec' % run_time)
         return ret
 
     def prep_next_plot(self, args):
         """Override when product needs multiple saves
         """
         self.qx_plot_setup(args)
+        self.result = self.my_ts.q_transform(**self.qxfrm_args)
         self.plot = self.result.plot(**self.pltargs)
+        self.title2 = (' Q = %.1f ' % self.result.q) + self.title_save
