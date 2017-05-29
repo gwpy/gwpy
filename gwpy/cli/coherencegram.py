@@ -80,16 +80,16 @@ class Coherencegram(CliProduct):
         sup += " vs. " + self.timeseries[1].channel.name
         return sup
 
-    def gen_plot(self, arg_list):
+    def gen_plot(self, args):
         """Generate the plot from time series and arguments"""
         self.is_freq_plot = True
 
         secpfft = 0.5
-        if arg_list.secpfft:
-            secpfft = float(arg_list.secpfft)
+        if args.secpfft:
+            secpfft = float(args.secpfft)
         ovlp_frac = 0.9
-        if arg_list.overlap:
-            ovlp_frac = float(arg_list.overlap)
+        if args.overlap:
+            ovlp_frac = float(args.overlap)
         self.secpfft = secpfft
         self.overlap = ovlp_frac
 
@@ -102,7 +102,7 @@ class Coherencegram(CliProduct):
         coh = self.timeseries[0].coherence_spectrogram(
             self.timeseries[1], stride, fftlength=secpfft, overlap=ovlap_sec)
         norm = False
-        if arg_list.norm:
+        if args.norm:
             coh = coh.ratio('mean')
             norm = True
 
@@ -115,38 +115,47 @@ class Coherencegram(CliProduct):
         self.xmax = self.timeseries[0].times.value.max()
 
         # set intensity (color) limits
-        if arg_list.imin:
-            lo = float(arg_list.imin)
+        if args.imin:
+            lo = float(args.imin)
         elif norm:
             lo = 0.5
         else:
             lo = 0.01
-        if norm or arg_list.nopct:
+        if norm or args.nopct:
             imin = lo
         else:
             imin = percentile(coh, lo*100)
 
-        if arg_list.imax:
-            up = float(arg_list.imax)
+        if args.imax:
+            up = float(args.imax)
         elif norm:
             up = 2
         else:
             up = 100
-        if norm or arg_list.nopct:
+        if norm or args.nopct:
             imax = up
         else:
             imax = percentile(coh, up)
 
+        pltargs = dict()
+        if args.cmap:
+            pltargs['cmap'] = args.cmap
+
+        pltargs['vmin'] = imin
+        pltargs['vmax'] = imax
+
         # plot the thing
         if norm:
-            self.plot = coh.plot(vmin=imin, vmax=imax)
             self.scale_text = 'Normalized to mean'
-        elif arg_list.logcolors:
-            self.plot = coh.plot(norm='log', vmin=imin, vmax=imax)
+        elif args.logcolors:
+            pltargs['norm'] = 'log'
             self.scale_text = r'log_10 Coherence'
         else:
-            self.plot = coh.plot(vmin=imin, vmax=imax)
             self.scale_text = r'Coherence'
+
+        self.plot = coh.plot(**pltargs)
+        self.result = coh
+
         # pass the scaling to the annotater
         self.imin = imin
         self.imax = imax

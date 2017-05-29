@@ -465,3 +465,19 @@ def get_availability(channels, start, end,
         out[name] = SegmentList([Segment(s.gps_start, s.gps_stop) for s in
                                  result.simple_list()])
     return out
+
+def minute_trend_times(start, end):
+    """Adjust start & end to 60 sec boundaries for nds
+    start : `int`
+        GPS start time of query
+
+    end : `int`
+        GPS end time of query
+
+    Returns
+    -------
+    start, end : adjusted outwards
+    """
+    start2 = int(start / 60) * 60
+    end2 = int ((end + 59) / 60) * 60
+    return start2, end2

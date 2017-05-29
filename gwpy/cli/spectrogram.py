@@ -19,7 +19,7 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-""" Coherence plots
+""" Spectrogram plots
 """
 from .cliproduct import CliProduct
 
@@ -65,18 +65,18 @@ class Spectrogram(CliProduct):
         """Start of default super title, first channel is appended to it"""
         return 'Spectrogram: '
 
-    def gen_plot(self, arg_list):
+    def gen_plot(self, args):
         """Generate the plot from time series and arguments"""
         self.is_freq_plot = True
 
         from numpy import percentile
 
         secpfft = 1
-        if arg_list.secpfft:
-            secpfft = float(arg_list.secpfft)
+        if args.secpfft:
+            secpfft = float(args.secpfft)
         ovlp_frac = 0.5
-        if arg_list.overlap:
-            ovlp_frac = float(arg_list.overlap)
+        if args.overlap:
+            ovlp_frac = float(args.overlap)
         self.secpfft = secpfft
         self.overlap = ovlp_frac
 
@@ -87,26 +87,26 @@ class Spectrogram(CliProduct):
         stride_sec = max(2*secpfft, stride_sec)
         fs = self.timeseries[0].sample_rate.value
 
-        # based on the number of FFT calculation choose between
-        # high time resolution and high SNR
-        snr_nfft = self.dur / stride_sec
-        if snr_nfft > 512:
+        # based on the number of FFT calculations per pixel
+        # in output image choose between
+        # high time resolution (spectrogram2) and high SNR (spectrogram)
+        if fft_per_stride > 3:
             specgram = self.timeseries[0].spectrogram(stride_sec,
                                                       fftlength=secpfft,
                                                       overlap=ovlp_sec)
             self.log(3, ('Spectrogram calc, stride: %.2fs, fftlength: %.2f, '
                          'overlap: %.2f, #fft: %d' %
-                         (stride_sec, secpfft, ovlp_sec, snr_nfft)))
+                         (stride_sec, secpfft, ovlp_sec, nfft)))
         else:
             specgram = self.timeseries[0].spectrogram2(fftlength=secpfft,
                                                        overlap=ovlp_sec)
             self.log(3, ('HR-Spectrogram calc, stride: %.2fs, fftlength: %.2f,'
                          ' overlap: %.2f, #fft: %d' %
-                         (stride_sec, secpfft, ovlp_sec, snr_nfft)))
+                         (stride_sec, secpfft, ovlp_sec, nfft)))
         specgram = specgram ** (1/2.)   # ASD
 
         norm = False
-        if arg_list.norm:
+        if args.norm:
             specgram = specgram.ratio('median')
             norm = True
         # save if we're interactive
@@ -121,35 +121,53 @@ class Spectrogram(CliProduct):
         self.xmax = self.timeseries[0].times.value.max()
 
         # set intensity (color) limits
-        if arg_list.imin:
-            lo = float(arg_list.imin)
+        if args.imin:
+            lo = float(args.imin)
+        elif args.nopct:
+            lo = specgram.min()
+            lo = lo.value
         else:
             lo = .01
-        if norm or arg_list.nopct:
+
+        if norm or args.nopct:
             imin = lo
         else:
-            imin = percentile(specgram, lo*100)
+            imin = percentile(specgram, lo)
 
-        if arg_list.imax:
-            up = float(arg_list.imax)
+        if args.imax:
+            up = float(args.imax)
+        elif args.nopct:
+            up = specgram.max()
+            up = up.value
         else:
             up = 100
-        if arg_list.nopct:
+        if args.nopct:
             imax = up
         else:
             imax = percentile(specgram, up)
 
+        self.log(3, 'Intensity (colorbar) limits %.3g - %.3g' %
+                 (imin, imax))
+
+        pltargs = dict()
+        if args.cmap:
+            pltargs['cmap'] = args.cmap
+
+        pltargs['vmin'] = imin
+        pltargs['vmax'] = imax
+
         if norm:
-            self.plot = specgram.plot(norm='log', vmin=imin, vmax=imax)
+            pltargs['norm'] = 'log'
             self.scaleText = 'Normalized to median'
-        elif arg_list.lincolors:
-            self.plot = specgram.plot(vmin=imin, vmax=imax)
+        elif args.lincolors:
             self.scaleText = r'ASD $\left( \frac{\mathrm{Counts}}' \
                              r'{\sqrt{\mathrm{Hz}}}\right)$'
         else:
-            self.plot = specgram.plot(norm='log', vmin=imin, vmax=imax)
+            pltargs['norm'] = 'log'
             self.scaleText = r'$ASD \left(\frac{\mathrm{Counts}}' \
                              r'{\sqrt{\mathrm{Hz}}}\right)$'
+
+        self.plot = specgram.plot(**pltargs)
         # pass the image limits back to the annotater
         self.imin = imin
         self.imax = imax
