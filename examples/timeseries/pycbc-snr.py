@@ -63,7 +63,7 @@ hp, _ = get_fd_waveform(approximant="IMRPhenomD", mass1=40, mass2=32,
 # At this point we are ready to calculate the SNR, so we import the
 # :func:`~pycbc.filter.matched_filter` method, and pass it our template,
 # the data, and the PSD, using the :meth:`~TimeSeries.to_pycbc` methods of
-# the `TimeSeries` and `~gwpy.frequencyseries.FrequencySeries objects:
+# the `TimeSeries` and `~gwpy.frequencyseries.FrequencySeries` objects:
 
 import numpy
 from pycbc.filter import matched_filter
