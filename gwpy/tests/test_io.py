@@ -148,6 +148,16 @@ class NdsIoTestCase(unittest.TestCase):
             self.assertEqual(conn.get_host(), 'nds2.test.gwpy')
             self.assertEqual(conn.get_port(), 8088)
 
+    def test_minute_trend_times(self):
+        self.assertTupleEqual(io_nds2.minute_trend_times(0, 60), (0, 60))
+        self.assertTupleEqual(io_nds2.minute_trend_times(1, 60), (0, 60))
+        self.assertTupleEqual(io_nds2.minute_trend_times(0, 61), (0, 120))
+        self.assertTupleEqual(io_nds2.minute_trend_times(59, 61), (0, 120))
+        self.assertTupleEqual(
+            io_nds2.minute_trend_times(1167264018, 1198800018),
+            (1167264000, 1198800060))
+
+
 # -- gwpy.io.cache ------------------------------------------------------------
 
 class CacheIoTestCase(unittest.TestCase):
