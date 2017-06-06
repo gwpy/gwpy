@@ -202,6 +202,9 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                         series_class(arr, t0=dimstart+a*dx, dt=dx, name=name,
                                      channel=channel, unit=unit, copy=False),
                         requirements=['O'])
+                    # add information to channel
+                    ts.channel.sample_rate = ts.sample_rate.value
+                    ts.channel.unit = unit
                 else:
                     ts.append(arr)
         if ts is None:
