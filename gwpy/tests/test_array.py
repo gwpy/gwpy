@@ -67,9 +67,15 @@ class CommonTests(object):
         try:
             return self._TEST_ARRAY
         except AttributeError:
+            # create array
             self._TEST_ARRAY = self.create(name=CHANNEL_NAME, unit='meter',
                                            channel=CHANNEL_NAME,
                                            epoch=GPS_EPOCH)
+            # customise channel a wee bit
+            #    used to test pickle/unpickle when storing channel as
+            #    dataset attr in HDF5
+            self._TEST_ARRAY.channel.sample_rate = 128
+            self._TEST_ARRAY.channel.unit = 'm'
             return self.TEST_ARRAY
 
     def create(self, *args, **kwargs):

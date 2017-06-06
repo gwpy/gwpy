@@ -200,8 +200,12 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                     # create array - need require() to prevent segfault
                     ts = numpy.require(
                         series_class(arr, t0=dimstart+a*dx, dt=dx, name=name,
-                                     channel=channel, unit=unit, copy=False),
+                                     channel=name, unit=unit, copy=False),
                         requirements=['O'])
+                    # add information to channel
+                    ts.channel.sample_rate = ts.sample_rate.value
+                    ts.channel.unit = unit
+                    ts.channel.dtype = ts.dtype
                 else:
                     ts.append(arr)
         if ts is None:
