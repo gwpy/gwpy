@@ -609,6 +609,14 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(sg.df, 4 * units.Hertz)
         self.assertEqual(sg.dt, 0.5 * units.second)
 
+        # check that `cross` keyword gets deprecated properly
+        # TODO: removed before 1.0 release
+        with pytest.warns(DeprecationWarning) as wng:
+            out = ts.spectrogram(0.5, fftlength=.25, cross=ts)
+        self.assertIn('`cross` keyword argument has been deprecated',
+                      wng[0].message.args[0])
+        self.assertArraysEqual(out, ts.csd_spectrogram(ts, 0.5, fftlength=.25))
+
     def test_spectrogram2(self):
         ts = self._read()
         # test defaults
