@@ -164,7 +164,12 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
             except AttributeError:  # not proc channel
                 pass
             else:
-                if start and dataend < start:  # don't need this frame
+                if datastart == dataend:  # tRange not set
+                    # tRange is not required, so if it is 0, it may have been
+                    # omitted, rather than actually representing an empty
+                    # data set
+                    pass
+                elif start and dataend < start:  # don't need this frame
                     continue
             for vect in data.data:  # loop hopefully over single vector
                 # decompress data
