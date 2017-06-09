@@ -1457,7 +1457,7 @@ class TimeSeries(TimeSeriesBase):
 
     def q_transform(self, qrange=(4, 64), frange=(0, numpy.inf),
                     gps=None, search=.5, tres=.001, fres=.5, outseg=None,
-                    whiten=True, **psdkwargs):
+                    whiten=True, **asd_kw):
         """Scan a `TimeSeries` using a multi-Q transform
 
         Parameters
@@ -1486,9 +1486,14 @@ class TimeSeries(TimeSeriesBase):
         outseg : `~gwpy.segments.Segment`, optional
             GPS `[start, stop)` segment for output `Spectrogram`
 
-        **psdkwargs
-            keyword arguments to pass to `TimeSeries.psd` when whitening
-            the input data
+        whiten : `bool`, `~gwpy.frequencyseries.FrequencySeries`, optional
+            boolean switch to enable (`True`) or disable (`False`) data
+            whitening, or an ASD `~gwpy.freqencyseries.FrequencySeries`
+            with which to whiten the data
+
+        **asd_kw
+            keyword arguments to pass to `TimeSeries.asd` to generate
+            an ASD to use when whitening the data
 
         Returns
         -------
@@ -1507,8 +1512,8 @@ class TimeSeries(TimeSeriesBase):
 
         See Also
         --------
-        TimeSeries.psd
-            for documentation on acceptable `**psdkwargs`
+        TimeSeries.asd
+            for documentation on acceptable `**asd_kw`
         TimeSeries.whiten
             for documentation on how the whitening is done
         gwpy.signal.qtransform
@@ -1521,6 +1526,7 @@ class TimeSeries(TimeSeriesBase):
             resolution across the band.
         """
         from scipy.interpolate import (interp2d, InterpolatedUnivariateSpline)
+        from ..frequencyseries import FrequencySeries
         from ..spectrogram import Spectrogram
         from ..signal.qtransform import QTiling
 
@@ -1532,17 +1538,22 @@ class TimeSeries(TimeSeriesBase):
                          qrange=qrange, frange=frange)
 
         # condition data
-        psdkw = {
-            'method': 'median-mean',
-            'fftlength': 2,
-            'overlap': 1,
-        }
-        psdkw.update(psdkwargs)
-        fftlength = psdkw.pop('fftlength')
-        overlap = psdkw.pop('overlap')
         if whiten:
-            asd = self.asd(fftlength, overlap, **psdkw)
-            wdata = self.whiten(fftlength, overlap, asd=asd)
+            if isinstance(whiten, FrequencySeries):
+                fftlength = 1/whiten.df.value
+                overlap = fftlength / 2.
+            else:
+                method = asd_kw.pop('method', 'median-mean')
+                fftlength = asd_kw.pop('fftlength', min(2, self.duration.value))
+                overlap = asd_kw.pop('overlap', None)
+                if overlap is None and fftlength == self.duration.value:
+                    method = 'welch'
+                    overlap = 0
+                else:
+                    overlap = fftlength / 2.
+                whiten = self.asd(fftlength, overlap, method=method, **asd_kw)
+            # apply whitening
+            wdata = self.whiten(fftlength, overlap, asd=whiten)
             fdata = wdata.fft().value
         else:
             fdata = self.fft().value
