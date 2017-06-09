@@ -45,13 +45,17 @@ def seconds_to_samples(x, rate):
 def _fft_params_in_samples(f):
     @wraps(f)
     def wrapped_func(series, *args, **kwargs):
+        if isinstance(series, tuple):
+            ts = series[0]
+        else:
+            ts = series
         # extract parameters in seconds
-        fftlength = kwargs.pop('fftlength', None) or series.duration
+        fftlength = kwargs.pop('fftlength', None) or ts.duration
         overlap = kwargs.pop('overlap', None) or 0
 
         # convert to samples
-        kwargs['nfft'] = seconds_to_samples(fftlength, series.sample_rate)
-        kwargs['noverlap'] = seconds_to_samples(overlap, series.sample_rate)
+        kwargs['nfft'] = seconds_to_samples(fftlength, ts.sample_rate)
+        kwargs['noverlap'] = seconds_to_samples(overlap, ts.sample_rate)
 
         return f(series, *args, **kwargs)
 
@@ -62,12 +66,13 @@ def _fft_params_in_samples(f):
 def psd(timeseries, method_func, *args, **kwargs):
     """Generate a PSD using a method function
     """
-    if len(args) and isinstance(args[0], type(timeseries)):
-        other = args[0]
-        args = args[1:]
+    # unpack tuple of timeseries for cross spectrum
+    try:
+        timeseries, other = timeseries
         return method_func(timeseries, other, kwargs.pop('nfft'),
                            *args, **kwargs)
-    else:
+    # or just calculate PSD
+    except ValueError:
         return method_func(timeseries, kwargs.pop('nfft'), *args, **kwargs)
 
 
@@ -77,6 +82,13 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
     Each time bin of the resulting spectrogram is a PSD generated using
     the method_func
     """
+    # unpack CSD TimeSeries pair, or single timeseries
+    try:
+        timeseries, other = timeseries
+    except ValueError:
+        timeseries = timeseries
+        other = None
+
     from ...spectrogram import Spectrogram
 
     nproc = kwargs.pop('nproc', 1)
@@ -99,7 +111,6 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
     nstride = seconds_to_samples(stride, timeseries.sample_rate)
     nfft = seconds_to_samples(fftlength, timeseries.sample_rate)
     noverlap = seconds_to_samples(overlap, timeseries.sample_rate)
-    halfoverlap = int(noverlap // 2.)
 
     # generate windows and FFT plans up-front
     if method_func.__module__.endswith('.lal'):
@@ -130,16 +141,10 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
             return e
 
     # define chunks
-    chunks = []
-    x = y = 0
-    dx = nstride - halfoverlap
-    while x + nstride <= timeseries.size:
-        y = min(timeseries.size, x + nstride + noverlap)
-        chunks.append((x, y))
-        x += dx
-        dx = nstride
-
-    tschunks = (timeseries[i:j] for i, j in chunks)
+    tschunks = _chunk_timeseries(timeseries, nstride, noverlap)
+    if other:
+        otherchunks = _chunk_timeseries(other, nstride, noverlap)
+        tschunks = zip(tschunks, otherchunks)
 
     # calculate PSDs
     psds = mp_utils.multiprocess_with_queues(nproc, _psd, tschunks,
@@ -232,3 +237,14 @@ def spectrogram(timeseries, *args, **kwargs):
         out.value[i, :] = numpy.average(data[x0:x1], axis=0, weights=w)
 
     return out
+
+
+def _chunk_timeseries(ts, nstride, noverlap):
+    # define chunks
+    x = y = 0
+    dx = nstride - int(noverlap // 2.)
+    while x + nstride <= ts.size:
+        y = min(ts.size, x + nstride + noverlap)
+        yield ts[x:y]
+        x += dx
+        dx = nstride

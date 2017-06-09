@@ -416,21 +416,13 @@ class TimeSeries(TimeSeriesBase):
         # get method
         method_func = fft_registry.get_method('csd', scaling='other')
 
-        # type-cast arguments
-        if fftlength is None:
-            fftlength = self.duration
-        nfft = int((fftlength * self.sample_rate).decompose().value)
-        if overlap is not None:
-            kwargs['noverlap'] = int(
-                (overlap * self.sample_rate).decompose().value)
-
-        # calculate and return spectrum
-        return method_func(self, other, nfft, **kwargs)
+        # calculate CSD using UI method
+        return fft_ui.psd((self, other), method_func, fftlength=fftlength,
+                          overlap=overlap, **kwargs)
 
     @_update_doc_with_fft_methods
     def spectrogram(self, stride, fftlength=None, overlap=0,
-                    method='welch', window=None, nproc=1,
-                    cross=None, **kwargs):
+                    method='welch', window=None, nproc=1, **kwargs):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
 
@@ -464,11 +456,6 @@ class TimeSeries(TimeSeriesBase):
         nproc : `int`, default: ``1``
             number of CPUs to use in parallel processing of FFTs
 
-        cross : `TimeSeries`
-            optional keyword argument
-            time-series for calculating CSD spectrogram
-            if None, then calculates PSD spectrogram
-
         Returns
         -------
         spectrogram : `~gwpy.spectrogram.Spectrogram`
@@ -478,6 +465,20 @@ class TimeSeries(TimeSeriesBase):
         Notes
         -----
         """
+        # handle deprecated kwargs - TODO: remove before 1.0 release
+        try:
+            other = kwargs.pop('cross')
+        except KeyError:
+            pass
+        else:
+            warn('the `cross` keyword argument has been deprecated, '
+                 'please use the csd_spectrogram() method directly, this '
+                 'warning will become an error before the 1.0 release',
+                 DeprecationWarning)
+            return self.csd_spectrogram(other, stride, fftlength=fftlength,
+                                        overlap=overlap, window=window,
+                                        nproc=nproc, **kwargs)
+
         # get method
         scaling = kwargs.get('scaling', 'density')
         method_func = fft_registry.get_method(method, scaling=scaling)
@@ -735,7 +736,7 @@ class TimeSeries(TimeSeriesBase):
             two input time-series.
         """
         method_func = fft_registry.get_method('csd', scaling='other')
-        sg = fft_ui.average_spectrogram(self, method_func, stride, other,
+        sg = fft_ui.average_spectrogram((self, other), method_func, stride,
                                         fftlength=fftlength, overlap=overlap,
                                         window=window, nproc=nproc, **kwargs)
         return sg
