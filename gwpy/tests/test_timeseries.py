@@ -759,6 +759,8 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         qsg2 = ts.q_transform(method='welch', whiten=asd)
         qsg3 = ts.q_transform(method='welch', fftlength=.5, overlap=.25)
         self.assertArraysEqual(qsg2, qsg3)
+        ts2 = ts.crop(ts.x0.value, ts.x0.value+1)
+        ts2.q_transform()
 
         # make sure frequency too high presents warning
         with pytest.warns(UserWarning):
