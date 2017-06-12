@@ -123,7 +123,10 @@ def to_gps(t, *args, **kwargs):
                 t = datetime.datetime.combine(t, datetime.time.min)
             t = Time(t, scale='utc')
         else:
-            return to_gps(UTCToGPS(t.timetuple()))
+            gps = to_gps(UTCToGPS(t.timetuple()))
+            if hasattr(t, 'microsecond'):
+                return gps + t.microsecond * 1e-6
+            return gps
     # and then into LIGOTimeGPS
     if isinstance(t, Time):
         return time_to_gps(t)
@@ -225,7 +228,7 @@ def str_to_datetime(datestr):
     else:
         try:
             date = dateparser.parse(datestr)
-        except TypeError as e:
+        except (ValueError, TypeError) as e:
             e.args = ("Cannot parse date string %r: %s"
                       % (datestr, e.args[0]),)
             raise
