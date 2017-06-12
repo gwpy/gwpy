@@ -40,6 +40,9 @@ GWPY_VERSION = gwpy_version.get_versions()
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
+# local extensions
+from gwpy.utils.sphinx import numpydoc
+
 # extension modules
 extensions = [
     'sphinx.ext.autodoc',
@@ -141,6 +144,9 @@ plot_html_show_source_link = False
 
 # fix numpydoc autosummary
 numpydoc_show_class_members = False
+
+# auto-insert plot directive in examples
+numpydoc_use_plots = True
 
 # -- inhertiance_diagram ------------------------
 
