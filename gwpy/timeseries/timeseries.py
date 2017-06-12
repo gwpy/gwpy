@@ -1500,16 +1500,6 @@ class TimeSeries(TimeSeriesBase):
         specgram : `~gwpy.spectrogram.Spectrogram`
             output `Spectrogram` of normalised Q energy
 
-        Notes
-        -----
-        It is highly recommended to use the `outseg` keyword argument when
-        only a small window around a given GPS time is of interest. This
-        will speed up this method a little, but can greatly speed up
-        rendering the resulting `~gwpy.spectrogram.Spectrogram` using
-        `~matplotlib.axes.Axes.pcolormesh`.
-
-        If you aren't going to use `pcolormesh` in the end, don't worry.
-
         See Also
         --------
         TimeSeries.asd
@@ -1524,6 +1514,38 @@ class TimeSeries(TimeSeriesBase):
             cast all frequency rows to the same time-axis, and then
             `~scipy.interpolate.interpd` to apply the desired frequency
             resolution across the band.
+
+        Notes
+        -----
+        It is highly recommended to use the `outseg` keyword argument when
+        only a small window around a given GPS time is of interest. This
+        will speed up this method a little, but can greatly speed up
+        rendering the resulting `~gwpy.spectrogram.Spectrogram` using
+        `~matplotlib.axes.Axes.pcolormesh`.
+
+        If you aren't going to use `pcolormesh` in the end, don't worry.
+
+        Examples
+        --------
+        >>> from numpy.random import normal
+        >>> from scipy.signal import gausspulse
+        >>> from gwpy.timeseries import TimeSeries
+
+        Generate a `TimeSeries` containing Gaussian noise sampled at 4096 Hz,
+        centred on GPS time 0, with a sine-Gaussian pulse ('glitch') at
+        500 Hz:
+
+        >>> noise = TimeSeries(normal(loc=1, size=4096*4), sample_rate=4096, epoch=-2)
+        >>> glitch = TimeSeries(gausspulse(noise.times.value, fc=500) * 4, sample_rate=4096)
+        >>> data = noise + glitch
+
+        Compute and plot the Q-transform of these data:
+
+        >>> q = data.q_transform()
+        >>> plot = q.plot()
+        >>> plot.set_xlim(-.2, .2)
+        >>> plot.set_epoch(0)
+        >>> plot.show()
         """
         from scipy.interpolate import (interp2d, InterpolatedUnivariateSpline)
         from ..frequencyseries import FrequencySeries
