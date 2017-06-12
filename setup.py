@@ -109,6 +109,7 @@ except ImportError:
 setup_requires.append('pytest-runner')
 tests_require = [
     'pytest>=2.8',
+    'freezegun',
 ]
 if sys.version < '3':
     tests_require.append('mock')
