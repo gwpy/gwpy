@@ -39,8 +39,8 @@ def tconvert(gpsordate='now'):
 
     Parameters
     ----------
-    gpsordate : `float`, `LIGOTimeGPS`, `Time`, `datetime.datetime`, ...
-        input gps or date to convert
+    gpsordate : `float`, `astropy.time.Time`, `datetime.datetime`, ...
+        input gps or date to convert, many input types are supported
 
     Returns
     -------
@@ -53,6 +53,30 @@ def tconvert(gpsordate='now'):
     it will get converted from GPS format into a
     `datetime.datetime`, otherwise the input will be converted
     into `LIGOTimeGPS`.
+
+    Examples
+    --------
+    Integers and floats are automatically converted from GPS to
+    `datetime.datetime`:
+
+    >>> from gwpy.time import tconvert
+    >>> tconvert(0)
+    datetime.datetime(1980, 1, 6, 0, 0)
+    >>> tconvert(1126259462.3910)
+    datetime.datetime(2015, 9, 14, 9, 50, 45, 391000)
+
+    while strings are automatically converted to `~gwpy.time.LIGOTimeGPS`:
+
+    >>> to_gps('Sep 14 2015 09:50:45.391')
+    LIGOTimeGPS(1126259462, 391000000)
+
+    Additionally, a few special-case words as supported, which all return
+    `~gwpy.time.LIGOTimeGPS`:
+
+    >>> tconvert('now')
+    >>> tconvert('today')
+    >>> tconvert('tomorrow')
+    >>> tconvert('yesterday')
     """
     # convert from GPS into datetime
     try:
@@ -95,6 +119,21 @@ def to_gps(t, *args, **kwargs):
     ValueError
         if the input cannot be cast as a `~astropy.time.Time` or
         `LIGOTimeGPS`.
+
+    Examples
+    --------
+    >>> to_gps('Jan 1 2017')
+    LIGOTimeGPS(1167264018, 0)
+    >>> to_gps('Sep 14 2015 09:50:45.391')
+    LIGOTimeGPS(1126259462, 391000000)
+
+    >>> import datetime
+    >>> to_gps(datetime.datetime(2017, 1, 1))
+    LIGOTimeGPS(1167264018, 0)
+
+    >>> from astropy.time import Time
+    >>> to_gps(Time(57754, format='mjd'))
+    LIGOTimeGPS(1167264018, 0)
     """
     # allow Time conversion to override type-checking
     if args or kwargs:
@@ -138,17 +177,24 @@ def to_gps(t, *args, **kwargs):
 
 
 def from_gps(gps):
-    """Convert a GPS time into a `datetime.datetime`.
+    """Convert a GPS time into a `datetime.datetime`
 
     Parameters
     ----------
-    gps : `LIGOTimeGPS`
+    gps : `LIGOTimeGPS`, `int`, `float`
         GPS time to convert
 
     Returns
     -------
     datetime : `datetime.datetime`
         ISO-format datetime equivalent of input GPS time
+
+    Examples
+    --------
+    >>> from_gps(1167264018)
+    datetime.datetime(2017, 1, 1, 0, 0)
+    >>> from_gps(1126259462.3910)
+    datetime.datetime(2015, 9, 14, 9, 50, 45, 391000)
     """
     try:
         gps = LIGOTimeGPS(gps)
