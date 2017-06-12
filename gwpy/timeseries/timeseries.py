@@ -99,14 +99,8 @@ class TimeSeries(TimeSeriesBase):
     subok : `bool`, optional, default: `True`
         allow passing of sub-classes by the array generator
 
-    Examples
-    --------
-    Any regular array, i.e. any iterable collection of data, can be
-    easily converted into a `TimeSeries`::
-
-        >>> data = numpy.asarray([1,2,3])
-        >>> series = TimeSeries(data)
-
+    Notes
+    -----
     The necessary metadata to reconstruct timing information are recorded
     in the `epoch` and `sample_rate` attributes. This time-stamps can be
     returned via the :attr:`~TimeSeries.times` property.
@@ -115,15 +109,20 @@ class TimeSeries(TimeSeriesBase):
     :class:`~gwpy.timeseries.statevector.StateTimeSeries` - a boolean array
     with metadata copied from the starting `TimeSeries`.
 
-    .. rubric:: Key Methods
+    Examples
+    --------
+    >>> from gwpy.timeseries import TimeSeries
 
-    .. autosummary::
+    To create an array of random numbers, sampled at 100 Hz, in units of
+    'metres':
 
-        ~TimeSeries.get
-        ~TimeSeries.read
-        ~TimeSeries.write
-        ~TimeSeries.plot
+    >>> from numpy import random
+    >>> series = TimeSeries(random.random(1000), sample_rate=100, unit='m')
 
+    which can then be simply visualised via
+
+    >>> plot = series.plot()
+    >>> plot.show()
     """
     @classmethod
     def read(cls, source, *args, **kwargs):
