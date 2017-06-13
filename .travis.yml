@@ -72,7 +72,7 @@ before_install:
   # install full dependency list if not minimal build
   - >
     if [ "${MINIMAL}" != true ]; then
-        travis_wait source .travis/build-src-dependencies.sh;
+        source .travis/build-src-dependencies.sh;
         pip install ${PIP_FLAGS} -r requirements-dev.txt;
     fi
 
