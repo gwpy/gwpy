@@ -230,10 +230,13 @@ def time_to_gps(t):
     t = t.utc
     dt = t.datetime
     gps = t.gps
+    # if datetime format has zero microseconds, force int(gps) to remove
+    # floating point precision errors from gps
     if ((isinstance(dt, datetime.datetime) and not dt.microsecond) or
             type(dt) is datetime.date):
-        gps = int(gps)
-    return LIGOTimeGPS(gps)
+        return LIGOTimeGPS(int(gps))
+    # use repr() to remove hidden floating point precision problems
+    return LIGOTimeGPS(repr(gps))
 
 
 def str_to_datetime(datestr):
