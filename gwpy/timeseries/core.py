@@ -797,8 +797,8 @@ class TimeSeriesBaseDict(OrderedDict):
 
         return fetch(channels, istart, iend, host=host,
                      port=port, verbose=verbose, type=type,
-                     dtype=dtype, pad=pad,
-                     allow_tape=allow_tape).crop(start, end)
+                     dtype=dtype, pad=pad, allow_tape=allow_tape,
+                     series_class=cls.EntryClass).crop(start, end)
 
     @classmethod
     def find(cls, channels, start, end, frametype=None,
