@@ -28,8 +28,6 @@ from compat import (unittest, mock)
 from astropy.time import Time
 from astropy.units import (UnitConversionError, Quantity)
 
-from glue.lal import LIGOTimeGPS as GlueGPS
-
 from gwpy import time
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -99,8 +97,13 @@ class TimeTests(unittest.TestCase):
         # from GPS using LAL LIGOTimeGPS
         self.assertEqual(time.tconvert(time.LIGOTimeGPS(1126259462.391)),
                          datetime.datetime(2015, 9, 14, 9, 50, 45, 391000))
-        self.assertEqual(time.tconvert(GlueGPS(1126259462.391)),
-                         datetime.datetime(2015, 9, 14, 9, 50, 45, 391000))
+        try:
+            from glue.lal import LIGOTimeGPS as GlueGPS
+        except ImportError:
+            pass
+        else:
+            self.assertEqual(time.tconvert(GlueGPS(1126259462.391)),
+                             datetime.datetime(2015, 9, 14, 9, 50, 45, 391000))
 
         # to GPS
         self.assertEqual(
