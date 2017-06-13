@@ -750,6 +750,18 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertTupleEqual(qspecgram.shape, (32000, 2560))
         self.assertAlmostEqual(qspecgram.q, 11.31370849898476)
         self.assertAlmostEqual(qspecgram.value.max(), 37.035843858490509)
+
+        # test whitening args
+        asd = ts.asd(2, 1)
+        qsg2 = ts.q_transform(method='welch', whiten=asd)
+        self.assertArraysEqual(qspecgram, qsg2)
+        asd = ts.asd(.5, .25)
+        qsg2 = ts.q_transform(method='welch', whiten=asd)
+        qsg3 = ts.q_transform(method='welch', fftlength=.5, overlap=.25)
+        self.assertArraysEqual(qsg2, qsg3)
+        ts2 = ts.crop(ts.x0.value, ts.x0.value+1)
+        ts2.q_transform()
+
         # make sure frequency too high presents warning
         with pytest.warns(UserWarning):
             qspecgram = ts.q_transform(method='welch', frange=(0, 10000))
