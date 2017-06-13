@@ -21,14 +21,14 @@
 
 import datetime
 
-from compat import unittest
+from freezegun import freeze_time
 
+from compat import (unittest, mock)
+
+from astropy.time import Time
 from astropy.units import (UnitConversionError, Quantity)
 
 from gwpy import time
-
-DATE = datetime.datetime(2000, 1, 1, 0, 0)
-GPS = 630720013
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -37,38 +37,79 @@ class TimeTests(unittest.TestCase):
     """`TestCase` for the time module
     """
     def test_to_gps(self):
-        # test datetime conversion
-        self.assertEqual(time.to_gps(DATE), GPS)
-        # test Time
-        self.assertEqual(
-            time.to_gps(DATE, format='datetime', scale='utc'), GPS)
-        # test tuple
-        self.assertEqual(time.to_gps(tuple(DATE.timetuple())[:6]), GPS)
-        # test Quantity
-        self.assertEqual(time.to_gps(Quantity(GPS, 's')), GPS)
-        # test errors
+        # str conversion
+        t = time.to_gps('Jan 1 2017')
+        self.assertIsInstance(t, time.LIGOTimeGPS)
+        self.assertEqual(t, 1167264018)
+        self.assertEqual(time.to_gps('Sep 14 2015 09:50:45.391'),
+                         time.LIGOTimeGPS(1126259462, 391000000))
+
+        # datetime conversion
+        self.assertEqual(time.to_gps(datetime.datetime(2017, 1, 1)), 1167264018)
+
+        # astropy.time.Time conversion
+        self.assertEqual(time.to_gps(Time(57754, format='mjd')), 1167264018)
+
+        # tuple
+        self.assertEqual(time.to_gps((2017, 1, 1)), 1167264018)
+
+        # Quantity
+        self.assertEqual(time.to_gps(Quantity(1167264018, 's')), 1167264018)
+
+        # keywords
+        with freeze_time('2015-09-14 09:50:45.391'):
+            self.assertEqual(time.to_gps('now'), 1126259462)
+            self.assertEqual(time.to_gps('today'), 1126224017)
+            self.assertEqual(time.to_gps('tomorrow'), 1126310417)
+            self.assertEqual(time.to_gps('yesterday'), 1126137617)
+
+        # errors
         self.assertRaises(UnitConversionError, time.to_gps, Quantity(1, 'm'))
-        self.assertRaises(ValueError, time.to_gps, 'random string')
+        with self.assertRaises(ValueError) as exc:
+            time.to_gps('random string')
+        self.assertIn('Cannot parse date string \'random string\': ',
+                      str(exc.exception))
 
     def test_from_gps(self):
-        date = time.from_gps(GPS)
-        self.assertEqual(date, DATE)
+        # basic
+        d = time.from_gps(1167264018)
+        self.assertIsInstance(d, datetime.datetime)
+        self.assertEqual(d, datetime.datetime(2017, 1, 1))
+
+        # str
+        self.assertEqual(time.from_gps('1167264018'),
+                         datetime.datetime(2017, 1, 1))
+
+        # float
+        self.assertEqual(time.from_gps(1126259462.391),
+                         datetime.datetime(2015, 9, 14, 9, 50, 45, 391000))
+        self.assertEqual(time.from_gps('1.13e9'),
+                         datetime.datetime(2015, 10, 27, 16, 53, 3))
+
+        # errors
+        self.assertRaises((RuntimeError, ValueError), time.from_gps, 'test')
 
     def test_tconvert(self):
         # from GPS
-        date = time.tconvert(GPS)
-        self.assertEqual(date, DATE)
+        self.assertEqual(time.tconvert(1126259462.391),
+                         datetime.datetime(2015, 9, 14, 9, 50, 45, 391000))
+
         # from GPS using LAL LIGOTimeGPS
+        self.assertEqual(time.tconvert(time.LIGOTimeGPS(1126259462.391)),
+                         datetime.datetime(2015, 9, 14, 9, 50, 45, 391000))
         try:
-            from lal import LIGOTimeGPS
+            from glue.lal import LIGOTimeGPS as GlueGPS
         except ImportError:
             pass
         else:
-            d = time.tconvert(LIGOTimeGPS(GPS))
-            self.assertEqual(d, DATE)
+            self.assertEqual(time.tconvert(GlueGPS(1126259462.391)),
+                             datetime.datetime(2015, 9, 14, 9, 50, 45, 391000))
+
         # to GPS
-        gps = time.tconvert(date)
-        self.assertEqual(gps, GPS)
+        self.assertEqual(
+            time.tconvert(datetime.datetime(2015, 9, 14, 9, 50, 45, 391000)),
+            time.LIGOTimeGPS(1126259462, 391000000))
+
         # special cases
         now = time.tconvert()
         now2 = time.tconvert('now')
