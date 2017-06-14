@@ -391,8 +391,9 @@ class TimeSeriesTestMixin(object):
              mock.patch('nds2.buffer', nds_buffer):
             mock_connection.return_value = nds_connection
             # use verbose=True to hit more lines
-            ts = TimeSeries.fetch('X1:TEST', 1000000000, 1000000001,
+            ts = self.TEST_CLASS.fetch('X1:TEST', 1000000000, 1000000001,
                                   verbose=True)
+        self.assertIsInstance(ts, self.TEST_CLASS)
         nptest.assert_array_equal(ts.value, self.data)
         self.assertEqual(ts.sample_rate, self.data.shape[0] * units.Hz)
         self.assertTupleEqual(ts.span, (1000000000, 1000000001))
