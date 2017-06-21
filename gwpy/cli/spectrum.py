@@ -21,7 +21,10 @@
 
 """ Spectrum plots
 """
+
 from .cliproduct import CliProduct
+
+__author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 
 class Spectrum(CliProduct):

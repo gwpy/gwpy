@@ -41,6 +41,8 @@ from argparse import ArgumentError
 
 from ..timeseries import TimeSeries
 
+__author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
+
 
 class CliProduct(object):
     """Base class for all cli plot products"""

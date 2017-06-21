@@ -21,7 +21,10 @@
 
 """ Time Series plots
 """
+
 from .cliproduct import CliProduct
+
+__author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 
 class TimeSeries(CliProduct):

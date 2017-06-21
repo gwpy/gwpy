@@ -26,7 +26,7 @@ from numpy import percentile
 
 from .cliproduct import CliProduct
 
-__author__ = 'Joseph Areeda'
+__author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 
 class Coherencegram(CliProduct):

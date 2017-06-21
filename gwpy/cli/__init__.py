@@ -19,4 +19,4 @@
 """Command-line utils for GWpy
 """
 
-__author__ = 'Joseph Areeda'
+__author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'

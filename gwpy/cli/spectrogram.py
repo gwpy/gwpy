@@ -21,8 +21,10 @@
 
 """ Coherence plots
 """
+
 from .cliproduct import CliProduct
 
+__author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 class Spectrogram(CliProduct):
     """Derived class to calculate Spectrograms"""
