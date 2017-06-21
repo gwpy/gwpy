@@ -47,7 +47,6 @@ class Coherence(CliProduct):
         self.arg_ax_liny(parser)
         self.arg_plot(parser)
         self.xaxis_is_freq = True
-        return
 
     def get_ylabel(self, args):
         """Text for y-axis label
@@ -195,5 +194,3 @@ class Coherence(CliProduct):
         self.ymax = mymax
         self.fmin = max(myfmin.value, 1/self.secpfft)
         self.fmax = min(myfmax.value, maxfs.value/2)
-
-        return

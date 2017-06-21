@@ -45,7 +45,6 @@ class Spectrogram(CliProduct):
         self.arg_ax_intlog(parser)
         self.arg_imag(parser)
         self.arg_plot(parser)
-        return
 
     def get_ylabel(self, args):
         """Default text for y-axis label
@@ -164,4 +163,3 @@ class Spectrogram(CliProduct):
         # pass the image limits back to the annotater
         self.imin = imin
         self.imax = imax
-        return

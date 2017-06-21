@@ -48,7 +48,6 @@ class Coherencegram(CliProduct):
         self.arg_ax_intlin(parser)
         self.arg_imag(parser)
         self.arg_plot(parser)
-        return
 
     def get_max_datasets(self):
         """Coherencegram only handles 1 set of 2 at a time
@@ -161,4 +160,3 @@ class Coherencegram(CliProduct):
         # pass the scaling to the annotater
         self.imin = imin
         self.imax = imax
-        return

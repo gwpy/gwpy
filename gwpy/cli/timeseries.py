@@ -41,7 +41,6 @@ class TimeSeries(CliProduct):
         self.arg_ax_linx(parser)
         self.arg_ax_liny(parser)
         self.arg_plot(parser)
-        return
 
     def get_ylabel(self, args):
         """Text for y-axis label,  check if channel defines it
@@ -130,4 +129,3 @@ class TimeSeries(CliProduct):
             self.ymin = mid - yrange / (2 * self.yscale_factor)
             self.log(2, ('Scaling y-limits, new: %f, %f)' %
                          (self.ymin, self.ymax)))
-        return

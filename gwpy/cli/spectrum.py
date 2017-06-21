@@ -43,7 +43,6 @@ class Spectrum(CliProduct):
         self.arg_ax_logy(parser)
         self.arg_plot(parser)
         self.xaxis_is_freq = True
-        return
 
     def get_ylabel(self, args):
         """Text for y-axis label
@@ -150,4 +149,3 @@ class Spectrum(CliProduct):
 
             self.ymin = mymin
             self.ymax = mymax
-        return

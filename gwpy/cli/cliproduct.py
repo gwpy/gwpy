@@ -192,14 +192,11 @@ class CliProduct(object):
                             help='frequency for low pass filter, '
                                  'default no filter')
 
-        return
-
     def arg_chan1(self, parser):
         # list of channel names when only 1 is required
         parser.add_argument('--chan', nargs='+', action='append',
                             required=True, help='One or more channel names.')
         self.arg_chan(parser)
-        return
 
     def arg_chan2(self, parser):
         """list of channel names when at least 2 are required
@@ -214,8 +211,6 @@ class CliProduct(object):
 
         self.arg_chan(parser)
 
-        return
-
     def arg_freq(self, parser):
         """Parameters for FFT based plots, with Spectral defaults
         """
@@ -225,7 +220,6 @@ class CliProduct(object):
                                  'for each calculation, default = 1.0')
         parser.add_argument('--overlap', default='0.5',
                             help='Overlap as fraction [0-1), default=0.5')
-        return
 
     def arg_freq2(self, parser):
         """Parameters for FFT based plots, with Coherencegram defaults
@@ -236,7 +230,6 @@ class CliProduct(object):
                                  'for each calculation, default=0.5')
         parser.add_argument('--overlap', default='0.9',
                             help='Overlap as fraction [0-1), default=0.9')
-        return
 
     def arg_plot(self, parser):
         """Add arguments common to all plots
@@ -270,15 +263,12 @@ class CliProduct(object):
                  'http://matplotlib.org/users/style_sheets.html#style-sheets '
                  'for details of how to write one')
 
-        return
-
     def arg_ax_x(self, parser):
         """X-axis is called X. Do not call this
         one call arg_ax_linx or arg_ax_logx
         """
         parser.add_argument('--xmin', help='min value for X-axis')
         parser.add_argument('--xmax', help='max value for X-axis')
-        return
 
     def arg_ax_linx(self, parser):
         """X-axis is called X and defaults to linear
@@ -290,7 +280,6 @@ class CliProduct(object):
                             help='center X axis on this GPS time. '
                                  'Incompatible with logx')
         self.arg_ax_x(parser)
-        return
 
     def arg_ax_logx(self, parser):
         """X-axis is called X and defaults to logarithmic
@@ -299,7 +288,6 @@ class CliProduct(object):
         parser.add_argument('--nologx', action='store_true',
                             help='make X-axis linear, default=logarithmic')
         self.arg_ax_x(parser)
-        return
 
     def arg_ax_lf(self, parser):
         """One of this  axis is frequency and logarthmic
@@ -309,7 +297,6 @@ class CliProduct(object):
                                  'default=logarithmic')
         parser.add_argument('--fmin', help='min value for frequency axis')
         parser.add_argument('--fmax', help='max value for frequency axis')
-        return
 
     def arg_ax_int(self, parser):
         """Images have an intensity axis
@@ -318,7 +305,6 @@ class CliProduct(object):
                             help='min pixel value in resulting image')
         parser.add_argument('--imax',
                             help='max pixek value in resulting image')
-        return
 
     def arg_ax_intlin(self, parser):
         """Intensity (colors) default to linear
@@ -328,7 +314,6 @@ class CliProduct(object):
                             help='set intensity scale of image '
                                  'to logarithmic, default=linear')
         self.arg_ax_int(parser)
-        return
 
     def arg_ax_intlog(self, parser):
         """Intensity (colors) default to log
@@ -338,21 +323,18 @@ class CliProduct(object):
                             help='set intensity scale of image to linear, '
                                  'default=logarithmic')
         self.arg_ax_int(parser)
-        return
 
     def arg_ax_xlf(self, parser):
         """X-axis is called F and defaults to log
         """
         self.xaxis_type = 'logf'
         self.arg_ax_lf(parser)
-        return
 
     def arg_ax_ylf(self, parser):
         """Y-axis is called Frequency and defaults to log
         """
         self.yaxis_type = 'logf'
         self.arg_ax_lf(parser)
-        return
 
     def arg_ax_y(self, parser):
         """Y-axis limits.  Do not call this one
@@ -362,7 +344,6 @@ class CliProduct(object):
                                            ' defaults to min of data')
         parser.add_argument('--ymax', help='max value for y-axis '
                                            'default to max of data')
-        return
 
     def arg_ax_liny(self, parser):
         """Y-axis is called Y and defaults to linear
@@ -371,7 +352,6 @@ class CliProduct(object):
         parser.add_argument('--logy', action='store_true',
                             help='make Y-axis logarithmic, default=linear')
         self.arg_ax_y(parser)
-        return
 
     def arg_ax_logy(self, parser):
         """Y-axis is called Y and defaults to log
@@ -380,7 +360,6 @@ class CliProduct(object):
         parser.add_argument('--nology', action='store_true',
                             help='make Y-axis linear, default=logarthmic')
         self.arg_ax_y(parser)
-        return
 
     def arg_imag(self, parser):
         """Add arguments for image based plots like spectrograms
@@ -393,7 +372,6 @@ class CliProduct(object):
         parser.add_argument('--norm', action='store_true',
                             help='Display the ratio of each fequency '
                                  'bin to the mean of that frequency')
-        return
 
     # -- data transfer --------------------------
 
@@ -498,7 +476,6 @@ class CliProduct(object):
             else:
                 self.log(0, 'Not enough data for requested plot.')
                 sys.exit(2)
-        return
 
     # -- plotting -------------------------------
 
@@ -529,7 +506,6 @@ class CliProduct(object):
         self.xinch = self.width / self.dpi
         self.yinch = self.height / self.dpi
         rcParams['figure.figsize'] = (self.xinch, self.yinch)
-        return
 
     def setup_xaxis(self, arg_list):
         """Handle scale and limits of X-axis by type
@@ -616,7 +592,6 @@ class CliProduct(object):
         self.ax.set_xlim(xmin, xmax)
         self.log(3, ('X-axis limits are [ %f, %f], scale: %s' %
                      (xmin, xmax, scale)))
-        return
 
     def setup_yaxis(self, arg_list):
         "Set scale and limits of y-axis by type"
@@ -657,7 +632,6 @@ class CliProduct(object):
         self.ax.set_ylim(ymin, ymax)
         self.log(3, ('Y-axis limits are [ %f, %f], scale: %s' %
                      (ymin, ymax, scale)))
-        return
 
     def setup_iaxis(self, arg_list):
         """set the limits and scale of the colorbar (intensity axis)
@@ -802,8 +776,6 @@ class CliProduct(object):
                           figsize=[self.xinch, self.yinch],
                           dpi=self.dpi, bbox_inches='tight')
         self.log(3, ('wrote %s' % arg_list.out))
-
-        return
 
     # -- the one that does all the work ---------
 
