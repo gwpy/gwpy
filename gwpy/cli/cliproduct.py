@@ -87,7 +87,8 @@ class CliProduct(object):
         self.plot = 0           # plot object
         self.ax = 0             # current axis object from plot
 
-# ------Abstract metods------------
+    # -- abstract metods ------------------------
+
     @abc.abstractmethod
     def get_action(self):
         """Return the string used as "action" on command line."""
@@ -113,7 +114,8 @@ class CliProduct(object):
         """Start of default super title, first channel is appended to it"""
         return
 
-# --------Defaults for overridable methods if product differs from default
+    # -- defaults -------------------------------
+
     def get_min_datasets(self):
         """Override if plot requires more than 1 dataset.
         eg: coherence requires 2"""
@@ -145,15 +147,15 @@ class CliProduct(object):
         """Override if default lacks critical info"""
         return self.get_title() + self.timeseries[0].channel.name
 
-# ------Helper functions
+    # -- utilities ------------------------------
+
     def log(self, level, msg):
         """print log message if verbosity is set high enough"""
         if self.verbose >= level:
             print(msg)
         return
 
-
-# ------Argparse methods
+    # -- command-line parsing -------------------
 
     def arg_chan(self, parser):
         """Allow user to specify list of channel names,
@@ -163,17 +165,17 @@ class CliProduct(object):
         parser.add_argument('--duration', default=10,
                             help='Duration (seconds) [10]')
         parser.add_argument('-c', '--framecache',
-                            help='use .gwf files in cache not NDS2,' +
-                                 ' default use NDS2')
+                            help='use .gwf files in cache not NDS2, '
+                                 'default use NDS2')
         parser.add_argument('-n', '--nds2-server', metavar='HOSTNAME',
                             help='name of nds2 server to use, default is to '
                                  'try all of them')
         parser.add_argument('--highpass',
-                            help='frequency for high pass filter,' +
-                                 ' default no filter')
+                            help='frequency for high pass filter, '
+                                 'default no filter')
         parser.add_argument('--lowpass',
-                            help='frequency for low pass filter,' +
-                                 ' default no filter')
+                            help='frequency for low pass filter, '
+                                 'default no filter')
 
         return
 
@@ -188,10 +190,10 @@ class CliProduct(object):
         """list of channel names when at least 2 are required"""
         parser.add_argument('--chan', nargs='+', action='append',
                             required=True,
-                            help='Two or more channels or times, first' +
-                                 ' one is compared to all the others')
+                            help='Two or more channels or times, first '
+                                 'one is compared to all the others')
         parser.add_argument('--ref',
-                            help='Reference channel against which ' +
+                            help='Reference channel against which '
                                  'others will be compared')
 
         self.arg_chan(parser)
@@ -202,7 +204,7 @@ class CliProduct(object):
         """Parameters for FFT based plots, with Spectral defaults"""
         self.is_freq_plot = True
         parser.add_argument('--secpfft', default='1.0',
-                            help='length of fft in seconds ' +
+                            help='length of fft in seconds '
                                  'for each calculation, default = 1.0')
         parser.add_argument('--overlap', default='0.5',
                             help='Overlap as fraction [0-1), default=0.5')
@@ -212,7 +214,7 @@ class CliProduct(object):
         """Parameters for FFT based plots, with Coherencegram defaults"""
         self.is_freq_plot = True
         parser.add_argument('--secpfft', default='0.5',
-                            help='length of fft in seconds ' +
+                            help='length of fft in seconds '
                                  'for each calculation, default=0.5')
         parser.add_argument('--overlap', default='0.9',
                             help='Overlap as fraction [0-1), default=0.9')
@@ -221,10 +223,10 @@ class CliProduct(object):
     def arg_plot(self, parser):
         """Add arguments common to all plots"""
         parser.add_argument('-g', '--geometry', default='1200x600',
-                            help='size of resulting image WxH, ' +
+                            help='size of resulting image WxH, '
                                  'default: %(default)s')
         parser.add_argument('--interactive', action='store_true',
-                            help='when running from ipython ' +
+                            help='when running from ipython '
                                  'allows experimentation')
         parser.add_argument('--title', action='append',
                             help='One or more title lines')
@@ -233,7 +235,7 @@ class CliProduct(object):
         parser.add_argument('--xlabel', help='x axis text')
         parser.add_argument('--ylabel', help='y axis text')
         parser.add_argument('--out',
-                            help='output filename, type=ext (png, pdf, ' +
+                            help='output filename, type=ext (png, pdf, '
                                  'jpg), default=gwpy.png')
         # legends match input files in position are displayed if specified.
         parser.add_argument('--legend', nargs='*', action='append',
@@ -244,10 +246,10 @@ class CliProduct(object):
                             help='do not display grid lines')
         # allow custom styling with a style file
         parser.add_argument(
-           '--style', metavar='FILE',
-           help='path to custom matplotlib style sheet, see '
-                'http://matplotlib.org/users/style_sheets.html#style-sheets '
-                'for details of how to write one')
+            '--style', metavar='FILE',
+            help='path to custom matplotlib style sheet, see '
+                 'http://matplotlib.org/users/style_sheets.html#style-sheets '
+                 'for details of how to write one')
 
         return
 
@@ -264,7 +266,7 @@ class CliProduct(object):
         parser.add_argument('--logx', action='store_true',
                             help='make X-axis logarithmic, default=linear')
         parser.add_argument('--epoch',
-                            help='center X axis on this GPS time. ' +
+                            help='center X axis on this GPS time. '
                                  'Incompatible with logx')
         self.arg_ax_x(parser)
         return
@@ -280,7 +282,7 @@ class CliProduct(object):
     def arg_ax_lf(self, parser):
         """One of this  axis is frequency and logarthmic"""
         parser.add_argument('--nologf', action='store_true',
-                            help='make frequency axis linear, ' +
+                            help='make frequency axis linear, '
                                  'default=logarithmic')
         parser.add_argument('--fmin', help='min value for frequency axis')
         parser.add_argument('--fmax', help='max value for frequency axis')
@@ -298,7 +300,7 @@ class CliProduct(object):
         """Intensity (colors) default to linear"""
         self.iaxis = 'lini'
         parser.add_argument('--logcolors', action='store_true',
-                            help='set intensity scale of image ' +
+                            help='set intensity scale of image '
                                  'to logarithmic, default=linear')
         self.arg_ax_int(parser)
         return
@@ -327,9 +329,9 @@ class CliProduct(object):
     def arg_ax_y(self, parser):
         """Y-axis limits.  Do not call this one
         use arg_ax_liny or arg_ax_logy"""
-        parser.add_argument('--ymin', help='fix min value for yaxis' +
+        parser.add_argument('--ymin', help='fix min value for yaxis'
                                            ' defaults to min of data')
-        parser.add_argument('--ymax', help='max value for y-axis ' +
+        parser.add_argument('--ymax', help='max value for y-axis '
                                            'default to max of data')
         return
 
@@ -352,16 +354,16 @@ class CliProduct(object):
     def arg_imag(self, parser):
         """Add arguments for image based plots like spectrograms"""
         parser.add_argument('--nopct', action='store_true',
-                            help='up and lo are pixel values, ' +
+                            help='up and lo are pixel values, '
                                  'default=percentile if not normalized')
         parser.add_argument('--nocolorbar', action='store_true',
                             help='hide the color bar')
         parser.add_argument('--norm', action='store_true',
-                            help='Display the ratio of each fequency ' +
+                            help='Display the ratio of each fequency '
                                  'bin to the mean of that frequency')
         return
 
-# -------Data transfer methods
+    # -- data transfer --------------------------
 
     def getTimeSeries(self, arg_list):
         """Verify and interpret arguments to get all
@@ -465,7 +467,7 @@ class CliProduct(object):
                 sys.exit(2)
         return
 
-# ---- Plotting methods
+    # -- plotting -------------------------------
 
     def show_plot_info(self):
         self.log(3, ('X-scale: %s, Y-scale: %s' % (self.plot.get_xscale(),
@@ -767,7 +769,8 @@ class CliProduct(object):
 
         return
 
-# -----The one that does all the work
+    # -- the one that does all the work ---------
+
     def makePlot(self, args):
         """Make the plot, all actions are generally the same at this level"""
         if args.silent:
