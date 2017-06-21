@@ -45,7 +45,8 @@ __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 
 class CliProduct(object):
-    """Base class for all cli plot products"""
+    """Base class for all cli plot products
+    """
 
     __metaclass__ = abc.ABCMeta
 
@@ -91,66 +92,79 @@ class CliProduct(object):
 
     @abc.abstractmethod
     def get_action(self):
-        """Return the string used as "action" on command line."""
+        """Return the string used as "action" on command line.
+        """
         return
 
     @abc.abstractmethod
     def init_cli(self, parser):
-        """Set up the argument list for this product"""
+        """Set up the argument list for this product
+        """
         return
 
     @abc.abstractmethod
     def gen_plot(self, args):
-        """Generate the plot from time series and arguments"""
+        """Generate the plot from time series and arguments
+        """
         return
 
     @abc.abstractmethod
     def get_ylabel(self, args):
-        """Text for y-axis label"""
+        """Text for y-axis label
+        """
         return
 
     @abc.abstractmethod
     def get_title(self):
-        """Start of default super title, first channel is appended to it"""
+        """Start of default super title, first channel is appended to it
+        """
         return
 
     # -- defaults -------------------------------
 
     def get_min_datasets(self):
         """Override if plot requires more than 1 dataset.
-        eg: coherence requires 2"""
+        eg: coherence requires 2
+        """
         return 1
 
     def get_max_datasets(self):
         """Override if plot has a maximum number of datasets.
-        eg: spectrogram only handles 1"""
+        eg: spectrogram only handles 1
+        """
         return 16  # arbitrary max
 
     def is_image(self):
-        """Override if plot is image type, eg: spectrogram"""
+        """Override if plot is image type, eg: spectrogram
+        """
         return False
 
     def freq_is_y(self):
-        """Override if frequency is on y-axis like spectrogram"""
+        """Override if frequency is on y-axis like spectrogram
+        """
         return False
 
     def get_xlabel(self):
         """Override if you have a better label.
-        default is to usw gwpy's default label"""
+        default is to usw gwpy's default label
+        """
         return ''
 
     def get_color_label(self):
-        """All products with a color bar should override this"""
+        """All products with a color bar should override this
+        """
         return 'action does not label color bar (it should)'
 
     def get_sup_title(self):
-        """Override if default lacks critical info"""
+        """Override if default lacks critical info
+        """
         return self.get_title() + self.timeseries[0].channel.name
 
     # -- utilities ------------------------------
 
     def log(self, level, msg):
-        """print log message if verbosity is set high enough"""
+        """print log message if verbosity is set high enough
+        """
         if self.verbose >= level:
             print(msg)
         return
@@ -159,7 +173,8 @@ class CliProduct(object):
 
     def arg_chan(self, parser):
         """Allow user to specify list of channel names,
-        list of start gps times and single duration"""
+        list of start gps times and single duration
+        """
         parser.add_argument('--start', nargs='+',
                             help='Starting GPS times(required)')
         parser.add_argument('--duration', default=10,
@@ -187,7 +202,8 @@ class CliProduct(object):
         return
 
     def arg_chan2(self, parser):
-        """list of channel names when at least 2 are required"""
+        """list of channel names when at least 2 are required
+        """
         parser.add_argument('--chan', nargs='+', action='append',
                             required=True,
                             help='Two or more channels or times, first '
@@ -201,7 +217,8 @@ class CliProduct(object):
         return
 
     def arg_freq(self, parser):
-        """Parameters for FFT based plots, with Spectral defaults"""
+        """Parameters for FFT based plots, with Spectral defaults
+        """
         self.is_freq_plot = True
         parser.add_argument('--secpfft', default='1.0',
                             help='length of fft in seconds '
@@ -211,7 +228,8 @@ class CliProduct(object):
         return
 
     def arg_freq2(self, parser):
-        """Parameters for FFT based plots, with Coherencegram defaults"""
+        """Parameters for FFT based plots, with Coherencegram defaults
+        """
         self.is_freq_plot = True
         parser.add_argument('--secpfft', default='0.5',
                             help='length of fft in seconds '
@@ -221,7 +239,8 @@ class CliProduct(object):
         return
 
     def arg_plot(self, parser):
-        """Add arguments common to all plots"""
+        """Add arguments common to all plots
+        """
         parser.add_argument('-g', '--geometry', default='1200x600',
                             help='size of resulting image WxH, '
                                  'default: %(default)s')
@@ -255,13 +274,15 @@ class CliProduct(object):
 
     def arg_ax_x(self, parser):
         """X-axis is called X. Do not call this
-        one call arg_ax_linx or arg_ax_logx"""
+        one call arg_ax_linx or arg_ax_logx
+        """
         parser.add_argument('--xmin', help='min value for X-axis')
         parser.add_argument('--xmax', help='max value for X-axis')
         return
 
     def arg_ax_linx(self, parser):
-        """X-axis is called X and defaults to linear"""
+        """X-axis is called X and defaults to linear
+        """
         self.xaxis_type = 'linx'
         parser.add_argument('--logx', action='store_true',
                             help='make X-axis logarithmic, default=linear')
@@ -272,7 +293,8 @@ class CliProduct(object):
         return
 
     def arg_ax_logx(self, parser):
-        """X-axis is called X and defaults to logarithmic"""
+        """X-axis is called X and defaults to logarithmic
+        """
         self.xaxis_type = 'logx'
         parser.add_argument('--nologx', action='store_true',
                             help='make X-axis linear, default=logarithmic')
@@ -280,7 +302,8 @@ class CliProduct(object):
         return
 
     def arg_ax_lf(self, parser):
-        """One of this  axis is frequency and logarthmic"""
+        """One of this  axis is frequency and logarthmic
+        """
         parser.add_argument('--nologf', action='store_true',
                             help='make frequency axis linear, '
                                  'default=logarithmic')
@@ -289,7 +312,8 @@ class CliProduct(object):
         return
 
     def arg_ax_int(self, parser):
-        """Images have an intensity axis"""
+        """Images have an intensity axis
+        """
         parser.add_argument('--imin',
                             help='min pixel value in resulting image')
         parser.add_argument('--imax',
@@ -297,7 +321,8 @@ class CliProduct(object):
         return
 
     def arg_ax_intlin(self, parser):
-        """Intensity (colors) default to linear"""
+        """Intensity (colors) default to linear
+        """
         self.iaxis = 'lini'
         parser.add_argument('--logcolors', action='store_true',
                             help='set intensity scale of image '
@@ -306,7 +331,8 @@ class CliProduct(object):
         return
 
     def arg_ax_intlog(self, parser):
-        """Intensity (colors) default to log"""
+        """Intensity (colors) default to log
+        """
         self.iaxis = "logi"
         parser.add_argument('--lincolors', action='store_true',
                             help='set intensity scale of image to linear, '
@@ -315,20 +341,23 @@ class CliProduct(object):
         return
 
     def arg_ax_xlf(self, parser):
-        """X-axis is called F and defaults to log"""
+        """X-axis is called F and defaults to log
+        """
         self.xaxis_type = 'logf'
         self.arg_ax_lf(parser)
         return
 
     def arg_ax_ylf(self, parser):
-        """Y-axis is called Frequency and defaults to log"""
+        """Y-axis is called Frequency and defaults to log
+        """
         self.yaxis_type = 'logf'
         self.arg_ax_lf(parser)
         return
 
     def arg_ax_y(self, parser):
         """Y-axis limits.  Do not call this one
-        use arg_ax_liny or arg_ax_logy"""
+        use arg_ax_liny or arg_ax_logy
+        """
         parser.add_argument('--ymin', help='fix min value for yaxis'
                                            ' defaults to min of data')
         parser.add_argument('--ymax', help='max value for y-axis '
@@ -336,7 +365,8 @@ class CliProduct(object):
         return
 
     def arg_ax_liny(self, parser):
-        """Y-axis is called Y and defaults to linear"""
+        """Y-axis is called Y and defaults to linear
+        """
         self.yaxis_type = 'liny'
         parser.add_argument('--logy', action='store_true',
                             help='make Y-axis logarithmic, default=linear')
@@ -344,7 +374,8 @@ class CliProduct(object):
         return
 
     def arg_ax_logy(self, parser):
-        """Y-axis is called Y and defaults to log"""
+        """Y-axis is called Y and defaults to log
+        """
         self.yaxis_type = 'logy'
         parser.add_argument('--nology', action='store_true',
                             help='make Y-axis linear, default=logarthmic')
@@ -352,7 +383,8 @@ class CliProduct(object):
         return
 
     def arg_imag(self, parser):
-        """Add arguments for image based plots like spectrograms"""
+        """Add arguments for image based plots like spectrograms
+        """
         parser.add_argument('--nopct', action='store_true',
                             help='up and lo are pixel values, '
                                  'default=percentile if not normalized')
@@ -367,7 +399,8 @@ class CliProduct(object):
 
     def getTimeSeries(self, arg_list):
         """Verify and interpret arguments to get all
-        TimeSeries objects defined"""
+        TimeSeries objects defined
+        """
 
         # retrieve channel data from NDS as a TimeSeries
         for chans in arg_list.chan:
@@ -476,7 +509,8 @@ class CliProduct(object):
                                                    self.plot.ylim)))
 
     def config_plot(self, arg_list):
-        """Configure global plot parameters"""
+        """Configure global plot parameters
+        """
         from matplotlib import rcParams
 
         # determine image dimensions (geometry)
@@ -498,7 +532,8 @@ class CliProduct(object):
         return
 
     def setup_xaxis(self, arg_list):
-        """Handle scale and limits of X-axis by type"""
+        """Handle scale and limits of X-axis by type
+        """
 
         xmin = 0        # these will be set by x min, max or f min, max
         xmax = 1
@@ -625,7 +660,7 @@ class CliProduct(object):
         return
 
     def setup_iaxis(self, arg_list):
-        """ set the limits and scale of the colorbar (intensity axis)
+        """set the limits and scale of the colorbar (intensity axis)
         :param arg_list: global arguments
         :return: none
         """
@@ -636,7 +671,8 @@ class CliProduct(object):
 
     def annotate_save_plot(self, arg_list):
         """After the derived class generated a plot
-        object finish the process"""
+        object finish the process
+        """
         from astropy.time import Time
         from gwpy.plotter.tex import label_to_latex
         import matplotlib
@@ -772,7 +808,8 @@ class CliProduct(object):
     # -- the one that does all the work ---------
 
     def makePlot(self, args):
-        """Make the plot, all actions are generally the same at this level"""
+        """Make the plot, all actions are generally the same at this level
+        """
         if args.silent:
             self.verbose = 0
         else:
