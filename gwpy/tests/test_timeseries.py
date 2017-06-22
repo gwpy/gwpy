@@ -266,14 +266,6 @@ class TimeSeriesTestMixin(object):
     def test_read_write_csv(self):
         return self._test_read_write_ascii(format='csv')
 
-    def test_read_write_wav(self):
-        # WAV doesn't preserve metadata, so need to exclude basically
-        # everything
-        return self._test_read_write(
-            format='wav',
-            exclude=['name', 'unit', 'channel', 'epoch', 'x0', 'xindex'],
-            writekwargs={'scale': 1})
-
     def test_find(self):
         try:
             ts = self.TEST_CLASS.find(FIND_CHANNEL, FIND_GPS, FIND_GPS+1,
@@ -788,6 +780,13 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
     def test_rms(self):
         rms = self.TEST_ARRAY.rms(1.)
         self.assertQuantityEqual(rms.sample_rate, 1 * units.Hertz)
+
+    def test_read_write_wav(self):
+        with tempfile.NamedTemporaryFile(suffix='.wav') as f:
+            self.TEST_ARRAY.write(f, scale=1)
+            t = self.TEST_CLASS.read(f)
+        nptest.assert_array_equal(self.TEST_ARRAY.value, t.value)
+        self.assertEqual(self.TEST_ARRAY.sample_rate, t.sample_rate)
 
 
 class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
