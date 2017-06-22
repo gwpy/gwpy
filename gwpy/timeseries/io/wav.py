@@ -97,7 +97,7 @@ def is_wav(origin, filepath, fileobj, *args, **kwargs):
     See `astropy.io.registry` for details on how this function is used.
     """
     # pylint: disable=unused-argument
-    if fileobj is not None:
+    if origin == 'read' and fileobj is not None:
         loc = fileobj.tell()
         fileobj.seek(0)
         try:
