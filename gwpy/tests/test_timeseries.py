@@ -469,7 +469,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
     TEST_CLASS = TimeSeries
 
     @classmethod
-    def setUpClass(cls, dtype=None):
+    def setUpClass(cls, dtype='float32'):
         super(TimeSeriesTestCase, cls).setUpClass(dtype=dtype)
         cls.random = cls.TEST_CLASS(
             numpy.random.normal(loc=1, size=16384 * 10), sample_rate=16384,
