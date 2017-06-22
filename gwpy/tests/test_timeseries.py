@@ -266,6 +266,14 @@ class TimeSeriesTestMixin(object):
     def test_read_write_csv(self):
         return self._test_read_write_ascii(format='csv')
 
+    def test_read_write_wav(self):
+        # WAV doesn't preserve metadata, so need to exclude basically
+        # everything
+        return self._test_read_write(
+            format='wav',
+            exclude=['name', 'unit', 'channel', 'epoch', 'x0', 'xindex'],
+            writekwargs={'scale': 1})
+
     def test_find(self):
         try:
             ts = self.TEST_CLASS.find(FIND_CHANNEL, FIND_GPS, FIND_GPS+1,
