@@ -107,6 +107,8 @@ def is_wav(origin, filepath, fileobj, *args, **kwargs):
                 riff = riff.decode('utf-8')
                 fmt = fmt.decode('utf-8')
             return riff == WAV_SIGNATURE[0] and fmt == WAV_SIGNATURE[1]
+        except (UnicodeDecodeError, struct.error):
+            return False
         finally:
             fileobj.seek(loc)
     elif filepath is not None:
