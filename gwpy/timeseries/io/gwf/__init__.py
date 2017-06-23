@@ -256,7 +256,8 @@ def register_gwf_api(library):
             if (resample.get(name) and
                     resample[name] != out[name].sample_rate.value):
                 out[name] = out[name].resample(resample[name])
-            if dtype.get(name) and numpy.dtype(dtype[name]) != out[name].dtype:
+            if dtype.get(name) is not None and (
+                    numpy.dtype(dtype[name]) != out[name].dtype):
                 out[name] = out[name].astype(dtype[name])
         return out
 
