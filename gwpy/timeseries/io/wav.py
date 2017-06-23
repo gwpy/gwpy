@@ -19,6 +19,7 @@
 """Read/write WAV files using `scipy.signal.wavfile`
 """
 
+import struct
 import wave
 
 import numpy
@@ -101,9 +102,11 @@ def is_wav(origin, filepath, fileobj, *args, **kwargs):
         loc = fileobj.tell()
         fileobj.seek(0)
         try:
-            header = fileobj.read(12)
-            return (header[:4] == WAV_SIGNATURE[0] and
-                    header[-4:] == WAV_SIGNATURE[1])
+            riff, _, fmt = struct.unpack('<4sI4s', fileobj.read(12))
+            if isinstance(riff, bytes):
+                riff = riff.decode('utf-8')
+                fmt = fmt.decode('utf-8')
+            return riff == WAV_SIGNATURE[0] and fmt == WAV_SIGNATURE[1]
         finally:
             fileobj.seek(loc)
     elif filepath is not None:
