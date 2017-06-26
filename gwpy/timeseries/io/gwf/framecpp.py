@@ -172,10 +172,10 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                 elif start and dataend < start:  # don't need this frame
                     continue
             for vect in data.data:  # loop hopefully over single vector
-                # only read FrVect with matching name
+                # only read FrVect with matching name (or no name set)
                 #    frame spec allows for arbitrary other FrVects
                 #    to hold other information
-                if vect.GetName() != name:
+                if vect.GetName() and vect.GetName() != name:
                     continue
                 # decompress data
                 arr = vect.GetDataArray()
