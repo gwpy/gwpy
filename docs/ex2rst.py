@@ -29,7 +29,6 @@ import re
 
 METADATA = {
     'author': 'sectionauthor',
-    'currentmodule': 'currentmodule',
 }
 
 
@@ -92,8 +91,10 @@ for i,line in enumerate(lines):
     elif line.startswith('__'):
         key, value = map(lambda x: x.strip(' _="\'').rstrip(' _="\''),
                          line.split('=', 1))
-        if key in METADATA:
+        try:
             header.append('.. %s:: %s\n' % (METADATA[key], value))
+        except KeyError:
+            header.append('.. %s:: %s\n' % (key, value))
     # block quote
     elif indoc:
         output.append(line.strip('"').rstrip('"'))
