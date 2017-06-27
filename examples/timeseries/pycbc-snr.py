@@ -19,7 +19,7 @@
 
 """Calculating the SNR associated with a given astrophysical signal model
 
-The example :ref:`gwpy-example-timeseries-gw150914` showed us we can visually
+The example :ref:`gwpy-example-signal-gw150914` showed us we can visually
 extract a signal from the noise using basic signal-processing techniques.
 
 However, an actual astrophysical search algorithm detects signals by
