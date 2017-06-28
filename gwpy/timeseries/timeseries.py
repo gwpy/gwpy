@@ -224,7 +224,7 @@ class TimeSeries(TimeSeriesBase):
 
         Notes
         -----
-        This method, in constrast to the :meth:`numpy.fft.rfft` method
+        This method, in constrast to the :func:`numpy.fft.rfft` method
         it calls, applies the necessary normalisation such that the
         amplitude of the output `~gwpy.frequencyseries.FrequencySeries` is
         correct.
@@ -327,7 +327,7 @@ class TimeSeries(TimeSeriesBase):
 
     @_update_doc_with_fft_methods
     def psd(self, fftlength=None, overlap=None, method='welch', **kwargs):
-        """Calculate the PSD `FrequencySeries` for this `TimeSeries`.
+        """Calculate the PSD `FrequencySeries` for this `TimeSeries`
 
         Parameters
         ----------
@@ -363,7 +363,7 @@ class TimeSeries(TimeSeriesBase):
 
     @_update_doc_with_fft_methods
     def asd(self, fftlength=None, overlap=None, method='welch', **kwargs):
-        """Calculate the ASD `FrequencySeries` of this `TimeSeries`.
+        """Calculate the ASD `FrequencySeries` of this `TimeSeries`
 
         Parameters
         ----------
@@ -765,7 +765,7 @@ class TimeSeries(TimeSeriesBase):
 
         **kwargs
             other keyword arguments are passed to
-            :meth:`gwpy.signal.filter_design.highpass`
+            :func:`gwpy.signal.filter_design.highpass`
 
         Returns
         -------
@@ -815,7 +815,7 @@ class TimeSeries(TimeSeriesBase):
 
         **kwargs
             other keyword arguments are passed to
-            :meth:`gwpy.signal.filter_design.lowpass`
+            :func:`gwpy.signal.filter_design.lowpass`
 
         Returns
         -------
@@ -868,7 +868,7 @@ class TimeSeries(TimeSeriesBase):
 
         **kwargs
             other keyword arguments are passed to
-            :meth:`gwpy.signal.filter_design.bandpass`
+            :func:`gwpy.signal.filter_design.bandpass`
 
         Returns
         -------
@@ -1396,7 +1396,7 @@ class TimeSeries(TimeSeriesBase):
     def detrend(self, detrend='constant'):
         """Remove the trend from this `TimeSeries`
 
-        This method just wraps :meth:`scipy.signal.detrend` to return
+        This method just wraps :func:`scipy.signal.detrend` to return
         an object of the same type as the input.
 
         Parameters
@@ -1652,11 +1652,11 @@ class TimeSeriesDict(TimeSeriesBaseDict):
 
         start : `~gwpy.time.LIGOTimeGPS`, `float`, `str` optional
             GPS start time of required data, anything parseable by
-            :meth:`~gwpy.time.to_gps` is fine
+            :func:`~gwpy.time.to_gps` is fine
 
         end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS end time of required data, anything parseable by
-            :meth:`~gwpy.time.to_gps` is fine
+            :func:`~gwpy.time.to_gps` is fine
 
         format : `str`, optional
             source format identifier. If not given, the format will be

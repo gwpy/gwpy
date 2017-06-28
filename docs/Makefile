@@ -44,7 +44,7 @@ help:
 
 clean:
 	-rm -rf examples/*/*.rst
-	-rm -rf $(CLIEXAMPLEDIR)/*.png
+	-rm -rf $(CLIEXAMPLEDIR)/cli-*.png
 	-rm -rf $(BUILDDIR)
 	-rm -rf _generated
 	-rm -rf api/

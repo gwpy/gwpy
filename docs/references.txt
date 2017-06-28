@@ -46,6 +46,9 @@
 .. |numpydoc| replace:: `numpydoc`
 .. _numpydoc: https://pypi.python.org/pypi/numpydoc
 
+.. |pycbc| replace:: `pycbc`
+.. _pycbc: https://ligo-cbc.github.io/
+
 .. |root_numpy| replace:: `root_numpy`
 .. _root_numpy: https://rootpy.github.io/root_numpy/
 
