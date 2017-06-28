@@ -82,16 +82,17 @@ class CommonTests(object):
         kwargs.setdefault('copy', False)
         return self.TEST_CLASS(self.data, *args, **kwargs)
 
-    def assertQuantityEqual(self, q1, q2, *args):
+    def assertQuantityEqual(self, q1, q2, unit=True):
         nptest.assert_array_equal(q1.value, q2.value)
-        self.assertEqual(q1.unit, q2.unit)
+        if unit:
+            self.assertEqual(q1.unit, q2.unit)
 
     def assertArraysEqual(self, ts1, ts2, *args, **kwargs):
         exclude = kwargs.pop('exclude', [])
         if kwargs:
             raise TypeError("assertArraysEqual has no keyword argument %r"
                             % list(kwargs.keys())[0])
-        self.assertQuantityEqual(ts1, ts2)
+        self.assertQuantityEqual(ts1, ts2, unit='unit' not in exclude)
         if not args:
             args = self.TEST_CLASS._metadata_slots
         for attr in args:

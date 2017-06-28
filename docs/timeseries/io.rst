@@ -20,6 +20,7 @@ Those formats are:
 - :ref:`gwpy-timeseries-io-ascii`
 - :ref:`gwpy-timeseries-io-gwf`
 - :ref:`gwpy-timeseries-io-hdf5`
+- :ref:`gwpy-timeseries-io-wav`
 
 .. _gwpy-timeseries-io-ascii:
 
@@ -157,3 +158,33 @@ Writing
 Data held in a `TimeSeries` or `StateVector` can be written to an HDF5 file via::
 
    >>> data.write('output.hdf')
+
+.. _gwpy-timeseries-io-wav:
+
+===
+WAV
+===
+
+Any `TimeSeries` can be written to / read from a WAV file using :meth:`TimeSeries.read`:
+
+.. warning::
+
+   No metadata are stored in the WAV file except the sampling rate, so any units or GPS timing information are lost when converting to/from WAV.
+
+Reading
+-------
+
+To read a `TimeSeries` from WAV::
+
+   >>> t = TimeSeries.read('data.wav')
+
+See :func:`scipy.io.wavfile.read` for any keyword argument options.
+
+Writing
+-------
+
+To write a `TimeSeries` to WAV::
+
+   >>> t.write('data.wav')
+
+See :func:`scipy.io.wavfile.write` for keyword argument options.

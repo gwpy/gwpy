@@ -476,7 +476,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
     TEST_CLASS = TimeSeries
 
     @classmethod
-    def setUpClass(cls, dtype=None):
+    def setUpClass(cls, dtype='float32'):
         super(TimeSeriesTestCase, cls).setUpClass(dtype=dtype)
         cls.random = cls.TEST_CLASS(
             numpy.random.normal(loc=1, size=16384 * 10), sample_rate=16384,
@@ -787,6 +787,13 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
     def test_rms(self):
         rms = self.TEST_ARRAY.rms(1.)
         self.assertQuantityEqual(rms.sample_rate, 1 * units.Hertz)
+
+    def test_read_write_wav(self):
+        with tempfile.NamedTemporaryFile(suffix='.wav') as f:
+            self.TEST_ARRAY.write(f, scale=1)
+            t = self.TEST_CLASS.read(f)
+        nptest.assert_array_equal(self.TEST_ARRAY.value, t.value)
+        self.assertEqual(self.TEST_ARRAY.sample_rate, t.sample_rate)
 
 
 class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
