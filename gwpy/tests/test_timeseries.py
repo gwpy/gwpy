@@ -220,6 +220,13 @@ class TimeSeriesTestMixin(object):
         t = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format='gwf',
                                  end=end)
         self.assertTupleEqual(t.span, (TEST_SEGMENT[0], end))
+        # check type casting works
+        t = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format='gwf',
+                                 end=end, dtype='float32')
+        self.assertEqual(t.dtype, numpy.dtype('float32'))
+        t = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format='gwf',
+                                 end=end, dtype={self.channel: 'float64'})
+        self.assertEqual(t.dtype, numpy.dtype('float64'))
         # check errors
         self.assertRaises((ValueError, RuntimeError), self.TEST_CLASS.read,
                           TEST_GWF_FILE, self.channel, format='gwf',
