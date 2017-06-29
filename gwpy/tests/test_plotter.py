@@ -809,9 +809,13 @@ class TexTestCase(Mixin, unittest.TestCase):
         self.assertRaises(TypeError, float_to_latex, '1')
 
     def test_label_to_latex(self):
+        self.assertEqual(label_to_latex(None), '')
+        self.assertEqual(label_to_latex(''), '')
         self.assertEqual(label_to_latex('Test'), 'Test')
         self.assertEqual(label_to_latex('Test_with_underscore'),
                          r'Test\_with\_underscore')
+        self.assertEqual(label_to_latex(r'Test_with\_escaped\%characters'),
+                         r'Test\_with\_escaped\%characters')
 
     def test_unit_to_latex(self):
         t = unit_to_latex(units.Hertz)

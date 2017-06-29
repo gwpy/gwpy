@@ -22,8 +22,9 @@
 from __future__ import division
 
 import os
+import re
 
-__author__ = "Duncan M. Macleod <duncan.macleod@ligo.org>"
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # -- tex configuration --------------------------------------------------------
 
@@ -36,6 +37,8 @@ HAS_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
 # -- tex formatting -----------------------------------------------------------
 
 LATEX_CONTROL_CHARS = ["%", "\\", "_", "~", "&"]
+re_latex_control = re.compile(r'(?<!\\)[%s](?!.*{)'
+                              % ''.join(LATEX_CONTROL_CHARS))
 
 
 def float_to_latex(x, format="%.2g"):
@@ -58,8 +61,15 @@ def float_to_latex(x, format="%.2g"):
 
     Examples
     --------
+    >>> from gwpy.plotter.tex import float_to_latex
+    >>> float_to_latex(1)
+    '1'
     >>> float_to_latex(2000)
     '2\times 10^{3}'
+    >>> float_to_latex(100)
+    '10^{2}'
+    >>> float_to_latex(-500)
+    r'-5\!\!\times\!\!10^{2}'
     """
     base_str = format % x
     if "e" not in base_str:
@@ -77,17 +87,74 @@ def float_to_latex(x, format="%.2g"):
 
 
 def label_to_latex(text):
-    """Convert an abitrary string of text into a latex-passable
-    representation.
+    """Convert text into a latex-passable representation.
+
+    This method just escapes the following reserved LaTeX characters:
+    % \ _ ~ &, whilst trying to avoid doubly-escaping already escaped
+    characters
+
+    Parameters
+    ----------
+    text : `str`
+        input text to convert
+
+    Returns
+    -------
+    tex : `str`
+        a modified version of the input text with all unescaped reserved
+        latex characters escaped
+
+    Examples
+    --------
+    >>> from gwpy.plotter.tex import label_to_latex
+    >>> label_to_latex('normal text')
+    'normal text'
+    >>> label_to_latex('$1 + 2 = 3$')
+    '$1 + 2 = 3$'
+    >>> label_to_latex('H1:ABC-DEF_GHI')
+    'H1:ABC-DEF\\_GHI'
+    >>> label_to_latex('H1:ABC-DEF\_GHI')
+    'H1:ABC-DEF\\_GHI'
     """
     if text is None:
         return ''
-    for ch in LATEX_CONTROL_CHARS:
-        text = text.replace(ch, "\\%s" % ch)
-    return text
+    out = []
+    x = None
+    # loop over matches in reverse order and replace
+    for m in re_latex_control.finditer(text):
+        a, b = m.span()
+        char = m.group()[0]
+        out.append(text[x:a])
+        out.append(r'\%s' % char)
+        x = b
+    if not x:  # no match
+        return text
+    # append prefix and return joined components
+    out.append(text[b:])
+    return ''.join(out)
 
 
 def unit_to_latex(unit):
+    """Convert a `~astropy.units.Unit` to a latex string
+
+    Parameters
+    ----------
+    unit : `~astropy.units.Unit`
+        input unit to represent
+
+    Returns
+    -------
+    tex : `str`
+        a tex-formatted version of the unit
+
+    Examples
+    --------
+    >>> from gwpy.plotter.tex import unit_to_latex
+    >>> unit_to_latex(units.Hertz)
+    '$\mathrm{Hz}$'
+    >>> unit_to_latex(units.Volt.decompose())
+    '$\mathrm{m^{2}\,kg\,A^{-1}\,s^{-3}}$'
+    """
     from astropy import units
     from astropy.units.format import utils as unit_utils
 
@@ -104,18 +171,18 @@ def unit_to_latex(unit):
             positives, negatives = unit_utils.get_grouped_by_powers(
                 unit.bases, unit.powers)
             if len(negatives) == 1:
-                negatives = format_unit_list(negatives)
-                positives = positives and format_unit_list(positives) or 1
+                negatives = _format_unit_list(negatives)
+                positives = positives and _format_unit_list(positives) or 1
                 s += r'{0}/{1}'.format(positives, negatives)
             elif len(negatives):
                 if len(positives):
-                    positives = format_unit_list(positives)
+                    positives = _format_unit_list(positives)
                 else:
                     positives = ''
-                negatives = format_unit_list(negatives, negative=True)
+                negatives = _format_unit_list(negatives, negative=True)
                 s += r'{0}\,{1}'.format(positives, negatives)
             else:
-                positives = format_unit_list(positives)
+                positives = _format_unit_list(positives)
                 s += positives
     elif isinstance(unit, units.UnitBase):
         return s.to_string('latex_inline')
@@ -127,7 +194,7 @@ def unit_to_latex(unit):
         return ''
 
 
-def format_unit_list(unitlist, negative=False):
+def _format_unit_list(unitlist, negative=False):
     from astropy.units.format import latex
 
     out = []
