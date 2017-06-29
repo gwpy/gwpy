@@ -144,18 +144,18 @@ def unit_to_latex(unit):
             positives, negatives = unit_utils.get_grouped_by_powers(
                 unit.bases, unit.powers)
             if len(negatives) == 1:
-                negatives = format_unit_list(negatives)
-                positives = positives and format_unit_list(positives) or 1
+                negatives = _format_unit_list(negatives)
+                positives = positives and _format_unit_list(positives) or 1
                 s += r'{0}/{1}'.format(positives, negatives)
             elif len(negatives):
                 if len(positives):
-                    positives = format_unit_list(positives)
+                    positives = _format_unit_list(positives)
                 else:
                     positives = ''
-                negatives = format_unit_list(negatives, negative=True)
+                negatives = _format_unit_list(negatives, negative=True)
                 s += r'{0}\,{1}'.format(positives, negatives)
             else:
-                positives = format_unit_list(positives)
+                positives = _format_unit_list(positives)
                 s += positives
     elif isinstance(unit, units.UnitBase):
         return s.to_string('latex_inline')
@@ -167,7 +167,7 @@ def unit_to_latex(unit):
         return ''
 
 
-def format_unit_list(unitlist, negative=False):
+def _format_unit_list(unitlist, negative=False):
     from astropy.units.format import latex
 
     out = []
