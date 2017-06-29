@@ -24,7 +24,7 @@ from __future__ import division
 import os
 import re
 
-__author__ = "Duncan M. Macleod <duncan.macleod@ligo.org>"
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # -- tex configuration --------------------------------------------------------
 
@@ -61,8 +61,15 @@ def float_to_latex(x, format="%.2g"):
 
     Examples
     --------
+    >>> from gwpy.plotter.tex import float_to_latex
+    >>> float_to_latex(1)
+    '1'
     >>> float_to_latex(2000)
     '2\times 10^{3}'
+    >>> float_to_latex(100)
+    '10^{2}'
+    >>> float_to_latex(-500)
+    r'-5\!\!\times\!\!10^{2}'
     """
     base_str = format % x
     if "e" not in base_str:
@@ -128,6 +135,26 @@ def label_to_latex(text):
 
 
 def unit_to_latex(unit):
+    """Convert a `~astropy.units.Unit` to a latex string
+
+    Parameters
+    ----------
+    unit : `~astropy.units.Unit`
+        input unit to represent
+
+    Returns
+    -------
+    tex : `str`
+        a tex-formatted version of the unit
+
+    Examples
+    --------
+    >>> from gwpy.plotter.tex import unit_to_latex
+    >>> unit_to_latex(units.Hertz)
+    '$\mathrm{Hz}$'
+    >>> unit_to_latex(units.Volt.decompose())
+    '$\mathrm{m^{2}\,kg\,A^{-1}\,s^{-3}}$'
+    """
     from astropy import units
     from astropy.units.format import utils as unit_utils
 
