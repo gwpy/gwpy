@@ -22,6 +22,7 @@
 from __future__ import division
 
 import os
+import re
 
 __author__ = "Duncan M. Macleod <duncan.macleod@ligo.org>"
 
@@ -36,6 +37,8 @@ HAS_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
 # -- tex formatting -----------------------------------------------------------
 
 LATEX_CONTROL_CHARS = ["%", "\\", "_", "~", "&"]
+re_latex_control = re.compile(r'(?<!\\)[%s](?!.*{)'
+                              % ''.join(LATEX_CONTROL_CHARS))
 
 
 def float_to_latex(x, format="%.2g"):
@@ -77,14 +80,51 @@ def float_to_latex(x, format="%.2g"):
 
 
 def label_to_latex(text):
-    """Convert an abitrary string of text into a latex-passable
-    representation.
+    """Convert text into a latex-passable representation.
+
+    This method just escapes the following reserved LaTeX characters:
+    % \ _ ~ &, whilst trying to avoid doubly-escaping already escaped
+    characters
+
+    Parameters
+    ----------
+    text : `str`
+        input text to convert
+
+    Returns
+    -------
+    tex : `str`
+        a modified version of the input text with all unescaped reserved
+        latex characters escaped
+
+    Examples
+    --------
+    >>> from gwpy.plotter.tex import label_to_latex
+    >>> label_to_latex('normal text')
+    'normal text'
+    >>> label_to_latex('$1 + 2 = 3$')
+    '$1 + 2 = 3$'
+    >>> label_to_latex('H1:ABC-DEF_GHI')
+    'H1:ABC-DEF\\_GHI'
+    >>> label_to_latex('H1:ABC-DEF\_GHI')
+    'H1:ABC-DEF\\_GHI'
     """
     if text is None:
         return ''
-    for ch in LATEX_CONTROL_CHARS:
-        text = text.replace(ch, "\\%s" % ch)
-    return text
+    out = []
+    x = None
+    # loop over matches in reverse order and replace
+    for m in re_latex_control.finditer(text):
+        a, b = m.span()
+        char = m.group()[0]
+        out.append(text[x:a])
+        out.append(r'\%s' % char)
+        x = b
+    if not x:  # no match
+        return text
+    # append prefix and return joined components
+    out.append(text[b:])
+    return ''.join(out)
 
 
 def unit_to_latex(unit):
