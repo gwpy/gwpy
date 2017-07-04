@@ -161,7 +161,7 @@ def file_segment(filename):
             e.args = ('Failed to parse %r as LIGO-T050017-compatible filename'
                       % filename,)
             raise
-        s = int(s)
+        s = float(s)
         e = int(e.split('.')[0])
         return Segment(s, s+e)
 
