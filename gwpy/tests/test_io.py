@@ -33,7 +33,7 @@ from gwpy.segments import (Segment, SegmentList)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
-                          'HLV-GW100916-968654552-1.gwf')
+                             'HLV-GW100916-968654552-1.gwf')
 TEST_CHANNELS = [
     'H1:LDAS-STRAIN', 'L1:LDAS-STRAIN', 'V1:h_16384Hz',
 ]
@@ -223,6 +223,7 @@ class CacheIoTestCase(unittest.TestCase):
 
 def mock_call(*args, **kwargs):
     raise OSError("")
+
 
 class GwfIoTestCase(unittest.TestCase):
 
