@@ -26,13 +26,14 @@ from compat import (unittest, mock, HAS_LAL, HAS_NDS2)
 import mockutils
 
 from gwpy.io import (datafind, gwf, nds2 as io_nds2)
-from gwpy.io.cache import (cache_segments, flatten, find_contiguous)
+from gwpy.io.cache import (cache_segments, flatten, find_contiguous,
+                           file_segment)
 from gwpy.segments import (Segment, SegmentList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
-                          'HLV-GW100916-968654552-1.gwf')
+                             'HLV-GW100916-968654552-1.gwf')
 TEST_CHANNELS = [
     'H1:LDAS-STRAIN', 'L1:LDAS-STRAIN', 'V1:h_16384Hz',
 ]
@@ -188,6 +189,17 @@ class CacheIoTestCase(unittest.TestCase):
         sl = cache_segments(cache[:2], cache[2:])
         self.assertEquals(sl, segs)
 
+    def test_file_segment(self):
+        self.assertTupleEqual(file_segment('A-B-1-2.ext'), (1, 3))
+        self.assertTupleEqual(file_segment('A-B-1-2.ext.gz'), (1, 3))
+        self.assertTupleEqual(file_segment('A-B-1.23-4.ext.gz'), (1.23, 5.23))
+        # test errors
+        with self.assertRaises(ValueError) as exc:
+            file_segment('blah')
+        self.assertEqual(
+            'Failed to parse \'blah\' as LIGO-T050017-compatible filename',
+            str(exc.exception))
+
     def test_flatten(self):
         # check flattened version of single cache is unchanged
         a, _ = self.make_cache()
@@ -211,6 +223,7 @@ class CacheIoTestCase(unittest.TestCase):
 
 def mock_call(*args, **kwargs):
     raise OSError("")
+
 
 class GwfIoTestCase(unittest.TestCase):
 

@@ -155,8 +155,13 @@ def file_segment(filename):
     except AttributeError:  # otherwise parse from T050017 spec
         from ..segments import Segment
         base = os.path.basename(filename)
-        _, _, s, e = base.split('-')
-        s = int(s)
+        try:
+            _, _, s, e = base.split('-')
+        except ValueError as e:
+            e.args = ('Failed to parse %r as LIGO-T050017-compatible filename'
+                      % filename,)
+            raise
+        s = float(s)
         e = int(e.split('.')[0])
         return Segment(s, s+e)
 
