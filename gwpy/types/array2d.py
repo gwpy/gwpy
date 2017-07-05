@@ -376,19 +376,25 @@ class Array2D(Series):
 
     def _wrap_function(self, function, *args, **kwargs):
         out = super(Array2D, self)._wrap_function(function, *args, **kwargs)
-        if out.ndim == 1:
+        if out.ndim == 1:  # return Series
             # HACK: need to check astropy will always pass axis as first arg
             axis = args[0]
-            # return Series
+            metadata = {'unit': out.unit, 'channel': out.channel,
+                        'epoch': self.epoch,
+                        'name': '%s %s' % (self.name, function.__name__)}
+            # return Column series
             if axis == 0:
-                x0 = self.y0
-                dx = self.dy
-                xindex = hasattr(self, '_yindex') and self.yindex or None
+                if hasattr(self, '_yindex'):
+                    metadata['xindex'] = self.yindex
+                else:
+                    metadata['x0'] = self.y0
+                    metadata['dx'] = self.dy
+                return self._columnclass(out.value, **metadata)
+            # return Row series
+            if hasattr(self, '_xindex'):
+                metadata['xindex'] = self.xindex
             else:
-                x0 = self.x0
-                dx = self.dx
-                xindex = hasattr(self, '_xindex') and self.xindex or None
-            return Series(out.value, unit=out.unit, x0=x0, dx=dx,
-                          channel=out.channel, epoch=self.epoch, xindex=xindex,
-                          name='%s %s' % (self.name, function.__name__))
+                metadata['x0'] = self.x0
+                metadata['dx'] = self.dx
+            return self._rowclass(out.value, **metadata)
         return out
