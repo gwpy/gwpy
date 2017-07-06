@@ -26,6 +26,7 @@ from .cliproduct import CliProduct
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
+
 class Coherence(CliProduct):
     """Product class for coherence line plots
     """
