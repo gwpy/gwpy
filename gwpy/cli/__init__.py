@@ -17,6 +17,9 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Command-line utilities for GWpy
+
+The `gwpy.cli` module provides methods and functionality to power the
+`gwpy-plot` command-line executable (distributed with GWpy).
 """
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
