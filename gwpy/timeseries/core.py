@@ -744,7 +744,7 @@ class TimeSeriesBaseDict(OrderedDict):
         # -- open a connection ------------------
 
         # open connection to specific host
-        if host is not None and connection is None:
+        if connection is None and host is not None:
             print_verbose("Opening new connection to {0}...".format(host),
                           end=' ', verbose=verbose)
             connection = io_nds2.auth_connect(host, port)
@@ -795,8 +795,8 @@ class TimeSeriesBaseDict(OrderedDict):
         istart = int(start)
         iend = int(ceil(end))
 
-        return fetch(channels, istart, iend, host=host,
-                     port=port, verbose=verbose, type=type,
+        return fetch(channels, istart, iend, connection=connection,
+                     host=host, port=port, verbose=verbose, type=type,
                      dtype=dtype, pad=pad, allow_tape=allow_tape,
                      series_class=cls.EntryClass).crop(start, end)
 
