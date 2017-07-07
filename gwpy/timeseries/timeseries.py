@@ -421,7 +421,7 @@ class TimeSeries(TimeSeriesBase):
 
     @_update_doc_with_fft_methods
     def spectrogram(self, stride, fftlength=None, overlap=0,
-                    method='welch', window=None, nproc=1, **kwargs):
+                    method='welch', window='hann', nproc=1, **kwargs):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
 
@@ -586,7 +586,7 @@ class TimeSeries(TimeSeriesBase):
 
     @_update_doc_with_fft_methods
     def spectral_variance(self, stride, fftlength=None, overlap=None,
-                          method='welch', window=None, nproc=1,
+                          method='welch', window='hann', nproc=1,
                           filter=None, bins=None, low=None, high=None,
                           nbins=500, log=False, norm=False, density=False):
         """Calculate the `SpectralVariance` of this `TimeSeries`.
@@ -681,7 +681,7 @@ class TimeSeries(TimeSeriesBase):
                           overlap=overlap)
 
     def rayleigh_spectrogram(self, stride, fftlength=None, overlap=0,
-                             window=None, nproc=1, **kwargs):
+                             window='hann', nproc=1, **kwargs):
         """Calculate the Rayleigh statistic spectrogram of this `TimeSeries`
 
         Parameters
@@ -712,7 +712,7 @@ class TimeSeries(TimeSeriesBase):
         return sg
 
     def csd_spectrogram(self, other, stride, fftlength=None, overlap=0,
-                        window=None, nproc=1, **kwargs):
+                        window='hann', nproc=1, **kwargs):
         """Calculate the cross spectral density spectrogram of this
            `TimeSeries` with 'other'.
 
@@ -1132,7 +1132,7 @@ class TimeSeries(TimeSeriesBase):
         return new
 
     def coherence(self, other, fftlength=None, overlap=None,
-                  window=None, **kwargs):
+                  window='hann', **kwargs):
         """Calculate the frequency-coherence between this `TimeSeries`
         and another.
 
@@ -1206,7 +1206,7 @@ class TimeSeries(TimeSeriesBase):
         return out
 
     def auto_coherence(self, dt, fftlength=None, overlap=None,
-                       window=None, **kwargs):
+                       window='hann', **kwargs):
         """Calculate the frequency-coherence between this `TimeSeries`
         and a time-shifted copy of itself.
 
@@ -1258,7 +1258,7 @@ class TimeSeries(TimeSeriesBase):
                                overlap=overlap, window=window, **kwargs)
 
     def coherence_spectrogram(self, other, stride, fftlength=None,
-                              overlap=None, window=None, nproc=1):
+                              overlap=None, window='hann', nproc=1):
         """Calculate the coherence spectrogram between this `TimeSeries`
         and other.
 

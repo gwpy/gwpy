@@ -34,6 +34,7 @@ from astropy.units import Quantity
 
 from . import utils as fft_utils
 from ...utils import mp as mp_utils
+from ..window import recommended_overlap
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -77,6 +78,9 @@ def normalize_fft_params(series, kwargs={}):
     then updates ``kwargs`` in place to include ``nfft`` and ``noverlap``
     as values in sample counts.
 
+    If a ``window`` is given, the ``noverlap`` parameter will be set to the
+    recommended overlap for that window type, if ``overlap`` is not given.
+
     Parameters
     ----------
     series : `gwpy.timeseries.TimeSeries`
@@ -92,6 +96,8 @@ def normalize_fft_params(series, kwargs={}):
     >>> from gwpy.signal.fft.ui import normalize_fft_params
     >>> normalize_fft_params(TimeSeries(normal(size=1024), sample_rate=256))
     {'nfft': 1024, 'noverlap': 0}
+    >>> normalize_fft_params(TimeSeries(normal(size=1024), sample_rate=256), {'window': 'hann'})
+    {'nfft': 1024, 'noverlap': 0, 'window': 'hann'}
     """
     samp = series.sample_rate
     fftlength = kwargs.pop('fftlength', None)
@@ -103,7 +109,9 @@ def normalize_fft_params(series, kwargs={}):
     nfft = seconds_to_samples(fftlength, samp)
 
     # overlap -> noverlap
-    if overlap is None:
+    if overlap is None and isinstance(kwargs.get('window', None), str):
+        noverlap = recommended_overlap(kwargs['window'], nfft)
+    elif overlap is None:
         noverlap = 0
     else:
         noverlap = seconds_to_samples(overlap, samp)
