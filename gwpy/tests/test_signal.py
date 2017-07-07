@@ -33,7 +33,8 @@ if HAS_LAL:
 
 from gwpy import signal as gwpy_signal
 from gwpy.signal.fft import (lal as fft_lal, utils as fft_utils,
-                             registry as fft_registry)
+                             registry as fft_registry, ui as fft_ui)
+from gwpy.timeseries import TimeSeries
 
 ONE_HZ = units.Quantity(1, 'Hz')
 
@@ -114,6 +115,23 @@ class FFTRegistryTests(unittest.TestCase):
             '============ =================================\n\n'
             'See :ref:`gwpy-signal-fft` for more details\n',
         )
+
+
+# -- gwpy.signal.fft.ui -------------------------------------------------------
+
+class FFTUITests(unittest.TestCase):
+    def test_seconds_to_samples(self):
+        self.assertEqual(fft_ui.seconds_to_samples(4, 256), 1024)
+        self.assertEqual(fft_ui.seconds_to_samples(1 * units.minute, 16), 960)
+        self.assertEqual(fft_ui.seconds_to_samples(
+            4 * units.second, 16.384 * units.kiloHertz), 65536)
+
+    def test_normalize_fft_params(self):
+        self.assertDictEqual(
+            fft_ui.normalize_fft_params(
+                TimeSeries(numpy.zeros(1024), sample_rate=256)),
+            {'nfft': 1024, 'noverlap': 0})
+
 
 # -- gwpy.signal.fft.utils ----------------------------------------------------
 
