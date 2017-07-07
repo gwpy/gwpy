@@ -533,7 +533,11 @@ class TimeSeries(TimeSeriesBase):
         a triangular window centred on that chunk which most overlaps the
         given `Spectrogram` time sample.
         """
-        return fft_ui.spectrogram(self, fftlength=fftlength, overlap=overlap,
+        # set kwargs for periodogram()
+        kwargs.setdefault('fs', self.sample_rate.to('Hz').value)
+        # run
+        return fft_ui.spectrogram(self, signal.periodogram,
+                                  fftlength=fftlength, overlap=overlap,
                                   **kwargs)
 
     def fftgram(self, stride):

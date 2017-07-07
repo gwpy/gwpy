@@ -39,32 +39,136 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 def seconds_to_samples(x, rate):
+    """Convert a value in seconds to a number of samples for a given rate
+
+    Parameters
+    ----------
+    x : `float`, `~astropy.units.Quantity`
+        number of seconds (or `Quantity` in any time units)
+
+    rate : `float`
+        the rate of the relevant data, in Hertz (or `Quantity` in
+        any frequency units)
+
+    Returns
+    -------
+    nsamp : `int`
+        the number of samples corresponding to the relevant quantities
+
+    Examples
+    --------
+    >>> from astropy import units
+    >>> from gwpy.signal.fft.ui import seconds_to_samples
+    >>> seconds_to_samples(4, 256)
+    1024
+    >>> seconds_to_samples(1 * units.minute, 16)
+    960
+    >>> seconds_to_samples(4 * units.second, 16.384 * units.kiloHertz)
+    65536
+    """
     return int((Quantity(x, 's') * rate).decompose().value)
 
 
-def _fft_params_in_samples(f):
+def normalize_fft_params(series, kwargs={}):
+    """Normalize a set of FFT parameters for processing
+
+    This method reads the ``fftlength`` and ``overlap`` keyword arguments
+    (presumed to be values in seconds), works out sensible defaults,
+    then updates ``kwargs`` in place to include ``nfft`` and ``noverlap``
+    as values in sample counts.
+
+    Parameters
+    ----------
+    series : `gwpy.timeseries.TimeSeries`
+        the data that will be processed using an FFT-based method
+
+    kwargs : `dict`
+        the dict of keyword arguments passed by the user
+
+    Examples
+    --------
+    >>> from numpy.random import normal
+    >>> from gwpy.timeseries import TimeSeries
+    >>> from gwpy.signal.fft.ui import normalize_fft_params
+    >>> normalize_fft_params(TimeSeries(normal(size=1024), sample_rate=256))
+    {'nfft': 1024, 'noverlap': 0}
+    """
+    samp = series.sample_rate
+    fftlength = kwargs.pop('fftlength', None)
+    overlap = kwargs.pop('overlap', None)
+
+    # fftlength -> nfft
+    if fftlength is None:
+        fftlength = series.duration
+    nfft = seconds_to_samples(fftlength, samp)
+
+    # overlap -> noverlap
+    if overlap is None:
+        noverlap = 0
+    else:
+        noverlap = seconds_to_samples(overlap, samp)
+
+    kwargs.update({
+        'nfft': nfft,
+        'noverlap': noverlap,
+    })
+    return kwargs
+
+
+def set_fft_params(f):
+    """Decorate a method to automatically convert quantities to samples
+    """
     @wraps(f)
-    def wrapped_func(series, *args, **kwargs):
+    def wrapped_func(series, method_func, *args, **kwargs):
         if isinstance(series, tuple):
             ts = series[0]
         else:
             ts = series
-        # extract parameters in seconds
-        fftlength = kwargs.pop('fftlength', None) or ts.duration
-        overlap = kwargs.pop('overlap', None) or 0
 
-        # convert to samples
-        kwargs['nfft'] = seconds_to_samples(fftlength, ts.sample_rate)
-        kwargs['noverlap'] = seconds_to_samples(overlap, ts.sample_rate)
+        # extract parameters in seconds, setting recommended default overlap
+        normalize_fft_params(ts, kwargs)
 
-        return f(series, *args, **kwargs)
+        return f(series, method_func, *args, **kwargs)
 
     return wrapped_func
 
 
-@_fft_params_in_samples
+@set_fft_params
 def psd(timeseries, method_func, *args, **kwargs):
     """Generate a PSD using a method function
+
+    All arguments are presumed to be given in physical units
+
+    Parameters
+    ----------
+    timeseries : `~gwpy.timeseries.TimeSeries`, `tuple`
+        the data to process, or a 2-tuple of series to correlate
+
+    method_func : `callable`
+        the function that will be called to perform the signal processing
+
+    *args, **kwargs
+        other arguments to pass to ``method_func`` when calling
+    """
+    # decorator has translated the arguments for us, so just call psdn()
+    return psdn(timeseries, method_func, *args, **kwargs)
+
+
+def psdn(timeseries, method_func, *args, **kwargs):
+    """Generate a PSD using a method function with FFT arguments in samples
+
+    All arguments are presumed to be in sample counts, not physical units
+
+    Parameters
+    ----------
+    timeseries : `~gwpy.timeseries.TimeSeries`, `tuple`
+        the data to process, or a 2-tuple of series to correlate
+
+    method_func : `callable`
+        the function that will be called to perform the signal processing
+
+    *args, **kwargs
+        other arguments to pass to ``method_func`` when calling
     """
     # unpack tuple of timeseries for cross spectrum
     try:
@@ -95,44 +199,43 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
 
     # get params
     epoch = timeseries.t0.value
-    fftlength = kwargs['fftlength'] = kwargs.pop('fftlength', None) or stride
-    overlap = kwargs['overlap'] = kwargs.pop('overlap', None) or 0
+    nstride = seconds_to_samples(stride, timeseries.sample_rate)
+    kwargs['fftlength'] = kwargs.pop('fftlength', stride) or stride
+    normalize_fft_params(timeseries, kwargs)
+    nfft = kwargs['nfft']
+    noverlap = kwargs['noverlap']
+    window = kwargs.pop('window', None)
 
     # sanity check parameters
-    if stride > abs(timeseries.span):
+    if nstride > timeseries.size:
         raise ValueError("stride cannot be greater than the duration of "
                          "this TimeSeries")
-    if fftlength > stride:
+    if nfft > nstride:
         raise ValueError("fftlength cannot be greater than stride")
-    if overlap >= fftlength:
+    if noverlap >= nfft:
         raise ValueError("overlap must be less than fftlength")
-
-    # get params in samples
-    nstride = seconds_to_samples(stride, timeseries.sample_rate)
-    nfft = seconds_to_samples(fftlength, timeseries.sample_rate)
-    noverlap = seconds_to_samples(overlap, timeseries.sample_rate)
 
     # generate windows and FFT plans up-front
     if method_func.__module__.endswith('.lal'):
         from .lal import (generate_fft_plan, generate_window)
-        if kwargs.get('window', None) is None:
-            kwargs['window'] = generate_window(nfft, dtype=timeseries.dtype)
+        if isinstance(window, (str, tuple)):
+            window = generate_window(nfft, window=window,
+                                     dtype=timeseries.dtype)
         if kwargs.get('plan', None) is None:
             kwargs['plan'] = generate_fft_plan(nfft, dtype=timeseries.dtype)
     else:
-        window = kwargs.pop('window', None)
-        if isinstance(window, str) or type(window) is tuple:
+        if isinstance(window, (str, tuple)):
             window = get_window(window, nfft)
-        # don't operate on None, let the method_func work out its own defaults
-        if window is not None:
-            kwargs['window'] = window
+    # don't operate on None, let the method_func work out its own defaults
+    if window is not None:
+        kwargs['window'] = window
 
     # set up single process Spectrogram method
     def _psd(ts):
         """Calculate a single PSD for a spectrogram
         """
         try:
-            psd_ = psd(ts, method_func, *args, **kwargs)
+            psd_ = psdn(ts, method_func, *args, **kwargs)
             del psd_.epoch  # fixes Segmentation fault (no idea why it faults)
             return psd_
         except Exception as e:
@@ -155,8 +258,8 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
                                     channel=timeseries.channel)
 
 
-@_fft_params_in_samples
-def spectrogram(timeseries, *args, **kwargs):
+@set_fft_params
+def spectrogram(timeseries, method_func, *args, **kwargs):
     """Generate a spectrogram using a method function
 
     Each time bin of the resulting spectrogram is a PSD estimate using
@@ -185,7 +288,7 @@ def spectrogram(timeseries, *args, **kwargs):
         """Calculate a single PSD for a spectrogram
         """
         try:
-            return periodogram(ts, fs=sampling, nfft=nfft, window=window,
+            return method_func(ts, nfft=nfft, window=window,
                                **kwargs)[1]
         except Exception as e:
             if nproc == 1:
