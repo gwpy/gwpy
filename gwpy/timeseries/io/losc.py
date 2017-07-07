@@ -150,7 +150,6 @@ def fetch_losc_data(detector, start, end, host=LOSC_URL,
     out = None
     for url in cache:
         keep = file_segment(url) & span
-        print(url)
         new = _fetch_losc_data_file(url, host=host, channel=channel, cls=cls,
                                     verbose=verbose).crop(*keep, copy=False)
         if out is None:
