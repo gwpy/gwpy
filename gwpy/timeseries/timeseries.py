@@ -1249,7 +1249,7 @@ class TimeSeries(TimeSeriesBase):
         else:
             fftlength = int((fftlength * self_.sample_rate).decompose().value)
         if window is not None:
-            kwargs['window'] = window
+            kwargs['window'] = signal.get_window(window, fftlength)
         coh, f = mlab.cohere(self_.value, other.value, NFFT=fftlength,
                              Fs=sampling, noverlap=overlap, **kwargs)
         out = coh.view(FrequencySeries)
