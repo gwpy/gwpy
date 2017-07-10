@@ -106,7 +106,7 @@ class TimeSeries(TimeSeriesBase):
     returned via the :attr:`~TimeSeries.times` property.
 
     All comparison operations performed on a `TimeSeries` will return a
-    :class:`~gwpy.timeseries.statevector.StateTimeSeries` - a boolean array
+    `~gwpy.timeseries.StateTimeSeries` - a boolean array
     with metadata copied from the starting `TimeSeries`.
 
     Examples
@@ -214,7 +214,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        out : :class:`~gwpy.frequencyseries.FrequencySeries`
+        out : `~gwpy.frequencyseries.FrequencySeries`
             the normalised, complex-valued FFT `FrequencySeries`.
 
         See Also
@@ -267,7 +267,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        out : complex-valued :class:`~gwpy.frequencyseries.FrequencySeries`
+        out : complex-valued `~gwpy.frequencyseries.FrequencySeries`
             the transformed output, with populated frequencies array
             metadata
 
@@ -394,7 +394,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        psd :  :class:`~gwpy.frequencyseries.FrequencySeries`
+        psd :  `~gwpy.frequencyseries.FrequencySeries`
             a data series containing the PSD.
 
         See also
@@ -432,7 +432,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        csd :  :class:`~gwpy.frequencyseries.FrequencySeries`
+        csd :  `~gwpy.frequencyseries.FrequencySeries`
             a data series containing the CSD.
         """
         # get method
@@ -578,7 +578,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        fftgram : :class:`~gwpy.spectrogram.core.Spectrogram`
+        fftgram : `~gwpy.spectrogram.Spectrogram`
             a Fourier-gram
         """
         from ..spectrogram import Spectrogram
@@ -642,7 +642,7 @@ class TimeSeries(TimeSeriesBase):
             maximum number of independent frame reading processes, default
             is set to single-process file reading.
 
-        bins : :class:`~numpy.ndarray`, optional, default `None`
+        bins : `numpy.ndarray`, optional, default `None`
             array of histogram bin edges, including the rightmost edge
 
         low : `float`, optional, default: `None`
@@ -703,7 +703,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        psd :  :class:`~gwpy.frequencyseries.FrequencySeries`
+        psd :  `~gwpy.frequencyseries.FrequencySeries`
             a data series containing the PSD.
         """
         method_func = fft_registry.get_method('rayleigh', scaling='other')
@@ -779,7 +779,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        spectrogram : :class:`~gwpy.spectrogram.Spectrogram`
+        spectrogram : `~gwpy.spectrogram.Spectrogram`
             time-frequency cross spectrogram as generated from the
             two input time-series.
         """
@@ -1087,7 +1087,7 @@ class TimeSeries(TimeSeriesBase):
         *filt
             one of:
 
-            - :class:`scipy.signal.lti`
+            - `scipy.signal.lti`
             - `MxN` `numpy.ndarray` of second-order-sections
               (`scipy` >= 0.16 only)
             - ``(numerator, denominator)`` polynomials
@@ -1210,7 +1210,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        coherence : :class:`~gwpy.frequencyseries.FrequencySeries`
+        coherence : `~gwpy.frequencyseries.FrequencySeries`
             the coherence `FrequencySeries` of this `TimeSeries`
             with the other
 
@@ -1294,7 +1294,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        coherence : :class:`~gwpy.frequencyseries.FrequencySeries`
+        coherence : `~gwpy.frequencyseries.FrequencySeries`
             the coherence `FrequencySeries` of this `TimeSeries`
             with the other
 
@@ -1347,7 +1347,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
+        spectrogram : `~gwpy.spectrogram.Spectrogram`
             time-frequency coherence spectrogram as generated from the
             input time-series.
         """
