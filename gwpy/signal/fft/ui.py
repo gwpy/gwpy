@@ -34,7 +34,7 @@ from astropy.units import Quantity
 
 from . import utils as fft_utils
 from ...utils import mp as mp_utils
-from ..window import recommended_overlap
+from ..window import (canonical_name, recommended_overlap)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -102,6 +102,10 @@ def normalize_fft_params(series, kwargs={}):
     samp = series.sample_rate
     fftlength = kwargs.pop('fftlength', None)
     overlap = kwargs.pop('overlap', None)
+
+    # get canonical window name
+    if isinstance(kwargs.get('window', None), str):
+        kwargs['window'] = canonical_name(kwargs['window'])
 
     # fftlength -> nfft
     if fftlength is None:
