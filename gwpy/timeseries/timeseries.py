@@ -367,7 +367,7 @@ class TimeSeries(TimeSeriesBase):
 
         # calculate PSD using UI method
         return fft_ui.psd(self, method_func, fftlength=fftlength,
-                          overlap=overlap, **kwargs)
+                          overlap=overlap, window=window, **kwargs)
 
     @_update_doc_with_fft_methods
     def asd(self, fftlength=None, overlap=None, window='hann',
