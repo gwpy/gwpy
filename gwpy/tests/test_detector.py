@@ -19,7 +19,9 @@
 """Unit test for detector module
 """
 
+import os.path
 from six.moves.urllib.error import URLError
+from tempfile import NamedTemporaryFile
 
 import pytest
 
@@ -37,6 +39,46 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 NDSHOST = 'nds.ligo-la.caltech.edu'
 
+OMEGA_CONFIG = """
+[L1:CAL,L1 calibrated]
+
+{
+  channelName:                 'L1:GDS-CALIB_STRAIN'
+  frameType:                   'L1_HOFT_C00'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 96]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        0.5
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              1
+}
+
+[L1:PEM,L1 environment]
+
+{
+  channelName:                 'L1:PEM-CS_SEIS_LVEA_VERTEX_Z_DQ'
+  frameType:                   'L1_R'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        1.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+"""
+
+
+# -- Channel ------------------------------------------------------------------
 
 class ChannelTests(unittest.TestCase):
     """`TestCase` for the timeseries module
@@ -311,6 +353,47 @@ class ChannelListTestCase(unittest.TestCase):
             self.REAL_CHANNELS[:1], 'Jan 1 2017', 'Jan 2 2017',
             host=NDSHOST, ctype=1)
         self.assertListEqual(list(avail.values())[0], SegmentList())
+
+    def test_read_write_omega_config(self):
+        # write OMEGA_CONFIG to file and read it back
+        try:
+            with NamedTemporaryFile(suffix='.txt', delete=False) as f:
+                f.write(OMEGA_CONFIG)
+            cl = ChannelList.read(f.name, format='omega-scan')
+            self.assertEqual(len(cl), 2)
+            self.assertEqual(cl[0].name, 'L1:GDS-CALIB_STRAIN')
+            self.assertEqual(cl[0].sample_rate, 4096 * units.Hertz)
+            self.assertEqual(cl[0].frametype, 'L1_HOFT_C00')
+            self.assertDictEqual(
+                cl[0].params, {'channelName': 'L1:GDS-CALIB_STRAIN',
+                               'frameType': 'L1_HOFT_C00',
+                               'sampleFrequency': 4096,
+                               'searchTimeRange': 64,
+                               'searchFrequencyRange': (0, float('inf')),
+                               'searchQRange': (4, 96),
+                               'searchMaximumEnergyLoss': 0.2,
+                               'whiteNoiseFalseRate': 1e-3,
+                               'searchWindowDuration': 0.5,
+                               'plotTimeRanges': (1, 4, 16),
+                               'plotFrequencyRange': (),
+                               'plotNormalizedEnergyRange': (0, 25.5),
+                               'alwaysPlotFlag': 1,})
+            self.assertEqual(cl[1].name, 'L1:PEM-CS_SEIS_LVEA_VERTEX_Z_DQ')
+            self.assertEqual(cl[1].frametype, 'L1_R')
+        finally:
+            if os.path.isfile(f.name):
+                os.remove(f.name)
+        # write omega config again using ChannelList.write and read it back
+        # and check that the two lists match
+        try:
+            with NamedTemporaryFile(suffix='.txt', delete=False,
+                                    mode='w') as f2:
+                cl.write(f2, format='omega-scan')
+            cl2 = type(cl).read(f2.name, format='omega-scan')
+            self.assertListEqual(cl, cl2)
+        finally:
+            if os.path.isfile(f2.name):
+                os.remove(f2.name)
 
 
 if __name__ == '__main__':
