@@ -199,6 +199,7 @@ def print_omega_channel(channel, file=sys.stdout):
         print('  {0: <30}  {1}'.format(key, value), file=file)
     print('}', file=file)
 
+
 # -- registry -----------------------------------------------------------------
 
 registry.register_reader('omega-scan', ChannelList, read_omega_scan_config)
