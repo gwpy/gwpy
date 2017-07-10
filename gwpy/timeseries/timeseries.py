@@ -256,13 +256,14 @@ class TimeSeries(TimeSeriesBase):
             number of seconds in single FFT, default, use
             whole `TimeSeries`
 
-        overlap : `float`
-            numbers of seconds by which to overlap neighbouring FFTs,
-            by default, no overlap is used.
+        overlap : `float`, optional
+            number of seconds of overlap between FFTs, defaults to the
+            recommended overlap for the given window (if given), or 0
 
-        window : `str`, :class:`numpy.ndarray`
-            name of the window function to use, or an array of length
-            ``fftlength * TimeSeries.sample_rate`` to use as the window.
+        window : `str`, `numpy.ndarray`, optional
+            window function to apply to timeseries prior to FFT,
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
 
         Returns
         -------
@@ -326,7 +327,8 @@ class TimeSeries(TimeSeriesBase):
         return mean
 
     @_update_doc_with_fft_methods
-    def psd(self, fftlength=None, overlap=None, method='welch', **kwargs):
+    def psd(self, fftlength=None, overlap=None, window='hann',
+            method='welch', **kwargs):
         """Calculate the PSD `FrequencySeries` for this `TimeSeries`
 
         Parameters
@@ -334,12 +336,18 @@ class TimeSeries(TimeSeriesBase):
         fftlength : `float`, default: `TimeSeries.duration`
             number of seconds in single FFT
 
-        overlap : `float`, optional, default: `None`
-            number of seconds of overlap between FFTs, defaults to that of
-            the relevant method.
+        overlap : `float`, optional
+            number of seconds of overlap between FFTs, defaults to the
+            recommended overlap for the given window (if given), or 0
 
-        method : `str`, optional, default: ``'welch'``
-            PSD-generation method, see below for more details
+        window : `str`, `numpy.ndarray`, optional
+            window function to apply to timeseries prior to FFT,
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
+
+        method : `str`, optional
+            FFT-averaging method, default: ``'welch'``,
+            see *Notes* for more details
 
         **kwargs
             other keyword arguments are passed to the underlying
@@ -362,7 +370,8 @@ class TimeSeries(TimeSeriesBase):
                           overlap=overlap, **kwargs)
 
     @_update_doc_with_fft_methods
-    def asd(self, fftlength=None, overlap=None, method='welch', **kwargs):
+    def asd(self, fftlength=None, overlap=None, window='hann',
+            method='welch', **kwargs):
         """Calculate the ASD `FrequencySeries` of this `TimeSeries`
 
         Parameters
@@ -370,12 +379,18 @@ class TimeSeries(TimeSeriesBase):
         fftlength : `float`, default: `TimeSeries.duration`
             number of seconds in single FFT
 
-        overlap : `float`, optional, default: `None`
-            number of seconds of overlap between FFTs, defaults to that of
-            the relevant method.
+        overlap : `float`, optional
+            number of seconds of overlap between FFTs, defaults to the
+            recommended overlap for the given window (if given), or 0
 
-        method : `str`, optional, default: ``'welch'``
-            FFT-averaging method, see below for more details
+        window : `str`, `numpy.ndarray`, optional
+            window function to apply to timeseries prior to FFT,
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
+
+        method : `str`, optional
+            FFT-averaging method, default: ``'welch'``,
+            see *Notes* for more details
 
         Returns
         -------
@@ -394,18 +409,26 @@ class TimeSeries(TimeSeriesBase):
         return self.psd(method=method, fftlength=fftlength, overlap=overlap,
                         **kwargs) ** (1/2.)
 
-    def csd(self, other, fftlength=None, overlap=None, **kwargs):
+    def csd(self, other, fftlength=None, overlap=None, window='hann',
+            **kwargs):
         """Calculate the CSD `FrequencySeries` for two `TimeSeries`
 
         Parameters
         ----------
         other : `TimeSeries`
             the second `TimeSeries` in this CSD calculation
+
         fftlength : `float`, default: `TimeSeries.duration`
             number of seconds in single FFT
-        overlap : `float`, optional, default: `None`
-            number of seconds of overlap between FFTs, defaults to that of
-            the relevant method.
+
+        overlap : `float`, optional
+            number of seconds of overlap between FFTs, defaults to the
+            recommended overlap for the given window (if given), or 0
+
+        window : `str`, `numpy.ndarray`, optional
+            window function to apply to timeseries prior to FFT,
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
 
         Returns
         -------
@@ -421,7 +444,7 @@ class TimeSeries(TimeSeriesBase):
 
     @_update_doc_with_fft_methods
     def spectrogram(self, stride, fftlength=None, overlap=0,
-                    method='welch', window='hann', nproc=1, **kwargs):
+                    window='hann', method='welch', nproc=1, **kwargs):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
 
@@ -441,16 +464,18 @@ class TimeSeries(TimeSeriesBase):
         fftlength : `float`
             number of seconds in single FFT.
 
-        overlap : `int`, optional, default: 0
-            number of seconds between FFTs.
+        overlap : `float`, optional
+            number of seconds of overlap between FFTs, defaults to the
+            recommended overlap for the given window (if given), or 0
 
-        method : `str`, optional, default: ``'welch'``
-            FFT-averaging method, see below for more details
-
-        window : `str`, `numpy.ndarray`, optional, default: `None`
+        window : `str`, `numpy.ndarray`, optional
             window function to apply to timeseries prior to FFT,
-            see `scipy.signal.get_window` for details on acceptable
+            see :func:`scipy.signal.get_window` for details on acceptable
             formats
+
+        method : `str`, optional
+            FFT-averaging method, default: ``'welch'``,
+            see *Notes* for more details
 
         nproc : `int`, default: ``1``
             number of CPUs to use in parallel processing of FFTs
@@ -496,12 +521,13 @@ class TimeSeries(TimeSeriesBase):
             number of seconds in single FFT.
 
         overlap : `float`, optional
-            number of seconds between FFTs.
+            number of seconds of overlap between FFTs, defaults to the
+            recommended overlap for the given window (if given), or 0
 
-        window : `str` or `tuple` or `array-like`, optional
-            desired window to use. See `~scipy.signal.get_window` for a list
-            of windows and required parameters. If `window` is array_like it
-            will be used directly as the window.
+        window : `str`, `numpy.ndarray`, optional
+            window function to apply to timeseries prior to FFT,
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
 
         scaling : [ 'density' | 'spectrum' ], optional
             selects between computing the power spectral density ('density')
@@ -599,14 +625,18 @@ class TimeSeries(TimeSeriesBase):
         fftlength : `float`
             number of seconds in single FFT
 
-        method : `str`, optional, default: ``'welch'``
-            FFT-averaging method, see below for more details
+        method : `str`, optional
+            FFT-averaging method, default: ``'welch'``,
+            see *Notes* for more details
 
-        overlap : `int`, optiona, default: fftlength
-            number of seconds between FFTs
+        overlap : `float`, optional
+            number of seconds of overlap between FFTs, defaults to the
+            recommended overlap for the given window (if given), or 0
 
-        window : `timeseries.window.Window`, optional, default: `None`
-            window function to apply to timeseries prior to FFT
+        window : `str`, `numpy.ndarray`, optional
+            window function to apply to timeseries prior to FFT,
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
 
         nproc : `int`, default: ``1``
             maximum number of independent frame reading processes, default
@@ -667,7 +697,7 @@ class TimeSeries(TimeSeriesBase):
         fftlength : `float`, default: `TimeSeries.duration`
             number of seconds in single FFT
 
-        overlap : `float`, optional, default: `None`
+        overlap : `float`, optional
             number of seconds of overlap between FFTs, defaults to that of
             the relevant method.
 
@@ -688,12 +718,19 @@ class TimeSeries(TimeSeriesBase):
         ----------
         stride : `float`
             number of seconds in single PSD (column of spectrogram).
+
         fftlength : `float`
             number of seconds in single FFT.
-        overlap : `int`, optiona, default: fftlength
-            number of seconds between FFTs.
-        window : `numpy.ndarray`, `str`, optional, default: `None`
-            window to apply to timeseries prior to FFT.
+
+        overlap : `float`, optional
+            number of seconds of overlap between FFTs, defaults to the
+            recommended overlap for the given window (if given), or 0
+
+        window : `str`, `numpy.ndarray`, optional
+            window function to apply to timeseries prior to FFT,
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
+
         nproc : `int`, default: ``1``
             maximum number of independent frame reading processes, default
             is set to single-process file reading.
@@ -720,14 +757,22 @@ class TimeSeries(TimeSeriesBase):
         ----------
         other : `~gwpy.timeseries.TimeSeries`
             second time-series for cross spectral density calculation
+
         stride : `float`
             number of seconds in single PSD (column of spectrogram).
+
         fftlength : `float`
             number of seconds in single FFT.
-        overlap : `int`, optional, default: fftlength
-            number of seconds between FFTs.
-        window : `numpy.ndarray`, `str`, optional, default: `None`
-            window to apply to timeseries prior to FFT.
+
+        overlap : `float`, optional
+            number of seconds of overlap between FFTs, defaults to the
+            recommended overlap for the given window (if given), or 0
+
+        window : `str`, `numpy.ndarray`, optional
+            window function to apply to timeseries prior to FFT,
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
+
         nproc : `int`, default: ``1``
             maximum number of independent frame reading processes, default
             is set to single-process file reading.
@@ -906,11 +951,15 @@ class TimeSeries(TimeSeriesBase):
         ----------
         rate : `float`
             rate to which to resample this `Series`
-        window : array_like, callable, string, float, or tuple, optional
-            specifies the window applied to the signal in the Fourier
-            domain, only used for `ftype='fir'` or irregular downsampling
+
+        window : `str`, `numpy.ndarray`, optional
+            window function to apply to signal in the Fourier domain,
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats, only used for `ftype='fir'` or irregular downsampling
+
         ftype : `str`, optional
             type of filter, either 'fir' or 'iir', defaults to 'fir'
+
         n : `int`, optional
             if `ftype='fir'` the number of taps in the filter, otherwise
             the order of the Chebyshev type I IIR filter
@@ -1140,14 +1189,19 @@ class TimeSeries(TimeSeriesBase):
         ----------
         other : `TimeSeries`
             `TimeSeries` signal to calculate coherence with
+
         fftlength : `float`, optional, default: `TimeSeries.duration`
             number of seconds in single FFT, defaults to a single FFT
-        overlap : `float`, optional, default: `None`
-            number of seconds of overlap between FFTs, defaults to no
-            overlap
-        window : `timeseries.window.Window`, optional, default: `HanningWindow`
+
+        overlap : `float`, optional
+            number of seconds of overlap between FFTs, defaults to the
+            recommended overlap for the given window (if given), or 0
+
+        window : `str`, `numpy.ndarray`, optional
             window function to apply to timeseries prior to FFT,
-            default HanningWindow of the relevant size
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
+
         **kwargs
             any other keyword arguments accepted by
             :func:`matplotlib.mlab.cohere` except ``NFFT``, ``window``,
@@ -1219,14 +1273,19 @@ class TimeSeries(TimeSeriesBase):
         ----------
         dt : `float`
             duration (in seconds) of time-shift
+
         fftlength : `float`, optional, default: `TimeSeries.duration`
             number of seconds in single FFT, defaults to a single FFT
-        overlap : `int`, optiona, default: fftlength
-            number of seconds of overlap between FFTs, defaults to no
-            overlap
-        window : `timeseries.window.Window`, optional, default: `HanningWindow`
+
+        overlap : `float`, optional
+            number of seconds of overlap between FFTs, defaults to the
+            recommended overlap for the given window (if given), or 0
+
+        window : `str`, `numpy.ndarray`, optional
             window function to apply to timeseries prior to FFT,
-            default HanningWindow of the relevant size
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
+
         **kwargs
             any other keyword arguments accepted by
             :func:`matplotlib.mlab.cohere` except ``NFFT``, ``window``,
@@ -1266,15 +1325,22 @@ class TimeSeries(TimeSeriesBase):
         ----------
         other : `TimeSeries`
             the second `TimeSeries` in this CSD calculation
+
         stride : `float`
             number of seconds in single PSD (column of spectrogram)
+
         fftlength : `float`
             number of seconds in single FFT
-        overlap : `int`, optiona, default: fftlength
-            number of seconds of overlap between FFTs, defaults to no
-            overlap
-        window : `timeseries.window.Window`, optional, default: `None`
-            window function to apply to timeseries prior to FFT
+
+        overlap : `float`, optional
+            number of seconds of overlap between FFTs, defaults to the
+            recommended overlap for the given window (if given), or 0
+
+        window : `str`, `numpy.ndarray`, optional
+            window function to apply to timeseries prior to FFT,
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
+
         nproc : `int`, default: ``1``
             number of parallel processes to use when calculating
             individual coherence spectra.
@@ -1328,16 +1394,18 @@ class TimeSeries(TimeSeriesBase):
         fftlength : `float`
             number of seconds in single FFT
 
-        overlap : `float`, optional, default: 0
-            numbers of seconds by which to overlap neighbouring FFTs,
-            by default, no overlap is used.
+        overlap : `float`, optional
+            number of seconds of overlap between FFTs, defaults to the
+            recommended overlap for the given window (if given), or 0
 
-        method : `str`, optional, default: ``'welch'``
-            FFT-averaging method, see below for more details
+        method : `str`, optional
+            FFT-averaging method, default: ``'welch'``,
+            see *Notes* for more details
 
-        window : `str`, `numpy.ndarray`
-            name of the window function to use, or an array of length
-            ``fftlength * TimeSeries.sample_rate`` to use as the window.
+        window : `str`, `numpy.ndarray`, optional
+            window function to apply to timeseries prior to FFT,
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
 
         detrend : `str`, optional
             type of detrending to do before FFT (see `~TimeSeries.detrend`
