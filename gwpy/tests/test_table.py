@@ -49,7 +49,7 @@ class TableTests(unittest.TestCase):
     TABLE_CLASS = Table
 
     def assertTableEqual(self, a, b, copy=None, meta=False):
-        assert a.colnames == b.colnames
+        assert sorted(a.colnames) == sorted(b.colnames)
         nptest.assert_array_equal(a.as_array(), b.as_array())
         if meta:
             assert a.meta == b.meta
