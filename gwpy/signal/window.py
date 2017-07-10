@@ -70,6 +70,7 @@ ROV = {
     'triang': .5
 }
 
+
 def recommended_overlap(name, nfft=None):
     """Returns the recommended fractional overlap for the given window
 
