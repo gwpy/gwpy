@@ -154,7 +154,7 @@ def empty_hdf5_file(h5f, ifo=None):
     h5f = h5f.file
     if list(h5f) == []:
         return True
-    if ifo is not None and list(h5f[ifo]) == ['psd']:
+    if ifo is not None and (ifo not in h5f or list(h5f[ifo]) == ['psd']):
         return True
     return False
 
