@@ -108,7 +108,7 @@ class TableTests(unittest.TestCase):
             # overwrite=False, append=True
             table.write(fp, format='ligolw.sngl_burst', append=True)
             table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
-            self.assertTableEqual(table2, table5)
+            self.assertTableEqualTypeless(table2, table5)
             # overwrite=True, append=True
             table.write(fp, format='ligolw.sngl_burst', append=True,
                         overwrite=True)
