@@ -136,11 +136,11 @@ class ChannelTests(unittest.TestCase):
         # test virgo channels
         out = Channel.parse_channel_name("V1:h_16384Hz")
         self.assertDictEqual(
-            out, {'ifo': 'V1', 'system':'h', 'subsystem':'16384Hz',
+            out, {'ifo': 'V1', 'system': 'h', 'subsystem': '16384Hz',
                   'signal': None, 'trend': None, 'type': None})
         out = Channel.parse_channel_name("V1:Sa_PR_f0_zL_500Hz")
         self.assertDictEqual(
-            out, {'ifo': 'V1', 'system':'Sa', 'subsystem':'PR',
+            out, {'ifo': 'V1', 'system': 'Sa', 'subsystem': 'PR',
                   'signal': 'f0_zL_500Hz', 'trend': None, 'type': None})
 
     def test_property_frequency_range(self):
@@ -172,7 +172,7 @@ class ChannelTests(unittest.TestCase):
         except URLError as e:
             msg = str(e)
             if ('timed out' in msg.lower() or
-                'connection reset' in msg.lower()):
+                    'connection reset' in msg.lower()):
                 self.skipTest(msg)
             raise
         except ValueError as e:
@@ -188,7 +188,7 @@ class ChannelTests(unittest.TestCase):
                 import kerberos
             except ImportError:
                 self.skipTest('Channel.query() requires kerberos '
-                                        'to be installed')
+                              'to be installed')
             else:
                 if isinstance(e, kerberos.GSSError):
                     self.skipTest(str(e))
@@ -274,7 +274,8 @@ class UnitTest(unittest.TestCase):
         aunit = lalutils.from_lal_unit(lalunit)
         self.assertEqual(aunit, units.meter)
         # test compound
-        self.assertEqual(units.Newton,
+        self.assertEqual(
+            units.Newton,
             lalutils.from_lal_unit(lalutils.to_lal_unit(units.Newton)))
         # test error
         self.assertRaises(ValueError, lalutils.to_lal_unit, 'blah')
@@ -287,8 +288,8 @@ class ChannelListTestCase(unittest.TestCase):
     REAL_CHANNELS = ['L1:IMC-PWR_IN_OUT_DQ', 'H1:PSL-ODC_CHANNEL_OUT_DQ']
 
     def setUp(self):
-        self.channels = [Channel(n, s) for n, s in
-                    zip(self.NAMES, self.SAMPLE_RATES)]
+        self.channels = [Channel(n, s) for
+                         n, s in zip(self.NAMES, self.SAMPLE_RATES)]
 
     def create(self):
         return ChannelList(self.channels)
@@ -377,7 +378,7 @@ class ChannelListTestCase(unittest.TestCase):
                                'plotTimeRanges': (1, 4, 16),
                                'plotFrequencyRange': (),
                                'plotNormalizedEnergyRange': (0, 25.5),
-                               'alwaysPlotFlag': 1,})
+                               'alwaysPlotFlag': 1})
             self.assertEqual(cl[1].name, 'L1:PEM-CS_SEIS_LVEA_VERTEX_Z_DQ')
             self.assertEqual(cl[1].frametype, 'L1_R')
         finally:
