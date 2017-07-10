@@ -34,6 +34,18 @@ from gwpy.timeseries import TimeSeries
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+# hack up constants that changed between astropy 1.3 and 2.0
+# TODO: might want to do this in reverse, i.e. hard-coding the answers for 2.0
+from astropy import __version__ as astropy_version
+if astropy_version >= '2.0':
+    from astropy import constants
+    from astropy.constants import (si, astropyconst13)
+    units.M_sun._represents = units.Unit(astropyconst13.M_sun)
+    constants.M_sun = si.M_sun = astropyconst13.M_sun
+    constants.G = si.G = astropyconst13.G
+    constants.c = si.c = astropyconst13.c
+    constants.pc = si.pc = astropyconst13.pc
+
 # something changed in scyip 0.19, something FFT-related
 if scipy.__version__ < '0.19':
     TEST_RESULTS = {

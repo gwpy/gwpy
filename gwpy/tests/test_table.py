@@ -49,7 +49,7 @@ class TableTests(unittest.TestCase):
     TABLE_CLASS = Table
 
     def assertTableEqual(self, a, b, copy=None, meta=False):
-        assert a.colnames == b.colnames
+        assert sorted(a.colnames) == sorted(b.colnames)
         nptest.assert_array_equal(a.as_array(), b.as_array())
         if meta:
             assert a.meta == b.meta
@@ -108,7 +108,7 @@ class TableTests(unittest.TestCase):
             # overwrite=False, append=True
             table.write(fp, format='ligolw.sngl_burst', append=True)
             table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
-            self.assertTableEqual(table2, table5)
+            self.assertTableEqualTypeless(table2, table5)
             # overwrite=True, append=True
             table.write(fp, format='ligolw.sngl_burst', append=True,
                         overwrite=True)

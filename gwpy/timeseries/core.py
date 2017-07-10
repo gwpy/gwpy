@@ -47,6 +47,7 @@ from math import ceil
 import numpy
 
 from astropy import units
+from astropy import __version__ as astropy_version
 
 from ..types import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
@@ -58,6 +59,8 @@ from ..utils.compat import OrderedDict
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 __all__ = ['TimeSeriesBase', 'ArrayTimeSeries', 'TimeSeriesBaseDict']
+
+ASTROPY_2_0 = astropy_version >= '2.0'
 
 _UFUNC_STRING = {'less': '<',
                  'less_equal': '<=',
@@ -534,6 +537,25 @@ class TimeSeriesBase(Series):
                                 epoch=self.epoch.gps, copy=copy)
 
     # -- TimeSeries operations ------------------
+
+    if ASTROPY_2_0:
+        def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+            # this is new in numpy 1.13, astropy 2.0 adopts it, we need to
+            # work out how to handle this and __array_wrap__ together properly
+            out = super(TimeSeriesBase, self).__array_ufunc__(
+                ufunc, method, *inputs, **kwargs)
+            if out.dtype is numpy.dtype(bool):
+                from .statevector import StateTimeSeries
+                orig, value = inputs
+                try:
+                    op_ = _UFUNC_STRING[ufunc.__name__]
+                except KeyError:
+                    op_ = ufunc.__name__
+                out = out.view(StateTimeSeries)
+                out.__metadata_finalize__(orig)
+                out.override_unit('')
+                out.name = '%s %s %s' % (orig.name, op_, value)
+            return out
 
     def __array_wrap__(self, obj, context=None):
         # if output type is boolean, return a `StateTimeSeries`
@@ -1142,3 +1164,11 @@ class TimeSeriesBaseList(list):
 
     def __getslice__(self, i, j):
         return type(self)(*super(TimeSeriesBaseList, self).__getslice__(i, j))
+
+    def copy(self):
+        """Return a copy of this list with each element copied to new memory
+        """
+        out = type(self)()
+        for series in self:
+            out.append(series.copy())
+        return out

@@ -975,8 +975,9 @@ class TimeSeriesListTestCase(unittest.TestCase):
 
     def test_coalesce(self):
         tsl = self.create()
-        tsl2 = self.create().coalesce()
-        self.assertEqual(tsl2[0], tsl[0].append(tsl[1], inplace=False))
+        tsl2 = tsl.copy().coalesce()
+        nptest.assert_array_equal(tsl2[0].value,
+                                  tsl[0].append(tsl[1], inplace=False).value)
 
 
 if __name__ == '__main__':
