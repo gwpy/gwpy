@@ -80,12 +80,31 @@ OMEGA_CONFIG = """
 }
 """
 
+CLF = """
+[group-1]
+flow = 4
+fhigh = Nyquist
+qhigh = 150
+frametype = H1_HOFT_C00
+channels = H1:GDS-CALIB_STRAIN 16384 unsafe clean
+
+[group-2]
+flow = .1
+fhigh = 60
+qhigh = 60
+frametype = H1_R
+channels =
+	H1:ISI-GND_STS_HAM2_X_DQ 512 safe flat
+	H1:ISI-GND_STS_HAM2_Y_DQ 256 unsafe flat
+	H1:ISI-GND_STS_HAM2_Z_DQ 512 glitchy
+"""
+
+
 # -----------------------------------------------------------------------------
 #
 #   gwpy.detector.units
 #
 # -----------------------------------------------------------------------------
-
 
 @pytest.mark.parametrize('arg, unit', [
     (None, None),
@@ -560,6 +579,50 @@ class TestChannelList(object):
                                     mode='w') as f2:
                 cl.write(f2, format='omega-scan')
             cl2 = type(cl).read(f2.name, format='omega-scan')
+            assert cl == cl2
+        finally:
+            if os.path.isfile(f2.name):
+                os.remove(f2.name)
+
+    def test_read_write_clf(self):
+        # write clf to file and read it back
+        try:
+            with NamedTemporaryFile(suffix='.ini', delete=False) as f:
+                f.write(CLF)
+            cl = ChannelList.read(f.name)
+            assert len(cl) == 4
+            a = cl[0]
+            assert a.name == 'H1:GDS-CALIB_STRAIN'
+            assert a.sample_rate == 16384 * units.Hz
+            assert a.frametype == 'H1_HOFT_C00'
+            assert a.frequency_range[0] == 4. * units.Hz
+            assert a.frequency_range[1] == float('inf') * units.Hz
+            assert a.safe == False
+            assert a.params == {'qhigh': '150', 'safe': 'unsafe',
+                                'fidelity': 'clean'}
+            b = cl[1]
+            assert b.name == 'H1:ISI-GND_STS_HAM2_X_DQ'
+            assert b.frequency_range[0] == .1 * units.Hz
+            assert b.frequency_range[1] == 60. * units.Hz
+            c = cl[2]
+            assert c.name == 'H1:ISI-GND_STS_HAM2_Y_DQ'
+            assert c.sample_rate == 256 * units.Hz
+            assert c.safe == False
+            d = cl[3]
+            assert d.name == 'H1:ISI-GND_STS_HAM2_Z_DQ'
+            assert d.safe == True
+            assert d.params['fidelity'] == 'glitchy'
+        finally:
+            if os.path.isfile(f.name):
+                os.remove(f.name)
+        # write omega config again using ChannelList.write and read it back
+        # and check that the two lists match
+        try:
+            with NamedTemporaryFile(suffix='.ini', delete=False,
+                                    mode='w') as f2:
+
+                cl.write(f2)
+            cl2 = type(cl).read(f2.name)
             assert cl == cl2
         finally:
             if os.path.isfile(f2.name):
