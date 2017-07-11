@@ -77,6 +77,7 @@ from numpy import inf
 
 from ...io import registry
 from ...io.utils import identify_factory
+from ...io.cache import FILE_LIKE
 from ...utils.compat import OrderedDict
 from .. import (Channel, ChannelList)
 
@@ -162,7 +163,7 @@ def write_channel_list_file(channels, fobj):
             out.set(group, 'channels', '\n%s' % entry)
         else:
             out.set(group, 'channels', cl + '\n%s' % entry)
-    if isinstance(fobj, file):
+    if isinstance(fobj, FILE_LIKE):
         close = False
     else:
         fobj = open(fobj, 'w')
