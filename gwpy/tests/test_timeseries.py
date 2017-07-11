@@ -54,7 +54,7 @@ from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
 from test_array import SeriesTestCase
 from compat import HAS_LAL
 import common
-import mockutils
+import mocks
 
 SEED = 1
 numpy.random.seed(SEED)
@@ -401,9 +401,9 @@ class TimeSeriesTestMixin(object):
 
     @unittest.skipUnless(HAS_NDS2, 'No module named nds2')
     def test_fetch(self):
-        nds_buffer = mockutils.mock_nds2_buffer(
+        nds_buffer = mocks.mock_nds2_buffer(
             'X1:TEST', self.data, 1000000000, self.data.shape[0], 'm')
-        nds_connection = mockutils.mock_nds2_connection(buffers=[nds_buffer])
+        nds_connection = mocks.mock_nds2_connection(buffers=[nds_buffer])
         with mock.patch('nds2.connection') as mock_connection, \
              mock.patch('nds2.buffer', nds_buffer):
             mock_connection.return_value = nds_connection

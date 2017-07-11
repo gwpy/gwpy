@@ -43,7 +43,7 @@ from gwpy.plotter import (SegmentPlot, SegmentAxes)
 
 from compat import (unittest, mock, HAS_H5PY, HAS_LAL, HAS_DQSEGDB, HAS_M2CRYPTO)
 import common
-import mockutils
+import mocks
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -181,7 +181,7 @@ class SegmentClassTestsMixin(object):
                           "rerunning with mock..."
                           % (type(e).__name__, str(e)))
             with mock.patch('dqsegdb.apicalls.dqsegdbQueryTimes',
-                            mockutils.mock_query_times(result)):
+                            mocks.mock_query_times(result)):
                 return cm(*args, **kwargs)
 
     @unittest.skipUnless(HAS_DQSEGDB, 'No module named dqsegdb')
@@ -195,7 +195,7 @@ class SegmentClassTestsMixin(object):
                           "rerunning with mock..."
                           % (type(e).__name__, str(e)))
             with mock.patch('dqsegdb.apicalls.dqsegdbCascadedQuery',
-                            mockutils.mock_dqsegdb_cascaded_query(result)):
+                            mocks.mock_dqsegdb_cascaded_query(result)):
                 return cm(*args, **kwargs)
 
 
