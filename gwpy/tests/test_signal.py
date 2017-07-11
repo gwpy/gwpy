@@ -19,23 +19,24 @@
 """Unit test for signal module
 """
 
-from compat import (unittest, HAS_LAL)
+import pytest
 
 import numpy
-from numpy import testing as nptest
-
-from scipy import signal
 
 from astropy import units
 
-if HAS_LAL:
+try:
     import lal
+except ImportError:
+    pass
 
 from gwpy import signal as gwpy_signal
 from gwpy.signal import window
 from gwpy.signal.fft import (lal as fft_lal, utils as fft_utils,
                              registry as fft_registry, ui as fft_ui)
 from gwpy.timeseries import TimeSeries
+
+import utils
 
 ONE_HZ = units.Quantity(1, 'Hz')
 
@@ -50,47 +51,55 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # -- gwpy.signal.filter_design ------------------------------------------------
 
-class FilterDesignTestCase(unittest.TestCase):
-    """`~unittest.TestCase` for the `gwpy.signal.filter_design` module
+class TestSignalFilterDesign(object):
+    """Tests for :mod:`gwpy.signal.filter_design`
     """
     def test_notch_design(self):
+        """Test :func:`gwpy.signal.filter_design.notch`
+        """
         # test simple notch
         zpk = gwpy_signal.notch(60, 16384)
         for a, b in zip(zpk, NOTCH_60HZ):
-            nptest.assert_array_almost_equal(a, b)
+            utils.assert_array_almost_equal(a, b)
         # test Quantities
         zpk2 = gwpy_signal.notch(60 * ONE_HZ, 16384 * ONE_HZ)
         for a, b in zip(zpk, zpk2):
-            nptest.assert_array_almost_equal(a, b)
+            utils.assert_array_almost_equal(a, b)
 
 
 # -- gwpy.signal.window -------------------------------------------------------
 
-class WindowTestCase(unittest.TestCase):
-    """`~unittest.TestCase` for the `gwpy.signal.window` module
+class TestSignalWindow(object):
+    """Tests for :mod:`gwpy.signal.window`
     """
     def test_canonical_name(self):
-        self.assertEqual(window.canonical_name('Hanning'), 'hann')
-        with self.assertRaises(ValueError) as exc:
+        """Test :func:`gwpy.signal.window.canonical_name`
+        """
+        assert window.canonical_name('Hanning') == 'hann'
+        with pytest.raises(ValueError) as exc:
             window.canonical_name('blah')
-        self.assertEqual(str(exc.exception),
-                         'no window function in scipy.signal equivalent '
-                         'to \'blah\'')
+        assert str(exc.value) == ('no window function in scipy.signal '
+                                  'equivalent to \'blah\'')
 
     def test_recommended_overlap(self):
-        self.assertEqual(window.recommended_overlap('ham'), .5)
-        self.assertEqual(window.recommended_overlap('Hanning'), .5)
-        self.assertEqual(window.recommended_overlap('bth', nfft=128), 64)
-        with self.assertRaises(ValueError) as exc:
+        """Test :func:`gwpy.signal.window.recommended_overlap`
+        """
+        assert window.recommended_overlap('ham') == .5
+        assert window.recommended_overlap('Hanning') == .5
+        assert window.recommended_overlap('bth', nfft=128) == 64
+        with pytest.raises(ValueError) as exc:
             window.recommended_overlap('kaiser')
-        self.assertEqual(str(exc.exception),
-                         'no recommended overlap for \'kaiser\' window')
+        assert str(exc.value) == ('no recommended overlap for \'kaiser\' '
+                                  'window')
 
 
 # -- gwpy.signal.fft.registry -------------------------------------------------
 
-class FFTRegistryTests(unittest.TestCase):
-    def tearDown(self):
+class TestSignalFftRegistry(object):
+    """Tests for :mod:`gwpy.signal.fft.registry`
+    """
+    @staticmethod
+    def teardown():
         # remove test methods from registry
         # otherwise they will impact other tests, and test ordering
         # is annoying to predict
@@ -98,34 +107,40 @@ class FFTRegistryTests(unittest.TestCase):
             fft_registry.METHODS[scaling].pop('fake_method', '')
 
     def test_registry(self):
+        """Test :mod:`gwpy.signal.fft.registry`
+        """
         def fake_method():
             pass
 
         # test register
         fft_registry.register_method(fake_method)
-        self.assertIn('fake_method', fft_registry.METHODS['density'])
-        self.assertRaises(KeyError, fft_registry.register_method, fake_method)
+        assert 'fake_method' in fft_registry.METHODS['density']
+        with pytest.raises(KeyError):
+            fft_registry.register_method(fake_method)
         fft_registry.register_method(fake_method, force=True)
-        self.assertIn('fake_method', fft_registry.METHODS['density'])
+        assert 'fake_method' in fft_registry.METHODS['density']
         fft_registry.register_method(fake_method, scaling='spectrum')
-        self.assertIn('fake_method', fft_registry.METHODS['spectrum'])
-        self.assertRaises(KeyError, fft_registry.register_method,
-                          fake_method, scaling='unknown')
+        assert 'fake_method' in fft_registry.METHODS['spectrum']
+        with pytest.raises(KeyError):
+            fft_registry.register_method(fake_method, scaling='unknown')
         # test get
         f = fft_registry.get_method('fake_method')
-        self.assertIs(f, fake_method)
-        self.assertRaises(KeyError, fft_registry.get_method, 'unregistered')
-        self.assertRaises(KeyError, fft_registry.get_method, 'fake_method',
-                          scaling='unknown')
+        assert f is fake_method
+        with pytest.raises(KeyError):
+            fft_registry.get_method('unregistered')
+        with pytest.raises(KeyError):
+            fft_registry.get_method('fake_method', scaling='unknown')
 
     def test_update_doc(self):
+        """Test :func:`gwpy.signal.fft.registry.update_doc`
+        """
         def fake_caller():
             pass
 
-        self.assertEqual(fake_caller.__doc__, None)
+        assert fake_caller.__doc__ is None
         fft_registry.update_doc(fake_caller)
-        self.assertEqual(
-            fake_caller.__doc__,
+        print(fake_caller.__doc__)
+        assert fake_caller.__doc__ == (
             'The available methods are:\n\n'
             '============ =================================\n'
             'Method name               Function            \n'
@@ -137,90 +152,93 @@ class FFTRegistryTests(unittest.TestCase):
             '    bartlett  `gwpy.signal.fft.scipy.bartlett`\n'
             '       welch     `gwpy.signal.fft.scipy.welch`\n'
             '============ =================================\n\n'
-            'See :ref:`gwpy-signal-fft` for more details\n',
+            'See :ref:`gwpy-signal-fft` for more details\n'
         )
 
 
 # -- gwpy.signal.fft.ui -------------------------------------------------------
 
-class FFTUITests(unittest.TestCase):
+class TestSignalFftUI(object):
     def test_seconds_to_samples(self):
-        self.assertEqual(fft_ui.seconds_to_samples(4, 256), 1024)
-        self.assertEqual(fft_ui.seconds_to_samples(1 * units.minute, 16), 960)
-        self.assertEqual(fft_ui.seconds_to_samples(
-            4 * units.second, 16.384 * units.kiloHertz), 65536)
+        """Test :func:`gwpy.signal.fft.ui.seconds_to_samples`
+        """
+        assert fft_ui.seconds_to_samples(4, 256) == 1024
+        assert fft_ui.seconds_to_samples(1 * units.minute, 16) == 960
+        assert fft_ui.seconds_to_samples(
+            4 * units.second, 16.384 * units.kiloHertz) == 65536
 
     def test_normalize_fft_params(self):
-        self.assertDictEqual(
-            fft_ui.normalize_fft_params(
-                TimeSeries(numpy.zeros(1024), sample_rate=256)),
-            {'nfft': 1024, 'noverlap': 0})
-        self.assertDictEqual(
-            fft_ui.normalize_fft_params(
-                TimeSeries(numpy.zeros(1024), sample_rate=256),
-                {'window': 'hann'}),
-            {'nfft': 1024, 'noverlap': 512, 'window': 'hann'})
+        """Test :func:`gwpy.signal.fft.ui.normalize_fft_params`
+        """
+        ftp = fft_ui.normalize_fft_params(
+            TimeSeries(numpy.zeros(1024), sample_rate=256))
+        assert ftp == {'nfft': 1024, 'noverlap': 0}
+        ftp = fft_ui.normalize_fft_params(
+            TimeSeries(numpy.zeros(1024), sample_rate=256),
+            {'window': 'hann'})
+        assert ftp == {'nfft': 1024, 'noverlap': 512, 'window': 'hann'}
 
 
 # -- gwpy.signal.fft.utils ----------------------------------------------------
 
-class FFTUtilsTests(unittest.TestCase):
+class TestSignalFftUtils(object):
     def test_scale_timeseries_unit(self):
+        """Test :func:`gwpy.signal.fft.utils.scale_timeseries_units`
+        """
+        scale_ = fft_utils.scale_timeseries_unit
         u = units.Unit('m')
         # check default
-        self.assertEqual(fft_utils.scale_timeseries_unit(u),
-                         units.Unit('m^2/Hz'))
+        assert scale_(u) == units.Unit('m^2/Hz')
         # check scaling='density'
-        self.assertEqual(
-            fft_utils.scale_timeseries_unit(u, scaling='density'),
-            units.Unit('m^2/Hz'))
+        assert scale_(u, scaling='density') == units.Unit('m^2/Hz')
         # check scaling='spectrum'
-        self.assertEqual(
-            fft_utils.scale_timeseries_unit(u, scaling='spectrum'),
-            units.Unit('m^2'))
+        assert scale_(u, scaling='spectrum') == units.Unit('m^2')
         # check anything else raises an exception
-        self.assertRaises(ValueError, fft_utils.scale_timeseries_unit,
-                          u, scaling='other')
+        with pytest.raises(ValueError):
+            scale_(u, scaling='other')
         # check null unit
-        self.assertEqual(fft_utils.scale_timeseries_unit(None),
-                         units.Unit('Hz^-1'))
+        assert scale_(None) == units.Unit('Hz^-1')
 
 
 # -- gwpy.signal.fft.lal ------------------------------------------------------
 
-@unittest.skipUnless(HAS_LAL, 'No module named lal')
-class LALFftTests(unittest.TestCase):
+@utils.skip_missing_dependency('lal')
+class TestSignalFftLal(object):
     def test_generate_window(self):
+        """Test :func:`gwpy.signal.fft.lal.generate_window`
+        """
         # test default arguments
         w = fft_lal.generate_window(128)
-        self.assertIsInstance(w, lal.REAL8Window)
-        self.assertEqual(w.data.data.size, 128)
-        self.assertEqual(w.sum, 32.31817089602309)
+        assert isinstance(w, lal.REAL8Window)
+        assert w.data.data.size == 128
+        assert w.sum == 32.31817089602309
         # test generating the same window again returns the same object
-        self.assertIs(fft_lal.generate_window(128), w)
+        assert fft_lal.generate_window(128) is w
         # test dtype works
         w = fft_lal.generate_window(128, dtype='float32')
-        self.assertIsInstance(w, lal.REAL4Window)
-        self.assertEqual(w.sum, 32.31817089602309)
+        assert isinstance(w, lal.REAL4Window)
+        assert w.sum == 32.31817089602309
         # test errors
-        self.assertRaises(AttributeError, fft_lal.generate_window,
-                          128, 'unknown')
-        self.assertRaises(AttributeError, fft_lal.generate_window,
-                          128, dtype=int)
+        with pytest.raises(AttributeError):
+            fft_lal.generate_window(128, 'unknown')
+        with pytest.raises(AttributeError):
+            fft_lal.generate_window(128, dtype=int)
 
     def test_generate_fft_plan(self):
+        """Test :func:`gwpy.signal.fft.lal.generate_fft_plan`
+        """
         # test default arguments
         plan = fft_lal.generate_fft_plan(128)
-        self.assertIsInstance(plan, lal.REAL8FFTPlan)
+        assert isinstance(plan, lal.REAL8FFTPlan)
         # test generating the same fft_plan again returns the same object
-        self.assertIs(fft_lal.generate_fft_plan(128), plan)
+        assert fft_lal.generate_fft_plan(128) is plan
         # test dtype works
         plan = fft_lal.generate_fft_plan(128, dtype='float32')
-        self.assertIsInstance(plan, lal.REAL4FFTPlan)
+        assert isinstance(plan, lal.REAL4FFTPlan)
         # test forward/backward works
         rvrs = fft_lal.generate_fft_plan(128, forward=False)
-        self.assertIsInstance(rvrs, lal.REAL8FFTPlan)
-        self.assertIsNot(rvrs, plan)
+        assert isinstance(rvrs, lal.REAL8FFTPlan)
+        assert rvrs is not plan
         # test errors
-        self.assertRaises(AttributeError, fft_lal.generate_fft_plan,
-                          128, dtype=int)
+        with pytest.raises(AttributeError):
+            fft_lal.generate_fft_plan(128, dtype=int)
