@@ -362,7 +362,7 @@ class Array2D(Series):
         try:
             idx = (self.xindex.value == x).nonzero()[0][0]
         except IndexError as e:
-            e.args = ("Value %r not found in array xindex",)
+            e.args = ("Value %r not found in array xindex" % x,)
             raise
         try:
             idy = (self.yindex.value == y).nonzero()[0][0]
