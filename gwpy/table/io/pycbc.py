@@ -169,6 +169,7 @@ def identify_pycbc_live(origin, filepath, fileobj, *args, **kwargs):
         return True
     return False
 
+
 # register for unified I/O
 register_identifier(PYCBC_LIVE_FORMAT, EventTable, identify_pycbc_live)
 register_reader(PYCBC_LIVE_FORMAT, EventTable, table_from_file)
@@ -194,6 +195,7 @@ def get_new_snr(h5group, q=6., n=2.):
     newsnr[idx] *= _new_snr_scale(newsnr[idx], rchisq[idx], q=q, n=n)
     return newsnr
 
+
 GET_COLUMN['new_snr'] = get_new_snr
 
 
@@ -201,5 +203,6 @@ def get_mchirp(h5group):
     mass1 = h5group['mass1'][:]
     mass2 = h5group['mass2'][:]
     return (mass1 * mass2) ** (3/5.) / (mass1 + mass2) ** (1/5.)
+
 
 GET_COLUMN['mchirp'] = get_mchirp

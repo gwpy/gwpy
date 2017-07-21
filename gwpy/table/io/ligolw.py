@@ -240,6 +240,7 @@ def ligolw_io_factory(table_):
 
     return _read_table, _write_table
 
+
 # -- register -----------------------------------------------------------------
 
 EVENT_TABLES = (
