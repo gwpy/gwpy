@@ -27,6 +27,7 @@ import numpy
 from ...io.hdf5 import (identify_hdf5, with_read_hdf5)
 from ...io.registry import (register_reader, register_identifier)
 from .. import (Table, EventTable)
+from .utils import read_with_selection
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Nitz <alex.nitz@ligo.org>'
@@ -38,6 +39,7 @@ PYCBC_FILENAME = re.compile('([A-Z][0-9])+-Live-[0-9.]+-[0-9.]+.hdf')
 
 
 @with_read_hdf5
+@read_with_selection
 def table_from_file(source, ifo=None, columns=None, loudest=False):
     """Read a `Table` from a PyCBC live HDF5 file
     """

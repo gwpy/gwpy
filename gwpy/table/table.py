@@ -122,6 +122,13 @@ class EventTable(Table):
             the format of the given source files; if not given, an attempt
             will be made to automatically identify the format
 
+        selection : `str`, or `list` of `str`
+            one or more column filters with which to downselect the
+            returned table rows as they as read, e.g. ``'snr > 5'``;
+            multiple selections should be connected by ' && ', or given as
+            a `list`, e.g. ``'snr > 5 && frequency < 1000'`` or
+            ``['snr > 5', 'frequency < 1000']``
+
         nproc : `int`, optional, default: 1
             number of CPUs to use for parallel file reading
 
@@ -141,7 +148,24 @@ class EventTable(Table):
 
         Notes
         -----"""
-        return io_read_multi(vstack, cls, source, *args, **kwargs)
+        # astropy's ASCII formats don't support on-the-fly selection, so
+        # we pop the selection argument out here
+        if str(kwargs.get('format')).startswith('ascii'):
+            selection = kwargs.pop('selection', [])
+            if isinstance(selection, string_types):
+                selection = [selection]
+        else:
+            selection = []
+
+        # read the table
+        tab = io_read_multi(vstack, cls, source, *args, **kwargs)
+
+        # apply the selection if required:
+        if selection:
+            tab = tab.filter(*selection)
+
+        # and return
+        return tab
 
     def write(self, target, *args, **kwargs):
         """Write this table to a file

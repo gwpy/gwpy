@@ -19,6 +19,8 @@
 """Read events from GWF FrEvent structures into a Table
 """
 
+from six import string_types
+
 from astropy.table import (Table, Row)
 from astropy.io import registry as io_registry
 
@@ -26,6 +28,7 @@ from ...table import EventTable
 from ...time import LIGOTimeGPS
 from ...io import gwf as io_gwf
 from ...io.cache import FILE_LIKE
+from ..filter import parse_column_filters
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -41,11 +44,16 @@ def get_columns_from_frevent(frevent):
              'comment'] + list(params.keys()))
 
 
-def row_from_frevent(frevent, columns=None, row_class=Row):
+def row_from_frevent(frevent, columns=None, row_class=Row, selection=[]):
     """Generate a table row from an FrEvent
+
+    Filtering (``selection``) is done here, rather than in the table reader,
+    to enable filtering on columns that aren't being returned.
     """
+    # get default columns
     if columns is None:
         columns = get_columns_from_frevent(frevent)
+    # read params
     params = dict(frevent.GetParam())
     params['time'] = float(LIGOTimeGPS(*frevent.GetGTime()))
     params['amplitude'] = frevent.GetAmplitude()
@@ -53,10 +61,16 @@ def row_from_frevent(frevent, columns=None, row_class=Row):
     params['timeBefore'] = frevent.GetTimeBefore()
     params['timeAfter'] = frevent.GetTimeAfter()
     params['comment'] = frevent.GetComment()
+    # filter
+    print(selection)
+    print(params)
+    if not all(op_(params[c], t) for c, math in selection for t, op_ in math):
+        return None
+    # return event as list
     return [params[c] for c in columns]
 
 
-def table_from_gwf(filename, name, columns=None):
+def table_from_gwf(filename, name, columns=None, selection=None):
     """Read a Table from FrEvent structures in a GWF file (or files)
 
     Parameters
@@ -67,7 +81,11 @@ def table_from_gwf(filename, name, columns=None):
     name : `str`
         name associated with the `FrEvent` structures
 
-    columns : `
+    columns : `list` of `str`
+        list of column names to read
+
+    selection : `str`, `list` of `str`
+        one or more column selection strings to apply, e.g. ``'snr>6'``
     """
     from LDAStools import frameCPP
 
@@ -75,6 +93,11 @@ def table_from_gwf(filename, name, columns=None):
     if isinstance(filename, FILE_LIKE):
         filename = filename.name
     stream = frameCPP.IFrameFStream(filename)
+
+    # parse selections and map to column indices
+    if selection is None:
+        selection = []
+    selection = parse_column_filters(selection)
 
     # read events row by row
     data = []
@@ -84,10 +107,14 @@ def table_from_gwf(filename, name, columns=None):
             frevent = stream.ReadFrEvent(i, name)
         except IndexError:
             break
-        if columns is None:  # read first event to get column names
-            columns = get_columns_from_frevent(frevent)
-        data.append(row_from_frevent(frevent, columns=columns))
         i += 1
+        # read first event to get column names (and map selection)
+        if columns is None:
+            columns = get_columns_from_frevent(frevent)
+        # read row with filter
+        row = row_from_frevent(frevent, columns=columns, selection=selection)
+        if row is not None:  # if passed selection
+            data.append(row)
 
     return Table(rows=data, names=columns)
 

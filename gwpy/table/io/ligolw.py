@@ -32,6 +32,7 @@ except ImportError:
 from ...io import registry
 from ...io.ligolw import (table_from_file, write_tables)
 from .. import (Table, EventTable)
+from .utils import read_with_selection
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = []
@@ -42,6 +43,7 @@ GET_AS_EXCLUDE = ['get_column', 'get_table']
 
 # -- read ---------------------------------------------------------------------
 
+@read_with_selection
 def _table_from_ligolw(llwtable, target, copy, columns=None,
                        on_attributeerror='raise', get_as_columns=False,
                        rename={}):
@@ -192,6 +194,7 @@ def ligolw_io_factory(table_):
             'on_attributeerror': 'raise',
             'get_as_columns': False,
             'rename': {},
+            'selection': [],
         }
         for key in reckwargs:
             if key in kwargs:
