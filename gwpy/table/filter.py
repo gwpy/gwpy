@@ -114,7 +114,7 @@ def parse_column_filter(definition):
     parts = list(generate_tokens(StringIO(definition).readline))
 
     # find column name
-    names = filter(lambda t: t[0] == token.NAME, parts)
+    names = list(filter(lambda t: t[0] == token.NAME, parts))
     if len(names) != 1:
         raise ValueError("Multiple column names parsed from "
                          "column filter definition %r" % definition)

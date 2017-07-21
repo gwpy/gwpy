@@ -94,7 +94,7 @@ def _table_from_ligolw(llwtable, target, copy, columns=None,
         orig_type = llwtable.validcolumns[column]
         try:
             if orig_type == 'ilwd:char':  # numpy tries long() which breaks
-                arr = map(int, llwtable.getColumnByName(column))
+                arr = list(map(int, llwtable.getColumnByName(column)))
             else:
                 arr = llwtable.getColumnByName(column)
         except AttributeError as e:
