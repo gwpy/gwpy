@@ -155,10 +155,21 @@ def parse_column_filters(*definitions):
      ('frequency', [(1000.0, <built-in function lt>)])]
     """
     fltrs = []
-    for def_ in definitions:
+    for def_ in _flatten(definitions):
         for splitdef in def_.replace('&&', '&').split('&'):
             fltrs.append(parse_column_filter(splitdef))
     return fltrs
+
+
+def _flatten(container):
+    """Flatten arbitrary nested list into strings
+    """
+    for i in container:
+        if isinstance(i, (list, tuple)):
+            for j in _flatten(i):
+                yield j
+        else:
+            yield i
 
 
 def filter_table(table, *column_filters):
