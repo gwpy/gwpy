@@ -271,9 +271,9 @@ class TimeSeriesBase(Series):
             allow_tape=allow_tape, type=type, dtype=dtype)[str(channel)]
 
     @classmethod
-    def fetch_open_data(cls, ifo, start, end, name='strain/Strain',
-                        sample_rate=4096, host='https://losc.ligo.org',
-                        verbose=False):
+    def fetch_open_data(cls, ifo, start, end, sample_rate=4096,
+                        format=None, host='https://losc.ligo.org',
+                        verbose=False, **kwargs):
         """Fetch open-access data from the LIGO Open Science Center
 
         Parameters
@@ -290,26 +290,32 @@ class TimeSeriesBase(Series):
             GPS end time of required data, defaults to end of data found;
             any input parseable by `~gwpy.time.to_gps` is fine
 
-        name : `str`, optional
-            the full name of HDF5 dataset that represents the data you want,
-            e.g. `'strain/Strain'` for _h(t)_ data, or `'quality/simple'`
-            for basic data-quality information
-
         sample_rate : `float`, optional, default: `4096`
             the sample rate of desired data. Most data are stored
             by LOSC at 4096 Hz, however there may be event-related
             data releases with a 16384 Hz rate
+
+        format : `str`, optional
+            the data format to download and parse, defaults to 'txt.gz'
+            which requires no extra packages. Other options include
+
+            - ``'hdf5'`` - requires |h5py|_
+            - ``'gwf'`` - requires |LDAStools.frameCPP|_
 
         verbose : `bool`, optional, default: `False`
             print verbose output while fetching data
 
         host : `str`, optional
             HTTP host name of LOSC server to access
+
+        **kwargs
+            any other keyword arguments are passed to the `TimeSeries.read`
+            method that parses the file that was downloaded
         """
         from .io.losc import fetch_losc_data
-        return fetch_losc_data(ifo, start, end, channel=name, cls=cls,
-                               sample_rate=sample_rate, host=host,
-                               verbose=verbose)
+        return fetch_losc_data(ifo, start, end, cls=cls,
+                               sample_rate=sample_rate, format=format,
+                               host=host, verbose=verbose, **kwargs)
 
     @classmethod
     def find(cls, channel, start, end, frametype=None,
