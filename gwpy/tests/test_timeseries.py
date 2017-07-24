@@ -830,6 +830,10 @@ class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
     def setUpClass(cls, dtype='uint32'):
         super(StateVectorTestCase, cls).setUpClass(dtype=dtype)
 
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
+    def fetch_open_data(self, **kwargs):
+        return super(StateVectorTestCase, self).fetch_open_data(**kwargs)
+
     def _test_losc_inner(self, loscfile):
         ts = self.TEST_CLASS.read(loscfile, 'quality/simple', format='losc')
         self.assertEqual(ts.x0, units.Quantity(931069952, 's'))
