@@ -435,7 +435,7 @@ class TimeSeriesTestMixin(object):
     def test_fetch_open_data_ascii(self):
         # test ASCII first
         ts = self.fetch_open_data()
-        self.assertEqual(ts.span, LOSC_GW150914_SEGMENT)
+        self.assertTupleEqual(ts.span, LOSC_GW150914_SEGMENT)
         self.assertEqual(ts.sample_rate, 4096 * units.Hz)
         nptest.assert_allclose(
             ts.value[:10],
