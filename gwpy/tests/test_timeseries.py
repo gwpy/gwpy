@@ -93,7 +93,17 @@ LOSC_DQ_BITS = [
     'Category-1 checks passed for continuous-wave search',
     'Category-1 checks passed for stochastic search',
 ]
+LOSC_GW150914_DQ_BITS = [
+    'data present',
+    'passes cbc CAT1 test',
+    'passes cbc CAT2 test',
+    'passes cbc CAT3 test',
+    'passes burst CAT1 test',
+    'passes burst CAT2 test',
+    'passes burst CAT3 test',
+]
 LOSC_GW150914 = 1126259462
+LOSC_GW150914_SEGMENT = Segment(LOSC_GW150914-2, LOSC_GW150914+2)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -409,35 +419,35 @@ class TimeSeriesTestMixin(object):
         self.assertTupleEqual(ts.span, (1000000000, 1000000001))
         self.assertEqual(ts.unit, units.meter)
 
-    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
-    def fetch_open_data(self):
+    def fetch_open_data(self, **kwargs):
         try:
             return self._open_data
         except AttributeError:
             try:
                 type(self)._open_data = self.TEST_CLASS.fetch_open_data(
-                    self.channel[:2], *TEST_SEGMENT)
+                    self.channel[:2], *LOSC_GW150914_SEGMENT, **kwargs)
             except URLError as e:
                 self.skipTest(str(e))
             else:
                 return self.fetch_open_data()
 
-    def test_fetch_open_data(self):
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
+    def test_fetch_open_data_ascii(self):
+        # test ASCII first
         ts = self.fetch_open_data()
-        self.assertEqual(ts.unit, units.Unit('strain'))
+        self.assertEqual(ts.span, LOSC_GW150914_SEGMENT)
         self.assertEqual(ts.sample_rate, 4096 * units.Hz)
-        self.assertEqual(ts.span, TEST_SEGMENT)
         nptest.assert_allclose(
             ts.value[:10],
-            [-2.86995824e-17, -2.77331804e-17, -2.67514139e-17,
-             -2.57456587e-17, -2.47232689e-17, -2.37029998e-17,
-             -2.26415858e-17, -2.15710360e-17, -2.04492206e-17,
-             -1.93265041e-17])
+            [-9.948112e-19, -9.512103e-19, -9.170318e-19,
+             -9.211180e-19, -9.368385e-19, -9.529480e-19,
+             -9.930932e-19, -1.014551e-18, -9.918678e-19,
+             -9.525143e-19])
+
         # try GW150914 data at 16 kHz
         try:
             ts = self.TEST_CLASS.fetch_open_data(
-                self.channel[:2], LOSC_GW150914-16, LOSC_GW150914+16,
-                sample_rate=16384)
+                self.channel[:2], *LOSC_GW150914_SEGMENT, sample_rate=16384)
         except URLError as e:
             self.skipTest(str(e))
         else:
@@ -446,6 +456,19 @@ class TimeSeriesTestMixin(object):
         # make sure errors get thrown
         self.assertRaises(ValueError, self.TEST_CLASS.fetch_open_data,
                           self.channel[:2], 0, 1)
+
+
+
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
+    def test_fetch_open_data_hdf5(self):
+        ts = self.fetch_open_data()
+        try:
+            ts2 = self.fetch_open_data(format='hdf5')
+        except ImportError as e:
+            self.skipTest(str(e))
+        else:
+            self.assertEqual(ts2.unit, units.Unit('strain'))
+            nptest.assert_array_equal(ts.value, ts2.value)
 
     @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def test_losc(self):
@@ -743,27 +766,23 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
 
     @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def _test_losc_inner(self, loscfile):
-        ts = self.TEST_CLASS.read(loscfile, 'Strain', format='losc')
+        ts = self.TEST_CLASS.read(loscfile, path='strain/Strain',
+                                  format='hdf5.losc')
         self.assertEqual(ts.x0, units.Quantity(931069952, 's'))
         self.assertEqual(ts.dx, units.Quantity(0.000244140625, 's'))
         self.assertEqual(ts.name, 'Strain')
 
     def test_q_transform(self):
-        gps = 968654558
-        duration = 32
-        start = int(round(gps - duration/2.))
-        end = start + duration
-        # load data, skip on missing h5py
         try:
-            ts = self.TEST_CLASS.fetch_open_data('H1', start, end)
-        except (ImportError, RuntimeError, URLError) as e:
+            ts = self.TEST_CLASS.fetch_open_data('H1', *LOSC_GW150914_SEGMENT)
+        except (RuntimeError, URLError) as e:
             self.skipTest(str(e))
         # test simple q-transform
         qspecgram = ts.q_transform(method='welch')
         self.assertIsInstance(qspecgram, Spectrogram)
-        self.assertTupleEqual(qspecgram.shape, (32000, 2560))
-        self.assertAlmostEqual(qspecgram.q, 11.31370849898476)
-        self.assertAlmostEqual(qspecgram.value.max(), 37.035843858490509)
+        self.assertTupleEqual(qspecgram.shape, (4000, 2403))
+        self.assertAlmostEqual(qspecgram.q, 5.65685424949238)
+        self.assertAlmostEqual(qspecgram.value.max(), 88.685964259217172)
 
         # test whitening args
         asd = ts.asd(2, 1)
@@ -779,7 +798,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         # make sure frequency too high presents warning
         with pytest.warns(UserWarning):
             qspecgram = ts.q_transform(method='welch', frange=(0, 10000))
-            self.assertAlmostEqual(qspecgram.yspan[1], 1291.25395395)
+            self.assertAlmostEqual(qspecgram.yspan[1], 1291.5316316157107)
 
 
     def test_boolean_statetimeseries(self):
@@ -817,12 +836,15 @@ class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(ts.dx, units.Quantity(1.0, 's'))
         self.assertListEqual(list(ts.bits), LOSC_DQ_BITS)
 
-    def test_fetch_open_data(self):
+    def test_fetch_open_data_ascii(self):
+        return NotImplemented
+
+    def test_fetch_open_data_hdf5(self):
         ts = self.fetch_open_data()
         self.assertEqual(ts.sample_rate, 1 * units.Hz)
-        self.assertEqual(ts.span, TEST_SEGMENT)
-        self.assertListEqual(list(ts.bits), LOSC_DQ_BITS)
-        self.assertEqual(ts.value[0], 131071)  # sanity check data
+        self.assertEqual(ts.span, LOSC_GW150914_SEGMENT)
+        self.assertListEqual(list(ts.bits), LOSC_GW150914_DQ_BITS)
+        self.assertEqual(ts.value[0], 127)  # sanity check data
 
     def test_to_dqflags(self):
         sv = self.fetch_open_data()
