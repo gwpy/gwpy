@@ -38,6 +38,7 @@ from numpy.lib import recfunctions
 from ...segments import Segment
 from ...time import (to_gps, from_gps)
 from .. import EventTable
+from .utils import read_with_selection
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -88,6 +89,7 @@ def get_hacr_channels(db=None, gps=None, connection=None,
     return [r[0] for r in out]
 
 
+@read_with_selection
 def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
                       monitor='chacr', **connectkwargs):
     """Fetch a table of HACR triggers in the given interval
