@@ -48,7 +48,7 @@ from ...time import to_gps
 LOSC_URL = 'https://losc.ligo.org'
 
 
-# -- remote URL discovery -----------------------------------------------------
+# -- JSON handling ------------------------------------------------------------
 
 def _fetch_losc_json(url):
     # fetch the URL
@@ -70,7 +70,7 @@ def _fetch_losc_json(url):
         raise
 
 
-def _losc_json_cache(metadata, detector, sample_rate=4096,
+def _parse_losc_json(metadata, detector, sample_rate=4096,
                      format='hdf5', duration=4096):
     """Parse a list of file URLs from a LOSC metadata packet
     """
@@ -86,7 +86,9 @@ def _losc_json_cache(metadata, detector, sample_rate=4096,
     return urls
 
 
-def fetch_losc_url_cache(detector, start, end, host=LOSC_URL,
+# -- file discovery -----------------------------------------------------------
+
+def find_losc_urls(detector, start, end, host=LOSC_URL,
                          sample_rate=4096, format=None):
     """Fetch the metadata from LOSC regarding a given GPS interval
     """
@@ -120,7 +122,7 @@ def fetch_losc_url_cache(detector, start, end, host=LOSC_URL,
                 emd = _fetch_losc_json(url)
                 # get cache and sieve for our segment
                 for duration in [32, 4096]:  # try short files for events first
-                    cache = _losc_json_cache(
+                    cache = _parse_losc_json(
                         emd['strain'], detector, sample_rate=sample_rate,
                         format=form, duration=duration)
                     cache = [u for u in cache if
@@ -132,40 +134,7 @@ def fetch_losc_url_cache(detector, start, end, host=LOSC_URL,
                      % (detector, start, end))
 
 
-def fetch_losc_data(detector, start, end, host=LOSC_URL, sample_rate=4096,
-                    format='hdf5', cls=TimeSeries, verbose=False, **kwargs):
-    """Fetch LOSC data for a given detector
-
-    This function is for internal purposes only, all users should instead
-    use the interface provided by `TimeSeries.fetch_open_data` (and similar
-    for `StateVector.fetch_open_data`).
-    """
-    sample_rate = Quantity(sample_rate, 'Hz').value
-    start = to_gps(start)
-    end = to_gps(end)
-    span = Segment(start, end)
-    # get cache of URLS
-    cache = fetch_losc_url_cache(detector, start, end, host=host,
-                                 sample_rate=sample_rate, format=format)
-    if verbose:
-        print("Fetched list of %d URLs to read from %s for [%d .. %d)"
-              % (len(cache), host, int(start), int(end)))
-    # read data
-    out = None
-    for url in cache:
-        keep = file_segment(url) & span
-        new = _fetch_losc_data_file(url, cls=cls, verbose=verbose,
-                                    **kwargs).crop(*keep, copy=False)
-        if out is None:
-            out = new.copy()
-        else:
-            out.append(new, resize=True)
-    return out
-
-    # panic
-    raise ValueError("%s data for %s not available in full from LOSC"
-                     % (detector, span))
-
+# -- remote file reading ------------------------------------------------------
 
 def _fetch_losc_data_file(url, cls=TimeSeries, verbose=False, **kwargs):
     """Internal function for fetching a single LOSC file and returning a Series
@@ -205,6 +174,43 @@ def _fetch_losc_data_file(url, cls=TimeSeries, verbose=False, **kwargs):
         finally:
             if verbose:
                 print(" Done")
+
+
+# -- remote data access (the main event) --------------------------------------
+
+def fetch_losc_data(detector, start, end, host=LOSC_URL, sample_rate=4096,
+                    format='hdf5', cls=TimeSeries, verbose=False, **kwargs):
+    """Fetch LOSC data for a given detector
+
+    This function is for internal purposes only, all users should instead
+    use the interface provided by `TimeSeries.fetch_open_data` (and similar
+    for `StateVector.fetch_open_data`).
+    """
+    sample_rate = Quantity(sample_rate, 'Hz').value
+    start = to_gps(start)
+    end = to_gps(end)
+    span = Segment(start, end)
+    # get cache of URLS
+    cache = find_losc_urls(detector, start, end, host=host,
+                                 sample_rate=sample_rate, format=format)
+    if verbose:
+        print("Fetched list of %d URLs to read from %s for [%d .. %d)"
+              % (len(cache), host, int(start), int(end)))
+    # read data
+    out = None
+    for url in cache:
+        keep = file_segment(url) & span
+        new = _fetch_losc_data_file(url, cls=cls, verbose=verbose,
+                                    **kwargs).crop(*keep, copy=False)
+        if out is None:
+            out = new.copy()
+        else:
+            out.append(new, resize=True)
+    return out
+
+    # panic
+    raise ValueError("%s data for %s not available in full from LOSC"
+                     % (detector, span))
 
 
 # -- I/O ----------------------------------------------------------------------
