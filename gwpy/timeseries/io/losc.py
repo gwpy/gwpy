@@ -80,7 +80,7 @@ def _parse_losc_json(metadata, detector, sample_rate=4096,
 # -- file discovery -----------------------------------------------------------
 
 def find_losc_urls(detector, start, end, host=LOSC_URL,
-                         sample_rate=4096, format=None):
+                   sample_rate=4096, format=None):
     """Fetch the metadata from LOSC regarding a given GPS interval
     """
     start = int(start)
@@ -145,8 +145,6 @@ def _fetch_losc_data_file(url, cls=TimeSeries, verbose=False, **kwargs):
         kwargs.setdefault('format', 'ascii.losc')
 
     with get_readable_fileobj(url, show_progress=False) as remote:
-        #local.write(remote.read())
-        #local.seek(0)
         try:
             return cls.read(remote, **kwargs)
         except Exception as e:
@@ -175,7 +173,7 @@ def fetch_losc_data(detector, start, end, host=LOSC_URL, sample_rate=4096,
     span = Segment(start, end)
     # get cache of URLS
     cache = find_losc_urls(detector, start, end, host=host,
-                                 sample_rate=sample_rate, format=format)
+                           sample_rate=sample_rate, format=format)
     if verbose:
         print("Fetched list of %d URLs to read from %s for [%d .. %d)"
               % (len(cache), host, int(start), int(end)))
@@ -227,7 +225,6 @@ def read_losc_hdf5(f, path='strain/Strain', start=None, end=None, copy=False):
     return TimeSeries(nddata, epoch=epoch, sample_rate=(1/dt).to('Hertz'),
                       unit=unit, name=path.rsplit('/', 1)[1],
                       copy=copy).crop(start=start, end=end)
-
 
 
 @io_hdf5.with_read_hdf5
