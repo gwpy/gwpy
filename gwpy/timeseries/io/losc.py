@@ -27,15 +27,14 @@ import os.path
 import sys
 import json
 import re
-from tempfile import NamedTemporaryFile
 
 from six import string_types
-from six.moves.urllib.request import urlopen
 
 import numpy
 
 from astropy.io import registry
 from astropy.units import Quantity
+from astropy.utils.data import get_readable_fileobj
 
 from .. import (StateVector, TimeSeries)
 from ...io import (hdf5 as io_hdf5, utils as io_utils)
@@ -51,23 +50,15 @@ LOSC_URL = 'https://losc.ligo.org'
 # -- JSON handling ------------------------------------------------------------
 
 def _fetch_losc_json(url):
-    # fetch the URL
-    try:
-        response = urlopen(url)
-    except (IOError, Exception) as e:
-        e.args = ("Failed to access LOSC metadata from %r: %s"
-                  % (url, str(e)),)
-        raise
-    # parse the JSON
-    data = response.read()
-    if isinstance(data, bytes):
-        data = data.decode('utf-8')
-    try:
-        return json.loads(data)
-    except ValueError as e:
-        e.args = ("Failed to parse LOSC JSON from %r: %s"
-                  % (url, str(e)),)
-        raise
+    with get_readable_fileobj(url, show_progress=False,
+                              encoding='utf-8') as response:
+        data = response.read()
+        try:
+            return json.loads(data)
+        except ValueError as e:
+            e.args = ("Failed to parse LOSC JSON from %r: %s"
+                      % (url, str(e)),)
+            raise
 
 
 def _parse_losc_json(metadata, detector, sample_rate=4096,
@@ -142,30 +133,22 @@ def _fetch_losc_data_file(url, cls=TimeSeries, verbose=False, **kwargs):
     if verbose:
         print("Reading %s..." % url, end=' ')
         sys.stdout.flush()
-    try:
-        response = urlopen(url)
-    except Exception as e:
-        if verbose:
-            print("")
-        e.args = ("Failed to download LOSC data from %r: %s"
-                  % (url, str(e)),)
-        raise
 
     # match file format
     if url.endswith('.gz'):
-        ext = '.'.join([''] + url.rsplit('.', 2)[-2:])
+        ext = os.path.splitext(url[:-3])[-1]
     else:
         ext = os.path.splitext(url)[-1]
     if ext == '.hdf5':
         kwargs.setdefault('format', 'hdf5.losc')
-    elif ext == '.txt.gz':
+    elif ext == '.txt':
         kwargs.setdefault('format', 'ascii.losc')
 
-    with NamedTemporaryFile(suffix=ext) as f:
-        f.write(response.read())
-        f.seek(0)
+    with get_readable_fileobj(url, show_progress=False) as remote:
+        #local.write(remote.read())
+        #local.seek(0)
         try:
-            return cls.read(f.name, **kwargs)
+            return cls.read(remote, **kwargs)
         except Exception as e:
             if verbose:
                 print("")
