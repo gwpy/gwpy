@@ -294,16 +294,16 @@ def read_losc_ascii(fobj):
 
     # read header to get metadata
     metadata = {}
-    pos = fobj.tell()
     for line in fobj:
         if not line.startswith('#'):  # stop iterating, and rewind one line
-            fobj.seek(pos)
             break
         if line.startswith('# starting GPS'):  # parse metadata
             m = re_losc_ascii_header.match(line.rstrip('\n'))
             if m:
                 metadata.update(m.groupdict())
-        pos = fobj.tell()
+
+    # rewind to make sure we don't miss the first data point
+    fobj.seek(0)
 
     # work out sample_rate from metadata
     try:
