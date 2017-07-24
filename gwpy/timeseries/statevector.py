@@ -635,7 +635,7 @@ class StateVector(TimeSeriesBase):
         return new
 
     @classmethod
-    def fetch_open_data(cls, ifo, start, end, name='quality/simple',
+    def fetch_open_data(cls, ifo, start, end, format='hdf5',
                         host='https://losc.ligo.org', verbose=False):
         """Fetch open-access data from the LIGO Open Science Center
 
@@ -653,10 +653,9 @@ class StateVector(TimeSeriesBase):
             GPS end time of required data, defaults to end of data found;
             any input parseable by `~gwpy.time.to_gps` is fine
 
-        name : `str`, optional
-            the full name of HDF5 dataset that represents the data you want,
-            e.g. `'strain/Strain'` for _h(t)_ data, or `'quality/simple'`
-            for basic data-quality information
+        format : `str`, optional
+            the data format to download and parse, defaults to ``'hdf5'``
+            which relies upon |h5py|_
 
         host : `str`, optional
             HTTP host name of LOSC server to access
@@ -664,9 +663,13 @@ class StateVector(TimeSeriesBase):
         verbose : `bool`, optional, default: `False`
             print verbose output while fetching data
 
+        Returns
+        -------
+        state : `~gwpy.timeseries.StateVector`
+            the data-quality statevector recorded by LOSC for this period
         """
         from .io.losc import fetch_losc_data
-        return fetch_losc_data(ifo, start, end, channel=name, cls=cls,
+        return fetch_losc_data(ifo, start, end, format=format, cls=cls,
                                host=host, verbose=verbose)
 
     @classmethod
