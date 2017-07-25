@@ -32,7 +32,7 @@ import sys
 
 import numpy
 
-from astropy.units import Quantity
+from astropy import units
 from astropy.io import registry as io_registry
 
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
@@ -230,7 +230,7 @@ class Bits(list):
     def epoch(self, epoch):
         if isinstance(epoch, Time):
             self._epoch = epoch.gps
-        elif isinstance(epoch, Quantity):
+        elif isinstance(epoch, units.Quantity):
             self._epoch = epoch.value
         else:
             self._epoch = float(epoch)
@@ -783,7 +783,7 @@ class StateVector(TimeSeriesBase):
             resampled version of the input `StateVector`
         """
         rate1 = self.sample_rate.value
-        if isinstance(rate, Quantity):
+        if isinstance(rate, units.Quantity):
             rate2 = rate.value
         else:
             rate2 = float(rate)
