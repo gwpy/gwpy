@@ -440,8 +440,8 @@ class StateVector(TimeSeriesBase):
         for b in bits:
             try:
                 bindex.append((self.bits.index(b), b))
-            except IndexError as e:
-                e.args = ('Bit %r not found in StateVector' % b)
+            except (IndexError, ValueError) as e:
+                e.args = ('Bit %r not found in StateVector' % b,)
                 raise e
         self._bitseries = StateTimeSeriesDict()
         for i, bit in bindex:
