@@ -47,7 +47,7 @@ if sys.version_info[0] < 3:
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-__all__ = ['StateTimeSeries',
+__all__ = ['StateTimeSeries', 'StateTimeSeriesDict',
            'StateVector', 'StateVectorDict', 'StateVectorList', 'Bits']
 
 
