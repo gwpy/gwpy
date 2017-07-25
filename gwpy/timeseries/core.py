@@ -1094,21 +1094,20 @@ class TimeSeriesBaseList(list):
     def append(self, item):
         if not isinstance(item, self.EntryClass):
             raise TypeError("Cannot append type '%s' to %s"
-                            % (item.__class__.__name__,
-                               self.__class__.__name__))
+                            % (type(item).__name__, type(self).__name__))
         super(TimeSeriesBaseList, self).append(item)
         return self
     append.__doc__ = list.append.__doc__
 
     def extend(self, item):
-        item = TimeSeriesBaseList(item)
+        item = TimeSeriesBaseList(*item)
         super(TimeSeriesBaseList, self).extend(item)
     extend.__doc__ = list.extend.__doc__
 
     def coalesce(self):
         """Merge contiguous elements of this list into single objects
 
-        This method implicitly sorts and potentially shortens the this list.
+        This method implicitly sorts and potentially shortens this list.
         """
         self.sort(key=lambda ts: ts.t0.value)
         i = j = 0
