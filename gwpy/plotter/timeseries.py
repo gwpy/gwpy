@@ -150,9 +150,9 @@ class TimeSeriesAxes(Axes):
         matplotlib.axes.Axes.plot
             for a full description of acceptable ``*args`` and ``**kwargs``
         """
-        from ..timeseries import TimeSeries
+        from ..timeseries import TimeSeriesBase
         from ..spectrogram import Spectrogram
-        if len(args) == 1 and isinstance(args[0], TimeSeries):
+        if len(args) == 1 and isinstance(args[0], TimeSeriesBase):
             return self.plot_timeseries(*args, **kwargs)
         elif len(args) == 1 and isinstance(args[0], Spectrogram):
             return self.plot_spectrogram(*args, **kwargs)
