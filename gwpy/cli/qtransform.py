@@ -29,7 +29,6 @@ import math
 from pprint import pprint
 import gc
 from time import time
-import psutil
 
 
 class Qtransform(CliProduct):
@@ -41,8 +40,8 @@ class Qtransform(CliProduct):
 
     def __init__(self):
         self.start_time = time()
-        self.qxfrm_args = dict( )
-        super(Qtransform,self).__init__()
+        self.qxfrm_args = dict()
+        super(Qtransform, self).__init__()
 
     def get_action(self):
         """Return the string used as "action" on command line."""
@@ -108,11 +107,14 @@ class Qtransform(CliProduct):
 
         self.qxfrm_args['search'] = self.my_ts.dt.value * len(self.my_ts)
         if args.qrange:
-            self.qxfrm_args['qrange'] = (float(args.qrange[0]), float(args.qrange[1]))
+            self.qxfrm_args['qrange'] = (float(args.qrange[0]),
+                                         float(args.qrange[1]))
             self.title2 += (' q-range [%.1f, %.1f], ' %
-                            (self.qxfrm_args['qrange'][0], self.qxfrm_args['qrange'][1]))
+                            (self.qxfrm_args['qrange'][0],
+                             self.qxfrm_args['qrange'][1]))
         if args.frange:
-            self.qxfrm_args['frange'] = (float(args.frange[0]), float(args.frange[1]))
+            self.qxfrm_args['frange'] = (float(args.frange[0]),
+                                         float(args.frange[1]))
 
         if args.nowhiten:
             self.qxfrm_args['whiten'] = False
@@ -207,7 +209,7 @@ class Qtransform(CliProduct):
                     float(args.gps), prange))
         self.qxfrm_args['outseg'] = (epoch-prange, epoch+prange)
 
-    def get_plot_range(self,args):
+    def get_plot_range(self, args):
         prng = args.plot
         if isinstance(prng, types.ListType):
             prange = float(prng[self.plot_num])
@@ -224,7 +226,7 @@ class Qtransform(CliProduct):
         ret = self.plot_num < len(args.plot)
         if not ret:
             run_time = time() - self.start_time
-            self.log(2,'Q-transform run time: %.1f  sec' % run_time)
+            self.log(2, 'Q-transform run time: %.1f  sec' % run_time)
         return ret
 
     def prep_next_plot(self, args):
