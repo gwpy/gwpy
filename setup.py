@@ -84,7 +84,7 @@ extras_require['all'] = set(p for extra in extras_require.values()
 try:
     import lal
 except ImportError as e:
-    install_requires.append('ligotimegps')
+    install_requires.append('ligotimegps>=1.1')
 
 # test for OrderedDict
 try:
@@ -109,6 +109,7 @@ except ImportError:
 setup_requires.append('pytest-runner')
 tests_require = [
     'pytest>=2.8',
+    'freezegun',
 ]
 if sys.version < '3':
     tests_require.append('mock')

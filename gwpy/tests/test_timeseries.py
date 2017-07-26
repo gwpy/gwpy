@@ -93,7 +93,17 @@ LOSC_DQ_BITS = [
     'Category-1 checks passed for continuous-wave search',
     'Category-1 checks passed for stochastic search',
 ]
+LOSC_GW150914_DQ_BITS = [
+    'data present',
+    'passes cbc CAT1 test',
+    'passes cbc CAT2 test',
+    'passes cbc CAT3 test',
+    'passes burst CAT1 test',
+    'passes burst CAT2 test',
+    'passes burst CAT3 test',
+]
 LOSC_GW150914 = 1126259462
+LOSC_GW150914_SEGMENT = Segment(LOSC_GW150914-2, LOSC_GW150914+2)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -220,6 +230,13 @@ class TimeSeriesTestMixin(object):
         t = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format='gwf',
                                  end=end)
         self.assertTupleEqual(t.span, (TEST_SEGMENT[0], end))
+        # check type casting works
+        t = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format='gwf',
+                                 end=end, dtype='float32')
+        self.assertEqual(t.dtype, numpy.dtype('float32'))
+        t = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format='gwf',
+                                 end=end, dtype={self.channel: 'float64'})
+        self.assertEqual(t.dtype, numpy.dtype('float64'))
         # check errors
         self.assertRaises((ValueError, RuntimeError), self.TEST_CLASS.read,
                           TEST_GWF_FILE, self.channel, format='gwf',
@@ -391,42 +408,46 @@ class TimeSeriesTestMixin(object):
              mock.patch('nds2.buffer', nds_buffer):
             mock_connection.return_value = nds_connection
             # use verbose=True to hit more lines
-            ts = TimeSeries.fetch('X1:TEST', 1000000000, 1000000001,
-                                  verbose=True)
+            ts = self.TEST_CLASS.fetch('X1:TEST', 1000000000, 1000000001,
+                                       verbose=True)
+            # check open connection works
+            ts = self.TEST_CLASS.fetch('X1:TEST', 1000000000, 1000000001,
+                                       connection=nds_connection, verbose=True)
+        self.assertIsInstance(ts, self.TEST_CLASS)
         nptest.assert_array_equal(ts.value, self.data)
         self.assertEqual(ts.sample_rate, self.data.shape[0] * units.Hz)
         self.assertTupleEqual(ts.span, (1000000000, 1000000001))
         self.assertEqual(ts.unit, units.meter)
 
-    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
-    def fetch_open_data(self):
+    def fetch_open_data(self, **kwargs):
         try:
             return self._open_data
         except AttributeError:
             try:
                 type(self)._open_data = self.TEST_CLASS.fetch_open_data(
-                    self.channel[:2], *TEST_SEGMENT)
+                    self.channel[:2], *LOSC_GW150914_SEGMENT, **kwargs)
             except URLError as e:
                 self.skipTest(str(e))
             else:
                 return self.fetch_open_data()
 
-    def test_fetch_open_data(self):
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
+    def test_fetch_open_data_ascii(self):
+        # test ASCII first
         ts = self.fetch_open_data()
-        self.assertEqual(ts.unit, units.Unit('strain'))
+        self.assertTupleEqual(ts.span, LOSC_GW150914_SEGMENT)
         self.assertEqual(ts.sample_rate, 4096 * units.Hz)
-        self.assertEqual(ts.span, TEST_SEGMENT)
         nptest.assert_allclose(
             ts.value[:10],
-            [-2.86995824e-17, -2.77331804e-17, -2.67514139e-17,
-             -2.57456587e-17, -2.47232689e-17, -2.37029998e-17,
-             -2.26415858e-17, -2.15710360e-17, -2.04492206e-17,
-             -1.93265041e-17])
+            [-9.948112e-19, -9.512103e-19, -9.170318e-19,
+             -9.211180e-19, -9.368385e-19, -9.529480e-19,
+             -9.930932e-19, -1.014551e-18, -9.918678e-19,
+             -9.525143e-19])
+
         # try GW150914 data at 16 kHz
         try:
             ts = self.TEST_CLASS.fetch_open_data(
-                self.channel[:2], LOSC_GW150914-16, LOSC_GW150914+16,
-                sample_rate=16384)
+                self.channel[:2], *LOSC_GW150914_SEGMENT, sample_rate=16384)
         except URLError as e:
             self.skipTest(str(e))
         else:
@@ -435,6 +456,19 @@ class TimeSeriesTestMixin(object):
         # make sure errors get thrown
         self.assertRaises(ValueError, self.TEST_CLASS.fetch_open_data,
                           self.channel[:2], 0, 1)
+
+
+
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
+    def test_fetch_open_data_hdf5(self):
+        ts = self.fetch_open_data()
+        try:
+            ts2 = self.fetch_open_data(format='hdf5')
+        except ImportError as e:
+            self.skipTest(str(e))
+        else:
+            self.assertEqual(ts2.unit, units.Unit('strain'))
+            nptest.assert_array_equal(ts.value, ts2.value)
 
     @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def test_losc(self):
@@ -468,7 +502,7 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
     TEST_CLASS = TimeSeries
 
     @classmethod
-    def setUpClass(cls, dtype=None):
+    def setUpClass(cls, dtype='float32'):
         super(TimeSeriesTestCase, cls).setUpClass(dtype=dtype)
         cls.random = cls.TEST_CLASS(
             numpy.random.normal(loc=1, size=16384 * 10), sample_rate=16384,
@@ -531,6 +565,9 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         ts.psd(fftlength=0.4, overlap=0.2, method='median')
         # test LAL method with window specification
         ts.psd(fftlength=0.4, overlap=0.2, method='median-mean', window='hann')
+        # test LAL method with non-canonical window specification
+        ts.psd(fftlength=0.4, overlap=0.2, method='median-mean',
+               window='hanning')
         # test check for at least two averages (defaults to single FFT)
         self.assertRaises(ValueError, ts.psd, method='median-mean')
 
@@ -608,6 +645,14 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         self.assertEqual(sg.shape, (2, 0.25 * ts.size//2 + 1))
         self.assertEqual(sg.df, 4 * units.Hertz)
         self.assertEqual(sg.dt, 0.5 * units.second)
+
+        # check that `cross` keyword gets deprecated properly
+        # TODO: removed before 1.0 release
+        with pytest.warns(DeprecationWarning) as wng:
+            out = ts.spectrogram(0.5, fftlength=.25, cross=ts)
+        self.assertIn('`cross` keyword argument has been deprecated',
+                      wng[0].message.args[0])
+        self.assertArraysEqual(out, ts.csd_spectrogram(ts, 0.5, fftlength=.25))
 
     def test_spectrogram2(self):
         ts = self._read()
@@ -721,31 +766,39 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
 
     @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
     def _test_losc_inner(self, loscfile):
-        ts = self.TEST_CLASS.read(loscfile, 'Strain', format='losc')
+        ts = self.TEST_CLASS.read(loscfile, path='strain/Strain',
+                                  format='hdf5.losc')
         self.assertEqual(ts.x0, units.Quantity(931069952, 's'))
         self.assertEqual(ts.dx, units.Quantity(0.000244140625, 's'))
         self.assertEqual(ts.name, 'Strain')
 
     def test_q_transform(self):
-        gps = 968654558
-        duration = 32
-        start = int(round(gps - duration/2.))
-        end = start + duration
-        # load data, skip on missing h5py
         try:
-            ts = self.TEST_CLASS.fetch_open_data('H1', start, end)
-        except (ImportError, RuntimeError, URLError) as e:
+            ts = self.TEST_CLASS.fetch_open_data('H1', *LOSC_GW150914_SEGMENT)
+        except (RuntimeError, URLError) as e:
             self.skipTest(str(e))
         # test simple q-transform
         qspecgram = ts.q_transform(method='welch')
         self.assertIsInstance(qspecgram, Spectrogram)
-        self.assertTupleEqual(qspecgram.shape, (32000, 2560))
-        self.assertAlmostEqual(qspecgram.q, 11.31370849898476)
-        self.assertAlmostEqual(qspecgram.value.max(), 37.035843858490509)
+        self.assertTupleEqual(qspecgram.shape, (4000, 2403))
+        self.assertAlmostEqual(qspecgram.q, 5.65685424949238)
+        self.assertAlmostEqual(qspecgram.value.max(), 88.685964259217172)
+
+        # test whitening args
+        asd = ts.asd(2, 1)
+        qsg2 = ts.q_transform(method='welch', whiten=asd)
+        self.assertArraysEqual(qspecgram, qsg2)
+        asd = ts.asd(.5, .25)
+        qsg2 = ts.q_transform(method='welch', whiten=asd)
+        qsg3 = ts.q_transform(method='welch', fftlength=.5, overlap=.25)
+        self.assertArraysEqual(qsg2, qsg3)
+        ts2 = ts.crop(ts.x0.value, ts.x0.value+1)
+        ts2.q_transform()
+
         # make sure frequency too high presents warning
         with pytest.warns(UserWarning):
             qspecgram = ts.q_transform(method='welch', frange=(0, 10000))
-            self.assertAlmostEqual(qspecgram.yspan[1], 1291.25395395)
+            self.assertAlmostEqual(qspecgram.yspan[1], 1291.5316316157107)
 
 
     def test_boolean_statetimeseries(self):
@@ -760,6 +813,13 @@ class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
         rms = self.TEST_ARRAY.rms(1.)
         self.assertQuantityEqual(rms.sample_rate, 1 * units.Hertz)
 
+    def test_read_write_wav(self):
+        with tempfile.NamedTemporaryFile(suffix='.wav') as f:
+            self.TEST_ARRAY.write(f, scale=1)
+            t = self.TEST_CLASS.read(f)
+        nptest.assert_array_equal(self.TEST_ARRAY.value, t.value)
+        self.assertEqual(self.TEST_ARRAY.sample_rate, t.sample_rate)
+
 
 class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
     """`~unittest.TestCase` for the `~gwpy.timeseries.StateVector` object
@@ -770,18 +830,25 @@ class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
     def setUpClass(cls, dtype='uint32'):
         super(StateVectorTestCase, cls).setUpClass(dtype=dtype)
 
+    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
+    def fetch_open_data(self, **kwargs):
+        return super(StateVectorTestCase, self).fetch_open_data(**kwargs)
+
     def _test_losc_inner(self, loscfile):
         ts = self.TEST_CLASS.read(loscfile, 'quality/simple', format='losc')
         self.assertEqual(ts.x0, units.Quantity(931069952, 's'))
         self.assertEqual(ts.dx, units.Quantity(1.0, 's'))
         self.assertListEqual(list(ts.bits), LOSC_DQ_BITS)
 
-    def test_fetch_open_data(self):
+    def test_fetch_open_data_ascii(self):
+        return NotImplemented
+
+    def test_fetch_open_data_hdf5(self):
         ts = self.fetch_open_data()
         self.assertEqual(ts.sample_rate, 1 * units.Hz)
-        self.assertEqual(ts.span, TEST_SEGMENT)
-        self.assertListEqual(list(ts.bits), LOSC_DQ_BITS)
-        self.assertEqual(ts.value[0], 131071)  # sanity check data
+        self.assertEqual(ts.span, LOSC_GW150914_SEGMENT)
+        self.assertListEqual(list(ts.bits), LOSC_GW150914_DQ_BITS)
+        self.assertEqual(ts.value[0], 127)  # sanity check data
 
     def test_to_dqflags(self):
         sv = self.fetch_open_data()
@@ -934,8 +1001,9 @@ class TimeSeriesListTestCase(unittest.TestCase):
 
     def test_coalesce(self):
         tsl = self.create()
-        tsl2 = self.create().coalesce()
-        self.assertEqual(tsl2[0], tsl[0].append(tsl[1], inplace=False))
+        tsl2 = tsl.copy().coalesce()
+        nptest.assert_array_equal(tsl2[0].value,
+                                  tsl[0].append(tsl[1], inplace=False).value)
 
 
 if __name__ == '__main__':

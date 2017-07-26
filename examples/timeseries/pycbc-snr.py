@@ -19,7 +19,7 @@
 
 """Calculating the SNR associated with a given astrophysical signal model
 
-The example :ref:`gwpy-example-timeseries-gw150914` showed us we can visually
+The example :ref:`gwpy-example-signal-gw150914` showed us we can visually
 extract a signal from the noise using basic signal-processing techniques.
 
 However, an actual astrophysical search algorithm detects signals by
@@ -31,6 +31,7 @@ Using |pycbc|_ (the actual search code), we can do that.
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.timeseries'
+__include__ = '../../references.txt'
 
 # First, as always, we fetch some of the public data from the LIGO Open
 # Science Center
@@ -63,7 +64,7 @@ hp, _ = get_fd_waveform(approximant="IMRPhenomD", mass1=40, mass2=32,
 # At this point we are ready to calculate the SNR, so we import the
 # :func:`~pycbc.filter.matched_filter` method, and pass it our template,
 # the data, and the PSD, using the :meth:`~TimeSeries.to_pycbc` methods of
-# the `TimeSeries` and `~gwpy.frequencyseries.FrequencySeries objects:
+# the `TimeSeries` and `~gwpy.frequencyseries.FrequencySeries` objects:
 
 import numpy
 from pycbc.filter import matched_filter

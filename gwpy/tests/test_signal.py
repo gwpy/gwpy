@@ -32,8 +32,10 @@ if HAS_LAL:
     import lal
 
 from gwpy import signal as gwpy_signal
+from gwpy.signal import window
 from gwpy.signal.fft import (lal as fft_lal, utils as fft_utils,
-                             registry as fft_registry)
+                             registry as fft_registry, ui as fft_ui)
+from gwpy.timeseries import TimeSeries
 
 ONE_HZ = units.Quantity(1, 'Hz')
 
@@ -60,6 +62,29 @@ class FilterDesignTestCase(unittest.TestCase):
         zpk2 = gwpy_signal.notch(60 * ONE_HZ, 16384 * ONE_HZ)
         for a, b in zip(zpk, zpk2):
             nptest.assert_array_almost_equal(a, b)
+
+
+# -- gwpy.signal.window -------------------------------------------------------
+
+class WindowTestCase(unittest.TestCase):
+    """`~unittest.TestCase` for the `gwpy.signal.window` module
+    """
+    def test_canonical_name(self):
+        self.assertEqual(window.canonical_name('Hanning'), 'hann')
+        with self.assertRaises(ValueError) as exc:
+            window.canonical_name('blah')
+        self.assertEqual(str(exc.exception),
+                         'no window function in scipy.signal equivalent '
+                         'to \'blah\'')
+
+    def test_recommended_overlap(self):
+        self.assertEqual(window.recommended_overlap('ham'), .5)
+        self.assertEqual(window.recommended_overlap('Hanning'), .5)
+        self.assertEqual(window.recommended_overlap('bth', nfft=128), 64)
+        with self.assertRaises(ValueError) as exc:
+            window.recommended_overlap('kaiser')
+        self.assertEqual(str(exc.exception),
+                         'no recommended overlap for \'kaiser\' window')
 
 
 # -- gwpy.signal.fft.registry -------------------------------------------------
@@ -114,6 +139,28 @@ class FFTRegistryTests(unittest.TestCase):
             '============ =================================\n\n'
             'See :ref:`gwpy-signal-fft` for more details\n',
         )
+
+
+# -- gwpy.signal.fft.ui -------------------------------------------------------
+
+class FFTUITests(unittest.TestCase):
+    def test_seconds_to_samples(self):
+        self.assertEqual(fft_ui.seconds_to_samples(4, 256), 1024)
+        self.assertEqual(fft_ui.seconds_to_samples(1 * units.minute, 16), 960)
+        self.assertEqual(fft_ui.seconds_to_samples(
+            4 * units.second, 16.384 * units.kiloHertz), 65536)
+
+    def test_normalize_fft_params(self):
+        self.assertDictEqual(
+            fft_ui.normalize_fft_params(
+                TimeSeries(numpy.zeros(1024), sample_rate=256)),
+            {'nfft': 1024, 'noverlap': 0})
+        self.assertDictEqual(
+            fft_ui.normalize_fft_params(
+                TimeSeries(numpy.zeros(1024), sample_rate=256),
+                {'window': 'hann'}),
+            {'nfft': 1024, 'noverlap': 512, 'window': 'hann'})
+
 
 # -- gwpy.signal.fft.utils ----------------------------------------------------
 

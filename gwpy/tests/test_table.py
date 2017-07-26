@@ -32,6 +32,7 @@ from astropy import units
 from astropy.io.ascii import InconsistentTableError
 
 from gwpy.table import (Table, EventTable)
+from gwpy.table.filter import filter_table
 from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
 
 import common
@@ -49,7 +50,7 @@ class TableTests(unittest.TestCase):
     TABLE_CLASS = Table
 
     def assertTableEqual(self, a, b, copy=None, meta=False):
-        assert a.colnames == b.colnames
+        assert sorted(a.colnames) == sorted(b.colnames)
         nptest.assert_array_equal(a.as_array(), b.as_array())
         if meta:
             assert a.meta == b.meta
@@ -108,7 +109,7 @@ class TableTests(unittest.TestCase):
             # overwrite=False, append=True
             table.write(fp, format='ligolw.sngl_burst', append=True)
             table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
-            self.assertTableEqual(table2, table5)
+            self.assertTableEqualTypeless(table2, table5)
             # overwrite=True, append=True
             table.write(fp, format='ligolw.sngl_burst', append=True,
                         overwrite=True)
@@ -126,6 +127,11 @@ class TableTests(unittest.TestCase):
             self.assertEqual(
                 str(exc.exception),
                 'document must contain exactly one sngl_burst table')
+            # test with selection
+            table3 = self.TABLE_CLASS.read(TEST_XML_FILE,
+                                           format='ligolw.sngl_burst',
+                                           selection='snr>5')
+            self.assertTableEqual(filter_table(table, 'snr>5'), table3)
         finally:
             if os.path.isdir(tempdir):
                 shutil.rmtree(tempdir)
@@ -149,6 +155,11 @@ class TableTests(unittest.TestCase):
                 self.TABLE_CLASS.read(fp)
             self.assertTrue(str(exc.exception).startswith(
                 "Multiple trees found"))
+            # test with selection
+            table3 = self.TABLE_CLASS.read(fp, treename='test',
+                                           selection='frequency>500')
+            self.assertTableEqual(
+                filter_table(table2, 'frequency>500'), table3)
         except ImportError as e:
             self.skipTest(str(e))
         finally:
@@ -170,6 +181,12 @@ class TableTests(unittest.TestCase):
             table2 = self.TABLE_CLASS.read(fp, 'test_read_write_gwf',
                                            columns=columns)
             self.assertTableEqualTypeless(table, table2, meta=False)
+            # test with selection
+            table3 = self.TABLE_CLASS.read(fp, 'test_read_write_gwf',
+                                           columns=columns,
+                                           selection='frequency>500')
+            self.assertTableEqual(
+                filter_table(table2, 'frequency>500'), table3)
         except ImportError as e:
             self.skipTest(str(e))
         finally:
@@ -296,6 +313,28 @@ class EventTableTests(TableTests):
             mchirp = (table['mass1'] * table['mass2']) ** (3/5.) / (
                 table['mass1'] + table['mass2']) ** (1/5.)
             nptest.assert_array_equal(table2['mchirp'], mchirp)
+
+            # test with selection
+            table3 = self.TABLE_CLASS.read(fp, format='hdf5.pycbc_live',
+                                           ifo='X1', selection='snr>.5')
+            self.assertTableEqual(filter_table(table, 'snr>.5'), table3)
         finally:
             if os.path.exists(fp):
                 os.remove(fp)
+
+    def test_filter(self):
+        table = self.TABLE_CLASS.read(TEST_OMEGA_FILE, format='ascii.omega')
+        # check simple filter
+        lowf = table.filter('frequency < 1000')
+        self.assertIsInstance(lowf, type(table))
+        self.assertEqual(len(lowf), 45)
+        self.assertLess(lowf['frequency'].max(), 1000)
+        # check filtering everything returns an empty table
+        self.assertEqual(
+            len(table.filter('frequency < 1000', 'frequency>=1000')), 0)
+        # check compounding works
+        loud = table.filter('normalizedEnergy>5000')
+        lowfloud = table.filter('frequency < 1000', 'normalizedEnergy>5000')
+        brute = type(table)(rows=[row for row in lowf if row in loud],
+                            names=table.dtype.names)
+        self.assertTableEqual(brute, lowfloud)

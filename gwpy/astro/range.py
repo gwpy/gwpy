@@ -165,13 +165,14 @@ def burst_range_spectrum(psd, snr=8, energy=1e-2, unit='Mpc'):
     rangespec : `~gwpy.frequencyseries.FrequencySeries`
         the burst range `FrequencySeries` [Mpc (default)]
     """
-    unit = units.Unit(unit)
+    # calculate frequency dependent range in parsecs
     a = (constants.G.value * energy * constants.M_sun.value * 0.4 /
          (pi**2 * constants.c.value))**(1/2.)
     dspec = a / (snr * psd**(1/2.) * psd.frequencies) / constants.pc.value
-    conv = units.pc.get_converter(unit)
-    rspec = conv(dspec)
-    rspec.override_unit(unit)
+    dspec.override_unit(units.pc)
+    # convert to output unit
+    rspec = dspec.to(unit)
+    # rescale 0 Hertz (which has 0 range always)
     if rspec.f0.value == 0.0:
         rspec[0] = 0.0
     return rspec

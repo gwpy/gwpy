@@ -30,13 +30,10 @@ from astropy.table import (Table, Column, vstack)
 from astropy.io.registry import write as io_write
 
 from ..io.mp import read_multi as io_read_multi
+from .filter import (filter_table, parse_operator)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['EventColumn', 'EventTable']
-
-OPERATORS = {'<': _operator.lt, '<=': _operator.le, '=': _operator.eq,
-             '>=': _operator.ge, '>': _operator.gt, '==': _operator.is_,
-             '!=': _operator.is_not}
 
 
 class EventColumn(Column):
@@ -125,6 +122,13 @@ class EventTable(Table):
             the format of the given source files; if not given, an attempt
             will be made to automatically identify the format
 
+        selection : `str`, or `list` of `str`
+            one or more column filters with which to downselect the
+            returned table rows as they as read, e.g. ``'snr > 5'``;
+            multiple selections should be connected by ' && ', or given as
+            a `list`, e.g. ``'snr > 5 && frequency < 1000'`` or
+            ``['snr > 5', 'frequency < 1000']``
+
         nproc : `int`, optional, default: 1
             number of CPUs to use for parallel file reading
 
@@ -144,7 +148,24 @@ class EventTable(Table):
 
         Notes
         -----"""
-        return io_read_multi(vstack, cls, source, *args, **kwargs)
+        # astropy's ASCII formats don't support on-the-fly selection, so
+        # we pop the selection argument out here
+        if str(kwargs.get('format')).startswith('ascii'):
+            selection = kwargs.pop('selection', [])
+            if isinstance(selection, string_types):
+                selection = [selection]
+        else:
+            selection = []
+
+        # read the table
+        tab = io_read_multi(vstack, cls, source, *args, **kwargs)
+
+        # apply the selection if required:
+        if selection:
+            tab = tab.filter(*selection)
+
+        # and return
+        return tab
 
     def write(self, target, *args, **kwargs):
         """Write this table to a file
@@ -302,7 +323,7 @@ class EventTable(Table):
                 bins2.append((bin_, bins[i+1]))
             bins = bins2
         elif isinstance(operator, string_types):
-            op = OPERATORS[operator]
+            op = parse_operator(operator)
         else:
             op = operator
 
@@ -383,3 +404,21 @@ class EventTable(Table):
         """
         from gwpy.plotter import HistogramPlot
         return HistogramPlot(self, column, **kwargs)
+
+    def filter(self, *column_filters):
+        """Apply one or more column slice filters to this `EventTable`
+
+        Multiple column filters can be given, and will be applied
+        concurrently
+
+        Parameters
+        ----------
+        column_filter : `str`
+            a column slice filter definition, e.g. ``'snr > 10``
+
+        Returns
+        -------
+        table : `EventTable`
+            a new table with only those rows matching the filters
+        """
+        return filter_table(self, *column_filters)

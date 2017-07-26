@@ -34,7 +34,11 @@ The `EventTable` extends the functionality of the regular
 `~astropy.table.Table` with multi-file input routines, and utilities for
 processing and plotting tables of events that contain GPS timestamps.
 
-See the :mod:`astropy.table` documentation for examples of how to create custom tables, and much more.
+See the :any:`astropy-table` documentation for examples of how to create custom tables, and much more.
+The only thing to change if you want to use the `EventTable` instead of the basic `Table` is the import::
+
+    >>> from gwpy.table import EventTable
+
 
 ============================
 Reading/writing tabular data

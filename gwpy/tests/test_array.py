@@ -67,25 +67,32 @@ class CommonTests(object):
         try:
             return self._TEST_ARRAY
         except AttributeError:
+            # create array
             self._TEST_ARRAY = self.create(name=CHANNEL_NAME, unit='meter',
                                            channel=CHANNEL_NAME,
                                            epoch=GPS_EPOCH)
+            # customise channel a wee bit
+            #    used to test pickle/unpickle when storing channel as
+            #    dataset attr in HDF5
+            self._TEST_ARRAY.channel.sample_rate = 128
+            self._TEST_ARRAY.channel.unit = 'm'
             return self.TEST_ARRAY
 
     def create(self, *args, **kwargs):
         kwargs.setdefault('copy', False)
         return self.TEST_CLASS(self.data, *args, **kwargs)
 
-    def assertQuantityEqual(self, q1, q2, *args):
+    def assertQuantityEqual(self, q1, q2, unit=True):
         nptest.assert_array_equal(q1.value, q2.value)
-        self.assertEqual(q1.unit, q2.unit)
+        if unit:
+            self.assertEqual(q1.unit, q2.unit)
 
     def assertArraysEqual(self, ts1, ts2, *args, **kwargs):
         exclude = kwargs.pop('exclude', [])
         if kwargs:
             raise TypeError("assertArraysEqual has no keyword argument %r"
                             % list(kwargs.keys())[0])
-        self.assertQuantityEqual(ts1, ts2)
+        self.assertQuantityEqual(ts1, ts2, unit='unit' not in exclude)
         if not args:
             args = self.TEST_CLASS._metadata_slots
         for attr in args:

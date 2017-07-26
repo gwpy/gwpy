@@ -27,6 +27,7 @@ import numpy
 from ...io.hdf5 import (identify_hdf5, with_read_hdf5)
 from ...io.registry import (register_reader, register_identifier)
 from .. import (Table, EventTable)
+from .utils import read_with_selection
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Nitz <alex.nitz@ligo.org>'
@@ -38,6 +39,7 @@ PYCBC_FILENAME = re.compile('([A-Z][0-9])+-Live-[0-9.]+-[0-9.]+.hdf')
 
 
 @with_read_hdf5
+@read_with_selection
 def table_from_file(source, ifo=None, columns=None, loudest=False):
     """Read a `Table` from a PyCBC live HDF5 file
     """
@@ -154,7 +156,7 @@ def empty_hdf5_file(h5f, ifo=None):
     h5f = h5f.file
     if list(h5f) == []:
         return True
-    if ifo is not None and list(h5f[ifo]) == ['psd']:
+    if ifo is not None and (ifo not in h5f or list(h5f[ifo]) == ['psd']):
         return True
     return False
 
@@ -166,6 +168,7 @@ def identify_pycbc_live(origin, filepath, fileobj, *args, **kwargs):
             filepath is not None and PYCBC_FILENAME.match(basename(filepath))):
         return True
     return False
+
 
 # register for unified I/O
 register_identifier(PYCBC_LIVE_FORMAT, EventTable, identify_pycbc_live)
@@ -192,6 +195,7 @@ def get_new_snr(h5group, q=6., n=2.):
     newsnr[idx] *= _new_snr_scale(newsnr[idx], rchisq[idx], q=q, n=n)
     return newsnr
 
+
 GET_COLUMN['new_snr'] = get_new_snr
 
 
@@ -199,5 +203,6 @@ def get_mchirp(h5group):
     mass1 = h5group['mass1'][:]
     mass2 = h5group['mass2'][:]
     return (mass1 * mass2) ** (3/5.) / (mass1 + mass2) ** (1/5.)
+
 
 GET_COLUMN['mchirp'] = get_mchirp

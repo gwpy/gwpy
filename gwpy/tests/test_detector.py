@@ -19,7 +19,9 @@
 """Unit test for detector module
 """
 
+import os.path
 from six.moves.urllib.error import URLError
+from tempfile import NamedTemporaryFile
 
 import pytest
 
@@ -37,6 +39,46 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 NDSHOST = 'nds.ligo-la.caltech.edu'
 
+OMEGA_CONFIG = """
+[L1:CAL,L1 calibrated]
+
+{
+  channelName:                 'L1:GDS-CALIB_STRAIN'
+  frameType:                   'L1_HOFT_C00'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 96]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        0.5
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              1
+}
+
+[L1:PEM,L1 environment]
+
+{
+  channelName:                 'L1:PEM-CS_SEIS_LVEA_VERTEX_Z_DQ'
+  frameType:                   'L1_R'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        1.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+"""
+
+
+# -- Channel ------------------------------------------------------------------
 
 class ChannelTests(unittest.TestCase):
     """`TestCase` for the timeseries module
@@ -94,11 +136,11 @@ class ChannelTests(unittest.TestCase):
         # test virgo channels
         out = Channel.parse_channel_name("V1:h_16384Hz")
         self.assertDictEqual(
-            out, {'ifo': 'V1', 'system':'h', 'subsystem':'16384Hz',
+            out, {'ifo': 'V1', 'system': 'h', 'subsystem': '16384Hz',
                   'signal': None, 'trend': None, 'type': None})
         out = Channel.parse_channel_name("V1:Sa_PR_f0_zL_500Hz")
         self.assertDictEqual(
-            out, {'ifo': 'V1', 'system':'Sa', 'subsystem':'PR',
+            out, {'ifo': 'V1', 'system': 'Sa', 'subsystem': 'PR',
                   'signal': 'f0_zL_500Hz', 'trend': None, 'type': None})
 
     def test_property_frequency_range(self):
@@ -130,7 +172,7 @@ class ChannelTests(unittest.TestCase):
         except URLError as e:
             msg = str(e)
             if ('timed out' in msg.lower() or
-                'connection reset' in msg.lower()):
+                    'connection reset' in msg.lower()):
                 self.skipTest(msg)
             raise
         except ValueError as e:
@@ -146,7 +188,7 @@ class ChannelTests(unittest.TestCase):
                 import kerberos
             except ImportError:
                 self.skipTest('Channel.query() requires kerberos '
-                                        'to be installed')
+                              'to be installed')
             else:
                 if isinstance(e, kerberos.GSSError):
                     self.skipTest(str(e))
@@ -232,7 +274,8 @@ class UnitTest(unittest.TestCase):
         aunit = lalutils.from_lal_unit(lalunit)
         self.assertEqual(aunit, units.meter)
         # test compound
-        self.assertEqual(units.Newton,
+        self.assertEqual(
+            units.Newton,
             lalutils.from_lal_unit(lalutils.to_lal_unit(units.Newton)))
         # test error
         self.assertRaises(ValueError, lalutils.to_lal_unit, 'blah')
@@ -245,8 +288,8 @@ class ChannelListTestCase(unittest.TestCase):
     REAL_CHANNELS = ['L1:IMC-PWR_IN_OUT_DQ', 'H1:PSL-ODC_CHANNEL_OUT_DQ']
 
     def setUp(self):
-        self.channels = [Channel(n, s) for n, s in
-                    zip(self.NAMES, self.SAMPLE_RATES)]
+        self.channels = [Channel(n, s) for
+                         n, s in zip(self.NAMES, self.SAMPLE_RATES)]
 
     def create(self):
         return ChannelList(self.channels)
@@ -311,6 +354,47 @@ class ChannelListTestCase(unittest.TestCase):
             self.REAL_CHANNELS[:1], 'Jan 1 2017', 'Jan 2 2017',
             host=NDSHOST, ctype=1)
         self.assertListEqual(list(avail.values())[0], SegmentList())
+
+    def test_read_write_omega_config(self):
+        # write OMEGA_CONFIG to file and read it back
+        try:
+            with NamedTemporaryFile(suffix='.txt', delete=False) as f:
+                f.write(OMEGA_CONFIG)
+            cl = ChannelList.read(f.name, format='omega-scan')
+            self.assertEqual(len(cl), 2)
+            self.assertEqual(cl[0].name, 'L1:GDS-CALIB_STRAIN')
+            self.assertEqual(cl[0].sample_rate, 4096 * units.Hertz)
+            self.assertEqual(cl[0].frametype, 'L1_HOFT_C00')
+            self.assertDictEqual(
+                cl[0].params, {'channelName': 'L1:GDS-CALIB_STRAIN',
+                               'frameType': 'L1_HOFT_C00',
+                               'sampleFrequency': 4096,
+                               'searchTimeRange': 64,
+                               'searchFrequencyRange': (0, float('inf')),
+                               'searchQRange': (4, 96),
+                               'searchMaximumEnergyLoss': 0.2,
+                               'whiteNoiseFalseRate': 1e-3,
+                               'searchWindowDuration': 0.5,
+                               'plotTimeRanges': (1, 4, 16),
+                               'plotFrequencyRange': (),
+                               'plotNormalizedEnergyRange': (0, 25.5),
+                               'alwaysPlotFlag': 1})
+            self.assertEqual(cl[1].name, 'L1:PEM-CS_SEIS_LVEA_VERTEX_Z_DQ')
+            self.assertEqual(cl[1].frametype, 'L1_R')
+        finally:
+            if os.path.isfile(f.name):
+                os.remove(f.name)
+        # write omega config again using ChannelList.write and read it back
+        # and check that the two lists match
+        try:
+            with NamedTemporaryFile(suffix='.txt', delete=False,
+                                    mode='w') as f2:
+                cl.write(f2, format='omega-scan')
+            cl2 = type(cl).read(f2.name, format='omega-scan')
+            self.assertListEqual(cl, cl2)
+        finally:
+            if os.path.isfile(f2.name):
+                os.remove(f2.name)
 
 
 if __name__ == '__main__':
