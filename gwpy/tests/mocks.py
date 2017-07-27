@@ -21,6 +21,8 @@
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+import inspect
+
 from gwpy.time import LIGOTimeGPS
 from gwpy.segments import (Segment, SegmentList)
 
@@ -108,19 +110,24 @@ def segdb_query_segments(result):
 
 # -- NDS2 ---------------------------------------------------------------------
 
-def mock_nds2_buffer(channel, data, epoch, sample_rate, unit):
+def nds2_buffer(channel, data, epoch, sample_rate, unit):
     import nds2
     epoch = LIGOTimeGPS(epoch)
-    NdsBuffer = mock.create_autospec(nds2.buffer)
-    NdsBuffer.length = data.shape[0]
-    NdsBuffer.channel = mock_nds2_channel(channel, sample_rate, unit)
-    NdsBuffer.gps_seconds = epoch.gpsSeconds
-    NdsBuffer.gps_nanoseconds = epoch.gpsNanoSeconds
-    NdsBuffer.data = data
-    return NdsBuffer
+    ndsbuffer = mock.create_autospec(nds2.buffer)
+    ndsbuffer.length = len(data)
+    ndsbuffer.channel = nds2_channel(channel, sample_rate, unit)
+    ndsbuffer.gps_seconds = epoch.gpsSeconds
+    ndsbuffer.gps_nanoseconds = epoch.gpsNanoSeconds
+    ndsbuffer.data = data
+    return ndsbuffer
 
 
-def mock_nds2_channel(name, sample_rate, unit):
+def nds2_buffer_from_timeseries(ts):
+    return nds2_buffer(ts.name, ts.value, ts.t0.value,
+                       ts.sample_rate.value, str(ts.unit))
+
+
+def nds2_channel(name, sample_rate, unit):
     import nds2
     channel = mock.create_autospec(nds2.channel)
     channel.name = name
@@ -129,10 +136,13 @@ def mock_nds2_channel(name, sample_rate, unit):
     channel.channel_type = 2
     channel.channel_type_to_string.return_value = 'raw'
     channel.data_type = 8
+    for attr, value in inspect.getmembers(
+            nds2.channel, predicate=lambda x: isinstance(x, int)):
+        setattr(channel, attr, value)
     return channel
 
 
-def mock_nds2_connection(host='nds.test.gwpy', port=31200, buffers=[]):
+def nds2_connection(host='nds.test.gwpy', port=31200, buffers=[]):
     import nds2
     NdsConnection = mock.create_autospec(nds2.connection)
     try:
@@ -143,8 +153,29 @@ def mock_nds2_connection(host='nds.test.gwpy', port=31200, buffers=[]):
     NdsConnection.get_host.return_value = host
     NdsConnection.get_port.return_value = int(port)
     NdsConnection.iterate.return_value = [buffers]
-    NdsConnection.find_channels.return_value = [b.channel for b in buffers]
+
+    def find_channels(name, ctype, dtype, *sample_rate):
+        return [b.channel for b in buffers if b.channel.name == name]
+
+    NdsConnection.find_channels = find_channels
     return NdsConnection
+
+
+def nds2_availability(name, segments):
+    import nds2
+    availability = mock.create_autospec(nds2.availability)
+    availability.name = name
+    availability.simple_list.return_value = list(map(nds2_segment, segments))
+    return availability
+
+
+def nds2_segment(segment):
+    import nds2
+    nds2seg = mock.create_autospec(nds2.simple_segment)
+    nds2seg.gps_start = segment[0]
+    nds2seg.gps_stop = segment[1]
+    return nds2seg
+
 
 
 # -- glue.datafind ------------------------------------------------------------
