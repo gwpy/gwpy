@@ -414,11 +414,11 @@ class Channel(object):
         """
         channellist = ChannelList.query(name, debug=debug, timeout=timeout)
         if len(channellist) == 0:
-            raise ValueError("No channels found matching '%s'." % name)
+            raise ValueError("No channels found matching '%s'" % name)
         if len(channellist) > 1:
             raise ValueError("%d channels found matching '%s', please refine "
                              "search, or use `ChannelList.query` to return "
-                             "all results." % (len(channellist), name))
+                             "all results" % (len(channellist), name))
         return channellist[0]
 
     @classmethod
