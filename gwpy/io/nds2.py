@@ -335,8 +335,9 @@ def parse_nds2_enums(func):
     def wrapped_func(*args, **kwargs):
         for kw, enum_ in (('type', Nds2ChannelType),
                           ('dtype', Nds2DataType)):
-            kwargs.setdefault(kw, enum_.any())
-            if not isinstance(kwargs[kw], int):
+            if kwargs.get(kw, None) is None:
+                kwargs[kw] = enum_.any()
+            elif not isinstance(kwargs[kw], int):
                 kwargs[kw] = enum_.find(kwargs[kw]).value
         return func(*args, **kwargs)
     return wrapped_func
