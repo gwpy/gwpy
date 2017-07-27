@@ -26,6 +26,7 @@ import numpy
 import warnings
 import subprocess
 import sys
+from copy import copy
 from math import (log, ceil)
 
 from six import string_types
@@ -569,10 +570,10 @@ class Channel(object):
             allow_tape=allow_tape)
 
     def copy(self):
-        return type(self)(self.name, unit=self.unit,
-                          sample_rate=self.sample_rate, dtype=self.dtype,
-                          type=self.type, frametype=self.frametype,
-                          model=self.model, url=self.url)
+        new = type(self)(str(self))
+        for key, value in vars(self).items():
+            setattr(new, key, copy(value))
+        return new
 
     def __str__(self):
         return self.name
