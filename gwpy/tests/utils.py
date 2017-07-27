@@ -150,26 +150,109 @@ def assert_table_equal(a, b, is_copy=True, meta=False, check_types=True,
         assert numpy.may_share_memory(col, col2) is not is_copy
 
 
+def assert_segmentlist_equal(a, b):
+    """Assert that two `SegmentList`s contain the same data
+    """
+    for aseg, bseg in zip(a, b):
+        assert aseg == bseg
+
+
+def assert_flag_equal(a, b, attrs=['name', 'ifo', 'tag', 'version']):
+    """Assert that two `DataQualityFlag`s contain the same data
+    """
+    assert_segmentlist_equal(a.active, b.active)
+    assert_segmentlist_equal(a.known, b.known)
+    for attr in attrs:
+        assert getattr(a, attr) == getattr(b, attr)
+
+
+def assert_dict_equal(a, b, assert_value, *args, **kwargs):
+    """Assert that two `dict`s contain the same data
+
+    Parameters
+    ----------
+    a, b
+        two objects to compare
+
+    assert_value : `callable`
+        method to compare that two dict entries are the same
+
+    *args, **kargs
+        positional and keyword arguments to pass to ``assert_value``
+    """
+    assert a.keys() == b.keys()
+    for key in a:
+        assert_value(a[key], b[key], *args, **kwargs)
+
+
 # -- I/O helpers --------------------------------------------------------------
 
+def test_read_write(data, format,
+                    extension=None, autoidentify=True,
+                    read_args=[], read_kw={},
+                    write_args=[], write_kw={},
+                    assert_equal=assert_array_equal, assert_kw={}):
+    """Test that data can be written to and read from a file in some format
 
-def test_read_write(data, format, extension=None, autoidentify=True,
-                    exclude=[], read_args=[], read_kw={},
-                    write_args=[], write_kw={}):
+    Parameters
+    ----------
+    data : some type with `.read()` and `.write()` methods
+        the data to be written
+
+    format : `str`
+        the name of the file format (as registered with `astropy.io.registry`
+
+    extension : `str`, optional
+        the name of the file extension, defaults to ``.<format>``
+
+    autoidenfity : `bool`, optional
+        attempt to auto-identify when reading writing by not specifying
+        ``format``
+
+    read_args : `list`, optional
+        positional arguments to pass to ``type(data).read()``
+
+    read_kwargs : `dict`, optional
+        keyword arguments to pass to ``type(data).read()``
+
+    write_args : `list`, optional
+        positional arguments to pass to ``data.write()``
+
+    write_kwargs : `dict`, optional
+        keyword arguments to pass to ``data.write()``
+
+    assert_equal : `callable`, optional
+        the function to assert that the object read back from file matches
+        the original ``data``
+
+    assert_kwargs : `dict`, optional
+        keyword arguments to pass to ``assert_equal``
+    """
     # parse extension and add leading period
     if extension is None:
         extension = format
-    extension = '.%s' % extension.lstrip()
-    # try writing the data and reading it back
+    extension = '.%s' % extension.lstrip('.')
+
+    DataClass = type(data)
+
     try:
+        # write data to a file
         fp = tempfile.mktemp(suffix=extension)
         data.write(fp, *write_args, format=format, **write_kw)
+
+        # try again with automatic format identification
         if autoidentify:
             data.write(fp, *write_args, **write_kw)
-        b = data.read(fp, *read_args, format=format, **read_kw)
+
+        # read the data back and check that its the same
+        new = DataClass.read(fp, *read_args, format=format, **read_kw)
+        assert_equal(new, data, **assert_kw)
+
+        # try again with automatic format identification
         if autoidentify:
-            data.read(fp, *read_args, **read_kw)
-        assert_quantity_sub_equal(data, b, exclude=exclude)
+            new = DataClass.read(fp, *read_args, **read_kw)
+            assert_equal(new, data, **assert_kw)
+
     finally:
         # make sure and clean up after ourselves
         if os.path.exists(fp):

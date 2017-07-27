@@ -22,25 +22,27 @@
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 from gwpy.time import LIGOTimeGPS
+from gwpy.segments import (Segment, SegmentList)
 
 from compat import mock
 
 
 # -- DQSEGDB calls ------------------------------------------------------------
 
-def mock_query_times(result, deactivated=False,
-                     active_indicates_ifo_badness=False, **kwargs):
+def dqsegdb_query_times(result, deactivated=False,
+                        active_indicates_ifo_badness=False, **kwargs):
     """Build a mock of `dqsegdb.apicalls.dqsegdbQueryTimes` for testing
     """
 
     def query_times(protocol, server, ifo, name, version, request, start, end):
         flag = '%s:%s:%d' % (ifo, name, version)
+        span = SegmentList([Segment(start, end)])
         return {
             'ifo': ifo,
             'name': name,
             'version': version,
-            'known': list(map(tuple, result[flag].known)),
-            'active': list(map(tuple, result[flag].active)),
+            'known': list(map(tuple, result[flag].known & span)),
+            'active': list(map(tuple, result[flag].active & span)),
             'query_information': {},
             'metadata': kwargs,
         }, 'BOGUS_QUERY_STRING'
@@ -48,8 +50,9 @@ def mock_query_times(result, deactivated=False,
     return query_times
 
 
-def mock_dqsegdb_cascaded_query(result, deactivated=False,
-                                active_indicates_ifo_badness=False, **kwargs):
+def dqsegdb_cascaded_query(result, deactivated=False,
+                           active_indicates_ifo_badness=False,
+                           **kwargs):
     """Build a mock of `dqsegdb.apicalls.dqsegdbCascadedQuery` for testing
     """
 
@@ -75,6 +78,32 @@ def mock_dqsegdb_cascaded_query(result, deactivated=False,
         )
 
     return cascaded_query
+
+
+def segdb_expand_version_number(min_, max_):
+    def expand_version_number(engine, segdef):
+        ifo, name, version, start_time, end_time, start_pad, end_pad = segdef
+        if version != '*':
+            return [segdef]
+        return [[ifo, name, v, start_time, end_time, start_pad, end_pad] for
+                v in range(min_, max_+1)[::-1]]
+
+    return expand_version_number
+
+
+def segdb_query_segments(result):
+    def query_segments(engine, tablename, segdefs):
+        out = []
+        for ifo, flag, version, start, end, startpad, endpad in segdefs:
+            flag = '%s:%s:%d' % (ifo, flag, version)
+            if flag not in result:
+                out.append([])
+            if tablename == 'segment':
+                out.append(result[flag].active)
+            else:
+                out.append(result[flag].known)
+        return out
+    return query_segments
 
 
 # -- NDS2 ---------------------------------------------------------------------
