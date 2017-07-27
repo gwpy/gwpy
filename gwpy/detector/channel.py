@@ -860,4 +860,4 @@ class ChannelList(list):
                                       type=ctype)
         availability = io_nds2.get_availability(chans, start, end,
                                                 connection=connection)
-        return type(availability)(zip(chans, availability.values()))
+        return type(availability)(zip(channels, availability.values()))
