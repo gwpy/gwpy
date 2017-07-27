@@ -48,6 +48,7 @@ from six.moves.queue import Queue
 from numpy import inf
 
 from astropy.io import registry as io_registry
+from astropy.utils.data import get_readable_fileobj
 
 from ..time import to_gps
 from ..utils.deps import with_import
@@ -1228,14 +1229,9 @@ class DataQualityDict(OrderedDict):
             end = to_gps(end)
 
         # read veto definer file
-        if urlparse(fp).scheme in ['http', 'https']:
-            response = request.urlopen(fp)
-            with tempfile.NamedTemporaryFile() as temp:
-                temp.write(response.read())
-                temp.flush()
-                veto_def_table = table_from_file(temp.name, 'veto_definer')
-        else:
-            veto_def_table = table_from_file(fp, 'veto_definer')
+        with get_readable_fileobj(fp, show_progress=False) as f:
+            veto_def_table = table_from_file(f, 'veto_definer')
+
         # parse flag definitions
         out = cls()
         for row in veto_def_table:
