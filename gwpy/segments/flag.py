@@ -438,7 +438,7 @@ class DataQualityFlag(object):
                              "or a SegmentList of query segments")
         # process query
         try:
-            flags = DataQualityDict.query([flag], qsegs, **kwargs)
+            flags = DataQualityDict.query_segdb([flag], qsegs, **kwargs)
         except TypeError as e:
             if 'DataQualityDict' in str(e):
                 raise TypeError(str(e).replace('DataQualityDict',
