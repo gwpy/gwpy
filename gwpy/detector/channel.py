@@ -30,6 +30,7 @@ from copy import copy
 from math import (log, ceil)
 
 from six import string_types
+from six.moves.urllib.parse import urlparse
 
 from astropy import units
 from astropy.io import registry as io_registry
@@ -297,7 +298,15 @@ class Channel(object):
 
     @url.setter
     def url(self, href):
-        self._url = href
+        if href is None:
+            self._url = None
+        else:
+            try:
+                url = urlparse(href)
+                assert url.scheme in ('http', 'https', 'file')
+            except (AttributeError, ValueError, AssertionError):
+                raise ValueError("Invalid URL %r" % href)
+            self._url = href
 
     @property
     def frametype(self):
