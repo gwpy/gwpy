@@ -156,9 +156,7 @@ class Channel(object):
 
     @sample_rate.setter
     def sample_rate(self, rate):
-        if isinstance(rate, units.Unit):
-            self._sample_rate = rate
-        elif rate is None:
+        if rate is None:
             self._sample_rate = None
         elif isinstance(rate, units.Quantity):
             self._sample_rate = rate
