@@ -100,7 +100,7 @@ class Nds2ChannelType(Nds2Enum):
             for ctype in cls._member_map_.values():
                 if ctype.name == name:
                     return ctype
-            raise
+            raise ValueError('%s is not a valid %s' % (name, cls.__name__))
 
     UNKNOWN = 0
     ONLINE = 1
