@@ -213,10 +213,8 @@ def to_lal_ligotimegps(gps):
     ligotimegps : `lal.LIGOTimeGPS`
         a SWIG-LAL `~lal.LIGOTimeGPS` representation of the given GPS time
     """
-    warnings.warn("to_lal_ligotimegps has been deprecated in favour of "
-                  "gwpy.time.to_gps, which returns a `lal.LIGOTimeGPS` object",
-                  DeprecationWarning)
-    return to_gps(gps)
+    gps = to_gps(gps)
+    return lal.LIGOTimeGPS(gps.gpsSeconds, gps.gpsNanoSeconds)
 
 
 # -- detectors ----------------------------------------------------------------
