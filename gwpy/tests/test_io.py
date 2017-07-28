@@ -65,7 +65,7 @@ class TestIoNds2(object):
         assert io_nds2.Nds2DataType.find(float) == io_nds2.Nds2DataType.FLOAT64
         # test uint
         assert io_nds2.Nds2DataType.find('uint32') == \
-               io_nds2.Nds2DataType.UINT32
+            io_nds2.Nds2DataType.UINT32
         # test unknown
         with pytest.raises(TypeError):
             io_nds2.Nds2DataType.find('blah')
@@ -150,7 +150,7 @@ class TestIoNds2(object):
             assert conn.get_port() == 31200
 
         nds_connection = mocks.nds2_connection(host='nds2.test.gwpy',
-                                                        port=8088)
+                                               port=8088)
         with mock.patch('nds2.connection') as mock_connection:
             mock_connection.return_value = nds_connection
             conn = io_nds2.connect('nds2.test.gwpy')
@@ -315,10 +315,10 @@ class TestIoDatafind(object):
         """
         with mock.patch('glue.datafind.GWDataFindHTTPConnection',
                         connection), \
-             mock.patch('glue.datafind.GWDataFindHTTPSConnection',
-                        connection), \
-             mock.patch('glue.datafind.find_credential',
-                        mocks.mock_find_credential):
+                mock.patch('glue.datafind.GWDataFindHTTPSConnection',
+                           connection), \
+                mock.patch('glue.datafind.find_credential',
+                           mocks.mock_find_credential):
             io_datafind.connect()  # HTTP
             io_datafind.connect('host', 443)  # HTTPS
 
@@ -326,10 +326,10 @@ class TestIoDatafind(object):
         """Test :func:`gwpy.io.datafind.find_frametype
         """
         with mock.patch('glue.datafind.GWDataFindHTTPConnection') as \
-                 mock_connection, \
-                 mock.patch('gwpy.io.datafind.num_channels', lambda x: 1), \
-                 mock.patch('gwpy.io.gwf.iter_channel_names',
-                            lambda x: ['L1:LDAS-STRAIN']):
+                mock_connection, \
+                mock.patch('gwpy.io.datafind.num_channels', lambda x: 1), \
+                mock.patch('gwpy.io.gwf.iter_channel_names',
+                           lambda x: ['L1:LDAS-STRAIN']):
             mock_connection.return_value = connection
             assert io_datafind.find_frametype('L1:LDAS-STRAIN',
                                               allow_tape=True) == 'GW100916'
@@ -362,10 +362,10 @@ class TestIoDatafind(object):
         """Test :func:`gwpy.io.datafind.find_best_frametype
         """
         with mock.patch('glue.datafind.GWDataFindHTTPConnection') as \
-                 mock_connection, \
-                 mock.patch('gwpy.io.datafind.num_channels', lambda x: 1), \
-                 mock.patch('gwpy.io.gwf.iter_channel_names',
-                            lambda x: ['L1:LDAS-STRAIN']):
+                mock_connection, \
+                mock.patch('gwpy.io.datafind.num_channels', lambda x: 1), \
+                mock.patch('gwpy.io.gwf.iter_channel_names',
+                           lambda x: ['L1:LDAS-STRAIN']):
             mock_connection.return_value = connection
             assert io_datafind.find_best_frametype(
                 'L1:LDAS-STRAIN', 968654552, 968654553) == 'GW100916'

@@ -156,6 +156,7 @@ class Nds2DataType(Nds2Enum):
 class NDSWarning(UserWarning):
     pass
 
+
 warnings.simplefilter('always', NDSWarning)
 
 

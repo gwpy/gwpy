@@ -671,7 +671,7 @@ class Series(Array):
         if type(other) == type(self) and other.unit == self.unit:
             self.value[-N:] = other.value[-N:]
         # otherwise if its just a numpy array
-        elif type(other) == type(self.value) or (
+        elif type(other) is type(self.value) or (
                 other.dtype.name.startswith('uint')):
             self.value[-N:] = other[-N:]
         else:

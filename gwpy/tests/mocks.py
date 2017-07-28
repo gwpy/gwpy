@@ -73,12 +73,12 @@ def dqsegdb_cascaded_query(result, deactivated=False,
              'name': 'RESULT',
              'version': 1},
             [{'ifo': ifo,
-             'name': name,
-             'version': version,
-             'known': list(map(tuple, result[flag].known)),
-             'active': list(map(tuple, result[flag].active)),
-             'query_information': {},
-             'metadata': kwargs}],
+              'name': name,
+              'version': version,
+              'known': list(map(tuple, result[flag].known)),
+              'active': list(map(tuple, result[flag].active)),
+              'query_information': {},
+              'metadata': kwargs}],
             {},
         )
 
@@ -188,12 +188,11 @@ def nds2_segment(segment):
     return nds2seg
 
 
-
 # -- glue.datafind ------------------------------------------------------------
-
 
 def mock_find_credential():
     return '/mock/cert/path', '/mock/key/path'
+
 
 def mock_datafind_connection(framefile):
     from lal.utils import CacheEntry
@@ -201,7 +200,8 @@ def mock_datafind_connection(framefile):
     ce = CacheEntry.from_T050017(framefile)
     frametype = ce.description
     # create mock up of connection object
-    DatafindConnection = mock.create_autospec(datafind.GWDataFindHTTPConnection)
+    DatafindConnection = mock.create_autospec(
+        datafind.GWDataFindHTTPConnection)
     DatafindConnection.find_types.return_value = [frametype]
     DatafindConnection.find_latest.return_value = [ce]
     DatafindConnection.find_frame_urls.return_value = [ce]

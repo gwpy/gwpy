@@ -34,7 +34,7 @@ from numpy import (may_share_memory, testing as nptest)
 from scipy import signal
 
 from matplotlib import use, rc_context
-use('agg')
+use('agg')  # nopep8
 
 from astropy import units
 from astropy.io.registry import (get_reader, register_reader)
@@ -65,7 +65,7 @@ ONE_HZ = units.Quantity(1, 'Hz')
 ONE_SECOND = units.Quantity(1, 'second')
 
 TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
-                          'HLV-GW100916-968654552-1.gwf')
+                             'HLV-GW100916-968654552-1.gwf')
 TEST_HDF_FILE = '%s.hdf' % TEST_GWF_FILE[:-4]
 TEST_SEGMENT = Segment(968654552, 968654553)
 
@@ -178,9 +178,9 @@ class TestTimeSeriesBase(TestSeries):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot()
             assert isinstance(plot, TimeSeriesPlot)
-            l = plot.gca().lines[0]
-            utils.assert_array_equal(l.get_xdata(), array.xindex.value)
-            utils.assert_array_equal(l.get_ydata(), array.value)
+            line = plot.gca().lines[0]
+            utils.assert_array_equal(line.get_xdata(), array.xindex.value)
+            utils.assert_array_equal(line.get_ydata(), array.value)
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
             return plot  # allow subclasses to extend tests
@@ -360,7 +360,7 @@ class TestTimeSeriesBaseDict(object):
 
     def test_resample(self, instance):
         if self.ENTRY_CLASS is TimeSeriesBase:  # currently only for subclasses
-           return NotImplemented
+            return NotImplemented
         a = instance.resample(.5)
         for key in a:
             assert a[key].dx == 1/.5 * a[key].xunit
@@ -378,10 +378,10 @@ class TestTimeSeriesBaseDict(object):
         with rc_context(rc={'text.usetex': False}):
             plot = instance.plot()
             assert isinstance(plot, TimeSeriesPlot)
-            for l, key in zip(plot.gca().lines, instance):
-                utils.assert_array_equal(l.get_xdata(),
+            for line, key in zip(plot.gca().lines, instance):
+                utils.assert_array_equal(line.get_xdata(),
                                          instance[key].xindex.value)
-                utils.assert_array_equal(l.get_ydata(), instance[key].value)
+                utils.assert_array_equal(line.get_ydata(), instance[key].value)
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
             return plot  # allow subclasses to extend tests
@@ -676,7 +676,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         nds_buffer = mocks.nds2_buffer_from_timeseries(ts)
         nds_connection = mocks.nds2_connection(buffers=[nds_buffer])
         with mock.patch('nds2.connection') as mock_connection, \
-             mock.patch('nds2.buffer', nds_buffer):
+                mock.patch('nds2.buffer', nds_buffer):
             mock_connection.return_value = nds_connection
             # use verbose=True to hit more lines
             ts2 = self.TEST_CLASS.fetch('X1:TEST', *ts.span, verbose=True)
@@ -771,7 +771,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         assert isinstance(fs, FrequencySeries)
         assert fs.size == losc.size // 2 + 1
         assert fs.f0 == 0 * units.Hz
-        assert fs.df == 1  / losc.duration
+        assert fs.df == 1 / losc.duration
         assert fs.channel is losc.channel
         assert fs.unit == losc.unit ** 2 / units.Hz
 
@@ -801,7 +801,7 @@ class TestTimeSeries(TestTimeSeriesBase):
 
         # test LAL method with non-canonical window specification
         losc.psd(fftlength=0.4, overlap=0.2, method='median-mean',
-               window='hanning')
+                 window='hanning')
 
         # test check for at least two averages (defaults to single FFT)
         with pytest.raises(ValueError) as e:
@@ -828,7 +828,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         # test defaults
         sg = losc.spectrogram(1)  # defaults to 50% overlap for 'hann' window
         assert isinstance(sg, Spectrogram)
-        assert sg.shape == (4, losc.sample_rate.value // 2  + 1)
+        assert sg.shape == (4, losc.sample_rate.value // 2 + 1)
         assert sg.f0 == 0 * units.Hz
         assert sg.df == 1 * units.Hz
         assert sg.channel is losc.channel
@@ -860,7 +860,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         assert sg.df == 4 * units.Hertz
         assert sg.dt == 0.5 * units.second
         sg = losc.spectrogram(0.5, fftlength=0.25, method='bartlett')
-        assert sg.shape == (8, 0.25 * losc.sample_rate.value //2 + 1)
+        assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
         assert sg.df == 4 * units.Hertz
         assert sg.dt == 0.5 * units.second
         sg = losc.spectrogram(0.5, fftlength=0.25, method='lal-welch')
@@ -938,15 +938,15 @@ class TestTimeSeries(TestTimeSeriesBase):
         assert isinstance(sg, Spectrogram)
         assert sg.shape == (4, losc.sample_rate.value // 2 + 1)
         assert sg.f0 == 0 * units.Hz
-        assert sg.df == 1  * units.Hz
+        assert sg.df == 1 * units.Hz
         assert sg.channel is losc.channel
         assert sg.unit == losc.unit ** 2 / units.Hertz
         assert sg.epoch == losc.epoch
         assert sg.span == losc.span
 
         # check the same result as CSD
-        l = losc[:int(losc.sample_rate.value)]
-        csd = l.csd(l)
+        losc1 = losc[:int(losc.sample_rate.value)]
+        csd = losc1.csd(losc1)
         utils.assert_quantity_sub_equal(sg[0], csd, exclude=['name', 'epoch'])
 
         # test fftlength
@@ -1134,6 +1134,7 @@ class TestStateTimeSeriesDict(TestTimeSeriesBaseDict):
     def test_resample(self):
         return NotImplemented
 
+
 # -- StateVector---------------------------------------------------------------
 
 class TestStateVector(TestTimeSeriesBase):
@@ -1144,10 +1145,6 @@ class TestStateVector(TestTimeSeriesBase):
     def setup_class(cls):
         numpy.random.seed(0)
         cls.data = numpy.random.randint(2**4+1, size=100, dtype=cls.DTYPE)
-
-    #def create(self, *args, **kwargs):
-    #    bits = ['Bit %d' % i for i in range(4)]
-    #    super(TestStateVector, self).create(*args, **kwargs)
 
     def test_bits(self, array):
         assert isinstance(array.bits, Bits)
@@ -1209,9 +1206,9 @@ class TestStateVector(TestTimeSeriesBase):
             # test timeseries plotting as normal
             plot = array.plot(format='timeseries')
             assert isinstance(plot, TimeSeriesPlot)
-            l = plot.gca().lines[0]
-            utils.assert_array_equal(l.get_xdata(), array.xindex.value)
-            utils.assert_array_equal(l.get_ydata(), array.value)
+            line = plot.gca().lines[0]
+            utils.assert_array_equal(line.get_xdata(), array.xindex.value)
+            utils.assert_array_equal(line.get_ydata(), array.value)
             plot.close()
 
     def test_resample(self, array):
@@ -1233,7 +1230,7 @@ class TestStateVector(TestTimeSeriesBase):
             array.resample(array.sample_rate * 1.5)
 
 
-# -- StateVectorDict -----------------------------------------------------------
+# -- StateVectorDict ----------------------------------------------------------
 
 class TestStateVectorDict(TestTimeSeriesBaseDict):
     TEST_CLASS = StateVectorDict
@@ -1241,7 +1238,7 @@ class TestStateVectorDict(TestTimeSeriesBaseDict):
     DTYPE = 'uint32'
 
 
-# -- StateVectorList -----------------------------------------------------------
+# -- StateVectorList ----------------------------------------------------------
 
 class TestStateVectorList(TestTimeSeriesBaseList):
     TEST_CLASS = StateVectorList

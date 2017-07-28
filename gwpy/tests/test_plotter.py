@@ -29,7 +29,7 @@ from numpy import testing as nptest
 from scipy import signal
 
 from matplotlib import (use, rc_context, __version__ as mpl_version)
-use('agg')
+use('agg')  # nopep8
 from matplotlib.legend import Legend
 from matplotlib.colors import (LogNorm, ColorConverter)
 from matplotlib.collections import (PathCollection, PatchCollection,
@@ -323,9 +323,9 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         # check method works
         ax.plot_timeseries(self.ts)
         # check data are correct
-        l = ax.get_lines()[0]
-        nptest.assert_array_equal(l.get_xdata(), self.ts.times.value)
-        nptest.assert_array_equal(l.get_ydata(), self.ts.value)
+        line = ax.get_lines()[0]
+        nptest.assert_array_equal(line.get_xdata(), self.ts.times.value)
+        nptest.assert_array_equal(line.get_ydata(), self.ts.value)
         # check GPS axis is set ok
         assert ax.get_epoch() == self.ts.x0.value
         assert ax.get_xlim() == tuple(self.ts.span)
@@ -395,6 +395,7 @@ class FrequencySeriesMixin(object):
         cls.asd = cls.ts.asd(1)
         cls.mmm = [cls.asd, cls.asd*0.9, cls.asd*1.1]
 
+
 class TestFrequencySeriesPlot(FrequencySeriesMixin, TestPlot):
     def test_init(self):
         super(TestFrequencySeriesPlot, self).test_init()
@@ -409,9 +410,9 @@ class TestFrequencySeriesPlot(FrequencySeriesMixin, TestPlot):
 class TestFrequencySeriesAxes(FrequencySeriesMixin, TestAxes):
     def test_plot_frequencyseries(self):
         fig, ax = self.new()
-        l = ax.plot_frequencyseries(self.asd)[0]
-        nptest.assert_array_equal(l.get_xdata(), self.asd.frequencies.value)
-        nptest.assert_array_equal(l.get_ydata(), self.asd.value)
+        line = ax.plot_frequencyseries(self.asd)[0]
+        nptest.assert_array_equal(line.get_xdata(), self.asd.frequencies.value)
+        nptest.assert_array_equal(line.get_ydata(), self.asd.value)
         self.save_and_close(fig)
 
     def test_plot_frequencyseries_mmm(self):

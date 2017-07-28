@@ -133,11 +133,11 @@ def test_lal_units():
     from gwpy.utils.lal import (to_lal_unit as to_, from_lal_unit as from_)
 
     # test to LAL
-    l = to_('meter')
-    assert l == lal.MeterUnit
+    lalu = to_('meter')
+    assert lalu == lal.MeterUnit
 
     # test from LAL
-    a = from_(l)
+    a = from_(lalu)
     assert a == units.meter
 
     # test compound
@@ -525,7 +525,8 @@ class TestChannelList(object):
     def test_read_write_omega_config(self):
         # write OMEGA_CONFIG to file and read it back
         try:
-            with NamedTemporaryFile(suffix='.txt', mode='w', delete=False) as f:
+            with NamedTemporaryFile(suffix='.txt', mode='w',
+                                    delete=False) as f:
                 f.write(OMEGA_CONFIG)
             cl = self.TEST_CLASS.read(f.name, format='omega-scan')
             assert len(cl) == 2

@@ -582,7 +582,7 @@ class TestSeries(TestArray):
                 utils.assert_array_equal(self.TEST_ARRAY.value, b.value)
         finally:
             if os.path.exists(f.name):
-               os.remove(f.name)
+                os.remove(f.name)
 
 
 class TestArray2D(TestSeries):
@@ -592,7 +592,7 @@ class TestArray2D(TestSeries):
     def setup_class(cls, dtype=None):
         numpy.random.seed(SEED)
         cls.data = (numpy.random.random(100)
-                     * 1e5).astype(dtype=dtype).reshape((10, 10))
+                    * 1e5).astype(dtype=dtype).reshape((10, 10))
         cls.datasq = cls.data ** 2
 
     # -- test properties ------------------------
@@ -697,7 +697,7 @@ class TestArray2D(TestSeries):
         assert isinstance(array[0][0], units.Quantity)
         assert array[0].unit == array.unit
         assert array[0][0].unit == array.unit
-        assert isinstance(array[:,0], self.TEST_CLASS._rowclass)
+        assert isinstance(array[:, 0], self.TEST_CLASS._rowclass)
 
     def test_is_compatible(self, array):
         super(TestArray2D, self).test_is_compatible(array)

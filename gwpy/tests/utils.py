@@ -54,6 +54,7 @@ def skip_missing_dependency(module):
     return pytest.mark.skipif(not has(module),
                               reason='No module named %s' % module)
 
+
 # -- assertions ---------------------------------------------------------------
 
 def assert_quantity_equal(q1, q2):

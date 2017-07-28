@@ -34,6 +34,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 def table_from_cwb(f, *args, **kwargs):
     return EventTable.read(f, 'waveburst', *args, format='root', **kwargs)
 
+
 registry.register_reader('root.cwb', EventTable, table_from_cwb)
 
 
@@ -103,6 +104,7 @@ class Cwb(core.BaseReader):
 
     header_class = CwbHeader
     data_class = CwbData
+
 
 # register ascii.cwb for EventTable
 registry.register_reader(

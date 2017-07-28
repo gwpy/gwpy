@@ -76,9 +76,9 @@ class TestFrequencySeries(TestSeries):
             plot = array.plot()
             assert isinstance(plot, FrequencySeriesPlot)
             assert isinstance(plot.gca(), FrequencySeriesAxes)
-            l = plot.gca().lines[0]
-            utils.assert_array_equal(l.get_xdata(), array.xindex.value)
-            utils.assert_array_equal(l.get_ydata(), array.value)
+            line = plot.gca().lines[0]
+            utils.assert_array_equal(line.get_xdata(), array.xindex.value)
+            utils.assert_array_equal(line.get_ydata(), array.value)
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
 

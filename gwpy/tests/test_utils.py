@@ -49,6 +49,7 @@ def test_shell_call():
     with pytest.warns(UserWarning):
         shell.call('false', on_error='warn')
 
+
 def test_which():
     try:
         result, _ = shell.call('which true')

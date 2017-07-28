@@ -68,6 +68,7 @@ def test_to_gps():
         time.to_gps('random string')
     assert 'Cannot parse date string \'random string\': ' in str(exc.value)
 
+
 def test_from_gps():
     """Test :func:`gwpy.time.from_gps`
    """
@@ -87,6 +88,7 @@ def test_from_gps():
     # errors
     with pytest.raises((RuntimeError, ValueError)):
         time.from_gps('test')
+
 
 def test_tconvert():
     """Test :func:`gwpy.time.tconvert`
