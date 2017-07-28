@@ -21,6 +21,8 @@
 
 import subprocess
 
+from six import PY2
+
 import pytest
 
 from gwpy.utils import shell
@@ -63,9 +65,12 @@ def test_import_method_dependency():
     assert mod is subprocess
     with pytest.raises(ImportError) as exc:
         deps.import_method_dependency('blah')
-    assert str(exc.value) == ("Cannot import blah required by the "
-                              "test_import_method_dependency() method: "
-                              "'No module named blah'")
+    if PY2:
+        assert str(exc.value) == ("Cannot import blah required by the "
+                                  "test_import_method_dependency() method: "
+                                  "'No module named blah'")
+    else:
+        assert str(exc.value) == "No module named 'blah'"
 
 
 def test_with_import():

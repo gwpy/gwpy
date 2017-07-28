@@ -23,6 +23,8 @@ import os.path
 import shutil
 import tempfile
 
+from six import PY3
+
 import pytest
 
 from numpy import (random, isclose)
@@ -92,7 +94,13 @@ class TestTable(object):
             utils.assert_table_equal(table, t2, almost_equal=True)
 
             # check reading multiple tables works
-            t3 = self.TABLE.read([f.name, f.name], format='ligolw.sngl_burst')
+            try:
+                t3 = self.TABLE.read([f.name, f.name],
+                                     format='ligolw.sngl_burst')
+            except NameError as e:
+                if PY3:  # ligolw not patched for python3 just yet
+                    pytest.xfail(str(e))
+                raise
             utils.assert_table_equal(vstack((t2, t2)), t3)
 
             # check writing to existing file raises IOError
@@ -101,7 +109,13 @@ class TestTable(object):
             assert str(exc.value) == 'File exists: %s' % f.name
 
             # check overwrite=True, append=False rewrites table
-            table.write(f.name, format='ligolw.sngl_burst', overwrite=True)
+            try:
+                table.write(f.name, format='ligolw.sngl_burst', overwrite=True)
+            except TypeError as e:
+                # ligolw is not python3-compatbile, so skip if it fails
+                if PY3 and str(e) == 'write() argument must be str, not bytes':
+                    pytest.xfail(str(e))
+                raise
             t3 = _read()
             utils.assert_table_equal(t2, t3)
 
@@ -183,7 +197,7 @@ class TestTable(object):
                 filter_table(t2, 'frequency>500'), t3)
 
         except ImportError as e:
-            self.skipTest(str(e))
+            pytest.skip(str(e))
         finally:
             if os.path.isdir(tempdir):
                 shutil.rmtree(tempdir)
@@ -212,7 +226,7 @@ class TestEventTable(TestTable):
     @pytest.mark.parametrize('fmtname', ('Omega', 'cWB'))
     def test_read_write_ascii(self, table, fmtname):
         fmt = 'ascii.%s' % fmtname.lower()
-        with tempfile.NamedTemporaryFile(suffix='.txt', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix='.txt', mode='w') as f:
             print(f.name)
             # check write/read returns the same table
             table.write(f, format=fmt)

@@ -185,6 +185,7 @@ class TestTimeSeriesBase(TestSeries):
                 plot.save(f.name)
             return plot  # allow subclasses to extend tests
 
+    @utils.skip_missing_dependency('nds2')
     def test_from_nds2_buffer(self):
         nds_buffer = mocks.nds2_buffer(
             'X1:TEST', self.data, 1000000000, self.data.shape[0], 'm')
@@ -540,7 +541,15 @@ class TestTimeSeries(TestTimeSeriesBase):
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={'exclude': ['name', 'channel', 'unit']})
 
-    @pytest.mark.parametrize('api', (None, 'lalframe', 'framecpp'))
+    @pytest.mark.parametrize('api', [
+        None,
+        pytest.param(
+            'lalframe',
+            marks=utils.skip_missing_dependency('lalframe')),
+        pytest.param(
+            'framecpp',
+            marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
+    ])
     def test_read_write_gwf(self, api):
         array = self.create(name='TEST')
 
@@ -557,7 +566,7 @@ class TestTimeSeries(TestTimeSeriesBase):
                 assert_equal=utils.assert_quantity_sub_equal,
                 assert_kw={'exclude': ['channel']})
         except ImportError as e:
-            self.skipTest(str(e))
+            pytest.skip(str(e))
 
         # test read keyword arguments
         with tempfile.NamedTemporaryFile(suffix='.gwf') as f:
@@ -723,7 +732,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         try:
             ts = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
         except (ImportError, RuntimeError) as e:
-            self.skipTest(str(e))
+            pytest.skip(str(e))
         utils.assert_quantity_sub_equal(ts, losc_16384,
                                         exclude=['name', 'channel', 'unit'])
 

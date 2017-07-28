@@ -68,6 +68,7 @@ else:
 
 # -- utilities ----------------------------------------------------------------
 
+@utils.skip_missing_dependency('h5py')
 @pytest.fixture(scope='module')
 def psd():
     h5path = os.path.join(os.path.dirname(__file__), 'data',
@@ -78,7 +79,6 @@ def psd():
 
 # -- gwpy.astro.range ---------------------------------------------------------
 
-@utils.skip_missing_dependency('h5py')
 def test_inspiral_range_psd(psd):
     """Test for :func:`gwpy.astro.inspiral_range_psd`
     """
@@ -88,7 +88,6 @@ def test_inspiral_range_psd(psd):
                                        TEST_RESULTS['inspiral_range_psd'])
 
 
-@utils.skip_missing_dependency('h5py')
 def test_inspiral_range(psd):
     """Test for :func:`gwpy.astro.inspiral_range_psd`
     """
@@ -96,7 +95,6 @@ def test_inspiral_range(psd):
     utils.assert_quantity_almost_equal(r, TEST_RESULTS['inspiral_range'])
 
 
-@utils.skip_missing_dependency('h5py')
 def test_burst_range(psd):
     """Test for :func:`gwpy.astro.burst_range`
     """
@@ -104,7 +102,6 @@ def test_burst_range(psd):
     utils.assert_quantity_almost_equal(r, TEST_RESULTS['burst_range'])
 
 
-@utils.skip_missing_dependency('h5py')
 def test_burst_range_spectrum(psd):
     """Test for :func:`gwpy.astro.burst_range_spectrum`
     """

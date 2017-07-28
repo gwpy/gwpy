@@ -116,27 +116,31 @@ QUERY_RESULTC = type(QUERY_RESULT)({x: y.copy().coalesce() for
                                     x, y in QUERY_RESULT.items()})
 
 
-@utils.skip_missing_dependency('m2crypto')
 def query_segdb(query_func, *args, **kwargs):
     """Mock a query to an S6-style DB2 database
     """
-    with mock.patch('glue.segmentdb.segmentdb_utils.setup_database'), \
-         mock.patch('glue.segmentdb.segmentdb_utils.expand_version_number',
-                    mocks.segdb_expand_version_number(1, 4)), \
-         mock.patch('glue.segmentdb.segmentdb_utils.query_segments',
-                    mocks.segdb_query_segments(QUERY_RESULT)):
-        return query_func(*args, **kwargs)
+    try:
+        with mock.patch('glue.segmentdb.segmentdb_utils.setup_database'), \
+             mock.patch('glue.segmentdb.segmentdb_utils.expand_version_number',
+                        mocks.segdb_expand_version_number(1, 4)), \
+             mock.patch('glue.segmentdb.segmentdb_utils.query_segments',
+                        mocks.segdb_query_segments(QUERY_RESULT)):
+            return query_func(*args, **kwargs)
+    except ImportError as e:
+        pytest.skip(str(e))
 
 
-@utils.skip_missing_dependency('dqsegdb')
 def query_dqsegdb(query_func, *args, **kwargs):
     """Mock a query to an aLIGO DQSEGDB database
     """
-    with mock.patch('dqsegdb.apicalls.dqsegdbQueryTimes',
-                    mocks.dqsegdb_query_times(QUERY_RESULT)), \
-         mock.patch('dqsegdb.apicalls.dqsegdbCascadedQuery',
-                    mocks.dqsegdb_cascaded_query(QUERY_RESULT)):
-        return query_func(*args, **kwargs)
+    try:
+        with mock.patch('dqsegdb.apicalls.dqsegdbQueryTimes',
+                        mocks.dqsegdb_query_times(QUERY_RESULT)), \
+             mock.patch('dqsegdb.apicalls.dqsegdbCascadedQuery',
+                        mocks.dqsegdb_cascaded_query(QUERY_RESULT)):
+            return query_func(*args, **kwargs)
+    except ImportError as e:
+        pytest.skip(str(e))
 
 
 # -----------------------------------------------------------------------------
@@ -194,20 +198,20 @@ class TestSegmentList(object):
 
     @utils.skip_missing_dependency('lal')
     def test_read_write_segwizard(self, segmentlist):
-        with tempfile.NamedTemporaryFile(suffix='.txt') as f:
+        with tempfile.NamedTemporaryFile(suffix='.txt', mode='w') as f:
             # check write/read returns the same list
-            segmentlist.write(f)
-            sl2 = self.TEST_CLASS.read(f, coalesce=False)
+            segmentlist.write(f.name)
+            sl2 = self.TEST_CLASS.read(f.name, coalesce=False)
             utils.assert_segmentlist_equal(sl2, segmentlist)
             assert isinstance(sl2[0][0], LIGOTimeGPS)
 
             # check that coalesceing does what its supposed to
             c = type(segmentlist)(segmentlist).coalesce()
-            sl2 = self.TEST_CLASS.read(f, coalesce=True)
+            sl2 = self.TEST_CLASS.read(f.name, coalesce=True)
             utils.assert_segmentlist_equal(sl2, c)
 
             # check gpstype kwarg
-            sl2 = self.TEST_CLASS.read(f, gpstype=float)
+            sl2 = self.TEST_CLASS.read(f.name, gpstype=float)
             assert isinstance(sl2[0][0], float)
 
     @utils.skip_missing_dependency('h5py')
@@ -643,6 +647,7 @@ class TestDataQualityDict(object):
         assert isinstance(result, self.TEST_CLASS)
         utils.assert_dict_equal(result, QUERY_RESULT, utils.assert_flag_equal)
 
+    @utils.skip_missing_dependency('dqsegdb')
     def test_populate(self):
         def fake():
             return self.TEST_CLASS({
@@ -660,7 +665,6 @@ class TestDataQualityDict(object):
         span = SegmentList([Segment(0, 2)])
 
         # and populate using a mocked query
-        'dqsegdb.apicalls.dqsegdbQueryTimes', mocks.dqsegdb_query_times,
         with mock.patch('dqsegdb.apicalls.dqsegdbQueryTimes',
                         mocks.dqsegdb_query_times(QUERY_RESULT)):
             vdf.populate()

@@ -525,7 +525,7 @@ class TestChannelList(object):
     def test_read_write_omega_config(self):
         # write OMEGA_CONFIG to file and read it back
         try:
-            with NamedTemporaryFile(suffix='.txt', delete=False) as f:
+            with NamedTemporaryFile(suffix='.txt', mode='w', delete=False) as f:
                 f.write(OMEGA_CONFIG)
             cl = self.TEST_CLASS.read(f.name, format='omega-scan')
             assert len(cl) == 2

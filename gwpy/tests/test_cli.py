@@ -24,6 +24,8 @@ import tempfile
 import importlib
 import argparse
 
+import pytest
+
 from numpy import random
 
 from matplotlib import use
@@ -72,6 +74,10 @@ class CliTestBase(object):
 
     @utils.skip_missing_dependency('nds2')
     def test_get_timeseries(self):
+        try:  # can't use decorator because this method gets called
+            import nds2
+        except ImportError as e:
+            pytest.skip(str(e))
         product, parser = self.test_init_cli()
         args = parser.parse_args(self.TEST_ARGS + ['--out', TEMP_PLOT_FILE])
 

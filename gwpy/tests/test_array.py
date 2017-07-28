@@ -147,7 +147,7 @@ class TestArray(object):
 
         # but everything else gets str()
         array.name = 4
-        assert array.name is '4'
+        assert array.name == '4'
 
     def test_epoch(self, array):
         # test default is no epoch
@@ -573,7 +573,7 @@ class TestSeries(TestArray):
     def _test_read_write_ascii(self, format='txt'):
         extension = '.%s' % format.lstrip('.')
         try:
-            with tempfile.NamedTemporaryFile(suffix=extension,
+            with tempfile.NamedTemporaryFile(suffix=extension, mode='w',
                                              delete=False) as f:
                 self.TEST_ARRAY.write(f.name, format=format)
                 self.TEST_ARRAY.write(f.name)

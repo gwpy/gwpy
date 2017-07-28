@@ -23,6 +23,10 @@ import os.path
 import tempfile
 from importlib import import_module
 
+from six import PY3
+
+import pytest
+
 import numpy
 from numpy.testing import (assert_array_equal, assert_allclose)
 
@@ -238,7 +242,15 @@ def test_read_write(data, format,
     try:
         # write data to a file
         fp = tempfile.mktemp(suffix=extension)
-        data.write(fp, *write_args, format=format, **write_kw)
+
+        try:
+            data.write(fp, *write_args, format=format, **write_kw)
+        except TypeError as e:
+            # ligolw is not python3-compatbile, so skip if it fails
+            if PY3 and format == 'ligolw' and (
+                    str(e) == 'write() argument must be str, not bytes'):
+                pytest.xfail(str(e))
+            raise
 
         # try again with automatic format identification
         if autoidentify:
