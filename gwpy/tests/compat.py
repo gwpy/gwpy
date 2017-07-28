@@ -30,38 +30,3 @@ try:
     from unittest import mock
 except ImportError:
     import mock
-
-try:
-    import h5py
-except ImportError:
-    HAS_H5PY = False
-else:
-    HAS_H5PY = True
-
-try:
-    import lal
-except ImportError:
-    HAS_LAL = False
-else:
-    HAS_LAL = True
-
-try:
-    import dqsegdb
-except ImportError:
-    HAS_DQSEGDB = False
-else:
-    HAS_DQSEGDB = True
-
-try:
-    import m2crypto
-except ImportError:
-    HAS_M2CRYPTO = False
-else:
-    HAS_M2CRYPTO = True
-
-try:
-    import nds2
-except ImportError:
-    HAS_NDS2 = False
-else:
-    HAS_NDS2 = True
