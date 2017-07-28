@@ -55,11 +55,12 @@ def read_hdf5_array(f, path=None, array_type=Array):
         attrs['channel'] = pickle.loads(attrs['channel'])
     except KeyError:  # no channel stored
         pass
-    except ValueError:
-        if attrs['channel'].startswith('ccopy_reg'):  # corrupt pickle
-            raise
-        else:  # not pickled
-            pass
+    except ValueError:  # not pickled
+        pass
+    # unpack byte strings for python3
+    for key in attrs:
+        if isinstance(attrs[key], bytes):
+            attrs[key] = attrs[key].decode('utf-8')
     return array_type(dataset[()], **attrs)
 
 
