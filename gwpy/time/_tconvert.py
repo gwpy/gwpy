@@ -23,6 +23,7 @@ Peter Shawhan.
 """
 
 import datetime
+from decimal import Decimal
 
 from dateutil import parser as dateparser
 
@@ -141,6 +142,9 @@ def to_gps(t, *args, **kwargs):
     # if lal.LIGOTimeGPS, just return it
     if isinstance(t, LIGOTimeGPS):
         return t
+    # if Decimal, cast to LIGOTimeGPS and return
+    if isinstance(t, Decimal):
+        return LIGOTimeGPS(str(t))
     # or convert numeric string to float (e.g. '123.456')
     try:
         t = float(t)
