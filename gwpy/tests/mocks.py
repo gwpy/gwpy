@@ -152,7 +152,15 @@ def nds2_connection(host='nds.test.gwpy', port=31200, buffers=[]):
         pass
     NdsConnection.get_host.return_value = host
     NdsConnection.get_port.return_value = int(port)
-    NdsConnection.iterate.return_value = [buffers]
+
+    def iterate(start, end, names):
+        print(start, end, names)
+        return [[b for b in buffers if
+                 '%s,%s' % (b.channel.name,
+                            b.channel.channel_type_to_string(b.channel_type))
+                 in names]]
+
+    NdsConnection.iterate = iterate
 
     def find_channels(name, ctype, dtype, *sample_rate):
         return [b.channel for b in buffers if b.channel.name == name]
