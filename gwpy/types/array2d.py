@@ -341,21 +341,23 @@ class Array2D(Series):
 
     @property
     def yspan(self):
-        """X-axis [low, high) segment encompassed by these data
+        """Y-axis [low, high) segment encompassed by these data
 
         :type: `~gwpy.segments.Segment`
         """
         from ..segments import Segment
         try:
-            self._yindex
-        except AttributeError:
-            y0 = self.y0.to(self.yunit).value
             dy = self.dy.to(self.yunit).value
-            return Segment(y0, y0 + self.shape[1] * dy)
+        except AttributeError:  # irregular yindex
+            try:
+                dy = self.yindex.value[-1] - self.yindex.value[-2]
+            except IndexError:
+                raise ValueError("Cannot determine y-axis stride (dy)"
+                                 "from a single data point")
+            return Segment(self.yindex.value[0], self.yindex.value[-1] + dy)
         else:
-            dy = self.yindex.value[-1] - self.yindex.value[-2]
-            return Segment(self.yindex.value[0],
-                           self.yindex.value[-1] + self.dy.value)
+            y0 = self.y0.to(self.yunit).value
+            return Segment(y0, y0+self.shape[1]*dy)
 
     # -- Array2D methods ------------------------
 
