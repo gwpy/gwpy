@@ -19,6 +19,8 @@
 """The `Series` is a one-dimensional array with metadata
 """
 
+from warnings import warn
+
 import numpy
 
 from astropy.units import (Unit, Quantity)
@@ -111,19 +113,34 @@ class Array2D(Series):
         new = super(Array2D, cls).__new__(cls, data, unit=unit, xindex=xindex,
                                           x0=x0, dx=dx, **kwargs)
 
-        # set new metadata
-        if isinstance(dy, Quantity):
-            yunit = dy.unit
-        elif isinstance(y0, Quantity):
-            yunit = y0.unit
-        else:
-            yunit = cls._default_yunit
-        if dy is not None:
-            new.dy = Quantity(dy, yunit)
-        if y0 is not None:
-            new.y0 = Quantity(y0, yunit)
+        # set y-axis metadata from yindex
         if yindex is not None:
-            new.yindex = yindex
+            # warn about duplicate settings
+            if dy is not None:
+                warn("yindex was given to %s(), dy will be ignored"
+                     % cls.__name__)
+            if y0 is not None:
+                warn("yindex was given to %s(), y0 will be ignored"
+                     % cls.__name__)
+            # get unit
+            if yunit is None and isinstance(yindex, Quantity):
+                yunit = yindex.unit
+            elif yunit is None:
+                yunit = cls._default_yunit
+            new.yindex = Quantity(yindex, unit=yunit)
+        # or from y0 and dy
+        else:
+            if yunit is None and isinstance(dy, Quantity):
+                yunit = dy.unit
+            elif yunit is None and isinstance(y0, Quantity):
+                yunit = y0.unit
+            elif yunit is None:
+                yunit = cls._default_yunit
+            if dy is not None:
+                new.dy = Quantity(dy, yunit)
+            if y0 is not None:
+                new.y0 = Quantity(y0, yunit)
+
         return new
 
     # rebuild getitem to handle complex slicing

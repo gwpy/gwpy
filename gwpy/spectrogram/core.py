@@ -36,6 +36,7 @@ from ..detector import Channel
 from ..types import (Array2D, Series)
 from ..segments import Segment
 from ..timeseries import (TimeSeries, TimeSeriesList)
+from ..timeseries.core import _format_time
 from ..frequencyseries import FrequencySeries
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
@@ -122,19 +123,13 @@ class Spectrogram(Array2D):
         epoch = kwargs.pop('epoch', None)
         if epoch is not None and t0 is not None:
             raise ValueError("give only one of epoch or t0")
-        if epoch is None and dt is None:
-            kwargs.setdefault('x0', 0)
-        elif epoch is None:
-            kwargs['x0'] = t0
-        elif isinstance(epoch, Time):
-            kwargs['x0'] = epoch.gps
-        else:
-            kwargs['x0'] = epoch
-
+        if epoch is None and t0 is not None:
+            kwargs['x0'] = _format_time(t0)
+        elif epoch is not None:
+            kwargs['x0'] = _format_time(epoch)
         # parse sample_rate or dt
         if dt is not None:
             kwargs['dx'] = dt
-
         # parse times
         if times is not None:
             kwargs['xindex'] = times
