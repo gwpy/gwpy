@@ -1167,8 +1167,12 @@ class TimeSeriesBaseList(list):
             out.append(ts, gap=gap, pad=pad)
         return out
 
-    def __getslice__(self, i, j):
-        return type(self)(*super(TimeSeriesBaseList, self).__getslice__(i, j))
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            return type(self)(
+                *super(TimeSeriesBaseList, self).__getitem__(key))
+        else:
+            return super(TimeSeriesBaseList, self).__getitem__(key)
 
     def copy(self):
         """Return a copy of this list with each element copied to new memory
