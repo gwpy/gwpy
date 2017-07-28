@@ -60,11 +60,11 @@ class TestSignalFilterDesign(object):
         # test simple notch
         zpk = gwpy_signal.notch(60, 16384)
         for a, b in zip(zpk, NOTCH_60HZ):
-            utils.assert_array_almost_equal(a, b)
+            utils.assert_allclose(a, b)
         # test Quantities
         zpk2 = gwpy_signal.notch(60 * ONE_HZ, 16384 * ONE_HZ)
         for a, b in zip(zpk, zpk2):
-            utils.assert_array_almost_equal(a, b)
+            utils.assert_allclose(a, b)
 
 
 # -- gwpy.signal.window -------------------------------------------------------
