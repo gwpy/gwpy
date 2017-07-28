@@ -375,8 +375,12 @@ class FrequencySeries(Series):
         typestr = LAL_TYPE_STR_FROM_NUMPY[self.dtype.type]
         try:
             unit = to_lal_unit(self.unit)
-        except TypeError:
-            unit = lal.lalDimensionlessUnit
+        except ValueError as e:
+            warnings.warn("%s, defaulting to lal.DimensionlessUnit" % str(e))
+            try:
+                unit = lal.DimensionlessUnit
+            except AttributeError:
+                unit = lal.lalDimensionlessUnit
         create = getattr(lal, 'Create%sFrequencySeries' % typestr.upper())
         if self.epoch is None:
             epoch = 0
