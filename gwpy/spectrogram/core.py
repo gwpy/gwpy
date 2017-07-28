@@ -524,28 +524,6 @@ class Spectrogram(Array2D):
 
     # -- Spectrogram connectors -----------------
 
-    def is_compatible(self, other):
-        """Check whether metadata attributes for self and other match.
-        """
-        if type(other) in [list, tuple, numpy.ndarray]:
-            return True
-        if not numpy.isclose(
-                self.dt.decompose().value, other.dt.decompose().value):
-            raise ValueError("Spectrogram time resolutions do not match: "
-                             "%s vs %s." % (self.dt, other.dt))
-        if not numpy.isclose(
-                self.df.decompose().value, other.df.decompose().value):
-            raise ValueError("Spectrogram frequency resolutions do not match:"
-                             "%s vs %s." % (self.df, other.df))
-        if not numpy.isclose(
-                self.f0.decompose().value, other.f0.decompose().value):
-            raise ValueError("Spectrogram starting frequencies do not match:"
-                             "%s vs %s." % (self.f0, other.f0))
-        if not self.unit == other.unit:
-            raise ValueError("Spectrogram units do not match: %s vs %s."
-                             % (self.unit, other.unit))
-        return True
-
     def crop_frequencies(self, low=None, high=None, copy=False):
         """Crop this `Spectrogram` to the specified frequencies
 

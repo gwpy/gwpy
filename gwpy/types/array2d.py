@@ -342,6 +342,23 @@ class Array2D(Series):
 
     # -- Array2D methods ------------------------
 
+    def is_compatible(self, other):
+        """Check whether this array and ``other`` have compatible metadata
+        """
+        super(Array2D, self).is_compatible(other)
+        # check y-axis metadata
+        if isinstance(other, type(self)):
+            try:
+                if not self.dy == other.dy:
+                    raise ValueError("%s sample sizes do not match: "
+                                     "%s vs %s." % (type(self).__name__,
+                                                    self.dy, other.dy))
+            except AttributeError:
+                raise ValueError("Series with irregular y-indexes cannot "
+                                 "be compatible")
+
+        return True
+
     def value_at(self, x, y):
         """Return the value of this `Series` at the given `(x, y)` coordinates
 
