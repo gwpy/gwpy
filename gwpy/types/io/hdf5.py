@@ -20,6 +20,7 @@
 """
 
 import pickle
+from decimal import Decimal
 
 from astropy.units import (Quantity, UnitBase)
 
@@ -99,7 +100,7 @@ def create_array_dataset(h5g, array, path=None, compression='gzip', **kwargs):
             dset.attrs[attr] = pickle.dumps(mdval)
         elif isinstance(mdval, UnitBase):
             dset.attrs[attr] = str(mdval)
-        elif isinstance(mdval, LIGOTimeGPS):
+        elif isinstance(mdval, (Decimal, LIGOTimeGPS)):
             dset.attrs[attr] = str(mdval)
         elif isinstance(mdval, Time):
             dset.attrs[attr] = mdval.utc.gps
