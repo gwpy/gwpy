@@ -55,7 +55,7 @@ class TestIoNds2(object):
         b = io_nds2.Nds2ChannelType.find('MTREND')
         assert a == b == io_nds2.Nds2ChannelType.MTREND
         # test unknown
-        with pytest.raises(KeyError):
+        with pytest.raises(ValueError):
             io_nds2.Nds2ChannelType.find('blah')
 
     def test_data_type_find(self):
@@ -142,14 +142,14 @@ class TestIoNds2(object):
         """Test :func:`gwpy.io.connect`
         """
         import nds2
-        nds_connection = mocks.mock_nds2_connection(host='nds.test.gwpy')
+        nds_connection = mocks.nds2_connection(host='nds.test.gwpy')
         with mock.patch('nds2.connection') as mock_connection:
             mock_connection.return_value = nds_connection
             conn = io_nds2.connect('nds.test.gwpy')
             assert conn.get_host() == 'nds.test.gwpy'
             assert conn.get_port() == 31200
 
-        nds_connection = mocks.mock_nds2_connection(host='nds2.test.gwpy',
+        nds_connection = mocks.nds2_connection(host='nds2.test.gwpy',
                                                         port=8088)
         with mock.patch('nds2.connection') as mock_connection:
             mock_connection.return_value = nds_connection
