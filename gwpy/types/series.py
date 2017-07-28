@@ -228,7 +228,7 @@ class Series(Array):
             return
         # convert float to Quantity
         if not isinstance(value, Quantity):
-            value = Quantity(value).to(self.xunit)
+            value = Quantity(value, self.xunit)
         # if value is changing, delete xindex
         try:
             dx = self._dx
