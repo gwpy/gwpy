@@ -23,10 +23,13 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 import inspect
 
+try:
+    from unittest import mock
+except ImportError:
+    import mock
+
 from gwpy.time import LIGOTimeGPS
 from gwpy.segments import (Segment, SegmentList)
-
-from compat import mock
 
 
 # -- DQSEGDB calls ------------------------------------------------------------

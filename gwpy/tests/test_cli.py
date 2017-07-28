@@ -33,8 +33,8 @@ from gwpy.timeseries import TimeSeries
 from gwpy.plotter import rcParams
 
 # local imports
-from compat import mock
 import mocks
+from mocks import mock
 import utils
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

@@ -53,10 +53,10 @@ from gwpy.types import Array2D
 from gwpy.spectrogram import Spectrogram
 from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
 
-from compat import (unittest, mock)
 import common
 import mocks
 import utils
+from mocks import mock
 from test_array import TestSeries
 
 SEED = 1

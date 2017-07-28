@@ -36,9 +36,9 @@ from gwpy.detector import (Channel, ChannelList)
 from gwpy.detector.units import parse_unit
 from gwpy.segments import SegmentListDict
 
-from compat import mock
 import utils
 import mocks
+from mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

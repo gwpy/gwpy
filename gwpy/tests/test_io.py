@@ -29,9 +29,9 @@ from gwpy.io import (cache as io_cache,
                      nds2 as io_nds2)
 from gwpy.segments import (Segment, SegmentList)
 
-from compat import (unittest, mock)
-import mocks
 import utils
+import mocks
+from mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

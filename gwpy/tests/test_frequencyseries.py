@@ -37,7 +37,6 @@ from gwpy.plotter import (FrequencySeriesPlot, FrequencySeriesAxes)
 
 import utils
 from test_array import (TestSeries, TestArray2D)
-from compat import unittest
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -231,7 +230,3 @@ class TestSpectralVariance(TestArray2D):
             self.data[8][1] * array.unit)
         with pytest.raises(IndexError):
             array.value_at(1.6, 5.8)
-
-
-if __name__ == '__main__':
-    unittest.main()
