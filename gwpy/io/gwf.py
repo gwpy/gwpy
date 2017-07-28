@@ -19,6 +19,8 @@
 """I/O utilities for GWF files using the lalframe or frameCPP APIs
 """
 
+import six
+
 from ..time import to_gps
 from ..utils import (shell, with_import)
 from .cache import open_cache
@@ -26,7 +28,10 @@ from .cache import open_cache
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # first 4 bytes of any valid GWF file (see LIGO-T970130 §4.3.1)
-GWF_SIGNATURE = 'IGWD'
+if six.PY2:
+    GWF_SIGNATURE = 'IGWD'
+else:
+    GWF_SIGNATURE = b'IGWD'
 
 
 # -- i/o ----------------------------------------------------------------------
