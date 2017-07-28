@@ -53,7 +53,6 @@ from gwpy.types import Array2D
 from gwpy.spectrogram import Spectrogram
 from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
 
-import common
 import mocks
 import utils
 from mocks import mock
