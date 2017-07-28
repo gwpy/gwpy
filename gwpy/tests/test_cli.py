@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for the `gwpy.cli` module
+"""Unit tests for :mod:`gwpy.cli`
 """
 
 import os
@@ -27,76 +27,78 @@ import argparse
 from numpy import random
 
 from matplotlib import use
-use('agg')
-
-from compat import unittest
+use('agg')  # nopep8
 
 from gwpy.timeseries import TimeSeries
 from gwpy.plotter import rcParams
 
+# local imports
+from compat import mock
+import mocks
+import utils
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
-                          'HLV-GW100916-968654552-1.gwf')
 _, TEMP_PLOT_FILE = tempfile.mkstemp(prefix='GWPY-UNITTEST_', suffix='.png')
 
 
-class CliTestMixin(object):
+class CliTestBase(object):
     PRODUCT_NAME = 'gwpy.cli.cliproduct.CliProduct'
     ACTION = None
-    TEST_ARGS = ['--chan', 'H1:LDAS-STRAIN', '--start', '968654552',
-                 '--framecache', TEST_GWF_FILE]
+    TEST_ARGS = ['--chan', 'X1:TEST-CHANNEL', '--start', '1000000000']
 
-    def setUp(self):
-        self.PRODUCT_TYPE = self._import_product()
+    @classmethod
+    def setup_class(cls):
+        cls.PRODUCT_TYPE = cls._import_product()
 
-    def _import_product(self):
-        modname, objname = self.PRODUCT_NAME.rsplit('.', 1)
+    @classmethod
+    def _import_product(cls):
+        modname, objname = cls.PRODUCT_NAME.rsplit('.', 1)
         mod = importlib.import_module(modname)
         return getattr(mod, objname)
 
     def test_init(self):
-        product = self.PRODUCT_TYPE()
+        self.PRODUCT_TYPE()
 
     def test_get_action(self):
-        self.assertEqual(self.PRODUCT_TYPE().get_action(), self.ACTION)
+        assert self.PRODUCT_TYPE().get_action() == self.ACTION
 
     def test_init_cli(self):
         parser = argparse.ArgumentParser()
         product = self.PRODUCT_TYPE()
         product.init_cli(parser)
-        self.assertGreater(len(parser._actions), 1)
+        assert len(parser._actions) > 1
         return product, parser
 
+    @utils.skip_missing_dependency('nds2')
     def test_get_timeseries(self):
         product, parser = self.test_init_cli()
         args = parser.parse_args(self.TEST_ARGS + ['--out', TEMP_PLOT_FILE])
-        try:
-            try:
-                product.getTimeSeries(args)
-            except Exception as e:
-                if 'No reader' in str(e):
-                    raise RuntimeError(str(e))
-                else:
-                    raise
-        except (RuntimeError, ImportError):
-            product.timeseries = []
-            product.time_groups = []
-            product.start_list = []
-            for s in map(int, args.start):
-                product.start_list.append(s)
-                product.time_groups.append([])
-                for c in args.chan:
-                    product.timeseries.append(
-                        TimeSeries(random.random(1024 * 100), sample_rate=1024,
-                                   channel=c, epoch=s))
-                    product.time_groups[-1].append(len(product.timeseries)-1)
+
+        random.seed(0)
+        xts = TimeSeries(random.rand(10240), t0=1000000000,
+                         sample_rate=1024, name='X1:TEST-CHANNEL')
+        yts = TimeSeries(random.rand(10240), t0=1000000000,
+                         sample_rate=1024, name='Y1:TEST-CHANNEL')
+        nds_connection = mocks.nds2_connection(buffers=[
+            mocks.nds2_buffer_from_timeseries(xts),
+            mocks.nds2_buffer_from_timeseries(yts),
+        ])
+        with mock.patch('nds2.connection') as mock_connection, \
+                mock.patch('nds2.buffer'):
+            mock_connection.return_value = nds_connection
+
+            product.getTimeSeries(args)
+
+        assert len(product.timeseries) == (len(product.chan_list) *
+                                           len(product.start_list))
+
         return product, args
 
     def test_gen_plot(self):
         product, args = self.test_get_timeseries()
         product.config_plot(args)
-        rcParams.update({'text.usetex': False,})
+        rcParams.update({'text.usetex': False})
         product.gen_plot(args)
         return product, args
 
@@ -123,37 +125,29 @@ class CliTestMixin(object):
                 os.remove(args.out)
 
 
-class CliTimeSeriesTests(CliTestMixin, unittest.TestCase):
+class TestCliTimeSeries(CliTestBase):
     PRODUCT_NAME = 'gwpy.cli.timeseries.TimeSeries'
     ACTION = 'timeseries'
 
 
-class CliSpectrumTests(CliTestMixin, unittest.TestCase):
+class TestCliSpectrum(CliTestBase):
     PRODUCT_NAME = 'gwpy.cli.spectrum.Spectrum'
     ACTION = 'spectrum'
 
 
-class CliSpectrogramTests(CliTestMixin, unittest.TestCase):
+class TestCliSpectrogram(CliTestBase):
     PRODUCT_NAME = 'gwpy.cli.spectrogram.Spectrogram'
     ACTION = 'spectrogram'
 
 
-class CliCoherenceTests(CliTestMixin, unittest.TestCase):
+class TestCliCoherence(CliTestBase):
     PRODUCT_NAME = 'gwpy.cli.coherence.Coherence'
     ACTION = 'coherence'
-    TEST_ARGS = CliTestMixin.TEST_ARGS + [
-        '--chan', 'L1:LDAS-STRAIN', '--secpfft', '0.25',
+    TEST_ARGS = CliTestBase.TEST_ARGS + [
+        '--chan', 'Y1:TEST-CHANNEL', '--secpfft', '0.25',
     ]
 
 
-class CliCoherencegramTests(CliTestMixin, unittest.TestCase):
+class TestCliCoherencegram(TestCliCoherence):
     PRODUCT_NAME = 'gwpy.cli.coherencegram.Coherencegram'
     ACTION = 'coherencegram'
-    # XXX coherencegram fails to generate using 1-second of input data
-    #     which is probably fair enough
-    TEST_ARGS = ['--chan', 'X1:TEST-CHANNEL', '--chan', 'Y1:TEST-CHANNEL',
-                 '--start', '968654552']
-
-
-if __name__ == '__main__':
-    unittest.main()
