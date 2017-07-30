@@ -1167,6 +1167,9 @@ class TimeSeriesBaseList(list):
             out.append(ts, gap=gap, pad=pad)
         return out
 
+    def __getslice__(self, i, j):
+        return type(self)(*super(TimeSeriesBaseList, self).__getslice__(i, j))
+
     def __getitem__(self, key):
         if isinstance(key, slice):
             return type(self)(
