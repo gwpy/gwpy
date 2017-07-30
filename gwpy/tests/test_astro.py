@@ -68,12 +68,14 @@ else:
 
 # -- utilities ----------------------------------------------------------------
 
-@utils.skip_missing_dependency('h5py')
 @pytest.fixture(scope='module')
 def psd():
     h5path = os.path.join(os.path.dirname(__file__), 'data',
                           'HLV-GW100916-968654552-1.hdf')
-    data = TimeSeries.read(h5path, 'L1:LDAS-STRAIN', format='hdf5')
+    try:
+        data = TimeSeries.read(h5path, 'L1:LDAS-STRAIN', format='hdf5')
+    except ImportError as e:
+        pytest.skip(str(e))
     return data.psd(.4, overlap=.2, window=('kaiser', 24))
 
 

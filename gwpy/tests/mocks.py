@@ -28,6 +28,8 @@ try:
 except ImportError:
     import mock
 
+import pytest
+
 from gwpy.time import LIGOTimeGPS
 from gwpy.segments import (Segment, SegmentList)
 
@@ -195,7 +197,10 @@ def mock_find_credential():
 
 
 def mock_datafind_connection(framefile):
-    from lal.utils import CacheEntry
+    try:
+        from lal.utils import CacheEntry
+    except ImportError as e:
+        pytest.skip(str(e))
     from glue import datafind
     ce = CacheEntry.from_T050017(framefile)
     frametype = ce.description

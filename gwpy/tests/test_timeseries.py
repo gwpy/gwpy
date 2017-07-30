@@ -790,22 +790,25 @@ class TestTimeSeries(TestTimeSeriesBase):
         # test methods
         losc.psd(fftlength=0.4, overlap=0.2, method='welch')
         losc.psd(fftlength=0.4, method='bartlett')
-        losc.psd(fftlength=0.4, overlap=0.2, method='lal-welch')
-        losc.psd(fftlength=0.4, method='lal-bartlett')
-        losc.psd(fftlength=0.4, overlap=0.2, method='median-mean')
-        losc.psd(fftlength=0.4, overlap=0.2, method='median')
+        try:
+            losc.psd(fftlength=0.4, overlap=0.2, method='lal-welch')
+            losc.psd(fftlength=0.4, method='lal-bartlett')
+            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean')
+            losc.psd(fftlength=0.4, overlap=0.2, method='median')
+        except ImportError as e:
+            pass
+        else:
+            # test LAL method with window specification
+            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean',
+                     window='hann')
 
-        # test LAL method with window specification
-        losc.psd(fftlength=0.4, overlap=0.2, method='median-mean',
-                 window='hann')
+            # test LAL method with non-canonical window specification
+            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean',
+                     window='hanning')
 
-        # test LAL method with non-canonical window specification
-        losc.psd(fftlength=0.4, overlap=0.2, method='median-mean',
-                 window='hanning')
-
-        # test check for at least two averages (defaults to single FFT)
-        with pytest.raises(ValueError) as e:
-            losc.psd(method='median-mean')
+            # test check for at least two averages (defaults to single FFT)
+            with pytest.raises(ValueError) as e:
+                losc.psd(method='median-mean')
 
     def test_asd(self, losc):
         fs = losc.asd()
@@ -863,18 +866,22 @@ class TestTimeSeries(TestTimeSeriesBase):
         assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
         assert sg.df == 4 * units.Hertz
         assert sg.dt == 0.5 * units.second
-        sg = losc.spectrogram(0.5, fftlength=0.25, method='lal-welch')
-        assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
-        assert sg.df == 4 * units.Hertz
-        assert sg.dt == 0.5 * units.second
-        sg = losc.spectrogram(0.5, fftlength=0.25, method='median-mean')
-        assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
-        assert sg.df == 4 * units.Hertz
-        assert sg.dt == 0.5 * units.second
-        sg = losc.spectrogram(0.5, fftlength=0.25, method='median')
-        assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
-        assert sg.df == 4 * units.Hertz
-        assert sg.dt == 0.5 * units.second
+        try:
+            sg = losc.spectrogram(0.5, fftlength=0.25, method='lal-welch')
+        except ImportError:
+            pass
+        else:
+            assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
+            assert sg.df == 4 * units.Hertz
+            assert sg.dt == 0.5 * units.second
+            sg = losc.spectrogram(0.5, fftlength=0.25, method='median-mean')
+            assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
+            assert sg.df == 4 * units.Hertz
+            assert sg.dt == 0.5 * units.second
+            sg = losc.spectrogram(0.5, fftlength=0.25, method='median')
+            assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
+            assert sg.df == 4 * units.Hertz
+            assert sg.dt == 0.5 * units.second
 
         # check that `cross` keyword gets deprecated properly
         # TODO: removed before 1.0 release
@@ -1050,6 +1057,7 @@ class TestTimeSeriesDict(TestTimeSeriesBaseDict):
     TEST_CLASS = TimeSeriesDict
     ENTRY_CLASS = TimeSeries
 
+    @utils.skip_missing_dependency('LDAStools.frameCPP')
     def test_read_write_gwf(self, instance):
         with tempfile.NamedTemporaryFile(suffix='.gwf') as f:
             instance.write(f.name)
@@ -1191,6 +1199,7 @@ class TestStateVector(TestTimeSeriesBase):
             array.get_bit_series(['blah'])
         assert str(exc.value) == "Bit 'blah' not found in StateVector"
 
+    @utils.skip_missing_dependency('lal')
     def test_plot(self, array):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot()

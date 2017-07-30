@@ -76,7 +76,7 @@ class TestTable(object):
 
     # -- test I/O -------------------------------
 
-    @utils.skip_missing_dependency('glue.ligolw')
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')
     @pytest.mark.parametrize('ext', ['xml', 'xml.gz'])
     def test_read_write_ligolw(self, ext):
         table = self.create(

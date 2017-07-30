@@ -174,9 +174,11 @@ class TestIoCache(object):
     """Tests of :mod:`gwpy.io.cache`
     """
     @staticmethod
-    @utils.skip_missing_dependency('lal')
     def make_cache():
-        from lal.utils import CacheEntry
+        try:
+            from lal.utils import CacheEntry
+        except ImportError as e:
+            pytest.skip(str(e))
         from glue.lal import Cache
 
         segs = SegmentList()

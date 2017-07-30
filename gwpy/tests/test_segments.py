@@ -474,7 +474,10 @@ class TestDataQualityFlag(object):
 
         # perform complicated test
         else:
-            _read_write(autoidentify=False)
+            try:
+                _read_write(autoidentify=False)
+            except ImportError as e:
+                pytest.skip(str(e))
             with pytest.raises(IOError):
                 _read_write(autoidentify=True)
             _read_write(autoidentify=True, write_kw={'overwrite': True})
@@ -575,6 +578,7 @@ class TestDataQualityDict(object):
 
     # -- test I/O -------------------------------
 
+    @utils.skip_missing_dependency('lal')
     def test_from_veto_definer_file(self):
         # read veto definer
         try:
@@ -591,14 +595,20 @@ class TestDataQualityDict(object):
         assert vdf[name].category is 3
         assert vdf[name].padding == (-8, 8)
 
-    @pytest.mark.parametrize('format, ext, rw_kwargs', [
-        ('ligolw', 'xml', {}),
-        ('ligolw', 'xml.gz', {}),
-        ('hdf5', 'hdf5', {}),
-        ('hdf5', 'h5', {}),
-        ('hdf5', 'hdf5', {'path': 'test-dqdict'}),
+    @pytest.mark.parametrize('format, ext, dep, rw_kwargs', [
+        ('ligolw', 'xml', 'glue.ligolw.lsctables', {}),
+        ('ligolw', 'xml.gz', 'glue.ligolw.lsctables', {}),
+        ('hdf5', 'hdf5', 'h5py', {}),
+        ('hdf5', 'h5', 'h5py', {}),
+        ('hdf5', 'hdf5', 'h5py', {'path': 'test-dqdict'}),
     ])
-    def test_read_write(self, instance, format, ext, rw_kwargs):
+    def test_read_write(self, instance, format, ext, dep, rw_kwargs):
+        from importlib import import_module
+        try:
+            import_module(dep)
+        except ImportError as e:
+            pytest.skip(str(e))
+
         # define assertion
         def _assert(a, b):
             return utils.assert_dict_equal(a, b, utils.assert_flag_equal)
