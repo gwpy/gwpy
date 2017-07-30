@@ -113,8 +113,6 @@ tests_require = [
 ]
 if sys.version < '3':
     tests_require.append('mock')
-if sys.version < '2.7':
-    tests_require.append('unittest2')
 
 
 # -- custom clean command -----------------------------------------------------
