@@ -49,7 +49,7 @@ cmdclass = {}
 
 # -- versioning ---------------------------------------------------------------
 
-import versioneer
+import versioneer  # nopep8
 __version__ = versioneer.get_version()
 cmdclass.update(versioneer.get_cmdclass())
 
@@ -113,8 +113,6 @@ tests_require = [
 ]
 if sys.version < '3':
     tests_require.append('mock')
-if sys.version < '2.7':
-    tests_require.append('unittest2')
 
 
 # -- custom clean command -----------------------------------------------------
@@ -146,6 +144,7 @@ class GWpyClean(clean):
                 log.info('removing %r' % portfile)
                 os.unlink(portfile)
         clean.run(self)
+
 
 cmdclass['clean'] = GWpyClean
 
@@ -217,6 +216,7 @@ class BuildPortfile(Command):
             raise subprocess.CalledProcessError(err)
         else:
             return out.splitlines()[0].rsplit(' ', 1)[-1]
+
 
 cmdclass['port'] = BuildPortfile
 if 'port' in sys.argv:

@@ -218,7 +218,7 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     # format and return
     if issubclass(cls, dict):
         try:
-            data.sort(key=lambda tsd: tsd.values()[0].epoch.gps)
+            data.sort(key=lambda tsd: list(tsd.values())[0].epoch.gps)
         except IndexError:
             pass
         out = cls()

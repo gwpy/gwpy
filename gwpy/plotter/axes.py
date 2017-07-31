@@ -246,4 +246,5 @@ class Axes(_Axes):
         else:
             return html.map_data(data, self, imagefile, **kwargs)
 
+
 register_projection(Axes)
