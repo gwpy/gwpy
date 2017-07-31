@@ -374,6 +374,7 @@ class TestChannel(object):
             assert getattr(c, key) == pdict[key]
         assert c.ndsname == name
 
+    @utils.skip_missing_dependency('ligo.org')
     @pytest.mark.parametrize('name', ('X1:TEST-CHANNEL', 'Y1:TEST_CHANNEL'))
     def test_query(self, name):
         # build fake CIS response
