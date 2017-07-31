@@ -19,40 +19,66 @@
 """Unit test for utils module
 """
 
-import os
 import subprocess
+
+from six import PY2
 
 import pytest
 
-from compat import unittest
-
 from gwpy.utils import shell
+from gwpy.utils import deps
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-class UtilsTestCase(unittest.TestCase):
-    """`TestCase` for the utils module
-    """
-    def test_shell_call(self):
-        out, err = shell.call(["echo", "This works"])
-        self.assertEqual(out, "This works\n")
-        self.assertEqual(err, '')
-        out2, err2 = shell.call("echo 'This works'")
-        self.assertEqual(out, out2)
-        self.assertEqual(err, err2)
-        self.assertRaises(OSError, shell.call, ['this-command-doesnt-exist'])
-        self.assertRaises(subprocess.CalledProcessError, shell.call,
-                          'this-command-doesnt-exist')
-        self.assertRaises(subprocess.CalledProcessError, shell.call, 'false')
-        with pytest.warns(UserWarning):
-            shell.call('false', on_error='warn')
+def test_shell_call():
+    out, err = shell.call(["echo", "This works"])
+    assert out == 'This works\n'
+    assert err == ''
 
-    def test_which(self):
-        try:
-            result, _ = shell.call('which true')
-        except Exception as e:
-            self.skipTest(str(e))
-        else:
-            result = result.rstrip('\n')
-        self.assertEqual(shell.which('true'), result)
+    out2, err2 = shell.call("echo 'This works'")
+    assert out == out2
+    assert err == err2
+
+    with pytest.raises(OSError):
+        shell.call(['this-command-doesnt-exist'])
+    with pytest.raises(subprocess.CalledProcessError):
+        shell.call('this-command-doesnt-exist')
+    with pytest.raises(subprocess.CalledProcessError):
+        shell.call('false')
+    with pytest.warns(UserWarning):
+        shell.call('false', on_error='warn')
+
+
+def test_which():
+    try:
+        result, _ = shell.call('which true')
+    except Exception as e:
+        pytest.skip(str(e))
+    else:
+        result = result.rstrip('\n')
+    assert shell.which('true') == result
+
+
+def test_import_method_dependency():
+    import subprocess
+    mod = deps.import_method_dependency('subprocess')
+    assert mod is subprocess
+    with pytest.raises(ImportError) as exc:
+        deps.import_method_dependency('blah')
+    if PY2:
+        assert str(exc.value) == ("Cannot import blah required by the "
+                                  "test_import_method_dependency() method: "
+                                  "'No module named blah'")
+    else:
+        assert str(exc.value) == "No module named 'blah'"
+
+
+def test_with_import():
+    @deps.with_import('blah')
+    def with_import_tester():
+        pass
+
+    # FIXME: this should really test the message
+    with pytest.raises(ImportError) as exc:
+        with_import_tester()

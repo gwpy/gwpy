@@ -175,6 +175,7 @@ class HistogramAxes(Axes):
         else:
             return numpy.linspace(lower, upper, num+1, endpoint=True)
 
+
 register_projection(HistogramAxes)
 
 

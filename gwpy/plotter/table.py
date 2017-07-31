@@ -289,6 +289,7 @@ class EventTableAxes(TimeSeriesAxes):
             self.title.set_position((pos[0], pos[1] + 0.05))
         self.set_ylim(*ylim)
 
+
 register_projection(EventTableAxes)
 
 

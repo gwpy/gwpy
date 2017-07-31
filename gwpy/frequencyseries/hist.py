@@ -27,6 +27,7 @@ from six.moves import xrange
 from astropy.io import registry as io_registry
 
 from ..types import (Quantity, Array2D)
+from ..segments import Segment
 from .core import FrequencySeries
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -99,10 +100,13 @@ class SpectralVariance(Array2D):
         except AttributeError:
             pass
 
-    # over-write yindex to communicate with bins
+    # over-write yindex and yspan to communicate with bins
     @property
     def yindex(self):
         return self.bins[:-1]
+
+    def yspan(self):
+        return Segment(self.bins[0], self.bins[-1])
 
     @property
     def dy(self):

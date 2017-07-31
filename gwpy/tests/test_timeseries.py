@@ -26,8 +26,6 @@ import tempfile
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.error import URLError
 
-from compat import (unittest, mock, HAS_H5PY, HAS_NDS2)
-
 import pytest
 
 import numpy
@@ -35,26 +33,30 @@ from numpy import (may_share_memory, testing as nptest)
 
 from scipy import signal
 
-from matplotlib import use
-use('agg')
+from matplotlib import use, rc_context
+use('agg')  # nopep8
 
 from astropy import units
 from astropy.io.registry import (get_reader, register_reader)
 
 from gwpy.detector import Channel
 from gwpy.time import (Time, LIGOTimeGPS)
-from gwpy.timeseries import (TimeSeries, StateVector, TimeSeriesDict,
-                             StateVectorDict, TimeSeriesList, StateTimeSeries)
-from gwpy.segments import (Segment, DataQualityFlag, DataQualityDict)
+from gwpy.timeseries import (TimeSeriesBase, TimeSeriesBaseDict,
+                             TimeSeriesBaseList,
+                             TimeSeries, TimeSeriesDict, TimeSeriesList,
+                             StateVector, StateVectorDict, StateVectorList,
+                             StateTimeSeries, StateTimeSeriesDict, Bits)
+from gwpy.segments import (Segment, SegmentList,
+                           DataQualityFlag, DataQualityDict)
 from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.types import Array2D
 from gwpy.spectrogram import Spectrogram
 from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
 
-from test_array import SeriesTestCase
-from compat import HAS_LAL
-import common
-import mockutils
+import mocks
+import utils
+from mocks import mock
+from test_array import TestSeries
 
 SEED = 1
 numpy.random.seed(SEED)
@@ -63,36 +65,17 @@ ONE_HZ = units.Quantity(1, 'Hz')
 ONE_SECOND = units.Quantity(1, 'second')
 
 TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
-                          'HLV-GW100916-968654552-1.gwf')
+                             'HLV-GW100916-968654552-1.gwf')
 TEST_HDF_FILE = '%s.hdf' % TEST_GWF_FILE[:-4]
 TEST_SEGMENT = Segment(968654552, 968654553)
 
 
-FIND_CHANNEL = 'L1:LDAS-STRAIN'
-FIND_GPS = 968654552
-FIND_FRAMETYPE = 'L1_LDAS_C02_L2'
+FIND_CHANNEL = 'L1:DCS-CALIB_STRAIN_C01'
+FIND_FRAMETYPE = 'L1_HOFT_C01'
 
-LOSC_HDF_FILE = ("https://losc.ligo.org/archive/data/S6/930086912/"
-                 "L-L1_LOSC_4_V1-931069952-4096.hdf5")
-LOSC_DQ_BITS = [
-    'Science data available',
-    'Category-1 checks passed for CBC high-mass search',
-    'Category-2 and 1 checks passed for CBC high-mass search',
-    'Category-3 and 2 and 1 checks passed for CBC high-mass search',
-    'Category-4,3,2,1 checks passed for CBC high-mass search',
-    'Category-1 checks passed for CBC low-mass search',
-    'Category-2 and 1 checks passed for CBC low-mass search',
-    'Category-3 and 2 and 1 checks passed for CBC low-mass search',
-    'Category-4, veto active for CBC low-mass search',
-    'Category-1 checks passed for burst search',
-    'Category-2 and 1 checks passed for burst search',
-    'Category-3 and 2 and 1 checks passed for burst search',
-    'Category-4, 3 and 2 and 1 checks passed for burst search',
-    'Category-3 and 2 and 1 and hveto checks passed for burst search',
-    'Category-4, 3 and 2 and 1 and hveto checks passed for burst search',
-    'Category-1 checks passed for continuous-wave search',
-    'Category-1 checks passed for stochastic search',
-]
+LOSC_IFO = 'L1'
+LOSC_GW150914 = 1126259462
+LOSC_GW150914_SEGMENT = Segment(LOSC_GW150914-2, LOSC_GW150914+2)
 LOSC_GW150914_DQ_BITS = [
     'data present',
     'passes cbc CAT1 test',
@@ -102,218 +85,652 @@ LOSC_GW150914_DQ_BITS = [
     'passes burst CAT2 test',
     'passes burst CAT3 test',
 ]
-LOSC_GW150914 = 1126259462
-LOSC_GW150914_SEGMENT = Segment(LOSC_GW150914-2, LOSC_GW150914+2)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 # -----------------------------------------------------------------------------
+#
+# gwpy.timeseries.core
+#
+# -----------------------------------------------------------------------------
 
-class TimeSeriesTestMixin(object):
-    """`~unittest.TestCase` for the `~gwpy.timeseries.TimeSeries` class
-    """
-    channel = 'L1:LDAS-STRAIN'
+# -- TimeSeriesBase -----------------------------------------------------------
 
-    def test_creation_with_metadata(self):
-        self.ts = self.create()
-        repr(self.ts)
-        self.assertEqual(self.ts.epoch, GPS_EPOCH)
-        self.assertEqual(self.ts.sample_rate, ONE_HZ)
-        self.assertEqual(self.ts.dt, ONE_SECOND)
+class TestTimeSeriesBase(TestSeries):
+    TEST_CLASS = TimeSeriesBase
 
-    def frame_read(self, format=None):
-        ts = self.TEST_CLASS.read(
-            TEST_GWF_FILE, self.channel, format=format)
-        self.assertEqual(ts.epoch, Time(968654552, format='gps', scale='utc'))
-        self.assertEqual(ts.sample_rate, units.Quantity(16384, 'Hz'))
-        self.assertEqual(ts.unit, units.Unit('strain'))
-        return ts
+    def test_new(self):
+        """Test `gwpy.timeseries.TimeSeriesBase` constructor
+        """
+        array = super(TestTimeSeriesBase, self).test_new()
+
+        # check time-domain metadata
+        assert array.epoch == GPS_EPOCH
+        assert array.sample_rate == units.Quantity(1, 'Hertz')
+        assert array.dt == units.Quantity(1, 'second')
+
+        # check handling of epoch vs t0
+        a = self.create(epoch=10)
+        b = self.create(t0=10)
+        utils.assert_quantity_sub_equal(a, b)
+        with pytest.raises(ValueError) as exc:
+            self.TEST_CLASS(self.data, epoch=1, t0=1)
+        assert str(exc.value) == 'give only one of epoch or t0'
+
+        # check handling of sample_rate vs dt
+        a = self.create(sample_rate=100)
+        b = self.create(dt=0.01)
+        utils.assert_quantity_sub_equal(a, b)
+        with pytest.raises(ValueError) as exc:
+            self.TEST_CLASS(self.data, sample_rate=1, dt=1)
+        assert str(exc.value) == 'give only one of sample_rate or dt'
+
+    def test_epoch(self):
+        """Test `gwpy.timeseries.TimeSeriesBase.epoch`
+        """
+        # check basic conversion from t0 -> epoch
+        a = self.create(t0=1126259462)
+        assert a.epoch == Time('2015-09-14 09:50:45', format='iso')
+
+        # test that we can't delete epoch
+        with pytest.raises(AttributeError):
+            del a.epoch
+
+        # check None gets preserved
+        a.epoch = None
+        with pytest.raises(AttributeError):
+            a._t0
+
+        # check other types
+        a.epoch = Time('2015-09-14 09:50:45', format='iso')
+        utils.assert_quantity_almost_equal(
+            a.t0, units.Quantity(1126259462, 's'))
+
+    def test_sample_rate(self):
+        """Test `gwpy.timeseries.TimeSeriesBase.sample_rate`
+        """
+        # check basic conversion from dt -> sample_rate
+        a = self.create(dt=0.5)
+        assert a.sample_rate == 2 * units.Hz
+
+        # test that we can't delete sample_rate
+        with pytest.raises(AttributeError):
+            del a.sample_rate
+
+        # check None gets preserved
+        a.sample_rate = None
+        with pytest.raises(AttributeError):
+            a._t0
+
+        # check other types
+        a.sample_rate = units.Quantity(128, units.Hz)
+        utils.assert_quantity_equal(a.dt, units.s / 128.)
+        a.sample_rate = units.Quantity(16.384, units.kiloHertz)
+        utils.assert_quantity_equal(a.dt, units.s / 16384)
+
+    def test_duration(self, array):
+        assert array.duration == array.t0 + array.shape[0] * array.dt
+
+    # -- test methods ---------------------------
+
+    def test_plot(self, array):
+        with rc_context(rc={'text.usetex': False}):
+            plot = array.plot()
+            assert isinstance(plot, TimeSeriesPlot)
+            line = plot.gca().lines[0]
+            utils.assert_array_equal(line.get_xdata(), array.xindex.value)
+            utils.assert_array_equal(line.get_ydata(), array.value)
+            with tempfile.NamedTemporaryFile(suffix='.png') as f:
+                plot.save(f.name)
+            return plot  # allow subclasses to extend tests
+
+    @utils.skip_missing_dependency('nds2')
+    def test_from_nds2_buffer(self):
+        nds_buffer = mocks.nds2_buffer(
+            'X1:TEST', self.data, 1000000000, self.data.shape[0], 'm')
+        a = self.TEST_CLASS.from_nds2_buffer(nds_buffer)
+        assert isinstance(a, self.TEST_CLASS)
+        utils.assert_array_equal(a.value, self.data)
+        assert a.unit == units.m
+        assert a.t0 == 1000000000 * units.s
+        assert a.dt == units.s / self.data.shape[0]
+        assert a.name == 'X1:TEST'
+        assert a.channel == Channel('X1:TEST', sample_rate=self.data.shape[0],
+                                    unit='m', type='raw', dtype='float32')
+        b = self.TEST_CLASS.from_nds2_buffer(nds_buffer, sample_rate=128)
+        assert b.dt == 1/128. * units.s
+
+    @utils.skip_missing_dependency('lal')
+    def test_to_from_lal(self, array):
+        import lal
+
+        # check that to + from returns the same array
+        lalts = array.to_lal()
+        a2 = type(array).from_lal(lalts)
+        utils.assert_quantity_sub_equal(array, a2, exclude=['name', 'channel'])
+        assert a2.name is ''
+
+        # test copy=False
+        a2 = type(array).from_lal(lalts, copy=False)
+        assert numpy.shares_memory(a2.value, lalts.data.data)
+
+        # test units
+        array.override_unit('undef')
+        with pytest.warns(UserWarning):
+            lalts = array.to_lal()
+        assert lalts.sampleUnits == lal.DimensionlessUnit
+        a2 = self.TEST_CLASS.from_lal(lalts)
+        assert a2.unit is units.dimensionless_unscaled
+
+    @utils.skip_missing_dependency('pycbc')
+    def test_to_from_pycbc(self, array):
+        from pycbc.types import TimeSeries as PyCBCTimeSeries
+
+        # test default conversion
+        pycbcts = array.to_pycbc()
+        assert isinstance(pycbcts, PyCBCTimeSeries)
+        nptest.assert_array_equal(array.value, pycbcts.data)
+        assert array.t0.value == pycbcts.start_time
+        assert array.dt.value == pycbcts.delta_t
+
+        # go back and check we get back what we put in in the first place
+        a2 = type(array).from_pycbc(pycbcts)
+        utils.assert_quantity_sub_equal(
+            array, a2, exclude=['name', 'unit', 'channel'])
+
+        # test copy=False
+        a2 = type(array).from_pycbc(array.to_pycbc(copy=False), copy=False)
+        assert numpy.shares_memory(array.value, a2.value)
+
+
+# -- TimeSeriesBaseDict -------------------------------------------------------
+
+class TestTimeSeriesBaseDict(object):
+    TEST_CLASS = TimeSeriesBaseDict
+    ENTRY_CLASS = TimeSeriesBase
+    DTYPE = None
+
+    @classmethod
+    def create(cls):
+        new = cls.TEST_CLASS()
+        new['a'] = cls.ENTRY_CLASS(numpy.random.normal(size=200),
+                                   name='a', x0=0, dx=1, dtype=cls.DTYPE)
+        new['b'] = cls.ENTRY_CLASS(numpy.random.normal(size=2000),
+                                   name='b', x0=0, dx=.1, dtype=cls.DTYPE)
+        return new
+
+    @pytest.fixture()
+    def instance(self):
+        return self.create()
+
+    def test_series_link(self):
+        assert self.ENTRY_CLASS.DictClass is self.TEST_CLASS
+        assert self.TEST_CLASS.EntryClass is self.ENTRY_CLASS
+
+    def test_copy(self, instance):
+        copy = instance.copy()
+        assert isinstance(copy, self.TEST_CLASS)
+        for key in copy:
+            assert not numpy.shares_memory(copy[key].value,
+                                           instance[key].value)
+            utils.assert_quantity_sub_equal(copy[key], instance[key])
+
+    def test_append(self, instance):
+        # test appending from empty (with and without copy)
+        for copy in (True, False):
+            new = type(instance)()
+            new.append(instance, copy=copy)
+            for key in new:
+                assert numpy.shares_memory(new[key].value,
+                                           instance[key].value) is not copy
+                utils.assert_quantity_sub_equal(new[key], instance[key])
+
+        # create copy of dict that is contiguous
+        new = type(instance)()
+        for key in instance:
+            a = instance[key]
+            new[key] = type(a)([1, 2, 3, 4, 5], x0=a.xspan[1], dx=a.dx,
+                               dtype=a.dtype)
+
+        # append and test
+        b = instance.copy()
+        b.append(new)
+        for key in b:
+            utils.assert_array_equal(
+                b[key].value,
+                numpy.concatenate((instance[key].value, new[key].value)))
+
+        # create copy of dict that is discontiguous
+        new = type(instance)()
+        for key in instance:
+            a = instance[key]
+            new[key] = type(a)([1, 2, 3, 4, 5], x0=a.xspan[1], dx=a.dx,
+                               dtype=a.dtype)
+        # check error
+        with pytest.raises(ValueError):
+            instance.append(new)
+        # check padding works (don't validate too much, that is tested
+        # elsewhere)
+        b = instance.copy()
+        b.append(new, pad=0)
+
+    def test_prepend(self, instance):
+        # test appending from empty (with and without copy)
+        new = type(instance)()
+        new.prepend(instance)
+        for key in new:
+            assert numpy.shares_memory(new[key].value, instance[key].value)
+            utils.assert_quantity_sub_equal(new[key], instance[key])
+
+        # create copy of dict that is contiguous
+        new = type(instance)()
+        for key in instance:
+            a = instance[key]
+            new[key] = type(a)([1, 2, 3, 4, 5], x0=a.xspan[1], dx=a.dx,
+                               dtype=a.dtype)
+        # append and test
+        b = new.copy()
+        b.prepend(instance)
+        for key in b:
+            utils.assert_array_equal(
+                b[key].value,
+                numpy.concatenate((instance[key].value, new[key].value)))
+
+        # create copy of dict that is discontiguous
+        new = type(instance)()
+        for key in instance:
+            a = instance[key]
+            new[key] = type(a)([1, 2, 3, 4, 5], x0=a.xspan[1], dx=a.dx,
+                               dtype=a.dtype)
+        # check error
+        with pytest.raises(ValueError):
+            new.append(instance)
+        # check padding works (don't validate too much, that is tested
+        # elsewhere)
+        b = new.copy()
+        b.prepend(instance, pad=0)
+
+    def test_crop(self, instance):
+        """Test :meth:`TimeSeriesBaseDict.crop`
+        """
+        a = instance.crop(10, 20)
+        for key in a:
+            utils.assert_quantity_sub_equal(a[key], instance[key].crop(10, 20))
+
+    def test_resample(self, instance):
+        if self.ENTRY_CLASS is TimeSeriesBase:  # currently only for subclasses
+            return NotImplemented
+        a = instance.resample(.5)
+        for key in a:
+            assert a[key].dx == 1/.5 * a[key].xunit
+
+    def test_fetch(self):
+        return NotImplemented
+
+    def test_find(self):
+        return NotImplemented
+
+    def test_get(self):
+        return NotImplemented
+
+    def test_plot(self, instance):
+        with rc_context(rc={'text.usetex': False}):
+            plot = instance.plot()
+            assert isinstance(plot, TimeSeriesPlot)
+            for line, key in zip(plot.gca().lines, instance):
+                utils.assert_array_equal(line.get_xdata(),
+                                         instance[key].xindex.value)
+                utils.assert_array_equal(line.get_ydata(), instance[key].value)
+            with tempfile.NamedTemporaryFile(suffix='.png') as f:
+                plot.save(f.name)
+            return plot  # allow subclasses to extend tests
+
+
+# -- TimeSeriesBaseList -------------------------------------------------------
+
+class TestTimeSeriesBaseList(object):
+    TEST_CLASS = TimeSeriesBaseList
+    ENTRY_CLASS = TimeSeriesBase
+    DTYPE = None
+
+    @classmethod
+    def create(cls):
+        new = cls.TEST_CLASS()
+        new.append(cls.ENTRY_CLASS(numpy.random.normal(size=100),
+                                   x0=0, dx=1, dtype=cls.DTYPE))
+        new.append(cls.ENTRY_CLASS(numpy.random.normal(size=1000),
+                                   x0=101, dx=1, dtype=cls.DTYPE))
+        return new
+
+    @pytest.fixture()
+    def instance(self):
+        return self.create()
+
+    def test_series_link(self):
+        assert self.TEST_CLASS.EntryClass is self.ENTRY_CLASS
+
+    def test_segments(self, instance):
+        """Test :attr:`gwpy.timeseries.TimeSeriesBaseList.segments`
+        """
+        sl = instance.segments
+        assert isinstance(sl, SegmentList)
+        assert all(isinstance(s, Segment) for s in sl)
+        assert sl == [(0, 100), (101, 1101)]
+
+    def test_append(self):
+        tsl = self.create()
+
+        # test simple append
+        new = self.ENTRY_CLASS([1, 2, 3, 4, 5], x0=1102, dx=1)
+        tsl.append(new)
+
+        # test mismatched type raises error
+        with pytest.raises(TypeError) as exc:
+            tsl.append([1, 2, 3, 4, 5])
+        assert str(exc.value) == (
+            "Cannot append type 'list' to %s" % type(tsl).__name__)
+
+    def test_extend(self):
+        a = self.create()
+        b = a.copy()
+        new = self.ENTRY_CLASS([1, 2, 3, 4, 5])
+        a.append(new)
+        b.extend([new])
+        assert a == b
+
+    def test_coalesce(self):
+        a = self.TEST_CLASS()
+        a.append(self.ENTRY_CLASS([1, 2, 3, 4, 5], x0=0, dx=1))
+        a.append(self.ENTRY_CLASS([1, 2, 3, 4, 5], x0=11, dx=1))
+        a.append(self.ENTRY_CLASS([1, 2, 3, 4, 5], x0=5, dx=1))
+        a.coalesce()
+        assert len(a) == 2
+        assert a[0].span == (0, 10)
+        utils.assert_array_equal(a[0].value, [1, 2, 3, 4, 5, 1, 2, 3, 4, 5])
+
+    def test_join(self):
+        a = self.TEST_CLASS()
+        a.append(self.ENTRY_CLASS([1, 2, 3, 4, 5], x0=0, dx=1))
+        a.append(self.ENTRY_CLASS([1, 2, 3, 4, 5], x0=5, dx=1))
+        a.append(self.ENTRY_CLASS([1, 2, 3, 4, 5], x0=11, dx=1))
+
+        # disjoint list should throw error
+        with pytest.raises(ValueError):
+            a.join()
+
+        # but we can pad to get rid of the errors
+        t = a.join(gap='pad')
+        assert isinstance(t, a.EntryClass)
+        assert t.span == (0, 16)
+        utils.assert_array_equal(
+            t.value, [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5])
+
+        # check that joining empty list produces something sensible
+        t = self.TEST_CLASS().join()
+        assert isinstance(t, self.TEST_CLASS.EntryClass)
+        assert t.size == 0
+
+    def test_slice(self, instance):
+        s = instance[:2]
+        assert type(s) is type(instance)
+
+    def test_copy(self, instance):
+        a = instance.copy()
+        assert type(a) is type(instance)
+        for x, y in zip(instance, a):
+            utils.assert_quantity_sub_equal(x, y)
+            assert not numpy.shares_memory(x.value, y.value)
+
+
+# -----------------------------------------------------------------------------
+#
+# gwpy.timeseries.timeseries
+#
+# -----------------------------------------------------------------------------
+
+# -- TimeSeries ---------------------------------------------------------------
+
+
+class TestTimeSeries(TestTimeSeriesBase):
+    TEST_CLASS = TimeSeries
+
+    # -- fixtures -------------------------------
+
+    @pytest.fixture(scope='class')
+    def losc(self):
+        try:
+            return self.TEST_CLASS.fetch_open_data(
+                LOSC_IFO, *LOSC_GW150914_SEGMENT)
+        except URLError as e:
+            pytest.skip(str(e))
+
+    @pytest.fixture(scope='class')
+    def losc_16384(self):
+        try:
+            return self.TEST_CLASS.fetch_open_data(
+                LOSC_IFO, *LOSC_GW150914_SEGMENT, sample_rate=16384)
+        except URLError as e:
+            pytest.skip(str(e))
+
+    # -- test class functionality ---------------
 
     def test_ligotimegps(self):
         # test that LIGOTimeGPS works
         array = self.create(t0=LIGOTimeGPS(0))
-        self.assertEqual(array.t0.value, 0)
+        assert array.t0.value == 0
         array.t0 = LIGOTimeGPS(10)
-        self.assertEqual(array.t0.value, 10)
+        assert array.t0.value == 10
         array.x0 = LIGOTimeGPS(1000000000)
-        self.assertEqual(array.t0.value, 1000000000)
+        assert array.t0.value == 1000000000
+
         # check epoch access
         array.epoch = LIGOTimeGPS(10)
-        self.assertEqual(array.t0.value, 10)
+        assert array.t0.value == 10
 
     def test_epoch(self):
         array = self.create()
-        self.assertEquals(array.epoch.gps, array.x0.value)
+        assert array.epoch.gps == array.x0.value
 
     # -- test I/O -------------------------------
 
-    @unittest.skipUnless(HAS_LAL, "No module named lal")
-    def _test_read_cache(self, format, extension=None, exclude=['channel']):
-        from glue.lal import Cache
+    @pytest.mark.parametrize('format', ['txt', 'csv'])
+    def test_read_write_ascii(self, array, format):
+        utils.test_read_write(
+            array, format,
+            assert_equal=utils.assert_quantity_sub_equal,
+            assert_kw={'exclude': ['name', 'channel', 'unit']})
 
-        if extension is None:
-            extension = format
-        # make array
-        a = self.create(name='test', t0=0, sample_rate=self.data.shape[0])
-        exta = '-%d-%d.%s' % (a.span[0], a.span[1], extension)
+    @pytest.mark.parametrize('api', [
+        None,
+        pytest.param(
+            'lalframe',
+            marks=utils.skip_missing_dependency('lalframe')),
+        pytest.param(
+            'framecpp',
+            marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
+    ])
+    def test_read_write_gwf(self, api):
+        array = self.create(name='TEST')
 
-        # write it to a file, so we can read it again later
-        with tempfile.NamedTemporaryFile(prefix='tmp-', suffix=exta,
-                                         delete=False) as f1:
-            a.write(f1.name)
-
-        # test reading it from the cache
-        cache = Cache.from_urls([f1.name], coltype=int)
-        b = self.TEST_CLASS.read(cache, a.name)
-        self.assertArraysEqual(a, b, exclude=exclude)
-
-        # write a cache file and read that
-        try:
-            with tempfile.NamedTemporaryFile(suffix='.lcf', delete=False,
-                                             mode='w') as f:
-                cache.tofile(f)
-                b = self.TEST_CLASS.read(f.name, a.name)
-                self.assertArraysEqual(a, b, exclude=exclude)
-                b = self.TEST_CLASS.read(open(f.name), a.name)
-                self.assertArraysEqual(a, b, exclude=exclude)
-        finally:
-            if os.path.isfile(f.name):
-                os.remove(f.name)
-
-        # create second array with a gap
-        b = self.create(name='test', t0=a.xspan[1]+1, dt=a.dt)
-        extb = '-%d-%d.%s' % (b.span[0], b.span[1], extension)
-        try:
-            with tempfile.NamedTemporaryFile(prefix='tmp-', suffix=extb,
-                                             delete=False) as f2:
-                # write tmp file
-                b.write(f2.name)
-                # make cache of file names
-                cache = Cache.from_urls([f1.name, f2.name], coltype=int)
-                # assert gap='raise' actually raises by default
-                self.assertRaises(ValueError, self.TEST_CLASS.read,
-                                  cache, a.name)
-                # read from cache
-                ts = self.TEST_CLASS.read(cache, a.name, gap='pad', pad=0)
-                nptest.assert_array_equal(
-                    ts.value,
-                    numpy.concatenate((a.value,
-                                       numpy.zeros(int(a.sample_rate.value)),
-                                       b.value)))
-                # read with multi-processing
-                ts2 = self.TEST_CLASS.read(cache, a.name, nproc=2,
-                                           gap='pad', pad=0)
-                self.assertArraysEqual(ts, ts2)
-        finally:
-            # clean up
-            for f in (f1, f2):
-                if os.path.exists(f.name):
-                    os.remove(f.name)
-
-    def test_read_write_gwf(self):
-        # test basic read
-        try:
-            self._test_read_write('gwf', exclude=['channel'])
-        except ImportError as e:
-            self.skipTest(str(e))
-        # test cache read
-        self._test_read_cache('gwf')
-        # check reading with start/end works
-        start, end = TEST_SEGMENT.contract(.25)
-        t = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format='gwf',
-                                 start=start, end=end)
-        self.assertTupleEqual(t.span, (start, end))
-        t = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format='gwf',
-                                 start=start)
-        self.assertTupleEqual(t.span, (start, TEST_SEGMENT[1]))
-        t = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format='gwf',
-                                 end=end)
-        self.assertTupleEqual(t.span, (TEST_SEGMENT[0], end))
-        # check type casting works
-        t = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format='gwf',
-                                 end=end, dtype='float32')
-        self.assertEqual(t.dtype, numpy.dtype('float32'))
-        t = self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format='gwf',
-                                 end=end, dtype={self.channel: 'float64'})
-        self.assertEqual(t.dtype, numpy.dtype('float64'))
-        # check errors
-        self.assertRaises((ValueError, RuntimeError), self.TEST_CLASS.read,
-                          TEST_GWF_FILE, self.channel, format='gwf',
-                          start=TEST_SEGMENT[1])
-        self.assertRaises((ValueError, RuntimeError), self.TEST_CLASS.read,
-                          TEST_GWF_FILE, self.channel, format='gwf',
-                          end=TEST_SEGMENT[0])
-
-    def read_write_gwf_api(self, api):
-        fmt = 'gwf.%s' % api
-        try:
-            self._test_read_write(fmt, extension='gwf', exclude=['channel'],
-                                  auto=True)#False)
-        except ImportError as e:
-            self.skipTest(str(e))
-        self._test_read_cache(fmt, extension='gwf')
-        # check old format prints a deprecation warning
-        with pytest.warns(DeprecationWarning):
-            self.TEST_CLASS.read(TEST_GWF_FILE, self.channel, format=api)
-
-    def test_read_write_gwf_lalframe(self):
-        return self.read_write_gwf_api('lalframe')
-
-    def test_read_write_gwf_framecpp(self):
-        return self.read_write_gwf_api('framecpp')
-
-    def test_read_write_hdf5(self):
-        # test basic read
-        try:
-            self._test_read_write('hdf5', exclude=['channel'], auto=False)
-        except ImportError as e:
-            self.skipTest(str(e))
-        self._test_read_write('hdf5', exclude=['channel'], auto=True,
-                              writekwargs={'overwrite': True})
-        # check reading with start/end works
-        start, end = TEST_SEGMENT.contract(.25)
-        t = self.TEST_CLASS.read(TEST_HDF_FILE, self.channel, format='hdf5',
-                                 start=start, end=end)
-        self.assertTupleEqual(t.span, (start, end))
-
-    def test_read_write_ascii(self):
-        return self._test_read_write_ascii(format='txt')
-
-    def test_read_write_csv(self):
-        return self._test_read_write_ascii(format='csv')
-
-    def test_find(self):
-        try:
-            ts = self.TEST_CLASS.find(FIND_CHANNEL, FIND_GPS, FIND_GPS+1,
-                                      frametype=FIND_FRAMETYPE)
-        except (ImportError, RuntimeError) as e:
-            self.skipTest(str(e))
+        # map API to format name
+        if api is None:
+            fmt = 'gwf'
         else:
-            self.assertEqual(ts.x0.value, FIND_GPS)
-            self.assertEqual(abs(ts.span), 1)
+            fmt = 'gwf.%s' % api
+
+        # test basic write/read
+        try:
+            utils.test_read_write(
+                array, fmt, extension='gwf', read_args=[array.name],
+                assert_equal=utils.assert_quantity_sub_equal,
+                assert_kw={'exclude': ['channel']})
+        except ImportError as e:
+            pytest.skip(str(e))
+
+        # test read keyword arguments
+        suffix = '-%d-%d.gwf' % (array.t0.value, array.duration.value)
+        with tempfile.NamedTemporaryFile(prefix='GWpy-', suffix=suffix) as f:
+            array.write(f.name)
+
+            def read_(**kwargs):
+                return type(array).read(f, array.name, format='gwf', **kwargs)
+
+            # test start, end
+            start, end = array.span.contract(10)
+            t = read_(start=start, end=end)
+            utils.assert_quantity_sub_equal(t, array.crop(start, end),
+                                            exclude=['channel'])
+            assert t.span == (start, end)
+            t = read_(start=start)
+            utils.assert_quantity_sub_equal(t, array.crop(start=start),
+                                            exclude=['channel'])
+            t = read_(end=end)
+            utils.assert_quantity_sub_equal(t, array.crop(end=end),
+                                            exclude=['channel'])
+
+            # test dtype
+            t = read_(dtype='float32')
+            assert t.dtype is numpy.dtype('float32')
+            t = read_(dtype={f.name: 'float64'})
+            assert t.dtype is numpy.dtype('float64')
+
+            # check errors
+            with pytest.raises((ValueError, RuntimeError)):
+                read_(start=array.span[1])
+            with pytest.raises((ValueError, RuntimeError)):
+                read_(end=array.span[0]-1)
+
+            # check old format prints a deprecation warning
+            if api:
+                with pytest.warns(DeprecationWarning):
+                    type(array).read(f, array.name, format=api)
+
+            # check reading from cache
             try:
-                comp = self.frame_read()
+                from glue.lal import Cache
             except ImportError:
                 pass
             else:
-                nptest.assert_array_almost_equal(ts.value, comp.value)
-            # test observatory
-            ts2 = self.TEST_CLASS.find(FIND_CHANNEL, FIND_GPS, FIND_GPS+1,
-                                      frametype=FIND_FRAMETYPE,
-                                      observatory=FIND_CHANNEL[0])
-            self.assertArraysEqual(ts, ts2)
-            self.assertRaises(RuntimeError, self.TEST_CLASS.find, FIND_CHANNEL,
-                              FIND_GPS, FIND_GPS+1, frametype=FIND_FRAMETYPE,
-                              observatory='X')
+                a2 = self.create(name='TEST', t0=array.span[1],
+                                 dt=array.dx)
+                suffix = '-%d-%d.gwf' % (a2.t0.value, a2.duration.value)
+                with tempfile.NamedTemporaryFile(prefix='GWpy-',
+                                                 suffix=suffix) as f2:
+                    a2.write(f2.name)
+                    cache = Cache.from_urls([f.name, f2.name], coltype=int)
+                    comb = type(array).read(cache, 'TEST', format=fmt, nproc=2)
+                    utils.assert_quantity_sub_equal(
+                        comb, array.append(a2, inplace=False),
+                        exclude=['channel'])
 
+
+    @utils.skip_missing_dependency('h5py')
+    @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
+    def test_read_write_hdf5(self, ext):
+        array = self.create()
+
+        with tempfile.NamedTemporaryFile(suffix='.%s' % ext) as f:
+            # check array with no name fails
+            with pytest.raises(ValueError) as exc:
+                array.write(f.name, overwrite=True)
+            assert str(exc.value).startswith('Cannot determine HDF5 path')
+            array.name = 'TEST'
+
+            # write array (with auto-identify)
+            array.write(f.name, overwrite=True)
+
+            # check reading gives the same data (with/without auto-identify)
+            ts = type(array).read(f.name, format='hdf5')
+            utils.assert_quantity_sub_equal(array, ts)
+            ts = type(array).read(f.name)
+            utils.assert_quantity_sub_equal(array, ts)
+
+            # check that we can't then write the same data again
+            with pytest.raises(IOError):
+                array.write(f.name)
+            with pytest.raises(RuntimeError):
+                array.write(f.name, append=True)
+
+            # check reading with start/end works
+            start, end = array.span.contract(25)
+            t = type(array).read(f, start=start, end=end)
+            utils.assert_quantity_sub_equal(t, array.crop(start, end))
+
+    def test_read_write_wav(self):
+        array = self.create(dtype='float32')
+        utils.test_read_write(
+            array, 'wav', write_kw={'scale': 1},
+            assert_equal=utils.assert_quantity_sub_equal,
+            assert_kw={'exclude': ['unit', 'name', 'channel', 'x0']})
+
+    # -- test remote data access ----------------
+
+    @pytest.mark.parametrize('format', [
+        None,
+        'txt.gz',
+        pytest.param('hdf5', marks=utils.skip_missing_dependency('h5py')),
+    ])
+    def test_fetch_open_data(self, losc, format):
+        try:
+            ts = self.TEST_CLASS.fetch_open_data(
+                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format)
+        except URLError as e:
+            pytest.skip(str(e))
+        utils.assert_quantity_sub_equal(ts, losc, exclude=['name', 'unit'])
+
+        # try again with 16384 Hz data
+        ts = self.TEST_CLASS.fetch_open_data(
+            LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, sample_rate=16384)
+        assert ts.sample_rate == 16384 * units.Hz
+
+        # make sure errors happen
+        with pytest.raises(ValueError) as exc:
+            self.TEST_CLASS.fetch_open_data(LOSC_IFO, 0, 1, format=format)
+        assert str(exc.value) == (
+            "Cannot find a LOSC dataset for %s covering [0, 1)" % LOSC_IFO)
+
+    @utils.skip_missing_dependency('nds2')
+    def test_fetch(self):
+        ts = self.create(name='X1:TEST', t0=1000000000, unit='m')
+        nds_buffer = mocks.nds2_buffer_from_timeseries(ts)
+        nds_connection = mocks.nds2_connection(buffers=[nds_buffer])
+        with mock.patch('nds2.connection') as mock_connection, \
+                mock.patch('nds2.buffer', nds_buffer):
+            mock_connection.return_value = nds_connection
+            # use verbose=True to hit more lines
+            ts2 = self.TEST_CLASS.fetch('X1:TEST', *ts.span, verbose=True)
+            # check open connection works
+            ts2 = self.TEST_CLASS.fetch('X1:TEST', *ts.span, verbose=True,
+                                        connection=nds_connection)
+        utils.assert_quantity_sub_equal(ts, ts2, exclude=['channel'])
+
+    @utils.skip_missing_dependency('glue.datafind')
+    @utils.skip_missing_dependency('LDAStools.frameCPP')
+    @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
+                        reason='No LIGO datafind server configured '
+                               'on this host')
+    def test_find(self, losc_16384):
+        ts = self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
+                                  frametype=FIND_FRAMETYPE)
+        utils.assert_quantity_sub_equal(ts, losc_16384)
+
+        # test observatory
+        ts2 = self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
+                                   frametype=FIND_FRAMETYPE,
+                                   observatory=FIND_CHANNEL[0])
+        utils.assert_quantity_sub_equal(ts, ts2)
+        with pytest.raises(RuntimeError):
+            self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
+                                 frametype=FIND_FRAMETYPE, observatory='X')
+
+    @utils.skip_missing_dependency('glue.datafind')
+    @utils.skip_missing_dependency('LDAStools.frameCPP')
+    @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
+                        reason='No LIGO datafind server configured '
+                               'on this host')
     def test_find_best_frametype(self):
         from gwpy.io import datafind
-        # check we can actually run this test here
-        try:
-            os.environ['LIGO_DATAFIND_SERVER']
-        except KeyError as e:
-            self.skipTest(str(e))
         # test a few (channel, frametype) pairs
         for channel, target in [
                 ('H1:GDS-CALIB_STRAIN',
@@ -329,682 +746,530 @@ class TimeSeriesTestMixin(object):
             self.assertIn(ft, target)
 
         # test that this works end-to-end as part of a TimeSeries.find
+        ts = self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
+
+    def test_get(self, losc_16384):
         try:
-            ts = self.TEST_CLASS.find(FIND_CHANNEL, FIND_GPS, FIND_GPS+1)
+            ts = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
         except (ImportError, RuntimeError) as e:
-            self.skipTest(str(e))
+            pytest.skip(str(e))
+        utils.assert_quantity_sub_equal(ts, losc_16384,
+                                        exclude=['name', 'channel', 'unit'])
 
-    def test_get(self):
-        try:
-            ts = self.TEST_CLASS.get(FIND_CHANNEL, FIND_GPS, FIND_GPS+1)
-        except (ImportError, RuntimeError) as e:
-            self.skipTest(str(e))
+    # -- signal processing methods --------------
 
-    # -- methods --------------------------------
+    def test_fft(self, losc):
+        fs = losc.fft()
+        assert isinstance(fs, FrequencySeries)
+        assert fs.size == losc.size // 2 + 1
+        assert fs.f0 == 0 * units.Hz
+        assert fs.df == 1 / losc.duration
+        assert fs.channel is losc.channel
+        nptest.assert_almost_equal(
+            fs.value.max(), 9.793003238789471e-20+3.5377863373683966e-21j)
 
-    def test_resample(self):
-        """Test the `TimeSeries.resample` method
-        """
-        ts1 = self.create(sample_rate=100)
-        ts2 = ts1.resample(10, ftype='iir')
-        self.assertEquals(ts2.sample_rate, ONE_HZ*10)
-        self.assertEqual(ts1.unit, ts2.unit)
-        ts1.resample(10, ftype='fir', n=10)
-
-    def test_to_from_lal(self):
-        ts = self.create()
-        try:
-            lalts = ts.to_lal()
-        except (NotImplementedError, ImportError) as e:
-            self.skipTest(str(e))
-        import lal
-        ts2 = type(ts).from_lal(lalts)
-        self.assertEqual(ts, ts2)
-        # test copy=False
-        ts2 = type(ts).from_lal(lalts, copy=False)
-        self.assertEqual(ts, ts2)
-        # test bad unit
-        ts.override_unit('undef')
-        with pytest.warns(UserWarning):
-            lalts = ts.to_lal()
-        self.assertEqual(lalts.sampleUnits, lal.DimensionlessUnit)
-        ts2 = self.TEST_CLASS.from_lal(lalts)
-        self.assertIs(ts2.unit, units.dimensionless_unscaled)
-
-    def test_to_from_pycbc(self):
-        try:
-            from pycbc.types import TimeSeries as PyCBCTimeSeries
-        except ImportError as e:
-            self.skipTest(str(e))
-        ts = self.create()
-        # test default conversion
-        pycbcts = ts.to_pycbc()
-        self.assertIsInstance(pycbcts, PyCBCTimeSeries)
-        nptest.assert_array_equal(ts.value, pycbcts.data)
-        self.assertEqual(ts.t0.value, pycbcts.start_time)
-        self.assertEqual(ts.dt.value, pycbcts.delta_t)
-        # go back and check we get back what we put in in the first place
-        ts2 = type(ts).from_pycbc(pycbcts)
-        nptest.assert_array_equal(ts.value, ts2.value)
-        self.assertQuantityEqual(ts.t0, ts2.t0)
-        self.assertQuantityEqual(ts.dt, ts2.dt)
-        self.assertIs(ts2.unit, units.dimensionless_unscaled)
-        # test copy=False
-        pycbcts = ts.to_pycbc(copy=False)
-        assert may_share_memory(ts.value, pycbcts.data)
-        ts2 = type(ts).from_pycbc(pycbcts, copy=False)
-        assert may_share_memory(ts.value, ts2.value)
-        assert may_share_memory(ts2.value, pycbcts.data)
-
-    def test_io_identify(self):
-        common.test_io_identify(self.TEST_CLASS, ['txt', 'hdf5', 'gwf'])
-
-    @unittest.skipUnless(HAS_NDS2, 'No module named nds2')
-    def test_fetch(self):
-        nds_buffer = mockutils.mock_nds2_buffer(
-            'X1:TEST', self.data, 1000000000, self.data.shape[0], 'm')
-        nds_connection = mockutils.mock_nds2_connection(buffers=[nds_buffer])
-        with mock.patch('nds2.connection') as mock_connection, \
-             mock.patch('nds2.buffer', nds_buffer):
-            mock_connection.return_value = nds_connection
-            # use verbose=True to hit more lines
-            ts = self.TEST_CLASS.fetch('X1:TEST', 1000000000, 1000000001,
-                                       verbose=True)
-            # check open connection works
-            ts = self.TEST_CLASS.fetch('X1:TEST', 1000000000, 1000000001,
-                                       connection=nds_connection, verbose=True)
-        self.assertIsInstance(ts, self.TEST_CLASS)
-        nptest.assert_array_equal(ts.value, self.data)
-        self.assertEqual(ts.sample_rate, self.data.shape[0] * units.Hz)
-        self.assertTupleEqual(ts.span, (1000000000, 1000000001))
-        self.assertEqual(ts.unit, units.meter)
-
-    def fetch_open_data(self, **kwargs):
-        try:
-            return self._open_data
-        except AttributeError:
-            try:
-                type(self)._open_data = self.TEST_CLASS.fetch_open_data(
-                    self.channel[:2], *LOSC_GW150914_SEGMENT, **kwargs)
-            except URLError as e:
-                self.skipTest(str(e))
-            else:
-                return self.fetch_open_data()
-
-    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
-    def test_fetch_open_data_ascii(self):
-        # test ASCII first
-        ts = self.fetch_open_data()
-        self.assertTupleEqual(ts.span, LOSC_GW150914_SEGMENT)
-        self.assertEqual(ts.sample_rate, 4096 * units.Hz)
-        nptest.assert_allclose(
-            ts.value[:10],
-            [-9.948112e-19, -9.512103e-19, -9.170318e-19,
-             -9.211180e-19, -9.368385e-19, -9.529480e-19,
-             -9.930932e-19, -1.014551e-18, -9.918678e-19,
-             -9.525143e-19])
-
-        # try GW150914 data at 16 kHz
-        try:
-            ts = self.TEST_CLASS.fetch_open_data(
-                self.channel[:2], *LOSC_GW150914_SEGMENT, sample_rate=16384)
-        except URLError as e:
-            self.skipTest(str(e))
-        else:
-            self.assertEqual(ts.sample_rate, 16384 * units.Hz)
-
-        # make sure errors get thrown
-        self.assertRaises(ValueError, self.TEST_CLASS.fetch_open_data,
-                          self.channel[:2], 0, 1)
-
-
-
-    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
-    def test_fetch_open_data_hdf5(self):
-        ts = self.fetch_open_data()
-        try:
-            ts2 = self.fetch_open_data(format='hdf5')
-        except ImportError as e:
-            self.skipTest(str(e))
-        else:
-            self.assertEqual(ts2.unit, units.Unit('strain'))
-            nptest.assert_array_equal(ts.value, ts2.value)
-
-    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
-    def test_losc(self):
-        _, tmpfile = tempfile.mkstemp(prefix='GWPY-TEST_LOSC_', suffix='.hdf')
-        try:
-            response = urlopen(LOSC_HDF_FILE)
-            with open(tmpfile, 'wb') as f:
-                f.write(response.read())
-            self._test_losc_inner(tmpfile)  # actually run test here
-        except (URLError, ImportError) as e:
-            self.skipTest(str(e))
-        finally:
-            if os.path.isfile(tmpfile):
-                os.remove(tmpfile)
-
-    def _test_losc_inner(self):
-        self.skipTest("LOSC inner test method has not been written yet")
-
-    def test_plot(self):
-        ts = self.create()
-        plot = ts.plot()
-        self.assertIsInstance(plot, TimeSeriesPlot)
-        with tempfile.NamedTemporaryFile(suffix='.png') as f:
-            plot.save(f.name)
-        return plot
-
-
-# -----------------------------------------------------------------------------
-
-class TimeSeriesTestCase(TimeSeriesTestMixin, SeriesTestCase):
-    TEST_CLASS = TimeSeries
-
-    @classmethod
-    def setUpClass(cls, dtype='float32'):
-        super(TimeSeriesTestCase, cls).setUpClass(dtype=dtype)
-        cls.random = cls.TEST_CLASS(
-            numpy.random.normal(loc=1, size=16384 * 10), sample_rate=16384,
-            epoch=-5)
-
-    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
-    def _read(self):
-        return self.TEST_CLASS.read(TEST_HDF_FILE, self.channel)
-
-    def test_fft(self):
-        ts = self._read()
-        fs = ts.fft()
-        self.assertEqual(fs.size, ts.size//2+1)
-        self.assertIsInstance(fs, FrequencySeries)
-        self.assertEqual(fs.x0, 0*units.Hertz)
-        self.assertEqual(fs.dx, 1*units.Hertz)
-        self.assertIs(ts.channel, fs.channel)
         # test with nfft arg
-        fs = ts.fft(nfft=256)
-        self.assertEqual(fs.size, 129)
-        self.assertEqual(fs.dx, ts.sample_rate / 256)
+        fs = losc.fft(nfft=256)
+        assert fs.size == 129
+        assert fs.dx == losc.sample_rate / 256
 
-    def test_average_fft(self):
-        ts = self._read()
+    def test_average_fft(self, losc):
         # test all defaults
-        fs = ts.average_fft()
-        self.assertEqual(fs.size, ts.size//2+1)
-        self.assertEqual(fs.f0, 0 * units.Hertz)
-        self.assertIsInstance(fs, FrequencySeries)
-        self.assertIs(fs.channel, ts.channel)
-        # test fftlength
-        fs = ts.average_fft(fftlength=0.5)
-        self.assertEqual(fs.size, 0.5 * ts.sample_rate.value // 2 + 1)
-        self.assertEqual(fs.df, 2 * units.Hertz)
-        # test overlap
-        fs = ts.average_fft(fftlength=0.4, overlap=0.2)
+        fs = losc.average_fft()
+        utils.assert_quantity_sub_equal(fs, losc.detrend().fft())
 
-    def test_psd(self):
-        ts = self._read()
-        # test all defaults
-        fs = ts.psd()
-        self.assertEqual(fs.size, ts.size//2+1)
-        self.assertEqual(fs.f0, 0*units.Hertz)
-        self.assertEqual(fs.df, 1 / ts.duration)
-        self.assertIsInstance(fs, FrequencySeries)
-        self.assertIs(fs.channel, ts.channel)
-        self.assertEqual(fs.unit, ts.unit ** 2 / units.Hertz)
         # test fftlength
-        fs = ts.psd(fftlength=0.5)
-        self.assertEqual(fs.size, 0.5 * ts.sample_rate.value // 2 + 1)
-        self.assertEqual(fs.df, 2 * units.Hertz)
+        fs = losc.average_fft(fftlength=0.5)
+        assert fs.size == 0.5 * losc.sample_rate.value // 2 + 1
+        assert fs.df == 2 * units.Hertz
+
+        fs = losc.average_fft(fftlength=0.4, overlap=0.2)
+
+    def test_psd(self, losc):
+        # test all defaults
+        fs = losc.psd()
+        assert isinstance(fs, FrequencySeries)
+        assert fs.size == losc.size // 2 + 1
+        assert fs.f0 == 0 * units.Hz
+        assert fs.df == 1 / losc.duration
+        assert fs.channel is losc.channel
+        assert fs.unit == losc.unit ** 2 / units.Hz
+
+        # test fftlength
+        fs = losc.psd(fftlength=0.5)
+        assert fs.size == 0.5 * losc.sample_rate.value // 2 + 1
+        assert fs.df == 2 * units.Hz
+
         # test overlap
-        ts.psd(fftlength=0.4, overlap=0.2)
+        fs = losc.psd(fftlength=0.4, overlap=0.2)
+
+        # test default overlap
+        fs2 = losc.psd(fftlength=.4)
+        utils.assert_quantity_sub_equal(fs, fs2)
+
         # test methods
-        ts.psd(fftlength=0.4, overlap=0.2, method='welch')
-        ts.psd(fftlength=0.4, method='bartlett')
-        ts.psd(fftlength=0.4, overlap=0.2, method='lal-welch')
-        ts.psd(fftlength=0.4, method='lal-bartlett')
-        ts.psd(fftlength=0.4, overlap=0.2, method='median-mean')
-        ts.psd(fftlength=0.4, overlap=0.2, method='median')
-        # test LAL method with window specification
-        ts.psd(fftlength=0.4, overlap=0.2, method='median-mean', window='hann')
-        # test LAL method with non-canonical window specification
-        ts.psd(fftlength=0.4, overlap=0.2, method='median-mean',
-               window='hanning')
-        # test check for at least two averages (defaults to single FFT)
-        self.assertRaises(ValueError, ts.psd, method='median-mean')
+        losc.psd(fftlength=0.4, overlap=0.2, method='welch')
+        losc.psd(fftlength=0.4, method='bartlett')
+        try:
+            losc.psd(fftlength=0.4, overlap=0.2, method='lal-welch')
+            losc.psd(fftlength=0.4, method='lal-bartlett')
+            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean')
+            losc.psd(fftlength=0.4, overlap=0.2, method='median')
+        except ImportError as e:
+            pass
+        else:
+            # test LAL method with window specification
+            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean',
+                     window='hann')
 
-    def test_asd(self):
-        ts = self._read()
-        fs = ts.asd()
-        self.assertEqual(fs.unit, ts.unit / units.Hertz ** (1/2.))
+            # test LAL method with non-canonical window specification
+            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean',
+                     window='hanning')
 
-    def test_csd(self):
-        ts = self._read()
+            # test check for at least two averages (defaults to single FFT)
+            with pytest.raises(ValueError) as e:
+                losc.psd(method='median-mean')
+
+    def test_asd(self, losc):
+        fs = losc.asd()
+        utils.assert_quantity_sub_equal(fs, losc.psd() ** (1/2.))
+
+    def test_csd(self, losc):
         # test all defaults
-        fs = ts.csd(ts)
-        self.assertEqual(fs.size, ts.size//2+1)
-        self.assertEqual(fs.f0, 0*units.Hertz)
-        self.assertEqual(fs.df, 1 / ts.duration)
-        self.assertIsInstance(fs, FrequencySeries)
-        self.assertIs(fs.channel, ts.channel)
-        self.assertEqual(fs.unit, ts.unit ** 2 / units.Hertz)
-        # test that self-CSD is equal to PSD
-        sp = ts.psd()
-        nptest.assert_array_equal(fs.value, sp.value)
-        # test fftlength
-        fs = ts.csd(ts, fftlength=0.5)
-        self.assertEqual(fs.size, 0.5 * ts.sample_rate.value // 2 + 1)
-        self.assertEqual(fs.df, 2 * units.Hertz)
-        # test overlap
-        ts.csd(ts, fftlength=0.4, overlap=0.2)
+        fs = losc.csd(losc)
+        utils.assert_quantity_sub_equal(fs, losc.psd(), exclude=['name'])
 
-    def test_spectrogram(self):
-        ts = self._read()
+        # test fftlength
+        fs = losc.csd(losc, fftlength=0.5)
+        assert fs.size == 0.5 * losc.sample_rate.value // 2 + 1
+        assert fs.df == 2 * units.Hertz
+
+        # test overlap
+        losc.csd(losc, fftlength=0.4, overlap=0.2)
+
+    def test_spectrogram(self, losc):
         # test defaults
-        sg = ts.spectrogram(1)
-        self.assertEqual(sg.shape, (1, ts.size//2+1))
-        self.assertEqual(sg.f0, 0*units.Hertz)
-        self.assertEqual(sg.df, 1 / ts.duration)
-        self.assertIsInstance(sg, Spectrogram)
-        self.assertIs(sg.channel, ts.channel)
-        self.assertEqual(sg.unit, ts.unit ** 2 / units.Hertz)
-        self.assertEqual(sg.epoch, ts.epoch)
-        self.assertEqual(sg.span, ts.span)
+        sg = losc.spectrogram(1)  # defaults to 50% overlap for 'hann' window
+        assert isinstance(sg, Spectrogram)
+        assert sg.shape == (4, losc.sample_rate.value // 2 + 1)
+        assert sg.f0 == 0 * units.Hz
+        assert sg.df == 1 * units.Hz
+        assert sg.channel is losc.channel
+        assert sg.unit == losc.unit ** 2 / units.Hz
+        assert sg.epoch == losc.epoch
+        assert sg.span == losc.span
+
         # check the same result as PSD
-        psd = ts.psd()
-        nptest.assert_array_equal(sg.value[0], psd.value)
+        psd = losc[:int(losc.sample_rate.value)].psd()
+        # FIXME: epoch should not be excluded here (probably)
+        utils.assert_quantity_sub_equal(sg[0], psd, exclude=['epoch'])
+
         # test fftlength
-        sg = ts.spectrogram(1, fftlength=0.5)
-        self.assertEqual(sg.shape, (1, 0.5 * ts.size//2+1))
-        self.assertEqual(sg.df, 2 * units.Hertz)
-        self.assertEqual(sg.dt, 1 * units.second)
+        sg = losc.spectrogram(1, fftlength=0.5)
+        assert sg.shape == (4, 0.5 * losc.sample_rate.value // 2 + 1)
+        assert sg.df == 2 * units.Hertz
+        assert sg.dt == 1 * units.second
         # test overlap
-        sg = ts.spectrogram(0.5, fftlength=0.25, overlap=0.125)
-        self.assertEqual(sg.shape, (2, 0.25 * ts.size//2 + 1))
-        self.assertEqual(sg.df, 4 * units.Hertz)
-        self.assertEqual(sg.dt, 0.5 * units.second)
+        sg = losc.spectrogram(0.5, fftlength=0.25, overlap=0.125)
+        assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
+        assert sg.df == 4 * units.Hertz
+        assert sg.dt == 0.5 * units.second
         # test multiprocessing
-        sg2 = ts.spectrogram(0.5, fftlength=0.25, overlap=0.125, nproc=2)
-        self.assertArraysEqual(sg, sg2)
+        sg2 = losc.spectrogram(0.5, fftlength=0.25, overlap=0.125, nproc=2)
+        utils.assert_quantity_sub_equal(sg, sg2)
         # test methods
-        ts.spectrogram(0.5, fftlength=0.25, method='welch')
-        self.assertEqual(sg.shape, (2, 0.25 * ts.size//2 + 1))
-        self.assertEqual(sg.df, 4 * units.Hertz)
-        self.assertEqual(sg.dt, 0.5 * units.second)
-        ts.spectrogram(0.5, fftlength=0.25, method='bartlett')
-        self.assertEqual(sg.shape, (2, 0.25 * ts.size//2 + 1))
-        self.assertEqual(sg.df, 4 * units.Hertz)
-        self.assertEqual(sg.dt, 0.5 * units.second)
-        ts.spectrogram(0.5, fftlength=0.25, method='lal-welch')
-        self.assertEqual(sg.shape, (2, 0.25 * ts.size//2 + 1))
-        self.assertEqual(sg.df, 4 * units.Hertz)
-        self.assertEqual(sg.dt, 0.5 * units.second)
-        ts.spectrogram(0.5, fftlength=0.25, method='median-mean')
-        self.assertEqual(sg.shape, (2, 0.25 * ts.size//2 + 1))
-        self.assertEqual(sg.df, 4 * units.Hertz)
-        self.assertEqual(sg.dt, 0.5 * units.second)
-        ts.spectrogram(0.5, fftlength=0.25, method='median')
-        self.assertEqual(sg.shape, (2, 0.25 * ts.size//2 + 1))
-        self.assertEqual(sg.df, 4 * units.Hertz)
-        self.assertEqual(sg.dt, 0.5 * units.second)
+        sg = losc.spectrogram(0.5, fftlength=0.25, method='welch')
+        assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
+        assert sg.df == 4 * units.Hertz
+        assert sg.dt == 0.5 * units.second
+        sg = losc.spectrogram(0.5, fftlength=0.25, method='bartlett')
+        assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
+        assert sg.df == 4 * units.Hertz
+        assert sg.dt == 0.5 * units.second
+        try:
+            sg = losc.spectrogram(0.5, fftlength=0.25, method='lal-welch')
+        except ImportError:
+            pass
+        else:
+            assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
+            assert sg.df == 4 * units.Hertz
+            assert sg.dt == 0.5 * units.second
+            sg = losc.spectrogram(0.5, fftlength=0.25, method='median-mean')
+            assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
+            assert sg.df == 4 * units.Hertz
+            assert sg.dt == 0.5 * units.second
+            sg = losc.spectrogram(0.5, fftlength=0.25, method='median')
+            assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
+            assert sg.df == 4 * units.Hertz
+            assert sg.dt == 0.5 * units.second
 
         # check that `cross` keyword gets deprecated properly
         # TODO: removed before 1.0 release
         with pytest.warns(DeprecationWarning) as wng:
-            out = ts.spectrogram(0.5, fftlength=.25, cross=ts)
-        self.assertIn('`cross` keyword argument has been deprecated',
-                      wng[0].message.args[0])
-        self.assertArraysEqual(out, ts.csd_spectrogram(ts, 0.5, fftlength=.25))
+            out = losc.spectrogram(0.5, fftlength=.25, cross=losc)
+        assert '`cross` keyword argument has been deprecated' in \
+            wng[0].message.args[0]
+        utils.assert_quantity_sub_equal(
+            out, losc.csd_spectrogram(losc, 0.5, fftlength=.25))
 
-    def test_spectrogram2(self):
-        ts = self._read()
+    def test_spectrogram2(self, losc):
         # test defaults
-        sg = ts.spectrogram2(1)
-        self.assertEqual(sg.shape, (1, ts.size//2+1))
-        self.assertEqual(sg.f0, 0*units.Hertz)
-        self.assertEqual(sg.df, 1 / ts.duration)
-        self.assertIsInstance(sg, Spectrogram)
-        self.assertEqual(sg.unit, ts.unit ** 2 / units.Hertz)
-        self.assertEqual(sg.epoch, ts.epoch)
-        self.assertEqual(sg.span, ts.span)
-        # test the same result as spectrogam
-        sg1 = ts.spectrogram(1)
-        nptest.assert_array_equal(sg.value, sg1.value)
-        # test fftlength
-        sg = ts.spectrogram2(0.5)
-        self.assertEqual(sg.shape, (2, 0.5 * ts.size//2+1))
-        self.assertEqual(sg.df, 2 * units.Hertz)
-        self.assertEqual(sg.dt, 0.5 * units.second)
-        # test overlap
-        sg = ts.spectrogram2(fftlength=0.25, overlap=0.24)
-        self.assertEqual(sg.shape, (99, 0.25 * ts.size//2 + 1))
-        self.assertEqual(sg.df, 4 * units.Hertz)
-        # note: bizarre stride length because 16384/100 gets rounded
-        self.assertEqual(sg.dt, 0.010009765625 * units.second)
+        sg = losc.spectrogram2(1)
+        utils.assert_quantity_sub_equal(sg, losc.spectrogram(1))
 
-    def test_spectral_variance(self):
-        ts = self._read()
-        variance = ts.spectral_variance(.5)
-        self.assertIsInstance(variance, SpectralVariance)
+        # test fftlength
+        sg = losc.spectrogram2(0.5)
+        assert sg.shape == (8, 0.5 * losc.sample_rate.value // 2 + 1)
+        assert sg.df == 2 * units.Hertz
+        assert sg.dt == 0.5 * units.second
+        # test overlap
+        sg = losc.spectrogram2(fftlength=0.25, overlap=0.24)
+        assert sg.shape == (399, 0.25 * losc.sample_rate.value // 2 + 1)
+        assert sg.df == 4 * units.Hertz
+        # note: bizarre stride length because 4096/100 gets rounded
+        assert sg.dt == 0.010009765625 * units.second
+
+    def test_spectral_variance(self, losc):
+        variance = losc.spectral_variance(.5)
+        assert isinstance(variance, SpectralVariance)
+        print(variance)
+        assert variance.x0 == 0 * units.Hz
+        assert variance.dx == 2 * units.Hz
+        assert variance.max() == 8
+
+    def test_rayleigh_spectrum(self, losc):
+        # assert single FFT creates Rayleigh of 0
+        ray = losc.rayleigh_spectrum()
+        assert isinstance(ray, FrequencySeries)
+        assert ray.unit is units.Unit('')
+        assert ray.name == 'Rayleigh spectrum of %s' % losc.name
+        assert ray.epoch == losc.epoch
+        assert ray.channel is losc.channel
+        assert ray.f0 == 0 * units.Hz
+        assert ray.df == 1 / losc.duration
+        assert ray.sum().value == 0
+
+        # actually test properly
+        ray = losc.rayleigh_spectrum(.5)  # no overlap
+        assert ray.df == 2 * units.Hz
+        nptest.assert_almost_equal(ray.max().value, 2.1239253590490157)
+        assert ray.frequencies[ray.argmax()] == 1322 * units.Hz
+
+        ray = losc.rayleigh_spectrum(.5, .25)  # 50 % overlap
+        nptest.assert_almost_equal(ray.max().value, 1.8814775174483833)
+        assert ray.frequencies[ray.argmax()] == 136 * units.Hz
+
+    def test_csd_spectrogram(self, losc):
+        # test defaults
+        sg = losc.csd_spectrogram(losc, 1)
+        assert isinstance(sg, Spectrogram)
+        assert sg.shape == (4, losc.sample_rate.value // 2 + 1)
+        assert sg.f0 == 0 * units.Hz
+        assert sg.df == 1 * units.Hz
+        assert sg.channel is losc.channel
+        assert sg.unit == losc.unit ** 2 / units.Hertz
+        assert sg.epoch == losc.epoch
+        assert sg.span == losc.span
+
+        # check the same result as CSD
+        losc1 = losc[:int(losc.sample_rate.value)]
+        csd = losc1.csd(losc1)
+        utils.assert_quantity_sub_equal(sg[0], csd, exclude=['name', 'epoch'])
+
+        # test fftlength
+        sg = losc.csd_spectrogram(losc, 1, fftlength=0.5)
+        assert sg.shape == (4, 0.5 * losc.sample_rate.value // 2 + 1)
+        assert sg.df == 2 * units.Hertz
+        assert sg.dt == 1 * units.second
+
+        # test overlap
+        sg = losc.csd_spectrogram(losc, 0.5, fftlength=0.25, overlap=0.125)
+        assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
+        assert sg.df == 4 * units.Hertz
+        assert sg.dt == 0.5 * units.second
+
+        # test multiprocessing
+        sg2 = losc.csd_spectrogram(losc, 0.5, fftlength=0.25,
+                                   overlap=0.125, nproc=2)
+        utils.assert_quantity_sub_equal(sg, sg2)
+
+    def test_resample(self, losc):
+        """Test :meth:`gwpy.timeseries.TimeSeries.resample`
+        """
+        # test IIR decimation
+        l2 = losc.resample(1024, ftype='iir')
+        # FIXME: this test needs to be more robust
+        assert l2.sample_rate == 1024 * units.Hz
+
+    def test_rms(self, losc):
+        rms = losc.rms(1.)
+        assert rms.sample_rate == 1 * units.Hz
 
     def test_whiten(self):
         # create noise with a glitch in it at 1000 Hz
-        noise = self.random.zpk([], [0], 1)
+        noise = self.TEST_CLASS(
+            numpy.random.normal(loc=1, size=16384 * 10), sample_rate=16384,
+            epoch=-5).zpk([], [0], 1)
         glitchtime = 0.5
         glitch = signal.gausspulse(noise.times.value + glitchtime,
                                    bw=100) * 1e-4
         data = noise + glitch
+
         # whiten and test that the max amplitude is recovered at the glitch
         tmax = data.times[data.argmax()]
-        self.assertNotAlmostEqual(tmax.value, -glitchtime)
+        assert not numpy.isclose(tmax.value, -glitchtime)
+
         whitened = data.whiten(2, 1)
-        self.assertEqual(noise.size, whitened.size)
-        self.assertAlmostEqual(whitened.mean().value, 0.0, places=4)
+
+        assert noise.size == whitened.size
+        nptest.assert_almost_equal(whitened.mean().value, 0.0, decimal=4)
+
         tmax = whitened.times[whitened.argmax()]
-        self.assertAlmostEqual(tmax.value, -glitchtime)
+        nptest.assert_almost_equal(tmax.value, -glitchtime)
 
-    def test_detrend(self):
-        self.assertNotAlmostEqual(self.random.value.mean(), 0.0)
-        detrended = self.random.detrend()
-        self.assertAlmostEqual(detrended.value.mean(), 0.0)
+    def test_detrend(self, losc):
+        assert not numpy.isclose(losc.value.mean(), 0.0, atol=1e-21)
+        detrended = losc.detrend()
+        assert numpy.isclose(detrended.value.mean(), 0.0)
 
-    def test_csd_spectrogram(self):
-        ts = self._read()
-        # test defaults
-        sg = ts.csd_spectrogram(ts, 1)
-        self.assertEqual(sg.shape, (1, ts.size//2+1))
-        self.assertEqual(sg.f0, 0*units.Hertz)
-        self.assertEqual(sg.df, 1 / ts.duration)
-        self.assertIsInstance(sg, Spectrogram)
-        self.assertIs(sg.channel, ts.channel)
-        self.assertEqual(sg.unit, ts.unit ** 2 / units.Hertz)
-        self.assertEqual(sg.epoch, ts.epoch)
-        self.assertEqual(sg.span, ts.span)
-        # check the same result as CSD
-        csd = ts.csd(ts)
-        nptest.assert_array_equal(sg.value[0], csd.value)
-        # test fftlength
-        sg = ts.csd_spectrogram(ts, 1, fftlength=0.5)
-        self.assertEqual(sg.shape, (1, 0.5 * ts.size//2+1))
-        self.assertEqual(sg.df, 2 * units.Hertz)
-        self.assertEqual(sg.dt, 1 * units.second)
-        # test overlap
-        sg = ts.csd_spectrogram(ts, 0.5, fftlength=0.25, overlap=0.125)
-        self.assertEqual(sg.shape, (2, 0.25 * ts.size//2 + 1))
-        self.assertEqual(sg.df, 4 * units.Hertz)
-        self.assertEqual(sg.dt, 0.5 * units.second)
-        # test multiprocessing
-        sg2 = ts.csd_spectrogram(ts, 0.5, fftlength=0.25,
-                                 overlap=0.125, nproc=2)
-        self.assertArraysEqual(sg, sg2)
-
-    def test_rayleigh_spectrum(self):
-        ts = self._read()
-        # assert single FFT creates Rayleigh of 0
-        ray = ts.rayleigh_spectrum()
-        self.assertIsInstance(ray, FrequencySeries)
-        self.assertEqual(ray.unit, units.Unit(''))
-        self.assertEqual(ray.name, 'Rayleigh spectrum of %s' % ts.name)
-        self.assertEqual(ray.epoch, ts.epoch)
-        self.assertIs(ray.channel, ts.channel)
-        self.assertEqual(ray.f0, 0 * units.Hz)
-        self.assertEqual(ray.df, 1 * units.Hz)
-        self.assertEqual(ray.sum().value, 0)
-        # actually test properly
-        ray = ts.rayleigh_spectrum(.5)  # no overlap
-        self.assertEqual(ray.df, 2 * units.Hz)
-        self.assertAlmostEqual(ray.max().value, 0.9997307802003135)
-        self.assertEqual(ray.frequencies[ray.argmax()], 5362 * units.Hz)
-        ray = ts.rayleigh_spectrum(.5, .25)  # 50 % overlap
-        self.assertAlmostEqual(ray.max().value, 1.3967672286018407)
-        self.assertEqual(ray.frequencies[ray.argmax()], 3088 * units.Hz)
-
-    def test_notch(self):
+    def test_notch(self, losc):
         # test notch runs end-to-end
-        ts = self.create(sample_rate=256)
-        notched = ts.notch(10)
+        notched = losc.notch(60)
+
         # test breaks when you try and 'fir' notch
-        self.assertRaises(NotImplementedError, ts.notch, 10, type='fir')
+        with pytest.raises(NotImplementedError):
+            losc.notch(10, type='fir')
 
-    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
-    def _test_losc_inner(self, loscfile):
-        ts = self.TEST_CLASS.read(loscfile, path='strain/Strain',
-                                  format='hdf5.losc')
-        self.assertEqual(ts.x0, units.Quantity(931069952, 's'))
-        self.assertEqual(ts.dx, units.Quantity(0.000244140625, 's'))
-        self.assertEqual(ts.name, 'Strain')
-
-    def test_q_transform(self):
-        try:
-            ts = self.TEST_CLASS.fetch_open_data('H1', *LOSC_GW150914_SEGMENT)
-        except (RuntimeError, URLError) as e:
-            self.skipTest(str(e))
+    def test_q_transform(self, losc):
         # test simple q-transform
-        qspecgram = ts.q_transform(method='welch')
-        self.assertIsInstance(qspecgram, Spectrogram)
-        self.assertTupleEqual(qspecgram.shape, (4000, 2403))
-        self.assertAlmostEqual(qspecgram.q, 5.65685424949238)
-        self.assertAlmostEqual(qspecgram.value.max(), 88.685964259217172)
+        qspecgram = losc.q_transform(method='welch')
+        assert isinstance(qspecgram, Spectrogram)
+        assert qspecgram.shape == (4000, 2403)
+        assert qspecgram.q == 5.65685424949238
+        nptest.assert_almost_equal(qspecgram.value.max(), 58.696743273955391)
 
         # test whitening args
-        asd = ts.asd(2, 1)
-        qsg2 = ts.q_transform(method='welch', whiten=asd)
-        self.assertArraysEqual(qspecgram, qsg2)
-        asd = ts.asd(.5, .25)
-        qsg2 = ts.q_transform(method='welch', whiten=asd)
-        qsg3 = ts.q_transform(method='welch', fftlength=.5, overlap=.25)
-        self.assertArraysEqual(qsg2, qsg3)
-        ts2 = ts.crop(ts.x0.value, ts.x0.value+1)
-        ts2.q_transform()
+        asd = losc.asd(2, 1)
+        qsg2 = losc.q_transform(method='welch', whiten=asd)
+        utils.assert_quantity_sub_equal(qspecgram, qsg2)
+
+        asd = losc.asd(.5, .25)
+        qsg2 = losc.q_transform(method='welch', whiten=asd)
+        qsg3 = losc.q_transform(method='welch', fftlength=.5, overlap=.25)
+        utils.assert_quantity_sub_equal(qsg2, qsg3)
 
         # make sure frequency too high presents warning
         with pytest.warns(UserWarning):
-            qspecgram = ts.q_transform(method='welch', frange=(0, 10000))
-            self.assertAlmostEqual(qspecgram.yspan[1], 1291.5316316157107)
+            qspecgram = losc.q_transform(method='welch', frange=(0, 10000))
+            nptest.assert_almost_equal(qspecgram.yspan[1], 1291.5316316157107)
+
+    def test_boolean_statetimeseries(self, array):
+        comp = array >= 2 * array.unit
+        assert isinstance(comp, StateTimeSeries)
+        assert comp.unit is units.Unit('')
+        assert comp.name == '%s >= 2.0' % (array.name)
 
 
-    def test_boolean_statetimeseries(self):
-        comp = self.TEST_ARRAY >= 100 * self.TEST_ARRAY.unit
-        self.assertIsInstance(comp, StateTimeSeries)
-        self.assertEqual(comp.unit, units.Unit(''))
-        self.assertEqual(
-            comp.name,
-            '%s >= 100.0 %s' % (self.TEST_ARRAY.name, self.TEST_ARRAY.unit))
+# -- TimeSeriesDict -----------------------------------------------------------
 
-    def test_rms(self):
-        rms = self.TEST_ARRAY.rms(1.)
-        self.assertQuantityEqual(rms.sample_rate, 1 * units.Hertz)
-
-    def test_read_write_wav(self):
-        with tempfile.NamedTemporaryFile(suffix='.wav') as f:
-            self.TEST_ARRAY.write(f, scale=1)
-            t = self.TEST_CLASS.read(f)
-        nptest.assert_array_equal(self.TEST_ARRAY.value, t.value)
-        self.assertEqual(self.TEST_ARRAY.sample_rate, t.sample_rate)
-
-
-class StateVectorTestCase(TimeSeriesTestMixin, SeriesTestCase):
-    """`~unittest.TestCase` for the `~gwpy.timeseries.StateVector` object
-    """
-    TEST_CLASS = StateVector
-
-    @classmethod
-    def setUpClass(cls, dtype='uint32'):
-        super(StateVectorTestCase, cls).setUpClass(dtype=dtype)
-
-    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
-    def fetch_open_data(self, **kwargs):
-        return super(StateVectorTestCase, self).fetch_open_data(**kwargs)
-
-    def _test_losc_inner(self, loscfile):
-        ts = self.TEST_CLASS.read(loscfile, 'quality/simple', format='losc')
-        self.assertEqual(ts.x0, units.Quantity(931069952, 's'))
-        self.assertEqual(ts.dx, units.Quantity(1.0, 's'))
-        self.assertListEqual(list(ts.bits), LOSC_DQ_BITS)
-
-    def test_fetch_open_data_ascii(self):
-        return NotImplemented
-
-    def test_fetch_open_data_hdf5(self):
-        ts = self.fetch_open_data()
-        self.assertEqual(ts.sample_rate, 1 * units.Hz)
-        self.assertEqual(ts.span, LOSC_GW150914_SEGMENT)
-        self.assertListEqual(list(ts.bits), LOSC_GW150914_DQ_BITS)
-        self.assertEqual(ts.value[0], 127)  # sanity check data
-
-    def test_to_dqflags(self):
-        sv = self.fetch_open_data()
-        dqdict = sv.to_dqflags()
-        self.assertIsInstance(dqdict, DataQualityDict)
-        for i, (key, flag) in enumerate(dqdict.items()):
-            self.assertIsInstance(flag, DataQualityFlag)
-            self.assertEqual(flag.name, sv.bits[i])
-            self.assertListEqual(flag.known, [sv.span])
-
-    def test_plot(self):
-        data = self.fetch_open_data()
-        # test segment plotting
-        plot = data.plot()
-        self.assertIsInstance(plot, SegmentPlot)
-        self.assertEqual(len(plot.gca().collections), len(data.bits) * 2)
-        plot.close()
-        # test timeseries plotting
-        plot = data.plot(format='timeseries')
-        self.assertIsInstance(plot, TimeSeriesPlot)
-        self.assertEqual(len(plot.gca().lines), 1)
-        plot.close()
-
-    def test_boolean(self):
-        data = self.fetch_open_data()
-        b = data.boolean
-        self.assertIsInstance(b, Array2D)
-        self.assertTupleEqual(b.shape, (data.size, len(data.bits)))
-
-    def test_resample(self):
-        ts1 = self.create(sample_rate=100)
-        ts2 = ts1.resample(10)
-        self.assertEqual(ts2.sample_rate, ONE_HZ*10)
-        self.assertEqual(ts1.unit, ts2.unit)
-
-
-# -- TimeSeriesDict tests ------------------------------------------------------
-
-class TimeSeriesDictTestCase(unittest.TestCase):
+class TestTimeSeriesDict(TestTimeSeriesBaseDict):
     channels = ['H1:LDAS-STRAIN', 'L1:LDAS-STRAIN']
     TEST_CLASS = TimeSeriesDict
+    ENTRY_CLASS = TimeSeries
 
-    def read(self):
-        try:
-            return self._test_data.copy()
-        except AttributeError:
-            try:
-                self._test_data = self.TEST_CLASS.read(
-                    TEST_GWF_FILE, self.channels)
-            except ImportError as e:
-                self.skipTest(str(e))
-            except Exception as e:
-                if 'No reader' in str(e):
-                    self.skipTest(str(e))
-                else:
-                    raise
-            else:
-                return self.read()
+    @utils.skip_missing_dependency('LDAStools.frameCPP')
+    def test_read_write_gwf(self, instance):
+        with tempfile.NamedTemporaryFile(suffix='.gwf') as f:
+            instance.write(f.name)
+            new = self.TEST_CLASS.read(f.name, instance.keys())
+            for key in new:
+                utils.assert_quantity_sub_equal(new[key], instance[key],
+                                                exclude=['channel'])
 
-    def test_init(self):
-        tsd = self.TEST_CLASS()
 
-    def test_read_write_gwf(self):
-        try:
-            a = self.TEST_CLASS.read(TEST_GWF_FILE, self.channels)
-        except ImportError as e:
-            self.skipTest(str(e))
-        for c in self.channels:
-            self.assertIn(c, a)
-        channels = list(map(Channel, self.channels))
-        a = self.TEST_CLASS.read(TEST_GWF_FILE, channels)
-        for c in channels:
-            self.assertIn(c, a)
-        # test write
-        try:
-            with tempfile.NamedTemporaryFile(suffix='.gwf', delete=False) as f:
-                a.write(f.name)
-                b = self.TEST_CLASS.read(f.name, a.keys())
-        finally:
-            if os.path.exists(f.name):
-                os.remove(f.name)
-        self.assertDictEqual(a, b)
+# -- TimeSeriesList -----------------------------------------------------------
 
-    def test_plot(self):
-        tsd = self.read()
-        plot = tsd.plot()
-        self.assertIsInstance(plot, TimeSeriesPlot)
-        self.assertEqual(len(plot.gca().lines), 2)
-        with tempfile.NamedTemporaryFile(suffix='.png') as f:
-            plot.save(f.name)
+class TestTimeSeriesList(TestTimeSeriesBaseList):
+    TEST_CLASS = TimeSeriesList
+    ENTRY_CLASS = TimeSeries
+
+
+# -----------------------------------------------------------------------------
+#
+# gwpy.timeseries.statevector
+#
+# -----------------------------------------------------------------------------
+
+# -- StateTimeSeries ----------------------------------------------------------
+
+class TestStateTimeSeries(TestTimeSeriesBase):
+    TEST_CLASS = StateTimeSeries
+
+    @classmethod
+    def setup_class(cls):
+        cls.data = numpy.asarray([0, 1, 1, 1, 0, 0, 0, 1, 0, 0,
+                                  1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
+                                 dtype=bool)
+
+    def test_new(self):
+        sts = self.create()
+        assert isinstance(sts, self.TEST_CLASS)
+        assert sts.dtype is numpy.dtype('bool')
+
+    def test_getitem(self, array):
+        assert isinstance(array[0], numpy.bool_)
+
+    def test_unit(self, array):
+        assert array.unit is units.dimensionless_unscaled
+
+        # check that we can't delete the unit
+        with pytest.raises(AttributeError):
+            del array.unit
+
+        # check that we can't set the unit
+        with pytest.raises(TypeError):
+            self.create(unit='test')
+
+    def test_math(self, array):
+        # test that math operations give back booleans
+        a2 = array ** 2
+        assert a2.dtype is numpy.dtype(bool)
+        utils.assert_array_equal(array.value, a2.value)
+
+    def test_override_unit(self):
+        return NotImplemented
+
+    def test_is_compatible(self):
+        return NotImplemented
+
+    def test_to_from_pycbc(self):
+        return NotImplemented
+
+    def test_to_from_lal(self):
+        return NotImplemented
+
+    def test_from_nds2_buffer(self):
+        return NotImplemented
+
+
+# -- StateTimeSeriesDict ------------------------------------------------------
+
+class TestStateTimeSeriesDict(TestTimeSeriesBaseDict):
+    TEST_CLASS = StateTimeSeriesDict
+    ENTRY_CLASS = StateTimeSeries
+    DTYPE = 'bool'
 
     def test_resample(self):
-        tsd = self.read()
-        tsd.resample(2048)
-        for key in tsd:
-            self.assertEqual(tsd[key].sample_rate, 2048 * units.Hertz)
-
-    def test_crop(self):
-        tsd = self.read()
-        tsd.crop(968654552, 968654552.5)
-        for key in tsd:
-            self.assertEqual(tsd[key].span, Segment(968654552, 968654552.5))
-
-    def test_append(self):
-        a = self.read()
-        a.crop(968654552, 968654552.5, copy=True)
-        b = self.read()
-        b.crop(968654552.5, 968654553)
-        a.append(b)
-        for key in a:
-            self.assertEqual(a[key].span, Segment(968654552, 968654553))
-
-    def test_prepend(self):
-        a = self.read()
-        a.crop(968654552, 968654552.5)
-        b = self.read()
-        b.crop(968654552.5, 968654553, copy=True)
-        b.prepend(a)
-        for key in b:
-            self.assertEqual(b[key].span, Segment(968654552, 968654553))
+        return NotImplemented
 
 
-class StateVectorDictTestCase(TimeSeriesDictTestCase):
+# -- StateVector---------------------------------------------------------------
+
+class TestStateVector(TestTimeSeriesBase):
+    TEST_CLASS = StateVector
+    DTYPE = 'uint32'
+
+    @classmethod
+    def setup_class(cls):
+        numpy.random.seed(0)
+        cls.data = numpy.random.randint(2**4+1, size=100, dtype=cls.DTYPE)
+
+    def test_bits(self, array):
+        assert isinstance(array.bits, Bits)
+        assert array.bits == ['Bit %d' % i for i in range(32)]
+
+        bits = ['Bit %d' % i for i in range(4)]
+
+        sv = self.create(bits=bits)
+        assert isinstance(sv.bits, Bits)
+        assert sv.bits.channel is sv.channel
+        assert sv.bits.epoch == sv.epoch
+        assert sv.bits == bits
+
+        del sv.bits
+        del sv.bits
+        assert isinstance(sv.bits, Bits)
+        assert sv.bits == ['Bit %d' % i for i in range(32)]
+
+        sv = self.create(dtype='uint16')
+        assert sv.bits == ['Bit %d' % i for i in range(16)]
+
+    def test_boolean(self, array):
+        b = array.boolean
+        assert isinstance(b, Array2D)
+        assert b.shape == (array.size, len(array.bits))
+        # array[0] == 12, check boolean equivalent
+        utils.assert_array_equal(b[0], [int(12) >> j & 1 for j in range(32)])
+
+    def test_get_bit_series(self, array):
+        # test default
+        bs = array.get_bit_series()
+        assert isinstance(bs, StateTimeSeriesDict)
+        assert list(bs.keys()) == array.bits
+        # check that correct number of samples match (simple test)
+        assert bs['Bit 2'].sum() == 43
+
+        # check that bits in gives bits out
+        bs = array.get_bit_series(['Bit 0', 'Bit 3'])
+        assert list(bs.keys()) == ['Bit 0', 'Bit 3']
+        assert [v.sum() for v in bs.values()] == [50, 41]
+
+        # check that invalid bits throws exception
+        with pytest.raises(ValueError) as exc:
+            array.get_bit_series(['blah'])
+        assert str(exc.value) == "Bit 'blah' not found in StateVector"
+
+    @utils.skip_missing_dependency('lal')
+    def test_plot(self, array):
+        with rc_context(rc={'text.usetex': False}):
+            plot = array.plot()
+            assert isinstance(plot, TimeSeriesPlot)
+            # make sure there were no lines drawn
+            assert plot.gca().lines == []
+            # assert one collection for each of known and active segmentlists
+            assert len(plot.gca().collections) == len(array.bits) * 2
+            with tempfile.NamedTemporaryFile(suffix='.png') as f:
+                plot.save(f.name)
+            plot.close()
+
+            # test timeseries plotting as normal
+            plot = array.plot(format='timeseries')
+            assert isinstance(plot, TimeSeriesPlot)
+            line = plot.gca().lines[0]
+            utils.assert_array_equal(line.get_xdata(), array.xindex.value)
+            utils.assert_array_equal(line.get_ydata(), array.value)
+            plot.close()
+
+    def test_resample(self, array):
+        # check downsampling by factor of 2
+        a2 = array.resample(array.sample_rate / 2.)
+        assert a2.sample_rate == array.sample_rate / 2.
+        assert a2.bits is array.bits
+        utils.assert_array_equal(a2.value[:10],
+                                 [12, 0, 3, 0, 4, 0, 6, 5, 8, 0])
+
+        # check upsampling raises NotImplementedError
+        with pytest.raises(NotImplementedError):
+            array.resample(array.sample_rate * 2.)
+
+        # check resampling by non-integer factor raises error
+        with pytest.raises(ValueError):
+            array.resample(array.sample_rate * .75)
+        with pytest.raises(ValueError):
+            array.resample(array.sample_rate * 1.5)
+
+
+# -- StateVectorDict ----------------------------------------------------------
+
+class TestStateVectorDict(TestTimeSeriesBaseDict):
     TEST_CLASS = StateVectorDict
-
-    def test_plot(self):
-        tsd = self.read()
-        plot = tsd.plot()
-        self.assertIsInstance(plot, TimeSeriesPlot)
-        with tempfile.NamedTemporaryFile(suffix='.png') as f:
-            plot.save(f.name)
+    ENTRY_CLASS = StateVector
+    DTYPE = 'uint32'
 
 
-# -- TimeSeriesList tests -----------------------------------------------------
+# -- StateVectorList ----------------------------------------------------------
 
-class TimeSeriesListTestCase(unittest.TestCase):
-    TEST_CLASS = TimeSeriesList
-
-    def create(self):
-        out = self.TEST_CLASS()
-        for epoch in [0, 100, 400]:
-            data = (numpy.random.random(100) * 1e5).astype(float)
-            out.append(out.EntryClass(data, epoch=epoch, sample_rate=1))
-        return out
-
-    def test_segments(self):
-        tsl = self.create()
-        segs = tsl.segments
-        self.assertListEqual(tsl.segments, [(0, 100), (100, 200), (400, 500)])
-
-    def test_coalesce(self):
-        tsl = self.create()
-        tsl2 = tsl.copy().coalesce()
-        nptest.assert_array_equal(tsl2[0].value,
-                                  tsl[0].append(tsl[1], inplace=False).value)
-
-
-if __name__ == '__main__':
-    unittest.main()
+class TestStateVectorList(TestTimeSeriesBaseList):
+    TEST_CLASS = StateVectorList
+    ENTRY_CLASS = StateVector
+    DTYPE = 'uint32'

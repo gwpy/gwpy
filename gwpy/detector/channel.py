@@ -26,9 +26,11 @@ import numpy
 import warnings
 import subprocess
 import sys
+from copy import copy
 from math import (log, ceil)
 
 from six import string_types
+from six.moves.urllib.parse import urlparse
 
 from astropy import units
 from astropy.io import registry as io_registry
@@ -154,9 +156,7 @@ class Channel(object):
 
     @sample_rate.setter
     def sample_rate(self, rate):
-        if isinstance(rate, units.Unit):
-            self._sample_rate = rate
-        elif rate is None:
+        if rate is None:
             self._sample_rate = None
         elif isinstance(rate, units.Quantity):
             self._sample_rate = rate
@@ -296,7 +296,15 @@ class Channel(object):
 
     @url.setter
     def url(self, href):
-        self._url = href
+        if href is None:
+            self._url = None
+        else:
+            try:
+                url = urlparse(href)
+                assert url.scheme in ('http', 'https', 'file')
+            except (AttributeError, ValueError, AssertionError):
+                raise ValueError("Invalid URL %r" % href)
+            self._url = href
 
     @property
     def frametype(self):
@@ -406,11 +414,11 @@ class Channel(object):
         """
         channellist = ChannelList.query(name, debug=debug, timeout=timeout)
         if len(channellist) == 0:
-            raise ValueError("No channels found matching '%s'." % name)
+            raise ValueError("No channels found matching '%s'" % name)
         if len(channellist) > 1:
             raise ValueError("%d channels found matching '%s', please refine "
                              "search, or use `ChannelList.query` to return "
-                             "all results." % (len(channellist), name))
+                             "all results" % (len(channellist), name))
         return channellist[0]
 
     @classmethod
@@ -569,10 +577,10 @@ class Channel(object):
             allow_tape=allow_tape)
 
     def copy(self):
-        return type(self)(self.name, unit=self.unit,
-                          sample_rate=self.sample_rate, dtype=self.dtype,
-                          type=self.type, frametype=self.frametype,
-                          model=self.model, url=self.url)
+        new = type(self)(str(self))
+        for key, value in vars(self).items():
+            setattr(new, key, copy(value))
+        return new
 
     def __str__(self):
         return self.name
@@ -852,4 +860,4 @@ class ChannelList(list):
                                       type=ctype)
         availability = io_nds2.get_availability(chans, start, end,
                                                 connection=connection)
-        return type(availability)(zip(chans, availability.values()))
+        return type(availability)(zip(channels, availability.values()))

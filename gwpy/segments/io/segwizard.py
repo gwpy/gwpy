@@ -49,8 +49,8 @@ def from_segwizard(f, coalesce=True, gpstype=LIGOTimeGPS, strict=True,
     segs = SegmentList()
     for fp in files:
         with open(fp, 'r') as fobj:
-            segs += SegmentList(map(Segment, segmentsUtils.fromsegwizard(
-                fobj, coltype=gpstype, strict=strict)))
+            segs.extend(SegmentList(map(Segment, segmentsUtils.fromsegwizard(
+                fobj, coltype=gpstype, strict=strict))))
     if coalesce:
         segs.coalesce()
     return segs

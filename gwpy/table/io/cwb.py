@@ -34,6 +34,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 def table_from_cwb(f, *args, **kwargs):
     return EventTable.read(f, 'waveburst', *args, format='root', **kwargs)
 
+
 registry.register_reader('root.cwb', EventTable, table_from_cwb)
 
 
@@ -57,6 +58,7 @@ class CwbHeader(core.BaseHeader):
             "(?P<colname>(.*))"
             )
         self.names = []
+        include_cuts = False
         for line in lines:
             if not line.startswith('# '):
                 break  # End of header lines
@@ -85,7 +87,7 @@ class CwbHeader(core.BaseHeader):
     def write(self, lines):
         if 'selection cut 1' in self.colnames:
             lines.append('# -/+ - not passed/passed final selection cuts')
-        for i, name in enumerate(self.colnames[2:]):
+        for i, name in enumerate(self.colnames):
             lines.append('# %.2d - %s' % (i+1, name))
 
 
@@ -102,6 +104,7 @@ class Cwb(core.BaseReader):
 
     header_class = CwbHeader
     data_class = CwbData
+
 
 # register ascii.cwb for EventTable
 registry.register_reader(

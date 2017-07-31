@@ -32,11 +32,11 @@ import sys
 
 import numpy
 
-from astropy.units import Quantity
+from astropy import units
 from astropy.io import registry as io_registry
 
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
-                   as_series_dict_class)
+                   as_series_dict_class, ASTROPY_2_0)
 from ..types import Array2D
 from ..detector import Channel
 from ..time import Time
@@ -47,7 +47,7 @@ if sys.version_info[0] < 3:
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-__all__ = ['StateTimeSeries',
+__all__ = ['StateTimeSeries', 'StateTimeSeriesDict',
            'StateVector', 'StateVectorDict', 'StateVectorList', 'Bits']
 
 
@@ -103,9 +103,12 @@ class StateTimeSeries(TimeSeriesBase):
     """
 
     def __new__(cls, data, t0=None, dt=None, sample_rate=None, times=None,
-                unit='dimensionlss', channel=None, name=None, **kwargs):
+                channel=None, name=None, **kwargs):
         """Generate a new StateTimeSeries
         """
+        if 'unit' in kwargs:
+            raise TypeError("%s does not accept keyword argument 'unit'"
+                            % cls.__name__)
         if isinstance(data, (list, tuple)):
             data = numpy.asarray(data)
         if not isinstance(data, cls):
@@ -113,6 +116,51 @@ class StateTimeSeries(TimeSeriesBase):
         return super(StateTimeSeries, cls).__new__(
             cls, data, t0=t0, dt=dt, sample_rate=sample_rate, times=times,
             name=name, channel=channel, **kwargs)
+
+    # -- unit handling (always dimensionless) ---
+
+    @property
+    def unit(self):
+        return units.dimensionless_unscaled
+
+    def override_unit(self, unit, parse_strict='raise'):
+        return NotImplemented
+
+    def _to_own_unit(self, value, check_precision=True):
+        if isinstance(value, units.Quantity) and value.unit != self.unit:
+            raise ValueError("Cannot store %s with units %r"
+                             % (type(self).__name__, value.unit))
+        if not isinstance(value, units.Quantity):
+            value *= self.unit
+        return value
+
+    # -- math handling (always boolean) ---------
+
+    if ASTROPY_2_0:
+        def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+            return super(StateTimeSeries, self).__array_ufunc__(
+                ufunc, method, *inputs, **kwargs).view(bool)
+
+    def __array_wrap__(self, obj, context=None):
+        return super(StateTimeSeries, self).__array_wrap__(
+            obj, context=context).view(bool)
+
+    def diff(self, n=1, axis=-1):
+        slice1 = (slice(1, None),)
+        slice2 = (slice(None, -1),)
+        new = (self.value[slice1] ^ self.value[slice2]).view(type(self))
+        new.__metadata_finalize__(self)
+        try:  # shift x0 to the right by one place
+            new.x0 = self._xindex[1]
+        except AttributeError:
+            new.x0 = self.x0 + self.dx
+        if n > 1:
+            return new.diff(n-1, axis=axis)
+        else:
+            return new
+    diff.__doc__ = TimeSeriesBase.diff.__doc__
+
+    # -- useful methods -------------------------
 
     def to_dqflag(self, name=None, minlen=1, dtype=float, round=False,
                   label=None, description=None):
@@ -230,7 +278,7 @@ class Bits(list):
     def epoch(self, epoch):
         if isinstance(epoch, Time):
             self._epoch = epoch.gps
-        elif isinstance(epoch, Quantity):
+        elif isinstance(epoch, units.Quantity):
             self._epoch = epoch.value
         else:
             self._epoch = float(epoch)
@@ -419,6 +467,16 @@ class StateVector(TimeSeriesBase):
                                     x0=self.x0, dx=self.dx, y0=0, dy=1)
             return self.boolean
 
+    # -- data type handling ---------------------
+
+    def _to_own_unit(self, value, check_precision=True):
+        if isinstance(value, units.Quantity) and value.unit != self.unit:
+            raise ValueError("Cannot store %s with units %r"
+                             % (type(self).__name__, value.unit))
+        if not isinstance(value, units.Quantity):
+            value * self.unit
+        return value
+
     # -- StateVector methods --------------------
 
     def get_bit_series(self, bits=None):
@@ -440,8 +498,8 @@ class StateVector(TimeSeriesBase):
         for b in bits:
             try:
                 bindex.append((self.bits.index(b), b))
-            except IndexError as e:
-                e.args = ('Bit %r not found in StateVector' % b)
+            except (IndexError, ValueError) as e:
+                e.args = ('Bit %r not found in StateVector' % b,)
                 raise e
         self._bitseries = StateTimeSeriesDict()
         for i, bit in bindex:
@@ -783,7 +841,7 @@ class StateVector(TimeSeriesBase):
             resampled version of the input `StateVector`
         """
         rate1 = self.sample_rate.value
-        if isinstance(rate, Quantity):
+        if isinstance(rate, units.Quantity):
             rate2 = rate.value
         else:
             rate2 = float(rate)

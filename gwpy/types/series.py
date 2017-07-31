@@ -19,6 +19,7 @@
 """The `Series` is a one-dimensional array with metadata
 """
 
+from numbers import Number
 from warnings import warn
 from math import floor
 
@@ -228,7 +229,7 @@ class Series(Array):
             return
         # convert float to Quantity
         if not isinstance(value, Quantity):
-            value = Quantity(value).to(self.xunit)
+            value = Quantity(value, self.xunit)
         # if value is changing, delete xindex
         try:
             dx = self._dx
@@ -482,7 +483,7 @@ class Series(Array):
 
     def __getitem__(self, item):
         # if single value, convert to a simple Quantity
-        if isinstance(item, (float, int)):
+        if isinstance(item, Number):
             return Quantity(self.value[item], unit=self.unit)
         new = super(Series, self).__getitem__(item)
         # if we're slicing, update the x-axis properties
@@ -671,7 +672,7 @@ class Series(Array):
         if type(other) == type(self) and other.unit == self.unit:
             self.value[-N:] = other.value[-N:]
         # otherwise if its just a numpy array
-        elif type(other) == type(self.value) or (
+        elif type(other) is type(self.value) or (
                 other.dtype.name.startswith('uint')):
             self.value[-N:] = other[-N:]
         else:

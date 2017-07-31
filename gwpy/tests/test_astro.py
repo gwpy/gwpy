@@ -16,27 +16,30 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for astro module
+"""Unit tests for gwpy.astro
 """
 
-import os
 import os.path
-import tempfile
 
-from compat import (unittest, HAS_H5PY)
+import pytest
 
-import scipy
+from scipy import __version__ as scipy_version
 
 from astropy import units
 
 from gwpy import astro
 from gwpy.timeseries import TimeSeries
+from gwpy.frequencyseries import FrequencySeries
+
+import utils
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+# -- test results -------------------------------------------------------------
+
 # hack up constants that changed between astropy 1.3 and 2.0
 # TODO: might want to do this in reverse, i.e. hard-coding the answers for 2.0
-from astropy import __version__ as astropy_version
+from astropy import __version__ as astropy_version  # nopep8
 if astropy_version >= '2.0':
     from astropy import constants
     from astropy.constants import (si, astropyconst13)
@@ -46,63 +49,64 @@ if astropy_version >= '2.0':
     constants.c = si.c = astropyconst13.c
     constants.pc = si.pc = astropyconst13.pc
 
-# something changed in scyip 0.19, something FFT-related
-if scipy.__version__ < '0.19':
+# something changed in scipy 0.19, something FFT-related
+if scipy_version < '0.19':
     TEST_RESULTS = {
-        'inspiral_range': 19.63704209223392,
-        'inspiral_range_psd': 7.915847068684727,
-        'burst_range': 13.813232309724613,
-        'burst_range_spectrum': 35.19303454822539,
+        'inspiral_range': 19.63704209223392 * units.Mpc,
+        'inspiral_range_psd': 7.915847068684727 * units.Mpc ** 2 / units.Hz,
+        'burst_range': 13.813232309724613 * units.Mpc,
+        'burst_range_spectrum': 35.19303454822539 * units.Mpc,
     }
 else:
     TEST_RESULTS = {
-        'inspiral_range': 19.63872448570372,
-        'inspiral_range_psd': 7.92640311063505,
-        'burst_range': 13.815456279746522,
-        'burst_range_spectrum': 35.216492263916535,
+        'inspiral_range': 19.63872448570372 * units.Mpc,
+        'inspiral_range_psd': 7.92640311063505 * units.Mpc ** 2 / units.Hz,
+        'burst_range': 13.815456279746522 * units.Mpc,
+        'burst_range_spectrum': 35.216492263916535 * units.Mpc,
     }
 
 
-class AstroTests(unittest.TestCase):
-    """`TestCase` for the astro module
+# -- utilities ----------------------------------------------------------------
+
+@pytest.fixture(scope='module')
+def psd():
+    h5path = os.path.join(os.path.dirname(__file__), 'data',
+                          'HLV-GW100916-968654552-1.hdf')
+    try:
+        data = TimeSeries.read(h5path, 'L1:LDAS-STRAIN', format='hdf5')
+    except ImportError as e:
+        pytest.skip(str(e))
+    return data.psd(.4, overlap=.2, window=('kaiser', 24))
+
+
+# -- gwpy.astro.range ---------------------------------------------------------
+
+def test_inspiral_range_psd(psd):
+    """Test for :func:`gwpy.astro.inspiral_range_psd`
     """
-    framefile = os.path.join(os.path.split(__file__)[0], 'data',
-                             'HLV-GW100916-968654552-1.hdf')
-    tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_')
-
-    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
-    def setUp(self):
-        # read data
-        self.data = TimeSeries.read(self.framefile, 'L1:LDAS-STRAIN')
-        # calculate PSD
-        self.psd = self.data.psd(0.4, 0.2, window=('kaiser', 24))
-
-    def test_inspiral_range(self):
-        r = astro.inspiral_range(self.psd, fmin=40)
-        self.assertEqual(r.unit, units.Mpc)
-        self.assertAlmostEqual(r.value, TEST_RESULTS['inspiral_range'])
-        return r
-
-    def test_inspiral_range_psd(self):
-        r = astro.inspiral_range_psd(self.psd)
-        self.assertEqual(r.unit, units.Mpc ** 2 / units.Hertz)
-        self.assertAlmostEqual(r.max().value, TEST_RESULTS['inspiral_range_psd'])
-        return r
-
-    def test_burst_range(self):
-        r = astro.burst_range(self.psd[self.psd.frequencies.value < 1000])
-        self.assertEqual(r.unit, units.Mpc)
-        self.assertAlmostEqual(r.value, TEST_RESULTS['burst_range'])
-        return r
-
-    def test_burst_range_spectrum(self):
-        r = astro.burst_range_spectrum(
-            self.psd[self.psd.frequencies.value < 1000])
-        self.assertEqual(r.unit, units.Mpc)
-        self.assertAlmostEqual(r.max().value,
-                               TEST_RESULTS['burst_range_spectrum'])
-        return r
+    r = astro.inspiral_range_psd(psd)
+    assert isinstance(r, FrequencySeries)
+    utils.assert_quantity_almost_equal(r.max(),
+                                       TEST_RESULTS['inspiral_range_psd'])
 
 
-if __name__ == '__main__':
-    unittest.main()
+def test_inspiral_range(psd):
+    """Test for :func:`gwpy.astro.inspiral_range_psd`
+    """
+    r = astro.inspiral_range(psd, fmin=40)
+    utils.assert_quantity_almost_equal(r, TEST_RESULTS['inspiral_range'])
+
+
+def test_burst_range(psd):
+    """Test for :func:`gwpy.astro.burst_range`
+    """
+    r = astro.burst_range(psd[psd.frequencies.value < 1000])
+    utils.assert_quantity_almost_equal(r, TEST_RESULTS['burst_range'])
+
+
+def test_burst_range_spectrum(psd):
+    """Test for :func:`gwpy.astro.burst_range_spectrum`
+    """
+    r = astro.burst_range_spectrum(psd[psd.frequencies.value < 1000])
+    utils.assert_quantity_almost_equal(r.max(),
+                                       TEST_RESULTS['burst_range_spectrum'])
