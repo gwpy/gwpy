@@ -540,8 +540,6 @@ class TestSeries(TestArray):
         and the right x0
         """
         diff = array.diff(axis=0)
-        print(array.shape)
-        print(diff.shape)
         assert isinstance(diff, type(array))
         assert array.shape[0] - 1 == diff.shape[0]
         assert diff.x0 == array.x0 + array.dx
