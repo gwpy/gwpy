@@ -145,6 +145,21 @@ class StateTimeSeries(TimeSeriesBase):
         return super(StateTimeSeries, self).__array_wrap__(
             obj, context=context).view(bool)
 
+    def diff(self, n=1, axis=-1):
+        slice1 = (slice(1, None),)
+        slice2 = (slice(None, -1),)
+        new = (self.value[slice1] ^ self.value[slice2]).view(type(self))
+        new.__metadata_finalize__(self)
+        try:  # shift x0 to the right by one place
+            new.x0 = self._xindex[1]
+        except AttributeError:
+            new.x0 = self.x0 + self.dx
+        if n > 1:
+            return new.diff(n-1, axis=axis)
+        else:
+            return new
+    diff.__doc__ = TimeSeriesBase.diff.__doc__
+
     # -- useful methods -------------------------
 
     def to_dqflag(self, name=None, minlen=1, dtype=float, round=False,
