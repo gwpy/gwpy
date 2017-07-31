@@ -123,7 +123,7 @@ class StateTimeSeries(TimeSeriesBase):
     def unit(self):
         return units.dimensionless_unscaled
 
-    def override_unit(self, unit):
+    def override_unit(self, unit, parse_strict='raise'):
         return NotImplemented
 
     def _to_own_unit(self, value, check_precision=True):
