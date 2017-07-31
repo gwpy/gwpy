@@ -196,20 +196,26 @@ class TestIoCache(object):
     @staticmethod
     def write_cache(cache, f):
         for entry in cache:
-            print(str(entry), file=f)
+            try:
+                print(str(entry), file=f)
+            except TypeError:
+                f.write(('%s\n' % str(entry)).encode('utf-8'))
 
-    def test_open_cache(self):
+    def test_read_write_cache(self):
         cache = self.make_cache()[0]
         with tempfile.NamedTemporaryFile() as f:
-            self.write_cache(cache, f)
+            io_cache.write_cache(cache, f)
             f.seek(0)
 
             # read from fileobj
-            c2 = io_cache.open_cache(f)
+            c2 = io_cache.read_cache(f)
             assert cache == c2
 
+            # write with file name
+            io_cache.write_cache(cache, f.name)
+
             # read from file name
-            c3 = io_cache.open_cache(f.name)
+            c3 = io_cache.read_cache(f.name)
             assert cache == c3
 
     def test_file_list(self):
@@ -223,8 +229,8 @@ class TestIoCache(object):
         assert io_cache.file_list(cache[0]) == [cache[0].path]
 
         # test cache file -> pfnlist()
-        with tempfile.NamedTemporaryFile(suffix='.lcf') as f:
-            self.write_cache(cache, f)
+        with tempfile.NamedTemporaryFile(suffix='.lcf', mode='w') as f:
+            io_cache.write_cache(cache, f)
             f.seek(0)
             assert io_cache.file_list(f.name) == cache.pfnlist()
 

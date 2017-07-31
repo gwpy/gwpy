@@ -63,7 +63,9 @@ except AttributeError:
 FILE_LIKE = tuple(FILE_LIKE)
 
 
-def open_cache(lcf, coltype=LIGOTimeGPS):
+# -- cache I/O ----------------------------------------------------------------
+
+def read_cache(lcf, coltype=LIGOTimeGPS):
     """Read a LAL-format cache file into memory as a `Cache`
 
     Parameters
@@ -85,9 +87,48 @@ def open_cache(lcf, coltype=LIGOTimeGPS):
     if not isinstance(lcf, FILE_LIKE):
         with open(lcf, 'r') as f:
             return open_cache(f, coltype=coltype)
-    # read file
-    return Cache.fromfile(lcf, coltype=coltype)
 
+    # read file
+    out = Cache()
+    for line in lcf:
+        if isinstance(line, bytes):
+            line = line.decode('utf-8')
+        out.append(out.entry_class(line, coltype=coltype))
+    return out
+
+
+def open_cache(*args, **kwargs):
+    warnings.warn("gwpy.io.cache.open_cache was renamed read_cache",
+                  DeprecationWarning)
+    return read_cache(*args, **kwargs)
+
+
+def write_cache(cache, fobj):
+    """Write a :cache:`~glue.lal.Cache` to a file
+
+    Parameters
+    ----------
+    cache : :class:`glue.lal.Cache`
+        the cache to write
+
+    fobj : `file`, `str`
+        the open file object, or file path to write to
+    """
+    # open file
+    if isinstance(fobj, string_types):
+        with open(fobj, 'w') as f:
+            return write_cache(cache, f)
+
+    # write file
+    for entry in cache:
+        line = '%s\n' % entry
+        try:
+            fobj.write(line)
+        except TypeError:
+            fobj.write(line.encode('utf-8'))
+
+
+# -- cache manipulation -------------------------------------------------------
 
 def file_list(flist):
     """Parse a number of possible input types into a list of filepaths.
@@ -122,7 +163,7 @@ def file_list(flist):
         return [flist.path]
     elif (isinstance(flist, string_types) and
           flist.endswith(('.cache', '.lcf'))):
-        return open_cache(flist).pfnlist()
+        return read_cache(flist).pfnlist()
     elif isinstance(flist, string_types):
         return flist.split(',')
     elif HAS_CACHE and isinstance(flist, Cache):
