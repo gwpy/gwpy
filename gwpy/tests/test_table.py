@@ -93,6 +93,12 @@ class TestTable(object):
             t2 = _read()
             utils.assert_table_equal(table, t2, almost_equal=True)
 
+            # check read with get_as_columns
+            t3 = _read(get_as_columns=True, on_attributeerror='ignore')
+            assert 'peak' in t3.columns
+            utils.assert_array_equal(
+                t3['peak'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
+
             # check reading multiple tables works
             try:
                 t3 = self.TABLE.read([f.name, f.name],
