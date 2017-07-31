@@ -41,6 +41,7 @@ except ImportError:  # no lal
 else:
     HAS_CACHE = True
     from lal.utils import CacheEntry
+    Cache.entry_class = CacheEntry
 
 from astropy.table import (Table, vstack as vstack_tables)
 from astropy.io.registry import _get_valid_format
@@ -80,11 +81,12 @@ def open_cache(lcf, coltype=LIGOTimeGPS):
         :class:`~lal.utils.CacheEntry`
     """
     from glue.lal import Cache
-    if isinstance(lcf, FILE_LIKE):
-        return Cache.fromfile(lcf, coltype=coltype)
-    else:
+    # open file
+    if not isinstance(lcf, FILE_LIKE):
         with open(lcf, 'r') as f:
-            return Cache.fromfile(f, coltype=coltype)
+            return open_cache(f, coltype=coltype)
+    # read file
+    return Cache.fromfile(lcf, coltype=coltype)
 
 
 def file_list(flist):
