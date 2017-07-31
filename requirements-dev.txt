@@ -11,6 +11,7 @@ mysqlclient
 dqsegdb
 https://github.com/ligovirgo/trigfind/archive/v0.4.tar.gz
 pycbc
+git+https://github.com/duncanmmacleod/ligo.org.git
 
 # docs
 sphinx
