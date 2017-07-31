@@ -481,40 +481,55 @@ class EventTable(Table):
         nproc : `int`, optional, default: 1
             number of CPUs to use for parallel file reading
 
+        kwargs: Optional TrainingSet and LabelledSamples args
+            that will download images in a specila way
+            ./"Label"/"SampleType"/"image"
+
         Returns
         -------
         Folder containing omega scans sorted by label
         """
         from ..utils import mp as mp_utils
         import os
+        from xml.sax import SAXException
+
+        # back to pandas
+        imagesDB = self.to_pandas()
+        imagesDB = imagesDB.loc[imagesDB.imgUrl1 != '?']
 
         TrainingSet = kwargs.pop('TrainingSet', 0)
         LabelledSamples = kwargs.pop('LabelledSamples', 0)
 
         if TrainingSet:
-            for iLabel in self.to_pandas.Label.unqiue():
+            for iLabel in imagesDB.Label.unique():
                 if LabelledSamples:
-                    for iType in self.to_panda.SampleType.unqiue():
-                        os.makedirs(iLabel + '/' + iType)
+                    for iType in imagesDB.SampleType.unique():
+                        if not os.path.isdir(iLabel + '/' + iType):
+                            os.makedirs(iLabel + '/' + iType)
                 else:
-                    os.makedirs(iLabel)
+                    if not os.path.isdir(iLabel):
+                        os.makedirs(iLabel)
 
-        def get_image(image):
+        def get_image(url, **kwargs):
             from ligo.org import request
-            f = open(image.split('/')[-1], 'wb')
-            f.write(request(image))
-            f.close()
+            directory = './'
+            if kwargs.pop('TrainingSet', 0):
+                print('I worked 1')
+                if kwargs.pop('LabelledSamples', 0):
+                    print('I worked 2')
+            with open(directory + url.split('/')[-1], 'wb') as f:
+                f.write(request(url))
 
-        imagesDB = self.to_pandas()[['imgUrl1','imgUrl2','imgUrl3','imgUrl4']]
-        images = imagesDB.loc[imagesDB.imgUrl1 != '?'].as_matrix().flatten().tolist()
+        imagesDB = imagesDB[['imgUrl1','imgUrl2','imgUrl3','imgUrl4']]
+        images = imagesDB.as_matrix().flatten().tolist()
 
         # calculate maximum number of processes
         nproc = min(kwargs.pop('nproc', 1), len(images))
 
         # define multiprocessing method
-        def _download_single_image(f):
+        def _download_single_image(f, **kwargs):
             try:
-                return f, get_image(f)
+                return f, get_image(f, **kwargs)
             except Exception as e:
                 if nproc == 1:
                     raise
