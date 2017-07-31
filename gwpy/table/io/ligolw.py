@@ -41,6 +41,18 @@ __all__ = []
 GET_AS_EXCLUDE = ['get_column', 'get_table']
 
 
+def handle_attributeerror(action, func, *args, **kwargs):
+    try:
+        return func(*args, **kwargs)
+    except AttributeError as e:
+        if action == 'ignore':
+            pass
+        elif action == 'warn':
+            warnings.warn('Caught %s: %s' % (type(e).__name__, str(e)))
+        else:
+            raise
+
+
 # -- read ---------------------------------------------------------------------
 
 @read_with_selection
@@ -92,16 +104,9 @@ def _table_from_ligolw(llwtable, target, copy, columns=None,
         if columns and column not in columns:  # skip if not wanted
             continue
         orig_type = llwtable.validcolumns[column]
-        try:
-            col = llwtable.getColumnByName(column)
-        except AttributeError as e:
-            if not columns and on_attributeerror == 'ignore':
-                pass
-            elif not columns and on_attributeerror == 'warn':
-                warnings.warn('Caught %s: %s' % (type(e).__name__, str(e)))
-            else:
-                raise
-        else:
+        col = handle_attributeerror(
+            on_attributeerror, llwtable.getColumnByName, column)
+        if col is not None:
             # get correct dtype
             if orig_type == 'ilwd:char':  # numpy tries long() which breaks
                 arr = list(map(int, col))
@@ -126,7 +131,9 @@ def _table_from_ligolw(llwtable, target, copy, columns=None,
                 continue
             if columns and column not in columns:  # skip if not wanted
                 continue
-            arr = meth()
+            arr = handle_attributeerror(on_attributeerror, meth)
+            if arr is None:
+                continue
             try:
                 dtype = arr.dtype
             except AttributeError:
