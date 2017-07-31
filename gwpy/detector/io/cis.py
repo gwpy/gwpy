@@ -41,7 +41,7 @@ CIS_DATA_TYPE = {
 }
 
 
-def query(name, debug=False):
+def query(name, use_kerberos=None, debug=False):
     """Query the Channel Information System for details on the given
     channel name
 
@@ -59,7 +59,7 @@ def query(name, debug=False):
     more = True
     out = ChannelList()
     while more:
-        reply = _get(url, debug=debug)
+        reply = _get(url, use_kerberos=use_kerberos, debug=debug)
         try:
             out.extend(map(parse_json, reply[u'results']))
         except KeyError:
