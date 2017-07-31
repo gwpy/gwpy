@@ -19,6 +19,7 @@
 """The `Series` is a one-dimensional array with metadata
 """
 
+from numbers import Number
 from warnings import warn
 from math import floor
 
@@ -482,7 +483,7 @@ class Series(Array):
 
     def __getitem__(self, item):
         # if single value, convert to a simple Quantity
-        if isinstance(item, (float, int)):
+        if isinstance(item, Number):
             return Quantity(self.value[item], unit=self.unit)
         new = super(Series, self).__getitem__(item)
         # if we're slicing, update the x-axis properties
