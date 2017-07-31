@@ -131,14 +131,14 @@ class StateTimeSeries(TimeSeriesBase):
             raise ValueError("Cannot store %s with units %r"
                              % (type(self).__name__, value.unit))
         if not isinstance(value, units.Quantity):
-            value * self.unit
+            value *= self.unit
         return value
 
     # -- math handling (always boolean) ---------
 
     if ASTROPY_2_0:
         def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
-            return super(TimeSeriesBase, self).__array_ufunc__(
+            return super(StateTimeSeries, self).__array_ufunc__(
                 ufunc, method, *inputs, **kwargs).view(bool)
 
     def __array_wrap__(self, obj, context=None):

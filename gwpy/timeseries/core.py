@@ -550,7 +550,7 @@ class TimeSeriesBase(Series):
             # work out how to handle this and __array_wrap__ together properly
             out = super(TimeSeriesBase, self).__array_ufunc__(
                 ufunc, method, *inputs, **kwargs)
-            if out.dtype is numpy.dtype(bool):
+            if out.dtype is numpy.dtype(bool) and len(inputs) == 2:
                 from .statevector import StateTimeSeries
                 orig, value = inputs
                 try:
