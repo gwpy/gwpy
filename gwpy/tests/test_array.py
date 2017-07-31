@@ -554,7 +554,6 @@ class TestSeries(TestArray):
 
     def test_value_at(self):
         ts1 = self.create(dx=.5)
-        print(ts1.value)
         assert ts1.value_at(1.5) == self.data[3] * ts1.unit
         assert ts1.value_at(1.5 * ts1.xunit) == self.data[3] * ts1.unit
         with pytest.raises(IndexError):
