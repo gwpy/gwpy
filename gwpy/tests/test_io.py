@@ -19,7 +19,10 @@
 """Unit test for `io` module
 """
 
+from __future__ import print_function
+
 import os
+import tempfile
 
 import pytest
 
@@ -189,6 +192,54 @@ class TestIoCache(object):
             cache.append(CacheEntry.from_T050017(f, coltype=int))
             segs.append(Segment(*seg))
         return cache, segs
+
+    @staticmethod
+    def write_cache(cache, f):
+        for entry in cache:
+            print(str(entry), file=f)
+
+    def test_open_cache(self):
+        cache = self.make_cache()[0]
+        with tempfile.NamedTemporaryFile() as f:
+            self.write_cache(cache, f)
+            f.seek(0)
+
+            # read from fileobj
+            c2 = io_cache.open_cache(f)
+            assert cache == c2
+
+            # read from file name
+            c3 = io_cache.open_cache(f.name)
+            assert cache == c3
+
+    def test_file_list(self):
+        cache = self.make_cache()[0]
+
+        # test file -> [file.name]
+        with tempfile.NamedTemporaryFile() as f:
+            assert io_cache.file_list(f) == [f.name]
+
+        # test CacheEntry -> [CacheEntry.path]
+        assert io_cache.file_list(cache[0]) == [cache[0].path]
+
+        # test cache file -> pfnlist()
+        with tempfile.NamedTemporaryFile(suffix='.lcf') as f:
+            self.write_cache(cache, f)
+            f.seek(0)
+            assert io_cache.file_list(f.name) == cache.pfnlist()
+
+        # test comma-separated list -> list
+        assert io_cache.file_list('A,B,C,D') == ['A', 'B', 'C', 'D']
+
+        # test cache object -> pfnlist
+        assert io_cache.file_list(cache) == cache.pfnlist()
+
+        # test list -> list
+        assert io_cache.file_list(['A', 'B', 'C', 'D']) == ['A', 'B', 'C', 'D']
+
+        # otherwise error
+        with pytest.raises(ValueError):
+            io_cache.file_list(1)
 
     def test_cache_segments(self):
         """Test :func:`gwpy.io.cache.cache_segments`
