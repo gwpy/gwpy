@@ -305,7 +305,6 @@ class Array(Quantity):
         if epoch is None:
             self._epoch = None
         else:
-            gps = to_gps(epoch)
             self._epoch = Decimal(str(to_gps(epoch)))
 
     @epoch.deleter

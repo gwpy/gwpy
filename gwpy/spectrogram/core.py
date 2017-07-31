@@ -30,7 +30,6 @@ from scipy import signal
 
 from astropy import units
 from astropy.io import registry as io_registry
-from astropy.time import Time
 
 from ..detector import Channel
 from ..types import (Array2D, Series)

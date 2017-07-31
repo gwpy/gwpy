@@ -20,7 +20,6 @@
 """
 
 from __future__ import absolute_import
-import warnings
 
 from collections import OrderedDict
 from six import string_types
