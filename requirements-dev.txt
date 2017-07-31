@@ -10,7 +10,10 @@ h5py>=1.3
 mysqlclient
 dqsegdb
 https://github.com/ligovirgo/trigfind/archive/v0.4.tar.gz
+https://github.com/duncanmmacleod/ligo.org.git
 pycbc
+sqlalchemy
+psycopg2
 
 # docs
 sphinx

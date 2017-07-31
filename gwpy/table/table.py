@@ -91,7 +91,7 @@ class EventTable(Table):
     This differs from the basic `~astropy.table.Table` in two ways
 
     - GW-specific file formats are registered to use with
-      `EventTable.read` and `EventTable.write`
+      `EventTable.read` and `EventTable.write` and `EventTable.fetch`
     - columns of this table are of the `EventColumn` type, which provides
       methods for filtering based on a `~gwpy.segments.SegmentList` (not
       specifically time segments)
@@ -106,6 +106,56 @@ class EventTable(Table):
     # -- i/o ------------------------------------
 
     @classmethod
+    def fetch(cls, table, *args, **kwargs):
+        """Fetch data into an `EventTable`
+
+        Parameters
+        ----------
+        table : `str`,
+            The name of table you are attempting to receive triggers
+            from.
+
+        *args
+            other filters you would like to supply
+            underlying reader method for the given format
+
+        .. note::
+
+           For now it will attempt to autmatically connect you
+           to a specific DB. In the future, this may be an input
+           argument.
+
+        Returns
+        -------
+        table : `EventTable`
+
+        Raises
+        ------
+        astropy.io.registry.IORegistryError
+            if the `format` cannot be automatically identified
+
+        Notes
+        -----"""
+        import os, sys
+        import pandas as pd
+        from sqlalchemy.engine import create_engine
+
+        try:
+            engine = create_engine('postgresql://{0}:{1}@gravityspy.ciera.northwestern.edu:5432/gravityspy'.format(os.environ['QUEST_SQL_USER'], os.environ['QUEST_SQL_PASSWORD']))
+        except:
+            raise ValueError('Remember to set export QUEST_SQL_USER and export QUEST_SQL_PASSWORD in order to access the Gravity Spy Data: https://secrets.ligo.org/secrets/144/ description is username and secret is password.')
+
+        try:
+            tab = pd.read_sql(table, engine)
+        except:
+            raise ValueError('I am sorry could not retrive triggers from that table. The following our acceptible table names {0}'.format(engine.table_names()))
+
+        tab = Table.from_pandas(tab)
+
+        # and return
+        return EventTable(tab.filled())
+
+
     def read(cls, source, *args, **kwargs):
         """Read data into an `EventTable`
 
@@ -422,3 +472,63 @@ class EventTable(Table):
             a new table with only those rows matching the filters
         """
         return filter_table(self, *column_filters)
+
+    def download(self, **kwargs):
+        """If table contains Gravity Spy triggers `EventTable`
+
+        Parameters
+        ----------
+        nproc : `int`, optional, default: 1
+            number of CPUs to use for parallel file reading
+
+        Returns
+        -------
+        Folder containing omega scans sorted by label
+        """
+        from ..utils import mp as mp_utils
+        import os
+
+        TrainingSet = kwargs.pop('TrainingSet', 0)
+        LabelledSamples = kwargs.pop('LabelledSamples', 0)
+
+        if TrainingSet:
+            for iLabel in self.to_pandas.Label.unqiue():
+                if LabelledSamples:
+                    for iType in self.to_panda.SampleType.unqiue():
+                        os.makedirs(iLabel + '/' + iType)
+                else:
+                    os.makedirs(iLabel)
+
+        def get_image(image):
+            from ligo.org import request
+            f = open(image.split('/')[-1], 'wb')
+            f.write(request(image))
+            f.close()
+
+        imagesDB = self.to_pandas()[['imgUrl1','imgUrl2','imgUrl3','imgUrl4']]
+        images = imagesDB.loc[imagesDB.imgUrl1 != '?'].as_matrix().flatten().tolist()
+
+        # calculate maximum number of processes
+        nproc = min(kwargs.pop('nproc', 1), len(images))
+
+        # define multiprocessing method
+        def _download_single_image(f):
+            try:
+                return f, get_image(f)
+            except Exception as e:
+                if nproc == 1:
+                    raise
+                elif isinstance(e, SAXException):  # SAXExceptions don't pickle
+                    return f, e.getException()
+                else:
+                    return f, e
+
+        # read files
+        output = mp_utils.multiprocess_with_queues(
+            nproc, _download_single_image, images, raise_exceptions=False)
+
+        # raise exceptions (from multiprocessing, single process raises inline)
+        for f, x in output:
+            if isinstance(x, Exception):
+                x.args = ('Failed to read %s: %s' % (f, str(x)),)
+                raise x
