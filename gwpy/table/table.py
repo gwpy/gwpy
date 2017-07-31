@@ -91,7 +91,7 @@ class EventTable(Table):
     This differs from the basic `~astropy.table.Table` in two ways
 
     - GW-specific file formats are registered to use with
-      `EventTable.read` and `EventTable.write` and `EventTable.fetch`
+      `EventTable.read` and `EventTable.write`
     - columns of this table are of the `EventColumn` type, which provides
       methods for filtering based on a `~gwpy.segments.SegmentList` (not
       specifically time segments)
