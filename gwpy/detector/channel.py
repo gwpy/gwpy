@@ -392,7 +392,7 @@ class Channel(object):
     # classsmethods
 
     @classmethod
-    def query(cls, name, debug=False, timeout=None):
+    def query(cls, name, use_kerberos=None, debug=False):
         """Query the LIGO Channel Information System for the `Channel`
         matching the given name
 
@@ -400,19 +400,24 @@ class Channel(object):
         ----------
         name : `str`
             name of channel
+
+        use_kerberos : `bool`, optional
+            use an existing Kerberos ticket as the authentication credential,
+            default behaviour will check for credentials and request username
+            and password if none are found (`None`)
+
         debug : `bool`, optional
             print verbose HTTP connection status for debugging,
             default: `False`
-        timeout : `float`, optional
-            maximum time to wait for a response from the CIS
 
         Returns
         -------
-        Channel
+        c : `Channel`
              a new `Channel` containing all of the attributes set from
              its entry in the CIS
         """
-        channellist = ChannelList.query(name, debug=debug, timeout=timeout)
+        channellist = ChannelList.query(name, use_kerberos=use_kerberos,
+                                        debug=debug)
         if len(channellist) == 0:
             raise ValueError("No channels found matching '%s'" % name)
         if len(channellist) > 1:
@@ -755,26 +760,30 @@ class ChannelList(list):
         return self.__class__(c)
 
     @classmethod
-    def query(cls, name, debug=False, timeout=None):
+    def query(cls, name, use_kerberos=None, debug=False):
         """Query the LIGO Channel Information System a `ChannelList`.
 
         Parameters
         ----------
         name : `str`
             name of channel, or part of it.
+
+        use_kerberos : `bool`, optional
+            use an existing Kerberos ticket as the authentication credential,
+            default behaviour will check for credentials and request username
+            and password if none are found (`None`)
+
         debug : `bool`, optional
             print verbose HTTP connection status for debugging,
             default: `False`
-        timeout : `float`, optional
-            maximum time to wait for a response from the CIS
 
         Returns
         -------
-        `ChannelList`
+        channels : `ChannelList`
             a new list containing all `Channels <Channel>` found.
         """
         from .io import cis
-        return cis.query(name, debug=debug, timeout=timeout)
+        return cis.query(name, use_kerberos=use_kerberos, debug=debug)
 
     @classmethod
     def query_nds2(cls, names, host=None, port=None, connection=None,

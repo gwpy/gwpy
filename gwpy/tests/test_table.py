@@ -27,6 +27,8 @@ from six import PY3
 
 import pytest
 
+import sqlparse
+
 from numpy import (random, isclose)
 
 from matplotlib import use, rc_context
@@ -38,11 +40,13 @@ from astropy.table import vstack
 
 from gwpy.table import (Table, EventTable)
 from gwpy.table.filter import filter_table
+from gwpy.table.io.hacr import (HACR_COLUMNS, get_hacr_triggers)
 from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
 from gwpy.plotter import (EventTablePlot, EventTableAxes, TimeSeriesPlot,
                           HistogramPlot)
 
 import utils
+from mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -50,6 +54,38 @@ TEST_DATA_DIR = os.path.join(os.path.split(__file__)[0], 'data')
 TEST_XML_FILE = os.path.join(
     TEST_DATA_DIR, 'H1-LDAS_STRAIN-968654552-10.xml.gz')
 TEST_OMEGA_FILE = os.path.join(TEST_DATA_DIR, 'omega.txt')
+
+
+# -- mocks --------------------------------------------------------------------
+
+def mock_hacr_connection(table, start, stop):
+    """Mock a pymysql connection object to test HACR fetching
+    """
+    # create cursor
+    cursor = mock.MagicMock()
+
+    def execute(qstr):
+        cursor._query = sqlparse.parse(qstr)[0]
+        return len(table)
+
+    cursor.execute = execute
+
+    def fetchall():
+        if cursor._query.get_real_name() == 'job':
+            return [(1, start, stop)]
+        if cursor._query.get_real_name() == 'mhacr':
+            columns = list(map(
+                str, list(cursor._query.get_sublists())[0].get_identifiers()))
+            selections = list(map(
+                str, list(cursor._query.get_sublists())[2].get_sublists()))
+            return filter_table(table, selections[3:])[columns]
+
+    cursor.fetchall = fetchall
+
+    # create connection
+    conn = mock.MagicMock()
+    conn.cursor.return_value = cursor
+    return conn
 
 
 # -- gwpy.table.Table (astropy.table.Table) -----------------------------------
@@ -333,3 +369,32 @@ class TestEventTable(TestTable):
         finally:
             if os.path.isdir(os.path.dirname(fp)):
                 shutil.rmtree(os.path.dirname(fp))
+
+    def test_get_hacr_triggers(self):
+        table = self.create(100, names=HACR_COLUMNS)
+        try:
+            from pymysql import connect
+        except ImportError:
+            mockee = 'gwpy.table.io.hacr.connect'
+        else:
+            mockee = 'pymysql.connect'
+        with mock.patch(mockee) as mock_connect:
+            mock_connect.return_value = mock_hacr_connection(
+                table, 123, 456)
+
+            # test simple query returns the full table
+            t2 = get_hacr_triggers('X1:TEST-CHANNEL', 123, 456)
+            utils.assert_table_equal(table, t2)
+
+            # test column selection works
+            t2 = get_hacr_triggers('X1:TEST-CHANNEL', 123, 456,
+                                   columns=['gps_start', 'snr'])
+            utils.assert_table_equal(table['gps_start', 'snr'], t2)
+
+            # test column selection works
+            t2 = get_hacr_triggers('X1:TEST-CHANNEL', 123, 456,
+                                   columns=['gps_start', 'snr'],
+                                   selection='freq_central>500')
+            utils.assert_table_equal(
+                filter_table(table, 'freq_central>500')['gps_start', 'snr'],
+                t2)

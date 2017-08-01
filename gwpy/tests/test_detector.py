@@ -24,8 +24,6 @@ import os.path
 import warnings
 from tempfile import NamedTemporaryFile
 
-from six.moves import StringIO
-
 import pytest
 
 import numpy
@@ -376,6 +374,7 @@ class TestChannel(object):
             assert getattr(c, key) == pdict[key]
         assert c.ndsname == name
 
+    @utils.skip_missing_dependency('ligo.org')
     @pytest.mark.parametrize('name', ('X1:TEST-CHANNEL', 'Y1:TEST_CHANNEL'))
     def test_query(self, name):
         # build fake CIS response
@@ -391,10 +390,10 @@ class TestChannel(object):
             results = [channelinfo[name]]
         else:
             results = []
-        jsonresponse = StringIO(json.dumps({'results': results}))
+        jsonresponse = json.dumps({'results': results})
 
         # mock response and test parsing
-        with mock.patch('gwpy.utils.auth.request') as mocked:
+        with mock.patch('ligo.org.request') as mocked:
             mocked.return_value = jsonresponse
             if name == 'X1:TEST-CHANNEL':
                 c = self.TEST_CLASS.query(name)
