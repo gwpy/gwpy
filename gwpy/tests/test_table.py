@@ -74,10 +74,10 @@ def mock_hacr_mysqldb_connection(table, start, stop):
         if cursor._query.get_real_name() == 'job':
             return [(1, start, stop)]
         if cursor._query.get_real_name() == 'mhacr':
-            columns = map(
-                str, list(cursor._query.get_sublists())[0].get_identifiers())
-            selections = map(
-                str, list(cursor._query.get_sublists())[2].get_sublists())
+            columns = list(map(
+                str, list(cursor._query.get_sublists())[0].get_identifiers()))
+            selections = list(map(
+                str, list(cursor._query.get_sublists())[2].get_sublists()))
             return filter_table(table, selections[3:])[columns]
 
     cursor.fetchall = fetchall
