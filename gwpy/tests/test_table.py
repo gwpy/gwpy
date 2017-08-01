@@ -58,8 +58,8 @@ TEST_OMEGA_FILE = os.path.join(TEST_DATA_DIR, 'omega.txt')
 
 # -- mocks --------------------------------------------------------------------
 
-def mock_hacr_mysqldb_connection(table, start, stop):
-    """Mock a MySQLdb connection object to test HACR fetching
+def mock_hacr_connection(table, start, stop):
+    """Mock a pymysql connection object to test HACR fetching
     """
     # create cursor
     cursor = mock.MagicMock()
@@ -373,13 +373,13 @@ class TestEventTable(TestTable):
     def test_get_hacr_triggers(self):
         table = self.create(100, names=HACR_COLUMNS)
         try:
-            from MySQLdb import connect
+            from pymysql import connect
         except ImportError:
             mockee = 'gwpy.table.io.hacr.connect'
         else:
-            mockee = 'MySQLdb.connect'
+            mockee = 'pymysql.connect'
         with mock.patch(mockee) as mock_connect:
-            mock_connect.return_value = mock_hacr_mysqldb_connection(
+            mock_connect.return_value = mock_hacr_connection(
                 table, 123, 456)
 
             # test simple query returns the full table

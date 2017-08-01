@@ -140,18 +140,18 @@ def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
 
 def connect(db, host=HACR_DATABASE_SERVER, user=HACR_DATABASE_USER,
             passwd=HACR_DATABASE_PASSWD):
-    """Connect to the given MySQL database
+    """Connect to the given SQL database
     """
     try:
-        import MySQLdb
+        import pymysql
     except ImportError as e:
-        e.args = ('MySQLdb is required to fetch HACR triggers',)
+        e.args = ('pymysql is required to fetch HACR triggers',)
         raise
-    return MySQLdb.connect(host=host, user=user, passwd=passwd, db=db)
+    return pymysql.connect(host=host, user=user, passwd=passwd, db=db)
 
 
 def query(querystr, connection=None, **connectkwargs):
-    """Execute a query of the given MySQL database
+    """Execute a query of the given SQL database
     """
     if connection is None:
         connection = connect(**connectkwargs)
