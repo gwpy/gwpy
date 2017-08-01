@@ -36,7 +36,7 @@ from dateutil.relativedelta import relativedelta
 from ...segments import Segment
 from ...time import (to_gps, from_gps)
 from .. import EventTable
-from .utils import read_with_selection
+from ..filter import (OPERATORS, parse_column_filters)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -87,9 +87,8 @@ def get_hacr_channels(db=None, gps=None, connection=None,
     return [r[0] for r in out]
 
 
-@read_with_selection
 def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
-                      monitor='chacr', **connectkwargs):
+                      monitor='chacr', selection=None, **connectkwargs):
     """Fetch a table of HACR triggers in the given interval
     """
     if columns is None:
@@ -97,6 +96,15 @@ def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
     columns = list(columns)
     span = Segment(map(to_gps, (start, end)))
 
+    # parse selections and map to column indices
+    if selection is None:
+        selectionstr = ''
+    else:
+        selectionstr = ''
+        for col, def_ in parse_column_filters(selection):
+            for thresh, op_ in def_:
+                opstr = [key for key in OPERATORS if OPERATORS[key] is op_][0]
+                selectionstr += ' and {0} {1} {2}'.format(col, opstr, thresh)
 
     # get database names and loop over each on
     databases = get_database_names(start, end)
@@ -117,8 +125,9 @@ def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
                 continue
             # execute trigger query
             q = ('select %s from mhacr where process_id = %d and '
-                 'gps_start > %s and gps_start < %d order by gps_start asc'
-                 % (', '.join(columns), int(p), span[0], span[1]))
+                 'gps_start > %s and gps_start < %d %s order by gps_start asc'
+                 % (', '.join(columns), int(p), span[0], span[1],
+                    selectionstr))
             n = cursor.execute(q)
             if n == 0:
                 continue
