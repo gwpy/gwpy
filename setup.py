@@ -71,7 +71,7 @@ extras_require = {
     'hdf5': ['h5py>=1.3'],
     'root': ['root_numpy'],
     'segments': ['dqsegdb'],
-    'hacr': ['mysqlclient'],
+    'hacr': ['pymysql'],
     'docs': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme',
              'sphinxcontrib-programoutput'],
 }
@@ -110,6 +110,7 @@ setup_requires.append('pytest-runner')
 tests_require = [
     'pytest>=2.8',
     'freezegun',
+    'sqlparse',
 ]
 if sys.version < '3':
     tests_require.append('mock')
