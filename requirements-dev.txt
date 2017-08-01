@@ -22,6 +22,6 @@ sphinxcontrib-programoutput
 # tests
 pytest>=2.8
 coveralls
-unittest2
 mock
 freezegun
+sqlparse

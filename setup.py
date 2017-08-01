@@ -110,6 +110,7 @@ setup_requires.append('pytest-runner')
 tests_require = [
     'pytest>=2.8',
     'freezegun',
+    'sqlparse',
 ]
 if sys.version < '3':
     tests_require.append('mock')
