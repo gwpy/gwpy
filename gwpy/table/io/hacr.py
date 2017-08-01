@@ -94,7 +94,7 @@ def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
     if columns is None:
         columns = HACR_COLUMNS
     columns = list(columns)
-    span = Segment(map(to_gps, (start, end)))
+    span = Segment(*map(to_gps, (start, end)))
 
     # parse selections and map to column indices
     if selection is None:
