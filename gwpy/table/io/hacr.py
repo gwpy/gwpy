@@ -33,8 +33,6 @@ arguments
 import os.path
 from dateutil.relativedelta import relativedelta
 
-from numpy.lib import recfunctions
-
 from ...segments import Segment
 from ...time import (to_gps, from_gps)
 from .. import EventTable
@@ -97,28 +95,8 @@ def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
     if columns is None:
         columns = HACR_COLUMNS
     columns = list(columns)
-    data = []
     span = Segment(map(to_gps, (start, end)))
 
-    # allow user to specify 'time'
-    ucolumns = list(columns)
-    try:
-        columns.pop(columns.index('time'))
-    except ValueError:
-        addtime = False
-    else:
-        # make sure that we query for 'gps_start' and 'gps_offset'
-        # optionally popping those columns out before returning
-        # (if they weren't given in the first place)
-        addtime = True
-        popstart = False
-        popoffset = False
-        if 'gps_start' not in columns:
-            columns.append('gps_start')
-            popstart = True
-        if 'gps_offset' not in columns:
-            columns.append('gps_offset')
-            popoffset = True
 
     # get database names and loop over each on
     databases = get_database_names(start, end)
@@ -149,44 +127,17 @@ def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
     return EventTable(rows=rows, names=columns)
 
 
-def add_time_column(table, name='time', pop_start=True, pop_offset=True):
-    """Append a column named 'time' by combining the gps_start and _offset
-
-    Parameters
-    ----------
-    table : `EventTable`
-        table of events to modify
-    name : `str`, optional
-        name of field to append, default: 'time'
-    pop_start: `bool`, optional
-        remove the 'gps_start' field when finished, default: `True`
-    pop_offset: `bool`, optional
-        remove the 'gps_offset' field when finished, default: `True`
-
-    Returns
-    -------
-    mod : `recarray`, matches type of input
-        a modified version of the input table with the new time field
-    """
-    type_ = type(table)
-    t = table['gps_start'] + table['gps_offset']
-    drop = []
-    if pop_start:
-        drop.append('gps_start')
-    if pop_offset:
-        drop.append('gps_offset')
-    if drop:
-        table = recfunctions.rec_drop_fields(table, drop)
-    return recfunctions.rec_append_fields(table, [name], [t]).view(type_)
-
-
 # -- utilities ----------------------------------------------------------------
 
 def connect(db, host=HACR_DATABASE_SERVER, user=HACR_DATABASE_USER,
             passwd=HACR_DATABASE_PASSWD):
     """Connect to the given MySQL database
     """
-    import MySQLdb
+    try:
+        import MySQLdb
+    except ImportError as e:
+        e.args = ('MySQLdb is required to fetch HACR triggers',)
+        raise
     return MySQLdb.connect(host=host, user=user, passwd=passwd, db=db)
 
 
