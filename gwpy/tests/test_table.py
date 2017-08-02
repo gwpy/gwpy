@@ -265,24 +265,6 @@ class TestEventTable(TestTable):
                             names=table.dtype.names)
         utils.assert_table_equal(brute, lowfloud)
 
-    @pytest.mark.parametrize('fmtname', ('Omega', 'cWB'))
-    def test_read_write_ascii(self, table, fmtname):
-        fmt = 'ascii.%s' % fmtname.lower()
-        with tempfile.NamedTemporaryFile(suffix='.txt', mode='w') as f:
-            print(f.name)
-            # check write/read returns the same table
-            table.write(f, format=fmt)
-            f.seek(0)
-            utils.assert_table_equal(table, self.TABLE.read(f, format=fmt),
-                                     almost_equal=True)
-
-        with tempfile.NamedTemporaryFile(suffix='.txt') as f:
-            # assert reading blank file doesn't work with column name error
-            with pytest.raises(InconsistentTableError) as exc:
-                self.TABLE.read(f, format=fmt)
-            assert str(exc.value) == ('No column names found in %s header'
-                                      % fmtname)
-
     def test_event_rates(self, table):
         rate = table.event_rate(1)
         assert isinstance(rate, TimeSeries)
@@ -317,6 +299,26 @@ class TestEventTable(TestTable):
 
     def test_get_column(self, table):
         utils.assert_array_equal(table.get_column('snr'), table['snr'])
+
+    # -- test I/O -------------------------------
+
+    @pytest.mark.parametrize('fmtname', ('Omega', 'cWB'))
+    def test_read_write_ascii(self, table, fmtname):
+        fmt = 'ascii.%s' % fmtname.lower()
+        with tempfile.NamedTemporaryFile(suffix='.txt', mode='w') as f:
+            print(f.name)
+            # check write/read returns the same table
+            table.write(f, format=fmt)
+            f.seek(0)
+            utils.assert_table_equal(table, self.TABLE.read(f, format=fmt),
+                                     almost_equal=True)
+
+        with tempfile.NamedTemporaryFile(suffix='.txt') as f:
+            # assert reading blank file doesn't work with column name error
+            with pytest.raises(InconsistentTableError) as exc:
+                self.TABLE.read(f, format=fmt)
+            assert str(exc.value) == ('No column names found in %s header'
+                                      % fmtname)
 
     @utils.skip_missing_dependency('h5py')
     def test_read_pycbc_live(self):
@@ -370,7 +372,7 @@ class TestEventTable(TestTable):
             if os.path.isdir(os.path.dirname(fp)):
                 shutil.rmtree(os.path.dirname(fp))
 
-    def test_get_hacr_triggers(self):
+    def test_fetch_hacr(self):
         table = self.create(100, names=HACR_COLUMNS)
         try:
             from pymysql import connect
@@ -383,18 +385,18 @@ class TestEventTable(TestTable):
                 table, 123, 456)
 
             # test simple query returns the full table
-            t2 = get_hacr_triggers('X1:TEST-CHANNEL', 123, 456)
+            t2 = self.TABLE.fetch('hacr', 'X1:TEST-CHANNEL', 123, 456)
             utils.assert_table_equal(table, t2)
 
             # test column selection works
-            t2 = get_hacr_triggers('X1:TEST-CHANNEL', 123, 456,
-                                   columns=['gps_start', 'snr'])
+            t2 = self.TABLE.fetch('hacr', 'X1:TEST-CHANNEL', 123, 456,
+                                  columns=['gps_start', 'snr'])
             utils.assert_table_equal(table['gps_start', 'snr'], t2)
 
             # test column selection works
-            t2 = get_hacr_triggers('X1:TEST-CHANNEL', 123, 456,
-                                   columns=['gps_start', 'snr'],
-                                   selection='freq_central>500')
+            t2 = self.TABLE.fetch('hacr', 'X1:TEST-CHANNEL', 123, 456,
+                                  columns=['gps_start', 'snr'],
+                                  selection='freq_central>500')
             utils.assert_table_equal(
                 filter_table(table, 'freq_central>500')['gps_start', 'snr'],
                 t2)

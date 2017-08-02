@@ -2,7 +2,7 @@
 #           [use requirements-dev.txt for a full development environment
 #            including docs and testing dependencies]
 six>=1.5
-numpy>=1.10
+numpy>=1.11
 scipy>=0.16
 astropy>=1.2.1
 matplotlib>=1.4.1
