@@ -47,22 +47,12 @@ env:
   # normal build, normal tests
   - PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS=""
 
-  # normal build, pedantic tests
-  - PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS="--strict"
-
   # pre-release build, pedantic tests
   - PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--strict"
 
 matrix:
   allow_failures:
-    - python: '2.7'
-      env: PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--strict"
-    - python: '3.5'
-      env: PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS=""
-    - python: '3.5'
-      env: PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS="--strict"
-    - python: '3.5'
-      env: PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--strict"
+    - env: PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--strict"
   fast_finish: true
 
 before_install:
