@@ -108,7 +108,7 @@ except ImportError:
 
 setup_requires.append('pytest-runner')
 tests_require = [
-    'pytest>=2.8',
+    'pytest>=3.1',
     'freezegun',
     'sqlparse',
 ]
