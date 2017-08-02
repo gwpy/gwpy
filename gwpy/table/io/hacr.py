@@ -37,6 +37,7 @@ from ...segments import Segment
 from ...time import (to_gps, from_gps)
 from .. import EventTable
 from ..filter import (OPERATORS, parse_column_filters)
+from .fetch import register_fetcher
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -134,6 +135,10 @@ def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
             # get new events, convert to recarray, and append to table
             rows.extend(cursor.fetchall())
     return EventTable(rows=rows, names=columns)
+
+
+register_fetcher('hacr', EventTable, get_hacr_triggers,
+                 usage="channel, gpsstart, gpstop")
 
 
 # -- utilities ----------------------------------------------------------------

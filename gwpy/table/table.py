@@ -197,6 +197,43 @@ class EventTable(Table):
         -----"""
         return io_write(self, target, *args, **kwargs)
 
+    @classmethod
+    def fetch(cls, format_, *args, **kwargs):
+        """Fetch a table of events from a database
+
+        Parameters
+        ----------
+        format : `str`
+            the format of the remote data, see _Notes_ for a list of
+            registered formats
+
+        *args
+            all other positional arguments are specific to the
+            data format, see the online documentation for more details
+
+        selection : `str`, or `list` of `str`
+            one or more column filters with which to downselect the
+            returned table rows as they as read, e.g. ``'snr > 5'``;
+            multiple selections should be connected by ' && ', or given as
+            a `list`, e.g. ``'snr > 5 && frequency < 1000'`` or
+            ``['snr > 5', 'frequency < 1000']``
+
+        **kwargs
+            all other positional arguments are specific to the
+            data format, see the online documentation for more details
+
+
+        Returns
+        -------
+        table : `EventTable`
+            a table of events recovered from the remote database
+
+        Notes
+        -----"""
+        from .io.fetch import get_fetcher
+        fetcher = get_fetcher(format_, cls)
+        return fetcher(*args, **kwargs)
+
     # -- ligolw compatibility -------------------
 
     def get_column(self, name):
