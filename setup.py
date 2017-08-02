@@ -59,7 +59,7 @@ cmdclass.update(versioneer.get_cmdclass())
 setup_requires = [
 ]
 install_requires = [
-    'numpy>=1.10',
+    'numpy>=1.11',
     'scipy>=0.16.0',
     'matplotlib>=1.4.1',
     'astropy>=1.2.1',
