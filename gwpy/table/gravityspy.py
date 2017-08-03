@@ -27,6 +27,8 @@ from sqlalchemy.engine import create_engine
 from .table import EventTable
 from astropy.table import Table
 
+from itertools import izip_longest
+
 from ..utils import mp as mp_utils
 
 from xml.sax import SAXException
@@ -59,53 +61,6 @@ class GravitySpyTable(EventTable):
     """
 
     # -- i/o ------------------------------------
-
-    @classmethod
-    def fetch(cls, table, *args, **kwargs):
-        """Fetch data into an `EventTable`
-
-        Parameters
-        ----------
-        table : `str`,
-            The name of table you are attempting to receive triggers
-            from.
-
-        *args
-            other filters you would like to supply
-            underlying reader method for the given format
-
-        .. note::
-
-           For now it will attempt to autmatically connect you
-           to a specific DB. In the future, this may be an input
-           argument.
-
-        Returns
-        -------
-        table : `EventTable`
-
-        Raises
-        ------
-        astropy.io.registry.IORegistryError
-            if the `format` cannot be automatically identified
-
-        Notes"""
-
-        try:
-            engine = create_engine('postgresql://{0}:{1}@gravityspy.ciera.northwestern.edu:5432/gravityspy'.format(os.environ['QUEST_SQL_USER'], os.environ['QUEST_SQL_PASSWORD']))
-        except:
-            raise ValueError('Remember to set export QUEST_SQL_USER and export QUEST_SQL_PASSWORD in order to access the Gravity Spy Data: https://secrets.ligo.org/secrets/144/ description is username and secret is password.')
-
-        try:
-            tab = pd.read_sql(table, engine)
-        except:
-            raise ValueError('I am sorry could not retrive triggers from that table. The following our acceptible table names {0}'.format(engine.table_names()))
-
-        tab = Table.from_pandas(tab)
-
-        # and return
-        return GravitySpyTable(EventTable(tab.filled()))
-
 
     def download(self, **kwargs):
         """If table contains Gravity Spy triggers `EventTable`
@@ -141,26 +96,33 @@ class GravitySpyTable(EventTable):
                     if not os.path.isdir(iLabel):
                         os.makedirs(iLabel)
 
-        def get_image(url, **kwargs):
+        def get_image(url):
             from ligo.org import request
-            directory = './'
-            if kwargs.pop('TrainingSet', 0):
-                print('I worked 1')
-                if kwargs.pop('LabelledSamples', 0):
-                    print('I worked 2')
-            with open(directory + url.split('/')[-1], 'wb') as f:
-                f.write(request(url))
+            directory = './' + url[1] + '/' + url[2] + '/'
+            with open(directory + url[0].split('/')[-1], 'wb') as f:
+                f.write(request(url[0]))
 
-        imagesDB = imagesDB[['imgUrl1','imgUrl2','imgUrl3','imgUrl4']]
-        images = imagesDB.as_matrix().flatten().tolist()
+        imagesURL = imagesDB[['imgUrl1','imgUrl2','imgUrl3','imgUrl4']]
+        imagesURL = imagesURL.as_matrix().flatten().tolist()
+        if TrainingSet:
+            labels = imagesDB.Label.as_matrix().flatten().tolist()
+            if LabelledSamples:
+                sampletype = imagesDB.SampleType.as_matrix().flatten().tolist()
+                images = izip_longest(imagesURL, labels, sampletype)
+            else:
+                images =izip_longest(imagesURL, labels, [])
+        else:
+            images = izip_longest(imagesURL, [], [])
+                
+        images = list(images)
 
         # calculate maximum number of processes
         nproc = min(kwargs.pop('nproc', 1), len(images))
 
         # define multiprocessing method
-        def _download_single_image(f, **kwargs):
+        def _download_single_image(f):
             try:
-                return f, get_image(f, **kwargs)
+                return f, get_image(f)
             except Exception as e:
                 if nproc == 1:
                     raise
@@ -178,4 +140,3 @@ class GravitySpyTable(EventTable):
             if isinstance(x, Exception):
                 x.args = ('Failed to read %s: %s' % (f, str(x)),)
                 raise x
-

@@ -28,6 +28,7 @@ from . import (  # pylint: disable=unused-import
     pycbc,  # PyCBC (Live) HDF5
     hacr,  # Hierarchichal Algorithm for Curves and Ridges
     gwf,  # GWF FrEvents (e.g. MBTA)
+    gravityspy, # Gravity Spy Triggers
 )
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
