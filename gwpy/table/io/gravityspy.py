@@ -30,9 +30,6 @@ is the username and thesecret is the password.
 """
 import os
 
-import pandas as pd
-from sqlalchemy.engine import create_engine
-
 from .. import GravitySpyTable
 from .. import EventTable
 from astropy.table import Table
@@ -69,6 +66,17 @@ def get_gravityspy_triggers(tablename, selection=None, **kwargs):
     table : `GravitySpyTable`
 
     Notes"""
+    try:
+        import pandas as pd
+    except ImportError as e:
+        e.args = ('pandas is required to download triggers',)
+        raise
+
+    try:
+        from sqlalchemy.engine import create_engine
+    except ImportError as e:
+        e.args = ('sqlalchemy is required to download triggers',)
+        raise
 
     if (not QUEST_SQL_USER) or (not QUEST_SQL_PASSWORD):
         raise ValueError('Remember to set export QUEST_SQL_USER \

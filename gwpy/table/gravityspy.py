@@ -22,9 +22,6 @@
 import os
 import sys
 
-import pandas as pd
-from sqlalchemy.engine import create_engine
-
 from .table import EventTable
 from astropy.table import Table
 
@@ -80,6 +77,11 @@ class GravitySpyTable(EventTable):
         -------
         Folder containing omega scans sorted by label
         """
+        try:
+            import pandas as pd
+        except ImportError as e:
+            e.args = ('pandas is required to download triggers',)
+            raise
 
         # back to pandas
         imagesDB = self.to_pandas()
