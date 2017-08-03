@@ -14,6 +14,7 @@ pycbc; python_version == '2.7'
 git+https://github.com/duncanmmacleod/ligo.org.git
 sqlalchemy
 psycopg2
+pandas
 
 # docs
 sphinx

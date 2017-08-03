@@ -19,7 +19,8 @@
 """Extend :mod:`astropy.table` with the `GravitySpyTable`
 """
 
-import os, sys
+import os
+import sys
 
 import pandas as pd
 from sqlalchemy.engine import create_engine
@@ -35,6 +36,7 @@ from xml.sax import SAXException
 
 __author__ = 'Scott Coughlin <scott.coughlin@ligo.org>'
 __all__ = ['GravitySpyTable']
+
 
 class GravitySpyTable(EventTable):
     """A container for a table of Gravity Spy Events (as well as
@@ -102,7 +104,7 @@ class GravitySpyTable(EventTable):
             with open(directory + url[0].split('/')[-1], 'wb') as f:
                 f.write(request(url[0]))
 
-        imagesURL = imagesDB[['imgUrl1','imgUrl2','imgUrl3','imgUrl4']]
+        imagesURL = imagesDB[['imgUrl1', 'imgUrl2', 'imgUrl3', 'imgUrl4']]
         imagesURL = imagesURL.as_matrix().flatten().tolist()
         if TrainingSet:
             labels = imagesDB.Label.as_matrix().flatten().tolist()
@@ -113,7 +115,7 @@ class GravitySpyTable(EventTable):
                 images =izip_longest(imagesURL, labels, [])
         else:
             images = izip_longest(imagesURL, [], [])
-                
+
         images = list(images)
 
         # calculate maximum number of processes

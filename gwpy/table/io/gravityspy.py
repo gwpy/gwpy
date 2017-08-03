@@ -18,14 +18,14 @@
 
 """Input/output methods for tabular data.
 
-Access to GravitySpy and O1GlitchClassification triggers requires access 
+Access to GravitySpy and O1GlitchClassification triggers requires access
 to a PostgresSQL database. Users can set the username and password for
 connections in the following environment variables
 
 - ``QUEST_SQL_USER``
 - ``QUEST_SQL_PASSWORD``
 
-These can be found https://secrets.ligo.org/secrets/144/. The description 
+These can be found https://secrets.ligo.org/secrets/144/. The description
 is the username and thesecret is the password.
 """
 import os
@@ -44,18 +44,19 @@ __author__ = 'Scott Coughlin <scott.coughlin@ligo.org>'
 QUEST_SQL_USER = os.getenv('QUEST_SQL_USER', None)
 QUEST_SQL_PASSWORD = os.getenv('QUEST_SQL_PASSWORD', None)
 
+
 def get_gravityspy_triggers(tablename, selection=None, **kwargs):
     """Fetch data into an `GravitySpyTable`
 
     Parameters
     ----------
     table : `str`,
-	The name of table you are attempting to receive triggers
-	from.
+        The name of table you are attempting to receive triggers
+        from.
 
     selection
-	other filters you would like to supply
-	underlying reader method for the given format
+        other filters you would like to supply
+        underlying reader method for the given format
 
     .. note::
 
@@ -70,7 +71,10 @@ def get_gravityspy_triggers(tablename, selection=None, **kwargs):
     Notes"""
 
     if (not QUEST_SQL_USER) or (not QUEST_SQL_PASSWORD):
-        raise ValueError('Remember to set export QUEST_SQL_USER and export QUEST_SQL_PASSWORD in order to access the Gravity Spy Data: https://secrets.ligo.org/secrets/144/ description is username and secret is password.')
+        raise ValueError('Remember to set export QUEST_SQL_USER \
+            and export QUEST_SQL_PASSWORD in order to access the \
+            Gravity Spy Data: https://secrets.ligo.org/secrets/144/\
+             description is username and secret is password.')
 
     engine = create_engine('postgresql://{0}:{1}@gravityspy.ciera.northwestern.edu:5432/gravityspy'.format(os.environ['QUEST_SQL_USER'], os.environ['QUEST_SQL_PASSWORD']))
 
@@ -82,12 +86,15 @@ def get_gravityspy_triggers(tablename, selection=None, **kwargs):
             selectionstr = 'SELECT * FROM \"{0}\"'.format(tablename)
         tab = pd.read_sql(selectionstr, engine)
     except:
-        raise ValueError('I am sorry could not retrive triggers from that table. The following our acceptible table names {0}'.format(engine.table_names()))
+        raise ValueError('I am sorry could not retrive triggers\
+            from that table. The following our acceptible \
+            table names {0}'.format(engine.table_names()))
 
     tab = Table.from_pandas(tab)
 
     # and return
     return GravitySpyTable(tab.filled())
+
 
 register_fetcher('gravityspy', EventTable, get_gravityspy_triggers,
                  usage="tablename")
