@@ -84,7 +84,10 @@ def get_gravityspy_triggers(tablename, selection=None, **kwargs):
             Gravity Spy Data: https://secrets.ligo.org/secrets/144/\
              description is username and secret is password.')
 
-    engine = create_engine('postgresql://{0}:{1}@gravityspy.ciera.northwestern.edu:5432/gravityspy'.format(os.environ['QUEST_SQL_USER'], os.environ['QUEST_SQL_PASSWORD']))
+    engine = create_engine('postgresql://{0}:{1}\
+        @gravityspy.ciera.northwestern.edu:5432/gravityspy'\
+        .format(os.environ['QUEST_SQL_USER'], 
+            os.environ['QUEST_SQL_PASSWORD']))
 
     try:
         # parse selections and map to column indices
@@ -93,7 +96,7 @@ def get_gravityspy_triggers(tablename, selection=None, **kwargs):
         else:
             selectionstr = 'SELECT * FROM \"{0}\"'.format(tablename)
         tab = pd.read_sql(selectionstr, engine)
-    except:
+    except Exception as e:
         raise ValueError('I am sorry could not retrive triggers\
             from that table. The following our acceptible \
             table names {0}'.format(engine.table_names()))

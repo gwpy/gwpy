@@ -114,7 +114,7 @@ class GravitySpyTable(EventTable):
                 sampletype = imagesDB.SampleType.as_matrix().flatten().tolist()
                 images = izip_longest(imagesURL, labels, sampletype)
             else:
-                images =izip_longest(imagesURL, labels, [])
+                images = izip_longest(imagesURL, labels, [])
         else:
             images = izip_longest(imagesURL, [], [])
 
