@@ -1235,11 +1235,11 @@ class DataQualityDict(OrderedDict):
         for row in veto_def_table:
             if ifo and row.ifo != ifo:
                 continue
-            if start and 0 < row.end_time < start:
+            if start and 0 < row.end_time <= start:
                 continue
             elif start:
                 row.start_time = max(row.start_time, start)
-            if end and row.start_time > end:
+            if end and row.start_time >= end:
                 continue
             elif end and not row.end_time:
                 row.end_time = end
