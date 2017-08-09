@@ -1130,7 +1130,6 @@ class DataQualityDict(OrderedDict):
                                    key=lambda x: x[0])))[1]
         for result, flag in zip(results, flags):
             if isinstance(result, Exception):
-                new[flag] = cls._EntryClass(name=flag)
                 result.args = ('%s [%s]' % (str(result), str(flag)),)
                 if on_error == 'ignore':
                     pass
