@@ -713,11 +713,9 @@ class DataQualityFlag(object):
         """
         if len(args) == 0:
             start, end = self.padding
-        elif len(args) == 2:
-            start, end = args
         else:
-            raise ValueError("Cannot parse (start, end) padding from %r"
-                             % args)
+            start, end = args
+
         if kwargs.pop('inplace', False):
             new = self
         else:
