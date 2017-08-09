@@ -23,7 +23,7 @@ import os.path
 import shutil
 import tempfile
 
-from six import PY3
+from six import PY2
 
 import pytest
 
@@ -140,7 +140,7 @@ class TestTable(object):
                 t3 = self.TABLE.read([f.name, f.name],
                                      format='ligolw.sngl_burst')
             except NameError as e:
-                if PY3:  # ligolw not patched for python3 just yet
+                if not PY2:  # ligolw not patched for python3 just yet
                     pytest.xfail(str(e))
                 raise
             utils.assert_table_equal(vstack((t2, t2)), t3)
@@ -155,7 +155,8 @@ class TestTable(object):
                 table.write(f.name, format='ligolw.sngl_burst', overwrite=True)
             except TypeError as e:
                 # ligolw is not python3-compatbile, so skip if it fails
-                if PY3 and str(e) == 'write() argument must be str, not bytes':
+                if not PY2 and (
+                        str(e) == 'write() argument must be str, not bytes'):
                     pytest.xfail(str(e))
                 raise
             t3 = _read()
