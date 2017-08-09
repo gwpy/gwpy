@@ -644,8 +644,9 @@ class TestDataQualityFlag(object):
                           SegmentList([(0, 10)]))
 
         with pytest.raises(HTTPError) as exc:
-            self.TEST_CLASS.query_dqsegdb('X1:GWPY-TEST:0', 0, 10)
-        assert str(exc.value) == 'HTTP Error 404: Not Found [X1:GWPY-TEST:0]'
+            query_dqsegdb(self.TEST_CLASS.query_dqsegdb,
+                          'X1:GWPY-TEST:0', 0, 10)
+        assert str(exc.value) == 'HTTP Error 404: Not found [X1:GWPY-TEST:0]'
 
 
     def test_query_dqsegdb_multi(self):
