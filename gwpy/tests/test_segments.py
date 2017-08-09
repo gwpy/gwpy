@@ -69,10 +69,11 @@ VETO_DEFINER_FILE = """<?xml version='1.0' encoding='utf-8'?>
 
 @pytest.fixture(scope='module')
 def veto_definer():
-    with tempfile.NamedTemporaryFile(suffix='.xml', delete=False) as f:
+    with tempfile.NamedTemporaryFile(suffix='.xml', mode='w',
+                                     delete=False) as f:
         f.write(VETO_DEFINER_FILE)
         f.seek(0)
-        yield f
+        yield f.name
     if os.path.isfile(f.name):
         os.remove(f.name)
 
