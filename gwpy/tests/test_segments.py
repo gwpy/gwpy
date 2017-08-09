@@ -412,6 +412,7 @@ class TestDataQualityFlag(object):
         assert flag.version == 1
 
     def test_plot(self, flag):
+        flag.label = 'Test label'
         with rc_context(rc={'text.usetex': False}):
             plot = flag.plot(figsize=(6.4, 3.8))
             assert isinstance(plot, SegmentPlot)
@@ -420,9 +421,17 @@ class TestDataQualityFlag(object):
             assert len(plot.gca().collections) == 2
             assert len(plot.gca().collections[0].get_paths()) == len(KNOWN)
             assert len(plot.gca().collections[1].get_paths()) == len(ACTIVE)
+            assert plot.gca().collections[0].get_label() == flag.label
 
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
+            plot.close()
+
+        flag.label = None
+        with rc_context(rc={'text.usetex': True}):
+            plot = flag.plot(figsize=(6.4, 3.8))
+            assert plot.gca().collections[0].get_label() == flag.texname
+            plot.close()
 
     def test_math(self):
         a = self.TEST_CLASS(active=ACTIVE[:2], known=KNOWN)
@@ -830,6 +839,19 @@ class TestDataQualityDict(object):
         assert isinstance(result, self.TEST_CLASS)
         utils.assert_dict_equal(result, RESULT, utils.assert_flag_equal)
 
+        # check all values of on_error
+        with pytest.warns(UserWarning) as record:
+            result = query_dqsegdb(self.TEST_CLASS.query_dqsegdb,
+                                   QUERY_FLAGS + ['X1:BLAHBLAH:1'], 0, 10,
+                                   on_error='warn')
+            result = query_dqsegdb(self.TEST_CLASS.query_dqsegdb,
+                                   QUERY_FLAGS + ['X1:BLAHBLAH:1'], 0, 10,
+                                   on_error='ignore')
+        utils.assert_dict_equal(result, RESULT, utils.assert_flag_equal)
+        assert len(record) == 1  # check on_error='ignore' didn't warn
+        with pytest.raises(ValueError):
+            self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS, 0, 10, on_error='blah')
+
     def test_query_segdb(self):
         result = query_segdb(self.TEST_CLASS.query_segdb, QUERY_FLAGS, 0, 10)
         assert isinstance(result, self.TEST_CLASS)
@@ -858,6 +880,17 @@ class TestDataQualityDict(object):
             vdf.populate()
             vdf2.populate()
             vdf3.populate(segments=span)
+
+            # test warnings on bad entries
+            vdf['TEST'] = self.ENTRY_CLASS('X1:BLAHBLAHBLAH:1', known=[(0, 1)])
+            with pytest.warns(UserWarning) as record:
+                vdf.populate(on_error='warn')
+                vdf.populate(on_error='ignore')
+            assert len(record) == 1
+            vdf.pop('TEST')
+
+            with pytest.raises(ValueError):
+                vdf.populate(on_error='blah')
 
         # check basic populate worked
         utils.assert_dict_equal(vdf, QUERY_RESULTC, utils.assert_flag_equal)
