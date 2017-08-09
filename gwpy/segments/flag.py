@@ -306,11 +306,7 @@ class DataQualityFlag(object):
     def padding(self):
         """[start, end) padding for this flag's active segments.
         """
-        try:
-            return self._padding
-        except AttributeError:
-            self._padding = (0, 0)
-            return self.padding
+        return self._padding
 
     @padding.setter
     def padding(self, pad):
@@ -318,6 +314,10 @@ class DataQualityFlag(object):
             self._padding = (0, 0)
         else:
             self._padding = (pad[0], pad[1])
+
+    @padding.deleter
+    def padding(self):
+        self._padding = (0, 0)
 
     # -------------------------------------------------------------------------
     # read-only properties

@@ -349,6 +349,19 @@ class TestDataQualityFlag(object):
         assert empty.regular is True
         assert flag.regular is False
 
+    def test_padding(self, flag):
+        assert flag.padding == (0, 0)
+
+        flag.padding = [-1, 2]
+        assert isinstance(flag.padding, tuple)
+        assert flag.padding == (-1, 2)
+
+        flag.padding = None
+        assert flag.padding == (0, 0)
+
+        del flag.padding
+        assert flag.padding == (0, 0)
+
     def test_deprecated_names(self):
         with pytest.warns(DeprecationWarning):
             flag = self.TEST_CLASS(NAME, valid=KNOWN)
