@@ -521,7 +521,7 @@ class TestDataQualityFlag(object):
             kwargs['name'] = name
             kwargs['version'] = version
             for key in VetoDef.__slots__:
-               setattr(vdef, key, kwargs.get(key, None))
+                setattr(vdef, key, kwargs.get(key, None))
             return vdef
 
         a = veto_def('X1', 'TEST-FLAG', 1, start_time=0, end_time=0,
@@ -647,7 +647,6 @@ class TestDataQualityFlag(object):
             query_dqsegdb(self.TEST_CLASS.query_dqsegdb,
                           'X1:GWPY-TEST:0', 0, 10)
         assert str(exc.value) == 'HTTP Error 404: Not found [X1:GWPY-TEST:0]'
-
 
     def test_query_dqsegdb_multi(self):
         segs = SegmentList([Segment(0, 2), Segment(8, 10)])
