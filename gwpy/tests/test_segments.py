@@ -529,6 +529,16 @@ class TestDataQualityFlag(object):
         assert f.name == 'X1:TEST-FLAG'
         assert f.version is None
 
+    @utils.skip_missing_dependency('dqsegdb')
+    def test_populate(self):
+        name = QUERY_FLAGS[0]
+        flag = self.TEST_CLASS(name, known=QUERY_RESULT[name].known)
+
+        with mock.patch('dqsegdb.apicalls.dqsegdbQueryTimes',
+                        mocks.dqsegdb_query_times(QUERY_RESULT)):
+            flag.populate()
+        utils.assert_flag_equal(flag, QUERY_RESULTC[name])
+
     # -- test I/O -------------------------------
 
     @pytest.mark.parametrize('format, ext, rw_kwargs, simple', [
