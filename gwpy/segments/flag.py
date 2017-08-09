@@ -39,7 +39,7 @@ from threading import Thread
 
 from six import string_types
 from six.moves import reduce
-from six.moves.urllib.error import URLError
+from six.moves.urllib.error import (URLError, HTTPError)
 from six.moves.urllib.parse import urlparse
 from six.moves.queue import Queue
 
@@ -509,8 +509,9 @@ class DataQualityFlag(object):
                     data, _ = apicalls.dqsegdbQueryTimes(
                         protocol, server, out.ifo, out.tag, out.version,
                         request, int(start), int(end))
-                except URLError as e:
-                    e.args = ('Error querying for %s: %s' % (flag, e),)
+                except HTTPError as e:
+                    if e.code == 404:  # if not found, annotate with flag name
+                        e.msg += ' [{0}]'.format(flag)
                     raise
             # read from json buffer
             try:

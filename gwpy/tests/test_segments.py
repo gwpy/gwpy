@@ -23,6 +23,8 @@ import os.path
 import shutil
 import tempfile
 
+from six.moves.urllib.error import HTTPError
+
 import pytest
 
 from matplotlib import use, rc_context
@@ -590,6 +592,15 @@ class TestDataQualityFlag(object):
         result2 = query_dqsegdb(self.TEST_CLASS.query_dqsegdb,
                                 name, SegmentList([(0, 10)]))
         utils.assert_flag_equal(result, result2)
+
+        with pytest.raises(ValueError):
+            query_dqsegdb(self.TEST_CLASS.query_dqsegdb, 'BAD-FLAG_NAME',
+                          SegmentList([(0, 10)]))
+
+        with pytest.raises(HTTPError) as exc:
+            self.TEST_CLASS.query_dqsegdb('X1:GWPY-TEST:0', 0, 10)
+        assert str(exc.value) == 'HTTP Error 404: Not Found [X1:GWPY-TEST:0]'
+
 
     def test_query_dqsegdb_multi(self):
         segs = SegmentList([Segment(0, 2), Segment(8, 10)])
