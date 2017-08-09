@@ -365,6 +365,8 @@ class TestDataQualityFlag(object):
     def test_deprecated_names(self):
         with pytest.warns(DeprecationWarning):
             flag = self.TEST_CLASS(NAME, valid=KNOWN)
+        with pytest.raises(ValueError):
+            flag = self.TEST_CLASS(NAME, valid=KNOWN, known=KNOWN)
         with pytest.warns(DeprecationWarning):
             flag.valid
         with pytest.warns(DeprecationWarning):
@@ -408,7 +410,7 @@ class TestDataQualityFlag(object):
 
     def test_plot(self, flag):
         with rc_context(rc={'text.usetex': False}):
-            plot = flag.plot()
+            plot = flag.plot(figsize=(6.4, 3.8))
             assert isinstance(plot, SegmentPlot)
             assert isinstance(plot.gca(), SegmentAxes)
             assert plot.gca().get_epoch() == flag.known[0][0]
@@ -690,7 +692,7 @@ class TestDataQualityDict(object):
 
     def test_plot(self, instance):
         with rc_context(rc={'text.usetex': False}):
-            plot = instance.plot()
+            plot = instance.plot(figsize=(6.4, 3.8))
             assert isinstance(plot, SegmentPlot)
             assert isinstance(plot.gca(), SegmentAxes)
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
