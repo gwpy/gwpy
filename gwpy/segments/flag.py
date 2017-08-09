@@ -427,12 +427,9 @@ class DataQualityFlag(object):
         elif len(args) == 1 and len(args[0]) == 2:
             qsegs = SegmentList([Segment(to_gps(args[0][0]),
                                          to_gps(args[0][1]))])
-        elif len(args) == 2:
-            qsegs = SegmentList([Segment(to_gps(args[0]), to_gps(args[1]))])
         else:
-            raise ValueError("DataQualityFlag.query must be called with a "
-                             "flag name, and either GPS start and stop times, "
-                             "or a SegmentList of query segments")
+            qsegs = SegmentList([Segment(map(to_gps, args))])
+
         # process query
         try:
             flags = DataQualityDict.query_segdb([flag], qsegs, **kwargs)
@@ -482,12 +479,9 @@ class DataQualityFlag(object):
         elif len(args) == 1 and len(args[0]) == 2:
             qsegs = SegmentList([Segment(to_gps(args[0][0]),
                                          to_gps(args[0][1]))])
-        elif len(args) == 2:
-            qsegs = SegmentList([Segment(to_gps(args[0]), to_gps(args[1]))])
         else:
-            raise ValueError("DataQualityFlag.query must be called with a "
-                             "flag name, and either GPS start and stop times, "
-                             "or a SegmentList of query segments")
+            qsegs = SegmentList([Segment(map(to_gps, args))])
+
         # get server
         protocol, server = kwargs.pop(
             'url', 'https://segments.ligo.org').split('://', 1)
