@@ -502,6 +502,33 @@ class TestDataQualityFlag(object):
         with pytest.raises(TypeError):
             flag.pad(*PADDING, kwarg='test')
 
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')
+    def test_from_veto_def(self):
+        from glue.ligolw.lsctables import VetoDef
+
+        def veto_def(ifo, name, version, **kwargs):
+            vdef = VetoDef()
+            kwargs['ifo'] = ifo
+            kwargs['name'] = name
+            kwargs['version'] = version
+            for key in VetoDef.__slots__:
+               setattr(vdef, key, kwargs.get(key, None))
+            return vdef
+
+        a = veto_def('X1', 'TEST-FLAG', 1, start_time=0, end_time=0,
+                     start_pad=-2, end_pad=2, comment='Comment')
+        f = self.TEST_CLASS.from_veto_def(a)
+        assert f.name == 'X1:TEST-FLAG:1'
+        assert f.category is None
+        assert f.padding == (-2, 2)
+        assert f.description == 'Comment'
+        utils.assert_segmentlist_equal(f.known, [(0, float('inf'))])
+
+        a = veto_def('X1', 'TEST-FLAG', None, start_time=0, end_time=1)
+        f = self.TEST_CLASS.from_veto_def(a)
+        assert f.name == 'X1:TEST-FLAG'
+        assert f.version is None
+
     # -- test I/O -------------------------------
 
     @pytest.mark.parametrize('format, ext, rw_kwargs, simple', [
