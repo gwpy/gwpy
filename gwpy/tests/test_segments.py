@@ -64,7 +64,7 @@ VETO_DEFINER_FILE = """<?xml version='1.0' encoding='utf-8'?>
 		</Stream>
 	</Table>
 </LIGO_LW>
-"""
+"""  # nopep8
 
 
 @pytest.fixture(scope='module')
@@ -631,7 +631,6 @@ class TestDataQualityDict(object):
         rev[keys[1]] = inst[keys[0]]
         return rev
 
-
     # -- test logic -----------------------------
 
     def test_iand(self, instance, reverse):
@@ -724,7 +723,6 @@ class TestDataQualityDict(object):
                                                      start=200, end=300)
         assert len(vdf.keys()) == 3
         assert 'X1:TEST-FLAG_2:1' not in vdf
-
 
     @pytest.mark.parametrize('format, ext, dep, rw_kwargs', [
         ('ligolw', 'xml', 'glue.ligolw.lsctables', {}),
