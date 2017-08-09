@@ -23,7 +23,7 @@ import os.path
 import shutil
 import tempfile
 
-from six.moves.urllib.error import URLError
+from six.moves.urllib.error import HTTPError
 
 import pytest
 
@@ -41,8 +41,43 @@ from mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-VETO_DEFINER_FILE = ('https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/'
-                     'segments/ER7/H1L1V1-ER7_CBC_OFFLINE.xml')
+
+# -- veto definer fixture -----------------------------------------------------
+
+VETO_DEFINER_FILE = """<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
+<LIGO_LW>
+	<Table Name="veto_definer:table">
+		<Column Type="int_4s" Name="veto_definer:category"/>
+		<Column Type="lstring" Name="veto_definer:comment"/>
+		<Column Type="int_4s" Name="veto_definer:end_pad"/>
+		<Column Type="ilwd:char" Name="veto_definer:process_id"/>
+		<Column Type="lstring" Name="veto_definer:name"/>
+		<Column Type="int_4s" Name="veto_definer:version"/>
+		<Column Type="int_4s" Name="veto_definer:start_pad"/>
+		<Column Type="int_4s" Name="veto_definer:start_time"/>
+		<Column Type="lstring" Name="veto_definer:ifo"/>
+		<Column Type="int_4s" Name="veto_definer:end_time"/>
+		<Stream Delimiter="," Type="Local" Name="veto_definer:table">
+			1,"Test flag 1",2,,"TEST-FLAG",1,-1,100,"X1",0,
+			2,"Test flag 1",2,,"TEST-FLAG_2",1,1,100,"X1",200,
+			2,"Test flag 1",2,,"TEST-FLAG_2",2,-2,200,"X1",0,
+			2,"Test flag 1",2,,"TEST-FLAG_2",2,-2,100,"Y1",0,
+		</Stream>
+	</Table>
+</LIGO_LW>
+"""  # nopep8
+
+
+@pytest.fixture(scope='module')
+def veto_definer():
+    with tempfile.NamedTemporaryFile(suffix='.xml', mode='w',
+                                     delete=False) as f:
+        f.write(VETO_DEFINER_FILE)
+        f.seek(0)
+        yield f.name
+    if os.path.isfile(f.name):
+        os.remove(f.name)
 
 
 # -- test data ----------------------------------------------------------------
@@ -317,9 +352,24 @@ class TestDataQualityFlag(object):
         assert empty.regular is True
         assert flag.regular is False
 
+    def test_padding(self, flag):
+        assert flag.padding == (0, 0)
+
+        flag.padding = [-1, 2]
+        assert isinstance(flag.padding, tuple)
+        assert flag.padding == (-1, 2)
+
+        flag.padding = None
+        assert flag.padding == (0, 0)
+
+        del flag.padding
+        assert flag.padding == (0, 0)
+
     def test_deprecated_names(self):
         with pytest.warns(DeprecationWarning):
             flag = self.TEST_CLASS(NAME, valid=KNOWN)
+        with pytest.raises(ValueError):
+            flag = self.TEST_CLASS(NAME, valid=KNOWN, known=KNOWN)
         with pytest.warns(DeprecationWarning):
             flag.valid
         with pytest.warns(DeprecationWarning):
@@ -362,17 +412,26 @@ class TestDataQualityFlag(object):
         assert flag.version == 1
 
     def test_plot(self, flag):
+        flag.label = 'Test label'
         with rc_context(rc={'text.usetex': False}):
-            plot = flag.plot()
+            plot = flag.plot(figsize=(6.4, 3.8))
             assert isinstance(plot, SegmentPlot)
             assert isinstance(plot.gca(), SegmentAxes)
             assert plot.gca().get_epoch() == flag.known[0][0]
             assert len(plot.gca().collections) == 2
             assert len(plot.gca().collections[0].get_paths()) == len(KNOWN)
             assert len(plot.gca().collections[1].get_paths()) == len(ACTIVE)
+            assert plot.gca().collections[0].get_label() == flag.label
 
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
+            plot.close()
+
+        flag.label = None
+        with rc_context(rc={'text.usetex': True}):
+            plot = flag.plot(figsize=(6.4, 3.8))
+            assert plot.gca().collections[0].get_label() == flag.texname
+            plot.close()
 
     def test_math(self):
         a = self.TEST_CLASS(active=ACTIVE[:2], known=KNOWN)
@@ -392,6 +451,11 @@ class TestDataQualityFlag(object):
         x = a | b
         utils.assert_segmentlist_equal(x.active, ACTIVE)
         utils.assert_segmentlist_equal(x.known, KNOWN)
+
+        # invert
+        x = ~a
+        utils.assert_segmentlist_equal(x.active, ~a.active)
+        utils.assert_segmentlist_equal(x.known, ~a.known)
 
     def test_coalesce(self):
         flag = self.create()
@@ -446,6 +510,43 @@ class TestDataQualityFlag(object):
         # check that other keyword arguments get rejected appropriately
         with pytest.raises(TypeError):
             flag.pad(*PADDING, kwarg='test')
+
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')
+    def test_from_veto_def(self):
+        from glue.ligolw.lsctables import VetoDef
+
+        def veto_def(ifo, name, version, **kwargs):
+            vdef = VetoDef()
+            kwargs['ifo'] = ifo
+            kwargs['name'] = name
+            kwargs['version'] = version
+            for key in VetoDef.__slots__:
+                setattr(vdef, key, kwargs.get(key, None))
+            return vdef
+
+        a = veto_def('X1', 'TEST-FLAG', 1, start_time=0, end_time=0,
+                     start_pad=-2, end_pad=2, comment='Comment')
+        f = self.TEST_CLASS.from_veto_def(a)
+        assert f.name == 'X1:TEST-FLAG:1'
+        assert f.category is None
+        assert f.padding == (-2, 2)
+        assert f.description == 'Comment'
+        utils.assert_segmentlist_equal(f.known, [(0, float('inf'))])
+
+        a = veto_def('X1', 'TEST-FLAG', None, start_time=0, end_time=1)
+        f = self.TEST_CLASS.from_veto_def(a)
+        assert f.name == 'X1:TEST-FLAG'
+        assert f.version is None
+
+    @utils.skip_missing_dependency('dqsegdb')
+    def test_populate(self):
+        name = QUERY_FLAGS[0]
+        flag = self.TEST_CLASS(name, known=QUERY_RESULT[name].known)
+
+        with mock.patch('dqsegdb.apicalls.dqsegdbQueryTimes',
+                        mocks.dqsegdb_query_times(QUERY_RESULT)):
+            flag.populate()
+        utils.assert_flag_equal(flag, QUERY_RESULTC[name])
 
     # -- test I/O -------------------------------
 
@@ -511,6 +612,14 @@ class TestDataQualityFlag(object):
         utils.assert_segmentlist_equal(result.known, RESULT.known)
         utils.assert_segmentlist_equal(result.active, RESULT.active)
 
+        result2 = query_segdb(self.TEST_CLASS.query_segdb,
+                              QUERY_FLAGS[0], (0, 10))
+        utils.assert_flag_equal(result, result2)
+
+        result2 = query_segdb(self.TEST_CLASS.query_segdb,
+                              QUERY_FLAGS[0], SegmentList([(0, 10)]))
+        utils.assert_flag_equal(result, result2)
+
     @pytest.mark.parametrize('name, flag', [
         (QUERY_FLAGS[0], QUERY_FLAGS[0]),  # regular query
         (QUERY_FLAGS[0].rsplit(':', 1)[0], QUERY_FLAGS[0]),  # versionless
@@ -522,6 +631,22 @@ class TestDataQualityFlag(object):
         assert isinstance(result, self.TEST_CLASS)
         utils.assert_segmentlist_equal(result.known, RESULT.known)
         utils.assert_segmentlist_equal(result.active, RESULT.active)
+
+        result2 = query_dqsegdb(self.TEST_CLASS.query_dqsegdb, name, (0, 10))
+        utils.assert_flag_equal(result, result2)
+
+        result2 = query_dqsegdb(self.TEST_CLASS.query_dqsegdb,
+                                name, SegmentList([(0, 10)]))
+        utils.assert_flag_equal(result, result2)
+
+        with pytest.raises(ValueError):
+            query_dqsegdb(self.TEST_CLASS.query_dqsegdb, 'BAD-FLAG_NAME',
+                          SegmentList([(0, 10)]))
+
+        with pytest.raises(HTTPError) as exc:
+            query_dqsegdb(self.TEST_CLASS.query_dqsegdb,
+                          'X1:GWPY-TEST:0', 0, 10)
+        assert str(exc.value) == 'HTTP Error 404: Not found [X1:GWPY-TEST:0]'
 
     def test_query_dqsegdb_multi(self):
         segs = SegmentList([Segment(0, 2), Segment(8, 10)])
@@ -554,6 +679,60 @@ class TestDataQualityDict(object):
     def instance(cls):
         return cls.create()
 
+    @classmethod
+    @pytest.fixture()
+    def reverse(cls):
+        inst = cls.create()
+        rev = type(inst)()
+        keys = list(inst.keys())
+        rev[keys[0]] = inst[keys[1]]
+        rev[keys[1]] = inst[keys[0]]
+        return rev
+
+    # -- test logic -----------------------------
+
+    def test_iand(self, instance, reverse):
+        a = instance.copy()
+        a &= reverse
+        keys = list(a.keys())
+        utils.assert_flag_equal(a[keys[0]],
+                                instance[keys[0]] & reverse[keys[1]])
+
+    def test_and(self, instance, reverse):
+        a = instance.copy()
+        a &= reverse
+        utils.assert_dict_equal(a, instance & reverse, utils.assert_flag_equal)
+
+    def test_ior(self, instance, reverse):
+        a = instance.copy()
+        a |= reverse
+        keys = list(a.keys())
+        utils.assert_flag_equal(a[keys[0]],
+                                instance[keys[0]] | reverse[keys[1]])
+
+    def test_or(self, instance, reverse):
+        a = instance.copy()
+        a |= reverse
+        utils.assert_dict_equal(a, instance | reverse, utils.assert_flag_equal)
+
+    def test_isub(self, instance, reverse):
+        a = instance.copy()
+        a -= reverse
+        keys = list(a.keys())
+        utils.assert_flag_equal(a[keys[0]],
+                                instance[keys[0]] - reverse[keys[1]])
+
+    def test_sub(self, instance, reverse):
+        a = instance.copy()
+        a -= reverse
+        utils.assert_dict_equal(a, instance - reverse, utils.assert_flag_equal)
+
+    def test_invert(self, instance):
+        inverse = type(instance)()
+        for key in instance:
+            inverse[key] = ~instance[key]
+        utils.assert_dict_equal(~instance, inverse, utils.assert_flag_equal)
+
     # -- test methods ---------------------------
 
     def test_union(self, instance):
@@ -570,7 +749,7 @@ class TestDataQualityDict(object):
 
     def test_plot(self, instance):
         with rc_context(rc={'text.usetex': False}):
-            plot = instance.plot()
+            plot = instance.plot(figsize=(6.4, 3.8))
             assert isinstance(plot, SegmentPlot)
             assert isinstance(plot.gca(), SegmentAxes)
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
@@ -579,21 +758,29 @@ class TestDataQualityDict(object):
     # -- test I/O -------------------------------
 
     @utils.skip_missing_dependency('lal')
-    def test_from_veto_definer_file(self):
+    def test_from_veto_definer_file(self, veto_definer):
         # read veto definer
-        try:
-            vdf = self.TEST_CLASS.from_veto_definer_file(VETO_DEFINER_FILE)
-        except URLError as e:
-            pytest.skip(str(e))
-        assert len(vdf.keys()) == 42
+        vdf = self.TEST_CLASS.from_veto_definer_file(veto_definer)
+        assert len(vdf.keys()) == 4
 
         # test one flag to make sure it is well read
-        name = 'H1:ODC-INJECTION_CBC:1'
+        name = 'X1:TEST-FLAG:1'
         assert name in vdf
         utils.assert_segmentlist_equal(vdf[name].known,
-                                       [(1073779216, float('inf'))])
-        assert vdf[name].category is 3
-        assert vdf[name].padding == (-8, 8)
+                                       [(100, float('inf'))])
+        assert vdf[name].category is 1
+        assert vdf[name].padding == (-1, 2)
+
+        # test ifo kwarg
+        vdf = self.TEST_CLASS.from_veto_definer_file(veto_definer, ifo='X1')
+        assert len(vdf.keys()) == 3
+        assert 'Y1:TEST-FLAG_2:2' not in vdf
+
+        # test start and end kwargs
+        vdf = self.TEST_CLASS.from_veto_definer_file(veto_definer,
+                                                     start=200, end=300)
+        assert len(vdf.keys()) == 3
+        assert 'X1:TEST-FLAG_2:1' not in vdf
 
     @pytest.mark.parametrize('format, ext, dep, rw_kwargs', [
         ('ligolw', 'xml', 'glue.ligolw.lsctables', {}),
@@ -652,6 +839,19 @@ class TestDataQualityDict(object):
         assert isinstance(result, self.TEST_CLASS)
         utils.assert_dict_equal(result, RESULT, utils.assert_flag_equal)
 
+        # check all values of on_error
+        with pytest.warns(UserWarning) as record:
+            result = query_dqsegdb(self.TEST_CLASS.query_dqsegdb,
+                                   QUERY_FLAGS + ['X1:BLAHBLAH:1'], 0, 10,
+                                   on_error='warn')
+            result = query_dqsegdb(self.TEST_CLASS.query_dqsegdb,
+                                   QUERY_FLAGS + ['X1:BLAHBLAH:1'], 0, 10,
+                                   on_error='ignore')
+        utils.assert_dict_equal(result, RESULT, utils.assert_flag_equal)
+        assert len(record) == 1  # check on_error='ignore' didn't warn
+        with pytest.raises(ValueError):
+            self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS, 0, 10, on_error='blah')
+
     def test_query_segdb(self):
         result = query_segdb(self.TEST_CLASS.query_segdb, QUERY_FLAGS, 0, 10)
         assert isinstance(result, self.TEST_CLASS)
@@ -680,6 +880,17 @@ class TestDataQualityDict(object):
             vdf.populate()
             vdf2.populate()
             vdf3.populate(segments=span)
+
+            # test warnings on bad entries
+            vdf['TEST'] = self.ENTRY_CLASS('X1:BLAHBLAHBLAH:1', known=[(0, 1)])
+            with pytest.warns(UserWarning) as record:
+                vdf.populate(on_error='warn')
+                vdf.populate(on_error='ignore')
+            assert len(record) == 1
+            vdf.pop('TEST')
+
+            with pytest.raises(ValueError):
+                vdf.populate(on_error='blah')
 
         # check basic populate worked
         utils.assert_dict_equal(vdf, QUERY_RESULTC, utils.assert_flag_equal)

@@ -28,6 +28,8 @@ try:
 except ImportError:
     import mock
 
+from six.moves.urllib.error import HTTPError
+
 import pytest
 
 from gwpy.time import LIGOTimeGPS
@@ -44,6 +46,8 @@ def dqsegdb_query_times(result, deactivated=False,
     def query_times(protocol, server, ifo, name, version, request, start, end):
         flag = '%s:%s:%d' % (ifo, name, version)
         span = SegmentList([Segment(start, end)])
+        if flag not in result:
+            raise HTTPError('test-url/', 404, 'Not found', None, None)
         return {
             'ifo': ifo,
             'name': name,
