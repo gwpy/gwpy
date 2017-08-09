@@ -907,6 +907,12 @@ class DataQualityFlag(object):
     __add__ = __or__
     __iadd__ = __ior__
 
+    def __invert__(self):
+        new = self.copy()
+        new.known = ~self.known
+        new.active = ~self.active
+        return new
+
 
 class _QueryDQSegDBThread(Thread):
     """Threaded DQSegDB query
@@ -1353,8 +1359,8 @@ class DataQualityDict(OrderedDict):
         return self
 
     def __and__(self, other):
-        if sum(len(s) for s in self.values()) <= sum(len(s) for s in
-                                                     other.values()):
+        if (sum(len(s.active) for s in self.values()) <=
+                sum(len(s.active) for s in other.values())):
             return self.copy().__iand__(other)
         return other.copy().__iand__(self)
 
@@ -1384,24 +1390,10 @@ class DataQualityDict(OrderedDict):
     def __sub__(self, other):
         return self.copy().__isub__(other)
 
-    def __ixor__(self, other):
-        for key, value in other.items():
-            if key in self:
-                self[key] ^= value
-            else:
-                self[key] = shallowcopy(value)
-        return self
-
-    def __xor__(self, other):
-        if sum(len(s) for s in self.values()) <= sum(len(s) for s in
-                                                     other.values()):
-            return self.copy().__ixor__(other)
-        return other.copy().__ixor__(self)
-
     def __invert__(self):
         new = self.copy()
         for key, value in new.items():
-            dict.__setitem__(new, key, ~value)
+            new[key] = ~value
         return new
 
     def union(self):

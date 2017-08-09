@@ -438,6 +438,11 @@ class TestDataQualityFlag(object):
         utils.assert_segmentlist_equal(x.active, ACTIVE)
         utils.assert_segmentlist_equal(x.known, KNOWN)
 
+        # invert
+        x = ~a
+        utils.assert_segmentlist_equal(x.active, ~a.active)
+        utils.assert_segmentlist_equal(x.known, ~a.known)
+
     def test_coalesce(self):
         flag = self.create()
         flag.coalesce()
@@ -613,6 +618,61 @@ class TestDataQualityDict(object):
     @pytest.fixture()
     def instance(cls):
         return cls.create()
+
+    @classmethod
+    @pytest.fixture()
+    def reverse(cls):
+        inst = cls.create()
+        rev = type(inst)()
+        keys = list(inst.keys())
+        rev[keys[0]] = inst[keys[1]]
+        rev[keys[1]] = inst[keys[0]]
+        return rev
+
+
+    # -- test logic -----------------------------
+
+    def test_iand(self, instance, reverse):
+        a = instance.copy()
+        a &= reverse
+        keys = list(a.keys())
+        utils.assert_flag_equal(a[keys[0]],
+                                instance[keys[0]] & reverse[keys[1]])
+
+    def test_and(self, instance, reverse):
+        a = instance.copy()
+        a &= reverse
+        utils.assert_dict_equal(a, instance & reverse, utils.assert_flag_equal)
+
+    def test_ior(self, instance, reverse):
+        a = instance.copy()
+        a |= reverse
+        keys = list(a.keys())
+        utils.assert_flag_equal(a[keys[0]],
+                                instance[keys[0]] | reverse[keys[1]])
+
+    def test_or(self, instance, reverse):
+        a = instance.copy()
+        a |= reverse
+        utils.assert_dict_equal(a, instance | reverse, utils.assert_flag_equal)
+
+    def test_isub(self, instance, reverse):
+        a = instance.copy()
+        a -= reverse
+        keys = list(a.keys())
+        utils.assert_flag_equal(a[keys[0]],
+                                instance[keys[0]] - reverse[keys[1]])
+
+    def test_sub(self, instance, reverse):
+        a = instance.copy()
+        a -= reverse
+        utils.assert_dict_equal(a, instance - reverse, utils.assert_flag_equal)
+
+    def test_invert(self, instance):
+        inverse = type(instance)()
+        for key in instance:
+            inverse[key] = ~instance[key]
+        utils.assert_dict_equal(~instance, inverse, utils.assert_flag_equal)
 
     # -- test methods ---------------------------
 
