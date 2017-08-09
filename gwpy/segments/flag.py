@@ -426,8 +426,8 @@ class DataQualityFlag(object):
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
         elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(to_gps(args[0][0]),
-                                        to_gps(args[0][1])))
+            qsegs = SegmentList([Segment(to_gps(args[0][0]),
+                                         to_gps(args[0][1]))])
         elif len(args) == 2:
             qsegs = SegmentList([Segment(to_gps(args[0]), to_gps(args[1]))])
         else:
@@ -480,8 +480,8 @@ class DataQualityFlag(object):
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
         elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(to_gps(args[0][0]),
-                                        to_gps(args[0][1])))
+            qsegs = SegmentList([Segment(to_gps(args[0][0]),
+                                         to_gps(args[0][1]))])
         elif len(args) == 2:
             qsegs = SegmentList([Segment(to_gps(args[0]), to_gps(args[1]))])
         else:

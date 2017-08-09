@@ -556,6 +556,14 @@ class TestDataQualityFlag(object):
         utils.assert_segmentlist_equal(result.known, RESULT.known)
         utils.assert_segmentlist_equal(result.active, RESULT.active)
 
+        result2 = query_segdb(self.TEST_CLASS.query_segdb,
+                              QUERY_FLAGS[0], (0, 10))
+        utils.assert_flag_equal(result, result2)
+
+        result2 = query_segdb(self.TEST_CLASS.query_segdb,
+                              QUERY_FLAGS[0], SegmentList([(0, 10)]))
+        utils.assert_flag_equal(result, result2)
+
     @pytest.mark.parametrize('name, flag', [
         (QUERY_FLAGS[0], QUERY_FLAGS[0]),  # regular query
         (QUERY_FLAGS[0].rsplit(':', 1)[0], QUERY_FLAGS[0]),  # versionless
@@ -567,6 +575,13 @@ class TestDataQualityFlag(object):
         assert isinstance(result, self.TEST_CLASS)
         utils.assert_segmentlist_equal(result.known, RESULT.known)
         utils.assert_segmentlist_equal(result.active, RESULT.active)
+
+        result2 = query_dqsegdb(self.TEST_CLASS.query_dqsegdb, name, (0, 10))
+        utils.assert_flag_equal(result, result2)
+
+        result2 = query_dqsegdb(self.TEST_CLASS.query_dqsegdb,
+                                name, SegmentList([(0, 10)]))
+        utils.assert_flag_equal(result, result2)
 
     def test_query_dqsegdb_multi(self):
         segs = SegmentList([Segment(0, 2), Segment(8, 10)])
