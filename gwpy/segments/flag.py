@@ -428,7 +428,7 @@ class DataQualityFlag(object):
             qsegs = SegmentList([Segment(to_gps(args[0][0]),
                                          to_gps(args[0][1]))])
         else:
-            qsegs = SegmentList([Segment(map(to_gps, args))])
+            qsegs = SegmentList([Segment(*map(to_gps, args))])
 
         # process query
         try:
@@ -480,7 +480,8 @@ class DataQualityFlag(object):
             qsegs = SegmentList([Segment(to_gps(args[0][0]),
                                          to_gps(args[0][1]))])
         else:
-            qsegs = SegmentList([Segment(map(to_gps, args))])
+            print(args)
+            qsegs = SegmentList([Segment(*map(to_gps, args))])
 
         # get server
         protocol, server = kwargs.pop(
