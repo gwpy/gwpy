@@ -28,6 +28,8 @@ try:
 except ImportError:
     import mock
 
+from six.moves.urllib.error import HTTPError
+
 import pytest
 
 from gwpy.time import LIGOTimeGPS
