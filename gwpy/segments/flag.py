@@ -49,7 +49,6 @@ from astropy.io import registry as io_registry
 from astropy.utils.data import get_readable_fileobj
 
 from ..time import to_gps
-from ..utils.deps import with_import
 from ..utils.compat import OrderedDict
 from .segments import Segment, SegmentList
 
@@ -453,7 +452,6 @@ class DataQualityFlag(object):
         return flags[flag]
 
     @classmethod
-    @with_import('dqsegdb.apicalls')
     def query_dqsegdb(cls, flag, *args, **kwargs):
         """Query the advanced LIGO DQSegDB for the given flag
 
@@ -476,6 +474,8 @@ class DataQualityFlag(object):
             A new `DataQualityFlag`, with the `known` and `active` lists
             filled appropriately.
         """
+        from dqsegdb import apicalls
+
         # parse arguments
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
