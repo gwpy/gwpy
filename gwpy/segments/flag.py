@@ -1217,7 +1217,6 @@ class DataQualityDict(OrderedDict):
         >>> flags.populate()
 
         """
-        from glue.ligolw.lsctables import VetoDefTable
         from ..io.ligolw import table_from_file
 
         if format != 'ligolw':
