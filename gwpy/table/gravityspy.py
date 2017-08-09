@@ -25,7 +25,7 @@ import sys
 from .table import EventTable
 from astropy.table import Table
 
-from itertools import izip_longest
+import six
 
 from ..utils import mp as mp_utils
 
@@ -112,11 +112,12 @@ class GravitySpyTable(EventTable):
             labels = imagesDB.Label.as_matrix().flatten().tolist()
             if LabelledSamples:
                 sampletype = imagesDB.SampleType.as_matrix().flatten().tolist()
-                images = izip_longest(imagesURL, labels, sampletype)
+                images = six.itertools.izip_longest(
+                         imagesURL, labels, sampletype)
             else:
-                images = izip_longest(imagesURL, labels, [])
+                images = six.itertools.izip_longest(imagesURL, labels, [])
         else:
-            images = izip_longest(imagesURL, [], [])
+            images = six.itertools.izip_longest(imagesURL, [], [])
 
         images = list(images)
 
