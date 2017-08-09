@@ -1022,11 +1022,7 @@ class DataQualityDict(OrderedDict):
         if kwargs.keys():
             raise TypeError("DataQualityDict.query_segdb has no keyword "
                             "argument '%s'" % list(kwargs.keys()[0]))
-        # parse flags
-        if isinstance(flags, string_types):
-            flags = flags.split(',')
-        else:
-            flags = flags
+
         # process query
         from glue.segmentdb import (segmentdb_utils as segdb_utils,
                                     query_engine as segdb_engine)
