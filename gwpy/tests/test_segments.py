@@ -23,8 +23,6 @@ import os.path
 import shutil
 import tempfile
 
-from six.moves.urllib.error import URLError
-
 import pytest
 
 from matplotlib import use, rc_context
@@ -41,8 +39,42 @@ from mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-VETO_DEFINER_FILE = ('https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/'
-                     'segments/ER7/H1L1V1-ER7_CBC_OFFLINE.xml')
+
+# -- veto definer fixture -----------------------------------------------------
+
+VETO_DEFINER_FILE = """<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
+<LIGO_LW>
+	<Table Name="veto_definer:table">
+		<Column Type="int_4s" Name="veto_definer:category"/>
+		<Column Type="lstring" Name="veto_definer:comment"/>
+		<Column Type="int_4s" Name="veto_definer:end_pad"/>
+		<Column Type="ilwd:char" Name="veto_definer:process_id"/>
+		<Column Type="lstring" Name="veto_definer:name"/>
+		<Column Type="int_4s" Name="veto_definer:version"/>
+		<Column Type="int_4s" Name="veto_definer:start_pad"/>
+		<Column Type="int_4s" Name="veto_definer:start_time"/>
+		<Column Type="lstring" Name="veto_definer:ifo"/>
+		<Column Type="int_4s" Name="veto_definer:end_time"/>
+		<Stream Delimiter="," Type="Local" Name="veto_definer:table">
+			1,"Test flag 1",2,,"TEST-FLAG",1,-1,100,"X1",0,
+			2,"Test flag 1",2,,"TEST-FLAG_2",1,1,100,"X1",200,
+			2,"Test flag 1",2,,"TEST-FLAG_2",2,-2,200,"X1",0,
+			2,"Test flag 1",2,,"TEST-FLAG_2",2,-2,100,"Y1",0,
+		</Stream>
+	</Table>
+</LIGO_LW>
+"""
+
+
+@pytest.fixture(scope='module')
+def veto_definer():
+    with tempfile.NamedTemporaryFile(suffix='.xml', delete=False) as f:
+        f.write(VETO_DEFINER_FILE)
+        f.seek(0)
+        yield f
+    if os.path.isfile(f.name):
+        os.remove(f.name)
 
 
 # -- test data ----------------------------------------------------------------
@@ -579,21 +611,30 @@ class TestDataQualityDict(object):
     # -- test I/O -------------------------------
 
     @utils.skip_missing_dependency('lal')
-    def test_from_veto_definer_file(self):
+    def test_from_veto_definer_file(self, veto_definer):
         # read veto definer
-        try:
-            vdf = self.TEST_CLASS.from_veto_definer_file(VETO_DEFINER_FILE)
-        except URLError as e:
-            pytest.skip(str(e))
-        assert len(vdf.keys()) == 42
+        vdf = self.TEST_CLASS.from_veto_definer_file(veto_definer)
+        assert len(vdf.keys()) == 4
 
         # test one flag to make sure it is well read
-        name = 'H1:ODC-INJECTION_CBC:1'
+        name = 'X1:TEST-FLAG:1'
         assert name in vdf
         utils.assert_segmentlist_equal(vdf[name].known,
-                                       [(1073779216, float('inf'))])
-        assert vdf[name].category is 3
-        assert vdf[name].padding == (-8, 8)
+                                       [(100, float('inf'))])
+        assert vdf[name].category is 1
+        assert vdf[name].padding == (-1, 2)
+
+        # test ifo kwarg
+        vdf = self.TEST_CLASS.from_veto_definer_file(veto_definer, ifo='X1')
+        assert len(vdf.keys()) == 3
+        assert 'Y1:TEST-FLAG_2:2' not in vdf
+
+        # test start and end kwargs
+        vdf = self.TEST_CLASS.from_veto_definer_file(veto_definer,
+                                                     start=200, end=300)
+        assert len(vdf.keys()) == 3
+        assert 'X1:TEST-FLAG_2:1' not in vdf
+
 
     @pytest.mark.parametrize('format, ext, dep, rw_kwargs', [
         ('ligolw', 'xml', 'glue.ligolw.lsctables', {}),
