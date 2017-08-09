@@ -23,7 +23,7 @@ import os.path
 import tempfile
 from importlib import import_module
 
-from six import PY3
+from six import PY2
 
 import pytest
 
@@ -248,7 +248,7 @@ def test_read_write(data, format,
             data.write(fp, *write_args, format=format, **write_kw)
         except TypeError as e:
             # ligolw is not python3-compatbile, so skip if it fails
-            if PY3 and format == 'ligolw' and (
+            if not PY2 and format == 'ligolw' and (
                     str(e) == 'write() argument must be str, not bytes'):
                 pytest.xfail(str(e))
             raise
