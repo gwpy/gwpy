@@ -147,7 +147,7 @@ def lowpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
 
     **kwargs
         other keyword arguments are passed directly to
-        :meth:`~scipy.signal.iirdesign` or :meth:`~scipy.signal.firwin`
+        :func:`~scipy.signal.iirdesign` or :func:`~scipy.signal.firwin`
 
     Returns
     -------
@@ -219,7 +219,7 @@ def highpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
 
     **kwargs
         other keyword arguments are passed directly to
-        :meth:`~scipy.signal.iirdesign` or :meth:`~scipy.signal.firwin`
+        :func:`~scipy.signal.iirdesign` or :func:`~scipy.signal.firwin`
 
     Returns
     -------
@@ -294,7 +294,7 @@ def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
 
     **kwargs
         other keyword arguments are passed directly to
-        :meth:`~scipy.signal.iirdesign` or :meth:`~scipy.signal.firwin`
+        :func:`~scipy.signal.iirdesign` or :func:`~scipy.signal.firwin`
 
     Returns
     -------
