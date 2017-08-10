@@ -190,6 +190,15 @@ def assert_dict_equal(a, b, assert_value, *args, **kwargs):
         assert_value(a[key], b[key], *args, **kwargs)
 
 
+def assert_zpk_equal(a, b, almost_equal=False):
+    if almost_equal:
+        assert_array = assert_allclose
+    else:
+        assert_array = assert_array_equal
+    for x, y in zip(a, b):  # zip through zeros, poles, gain
+        assert_array(x, y)
+
+
 # -- I/O helpers --------------------------------------------------------------
 
 def test_read_write(data, format,
