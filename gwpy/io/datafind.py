@@ -23,7 +23,6 @@ import os.path
 import re
 
 from ..time import to_gps
-from ..utils import with_import
 from .gwf import (num_channels, channel_in_frame)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -34,7 +33,6 @@ SECOND_TREND_TYPE = re.compile('\A(.*_)?T\Z')  # T or anything ending in _T
 MINUTE_TREND_TYPE = re.compile('\A(.*_)?M\Z')  # M or anything ending in _M
 
 
-@with_import('glue.datafind')
 def connect(host=None, port=None):
     """Open a new datafind connection
 
@@ -51,6 +49,8 @@ def connect(host=None, port=None):
     connection : `~glue.datafind.GWDataFindHTTPConnection`
         the new open connection
     """
+    from glue import datafind
+
     port = port and int(port)
     if port is not None and port != 80:
         cert, key = datafind.find_credential()

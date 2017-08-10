@@ -26,7 +26,7 @@ from six import PY2
 import pytest
 
 from gwpy.utils import shell
-from gwpy.utils import deps
+from gwpy.utils import deps  # deprecated
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

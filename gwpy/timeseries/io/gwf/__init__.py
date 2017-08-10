@@ -49,7 +49,6 @@ else:
 
 from ....segments import Segment
 from ....time import to_gps
-from ....utils.deps import import_method_dependency
 from ....io.gwf import identify_gwf
 from ....io.cache import (FILE_LIKE, read_cache, find_contiguous)
 from ....io.registry import (register_reader,
