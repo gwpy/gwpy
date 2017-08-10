@@ -23,6 +23,8 @@ from __future__ import division
 import operator
 from math import (pi, log10)
 
+from six.moves import reduce
+
 from numpy import (atleast_1d, concatenate)
 
 from scipy import signal
