@@ -70,6 +70,9 @@ class CliTestBase(object):
         product = self.PRODUCT_TYPE()
         product.init_cli(parser)
         assert len(parser._actions) > 1
+
+        parser.add_argument('--verbose', default=1, action='count')
+        parser.add_argument('--silent', default=False, action='store_true')
         return product, parser
 
     @utils.skip_missing_dependency('nds2')
@@ -129,6 +132,30 @@ class CliTestBase(object):
         finally:
             if os.path.isfile(args.out):
                 os.remove(args.out)
+
+    @utils.skip_missing_dependency('nds2')
+    def test_makePlot(self):
+        product, parser = self.test_init_cli()
+        args = parser.parse_args(self.TEST_ARGS + ['--out', TEMP_PLOT_FILE])
+        args.interactive = True
+
+        random.seed(0)
+        xts = TimeSeries(random.rand(10240), t0=1000000000,
+                         sample_rate=1024, name='X1:TEST-CHANNEL')
+        yts = TimeSeries(random.rand(10240), t0=1000000000,
+                         sample_rate=1024, name='Y1:TEST-CHANNEL')
+        nds_connection = mocks.nds2_connection(buffers=[
+            mocks.nds2_buffer_from_timeseries(xts),
+            mocks.nds2_buffer_from_timeseries(yts),
+        ])
+
+        with mock.patch('nds2.connection') as mock_connection, \
+                mock.patch('nds2.buffer'):
+            mock_connection.return_value = nds_connection
+
+            product.makePlot(args)
+
+        assert product.is_interactive is True
 
 
 class TestCliTimeSeries(CliTestBase):
