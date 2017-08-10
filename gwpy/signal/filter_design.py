@@ -73,16 +73,17 @@ def _design_iir(wp, ws, sample_rate, gpass, gstop,
         raise ValueError("'%s' is not a valid output form." % output)
 
 
-def _design_fir(wp, ws, sample_rate, gpass, gstop, window='hann', **kwargs):
+def _design_fir(wp, ws, sample_rate, gpass, gstop, window='hamming', **kwargs):
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
     tw = abs(wp[0] - ws[0])
     nt = num_taps(sample_rate, tw, gpass, gstop)
     if wp[0] > ws[0]:
         kwargs.setdefault('pass_zero', False)
-    kwargs.setdefault('width', fstop-frequency)
+    if ws.shape == (1,):
+        kwargs.setdefault('width', ws - wp)
     kwargs.setdefault('nyq', sample_rate/2.)
-    return signal.firwin(n, frequency, window=window, **kwargs)
+    return signal.firwin(nt, wp, window=window, **kwargs)
 
 
 def num_taps(sample_rate, transitionwidth, gpass, gstop):
@@ -337,8 +338,8 @@ def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
         return _design_iir((flow, fhigh), fstop, sample_rate, gpass, gstop,
                            **kwargs)
     else:
-        return _design_fir(frequency, fstop, sample_rate, gpass, gstop,
-                           **kwargs)
+        return _design_fir((flow, fhigh), fstop, sample_rate, gpass, gstop,
+                           pass_zero=False, **kwargs)
 
 
 def notch(frequency, sample_rate, type='iir', **kwargs):
