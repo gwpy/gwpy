@@ -181,6 +181,7 @@ class TestSignalFilterDesign(object):
             gwpy_signal.concatenate_zpks(zpk1, zpk2),
             ([1, 2, 3, 1, 2, 3, 4], [4, 5, 6, 5, 6, 7, 8], 100))
 
+
 # -- gwpy.signal.window -------------------------------------------------------
 
 class TestSignalWindow(object):

@@ -39,6 +39,7 @@ def _as_float(x):
     except AttributeError:
         return float(x)
 
+
 TWO_PI = 2 * pi
 FIRWIN_DEFAULTS = {
     'window': 'hann',
