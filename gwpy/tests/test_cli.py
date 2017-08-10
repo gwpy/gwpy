@@ -133,6 +133,7 @@ class CliTestBase(object):
             if os.path.isfile(args.out):
                 os.remove(args.out)
 
+    @utils.skip_missing_dependency('nds2')
     def test_makePlot(self):
         product, parser = self.test_init_cli()
         args = parser.parse_args(self.TEST_ARGS + ['--out', TEMP_PLOT_FILE])
