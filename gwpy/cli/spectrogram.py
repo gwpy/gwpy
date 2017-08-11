@@ -75,7 +75,7 @@ class Spectrogram(CliProduct):
         """
         return 'Spectrogram: '
 
-    def gen_plot(self, arg_list):
+    def gen_plot(self, args):
         """Generate the plot from time series and arguments
         """
         self.is_freq_plot = True

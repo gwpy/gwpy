@@ -57,9 +57,7 @@ PRODUCTS = [
         'Qtransform'
 ]
 
-parser = argparse.ArgumentParser(formatter_class=CliHelpFormatter,
-                                 description=__doc__, prog='gwpy-plot')
-# Setup the argument parser to act as the parent
+-plot-plotp the argument parser to act as the parent
 parentparser = argparse.ArgumentParser(add_help=False)
 
 # These arguments apply to all commands
