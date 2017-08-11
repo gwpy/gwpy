@@ -120,13 +120,16 @@ def read_hdf5_segmentlist(f, path=None, gpstype=LIGOTimeGPS, **kwargs):
 
 
 @io_hdf5.with_read_hdf5
-def read_hdf5_dict(f, names=None, **kwargs):
+def read_hdf5_dict(h5f, names=None, path=None, **kwargs):
     """Read a `DataQualityDict` from an HDF5 file
     """
+    if path:
+        h5f = h5f[path]
+
     # try and get list of names automatically
     if names is None:
         try:
-            names = find_flag_groups(f, strict=True)
+            names = find_flag_groups(h5f, strict=True)
         except KeyError:
             names = None
         if not names:
@@ -137,7 +140,7 @@ def read_hdf5_dict(f, names=None, **kwargs):
     # read data
     out = DataQualityDict()
     for name in names:
-        out[name] = read_hdf5_flag(f, name, **kwargs)
+        out[name] = read_hdf5_flag(h5f, name, **kwargs)
 
     return out
 
@@ -202,7 +205,7 @@ def write_hdf5_dict(flags, output, path=None, append=False, overwrite=False,
         try:
             parent = output[path]
         except KeyError:
-            parent = output.create_group(group)
+            parent = output.create_group(path)
     else:
         parent = output
 

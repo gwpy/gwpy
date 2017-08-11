@@ -550,7 +550,7 @@ class TimeSeriesBase(Series):
             # work out how to handle this and __array_wrap__ together properly
             out = super(TimeSeriesBase, self).__array_ufunc__(
                 ufunc, method, *inputs, **kwargs)
-            if out.dtype is numpy.dtype(bool):
+            if out.dtype is numpy.dtype(bool) and len(inputs) == 2:
                 from .statevector import StateTimeSeries
                 orig, value = inputs
                 try:
@@ -1094,21 +1094,20 @@ class TimeSeriesBaseList(list):
     def append(self, item):
         if not isinstance(item, self.EntryClass):
             raise TypeError("Cannot append type '%s' to %s"
-                            % (item.__class__.__name__,
-                               self.__class__.__name__))
+                            % (type(item).__name__, type(self).__name__))
         super(TimeSeriesBaseList, self).append(item)
         return self
     append.__doc__ = list.append.__doc__
 
     def extend(self, item):
-        item = TimeSeriesBaseList(item)
+        item = TimeSeriesBaseList(*item)
         super(TimeSeriesBaseList, self).extend(item)
     extend.__doc__ = list.extend.__doc__
 
     def coalesce(self):
         """Merge contiguous elements of this list into single objects
 
-        This method implicitly sorts and potentially shortens the this list.
+        This method implicitly sorts and potentially shortens this list.
         """
         self.sort(key=lambda ts: ts.t0.value)
         i = j = 0
@@ -1170,6 +1169,13 @@ class TimeSeriesBaseList(list):
 
     def __getslice__(self, i, j):
         return type(self)(*super(TimeSeriesBaseList, self).__getslice__(i, j))
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            return type(self)(
+                *super(TimeSeriesBaseList, self).__getitem__(key))
+        else:
+            return super(TimeSeriesBaseList, self).__getitem__(key)
 
     def copy(self):
         """Return a copy of this list with each element copied to new memory

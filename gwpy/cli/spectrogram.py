@@ -21,18 +21,24 @@
 
 """ Spectrogram plots
 """
+
 from .cliproduct import CliProduct
+
+__author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 
 class Spectrogram(CliProduct):
-    """Derived class to calculate Spectrograms"""
+    """Derived class to calculate Spectrograms
+    """
 
     def get_action(self):
-        """Return the string used as "action" on command line."""
+        """Return the string used as "action" on command line.
+        """
         return 'spectrogram'
 
     def init_cli(self, parser):
-        """Set up the argument list for this product"""
+        """Set up the argument list for this product
+        """
         self.arg_chan1(parser)
         self.arg_freq(parser)
         self.arg_ax_linx(parser)
@@ -40,33 +46,38 @@ class Spectrogram(CliProduct):
         self.arg_ax_intlog(parser)
         self.arg_imag(parser)
         self.arg_plot(parser)
-        return
 
     def get_ylabel(self, args):
-        """Default text for y-axis label"""
+        """Default text for y-axis label
+        """
         return 'Frequency (Hz)'
 
     def get_color_label(self):
         return self.scaleText
 
     def get_max_datasets(self):
-        """Spectrogram only handles 1 at a time"""
+        """Spectrogram only handles 1 at a time
+        """
         return 1
 
     def is_image(self):
-        """This plot is image type"""
+        """This plot is image type
+        """
         return True
 
     def freq_is_y(self):
-        """This plot puts frequency on the y-axis of the image"""
+        """This plot puts frequency on the y-axis of the image
+        """
         return True
 
     def get_title(self):
-        """Start of default super title, first channel is appended to it"""
+        """Start of default super title, first channel is appended to it
+        """
         return 'Spectrogram: '
 
-    def gen_plot(self, args):
-        """Generate the plot from time series and arguments"""
+    def gen_plot(self, arg_list):
+        """Generate the plot from time series and arguments
+        """
         self.is_freq_plot = True
 
         from numpy import percentile
@@ -171,4 +182,3 @@ class Spectrogram(CliProduct):
         # pass the image limits back to the annotater
         self.imin = imin
         self.imax = imax
-        return

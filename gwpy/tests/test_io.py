@@ -19,20 +19,26 @@
 """Unit test for `io` module
 """
 
+from __future__ import print_function
+
 import os
+import tempfile
 
-from common import skip_missing_import
-from compat import (unittest, mock, HAS_LAL, HAS_NDS2)
-import mockutils
+import pytest
 
-from gwpy.io import (datafind, gwf, nds2 as io_nds2)
-from gwpy.io.cache import (cache_segments, flatten, find_contiguous,
-                           file_segment)
+from gwpy.io import (cache as io_cache,
+                     datafind as io_datafind,
+                     gwf as io_gwf,
+                     nds2 as io_nds2)
 from gwpy.segments import (Segment, SegmentList)
+
+import utils
+import mocks
+from mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
+TEST_GWF_FILE = os.path.join(os.path.dirname(__file__), 'data',
                              'HLV-GW100916-968654552-1.gwf')
 TEST_CHANNELS = [
     'H1:LDAS-STRAIN', 'L1:LDAS-STRAIN', 'V1:h_16384Hz',
@@ -41,131 +47,141 @@ TEST_CHANNELS = [
 
 # -- gwpy.io.nds --------------------------------------------------------------
 
-class NdsIoTestCase(unittest.TestCase):
-
+class TestIoNds2(object):
+    """Tests of :mod:`gwpy.io.nds2`
+    """
     def test_channel_type_find(self):
-        self.assertIs(io_nds2.Nds2ChannelType.find('m-trend'),
-                      io_nds2.Nds2ChannelType.MTREND)
-        self.assertIs(io_nds2.Nds2ChannelType.find('MTREND'),
-                      io_nds2.Nds2ChannelType.MTREND)
-        self.assertRaises(KeyError, io_nds2.Nds2ChannelType.find, 'blah')
+        """Test `gwpy.io.nds2.Nds2ChannelType` enum
+        """
+        # check that m-trend gets recognised properly
+        a = io_nds2.Nds2ChannelType.find('m-trend')
+        b = io_nds2.Nds2ChannelType.find('MTREND')
+        assert a == b == io_nds2.Nds2ChannelType.MTREND
+        # test unknown
+        with pytest.raises(ValueError):
+            io_nds2.Nds2ChannelType.find('blah')
 
     def test_data_type_find(self):
-        self.assertIs(io_nds2.Nds2DataType.find(float),
-                      io_nds2.Nds2DataType.FLOAT64)
-        self.assertIs(io_nds2.Nds2DataType.find('uint32'),
-                      io_nds2.Nds2DataType.UINT32)
-        self.assertRaises(TypeError, io_nds2.Nds2DataType.find, 'blah')
+        """Test `gwpy.io.nds2.Nds2DataType` enum
+        """
+        # test float
+        assert io_nds2.Nds2DataType.find(float) == io_nds2.Nds2DataType.FLOAT64
+        # test uint
+        assert io_nds2.Nds2DataType.find('uint32') == \
+            io_nds2.Nds2DataType.UINT32
+        # test unknown
+        with pytest.raises(TypeError):
+            io_nds2.Nds2DataType.find('blah')
 
     def test_parse_nds_env(self):
+        """Test :func:`gwpy.io.nds2.parse_nds_env`
+        """
+        # test basic NDSSERVER usage
         os.environ['NDSSERVER'] = 'test1.ligo.org:80,test2.ligo.org:43'
         hosts = io_nds2.parse_nds_env()
-        self.assertListEqual(
-            hosts, [('test1.ligo.org', 80), ('test2.ligo.org', 43)])
+        assert hosts == [('test1.ligo.org', 80), ('test2.ligo.org', 43)]
+
+        # check that duplicates get removed
         os.environ['NDSSERVER'] = ('test1.ligo.org:80,test2.ligo.org:43,'
                                    'test.ligo.org,test2.ligo.org:43')
         hosts = io_nds2.parse_nds_env()
-        self.assertListEqual(
-            hosts, [('test1.ligo.org', 80), ('test2.ligo.org', 43),
-                    ('test.ligo.org', None)])
+        assert hosts == [('test1.ligo.org', 80), ('test2.ligo.org', 43),
+                         ('test.ligo.org', None)]
 
+        # check that a named environment variable works
         os.environ['TESTENV'] = 'test1.ligo.org:80,test2.ligo.org:43'
         hosts = io_nds2.parse_nds_env('TESTENV')
-        self.assertListEqual(
-            hosts, [('test1.ligo.org', 80), ('test2.ligo.org', 43)])
+        assert hosts == [('test1.ligo.org', 80), ('test2.ligo.org', 43)]
 
-    def test_nds2_host_order_none(self):
-        """Test `host_resolution_order` with `None` IFO
+    def test_nds2_host_order(self):
+        """Test :func:`gwpy.io.nds2.host_resolution_order`
         """
+        # check None returns CIT
         hro = io_nds2.host_resolution_order(None, env=None)
-        self.assertListEqual(hro, [('nds.ligo.caltech.edu', 31200)])
+        assert hro == [('nds.ligo.caltech.edu', 31200)]
 
-    def test_nds2_host_order_ifo(self):
-        """Test `host_resolution_order` with `ifo` argument
-        """
+        # check L1 returns (LLO, CIT)
         hro = io_nds2.host_resolution_order('L1', env=None)
-        self.assertListEqual(
-            hro, [('nds.ligo-la.caltech.edu', 31200),
-                  ('nds.ligo.caltech.edu', 31200)])
+        assert hro == [('nds.ligo-la.caltech.edu', 31200),
+                       ('nds.ligo.caltech.edu', 31200)]
 
-    def test_nds2_host_order_ndsserver(self):
-        """Test `host_resolution_order` with default env set
-        """
+        # check NDSSERVER works
         os.environ['NDSSERVER'] = 'test1.ligo.org:80,test2.ligo.org:43'
         hro = io_nds2.host_resolution_order(None)
-        self.assertListEqual(
-            hro, [('test1.ligo.org', 80), ('test2.ligo.org', 43),
-                  ('nds.ligo.caltech.edu', 31200)])
-        hro = io_nds2.host_resolution_order('L1')
-        self.assertListEqual(
-            hro, [('test1.ligo.org', 80), ('test2.ligo.org', 43),
-                  ('nds.ligo-la.caltech.edu', 31200),
-                  ('nds.ligo.caltech.edu', 31200)])
+        assert hro == [('test1.ligo.org', 80), ('test2.ligo.org', 43),
+                       ('nds.ligo.caltech.edu', 31200)]
 
-    def test_nds2_host_order_env(self):
-        """Test `host_resolution_order` with non-default env set
-        """
+        # check that NDSSERVER and an IFO spec works at the same time
+        hro = io_nds2.host_resolution_order('L1')
+        assert hro == [('test1.ligo.org', 80), ('test2.ligo.org', 43),
+                       ('nds.ligo-la.caltech.edu', 31200),
+                       ('nds.ligo.caltech.edu', 31200)]
+
+        # test named environment variable
         os.environ['TESTENV'] = 'test1.ligo.org:80,test2.ligo.org:43'
         hro = io_nds2.host_resolution_order(None, env='TESTENV')
-        self.assertListEqual(
-            hro, [('test1.ligo.org', 80), ('test2.ligo.org', 43),
-                  ('nds.ligo.caltech.edu', 31200)])
+        assert hro == [('test1.ligo.org', 80), ('test2.ligo.org', 43),
+                       ('nds.ligo.caltech.edu', 31200)]
 
-    def test_nds2_host_order_epoch(self):
-        """Test `host_resolution_order` with old GPS epoch
-        """
-        # test kwarg doesn't change anything
+        # test epoch='now' doesn't change anything
+        os.environ.pop('NDSSERVER')
         hro = io_nds2.host_resolution_order('L1', epoch='now', env=None)
-        self.assertListEqual(
-            hro, [('nds.ligo-la.caltech.edu', 31200),
-                  ('nds.ligo.caltech.edu', 31200)])
+        assert hro == [('nds.ligo-la.caltech.edu', 31200),
+                       ('nds.ligo.caltech.edu', 31200)]
+
         # test old epoch puts CIT ahead of LLO
         hro = io_nds2.host_resolution_order('L1', epoch='Jan 1 2015', env=None)
-        self.assertListEqual(
-            hro, [('nds.ligo.caltech.edu', 31200),
-                  ('nds.ligo-la.caltech.edu', 31200)])
-        # test epoch doesn't operate with env
-        os.environ['TESTENV'] = 'test1.ligo.org:80,test2.ligo.org:43'
-        hro = io_nds2.host_resolution_order('L1', epoch='now', env='TESTENV')
-        self.assertListEqual(
-            hro, [('test1.ligo.org', 80), ('test2.ligo.org', 43),
-                  ('nds.ligo-la.caltech.edu', 31200),
-                  ('nds.ligo.caltech.edu', 31200)])
+        assert hro == [('nds.ligo.caltech.edu', 31200),
+                       ('nds.ligo-la.caltech.edu', 31200)]
 
-    @unittest.skipUnless(HAS_NDS2, 'No module named nds2')
+        # test epoch doesn't operate with env
+        hro = io_nds2.host_resolution_order('L1', epoch='now', env='TESTENV')
+        assert hro == [('test1.ligo.org', 80), ('test2.ligo.org', 43),
+                       ('nds.ligo-la.caltech.edu', 31200),
+                       ('nds.ligo.caltech.edu', 31200)]
+
+    @utils.skip_missing_dependency('nds2')
     def test_connect(self):
+        """Test :func:`gwpy.io.connect`
+        """
         import nds2
-        nds_connection = mockutils.mock_nds2_connection(host='nds.test.gwpy')
+        nds_connection = mocks.nds2_connection(host='nds.test.gwpy')
         with mock.patch('nds2.connection') as mock_connection:
             mock_connection.return_value = nds_connection
             conn = io_nds2.connect('nds.test.gwpy')
-            self.assertEqual(conn.get_host(), 'nds.test.gwpy')
-            self.assertEqual(conn.get_port(), 31200)
-        nds_connection = mockutils.mock_nds2_connection(host='nds2.test.gwpy',
-                                                        port=8088)
+            assert conn.get_host() == 'nds.test.gwpy'
+            assert conn.get_port() == 31200
+
+        nds_connection = mocks.nds2_connection(host='nds2.test.gwpy',
+                                               port=8088)
         with mock.patch('nds2.connection') as mock_connection:
             mock_connection.return_value = nds_connection
             conn = io_nds2.connect('nds2.test.gwpy')
-            self.assertEqual(conn.get_host(), 'nds2.test.gwpy')
-            self.assertEqual(conn.get_port(), 8088)
+            assert conn.get_host() == 'nds2.test.gwpy'
+            assert conn.get_port() == 8088
 
     def test_minute_trend_times(self):
-        self.assertTupleEqual(io_nds2.minute_trend_times(0, 60), (0, 60))
-        self.assertTupleEqual(io_nds2.minute_trend_times(1, 60), (0, 60))
-        self.assertTupleEqual(io_nds2.minute_trend_times(0, 61), (0, 120))
-        self.assertTupleEqual(io_nds2.minute_trend_times(59, 61), (0, 120))
-        self.assertTupleEqual(
-            io_nds2.minute_trend_times(1167264018, 1198800018),
-            (1167264000, 1198800060))
+        """Test :func:`gwpy.io.nds2.minute_trend_times`
+        """
+        assert io_nds2.minute_trend_times(0, 60) == (0, 60)
+        assert io_nds2.minute_trend_times(1, 60) == (0, 60)
+        assert io_nds2.minute_trend_times(0, 61) == (0, 120)
+        assert io_nds2.minute_trend_times(59, 61) == (0, 120)
+        assert (io_nds2.minute_trend_times(1167264018, 1198800018) ==
+                (1167264000, 1198800060))
 
 
 # -- gwpy.io.cache ------------------------------------------------------------
 
-class CacheIoTestCase(unittest.TestCase):
+class TestIoCache(object):
+    """Tests of :mod:`gwpy.io.cache`
+    """
     @staticmethod
-    @unittest.skipUnless(HAS_LAL, 'No module named lal')
     def make_cache():
-        from lal.utils import CacheEntry
+        try:
+            from lal.utils import CacheEntry
+        except ImportError as e:
+            pytest.skip(str(e))
         from glue.lal import Cache
 
         segs = SegmentList()
@@ -177,46 +193,114 @@ class CacheIoTestCase(unittest.TestCase):
             segs.append(Segment(*seg))
         return cache, segs
 
+    @staticmethod
+    def write_cache(cache, f):
+        for entry in cache:
+            try:
+                print(str(entry), file=f)
+            except TypeError:
+                f.write(('%s\n' % str(entry)).encode('utf-8'))
+
+    def test_read_write_cache(self):
+        cache = self.make_cache()[0]
+        with tempfile.NamedTemporaryFile() as f:
+            io_cache.write_cache(cache, f)
+            f.seek(0)
+
+            # read from fileobj
+            c2 = io_cache.read_cache(f)
+            assert cache == c2
+
+            # write with file name
+            io_cache.write_cache(cache, f.name)
+
+            # read from file name
+            c3 = io_cache.read_cache(f.name)
+            assert cache == c3
+
+    def test_file_list(self):
+        cache = self.make_cache()[0]
+
+        # test file -> [file.name]
+        with tempfile.NamedTemporaryFile() as f:
+            assert io_cache.file_list(f) == [f.name]
+
+        # test CacheEntry -> [CacheEntry.path]
+        assert io_cache.file_list(cache[0]) == [cache[0].path]
+
+        # test cache file -> pfnlist()
+        with tempfile.NamedTemporaryFile(suffix='.lcf', mode='w') as f:
+            io_cache.write_cache(cache, f)
+            f.seek(0)
+            assert io_cache.file_list(f.name) == cache.pfnlist()
+
+        # test comma-separated list -> list
+        assert io_cache.file_list('A,B,C,D') == ['A', 'B', 'C', 'D']
+
+        # test cache object -> pfnlist
+        assert io_cache.file_list(cache) == cache.pfnlist()
+
+        # test list -> list
+        assert io_cache.file_list(['A', 'B', 'C', 'D']) == ['A', 'B', 'C', 'D']
+
+        # otherwise error
+        with pytest.raises(ValueError):
+            io_cache.file_list(1)
+
     def test_cache_segments(self):
+        """Test :func:`gwpy.io.cache.cache_segments`
+        """
         # check empty input
-        sl = cache_segments()
-        self.assertIsInstance(sl, SegmentList)
-        self.assertEquals(len(sl), 0)
+        sl = io_cache.cache_segments()
+        assert isinstance(sl, SegmentList)
+        assert len(sl) == 0
+        # check simple cache
         cache, segs = self.make_cache()
         segs.coalesce()
-        sl = cache_segments(cache)
-        self.assertEquals(sl, segs)
-        sl = cache_segments(cache[:2], cache[2:])
-        self.assertEquals(sl, segs)
+        sl = io_cache.cache_segments(cache)
+        assert sl == segs
+        # check multiple caches produces the same result
+        sl = io_cache.cache_segments(cache[:2], cache[2:])
+        assert sl == segs
 
     def test_file_segment(self):
-        self.assertTupleEqual(file_segment('A-B-1-2.ext'), (1, 3))
-        self.assertTupleEqual(file_segment('A-B-1-2.ext.gz'), (1, 3))
-        self.assertTupleEqual(file_segment('A-B-1.23-4.ext.gz'), (1.23, 5.23))
+        """Test :func:`gwpy.io.cache.file_segment`
+        """
+        # check basic
+        fs = io_cache.file_segment('A-B-1-2.ext')
+        assert isinstance(fs, Segment)
+        assert fs == Segment(1, 3)
+        # check mutliple file extensions
+        assert io_cache.file_segment('A-B-1-2.ext.gz') == (1, 3)
+        # check floats (and multiple file extensions)
+        assert io_cache.file_segment('A-B-1.23-4.ext.gz') == (1.23, 5.23)
         # test errors
-        with self.assertRaises(ValueError) as exc:
-            file_segment('blah')
-        self.assertEqual(
-            'Failed to parse \'blah\' as LIGO-T050017-compatible filename',
-            str(exc.exception))
+        with pytest.raises(ValueError) as exc:
+            io_cache.file_segment('blah')
+        assert str(exc.value) == ('Failed to parse \'blah\' as '
+                                  'LIGO-T050017-compatible filename')
 
     def test_flatten(self):
+        """Test :func:`gwpy.io.cache.flatten`
+        """
         # check flattened version of single cache is unchanged
         a, _ = self.make_cache()
-        self.assertListEqual(flatten(a), a)
-        self.assertListEqual(flatten(a, a), a)
+        assert io_cache.flatten(a) == a
+        assert io_cache.flatten(a, a) == a
         # check two caches get concatenated properly
         b, _ = self.make_cache()
         for e in b:
             e.segment = e.segment.shift(10)
         c = a + b
-        self.assertListEqual(flatten(a, b), c)
+        assert io_cache.flatten(a, b) == c
 
     def test_find_contiguous(self):
+        """Test :func:`gwpy.io.cache.find_contiguous`
+        """
         a, segs = self.make_cache()
         segs.coalesce()
-        for i, cache in enumerate(find_contiguous(a)):
-            self.assertEqual(cache.to_segmentlistdict()['A'].extent(), segs[i])
+        for i, cache in enumerate(io_cache.find_contiguous(a)):
+            assert cache.to_segmentlistdict()['A'].extent() == segs[i]
 
 
 # -- gwpy.io.gwf --------------------------------------------------------------
@@ -225,97 +309,122 @@ def mock_call(*args, **kwargs):
     raise OSError("")
 
 
-class GwfIoTestCase(unittest.TestCase):
+class TestIoGwf(object):
 
-    @skip_missing_import('lalframe')
+    def test_identify_gwf(self):
+        assert io_gwf.identify_gwf('read', TEST_GWF_FILE, None) is True
+        with open(TEST_GWF_FILE, 'rb') as gwff:
+            assert io_gwf.identify_gwf('read', None, gwff) is True
+        assert not io_gwf.identify_gwf('read', None, None)
+
+    @utils.skip_missing_dependency('lalframe')
     def test_iter_channel_names(self):
         # maybe need something better?
         from types import GeneratorType
-        names = gwf.iter_channel_names(TEST_GWF_FILE)
-        self.assertIsInstance(names, GeneratorType)
-        self.assertSequenceEqual(list(names), TEST_CHANNELS)
+        names = io_gwf.iter_channel_names(TEST_GWF_FILE)
+        assert isinstance(names, GeneratorType)
+        assert list(names) == TEST_CHANNELS
         with mock.patch('gwpy.utils.shell.call', mock_call):
-            names = gwf.iter_channel_names(TEST_GWF_FILE)
-            self.assertIsInstance(names, GeneratorType)
-            self.assertSequenceEqual(list(names), TEST_CHANNELS)
+            names = io_gwf.iter_channel_names(TEST_GWF_FILE)
+            assert isinstance(names, GeneratorType)
+            assert list(names) == TEST_CHANNELS
 
-    @skip_missing_import('lalframe')
+    @utils.skip_missing_dependency('lalframe')
     def test_get_channel_names(self):
-        self.assertListEqual(gwf.get_channel_names(TEST_GWF_FILE),
-                             TEST_CHANNELS)
+        assert io_gwf.get_channel_names(TEST_GWF_FILE) == TEST_CHANNELS
 
-    @skip_missing_import('lalframe')
+    @utils.skip_missing_dependency('lalframe')
     def test_num_channels(self):
-        self.assertEqual(gwf.num_channels(TEST_GWF_FILE), 3)
+        assert io_gwf.num_channels(TEST_GWF_FILE) == 3
 
-    @skip_missing_import('lalframe')
+    @utils.skip_missing_dependency('lalframe')
     def test_get_channel_type(self):
-        self.assertEqual(gwf.get_channel_type(
-            'L1:LDAS-STRAIN', TEST_GWF_FILE), 'proc')
-        self.assertRaises(ValueError, gwf.get_channel_type,
-                          'X1:NOT-IN_FRAME', TEST_GWF_FILE)
+        assert io_gwf.get_channel_type('L1:LDAS-STRAIN',
+                                       TEST_GWF_FILE) == 'proc'
+        with pytest.raises(ValueError) as exc:
+            io_gwf.get_channel_type('X1:NOT-IN_FRAME', TEST_GWF_FILE)
+        assert str(exc.value) == ('X1:NOT-IN_FRAME not found in '
+                                  'table-of-contents for %s' % TEST_GWF_FILE)
 
-    @skip_missing_import('lalframe')
+    @utils.skip_missing_dependency('lalframe')
     def test_channel_in_frame(self):
-        self.assertTrue(
-            gwf.channel_in_frame('L1:LDAS-STRAIN', TEST_GWF_FILE))
-        self.assertFalse(
-            gwf.channel_in_frame('X1:NOT-IN_FRAME', TEST_GWF_FILE))
+        assert io_gwf.channel_in_frame('L1:LDAS-STRAIN', TEST_GWF_FILE) is True
+        assert io_gwf.channel_in_frame('X1:NOT-IN_FRAME',
+                                       TEST_GWF_FILE) is False
 
 
 # -- gwpy.io.datafind ---------------------------------------------------------
 
-class DataFindIoTestCase(unittest.TestCase):
-
-    @classmethod
-    @unittest.skipUnless(HAS_LAL, 'No module named lal')
-    def setUpClass(cls):
-        cls.MOCK_CONNECTION = mockutils.mock_datafind_connection(TEST_GWF_FILE)
+class TestIoDatafind(object):
+    """Tests for :mod:`gwpy.io.datafind`
+    """
+    @staticmethod
+    @pytest.fixture(scope='class')
+    @utils.skip_missing_dependency('lal')
+    def connection():
+        return mocks.mock_datafind_connection(TEST_GWF_FILE)
 
     def test_on_tape(self):
-        self.assertFalse(datafind.on_tape(TEST_GWF_FILE))
+        """Test :func:`gwpy.io.datafind.on_tape`
+        """
+        assert io_datafind.on_tape(TEST_GWF_FILE) is False
 
-    def test_connect(self):
+    def test_connect(self, connection):
+        """Test :func:`gwpy.io.datafind.connect`
+        """
         with mock.patch('glue.datafind.GWDataFindHTTPConnection',
-                        self.MOCK_CONNECTION), \
-             mock.patch('glue.datafind.GWDataFindHTTPSConnection',
-                        self.MOCK_CONNECTION), \
-             mock.patch('glue.datafind.find_credential',
-                        mockutils.mock_find_credential):
-            datafind.connect()
-            datafind.connect('host', 443)
+                        connection), \
+                mock.patch('glue.datafind.GWDataFindHTTPSConnection',
+                           connection), \
+                mock.patch('glue.datafind.find_credential',
+                           mocks.mock_find_credential):
+            io_datafind.connect()  # HTTP
+            io_datafind.connect('host', 443)  # HTTPS
 
-    def test_find_frametype(self):
+    def test_find_frametype(self, connection):
+        """Test :func:`gwpy.io.datafind.find_frametype
+        """
         with mock.patch('glue.datafind.GWDataFindHTTPConnection') as \
-                 mock_connection, \
-                 mock.patch('gwpy.io.datafind.num_channels', lambda x: 1), \
-                 mock.patch('gwpy.io.gwf.iter_channel_names',
-                            lambda x: ['L1:LDAS-STRAIN']):
-            mock_connection.return_value = self.MOCK_CONNECTION
-            ft = datafind.find_frametype('L1:LDAS-STRAIN', allow_tape=True)
-            self.assertEqual(ft, 'GW100916')
-            ft = datafind.find_frametype('L1:LDAS-STRAIN', return_all=True)
-            self.assertListEqual(ft, ['GW100916'])
-            self.assertRaises(ValueError, datafind.find_frametype, 'X1:TEST')
-            self.assertRaises(ValueError, datafind.find_frametype,
-                              'bad channel name')
+                mock_connection, \
+                mock.patch('gwpy.io.datafind.num_channels', lambda x: 1), \
+                mock.patch('gwpy.io.gwf.iter_channel_names',
+                           lambda x: ['L1:LDAS-STRAIN']):
+            mock_connection.return_value = connection
+            assert io_datafind.find_frametype('L1:LDAS-STRAIN',
+                                              allow_tape=True) == 'GW100916'
+            assert io_datafind.find_frametype('L1:LDAS-STRAIN',
+                                              return_all=True) == ['GW100916']
+            # test missing channel raises sensible error
+            with pytest.raises(ValueError) as exc:
+                io_datafind.find_frametype('X1:TEST', allow_tape=True)
+            assert str(exc.value) == ('Cannot locate \'X1:TEST\' in any known '
+                                      'frametype')
+            # test malformed channel name raises sensible error
+            with pytest.raises(ValueError) as exc:
+                io_datafind.find_frametype('bad channel name')
+            assert str(exc.value) == ('Cannot parse interferometer prefix '
+                                      'from channel name \'bad channel name\','
+                                      ' cannot proceed with find()')
             # test trend sorting ends up with an error
-            self.assertRaises(ValueError, datafind.find_frametype,
-                              'X1:TEST.rms,s-trend')
-            self.assertRaises(ValueError, datafind.find_frametype,
-                              'X1:TEST.rms,m-trend')
+            with pytest.raises(ValueError) as exc:
+                io_datafind.find_frametype('X1:TEST.rms,s-trend',
+                                           allow_tape=True)
+            assert str(exc.value) == ('Cannot locate \'X1:TEST.rms\' '
+                                      'in any known frametype')
+            with pytest.raises(ValueError):
+                io_datafind.find_frametype('X1:TEST.rms,m-trend',
+                                           allow_tape=True)
+            assert str(exc.value) == ('Cannot locate \'X1:TEST.rms\' '
+                                      'in any known frametype')
 
-    def test_find_best_frametype(self):
+    def test_find_best_frametype(self, connection):
+        """Test :func:`gwpy.io.datafind.find_best_frametype
+        """
         with mock.patch('glue.datafind.GWDataFindHTTPConnection') as \
-                 mock_connection, \
-                 mock.patch('gwpy.io.datafind.num_channels', lambda x: 1), \
-                 mock.patch('gwpy.io.gwf.iter_channel_names',
-                            lambda x: ['L1:LDAS-STRAIN']):
-            mock_connection.return_value = self.MOCK_CONNECTION
-            ft = datafind.find_best_frametype('L1:LDAS-STRAIN', 968654552,
-                                              968654553)
-            self.assertEqual(ft, 'GW100916')
-
-
-if __name__ == '__main__':
-    unittest.main()
+                mock_connection, \
+                mock.patch('gwpy.io.datafind.num_channels', lambda x: 1), \
+                mock.patch('gwpy.io.gwf.iter_channel_names',
+                           lambda x: ['L1:LDAS-STRAIN']):
+            mock_connection.return_value = connection
+            assert io_datafind.find_best_frametype(
+                'L1:LDAS-STRAIN', 968654552, 968654553) == 'GW100916'

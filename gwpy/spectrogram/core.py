@@ -30,12 +30,12 @@ from scipy import signal
 
 from astropy import units
 from astropy.io import registry as io_registry
-from astropy.time import Time
 
 from ..detector import Channel
 from ..types import (Array2D, Series)
 from ..segments import Segment
 from ..timeseries import (TimeSeries, TimeSeriesList)
+from ..timeseries.core import _format_time
 from ..frequencyseries import FrequencySeries
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
@@ -122,19 +122,13 @@ class Spectrogram(Array2D):
         epoch = kwargs.pop('epoch', None)
         if epoch is not None and t0 is not None:
             raise ValueError("give only one of epoch or t0")
-        if epoch is None and dt is None:
-            kwargs.setdefault('x0', 0)
-        elif epoch is None:
-            kwargs['x0'] = t0
-        elif isinstance(epoch, Time):
-            kwargs['x0'] = epoch.gps
-        else:
-            kwargs['x0'] = epoch
-
+        if epoch is None and t0 is not None:
+            kwargs['x0'] = _format_time(t0)
+        elif epoch is not None:
+            kwargs['x0'] = _format_time(epoch)
         # parse sample_rate or dt
         if dt is not None:
             kwargs['dx'] = dt
-
         # parse times
         if times is not None:
             kwargs['xindex'] = times
@@ -523,28 +517,6 @@ class Spectrogram(Array2D):
             norm=norm, density=density)
 
     # -- Spectrogram connectors -----------------
-
-    def is_compatible(self, other):
-        """Check whether metadata attributes for self and other match.
-        """
-        if type(other) in [list, tuple, numpy.ndarray]:
-            return True
-        if not numpy.isclose(
-                self.dt.decompose().value, other.dt.decompose().value):
-            raise ValueError("Spectrogram time resolutions do not match: "
-                             "%s vs %s." % (self.dt, other.dt))
-        if not numpy.isclose(
-                self.df.decompose().value, other.df.decompose().value):
-            raise ValueError("Spectrogram frequency resolutions do not match:"
-                             "%s vs %s." % (self.df, other.df))
-        if not numpy.isclose(
-                self.f0.decompose().value, other.f0.decompose().value):
-            raise ValueError("Spectrogram starting frequencies do not match:"
-                             "%s vs %s." % (self.f0, other.f0))
-        if not self.unit == other.unit:
-            raise ValueError("Spectrogram units do not match: %s vs %s."
-                             % (self.unit, other.unit))
-        return True
 
     def crop_frequencies(self, low=None, high=None, copy=False):
         """Crop this `Spectrogram` to the specified frequencies

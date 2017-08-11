@@ -363,5 +363,6 @@ def create_frvect(timeseries):
         timeseries.name or '', FRVECT_TYPE_FROM_NUMPY[timeseries.dtype.type],
         1, dims, str(timeseries.unit))
     # populate FrVect and return
-    vect.GetDataArray()[:] = timeseries.value
+    vect.GetDataArray()[:] = numpy.require(timeseries.value,
+                                           requirements=['C'])
     return vect

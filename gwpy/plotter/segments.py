@@ -478,6 +478,7 @@ class SegmentAxes(TimeSeriesAxes):
 
     draw.__doc__ = TimeSeriesAxes.draw.__doc__
 
+
 register_projection(SegmentAxes)
 
 

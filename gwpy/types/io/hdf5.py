@@ -20,6 +20,7 @@
 """
 
 import pickle
+from decimal import Decimal
 
 from astropy.units import (Quantity, UnitBase)
 
@@ -54,11 +55,12 @@ def read_hdf5_array(f, path=None, array_type=Array):
         attrs['channel'] = pickle.loads(attrs['channel'])
     except KeyError:  # no channel stored
         pass
-    except ValueError:
-        if attrs['channel'].startswith('ccopy_reg'):  # corrupt pickle
-            raise
-        else:  # not pickled
-            pass
+    except ValueError:  # not pickled
+        pass
+    # unpack byte strings for python3
+    for key in attrs:
+        if isinstance(attrs[key], bytes):
+            attrs[key] = attrs[key].decode('utf-8')
     return array_type(dataset[()], **attrs)
 
 
@@ -99,7 +101,7 @@ def create_array_dataset(h5g, array, path=None, compression='gzip', **kwargs):
             dset.attrs[attr] = pickle.dumps(mdval)
         elif isinstance(mdval, UnitBase):
             dset.attrs[attr] = str(mdval)
-        elif isinstance(mdval, LIGOTimeGPS):
+        elif isinstance(mdval, (Decimal, LIGOTimeGPS)):
             dset.attrs[attr] = str(mdval)
         elif isinstance(mdval, Time):
             dset.attrs[attr] = mdval.utc.gps

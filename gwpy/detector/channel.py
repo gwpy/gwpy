@@ -26,9 +26,11 @@ import numpy
 import warnings
 import subprocess
 import sys
+from copy import copy
 from math import (log, ceil)
 
 from six import string_types
+from six.moves.urllib.parse import urlparse
 
 from astropy import units
 from astropy.io import registry as io_registry
@@ -154,9 +156,7 @@ class Channel(object):
 
     @sample_rate.setter
     def sample_rate(self, rate):
-        if isinstance(rate, units.Unit):
-            self._sample_rate = rate
-        elif rate is None:
+        if rate is None:
             self._sample_rate = None
         elif isinstance(rate, units.Quantity):
             self._sample_rate = rate
@@ -296,7 +296,15 @@ class Channel(object):
 
     @url.setter
     def url(self, href):
-        self._url = href
+        if href is None:
+            self._url = None
+        else:
+            try:
+                url = urlparse(href)
+                assert url.scheme in ('http', 'https', 'file')
+            except (AttributeError, ValueError, AssertionError):
+                raise ValueError("Invalid URL %r" % href)
+            self._url = href
 
     @property
     def frametype(self):
@@ -384,7 +392,7 @@ class Channel(object):
     # classsmethods
 
     @classmethod
-    def query(cls, name, debug=False, timeout=None):
+    def query(cls, name, use_kerberos=None, debug=False):
         """Query the LIGO Channel Information System for the `Channel`
         matching the given name
 
@@ -392,25 +400,30 @@ class Channel(object):
         ----------
         name : `str`
             name of channel
+
+        use_kerberos : `bool`, optional
+            use an existing Kerberos ticket as the authentication credential,
+            default behaviour will check for credentials and request username
+            and password if none are found (`None`)
+
         debug : `bool`, optional
             print verbose HTTP connection status for debugging,
             default: `False`
-        timeout : `float`, optional
-            maximum time to wait for a response from the CIS
 
         Returns
         -------
-        Channel
+        c : `Channel`
              a new `Channel` containing all of the attributes set from
              its entry in the CIS
         """
-        channellist = ChannelList.query(name, debug=debug, timeout=timeout)
+        channellist = ChannelList.query(name, use_kerberos=use_kerberos,
+                                        debug=debug)
         if len(channellist) == 0:
-            raise ValueError("No channels found matching '%s'." % name)
+            raise ValueError("No channels found matching '%s'" % name)
         if len(channellist) > 1:
             raise ValueError("%d channels found matching '%s', please refine "
                              "search, or use `ChannelList.query` to return "
-                             "all results." % (len(channellist), name))
+                             "all results" % (len(channellist), name))
         return channellist[0]
 
     @classmethod
@@ -569,10 +582,10 @@ class Channel(object):
             allow_tape=allow_tape)
 
     def copy(self):
-        return type(self)(self.name, unit=self.unit,
-                          sample_rate=self.sample_rate, dtype=self.dtype,
-                          type=self.type, frametype=self.frametype,
-                          model=self.model, url=self.url)
+        new = type(self)(str(self))
+        for key, value in vars(self).items():
+            setattr(new, key, copy(value))
+        return new
 
     def __str__(self):
         return self.name
@@ -747,26 +760,30 @@ class ChannelList(list):
         return self.__class__(c)
 
     @classmethod
-    def query(cls, name, debug=False, timeout=None):
+    def query(cls, name, use_kerberos=None, debug=False):
         """Query the LIGO Channel Information System a `ChannelList`.
 
         Parameters
         ----------
         name : `str`
             name of channel, or part of it.
+
+        use_kerberos : `bool`, optional
+            use an existing Kerberos ticket as the authentication credential,
+            default behaviour will check for credentials and request username
+            and password if none are found (`None`)
+
         debug : `bool`, optional
             print verbose HTTP connection status for debugging,
             default: `False`
-        timeout : `float`, optional
-            maximum time to wait for a response from the CIS
 
         Returns
         -------
-        `ChannelList`
+        channels : `ChannelList`
             a new list containing all `Channels <Channel>` found.
         """
         from .io import cis
-        return cis.query(name, debug=debug, timeout=timeout)
+        return cis.query(name, use_kerberos=use_kerberos, debug=debug)
 
     @classmethod
     def query_nds2(cls, names, host=None, port=None, connection=None,
@@ -852,4 +869,4 @@ class ChannelList(list):
                                       type=ctype)
         availability = io_nds2.get_availability(chans, start, end,
                                                 connection=connection)
-        return type(availability)(zip(chans, availability.values()))
+        return type(availability)(zip(channels, availability.values()))

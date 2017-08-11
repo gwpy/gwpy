@@ -39,10 +39,10 @@ OPERATORS = {
 }
 
 OPERATORS_INV = {
-    '<': operator.ge,
-    '<=': operator.gt,
-    '>=': operator.lt,
-    '>': operator.le,
+    '<=': operator.ge,
+    '<': operator.gt,
+    '>': operator.lt,
+    '>=': operator.le,
 }
 
 
@@ -129,7 +129,7 @@ def parse_column_filter(definition):
     math = []
     for lim, op in zip(thresholds, operators):
         try:
-            # parse '1 < snr' as 'snr >= 1'
+            # parse '1 < snr' as 'snr > 1'
             if (definition.find(lim) < definition.find(op) and
                     op in OPERATORS_INV):
                 math.append((float(lim), OPERATORS_INV[op]))
