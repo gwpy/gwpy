@@ -217,20 +217,24 @@ class Qtransform(CliProduct):
             prange = float(prng)
         else:
             prange = 0.5
+            args.plot = '0.5'
 
         return prange
 
     def has_more_plots(self, args):
         """any ranges left to plot?"""
         self.plot_num += 1
-        ret = self.plot_num < len(args.plot)
+        if not args.plot:
+            ret = False
+        else:
+            ret = self.plot_num < len(args.plot)
         if not ret:
             run_time = time() - self.start_time
             self.log(2, 'Q-transform run time: %.1f  sec' % run_time)
         return ret
 
     def prep_next_plot(self, args):
-        """Override when product needs multiple saves
+        """Overridden because we may need multiple saves
         """
         self.qx_plot_setup(args)
         self.result = self.my_ts.q_transform(**self.qxfrm_args)
