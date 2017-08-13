@@ -25,9 +25,7 @@
 import re
 from .cliproduct import CliProduct
 import types
-import math
 from pprint import pprint
-import gc
 from time import time
 
 
