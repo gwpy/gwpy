@@ -578,8 +578,8 @@ class CliProduct(object):
             # handle time on X-axis
             xmin = self.xmin
             xmax = self.xmax
-            if args.xmin:
-                al_xmin = float(args.xmin)
+            if arg_list.xmin:
+                al_xmin = float(arg_list.xmin)
                 if self.xaxis_is_freq:
                     xmin = al_xmin      # frequency specified
                 elif al_xmin <= 1e8:
@@ -587,8 +587,8 @@ class CliProduct(object):
                     # seconds relative to start GPS
                 else:
                     xmin = al_xmin     # absolute GPS
-            if args.xmax:
-                al_xmax = float(args.xmax)
+            if arg_list.xmax:
+                al_xmax = float(arg_list.xmax)
                 if self.xaxis_is_freq:
                     xmax = al_xmax
                 elif al_xmax <= 9e8:
@@ -597,8 +597,8 @@ class CliProduct(object):
                     xmax = al_xmax
 
             if self.xaxis_type == 'linx':
-                if args.epoch:
-                    epoch = float(args.epoch)
+                if arg_list.epoch:
+                    epoch = float(arg_list.epoch)
 
                 scale = 'auto-gps'
 
@@ -614,21 +614,21 @@ class CliProduct(object):
                         scale = 'auto-gps'
                         self.ax.set_epoch(epoch)
 
-                if args.logx:
+                if arg_list.logx:
                     scale = 'log'
-                elif not (self.get_xlabel() or args.xlabel):
+                elif not (self.get_xlabel() or arg_list.xlabel):
                     # duplicate default label except use parens not brackets
                     scale = self.ax.get_xscale()
                     if scale == 'auto-gps':
                         epoch = self.ax.get_epoch()
                         if epoch is None:
-                            args.xlabel = 'GPS Time'
+                            arg_list.xlabel = 'GPS Time'
                 if self.ax.get_xscale() == 'gps':
                     for l in self.ax.xaxis.get_ticklabels():
                         l.set_rotation(25)
                         l.set_ha('right')
             elif self.xaxis_type == 'logx':
-                if args.nologx:
+                if arg_list.nologx:
                     scale = 'linear'
                 else:
                     scale = 'log'
@@ -638,12 +638,12 @@ class CliProduct(object):
             xmax = self.fmax
 
             scale = 'log'
-            if args.nologf:
+            if arg_list.nologf:
                 scale = 'linear'
-            if args.fmin:
-                xmin = float(args.fmin)
-            if args.fmax:
-                xmax = float(args.fmax)
+            if arg_list.fmin:
+                xmin = float(arg_list.fmin)
+            if arg_list.fmax:
+                xmax = float(arg_list.fmax)
         else:
             raise AssertionError('X-axis type [%s] is unknown' %
                                  self.xaxis_type)
