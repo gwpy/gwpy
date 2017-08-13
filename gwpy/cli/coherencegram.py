@@ -95,11 +95,11 @@ class Coherencegram(CliProduct):
         self.is_freq_plot = True
 
         secpfft = 0.5
-        if args.secpfft:
-            secpfft = float(args.secpfft)
+        if arg_list.secpfft:
+            secpfft = float(arg_list.secpfft)
         ovlp_frac = 0.9
-        if args.overlap:
-            ovlp_frac = float(args.overlap)
+        if arg_list.overlap:
+            ovlp_frac = float(arg_list.overlap)
         self.secpfft = secpfft
         self.overlap = ovlp_frac
 
@@ -112,7 +112,7 @@ class Coherencegram(CliProduct):
         coh = self.timeseries[0].coherence_spectrogram(
             self.timeseries[1], stride, fftlength=secpfft, overlap=ovlap_sec)
         norm = False
-        if args.norm:
+        if arg_list.norm:
             coh = coh.ratio('mean')
             norm = True
 
@@ -125,31 +125,31 @@ class Coherencegram(CliProduct):
         self.xmax = self.timeseries[0].times.value.max()
 
         # set intensity (color) limits
-        if args.imin:
-            lo = float(args.imin)
+        if arg_list.imin:
+            lo = float(arg_list.imin)
         elif norm:
             lo = 0.5
         else:
             lo = 0.01
-        if norm or args.nopct:
+        if norm or arg_list.nopct:
             imin = lo
         else:
             imin = percentile(coh, lo*100)
 
-        if args.imax:
-            up = float(args.imax)
+        if arg_list.imax:
+            up = float(arg_list.imax)
         elif norm:
             up = 2
         else:
             up = 100
-        if norm or args.nopct:
+        if norm or arg_list.nopct:
             imax = up
         else:
             imax = percentile(coh, up)
 
         pltargs = dict()
-        if args.cmap:
-            pltargs['cmap'] = args.cmap
+        if arg_list.cmap:
+            pltargs['cmap'] = arg_list.cmap
 
         pltargs['vmin'] = imin
         pltargs['vmax'] = imax
@@ -157,7 +157,7 @@ class Coherencegram(CliProduct):
         # plot the thing
         if norm:
             self.scale_text = 'Normalized to mean'
-        elif args.logcolors:
+        elif arg_list.logcolors:
             pltargs['norm'] = 'log'
             self.scale_text = r'log_10 Coherence'
         else:
