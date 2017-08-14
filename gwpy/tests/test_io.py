@@ -247,6 +247,25 @@ class TestIoCache(object):
         with pytest.raises(ValueError):
             io_cache.file_list(1)
 
+    def test_file_name(self):
+        cache = self.make_cache()[0]
+
+        # check file_name(<str>)
+        assert io_cache.file_name('test.txt') == 'test.txt'
+
+        # check file_name(<file>)
+        with tempfile.NamedTemporaryFile() as f:
+            assert io_cache.file_name(f) == f.name
+
+        # check file_name(<CacheEntry>)
+        assert io_cache.file_name(cache[0]) == cache[0].path
+
+        # check that anything else fails
+        with pytest.raises(ValueError):
+            io_cache.file_name(1)
+        with pytest.raises(ValueError):
+            io_cache.file_name(['test.txt'])
+
     def test_cache_segments(self):
         """Test :func:`gwpy.io.cache.cache_segments`
         """
