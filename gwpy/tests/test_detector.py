@@ -587,7 +587,8 @@ class TestChannelList(object):
     def test_read_write_clf(self):
         # write clf to file and read it back
         try:
-            with NamedTemporaryFile(suffix='.ini', delete=False) as f:
+            with NamedTemporaryFile(suffix='.ini', delete=False,
+                                    mode='w') as f:
                 f.write(CLF)
             cl = ChannelList.read(f.name)
             assert len(cl) == 4

@@ -77,7 +77,7 @@ from numpy import inf
 
 from ...io import registry
 from ...io.utils import identify_factory
-from ...io.cache import FILE_LIKE
+from ...io.cache import (file_list, FILE_LIKE)
 from ...utils.compat import OrderedDict
 from .. import (Channel, ChannelList)
 
@@ -96,7 +96,7 @@ def read_channel_list_file(*source):
     """
     # read file(s)
     config = configparser.ConfigParser(dict_type=OrderedDict)
-    source = [f.name for f in source if isinstance(f, file) or f]
+    source = file_list(source)
     success_ = config.read(*source)
     if len(success_) != len(source):
         raise IOError("Failed to read one or more CLF files")
