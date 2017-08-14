@@ -28,10 +28,7 @@ import getpass
 import os
 import sys
 
-try:
-    raw_input
-except NameError:
-    raw_input = input
+from six.moves import input
 
 import re
 from subprocess import (PIPE, Popen)
@@ -117,8 +114,8 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
         realm = 'LIGO.ORG'
     if username is None:
         verbose = True
-        username = raw_input("Please provide username for the %s kerberos "
-                             "realm: " % realm)
+        username = input("Please provide username for the %s kerberos "
+                         "realm: " % realm)
     if not keytab and password is None:
         verbose = True
         password = getpass.getpass(prompt="Password for %s@%s: "
