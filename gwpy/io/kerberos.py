@@ -147,7 +147,7 @@ def parse_keytab(keytab):
     keytab : `str`
         path to keytab file
     """
-    cmd = ['klist', '-k', '-K', keytab]
+    cmd = ['klist', '-k', keytab]
     klist = Popen(cmd, stdout=PIPE, stderr=PIPE)
     out = klist.communicate()[0]
     if klist.returncode:
@@ -155,7 +155,7 @@ def parse_keytab(keytab):
     principals = []
     for line in out.splitlines():
         try:
-            n, principal, _ = re.split('\s+', line.strip(' '), 2)
+            n, principal, = re.split('\s+', line.strip(' '), 1)
         except ValueError:
             continue
         else:
