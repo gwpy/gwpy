@@ -39,7 +39,7 @@ from threading import Thread
 
 from six import string_types
 from six.moves import reduce
-from six.moves.urllib.error import URLError
+from six.moves.urllib.error import (URLError, HTTPError)
 from six.moves.urllib.parse import urlparse
 from six.moves.queue import Queue
 
@@ -49,7 +49,6 @@ from astropy.io import registry as io_registry
 from astropy.utils.data import get_readable_fileobj
 
 from ..time import to_gps
-from ..utils.deps import with_import
 from ..utils.compat import OrderedDict
 from .segments import Segment, SegmentList
 
@@ -306,11 +305,7 @@ class DataQualityFlag(object):
     def padding(self):
         """[start, end) padding for this flag's active segments.
         """
-        try:
-            return self._padding
-        except AttributeError:
-            self._padding = (0, 0)
-            return self.padding
+        return self._padding
 
     @padding.setter
     def padding(self, pad):
@@ -318,6 +313,10 @@ class DataQualityFlag(object):
             self._padding = (0, 0)
         else:
             self._padding = (pad[0], pad[1])
+
+    @padding.deleter
+    def padding(self):
+        self._padding = (0, 0)
 
     # -------------------------------------------------------------------------
     # read-only properties
@@ -426,14 +425,11 @@ class DataQualityFlag(object):
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
         elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(to_gps(args[0][0]),
-                                        to_gps(args[0][1])))
-        elif len(args) == 2:
-            qsegs = SegmentList([Segment(to_gps(args[0]), to_gps(args[1]))])
+            qsegs = SegmentList([Segment(to_gps(args[0][0]),
+                                         to_gps(args[0][1]))])
         else:
-            raise ValueError("DataQualityFlag.query must be called with a "
-                             "flag name, and either GPS start and stop times, "
-                             "or a SegmentList of query segments")
+            qsegs = SegmentList([Segment(*map(to_gps, args))])
+
         # process query
         try:
             flags = DataQualityDict.query_segdb([flag], qsegs, **kwargs)
@@ -453,7 +449,6 @@ class DataQualityFlag(object):
         return flags[flag]
 
     @classmethod
-    @with_import('dqsegdb.apicalls')
     def query_dqsegdb(cls, flag, *args, **kwargs):
         """Query the advanced LIGO DQSegDB for the given flag
 
@@ -476,18 +471,18 @@ class DataQualityFlag(object):
             A new `DataQualityFlag`, with the `known` and `active` lists
             filled appropriately.
         """
+        from dqsegdb import apicalls
+
         # parse arguments
         if len(args) == 1 and isinstance(args[0], SegmentList):
             qsegs = args[0]
         elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(to_gps(args[0][0]),
-                                        to_gps(args[0][1])))
-        elif len(args) == 2:
-            qsegs = SegmentList([Segment(to_gps(args[0]), to_gps(args[1]))])
+            qsegs = SegmentList([Segment(to_gps(args[0][0]),
+                                         to_gps(args[0][1]))])
         else:
-            raise ValueError("DataQualityFlag.query must be called with a "
-                             "flag name, and either GPS start and stop times, "
-                             "or a SegmentList of query segments")
+            print(args)
+            qsegs = SegmentList([Segment(*map(to_gps, args))])
+
         # get server
         protocol, server = kwargs.pop(
             'url', 'https://segments.ligo.org').split('://', 1)
@@ -515,8 +510,9 @@ class DataQualityFlag(object):
                     data, _ = apicalls.dqsegdbQueryTimes(
                         protocol, server, out.ifo, out.tag, out.version,
                         request, int(start), int(end))
-                except URLError as e:
-                    e.args = ('Error querying for %s: %s' % (flag, e),)
+                except HTTPError as e:
+                    if e.code == 404:  # if not found, annotate with flag name
+                        e.msg += ' [{0}]'.format(flag)
                     raise
             # read from json buffer
             try:
@@ -713,11 +709,9 @@ class DataQualityFlag(object):
         """
         if len(args) == 0:
             start, end = self.padding
-        elif len(args) == 2:
-            start, end = args
         else:
-            raise ValueError("Cannot parse (start, end) padding from %r"
-                             % args)
+            start, end = args
+
         if kwargs.pop('inplace', False):
             new = self
         else:
@@ -909,6 +903,12 @@ class DataQualityFlag(object):
     __add__ = __or__
     __iadd__ = __ior__
 
+    def __invert__(self):
+        new = self.copy()
+        new.known = ~self.known
+        new.active = ~self.active
+        return new
+
 
 class _QueryDQSegDBThread(Thread):
     """Threaded DQSegDB query
@@ -1023,11 +1023,7 @@ class DataQualityDict(OrderedDict):
         if kwargs.keys():
             raise TypeError("DataQualityDict.query_segdb has no keyword "
                             "argument '%s'" % list(kwargs.keys()[0]))
-        # parse flags
-        if isinstance(flags, string_types):
-            flags = flags.split(',')
-        else:
-            flags = flags
+
         # process query
         from glue.segmentdb import (segmentdb_utils as segdb_utils,
                                     query_engine as segdb_engine)
@@ -1135,7 +1131,6 @@ class DataQualityDict(OrderedDict):
                                    key=lambda x: x[0])))[1]
         for result, flag in zip(results, flags):
             if isinstance(result, Exception):
-                new[flag] = cls._EntryClass(name=flag)
                 result.args = ('%s [%s]' % (str(result), str(flag)),)
                 if on_error == 'ignore':
                     pass
@@ -1213,7 +1208,6 @@ class DataQualityDict(OrderedDict):
         >>> flags.populate()
 
         """
-        from glue.ligolw.lsctables import VetoDefTable
         from ..io.ligolw import table_from_file
 
         if format != 'ligolw':
@@ -1235,11 +1229,11 @@ class DataQualityDict(OrderedDict):
         for row in veto_def_table:
             if ifo and row.ifo != ifo:
                 continue
-            if start and 0 < row.end_time < start:
+            if start and 0 < row.end_time <= start:
                 continue
             elif start:
                 row.start_time = max(row.start_time, start)
-            if end and row.start_time > end:
+            if end and row.start_time >= end:
                 continue
             elif end and not row.end_time:
                 row.end_time = end
@@ -1355,8 +1349,8 @@ class DataQualityDict(OrderedDict):
         return self
 
     def __and__(self, other):
-        if sum(len(s) for s in self.values()) <= sum(len(s) for s in
-                                                     other.values()):
+        if (sum(len(s.active) for s in self.values()) <=
+                sum(len(s.active) for s in other.values())):
             return self.copy().__iand__(other)
         return other.copy().__iand__(self)
 
@@ -1386,24 +1380,10 @@ class DataQualityDict(OrderedDict):
     def __sub__(self, other):
         return self.copy().__isub__(other)
 
-    def __ixor__(self, other):
-        for key, value in other.items():
-            if key in self:
-                self[key] ^= value
-            else:
-                self[key] = shallowcopy(value)
-        return self
-
-    def __xor__(self, other):
-        if sum(len(s) for s in self.values()) <= sum(len(s) for s in
-                                                     other.values()):
-            return self.copy().__ixor__(other)
-        return other.copy().__ixor__(self)
-
     def __invert__(self):
         new = self.copy()
         for key, value in new.items():
-            dict.__setitem__(new, key, ~value)
+            new[key] = ~value
         return new
 
     def union(self):
