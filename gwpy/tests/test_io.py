@@ -23,12 +23,14 @@ from __future__ import print_function
 
 import os
 import tempfile
+import sys
 
 import pytest
 
 from gwpy.io import (cache as io_cache,
                      datafind as io_datafind,
                      gwf as io_gwf,
+                     kerberos as io_kerberos,
                      nds2 as io_nds2)
 from gwpy.segments import (Segment, SegmentList)
 
@@ -37,6 +39,9 @@ import mocks
 from mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+# remove real user's keytab, if present
+os.environ.pop('KRB5_KTNAME', None)
 
 TEST_GWF_FILE = os.path.join(os.path.dirname(__file__), 'data',
                              'HLV-GW100916-968654552-1.gwf')
@@ -447,3 +452,91 @@ class TestIoDatafind(object):
             mock_connection.return_value = connection
             assert io_datafind.find_best_frametype(
                 'L1:LDAS-STRAIN', 968654552, 968654553) == 'GW100916'
+
+
+# -- gwpy.io.kerberos ---------------------------------------------------------
+
+KLIST = """Keytab name: FILE:/test.keytab
+KVNO Principal
+---- -------------------------------
+   1 albert.einstein@LIGO.ORG
+   2 ronald.drever@LIGO.ORG"""
+
+
+def mock_popen_return(popen, out='', err='', returncode=0):
+    mocked_p = mock.Mock()
+    mocked_p.configure_mock(**{
+        'communicate.return_value': (out, err),
+        'returncode': returncode,
+    })
+    popen.return_value = mocked_p
+
+
+class TestIoKerberos(object):
+    @mock.patch('gwpy.io.kerberos.Popen')
+    def test_parse_keytab(self, mocked_popen):
+        mock_popen_return(mocked_popen, out=KLIST)
+
+        # assert principals get extracted correctly
+        principals = io_kerberos.parse_keytab('test.keytab')
+        assert principals == [['albert.einstein', 'LIGO.ORG'],
+                              ['ronald.drever', 'LIGO.ORG']]
+
+        # assert klist fail gets raise appropriately
+        mock_popen_return(mocked_popen, returncode=1)
+        with pytest.raises(io_kerberos.KerberosError):
+            io_kerberos.parse_keytab('test.keytab')
+
+    @mock.patch('gwpy.io.kerberos.which', return_value='/bin/kinit')
+    @mock.patch('gwpy.io.kerberos.Popen')
+    @mock.patch('getpass.getpass', return_value='test')
+    @mock.patch('gwpy.io.kerberos.input', return_value='rainer.weiss')
+    def test_kinit(self, raw_input_, getpass, mocked_popen, which, capsys):
+        # default popen kwargs
+        popen_kwargs = {'stdin': -1, 'stderr': -1, 'stdout': -1, 'env': None}
+
+        # pass username and password, and kinit exe path
+        io_kerberos.kinit(username='albert.einstein', password='test',
+                          exe='/usr/bin/kinit', verbose=True)
+        mocked_popen.assert_called_with(
+            ['/usr/bin/kinit', 'albert.einstein@LIGO.ORG'], **popen_kwargs)
+        out, err = capsys.readouterr()
+        assert out == (
+            'Kerberos ticket generated for albert.einstein@LIGO.ORG\n')
+
+        # configure klisting (remove Drever)
+        mock_popen_return(mocked_popen, out=KLIST.rsplit('\n', 1)[0])
+        os.environ['KRB5_KTNAME'] = '/test.keytab'
+
+        # test keytab from environment not found (default) prompts user
+        io_kerberos.kinit()
+        mocked_popen.assert_called_with(
+            ['/bin/kinit', 'rainer.weiss@LIGO.ORG'], **popen_kwargs)
+
+        # test keytab from enviroment found
+        with tempfile.NamedTemporaryFile(suffix='.keytab') as f:
+            io_kerberos.kinit(keytab=f.name)
+            mocked_popen.assert_called_with(
+                ['/bin/kinit', '-k', '-t', f.name, 'albert.einstein@LIGO.ORG'],
+                **popen_kwargs)
+
+        os.environ.pop('KRB5_KTNAME', None)
+
+        # pass keytab
+        io_kerberos.kinit(keytab='test.keytab')
+        mocked_popen.assert_called_with(
+            ['/bin/kinit', '-k', '-t', 'test.keytab',
+             'albert.einstein@LIGO.ORG'], **popen_kwargs)
+
+        # don't pass keytab (prompts for username and password)
+        io_kerberos.kinit()
+        getpass.assert_called_with(
+            prompt='Password for rainer.weiss@LIGO.ORG: ', stream=sys.stdout)
+        mocked_popen.assert_called_with(
+            ['/bin/kinit', 'rainer.weiss@LIGO.ORG'], **popen_kwargs)
+
+        # test using krb5ccname (credentials cache)
+        io_kerberos.kinit(krb5ccname='/test_cc.krb5')
+        popen_kwargs['env'] = {'KRB5CCNAME': '/test_cc.krb5'}
+        mocked_popen.assert_called_with(
+            ['/bin/kinit', 'rainer.weiss@LIGO.ORG'], **popen_kwargs)
