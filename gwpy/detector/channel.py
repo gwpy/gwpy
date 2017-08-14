@@ -37,7 +37,6 @@ from astropy.io import registry as io_registry
 
 from ..io import (datafind, nds2 as io_nds2)
 from ..time import to_gps
-from ..utils.deps import with_import
 from .units import parse_unit
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -427,7 +426,6 @@ class Channel(object):
         return channellist[0]
 
     @classmethod
-    @with_import('nds2')
     def query_nds2(cls, name, host=None, port=None, connection=None,
                    type=None):
         """Query an NDS server for channel information

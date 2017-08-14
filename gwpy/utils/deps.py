@@ -21,9 +21,13 @@ dependencies within GWpy code.
 """
 
 import inspect
+import warnings
 from functools import wraps
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+warnings.warn('The gwpy.utils.deps module has been deprecated and will be '
+              'removed in an upcoming release', DeprecationWarning)
 
 
 def import_method_dependency(module, stacklevel=1):
