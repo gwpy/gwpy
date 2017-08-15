@@ -65,6 +65,7 @@ def get_gravityspy_triggers(tablename, engine=None,
     """
     import pandas as pd
     from sqlalchemy.engine import create_engine
+    from sqlalchemy.exc import ProgrammingError
 
     # connect if needed
     if engine is None:
@@ -72,11 +73,16 @@ def get_gravityspy_triggers(tablename, engine=None,
         engine = create_engine(connectionStr)
 
     try:
-        tab = pd.read_sql(tablename, engine)
-    except Exception as e:
-        raise ValueError('I am sorry could not retrive triggers\
-            from that table. The following our acceptible \
-            table names {0}'.format(engine.table_names()))
+        tab = pd.read_sql(qstr, engine, **kwargs)
+    except ProgrammingError as e:
+        if 'relation "%s" does not exist' % tablename in str(e):
+            msg = e.args[0]
+            msg = msg.replace(
+                'does not exist',
+                'does not exist, the following tablenames are '
+                'acceptable:\n    %s\n' % '\n    '.join(engine.table_names()))
+            e.args = (msg,)
+        raise
 
     tab = Table.from_pandas(tab)
 
