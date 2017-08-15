@@ -155,23 +155,37 @@ def file_list(flist):
     ValueError
         if the input `flist` cannot be interpreted as any of the above inputs
     """
-    # detect open files
-    if isinstance(flist, FILE_LIKE):
-        flist = flist.name
-    # then format list of file paths
-    if HAS_CACHE and isinstance(flist, CacheEntry):
-        return [flist.path]
-    elif (isinstance(flist, string_types) and
-          flist.endswith(('.cache', '.lcf'))):
+    # open a cache file and return list of paths
+    if isinstance(flist, string_types) and flist.endswith(('.cache', '.lcf')):
         return read_cache(flist).pfnlist()
-    elif isinstance(flist, string_types):
+
+    # separate comma-separate list of names
+    if isinstance(flist, string_types):
         return flist.split(',')
-    elif HAS_CACHE and isinstance(flist, Cache):
-        return flist.pfnlist()
-    elif isinstance(flist, (list, tuple)):
-        return flist
-    raise ValueError("Could not parse input %r as one or more "
-                     "file-like objects" % flist)
+
+    # parse list of entries (of some format)
+    if isinstance(flist, (list, tuple)):
+        return list(map(file_name, flist))
+
+    # otherwise parse a single entry
+    try:
+        return [file_name(flist)]
+    except ValueError as e:
+        e.args = ("Could not parse input %r as one or more "
+                  "file-like objects" % flist,)
+        raise
+
+
+def file_name(fobj):
+    """Returns the name (path) of the file object
+    """
+    if isinstance(fobj, string_types):
+        return fobj
+    if isinstance(fobj, FILE_LIKE):
+        return fobj.name
+    if HAS_CACHE and isinstance(fobj, CacheEntry):
+        return fobj.path
+    raise ValueError("Cannot parse file name for %r" % fobj)
 
 
 def file_segment(filename):
