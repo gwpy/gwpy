@@ -30,10 +30,11 @@ is the username and thesecret is the password.
 """
 import os
 
+from astropy.table import Table
+
+from .fetch import register_fetcher
 from .. import GravitySpyTable
 from .. import EventTable
-from astropy.table import Table
-from .fetch import register_fetcher
 
 __author__ = 'Scott Coughlin <scott.coughlin@ligo.org>'
 
