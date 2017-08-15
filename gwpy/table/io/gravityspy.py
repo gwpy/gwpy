@@ -39,7 +39,7 @@ __author__ = 'Scott Coughlin <scott.coughlin@ligo.org>'
 
 
 def get_gravityspy_triggers(tablename, engine=None,
-                      **connectkwargs):
+                            **connectkwargs):
     """Fetch data into an `GravitySpyTable`
 
     Parameters
@@ -93,6 +93,7 @@ def get_gravityspy_triggers(tablename, engine=None,
     return GravitySpyTable(tab.filled())
 
 # -- utilities ----------------------------------------------------------------
+
 
 def connectStr(db='gravityspy', host='gravityspy.ciera.northwestern.edu',
                user=os.getenv('GRAVITYSPY_DATABASE_USER', None),
