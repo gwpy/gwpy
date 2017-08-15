@@ -95,20 +95,21 @@ def get_gravityspy_triggers(tablename, engine=None,
 # -- utilities ----------------------------------------------------------------
 
 def connectStr(db='gravityspy', host='gravityspy.ciera.northwestern.edu',
-                      user=os.getenv('GRAVITYSPY_DATABASE_USER', None),
-                      passwd=os.getenv('GRAVITYSPY_DATABASE_PASSWD', None)):
+               user=os.getenv('GRAVITYSPY_DATABASE_USER', None),
+               passwd=os.getenv('GRAVITYSPY_DATABASE_PASSWD', None)):
     """Create string to pass to create_engine
     """
 
     if (not user) or (not passwd):
-        raise ValueError('Remember to either pass\
-            or export GRAVITYSPY_DATABASE_USER\
-            and export GRAVITYSPY_DATABASE_PASSWD in order to access the\
-            Gravity Spy Data: https://secrets.ligo.org/secrets/144/\
-             description is username and secret is password.')
+        raise ValueError('Remember to either pass '
+                         'or export GRAVITYSPY_DATABASE_USER '
+                         'and export GRAVITYSPY_DATABASE_PASSWD in order '
+                         'to access the Gravity Spy Data: '
+                         'https://secrets.ligo.org/secrets/144/'
+                         ' description is username and secret is password.')
 
-    connectionString = 'postgresql://{0}:{1}@{2}:5432/{3}'\
-                       .format(user, passwd, host, db)
+    connectionString = 'postgresql://{0}:{1}@{2}:5432/{3}'.format(
+        user, passwd, host, db)
 
     return connectionString
 
