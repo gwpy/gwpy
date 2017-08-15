@@ -62,19 +62,9 @@ def get_gravityspy_triggers(tablename, engine=None,
     Returns
     -------
     table : `GravitySpyTable`
-
-    Notes"""
-    try:
-        import pandas as pd
-    except ImportError as e:
-        e.args = ('pandas is required to download triggers',)
-        raise
-
-    try:
-        from sqlalchemy.engine import create_engine
-    except ImportError as e:
-        e.args = ('sqlalchemy is required to download triggers',)
-        raise
+    """
+    import pandas as pd
+    from sqlalchemy.engine import create_engine
 
     # connect if needed
     if engine is None:
