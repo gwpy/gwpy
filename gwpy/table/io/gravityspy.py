@@ -30,16 +30,18 @@ is the username and thesecret is the password.
 """
 import os
 
+from astropy.table import Table
+
+from .fetch import register_fetcher
 from .. import GravitySpyTable
 from .. import EventTable
-from astropy.table import Table
-from .fetch import register_fetcher
+from ..filter import (OPERATORS, parse_column_filters)
 
 __author__ = 'Scott Coughlin <scott.coughlin@ligo.org>'
 
 
-def get_gravityspy_triggers(tablename, engine=None,
-                            **connectkwargs):
+def get_gravityspy_triggers(tablename, engine=None, columns=None,
+                            selection=None, **kwargs):
     """Fetch data into an `GravitySpyTable`
 
     Parameters
@@ -61,31 +63,55 @@ def get_gravityspy_triggers(tablename, engine=None,
     Returns
     -------
     table : `GravitySpyTable`
-
-    Notes"""
-    try:
-        import pandas as pd
-    except ImportError as e:
-        e.args = ('pandas is required to download triggers',)
-        raise
-
-    try:
-        from sqlalchemy.engine import create_engine
-    except ImportError as e:
-        e.args = ('sqlalchemy is required to download triggers',)
-        raise
+    """
+    import pandas as pd
+    from sqlalchemy.engine import create_engine
+    from sqlalchemy.exc import ProgrammingError
 
     # connect if needed
     if engine is None:
-        connectionStr = connectStr(**connectkwargs)
+        conn_kw = {}
+        for key in ('db', 'host', 'user', 'passwd'):
+            try:
+                conn_kw[key] = kwargs.pop(key)
+            except KeyError:
+                pass
+        connectionStr = connectStr(**conn_kw)
         engine = create_engine(connectionStr)
 
+    # parse columns for SQL query
+    if columns is None:
+        columnstr = '*'
+    else:
+        columnstr = ', '.join('"%s"' % c for c in columns)
+
+    # parse selection for SQL query
+    if selection is None:
+        selectionstr = ''
+    else:
+        selections = []
+        for col, def_ in parse_column_filters(selection):
+            for thresh, op_ in def_:
+                opstr = [key for key in OPERATORS if OPERATORS[key] is op_][0]
+                selections.append('{0} {1} {2}'.format(col, opstr, thresh))
+        if selections:
+            selectionstr = 'where %s' % ' AND '.join(selections)
+
+    # build SQL query
+    qstr = 'SELECT %s FROM %s %s' % (columnstr, tablename, selectionstr)
+
+    # perform query
     try:
-        tab = pd.read_sql(tablename, engine)
-    except Exception as e:
-        raise ValueError('I am sorry could not retrive triggers\
-            from that table. The following our acceptible \
-            table names {0}'.format(engine.table_names()))
+        tab = pd.read_sql(qstr, engine, **kwargs)
+    except ProgrammingError as e:
+        if 'relation "%s" does not exist' % tablename in str(e):
+            msg = e.args[0]
+            msg = msg.replace(
+                'does not exist',
+                'does not exist, the following tablenames are '
+                'acceptable:\n    %s\n' % '\n    '.join(engine.table_names()))
+            e.args = (msg,)
+        raise
 
     tab = Table.from_pandas(tab)
 
