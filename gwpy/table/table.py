@@ -203,15 +203,18 @@ class EventTable(Table):
 
         Parameters
         ----------
-        format : `str`
+        format : `str`, `~sqlalchemy.engine.Engine`
             the format of the remote data, see _Notes_ for a list of
-            registered formats
+            registered formats, OR an SQL database `Engine` object
 
         *args
             all other positional arguments are specific to the
-            data format, see the online documentation for more details
+            data format, see below for basic usage
 
-        selection : `str`, or `list` of `str`
+        columns : `list` of `str`, optional
+            the columns to fetch from the database table, defaults to all
+
+        selection : `str`, or `list` of `str`, optional
             one or more column filters with which to downselect the
             returned table rows as they as read, e.g. ``'snr > 5'``;
             multiple selections should be connected by ' && ', or given as
@@ -228,8 +231,33 @@ class EventTable(Table):
         table : `EventTable`
             a table of events recovered from the remote database
 
+        Examples
+        --------
+        >>> from gwpy.table import EventTable
+
+        To download a table of all blip glitches from the Gravity Spy database:
+
+        >>> EventTable.fetch('gravityspy', 'glitches', selection='Label = Blip')
+
+        To download a table from any SQL-type server
+
+        >>> from sqlalchemy.engine import create_engine
+        >>> engine = create_engine(...)
+        >>> EventTable.fetch(engine, 'mytable')
+
         Notes
         -----"""
+        # handle open database engine
+        try:
+            from sqlalchemy.engine import Engine
+        except ImportError:
+            pass
+        else:
+            if isinstance(format_, Engine):
+                from .io.sql import fetch
+                return cls(fetch(format_, *args, **kwargs))
+
+        # standard registered fetch
         from .io.fetch import get_fetcher
         fetcher = get_fetcher(format_, cls)
         return fetcher(*args, **kwargs)

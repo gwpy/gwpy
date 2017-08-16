@@ -28,20 +28,20 @@ connections in the following environment variables
 These can be found https://secrets.ligo.org/secrets/144/. The description
 is the username and thesecret is the password.
 """
+
 import os
 
 from astropy.table import Table
 
+from .sql import fetch
 from .fetch import register_fetcher
 from .. import GravitySpyTable
 from .. import EventTable
-from ..filter import (OPERATORS, parse_column_filters)
 
 __author__ = 'Scott Coughlin <scott.coughlin@ligo.org>'
 
 
-def get_gravityspy_triggers(tablename, engine=None, columns=None,
-                            selection=None, **kwargs):
+def get_gravityspy_triggers(tablename, engine=None, **kwargs):
     """Fetch data into an `GravitySpyTable`
 
     Parameters
@@ -64,7 +64,6 @@ def get_gravityspy_triggers(tablename, engine=None, columns=None,
     -------
     table : `GravitySpyTable`
     """
-    import pandas as pd
     from sqlalchemy.engine import create_engine
     from sqlalchemy.exc import ProgrammingError
 
@@ -79,30 +78,8 @@ def get_gravityspy_triggers(tablename, engine=None, columns=None,
         connectionStr = connectStr(**conn_kw)
         engine = create_engine(connectionStr)
 
-    # parse columns for SQL query
-    if columns is None:
-        columnstr = '*'
-    else:
-        columnstr = ', '.join('"%s"' % c for c in columns)
-
-    # parse selection for SQL query
-    if selection is None:
-        selectionstr = ''
-    else:
-        selections = []
-        for col, def_ in parse_column_filters(selection):
-            for thresh, op_ in def_:
-                opstr = [key for key in OPERATORS if OPERATORS[key] is op_][0]
-                selections.append('{0} {1} {2}'.format(col, opstr, thresh))
-        if selections:
-            selectionstr = 'where %s' % ' AND '.join(selections)
-
-    # build SQL query
-    qstr = 'SELECT %s FROM %s %s' % (columnstr, tablename, selectionstr)
-
-    # perform query
     try:
-        tab = pd.read_sql(qstr, engine, **kwargs)
+        return GravitySpyTable(fetch(engine, tablename, **kwargs))
     except ProgrammingError as e:
         if 'relation "%s" does not exist' % tablename in str(e):
             msg = e.args[0]
@@ -113,13 +90,8 @@ def get_gravityspy_triggers(tablename, engine=None, columns=None,
             e.args = (msg,)
         raise
 
-    tab = Table.from_pandas(tab)
-
-    # and return
-    return GravitySpyTable(tab.filled())
 
 # -- utilities ----------------------------------------------------------------
-
 
 def connectStr(db='gravityspy', host='gravityspy.ciera.northwestern.edu',
                user=os.getenv('GRAVITYSPY_DATABASE_USER', None),
