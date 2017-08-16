@@ -237,7 +237,7 @@ class EventTable(Table):
 
         To download a table of all blip glitches from the Gravity Spy database:
 
-        >>> EventTable.fetch('gravityspy', 'glitches', selection='Label = Blip')
+        >>> EventTable.fetch('gravityspy', 'glitches', selection='Label=Blip')
 
         To download a table from any SQL-type server
 
