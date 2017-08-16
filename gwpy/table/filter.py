@@ -21,6 +21,7 @@
 
 import operator
 import token
+import re
 from tokenize import generate_tokens
 
 from six.moves import StringIO
@@ -32,6 +33,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 OPERATORS = {
     '<': operator.lt,
     '<=': operator.le,
+    '=': operator.eq,
     '==': operator.eq,
     '>=': operator.ge,
     '>': operator.gt,
@@ -44,6 +46,20 @@ OPERATORS_INV = {
     '>': operator.lt,
     '>=': operator.le,
 }
+
+re_quote = re.compile(r'^[\s\"\']+|[\s\"\']+$')
+re_delim = re.compile(r'(and|&+)', re.I)
+
+
+def _float_or_str(value):
+    """Internal method to attempt `float(value)` handling a `ValueError`
+    """
+    # remove any surrounding quotes
+    value = re_quote.sub('', value)
+    try:  # attempt `float()` conversion
+        return float(value)
+    except ValueError:  # just return the input
+        return value
 
 
 def parse_operator(mathstr):
@@ -111,35 +127,30 @@ def parse_column_filter(definition):
     ('snr', [(50.0, <built-in function ge>), (100.0, <build-in function lt>)])
     """
     # parse definition into parts
-    parts = list(generate_tokens(StringIO(definition).readline))
+    parts = list(generate_tokens(StringIO(definition.strip()).readline))
+    if parts[-1][0] == token.ENDMARKER:  # remove end marker
+        parts = parts[:-1]
 
-    # find column name
-    names = list(filter(lambda t: t[0] == token.NAME, parts))
-    if len(names) != 1:
-        raise ValueError("Multiple column names parsed from "
-                         "column filter definition %r" % definition)
-    name = names[0][1]
+    # parse simple definition: e.g: snr > 5
+    if len(parts) == 3:
+        a, b, c = parts
+        if a[0] in [token.NAME, token.STRING]:  # string comparison
+            name = re_quote.sub('', a[1])
+            op = OPERATORS[b[1]]
+            value = _float_or_str(c[1])
+        elif b[0] in [token.NAME, token.STRING]:
+            name = re_quote.sub('', b[1])
+            op = OPERATORS_INV[b[1]]
+            value = _float_or_str(a[1])
+        return name, [(value, op)]
 
-    # parse thresholds and operators and divide into single operation pairs
-    thresholds = list(zip(*filter(lambda t: t[0] == token.NUMBER, parts)))[1]
-    operators = list(zip(*filter(lambda t: t[0] == token.OP, parts)))[1]
-    if len(thresholds) != len(operators):  # sanity check
-        ValueError("Number of thresholds doesn't match number of operators "
-                   "in column filter definition %r" % definition)
-    math = []
-    for lim, op in zip(thresholds, operators):
-        try:
-            # parse '1 < snr' as 'snr > 1'
-            if (definition.find(lim) < definition.find(op) and
-                    op in OPERATORS_INV):
-                math.append((float(lim), OPERATORS_INV[op]))
-            else:
-                math.append((float(lim), OPERATORS[op]))
-        except KeyError as e:
-            e.args = ('Unrecognised math operator %r' % op,)
-            raise
+    # parse between definition: e.g: 5 < snr < 10
+    elif len(parts) == 5:
+        a, b, c, d, e = zip(*parts)[1]
+        return re_quote.sub('', c), [(_float_or_str(a), OPERATORS_INV[b]),
+                                     (_float_or_str(e), OPERATORS[d])]
 
-    return name, math
+    raise ValueError("Cannot parse filter definition from %r" % definition)
 
 
 def parse_column_filters(*definitions):
@@ -156,7 +167,7 @@ def parse_column_filters(*definitions):
     """
     fltrs = []
     for def_ in _flatten(definitions):
-        for splitdef in def_.replace('&&', '&').split('&'):
+        for splitdef in re_delim.split(def_)[::2]:
             fltrs.append(parse_column_filter(splitdef))
     return fltrs
 
