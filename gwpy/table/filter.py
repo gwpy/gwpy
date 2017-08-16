@@ -23,6 +23,7 @@ import operator
 import token
 import re
 from tokenize import generate_tokens
+from collections import OrderedDict
 
 from six.moves import StringIO
 
@@ -30,22 +31,22 @@ import numpy
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-OPERATORS = {
-    '<': operator.lt,
-    '<=': operator.le,
-    '=': operator.eq,
-    '==': operator.eq,
-    '>=': operator.ge,
-    '>': operator.gt,
-    '!=': operator.ne,
-}
+OPERATORS = OrderedDict([
+    ('<', operator.lt),
+    ('<=', operator.le),
+    ('=', operator.eq),
+    ('==', operator.eq),
+    ('>=', operator.ge),
+    ('>', operator.gt),
+    ('!=', operator.ne),
+])
 
-OPERATORS_INV = {
-    '<=': operator.ge,
-    '<': operator.gt,
-    '>': operator.lt,
-    '>=': operator.le,
-}
+OPERATORS_INV = OrderedDict([
+    ('<=', operator.ge),
+    ('<', operator.gt),
+    ('>', operator.lt),
+    ('>=', operator.le),
+])
 
 re_quote = re.compile(r'^[\s\"\']+|[\s\"\']+$')
 re_delim = re.compile(r'(and|&+)', re.I)

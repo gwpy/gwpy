@@ -36,7 +36,7 @@ def format_db_selection(selection, engine=None):
         if engine and engine.name == 'postgresql':
             col = '"%s"' % col
         for value, op_ in def_:
-            opstr = [key for key in OPERATORS if OPERATORS[key] is op_][-1]
+            opstr = [key for key in OPERATORS if OPERATORS[key] is op_][0]
             selections.append('{0} {1} {2!r}'.format(col, opstr, value))
     if selections:
         return 'WHERE %s' % ' AND '.join(selections)
