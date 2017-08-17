@@ -86,7 +86,7 @@ def get_fetcher(data_format, data_class):
 
 
 def _update__doc__(data_class):
-    header = "The available formats are:"
+    header = "The available named formats are:"
     fetch = data_class.fetch
 
     # if __doc__ isn't a string, bail-out now
@@ -108,7 +108,7 @@ def _update__doc__(data_class):
 
     # now re-write the format list
     formats = []
-    for fmt, cls in _FETCHERS:
+    for fmt, cls in sorted(_FETCHERS, key=lambda x: x[0]):
         if cls is not data_class:
             continue
         usage = _FETCHERS[(fmt, cls)][1]
