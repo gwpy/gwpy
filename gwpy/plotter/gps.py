@@ -19,7 +19,6 @@
 """This module defines a locators/formatters and a scale for GPS data.
 """
 
-import re
 from decimal import Decimal
 from numbers import Number
 
