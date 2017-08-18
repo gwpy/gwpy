@@ -20,6 +20,7 @@
 """
 
 import re
+from numbers import Number
 
 import numpy
 
@@ -94,7 +95,7 @@ class GPSMixin(object):
             self._unit = unit
             return
         # convert float to custom unit in seconds
-        if isinstance(unit, float):
+        if isinstance(unit, Number):
             unit = units.Unit(unit * units.second)
         # otherwise, should be able to convert to a time unit
         try:
