@@ -361,6 +361,7 @@ class GPSScale(GPSMixin, LinearScale):
         axis.set_minor_locator(GPSAutoMinorLocator(epoch=self.epoch))
         axis.set_minor_formatter(ticker.NullFormatter())
 
+
 register_scale(GPSScale)
 
 
@@ -368,6 +369,7 @@ class AutoGPSScale(GPSScale):
     """Automagic GPS scaling based on visible data
     """
     name = 'auto-gps'
+
 
 register_scale(AutoGPSScale)
 
@@ -380,6 +382,7 @@ def gps_scale_factory(unit):
         def __init__(self, axis, epoch=None):
             super(FixedGPSScale, self).__init__(axis, epoch=epoch, unit=unit)
     return FixedGPSScale
+
 
 for _unit in TIME_UNITS:
     register_scale(gps_scale_factory(_unit))
