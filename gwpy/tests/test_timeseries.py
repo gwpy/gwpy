@@ -1042,7 +1042,7 @@ class TestTimeSeries(TestTimeSeriesBase):
 
     def test_q_transform(self, losc):
         # test simple q-transform
-        qspecgram = losc.q_transform(method='welch')
+        qspecgram = losc.q_transform(method='welch', fftlength=2)
         assert isinstance(qspecgram, Spectrogram)
         assert qspecgram.shape == (4000, 2403)
         assert qspecgram.q == 5.65685424949238
