@@ -20,6 +20,7 @@
 """
 
 import re
+from decimal import Decimal
 from numbers import Number
 
 import numpy
@@ -147,17 +148,29 @@ class GPSTransformBase(GPSMixin, Transform):
     is_affine = True
     has_inverse = True
 
+    def transform_non_affine(self, values):
+        """Transform an array of GPS times.
+        """
+        flat = values.flatten()
+        return numpy.asarray(
+            list(map(self._transform_scalar, flat))).reshape(values.shape)
+
 
 class GPSTransform(GPSTransformBase):
     """Transform GPS time into N * scale from epoch.
     """
-    def transform_non_affine(self, a):
-        """Transform an array of GPS times.
-        """
+    def transform(self, values):
+        if isinstance(values, (Number, Decimal)):
+            return self._transform_scalar(values)
+        return super(GPSTransform, self).transform(values)
+
+    def _transform_scalar(self, a):
         if self.epoch is None:
             return a / self.scale
-        else:
-            return (a - self.epoch) / self.scale
+        adec = Decimal(repr(a))
+        edec = Decimal(repr(self.epoch))
+        sdec = Decimal(repr(self.scale))
+        return type(a)((adec - edec) / sdec)
 
     def inverted(self):
         return InvertedGPSTransform(unit=self.unit, epoch=self.epoch)
@@ -166,11 +179,13 @@ class GPSTransform(GPSTransformBase):
 class InvertedGPSTransform(GPSTransform):
     """Transform time (scaled units) from epoch into GPS time.
     """
-    def transform_non_affine(self, a):
+    def _transform_scalar(self, a):
         if self.epoch is None:
-            return numpy.round(a * self.scale, 4)
-        else:
-            return numpy.round(a * self.scale + self.epoch, 4)
+            return a * self.scale
+        adec = Decimal(repr(a))
+        edec = Decimal(repr(self.epoch))
+        sdec = Decimal(repr(self.scale))
+        return type(a)(adec * sdec + edec)
 
     def inverted(self):
         return GPSTransform(unit=self.unit, epoch=self.epoch)
@@ -289,13 +304,12 @@ class GPSFormatter(GPSMixin, ticker.Formatter):
     """Locator for astropy Time objects
     """
     def __call__(self, t, pos=None):
+        # transform using float() to get nicer
         trans = self.axis._scale.get_transform()
-        if isinstance(t, Time):
-            t = t.gps
-        f = trans.transform(t)
-        if numpy.isclose(f, round(f), rtol=1e-4):
-            f = int(round(f))
-        return re.sub('\.0+\Z', '', str(f))
+        f = trans.transform(float(t))
+        if f.is_integer():
+            return int(f)
+        return f
 
 
 # ---------------------------------------------------------------------------
