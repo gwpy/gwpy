@@ -30,13 +30,10 @@ from astropy.table import (Table, Column, vstack)
 from astropy.io.registry import write as io_write
 
 from ..io.mp import read_multi as io_read_multi
+from .filter import (filter_table, parse_operator)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['EventColumn', 'EventTable']
-
-OPERATORS = {'<': _operator.lt, '<=': _operator.le, '=': _operator.eq,
-             '>=': _operator.ge, '>': _operator.gt, '==': _operator.is_,
-             '!=': _operator.is_not}
 
 
 class EventColumn(Column):
@@ -125,6 +122,13 @@ class EventTable(Table):
             the format of the given source files; if not given, an attempt
             will be made to automatically identify the format
 
+        selection : `str`, or `list` of `str`
+            one or more column filters with which to downselect the
+            returned table rows as they as read, e.g. ``'snr > 5'``;
+            multiple selections should be connected by ' && ', or given as
+            a `list`, e.g. ``'snr > 5 && frequency < 1000'`` or
+            ``['snr > 5', 'frequency < 1000']``
+
         nproc : `int`, optional, default: 1
             number of CPUs to use for parallel file reading
 
@@ -144,7 +148,24 @@ class EventTable(Table):
 
         Notes
         -----"""
-        return io_read_multi(vstack, cls, source, *args, **kwargs)
+        # astropy's ASCII formats don't support on-the-fly selection, so
+        # we pop the selection argument out here
+        if str(kwargs.get('format')).startswith('ascii'):
+            selection = kwargs.pop('selection', [])
+            if isinstance(selection, string_types):
+                selection = [selection]
+        else:
+            selection = []
+
+        # read the table
+        tab = io_read_multi(vstack, cls, source, *args, **kwargs)
+
+        # apply the selection if required:
+        if selection:
+            tab = tab.filter(*selection)
+
+        # and return
+        return tab
 
     def write(self, target, *args, **kwargs):
         """Write this table to a file
@@ -175,6 +196,71 @@ class EventTable(Table):
         Notes
         -----"""
         return io_write(self, target, *args, **kwargs)
+
+    @classmethod
+    def fetch(cls, format_, *args, **kwargs):
+        """Fetch a table of events from a database
+
+        Parameters
+        ----------
+        format : `str`, `~sqlalchemy.engine.Engine`
+            the format of the remote data, see _Notes_ for a list of
+            registered formats, OR an SQL database `Engine` object
+
+        *args
+            all other positional arguments are specific to the
+            data format, see below for basic usage
+
+        columns : `list` of `str`, optional
+            the columns to fetch from the database table, defaults to all
+
+        selection : `str`, or `list` of `str`, optional
+            one or more column filters with which to downselect the
+            returned table rows as they as read, e.g. ``'snr > 5'``;
+            multiple selections should be connected by ' && ', or given as
+            a `list`, e.g. ``'snr > 5 && frequency < 1000'`` or
+            ``['snr > 5', 'frequency < 1000']``
+
+        **kwargs
+            all other positional arguments are specific to the
+            data format, see the online documentation for more details
+
+
+        Returns
+        -------
+        table : `EventTable`
+            a table of events recovered from the remote database
+
+        Examples
+        --------
+        >>> from gwpy.table import EventTable
+
+        To download a table of all blip glitches from the Gravity Spy database:
+
+        >>> EventTable.fetch('gravityspy', 'glitches', selection='Label=Blip')
+
+        To download a table from any SQL-type server
+
+        >>> from sqlalchemy.engine import create_engine
+        >>> engine = create_engine(...)
+        >>> EventTable.fetch(engine, 'mytable')
+
+        Notes
+        -----"""
+        # handle open database engine
+        try:
+            from sqlalchemy.engine import Engine
+        except ImportError:
+            pass
+        else:
+            if isinstance(format_, Engine):
+                from .io.sql import fetch
+                return cls(fetch(format_, *args, **kwargs))
+
+        # standard registered fetch
+        from .io.fetch import get_fetcher
+        fetcher = get_fetcher(format_, cls)
+        return fetcher(*args, **kwargs)
 
     # -- ligolw compatibility -------------------
 
@@ -302,7 +388,7 @@ class EventTable(Table):
                 bins2.append((bin_, bins[i+1]))
             bins = bins2
         elif isinstance(operator, string_types):
-            op = OPERATORS[operator]
+            op = parse_operator(operator)
         else:
             op = operator
 
@@ -383,3 +469,21 @@ class EventTable(Table):
         """
         from gwpy.plotter import HistogramPlot
         return HistogramPlot(self, column, **kwargs)
+
+    def filter(self, *column_filters):
+        """Apply one or more column slice filters to this `EventTable`
+
+        Multiple column filters can be given, and will be applied
+        concurrently
+
+        Parameters
+        ----------
+        column_filter : `str`
+            a column slice filter definition, e.g. ``'snr > 10``
+
+        Returns
+        -------
+        table : `EventTable`
+            a new table with only those rows matching the filters
+        """
+        return filter_table(self, *column_filters)

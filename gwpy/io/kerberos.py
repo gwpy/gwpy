@@ -28,10 +28,7 @@ import getpass
 import os
 import sys
 
-try:
-    raw_input
-except NameError:
-    raw_input = input
+from six.moves import input
 
 import re
 from subprocess import (PIPE, Popen)
@@ -107,8 +104,8 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
             if username is None and len(principals) == 1:
                 username = principals[0][0]
             # or if the given username is in the keytab, find the realm
-            if username in zip(*principals)[0]:
-                idx = zip(*principals)[0].index(username)
+            if username in list(zip(*principals))[0]:
+                idx = list(zip(*principals))[0].index(username)
                 realm = principals[idx][1]
             # otherwise this keytab is useless, so remove it
             else:
@@ -117,8 +114,8 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
         realm = 'LIGO.ORG'
     if username is None:
         verbose = True
-        username = raw_input("Please provide username for the %s kerberos "
-                             "realm: " % realm)
+        username = input("Please provide username for the %s kerberos "
+                         "realm: " % realm)
     if not keytab and password is None:
         verbose = True
         password = getpass.getpass(prompt="Password for %s@%s: "
@@ -150,7 +147,7 @@ def parse_keytab(keytab):
     keytab : `str`
         path to keytab file
     """
-    cmd = ['klist', '-k', '-K', keytab]
+    cmd = ['klist', '-k', keytab]
     klist = Popen(cmd, stdout=PIPE, stderr=PIPE)
     out = klist.communicate()[0]
     if klist.returncode:
@@ -158,7 +155,7 @@ def parse_keytab(keytab):
     principals = []
     for line in out.splitlines():
         try:
-            n, principal, _ = re.split('\s+', line.strip(' '), 2)
+            n, principal, = re.split('\s+', line.strip(' '), 1)
         except ValueError:
             continue
         else:

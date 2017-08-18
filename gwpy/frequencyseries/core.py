@@ -30,7 +30,6 @@ from astropy.io import registry as io_registry
 
 from ..types import Series
 from ..detector import Channel
-from ..utils import with_import
 
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
@@ -341,7 +340,6 @@ class FrequencySeries(Series):
         return self.filter(*args, **kwargs)
 
     @classmethod
-    @with_import('lal')
     def from_lal(cls, lalfs, copy=True):
         """Generate a new `FrequencySeries` from a LAL `FrequencySeries` of any type
         """
@@ -356,7 +354,6 @@ class FrequencySeries(Series):
                    df=lalfs.deltaF, epoch=float(lalfs.epoch),
                    dtype=lalfs.data.data.dtype, copy=copy)
 
-    @with_import('lal')
     def to_lal(self):
         """Convert this `FrequencySeries` into a LAL FrequencySeries.
 
@@ -371,12 +368,15 @@ class FrequencySeries(Series):
         Currently, this function is unable to handle unit string
         conversion.
         """
+        import lal
         from ..utils.lal import (LAL_TYPE_STR_FROM_NUMPY, to_lal_unit)
+
         typestr = LAL_TYPE_STR_FROM_NUMPY[self.dtype.type]
         try:
             unit = to_lal_unit(self.unit)
-        except TypeError:
-            unit = lal.lalDimensionlessUnit
+        except ValueError as e:
+            warnings.warn("%s, defaulting to lal.DimensionlessUnit" % str(e))
+            unit = lal.DimensionlessUnit
         create = getattr(lal, 'Create%sFrequencySeries' % typestr.upper())
         if self.epoch is None:
             epoch = 0

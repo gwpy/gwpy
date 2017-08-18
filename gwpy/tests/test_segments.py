@@ -16,272 +16,360 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for segments module
+"""Tests for :mod:`gwpy.segments`
 """
 
 import os.path
+import shutil
 import tempfile
-import warnings
 
-try:
-    from math import inf
-except ImportError:  # python<3.5
-    from numpy import inf
-
-from six.moves.urllib.request import urlopen
-from six.moves.urllib.error import URLError
+from six.moves.urllib.error import HTTPError
 
 import pytest
 
-from matplotlib import use
-use('agg')
+from matplotlib import use, rc_context
+use('agg')  # nopep8
 
-
+from gwpy.plotter import (SegmentPlot, SegmentAxes)
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
-from gwpy.plotter import (SegmentPlot, SegmentAxes)
+from gwpy.time import LIGOTimeGPS
 
-from compat import (unittest, mock, HAS_H5PY, HAS_LAL, HAS_DQSEGDB, HAS_M2CRYPTO)
-import common
-import mockutils
+import utils
+import mocks
+from mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-KNOWN = SegmentList([
-    Segment(0, 3),
-    Segment(6, 7),
-])
-ACTIVE = SegmentList([
-    Segment(1, 2),
-    Segment(3, 4),
-    Segment(5, 7),
-])
-KNOWNACTIVE = SegmentList([
-    Segment(1, 2),
-    Segment(6, 7),
-])
-ACTIVE_CONTRACTED = SegmentList([
-    Segment(1.1, 1.9),
-    Segment(3.1, 3.9),
-    Segment(5.1, 6.9),
-])
-ACTIVE_PROTRACTED = SegmentList([
-    Segment(.9, 2.1),
-    Segment(2.9, 4.1),
-    Segment(4.9, 7.1),
-])
 
-KNOWN2 = SegmentList([Segment(100, 150)])
-ACTIVE2 = SegmentList([
-    Segment(100, 101),
-    Segment(110, 120),
-])
+# -- veto definer fixture -----------------------------------------------------
 
-# get padding stuff
+VETO_DEFINER_FILE = """<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
+<LIGO_LW>
+	<Table Name="veto_definer:table">
+		<Column Type="int_4s" Name="veto_definer:category"/>
+		<Column Type="lstring" Name="veto_definer:comment"/>
+		<Column Type="int_4s" Name="veto_definer:end_pad"/>
+		<Column Type="ilwd:char" Name="veto_definer:process_id"/>
+		<Column Type="lstring" Name="veto_definer:name"/>
+		<Column Type="int_4s" Name="veto_definer:version"/>
+		<Column Type="int_4s" Name="veto_definer:start_pad"/>
+		<Column Type="int_4s" Name="veto_definer:start_time"/>
+		<Column Type="lstring" Name="veto_definer:ifo"/>
+		<Column Type="int_4s" Name="veto_definer:end_time"/>
+		<Stream Delimiter="," Type="Local" Name="veto_definer:table">
+			1,"Test flag 1",2,,"TEST-FLAG",1,-1,100,"X1",0,
+			2,"Test flag 1",2,,"TEST-FLAG_2",1,1,100,"X1",200,
+			2,"Test flag 1",2,,"TEST-FLAG_2",2,-2,200,"X1",0,
+			2,"Test flag 1",2,,"TEST-FLAG_2",2,-2,100,"Y1",0,
+		</Stream>
+	</Table>
+</LIGO_LW>
+"""  # nopep8
+
+
+@pytest.fixture(scope='module')
+def veto_definer():
+    with tempfile.NamedTemporaryFile(suffix='.xml', mode='w',
+                                     delete=False) as f:
+        f.write(VETO_DEFINER_FILE)
+        f.seek(0)
+        yield f.name
+    if os.path.isfile(f.name):
+        os.remove(f.name)
+
+
+# -- test data ----------------------------------------------------------------
+
+def _as_segmentlist(*segments):
+    return SegmentList([Segment(a, b) for a, b in segments])
+
+
+NAME = 'X1:TEST-FLAG_NAME:0'
+
+# simple list of 'known' segments
+KNOWN = _as_segmentlist(
+    (0, 3), (6, 7))
+
+# simple  list of 'active' segments
+ACTIVE = _as_segmentlist(
+    (1, 2), (3, 4), (5, 7))
+
+# intersection of above 'known' and 'active' segments
+KNOWNACTIVE = _as_segmentlist(
+    (1, 2), (6, 7))
+
+# 'active' set contracted by 0.1 seconds
+ACTIVE_CONTRACTED = _as_segmentlist(
+    (1.1, 1.9), (3.1, 3.9))
+
+# 'active' seg protracted by 0.1 seconts
+ACTIVE_PROTRACTED = _as_segmentlist(
+    (.9, 2.1), (2.9, 4.1), (4.9, 7.1))
+
+# some more segments
+KNOWN2 = _as_segmentlist(
+    (100, 150))
+
+ACTIVE2 = _as_segmentlist(
+    (100, 101), (110, 120))
+
+# padding
 PADDING = (-0.5, 1)
-KNOWNPAD = SegmentList([
-    Segment(-.5, 4),
-    Segment(5.5, 8),
-])
-ACTIVEPAD = SegmentList([
-    Segment(.5, 3),
-    Segment(2.5, 5),
-    Segment(4.5, 8),
-])
-ACTIVEPADC = SegmentList([
-    Segment(.5, 4),
-    Segment(5.5, 8),
-])
 
-SEGXML = os.path.join(os.path.split(__file__)[0], 'data',
-                      'X1-GWPY_TEST_SEGMENTS-0-10.xml.gz')
-SEGWIZ = os.path.join(os.path.split(__file__)[0], 'data',
-                      'X1-GWPY_TEST_SEGMENTS-0-10.txt')
-FLAG1 = 'X1:GWPY-TEST_SEGMENTS:1'
-FLAG2 = 'X1:GWPY-TEST_SEGMENTS:2'
+# padded version of above 'known' segments
+KNOWNPAD = _as_segmentlist(
+    (-.5, 4), (5.5, 8))
 
-QUERY_START = 968630415
-QUERY_END = 968716815
-QUERY_FLAGS = ['H1:DMT-SCIENCE:4', 'L1:DMT-SCIENCE:4']
+# padded version of above 'active' segments
+ACTIVEPAD = _as_segmentlist(
+    (.5, 3), (2.5, 5), (4.5, 8))
+
+# padded, coalesed version of above 'active' segments
+ACTIVEPADC = _as_segmentlist(
+    (.5, 4), (5.5, 8))
+
+
+# -- query helpers ------------------------------------------------------------
+
+QUERY_FLAGS = ['X1:TEST-FLAG:1', 'Y1:TEST-FLAG2:4']
+
 QUERY_RESULT = DataQualityDict()
-QUERY_RESULT['H1:DMT-SCIENCE:4'] = DataQualityFlag(
-    'H1:DMT-SCIENCE:4',
-    known=[(968630415, 968716815)],
-    active=[(968632249, 968641010), (968642871, 968644430),
-            (968646220, 968681205), (968686357, 968686575),
-            (968688760, 968690950), (968692881, 968714403)])
-QUERY_RESULT['L1:DMT-SCIENCE:4'] = DataQualityFlag(
-    'L1:DMT-SCIENCE:4',
-     known=[(968630415, 968716815)],
-     active=[(968630415, 968634911), (968638548, 968644632),
-             (968646025, 968675387), (968676835, 968679443),
-             (968680215, 968686803), (968688905, 968691838),
-             (968693321, 968694106), (968694718, 968699812),
-             (968701111, 968713996), (968714886, 968716815)])
-QUERY_URL = 'https://segments-s6.ligo.org'
-QUERY_URL_SEGDB = 'https://segdb.ligo.caltech.edu'
 
-VETO_DEFINER_FILE = ('https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/'
-                     'segments/ER7/H1L1V1-ER7_CBC_OFFLINE.xml')
-VETO_DEFINER_TEST_SEGMENTS = SegmentList([Segment(1117411216, 1117497616)])
+QUERY_RESULT['X1:TEST-FLAG:1'] = DataQualityFlag(
+    'X1:TEST-FLAG:1',
+    known=[(0, 10)],
+    active=[(0, 1), (1, 2), (3, 4), (6, 9)])
+
+QUERY_RESULT['Y1:TEST-FLAG2:4'] = DataQualityFlag(
+    'Y1:TEST-FLAG2:4',
+    known=[(0, 5), (9, 10)],
+    active=[])
+
+QUERY_RESULTC = type(QUERY_RESULT)({x: y.copy().coalesce() for
+                                    x, y in QUERY_RESULT.items()})
 
 
-class SegmentClassTestsMixin(object):
-    def _test_read_write(self, format, extension=None, auto=True,
-                         writekwargs={}, readkwargs={}):
-        if extension is None:
-            extension = '.%s' % format
-        try:
-            fp = tempfile.mktemp(suffix=extension)
-            self.TEST_DATA.write(fp, format=format, **writekwargs)
-            if auto:  # repeat write with auto-identify
-                self.TEST_DATA.write(fp, **writekwargs)
-            data = self.TEST_CLASS.read(fp, format=format, **readkwargs)
-            if auto:  # repeat read with auto-identify
-                data = self.TEST_CLASS.read(fp, **readkwargs)
-        finally:
-            if os.path.exists(fp):
-                os.remove(fp)
-        self.assertSegmentClassEqual(data, self.TEST_DATA)
-        return data
+def query_segdb(query_func, *args, **kwargs):
+    """Mock a query to an S6-style DB2 database
+    """
+    try:
+        with mock.patch('glue.segmentdb.segmentdb_utils.setup_database'), \
+             mock.patch('glue.segmentdb.segmentdb_utils.expand_version_number',
+                        mocks.segdb_expand_version_number(1, 4)), \
+             mock.patch('glue.segmentdb.segmentdb_utils.query_segments',
+                        mocks.segdb_query_segments(QUERY_RESULT)):
+            return query_func(*args, **kwargs)
+    except ImportError as e:
+        pytest.skip(str(e))
 
-    def assertSegmentListEqual(self, a, b):
-        return self.assertListEqual(a, b)
 
-    def assertDataQualityFlagEqual(
-            self, a, b, attrs=['name', 'ifo', 'tag', 'version']):
-        self.assertListEqual(a.active, b.active)
-        self.assertListEqual(a.known, b.known)
-        for attr in attrs:
-            self.assertEqual(getattr(a, attr), getattr(b, attr))
+def query_dqsegdb(query_func, *args, **kwargs):
+    """Mock a query to an aLIGO DQSEGDB database
+    """
+    try:
+        with mock.patch('dqsegdb.apicalls.dqsegdbQueryTimes',
+                        mocks.dqsegdb_query_times(QUERY_RESULT)), \
+             mock.patch('dqsegdb.apicalls.dqsegdbCascadedQuery',
+                        mocks.dqsegdb_cascaded_query(QUERY_RESULT)):
+            return query_func(*args, **kwargs)
+    except ImportError as e:
+        pytest.skip(str(e))
 
-    def assertDataQualityDictEqual(
-            self, a, b, attrs=['name', 'ifo', 'tag', 'version']):
-        self.assertListEqual(sorted(list(a.keys())), sorted(list(b.keys())))
-        for key in a:
-            self.assertDataQualityFlagEqual(a[key], b[key])
 
-    def assertSegmentClassEqual(self, a, b):
-        if isinstance(a, SegmentList):
-            return self.assertSegmentListEqual(a, b)
-        elif isinstance(a, DataQualityFlag):
-            return self.assertDataQualityFlagEqual(a, b)
-        elif isinstance(a, DataQualityDict):
-            return self.assertDataQualityDictEqual(a, b)
-        return self.assertEqual(a, b)
-
-    @unittest.skipUnless(HAS_DQSEGDB, 'No module named dqsegdb')
-    def _mock_query(self, cm, result, *args, **kwargs):
-        """Query for segments using a mock of the dqsegdb API
-        """
-        try:
-            return cm(*args, **kwargs)
-        except (UnboundLocalError, AttributeError, URLError) as e:
-            warnings.warn("Test query failed with %s: %s, "
-                          "rerunning with mock..."
-                          % (type(e).__name__, str(e)))
-            with mock.patch('dqsegdb.apicalls.dqsegdbQueryTimes',
-                            mockutils.mock_query_times(result)):
-                return cm(*args, **kwargs)
-
-    @unittest.skipUnless(HAS_DQSEGDB, 'No module named dqsegdb')
-    def _mock_query_versionless(self, cm, result, *args, **kwargs):
-        """Query for segments using a mock of the dqsegdb API
-        """
-        try:
-            return cm(*args, **kwargs)
-        except (UnboundLocalError, AttributeError, URLError) as e:
-            warnings.warn("Test query failed with %s: %s, "
-                          "rerunning with mock..."
-                          % (type(e).__name__, str(e)))
-            with mock.patch('dqsegdb.apicalls.dqsegdbCascadedQuery',
-                            mockutils.mock_dqsegdb_cascaded_query(result)):
-                return cm(*args, **kwargs)
-
+# -----------------------------------------------------------------------------
+#
+# gwpy.segments.segments
+#
+# -----------------------------------------------------------------------------
 
 # -- Segment ------------------------------------------------------------------
 
-class SegmentTests(unittest.TestCase):
+class TestSegment(object):
     TEST_CLASS = Segment
 
-    def test_properties(self):
-        s = self.TEST_CLASS(1, 2)
-        self.assertEqual(s.start, 1.)
-        self.assertEqual(s.end, 2.)
+    @classmethod
+    @pytest.fixture()
+    def segment(cls):
+        return cls.TEST_CLASS(1, 2)
+
+    def test_start_end(self, segment):
+        assert segment.start == 1.
+        assert segment.end == 2.
+
+    def test_repr(self, segment):
+        assert repr(segment) == 'Segment(1, 2)'
+
+    def test_str(self, segment):
+        assert str(segment) == '[1 ... 2)'
 
 
 # -- SegmentList --------------------------------------------------------------
 
-class SegmentListTests(unittest.TestCase, SegmentClassTestsMixin):
-    """Unit tests for the `SegmentList` class
-    """
+class TestSegmentList(object):
     TEST_CLASS = SegmentList
-    TEST_DATA = ACTIVE
-    tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_segmentlist')
+    ENTRY_CLASS = Segment
 
-    @unittest.skipUnless(HAS_LAL, 'No module named lal')
-    def test_read_write_segwizard(self):
-        return self._test_read_write('segwizard', extension='txt', auto=True)
+    @classmethod
+    def create(cls, *segments):
+        return cls.TEST_CLASS([cls.ENTRY_CLASS(a, b) for a, b in segments])
 
-    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
-    def test_read_write_hdf5(self):
-        self._test_read_write('hdf5', auto=False,
-                              writekwargs={'path': 'test-segmentlist'},
-                              readkwargs={'path': 'test-segmentlist'})
-        self._test_read_write('hdf5', auto=True,
-                              writekwargs={'path': 'test-segmentlist',
-                                           'overwrite': True},
-                              readkwargs={'path': 'test-segmentlist'})
-        with self.assertRaises(ValueError) as exc:
-            self._test_read_write('hdf5', auto=True)
-        self.assertIn('Please specify the HDF5 path', str(exc.exception))
+    @classmethod
+    @pytest.fixture()
+    def segmentlist(cls):
+        return cls.create((1, 2), (3, 4), (4, 6), (8, 10))
+
+    # -- test methods ---------------------------
 
     def test_coalesce(self):
-        l = self.TEST_CLASS([Segment(1, 4), Segment(4, 5)])
-        c = l.coalesce()
-        self.assertIsInstance(c, self.TEST_CLASS)
-        self.assertSegmentListEqual(c, self.TEST_CLASS([Segment(1, 5)]))
-        self.assertIsInstance(c[0], Segment)
+        segmentlist = self.create((1, 2), (3, 4), (4, 5))
+        c = segmentlist.coalesce()
+        assert c is segmentlist
+        utils.assert_segmentlist_equal(c, [(1, 2), (3, 5)])
+        assert isinstance(c[0], self.ENTRY_CLASS)
 
+    # -- test I/O -------------------------------
+
+    @utils.skip_missing_dependency('lal')
+    def test_read_write_segwizard(self, segmentlist):
+        with tempfile.NamedTemporaryFile(suffix='.txt', mode='w') as f:
+            # check write/read returns the same list
+            segmentlist.write(f.name)
+            sl2 = self.TEST_CLASS.read(f.name, coalesce=False)
+            utils.assert_segmentlist_equal(sl2, segmentlist)
+            assert isinstance(sl2[0][0], LIGOTimeGPS)
+
+            # check that coalesceing does what its supposed to
+            c = type(segmentlist)(segmentlist).coalesce()
+            sl2 = self.TEST_CLASS.read(f.name, coalesce=True)
+            utils.assert_segmentlist_equal(sl2, c)
+
+            # check gpstype kwarg
+            sl2 = self.TEST_CLASS.read(f.name, gpstype=float)
+            assert isinstance(sl2[0][0], float)
+
+    @utils.skip_missing_dependency('h5py')
+    @pytest.mark.parametrize('ext', ('.hdf5', '.h5'))
+    def test_read_write_hdf5(self, segmentlist, ext):
+        tempdir = tempfile.mkdtemp()
+        try:
+            fp = tempfile.mktemp(suffix=ext, dir=tempdir)
+
+            # check basic write/read with auto-path discovery
+            segmentlist.write(fp, 'test-segmentlist')
+            sl2 = self.TEST_CLASS.read(fp)
+            utils.assert_segmentlist_equal(sl2, segmentlist)
+            assert isinstance(sl2[0][0], LIGOTimeGPS)
+
+            sl2 = self.TEST_CLASS.read(fp, path='test-segmentlist')
+            utils.assert_segmentlist_equal(sl2, segmentlist)
+
+            # check overwrite kwarg
+            with pytest.raises(IOError):
+                segmentlist.write(fp, 'test-segmentlist')
+            segmentlist.write(fp, 'test-segmentlist', overwrite=True)
+
+            # check gpstype kwarg
+            sl2 = self.TEST_CLASS.read(fp, gpstype=float)
+            utils.assert_segmentlist_equal(sl2, segmentlist)
+            assert isinstance(sl2[0][0], float)
+
+        finally:
+            if os.path.isdir(tempdir):
+                shutil.rmtree(tempdir)
+
+
+# -----------------------------------------------------------------------------
+#
+# gwpy.segments.flag
+#
+# -----------------------------------------------------------------------------
 
 # -- DataQualityFlag ----------------------------------------------------------
 
-class DataQualityFlagTests(unittest.TestCase, SegmentClassTestsMixin):
-    """Unit tests for the `DataQualityFlag` class
-    """
+class TestDataQualityFlag(object):
     TEST_CLASS = DataQualityFlag
-    TEST_DATA = list(QUERY_RESULT.values())[0]
-    tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_dqflag')
 
-    def test_properties(self):
-        empty = self.TEST_CLASS()
-        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN,
-                               padding=(-4, 8))
-        # name
-        self.assertEqual(empty.name, None)
-        self.assertEqual(flag.name, FLAG1)
-        self.assertEqual(flag.ifo, FLAG1.split(':')[0])
-        self.assertEqual(flag.version, int(FLAG1.split(':')[-1]))
-        # known
-        self.assertIsInstance(empty.known, SegmentList)
-        self.assertListEqual(empty.known, SegmentList())
-        self.assertListEqual(flag.known, KNOWN)
-        # active
-        self.assertIsInstance(empty.active, SegmentList)
-        self.assertListEqual(empty.active, SegmentList())
-        self.assertListEqual(flag.active, ACTIVE)
-        # padding
-        self.assertTupleEqual(empty.padding, (0, 0))
-        self.assertTupleEqual(flag.padding, (-4, 8))
-        # texname
-        self.assertEqual(flag.texname, FLAG1.replace('_', r'\_'))
-        self.assertEqual(empty.texname, None)
-        # livetime
-        self.assertEqual(flag.livetime, 4)
+    @classmethod
+    def create(cls, name=NAME, known=KNOWN, active=ACTIVE, **kwargs):
+        return cls.TEST_CLASS(name=name, known=known, active=active, **kwargs)
 
-    def test_deprecated(self):
+    @classmethod
+    @pytest.fixture()
+    def flag(cls):
+        return cls.create()
+
+    @classmethod
+    @pytest.fixture()
+    def empty(cls):
+        return cls.TEST_CLASS()
+
+    # -- test attributes ------------------------
+
+    def test_name(self, empty, flag):
+        assert empty.name is None
+
+        assert flag.name == NAME
+        assert flag.ifo == NAME.split(':')[0]
+        assert flag.tag == NAME.split(':')[1]
+        assert flag.version == int(NAME.split(':')[2])
+
+    def test_known(self, empty, flag):
+        assert isinstance(empty.known, SegmentList)
+        assert empty.known == []
+
+        utils.assert_segmentlist_equal(flag.known, KNOWN)
+
+        new = self.TEST_CLASS()
+        new.known = [(1, 2), (3, 4)]
+        assert isinstance(empty.known, SegmentList)
+
+    def test_active(self, empty, flag):
+        assert isinstance(empty.active, SegmentList)
+        assert empty.active == []
+
+        utils.assert_segmentlist_equal(flag.active, ACTIVE)
+
+        new = self.TEST_CLASS()
+        new.active = [(1, 2), (3, 4)]
+        assert isinstance(empty.active, SegmentList)
+
+    def test_texname(self, empty, flag):
+        assert empty.texname is None
+        assert flag.texname == NAME.replace('_', r'\_')
+
+    def test_extent(self, empty, flag):
+        assert flag.extent == (KNOWN[0][0], KNOWN[-1][1])
+        with pytest.raises(ValueError):
+            empty.extent
+
+    def test_livetime(self, empty, flag):
+        assert empty.livetime == 0
+        assert flag.livetime == abs(ACTIVE)
+
+    def test_regular(self, empty, flag):
+        assert empty.regular is True
+        assert flag.regular is False
+
+    def test_padding(self, flag):
+        assert flag.padding == (0, 0)
+
+        flag.padding = [-1, 2]
+        assert isinstance(flag.padding, tuple)
+        assert flag.padding == (-1, 2)
+
+        flag.padding = None
+        assert flag.padding == (0, 0)
+
+        del flag.padding
+        assert flag.padding == (0, 0)
+
+    def test_deprecated_names(self):
         with pytest.warns(DeprecationWarning):
-            flag = self.TEST_CLASS(FLAG1, active=ACTIVE, valid=KNOWN)
+            flag = self.TEST_CLASS(NAME, valid=KNOWN)
+        with pytest.raises(ValueError):
+            flag = self.TEST_CLASS(NAME, valid=KNOWN, known=KNOWN)
         with pytest.warns(DeprecationWarning):
             flag.valid
         with pytest.warns(DeprecationWarning):
@@ -289,328 +377,530 @@ class DataQualityFlagTests(unittest.TestCase, SegmentClassTestsMixin):
         with pytest.warns(DeprecationWarning):
             del flag.valid
 
-    def test_plot(self):
-        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN)
-        plot = flag.plot()
-        self.assertIsInstance(plot, SegmentPlot)
-        self.assertIsInstance(plot.gca(), SegmentAxes)
-        self.assertEqual(plot.gca().get_epoch(), flag.known[0][0])
+    # -- test methods ---------------------------
 
     def test_parse_name(self):
         flag = self.TEST_CLASS(None)
-        self.assertIsNone(flag.name)
-        self.assertIsNone(flag.ifo)
-        self.assertIsNone(flag.tag)
-        self.assertIsNone(flag.version)
+        assert flag.name is None
+        assert flag.ifo is None
+        assert flag.tag is None
+        assert flag.version is None
+
         flag = self.TEST_CLASS('test')
-        self.assertEqual(flag.name, 'test')
-        self.assertIsNone(flag.ifo)
-        self.assertIsNone(flag.tag)
-        self.assertIsNone(flag.version)
+        assert flag.name == 'test'
+        assert flag.ifo is None
+        assert flag.tag is None
+        assert flag.version is None
+
         flag = self.TEST_CLASS('L1:test')
-        self.assertEqual(flag.name, 'L1:test')
-        self.assertEqual(flag.ifo, 'L1')
-        self.assertEqual(flag.tag, 'test')
-        self.assertIsNone(flag.version)
+        assert flag.name == 'L1:test'
+        assert flag.ifo == 'L1'
+        assert flag.tag == 'test'
+        assert flag.version is None
+
         flag = self.TEST_CLASS('L1:test:1')
-        self.assertEqual(flag.name, 'L1:test:1')
-        self.assertEqual(flag.ifo, 'L1')
-        self.assertEqual(flag.tag, 'test')
-        self.assertEqual(flag.version, 1)
+        assert flag.name == 'L1:test:1'
+        assert flag.ifo == 'L1'
+        assert flag.tag == 'test'
+        assert isinstance(flag.version, int)
+        assert flag.version == 1
+
         flag = self.TEST_CLASS('test:1')
-        self.assertEqual(flag.name, 'test:1')
-        self.assertIsNone(flag.ifo)
-        self.assertEqual(flag.tag, 'test')
-        self.assertEqual(flag.version, 1)
+        assert flag.name == 'test:1'
+        assert flag.ifo is None
+        assert flag.tag == 'test'
+        assert flag.version == 1
+
+    def test_plot(self, flag):
+        flag.label = 'Test label'
+        with rc_context(rc={'text.usetex': False}):
+            plot = flag.plot(figsize=(6.4, 3.8))
+            assert isinstance(plot, SegmentPlot)
+            assert isinstance(plot.gca(), SegmentAxes)
+            assert plot.gca().get_epoch() == flag.known[0][0]
+            assert len(plot.gca().collections) == 2
+            assert len(plot.gca().collections[0].get_paths()) == len(KNOWN)
+            assert len(plot.gca().collections[1].get_paths()) == len(ACTIVE)
+            assert plot.gca().collections[0].get_label() == flag.label
+
+            with tempfile.NamedTemporaryFile(suffix='.png') as f:
+                plot.save(f.name)
+            plot.close()
+
+        flag.label = None
+        with rc_context(rc={'text.usetex': True}):
+            plot = flag.plot(figsize=(6.4, 3.8))
+            assert plot.gca().collections[0].get_label() == flag.texname
+            plot.close()
 
     def test_math(self):
-        flag1 = self.TEST_CLASS(FLAG1, active=ACTIVE[:2], known=KNOWN)
-        flag2 = self.TEST_CLASS(FLAG1, active=ACTIVE[2:], known=KNOWN)
+        a = self.TEST_CLASS(active=ACTIVE[:2], known=KNOWN)
+        b = self.TEST_CLASS(active=ACTIVE[2:], known=KNOWN)
+
         # and
-        x = flag1 & flag2
-        self.assertListEqual(x.active, [])
-        self.assertListEqual(x.known, KNOWN)
+        x = a & b
+        utils.assert_segmentlist_equal(x.active, [])
+        utils.assert_segmentlist_equal(x.known, KNOWN)
+
         # sub
-        x = flag1 - flag2
-        self.assertListEqual(x.active, flag1.active)
-        self.assertListEqual(x.known, flag1.known)
+        x = a - b
+        utils.assert_segmentlist_equal(x.active, a.active)  # no overlap
+        utils.assert_segmentlist_equal(x.known, a.known)
+
         # or
-        x = flag1 | flag2
-        self.assertListEqual(x.active, ACTIVE)
-        self.assertListEqual(x.known, KNOWN)
+        x = a | b
+        utils.assert_segmentlist_equal(x.active, ACTIVE)
+        utils.assert_segmentlist_equal(x.known, KNOWN)
+
+        # invert
+        x = ~a
+        utils.assert_segmentlist_equal(x.active, ~a.active)
+        utils.assert_segmentlist_equal(x.known, ~a.known)
 
     def test_coalesce(self):
-        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN)
-        self.assertFalse(flag.regular,
-                         'flag.regular test failed (should be False)')
+        flag = self.create()
         flag.coalesce()
-        self.assertTrue(flag.known == KNOWN, 'flag.known changed by coalesce')
-        self.assertTrue(flag.active == KNOWNACTIVE,
-                        'flag.active misset by coalesce')
-        self.assertTrue(flag.regular,
-                        'flag.regular test failed (should be True)')
+        utils.assert_segmentlist_equal(flag.known, KNOWN)
+        utils.assert_segmentlist_equal(flag.active, KNOWNACTIVE)
+        assert flag.regular is True
 
     def test_contract(self):
-        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN)
+        flag = self.create()
         flag.contract(.1)
-        self.assertListEqual(flag.active, ACTIVE_CONTRACTED)
+        utils.assert_segmentlist_equal(flag.known, KNOWN)
+        utils.assert_segmentlist_equal(flag.active, ACTIVE_CONTRACTED)
 
     def test_protract(self):
-        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN)
+        flag = self.create(active=ACTIVE_CONTRACTED)
         flag.protract(.1)
-        self.assertListEqual(flag.active, ACTIVE_PROTRACTED)
+        utils.assert_segmentlist_equal(flag.known, KNOWN)
+        utils.assert_segmentlist_equal(flag.active, ACTIVE)
 
     def test_round(self):
-        flag = self.TEST_CLASS(FLAG1, active=ACTIVE_CONTRACTED, known=KNOWN)
-        flag2 = flag.round()
-        self.assertListEqual(flag2.active, ACTIVE & KNOWN)
+        flag = self.create(active=ACTIVE_CONTRACTED)
+        r = flag.round()
+        utils.assert_segmentlist_equal(r.known, KNOWN)
+        utils.assert_segmentlist_equal(r.active, KNOWNACTIVE)
 
-    def test_repr_str(self):
-        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN)
-        repr(flag)
-        str(flag)
-
-    def test_pad(self):
-        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN)
-        # test without arguments (and no padding)
+    def test_pad(self, flag):
+        # test with no arguments (and no padding)
         padded = flag.pad()
-        self.assertListEqual(padded.known, flag.known)
-        self.assertListEqual(padded.active, flag.active)
-        # test without arguments (and no padding)
+        utils.assert_flag_equal(flag, padded)
+
+        # test with padding
         flag.padding = PADDING
         padded = flag.pad()
-        self.assertListEqual(padded.known, KNOWNPAD)
-        self.assertListEqual(padded.active, ACTIVEPAD)
+        utils.assert_segmentlist_equal(padded.known, KNOWNPAD)
+        utils.assert_segmentlist_equal(padded.active, ACTIVEPAD)
+
         # test with arguments
-        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN)
+        flag.padding = None
         padded = flag.pad(*PADDING)
-        self.assertListEqual(padded.known, KNOWNPAD)
-        self.assertListEqual(padded.active, ACTIVEPAD)
-        # test coalesce
-        padded.coalesce()
-        self.assertListEqual(padded.active, ACTIVEPADC)
+        utils.assert_segmentlist_equal(padded.known, KNOWNPAD)
+        utils.assert_segmentlist_equal(padded.active, ACTIVEPAD)
+
         # test in-place
-        flag = self.TEST_CLASS(FLAG1, active=ACTIVE, known=KNOWN)
         padded = flag.pad(*PADDING)
-        self.assertIsNot(flag, padded)
+        assert padded is not flag
         padded = flag.pad(*PADDING, inplace=True)
-        self.assertIs(flag, padded)
-        # test other kwargs fail
-        self.assertRaises(TypeError, flag.pad, *PADDING, kwarg='test')
+        assert padded is flag
+        utils.assert_segmentlist_equal(flag.known, KNOWNPAD)
+        utils.assert_segmentlist_equal(flag.active, ACTIVEPAD)
 
-    # -- I/O ------------------------------------
+        # check that other keyword arguments get rejected appropriately
+        with pytest.raises(TypeError):
+            flag.pad(*PADDING, kwarg='test')
 
-    @unittest.skipUnless(HAS_LAL, 'No module named lal')
-    def test_read_write_ligolw(self):
-        self._test_read_write('ligolw', extension='xml', auto=True,
-                              writekwargs={'overwrite': True})
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')
+    def test_from_veto_def(self):
+        from glue.ligolw.lsctables import VetoDef
 
-    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
-    def test_read_write_hdf5(self):
-        kwargs = {'writekwargs': {'path': 'test-dqflag'},
-                  'readkwargs': {'path': 'test-dqflag'}}
-        self._test_read_write('hdf5', auto=False, **kwargs)
-        kwargs['writekwargs']['overwrite'] = True
-        self._test_read_write('hdf5', auto=True, **kwargs)
+        def veto_def(ifo, name, version, **kwargs):
+            vdef = VetoDef()
+            kwargs['ifo'] = ifo
+            kwargs['name'] = name
+            kwargs['version'] = version
+            for key in VetoDef.__slots__:
+                setattr(vdef, key, kwargs.get(key, None))
+            return vdef
 
-    def test_read_write_json(self):
-        self._test_read_write('json', auto=True)
+        a = veto_def('X1', 'TEST-FLAG', 1, start_time=0, end_time=0,
+                     start_pad=-2, end_pad=2, comment='Comment')
+        f = self.TEST_CLASS.from_veto_def(a)
+        assert f.name == 'X1:TEST-FLAG:1'
+        assert f.category is None
+        assert f.padding == (-2, 2)
+        assert f.description == 'Comment'
+        utils.assert_segmentlist_equal(f.known, [(0, float('inf'))])
 
-    # -- segment queries ------------------------
+        a = veto_def('X1', 'TEST-FLAG', None, start_time=0, end_time=1)
+        f = self.TEST_CLASS.from_veto_def(a)
+        assert f.name == 'X1:TEST-FLAG'
+        assert f.version is None
 
-    def test_query(self):
-        flag = QUERY_FLAGS[0]
-        result = self._mock_query(
-            self.TEST_CLASS.query, QUERY_RESULT,
-            flag, QUERY_START, QUERY_END, url=QUERY_URL)
-        self.assertEqual(result.known, QUERY_RESULT[flag].known)
-        self.assertEqual(result.active, QUERY_RESULT[flag].active)
+    @utils.skip_missing_dependency('dqsegdb')
+    def test_populate(self):
+        name = QUERY_FLAGS[0]
+        flag = self.TEST_CLASS(name, known=QUERY_RESULT[name].known)
 
-    def test_query_dqsegdb(self):
-        flag = QUERY_FLAGS[0]
-        result = self._mock_query(
-            self.TEST_CLASS.query_dqsegdb, QUERY_RESULT,
-            flag, QUERY_START, QUERY_END, url=QUERY_URL)
-        self.assertEqual(result.known, QUERY_RESULT[flag].known)
-        self.assertEqual(result.active, QUERY_RESULT[flag].active)
+        with mock.patch('dqsegdb.apicalls.dqsegdbQueryTimes',
+                        mocks.dqsegdb_query_times(QUERY_RESULT)):
+            flag.populate()
+        utils.assert_flag_equal(flag, QUERY_RESULTC[name])
 
-    @unittest.skipUnless(HAS_M2CRYPTO, "No module named m2crypto")
-    def test_query_segdb(self):
-        from glue.LDBDWClient import LDBDClientException
-        flag = QUERY_FLAGS[0]
+    # -- test I/O -------------------------------
+
+    @pytest.mark.parametrize('format, ext, rw_kwargs, simple', [
+        ('ligolw', 'xml', {}, False),
+        ('ligolw', 'xml.gz', {}, False),
+        ('hdf5', 'hdf5', {'path': 'test-dqflag'}, False),
+        ('hdf5', 'h5', {'path': 'test-dqflag'}, False),
+        ('json', 'json', {}, True),
+    ])
+    def test_read_write(self, flag, format, ext, rw_kwargs, simple):
+        # simplify calling read/write tester
+        def _read_write(**kwargs):
+            read_kw = rw_kwargs.copy()
+            read_kw.update(kwargs.pop('read_kw', {}))
+            write_kw = rw_kwargs.copy()
+            write_kw.update(kwargs.pop('write_kw', {}))
+            return utils.test_read_write(flag, format, extension=ext,
+                                         assert_equal=utils.assert_flag_equal,
+                                         read_kw=read_kw, write_kw=write_kw,
+                                         **kwargs)
+
+        # perform simple test
+        if simple:
+            _read_write()
+
+        # perform complicated test
+        else:
+            try:
+                _read_write(autoidentify=False)
+            except ImportError as e:
+                pytest.skip(str(e))
+            with pytest.raises(IOError):
+                _read_write(autoidentify=True)
+            _read_write(autoidentify=True, write_kw={'overwrite': True})
+
+    # -- test queries ---------------------------
+
+    @pytest.mark.parametrize('api', ('dqsegdb', 'segdb'))
+    def test_query(self, api):
         try:
-            result = self.TEST_CLASS.query_segdb(flag, QUERY_START, QUERY_END,
-                                                 url=QUERY_URL_SEGDB)
-        except (SystemExit, LDBDClientException, ImportError) as e:
-            self.skipTest(str(e))
-        self.assertEqual(result.known, QUERY_RESULT[flag].known)
-        self.assertEqual(result.active, QUERY_RESULT[flag].active)
+            if api == 'dqsegdb':
+                result = query_dqsegdb(self.TEST_CLASS.query, QUERY_FLAGS[0],
+                                       0, 10)
+                RESULT = QUERY_RESULT[QUERY_FLAGS[0]].copy().coalesce()
+            else:
+                result = query_segdb(self.TEST_CLASS.query, QUERY_FLAGS[0],
+                                     0, 10, url='https://segdb.does.not.exist')
+                RESULT = QUERY_RESULT[QUERY_FLAGS[0]]
+        except ImportError as e:
+            pytest.skip(str(e))
 
-    def test_query_dqsegdb_versionless(self):
-        flag = QUERY_FLAGS[0]
-        result = self._mock_query_versionless(
-            self.TEST_CLASS.query, QUERY_RESULT,
-            flag.rsplit(':', 1)[0], QUERY_START, QUERY_END, url=QUERY_URL)
-        self.assertEqual(result.known, QUERY_RESULT[flag].known)
-        self.assertEqual(result.active, QUERY_RESULT[flag].active)
+        assert isinstance(result, self.TEST_CLASS)
+        utils.assert_segmentlist_equal(result.known, RESULT.known)
+        utils.assert_segmentlist_equal(result.active, RESULT.active)
 
+    def test_query_segdb(self):
+        result = query_segdb(self.TEST_CLASS.query_segdb,
+                             QUERY_FLAGS[0], 0, 10)
+        RESULT = QUERY_RESULT[QUERY_FLAGS[0]]
+
+        assert isinstance(result, self.TEST_CLASS)
+        utils.assert_segmentlist_equal(result.known, RESULT.known)
+        utils.assert_segmentlist_equal(result.active, RESULT.active)
+
+        result2 = query_segdb(self.TEST_CLASS.query_segdb,
+                              QUERY_FLAGS[0], (0, 10))
+        utils.assert_flag_equal(result, result2)
+
+        result2 = query_segdb(self.TEST_CLASS.query_segdb,
+                              QUERY_FLAGS[0], SegmentList([(0, 10)]))
+        utils.assert_flag_equal(result, result2)
+
+    @pytest.mark.parametrize('name, flag', [
+        (QUERY_FLAGS[0], QUERY_FLAGS[0]),  # regular query
+        (QUERY_FLAGS[0].rsplit(':', 1)[0], QUERY_FLAGS[0]),  # versionless
+    ])
+    def test_query_dqsegdb(self, name, flag):
+        result = query_dqsegdb(self.TEST_CLASS.query_dqsegdb, name, 0, 10)
+        RESULT = QUERY_RESULTC[flag]
+
+        assert isinstance(result, self.TEST_CLASS)
+        utils.assert_segmentlist_equal(result.known, RESULT.known)
+        utils.assert_segmentlist_equal(result.active, RESULT.active)
+
+        result2 = query_dqsegdb(self.TEST_CLASS.query_dqsegdb, name, (0, 10))
+        utils.assert_flag_equal(result, result2)
+
+        result2 = query_dqsegdb(self.TEST_CLASS.query_dqsegdb,
+                                name, SegmentList([(0, 10)]))
+        utils.assert_flag_equal(result, result2)
+
+        with pytest.raises(ValueError):
+            query_dqsegdb(self.TEST_CLASS.query_dqsegdb, 'BAD-FLAG_NAME',
+                          SegmentList([(0, 10)]))
+
+        with pytest.raises(HTTPError) as exc:
+            query_dqsegdb(self.TEST_CLASS.query_dqsegdb,
+                          'X1:GWPY-TEST:0', 0, 10)
+        assert str(exc.value) == 'HTTP Error 404: Not found [X1:GWPY-TEST:0]'
 
     def test_query_dqsegdb_multi(self):
-        querymid = int(QUERY_START + (QUERY_END - QUERY_START) /2.)
-        segs = SegmentList([Segment(QUERY_START, querymid),
-                            Segment(querymid, QUERY_END)])
-        flag = QUERY_FLAGS[0]
-        result = self._mock_query(
-            self.TEST_CLASS.query, QUERY_RESULT,
-            flag, segs, url=QUERY_URL)
-        self.assertEqual(result.known, QUERY_RESULT[flag].known)
-        self.assertEqual(result.active, QUERY_RESULT[flag].active)
+        segs = SegmentList([Segment(0, 2), Segment(8, 10)])
+        result = query_dqsegdb(self.TEST_CLASS.query_dqsegdb,
+                               QUERY_FLAGS[0], segs)
+        RESULT = QUERY_RESULTC[QUERY_FLAGS[0]]
+
+        assert isinstance(result, self.TEST_CLASS)
+        utils.assert_segmentlist_equal(result.known, RESULT.known & segs)
+        utils.assert_segmentlist_equal(result.active, RESULT.active & segs)
 
 
 # -- DataQualityDict ----------------------------------------------------------
 
-class DataQualityDictTests(unittest.TestCase, SegmentClassTestsMixin):
+class TestDataQualityDict(object):
     TEST_CLASS = DataQualityDict
-    TEST_DATA = QUERY_RESULT
-    tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_dqdict')
-    VETO_DEFINER = tmpfile % 'vdf.xml'
+    ENTRY_CLASS = DataQualityFlag
 
-    def setUp(self):
-        # download veto definer
-        vdffile = urlopen(VETO_DEFINER_FILE)
-        with open(self.VETO_DEFINER, 'w') as f:
-            try:
-                f.write(vdffile.read().decode('utf-8'))
-            except AttributeError:
-                f.write(vdffile.read())
-
-    def tearDown(self):
-        if os.path.isfile(self.VETO_DEFINER):
-            os.remove(self.VETO_DEFINER)
-
-    def create(self):
-        flgd = self.TEST_CLASS()
-        flgd['flag1'] = DataQualityFlag(name='flag1', active=ACTIVE,
-                                        known=KNOWN)
-        flgd['flag2'] = DataQualityFlag(name='flag2', active=ACTIVE2,
-                                        known=KNOWN2)
+    @classmethod
+    def create(cls):
+        flgd = cls.TEST_CLASS()
+        flgd['X1:TEST-FLAG:1'] = cls.ENTRY_CLASS(name='X1:TEST-FLAG:1',
+                                                 active=ACTIVE, known=KNOWN)
+        flgd['Y1:TEST-FLAG:2'] = cls.ENTRY_CLASS(name='Y1:TEST-FLAG:2',
+                                                 active=ACTIVE2, known=KNOWN2)
         return flgd
 
-    # -- I/O ------------------------------------
+    @classmethod
+    @pytest.fixture()
+    def instance(cls):
+        return cls.create()
 
-    @unittest.skipUnless(HAS_LAL, 'No module named lal')
-    def test_from_veto_definer_file(self):
-        vdf = self.TEST_CLASS.from_veto_definer_file(self.VETO_DEFINER)
-        self.assertNotEqual(len(vdf.keys()), 0)
-        # test missing h(t) flag
-        self.assertIn('H1:DCH-MISSING_H1_HOFT_C00:1', vdf)
-        self.assertEquals(vdf['H1:DCH-MISSING_H1_HOFT_C00:1'].known[0][0],
-                          1073779216)
-        self.assertEquals(vdf['H1:DCH-MISSING_H1_HOFT_C00:1'].known[0][-1],
-                          +inf)
-        self.assertEquals(vdf['H1:DCH-MISSING_H1_HOFT_C00:1'].category, 1)
-        # test injections padding
-        self.assertEquals(vdf['H1:ODC-INJECTION_CBC:1'].padding, Segment(-8, 8))
-        # test download URL
-        vdf2 = self.TEST_CLASS.from_veto_definer_file(VETO_DEFINER_FILE)
-        self.assertEqual(len(vdf.keys()), len(vdf2.keys()))
+    @classmethod
+    @pytest.fixture()
+    def reverse(cls):
+        inst = cls.create()
+        rev = type(inst)()
+        keys = list(inst.keys())
+        rev[keys[0]] = inst[keys[1]]
+        rev[keys[1]] = inst[keys[0]]
+        return rev
 
-    @unittest.skipUnless(HAS_LAL, 'No module named lal')
-    def test_read_write_ligolw(self):
-        return self._test_read_write('ligolw', extension='xml', auto=True,
-                                     writekwargs={'overwrite': True})
+    # -- test logic -----------------------------
 
-    @unittest.skipUnless(HAS_H5PY, 'No module named h5py')
-    def test_read_write_hdf5(self):
-        self._test_read_write('hdf5', auto=False)
-        self._test_read_write('hdf5', auto=True,
-                              writekwargs={'overwrite': True})
+    def test_iand(self, instance, reverse):
+        a = instance.copy()
+        a &= reverse
+        keys = list(a.keys())
+        utils.assert_flag_equal(a[keys[0]],
+                                instance[keys[0]] & reverse[keys[1]])
 
-    # -- segment queries ------------------------
+    def test_and(self, instance, reverse):
+        a = instance.copy()
+        a &= reverse
+        utils.assert_dict_equal(a, instance & reverse, utils.assert_flag_equal)
 
-    @unittest.skipUnless(HAS_LAL, 'No module named lal')
-    def test_populate(self):
+    def test_ior(self, instance, reverse):
+        a = instance.copy()
+        a |= reverse
+        keys = list(a.keys())
+        utils.assert_flag_equal(a[keys[0]],
+                                instance[keys[0]] | reverse[keys[1]])
+
+    def test_or(self, instance, reverse):
+        a = instance.copy()
+        a |= reverse
+        utils.assert_dict_equal(a, instance | reverse, utils.assert_flag_equal)
+
+    def test_isub(self, instance, reverse):
+        a = instance.copy()
+        a -= reverse
+        keys = list(a.keys())
+        utils.assert_flag_equal(a[keys[0]],
+                                instance[keys[0]] - reverse[keys[1]])
+
+    def test_sub(self, instance, reverse):
+        a = instance.copy()
+        a -= reverse
+        utils.assert_dict_equal(a, instance - reverse, utils.assert_flag_equal)
+
+    def test_invert(self, instance):
+        inverse = type(instance)()
+        for key in instance:
+            inverse[key] = ~instance[key]
+        utils.assert_dict_equal(~instance, inverse, utils.assert_flag_equal)
+
+    # -- test methods ---------------------------
+
+    def test_union(self, instance):
+        union = instance.union()
+        assert isinstance(union, self.ENTRY_CLASS)
+        utils.assert_segmentlist_equal(union.known, KNOWN + KNOWN2)
+        utils.assert_segmentlist_equal(union.active, ACTIVE + ACTIVE2)
+
+    def test_intersection(self, instance):
+        intersection = instance.intersection()
+        assert isinstance(intersection, self.ENTRY_CLASS)
+        utils.assert_segmentlist_equal(intersection.known, KNOWN & KNOWN2)
+        utils.assert_segmentlist_equal(intersection.active, ACTIVE & ACTIVE2)
+
+    def test_plot(self, instance):
+        with rc_context(rc={'text.usetex': False}):
+            plot = instance.plot(figsize=(6.4, 3.8))
+            assert isinstance(plot, SegmentPlot)
+            assert isinstance(plot.gca(), SegmentAxes)
+            with tempfile.NamedTemporaryFile(suffix='.png') as f:
+                plot.save(f.name)
+
+    # -- test I/O -------------------------------
+
+    @utils.skip_missing_dependency('lal')
+    def test_from_veto_definer_file(self, veto_definer):
         # read veto definer
-        start, end = VETO_DEFINER_TEST_SEGMENTS[0]
-        vdf = self.TEST_CLASS.from_veto_definer_file(
-            VETO_DEFINER_FILE, ifo='H1', start=start, end=end)
-        # test query that should fail with 404
-        try:
-            vdf.populate(url='https://segments.ligo.org')
-        except (ImportError, UnboundLocalError) as e:
-            self.skipTest(str(e))
-        except URLError as e:
-            if e.code == 401:  # 401 is uninformative
-                self.skipTest(str(e))
-            elif e.code == 404:
-                pass
-            else:
-                raise
-        else:
-            raise AssertionError("URLError not raised")
-        # check reduction to warning
-        vdf = self.TEST_CLASS.from_veto_definer_file(
-            VETO_DEFINER_FILE, ifo='H1', start=start, end=end)
-        with pytest.warns(UserWarning):
-            vdf.populate(url='https://segments.ligo.org', on_error='warn')
-        # check results
-        self.assertEqual(
-            len(vdf['H1:HVT-ER7_A_RND17:1'].active), 36)
-        # check use of specific segments
-        vdf = self.TEST_CLASS.from_veto_definer_file(
-            VETO_DEFINER_FILE, ifo='H1')
-        vdf.populate(segments=VETO_DEFINER_TEST_SEGMENTS, on_error='ignore')
+        vdf = self.TEST_CLASS.from_veto_definer_file(veto_definer)
+        assert len(vdf.keys()) == 4
 
-    def test_query(self):
-        result = self._mock_query(
-            self.TEST_CLASS.query, QUERY_RESULT,
-            QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL)
-        self.assertListEqual(list(result.keys()), QUERY_FLAGS)
-        for flag in result:
-            self.assertEqual(result[flag].known, QUERY_RESULT[flag].known)
-            self.assertEqual(result[flag].active, QUERY_RESULT[flag].active)
+        # test one flag to make sure it is well read
+        name = 'X1:TEST-FLAG:1'
+        assert name in vdf
+        utils.assert_segmentlist_equal(vdf[name].known,
+                                       [(100, float('inf'))])
+        assert vdf[name].category is 1
+        assert vdf[name].padding == (-1, 2)
+
+        # test ifo kwarg
+        vdf = self.TEST_CLASS.from_veto_definer_file(veto_definer, ifo='X1')
+        assert len(vdf.keys()) == 3
+        assert 'Y1:TEST-FLAG_2:2' not in vdf
+
+        # test start and end kwargs
+        vdf = self.TEST_CLASS.from_veto_definer_file(veto_definer,
+                                                     start=200, end=300)
+        assert len(vdf.keys()) == 3
+        assert 'X1:TEST-FLAG_2:1' not in vdf
+
+    @pytest.mark.parametrize('format, ext, dep, rw_kwargs', [
+        ('ligolw', 'xml', 'glue.ligolw.lsctables', {}),
+        ('ligolw', 'xml.gz', 'glue.ligolw.lsctables', {}),
+        ('hdf5', 'hdf5', 'h5py', {}),
+        ('hdf5', 'h5', 'h5py', {}),
+        ('hdf5', 'hdf5', 'h5py', {'path': 'test-dqdict'}),
+    ])
+    def test_read_write(self, instance, format, ext, dep, rw_kwargs):
+        from importlib import import_module
+        try:
+            import_module(dep)
+        except ImportError as e:
+            pytest.skip(str(e))
+
+        # define assertion
+        def _assert(a, b):
+            return utils.assert_dict_equal(a, b, utils.assert_flag_equal)
+
+        # simplify calling read/write tester
+        def _read_write(**kwargs):
+            read_kw = rw_kwargs.copy()
+            read_kw.update(kwargs.pop('read_kw', {}))
+            write_kw = rw_kwargs.copy()
+            write_kw.update(kwargs.pop('write_kw', {}))
+            return utils.test_read_write(instance, format, extension=ext,
+                                         assert_equal=_assert,
+                                         read_kw=read_kw, write_kw=write_kw,
+                                         **kwargs)
+
+        _read_write(autoidentify=False)
+        with pytest.raises(IOError):
+            _read_write(autoidentify=True)
+        _read_write(autoidentify=True, write_kw={'overwrite': True})
+
+    # -- test queries ---------------------------
+
+    @pytest.mark.parametrize('api', ('dqsegdb', 'segdb'))
+    def test_query(self, api):
+        if api == 'dqsegdb':
+            result = query_dqsegdb(self.TEST_CLASS.query, QUERY_FLAGS,
+                                   0, 10)
+            RESULT = QUERY_RESULTC
+        else:
+            result = query_segdb(self.TEST_CLASS.query, QUERY_FLAGS,
+                                 0, 10, url='https://segdb.does.not.exist')
+            RESULT = QUERY_RESULT
+
+        assert isinstance(result, self.TEST_CLASS)
+        utils.assert_dict_equal(result, RESULT, utils.assert_flag_equal)
 
     def test_query_dqsegdb(self):
-        result = self._mock_query(
-            self.TEST_CLASS.query_dqsegdb, QUERY_RESULT,
-            QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL)
-        self.assertListEqual(list(result.keys()), QUERY_FLAGS)
-        for flag in result:
-            self.assertEqual(result[flag].known, QUERY_RESULT[flag].known)
-            self.assertEqual(result[flag].active, QUERY_RESULT[flag].active)
+        result = query_dqsegdb(self.TEST_CLASS.query_dqsegdb, QUERY_FLAGS,
+                               0, 10)
+        RESULT = QUERY_RESULTC
+        assert isinstance(result, self.TEST_CLASS)
+        utils.assert_dict_equal(result, RESULT, utils.assert_flag_equal)
 
-    @unittest.skipUnless(HAS_M2CRYPTO, "No module named m2crypto")
+        # check all values of on_error
+        with pytest.warns(UserWarning) as record:
+            result = query_dqsegdb(self.TEST_CLASS.query_dqsegdb,
+                                   QUERY_FLAGS + ['X1:BLAHBLAH:1'], 0, 10,
+                                   on_error='warn')
+            result = query_dqsegdb(self.TEST_CLASS.query_dqsegdb,
+                                   QUERY_FLAGS + ['X1:BLAHBLAH:1'], 0, 10,
+                                   on_error='ignore')
+        utils.assert_dict_equal(result, RESULT, utils.assert_flag_equal)
+        assert len(record) == 1  # check on_error='ignore' didn't warn
+        with pytest.raises(ValueError):
+            self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS, 0, 10, on_error='blah')
+
     def test_query_segdb(self):
-        from glue.LDBDWClient import LDBDClientException
-        try:
-            result = self.TEST_CLASS.query_segdb(
-                QUERY_FLAGS, QUERY_START, QUERY_END, url=QUERY_URL_SEGDB)
-        except (SystemExit, LDBDClientException, ImportError) as e:
-            self.skipTest(str(e))
-        self.assertListEqual(list(result.keys()), QUERY_FLAGS)
-        for flag in result:
-            self.assertEqual(result[flag].known, QUERY_RESULT[flag].known)
-            self.assertEqual(result[flag].active, QUERY_RESULT[flag].active)
+        result = query_segdb(self.TEST_CLASS.query_segdb, QUERY_FLAGS, 0, 10)
+        assert isinstance(result, self.TEST_CLASS)
+        utils.assert_dict_equal(result, QUERY_RESULT, utils.assert_flag_equal)
 
-    # -- methods --------------------------------
+    @utils.skip_missing_dependency('dqsegdb')
+    def test_populate(self):
+        def fake():
+            return self.TEST_CLASS({
+                x: self.ENTRY_CLASS(name=x, known=y.known) for
+                x, y in QUERY_RESULT.items()})
 
-    def test_union(self):
-        flgd = self.create()
-        union = flgd.union()
-        self.assertIsInstance(union, DataQualityFlag)
-        self.assertListEqual(union.known, KNOWN + KNOWN2)
-        self.assertListEqual(union.active, ACTIVE + ACTIVE2)
+        # build fake veto definer file
+        vdf = fake()
+        vdf2 = fake()
+        vdf3 = fake()
 
-    def test_intersection(self):
-        flgd = self.create()
-        inter = flgd.intersection()
-        self.assertIsInstance(inter, DataQualityFlag)
-        self.assertListEqual(inter.known, KNOWN & KNOWN2)
-        self.assertListEqual(inter.active, ACTIVE & ACTIVE2)
+        flag = QUERY_FLAGS[0]
+        vdf2[flag].padding = (-1, 1)
 
-    def test_plot(self):
-        flgd = self.create()
-        plot = flgd.plot()
-        self.assertIsInstance(plot, SegmentPlot)
-        self.assertIsInstance(plot.gca(), SegmentAxes)
-        self.assertEqual(len(plot.gca().collections), len(flgd) * 2)
+        span = SegmentList([Segment(0, 2)])
+
+        # and populate using a mocked query
+        with mock.patch('dqsegdb.apicalls.dqsegdbQueryTimes',
+                        mocks.dqsegdb_query_times(QUERY_RESULT)):
+            vdf.populate()
+            vdf2.populate()
+            vdf3.populate(segments=span)
+
+            # test warnings on bad entries
+            vdf['TEST'] = self.ENTRY_CLASS('X1:BLAHBLAHBLAH:1', known=[(0, 1)])
+            with pytest.warns(UserWarning) as record:
+                vdf.populate(on_error='warn')
+                vdf.populate(on_error='ignore')
+            assert len(record) == 1
+            vdf.pop('TEST')
+
+            with pytest.raises(ValueError):
+                vdf.populate(on_error='blah')
+
+        # check basic populate worked
+        utils.assert_dict_equal(vdf, QUERY_RESULTC, utils.assert_flag_equal)
+
+        # check padded populate worked
+        utils.assert_flag_equal(vdf2[flag], QUERY_RESULTC[flag].pad(-1, 1))
+
+        # check segment-restricted populate worked
+        for flag in vdf3:
+            utils.assert_segmentlist_equal(
+                vdf3[flag].known, QUERY_RESULTC[flag].known & span)
+            utils.assert_segmentlist_equal(
+                vdf3[flag].active, QUERY_RESULTC[flag].active & span)

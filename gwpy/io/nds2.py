@@ -100,7 +100,7 @@ class Nds2ChannelType(Nds2Enum):
             for ctype in cls._member_map_.values():
                 if ctype.name == name:
                     return ctype
-            raise
+            raise ValueError('%s is not a valid %s' % (name, cls.__name__))
 
     UNKNOWN = 0
     ONLINE = 1
@@ -155,6 +155,7 @@ class Nds2DataType(Nds2Enum):
 
 class NDSWarning(UserWarning):
     pass
+
 
 warnings.simplefilter('always', NDSWarning)
 
@@ -335,8 +336,9 @@ def parse_nds2_enums(func):
     def wrapped_func(*args, **kwargs):
         for kw, enum_ in (('type', Nds2ChannelType),
                           ('dtype', Nds2DataType)):
-            kwargs.setdefault(kw, enum_.any())
-            if not isinstance(kwargs[kw], int):
+            if kwargs.get(kw, None) is None:
+                kwargs[kw] = enum_.any()
+            elif not isinstance(kwargs[kw], int):
                 kwargs[kw] = enum_.find(kwargs[kw]).value
         return func(*args, **kwargs)
     return wrapped_func
@@ -465,3 +467,36 @@ def get_availability(channels, start, end,
         out[name] = SegmentList([Segment(s.gps_start, s.gps_stop) for s in
                                  result.simple_list()])
     return out
+
+
+def minute_trend_times(start, end):
+    """Expand a [start, end) interval for use in querying for minute trends
+
+    NDS2 requires start and end times for minute trends to be a multiple of
+    60 (to exactly match the time of a minute-trend sample), so this function
+    expands the given ``[start, end)`` interval to the nearest multiples.
+
+    Parameters
+    ----------
+    start : `int`
+        GPS start time of query
+
+    end : `int`
+        GPS end time of query
+
+    Returns
+    -------
+    mstart : `int`
+        ``start`` rounded down to nearest multiple of 60
+    mend : `int`
+        ``end`` rounded up to nearest multiple of 60
+    """
+    warnings.warn("Requested at least one minute trend, but "
+                  "start and stop GPS times are not modulo "
+                  "60-seconds (from GPS epoch). Times will be "
+                  "expanded outwards to compensate")
+    if start % 60:
+        start = int(start) // 60 * 60
+    if end % 60:
+        end = int(end) // 60 * 60 + 60
+    return int(start), int(end)

@@ -32,6 +32,7 @@ except ImportError:
 from ...io import registry
 from ...io.ligolw import (table_from_file, write_tables)
 from .. import (Table, EventTable)
+from .utils import read_with_selection
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = []
@@ -40,8 +41,21 @@ __all__ = []
 GET_AS_EXCLUDE = ['get_column', 'get_table']
 
 
+def handle_attributeerror(action, func, *args, **kwargs):
+    try:
+        return func(*args, **kwargs)
+    except AttributeError as e:
+        if action == 'ignore':
+            pass
+        elif action == 'warn':
+            warnings.warn('Caught %s: %s' % (type(e).__name__, str(e)))
+        else:
+            raise
+
+
 # -- read ---------------------------------------------------------------------
 
+@read_with_selection
 def _table_from_ligolw(llwtable, target, copy, columns=None,
                        on_attributeerror='raise', get_as_columns=False,
                        rename={}):
@@ -90,20 +104,17 @@ def _table_from_ligolw(llwtable, target, copy, columns=None,
         if columns and column not in columns:  # skip if not wanted
             continue
         orig_type = llwtable.validcolumns[column]
-        try:
+        col = handle_attributeerror(
+            on_attributeerror, llwtable.getColumnByName, column)
+        if col is not None:
+            # get correct dtype
             if orig_type == 'ilwd:char':  # numpy tries long() which breaks
-                arr = map(int, llwtable.getColumnByName(column))
+                arr = list(map(int, col))
+            elif orig_type == 'lstring':  # let astropy handle it
+                arr = col
             else:
-                arr = llwtable.getColumnByName(column)
-        except AttributeError as e:
-            if not columns and on_attributeerror == 'ignore':
-                pass
-            elif not columns and on_attributeerror == 'warn':
-                warnings.warn('Caught %s: %s' % (type(e).__name__, str(e)))
-            else:
-                raise
-        else:
-            names.append(column)
+                arr = col.asarray()
+            # store data (with optional renaming)
             try:
                 data.append(target.Column(name=rename[column], data=arr))
             except KeyError:
@@ -120,7 +131,9 @@ def _table_from_ligolw(llwtable, target, copy, columns=None,
                 continue
             if columns and column not in columns:  # skip if not wanted
                 continue
-            arr = meth()
+            arr = handle_attributeerror(on_attributeerror, meth)
+            if arr is None:
+                continue
             try:
                 dtype = arr.dtype
             except AttributeError:
@@ -192,6 +205,7 @@ def ligolw_io_factory(table_):
             'on_attributeerror': 'raise',
             'get_as_columns': False,
             'rename': {},
+            'selection': [],
         }
         for key in reckwargs:
             if key in kwargs:
@@ -236,6 +250,7 @@ def ligolw_io_factory(table_):
                             *args, **kwargs)
 
     return _read_table, _write_table
+
 
 # -- register -----------------------------------------------------------------
 

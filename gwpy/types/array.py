@@ -28,6 +28,8 @@ transforming instances of the class.
 """
 
 import warnings
+from math import modf
+from decimal import Decimal
 
 import numpy
 
@@ -292,7 +294,7 @@ class Array(Quantity):
             if self._epoch is None:
                 return None
             else:
-                return Time(float(to_gps(self._epoch)),
+                return Time(*modf(self._epoch)[::-1],
                             format='gps', scale='utc')
         except AttributeError:
             self._epoch = None
@@ -303,7 +305,7 @@ class Array(Quantity):
         if epoch is None:
             self._epoch = None
         else:
-            self._epoch = to_gps(epoch)
+            self._epoch = Decimal(str(to_gps(epoch)))
 
     @epoch.deleter
     def epoch(self):

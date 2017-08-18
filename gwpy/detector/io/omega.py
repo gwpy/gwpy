@@ -26,6 +26,7 @@ import os
 
 from astropy.io import registry
 
+from ...io.cache import FILE_LIKE
 from ...utils.compat import OrderedDict
 from .. import (Channel, ChannelList)
 
@@ -57,7 +58,7 @@ def read_omega_scan_config(source):
     """
     out = ChannelList()
     append = out.append
-    if isinstance(source, file):
+    if isinstance(source, FILE_LIKE):
         close = False
     else:
         source = open(source, 'r')
@@ -66,7 +67,7 @@ def read_omega_scan_config(source):
         section = None
         while True:
             try:
-                line = source.next()
+                line = next(source)
             except StopIteration:
                 break
             if line == '' or line == '\n' or line.startswith('#'):
@@ -101,7 +102,7 @@ def parse_omega_channel(fp, section=None):
     """
     params = OrderedDict()
     while True:
-        line = fp.next()
+        line = next(fp)
         if line == '}\n':
             break
         key, value = line.split(':', 1)
@@ -138,7 +139,7 @@ def write_omega_scan_config(channellist, fobj, header=True):
     This method is dumb and assumes the channels are sorted in the right
     order already
     """
-    if isinstance(fobj, file):
+    if isinstance(fobj, FILE_LIKE):
         close = False
     else:
         fobj = open(fobj, 'w')
@@ -197,6 +198,7 @@ def print_omega_channel(channel, file=sys.stdout):
             value = repr(value)
         print('  {0: <30}  {1}'.format(key, value), file=file)
     print('}', file=file)
+
 
 # -- registry -----------------------------------------------------------------
 

@@ -33,11 +33,11 @@ arguments
 import os.path
 from dateutil.relativedelta import relativedelta
 
-from numpy.lib import recfunctions
-
 from ...segments import Segment
 from ...time import (to_gps, from_gps)
 from .. import EventTable
+from .fetch import register_fetcher
+from .sql import format_db_selection
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -89,34 +89,16 @@ def get_hacr_channels(db=None, gps=None, connection=None,
 
 
 def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
-                      monitor='chacr', **connectkwargs):
+                      monitor='chacr', selection=None, **connectkwargs):
     """Fetch a table of HACR triggers in the given interval
     """
     if columns is None:
         columns = HACR_COLUMNS
     columns = list(columns)
-    data = []
-    span = Segment(map(to_gps, (start, end)))
+    span = Segment(*map(to_gps, (start, end)))
 
-    # allow user to specify 'time'
-    ucolumns = list(columns)
-    try:
-        columns.pop(columns.index('time'))
-    except ValueError:
-        addtime = False
-    else:
-        # make sure that we query for 'gps_start' and 'gps_offset'
-        # optionally popping those columns out before returning
-        # (if they weren't given in the first place)
-        addtime = True
-        popstart = False
-        popoffset = False
-        if 'gps_start' not in columns:
-            columns.append('gps_start')
-            popstart = True
-        if 'gps_offset' not in columns:
-            columns.append('gps_offset')
-            popoffset = True
+    # parse selection for SQL query (removing leading 'where ')
+    selectionstr = 'and %s' % format_db_selection(selection, engine=None)[6:]
 
     # get database names and loop over each on
     databases = get_database_names(start, end)
@@ -137,8 +119,9 @@ def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
                 continue
             # execute trigger query
             q = ('select %s from mhacr where process_id = %d and '
-                 'gps_start > %s and gps_start < %d order by gps_start asc'
-                 % (', '.join(columns), int(p), span[0], span[1]))
+                 'gps_start > %s and gps_start < %d %s order by gps_start asc'
+                 % (', '.join(columns), int(p), span[0], span[1],
+                    selectionstr))
             n = cursor.execute(q)
             if n == 0:
                 continue
@@ -147,49 +130,26 @@ def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
     return EventTable(rows=rows, names=columns)
 
 
-def add_time_column(table, name='time', pop_start=True, pop_offset=True):
-    """Append a column named 'time' by combining the gps_start and _offset
-
-    Parameters
-    ----------
-    table : `EventTable`
-        table of events to modify
-    name : `str`, optional
-        name of field to append, default: 'time'
-    pop_start: `bool`, optional
-        remove the 'gps_start' field when finished, default: `True`
-    pop_offset: `bool`, optional
-        remove the 'gps_offset' field when finished, default: `True`
-
-    Returns
-    -------
-    mod : `recarray`, matches type of input
-        a modified version of the input table with the new time field
-    """
-    type_ = type(table)
-    t = table['gps_start'] + table['gps_offset']
-    drop = []
-    if pop_start:
-        drop.append('gps_start')
-    if pop_offset:
-        drop.append('gps_offset')
-    if drop:
-        table = recfunctions.rec_drop_fields(table, drop)
-    return recfunctions.rec_append_fields(table, [name], [t]).view(type_)
+register_fetcher('hacr', EventTable, get_hacr_triggers,
+                 usage="channel, gpsstart, gpstop")
 
 
 # -- utilities ----------------------------------------------------------------
 
 def connect(db, host=HACR_DATABASE_SERVER, user=HACR_DATABASE_USER,
             passwd=HACR_DATABASE_PASSWD):
-    """Connect to the given MySQL database
+    """Connect to the given SQL database
     """
-    import MySQLdb
-    return MySQLdb.connect(host=host, user=user, passwd=passwd, db=db)
+    try:
+        import pymysql
+    except ImportError as e:
+        e.args = ('pymysql is required to fetch HACR triggers',)
+        raise
+    return pymysql.connect(host=host, user=user, passwd=passwd, db=db)
 
 
 def query(querystr, connection=None, **connectkwargs):
-    """Execute a query of the given MySQL database
+    """Execute a query of the given SQL database
     """
     if connection is None:
         connection = connect(**connectkwargs)

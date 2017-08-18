@@ -49,7 +49,7 @@ cmdclass = {}
 
 # -- versioning ---------------------------------------------------------------
 
-import versioneer
+import versioneer  # nopep8
 __version__ = versioneer.get_version()
 cmdclass.update(versioneer.get_cmdclass())
 
@@ -59,7 +59,7 @@ cmdclass.update(versioneer.get_cmdclass())
 setup_requires = [
 ]
 install_requires = [
-    'numpy>=1.10',
+    'numpy>=1.11',
     'scipy>=0.16.0',
     'matplotlib>=1.4.1',
     'astropy>=1.2.1',
@@ -71,7 +71,7 @@ extras_require = {
     'hdf5': ['h5py>=1.3'],
     'root': ['root_numpy'],
     'segments': ['dqsegdb'],
-    'hacr': ['mysqlclient'],
+    'hacr': ['pymysql'],
     'docs': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme',
              'sphinxcontrib-programoutput'],
 }
@@ -84,7 +84,7 @@ extras_require['all'] = set(p for extra in extras_require.values()
 try:
     import lal
 except ImportError as e:
-    install_requires.append('ligotimegps')
+    install_requires.append('ligotimegps>=1.1')
 
 # test for OrderedDict
 try:
@@ -108,12 +108,12 @@ except ImportError:
 
 setup_requires.append('pytest-runner')
 tests_require = [
-    'pytest>=2.8',
+    'pytest>=3.1',
+    'freezegun',
+    'sqlparse',
 ]
 if sys.version < '3':
     tests_require.append('mock')
-if sys.version < '2.7':
-    tests_require.append('unittest2')
 
 
 # -- custom clean command -----------------------------------------------------
@@ -145,6 +145,7 @@ class GWpyClean(clean):
                 log.info('removing %r' % portfile)
                 os.unlink(portfile)
         clean.run(self)
+
 
 cmdclass['clean'] = GWpyClean
 
@@ -216,6 +217,7 @@ class BuildPortfile(Command):
             raise subprocess.CalledProcessError(err)
         else:
             return out.splitlines()[0].rsplit(' ', 1)[-1]
+
 
 cmdclass['port'] = BuildPortfile
 if 'port' in sys.argv:

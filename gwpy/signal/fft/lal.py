@@ -294,9 +294,6 @@ def bartlett(timeseries, segmentlength, noverlap=None, window=None, plan=None):
     --------
     lal.REAL8AverageSpectrumWelch
     """
-    if noverlap:
-        raise TypeError("bartlett() got an unexpected keyword argument "
-                        "'noverlap'")
     return _lal_spectrum(timeseries, segmentlength, noverlap=0,
                          method='welch', window=window, plan=plan)
 

@@ -19,6 +19,8 @@
 """The `Series` is a one-dimensional array with metadata
 """
 
+from warnings import warn
+
 import numpy
 
 from astropy.units import (Unit, Quantity)
@@ -111,19 +113,34 @@ class Array2D(Series):
         new = super(Array2D, cls).__new__(cls, data, unit=unit, xindex=xindex,
                                           x0=x0, dx=dx, **kwargs)
 
-        # set new metadata
-        if isinstance(dy, Quantity):
-            yunit = dy.unit
-        elif isinstance(y0, Quantity):
-            yunit = y0.unit
-        else:
-            yunit = cls._default_yunit
-        if dy is not None:
-            new.dy = Quantity(dy, yunit)
-        if y0 is not None:
-            new.y0 = Quantity(y0, yunit)
+        # set y-axis metadata from yindex
         if yindex is not None:
-            new.yindex = yindex
+            # warn about duplicate settings
+            if dy is not None:
+                warn("yindex was given to %s(), dy will be ignored"
+                     % cls.__name__)
+            if y0 is not None:
+                warn("yindex was given to %s(), y0 will be ignored"
+                     % cls.__name__)
+            # get unit
+            if yunit is None and isinstance(yindex, Quantity):
+                yunit = yindex.unit
+            elif yunit is None:
+                yunit = cls._default_yunit
+            new.yindex = Quantity(yindex, unit=yunit)
+        # or from y0 and dy
+        else:
+            if yunit is None and isinstance(dy, Quantity):
+                yunit = dy.unit
+            elif yunit is None and isinstance(y0, Quantity):
+                yunit = y0.unit
+            elif yunit is None:
+                yunit = cls._default_yunit
+            if dy is not None:
+                new.dy = Quantity(dy, yunit)
+            if y0 is not None:
+                new.y0 = Quantity(y0, yunit)
+
         return new
 
     # rebuild getitem to handle complex slicing
@@ -324,23 +341,42 @@ class Array2D(Series):
 
     @property
     def yspan(self):
-        """X-axis [low, high) segment encompassed by these data
+        """Y-axis [low, high) segment encompassed by these data
 
         :type: `~gwpy.segments.Segment`
         """
         from ..segments import Segment
         try:
-            self._yindex
-        except AttributeError:
-            y0 = self.y0.to(self.yunit).value
             dy = self.dy.to(self.yunit).value
-            return Segment(y0, y0 + self.shape[1] * dy)
+        except AttributeError:  # irregular yindex
+            try:
+                dy = self.yindex.value[-1] - self.yindex.value[-2]
+            except IndexError:
+                raise ValueError("Cannot determine y-axis stride (dy)"
+                                 "from a single data point")
+            return Segment(self.yindex.value[0], self.yindex.value[-1] + dy)
         else:
-            dy = self.yindex.value[-1] - self.yindex.value[-2]
-            return Segment(self.yindex.value[0],
-                           self.yindex.value[-1] + self.dy.value)
+            y0 = self.y0.to(self.yunit).value
+            return Segment(y0, y0+self.shape[1]*dy)
 
     # -- Array2D methods ------------------------
+
+    def is_compatible(self, other):
+        """Check whether this array and ``other`` have compatible metadata
+        """
+        super(Array2D, self).is_compatible(other)
+        # check y-axis metadata
+        if isinstance(other, type(self)):
+            try:
+                if not self.dy == other.dy:
+                    raise ValueError("%s sample sizes do not match: "
+                                     "%s vs %s." % (type(self).__name__,
+                                                    self.dy, other.dy))
+            except AttributeError:
+                raise ValueError("Series with irregular y-indexes cannot "
+                                 "be compatible")
+
+        return True
 
     def value_at(self, x, y):
         """Return the value of this `Series` at the given `(x, y)` coordinates
@@ -362,7 +398,7 @@ class Array2D(Series):
         try:
             idx = (self.xindex.value == x).nonzero()[0][0]
         except IndexError as e:
-            e.args = ("Value %r not found in array xindex",)
+            e.args = ("Value %r not found in array xindex" % x,)
             raise
         try:
             idy = (self.yindex.value == y).nonzero()[0][0]
@@ -376,19 +412,25 @@ class Array2D(Series):
 
     def _wrap_function(self, function, *args, **kwargs):
         out = super(Array2D, self)._wrap_function(function, *args, **kwargs)
-        if out.ndim == 1:
+        if out.ndim == 1:  # return Series
             # HACK: need to check astropy will always pass axis as first arg
             axis = args[0]
-            # return Series
+            metadata = {'unit': out.unit, 'channel': out.channel,
+                        'epoch': self.epoch,
+                        'name': '%s %s' % (self.name, function.__name__)}
+            # return Column series
             if axis == 0:
-                x0 = self.y0
-                dx = self.dy
-                xindex = hasattr(self, '_yindex') and self.yindex or None
+                if hasattr(self, '_yindex'):
+                    metadata['xindex'] = self.yindex
+                else:
+                    metadata['x0'] = self.y0
+                    metadata['dx'] = self.dy
+                return self._columnclass(out.value, **metadata)
+            # return Row series
+            if hasattr(self, '_xindex'):
+                metadata['xindex'] = self.xindex
             else:
-                x0 = self.x0
-                dx = self.dx
-                xindex = hasattr(self, '_xindex') and self.xindex or None
-            return Series(out.value, unit=out.unit, x0=x0, dx=dx,
-                          channel=out.channel, epoch=self.epoch, xindex=xindex,
-                          name='%s %s' % (self.name, function.__name__))
+                metadata['x0'] = self.x0
+                metadata['dx'] = self.dx
+            return self._rowclass(out.value, **metadata)
         return out

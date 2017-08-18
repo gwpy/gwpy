@@ -23,6 +23,8 @@ from __future__ import division
 import operator
 from math import (pi, log10)
 
+from six.moves import reduce
+
 from numpy import (atleast_1d, concatenate)
 
 from scipy import signal
@@ -38,6 +40,7 @@ def _as_float(x):
         return float(x.value)
     except AttributeError:
         return float(x)
+
 
 TWO_PI = 2 * pi
 FIRWIN_DEFAULTS = {
@@ -73,16 +76,17 @@ def _design_iir(wp, ws, sample_rate, gpass, gstop,
         raise ValueError("'%s' is not a valid output form." % output)
 
 
-def _design_fir(wp, ws, sample_rate, gpass, gstop, window='hann', **kwargs):
+def _design_fir(wp, ws, sample_rate, gpass, gstop, window='hamming', **kwargs):
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
     tw = abs(wp[0] - ws[0])
     nt = num_taps(sample_rate, tw, gpass, gstop)
     if wp[0] > ws[0]:
         kwargs.setdefault('pass_zero', False)
-    kwargs.setdefault('width', fstop-frequency)
+    if ws.shape == (1,):
+        kwargs.setdefault('width', ws - wp)
     kwargs.setdefault('nyq', sample_rate/2.)
-    return signal.firwin(n, frequency, window=window, **kwargs)
+    return signal.firwin(nt, wp, window=window, **kwargs)
 
 
 def num_taps(sample_rate, transitionwidth, gpass, gstop):
@@ -146,7 +150,7 @@ def lowpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
 
     **kwargs
         other keyword arguments are passed directly to
-        :meth:`~scipy.signal.iirdesign` or :meth:`~scipy.signal.firwin`
+        :func:`~scipy.signal.iirdesign` or :func:`~scipy.signal.firwin`
 
     Returns
     -------
@@ -218,7 +222,7 @@ def highpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
 
     **kwargs
         other keyword arguments are passed directly to
-        :meth:`~scipy.signal.iirdesign` or :meth:`~scipy.signal.firwin`
+        :func:`~scipy.signal.iirdesign` or :func:`~scipy.signal.firwin`
 
     Returns
     -------
@@ -293,7 +297,7 @@ def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
 
     **kwargs
         other keyword arguments are passed directly to
-        :meth:`~scipy.signal.iirdesign` or :meth:`~scipy.signal.firwin`
+        :func:`~scipy.signal.iirdesign` or :func:`~scipy.signal.firwin`
 
     Returns
     -------
@@ -337,8 +341,8 @@ def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
         return _design_iir((flow, fhigh), fstop, sample_rate, gpass, gstop,
                            **kwargs)
     else:
-        return _design_fir(frequency, fstop, sample_rate, gpass, gstop,
-                           **kwargs)
+        return _design_fir((flow, fhigh), fstop, sample_rate, gpass, gstop,
+                           pass_zero=False, **kwargs)
 
 
 def notch(frequency, sample_rate, type='iir', **kwargs):

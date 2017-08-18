@@ -164,9 +164,19 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
             except AttributeError:  # not proc channel
                 pass
             else:
-                if start and dataend < start:  # don't need this frame
+                if datastart == dataend:  # tRange not set
+                    # tRange is not required, so if it is 0, it may have been
+                    # omitted, rather than actually representing an empty
+                    # data set
+                    pass
+                elif start and dataend < start:  # don't need this frame
                     continue
             for vect in data.data:  # loop hopefully over single vector
+                # only read FrVect with matching name (or no name set)
+                #    frame spec allows for arbitrary other FrVects
+                #    to hold other information
+                if vect.GetName() and vect.GetName() != name:
+                    continue
                 # decompress data
                 arr = vect.GetDataArray()
                 dim = vect.GetDim(0)
@@ -200,8 +210,12 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                     # create array - need require() to prevent segfault
                     ts = numpy.require(
                         series_class(arr, t0=dimstart+a*dx, dt=dx, name=name,
-                                     channel=channel, unit=unit, copy=False),
+                                     channel=name, unit=unit, copy=False),
                         requirements=['O'])
+                    # add information to channel
+                    ts.channel.sample_rate = ts.sample_rate.value
+                    ts.channel.unit = unit
+                    ts.channel.dtype = ts.dtype
                 else:
                     ts.append(arr)
         if ts is None:
@@ -349,5 +363,6 @@ def create_frvect(timeseries):
         timeseries.name or '', FRVECT_TYPE_FROM_NUMPY[timeseries.dtype.type],
         1, dims, str(timeseries.unit))
     # populate FrVect and return
-    vect.GetDataArray()[:] = timeseries.value
+    vect.GetDataArray()[:] = numpy.require(timeseries.value,
+                                           requirements=['C'])
     return vect

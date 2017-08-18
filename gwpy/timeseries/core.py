@@ -47,17 +47,20 @@ from math import ceil
 import numpy
 
 from astropy import units
+from astropy import __version__ as astropy_version
 
 from ..types import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
 from ..io import datafind
 from ..time import (Time, LIGOTimeGPS, to_gps)
-from ..utils import (gprint, with_import)
+from ..utils import gprint
 from ..utils.compat import OrderedDict
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 __all__ = ['TimeSeriesBase', 'ArrayTimeSeries', 'TimeSeriesBaseDict']
+
+ASTROPY_2_0 = astropy_version >= '2.0'
 
 _UFUNC_STRING = {'less': '<',
                  'less_equal': '<=',
@@ -221,7 +224,6 @@ class TimeSeriesBase(Series):
     # -- TimeSeries accessors -------------------
 
     @classmethod
-    @with_import('nds2')
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
               connection=None, verify=False, pad=None, allow_tape=None,
               type=None, dtype=None):
@@ -268,9 +270,9 @@ class TimeSeriesBase(Series):
             allow_tape=allow_tape, type=type, dtype=dtype)[str(channel)]
 
     @classmethod
-    def fetch_open_data(cls, ifo, start, end, name='strain/Strain',
-                        sample_rate=4096, host='https://losc.ligo.org',
-                        verbose=False):
+    def fetch_open_data(cls, ifo, start, end, sample_rate=4096,
+                        format=None, host='https://losc.ligo.org',
+                        verbose=False, **kwargs):
         """Fetch open-access data from the LIGO Open Science Center
 
         Parameters
@@ -287,26 +289,32 @@ class TimeSeriesBase(Series):
             GPS end time of required data, defaults to end of data found;
             any input parseable by `~gwpy.time.to_gps` is fine
 
-        name : `str`, optional
-            the full name of HDF5 dataset that represents the data you want,
-            e.g. `'strain/Strain'` for _h(t)_ data, or `'quality/simple'`
-            for basic data-quality information
-
         sample_rate : `float`, optional, default: `4096`
             the sample rate of desired data. Most data are stored
             by LOSC at 4096 Hz, however there may be event-related
             data releases with a 16384 Hz rate
+
+        format : `str`, optional
+            the data format to download and parse, defaults to 'txt.gz'
+            which requires no extra packages. Other options include
+
+            - ``'hdf5'`` - requires |h5py|_
+            - ``'gwf'`` - requires |LDAStools.frameCPP|_
 
         verbose : `bool`, optional, default: `False`
             print verbose output while fetching data
 
         host : `str`, optional
             HTTP host name of LOSC server to access
+
+        **kwargs
+            any other keyword arguments are passed to the `TimeSeries.read`
+            method that parses the file that was downloaded
         """
         from .io.losc import fetch_losc_data
-        return fetch_losc_data(ifo, start, end, channel=name, cls=cls,
-                               sample_rate=sample_rate, host=host,
-                               verbose=verbose)
+        return fetch_losc_data(ifo, start, end, cls=cls,
+                               sample_rate=sample_rate, format=format,
+                               host=host, verbose=verbose, **kwargs)
 
     @classmethod
     def find(cls, channel, start, end, frametype=None,
@@ -423,7 +431,6 @@ class TimeSeriesBase(Series):
         return TimeSeriesPlot(self, **kwargs)
 
     @classmethod
-    @with_import('nds2')
     def from_nds2_buffer(cls, buffer_, **metadata):
         """Construct a new `TimeSeries` from an `nds2.buffer` object
 
@@ -456,7 +463,6 @@ class TimeSeriesBase(Series):
         return cls(buffer_.data, **metadata)
 
     @classmethod
-    @with_import('lal')
     def from_lal(cls, lalts, copy=True):
         """Generate a new TimeSeries from a LAL TimeSeries of any type.
         """
@@ -475,20 +481,17 @@ class TimeSeriesBase(Series):
         else:
             return out
 
-    @with_import('lal')
     def to_lal(self):
         """Convert this `TimeSeries` into a LAL TimeSeries.
         """
+        import lal
         from ..utils.lal import (LAL_TYPE_STR_FROM_NUMPY, to_lal_unit)
         typestr = LAL_TYPE_STR_FROM_NUMPY[self.dtype.type]
         try:
             unit = to_lal_unit(self.unit)
         except ValueError as e:
             warnings.warn("%s, defaulting to lal.DimensionlessUnit" % str(e))
-            try:
-                unit = lal.DimensionlessUnit
-            except AttributeError:
-                unit = lal.lalDimensionlessUnit
+            unit = lal.DimensionlessUnit
         create = getattr(lal, 'Create%sTimeSeries' % typestr.upper())
         lalts = create(self.name, lal.LIGOTimeGPS(self.epoch.gps), 0,
                        self.dt.value, unit, self.size)
@@ -534,6 +537,25 @@ class TimeSeriesBase(Series):
                                 epoch=self.epoch.gps, copy=copy)
 
     # -- TimeSeries operations ------------------
+
+    if ASTROPY_2_0:
+        def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+            # this is new in numpy 1.13, astropy 2.0 adopts it, we need to
+            # work out how to handle this and __array_wrap__ together properly
+            out = super(TimeSeriesBase, self).__array_ufunc__(
+                ufunc, method, *inputs, **kwargs)
+            if out.dtype is numpy.dtype(bool) and len(inputs) == 2:
+                from .statevector import StateTimeSeries
+                orig, value = inputs
+                try:
+                    op_ = _UFUNC_STRING[ufunc.__name__]
+                except KeyError:
+                    op_ = ufunc.__name__
+                out = out.view(StateTimeSeries)
+                out.__metadata_finalize__(orig)
+                out.override_unit('')
+                out.name = '%s %s %s' % (orig.name, op_, value)
+            return out
 
     def __array_wrap__(self, obj, context=None):
         # if output type is boolean, return a `StateTimeSeries`
@@ -683,7 +705,6 @@ class TimeSeriesBaseDict(OrderedDict):
         return self
 
     @classmethod
-    @with_import('nds2')
     def fetch(cls, channels, start, end, host=None, port=None,
               verify=False, verbose=False, connection=None,
               pad=None, allow_tape=None, type=None,
@@ -744,7 +765,7 @@ class TimeSeriesBaseDict(OrderedDict):
         # -- open a connection ------------------
 
         # open connection to specific host
-        if host is not None and connection is None:
+        if connection is None and host is not None:
             print_verbose("Opening new connection to {0}...".format(host),
                           end=' ', verbose=verbose)
             connection = io_nds2.auth_connect(host, port)
@@ -795,10 +816,10 @@ class TimeSeriesBaseDict(OrderedDict):
         istart = int(start)
         iend = int(ceil(end))
 
-        return fetch(channels, istart, iend, host=host,
-                     port=port, verbose=verbose, type=type,
-                     dtype=dtype, pad=pad,
-                     allow_tape=allow_tape).crop(start, end)
+        return fetch(channels, istart, iend, connection=connection,
+                     host=host, port=port, verbose=verbose, type=type,
+                     dtype=dtype, pad=pad, allow_tape=allow_tape,
+                     series_class=cls.EntryClass).crop(start, end)
 
     @classmethod
     def find(cls, channels, start, end, frametype=None,
@@ -1066,21 +1087,20 @@ class TimeSeriesBaseList(list):
     def append(self, item):
         if not isinstance(item, self.EntryClass):
             raise TypeError("Cannot append type '%s' to %s"
-                            % (item.__class__.__name__,
-                               self.__class__.__name__))
+                            % (type(item).__name__, type(self).__name__))
         super(TimeSeriesBaseList, self).append(item)
         return self
     append.__doc__ = list.append.__doc__
 
     def extend(self, item):
-        item = TimeSeriesBaseList(item)
+        item = TimeSeriesBaseList(*item)
         super(TimeSeriesBaseList, self).extend(item)
     extend.__doc__ = list.extend.__doc__
 
     def coalesce(self):
         """Merge contiguous elements of this list into single objects
 
-        This method implicitly sorts and potentially shortens the this list.
+        This method implicitly sorts and potentially shortens this list.
         """
         self.sort(key=lambda ts: ts.t0.value)
         i = j = 0
@@ -1142,3 +1162,18 @@ class TimeSeriesBaseList(list):
 
     def __getslice__(self, i, j):
         return type(self)(*super(TimeSeriesBaseList, self).__getslice__(i, j))
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            return type(self)(
+                *super(TimeSeriesBaseList, self).__getitem__(key))
+        else:
+            return super(TimeSeriesBaseList, self).__getitem__(key)
+
+    def copy(self):
+        """Return a copy of this list with each element copied to new memory
+        """
+        out = type(self)()
+        for series in self:
+            out.append(series.copy())
+        return out

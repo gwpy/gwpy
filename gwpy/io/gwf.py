@@ -19,14 +19,19 @@
 """I/O utilities for GWF files using the lalframe or frameCPP APIs
 """
 
+import six
+
 from ..time import to_gps
-from ..utils import (shell, with_import)
+from ..utils import shell
 from .cache import open_cache
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # first 4 bytes of any valid GWF file (see LIGO-T970130 §4.3.1)
-GWF_SIGNATURE = 'IGWD'
+if six.PY2:
+    GWF_SIGNATURE = 'IGWD'
+else:
+    GWF_SIGNATURE = b'IGWD'
 
 
 # -- i/o ----------------------------------------------------------------------
@@ -144,7 +149,6 @@ def create_frame(time=0, duration=None, name='gwpy', run=-1, ifos=[]):
 
 # -- utilities ----------------------------------------------------------------
 
-@with_import('lalframe')
 def num_channels(framefile):
     """Find the total number of channels in this framefile
 
@@ -166,7 +170,6 @@ def num_channels(framefile):
     return len(get_channel_names(framefile))
 
 
-@with_import('lalframe')
 def get_channel_type(channel, framefile):
     """Find the channel type in a given frame file
 
@@ -188,6 +191,8 @@ def get_channel_type(channel, framefile):
     ValueError
         if the channel is not found in the table-of-contents
     """
+    import lalframe
+
     name = str(channel)
     # read frame and table of contents
     frfile = lalframe.FrameUFrFileOpen(framefile, "r")

@@ -1,5 +1,8 @@
 language: python
 
+sudo: false
+dist: trusty
+
 addons:
   apt:
     sources:
@@ -44,22 +47,12 @@ env:
   # normal build, normal tests
   - PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS=""
 
-  # normal build, pedantic tests
-  - PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS="--strict"
-
   # pre-release build, pedantic tests
   - PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--strict"
 
 matrix:
   allow_failures:
-    - python: '2.7'
-      env: PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--strict"
-    - python: '3.5'
-      env: PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS=""
-    - python: '3.5'
-      env: PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS="--strict"
-    - python: '3.5'
-      env: PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--strict"
+    - env: PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--strict"
   fast_finish: true
 
 before_install:
@@ -72,7 +65,7 @@ before_install:
   # install full dependency list if not minimal build
   - >
     if [ "${MINIMAL}" != true ]; then
-        travis_wait source .travis/build-src-dependencies.sh;
+        source .travis/build-src-dependencies.sh;
         pip install ${PIP_FLAGS} -r requirements-dev.txt;
     fi
 

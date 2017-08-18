@@ -19,8 +19,8 @@
 
 """Plotting a normalised `~gwpy.spectrogram.Spectrogram`
 
-The :ref:`previous example <example-spectrogram-plot>` showed how to
-generate and display a `~gwpy.spectrogram.Spectrogram of the LIGO-Hanford
+The :ref:`previous example <gwpy-example-spectrogram-plot>` showed how to
+generate and display a `~gwpy.spectrogram.Spectrogram` of the LIGO-Hanford
 strain data around the GW150914 event.
 
 However, because of the shape of the LIGO sensitivity curve, picking out

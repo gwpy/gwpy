@@ -19,6 +19,9 @@
 """Basic HDF5 I/O methods for Array and sub-classes
 """
 
+import pickle
+from decimal import Decimal
+
 from astropy.units import (Quantity, UnitBase)
 
 from ...detector import Channel
@@ -47,7 +50,18 @@ def read_hdf5_array(f, path=None, array_type=Array):
         desired return type
     """
     dataset = io_hdf5.find_dataset(f, path=path)
-    return array_type(dataset[()], **dict(dataset.attrs))
+    attrs = dict(dataset.attrs)
+    try:  # unpickle channel object
+        attrs['channel'] = pickle.loads(attrs['channel'])
+    except KeyError:  # no channel stored
+        pass
+    except ValueError:  # not pickled
+        pass
+    # unpack byte strings for python3
+    for key in attrs:
+        if isinstance(attrs[key], bytes):
+            attrs[key] = attrs[key].decode('utf-8')
+    return array_type(dataset[()], **attrs)
 
 
 # -- write --------------------------------------------------------------------
@@ -84,10 +98,10 @@ def create_array_dataset(h5g, array, path=None, compression='gzip', **kwargs):
         if isinstance(mdval, Quantity):
             dset.attrs[attr] = mdval.value
         elif isinstance(mdval, Channel):
-            dset.attrs[attr] = mdval.ndsname
+            dset.attrs[attr] = pickle.dumps(mdval)
         elif isinstance(mdval, UnitBase):
             dset.attrs[attr] = str(mdval)
-        elif isinstance(mdval, LIGOTimeGPS):
+        elif isinstance(mdval, (Decimal, LIGOTimeGPS)):
             dset.attrs[attr] = str(mdval)
         elif isinstance(mdval, Time):
             dset.attrs[attr] = mdval.utc.gps

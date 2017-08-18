@@ -30,7 +30,7 @@ from six import string_types
 
 import numpy
 
-from ...io.cache import (FILE_LIKE, cache_segments, open_cache)
+from ...io.cache import (FILE_LIKE, cache_segments, read_cache)
 from .. import (TimeSeries, TimeSeriesList, TimeSeriesDict,
                 StateVector, StateVectorList, StateVectorDict)
 
@@ -92,7 +92,7 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     cls = kwargs.pop('target', TimeSeries)
     # open cache from file if given
     if isinstance(cache, FILE_LIKE + string_types):
-        cache = open_cache(cache)
+        cache = read_cache(cache)
 
     # force single-process for empty cache (since its a null-op anyway)
     if len(cache) == 0:
@@ -218,7 +218,7 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     # format and return
     if issubclass(cls, dict):
         try:
-            data.sort(key=lambda tsd: tsd.values()[0].epoch.gps)
+            data.sort(key=lambda tsd: list(tsd.values())[0].epoch.gps)
         except IndexError:
             pass
         out = cls()

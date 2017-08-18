@@ -23,19 +23,30 @@ import os.path
 import shutil
 import tempfile
 
-from numpy import (may_share_memory, testing as nptest, random)
+from six import PY2
 
-from matplotlib import use
-use('agg')
+import pytest
+
+import sqlparse
+
+from numpy import (random, isclose)
+
+from matplotlib import use, rc_context
+use('agg')  # nopep8
 
 from astropy import units
 from astropy.io.ascii import InconsistentTableError
+from astropy.table import vstack
 
 from gwpy.table import (Table, EventTable)
+from gwpy.table.filter import filter_table
+from gwpy.table.io.hacr import (HACR_COLUMNS, get_hacr_triggers)
 from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
+from gwpy.plotter import (EventTablePlot, EventTableAxes, TimeSeriesPlot,
+                          HistogramPlot)
 
-import common
-from compat import (unittest, HAS_LAL)
+import utils
+from mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -45,257 +56,348 @@ TEST_XML_FILE = os.path.join(
 TEST_OMEGA_FILE = os.path.join(TEST_DATA_DIR, 'omega.txt')
 
 
-class TableTests(unittest.TestCase):
-    TABLE_CLASS = Table
+# -- mocks --------------------------------------------------------------------
 
-    def assertTableEqual(self, a, b, copy=None, meta=False):
-        assert a.colnames == b.colnames
-        nptest.assert_array_equal(a.as_array(), b.as_array())
-        if meta:
-            assert a.meta == b.meta
-        for col, col2 in zip(a.columns.values(), b.columns.values()):
-            if copy:
-                assert not may_share_memory(col, col2)
-            elif copy is False:
-                assert may_share_memory(col, col2)
+def mock_hacr_connection(table, start, stop):
+    """Mock a pymysql connection object to test HACR fetching
+    """
+    # create cursor
+    cursor = mock.MagicMock()
 
-    def assertTableEqualTypeless(self, a, b, copy=None, meta=False):
-        assert a.colnames == b.colnames
-        for col, col2 in zip(a.columns.values(), b.columns.values()):
-            nptest.assert_array_equal(col, col2.astype(col.dtype))
-        if meta:
-            assert a.meta == b.meta
+    def execute(qstr):
+        cursor._query = sqlparse.parse(qstr)[0]
+        return len(table)
 
-    @unittest.skipUnless(HAS_LAL, 'No module named lal')
-    def test_read_write_ligolw(self):
-        table = self.TABLE_CLASS.read(TEST_XML_FILE,
-                                      format='ligolw.sngl_burst')
-        self.assertIsInstance(table, self.TABLE_CLASS)
-        self.assertIsInstance(table['snr'], self.TABLE_CLASS.Column)
-        self.assertEqual(len(table), 2052)
-        self.assertAlmostEqual(table[0]['snr'], 0.69409615)
-        # try multiple files
-        table2 = self.TABLE_CLASS.read([TEST_XML_FILE, TEST_XML_FILE],
-                                       format='ligolw.sngl_burst')
-        self.assertEqual(len(table2), 4104)
-        self.assertEqual(table2[0]['snr'], table2[2052]['snr'])
-        # try with columns
-        table4 = self.TABLE_CLASS.read(
-            TEST_XML_FILE, format='ligolw.sngl_burst',
-            columns=['time', 'snr', 'central_freq'])
-        self.assertListEqual(sorted(table4.dtype.names),
-                             ['central_freq', 'snr', 'time'])
-        self.assertEqual(
-            table[0]['peak_time'] + table[0]['peak_time_ns'] * 1e-9,
-            table4[0]['time'])
+    cursor.execute = execute
 
-        # test write
-        tempdir = tempfile.mkdtemp()
-        try:
-            fp = tempfile.mktemp(suffix='.xml', dir=tempdir)
-            # write fresh
-            table.write(fp, format='ligolw.sngl_burst')
-            table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
-            self.assertTableEqual(table, table5)
-            # assert existing file raises IOError
-            with self.assertRaises(IOError) as exc:
-                table.write(fp, format='ligolw.sngl_burst')
-            self.assertEqual(str(exc.exception), 'File exists: %s' % fp)
-            # overwrite=True, append=False
-            table.write(fp, format='ligolw.sngl_burst', overwrite=True)
-            table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
-            self.assertTableEqual(table, table5)
-            # overwrite=False, append=True
-            table.write(fp, format='ligolw.sngl_burst', append=True)
-            table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
-            self.assertTableEqual(table2, table5)
-            # overwrite=True, append=True
-            table.write(fp, format='ligolw.sngl_burst', append=True,
-                        overwrite=True)
-            table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
-            self.assertTableEqual(table, table5)
-            # append a different table and check we still have the first
-            p = self.TABLE_CLASS.read(TEST_XML_FILE, format='ligolw.process')
-            p.write(fp, format='ligolw.process', append=True)
-            table5 = self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
-            self.assertTableEqual(table, table5)
-            # append=False and check we don't still have the first
-            p.write(fp, format='ligolw.process', append=False, overwrite=True)
-            with self.assertRaises(ValueError) as exc:
-                self.TABLE_CLASS.read(fp, format='ligolw.sngl_burst')
-            self.assertEqual(
-                str(exc.exception),
-                'document must contain exactly one sngl_burst table')
-        finally:
-            if os.path.isdir(tempdir):
-                shutil.rmtree(tempdir)
+    def fetchall():
+        if cursor._query.get_real_name() == 'job':
+            return [(1, start, stop)]
+        if cursor._query.get_real_name() == 'mhacr':
+            columns = list(map(
+                str, list(cursor._query.get_sublists())[0].get_identifiers()))
+            selections = list(map(
+                str, list(cursor._query.get_sublists())[2].get_sublists()))
+            return filter_table(table, selections[3:])[columns]
 
-    def test_read_write_root(self):
-        table = self.TABLE_CLASS.read(
-            TEST_OMEGA_FILE, format='ascii.omega',
-            include_names=['time', 'normalizedEnergy', 'frequency'])
+    cursor.fetchall = fetchall
+
+    # create connection
+    conn = mock.MagicMock()
+    conn.cursor.return_value = cursor
+    return conn
+
+
+# -- gwpy.table.Table (astropy.table.Table) -----------------------------------
+
+class TestTable(object):
+    TABLE = Table
+
+    @classmethod
+    def create(cls, n, names, dtypes=None):
+        data = []
+        for i, name in enumerate(names):
+            random.seed(i)
+            if dtypes:
+                dtype = dtypes[i]
+            else:
+                dtype = None
+            data.append((random.rand(n) * 1000).astype(dtype))
+        return cls.TABLE(data, names=names)
+
+    @classmethod
+    @pytest.fixture()
+    def table(cls):
+        return cls.create(100, ['time', 'snr', 'frequency'])
+
+    # -- test I/O -------------------------------
+
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')
+    @pytest.mark.parametrize('ext', ['xml', 'xml.gz'])
+    def test_read_write_ligolw(self, ext):
+        table = self.create(
+            100, ['peak_time', 'peak_time_ns', 'snr', 'central_freq'],
+            ['i4', 'i4', 'f4', 'f4'])
+        with tempfile.NamedTemporaryFile(suffix=ext) as f:
+            table.write(f, format='ligolw.sngl_burst')
+
+            def _read(*args, **kwargs):
+                kwargs.setdefault('format', 'ligolw.sngl_burst')
+                return self.TABLE.read(f, *args, **kwargs)
+
+            # check simple read
+            t2 = _read()
+            utils.assert_table_equal(table, t2, almost_equal=True)
+
+            # check read with get_as_columns
+            t3 = _read(get_as_columns=True, on_attributeerror='ignore')
+            assert 'peak' in t3.columns
+            utils.assert_array_equal(
+                t3['peak'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
+
+            # check reading multiple tables works
+            try:
+                t3 = self.TABLE.read([f.name, f.name],
+                                     format='ligolw.sngl_burst')
+            except NameError as e:
+                if not PY2:  # ligolw not patched for python3 just yet
+                    pytest.xfail(str(e))
+                raise
+            utils.assert_table_equal(vstack((t2, t2)), t3)
+
+            # check writing to existing file raises IOError
+            with pytest.raises(IOError) as exc:
+                table.write(f.name, format='ligolw.sngl_burst')
+            assert str(exc.value) == 'File exists: %s' % f.name
+
+            # check overwrite=True, append=False rewrites table
+            try:
+                table.write(f.name, format='ligolw.sngl_burst', overwrite=True)
+            except TypeError as e:
+                # ligolw is not python3-compatbile, so skip if it fails
+                if not PY2 and (
+                        str(e) == 'write() argument must be str, not bytes'):
+                    pytest.xfail(str(e))
+                raise
+            t3 = _read()
+            utils.assert_table_equal(t2, t3)
+
+            # check append=True duplicates table
+            table.write(f.name, format='ligolw.sngl_burst', append=True)
+            t3 = _read()
+            utils.assert_table_equal(vstack((t2, t2)), t3)
+
+            # check overwrite=True, append=True rewrites table
+            table.write(f.name, format='ligolw.sngl_burst',
+                        append=True, overwrite=True)
+            t3 = _read()
+            utils.assert_table_equal(t2, t3)
+
+            # write another table and check we can still get back the first
+            insp = self.create(10, ['end_time', 'snr', 'chisq_dof'])
+            insp.write(f.name, format='ligolw.sngl_inspiral', append=True)
+            t3 = _read()
+            utils.assert_table_equal(t2, t3)
+
+            # write another table with append=False and check the first table
+            # is gone
+            insp.write(f.name, format='ligolw.sngl_inspiral', append=False,
+                       overwrite=True)
+            with pytest.raises(ValueError) as exc:
+                _read()
+            assert str(exc.value) == ('document must contain exactly '
+                                      'one sngl_burst table')
+
+    @utils.skip_missing_dependency('root_numpy')
+    def test_read_write_root(self, table):
         tempdir = tempfile.mkdtemp()
         try:
             fp = tempfile.mktemp(suffix='.root', dir=tempdir)
-            # test read
+
+            # check write
             table.write(fp)
-            # test read gives back same table
-            table2 = self.TABLE_CLASS.read(fp)
-            self.assertTableEqual(table, table2, meta=False)
-            # test writing a second table then reading without tree= raises
-            # ValueError
+
+            def _read(*args, **kwargs):
+                return type(table).read(fp, *args, **kwargs)
+
+            # check read gives back same table
+            utils.assert_table_equal(table, _read())
+
+            # check that reading table from file with multiple trees without
+            # specifying fails
             table.write(fp, treename='test')
-            with self.assertRaises(ValueError) as exc:
-                self.TABLE_CLASS.read(fp)
-            self.assertTrue(str(exc.exception).startswith(
-                "Multiple trees found"))
-        except ImportError as e:
-            self.skipTest(str(e))
+            with pytest.raises(ValueError) as exc:
+                _read()
+            assert str(exc.value).startswith('Multiple trees found')
+
+            # test selections work
+            t2 = _read(treename='test', selection='frequency > 500')
+            utils.assert_table_equal(
+                t2, filter_table(table, 'frequency > 500'))
+
         finally:
             if os.path.isdir(tempdir):
                 shutil.rmtree(tempdir)
 
     def test_read_write_gwf(self):
-        table = self.TABLE_CLASS.read(
-            TEST_OMEGA_FILE, format='ascii.omega',
-            include_names=['time', 'normalizedEnergy', 'frequency'])
-        # test read/write
+        table = self.create(100, ['time', 'blah', 'frequency'])
         columns = table.dtype.names
         tempdir = tempfile.mkdtemp()
         try:
             fp = tempfile.mktemp(suffix='.gwf', dir=tempdir)
-            # test read
+
+            # check write
             table.write(fp, 'test_read_write_gwf')
-            # test read gives back same table
-            table2 = self.TABLE_CLASS.read(fp, 'test_read_write_gwf',
-                                           columns=columns)
-            self.assertTableEqualTypeless(table, table2, meta=False)
+
+            # check read gives back same table
+            t2 = self.TABLE.read(fp, 'test_read_write_gwf', columns=columns)
+            utils.assert_table_equal(table, t2, meta=False, almost_equal=True)
+
+            # check selections works
+            t3 = self.TABLE.read(fp, 'test_read_write_gwf',
+                                 columns=columns, selection='frequency>500')
+            utils.assert_table_equal(
+                filter_table(t2, 'frequency>500'), t3)
+
         except ImportError as e:
-            self.skipTest(str(e))
+            pytest.skip(str(e))
         finally:
             if os.path.isdir(tempdir):
                 shutil.rmtree(tempdir)
 
-class EventTableTests(TableTests):
-    TABLE_CLASS = EventTable
 
-    def test_read_write_ligolw(self):
-        table = super(EventTableTests, self).test_read_write_ligolw()
-        # try reading with nproc
-        table = self.TABLE_CLASS.read([TEST_XML_FILE, TEST_XML_FILE],
-                                      format='ligolw.sngl_burst')
-        table2 = self.TABLE_CLASS.read([TEST_XML_FILE, TEST_XML_FILE],
-                                       nproc=2, format='ligolw.sngl_burst')
-        self.assertTableEqual(table, table2)
+class TestEventTable(TestTable):
+    TABLE = EventTable
 
-    def test_read_write_omega(self):
-        formats = {'time': '%.18f', 'normalizedEnergy': '%.18f',
-                   'frequency': '%.18f'}
-        # read canonical table
-        table = self.TABLE_CLASS.read(
-            TEST_OMEGA_FILE, format='ascii.omega',
-            include_names=['time', 'normalizedEnergy', 'frequency'])
-        # test read/write
+    def test_filter(self, table):
+        # check simple filter
+        lowf = table.filter('frequency < 100')
+        assert isinstance(lowf, type(table))
+        assert len(lowf) == 11
+        assert isclose(lowf['frequency'].max(), 96.5309156606)
+
+        # check filtering everything returns an empty table
+        assert len(table.filter('snr>5', 'snr<=5')) == 0
+
+        # check compounding works
+        loud = table.filter('snr > 100')
+        lowfloud = table.filter('frequency < 100', 'snr > 100')
+        brute = type(table)(rows=[row for row in lowf if row in loud],
+                            names=table.dtype.names)
+        utils.assert_table_equal(brute, lowfloud)
+
+    def test_event_rates(self, table):
+        rate = table.event_rate(1)
+        assert isinstance(rate, TimeSeries)
+        assert rate.sample_rate == 1 * units.Hz
+
+        # test binned_event_rates
+        rates = table.binned_event_rates(100, 'snr', [10, 100],
+                                         timecolumn='time')
+        assert isinstance(rates, TimeSeriesDict)
+        assert list(rates.keys()), [10, 100]
+        assert rates[10].max() == 0.14 * units.Hz
+        assert rates[100].max() == 0.13 * units.Hz
+        table.binned_event_rates(100, 'snr', [10, 100], operator='in')
+        table.binned_event_rates(100, 'snr', [(0, 10), (10, 100)])
+
+    def test_plot(self, table):
+        with rc_context(rc={'text.usetex': False}):
+            plot = table.plot('time', 'frequency', color='snr')
+            assert isinstance(plot, EventTablePlot)
+            assert isinstance(plot, TimeSeriesPlot)
+            assert isinstance(plot.gca(), EventTableAxes)
+            with tempfile.NamedTemporaryFile(suffix='.png') as f:
+                plot.save(f.name)
+
+    def test_hist(self, table):
+        with rc_context(rc={'text.usetex': False}):
+            plot = table.hist('snr')
+            assert isinstance(plot, HistogramPlot)
+            assert len(plot.gca().patches) == 10
+            with tempfile.NamedTemporaryFile(suffix='.png') as f:
+                plot.save(f.name)
+
+    def test_get_column(self, table):
+        utils.assert_array_equal(table.get_column('snr'), table['snr'])
+
+    # -- test I/O -------------------------------
+
+    @pytest.mark.parametrize('fmtname', ('Omega', 'cWB'))
+    def test_read_write_ascii(self, table, fmtname):
+        fmt = 'ascii.%s' % fmtname.lower()
         with tempfile.NamedTemporaryFile(suffix='.txt', mode='w') as f:
-            # test read
-            table.write(f, format='ascii.omega', formats=formats)
+            print(f.name)
+            # check write/read returns the same table
+            table.write(f, format=fmt)
             f.seek(0)
-            # test read gives back same table
-            table2 = self.TABLE_CLASS.read(f, format='ascii.omega')
-            self.assertTableEqualTypeless(table, table2, meta=False)
+            utils.assert_table_equal(table, self.TABLE.read(f, format=fmt),
+                                     almost_equal=True)
+
         with tempfile.NamedTemporaryFile(suffix='.txt') as f:
             # assert reading blank file doesn't work with column name error
-            with self.assertRaises(InconsistentTableError) as exc:
-                self.TABLE_CLASS.read(f, format='ascii.omega')
-            self.assertTrue('No column names found in Omega header')
+            with pytest.raises(InconsistentTableError) as exc:
+                self.TABLE.read(f, format=fmt)
+            assert str(exc.value) == ('No column names found in %s header'
+                                      % fmtname)
 
-    def test_event_rates(self):
-        # test event_rate
-        table = self.TABLE_CLASS.read(
-            TEST_OMEGA_FILE, format='ascii.omega',
-            include_names=['time', 'normalizedEnergy'])
-        rate = table.event_rate(1)
-        self.assertIsInstance(rate, TimeSeries)
-        self.assertEqual(rate.sample_rate, 1 * units.Hz)
-        # test binned_event_rates
-        rates = table.binned_event_rates(1, 'normalizedEnergy', [2, 4, 6])
-        self.assertIsInstance(rates, TimeSeriesDict)
-        table.binned_event_rates(1, 'normalizedEnergy', [2, 4, 6],
-                                 operator='in')
-        table.binned_event_rates(1, 'normalizedEnergy',
-                                 [(0, 2), (2, 4), (4, 6)])
-
-    def test_plot(self):
-        table = self.TABLE_CLASS.read(TEST_OMEGA_FILE, format='ascii.omega')
-        plot = table.plot('time', 'frequency', color='normalizedEnergy')
-
-    def test_hist(self):
-        table = self.TABLE_CLASS.read(TEST_OMEGA_FILE, format='ascii.omega')
-        table.hist('normalizedEnergy')
-
-    def test_get_column(self):
-        table = self.TABLE_CLASS.read(TEST_OMEGA_FILE, format='ascii.omega')
-        nptest.assert_array_equal(table.get_column('normalizedEnergy'),
-                                  table['normalizedEnergy'])
-
-    def test_read_hdf5_mp(self):
-        try:
-            import h5py
-        except ImportError as e:
-            self.skipTest(str(e))
-        t = self.TABLE_CLASS(random.random((10, 10)))
-        fp = tempfile.mktemp(suffix='.hdf')
-        try:
-            t.write(fp, format='hdf5', path='/test')
-            h5file = h5py.File(fp, 'r')
-            h5dset = h5file['/test']
-            t2 = self.TABLE_CLASS.read(h5dset, format='hdf5')
-        finally:
-            if os.path.exists(fp):
-                os.remove(fp)
-
+    @utils.skip_missing_dependency('h5py')
     def test_read_pycbc_live(self):
-        try:
-            import h5py
-        except ImportError as e:
-            self.skipTest(str(e))
-        table = self.TABLE_CLASS(random.random((10, 10)),
-                                 names=['a', 'b', 'c', 'chisq', 'd', 'e', 'f',
-                                        'mass1', 'mass2', 'snr'])
+        import h5py
+        table = self.create(
+            100, names=['a', 'b', 'c', 'chisq', 'd', 'e', 'f',
+                        'mass1', 'mass2', 'snr'])
         table.meta['ifo'] = 'X1'
         fp = os.path.join(tempfile.mkdtemp(), 'X1-Live-0-0.hdf')
         try:
-            # write table in pycbc_live format
-            h5file = h5py.File(fp, 'w')
-            group = h5file.create_group('X1')
-            for col in table.columns:
-                dataset = group.create_dataset(data=table[col], name=col)
-            h5file.close()
-            # assert reading works
-            table2 = self.TABLE_CLASS.read(fp)
-            self.assertTableEqual(table, table2)
-            # assert keyword arguments result in same table
-            table2 = self.TABLE_CLASS.read(fp, format='hdf5.pycbc_live')
-            self.assertTableEqual(table, table2)
-            table2 = self.TABLE_CLASS.read(fp, format='hdf5.pycbc_live',
-                                           ifo='X1')
-            self.assertTableEqual(table, table2)
+            # write table in pycbc_live format (by hand)
+            with h5py.File(fp, 'w') as h5f:
+                group = h5f.create_group('X1')
+                for col in table.columns:
+                    group.create_dataset(data=table[col], name=col)
+
+            # check that we can read
+            t2 = self.TABLE.read(fp)
+            utils.assert_table_equal(table, t2)
+
+            # check keyword arguments result in same table
+            t2 = self.TABLE.read(fp, format='hdf5.pycbc_live')
+            utils.assert_table_equal(table, t2)
+            t2 = self.TABLE.read(fp, format='hdf5.pycbc_live', ifo='X1')
+            utils.assert_table_equal(table, t2)
+
             # add another IFO, then assert that reading the table without
             # specifying the IFO fails
-            h5file = h5py.File(fp)
-            h5file.create_group('Z1')
-            with self.assertRaises(ValueError) as exc:
-                self.TABLE_CLASS.read(fp)
-            self.assertTrue(str(exc.exception).startswith(
-                'PyCBC live HDF5 file contains dataset groups'))
-            table2 = self.TABLE_CLASS.read(fp, format='hdf5.pycbc_live',
-                                           ifo='X1')
+            with h5py.File(fp) as h5f:
+                h5f.create_group('Z1')
+            with pytest.raises(ValueError) as exc:
+                self.TABLE.read(fp)
+            assert str(exc.value).startswith(
+                'PyCBC live HDF5 file contains dataset groups')
+
+            # but check that we can still read the original
+            t2 = self.TABLE.read(fp, format='hdf5.pycbc_live', ifo='X1')
+            utils.assert_table_equal(table, t2)
+
             # assert processed colums works
-            table2 = self.TABLE_CLASS.read(fp, ifo='X1',
-                                           columns=['mchirp', 'new_snr'])
+            t2 = self.TABLE.read(fp, ifo='X1', columns=['mchirp', 'new_snr'])
             mchirp = (table['mass1'] * table['mass2']) ** (3/5.) / (
                 table['mass1'] + table['mass2']) ** (1/5.)
-            nptest.assert_array_equal(table2['mchirp'], mchirp)
+            utils.assert_array_equal(t2['mchirp'], mchirp)
+
+            # test with selection
+            t2 = self.TABLE.read(fp, format='hdf5.pycbc_live',
+                                 ifo='X1', selection='snr>.5')
+            utils.assert_table_equal(filter_table(table, 'snr>.5'), t2)
         finally:
-            if os.path.exists(fp):
-                os.remove(fp)
+            if os.path.isdir(os.path.dirname(fp)):
+                shutil.rmtree(os.path.dirname(fp))
+
+    def test_fetch_hacr(self):
+        table = self.create(100, names=HACR_COLUMNS)
+        try:
+            from pymysql import connect
+        except ImportError:
+            mockee = 'gwpy.table.io.hacr.connect'
+        else:
+            mockee = 'pymysql.connect'
+        with mock.patch(mockee) as mock_connect:
+            mock_connect.return_value = mock_hacr_connection(
+                table, 123, 456)
+
+            # test simple query returns the full table
+            t2 = self.TABLE.fetch('hacr', 'X1:TEST-CHANNEL', 123, 456)
+            utils.assert_table_equal(table, t2)
+
+            # test column selection works
+            t2 = self.TABLE.fetch('hacr', 'X1:TEST-CHANNEL', 123, 456,
+                                  columns=['gps_start', 'snr'])
+            utils.assert_table_equal(table['gps_start', 'snr'], t2)
+
+            # test column selection works
+            t2 = self.TABLE.fetch('hacr', 'X1:TEST-CHANNEL', 123, 456,
+                                  columns=['gps_start', 'snr'],
+                                  selection='freq_central>500')
+            utils.assert_table_equal(
+                filter_table(table, 'freq_central>500')['gps_start', 'snr'],
+                t2)

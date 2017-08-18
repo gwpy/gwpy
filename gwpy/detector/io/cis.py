@@ -25,16 +25,23 @@ from six.moves.urllib.error import HTTPError
 
 import numpy
 
-from ...utils import auth
 from .. import (Channel, ChannelList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 CIS_API_URL = 'https://cis.ligo.org/api/channel'
-CIS_DATA_TYPE = {4: numpy.float32}
+CIS_DATA_TYPE = {
+    1: numpy.int16,
+    2: numpy.int32,
+    3: numpy.int64,
+    4: numpy.float32,
+    5: numpy.float64,
+    6: numpy.complex64,
+    7: numpy.uint32,
+}
 
 
-def query(name, debug=False, timeout=None):
+def query(name, use_kerberos=None, debug=False):
     """Query the Channel Information System for details on the given
     channel name
 
@@ -52,11 +59,14 @@ def query(name, debug=False, timeout=None):
     more = True
     out = ChannelList()
     while more:
-        reply = _get(url, debug=debug, timeout=timeout)
+        reply = _get(url, use_kerberos=use_kerberos, debug=debug)
         try:
             out.extend(map(parse_json, reply[u'results']))
         except KeyError:
             pass
+        except TypeError:  # reply is a list
+            out.extend(map(parse_json, reply))
+            break
         more = 'next' in reply and reply['next'] is not None
         if more:
             url = reply['next']
@@ -66,28 +76,22 @@ def query(name, debug=False, timeout=None):
     return out
 
 
-def _get(url, debug=False, timeout=None):
+def _get(url, use_kerberos=None, debug=False):
     """Perform a GET query against the CIS
     """
+    from ligo.org import request
+
     # perform query
     try:
-        response = auth.request(url, debug=debug, timeout=timeout)
+        response = request(url, debug=debug, use_kerberos=use_kerberos)
     except HTTPError:
         raise ValueError("Channel not found at URL %s "
                          "Information System. Please double check the "
                          "name and try again." % url)
 
-    # decode response
-    data = response.read()
-    if isinstance(data, bytes):
-        data = data.decode('utf-8')
-
-    # check for HTML data (authentication failure)
-    if data.startswith('<!DOCTYPE'):
-        raise RuntimeError("CIS query redirected to login prompt, "
-                           "authentication failed")
-
-    return json.loads(data)
+    if isinstance(response, bytes):
+        response = response.decode('utf-8')
+    return json.loads(response)
 
 
 def parse_json(data):

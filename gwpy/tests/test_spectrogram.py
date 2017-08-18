@@ -26,84 +26,100 @@ import pytest
 import numpy
 from numpy import testing as nptest
 
+from matplotlib import (use, rc_context)
+use('agg')  # nopep8
+
 from astropy import units
 
 from gwpy.spectrogram import Spectrogram
+from gwpy.plotter import (TimeSeriesPlot, TimeSeriesAxes)
 
-from test_array import Array2DTestCase
+import utils
+from test_array import TestArray2D
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 # -----------------------------------------------------------------------------
+#
+#     gwpy.spectrogram.core
+#
+# -----------------------------------------------------------------------------
 
-class SpectrogramTestCase(Array2DTestCase):
-    """`~unittest.TestCase` for the `~gwpy.spectrogram.Spectrogram` class
+# -- Spectrogram --------------------------------------------------------------
+
+class TestSpectrogram(TestArray2D):
+    """Tests of `gwpy.spectrogram.Spectrogram`
     """
     TEST_CLASS = Spectrogram
 
-    def test_epoch(self):
-        array = self.create()
-        self.assertEquals(array.epoch.gps, array.x0.value)
+    def test_epoch(self, array):
+        assert array.epoch.gps == array.x0.value
 
-    def test_ratio(self):
-        mean_ = self.TEST_ARRAY.ratio('mean')
-        nptest.assert_array_equal(
-            mean_.value,
-            self.TEST_ARRAY.value / self.TEST_ARRAY.mean(axis=0).value)
-        median_ = self.TEST_ARRAY.ratio('median')
-        nptest.assert_array_equal(
-            median_.value,
-            self.TEST_ARRAY.value / self.TEST_ARRAY.median(axis=0).value)
+    def test_value_at(self, array):
+        super(TestSpectrogram, self).test_value_at(array)
+        print(array)
+        v = array.value_at(5000 * units.millisecond,
+                           2000 * units.milliHertz)
+        assert v == self.data[5][2] * array.unit
 
-    def test_from_spectra(self):
+    @pytest.mark.parametrize('ratio', ('mean', 'median'))
+    def test_ratio(self, array, ratio):
+        rat = array.ratio(ratio)
+        array_meth = getattr(array, ratio)
+        utils.assert_quantity_sub_equal(rat, array / array_meth(axis=0))
+
+    def test_from_spectra(self, array):
         min_ = self.TEST_ARRAY.min(axis=0)
         max_ = self.TEST_ARRAY.max(axis=0)
         mean = self.TEST_ARRAY.mean(axis=0)
         # check basic stack works
         new = self.TEST_ARRAY.from_spectra(mean, min_, max_, dt=1)
-        self.assertEqual(new.shape, (3, min_.size))
-        self.assertEqual(new.name, mean.name)
-        self.assertEqual(new.epoch, mean.epoch)
-        self.assertEqual(new.f0, mean.f0)
-        self.assertEqual(new.df, mean.df)
-        self.assertEqual(new.unit, mean.unit)
-        self.assertEqual(new.dt, 1 * units.second)
-        nptest.assert_array_equal(
+        assert new.shape == (3, min_.size)
+        assert new.name == mean.name
+        assert new.epoch == mean.epoch
+        assert new.f0 == mean.f0
+        assert new.df == mean.df
+        assert new.unit == mean.unit
+        assert new.dt == 1 * units.second
+        utils.assert_array_equal(
             new.value, numpy.vstack((mean.value, min_.value, max_.value)))
         # check kwargs
         new = self.TEST_ARRAY.from_spectra(
             mean, min_, max_,
             dt=2, epoch=0, f0=100, df=.5, unit='meter', name='test')
-        self.assertEqual(new.name, 'test')
-        self.assertEqual(new.epoch.gps, 0)
-        self.assertEqual(new.f0, 100 * units.Hertz)
-        self.assertEqual(new.df, 0.5 * units.Hertz)
-        self.assertEqual(new.unit, units.meter)
+        assert new.name == 'test'
+        assert new.epoch.gps == 0
+        assert new.f0 == 100 * units.Hertz
+        assert new.df == 0.5 * units.Hertz
+        assert new.unit == units.meter
         # check error on timing
-        self.assertRaises(ValueError, self.TEST_ARRAY.from_spectra, mean)
+        with pytest.raises(ValueError):
+            self.TEST_ARRAY.from_spectra(mean)
 
     def test_crop_frequencies(self):
         array = self.create(f0=0, df=1)
         # test simple
         array2 = array.crop_frequencies()
-        self.assertArraysEqual(array, array2)
+        utils.assert_quantity_sub_equal(array, array2)
         # test normal
         array2 = array.crop_frequencies(2, 5)
-        nptest.assert_array_equal(array2.value, array.value[:, 2:5])
-        self.assertEqual(array2.f0, 2 * units.Hertz)
-        self.assertEqual(array2.df, array.df)
+        utils.assert_array_equal(array2.value, array.value[:, 2:5])
+        assert array2.f0 == 2 * units.Hertz
+        assert array2.df == array.df
         # test warnings
         with pytest.warns(UserWarning):
             array.crop_frequencies(array.yspan[0]-1, array.yspan[1])
         with pytest.warns(UserWarning):
             array.crop_frequencies(array.yspan[0], array.yspan[1]+1)
 
-    def test_plot(self):
-        plot = self.TEST_ARRAY.plot()
-        with tempfile.NamedTemporaryFile(suffix='.png') as f:
-            plot.save(f.name)
-
-
-if __name__ == '__main__':
-    unittest.main()
+    def test_plot(self, array):
+        with rc_context(rc={'text.usetex': False}):
+            plot = array.plot()
+            assert isinstance(plot, TimeSeriesPlot)
+            assert isinstance(plot.gca(), TimeSeriesAxes)
+            assert plot.gca().lines == []
+            assert len(plot.gca().collections) == 1
+            with tempfile.NamedTemporaryFile(suffix='.png') as f:
+                plot.save(f.name)
+            plot.close()

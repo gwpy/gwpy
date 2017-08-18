@@ -49,9 +49,8 @@ else:
 
 from ....segments import Segment
 from ....time import to_gps
-from ....utils.deps import import_method_dependency
 from ....io.gwf import identify_gwf
-from ....io.cache import (FILE_LIKE, open_cache, find_contiguous)
+from ....io.cache import (FILE_LIKE, read_cache, find_contiguous)
 from ....io.registry import (register_reader,
                              register_writer,
                              register_identifier)
@@ -231,7 +230,7 @@ def register_gwf_api(library):
                 source.endswith(('.lcf', '.cache'))) or (
                     isinstance(source, FILE_LIKE) and
                     source.name.endswith(('.lcf', '.cache'))):
-            source = open_cache(source)
+            source = read_cache(source)
         # separate cache into contiguous segments
         if HAS_CACHE and isinstance(source, Cache):
             if start is not None and end is not None:
@@ -256,7 +255,8 @@ def register_gwf_api(library):
             if (resample.get(name) and
                     resample[name] != out[name].sample_rate.value):
                 out[name] = out[name].resample(resample[name])
-            if dtype.get(name) and numpy.dtype(dtype[name]) != out[name].dtype:
+            if dtype.get(name) is not None and (
+                    numpy.dtype(dtype[name]) != out[name].dtype):
                 out[name] = out[name].astype(dtype[name])
         return out
 

@@ -43,6 +43,18 @@ def table_from_root(f, treename=None, include_names=None, **kwargs):
                           "astropy.table.Table.read kwargs, please update "
                           "your call.", DeprecationWarning)
 
+    # parse column filters into tree2array ``selection`` keyword
+    try:
+        filters = kwargs.pop('selection')
+    except KeyError:
+        pass
+    else:
+        if isinstance(filters, (list, tuple)):
+            filters = ' && '.join(filters)
+        kwargs['selection'] = filters
+
+    # find single tree (if only one tree present)
+
     files = file_list(f)
     if treename is None:
         trees = root_numpy.list_trees(files[0])
@@ -56,6 +68,7 @@ def table_from_root(f, treename=None, include_names=None, **kwargs):
                              "`treename='events'`. Available trees are: %s."
                              % (files[0], ', '.join(map(repr, trees))))
 
+    # read and return
     return Table(root_numpy.root2array(files, treename, branches=include_names,
                                        **kwargs))
 

@@ -19,52 +19,62 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-""" Coherence plots
+"""Coherence plots
 """
+
 from .cliproduct import CliProduct
+
+__author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 
 class Coherence(CliProduct):
-    """Product class for coherence line plots"""
+    """Product class for coherence line plots
+    """
 
     min_timeseries = 2
     plot = 0    # this will be a matplotlib plot after derived class makes it
 
     def get_action(self):
-        """Return the string used as "action" on command line."""
+        """Return the string used as "action" on command line.
+        """
         return 'coherence'
 
     def init_cli(self, parser):
-        """Set up the argument list for this product"""
+        """Set up the argument list for this product
+        """
         self.arg_chan2(parser)
         self.arg_freq(parser)
         self.arg_ax_xlf(parser)
         self.arg_ax_liny(parser)
         self.arg_plot(parser)
         self.xaxis_is_freq = True
-        return
 
     def get_ylabel(self, args):
-        """Text for y-axis label"""
+        """Text for y-axis label
+        """
         return 'Coherence'
 
     def get_title(self):
-        """Start of default super title, first channel is appended to it"""
+        """Start of default super title, first channel is appended to it
+        """
         return 'Coherence with: '
 
     def get_min_datasets(self):
-        """Coherence requires 2 datasets for the calculation"""
+        """Coherence requires 2 datasets for the calculation
+        """
         return 2
 
     def get_xlabel(self):
         return 'Frequency (Hz)'
 
     def get_sup_title(self):
-        """Override if default lacks critical info"""
+        """Override if default lacks critical info
+        """
         return self.get_title() + self.ref_chan_name
 
     def gen_plot(self, arg_list):
-        """Generate the coherence plot from all time series"""
+        """Generate the coherence plot from all time series
+        """
         import numpy
 
         self.is_freq_plot = True
@@ -185,5 +195,3 @@ class Coherence(CliProduct):
         self.ymax = mymax
         self.fmin = max(myfmin.value, 1/self.secpfft)
         self.fmax = min(myfmax.value, maxfs.value/2)
-
-        return

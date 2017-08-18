@@ -19,24 +19,26 @@
 """Unit test for gwpy.types classes
 """
 
-import abc
 import os
 import tempfile
 import pickle
+import warnings
 
 import pytest
-from compat import unittest
 
-from numpy import testing as nptest
 import numpy
 
-from astropy import (units, __version__ as astropy_version)
+from astropy import units
 from astropy.time import Time
 
 from gwpy.types import (Array, Series, Array2D)
 from gwpy.detector import Channel
 from gwpy.segments import Segment
 from gwpy.time import LIGOTimeGPS
+
+import utils
+
+warnings.filterwarnings('always', category=units.UnitsWarning)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -47,194 +49,219 @@ CHANNEL_NAME = 'G1:TEST-CHANNEL'
 CHANNEL = Channel(CHANNEL_NAME)
 
 
-class CommonTests(object):
-    __metaclass_ = abc.ABCMeta
+class TestArray(object):
+    """Test `gwpy.types.Array`
+    """
     TEST_CLASS = Array
-    tmpfile = '%s.%%s' % tempfile.mktemp(prefix='gwpy_test_')
-    if astropy_version >= '1.3':
-        EMPTY_ARRAY_ERROR = None
-    else:
-        EMPTY_ARRAY_ERROR = IndexError
+    DTYPE = None
+
+    # -- setup ----------------------------------
 
     @classmethod
-    def setUpClass(cls, dtype=None):
+    def setup_class(cls):
         numpy.random.seed(SEED)
-        cls.data = (numpy.random.random(100) * 1e5).astype(dtype=dtype)
-        cls.datasq = cls.data ** 2
+        cls.data = (numpy.random.random(100) * 1e5).astype(dtype=cls.DTYPE)
+
+    @classmethod
+    def create(cls, *args, **kwargs):
+        kwargs.setdefault('copy', False)
+        return cls.TEST_CLASS(cls.data, *args, **kwargs)
+
+    @classmethod
+    @pytest.fixture()
+    def array(cls):
+        return cls.create()
 
     @property
     def TEST_ARRAY(self):
         try:
             return self._TEST_ARRAY
         except AttributeError:
+            # create array
             self._TEST_ARRAY = self.create(name=CHANNEL_NAME, unit='meter',
                                            channel=CHANNEL_NAME,
                                            epoch=GPS_EPOCH)
+            # customise channel a wee bit
+            #    used to test pickle/unpickle when storing channel as
+            #    dataset attr in HDF5
+            self._TEST_ARRAY.channel.sample_rate = 128
+            self._TEST_ARRAY.channel.unit = 'm'
             return self.TEST_ARRAY
-
-    def create(self, *args, **kwargs):
-        kwargs.setdefault('copy', False)
-        return self.TEST_CLASS(self.data, *args, **kwargs)
-
-    def assertQuantityEqual(self, q1, q2, *args):
-        nptest.assert_array_equal(q1.value, q2.value)
-        self.assertEqual(q1.unit, q2.unit)
-
-    def assertArraysEqual(self, ts1, ts2, *args, **kwargs):
-        exclude = kwargs.pop('exclude', [])
-        if kwargs:
-            raise TypeError("assertArraysEqual has no keyword argument %r"
-                            % list(kwargs.keys())[0])
-        self.assertQuantityEqual(ts1, ts2)
-        if not args:
-            args = self.TEST_CLASS._metadata_slots
-        for attr in args:
-            if attr in exclude:
-                continue
-            a = getattr(ts1, attr, None)
-            b = getattr(ts2, attr, None)
-            msg="%r attribute doesn't match: %r != %r" % (attr, a, b)
-            if isinstance(a, numpy.ndarray) and isinstance(b, numpy.ndarray):
-                nptest.assert_array_equal(a, b, err_msg=msg)
-            else:
-                self.assertEqual(a, b, msg=msg)
 
     # -- test basic construction ----------------
 
-    def test_init(self):
+    def test_new(self):
         """Test Array creation
         """
         # test basic empty contructor
-        self.assertRaises(TypeError, self.TEST_CLASS)
-        if self.EMPTY_ARRAY_ERROR:
-            self.assertRaises(self.EMPTY_ARRAY_ERROR, self.TEST_CLASS, [])
+        with pytest.raises(TypeError):
+            self.TEST_CLASS()
+
         # test with some data
         array = self.create()
-        nptest.assert_array_equal(array.value, self.data)
+        utils.assert_array_equal(array.value, self.data)
+        return array
 
-    def test_unit(self):
+    def test_unit(self, array):
         # test default unit is dimensionless
-        array = self.create()
-        self.assertEqual(array.unit, units.dimensionless_unscaled)
+        assert array.unit is units.dimensionless_unscaled
+
         # test deleter and recovery
         del array.unit
-        del array.unit  # test twice to make sure Attribute Error isn't raised
-        self.assertIsNone(array.unit)
+        del array.unit  # test twice to make sure AttributeError isn't raised
+        assert array.unit is None
+
         # test unit gets passed properly
         array = self.create(unit='m')
-        self.assertIs(array.unit, units.m)
+        assert array.unit is units.m
+
         # test unrecognised units
         with pytest.warns(units.UnitsWarning):
             array = self.create(unit='blah')
-        self.assertIsInstance(array.unit, units.UnrecognizedUnit)
-        self.assertEqual(str(array.unit), 'blah')
+        assert isinstance(array.unit, units.UnrecognizedUnit)
+        assert str(array.unit) == 'blah'
+
         # test setting unit doesn't work
-        def _set_unit():
+        with pytest.raises(AttributeError):
             array.unit = 'm'
-        self.assertRaises(AttributeError, _set_unit)
         del array.unit
         array.unit = 'm'
-        self.assertIs(array.unit, units.m)
+        assert array.unit is units.m
 
-    def test_name(self):
+    def test_name(self, array):
         # test default is no name
-        array = self.create()
-        self.assertIsNone(array.name)
+        assert array.name is None
+
         # test deleter and recovery
         del array.name
         del array.name
-        self.assertIsNone(array.name)
+        assert array.name is None
+
         # test simple name
         array = self.create(name='TEST CASE')
-        self.assertEquals(array.name, 'TEST CASE')
+        assert array.name == 'TEST CASE'
 
-    def test_epoch(self):
+        # test None gets preserved
+        array.name = None
+        assert array.name is None
+
+        # but everything else gets str()
+        array.name = 4
+        assert array.name == '4'
+
+    def test_epoch(self, array):
         # test default is no epoch
-        array = self.create()
-        self.assertIsNone(array.epoch)
+        assert array.epoch is None
+
         # test deleter and recovery
         del array.epoch
         del array.epoch
-        self.assertIsNone(array.epoch)
+        assert array.epoch is None
+
         # test epoch gets parsed properly
         array = self.create(epoch=GPS_EPOCH)
-        self.assertIsInstance(array.epoch, Time)
-        self.assertEquals(array.epoch, TIME_EPOCH)
+        assert isinstance(array.epoch, Time)
+        assert array.epoch == TIME_EPOCH
+
         # test epoch in different formats
         array = self.create(epoch=LIGOTimeGPS(GPS_EPOCH))
-        self.assertEquals(array.epoch, TIME_EPOCH)
+        assert array.epoch == TIME_EPOCH
+
         # test precision at high GPS times (to millisecond)
         gps = LIGOTimeGPS(1234567890, 123456000)
         array = self.create(epoch=gps)
-        self.assertEqual(array.epoch.gps, float(gps))
+        assert array.epoch.gps == float(gps)
 
-    def test_channel(self):
+        # test None gets preserved
+        array.epoch = None
+        assert array.epoch is None
+
+    def test_channel(self, array):
         # test default channl is None
-        array = self.create()
-        self.assertIsNone(array.channel)
+        assert array.channel is None
+
         # test deleter and recovery
         del array.channel
         del array.channel
-        self.assertIsNone(array.channel)
+        assert array.channel is None
+
         # test simple channel
         array = self.create(channel=CHANNEL_NAME)
-        self.assertIsInstance(array.channel, Channel)
-        self.assertEquals(array.channel, CHANNEL)
+        assert isinstance(array.channel, Channel)
+        assert array.channel == CHANNEL
+
         # test existing channel doesn't get modified
         array = self.create(channel=CHANNEL)
-        self.assertIs(array.channel, CHANNEL)
+        assert array.channel is CHANNEL
+
         # test preserves None
         array.channel = None
-        self.assertIsNone(array.channel)
+        assert array.channel is None
 
-    def test_math(self):
-        """Test Array math operations
-        """
-        array = self.create(unit='Hz')
+    def test_math(self, array):
+        array.override_unit('Hz')
         # test basic operations
         arraysq = array ** 2
-        nptest.assert_array_equal(arraysq.value, self.datasq)
-        self.assertEqual(arraysq.unit, units.Hz ** 2)
-        self.assertEqual(arraysq.name, array.name)
-        self.assertEqual(arraysq.epoch, array.epoch)
-        self.assertEqual(arraysq.channel, array.channel)
+        utils.assert_array_equal(arraysq.value, self.data ** 2)
+        assert arraysq.unit == units.Hz ** 2
+        assert arraysq.name == array.name
+        assert arraysq.epoch == array.epoch
+        assert arraysq.channel == array.channel
 
-    def test_copy(self):
-        """Test Array.copy
-        """
-        array = self.create(unit='Hz')
-        array2 = array.copy()
-        nptest.assert_array_equal(array.value, array2.value)
-        self.assertEqual(array.unit, array2.unit)
+    def test_copy(self, array):
+        utils.assert_quantity_sub_equal(array, array.copy())
 
-    def test_repr(self):
+    def test_repr(self, array):
         # just test that it runs
-        array = self.create()
         repr(array)
 
-    def test_str(self):
+    def test_str(self, array):
         # just test that it runs
-        array = self.create()
         str(array)
 
-    def test_pickle(self):
-        """Check pickle-unpickle yields unchanged data
-        """
-        ts = self.create()
-        pkl = ts.dumps()
-        ts2 = pickle.loads(pkl)
-        self.assertArraysEqual(ts, ts2)
+    def test_pickle(self, array):
+        # check pickle-unpickle yields unchanged data
+        pkl = array.dumps()
+        a2 = pickle.loads(pkl)
+        utils.assert_quantity_sub_equal(array, a2)
 
     # -- test methods ---------------------------
 
-    def test_abs(self):
-        arr = self.create()
-        self.assertArraysEqual(arr.abs(), numpy.abs(arr))
+    def test_tostring(self, array):
+        assert array.tostring() == array.value.tostring()
+
+    def test_abs(self, array):
+        utils.assert_quantity_equal(array.abs(), numpy.abs(array))
+
+    def test_median(self, array):
+        utils.assert_quantity_equal(
+            array.median(), numpy.median(array.value) * array.unit)
+
+    def test_override_unit(self, array):
+        assert array.unit is units.dimensionless_unscaled
+
+        # check basic override works
+        array.override_unit('m')
+        assert array.unit is units.meter
+
+        # check parse_strict works for each of 'raise' (default), 'warn',
+        # and 'silent'
+        with pytest.raises(ValueError):
+            array.override_unit('blah')
+
+        with pytest.warns(units.UnitsWarning):
+            array.override_unit('blah', parse_strict='warn')
+
+        array.override_unit('blah', parse_strict='silent')
+        assert isinstance(array.unit, units.UnrecognizedUnit)
+        assert array.unit == units.Unit('blah', parse_strict='silent')
 
     # -- test I/O -------------------------------
 
     def _test_read_write(self, format, extension=None, auto=True, exclude=[],
                          readkwargs={}, writekwargs={}):
+        """Helper method for testing unified I/O for `Array` instances
+        """
         if extension is None:
             extension = format
         extension = '.%s' % extension.lstrip('.')
@@ -248,244 +275,231 @@ class CommonTests(object):
             if auto:
                 self.TEST_ARRAY.read(fp, self.TEST_ARRAY.name,
                                      **readkwargs)
-            self.assertArraysEqual(self.TEST_ARRAY, b, exclude=exclude)
+            utils.assert_array_equal(self.TEST_ARRAY, b, exclude=exclude)
             return b
         finally:
             if os.path.exists(fp):
                 os.remove(fp)
 
 
-class ArrayTestCase(CommonTests, unittest.TestCase):
-    pass
-
-
-class SeriesTestCase(CommonTests, unittest.TestCase):
+class TestSeries(TestArray):
     TEST_CLASS = Series
 
-    def test_init(self):
-        super(SeriesTestCase, self).test_init()
-        series = self.create(x0=0, dx=1)
-        self.assertEqual(series.x0, units.Quantity(0, series._default_xunit))
-        self.assertEqual(series.dx, units.Quantity(1, series._default_xunit))
+    def test_new(self):
+        array = super(TestSeries, self).test_new()
+        assert array.x0 == units.Quantity(0, self.TEST_CLASS._default_xunit)
+        assert array.dx == units.Quantity(1, self.TEST_CLASS._default_xunit)
+        return array
 
     # -- test properties ------------------------
 
-    def test_x0(self):
+    def test_x0(self, array):
+        array.x0 = 5
         # test simple
-        series = self.create(x0=5)
-        self.assertEqual(series.x0,
-                         units.Quantity(5, self.TEST_CLASS._default_xunit))
-        # test deleter
-        del series.x0
-        del series.x0
-        self.assertEqual(series.x0,
-                         units.Quantity(0, self.TEST_CLASS._default_xunit))
-        # test quantity
-        series.x0 = units.Quantity(5, 'm')
-        self.assertEqual(series.x0, units.Quantity(5, 'm'))
+        assert array.x0 == 5 * self.TEST_CLASS._default_xunit
 
-    def test_dx(self):
-        # test simple
-        series = self.create(dx=5)
-        self.assertEqual(series.dx,
-                         units.Quantity(5, self.TEST_CLASS._default_xunit))
         # test deleter
-        del series.dx
-        del series.dx
-        self.assertEqual(series.dx,
-                         units.Quantity(1, self.TEST_CLASS._default_xunit))
+        del array.x0
+        del array.x0
+        assert array.x0 == 0 * self.TEST_CLASS._default_xunit
+
         # test quantity
-        series.dx = units.Quantity(5, 'm')
-        self.assertEqual(series.dx, units.Quantity(5, 'm'))
+        array.x0 = 5 * units.m
+        assert array.x0 == units.Quantity(5, 'm')
+
+    def test_dx(self, array):
+        array.dx = 5 * self.TEST_CLASS._default_xunit
+        # test simple
+        assert array.dx == units.Quantity(5, self.TEST_CLASS._default_xunit)
+
+        # test deleter
+        del array.dx
+        del array.dx
+        assert array.dx == units.Quantity(1, self.TEST_CLASS._default_xunit)
+
+        # test quantity
+        array.dx = 5 * units.m
+        assert array.dx == units.Quantity(5, 'm')
 
     def test_xindex(self):
         x = numpy.linspace(0, 100, num=self.data.shape[0])
+
         # test simple
         series = self.create(xindex=x)
-        self.assertQuantityEqual(
+        utils.assert_quantity_equal(
             series.xindex, units.Quantity(x, self.TEST_CLASS._default_xunit))
+
         # test deleter
         del series.xindex
         del series.xindex
         x1 = series.x0.value + series.shape[0] * series.dx.value
         x_default = numpy.linspace(series.x0.value, x1, num=series.shape[0],
                                    endpoint=False)
-        self.assertQuantityEqual(
+        utils.assert_quantity_equal(
             series.xindex,
             units.Quantity(x_default, self.TEST_CLASS._default_xunit))
+
         # test setting of x0 and dx
         series = self.create(xindex=units.Quantity(x, 'Farad'))
-        self.assertEqual(series.x0, units.Quantity(x[0], 'Farad'))
-        self.assertEqual(series.dx, units.Quantity(x[1] - x[0], 'Farad'))
-        self.assertEqual(series.xunit, units.Farad)
-        self.assertEqual(series.xspan, (x[0], x[-1] + x[1] - x[0]))
+        assert series.x0 == units.Quantity(x[0], 'Farad')
+        assert series.dx == units.Quantity(x[1] - x[0], 'Farad')
+        assert series.xunit == units.Farad
+        assert series.xspan == (x[0], x[-1] + x[1] - x[0])
+
         # test that setting xindex warns about ignoring dx or x0
         with pytest.warns(UserWarning):
             series = self.create(xindex=units.Quantity(x, 'Farad'), dx=1)
         with pytest.warns(UserWarning):
             series = self.create(xindex=units.Quantity(x, 'Farad'), x0=0)
+
         # test non-regular xindex
         x = numpy.logspace(0, 2, num=self.data.shape[0])
         series = self.create(xindex=units.Quantity(x, 'Mpc'))
-        def _get_dx():
+        with pytest.raises(AttributeError):
             series.dx
-        self.assertRaises(AttributeError, _get_dx)
-        self.assertEqual(series.x0, units.Quantity(1, 'Mpc'))
-        self.assertEqual(series.xspan, (x[0], x[-1] + x[-1] - x[-2]))
+        assert series.x0 == units.Quantity(1, 'Mpc')
+        assert series.xspan == (x[0], x[-1] + x[-1] - x[-2])
 
     def test_xunit(self, unit=None):
         if unit is None:
             unit = self.TEST_CLASS._default_xunit
-        series = self.create(unit='Hz', dx=4*unit)
-        self.assertEqual(series.xunit, unit)
-        self.assertEqual(series.x0, 0*unit)
-        self.assertEqual(series.dx, 4*unit)
+        series = self.create(dx=4*unit)
+        assert series.xunit == unit
+        assert series.x0 == 0*unit
+        assert series.dx == 4*unit
         # for series only, test arbitrary xunit
-        if self.TEST_CLASS is Series:
-            series = self.create(unit='Hz', dx=4, xunit=units.m)
-            self.assertEqual(series.x0, 0*units.m)
-            self.assertEqual(series.dx, 4*units.m)
+        if self.TEST_CLASS is (Series, Array2D):
+            series = self.create(dx=4, xunit=units.m)
+            assert series.x0 == 0*units.m
+            assert series.dx == 4*units.m
 
     def test_xspan(self):
         # test normal
         series = self.create(x0=1, dx=1)
-        self.assertEqual(series.xspan, (1, 1 + 1 * series.shape[0]))
-        self.assertIsInstance(series.xspan, Segment)
+        assert series.xspan == (1, 1 + 1 * series.shape[0])
+        assert isinstance(series.xspan, Segment)
         # test from irregular xindex
         x = numpy.logspace(0, 2, num=self.data.shape[0])
         series = self.create(xindex=x)
-        self.assertEqual(series.xspan, (x[0], x[-1] + x[-1] - x[-2]))
+        assert series.xspan == (x[0], x[-1] + x[-1] - x[-2])
 
     # -- test methods ---------------------------
 
-    def test_getitem(self):
-        a = self.create()
-        self.assertEqual(a[0].value, a.value[0])
-        self.assertIsInstance(a[0], units.Quantity)
-        self.assertEqual(a[0].unit, a.unit)
+    def test_getitem(self, array):
+        assert array[0].value == array.value[0]
+        assert isinstance(array[0], units.Quantity)
+        assert array[0].unit == array.unit
 
-    def test_zip(self):
-        series = self.create()
-        z = series.zip()
-        nptest.assert_array_equal(
-            z, numpy.column_stack((series.xindex.value, series.value)))
+    def test_zip(self, array):
+        z = array.zip()
+        utils.assert_array_equal(
+            z, numpy.column_stack((array.xindex.value, array.value)))
 
-    def test_diff(self):
-        # test simple
-        series = self.create()
-        d = series.diff()
-        d2 = self.TEST_CLASS(numpy.diff(series.value),
-                             x0=series.x0 + series.dx)
-        self.assertArraysEqual(d, d2)
-        d = series.diff(n=2)
-        d2 = self.TEST_CLASS(numpy.diff(series.value, n=2),
-                             x0=series.x0 + series.dx * 2)
-        self.assertArraysEqual(d, d2)
-        # test irregular xindex
-        x = numpy.logspace(0, 2, num=self.data.shape[0])
-        series = self.create(xindex=x)
-        d = series.diff(n=4)
-        d2 = self.TEST_CLASS(numpy.diff(series.value, n=4), x0=x[4])
-        self.assertArraysEqual(d, d2)
-
-    def test_crop(self):
-        """Test cropping `Series` by GPS times
-        """
-        ts = self.create()
-        ts2 = ts.crop(10, 20)
-        self.assertEqual(ts2.x0.value, 10)
-        self.assertEqual(ts2.xspan[1], 20)
-        nptest.assert_array_equal(ts2.value, ts.value[10:20])
+    def test_crop(self, array):
+        a2 = array.crop(10, 20)
+        utils.assert_quantity_equal(array[10:20], a2)
         # check that warnings are printed for out-of-bounds
         with pytest.warns(UserWarning):
-            ts.crop(ts.xspan[0]-1, ts.xspan[1])
-            ts.crop(ts.xspan[0], ts.xspan[1]+1)
+            array.crop(array.xspan[0]-1, array.xspan[1])
+            array.crop(array.xspan[0], array.xspan[1]+1)
 
-    def test_is_compatible(self):
+    def test_is_compatible(self, array):
         """Test the `Series.is_compatible` method
         """
-        ts1 = self.create()
-        ts2 = self.create(name='TEST CASE 2')
-        self.assertTrue(ts1.is_compatible(ts2))
-        ts3 = self.create(dx=2)
-        self.assertRaises(ValueError, ts1.is_compatible, ts3)
-        ts4 = self.create(unit='m')
-        self.assertRaises(ValueError, ts1.is_compatible, ts4)
+        a2 = self.create(name='TEST CASE 2')
+        assert array.is_compatible(a2)
+
+        a3 = self.create(dx=2)
+        with pytest.raises(ValueError):
+            array.is_compatible(a3)
+
+        a4 = self.create(unit='m')
+        with pytest.raises(ValueError):
+            array.is_compatible(a4)
+
         x = numpy.logspace(0, 2, num=self.data.shape[0])
-        ts5 = self.create(xindex=x)
-        self.assertRaises(ValueError, ts1.is_compatible, ts5)
+        a5 = self.create(xindex=x)
+        with pytest.raises(ValueError):
+            array.is_compatible(a5)
 
-    def test_is_contiguous(self):
-        """Test the `Series.is_contiguous` method
-        """
-        ts1 = self.create()
-        ts2 = self.create(x0=ts1.xspan[1])
-        self.assertEquals(ts1.is_contiguous(ts2), 1)
-        self.assertEquals(ts1.is_contiguous(ts2.value), 1)
-        ts3 = self.create(x0=ts1.xspan[1]+1)
-        self.assertEquals(ts1.is_contiguous(ts3), 0)
-        ts4 = self.create(x0=-ts1.xspan[1])
-        self.assertEquals(ts1.is_contiguous(ts4), -1)
+    def test_is_contiguous(self, array):
+        a2 = self.create(x0=array.xspan[1])
+        assert array.is_contiguous(a2) == 1
+        assert array.is_contiguous(a2.value) == 1
 
-    def test_append(self):
-        """Test the `Series.append` method
-        """
-        # create arrays
-        ts1 = self.create()
-        ts2 = self.create(x0=ts1.xspan[1])
+        ts3 = self.create(x0=array.xspan[1]+1)
+        assert array.is_contiguous(ts3) == 0
+
+        ts4 = self.create(x0=-array.xspan[1])
+        assert array.is_contiguous(ts4) == -1
+
+    def test_append(self, array):
+        a2 = self.create(x0=array.xspan[1])
+
         # test basic append
-        ts3 = ts1.append(ts2, inplace=False)
-        self.assertEquals(ts3.epoch, ts1.epoch)
-        self.assertEquals(ts3.x0, ts1.x0)
-        self.assertEquals(ts3.size, ts1.size+ts2.size)
-        self.assertEquals(ts3.xspan, ts1.xspan+ts2.xspan)
-        self.assertRaises(ValueError, ts3.append, ts1)
-        nptest.assert_array_equal(ts3.value[:ts1.size], ts1.value)
-        nptest.assert_array_equal(ts3.value[-ts2.size:], ts2.value)
-        # test appending with one xindex deletes it in the output
-        ts1.xindex
-        ts3 = ts1.append(ts2, inplace=False)
-        self.assertFalse(hasattr(ts3, '_xindex'))
-        # test appending with both xindex appends as well
-        ts1.xindex
-        ts2.xindex
-        ts3 = ts1.append(ts2, inplace=False)
-        self.assertTrue(hasattr(ts3, '_xindex'))
-        nptest.assert_array_equal(
-            ts3.xindex.value,
-            numpy.concatenate((ts1.xindex.value, ts2.xindex.value)))
-        # test appending with one only and not resize
-        del ts2.xindex
-        ts3 = ts1.append(ts2, inplace=False, resize=False)
-        self.assertEqual(ts3.x0, ts1.x0 + ts1.dx * ts2.size)
-        # test discontiguous appends - gap='raise'
-        ts3 = self.create(x0=ts1.xspan[1] + 1)
-        ts4 = ts1.copy()
-        self.assertRaises(ValueError, ts1.append, ts3)
-        # gap='ignore'
-        ts4.append(ts3, gap='ignore')
-        self.assertEqual(ts4.shape[0], ts1.shape[0] + ts3.shape[0])
-        nptest.assert_array_equal(
-            ts4.value, numpy.concatenate((ts1.value, ts3.value)))
-        # gap='pad'
-        ts4 = ts1.copy()
-        ts4.append(ts3, gap='pad', pad=0)
-        self.assertEqual(ts4.shape[0], ts1.shape[0] + 1 + ts3.shape[0])
-        nptest.assert_array_equal(
-            ts4.value, numpy.concatenate((ts1.value, [0], ts3.value)))
+        a3 = array.append(a2, inplace=False)
+        assert a3.epoch == array.epoch
+        assert a3.x0 == array.x0
+        assert a3.size == array.size+a2.size
+        assert a3.xspan == array.xspan+a2.xspan
+        utils.assert_array_equal(a3.value[:array.shape[0]], array.value)
+        utils.assert_array_equal(a3.value[-a2.shape[0]:], a2.value)
 
-    def test_prepend(self):
+        # check that appending again causes a problem
+        with pytest.raises(ValueError):
+            a3.append(array)
+
+        # test appending with one xindex deletes it in the output
+        array.xindex
+        a3 = array.append(a2, inplace=False)
+        assert hasattr(a3, '_xindex') is False
+
+        # test appending with both xindex appends as well
+        array.xindex
+        a2.xindex
+        a3 = array.append(a2, inplace=False)
+        assert hasattr(a3, '_xindex')
+        utils.assert_array_equal(
+            a3.xindex.value,
+            numpy.concatenate((array.xindex.value, a2.xindex.value)))
+
+        # test appending with one only and not resize
+        del a2.xindex
+        a3 = array.append(a2, inplace=False, resize=False)
+        assert a3.x0 == array.x0 + array.dx * a2.shape[0]
+
+        # test discontiguous appends - gap='raise'
+        a3 = self.create(x0=array.xspan[1] + 1)
+        ts4 = array.copy()
+        with pytest.raises(ValueError):
+            array.append(a3)
+
+        # gap='ignore'
+        ts4.append(a3, gap='ignore')
+        assert ts4.shape[0] == array.shape[0] + a3.shape[0]
+        utils.assert_array_equal(
+            ts4.value, numpy.concatenate((array.value, a3.value)))
+
+        # gap='pad'
+        ts4 = array.copy()
+        ts4.append(a3, gap='pad', pad=0)
+        assert ts4.shape[0] == array.shape[0] + 1 + a3.shape[0]
+        z = numpy.zeros((1,) + array.shape[1:])
+        utils.assert_array_equal(
+            ts4.value, numpy.concatenate((array.value, z, a3.value)))
+
+    def test_prepend(self, array):
         """Test the `Series.prepend` method
         """
-        ts1 = self.create()
-        ts2 = self.create(x0=ts1.xspan[1]) * 2
-        ts3 = ts2.prepend(ts1, inplace=False)
-        self.assertEquals(ts3.x0, ts1.x0)
-        self.assertEquals(ts3.size, ts1.size+ts2.size)
-        self.assertEquals(ts3.xspan, ts1.xspan+ts2.xspan)
-        self.assertRaises(ValueError, ts3.prepend, ts1)
-        nptest.assert_array_equal(ts3.value[:ts1.size], ts1.value)
-        nptest.assert_array_equal(ts3.value[-ts2.size:], ts2.value)
+        a2 = self.create(x0=array.xspan[1]) * 2
+        a3 = a2.prepend(array, inplace=False)
+        assert a3.x0 == array.x0
+        assert a3.size == array.size + a2.size
+        assert a3.xspan == array.xspan + a2.xspan
+        with pytest.raises(ValueError):
+            a3.prepend(array)
+        utils.assert_array_equal(a3.value[:array.shape[0]], array.value)
+        utils.assert_array_equal(a3.value[-a2.shape[0]:], a2.value)
 
     def test_update(self):
         """Test the `Series.update` method
@@ -493,112 +507,213 @@ class SeriesTestCase(CommonTests, unittest.TestCase):
         ts1 = self.create()
         ts2 = self.create(x0=ts1.xspan[1])[:ts1.size//2]
         ts3 = ts1.update(ts2, inplace=False)
-        self.assertEquals(ts3.x0, ts1.x0 + abs(ts2.xspan)*ts1.x0.unit)
-        self.assertEquals(ts3.size, ts1.size)
-        self.assertRaises(ValueError, ts3.update, ts1)
+        assert ts3.x0 == ts1.x0 + abs(ts2.xspan)*ts1.x0.unit
+        assert ts3.size == ts1.size
+        with pytest.raises(ValueError):
+            ts3.update(ts1)
 
     def test_pad(self):
         """Test the `Series.pad` method
         """
         ts1 = self.create()
         ts2 = ts1.pad(10)
-        self.assertEquals(ts2.size, ts1.size + 20)
-        nptest.assert_array_equal(
+        assert ts2.shape[0] == ts1.shape[0] + 20
+        utils.assert_array_equal(
             ts2.value,
             numpy.concatenate((numpy.zeros(10), ts1.value, numpy.zeros(10))))
-        self.assertEquals(ts2.x0, ts1.x0 - 10*ts1.x0.unit)
+        assert ts2.x0 == ts1.x0 - 10*ts1.x0.unit
         # test pre-pad
         ts3 = ts1.pad((20, 10))
-        self.assertEquals(ts3.size, ts1.size + 30)
-        nptest.assert_array_equal(
+        assert ts3.size == ts1.size + 30
+        utils.assert_array_equal(
             ts3.value,
             numpy.concatenate((numpy.zeros(20), ts1.value, numpy.zeros(10))))
-        self.assertEquals(ts3.x0, ts1.x0 - 20*ts1.x0.unit)
+        assert ts3.x0 == ts1.x0 - 20*ts1.x0.unit
         # test bogus input
-        self.assertRaises(ValueError, ts1.pad, -1)
+        with pytest.raises(ValueError):
+            ts1.pad(-1)
 
-    def test_diff(self):
+    def test_diff(self, array):
         """Test the `Series.diff` method
 
         This just ensures that the returned `Series` has the right length
         and the right x0
         """
-        ts1 = self.create()
-        diff = ts1.diff()
-        self.assertIsInstance(diff, type(ts1))
-        self.assertEqual(ts1.size - 1, diff.size)
-        self.assertEqual(diff.x0, ts1.x0 + ts1.dx)
-        self.assertEqual(diff.xspan[1], ts1.xspan[1])
-        self.assertEqual(diff.channel, ts1.channel)
+        diff = array.diff(axis=0)
+        assert isinstance(diff, type(array))
+        assert array.shape[0] - 1 == diff.shape[0]
+        assert diff.x0 == array.x0 + array.dx
+        assert diff.xspan[1] == array.xspan[1]
+        assert diff.channel == array.channel
         # test n=3
-        diff = ts1.diff(n=3)
-        self.assertEqual(ts1.size - 3, diff.size)
-        self.assertEqual(diff.x0, ts1.x0 + ts1.dx * 3)
+        diff = array.diff(n=3)
+        assert array.shape[-1] - 3 == diff.shape[-1]
+        assert diff.x0 == array.x0 + array.dx * 3
 
     def test_value_at(self):
-        ts1 = self.TEST_CLASS([1, 2, 3, 4, 5, 4, 3, 2, 1], dx=.5, unit='m')
-        self.assertEqual(ts1.value_at(1.5), 4 * ts1.unit)
-        self.assertEqual(ts1.value_at(1.5 * ts1.xunit), 4 * units.m)
-        self.assertRaises(IndexError, ts1.value_at, 1.6)
+        ts1 = self.create(dx=.5)
+        assert ts1.value_at(1.5) == self.data[3] * ts1.unit
+        assert ts1.value_at(1.5 * ts1.xunit) == self.data[3] * ts1.unit
+        with pytest.raises(IndexError):
+            ts1.value_at(1.6)
         # test TimeSeries unit conversion
         if ts1.xunit == units.s:
-            self.assertEqual(ts1.value_at(1500 * units.millisecond),
-                             4 * units.m)
+            assert ts1.value_at(1500 * units.millisecond) == (
+                self.data[3] * ts1.unit)
         # test FrequencySeries unit conversion
         elif ts1.xunit == units.Hz:
-            self.assertEqual(ts1.value_at(1500 * units.milliHertz),
-                             4 * units.m)
+            assert ts1.value_at(1500 * units.milliHertz) == (
+                self.data[3] * ts1.unit)
 
     # -- test I/O -------------------------------
 
     def _test_read_write_ascii(self, format='txt'):
         extension = '.%s' % format.lstrip('.')
         try:
-            with tempfile.NamedTemporaryFile(suffix=extension,
+            with tempfile.NamedTemporaryFile(suffix=extension, mode='w',
                                              delete=False) as f:
                 self.TEST_ARRAY.write(f.name, format=format)
                 self.TEST_ARRAY.write(f.name)
                 b = self.TEST_ARRAY.read(f.name, format=format)
                 self.TEST_ARRAY.read(f.name)
-                nptest.assert_array_equal(self.TEST_ARRAY.value, b.value)
+                utils.assert_array_equal(self.TEST_ARRAY.value, b.value)
         finally:
             if os.path.exists(f.name):
-               os.remove(f.name)
+                os.remove(f.name)
 
 
-class Array2DTestCase(CommonTests, unittest.TestCase):
+class TestArray2D(TestSeries):
     TEST_CLASS = Array2D
-    EMPTY_ARRAY_ERROR = ValueError
 
     @classmethod
-    def setUpClass(cls, dtype=None):
+    def setup_class(cls, dtype=None):
         numpy.random.seed(SEED)
         cls.data = (numpy.random.random(100)
-                     * 1e5).astype(dtype=dtype).reshape((10, 10))
+                    * 1e5).astype(dtype=dtype).reshape((10, 10))
         cls.datasq = cls.data ** 2
 
-    def test_getitem(self):
-        a = self.create()
-        self.assertEqual(a[0, 0], a[0][0])
-        nptest.assert_array_equal(a[0].value, a.value[0])
-        self.assertIsInstance(a[0], self.TEST_CLASS._columnclass)
-        self.assertIsInstance(a[0][0], units.Quantity)
-        self.assertEqual(a[0].unit, a.unit)
-        self.assertEqual(a[0][0].unit, a.unit)
-        self.assertIsInstance(a[:,0], self.TEST_CLASS._rowclass)
+    # -- test properties ------------------------
 
-    def test_value_at(self):
-        ts1 = self.create(dx=.5, dy=.25, unit='m')
-        self.assertEqual(ts1.value_at(1.5, .75), self.data[3][3] * ts1.unit)
-        self.assertEqual(ts1.value_at(1.0 * ts1.xunit, .25 * ts1.yunit),
-                         self.data[2][1] * units.m)
-        self.assertRaises(IndexError, ts1.value_at, 1.6, 5.8)
-        # test Spectrogram unit conversion
-        if ts1.xunit == units.s and ts1.yunit == units.Hz:
-            self.assertEqual(ts1.value_at(1500 * units.millisecond,
-                                          750 * units.milliHertz),
-                             self.data[3][3] * units.m)
+    def test_y0(self, array):
+        array.y0 = 5
+        # test simple
+        assert array.y0 == 5 * self.TEST_CLASS._default_yunit
 
+        # test deleter
+        del array.y0
+        del array.y0
+        assert array.y0 == 0 * self.TEST_CLASS._default_yunit
 
-if __name__ == '__main__':
-    unittest.main()
+        # test quantity
+        array.y0 = 5 * units.m
+        assert array.y0 == units.Quantity(5, 'm')
+
+    def test_dy(self, array):
+        array.dy = 5 * self.TEST_CLASS._default_yunit
+        # test simple
+        assert array.dy == units.Quantity(5, self.TEST_CLASS._default_yunit)
+
+        # test deleter
+        del array.dy
+        del array.dy
+        assert array.dy == units.Quantity(1, self.TEST_CLASS._default_yunit)
+
+        # test quantity
+        array.dy = 5 * units.m
+        assert array.dy == units.Quantity(5, 'm')
+
+    def test_yindex(self):
+        y = numpy.linspace(0, 100, num=self.data.shape[0])
+
+        # test simple
+        series = self.create(yindex=y)
+        utils.assert_quantity_equal(
+            series.yindex, units.Quantity(y, self.TEST_CLASS._default_yunit))
+
+        # test deleter
+        del series.yindex
+        del series.yindex
+        y1 = series.y0.value + series.shape[0] * series.dy.value
+        y_default = numpy.linspace(series.y0.value, y1, num=series.shape[0],
+                                   endpoint=False)
+        utils.assert_quantity_equal(
+            series.yindex,
+            units.Quantity(y_default, self.TEST_CLASS._default_yunit))
+
+        # test setting of y0 and dy
+        series = self.create(yindex=units.Quantity(y, 'Farad'))
+        assert series.y0 == units.Quantity(y[0], 'Farad')
+        assert series.dy == units.Quantity(y[1] - y[0], 'Farad')
+        assert series.yunit == units.Farad
+        assert series.yspan == (y[0], y[-1] + y[1] - y[0])
+
+        # test that setting yindex warns about ignoring dy or y0
+        with pytest.warns(UserWarning):
+            series = self.create(yindex=units.Quantity(y, 'Farad'), dy=1)
+        with pytest.warns(UserWarning):
+            series = self.create(yindex=units.Quantity(y, 'Farad'), y0=0)
+
+        # test non-regular yindex
+        y = numpy.logspace(0, 2, num=self.data.shape[0])
+        series = self.create(yindex=units.Quantity(y, 'Mpc'))
+        with pytest.raises(AttributeError):
+            series.dy
+        assert series.y0 == units.Quantity(1, 'Mpc')
+        assert series.yspan == (y[0], y[-1] + y[-1] - y[-2])
+
+    def test_yunit(self, unit=None):
+        if unit is None:
+            unit = self.TEST_CLASS._default_yunit
+        series = self.create(dy=4*unit)
+        assert series.yunit == unit
+        assert series.y0 == 0*unit
+        assert series.dy == 4*unit
+        # for series only, test arbitrary yunit
+        if self.TEST_CLASS in (Series, Array2D):
+            series = self.create(dy=4, yunit=units.m)
+            assert series.y0 == 0*units.m
+            assert series.dy == 4*units.m
+
+    def test_yspan(self):
+        # test normal
+        series = self.create(y0=1, dy=1)
+        assert series.yspan == (1, 1 + 1 * series.shape[0])
+        assert isinstance(series.yspan, Segment)
+        # test from irregular yindex
+        y = numpy.logspace(0, 2, num=self.data.shape[0])
+        series = self.create(yindex=y)
+        assert series.yspan == (y[0], y[-1] + y[-1] - y[-2])
+
+    # -- test methods ---------------------------
+
+    def test_getitem(self, array):
+        array = self.create()
+        assert array[0, 0] == array[0][0]
+        utils.assert_array_equal(array[0].value, array.value[0])
+        assert isinstance(array[0], self.TEST_CLASS._columnclass)
+        assert isinstance(array[0][0], units.Quantity)
+        assert array[0].unit == array.unit
+        assert array[0][0].unit == array.unit
+        assert isinstance(array[:, 0], self.TEST_CLASS._rowclass)
+
+    def test_is_compatible(self, array):
+        super(TestArray2D, self).test_is_compatible(array)
+
+        a2 = self.create(dy=2)
+        with pytest.raises(ValueError):
+            array.is_compatible(a2)
+
+        y = numpy.logspace(0, 2, num=self.data.shape[0])
+        a2 = self.create(yindex=y)
+        with pytest.raises(ValueError):
+            array.is_compatible(a2)
+
+    def test_value_at(self, array):
+        assert array.value_at(2, 5) == self.data[2][5] * array.unit
+        assert array.value_at(5 * array.xunit, 2 * array.yunit) == (
+            self.data[5][2] * array.unit)
+        with pytest.raises(IndexError):
+            array.value_at(1.6, 5.8)
+
+    def test_pad(self):
+        return NotImplemented
