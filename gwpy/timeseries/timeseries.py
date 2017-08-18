@@ -1637,7 +1637,9 @@ class TimeSeries(TimeSeriesBase):
                 overlap = fftlength / 2.
             else:
                 method = asd_kw.pop('method', 'median-mean')
-                fftlength = asd_kw.pop('fftlength', min(2, self.duration.value))
+                fftlength = asd_kw.pop(
+                    'fftlength',
+                    min(planes.whitening_duration, self.duration.value))
                 overlap = asd_kw.pop('overlap', None)
                 if overlap is None and fftlength == self.duration.value:
                     method = 'welch'
