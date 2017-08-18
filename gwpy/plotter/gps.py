@@ -72,10 +72,10 @@ class GPSMixin(object):
     def set_epoch(self, epoch):
         if epoch is None:
             self._epoch = None
-        elif isinstance(epoch, Time):
-            self._epoch = epoch.utc.gps
-        else:
-            self._epoch = float(epoch)
+            return
+        if isinstance(epoch, Time):
+            epoch = epoch.utc.gps
+        self._epoch = float(epoch)
 
     epoch = property(fget=get_epoch, fset=set_epoch,
                      doc=get_epoch.__doc__)
