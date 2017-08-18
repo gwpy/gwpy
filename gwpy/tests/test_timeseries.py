@@ -624,7 +624,6 @@ class TestTimeSeries(TestTimeSeriesBase):
                         comb, array.append(a2, inplace=False),
                         exclude=['channel'])
 
-
     @utils.skip_missing_dependency('h5py')
     @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
     def test_read_write_hdf5(self, ext):
