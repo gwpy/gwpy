@@ -37,6 +37,7 @@ from astropy.io import registry as io_registry
 from ..segments import Segment
 from ..signal import (filter_design, sosfiltfilt)
 from ..signal.fft import (registry as fft_registry, ui as fft_ui)
+from ..signal.window import recommended_overlap
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
 
@@ -1636,14 +1637,22 @@ class TimeSeries(TimeSeriesBase):
                 fftlength = 1/whiten.df.value
                 overlap = fftlength / 2.
             else:
-                method = asd_kw.pop('method', 'median-mean')
-                fftlength = asd_kw.pop('fftlength', min(2, self.duration.value))
+                try:
+                    import lal
+                except ImportError:
+                    method = asd_kw.pop('method', 'welch')
+                else:
+                    method = asd_kw.pop('method', 'median-mean')
+                window = asd_kw.pop('window', 'hann')
+                fftlength = asd_kw.pop(
+                    'fftlength',
+                    min(planes.whitening_duration, self.duration.value))
                 overlap = asd_kw.pop('overlap', None)
                 if overlap is None and fftlength == self.duration.value:
                     method = 'welch'
                     overlap = 0
-                else:
-                    overlap = fftlength / 2.
+                elif overlap is None:
+                    overlap = recommended_overlap(window) * fftlength
                 whiten = self.asd(fftlength, overlap, method=method, **asd_kw)
             # apply whitening
             wdata = self.whiten(fftlength, overlap, asd=whiten)

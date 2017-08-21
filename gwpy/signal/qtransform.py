@@ -121,6 +121,10 @@ class QTiling(QObject):
         """
         return numpy.array(list(self._iter_qs()))
 
+    @property
+    def whitening_duration(self):
+        return max(t.whitening_duration for t in self)
+
     def _iter_qs(self):
         """Iterate over the Q values
         """
@@ -215,6 +219,10 @@ class QPlane(QBase):
         f = self.frequencies
         bandwidths = 2 * pi ** (1/2.) * f / self.q
         return f - bandwidths / 2.
+
+    @property
+    def whitening_duration(self):
+        return 2 ** (round(log(self.q / (2 * self.frange[0]), 2)))
 
     def transform(self, fseries, normalized=True, epoch=None):
         """Calculate the energy `TimeSeries` for the given fseries
