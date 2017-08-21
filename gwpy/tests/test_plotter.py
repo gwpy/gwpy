@@ -208,6 +208,17 @@ class TestPlot(PlottingTestBase):
         assert len(ax.collections) == 1
         fig.close()
 
+    def test_add_image(self):
+        fig, ax = self.new()
+        data = numpy.arange(120).reshape((10, 12))
+        image = fig.add_image(data, cmap='Blues')
+        assert ax.images == [image]
+        assert image.get_cmap().name == 'Blues'
+
+        fig = self.FIGURE_CLASS()
+        fig.add_image(data)
+        assert fig.gca().projection == self.AXES_CLASS.name
+
     def test_add_arrays(self):
         ts = TimeSeries([1, 2, 3, 4])
         fs = FrequencySeries([1, 2, 3, 4])
