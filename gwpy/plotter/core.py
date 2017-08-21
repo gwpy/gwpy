@@ -28,10 +28,7 @@ from matplotlib.axes import SubplotBase
 from matplotlib.cbook import iterable
 from matplotlib.ticker import LogLocator
 
-try:
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-except ImportError:
-    from mpl_toolkits.axes_grid import make_axes_locatable
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from . import utils
 from .rc import (rcParams, MPL_RCPARAMS, get_subplot_params)
