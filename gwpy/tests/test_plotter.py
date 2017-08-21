@@ -52,6 +52,7 @@ from gwpy.plotter import (figure, rcParams, Plot, Axes,
 from gwpy.plotter.rc import (SUBPLOT_WIDTH, SUBPLOT_HEIGHT)
 from gwpy.plotter.gps import (GPSTransform, InvertedGPSTransform)
 from gwpy.plotter.html import map_data
+from gwpy.plotter.log import CombinedLogFormatterMathtext
 from gwpy.plotter.text import (to_string, unit_as_label)
 from gwpy.plotter.tex import (float_to_latex, label_to_latex,
                               unit_to_latex)
@@ -233,6 +234,49 @@ class TestPlot(PlottingTestBase):
         assert len(fig.axes) == 2
         assert isinstance(fig.axes[1], FrequencySeriesAxes)
         fig.close()
+
+    def test_add_colorbar(self):
+        fig = self.FIGURE_CLASS()
+
+        # test that adding a colorbar to an empty plot fails
+        with pytest.raises(ValueError) as exc:
+            fig.add_colorbar()
+        assert str(exc.value) == ('Cannot determine mappable layer for '
+                                  'this colorbar')
+        with pytest.raises(ValueError) as exc:
+            fig.add_colorbar(visible=False)
+        assert str(exc.value) == ('Cannot determine an anchor Axes for '
+                                  'this colorbar')
+
+        # add axes and an image
+        ax = fig.gca()
+        mappable = ax.imshow(numpy.arange(120).reshape((10, 12)))
+        assert not isinstance(mappable.norm, LogNorm)
+
+        # add colorbar and check everything went through
+        cbar = fig.add_colorbar(log=True, label='Test label', cmap='plasma')
+        assert len(fig.axes) == 2
+        assert cbar in fig.colorbars
+        assert cbar.ax in fig._coloraxes
+        assert cbar.mappable is mappable
+        assert cbar.get_clim() == mappable.get_clim() == (1, 119)
+        assert isinstance(mappable.norm, LogNorm)
+        assert isinstance(cbar.formatter, CombinedLogFormatterMathtext)
+        assert cbar.get_cmap().name == 'plasma'
+        assert cbar.ax.get_ylabel() == 'Test label'
+        self.save_and_close(fig)
+        assert numpy.isclose(ax.get_position().width, 0.6465625)
+
+        # try a non-visible colorbar
+        fig = self.FIGURE_CLASS()
+        ax = fig.gca()
+        assert len(fig.axes) == 1
+        fig.add_colorbar(ax=ax, visible=False)
+        assert len(fig.axes) == 1
+
+        # check errors
+        with pytest.raises(ValueError):
+            fig.add_colorbar(location='bottom')
 
 
 class TestAxes(PlottingTestBase):
