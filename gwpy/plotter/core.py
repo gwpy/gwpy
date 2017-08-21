@@ -332,6 +332,20 @@ class Plot(figure.Figure):
         else:
             return [ax for ax in self.axes if ax.name == projection.lower()]
 
+    def _pick_axes(self, ax=None, projection=None, newax=None, **kwargs):
+        """Returns the `Axes` to use in an `add_xxx` method
+
+        A new `Axes` will be created if necessary.
+        """
+        if ax is None and not newax:
+            try:
+                ax = self._find_axes(projection)
+            except IndexError:
+                newax = True
+        if newax:
+            return self._add_new_axes(projection=projection, **kwargs)
+        return ax
+
     def _find_axes(self, projection=None):
         """Find the most recently added axes for the given projection
 
@@ -433,14 +447,9 @@ class Plot(figure.Figure):
         kwargs.setdefault("markersize", 0)
 
         # find relevant axes
-        if ax is None and not newax:
-            try:
-                ax = self._find_axes(projection)
-            except IndexError:
-                newax = True
-        if newax:
-            ax = self._add_new_axes(projection=projection,
-                                    sharex=sharex, sharey=sharey)
+        ax = self._pick_axes(ax=ax, projection=projection, newax=newax,
+                             sharex=sharex, sharey=sharey)
+
         # plot on axes
         return ax.plot(numpy.asarray(x), numpy.asarray(y), **kwargs)[0]
 
@@ -483,14 +492,9 @@ class Plot(figure.Figure):
         sharey = kwargs.pop('sharey', None)
 
         # find relevant axes
-        if ax is None and not newax:
-            try:
-                ax = self._find_axes(projection)
-            except IndexError:
-                newax = True
-        if newax:
-            ax = self._add_new_axes(projection=projection,
-                                    sharex=sharex, sharey=sharey)
+        ax = self._pick_axes(ax=ax, projection=projection, newax=newax,
+                             sharex=sharex, sharey=sharey)
+
         # plot on axes
         return ax.scatter(numpy.asarray(x), numpy.asarray(y), **kwargs)
 
@@ -528,15 +532,11 @@ class Plot(figure.Figure):
         """
         sharex = kwargs.pop('sharex', None)
         sharey = kwargs.pop('sharey', None)
+
         # find relevant axes
-        if ax is None and not newax:
-            try:
-                ax = self._find_axes(projection)
-            except IndexError:
-                newax = True
-        if newax:
-            ax = self._add_new_axes(projection=projection,
-                                    sharex=sharex, sharey=sharey)
+        ax = self._pick_axes(ax=ax, projection=projection, newax=newax,
+                             sharex=sharex, sharey=sharey)
+
         # plot on axes
         return ax.imshow(image, **kwargs)
 
@@ -759,14 +759,9 @@ class Plot(figure.Figure):
             the layer return from the relevant plotting function
         """
         # find relevant axes
-        if ax is None and not newax:
-            try:
-                ax = self._find_axes(projection)
-            except IndexError:
-                newax = True
-        if newax:
-            ax = self._add_new_axes(projection=projection,
-                                    sharex=sharex, sharey=sharey)
+        ax = self._pick_axes(ax=ax, projection=projection, newax=newax,
+                             sharex=sharex, sharey=sharey)
+
         # plot on axes
         return ax.plot(array, **kwargs)
 
@@ -799,14 +794,9 @@ class Plot(figure.Figure):
             the newly added patch collection
         """
         # find relevant axes
-        if ax is None and not newax:
-            try:
-                ax = self._find_axes(projection)
-            except IndexError:
-                newax = True
-        if newax:
-            ax = self._add_new_axes(projection=projection,
-                                    sharex=sharex, sharey=sharey)
+        ax = self._pick_axes(ax=ax, projection=projection, newax=newax,
+                             sharex=sharex, sharey=sharey)
+
         # plot on axes
         return ax.plot(flag, **kwargs)
 
