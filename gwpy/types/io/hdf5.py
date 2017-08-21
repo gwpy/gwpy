@@ -98,7 +98,7 @@ def create_array_dataset(h5g, array, path=None, compression='gzip', **kwargs):
         if isinstance(mdval, Quantity):
             dset.attrs[attr] = mdval.value
         elif isinstance(mdval, Channel):
-            dset.attrs[attr] = pickle.dumps(mdval)
+            dset.attrs[attr] = pickle.dumps(mdval, protocol=0)
         elif isinstance(mdval, UnitBase):
             dset.attrs[attr] = str(mdval)
         elif isinstance(mdval, (Decimal, LIGOTimeGPS)):

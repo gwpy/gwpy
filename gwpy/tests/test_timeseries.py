@@ -628,6 +628,7 @@ class TestTimeSeries(TestTimeSeriesBase):
     @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
     def test_read_write_hdf5(self, ext):
         array = self.create()
+        array.channel = 'X1:TEST-CHANNEL'
 
         with tempfile.NamedTemporaryFile(suffix='.%s' % ext) as f:
             # check array with no name fails
