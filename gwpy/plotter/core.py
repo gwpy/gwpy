@@ -258,6 +258,8 @@ class Plot(figure.Figure):
         # if Axes not given, use those from the mappable
         if visible and not ax:
             ax = mappable.axes
+        elif not ax:  # if visible=False just pick the current axes
+            _, ax = self._axstack.current_key_axes()
 
         # if no valid Axes found, panic
         if ax is None:
