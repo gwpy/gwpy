@@ -218,7 +218,7 @@ class TestPlot(PlottingTestBase):
 
         fig = self.FIGURE_CLASS()
         fig.add_image(data)
-        assert fig.gca().projection == self.AXES_CLASS.name
+        assert fig.gca().projection == 'rectilinear'
 
     def test_add_arrays(self):
         ts = TimeSeries([1, 2, 3, 4])
@@ -250,6 +250,7 @@ class TestPlot(PlottingTestBase):
 
         # add axes and an image
         ax = fig.gca()
+        width = ax.get_position().width
         mappable = ax.imshow(numpy.arange(120).reshape((10, 12)))
         assert not isinstance(mappable.norm, LogNorm)
 
@@ -265,7 +266,7 @@ class TestPlot(PlottingTestBase):
         assert cbar.get_cmap().name == 'plasma'
         assert cbar.ax.get_ylabel() == 'Test label'
         self.save_and_close(fig)
-        assert numpy.isclose(ax.get_position().width, 0.6465625)
+        assert ax.get_position().width < width
 
         # try a non-visible colorbar
         fig = self.FIGURE_CLASS()
