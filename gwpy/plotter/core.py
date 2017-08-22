@@ -932,7 +932,7 @@ class Plot(figure.Figure):
     def logx(self, log):
         if not self.logx and bool(log):
             self.set_xscale('log')
-        elif not self.logx and bool(log):
+        elif self.logx and not bool(log):
             self.set_xscale('linear')
 
     @axes_method
@@ -957,7 +957,7 @@ class Plot(figure.Figure):
     def logy(self, log):
         if not self.logy and bool(log):
             self.set_yscale('log')
-        elif not self.logy and bool(log):
+        elif self.logy and not bool(log):
             self.set_yscale('linear')
 
     @axes_method
