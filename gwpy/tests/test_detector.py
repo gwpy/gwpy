@@ -78,7 +78,7 @@ OMEGA_CONFIG = """
   plotNormalizedEnergyRange:   [0 25.5]
   alwaysPlotFlag:              0
 }
-"""
+"""  # nopep8
 
 CLF = """
 [group-1]
@@ -97,7 +97,7 @@ channels =
 	H1:ISI-GND_STS_HAM2_X_DQ 512 safe flat
 	H1:ISI-GND_STS_HAM2_Y_DQ 256 unsafe flat
 	H1:ISI-GND_STS_HAM2_Z_DQ 512 glitchy
-"""
+"""  # nopep8
 
 
 # -----------------------------------------------------------------------------
@@ -599,7 +599,7 @@ class TestChannelList(object):
             assert a.frametype == 'H1_HOFT_C00'
             assert a.frequency_range[0] == 4. * units.Hz
             assert a.frequency_range[1] == float('inf') * units.Hz
-            assert a.safe == False
+            assert a.safe is False
             assert a.params == {'qhigh': '150', 'safe': 'unsafe',
                                 'fidelity': 'clean'}
             b = cl[1]
@@ -609,10 +609,10 @@ class TestChannelList(object):
             c = cl[2]
             assert c.name == 'H1:ISI-GND_STS_HAM2_Y_DQ'
             assert c.sample_rate == 256 * units.Hz
-            assert c.safe == False
+            assert c.safe is False
             d = cl[3]
             assert d.name == 'H1:ISI-GND_STS_HAM2_Z_DQ'
-            assert d.safe == True
+            assert d.safe is True
             assert d.params['fidelity'] == 'glitchy'
         finally:
             if os.path.isfile(f.name):
