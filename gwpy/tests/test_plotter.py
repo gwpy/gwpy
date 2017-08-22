@@ -30,6 +30,7 @@ from scipy import signal
 
 from matplotlib import (use, rc_context, __version__ as mpl_version)
 use('agg')  # nopep8
+from matplotlib import pyplot
 from matplotlib.legend import Legend
 from matplotlib.colors import (LogNorm, ColorConverter)
 from matplotlib.collections import (PathCollection, PatchCollection,
@@ -122,6 +123,33 @@ class TestPlot(PlottingTestBase):
         assert isinstance(ax, self.AXES_CLASS)
         self.save_and_close(fig)
 
+    # -- plot rendering -------------------------
+
+    def test_figure(self):
+        fig = figure()
+        assert isinstance(fig, Plot)
+        fig.close()
+        fig = figure(FigureClass=self.FIGURE_CLASS)
+        assert isinstance(fig, self.FIGURE_CLASS)
+        fig.close()
+
+    def test_close(self):
+        fig = self.FIGURE_CLASS()
+        assert fig.canvas.manager.num in pyplot.get_fignums()
+        fig.close()
+        assert fig.canvas.manager.num not in pyplot.get_fignums()
+
+    def test_show(self):
+        # no idea how to assert that this worked
+        fig = self.FIGURE_CLASS()
+        fig.show(block=True)
+        fig.show(block=False)
+
+    def test_refresh(self):
+        # no idea how to assert that this worked
+        fig, ax = self.new()
+        fig.refresh()
+
     def test_auto_refresh(self):
         fig = self.FIGURE_CLASS()
         assert fig.get_auto_refresh() is False
@@ -147,6 +175,8 @@ class TestPlot(PlottingTestBase):
             sbp = fig.subplotpars
             assert sbp.left, target[0]*.1
 
+    # -- plot manipulation ----------------------
+
     @pytest.mark.parametrize('name, args', [
         ('xlim', (4, 5)),
         ('xlabel', 'test'),
@@ -171,15 +201,27 @@ class TestPlot(PlottingTestBase):
     @pytest.mark.parametrize('axis', ('x', 'y'))
     def test_log(self, axis):
         fig, ax = self.new()
+
         # fig.set_xlim(0.1, 10)
         getattr(fig, 'set_%slim' % axis)(0.1, 10)
-        #  fig.logx = True
+
+        # fig.logx = True
         setattr(fig, 'log%s' % axis, True)
+
         # assert ax.get_xscale() == 'log'
         assert getattr(ax, 'get_%sscale' % axis)() == 'log'
+
         # assert fig.logx is True
         assert getattr(fig, 'log%s' % axis) is True
+
+        # fig.logx = False
+        setattr(fig, 'log%s' % axis, False)
+        assert getattr(ax, 'get_%sscale' % axis)() == 'linear'
+        assert getattr(fig, 'log%s' % axis) is False
+
         self.save_and_close(fig)
+
+    # -- artist creation ------------------------
 
     def test_add_legend(self):
         fig, ax = self.new()
@@ -188,14 +230,6 @@ class TestPlot(PlottingTestBase):
         ax.plot([1, 2, 3, 4], label='Plot')
         assert isinstance(fig.add_legend(), Legend)
         self.save_and_close(fig)
-
-    def test_figure(self):
-        fig = figure()
-        assert isinstance(fig, Plot)
-        fig.close()
-        fig = figure(FigureClass=self.FIGURE_CLASS)
-        assert isinstance(fig, self.FIGURE_CLASS)
-        fig.close()
 
     def test_add_line(self):
         fig, ax = self.new()
@@ -274,10 +308,17 @@ class TestPlot(PlottingTestBase):
         assert len(fig.axes) == 1
         fig.add_colorbar(ax=ax, visible=False)
         assert len(fig.axes) == 1
+        fig.close()
+
+        # check that we can map an empty array
+        fig, ax = self.new()
+        ax.imshow(numpy.arange(0).reshape((0, 0)))
+        fig.add_colorbar()
 
         # check errors
+        mappable = ax.imshow(numpy.arange(120).reshape((10, 12)))
         with pytest.raises(ValueError):
-            fig.add_colorbar(location='bottom')
+            fig.add_colorbar(mappable=mappable, location='bottom')
 
 
 class TestAxes(PlottingTestBase):
