@@ -54,10 +54,7 @@ class PluralFormat(Generic):
                 raise exc
             alts = list(set(map(str.lower, alts)))
             if len(alts) == 1 and '%ss' % alts[0] == t.value.lower():
-                try:
-                    return cls._parse_unit(alts[0])
-                except ValueError:
-                    raise exc
+                return cls._parse_unit(alts[0])
             raise exc
 
 

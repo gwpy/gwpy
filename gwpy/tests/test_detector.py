@@ -112,24 +112,26 @@ channels =
     ('meter', units.m),
     ('Volts', units.V),
     ('meters/second', units.m / units.s),
-    ('blah', units.Unit('blah', parse_strict='silent')),
 ])
 def test_parse_unit(arg, unit):
     assert parse_unit(arg) == unit
 
-    # check warnings and errors
-    #    this looks a bit funky because UnitsWarning are a 'once' warning,
-    #    so use catch_warnings() rather than mess with filterwarnings()
-    if arg == 'blah':
-        with pytest.raises(ValueError):  # assert error
-            parse_unit(arg, parse_strict='raise')
-        with warnings.catch_warnings(record=True) as rec:  # assert warning
-            parse_unit('%s_%s' % (arg, arg), parse_strict='warn')
-        assert len(rec) == 1
-        assert issubclass(rec[0].category, units.UnitsWarning)
-        with warnings.catch_warnings(record=True) as rec:  # assert no warning
-            parse_unit(arg, parse_strict='silent')
-        assert len(rec) == 0
+
+def test_parse_unit_strict():
+    with pytest.raises(ValueError) as exc:  # assert error
+        parse_unit('metre', parse_strict='raise')
+    assert str(exc.value) == ("'metre' did not parse as pluralformat unit: "
+                              "metre is not a valid unit. Did you mean meter?")
+
+    with warnings.catch_warnings(record=True) as rec:  # assert warning
+        u = parse_unit('metre', parse_strict='warn')
+    assert len(rec) == 1
+    assert issubclass(rec[0].category, units.UnitsWarning)
+    assert isinstance(u, units.UnrecognizedUnit)
+
+    with warnings.catch_warnings(record=True) as rec:  # assert no warning
+        parse_unit('metre', parse_strict='silent')
+    assert len(rec) == 0
 
 
 @pytest.mark.parametrize('name', [
