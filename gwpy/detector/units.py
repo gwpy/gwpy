@@ -19,24 +19,60 @@
 """This module registers a number of custom units used in GW astronomy.
 """
 
+import re
+
 from astropy import units
+from astropy.units.format.generic import Generic
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-# enable imperial units
-units.add_enabled_units(units.imperial)
+# -- parser to handle plurals -------------------------------------------------
 
 
-def parse_unit(name, parse_strict='warn'):
+class PluralFormat(Generic):
+    """Sub-class of the `Generic` unit parser that handles plurals
+
+    This just enables uses to specify a unit as 'meters' instead of just
+    'meter', and have the parse handle things as well as can be expected.
+    """
+    re_closest_unit = re.compile(r'Did you mean (.*)\?\Z')
+    re_closest_unit_delim = re.compile('(, | or )')
+
+    @classmethod
+    def _get_unit(cls, t):
+        # match as normal
+        try:
+            return cls._parse_unit(t.value)
+        except ValueError as exc:
+            # if error message suggests one alternative that is just the
+            # singular of the unit given, use it, otherwise re-raise the
+            # original exception
+            match = cls.re_closest_unit.search(str(exc))
+            try:  # split 'A, B, or C' -> ['A', 'B', 'C']
+                alts = cls.re_closest_unit_delim.split(match.groups()[0])[::2]
+            except AttributeError:
+                raise exc
+            alts = list(set(map(str.lower, alts)))
+            if len(alts) == 1 and '%ss' % alts[0] == t.value.lower():
+                return cls._parse_unit(alts[0])
+            raise exc
+
+
+# pylint: disable=redefined-builtin
+def parse_unit(name, parse_strict='warn', format=PluralFormat):
     """Attempt to intelligently parse a `str` as a `~astropy.units.Unit`
 
     Parameters
     ----------
     name : `str`
         unit name to parse
+
     parse_strict : `str`
         one of 'silent', 'warn', or 'raise' depending on how pedantic
         you want the parser to be
+
+    format : `~astropy.units.format.Base`
+        the formatter class to use when parsing the unit string
 
     Returns
     -------
@@ -48,30 +84,19 @@ def parse_unit(name, parse_strict='warn'):
     ValueError
         if the unit cannot be parsed and `parse_strict='raise'`
     """
-    if name is None or isinstance(name, units.UnitBase):
-        return name
-    if isinstance(name, bytes):
-        name = name.decode('utf-8')
-    else:
-        name = str(name)
-    # try simple parse
-    try:
-        return units.Unit(name)
-    except ValueError:
-        pass
-    # try plural parsing
-    if name.endswith('s'):
-        try:
-            return units.Unit(name[:-1])
-        except ValueError:
-            pass
-    # otherwise allow a loose parsing
-    return units.Unit(name, parse_strict=parse_strict)
+    if name is None:
+        return None
+
+    # pylint: disable=unexpected-keyword-arg
+    return units.Unit(name, parse_strict=parse_strict, format=format)
 
 
-# -----------------------------------------------------------------------------
-# instrumental units
+# -- custom units -------------------------------------------------------------
 
+# enable imperial units
+units.add_enabled_units(units.imperial)
+
+# custom GWO units
 units.add_enabled_units([
     units.def_unit(['counts'], represents=units.Unit('count')),
     units.def_unit(['undef'], doc='No unit has been defined for these data'),

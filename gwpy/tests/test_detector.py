@@ -78,7 +78,7 @@ OMEGA_CONFIG = """
   plotNormalizedEnergyRange:   [0 25.5]
   alwaysPlotFlag:              0
 }
-"""
+"""  # nopep8
 
 CLF = """
 [group-1]
@@ -97,7 +97,7 @@ channels =
 	H1:ISI-GND_STS_HAM2_X_DQ 512 safe flat
 	H1:ISI-GND_STS_HAM2_Y_DQ 256 unsafe flat
 	H1:ISI-GND_STS_HAM2_Z_DQ 512 glitchy
-"""
+"""  # nopep8
 
 
 # -----------------------------------------------------------------------------
@@ -111,24 +111,27 @@ channels =
     (units.m, units.m),
     ('meter', units.m),
     ('Volts', units.V),
-    ('blah', units.Unit('blah', parse_strict='silent')),
+    ('meters/second', units.m / units.s),
 ])
 def test_parse_unit(arg, unit):
     assert parse_unit(arg) == unit
 
-    # check warnings and errors
-    #    this looks a bit funky because UnitsWarning are a 'once' warning,
-    #    so use catch_warnings() rather than mess with filterwarnings()
-    if arg == 'blah':
-        with pytest.raises(ValueError):  # assert error
-            parse_unit(arg, parse_strict='raise')
-        with warnings.catch_warnings(record=True) as rec:  # assert warning
-            parse_unit('%s_%s' % (arg, arg), parse_strict='warn')
-        assert len(rec) == 1
-        assert issubclass(rec[0].category, units.UnitsWarning)
-        with warnings.catch_warnings(record=True) as rec:  # assert no warning
-            parse_unit(arg, parse_strict='silent')
-        assert len(rec) == 0
+
+def test_parse_unit_strict():
+    with pytest.raises(ValueError) as exc:  # assert error
+        parse_unit('metre', parse_strict='raise')
+    assert str(exc.value) == ("'metre' did not parse as pluralformat unit: "
+                              "metre is not a valid unit. Did you mean meter?")
+
+    with warnings.catch_warnings(record=True) as rec:  # assert warning
+        u = parse_unit('metre', parse_strict='warn')
+    assert len(rec) == 1
+    assert issubclass(rec[0].category, units.UnitsWarning)
+    assert isinstance(u, units.UnrecognizedUnit)
+
+    with warnings.catch_warnings(record=True) as rec:  # assert no warning
+        parse_unit('metre', parse_strict='silent')
+    assert len(rec) == 0
 
 
 @pytest.mark.parametrize('name', [
@@ -598,7 +601,7 @@ class TestChannelList(object):
             assert a.frametype == 'H1_HOFT_C00'
             assert a.frequency_range[0] == 4. * units.Hz
             assert a.frequency_range[1] == float('inf') * units.Hz
-            assert a.safe == False
+            assert a.safe is False
             assert a.params == {'qhigh': '150', 'safe': 'unsafe',
                                 'fidelity': 'clean'}
             b = cl[1]
@@ -608,10 +611,10 @@ class TestChannelList(object):
             c = cl[2]
             assert c.name == 'H1:ISI-GND_STS_HAM2_Y_DQ'
             assert c.sample_rate == 256 * units.Hz
-            assert c.safe == False
+            assert c.safe is False
             d = cl[3]
             assert d.name == 'H1:ISI-GND_STS_HAM2_Z_DQ'
-            assert d.safe == True
+            assert d.safe is True
             assert d.params['fidelity'] == 'glitchy'
         finally:
             if os.path.isfile(f.name):
