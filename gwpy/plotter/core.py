@@ -235,39 +235,36 @@ class Plot(figure.Figure):
         >>> plot.add_colorbar(label='Value')
         >>> plot.show()
         """
-        # find default layer
-        if mappable is None and ax is not None and len(ax.collections):
-            mappable = ax.collections[-1]
-        elif mappable is None and ax is not None and len(ax.images):
-            mappable = ax.images[-1]
-        elif (visible is False and mappable is None and
-              ax is not None and len(ax.lines)):
-            mappable = ax.lines[-1]
-        elif mappable is None and ax is None:
-            for ax in self.axes[::-1]:
+        # if mappable artist not given, search through axes in reverse
+        # and pick most recent artist
+        if mappable is None and visible:
+            if ax is None:
+                axes_ = self.axes[::-1]  # find most recent elements first
+            else:
+                axes_ = [ax]
+            for ax in axes_:
                 if hasattr(ax, 'collections') and len(ax.collections):
                     mappable = ax.collections[-1]
                     break
                 elif hasattr(ax, 'images') and len(ax.images):
                     mappable = ax.images[-1]
                     break
-                elif visible is False and len(ax.lines):
-                    mappable = ax.lines[-1]
-                    break
+
+        # if no mappable element found, panic
         if visible and mappable is None:
             raise ValueError("Cannot determine mappable layer for this "
                              "colorbar")
-        elif ax is None:
+
+        # if Axes not given, use those from the mappable
+        if visible and not ax:
+            ax = mappable.axes
+
+        # if no valid Axes found, panic
+        if ax is None:
             raise ValueError("Cannot determine an anchor Axes for this "
                              "colorbar")
 
-        # find default axes
-        if not ax:
-            ax = mappable.axes
-
-        mappables = ax.collections + ax.images
-
-        # get new colour axis
+        # create Axes for colorbar
         divider = make_axes_locatable(ax)
         if location not in ['right', 'top']:
             raise ValueError("'left' and 'bottom' colorbars have not "
@@ -275,10 +272,14 @@ class Plot(figure.Figure):
         cax = divider.append_axes(location, width, pad=pad,
                                   add_to_figure=visible, axes_class=axes_class)
         self._coloraxes.append(cax)
+
         if visible:
             self.sca(ax)
         else:
             return
+
+        # find all mappables on these Axes
+        mappables = ax.collections + ax.images
 
         # set limits
         if not clim:
