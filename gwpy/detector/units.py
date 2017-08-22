@@ -61,6 +61,7 @@ class PluralFormat(Generic):
             raise exc
 
 
+# pylint: disable=redefined-builtin
 def parse_unit(name, parse_strict='warn', format=PluralFormat):
     """Attempt to intelligently parse a `str` as a `~astropy.units.Unit`
 
@@ -89,6 +90,7 @@ def parse_unit(name, parse_strict='warn', format=PluralFormat):
     if name is None:
         return None
 
+    # pylint: disable=unexpected-keyword-arg
     return units.Unit(name, parse_strict=parse_strict, format=format)
 
 
