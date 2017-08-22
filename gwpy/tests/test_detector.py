@@ -111,6 +111,7 @@ channels =
     (units.m, units.m),
     ('meter', units.m),
     ('Volts', units.V),
+    ('meters/second', units.m / units.s),
     ('blah', units.Unit('blah', parse_strict='silent')),
 ])
 def test_parse_unit(arg, unit):
