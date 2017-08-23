@@ -1055,7 +1055,7 @@ class TestHtml(object):
         fig = figure()
         ax = fig.gca()
         line = ax.plot([1, 2, 3, 4, 5])[0]
-        data = zip(*line.get_data())
+        data = list(zip(*line.get_data()))
 
         # create HTML map
         html = map_artist(line, 'test.png')
