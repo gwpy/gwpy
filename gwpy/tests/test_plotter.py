@@ -497,6 +497,33 @@ class TestTimeSeriesPlot(TimeSeriesMixin, TestPlot):
                          label='Test colorbar')
         self.save_and_close(fig)
 
+    def test_add_state_segments(self):
+        fig, ax = self.new()
+
+        # mock up some segments and add them as 'state' segments
+        segs = SegmentList([Segment(1, 2), Segment(4, 5)])
+        segax = fig.add_state_segments(segs)
+
+        # check that the new axes aligns with the parent
+        utils.assert_array_equal(segax.get_position().intervalx,
+                                 ax.get_position().intervalx)
+        coll = segax.collections[0]
+        for seg, path in zip(segs, coll.get_paths()):
+            utils.assert_array_equal(
+                path.vertices, [(seg[0], -.4), (seg[1], -.4), (seg[1], .4),
+                                (seg[0], .4), (seg[0], -.4)])
+
+        with pytest.raises(ValueError):
+            fig.add_state_segments(segs, location='left')
+
+        # test that this doesn't work with non-timeseries axes
+        fig = self.FIGURE_CLASS()
+        ax = fig.gca(projection='rectilinear')
+        with pytest.raises(ValueError) as exc:
+            fig.add_state_segments(segs)
+        assert str(exc.value) == ("No 'timeseries' Axes found, cannot anchor "
+                                  "new segment Axes.")
+
 
 class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
     def test_init(self):
