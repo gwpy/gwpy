@@ -219,7 +219,7 @@ def _map(data, axes, filename, href='#', mapname='points', popup=None,
     transform = axes.transData
 
     # get 2-d pixels
-    pixels = transform.transform(data[:, :2]).astype(int)
+    pixels = numpy.round(transform.transform(data[:, :2])).astype(int)
 
     # get figure size
     dpi = fig.dpi
@@ -257,5 +257,4 @@ def _map(data, axes, filename, href='#', mapname='points', popup=None,
     if standalone:
         return (HTML_HEADER.format(title=title, jquery=jquery) + hmap +
                 HTML_FOOTER)
-    else:
-        return hmap
+    return hmap
