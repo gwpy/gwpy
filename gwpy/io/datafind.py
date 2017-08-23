@@ -16,7 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""User-friendly extensions to `glue.datafind`
+"""User-friendly extensions to :mod:`glue.datafind`
+
+The functions in this module mainly focus on matching a channel name to
+one or more frametypes that contain data for that channel.
 """
 
 import os.path
@@ -27,10 +30,11 @@ from .gwf import (num_channels, channel_in_frame)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-S6_HOFT_NAME = re.compile('\A(H|L)1:LDAS-STRAIN\Z')
-S6_RECOLORED_TYPE = re.compile('\AT1200307_V4_EARLY_RECOLORED_V2\Z')
-SECOND_TREND_TYPE = re.compile('\A(.*_)?T\Z')  # T or anything ending in _T
-MINUTE_TREND_TYPE = re.compile('\A(.*_)?M\Z')  # M or anything ending in _M
+# special-case frame types
+S6_HOFT_NAME = re.compile(r'\A(H|L)1:LDAS-STRAIN\Z')
+S6_RECOLORED_TYPE = re.compile(r'\AT1200307_V4_EARLY_RECOLORED_V2\Z')
+SECOND_TREND_TYPE = re.compile(r'\A(.*_)?T\Z')  # T or anything ending in _T
+MINUTE_TREND_TYPE = re.compile(r'\A(.*_)?M\Z')  # M or anything ending in _M
 
 
 def connect(host=None, port=None):
@@ -56,8 +60,8 @@ def connect(host=None, port=None):
         cert, key = datafind.find_credential()
         return datafind.GWDataFindHTTPSConnection(
             host=host, port=port, cert_file=cert, key_file=key)
-    else:
-        return datafind.GWDataFindHTTPConnection(host=host, port=port)
+
+    return datafind.GWDataFindHTTPConnection(host=host, port=port)
 
 
 def find_frametype(channel, gpstime=None, frametype_match=None,
@@ -107,21 +111,21 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     types = connection.find_types(channel.ifo[0], match=frametype_match)
     # get reference frame for all types
     frames = []
-    for ft in types:
+    for ftype in types:
         try:
             if gpstime is None:
                 frame = connection.find_latest(
-                    channel.ifo[0], ft, urltype='file')[0]
+                    channel.ifo[0], ftype, urltype='file')[0]
             else:
                 frame = connection.find_frame_urls(
-                    channel.ifo[0], ft, gpstime, gpstime, urltype='file',
+                    channel.ifo[0], ftype, gpstime, gpstime, urltype='file',
                     on_gaps='ignore')[0]
         except (IndexError, RuntimeError):
             continue
         else:
             if os.access(frame.path, os.R_OK) and (
                     allow_tape or not on_tape(frame.path)):
-                frames.append((ft, frame.path))
+                frames.append((ftype, frame.path))
     # sort frames by allocated block size and regular size
     # (to put frames on tape at the bottom of the list)
     frames.sort(key=lambda x: (on_tape(x[1]), num_channels(x[1])))
@@ -149,25 +153,75 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
             return ft
         elif inframe:
             found.append(ft)
-    msg = "Cannot locate %r in any known frametype" % name
-    if gpstime:
-        msg += " at GPS=%d" % gpstime
-    if not allow_tape:
-        msg += (" [those files on tape have not been checked, use "
-                "allow_tape=True to perform a complete search]")
-    if len(found) == 0:
+
+    # raise exception if nothing found
+    if not found:
+        msg = "Cannot locate %r in any known frametype" % name
+        if gpstime:
+            msg += " at GPS=%d" % gpstime
+        if not allow_tape:
+            msg += (" [those files on tape have not been checked, use "
+                    "allow_tape=True to perform a complete search]")
         raise ValueError(msg)
-    else:
-        return found
+
+    return found
 
 
 def find_best_frametype(channel, start, end, urltype='file',
-                        host=None, port=None, allow_tape=True):
+                        host=None, port=None, frametype_match=None,
+                        allow_tape=True):
     """Intelligently select the best frametype from which to read this channel
+
+    Parameters
+    ----------
+    channel : `str`, `~gwpy.detector.Channel`
+        the channel to be found
+
+    start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        GPS start time of period of interest,
+        any input parseable by `~gwpy.time.to_gps` is fine
+
+    end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        GPS end time of period of interest,
+        any input parseable by `~gwpy.time.to_gps` is fine
+
+    urltype : `str`, optional
+        scheme of URL to return, default is ``'file'``
+
+    host : `str`, optional
+        name of datafind host to use
+
+    port : `int`, optional
+        port on datafind host to use
+
+    frametype_match : `str`, optiona
+        regular expression to use for frametype `str` matching
+
+    allow_tape : `bool`, optional
+        do not test types whose frame files are stored on tape (not on
+        spinning disk)
+
+    Returns
+    -------
+    frametype : `str`
+        the best matching frametype for the ``channel`` in the
+        ``[start, end)`` interval
+
+    Raises
+    ------
+    ValueError
+        if no valid frametypes are found
+
+    Examples
+    --------
+    >>> from gwpy.io.datafind import find_best_frametype
+    >>> find_best_frametype('L1:GDS-CALIB_STRAIN', 1126259460, 1126259464)
+    'L1_HOFT_C00'
     """
     start = to_gps(start).gpsSeconds
     end = to_gps(end).gpsSeconds
     frametype = find_frametype(channel, gpstime=start, host=host, port=port,
+                               frametype_match=frametype_match,
                                allow_tape=allow_tape)
     connection = connect(host=host, port=port)
     try:
@@ -178,6 +232,7 @@ def find_best_frametype(channel, start, end, urltype='file',
             raise RuntimeError()
     except RuntimeError:
         alltypes = find_frametype(channel, gpstime=start, host=host, port=port,
+                                  frametype_match=frametype_match,
                                   return_all=True, allow_tape=allow_tape)
         cache = [(ft, connection.find_frame_urls(
             channel[0], ft, start, end, urltype=urltype,
@@ -210,7 +265,7 @@ def on_tape(*files):
         `True` if any of the files are determined to be on tape,
         otherwise `False`
     """
-    for f in files:
-        if os.stat(f).st_blocks == 0:
+    for path in files:
+        if os.stat(path).st_blocks == 0:
             return True
     return False
