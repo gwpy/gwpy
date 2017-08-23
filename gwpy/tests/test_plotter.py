@@ -324,6 +324,76 @@ class TestPlot(PlottingTestBase):
 
 
 class TestAxes(PlottingTestBase):
+
+    # -- test properties ------------------------
+
+    @pytest.mark.parametrize('axis', ('x', 'y'))
+    def test_label(self, axis):
+        fig, ax = self.new()
+
+        axis_obj = getattr(ax, '%saxis' % axis)
+        label = '%slabel' % axis
+        get_label = getattr(ax, 'get_%slabel' % axis)
+
+        # assert ax.xlabel is ax.xaxis.label
+        assert getattr(ax, label) is axis_obj.label
+
+        # ax.xlabel = 'Test label'
+        setattr(ax, label, 'Test label')
+        # assert ax.get_xlabel() == 'Test label'
+        assert get_label() == 'Test label'
+
+        # check Text object gets preserved
+        t = ax.text(0, 0, 'Test text')
+        setattr(ax, label, t)
+        assert axis_obj.label is t
+
+        # check deleter works
+        delattr(ax, label)
+        assert get_label() == ''
+
+    @pytest.mark.parametrize('axis', ('x', 'y'))
+    def test_lim(self, axis):
+        fig, ax = self.new()
+        ax.plot([1, 2, 3, 4, 5], [1, 2, 3, 4, 5])
+        lim = '%slim' % axis
+        get_lim = getattr(ax, 'get_%slim' % axis)
+
+        # check getter/setter
+        setattr(ax, lim, (24, 36))
+        assert get_lim() == (24, 36)
+        assert getattr(ax, lim) == get_lim()
+
+        # check deleter
+        delattr(ax, lim)
+
+    @pytest.mark.parametrize('axis', ('x', 'y'))
+    def test_log(self, axis):
+        fig, ax = self.new()
+        log = 'log%s' % axis
+        get_scale = getattr(ax, 'get_%sscale' % axis)
+        set_scale = getattr(ax, 'set_%sscale' % axis)
+
+        # check default is not log
+        assert getattr(ax, log) is False
+
+        # set log and assert that the scale gets set properly
+        setattr(ax, log, True)
+        assert getattr(ax, log) is True
+        assert get_scale() == 'log'
+
+        # set not log and check
+        setattr(ax, log, False)
+        assert getattr(ax, log) is False
+        assert get_scale() == 'linear'
+
+    # -- test methods ---------------------------
+
+    def test_resize(self):
+        fig, ax = self.new()
+        ax.resize((0.25, 0.25, 0.5, 0.5))
+        assert ax.get_position().bounds == (.25, .25, .5, .5)
+
     def test_legend(self):
         fig = self.FIGURE_CLASS()
         ax = fig.add_subplot(111, projection=self.AXES_CLASS.name)
