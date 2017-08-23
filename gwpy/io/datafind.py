@@ -162,12 +162,14 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
 
 
 def find_best_frametype(channel, start, end, urltype='file',
-                        host=None, port=None, allow_tape=True):
+                        host=None, port=None, frametype_match=None,
+                        allow_tape=True):
     """Intelligently select the best frametype from which to read this channel
     """
     start = to_gps(start).gpsSeconds
     end = to_gps(end).gpsSeconds
     frametype = find_frametype(channel, gpstime=start, host=host, port=port,
+                               frametype_match=frametype_match,
                                allow_tape=allow_tape)
     connection = connect(host=host, port=port)
     try:
@@ -178,6 +180,7 @@ def find_best_frametype(channel, start, end, urltype='file',
             raise RuntimeError()
     except RuntimeError:
         alltypes = find_frametype(channel, gpstime=start, host=host, port=port,
+                                  frametype_match=frametype_match,
                                   return_all=True, allow_tape=allow_tape)
         cache = [(ft, connection.find_frame_urls(
             channel[0], ft, start, end, urltype=urltype,
