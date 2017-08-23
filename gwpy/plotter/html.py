@@ -25,6 +25,7 @@ import numpy
 
 from matplotlib.collections import Collection
 from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
 
 from ..types import Series
 
@@ -146,8 +147,10 @@ def map_artist(artist, filename, mapname='points', shape='circle',
         z = artist.get_array()
         if z is not None:
             data = numpy.vstack((data[:, 0], data[:, 1], z)).T
+    elif isinstance(artist, Line2D):
+        data = numpy.asarray(artist.get_data()).T
     else:
-        data = artist.get_data()
+        data = numpy.asarray(artist.get_data())
 
     return _map(data, axes, filename, mapname=mapname, shape=shape,
                 popup=popup, title=title, standalone=standalone, jquery=jquery)
