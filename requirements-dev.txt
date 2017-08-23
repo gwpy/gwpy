@@ -25,6 +25,7 @@ sphinxcontrib-programoutput
 # tests
 pytest>=3.1
 coveralls
-mock
+mock; python_version < '3'
 freezegun
 sqlparse
+bs4

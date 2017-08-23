@@ -111,6 +111,7 @@ tests_require = [
     'pytest>=3.1',
     'freezegun',
     'sqlparse',
+    'bs4',
 ]
 if sys.version < '3':
     tests_require.append('mock')

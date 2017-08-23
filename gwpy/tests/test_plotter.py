@@ -52,12 +52,14 @@ from gwpy.plotter import (figure, rcParams, Plot, Axes,
                           SpectrogramPlot, BodePlot)
 from gwpy.plotter.rc import (SUBPLOT_WIDTH, SUBPLOT_HEIGHT)
 from gwpy.plotter.gps import (GPSTransform, InvertedGPSTransform)
-from gwpy.plotter.html import map_data
+from gwpy.plotter.html import (map_data, map_artist)
 from gwpy.plotter.log import CombinedLogFormatterMathtext
 from gwpy.plotter.text import (to_string, unit_as_label)
 from gwpy.plotter.tex import (float_to_latex, label_to_latex,
                               unit_to_latex)
 from gwpy.plotter.table import get_column_string
+
+import utils
 
 # design ZPK for BodePlot test
 ZPK = [100], [1], 1e-2
@@ -335,6 +337,26 @@ class TestAxes(PlottingTestBase):
         for l in leg.get_lines():
             assert l.get_linewidth() == 8
         self.save_and_close(fig)
+
+    def test_html_map(self):
+        # this method just runs the html_map method but puts little effort
+        # into validating the result, that is left for the TestHtml
+        # suite
+
+        fig, ax = self.new()
+
+        with pytest.raises(ValueError) as exc:
+            ax.html_map('test.png')
+        assert str(exc.value) == 'Cannot determine artist to map, 0 found.'
+
+        ax.plot([1, 2, 3, 4, 5])
+        hmap = ax.html_map('test.png')
+        assert hmap.startswith('<!doctype html>')
+        assert hmap.count('<area') == 5
+
+        ax.plot([1, 2, 3, 4, 5])
+        with pytest.raises(ValueError):
+            ax.html_map('test.png')
 
     @pytest.mark.parametrize('method', [
         'plot',
@@ -927,3 +949,22 @@ class TestHtml(object):
         assert html.startswith('<!doctype html>')
         html = map_data(data, ax, 'test.png', standalone=False)
         assert html.startswith('\n<img src="test.png"')
+
+    @utils.skip_missing_dependency('bs4')
+    def test_map_artist(self):
+        from bs4 import BeautifulSoup
+
+        # create figure and plot a line
+        fig = figure()
+        ax = fig.gca()
+        line = ax.plot([1, 2, 3, 4, 5])[0]
+        data = zip(*line.get_data())
+
+        # create HTML map
+        html = map_artist(line, 'test.png')
+
+        # validate HTML map
+        soup = BeautifulSoup(html, 'html.parser')
+        areas = soup.find_all('area')
+        assert len(areas) == 5
+        assert sorted([eval(a.attrs['alt']) for a in areas]) == data
