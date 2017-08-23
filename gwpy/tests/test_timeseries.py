@@ -713,7 +713,8 @@ class TestTimeSeries(TestTimeSeriesBase):
     def test_find(self, losc_16384):
         ts = self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
                                   frametype=FIND_FRAMETYPE)
-        utils.assert_quantity_sub_equal(ts, losc_16384)
+        utils.assert_quantity_sub_equal(ts, losc_16384,
+                                        exclude=['name', 'channel', 'unit'])
 
         # test observatory
         ts2 = self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
@@ -743,18 +744,33 @@ class TestTimeSeries(TestTimeSeriesBase):
                     ['H1_M'])]:
             ft = datafind.find_best_frametype(
                 channel, 1143504017, 1143504017+100)
-            self.assertIn(ft, target)
+            assert ft in target
 
         # test that this works end-to-end as part of a TimeSeries.find
         ts = self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
 
     def test_get(self, losc_16384):
+        # get using datafind (maybe)
         try:
-            ts = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
+            ts = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
+                                     frametype_match='C01\Z')
         except (ImportError, RuntimeError) as e:
             pytest.skip(str(e))
         utils.assert_quantity_sub_equal(ts, losc_16384,
                                         exclude=['name', 'channel', 'unit'])
+
+        # get using NDS2 (if datafind could have been used to start with)
+        try:
+            dfs = os.environ.pop('LIGO_DATAFIND_SERVER')
+        except KeyError:
+            dfs = None
+        else:
+            ts2 = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
+            utils.assert_quantity_sub_equal(ts, ts2,
+                                            exclude=['channel', 'unit'])
+        finally:
+            if dfs is not None:
+                os.environ['LIGO_DATAFIND_SERVER'] = dfs
 
     # -- signal processing methods --------------
 
