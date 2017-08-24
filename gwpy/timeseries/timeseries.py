@@ -712,7 +712,7 @@ class TimeSeries(TimeSeriesBase):
                           overlap=overlap)
 
     def rayleigh_spectrogram(self, stride, fftlength=None, overlap=0,
-                             window='hann', nproc=1, **kwargs):
+                             nproc=1, **kwargs):
         """Calculate the Rayleigh statistic spectrogram of this `TimeSeries`
 
         Parameters
@@ -724,17 +724,11 @@ class TimeSeries(TimeSeriesBase):
             number of seconds in single FFT.
 
         overlap : `float`, optional
-            number of seconds of overlap between FFTs, defaults to the
-            recommended overlap for the given window (if given), or 0
+            number of seconds of overlap between FFTs, default: ``0``
 
-        window : `str`, `numpy.ndarray`, optional
-            window function to apply to timeseries prior to FFT,
-            see :func:`scipy.signal.get_window` for details on acceptable
-            formats
-
-        nproc : `int`, default: ``1``
+        nproc : `int`, optional
             maximum number of independent frame reading processes, default
-            is set to single-process file reading.
+            default: ``1``
 
         Returns
         -------
@@ -745,7 +739,7 @@ class TimeSeries(TimeSeriesBase):
         method_func = fft_registry.get_method('rayleigh', scaling='other')
         sg = fft_ui.average_spectrogram(self, method_func, stride,
                                         fftlength=fftlength, overlap=overlap,
-                                        window=window, nproc=nproc, **kwargs)
+                                        nproc=nproc, **kwargs)
         sg.override_unit('')
         return sg
 
@@ -1618,7 +1612,7 @@ class TimeSeries(TimeSeriesBase):
         >>> plot.set_xlim(-.2, .2)
         >>> plot.set_epoch(0)
         >>> plot.show()
-        """
+        """  # nopep8
         from scipy.interpolate import (interp2d, InterpolatedUnivariateSpline)
         from ..frequencyseries import FrequencySeries
         from ..spectrogram import Spectrogram
