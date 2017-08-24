@@ -250,25 +250,31 @@ class TestSignalFftRegistry(object):
         """Test :func:`gwpy.signal.fft.registry.update_doc`
         """
         def fake_caller():
+            """Test method
+
+            Notes
+            -----"""
             pass
 
-        assert fake_caller.__doc__ is None
         fft_registry.update_doc(fake_caller)
-        print(fake_caller.__doc__)
-        assert fake_caller.__doc__ == (
-            'The available methods are:\n\n'
-            '============ =================================\n'
-            'Method name               Function            \n'
-            '============ =================================\n'
-            'lal_bartlett    `gwpy.signal.fft.lal.bartlett`\n'
-            ' median_mean `gwpy.signal.fft.lal.median_mean`\n'
-            '      median      `gwpy.signal.fft.lal.median`\n'
-            '   lal_welch       `gwpy.signal.fft.lal.welch`\n'
-            '    bartlett  `gwpy.signal.fft.scipy.bartlett`\n'
-            '       welch     `gwpy.signal.fft.scipy.welch`\n'
-            '============ =================================\n\n'
-            'See :ref:`gwpy-signal-fft` for more details\n'
-        )
+        assert fake_caller.__doc__ == """Test method
+
+            Notes
+            -----
+            The available methods are:
+            
+            ============ =================================
+            Method name               Function            
+            ============ =================================
+            lal_bartlett `gwpy.signal.fft.lal.bartlett`   
+             median_mean `gwpy.signal.fft.lal.median_mean`
+                  median `gwpy.signal.fft.lal.median`     
+               lal_welch `gwpy.signal.fft.lal.welch`      
+                bartlett `gwpy.signal.fft.scipy.bartlett` 
+                   welch `gwpy.signal.fft.scipy.welch`    
+            ============ =================================
+            
+            See :ref:`gwpy-signal-fft` for more details"""  # nopep8
 
 
 # -- gwpy.signal.fft.ui -------------------------------------------------------

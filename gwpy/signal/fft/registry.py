@@ -113,6 +113,7 @@ def update_doc(obj, scaling='density'):
     for method in METHODS[scaling]:
         f = METHODS[scaling][method]
         rows.append((method, '`%s.%s`' % (f.__module__, f.__name__)))
+    rows.sort(key=lambda x: x[1])
     format_str = Table(rows=rows, names=['Method name', 'Function']).pformat(
         max_lines=-1, max_width=80, align=('>', '<'))
     format_str[1] = format_str[1].replace('-', '=')
