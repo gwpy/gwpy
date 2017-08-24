@@ -19,7 +19,11 @@
 
 """Plotting a `Spectrogram` of the Rayleigh statistic
 
-As described in :ref:`gwpy-example-frequencyseries-rayleigh`, the Rayleigh statistic can be used to study non-Gaussianity in a timeseries. We can study the time variance of these features by plotting a time-frequency spectrogram where we calculate the Rayleigh statistic for each time bin.
+As described in :ref:`gwpy-example-frequencyseries-rayleigh`, the Rayleigh
+statistic can be used to study non-Gaussianity in a timeseries.
+We can study the time variance of these features by plotting a
+time-frequency spectrogram where we calculate the Rayleigh statistic for
+each time bin.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -32,9 +36,9 @@ from gwpy.timeseries import TimeSeries
 gwdata = TimeSeries.fetch_open_data('L1', 'Dec 26 2015 03:37',
                                     'Dec 26 2015 03:47', verbose=True)
 
-# Next, we can calculate a Rayleigh statistic `Spectrogram` using the 
+# Next, we can calculate a Rayleigh statistic `Spectrogram` using the
 # :meth:`~gwpy.timeseries.TimeSeries.rayleigh_spectrogram` method of the
-# `~gwpy.timeseries.TimeSeries` and a 5-second stride with a 2-second FFT and 
+# `~gwpy.timeseries.TimeSeries` and a 5-second stride with a 2-second FFT and
 # 1-second overlap (50%):
 rayleigh = gwdata.rayleigh_spectrogram(5, fftlength=2, overlap=1)
 

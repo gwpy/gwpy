@@ -40,7 +40,7 @@ from gwpy.timeseries import TimeSeries
 gwdata = TimeSeries.fetch_open_data('L1', 'Dec 26 2015 03:37',
                                     'Dec 26 2015 03:47', verbose=True)
 
-# Next, we can calculate a Rayleigh statistic `FrequencySeries` using the 
+# Next, we can calculate a Rayleigh statistic `FrequencySeries` using the
 # :meth:`~gwpy.timeseries.TimeSeries.rayleigh_spectrum` method of the
 # `~gwpy.timeseries.TimeSeries` with a 2-second FFT and 1-second overlap (50%):
 

@@ -1612,7 +1612,7 @@ class TimeSeries(TimeSeriesBase):
         >>> plot.set_xlim(-.2, .2)
         >>> plot.set_epoch(0)
         >>> plot.show()
-        """
+        """  # nopep8
         from scipy.interpolate import (interp2d, InterpolatedUnivariateSpline)
         from ..frequencyseries import FrequencySeries
         from ..spectrogram import Spectrogram
