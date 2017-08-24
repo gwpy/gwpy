@@ -20,7 +20,8 @@
 """
 
 import re
-from operator import itemgetter
+
+from six import string_types
 
 from ...utils.compat import OrderedDict
 
@@ -87,25 +88,24 @@ def get_method(name, scaling='density'):
 def update_doc(obj, scaling='density'):
     """Update the docstring of ``obj`` to reference available FFT methods
     """
-    header = 'The available methods are:\n\n'
-    doc = obj.__doc__
+    header = 'The available methods are:'
 
-    # work out indent
-    try:
-        for line in doc.splitlines()[1:]:
-            if line:
-                break
-    except AttributeError:
-        line = ''
-    indent = ' ' * (len(line) - len(line.lstrip(' ')))
+    # if __doc__ isn't a string, bail-out now
+    if not isinstance(obj.__doc__, string_types):
+        return
 
-    # strip out existing methods table
+    # remove the old format list
+    lines = obj.__doc__.splitlines()
     try:
-        maindoc, _ = doc.split(header, 1)
-    except AttributeError:  # None
-        maindoc = ''
-    except ValueError:
-        maindoc = doc
+        pos = [i for i, line in enumerate(lines) if header in line][0]
+    except IndexError:
+        pass
+    else:
+        lines = lines[:pos]
+
+    # work out the indentation
+    matches = [re.search(r'(\S)', line) for line in lines[1:]]
+    indent = min(match.start() for match in matches if match)
 
     # build table of methods
     from astropy.table import Table
@@ -113,22 +113,16 @@ def update_doc(obj, scaling='density'):
     for method in METHODS[scaling]:
         f = METHODS[scaling][method]
         rows.append((method, '`%s.%s`' % (f.__module__, f.__name__)))
-    if rows:
-        rows = list(zip(*sorted(rows, key=itemgetter(1, 0))))
-    methodtable = Table(rows, names=('Method name', 'Function'))
-    newdoc = methodtable.pformat(max_lines=-1, max_width=80)
-    tablehead = re.sub('-', '=', newdoc[1])
-    newdoc[1] = tablehead
-    newdoc.insert(0, tablehead)
-    newdoc.append(tablehead)
-    newdoc.extend(['', 'See :ref:`gwpy-signal-fft` for more details'])
+    format_str = Table(rows=rows, names=['Method name', 'Function']).pformat(
+        max_lines=-1, max_width=80, align=('>', '<'))
+    format_str[1] = format_str[1].replace('-', '=')
+    format_str.insert(0, format_str[1])
+    format_str.append(format_str[0])
+    format_str.extend(['', 'See :ref:`gwpy-signal-fft` for more details'])
 
-    # re-write docstring
-    doc = '%s\n%s' % (maindoc.rstrip('\n'), header)
-    for line in newdoc:
-        doc += '%s%s\n' % (indent, line)
-    doc = doc.lstrip('\n')
+    lines.extend([' ' * indent + line for line in [header, ''] + format_str])
+    # and overwrite the docstring
     try:
-        obj.__doc__ = doc
-    except AttributeError:  # python 2.x
-        obj.__func__.__doc__ = doc
+        obj.__doc__ = '\n'.join(lines)
+    except AttributeError:
+        obj.__func__.__doc__ = '\n'.join(lines)

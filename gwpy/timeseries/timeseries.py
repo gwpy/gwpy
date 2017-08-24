@@ -360,8 +360,7 @@ class TimeSeries(TimeSeriesBase):
             a data series containing the PSD.
 
         Notes
-        -----
-        """
+        -----"""
         # get method
         scaling = kwargs.get('scaling', 'density')
         method_func = fft_registry.get_method(method, scaling=scaling)
@@ -488,8 +487,7 @@ class TimeSeries(TimeSeriesBase):
             input time-series.
 
         Notes
-        -----
-        """
+        -----"""
         # handle deprecated kwargs - TODO: remove before 1.0 release
         try:
             other = kwargs.pop('cross')
@@ -679,8 +677,7 @@ class TimeSeries(TimeSeriesBase):
             for details on specifying bins and weights
 
         Notes
-        -----
-        """
+        -----"""
         specgram = self.spectrogram(stride, fftlength=fftlength,
                                     overlap=overlap, method=method,
                                     window=window, nproc=nproc)
@@ -1428,8 +1425,7 @@ class TimeSeries(TimeSeriesBase):
         scipy.signal
 
         Notes
-        -----
-        """
+        -----"""
         # build whitener
         if asd is None:
             asd = self.asd(fftlength, overlap=overlap,
