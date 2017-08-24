@@ -501,7 +501,7 @@ class TestTimeSeries(TestTimeSeriesBase):
     def losc(self):
         try:
             return self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT)
+                LOSC_IFO, *LOSC_GW150914_SEGMENT, format='txt.gz')
         except URLError as e:
             pytest.skip(str(e))
 
@@ -509,7 +509,8 @@ class TestTimeSeries(TestTimeSeriesBase):
     def losc_16384(self):
         try:
             return self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, sample_rate=16384)
+                LOSC_IFO, *LOSC_GW150914_SEGMENT, sample_rate=16384,
+                format='txt.gz')
         except URLError as e:
             pytest.skip(str(e))
 
