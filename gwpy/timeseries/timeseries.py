@@ -72,11 +72,11 @@ class TimeSeries(TimeSeriesBase):
         GPS epoch associated with these data,
         any input parsable by `~gwpy.time.to_gps` is fine
 
-    dt : `float`, `~astropy.units.Quantity`, optional, default: `1`
+    dt : `float`, `~astropy.units.Quantity`, optional
         time between successive samples (seconds), can also be given inversely
         via `sample_rate`
 
-    sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
+    sample_rate : `float`, `~astropy.units.Quantity`, optional
         the rate of samples per second (Hertz), can also be given inversely
         via `dt`
 
@@ -94,10 +94,10 @@ class TimeSeries(TimeSeriesBase):
     dtype : `~numpy.dtype`, optional
         input data type
 
-    copy : `bool`, optional, default: `False`
+    copy : `bool`, optional
         choose to copy the input data to new memory
 
-    subok : `bool`, optional, default: `True`
+    subok : `bool`, optional
         allow passing of sub-classes by the array generator
 
     Notes
@@ -158,7 +158,7 @@ class TimeSeries(TimeSeriesBase):
             detected if possible. See below for list of acceptable
             formats.
 
-        nproc : `int`, optional, default: `1`
+        nproc : `int`, optional
             number of parallel processes to use, serial process by
             default.
 
@@ -334,8 +334,9 @@ class TimeSeries(TimeSeriesBase):
 
         Parameters
         ----------
-        fftlength : `float`, default: `TimeSeries.duration`
-            number of seconds in single FFT
+        fftlength : `float`
+            number of seconds in single FFT, defaults to a single FFT
+            covering the full duration
 
         overlap : `float`, optional
             number of seconds of overlap between FFTs, defaults to the
@@ -376,8 +377,9 @@ class TimeSeries(TimeSeriesBase):
 
         Parameters
         ----------
-        fftlength : `float`, default: `TimeSeries.duration`
-            number of seconds in single FFT
+        fftlength : `float`
+            number of seconds in single FFT, defaults to a single FFT
+            covering the full duration
 
         overlap : `float`, optional
             number of seconds of overlap between FFTs, defaults to the
@@ -418,8 +420,9 @@ class TimeSeries(TimeSeriesBase):
         other : `TimeSeries`
             the second `TimeSeries` in this CSD calculation
 
-        fftlength : `float`, default: `TimeSeries.duration`
-            number of seconds in single FFT
+        fftlength : `float`
+            number of seconds in single FFT, defaults to a single FFT
+            covering the full duration
 
         overlap : `float`, optional
             number of seconds of overlap between FFTs, defaults to the
@@ -477,7 +480,7 @@ class TimeSeries(TimeSeriesBase):
             FFT-averaging method, default: ``'welch'``,
             see *Notes* for more details
 
-        nproc : `int`, default: ``1``
+        nproc : `int`
             number of CPUs to use in parallel processing of FFTs
 
         Returns
@@ -637,33 +640,33 @@ class TimeSeries(TimeSeriesBase):
             see :func:`scipy.signal.get_window` for details on acceptable
             formats
 
-        nproc : `int`, default: ``1``
+        nproc : `int`
             maximum number of independent frame reading processes, default
             is set to single-process file reading.
 
         bins : `numpy.ndarray`, optional, default `None`
             array of histogram bin edges, including the rightmost edge
 
-        low : `float`, optional, default: `None`
+        low : `float`, optional
             left edge of lowest amplitude bin, only read
             if ``bins`` is not given
 
-        high : `float`, optional, default: `None`
+        high : `float`, optional
             right edge of highest amplitude bin, only read
             if ``bins`` is not given
 
-        nbins : `int`, optional, default: `500`
+        nbins : `int`, optional
             number of bins to generate, only read if ``bins`` is not
             given
 
-        log : `bool`, optional, default: `False`
+        log : `bool`, optional
             calculate amplitude bins over a logarithmic scale, only
             read if ``bins`` is not given
 
-        norm : `bool`, optional, default: `False`
+        norm : `bool`, optional
             normalise bin counts to a unit sum
 
-        density : `bool`, optional, default: `False`
+        density : `bool`, optional
             normalise bin counts to a unit integral
 
         Returns
@@ -692,8 +695,9 @@ class TimeSeries(TimeSeriesBase):
 
         Parameters
         ----------
-        fftlength : `float`, default: `TimeSeries.duration`
-            number of seconds in single FFT
+        fftlength : `float`
+            number of seconds in single FFT, defaults to a single FFT
+            covering the full duration
 
         overlap : `float`, optional
             number of seconds of overlap between FFTs, defaults to that of
@@ -765,7 +769,7 @@ class TimeSeries(TimeSeriesBase):
             see :func:`scipy.signal.get_window` for details on acceptable
             formats
 
-        nproc : `int`, default: ``1``
+        nproc : `int`
             maximum number of independent frame reading processes, default
             is set to single-process file reading.
 
@@ -995,15 +999,20 @@ class TimeSeries(TimeSeriesBase):
         ----------
         zeros : `array-like`
             list of zero frequencies
+
         poles : `array-like`
             list of pole frequencies
+
         gain : `float`
             DC gain of filter
-        analog : `bool`, optional, default: `True`
+
+        analog : `bool`, optional
             type of ZPK being applied, if `analog=True` all parameters
             will be converted in the Z-domain for digital filtering
-        unit : `str`, `~astropy.units.Unit`, optional, default: `'Hz'`
-            unit of zeros and poles, either 'Hz' or 'rad/s'
+
+        unit : `str`, `~astropy.units.Unit`, optional
+            unit of zeros and poles, either ``'Hz``' or ``'rad/s'``,
+            default is ``'Hz'``
 
         Returns
         -------
@@ -1086,7 +1095,7 @@ class TimeSeries(TimeSeriesBase):
             - ``(zeros, poles, gain)``
             - ``(A, B, C, D)`` 'state-space' representation
 
-        filtfilt : `bool`, optional, default: `False`
+        filtfilt : `bool`, optional
             filter forward and backwards to preserve phase
 
         **kwargs
@@ -1182,8 +1191,9 @@ class TimeSeries(TimeSeriesBase):
         other : `TimeSeries`
             `TimeSeries` signal to calculate coherence with
 
-        fftlength : `float`, optional, default: `TimeSeries.duration`
+        fftlength : `float`, optional
             number of seconds in single FFT, defaults to a single FFT
+            covering the full duration
 
         overlap : `float`, optional
             number of seconds of overlap between FFTs, defaults to the
@@ -1266,8 +1276,9 @@ class TimeSeries(TimeSeriesBase):
         dt : `float`
             duration (in seconds) of time-shift
 
-        fftlength : `float`, optional, default: `TimeSeries.duration`
+        fftlength : `float`, optional
             number of seconds in single FFT, defaults to a single FFT
+            covering the full duration
 
         overlap : `float`, optional
             number of seconds of overlap between FFTs, defaults to the
@@ -1333,7 +1344,7 @@ class TimeSeries(TimeSeriesBase):
             see :func:`scipy.signal.get_window` for details on acceptable
             formats
 
-        nproc : `int`, default: ``1``
+        nproc : `int`
             number of parallel processes to use when calculating
             individual coherence spectra.
 
@@ -1464,7 +1475,7 @@ class TimeSeries(TimeSeriesBase):
 
         Parameters
         ----------
-        detrend : `str`, optional, default: `constant`
+        detrend : `str`, optional
             the type of detrending.
 
         Returns
@@ -1496,8 +1507,10 @@ class TimeSeries(TimeSeriesBase):
         ----------
         frequency : `float`, `~astropy.units.Quantity`
             frequency (default in Hertz) at which to apply the notch
-        type : `str`, optional, default: 'iir'
+
+        type : `str`, optional
             type of filter to apply, currently only 'iir' is supported
+
         **kwargs
             other keyword arguments to pass to `scipy.signal.iirdesign`
 
@@ -1734,7 +1747,7 @@ class TimeSeriesDict(TimeSeriesBaseDict):
             detected if possible. See below for list of acceptable
             formats.
 
-        nproc : `int`, optional, default: ``1``
+        nproc : `int`, optional
             number of parallel processes to use, serial process by
             default.
 
