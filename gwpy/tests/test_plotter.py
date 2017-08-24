@@ -419,14 +419,26 @@ class TestAxes(PlottingTestBase):
             ax.html_map('test.png')
         assert str(exc.value) == 'Cannot determine artist to map, 0 found.'
 
-        ax.plot([1, 2, 3, 4, 5])
+        line = ax.plot([1, 2, 3, 4, 5])[0]
+
+        # auto-detect artist
         hmap = ax.html_map('test.png')
         assert hmap.startswith('<!doctype html>')
         assert hmap.count('<area') == 5
 
+        # manually pass artist
+        hmap2 = ax.html_map('test.png', data=line)
+        assert hmap2 == hmap
+
+        # auto-detect with multiple artists
         ax.plot([1, 2, 3, 4, 5])
         with pytest.raises(ValueError):
             ax.html_map('test.png')
+
+        # check data=<array>
+        data = list(zip(*line.get_data()))
+        hmap2 = ax.html_map('test.png', data=data)
+        assert hmap2 == hmap
 
     @pytest.mark.parametrize('method', [
         'plot',
