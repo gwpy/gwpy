@@ -198,12 +198,9 @@ def map_data(data, axes, filename, mapname='points', shape='circle',
     """
     if isinstance(data, Series):
         data = numpy.vstack((data.xindex.value, data.value)).T
-    elif isinstance(data, numpy.ndarray):
-        pass
     else:
-        raise NotImplementedError('Custom mappings for %r types have not been '
-                                  'implemented. Please plot these data and '
-                                  'pass the artist to map_artist().')
+        data = numpy.asarray(data)
+
     if isinstance(axes, Figure):
         axes = axes.gca()
 
