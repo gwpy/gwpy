@@ -41,6 +41,7 @@ class GWpyFormat(Generic):
     created so that mathematical operations will work. Conversions to other
     units will explicitly not work.
     """
+    name = 'gwpy'
     re_closest_unit = re.compile(r'Did you mean (.*)\?\Z')
     re_closest_unit_delim = re.compile('(, | or )')
 
@@ -82,7 +83,7 @@ class GWpyFormat(Generic):
 
 
 # pylint: disable=redefined-builtin
-def parse_unit(name, parse_strict='warn', format=GWpyFormat):
+def parse_unit(name, parse_strict='warn', format='gwpy'):
     """Attempt to intelligently parse a `str` as a `~astropy.units.Unit`
 
     Parameters
