@@ -21,7 +21,6 @@
 
 import json
 import os.path
-import warnings
 from tempfile import NamedTemporaryFile
 
 import pytest
@@ -111,40 +110,47 @@ channels =
     (units.m, units.m),
     ('meter', units.m),
     ('Volts', units.V),
-    ('meters/second', units.m / units.s),
+    ('Meters/Second', units.m / units.s),
+    ('Amp', units.ampere),
+    ('MPC', units.megaparsec),
+    ('degrees_C', units.Unit('Celsius')),
+    ('degrees_F', units.Unit('Fahrenheit')),
 ])
 def test_parse_unit(arg, unit):
-    assert parse_unit(arg) == unit
+    assert parse_unit(arg, parse_strict='silent') == unit
 
 
 def test_parse_unit_strict():
-    with pytest.raises(ValueError) as exc:  # assert error
+    # check that errors get raise appropriately
+    with pytest.raises(ValueError) as exc:
         parse_unit('metre', parse_strict='raise')
-    assert str(exc.value) == ("'metre' did not parse as pluralformat unit: "
+    assert str(exc.value) == ("'metre' did not parse as unit: "
                               "metre is not a valid unit. Did you mean meter?")
 
-    with warnings.catch_warnings(record=True) as rec:  # assert warning
+    # check that warnings get posted, and a custom NamedUnit gets returned
+    with pytest.warns(units.UnitsWarning) as exc:
         u = parse_unit('metre', parse_strict='warn')
-    assert len(rec) == 1
-    assert issubclass(rec[0].category, units.UnitsWarning)
-    assert isinstance(u, units.UnrecognizedUnit)
-
-    with warnings.catch_warnings(record=True) as rec:  # assert no warning
-        parse_unit('metre', parse_strict='silent')
-    assert len(rec) == 0
+    assert str(exc.value) == ('metre is not a valid unit. Mathematical '
+                              'operations using this unit should work, but '
+                              'conversions to other units will not.')
+    assert isinstance(u, units.NamedUnit)
+    assert u == unrecognised.Unit('metre')
 
 
 @pytest.mark.parametrize('name', [
-    'counts',
+    'NONE',
     'undef',
-    'coherence',
     'strain',
-    'Degrees_C',
-    'Degrees_F',
+    'coherence',
+    'sec',
+    'torr',
+    'cf',
+    'cfm',
+    'ptcls',
 ])
 def test_detector_units(name):
-    # just check that such a unit exists
-    units.Unit(name)
+    # just check that such a unit exists and doesn't evaluate to False
+    assert units.Unit(name)
 
 
 @utils.skip_missing_dependency('lal')
