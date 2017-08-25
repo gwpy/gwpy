@@ -124,17 +124,16 @@ def test_parse_unit_strict():
     # check that errors get raise appropriately
     with pytest.raises(ValueError) as exc:
         parse_unit('metre', parse_strict='raise')
-    assert str(exc.value) == ("'metre' did not parse as unit: "
-                              "metre is not a valid unit. Did you mean meter?")
 
     # check that warnings get posted, and a custom NamedUnit gets returned
     with pytest.warns(units.UnitsWarning) as exc:
         u = parse_unit('metre', parse_strict='warn')
-    assert str(exc.value) == ('metre is not a valid unit. Mathematical '
-                              'operations using this unit should work, but '
-                              'conversions to other units will not.')
-    assert isinstance(u, units.NamedUnit)
-    assert u == unrecognised.Unit('metre')
+    assert str(exc[0].message) == ('metre is not a valid unit. Did you mean '
+                                   'meter? Mathematical operations using this '
+                                   'unit should work, but conversions to '
+                                   'other units will not.')
+    assert isinstance(u, units.IrreducibleUnit)
+    assert str(u) == 'metre'
 
 
 @pytest.mark.parametrize('name', [
@@ -229,7 +228,6 @@ class TestChannel(object):
     @pytest.mark.parametrize('arg, unit', [
         (None, None),
         ('m', units.m),
-        ('blah', units.Unit('blah', parse_strict='silent')),
     ])
     def test_unit(self, arg, unit):
         new = self.TEST_CLASS('test', unit=arg)

@@ -74,9 +74,9 @@ class GWpyFormat(Generic):
             elif sname.lower() in alts:
                 alt = sname.lower()
             else:
-                warnings.warn('{0}. Mathematical operations using this unit '
+                warnings.warn('{0} Mathematical operations using this unit '
                               'should work, but conversions to other units '
-                              'will not.'.format(str(exc).rstrip(',. ')),
+                              'will not.'.format(str(exc).rstrip(' ')),
                               category=units.UnitsWarning)
                 return units.def_unit(name, doc='Unrecognized unit')
             return cls._parse_unit(alt)
