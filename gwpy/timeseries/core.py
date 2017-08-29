@@ -823,8 +823,8 @@ class TimeSeriesBaseDict(OrderedDict):
 
     @classmethod
     def find(cls, channels, start, end, frametype=None,
-             pad=None, dtype=None, nproc=1, verbose=False,
-             allow_tape=True, observatory=None, **readargs):
+             frametype_match=None, pad=None, dtype=None, nproc=1,
+             verbose=False, allow_tape=True, observatory=None, **readargs):
         """Find and read data from frames for a number of channels.
 
         Parameters
@@ -843,6 +843,9 @@ class TimeSeriesBaseDict(OrderedDict):
         frametype : `str`, optional
             name of frametype in which this channel is stored, by default
             will search for all required frame types
+
+        frametype_match : `str`, optional
+            regular expression to use for frametype matching
 
         pad : `float`, optional
             value with which to fill gaps in the source data, defaults to
@@ -871,8 +874,9 @@ class TimeSeriesBaseDict(OrderedDict):
         if frametype is None:
             frametypes = dict()
             for c in channels:
-                ft = datafind.find_best_frametype(c, start, end,
-                                                  allow_tape=allow_tape)
+                ft = datafind.find_best_frametype(
+                    c, start, end, frametype_match=frametype_match,
+                    allow_tape=allow_tape)
                 try:
                     frametypes[ft].append(c)
                 except KeyError:
@@ -991,10 +995,12 @@ class TimeSeriesBaseDict(OrderedDict):
                 if verbose:
                     gprint(str(e), file=sys.stderr)
                     gprint("Failed to access data from frames, trying NDS...")
+
+        # remove kwargs for .find()
+        for key in ('nproc', 'frametype', 'frametype_match', 'observatory'):
+            kwargs.pop(key, None)
+
         # otherwise fetch from NDS
-        kwargs.pop('nproc', None)
-        kwargs.pop('frametype', None)
-        kwargs.pop('observatory', None)
         try:
             return cls.fetch(channels, start, end, pad=pad, dtype=dtype,
                              allow_tape=allow_tape, verbose=verbose, **kwargs)

@@ -118,6 +118,7 @@ def _update__doc__(data_class):
         max_lines=-1, max_width=80, align=('>', '<'))
     format_str[1] = format_str[1].replace('-', '=')
     format_str.insert(0, format_str[1])
+    format_str.append(format_str[0])
 
     lines.extend([' ' * indent + line for line in [header, ''] + format_str])
     # and overwrite the docstring

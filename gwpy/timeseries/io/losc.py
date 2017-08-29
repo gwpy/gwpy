@@ -43,6 +43,13 @@ from ...detector.units import parse_unit
 from ...segments import (Segment, SegmentList)
 from ...time import to_gps
 
+try:
+    import h5py  # pylint: disable=unused-import
+except ImportError:
+    HAS_H5PY = False
+else:
+    HAS_H5PY = True
+
 # default URL
 LOSC_URL = 'https://losc.ligo.org'
 
@@ -86,7 +93,9 @@ def find_losc_urls(detector, start, end, host=LOSC_URL,
     start = int(start)
     end = int(end)
     span = SegmentList([Segment(start, end)])
-    if format is None:
+    if format is None and HAS_H5PY:  # loading HDF5 is much faster
+        formats = ['hdf5', 'txt.gz', 'gwf']
+    elif format is None:
         formats = ['txt.gz', 'hdf5', 'gwf']
     elif isinstance(format, string_types):
         formats = [format]
