@@ -19,24 +19,84 @@
 """This module registers a number of custom units used in GW astronomy.
 """
 
+import re
+import warnings
+
 from astropy import units
+from astropy.units.format.generic import Generic
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-# enable imperial units
-units.add_enabled_units(units.imperial)
+
+# -- parser to handle any unit ------------------------------------------------
+
+class GWpyFormat(Generic):
+    """Sub-class of the `Generic` unit parser that is more forgiving
+
+    This format tries to work around 'human' errors in unit naming,
+    including plurals, and capitalisation, and if nothing else works
+    it just defines a new unit matching the given string.
+
+    New units are not registered, so cannot be referred to later, but are
+    created so that mathematical operations will work. Conversions to other
+    units will explicitly not work.
+    """
+    name = 'gwpy'
+    re_closest_unit = re.compile(r'Did you mean (.*)\?\Z')
+    re_closest_unit_delim = re.compile('(, | or )')
+
+    @classmethod
+    def _get_unit(cls, t):
+        # match as normal
+        try:
+            return cls._parse_unit(t.value)
+        except ValueError as exc:
+            name = t.value
+            sname = name[:-1] if name.endswith('s') else ''
+
+            # parse alternative units from the error message
+            match = cls.re_closest_unit.search(str(exc))
+            try:  # split 'A, B, or C' -> ['A', 'B', 'C']
+                alts = cls.re_closest_unit_delim.split(match.groups()[0])[::2]
+            except AttributeError:
+                alts = []
+            alts = list(set(alts))
+
+            # match uppercase to titled (e.g. MPC -> Mpc)
+            if name.title() in alts:
+                alt = name.title()
+            # match titled unit to lower-case (e.g. Amp -> amp)
+            elif name.lower() in alts:
+                alt = name.lower()
+            # match plural to singular (e.g. meters -> meter)
+            elif sname in alts:
+                alt = sname
+            elif sname.lower() in alts:
+                alt = sname.lower()
+            else:
+                warnings.warn('{0} Mathematical operations using this unit '
+                              'should work, but conversions to other units '
+                              'will not.'.format(str(exc).rstrip(' ')),
+                              category=units.UnitsWarning)
+                return units.def_unit(name, doc='Unrecognized unit')
+            return cls._parse_unit(alt)
 
 
-def parse_unit(name, parse_strict='warn'):
+# pylint: disable=redefined-builtin
+def parse_unit(name, parse_strict='warn', format='gwpy'):
     """Attempt to intelligently parse a `str` as a `~astropy.units.Unit`
 
     Parameters
     ----------
     name : `str`
         unit name to parse
+
     parse_strict : `str`
         one of 'silent', 'warn', or 'raise' depending on how pedantic
         you want the parser to be
+
+    format : `~astropy.units.format.Base`
+        the formatter class to use when parsing the unit string
 
     Returns
     -------
@@ -48,35 +108,72 @@ def parse_unit(name, parse_strict='warn'):
     ValueError
         if the unit cannot be parsed and `parse_strict='raise'`
     """
-    if name is None or isinstance(name, units.UnitBase):
-        return name
-    if isinstance(name, bytes):
-        name = name.decode('utf-8')
-    else:
-        name = str(name)
-    # try simple parse
-    try:
-        return units.Unit(name)
-    except ValueError:
-        pass
-    # try plural parsing
-    if name.endswith('s'):
-        try:
-            return units.Unit(name[:-1])
-        except ValueError:
-            pass
-    # otherwise allow a loose parsing
-    return units.Unit(name, parse_strict=parse_strict)
+    if name is None:
+        return None
+
+    # pylint: disable=unexpected-keyword-arg
+    if parse_strict in ('raise',):
+        return units.Unit(name, parse_strict=parse_strict)
+    return units.Unit(name, parse_strict=parse_strict, format=format)
 
 
-# -----------------------------------------------------------------------------
-# instrumental units
+# -- custom units -------------------------------------------------------------
+# pylint: disable=no-member,invalid-name
 
-units.add_enabled_units([
-    units.def_unit(['counts'], represents=units.Unit('count')),
-    units.def_unit(['undef'], doc='No unit has been defined for these data'),
-    units.def_unit(['coherence'], represents=units.dimensionless_unscaled),
-    units.def_unit(['strain'], represents=units.dimensionless_unscaled),
-    units.def_unit(['Degrees_C'], represents=units.Unit('Celsius')),
-    units.def_unit(['Degrees_F'], represents=units.Unit('Fahrenheit')),
-])
+# enable imperial units
+units.add_enabled_units(units.imperial)
+
+# -- custom units settings
+# the following happens in two sets
+#     1) alternative names for standard units where SI prefices will not
+#        be used
+#     2) new units or alternative names for standard units where SI prefices
+#        _will_ be used
+#
+# for developers: when adding a new custom unit, please remember to add it
+# to the list of tested units in `test_detector.py`
+
+# 1) alternative names
+registry = units.get_current_unit_registry().registry
+for alias, unit in [
+        ('Degrees_C', units.Unit('Celsius')),
+        ('Degrees_F', units.Unit('Fahrenheit')),
+]:
+    unit.names.append(alias)
+    registry[alias] = unit
+
+# 2) new units
+_ns = {}
+
+# LIGO-Lab standard for 'no unit defined'
+units.def_unit(['NONE', 'undef'], namespace=_ns,
+               doc='No unit has been defined for these data')
+
+# other dimenionless units
+units.def_unit('strain', namespace=_ns)
+units.def_unit('coherence', namespace=_ns)
+
+# alias for 'second' but with prefices
+units.def_unit((['sec'], ['sec']), represents=units.second, prefixes=True,
+               namespace=_ns)
+
+# alternative Pressure unit for LIGO UHV
+units.def_unit((['torr'], ['torr']), represents=101325/760.*units.pascal,
+               prefixes=True, namespace=_ns)
+
+# pounds per square inch gauge
+units.def_unit('psig', represents=units.imperial.psi, prefixes=True,
+               namespace=_ns, doc='Pound per square inch gauge: pressure')
+
+# cubic feet
+units.def_unit('cf', represents=units.imperial.foot**3, namespace=_ns)
+
+# cubic feet per minute
+units.def_unit('cfm', represents=_ns['cf']/units.minute, namespace=_ns)
+
+# particles (as in dust)
+units.def_unit(['ptcls', 'particles', 'particulates'], prefixes=True,
+               namespace=_ns)
+
+# -- register units -----------------------------
+units.add_enabled_units(_ns)
