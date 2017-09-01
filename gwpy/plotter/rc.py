@@ -46,10 +46,12 @@ DEFAULT_PARAMS = {
     # ticks
     'axes.formatter.limits': (-3, 4),
     # fonts
-    'axes.titlesize': 24,
-    'axes.labelsize': 20,
-    'xtick.labelsize': 18,
-    'ytick.labelsize': 18,
+    'axes.labelpad': 5,
+    'axes.titlesize': 20,
+    'axes.labelsize': 18,
+    'xtick.labelsize': 16,
+    'ytick.labelsize': 16,
+    'font.sans-serif': ['FreeSans'] + rcParams['font.sans-serif'],
     # image
     'image.aspect': 'auto',
     'image.interpolation': 'nearest',
@@ -70,8 +72,15 @@ except KeyError:
 # set latex options
 rcParams['text.latex.preamble'].extend(tex.MACROS)
 if usetex:
-    DEFAULT_PARAMS['text.usetex'] = True
-    DEFAULT_PARAMS['font.family'] = 'serif'
+    DEFAULT_PARAMS.update({
+        'text.usetex': True,
+        'font.family': 'serif',
+        'axes.labelpad': 4,
+        'axes.labelsize': 20,
+        'axes.titlesize': 24,
+        'xtick.labelsize': 16,
+        'ytick.labelsize': 16,
+    })
     if mpl_version < '2.0':
         DEFAULT_PARAMS['font.serif'] = ['Computer Modern']
 
