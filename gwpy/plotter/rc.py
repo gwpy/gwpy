@@ -19,6 +19,8 @@
 """Custom default figure configuration
 """
 
+import os
+
 from matplotlib import (rcParams, rc_params, __version__ as mpl_version)
 from matplotlib.figure import SubplotParams
 
@@ -59,9 +61,15 @@ DEFAULT_PARAMS = {
     'legend.fancybox': False,
 }
 
+# select tex formatting (or not)
+try:  # allow user to override from environment
+    usetex = os.environ['GWPY_USETEX'].lower() in ['1', 'true', 'yes', 'y']
+except KeyError:
+    usetex = rcParams['text.usetex'] or tex.HAS_TEX
+
 # set latex options
 rcParams['text.latex.preamble'].extend(tex.MACROS)
-if rcParams['text.usetex'] or tex.HAS_TEX:
+if usetex:
     DEFAULT_PARAMS['text.usetex'] = True
     DEFAULT_PARAMS['font.family'] = 'serif'
     if mpl_version < '2.0':
