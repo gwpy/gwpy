@@ -170,4 +170,4 @@ def write_object_dataset(obj, f, create_func, append=False, overwrite=False,
     ValueError
         if the output file exists and ``append=False``
     """
-    return create_func(f, obj, **kwargs)
+    return create_func(f, obj, append=append, overwrite=overwrite, **kwargs)
