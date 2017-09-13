@@ -317,6 +317,10 @@ class Plot(figure.Figure):
             kwargs.setdefault('ticks', LogLocator(subs=numpy.arange(1, 11)))
             kwargs.setdefault('format', CombinedLogFormatterMathtext())
 
+        # set orientation
+        if location in ('top', 'bottom'):
+            kwargs.setdefault('orientation', 'horizontal')
+
         # make colour bar
         colorbar = self.colorbar(mappable, cax=cax, ax=ax, **kwargs)
 
