@@ -181,7 +181,7 @@ class StateTimeSeries(TimeSeriesBase):
         dtype : `type`, `callable`
             output segment entry type, can pass either a type for simple
             casting, or a callable function that accepts a float and returns
-            another numeric type, defaults to the `dtype` of the series
+            another numeric type, defaults to the `dtype` of the time index
 
         round : `bool`, optional, default: False
             choose to round each `~gwpy.segments.Segment` to its
@@ -197,14 +197,19 @@ class StateTimeSeries(TimeSeriesBase):
         from glue.segmentsUtils import from_bitstream
         from ..segments import (Segment, SegmentList, DataQualityFlag)
 
+        # format dtype
         if dtype is None:
-            dtype = self.dtype
-        start = dtype(self.x0.value)
-        dt = dtype(self.dx.value)
+            dtype = self.t0.dtype.type
+        elif isinstance(dtype, numpy.dtype):
+            dtype = dtype.type
+        start = dtype(self.t0.value)  # <-- sets the dtype for the segments
+        dt = self.dt.value
 
+        # build segmentlists
         active = from_bitstream(self.value, start, dt, minlen=int(minlen))
-        known = SegmentList([self.span])
+        known = SegmentList([Segment(*map(dtype, self.span))])
 
+        # build flag and return
         out = DataQualityFlag(name=name or self.name, active=active,
                               known=known, label=label or self.name,
                               description=description)
