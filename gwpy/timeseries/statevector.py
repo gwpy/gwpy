@@ -162,7 +162,7 @@ class StateTimeSeries(TimeSeriesBase):
 
     # -- useful methods -------------------------
 
-    def to_dqflag(self, name=None, minlen=1, dtype=float, round=False,
+    def to_dqflag(self, name=None, minlen=1, dtype=None, round=False,
                   label=None, description=None):
         """Convert this series into a `~gwpy.segments.DataQualityFlag`
 
@@ -178,10 +178,10 @@ class StateTimeSeries(TimeSeriesBase):
             `~gwpy.segments.Segment`. This is useful to ignore single
             bit flips, for example.
 
-        dtype : `type`, `callable`, default: `float`
+        dtype : `type`, `callable`
             output segment entry type, can pass either a type for simple
             casting, or a callable function that accepts a float and returns
-            another numeric type
+            another numeric type, defaults to the `dtype` of the time index
 
         round : `bool`, optional, default: False
             choose to round each `~gwpy.segments.Segment` to its
@@ -197,13 +197,19 @@ class StateTimeSeries(TimeSeriesBase):
         from glue.segmentsUtils import from_bitstream
         from ..segments import (Segment, SegmentList, DataQualityFlag)
 
-        start = self.x0.value
-        dt = self.dx.value
+        # format dtype
+        if dtype is None:
+            dtype = self.t0.dtype.type
+        elif isinstance(dtype, numpy.dtype):
+            dtype = dtype.type
+        start = dtype(self.t0.value)  # <-- sets the dtype for the segments
+        dt = self.dt.value
+
+        # build segmentlists
         active = from_bitstream(self.value, start, dt, minlen=int(minlen))
-        if dtype is not float:
-            active = active.__class__([Segment(dtype(s[0]), dtype(s[1])) for
-                                       s in active])
-        known = SegmentList([self.span])
+        known = SegmentList([Segment(*map(dtype, self.span))])
+
+        # build flag and return
         out = DataQualityFlag(name=name or self.name, active=active,
                               known=known, label=label or self.name,
                               description=description)
