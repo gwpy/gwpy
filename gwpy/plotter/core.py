@@ -28,10 +28,7 @@ from matplotlib.axes import SubplotBase
 from matplotlib.cbook import iterable
 from matplotlib.ticker import LogLocator
 
-try:
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-except ImportError:
-    from mpl_toolkits.axes_grid import make_axes_locatable
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from . import utils
 from .rc import (rcParams, MPL_RCPARAMS, get_subplot_params)
@@ -50,6 +47,8 @@ else:
 
 
 def interactive_backend():
+    """Returns `True` if the current backend is interactive
+    """
     return pyplot.get_backend() in backends.interactive_bk
 
 
@@ -177,7 +176,10 @@ class Plot(figure.Figure):
                      width=0.15, pad=0.08, log=None, label="", clim=None,
                      cmap=None, clip=None, visible=True, axes_class=Axes,
                      **kwargs):
-        """Add a colorbar to the current `Axes`
+        """Add a colorbar to the current `Plot`
+
+        A colorbar must be associated with an `Axes` on this `Plot`,
+        and an existing mappable element (e.g. an image) (if `visible=True`).
 
         Parameters
         ----------
@@ -185,28 +187,28 @@ class Plot(figure.Figure):
             collection against which to map the colouring
 
         ax : `~matplotlib.axes.Axes`
-            axes from which to steal space for the colour-bar
+            axes from which to steal space for the colorbar
 
-        location : `str`, optional, default: 'right'
+        location : `str`, optional
             position of the colorbar
 
-        width : `float`, optional default: 0.2
+        width : `float`, optional
             width of the colorbar as a fraction of the axes
 
-        pad : `float`, optional, default: 0.1
+        pad : `float`, optional
             gap between the axes and the colorbar as a fraction of the axes
 
-        log : `bool`, optional, default: `False`
-            display the colorbar with a logarithmic scale
+        log : `bool`, optional
+            display the colorbar with a logarithmic scale, or not
 
-        label : `str`, optional, default: '' (no label)
+        label : `str`, optional
             label for the colorbar
 
-        clim : pair of floats, optional
+        clim : pair of `float`
             (lower, upper) limits for the colorbar scale, values outside
             of these limits will be clipped to the edges
 
-        visible : `bool`, optional, default: `True`
+        visible : `bool`, optional
             make the colobar visible on the figure, this is useful to
             make two plots, each with and without a colorbar, but
             guarantee that the axes will be the same size
@@ -219,40 +221,52 @@ class Plot(figure.Figure):
         -------
         cbar : `~matplotlib.colorbar.Colorbar`
             the newly added `Colorbar`
+
+        Examples
+        --------
+        >>> import numpy
+        >>> from gwpy.plotter import Plot
+
+        To plot a simple image and add a colorbar:
+
+        >>> plot = Plot()
+        >>> ax = plot.gca()
+        >>> ax.imshow(numpy.random.randn(120).reshape((10, 12)))
+        >>> plot.add_colorbar(label='Value')
+        >>> plot.show()
         """
-        # find default layer
-        if mappable is None and ax is not None and len(ax.collections):
-            mappable = ax.collections[-1]
-        elif mappable is None and ax is not None and len(ax.images):
-            mappable = ax.images[-1]
-        elif (visible is False and mappable is None and
-              ax is not None and len(ax.lines)):
-            mappable = ax.lines[-1]
-        elif mappable is None and ax is None:
-            for ax in self.axes[::-1]:
+        # if mappable artist not given, search through axes in reverse
+        # and pick most recent artist
+        if mappable is None and visible:
+            if ax is None:
+                axes_ = self.axes[::-1]  # find most recent elements first
+            else:
+                axes_ = [ax]
+            for ax in axes_:
                 if hasattr(ax, 'collections') and len(ax.collections):
                     mappable = ax.collections[-1]
                     break
                 elif hasattr(ax, 'images') and len(ax.images):
                     mappable = ax.images[-1]
                     break
-                elif visible is False and len(ax.lines):
-                    mappable = ax.lines[-1]
-                    break
+
+        # if no mappable element found, panic
         if visible and mappable is None:
             raise ValueError("Cannot determine mappable layer for this "
                              "colorbar")
-        elif ax is None:
+
+        # if Axes not given, use those from the mappable
+        if visible and not ax:
+            ax = mappable.axes
+        elif not ax:  # if visible=False just pick the current axes
+            _, ax = self._axstack.current_key_axes()
+
+        # if no valid Axes found, panic
+        if ax is None:
             raise ValueError("Cannot determine an anchor Axes for this "
                              "colorbar")
 
-        # find default axes
-        if not ax:
-            ax = mappable.axes
-
-        mappables = ax.collections + ax.images
-
-        # get new colour axis
+        # create Axes for colorbar
         divider = make_axes_locatable(ax)
         if location not in ['right', 'top']:
             raise ValueError("'left' and 'bottom' colorbars have not "
@@ -260,10 +274,14 @@ class Plot(figure.Figure):
         cax = divider.append_axes(location, width, pad=pad,
                                   add_to_figure=visible, axes_class=axes_class)
         self._coloraxes.append(cax)
+
         if visible:
             self.sca(ax)
         else:
             return
+
+        # find all mappables on these Axes
+        mappables = ax.collections + ax.images
 
         # set limits
         if not clim:
@@ -299,6 +317,10 @@ class Plot(figure.Figure):
             kwargs.setdefault('ticks', LogLocator(subs=numpy.arange(1, 11)))
             kwargs.setdefault('format', CombinedLogFormatterMathtext())
 
+        # set orientation
+        if location in ('top', 'bottom'):
+            kwargs.setdefault('orientation', 'horizontal')
+
         # make colour bar
         colorbar = self.colorbar(mappable, cax=cax, ax=ax, **kwargs)
 
@@ -326,11 +348,29 @@ class Plot(figure.Figure):
         ----------
         projection : `str`
             name of axes types to return
+
+        Returns
+        -------
+        axlist : `list` of `~matplotlib.axes.Axes`
         """
         if projection is None:
             return self.axes
         else:
             return [ax for ax in self.axes if ax.name == projection.lower()]
+
+    def _pick_axes(self, ax=None, projection=None, newax=None, **kwargs):
+        """Returns the `Axes` to use in an `add_xxx` method
+
+        A new `Axes` will be created if necessary.
+        """
+        if ax is None and not newax:
+            try:
+                ax = self._find_axes(projection)
+            except IndexError:
+                newax = True
+        if newax:
+            return self._add_new_axes(projection=projection, **kwargs)
+        return ax
 
     def _find_axes(self, projection=None):
         """Find the most recently added axes for the given projection
@@ -401,16 +441,24 @@ class Plot(figure.Figure):
         ----------
         x : array-like
             x positions of the line points (in axis coordinates)
+
         y : array-like
             y positions of the line points (in axis coordinates)
-        projection : `str`, optional, default: `'timeseries'`
-            name of the Axes projection on which to plot
-        ax : `~gwpy.plotter.Axes`
+
+        projection : `str`, optional
+            name of the Axes projection on which to plot, defaults
+            to the default projection for this `Plot`
+
+        ax : `~matplotlib.axes.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
-        newax : `bool`, optional, default: `False`
-            force data to plot on a fresh set of `Axes`
+
+        newax : `bool`, optional
+            force data to plot on a fresh set of `Axes`, defaults to
+            plotting on a new `Axes` if none of the existing `Axes` match
+            the specified ``projection``
+
         **kwargs
             additional keyword arguments passed directly on to
             the axes :meth:`~matplotlib.axes.Axes.plot` method.
@@ -433,14 +481,9 @@ class Plot(figure.Figure):
         kwargs.setdefault("markersize", 0)
 
         # find relevant axes
-        if ax is None and not newax:
-            try:
-                ax = self._find_axes(projection)
-            except IndexError:
-                newax = True
-        if newax:
-            ax = self._add_new_axes(projection=projection,
-                                    sharex=sharex, sharey=sharey)
+        ax = self._pick_axes(ax=ax, projection=projection, newax=newax,
+                             sharex=sharex, sharey=sharey)
+
         # plot on axes
         return ax.plot(numpy.asarray(x), numpy.asarray(y), **kwargs)[0]
 
@@ -457,7 +500,7 @@ class Plot(figure.Figure):
         y : array-like
             y positions of the line points (in axis coordinates)
 
-        projection : `str`, optional, default: `None`
+        projection : `str`, optional
             name of the Axes projection on which to plot
 
         ax : `~gwpy.plotter.Axes`
@@ -465,7 +508,7 @@ class Plot(figure.Figure):
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
 
-        newax : `bool`, optional, default: `False`
+        newax : `bool`, optional
             force data to plot on a fresh set of `Axes`
 
         **kwargs
@@ -483,14 +526,9 @@ class Plot(figure.Figure):
         sharey = kwargs.pop('sharey', None)
 
         # find relevant axes
-        if ax is None and not newax:
-            try:
-                ax = self._find_axes(projection)
-            except IndexError:
-                newax = True
-        if newax:
-            ax = self._add_new_axes(projection=projection,
-                                    sharex=sharex, sharey=sharey)
+        ax = self._pick_axes(ax=ax, projection=projection, newax=newax,
+                             sharex=sharex, sharey=sharey)
+
         # plot on axes
         return ax.scatter(numpy.asarray(x), numpy.asarray(y), **kwargs)
 
@@ -506,7 +544,7 @@ class Plot(figure.Figure):
         y : array-like
             y positions of the line points (in axis coordinates)
 
-        projection : `str`, optional, default: `None`
+        projection : `str`, optional
             name of the Axes projection on which to plot
 
         ax : `~gwpy.plotter.Axes`
@@ -514,7 +552,7 @@ class Plot(figure.Figure):
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
 
-        newax : `bool`, optional, default: `False`
+        newax : `bool`, optional
             force data to plot on a fresh set of `Axes`
 
         **kwargs
@@ -528,15 +566,11 @@ class Plot(figure.Figure):
         """
         sharex = kwargs.pop('sharex', None)
         sharey = kwargs.pop('sharey', None)
+
         # find relevant axes
-        if ax is None and not newax:
-            try:
-                ax = self._find_axes(projection)
-            except IndexError:
-                newax = True
-        if newax:
-            ax = self._add_new_axes(projection=projection,
-                                    sharex=sharex, sharey=sharey)
+        ax = self._pick_axes(ax=ax, projection=projection, newax=newax,
+                             sharex=sharex, sharey=sharey)
+
         # plot on axes
         return ax.imshow(image, **kwargs)
 
@@ -552,7 +586,7 @@ class Plot(figure.Figure):
         y : array-like
             y positions of the line points (in axis coordinates)
 
-        projection : `str`, optional, default: `None`
+        projection : `str`, optional
             name of the Axes projection on which to plot
 
         ax : `~gwpy.plotter.Axes`
@@ -560,7 +594,7 @@ class Plot(figure.Figure):
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
 
-        newax : `bool`, optional, default: `False`
+        newax : `bool`, optional
             force data to plot on a fresh set of `Axes`
 
         **kwargs
@@ -586,7 +620,7 @@ class Plot(figure.Figure):
         y : array-like
             y-axis data points
 
-        projection : `str`, optional, default: `None`
+        projection : `str`, optional
             name of the Axes projection on which to plot
 
         ax : `~gwpy.plotter.Axes`
@@ -594,7 +628,7 @@ class Plot(figure.Figure):
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
 
-        newax : `bool`, optional, default: `False`
+        newax : `bool`, optional
             force data to plot on a fresh set of `Axes`
 
         **kwargs.
@@ -631,9 +665,8 @@ class Plot(figure.Figure):
                             **kwargs)
 
     @auto_refresh
-    def add_timeseries(self, timeseries, projection='timeseries',
-                       ax=None, newax=False, sharex=None, sharey=None,
-                       **kwargs):
+    def add_timeseries(self, timeseries, ax=None, newax=False,
+                       sharex=None, sharey=None, **kwargs):
         """Add a `~gwpy.timeseries.TimeSeries` trace to this plot
 
         Parameters
@@ -641,15 +674,12 @@ class Plot(figure.Figure):
         timeseries : `~gwpy.timeseries.TimeSeries`
             the TimeSeries to display
 
-        projection : `str`, optional, default: ``'timeseries'``
-            name of the Axes projection on which to plot
-
         ax : `~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
 
-        newax : `bool`, optional, default: `False`
+        newax : `bool`, optional
             force data to plot on a fresh set of `Axes`
 
         **kwargs
@@ -664,8 +694,8 @@ class Plot(figure.Figure):
                               sharex=sharex, sharey=sharey, **kwargs)
 
     @auto_refresh
-    def add_frequencyseries(self, spectrum, projection='spectrum', ax=None,
-                            newax=False, sharex=None, sharey=None, **kwargs):
+    def add_frequencyseries(self, spectrum, ax=None, newax=False,
+                            sharex=None, sharey=None, **kwargs):
         """Add a `~gwpy.frequencyseries.FrequencySeries` trace to this plot
 
         Parameters
@@ -673,15 +703,12 @@ class Plot(figure.Figure):
         spectrum : `~gwpy.frequencyseries.FrequencySeries`
             the `FrequencySeries` to display
 
-        projection : `str`, optional, default: `'frequencyseries'`
-            name of the Axes projection on which to plot
-
         ax : `~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
 
-        newax : `bool`, optional, default: `False`
+        newax : `bool`, optional
             force data to plot on a fresh set of `Axes`
 
         **kwargs
@@ -697,9 +724,8 @@ class Plot(figure.Figure):
                               **kwargs)
 
     @auto_refresh
-    def add_spectrogram(self, spectrogram, projection='timeseries',
-                        ax=None, newax=False, sharex=None, sharey=None,
-                        **kwargs):
+    def add_spectrogram(self, spectrogram, ax=None, newax=False,
+                        sharex=None, sharey=None, **kwargs):
         """Add a `~gwpy.spectrogram.Spectrogram` to this plot
 
         Parameters
@@ -707,15 +733,12 @@ class Plot(figure.Figure):
         spectrogram : `~gwpy.spectrogram.core.Spectrogram`
             the `Spectrogram` to display
 
-        projection : `str`, optional, default: `timeseries`
-            name of the Axes projection on which to plot
-
         ax : `~gwpy.plotter.Axes`
             the `Axes` on which to add these data, if this is not given,
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
 
-        newax : `bool`, optional, default: `False`
+        newax : `bool`, optional
             force data to plot on a fresh set of `Axes`
 
         **kwargs
@@ -747,7 +770,7 @@ class Plot(figure.Figure):
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
 
-        newax : `bool`, optional, default: `False`
+        newax : `bool`, optional
             force data to plot on a fresh set of `Axes`
 
         **kwargs
@@ -759,14 +782,9 @@ class Plot(figure.Figure):
             the layer return from the relevant plotting function
         """
         # find relevant axes
-        if ax is None and not newax:
-            try:
-                ax = self._find_axes(projection)
-            except IndexError:
-                newax = True
-        if newax:
-            ax = self._add_new_axes(projection=projection,
-                                    sharex=sharex, sharey=sharey)
+        ax = self._pick_axes(ax=ax, projection=projection, newax=newax,
+                             sharex=sharex, sharey=sharey)
+
         # plot on axes
         return ax.plot(array, **kwargs)
 
@@ -787,7 +805,7 @@ class Plot(figure.Figure):
             a guess will be made as to the best `Axes` to use. If no
             appropriate axes are found, new `Axes` will be created
 
-        newax : `bool`, optional, default: `False`
+        newax : `bool`, optional
             force data to plot on a fresh set of `Axes`
 
         **kwargs
@@ -799,14 +817,9 @@ class Plot(figure.Figure):
             the newly added patch collection
         """
         # find relevant axes
-        if ax is None and not newax:
-            try:
-                ax = self._find_axes(projection)
-            except IndexError:
-                newax = True
-        if newax:
-            ax = self._add_new_axes(projection=projection,
-                                    sharex=sharex, sharey=sharey)
+        ax = self._pick_axes(ax=ax, projection=projection, newax=newax,
+                             sharex=sharex, sharey=sharey)
+
         # plot on axes
         return ax.plot(flag, **kwargs)
 
@@ -925,7 +938,7 @@ class Plot(figure.Figure):
     def logx(self, log):
         if not self.logx and bool(log):
             self.set_xscale('log')
-        elif not self.logx and bool(log):
+        elif self.logx and not bool(log):
             self.set_xscale('linear')
 
     @axes_method
@@ -950,7 +963,7 @@ class Plot(figure.Figure):
     def logy(self, log):
         if not self.logy and bool(log):
             self.set_yscale('log')
-        elif not self.logy and bool(log):
+        elif self.logy and not bool(log):
             self.set_yscale('linear')
 
     @axes_method

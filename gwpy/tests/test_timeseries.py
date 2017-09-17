@@ -1103,6 +1103,14 @@ class TestTimeSeriesDict(TestTimeSeriesBaseDict):
                 utils.assert_quantity_sub_equal(new[key], instance[key],
                                                 exclude=['channel'])
 
+    @utils.skip_missing_dependency('h5py')
+    def test_read_write_hdf5(self, instance):
+        with tempfile.NamedTemporaryFile(suffix='.hdf5') as f:
+            instance.write(f.name, overwrite=True)
+            new = self.TEST_CLASS.read(f.name, instance.keys())
+            for key in new:
+                utils.assert_quantity_sub_equal(new[key], instance[key])
+
 
 # -- TimeSeriesList -----------------------------------------------------------
 
