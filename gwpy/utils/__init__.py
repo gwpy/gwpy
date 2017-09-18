@@ -23,8 +23,6 @@ from __future__ import print_function
 
 from sys import stdout
 
-from .deps import *
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
