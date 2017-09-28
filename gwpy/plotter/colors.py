@@ -20,7 +20,11 @@
 """
 
 from matplotlib import (__version__ as mpl_version, rcParams)
-from matplotlib.colors import _colors_full_map as color_map
+
+try:
+    from matplotlib.colors import _colors_full_map as color_map
+except ImportError:  # mpl < 2
+    from matplotlib.colors import cnames as color_map
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
