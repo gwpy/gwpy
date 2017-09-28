@@ -195,6 +195,11 @@ class Array2D(Series):
         if getattr(self, '_yindex', 0) is None:
             del self.yindex
 
+    def __iter__(self):
+        # astropy Quantity.__iter__ does something fancy that we don't need
+        # because we overload __getitem__
+        return super(Quantity, self).__iter__()
+
     # -- Array2d properties ---------------------
 
     # y0
