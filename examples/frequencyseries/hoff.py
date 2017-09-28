@@ -45,10 +45,9 @@ lloasd = llo.asd(4, 2)
 # We can then :meth:`~FrequencySeries.plot` the spectra using the 'standard'
 # colour scheme:
 
-from gwpy.plotter.colors import GW_OBSERVATORY_COLORS as GWO_COLORS
-plot = lhoasd.plot(color=GWO_COLORS['H1'], label='LIGO-Hanford')
+plot = lhoasd.plot(label='LIGO-Hanford', color='gwo:ligo-hanford')
 ax = plot.gca()
-ax.plot(lloasd, color=GWO_COLORS['L1'], label='LIGO-Livingston')
+ax.plot(lloasd, label='LIGO-Livingston', color='gwo:ligo-livingston')
 ax.set_xlim(10, 2000)
 ax.set_ylim(5e-24, 1e-21)
 plot.show()
