@@ -39,7 +39,7 @@ for i in range(h1range.size):
     h1range[i] = inspiral_range(h1spec[i], fmin=10)
     l1range[i] = inspiral_range(l1spec[i], fmin=10)
 
-# We can now easily plot the timeseries to see the variation in LIGO 
+# We can now easily plot the timeseries to see the variation in LIGO
 # sensitivity over the hour or so including GW150914:
 
 from gwpy.plotter.colors import GW_OBSERVATORY_COLORS as GWO_COLORS
