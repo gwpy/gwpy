@@ -17,3 +17,4 @@ GWpy examples
 
    table/index
 
+   miscellaneous/index
