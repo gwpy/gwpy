@@ -1531,8 +1531,8 @@ class TimeSeries(TimeSeriesBase):
         return self.filter(*zpk, filtfilt=filtfilt)
 
     def q_transform(self, qrange=(4, 64), frange=(0, numpy.inf),
-                    gps=None, search=.5, tres=.001, fres=.5, outseg=None,
-                    whiten=True, **asd_kw):
+                    gps=None, search=.5, tres=.001, fres=.5, norm='median',
+                    outseg=None, whiten=True, **asd_kw):
         """Scan a `TimeSeries` using a multi-Q transform
 
         Parameters
@@ -1557,6 +1557,11 @@ class TimeSeries(TimeSeriesBase):
             desired frequency resolution (Hertz) of output `Spectrogram`,
             give `None` to skip this step and return the original resolution,
             e.g. if you're going to do your own interpolation
+
+        norm : `bool`, `str`, optional
+            whether to normalize the returned Q-transform output, or how,
+            default: `True` (``'median'``), other options: `False`,
+            ``'mean'``
 
         outseg : `~gwpy.segments.Segment`, optional
             GPS `[start, stop)` segment for output `Spectrogram`
@@ -1669,7 +1674,7 @@ class TimeSeries(TimeSeriesBase):
 
         # Q-transform data for each `(Q, frequency)` tile
         for plane in planes:
-            f, normenergies = plane.transform(fdata, normalized=True,
+            f, normenergies = plane.transform(fdata, norm=norm,
                                               epoch=self.x0)
             # find peak energy in this plane and record if loudest
             for ts in normenergies:
