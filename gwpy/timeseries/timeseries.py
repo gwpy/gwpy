@@ -1674,7 +1674,7 @@ class TimeSeries(TimeSeriesBase):
 
         # Q-transform data for each `(Q, frequency)` tile
         for plane in planes:
-            f, normenergies = plane.transform(fdata, normalized=norm,
+            f, normenergies = plane.transform(fdata, norm=norm,
                                               epoch=self.x0)
             # find peak energy in this plane and record if loudest
             for ts in normenergies:
