@@ -1063,7 +1063,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         assert isinstance(qspecgram, Spectrogram)
         assert qspecgram.shape == (4000, 2403)
         assert qspecgram.q == 5.65685424949238
-        nptest.assert_almost_equal(qspecgram.value.max(), 58.696743273955391)
+        nptest.assert_almost_equal(qspecgram.value.max(), 146.61970478954652)
 
         # test whitening args
         asd = losc.asd(2, 1)
@@ -1079,6 +1079,14 @@ class TestTimeSeries(TestTimeSeriesBase):
         with pytest.warns(UserWarning):
             qspecgram = losc.q_transform(method='welch', frange=(0, 10000))
             nptest.assert_almost_equal(qspecgram.yspan[1], 1291.5316316157107)
+
+        # test other normalisations work (or don't)
+        q2 = losc.q_transform(method='welch', norm='median')
+        utils.assert_quantity_sub_equal(qspecgram, q2)
+        losc.q_transform(method='welch', norm='mean')
+        losc.q_transform(method='welch', norm=False)
+        with pytest.raises(ValueError):
+            losc.q_transform(method='welch', norm='blah')
 
     def test_boolean_statetimeseries(self, array):
         comp = array >= 2 * array.unit
