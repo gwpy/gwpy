@@ -53,9 +53,9 @@ def read_hdf5_dict(h5f, names=None, group=None, **kwargs):
 
     # find list of names to read
     if names is None:
-        # TODO: improved the TimeSeries -> HDF5 format to make detecting
+        # TODO: improve the TimeSeries -> HDF5 format to make detecting
         #       a TimeSeries easier
-        names = [key for key in h5g if 'dx' in h5g[dset].attrs['name']]
+        names = [key for key in h5g if 'dx' in h5g[key]]
 
     # read names
     out = kwargs.pop('dict_type', TimeSeriesDict)()

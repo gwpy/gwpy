@@ -1118,6 +1118,10 @@ class TestTimeSeriesDict(TestTimeSeriesBaseDict):
             new = self.TEST_CLASS.read(f.name, instance.keys())
             for key in new:
                 utils.assert_quantity_sub_equal(new[key], instance[key])
+            # check auto-detection of names
+            new = self.TEST_CLASS.read(f.name)
+            for key in new:
+                utils.assert_quantity_sub_equal(new[key], instance[key])
 
 
 # -- TimeSeriesList -----------------------------------------------------------
