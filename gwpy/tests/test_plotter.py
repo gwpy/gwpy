@@ -227,8 +227,6 @@ class TestPlot(PlottingTestBase):
 
     def test_add_legend(self):
         fig, ax = self.new()
-        with pytest.warns(UserWarning):
-            assert fig.add_legend() is None
         ax.plot([1, 2, 3, 4], label='Plot')
         assert isinstance(fig.add_legend(), Legend)
         self.save_and_close(fig)
