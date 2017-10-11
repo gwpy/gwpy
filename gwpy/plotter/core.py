@@ -23,6 +23,7 @@ import numpy
 
 from matplotlib import (backends, figure, pyplot, colors as mcolors,
                         _pylab_helpers)
+from matplotlib.rcsetup import interactive_bk as INTERACTIVE_BACKENDS
 from matplotlib.backend_bases import FigureManagerBase
 from matplotlib.axes import SubplotBase
 from matplotlib.cbook import iterable
@@ -49,7 +50,7 @@ else:
 def interactive_backend():
     """Returns `True` if the current backend is interactive
     """
-    return pyplot.get_backend() in backends.interactive_bk
+    return pyplot.get_backend() in INTERACTIVE_BACKENDS
 
 
 class Plot(figure.Figure):
