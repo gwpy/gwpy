@@ -133,7 +133,7 @@ class SegmentAxes(TimeSeriesAxes):
                                  "SegmentListDict, or SegmentList")
             break
         if len(args):
-            out.append(super(SegmentAxes, self).plot(*args, **kwargs))
+            out.extend(super(SegmentAxes, self).plot(*args, **kwargs))
         self.autoscale(axis='y')
         return out
 

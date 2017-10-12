@@ -19,6 +19,8 @@
 """Custom default figure configuration
 """
 
+import os
+
 from matplotlib import (rcParams, rc_params, __version__ as mpl_version)
 from matplotlib.figure import SubplotParams
 
@@ -44,10 +46,12 @@ DEFAULT_PARAMS = {
     # ticks
     'axes.formatter.limits': (-3, 4),
     # fonts
-    'axes.titlesize': 24,
-    'axes.labelsize': 20,
-    'xtick.labelsize': 18,
-    'ytick.labelsize': 18,
+    'axes.labelpad': 5,
+    'axes.titlesize': 20,
+    'axes.labelsize': 18,
+    'xtick.labelsize': 16,
+    'ytick.labelsize': 16,
+    'font.sans-serif': ['FreeSans'] + rcParams['font.sans-serif'],
     # image
     'image.aspect': 'auto',
     'image.interpolation': 'nearest',
@@ -59,11 +63,24 @@ DEFAULT_PARAMS = {
     'legend.fancybox': False,
 }
 
+# select tex formatting (or not)
+try:  # allow user to override from environment
+    usetex = os.environ['GWPY_USETEX'].lower() in ['1', 'true', 'yes', 'y']
+except KeyError:
+    usetex = rcParams['text.usetex'] or tex.HAS_TEX
+
 # set latex options
 rcParams['text.latex.preamble'].extend(tex.MACROS)
-if rcParams['text.usetex'] or tex.HAS_TEX:
-    DEFAULT_PARAMS['text.usetex'] = True
-    DEFAULT_PARAMS['font.family'] = 'serif'
+if usetex:
+    DEFAULT_PARAMS.update({
+        'text.usetex': True,
+        'font.family': 'serif',
+        'axes.labelpad': 4,
+        'axes.labelsize': 20,
+        'axes.titlesize': 24,
+        'xtick.labelsize': 16,
+        'ytick.labelsize': 16,
+    })
     if mpl_version < '2.0':
         DEFAULT_PARAMS['font.serif'] = ['Computer Modern']
 

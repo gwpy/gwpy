@@ -480,7 +480,6 @@ class DataQualityFlag(object):
             qsegs = SegmentList([Segment(to_gps(args[0][0]),
                                          to_gps(args[0][1]))])
         else:
-            print(args)
             qsegs = SegmentList([Segment(*map(to_gps, args))])
 
         # get server

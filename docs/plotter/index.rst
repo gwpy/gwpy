@@ -12,11 +12,11 @@ potential gravitational-wave signals they record.
 The :mod:`gwpy.plotter` module provides a number of plot classes, each
 representing display of a corresponding data type.
 
-=============
-Plotting data
-=============
+==============
+Basic plotting
+==============
 
-The majority of core data objects in GWpy come with a built-in :meth:`plot`
+The majority of core data objects in GWpy come with a built-in `plot()`
 method, allowing quick display of a single data set, for example:
 
 .. plot::
@@ -24,8 +24,8 @@ method, allowing quick display of a single data set, for example:
    :context:
 
     >>> from gwpy.timeseries import TimeSeries
-    >>> data = TimeSeries.fetch('H1:LDAS-STRAIN', 968654552, 968654562)
-    >>> plot = data.plot()
+    >>> h1 = TimeSeries.fetch_open_data('H1', 1126259457, 1126259467)
+    >>> plot = h1.plot()
     >>> plot.show()
 
 |
@@ -37,13 +37,25 @@ more complicated plots manually:
    :include-source:
    :context:
 
-    >>> data2 = TimeSeries.fetch('L1:LDAS-STRAIN', 968654552, 968654562)
+    >>> l1 = TimeSeries.fetch_open_data('L1', 1126259457, 1126259467)
     >>> from gwpy.plotter import TimeSeriesPlot
-    >>> plot2 = TimeSeriesPlot()
-    >>> ax2 = plot2.gca()
-    >>> ax2.plot(data, color='k', linestyle='--')
-    >>> ax2.plot(data2, color='r', linestyle=':')
-    >>> plot2.show()
+    >>> plot = TimeSeriesPlot()
+    >>> ax = plot.gca()
+    >>> ax.plot(h1, color='gwpy:ligo-hanford')
+    >>> ax.plot(l1, color='gwpy:ligo-livingston')
+    >>> ax.set_ylabel('Strain noise')
+    >>> plot.show()
+
+
+=================
+Plot applications
+=================
+
+.. toctree::
+   :titlesonly:
+
+   colors
+   filter
 
 ==========
 Plot types
@@ -53,13 +65,6 @@ The following diagram displays the available Plot objects and their
 inheritance from :class:`Plot`.
 
 .. inheritance-diagram:: core timeseries frequencyseries spectrogram table filter
-
-The following pages outline specific applications of some of the specialist plot types
-
-.. toctree::
-   :titlesonly:
-
-   filter
 
 ===============
 Class reference

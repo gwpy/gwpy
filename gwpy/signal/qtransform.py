@@ -28,6 +28,7 @@ from __future__ import division
 import warnings
 from math import (log, ceil, pi, isinf, exp)
 
+from six import string_types
 from six.moves import xrange
 
 import numpy
@@ -224,15 +225,16 @@ class QPlane(QBase):
     def whitening_duration(self):
         return 2 ** (round(log(self.q / (2 * self.frange[0]), 2)))
 
-    def transform(self, fseries, normalized=True, epoch=None):
+    def transform(self, fseries, norm=True, epoch=None):
         """Calculate the energy `TimeSeries` for the given fseries
 
         Parameters
         ----------
         fseries : `~gwpy.frequencyseries.FrequencySeries`
             the complex FFT of a time-series data set
-        normalized : `bool`, optional
-            normalize the energy of the output, if `False` the output
+        norm : `bool`, `str`, optional
+            normalize the energy of the output by the median (if `True` or
+            ``'median'``) or the ``'mean'``, if `False` the output
             is the complex `~numpy.fft.ifft` output of the Q-tranform
         epoch : `~gwpy.time.LIGOTimeGPS`, `float`, optional
             the epoch of these data, only used for metadata in the output
@@ -255,7 +257,7 @@ class QPlane(QBase):
         out = []
         for qtile in self:
             # get energy from transform
-            out.append(qtile.transform(fseries, normalized=normalized,
+            out.append(qtile.transform(fseries, norm=norm,
                                        epoch=epoch))
         return self.frequencies, out
 
@@ -327,15 +329,16 @@ class QTile(QBase):
         pad = self.ntiles - self.windowsize
         return (int((pad - 1)/2.), int((pad + 1)/2.))
 
-    def transform(self, fseries, normalized=True, epoch=None):
+    def transform(self, fseries, norm=True, epoch=None):
         """Calculate the energy `TimeSeries` for the given fseries
 
         Parameters
         ----------
         fseries : `~gwpy.frequencyseries.FrequencySeries`
             the complex FFT of a time-series data set
-        normalized : `bool`, optional
-            normalize the energy of the output, if `False` the output
+        norm : `bool`, `str`, optional
+            normalize the energy of the output by the median (if `True` or
+            ``'median'``) or the ``'mean'``, if `False` the output
             is the complex `~numpy.fft.ifft` output of the Q-tranform
         epoch : `~gwpy.time.LIGOTimeGPS`, `float`, optional
             the epoch of these data, only used for metadata in the output
@@ -359,11 +362,18 @@ class QTile(QBase):
         tdenergy = npfft.ifft(wenergy)
         cenergy = TimeSeries(tdenergy, x0=epoch,
                              dx=self.duration/tdenergy.size, copy=False)
-        if normalized:
+        if norm:
+            if isinstance(norm, string_types):
+                norm = norm.lower()
             energy = type(cenergy)(
                 cenergy.value.real ** 2. + cenergy.value.imag ** 2.,
                 x0=cenergy.x0, dx=cenergy.dx, copy=False)
-            meanenergy = energy.mean()
+            if norm in (True, 'median'):
+                meanenergy = energy.median()
+            elif norm in ('mean',):
+                meanenergy = energy.mean()
+            else:
+                raise ValueError("Invalid normalisation %r" % norm)
             return energy / meanenergy
         else:
             return cenergy
