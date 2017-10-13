@@ -40,32 +40,33 @@ The only thing to change if you want to use the `EventTable` instead of the basi
     >>> from gwpy.table import EventTable
 
 
-============================
-Reading/writing tabular data
-============================
+======================
+Reading/writing tables
+======================
 
 .. toctree::
    :maxdepth: 2
 
    io.rst
 
-=====================
-Plotting tabular data
-=====================
-
-.. toctree::
-   :maxdepth: 2
-
-   plot.rst
-
-=========================
-`EventTable` applications
-=========================
+============
+Using tables
+============
 
 .. toctree::
    :titlesonly:
 
+   filter
    rate
+
+===============
+Plotting tables
+===============
+
+.. toctree::
+   :maxdepth: 2
+
+   plot
    histogram
 
 ===============
