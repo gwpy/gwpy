@@ -48,34 +48,8 @@ class EventColumn(Column):
             a <= x < b
 
         """
-        segmentlist = type(segmentlist)(segmentlist).coalesce()
-        idx = self.argsort()
-        contains = numpy.zeros(self.shape[0], dtype=bool)
-        j = 0
-        try:
-            a, b = segmentlist[j]
-        except IndexError:  # no segments, return all False
-            return contains
-        i = 0
-        while i < contains.shape[0]:
-            x = idx[i]
-            v = self[x]
-            # if before start, move to next value
-            if v < a:
-                i += 1
-                continue
-            # if after end, find the next segment and check value again
-            if v >= b:
-                j += 1
-                try:
-                    a, b = segmentlist[j]
-                    continue
-                except IndexError:
-                    break
-            # otherwise value must be in this segment
-            contains[x] = True
-            i += 1
-        return contains
+        from .filters import in_segmentlist
+        return in_segmentlist(self, segmentlist)
 
     def not_in_segmentlist(self, segmentlist):
         """Return the index of values not lying inside the given segmentlist
@@ -478,12 +452,30 @@ class EventTable(Table):
 
         Parameters
         ----------
-        column_filter : `str`
-            a column slice filter definition, e.g. ``'snr > 10``
+        column_filter : `str`, `tuple`
+            a column slice filter definition, e.g. ``'snr > 10``, or
+            a filter tuple definition, e.g. ``('snr', <my_func>, <arg>)``
+
+        Notes
+        -----
+        See :ref:`gwpy-table-filter` for more details on using filter tuples
 
         Returns
         -------
         table : `EventTable`
             a new table with only those rows matching the filters
+
+        Examples
+        --------
+        To filter an existing `EventTable` (``table``) to include only
+        rows with ``snr`` greater than `10`, and ``frequency`` less than
+        `1000`:
+
+        >>> table.filter('snr>10', 'frequency<1000')
+
+        Custom operations can be defined using filter tuple definitions:
+
+        >>> from gwpy.table.filters import in_segmentlist
+        >>> filter(my_table, ('time', in_segmentlist, segs))
         """
         return filter_table(self, *column_filters)

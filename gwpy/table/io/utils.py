@@ -38,16 +38,13 @@ def read_with_selection(func):
             selection = kwargs.pop('selection')
         except KeyError:
             selection = []
-        else:
-            if isinstance(selection, string_types):
-                selection = selection.replace('&&', '&').split('&')
 
         # read table
         tab = func(*args, **kwargs)
 
         # apply selection
         if selection:
-            return filter_table(tab, *selection)
+            return filter_table(tab, selection)
 
         return tab
 
