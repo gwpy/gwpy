@@ -39,8 +39,6 @@ import sys
 import re
 import time
 
-from argparse import ArgumentError
-
 from dateutil.parser import parser
 
 from ..timeseries import TimeSeries
@@ -98,8 +96,12 @@ class CliProduct(object):
         # custom labeling
         self.title = None
         self.title2 = None
+        self.units = "Counts"
 
-    # -- abstract metods ------------------------
+        # just for error messaging. we need full refactoring
+        self.parser = None
+
+    # -- abstract methods ------------------------
 
     @abc.abstractmethod
     def get_action(self):
@@ -214,16 +216,16 @@ class CliProduct(object):
 
         parser.add_argument('--nowhiten', action='store_true',
                             help='do not whiten input ' +
-                                 'before transform')
+                            'before transform')
         self.arg_datasoure(parser)
 
     def arg_datasoure(self, parser):
         parser.add_argument('-c', '--framecache',
                             help='use .gwf files in cache not NDS2,' +
-                                 ' default use NDS2')
+                            ' default use NDS2')
         parser.add_argument('-n', '--nds2-server', metavar='HOSTNAME',
                             help='name of nds2 server to use, default is to '
-                                 'try all of them')
+                            'try all of them')
 
     def arg_chan(self, parser):
         """Allow user to specify list of channel names,
@@ -443,24 +445,24 @@ class CliProduct(object):
                     self.chan_list.append(chan)
 
         if len(self.chan_list) < self.min_timeseries:
-            raise ArgumentError(
+            parser.error(
                 'A minimum of %d channels must be specified for this product'
                 % self.min_timeseries)
 
         if len(arg_list.start) > 0:
             self.start_list = list(set(map(int, arg_list.start)))
         else:
-            raise ArgumentError('No start times specified')
+            raise parser.error('No start times specified')
 
         # Verify the number of datasets specified is valid for this plot
         self.n_datasets = len(self.chan_list) * len(self.start_list)
         if self.n_datasets < self.get_min_datasets():
-            raise ArgumentError(
+            raise parser.error(
                 '%d datasets are required for this plot but only %d are '
                 'supplied' % (self.get_min_datasets(), self.n_datasets))
 
         if self.n_datasets > self.get_max_datasets():
-            raise ArgumentError(
+            raise parser.error(
                 'A maximum of %d datasets allowed for this plot but %d '
                 'specified' % (self.get_max_datasets(), self.n_datasets))
 
@@ -791,6 +793,19 @@ class CliProduct(object):
             self.plot.set_xlabel(xlabel)
             self.log(3, ('X-axis label is: %s' % xlabel))
 
+        all_units = set()
+        for ts in self.timeseries:
+            un = str(ts.unit)
+            if (un != 'undef') & (un != ''):
+                all_units.add(un)
+            else:
+                all_units.add('Counts')
+
+        if len(all_units) == 1:
+            self.units = all_units.pop()
+        else:
+            self.units = 'Counts'
+
         if args.ylabel:
             ylabel = label_to_latex(args.ylabel)
         else:
@@ -849,10 +864,11 @@ class CliProduct(object):
 
     # -- the one that does all the work ---------
 
-    def makePlot(self, args):
+    def makePlot(self, args, parser):
         """Make the plot, all actions are generally the same at this level
         """
         tstart = time.time()
+        self.parser = parser
 
         if args.silent:
             self.verbose = 0

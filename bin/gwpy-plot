@@ -105,10 +105,7 @@ if __name__ == '__main__':
         # variables make some guesses
         if len(os.getenv('HOME', '')) == 0:
             os.environ['HOME'] = '/tmp/'
-        # if launched from a terminal with no display
-        if len(os.getenv('DISPLAY', '')) == 0:
-            import matplotlib
-            matplotlib.use('Agg')
+
 
         # parse the command line
         args = parser.parse_args()
@@ -136,7 +133,7 @@ if __name__ == '__main__':
         prod.log(2,'Setup time %.1f sec' % setup_time)
 
         # generate the plot
-        result_code = prod.makePlot(args)
+        result_code = prod.makePlot(args, parser)
 
         # If they requested interactive mode and run from ipython
         # this makes it easier
