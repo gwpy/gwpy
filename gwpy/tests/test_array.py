@@ -118,7 +118,7 @@ class TestArray(object):
         # test unrecognised units
         with pytest.warns(units.UnitsWarning):
             array = self.create(unit='blah')
-        assert isinstance(array.unit, units.UnrecognizedUnit)
+        assert isinstance(array.unit, units.IrreducibleUnit)
         assert str(array.unit) == 'blah'
 
         # test setting unit doesn't work
@@ -247,14 +247,14 @@ class TestArray(object):
         # check parse_strict works for each of 'raise' (default), 'warn',
         # and 'silent'
         with pytest.raises(ValueError):
-            array.override_unit('blah')
+            array.override_unit('blah', parse_strict='raise')
 
         with pytest.warns(units.UnitsWarning):
             array.override_unit('blah', parse_strict='warn')
 
         array.override_unit('blah', parse_strict='silent')
-        assert isinstance(array.unit, units.UnrecognizedUnit)
-        assert array.unit == units.Unit('blah', parse_strict='silent')
+        assert isinstance(array.unit, units.IrreducibleUnit)
+        assert str(array.unit) == 'blah'
 
     # -- test I/O -------------------------------
 

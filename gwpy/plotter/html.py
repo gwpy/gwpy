@@ -25,6 +25,7 @@ import numpy
 
 from matplotlib.collections import Collection
 from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
 
 from ..types import Series
 
@@ -146,8 +147,10 @@ def map_artist(artist, filename, mapname='points', shape='circle',
         z = artist.get_array()
         if z is not None:
             data = numpy.vstack((data[:, 0], data[:, 1], z)).T
+    elif isinstance(artist, Line2D):
+        data = numpy.asarray(artist.get_data()).T
     else:
-        data = artist.get_data()
+        data = numpy.asarray(artist.get_data())
 
     return _map(data, axes, filename, mapname=mapname, shape=shape,
                 popup=popup, title=title, standalone=standalone, jquery=jquery)
@@ -195,12 +198,9 @@ def map_data(data, axes, filename, mapname='points', shape='circle',
     """
     if isinstance(data, Series):
         data = numpy.vstack((data.xindex.value, data.value)).T
-    elif isinstance(data, numpy.ndarray):
-        pass
     else:
-        raise NotImplementedError('Custom mappings for %r types have not been '
-                                  'implemented. Please plot these data and '
-                                  'pass the artist to map_artist().')
+        data = numpy.asarray(data)
+
     if isinstance(axes, Figure):
         axes = axes.gca()
 
@@ -216,7 +216,7 @@ def _map(data, axes, filename, href='#', mapname='points', popup=None,
     transform = axes.transData
 
     # get 2-d pixels
-    pixels = transform.transform(data[:, :2]).astype(int)
+    pixels = numpy.round(transform.transform(data[:, :2])).astype(int)
 
     # get figure size
     dpi = fig.dpi
@@ -254,5 +254,4 @@ def _map(data, axes, filename, href='#', mapname='points', popup=None,
     if standalone:
         return (HTML_HEADER.format(title=title, jquery=jquery) + hmap +
                 HTML_FOOTER)
-    else:
-        return hmap
+    return hmap

@@ -36,8 +36,8 @@ from dateutil.relativedelta import relativedelta
 from ...segments import Segment
 from ...time import (to_gps, from_gps)
 from .. import EventTable
-from ..filter import (OPERATORS, parse_column_filters)
 from .fetch import register_fetcher
+from .sql import format_db_selection
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -97,15 +97,8 @@ def get_hacr_triggers(channel, start, end, columns=HACR_COLUMNS, pid=None,
     columns = list(columns)
     span = Segment(*map(to_gps, (start, end)))
 
-    # parse selections and map to column indices
-    if selection is None:
-        selectionstr = ''
-    else:
-        selectionstr = ''
-        for col, def_ in parse_column_filters(selection):
-            for thresh, op_ in def_:
-                opstr = [key for key in OPERATORS if OPERATORS[key] is op_][0]
-                selectionstr += ' and {0} {1} {2}'.format(col, opstr, thresh)
+    # parse selection for SQL query (removing leading 'where ')
+    selectionstr = 'and %s' % format_db_selection(selection, engine=None)[6:]
 
     # get database names and loop over each on
     databases = get_database_names(start, end)

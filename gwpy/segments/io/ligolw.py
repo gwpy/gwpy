@@ -188,7 +188,7 @@ def dqdict_to_ligolw_tables(dqdict):
             for col in segsumtab.columnnames:  # default all columns to None
                 setattr(segsum, col, None)
             segsum.segment_def_id = segdef.segment_def_id
-            segsum.set(map(LIGOTimeGPS, map(float, vseg)))
+            segsum.set(map(LIGOTimeGPS, vseg))
             segsum.comment = None
             segsum.segment_sum_id = lsctables.SegmentSumTable.get_next_id()
             segsumtab.append(segsum)
@@ -199,7 +199,7 @@ def dqdict_to_ligolw_tables(dqdict):
             for col in segtab.columnnames:  # default all columns to None
                 setattr(seg, col, None)
             seg.segment_def_id = segdef.segment_def_id
-            seg.set(map(LIGOTimeGPS, map(float, aseg)))
+            seg.set(map(LIGOTimeGPS, aseg))
             seg.segment_id = lsctables.SegmentTable.get_next_id()
             segtab.append(seg)
 

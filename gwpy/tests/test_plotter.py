@@ -30,6 +30,7 @@ from scipy import signal
 
 from matplotlib import (use, rc_context, __version__ as mpl_version)
 use('agg')  # nopep8
+from matplotlib import pyplot
 from matplotlib.legend import Legend
 from matplotlib.colors import (LogNorm, ColorConverter)
 from matplotlib.collections import (PathCollection, PatchCollection,
@@ -51,11 +52,14 @@ from gwpy.plotter import (figure, rcParams, Plot, Axes,
                           SpectrogramPlot, BodePlot)
 from gwpy.plotter.rc import (SUBPLOT_WIDTH, SUBPLOT_HEIGHT)
 from gwpy.plotter.gps import (GPSTransform, InvertedGPSTransform)
-from gwpy.plotter.html import map_data
+from gwpy.plotter.html import (map_data, map_artist)
+from gwpy.plotter.log import CombinedLogFormatterMathtext
 from gwpy.plotter.text import (to_string, unit_as_label)
 from gwpy.plotter.tex import (float_to_latex, label_to_latex,
                               unit_to_latex)
 from gwpy.plotter.table import get_column_string
+
+import utils
 
 # design ZPK for BodePlot test
 ZPK = [100], [1], 1e-2
@@ -121,6 +125,33 @@ class TestPlot(PlottingTestBase):
         assert isinstance(ax, self.AXES_CLASS)
         self.save_and_close(fig)
 
+    # -- plot rendering -------------------------
+
+    def test_figure(self):
+        fig = figure()
+        assert isinstance(fig, Plot)
+        fig.close()
+        fig = figure(FigureClass=self.FIGURE_CLASS)
+        assert isinstance(fig, self.FIGURE_CLASS)
+        fig.close()
+
+    def test_close(self):
+        fig = self.FIGURE_CLASS()
+        assert fig.canvas.manager.num in pyplot.get_fignums()
+        fig.close()
+        assert fig.canvas.manager.num not in pyplot.get_fignums()
+
+    def test_show(self):
+        # no idea how to assert that this worked
+        fig = self.FIGURE_CLASS()
+        fig.show(block=True)
+        fig.show(block=False)
+
+    def test_refresh(self):
+        # no idea how to assert that this worked
+        fig, ax = self.new()
+        fig.refresh()
+
     def test_auto_refresh(self):
         fig = self.FIGURE_CLASS()
         assert fig.get_auto_refresh() is False
@@ -146,6 +177,8 @@ class TestPlot(PlottingTestBase):
             sbp = fig.subplotpars
             assert sbp.left, target[0]*.1
 
+    # -- plot manipulation ----------------------
+
     @pytest.mark.parametrize('name, args', [
         ('xlim', (4, 5)),
         ('xlabel', 'test'),
@@ -170,31 +203,33 @@ class TestPlot(PlottingTestBase):
     @pytest.mark.parametrize('axis', ('x', 'y'))
     def test_log(self, axis):
         fig, ax = self.new()
+
         # fig.set_xlim(0.1, 10)
         getattr(fig, 'set_%slim' % axis)(0.1, 10)
-        #  fig.logx = True
+
+        # fig.logx = True
         setattr(fig, 'log%s' % axis, True)
+
         # assert ax.get_xscale() == 'log'
         assert getattr(ax, 'get_%sscale' % axis)() == 'log'
+
         # assert fig.logx is True
         assert getattr(fig, 'log%s' % axis) is True
+
+        # fig.logx = False
+        setattr(fig, 'log%s' % axis, False)
+        assert getattr(ax, 'get_%sscale' % axis)() == 'linear'
+        assert getattr(fig, 'log%s' % axis) is False
+
         self.save_and_close(fig)
+
+    # -- artist creation ------------------------
 
     def test_add_legend(self):
         fig, ax = self.new()
-        with pytest.warns(UserWarning):
-            assert fig.add_legend() is None
         ax.plot([1, 2, 3, 4], label='Plot')
         assert isinstance(fig.add_legend(), Legend)
         self.save_and_close(fig)
-
-    def test_figure(self):
-        fig = figure()
-        assert isinstance(fig, Plot)
-        fig.close()
-        fig = figure(FigureClass=self.FIGURE_CLASS)
-        assert isinstance(fig, self.FIGURE_CLASS)
-        fig.close()
 
     def test_add_line(self):
         fig, ax = self.new()
@@ -207,6 +242,17 @@ class TestPlot(PlottingTestBase):
         fig.add_scatter([1, 2, 3, 4], [1, 2, 3, 4])
         assert len(ax.collections) == 1
         fig.close()
+
+    def test_add_image(self):
+        fig, ax = self.new()
+        data = numpy.arange(120).reshape((10, 12))
+        image = fig.add_image(data, cmap='Blues')
+        assert ax.images == [image]
+        assert image.get_cmap().name == 'Blues'
+
+        fig = self.FIGURE_CLASS()
+        fig.add_image(data)
+        assert fig.gca().projection == 'rectilinear'
 
     def test_add_arrays(self):
         ts = TimeSeries([1, 2, 3, 4])
@@ -223,8 +269,129 @@ class TestPlot(PlottingTestBase):
         assert isinstance(fig.axes[1], FrequencySeriesAxes)
         fig.close()
 
+    def test_add_colorbar(self):
+        fig = self.FIGURE_CLASS()
+
+        # test that adding a colorbar to an empty plot fails
+        with pytest.raises(ValueError) as exc:
+            fig.add_colorbar()
+        assert str(exc.value) == ('Cannot determine mappable layer for '
+                                  'this colorbar')
+        with pytest.raises(ValueError) as exc:
+            fig.add_colorbar(visible=False)
+        assert str(exc.value) == ('Cannot determine an anchor Axes for '
+                                  'this colorbar')
+
+        # add axes and an image
+        ax = fig.gca()
+        width = ax.get_position().width
+        mappable = ax.imshow(numpy.arange(120).reshape((10, 12)))
+        assert not isinstance(mappable.norm, LogNorm)
+
+        # add colorbar and check everything went through
+        cbar = fig.add_colorbar(log=True, label='Test label', cmap='plasma')
+        assert len(fig.axes) == 2
+        assert cbar in fig.colorbars
+        assert cbar.ax in fig._coloraxes
+        assert cbar.mappable is mappable
+        assert cbar.get_clim() == mappable.get_clim() == (1, 119)
+        assert isinstance(mappable.norm, LogNorm)
+        assert isinstance(cbar.formatter, CombinedLogFormatterMathtext)
+        assert cbar.get_cmap().name == 'plasma'
+        assert cbar.ax.get_ylabel() == 'Test label'
+        self.save_and_close(fig)
+        assert ax.get_position().width < width
+
+        # try a non-visible colorbar
+        fig = self.FIGURE_CLASS()
+        ax = fig.gca()
+        assert len(fig.axes) == 1
+        fig.add_colorbar(ax=ax, visible=False)
+        assert len(fig.axes) == 1
+        fig.close()
+
+        # check that we can map an empty array
+        fig, ax = self.new()
+        ax.imshow(numpy.arange(0).reshape((0, 0)))
+        fig.add_colorbar()
+
+        # check errors
+        mappable = ax.imshow(numpy.arange(120).reshape((10, 12)))
+        with pytest.raises(ValueError):
+            fig.add_colorbar(mappable=mappable, location='bottom')
+
 
 class TestAxes(PlottingTestBase):
+
+    # -- test properties ------------------------
+
+    @pytest.mark.parametrize('axis', ('x', 'y'))
+    def test_label(self, axis):
+        fig, ax = self.new()
+
+        axis_obj = getattr(ax, '%saxis' % axis)
+        label = '%slabel' % axis
+        get_label = getattr(ax, 'get_%slabel' % axis)
+
+        # assert ax.xlabel is ax.xaxis.label
+        assert getattr(ax, label) is axis_obj.label
+
+        # ax.xlabel = 'Test label'
+        setattr(ax, label, 'Test label')
+        # assert ax.get_xlabel() == 'Test label'
+        assert get_label() == 'Test label'
+
+        # check Text object gets preserved
+        t = ax.text(0, 0, 'Test text')
+        setattr(ax, label, t)
+        assert axis_obj.label is t
+
+        # check deleter works
+        delattr(ax, label)
+        assert get_label() == ''
+
+    @pytest.mark.parametrize('axis', ('x', 'y'))
+    def test_lim(self, axis):
+        fig, ax = self.new()
+        ax.plot([1, 2, 3, 4, 5], [1, 2, 3, 4, 5])
+        lim = '%slim' % axis
+        get_lim = getattr(ax, 'get_%slim' % axis)
+
+        # check getter/setter
+        setattr(ax, lim, (24, 36))
+        assert get_lim() == (24, 36)
+        assert getattr(ax, lim) == get_lim()
+
+        # check deleter
+        delattr(ax, lim)
+
+    @pytest.mark.parametrize('axis', ('x', 'y'))
+    def test_log(self, axis):
+        fig, ax = self.new()
+        log = 'log%s' % axis
+        get_scale = getattr(ax, 'get_%sscale' % axis)
+        set_scale = getattr(ax, 'set_%sscale' % axis)
+
+        # check default is not log
+        assert getattr(ax, log) is False
+
+        # set log and assert that the scale gets set properly
+        setattr(ax, log, True)
+        assert getattr(ax, log) is True
+        assert get_scale() == 'log'
+
+        # set not log and check
+        setattr(ax, log, False)
+        assert getattr(ax, log) is False
+        assert get_scale() == 'linear'
+
+    # -- test methods ---------------------------
+
+    def test_resize(self):
+        fig, ax = self.new()
+        ax.resize((0.25, 0.25, 0.5, 0.5))
+        assert ax.get_position().bounds == (.25, .25, .5, .5)
+
     def test_legend(self):
         fig = self.FIGURE_CLASS()
         ax = fig.add_subplot(111, projection=self.AXES_CLASS.name)
@@ -238,6 +405,38 @@ class TestAxes(PlottingTestBase):
         for l in leg.get_lines():
             assert l.get_linewidth() == 8
         self.save_and_close(fig)
+
+    def test_html_map(self):
+        # this method just runs the html_map method but puts little effort
+        # into validating the result, that is left for the TestHtml
+        # suite
+
+        fig, ax = self.new()
+
+        with pytest.raises(ValueError) as exc:
+            ax.html_map('test.png')
+        assert str(exc.value) == 'Cannot determine artist to map, 0 found.'
+
+        line = ax.plot([1, 2, 3, 4, 5])[0]
+
+        # auto-detect artist
+        hmap = ax.html_map('test.png')
+        assert hmap.startswith('<!doctype html>')
+        assert hmap.count('<area') == 5
+
+        # manually pass artist
+        hmap2 = ax.html_map('test.png', data=line)
+        assert hmap2 == hmap
+
+        # auto-detect with multiple artists
+        ax.plot([1, 2, 3, 4, 5])
+        with pytest.raises(ValueError):
+            ax.html_map('test.png')
+
+        # check data=<array>
+        data = list(zip(*line.get_data()))
+        hmap2 = ax.html_map('test.png', data=data)
+        assert hmap2 == hmap
 
     @pytest.mark.parametrize('method', [
         'plot',
@@ -307,6 +506,33 @@ class TestTimeSeriesPlot(TimeSeriesMixin, TestPlot):
         fig.add_colorbar(ax=ax, norm='log', clim=[1e-22, 1e-18],
                          label='Test colorbar')
         self.save_and_close(fig)
+
+    def test_add_state_segments(self):
+        fig, ax = self.new()
+
+        # mock up some segments and add them as 'state' segments
+        segs = SegmentList([Segment(1, 2), Segment(4, 5)])
+        segax = fig.add_state_segments(segs)
+
+        # check that the new axes aligns with the parent
+        utils.assert_array_equal(segax.get_position().intervalx,
+                                 ax.get_position().intervalx)
+        coll = segax.collections[0]
+        for seg, path in zip(segs, coll.get_paths()):
+            utils.assert_array_equal(
+                path.vertices, [(seg[0], -.4), (seg[1], -.4), (seg[1], .4),
+                                (seg[0], .4), (seg[0], -.4)])
+
+        with pytest.raises(ValueError):
+            fig.add_state_segments(segs, location='left')
+
+        # test that this doesn't work with non-timeseries axes
+        fig = self.FIGURE_CLASS()
+        ax = fig.gca(projection='rectilinear')
+        with pytest.raises(ValueError) as exc:
+            fig.add_state_segments(segs)
+        assert str(exc.value) == ("No 'timeseries' Axes found, cannot anchor "
+                                  "new segment Axes.")
 
 
 class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
@@ -830,3 +1056,22 @@ class TestHtml(object):
         assert html.startswith('<!doctype html>')
         html = map_data(data, ax, 'test.png', standalone=False)
         assert html.startswith('\n<img src="test.png"')
+
+    @utils.skip_missing_dependency('bs4')
+    def test_map_artist(self):
+        from bs4 import BeautifulSoup
+
+        # create figure and plot a line
+        fig = figure()
+        ax = fig.gca()
+        line = ax.plot([1, 2, 3, 4, 5])[0]
+        data = list(zip(*line.get_data()))
+
+        # create HTML map
+        html = map_artist(line, 'test.png')
+
+        # validate HTML map
+        soup = BeautifulSoup(html, 'html.parser')
+        areas = soup.find_all('area')
+        assert len(areas) == 5
+        assert sorted([eval(a.attrs['alt']) for a in areas]) == data

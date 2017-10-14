@@ -24,7 +24,6 @@
 
 import datetime
 
-from ..utils.deps import with_import
 from . import units
 from .channel import *
 from .io import *
@@ -49,8 +48,8 @@ def get_timezone(ifo):
         raise
 
 
-@with_import('pytz')
 def get_timezone_offset(ifo, dt=None):
+    import pytz
     dt = dt or datetime.datetime.now()
     offset = pytz.timezone(get_timezone(ifo)).utcoffset(dt)
     return offset.days * 86400 + offset.seconds + offset.microseconds * 1e-6

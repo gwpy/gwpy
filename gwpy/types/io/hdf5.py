@@ -66,7 +66,8 @@ def read_hdf5_array(f, path=None, array_type=Array):
 
 # -- write --------------------------------------------------------------------
 
-def create_array_dataset(h5g, array, path=None, compression='gzip', **kwargs):
+def create_array_dataset(h5g, array, path=None, append=False, overwrite=False,
+                         compression='gzip', **kwargs):
     """Write the ``array` to an `h5py.Dataset`
     """
     if path is None:
@@ -75,12 +76,19 @@ def create_array_dataset(h5g, array, path=None, compression='gzip', **kwargs):
         raise ValueError("Cannot determine HDF5 path for %s, "
                          "please set ``name`` attribute, or pass ``path=`` "
                          "keyword when writing" % type(array).__name__)
+
+    # delete existing dataset
+    if path in h5g and append and overwrite:
+        del h5g[path]
+
+    # create new dataset, with better error reporting
     try:
         dset = h5g.create_dataset(path, data=array.value,
                                   compression=compression, **kwargs)
-    except ValueError as e:
-        if 'Name already exists' in str(e):
-            e.args = (str(e) + ': %s' % (name or array.name),)
+    except RuntimeError as e:
+        if str(e) == 'Unable to create link (Name already exists)':
+            e.args = ('{0}: {1!r}, pass overwrite=True, append=True '
+                      'to ignore existing datasets'.format(str(e), path),)
         raise
 
     # store metadata
@@ -98,7 +106,7 @@ def create_array_dataset(h5g, array, path=None, compression='gzip', **kwargs):
         if isinstance(mdval, Quantity):
             dset.attrs[attr] = mdval.value
         elif isinstance(mdval, Channel):
-            dset.attrs[attr] = pickle.dumps(mdval)
+            dset.attrs[attr] = pickle.dumps(mdval, protocol=0)
         elif isinstance(mdval, UnitBase):
             dset.attrs[attr] = str(mdval)
         elif isinstance(mdval, (Decimal, LIGOTimeGPS)):

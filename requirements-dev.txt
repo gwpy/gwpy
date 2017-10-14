@@ -12,6 +12,9 @@ dqsegdb
 https://github.com/ligovirgo/trigfind/archive/v0.4.tar.gz
 pycbc; python_version == '2.7'
 git+https://github.com/duncanmmacleod/ligo.org.git
+sqlalchemy
+psycopg2
+pandas
 
 # docs
 sphinx
@@ -22,6 +25,7 @@ sphinxcontrib-programoutput
 # tests
 pytest>=3.1
 coveralls
-mock
+mock; python_version < '3'
 freezegun
 sqlparse
+bs4

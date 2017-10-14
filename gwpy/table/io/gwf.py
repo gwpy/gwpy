@@ -62,8 +62,6 @@ def row_from_frevent(frevent, columns=None, row_class=Row, selection=[]):
     params['timeAfter'] = frevent.GetTimeAfter()
     params['comment'] = frevent.GetComment()
     # filter
-    print(selection)
-    print(params)
     if not all(op_(params[c], t) for c, math in selection for t, op_ in math):
         return None
     # return event as list

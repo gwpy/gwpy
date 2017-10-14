@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Plotting a Rayleigh-statistic `Spectum`
+"""Plotting a Rayleigh-statistic `Spectrum`
 
 In LIGO the 'Rayleigh' statistic is a calculation of the
 `coefficient of variation
@@ -33,15 +33,14 @@ and recorded at a LIGO site.
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.frequencyseries'
 
-# To demonstate, we can download some public LIGO data from the sixth science
-# run (S6) for the H1 interferometer:
+# To demonstate this, we can load some data from the LIGO Livingston
+# intereferometer around the time of the GW151226 gravitational wave detection:
 
 from gwpy.timeseries import TimeSeries
-gwdata = TimeSeries.fetch_open_data(
-    'H1', 'September 16 2010 07:00', 'September 16 2010 07:10',
-    verbose=True)
+gwdata = TimeSeries.fetch_open_data('L1', 'Dec 26 2015 03:37',
+                                    'Dec 26 2015 03:47', verbose=True)
 
-# Next, we can calculate a Rayleigh statistic `FrequencySeries` using the 
+# Next, we can calculate a Rayleigh statistic `FrequencySeries` using the
 # :meth:`~gwpy.timeseries.TimeSeries.rayleigh_spectrum` method of the
 # `~gwpy.timeseries.TimeSeries` with a 2-second FFT and 1-second overlap (50%):
 
@@ -51,13 +50,16 @@ rayleigh = gwdata.rayleigh_spectrum(2, 1)
 # strain data and plot both on the same figure:
 
 asd = gwdata.asd(2, 1)
-plot = asd.plot()
+plot = asd.plot(figsize=(8, 6))
 plot.add_frequencyseries(rayleigh, newax=True, sharex=plot.axes[0])
-plot.axes[0].set_xlabel('')
-plot.axes[0].set_xlim(40, 2000)
-plot.axes[0].set_ylim(1e-23, 5e-21)
-plot.axes[0].set_ylabel(r'[strain/\rtHz]')
-plot.axes[1].set_ylabel('Rayleigh statistic')
+asdax, rayax = plot.axes
+asdax.set_xlabel('')
+asdax.set_xlim(30, 1500)
+asdax.set_ylim(5e-24, 1e-21)
+asdax.set_ylabel(r'[strain/\rtHz]')
+rayax.set_ylim(0, 2)
+rayax.set_ylabel('Rayleigh statistic')
+asdax.set_title('Sensitivity of LIGO-Livingston around GW151226', fontsize=20)
 plot.show()
 
 # So, we see sharp dips at certain frequencies associated with 'lines' in

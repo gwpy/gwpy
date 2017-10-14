@@ -21,7 +21,6 @@
 
 import json
 import os.path
-import warnings
 from tempfile import NamedTemporaryFile
 
 import pytest
@@ -78,7 +77,27 @@ OMEGA_CONFIG = """
   plotNormalizedEnergyRange:   [0 25.5]
   alwaysPlotFlag:              0
 }
-"""
+"""  # nopep8
+
+CLF = """
+[group-1]
+flow = 4
+fhigh = Nyquist
+qhigh = 150
+frametype = H1_HOFT_C00
+channels = H1:GDS-CALIB_STRAIN 16384 unsafe clean
+
+[group-2]
+flow = .1
+fhigh = 60
+qhigh = 60
+frametype = H1_R
+channels =
+	H1:ISI-GND_STS_HAM2_X_DQ 512 safe flat
+	H1:ISI-GND_STS_HAM2_Y_DQ 256 unsafe flat
+	H1:ISI-GND_STS_HAM2_Z_DQ 512 glitchy
+"""  # nopep8
+
 
 # -----------------------------------------------------------------------------
 #
@@ -86,43 +105,51 @@ OMEGA_CONFIG = """
 #
 # -----------------------------------------------------------------------------
 
-
 @pytest.mark.parametrize('arg, unit', [
     (None, None),
     (units.m, units.m),
     ('meter', units.m),
     ('Volts', units.V),
-    ('blah', units.Unit('blah', parse_strict='silent')),
+    ('Meters/Second', units.m / units.s),
+    ('Amp', units.ampere),
+    ('MPC', units.megaparsec),
+    ('degrees_C', units.Unit('Celsius')),
+    ('degrees_F', units.Unit('Fahrenheit')),
 ])
 def test_parse_unit(arg, unit):
-    assert parse_unit(arg) == unit
+    assert parse_unit(arg, parse_strict='silent') == unit
 
-    # check warnings and errors
-    #    this looks a bit funky because UnitsWarning are a 'once' warning,
-    #    so use catch_warnings() rather than mess with filterwarnings()
-    if arg == 'blah':
-        with pytest.raises(ValueError):  # assert error
-            parse_unit(arg, parse_strict='raise')
-        with warnings.catch_warnings(record=True) as rec:  # assert warning
-            parse_unit('%s_%s' % (arg, arg), parse_strict='warn')
-        assert len(rec) == 1
-        assert issubclass(rec[0].category, units.UnitsWarning)
-        with warnings.catch_warnings(record=True) as rec:  # assert no warning
-            parse_unit(arg, parse_strict='silent')
-        assert len(rec) == 0
+
+def test_parse_unit_strict():
+    # check that errors get raise appropriately
+    with pytest.raises(ValueError) as exc:
+        parse_unit('metre', parse_strict='raise')
+
+    # check that warnings get posted, and a custom NamedUnit gets returned
+    with pytest.warns(units.UnitsWarning) as exc:
+        u = parse_unit('metre', parse_strict='warn')
+    assert str(exc[0].message) == ('metre is not a valid unit. Did you mean '
+                                   'meter? Mathematical operations using this '
+                                   'unit should work, but conversions to '
+                                   'other units will not.')
+    assert isinstance(u, units.IrreducibleUnit)
+    assert str(u) == 'metre'
 
 
 @pytest.mark.parametrize('name', [
-    'counts',
+    'NONE',
     'undef',
-    'coherence',
     'strain',
-    'Degrees_C',
-    'Degrees_F',
+    'coherence',
+    'sec',
+    'torr',
+    'cf',
+    'cfm',
+    'ptcls',
 ])
 def test_detector_units(name):
-    # just check that such a unit exists
-    units.Unit(name)
+    # just check that such a unit exists and doesn't evaluate to False
+    assert units.Unit(name)
 
 
 @utils.skip_missing_dependency('lal')
@@ -201,7 +228,6 @@ class TestChannel(object):
     @pytest.mark.parametrize('arg, unit', [
         (None, None),
         ('m', units.m),
-        ('blah', units.Unit('blah', parse_strict='silent')),
     ])
     def test_unit(self, arg, unit):
         new = self.TEST_CLASS('test', unit=arg)
@@ -560,6 +586,51 @@ class TestChannelList(object):
                                     mode='w') as f2:
                 cl.write(f2, format='omega-scan')
             cl2 = type(cl).read(f2.name, format='omega-scan')
+            assert cl == cl2
+        finally:
+            if os.path.isfile(f2.name):
+                os.remove(f2.name)
+
+    def test_read_write_clf(self):
+        # write clf to file and read it back
+        try:
+            with NamedTemporaryFile(suffix='.ini', delete=False,
+                                    mode='w') as f:
+                f.write(CLF)
+            cl = ChannelList.read(f.name)
+            assert len(cl) == 4
+            a = cl[0]
+            assert a.name == 'H1:GDS-CALIB_STRAIN'
+            assert a.sample_rate == 16384 * units.Hz
+            assert a.frametype == 'H1_HOFT_C00'
+            assert a.frequency_range[0] == 4. * units.Hz
+            assert a.frequency_range[1] == float('inf') * units.Hz
+            assert a.safe is False
+            assert a.params == {'qhigh': '150', 'safe': 'unsafe',
+                                'fidelity': 'clean'}
+            b = cl[1]
+            assert b.name == 'H1:ISI-GND_STS_HAM2_X_DQ'
+            assert b.frequency_range[0] == .1 * units.Hz
+            assert b.frequency_range[1] == 60. * units.Hz
+            c = cl[2]
+            assert c.name == 'H1:ISI-GND_STS_HAM2_Y_DQ'
+            assert c.sample_rate == 256 * units.Hz
+            assert c.safe is False
+            d = cl[3]
+            assert d.name == 'H1:ISI-GND_STS_HAM2_Z_DQ'
+            assert d.safe is True
+            assert d.params['fidelity'] == 'glitchy'
+        finally:
+            if os.path.isfile(f.name):
+                os.remove(f.name)
+        # write omega config again using ChannelList.write and read it back
+        # and check that the two lists match
+        try:
+            with NamedTemporaryFile(suffix='.ini', delete=False,
+                                    mode='w') as f2:
+
+                cl.write(f2)
+            cl2 = type(cl).read(f2.name)
             assert cl == cl2
         finally:
             if os.path.isfile(f2.name):

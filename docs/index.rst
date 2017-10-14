@@ -58,7 +58,7 @@ Working with data
 **Visualising data**
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    plotter/index
    cli/index

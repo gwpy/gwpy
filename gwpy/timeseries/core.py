@@ -53,7 +53,7 @@ from ..types import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
 from ..io import datafind
 from ..time import (Time, LIGOTimeGPS, to_gps)
-from ..utils import (gprint, with_import)
+from ..utils import gprint
 from ..utils.compat import OrderedDict
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -224,7 +224,6 @@ class TimeSeriesBase(Series):
     # -- TimeSeries accessors -------------------
 
     @classmethod
-    @with_import('nds2')
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
               connection=None, verify=False, pad=None, allow_tape=None,
               type=None, dtype=None):
@@ -432,7 +431,6 @@ class TimeSeriesBase(Series):
         return TimeSeriesPlot(self, **kwargs)
 
     @classmethod
-    @with_import('nds2')
     def from_nds2_buffer(cls, buffer_, **metadata):
         """Construct a new `TimeSeries` from an `nds2.buffer` object
 
@@ -465,7 +463,6 @@ class TimeSeriesBase(Series):
         return cls(buffer_.data, **metadata)
 
     @classmethod
-    @with_import('lal')
     def from_lal(cls, lalts, copy=True):
         """Generate a new TimeSeries from a LAL TimeSeries of any type.
         """
@@ -484,20 +481,17 @@ class TimeSeriesBase(Series):
         else:
             return out
 
-    @with_import('lal')
     def to_lal(self):
         """Convert this `TimeSeries` into a LAL TimeSeries.
         """
+        import lal
         from ..utils.lal import (LAL_TYPE_STR_FROM_NUMPY, to_lal_unit)
         typestr = LAL_TYPE_STR_FROM_NUMPY[self.dtype.type]
         try:
             unit = to_lal_unit(self.unit)
         except ValueError as e:
             warnings.warn("%s, defaulting to lal.DimensionlessUnit" % str(e))
-            try:
-                unit = lal.DimensionlessUnit
-            except AttributeError:
-                unit = lal.lalDimensionlessUnit
+            unit = lal.DimensionlessUnit
         create = getattr(lal, 'Create%sTimeSeries' % typestr.upper())
         lalts = create(self.name, lal.LIGOTimeGPS(self.epoch.gps), 0,
                        self.dt.value, unit, self.size)
@@ -711,7 +705,6 @@ class TimeSeriesBaseDict(OrderedDict):
         return self
 
     @classmethod
-    @with_import('nds2')
     def fetch(cls, channels, start, end, host=None, port=None,
               verify=False, verbose=False, connection=None,
               pad=None, allow_tape=None, type=None,
@@ -830,8 +823,8 @@ class TimeSeriesBaseDict(OrderedDict):
 
     @classmethod
     def find(cls, channels, start, end, frametype=None,
-             pad=None, dtype=None, nproc=1, verbose=False,
-             allow_tape=True, observatory=None, **readargs):
+             frametype_match=None, pad=None, dtype=None, nproc=1,
+             verbose=False, allow_tape=True, observatory=None, **readargs):
         """Find and read data from frames for a number of channels.
 
         Parameters
@@ -850,6 +843,9 @@ class TimeSeriesBaseDict(OrderedDict):
         frametype : `str`, optional
             name of frametype in which this channel is stored, by default
             will search for all required frame types
+
+        frametype_match : `str`, optional
+            regular expression to use for frametype matching
 
         pad : `float`, optional
             value with which to fill gaps in the source data, defaults to
@@ -878,8 +874,9 @@ class TimeSeriesBaseDict(OrderedDict):
         if frametype is None:
             frametypes = dict()
             for c in channels:
-                ft = datafind.find_best_frametype(c, start, end,
-                                                  allow_tape=allow_tape)
+                ft = datafind.find_best_frametype(
+                    c, start, end, frametype_match=frametype_match,
+                    allow_tape=allow_tape)
                 try:
                     frametypes[ft].append(c)
                 except KeyError:
@@ -998,10 +995,12 @@ class TimeSeriesBaseDict(OrderedDict):
                 if verbose:
                     gprint(str(e), file=sys.stderr)
                     gprint("Failed to access data from frames, trying NDS...")
+
+        # remove kwargs for .find()
+        for key in ('nproc', 'frametype', 'frametype_match', 'observatory'):
+            kwargs.pop(key, None)
+
         # otherwise fetch from NDS
-        kwargs.pop('nproc', None)
-        kwargs.pop('frametype', None)
-        kwargs.pop('observatory', None)
         try:
             return cls.fetch(channels, start, end, pad=pad, dtype=dtype,
                              allow_tape=allow_tape, verbose=verbose, **kwargs)
