@@ -570,3 +570,11 @@ class TestIoUtils(object):
             finally:
                 if os.path.isfile(fn):
                     os.remove(f.name)
+
+    def test_identify_factory(self):
+        id_func = io_utils.identify_factory('.blah', '.blah2')
+        assert id_func(None, None, None) is False
+        assert id_func(None, 'test.txt', None) is False
+        assert id_func(None, 'test.blah', None) is True
+        assert id_func(None, 'test.blah2', None) is True
+        assert id_func(None, 'test.blah2x', None) is False

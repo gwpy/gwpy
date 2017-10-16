@@ -29,14 +29,30 @@ GZIP_SIGNATURE = '\x1f\x8b\x08'
 
 
 def identify_factory(*extensions):
+    """Factory function to create I/O identifiers for a set of extensions
+
+    The returned function is designed for use in the unified I/O registry
+    via the `astropy.io.registry.register_identifier` hool.
+
+    Parameters
+    ----------
+    extensions : `str`
+        one or more file extension strings
+
+    Returns
+    -------
+    identifier : `callable`
+        an identifier function that tests whether an incoming file path
+        carries any of the given file extensions (using `str.endswith`)
+    """
     def identify(origin, filepath, fileobj, *args, **kwargs):
         """Identify the given extensions in a file object/path
         """
+        # pylint: disable=unused-argument
         if (isinstance(filepath, string_types) and
                 filepath.endswith(extensions)):
             return True
-        else:
-            return False
+        return False
     return identify
 
 
