@@ -21,6 +21,7 @@
 
 from __future__ import print_function
 
+import gzip
 import os
 import tempfile
 import sys
@@ -31,7 +32,8 @@ from gwpy.io import (cache as io_cache,
                      datafind as io_datafind,
                      gwf as io_gwf,
                      kerberos as io_kerberos,
-                     nds2 as io_nds2)
+                     nds2 as io_nds2,
+                     utils as io_utils)
 from gwpy.segments import (Segment, SegmentList)
 
 import utils
@@ -540,3 +542,31 @@ class TestIoKerberos(object):
         popen_kwargs['env'] = {'KRB5CCNAME': '/test_cc.krb5'}
         mocked_popen.assert_called_with(
             ['/bin/kinit', 'rainer.weiss@LIGO.ORG'], **popen_kwargs)
+
+
+# -- gwpy.io.utils ------------------------------------------------------------
+
+class TestIoUtils(object):
+    def test_gopen(self):
+        # test simple use
+        try:
+            with tempfile.NamedTemporaryFile(delete=False) as f:
+                f.write('blah blah blah')
+            f2 = io_utils.gopen(f.name)
+            assert f2.read() == 'blah blah blah'
+        finally:
+            if os.path.isfile(f.name):
+                os.remove(f.name)
+
+        # test gzip file (with and without extension)
+        for suffix in ('.txt.gz', ''):
+            try:
+                fn = tempfile.mktemp(suffix=suffix)
+                with gzip.open(fn, 'wb') as f:
+                    f.write('blah blah blah')
+                f2 = io_utils.gopen(fn)
+                assert isinstance(f2, gzip.GzipFile)
+                assert f2.read() == 'blah blah blah'
+            finally:
+                if os.path.isfile(fn):
+                    os.remove(f.name)

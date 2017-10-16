@@ -25,6 +25,8 @@ from six import string_types
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+GZIP_SIGNATURE = '\x1f\x8b\x08'
+
 
 def identify_factory(*extensions):
     def identify(origin, filepath, fileobj, *args, **kwargs):
@@ -49,7 +51,14 @@ def gopen(name, *args, **kwargs):
         other arguments to pass to either `open` for regular files, or
         `gzip.open` for files with a `name` ending in `.gz`
     """
-    if name.endswith('.gz'):
+    if name.endswith('.gz'):  # filename declares gzip
         return gzip.open(name, *args, **kwargs)
-    else:
-        return open(name, *args, **kwargs)
+    else:  # open regular file
+        fobj = open(name, *args, **kwargs)
+        sig = fobj.read(3)
+        fobj.seek(0)
+        is_gzip = (sig == bytes(GZIP_SIGNATURE) if isinstance(sig, bytes) else
+                   sig == GZIP_SIGNATURE)
+        if is_gzip:   # file signature declares gzip
+            return gzip.GzipFile(fileobj=fobj)
+        return fobj
