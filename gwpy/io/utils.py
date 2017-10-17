@@ -25,7 +25,7 @@ from six import string_types
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-GZIP_SIGNATURE = '\x1f\x8b\x08'
+GZIP_SIGNATURE = b'\x1f\x8b\x08'
 
 
 def identify_factory(*extensions):
@@ -73,8 +73,6 @@ def gopen(name, *args, **kwargs):
         fobj = open(name, *args, **kwargs)
         sig = fobj.read(3)
         fobj.seek(0)
-        is_gzip = (sig == bytes(GZIP_SIGNATURE) if isinstance(sig, bytes) else
-                   sig == GZIP_SIGNATURE)
-        if is_gzip:   # file signature declares gzip
+        if sig == GZIP_SIGNATURE:  # file signature declares gzip
             return gzip.GzipFile(fileobj=fobj)
         return fobj

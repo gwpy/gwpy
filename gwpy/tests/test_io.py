@@ -26,6 +26,8 @@ import os
 import tempfile
 import sys
 
+from six import PY2
+
 import pytest
 
 from gwpy.io import (cache as io_cache,
@@ -550,7 +552,7 @@ class TestIoUtils(object):
     def test_gopen(self):
         # test simple use
         try:
-            with tempfile.NamedTemporaryFile(delete=False) as f:
+            with tempfile.NamedTemporaryFile(delete=False, mode='w') as f:
                 f.write('blah blah blah')
             f2 = io_utils.gopen(f.name)
             assert f2.read() == 'blah blah blah'
@@ -562,11 +564,12 @@ class TestIoUtils(object):
         for suffix in ('.txt.gz', ''):
             try:
                 fn = tempfile.mktemp(suffix=suffix)
+                text = 'blah blah blah' if PY2 else b'blah blah blah'
                 with gzip.open(fn, 'wb') as f:
-                    f.write('blah blah blah')
-                f2 = io_utils.gopen(fn)
+                    f.write(text)
+                f2 = io_utils.gopen(fn, mode='rb')
                 assert isinstance(f2, gzip.GzipFile)
-                assert f2.read() == 'blah blah blah'
+                assert f2.read() == text
             finally:
                 if os.path.isfile(fn):
                     os.remove(f.name)
