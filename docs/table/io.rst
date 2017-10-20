@@ -46,7 +46,7 @@ but is **not** backported to for use with :meth:`Table.read`.
 ``LIGO_LW`` XML
 ===============
 
-**Additional dependencies:** |glue.ligolw|_
+**Additional dependencies:** :mod:`glue.ligolw`
 
 The LIGO Scientific Collaboration uses a custom scheme of XML in which to
 store tabular data, called the ``LIGO_LW`` scheme.

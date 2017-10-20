@@ -22,7 +22,7 @@ The :meth:`read` and :meth:`write` methods take different arguments and keywords
 ``LIGO_LW`` XML
 ===============
 
-**Additional dependencies:** |glue.ligolw|_
+**Additional dependencies:** :mod:`glue.ligolw`
 
 The LIGO Scientific Collaboration uses a custom scheme of XML in which to
 store tabular data, called the ``LIGO_LW`` scheme.

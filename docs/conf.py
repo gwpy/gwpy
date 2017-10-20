@@ -56,6 +56,7 @@ extensions = [
     'sphinx.ext.linkcode',
     'numpydoc',
     'matplotlib.sphinxext.plot_directive',
+    'gwpy.utils.sphinx.epydoc',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -153,6 +154,12 @@ numpydoc_use_plots = True
 # configure inheritance diagram
 inheritance_graph_attrs = dict(rankdir='TB')
 
+# -- epydoc -------------------------------------
+
+# epydoc extension config for GLUE
+epydoc_mapping = {
+    'http://software.ligo.org/docs/glue/': [r'glue(\.|$)'],
+}
 
 # -- Options for HTML output ----------------------------------------------
 

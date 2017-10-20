@@ -50,7 +50,7 @@ def connect(host=None, port=None):
 
     Returns
     -------
-    connection : `~glue.datafind.GWDataFindHTTPConnection`
+    connection : :class:`~glue.datafind.GWDataFindHTTPConnection`
         the new open connection
     """
     from glue import datafind
