@@ -390,7 +390,7 @@ class TestIoLigolw(object):
     Here we only test the utilties, rather than the read/write functions,
     which are tested extensively via other modules (e.g. test_tables.py)
     """
-    @utils.skip_missing_dependency('glue.ligolw')
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
     def test_open_xmldoc(self):
         from glue.ligolw.ligolw import (Document, LIGO_LW)
         assert isinstance(io_ligolw.open_xmldoc(tempfile.mktemp()), Document)
@@ -411,7 +411,7 @@ class TestIoLigolw(object):
         with pytest.raises(ValueError):
             io_ligolw.get_ligolw_element(Document())
 
-    @utils.skip_missing_dependency('glue.ligolw')
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
     def test_list_tables(self):
         from glue.ligolw import lsctables
         from glue.ligolw.ligolw import (Document, LIGO_LW)
