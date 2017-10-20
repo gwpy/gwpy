@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read LIGO_LW documents into glue.ligolw.table.Table objects.
+"""Read LIGO_LW documents into :class:`~glue.ligolw.table.Table` objects.
 """
 
 import inspect
@@ -46,7 +46,7 @@ GET_AS_EXCLUDE = ['get_column', 'get_table']
 
 def to_astropy_table(llwtable, apytable, copy=False, columns=None,
                      rename=None, on_attributeerror=None, get_as_columns=None):
-    """Convert a `~glue.ligolw.table.Table` to an `~astropy.tableTable`
+    """Convert a :class:`~glue.ligolw.table.Table` to an `~astropy.tableTable`
 
     This method is designed as an internal method to be attached to
     :class:`~glue.ligolw.table.Table` objects as `__astropy_table__`.
@@ -124,7 +124,7 @@ def to_astropy_table(llwtable, apytable, copy=False, columns=None,
 
 
 def to_astropy_column(llwcol, cls, copy=False, dtype=None, **kwargs):
-    """Convert a `glue.ligolw.table.Column` to `astropy.table.Column`
+    """Convert a :class:`~glue.ligolw.table.Column` to `astropy.table.Column`
 
     Parameters
     -----------
@@ -192,7 +192,7 @@ def _get_column_dtype(llwcol):
 
 
 def table_to_ligolw(table, tablename):
-    """Convert a `astropy.table.Table` to a :class:`~glue.ligolw.table.Table`
+    """Convert a `astropy.table.Table` to a :class:`glue.ligolw.table.Table`
     """
     from glue.ligolw import (lsctables, types)
     from glue.ligolw.ilwd import get_ilwdchar_class
