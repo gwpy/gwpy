@@ -50,7 +50,7 @@ def open_data_source(source):
 
     Parameters
     ----------
-    source : `str`, `file`, `lal.Cache`, `glue.lal.Cache`
+    source : `str`, `file`, `lal.Cache`, :class:`glue.lal.Cache`
         data source to read
 
     Returns

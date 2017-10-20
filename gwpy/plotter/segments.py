@@ -50,9 +50,10 @@ class SegmentAxes(TimeSeriesAxes):
     This `SegmentAxes` provides custom methods for displaying any of
 
     - `~gwpy.segments.DataQualityFlag`
-    - `~gwpy.segments.Segment` or `glue.segments.segment`
-    - `~gwpy.segments.SegmentList` or `glue.segments.segmentlist`
-    - `~gwpy.segments.SegmentListDict` or `glue.segments.segmentlistdict`
+    - `~gwpy.segments.Segment` or :class:`glue.segments.segment`
+    - `~gwpy.segments.SegmentList` or :class:`glue.segments.segmentlist`
+    - `~gwpy.segments.SegmentListDict` or
+      :class:`glue.segments.segmentlistdict`
 
     Parameters
     ----------
@@ -95,7 +96,7 @@ class SegmentAxes(TimeSeriesAxes):
                 - `~gwpy.segments.SegmentList`
                 - `~gwpy.segments.SegmentListDict`
 
-            or equivalent types upstream from `glue.segments`
+            or equivalent types upstream from :mod:`glue.segments`
 
         kwargs
             keyword arguments applicable to `~matplotib.axes.Axes.plot`

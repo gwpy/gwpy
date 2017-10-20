@@ -520,12 +520,12 @@ class StateVector(TimeSeriesBase):
 
         Parameters
         ----------
-        source : `str`, `~glue.lal.Cache`
+        source : `str`, :class:`~glue.lal.Cache`
             source of data, any of the following:
 
             - `str` path of single data file
             - `str` path of LAL-format cache file
-            - `~glue.lal.Cache` describing one or more data files,
+            - :class:`~glue.lal.Cache` describing one or more data files,
 
         channel : `str`, `~gwpy.detector.Channel`
             the name of the channel to read, or a `Channel` object.
@@ -554,7 +554,7 @@ class StateVector(TimeSeriesBase):
             .. note::
 
                Parallel frame reading, via the ``nproc`` keyword argument,
-               is only available when giving a `~glue.lal.Cache` of
+               is only available when giving a :class:`~glue.lal.Cache` of
                frames, or using the ``format='cache'`` keyword argument.
 
         gap : `str`, optional
@@ -912,8 +912,8 @@ class StateVectorDict(TimeSeriesBaseDict):
 
         Parameters
         ----------
-        source : `str`, `~glue.lal.Cache`
-            a single file path `str`, or a `~glue.lal.Cache` containing
+        source : `str`, :class:`~glue.lal.Cache`
+            a single file path `str`, or a :class:`~glue.lal.Cache` containing
             a contiguous list of files.
 
         channels : `~gwpy.detector.channel.ChannelList`, `list`
