@@ -183,7 +183,7 @@ def with_read_ligolw(func=None, contenthandler=None):
 
 def read_table(source, tablename=None, columns=None, contenthandler=None,
                **kwargs):
-    """Read a `~glue.ligolw.table.Table` from one or more LIGO_LW files
+    """Read a :class:`~glue.ligolw.table.Table` from one or more LIGO_LW files
 
     Parameters
     ----------
@@ -195,7 +195,7 @@ def read_table(source, tablename=None, columns=None, contenthandler=None,
         - a `str` pointing to a file path on disk
         - a formatted `~lal.utils.CacheEntry` representing one file
         - a `list` of `str` file paths
-        - a formatted `~glue.lal.Cache` representing many files
+        - a formatted :class:`~glue.lal.Cache` representing many files
 
     tablename : `str`
         name of the table to read.
