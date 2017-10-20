@@ -142,7 +142,8 @@ def file_list(flist):
         - `str` representing a single file path (or comma-separated collection)
         - open `file` or `~gzip.GzipFile` object
         - `~lal.utils.CacheEntry`
-        - `~glue.lal.Cache` object or `str` with '.cache' or '.lcf extension
+        - :class:`~glue.lal.Cache` object or `str` with `.cache` or
+          `.lcf` extension
         - simple `list` or `tuple` of `str` paths
 
     Returns
@@ -228,7 +229,7 @@ def cache_segments(*caches):
 
     Parameters
     ----------
-    *cache : `~glue.lal.Cache`, `list`
+    *cache : :class:`~glue.lal.Cache`, `list`
         one of more `Cache` objects (or simple `list`)
 
     Returns

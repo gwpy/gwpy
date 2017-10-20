@@ -570,7 +570,12 @@ class DataQualityFlag(object):
 
     @classmethod
     def from_veto_def(cls, veto):
-        """Define a `DataQualityFlag` from a `~glue.ligolw.lsctables.VetoDef`
+        """Define a `DataQualityFlag` from a `VetoDef`
+
+        Parameters
+        ----------
+        veto : :class:`~glue.ligolw.lsctables.VetoDef`
+            veto definition to convert from
         """
         name = '%s:%s' % (veto.ifo, veto.name)
         try:
