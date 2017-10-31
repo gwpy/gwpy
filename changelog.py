@@ -29,15 +29,15 @@ def format_rpm(tag):
 def format_deb(tag):
     tago = tag.tag
     date = datetime.datetime.fromtimestamp(tago.tagged_date)
-    dstr = date.strftime('%a, %d %b %Y %H:%M:%D')
-    tz = int(tago.tagger_tz_offset / 3600. * 100)
+    dstr = date.strftime('%a, %d %b %Y %H:%M:%S')
+    tz = int(-tago.tagger_tz_offset / 3600. * 100)
     version = tag.name.strip('v')
     tagger = tago.tagger
     message = tago.message.split('\n')[0]
-    return (" -- {} <{}>  {} {}\n\n"
-            "gwpy ({}-1) unstable; urgency=low\n\n"
-            "  * {}\n".format(tagger.name, tagger.email, dstr, tz,
-                              version, message))
+    return ("gwpy ({}-1) unstable; urgency=low\n\n"
+            "  * {}\n\n"
+            " -- {} <{}>  {} {:+05d}\n".format(version, message, tagger.name,
+                                               tagger.email, dstr, tz))
 
 
 formatter = {

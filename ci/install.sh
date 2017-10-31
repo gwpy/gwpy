@@ -42,6 +42,7 @@ elif [[ "${DOCKER_IMAGE}" == *"jessie" ]]; then  # Debian
     mkdir -p dist/debian
     pushd dist/debian
     cp ../gwpy-${GWPY_VERSION}.tar.gz ../gwpy_${GWPY_VERSION}.orig.tar.gz
+    tar -xf ../gwpy_${GWPY_VERSION}.orig.tar.gz --strip-components=1
     dpkg-buildpackage -us -uc
     popd
 
