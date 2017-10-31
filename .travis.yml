@@ -1,36 +1,19 @@
-language: python
+language: minimal
 
 sudo: false
 dist: trusty
 
+env:
+  global:
+    secure: KXq3Kn+i5pDl7ApqYkMKAZlxC7OOLDmiBn46t/JYKyRAchacp1PR84vrwTNj7OfhZek0tlTkKwQtwpFaw6llhYSpB9xl9SsPNmoYsBtZb9zC8z/oRXlXgYudesPSt7cltlt0K21pV9gRflOezRjlJRDoccbw3pe90vYpMdvr7+0=
+
 addons:
   apt:
-    sources:
-      - sourceline: deb http://software.ligo.org/lscsoft/debian wheezy contrib
-        key_url: http://software.ligo.org/keys/deb/lscsoft.key
-      - sourceline: deb-src http://software.ligo.org/lscsoft/debian wheezy contrib
-        key_url: http://software.ligo.org/keys/deb/lscsoft.key
-      - ubuntu-toolchain-r-test
     packages:
-      # generic packages
       - gcc
       - gfortran
       - libblas-dev
       - liblapack-dev
-      # lal dependencies
-      - pkg-config
-      - zlib1g-dev
-      - libgsl0-dev
-      - swig
-      - bc
-      - libfftw3-dev
-      # lalframe dependencies
-      - libframe-dev
-      # framecpp dependencies
-      - g++-4.7
-      # nds2 dependencies
-      - libsasl2-2
-      # misc python dependencies
       - texlive-latex-extra
       - texlive-fonts-recommended
       - dvipng
@@ -40,60 +23,67 @@ python:
   - '2.7'
   - '3.5'
 
-env:
-  # minimal build, normal tests
-  - PIP_FLAGS="--upgrade" MINIMAL=true TEST_FLAGS=""
-
-  # normal build, normal tests
-  - PIP_FLAGS="--upgrade" MINIMAL=false TEST_FLAGS=""
-
-  # pre-release build, pedantic tests
-  - PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--strict"
-
 matrix:
+  include:
+    # simple build
+    - env: GWPY_CI="gwpy-minimal"
+      language: python
+    # debian build
+    - env: GWPY_CI="gwpy-debian" DOCKER_IMAGE="ligo/lalsuite-dev:jessie"
+      language: minimal
+      sudo: required
+      services:
+        - docker
+    # sl7 build
+    - env: GWPY_CI="gwpy-sl" DOCKER_IMAGE="ligo/lalsuite-dev:el7"
+      language: minimal
+      sudo: required
+      services:
+        - docker
+
   allow_failures:
-    - env: PIP_FLAGS="--upgrade --pre" MINIMAL=false TEST_FLAGS="--strict"
+    - python: '3.5'
+
   fast_finish: true
 
 before_install:
-  # update pip
-  - pip install ${PIP_FLAGS} --upgrade pip
+  # set up utilities
+  - . ./ci/lib.sh
 
-  # install cython to speed up scipy build
-  - travis_retry pip install ${PIP_FLAGS} --install-option="--no-cython-compile" Cython
+  # configure docker and system dependencies
+  - . ./ci/docker-install.sh
 
-  # install full dependency list if not minimal build
-  - >
-    if [ "${MINIMAL}" != true ]; then
-        source .travis/build-src-dependencies.sh;
-        pip install ${PIP_FLAGS} -r requirements-dev.txt;
-    fi
+install:  # install package
+  - ci_run "pip install ."
 
-install:
-  - pip install .
-
-before_script:
-  - pip list installed
-
-script:
-  # need to install pytest here to avoid version conflict later
-  - pip install coverage "pytest>=2.8"
-  - coverage run ./setup.py test --addopts "gwpy/tests/ ${TEST_FLAGS}"
+script:  # run tests
+  - ci_run ". ./ci/test.sh"
 
 after_success:
-  - pip install coveralls
-  - coveralls
+  # submit coverage results
+  - ci_run "pip install coveralls && coveralls"
+
+  # build and deploy package files
+  - . ./ci/deploy.sh
 
 deploy:
   - provider: pypi
     user: duncanmmacleod
-    password:
-      secure: GAcOK9Pq/Wue8CZ24KLWcibAcslCfjREk/trARVJdB2VjESF0bFcHgLcdQBIGJg2UweHdc0gsucPo6J4uRhR54s/gl2z47yx6tQ8O3cogvMTQfkhD6TYlh2tzquZz8t5KkuCWQhXBsSxiCGMLlFtzV2kbF7ksbiXbFbvNudqjj4=
+    password: ${PYPI_PASSWD}
     on:
       branch: master
       tags: true
       distributions: sdist bdist_wheel
       python: '2.7'
+      repo: gwpy/gwpy
+  - provider: pypi
+    user: duncanmmacleod
+    password: ${PYPI_PASSWD}
+    on:
+      branch: master
+      tags: true
+      distributions: bdist_wheel
+      python: '3.5'
       repo: gwpy/gwpy
 
 notifications:
@@ -104,16 +94,5 @@ cache:
   apt: true
   pip: true
   ccache: true
-  directories:
-    - ./python-${TRAVIS_PYTHON_VERSION}-lal/
-    - ./python-${TRAVIS_PYTHON_VERSION}-framecpp/
-    - ./python-${TRAVIS_PYTHON_VERSION}-ldas-tools-al/
-    - ./python-${TRAVIS_PYTHON_VERSION}-lalframe/
-    - ./python-${TRAVIS_PYTHON_VERSION}-nds2-client/
 before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log
-  - rm -f ./python-${TRAVIS_PYTHON_VERSION}-lal/config.log
-  - rm -f ./python-${TRAVIS_PYTHON_VERSION}-ldas-tools-al/config.log
-  - rm -f ./python-${TRAVIS_PYTHON_VERSION}-framecpp/config.log
-  - rm -f ./python-${TRAVIS_PYTHON_VERSION}-lalframe/config.log
-  - rm -f ./python-${TRAVIS_PYTHON_VERSION}-nds2-client/CMakeFiles/CMakeError.log ./python-${TRAVIS_PYTHON_VERSION}-nds2-client/CMakeFiles/CMakeOutput.log
