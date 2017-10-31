@@ -32,9 +32,12 @@ if [ -z ${DOCKER_IMAGE} ]; then
 else
     GWPY_PATH="/gwpy/"
     PYTHON="python${PYTHON_VERSION}"
-    if [[ "${PYTHON_VERSION}" == "3"* ]]; then
-        PIP="pip3"
-        PYPKG_PREFIX="python3"
+    if [[ "${PYTHON_VERSION}" != "2"* ]] && [[ "${DOCKER_IMAGE}" == *"el7" ]]; then
+        PIP="pip${PYTHON_VERSION:0:1}"
+        PYPKG_PREFIX="python${PYTHON_VERSION//./}"
+    elif [[ "${PYTHON_VERSION}" != "2"* ]]; then
+        PIP="pip${PYTHON_VERSION:0:1}"
+        PYPKG_PREFIX="python${PYTHON_VERSION:0:1}"
     else
         PIP="pip"
         PYPKG_PREFIX="python"
