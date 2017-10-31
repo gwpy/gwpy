@@ -23,11 +23,11 @@
 GWPY_VERSION=`${PYTHON} setup.py version | grep Version | cut -d\  -f2`
 
 if [ -z ${DOCKER_IMAGE} ]; then  # simple
-    pip install .
+    sudo pip install .
 
 if [[ "${DOCKER_IMAGE}" == *"jessie" ]]; then  # Debian
     # prepare the tarball
-    pip install stdeb
+    sudo pip install stdeb
     ${PYTHON} changelog.py --changelog-format=deb > debian/changelog
     ${PYTHON} setup.py sdist
 
