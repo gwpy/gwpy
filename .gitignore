@@ -25,6 +25,8 @@ Portfile
 .coverage
 .eggs/
 
+debian/changelog
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
