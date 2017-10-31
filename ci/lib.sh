@@ -20,6 +20,11 @@
 # Library functions for CI builds
 #
 
+# set environment
+# NOTE: any variables defined here should also be added
+#       to the `docker run` command in /ci/docker-install.sh
+#       via --env options
+
 if [ -z ${DOCKER_IMAGE} ]; then
     GWPY_PATH="`pwd`/"
     PIP="pip"
@@ -42,7 +47,7 @@ ci_run() {
     if [ -z ${DOCKER_IMAGE} ]; then  # execute function normally
         eval "PIP=$PIP $@" || return 1
     else  # execute function in docker container
-        docker exec -it ${DOCKER_IMAGE##*:} sh -lxec "cd ${GWPY_PATH}; PIP=$PIP; eval \"$@\"" || return 1
+        docker exec -it ${DOCKER_IMAGE##*:} sh -lxec "cd ${GWPY_PATH}; eval \"$@\"" || return 1
     fi
     set +x
     return 0

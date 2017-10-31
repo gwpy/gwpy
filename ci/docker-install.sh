@@ -36,7 +36,10 @@ sudo docker run \
     --rm=true \
     --detach \
     --name ${DOCKER_IMAGE##*:} \
-    -v `pwd`:/gwpy:rw \
+    --env PYTHON="$PYTHON" \
+    --env PIP="$PIP" \
+    --env PYPKG_PREFIX="$PYPKG_PREFIX" \
+    --volume `pwd`:/gwpy:rw \
     ${DOCKER_IMAGE} \
     /bin/bash -lc 'tail -f /dev/null'
 
