@@ -24,6 +24,7 @@
 if [ -z ${DOCKER_IMAGE} ]; then
     echo "Not a docker install, skipping docker configuration"
     return 0
+fi
 
 set -x
 
