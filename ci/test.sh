@@ -16,10 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-set -e
+set -x
 
 # install test dependencies
 sudo pip install coverage "pytest>=2.8"
 
 # run tests
 coverage run ./setup.py test --addopts "gwpy/tests/ ${TEST_FLAGS}"
+
+set +x
