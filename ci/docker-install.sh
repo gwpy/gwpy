@@ -23,17 +23,22 @@
 
 if [ -z ${DOCKER_IMAGE} ]; then
     echo "Not a docker install, skipping docker configuration"
-else
-    set -x
-    sudo apt-get update -yqq
-    sudo docker pull ${DOCKER_IMAGE}
-    sudo docker run \
-        --rm=true \
-        --detach \
-        --name ${DOCKER_IMAGE##*:} \
-        -v `pwd`:/gwpy:rw \
-        ${DOCKER_IMAGE} \
-        /bin/bash -lc 'tail -f /dev/null'
-    sleep 10
-    set +x
-fi
+    return 0
+
+set -x
+
+# download container
+sudo docker pull ${DOCKER_IMAGE}
+
+# start container
+sudo docker run \
+    --rm=true \
+    --detach \
+    --name ${DOCKER_IMAGE##*:} \
+    -v `pwd`:/gwpy:rw \
+    ${DOCKER_IMAGE} \
+    /bin/bash -lc 'tail -f /dev/null'
+
+sleep 10
+
+set +x

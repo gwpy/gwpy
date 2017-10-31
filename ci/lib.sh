@@ -20,15 +20,29 @@
 # Library functions for CI builds
 #
 
-[ -z ${DOCKER_IMAGE} ] && GWPY_PATH="`pwd`/" || GWPY_PATH="/gwpy/"
+if [ -z ${DOCKER_IMAGE} ]; then
+    GWPY_PATH="`pwd`/"
+    PIP="pip"
+    PYTHON="python"
+else
+    GWPY_PATH="/gwpy/"
+    PYTHON="python${PYTHON_VERSION}"
+    if [[ "${PYTHON_VERSION}" == "3"* ]]; then
+        PIP="pip3"
+        PYPKG_PREFIX="python3"
+    else
+        PIP="pip"
+        PYPKG_PREFIX="python"
+    fi
+fi
+
 
 ci_run() {
     set -x
     if [ -z ${DOCKER_IMAGE} ]; then  # execute function normally
         eval "$@" || return 1
     else  # execute function in docker container
-        cd ${GWPY_PATH}
-        docker exec -it ${DOCKER_IMAGE##*:} sh -xec "$@" || return 1
+        docker exec -it ${DOCKER_IMAGE##*:} sh -xec "cd ${GWPY_PATH}; eval \"$@\"" || return 1
     fi
     set +x
     return 0
