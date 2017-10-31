@@ -42,7 +42,7 @@ ci_run() {
     if [ -z ${DOCKER_IMAGE} ]; then  # execute function normally
         eval "PIP=$PIP $@" || return 1
     else  # execute function in docker container
-        docker exec -it ${DOCKER_IMAGE##*:} sh -xec "cd ${GWPY_PATH}; PIP=$PIP; eval \"$@\"" || return 1
+        docker exec -it ${DOCKER_IMAGE##*:} sh -lxec "cd ${GWPY_PATH}; PIP=$PIP; eval \"$@\"" || return 1
     fi
     set +x
     return 0
