@@ -1,7 +1,6 @@
-language: minimal
+language: python
 
 sudo: false
-dist: trusty
 
 env:
   global:
@@ -27,16 +26,13 @@ matrix:
   include:
     # simple build
     - env: GWPY_CI="gwpy-minimal"
-      language: python
     # debian build
     - env: GWPY_CI="gwpy-debian" DOCKER_IMAGE="ligo/lalsuite-dev:jessie"
-      language: minimal
       sudo: required
       services:
         - docker
     # sl7 build
     - env: GWPY_CI="gwpy-sl" DOCKER_IMAGE="ligo/lalsuite-dev:el7"
-      language: minimal
       sudo: required
       services:
         - docker

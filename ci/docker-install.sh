@@ -16,6 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
+set -e
+set -x
+
 #
 # Configure the relevant docker container for this CI job, then install
 # the dependencies as system packages
@@ -29,7 +32,7 @@ else
     sudo docker run \
         --rm=true \
         --detach \
-        --name "${GWPY_CI}" \
+        --name ${GWPY_CI} \
         --volume `pwd`:/gwpy:rw \
         ${DOCKER_IMAGE}
     sleep 10
