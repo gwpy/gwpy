@@ -35,6 +35,7 @@ sudo docker pull ${DOCKER_IMAGE}
 sudo docker run \
     --rm=true \
     --detach \
+    --tty \
     --name ${DOCKER_IMAGE##*:} \
     --env DOCKER_IMAGE="${DOCKER_IMAGE}" \
     --env GWPY_PATH="${GWPY_PATH}" \
