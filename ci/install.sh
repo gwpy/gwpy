@@ -17,13 +17,40 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 #
-# Install gwpy for this CI build
+# Build system packages
 #
 
-set -e
-set -x
+GWPY_VERSION=`${PYTHON} setup.py version | grep Version | cut -d\  -f2`
 
-if [ -z ${DOCKER_IMAGE} ]; then
+if [ -z ${DOCKER_IMAGE} ]; then  # simple
     pip install .
-else
-    ci_run "pip install /gwpy/"
+
+if [[ "${DOCKER_IMAGE}" == *"jessie" ]]; then  # Debian
+    # prepare the tarball
+    pip install stdeb
+    ${PYTHON} changelog.py --changelog-format=deb > debian/changelog
+    ${PYTHON} setup.py sdist
+
+    # make the debian package
+    mkdir -p dist/debian
+    cd dist/debian
+    cp ../gwpy-${GWPY_VERSION}.tar.gz ../gwpy_${GWPY_VERSION}.orig.tar.gz
+    dpkg-buildpackage -us -uc
+
+    # install the deb
+    sudo dpkg -i ../python-gwpy_${GWPY_VERSION}-1_all.deb
+
+elif [[ "${DOCKER_IMAGE}" == *"el7" ]]; then  # Scientific Linux
+    # build the RPM
+    ${PYTHON} setup.py bdist_rpm --fix-python --changelog=`${PYTHON} changelog.py`
+
+    # install the rpm
+    sudo rpm -ivh dist/gwpy-${GWPY_VERSION}-1.noarch.rpm
+
+fi
+
+echo "------------------------------------------------------------------------"
+echo
+echo "GWpy installed to `${PYTHON} -c 'import gwpy; print(gwpy.__file__)'`"
+echo
+echo "------------------------------------------------------------------------"

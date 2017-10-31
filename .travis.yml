@@ -58,7 +58,7 @@ before_install:
   - . ./ci/docker-install.sh
 
 install:  # install package
-  - ci_run "pip install ."
+  - . ./ci/install.sh
 
 script:  # run tests
   - ci_run ". ./ci/test.sh"
