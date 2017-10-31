@@ -27,6 +27,11 @@ if [ -z ${DOCKER_IMAGE} ]; then  # simple
     sudo ${PIP} install .
 
 elif [[ "${DOCKER_IMAGE}" == *"jessie" ]]; then  # Debian
+
+    sudo apt-get install -yqq \
+        ${PYPKG_PREFIX} \
+        ${PYPKG_PREFIX}-pip
+
     # prepare the tarball
     sudo ${PIP} install stdeb
     ${PYTHON} changelog.py --start-tag "v0.5" > debian/changelog
@@ -45,9 +50,15 @@ elif [[ "${DOCKER_IMAGE}" == *"jessie" ]]; then  # Debian
     # install system-level extras
     sudo apt-get install -y \
         ${PYPKG_PREFIX}-nds2-client \
+        ${PYPKG_PREFIX}-h5py \
     || true
 
 elif [[ "${DOCKER_IMAGE}" == *"el7" ]]; then  # Scientific Linux
+
+    sudo yum install \
+        ${PYPKG_PREFIX} \
+        ${PYPKG_PREFIX}-pip
+
     # build the RPM
     ${PYTHON} setup.py bdist_rpm --fix-python --changelog="`${PYTHON} changelog.py --start-tag 'v0.5'`"
 
@@ -56,7 +67,8 @@ elif [[ "${DOCKER_IMAGE}" == *"el7" ]]; then  # Scientific Linux
 
     # install system-level extras
     sudo yum install \
-        ${PYPKG_PREFIX}-nds2-client \
+        nds2-client-python \
+        h5py \
     || true
 
 fi
