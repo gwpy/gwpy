@@ -32,8 +32,9 @@ elif [[ "${DOCKER_IMAGE}" == *"jessie" ]]; then  # Debian
         ${PYPKG_PREFIX} \
         ${PYPKG_PREFIX}-pip
 
+    ${PIP} install stdeb GitPython
+
     # prepare the tarball
-    ${PIP} install stdeb
     ${PYTHON} changelog.py --start-tag "v0.5" > debian/changelog
     ${PYTHON} setup.py sdist
 
@@ -58,6 +59,8 @@ elif [[ "${DOCKER_IMAGE}" == *"el7" ]]; then  # Scientific Linux
     yum install \
         ${PYPKG_PREFIX} \
         ${PYPKG_PREFIX}-pip
+
+    pip install GitPython  # needed for changelog.py
 
     # build the RPM
     ${PYTHON} setup.py bdist_rpm --fix-python --changelog="`${PYTHON} changelog.py --start-tag 'v0.5'`"
