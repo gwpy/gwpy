@@ -30,7 +30,7 @@ else
     sudo docker run \
         --rm=true \
         --detach \
-        --name ${GWPY_CI} \
+        --name ${DOCKER_IMAGE##*:} \
         -v `pwd`:/gwpy:rw \
         ${DOCKER_IMAGE} \
         /bin/bash -lc 'tail -f /dev/null'
