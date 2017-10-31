@@ -19,7 +19,7 @@
 set -x
 
 # install test dependencies
-sudo pip install coverage "pytest>=2.8"
+sudo ${PIP} install coverage "pytest>=2.8"
 
 # run tests
 coverage run ./setup.py test --addopts "gwpy/tests/ ${TEST_FLAGS}"

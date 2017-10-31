@@ -20,34 +20,49 @@
 # Build system packages
 #
 
+cd ${GWPY_PATH}
 GWPY_VERSION=`${PYTHON} setup.py version | grep Version | cut -d\  -f2`
 
 if [ -z ${DOCKER_IMAGE} ]; then  # simple
-    sudo pip install .
+    sudo ${PIP} install .
 
-if [[ "${DOCKER_IMAGE}" == *"jessie" ]]; then  # Debian
+elif [[ "${DOCKER_IMAGE}" == *"jessie" ]]; then  # Debian
     # prepare the tarball
-    sudo pip install stdeb
-    ${PYTHON} changelog.py --changelog-format=deb > debian/changelog
+    sudo ${PIP} install stdeb
+    ${PYTHON} changelog.py --start-tag "v0.5" > debian/changelog
     ${PYTHON} setup.py sdist
 
     # make the debian package
     mkdir -p dist/debian
-    cd dist/debian
+    pushd dist/debian
     cp ../gwpy-${GWPY_VERSION}.tar.gz ../gwpy_${GWPY_VERSION}.orig.tar.gz
     dpkg-buildpackage -us -uc
+    popd
 
     # install the deb
-    sudo dpkg -i ../python-gwpy_${GWPY_VERSION}-1_all.deb
+    sudo dpkg -i dist/python-gwpy_${GWPY_VERSION}-1_all.deb
+
+    # install system-level extras
+    sudo apt-get install -y \
+        ${PYPKG_PREFIX}-nds2-client \
+    || true
 
 elif [[ "${DOCKER_IMAGE}" == *"el7" ]]; then  # Scientific Linux
     # build the RPM
-    ${PYTHON} setup.py bdist_rpm --fix-python --changelog=`${PYTHON} changelog.py`
+    ${PYTHON} setup.py bdist_rpm --fix-python --changelog="`${PYTHON} changelog.py --start-tag 'v0.5'`"
 
     # install the rpm
     sudo rpm -ivh dist/gwpy-${GWPY_VERSION}-1.noarch.rpm
 
+    # install system-level extras
+    sudo yum install \
+        ${PYPKG_PREFIX}-nds2-client \
+    || true
+
 fi
+
+# install extras
+sudo ${PIP} install -r requirements-dev.txt
 
 echo "------------------------------------------------------------------------"
 echo
