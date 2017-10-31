@@ -16,9 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-set -e
-set -x
-
 #
 # Configure the relevant docker container for this CI job, then install
 # the dependencies as system packages
@@ -27,13 +24,16 @@ set -x
 if [ -z ${DOCKER_IMAGE} ]; then
     echo "Not a docker install, skipping docker configuration"
 else
+    set -x
     sudo apt-get update -yqq
     sudo docker pull ${DOCKER_IMAGE}
     sudo docker run \
         --rm=true \
         --detach \
         --name ${GWPY_CI} \
-        --volume `pwd`:/gwpy:rw \
-        ${DOCKER_IMAGE}
+        -v `pwd`:/gwpy:rw \
+        ${DOCKER_IMAGE} \
+        /bin/bash -lc 'tail -f /dev/null'
     sleep 10
+    set +x
 fi
