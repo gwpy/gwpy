@@ -1,4 +1,4 @@
-language: python
+language: minimal
 
 sudo: false
 
@@ -21,29 +21,32 @@ addons:
 matrix:
   include:
     # simple build
-    - env: GWPY_CI="gwpy-minimal"
-      python:
-        - '2.7'
-        - '3.5'
+    - env: PYTHON_VERSION='2.7'
+    - env: PYTHON_VERSION='3.5'
+
     # debian build
-    - env: GWPY_CI="gwpy-debian" DOCKER_IMAGE="ligo/lalsuite-dev:jessie"
+    - env: PYTHON_VERSION='2.7' DOCKER_IMAGE="ligo/lalsuite-dev:jessie"
       sudo: required
-      python:
-        - '2.7'
-        - '3.5'
       services:
         - docker
+    - env: PYTHON_VERSION='3.5' DOCKER_IMAGE="ligo/lalsuite-dev:jessie"
+      sudo: required
+      services:
+        - docker
+
     # sl7 build
-    - env: GWPY_CI="gwpy-sl" DOCKER_IMAGE="ligo/lalsuite-dev:el7"
-      python:
-        - '2.7'
-        - '3.5'
+    - env: PYTHON_VERSION='2.7' DOCKER_IMAGE="ligo/lalsuite-dev:el7"
+      sudo: required
+      services:
+        - docker
+    - env: PYTHON_VERSION='3.5' DOCKER_IMAGE="ligo/lalsuite-dev:el7"
       sudo: required
       services:
         - docker
 
   allow_failures:
-    - python: '3.5'
+    - env: PYTHON_VERSION='3.5' DOCKER_IMAGE="ligo/lalsuite-dev:jessie"
+    - env: PYTHON_VERSION='3.5' DOCKER_IMAGE="ligo/lalsuite-dev:el7"
 
   fast_finish: true
 

@@ -24,7 +24,7 @@
 
 GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
 
-if [ "${GWPY_CI}" == "gwpy-debian" ]; then
+if [[ "${DOCKER_IMAGE}" == *"jessie" ]]; then
     # prepare the tarball
     pip install stdeb
     python changelog.py --changelog-format=deb > debian/changelog
@@ -39,7 +39,7 @@ if [ "${GWPY_CI}" == "gwpy-debian" ]; then
     # install the deb
     sudo dpkg -i ../python-gwpy_${GWPY_VERSION}-1_all.deb
 
-elif [ "${GWPY_CI}" == "gwpy-el7" ]; then
+elif [[ "${DOCKER_IMAGE}" == *"el7" ]]; then
     # build the RPM
     python setup.py bdist_rpm --changelog=`python changelog.py`
 

@@ -28,7 +28,7 @@ ci_run() {
         eval "$@" || return 1
     else  # execute function in docker container
         cd ${GWPY_PATH}
-        docker exec -it ${GWPY_CI} sh -xec "$@" || return 1
+        docker exec -it ${DOCKER_IMAGE##*:} sh -xec "$@" || return 1
     fi
     set +x
     return 0
