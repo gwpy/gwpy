@@ -21,8 +21,10 @@ addons:
 matrix:
   include:
     # simple build
-    - env: PYTHON_VERSION='2.7'
-    - env: PYTHON_VERSION='3.5'
+    - language: python
+      python: 2.7
+    - language: python
+      python: 3.5
 
     # debian build
     - env: PYTHON_VERSION='2.7' DOCKER_IMAGE="ligo/lalsuite-dev:jessie"
