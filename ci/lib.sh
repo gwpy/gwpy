@@ -16,9 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-set -e
-set -x
-
 #
 # Library functions for CI builds
 #
@@ -26,11 +23,13 @@ set -x
 [ -z ${DOCKER_IMAGE} ] && GWPY_PATH="`pwd`/" || GWPY_PATH="/gwpy/"
 
 ci_run() {
+    set -x
     if [ -z ${DOCKER_IMAGE} ]; then  # execute function normally
         eval "$@" || return 1
     else  # execute function in docker container
         cd ${GWPY_PATH}
         docker exec -it ${GWPY_CI} sh -xec "$@" || return 1
     fi
+    set +x
     return 0
 }

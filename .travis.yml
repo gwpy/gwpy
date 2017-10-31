@@ -18,21 +18,26 @@ addons:
       - dvipng
       - libhdf5-serial-dev
 
-python:
-  - '2.7'
-  - '3.5'
-
 matrix:
   include:
     # simple build
     - env: GWPY_CI="gwpy-minimal"
+      python:
+        - '2.7'
+        - '3.5'
     # debian build
     - env: GWPY_CI="gwpy-debian" DOCKER_IMAGE="ligo/lalsuite-dev:jessie"
       sudo: required
+      python:
+        - '2.7'
+        - '3.5'
       services:
         - docker
     # sl7 build
     - env: GWPY_CI="gwpy-sl" DOCKER_IMAGE="ligo/lalsuite-dev:el7"
+      python:
+        - '2.7'
+        - '3.5'
       sudo: required
       services:
         - docker
