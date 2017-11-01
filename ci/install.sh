@@ -31,7 +31,9 @@ elif [[ "${DOCKER_IMAGE}" == *"jessie" ]]; then  # Debian
     GWPY_VERSION=${GWPY_VERSION/+/-}
 
     apt-get install -yqq \
+        debhelper \
         ${PYPKG_PREFIX} \
+        ${PYPKG_PREFIX}-all \
         ${PYPKG_PREFIX}-pip
 
     ${PIP} install stdeb GitPython
