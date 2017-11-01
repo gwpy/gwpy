@@ -53,3 +53,17 @@ ci_run() {
     fi
     return 0
 }
+
+ci_virtualenv() {
+    # create virtualenv in which to build
+    virtualenv -p ${PYTHON} ${GWPY_PATH}/opt/buildenv --system-site-packages
+    . ${GWPY_PATH}/opt/buildenv/bin/activate
+    pip install --upgrade pip
+    pip install --upgrade setuptools GitPython
+}
+
+ci_clean_virtualenv() {
+    local VENV_DIR=${VIRTUAL_ENV}
+    deactivate
+    rm -rf ${VENV_DIR}
+}

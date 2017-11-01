@@ -27,14 +27,19 @@ yum -y update
 yum -y install \
     rpm-build \
     ${PYPKG_PREFIX} \
-    ${PYPKG_PREFIX}-pip
+    ${PYPKG_PREFIX}-pip \
+    ${PYPKG_PREFIX}-virtualenv
 
-${PIP} install GitPython  # needed for changelog.py
+# create virtualenv for this build
+ci_virtualenv
 
 # build the RPM
-${PYTHON} setup.py bdist_rpm \
+python setup.py bdist_rpm \
     --fix-python \
-    --changelog="`${PYTHON} changelog.py --start-tag 'v0.5'`"
+    --changelog="`python changelog.py --start-tag 'v0.5'`"
+
+# exit virtualenv
+ci_clean_virtualenv
 
 # install the rpm
 rpm -ivh dist/gwpy-${GWPY_VERSION}-1.noarch.rpm
