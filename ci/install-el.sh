@@ -25,6 +25,7 @@ yum makecache
 yum -y update
 
 yum -y install \
+    rpm-build \
     ${PYPKG_PREFIX} \
     ${PYPKG_PREFIX}-pip
 
