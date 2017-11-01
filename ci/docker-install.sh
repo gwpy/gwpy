@@ -28,6 +28,10 @@ fi
 
 set -x
 
+# update docker itself
+sudo apt-get update
+sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
+
 # download container
 sudo docker pull ${DOCKER_IMAGE}
 
