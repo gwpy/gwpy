@@ -31,7 +31,8 @@ apt-get install -yqq \
     debhelper \
     ${PYPKG_PREFIX} \
     ${PYPKG_PREFIX}-all \
-    ${PYPKG_PREFIX}-pip
+    ${PYPKG_PREFIX}-pip \
+    lal-${PYPKG_PREFIX}
 
 # install build helpers
 ${PIP} install GitPython
