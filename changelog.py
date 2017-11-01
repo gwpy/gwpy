@@ -22,8 +22,8 @@ def format_rpm(tag):
     dstr = date.strftime('%a %b %d %Y')
     tagger = tago.tagger
     message = tago.message.split('\n')[0]
-    return "* {} {} <{}>\n- {}\n".format(dstr, tagger.name, tagger.email,
-                                         message)
+    return "* {} {} <{}>\n- {}".format(dstr, tagger.name, tagger.email,
+                                       message)
 
 
 def format_deb(tag):
