@@ -6,25 +6,35 @@ env:
   global:
     secure: KXq3Kn+i5pDl7ApqYkMKAZlxC7OOLDmiBn46t/JYKyRAchacp1PR84vrwTNj7OfhZek0tlTkKwQtwpFaw6llhYSpB9xl9SsPNmoYsBtZb9zC8z/oRXlXgYudesPSt7cltlt0K21pV9gRflOezRjlJRDoccbw3pe90vYpMdvr7+0=
 
-addons:
-  apt:
-    packages:
-      - gcc
-      - gfortran
-      - libblas-dev
-      - liblapack-dev
-      - texlive-latex-extra
-      - texlive-fonts-recommended
-      - dvipng
-      - libhdf5-serial-dev
-
 matrix:
   include:
     # simple build
     - language: python
       python: 2.7
+      addons:
+        apt:
+          packages:
+            - gcc
+            - gfortran
+            - libblas-dev
+            - liblapack-dev
+            - texlive-latex-extra
+            - texlive-fonts-recommended
+            - dvipng
+            - libhdf5-serial-dev
     - language: python
       python: 3.5
+      addons:
+        apt:
+          packages:
+            - gcc
+            - gfortran
+            - libblas-dev
+            - liblapack-dev
+            - texlive-latex-extra
+            - texlive-fonts-recommended
+            - dvipng
+            - libhdf5-serial-dev
 
     # debian build
     - env: PYTHON_VERSION='2.7' DOCKER_IMAGE="ligo/lalsuite-dev:jessie"
