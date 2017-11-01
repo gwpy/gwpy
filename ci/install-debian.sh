@@ -20,6 +20,7 @@
 # Build Debian package
 #
 
+GWPY_RELEASE=${GWPY_VERSION%%+*}
 GWPY_VERSION=${GWPY_VERSION/+/-}
 
 # install build dependencies
@@ -34,7 +35,7 @@ apt-get install -yqq \
 ${PIP} install stdeb GitPython
 
 # prepare the tarball
-${PYTHON} changelog.py --start-tag "v0.5" > debian/changelog
+${PYTHON} changelog.py -f deb -s "v0.5" > debian/changelog
 ${PYTHON} setup.py sdist
 
 # make the debian package
@@ -47,7 +48,7 @@ popd
 
 # install the deb
 ls dist/
-dpkg -i dist/python-gwpy_${GWPY_VERSION}-1_all.deb
+dpkg -i dist/python-gwpy_${GWPY_RELEASE}-1_all.deb
 
 # install system-level extras
 apt-get install -y \
