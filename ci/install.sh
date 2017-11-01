@@ -25,8 +25,10 @@ cd ${GWPY_PATH}
 set -e
 set -x
 
-# upgrade pip
-${PIP} install --upgrade --ignore-installed pip
+# upgrade pip and setuptools on the OS
+if [ ! -z ${DOCKER_IMAGE} ]; then
+    sudo ${PIP} install --upgrade pip setuptools
+fi
 
 # get version number for install scripts to use
 GWPY_VERSION=`${PYTHON} setup.py version | grep Version | cut -d\  -f2`
