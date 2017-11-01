@@ -23,6 +23,7 @@
 cd ${GWPY_PATH}
 
 set -e
+set -x
 
 # upgrade pip
 ${PIP} install --upgrade pip
@@ -49,3 +50,4 @@ echo
 echo "------------------------------------------------------------------------"
 
 set +e
+set +x
