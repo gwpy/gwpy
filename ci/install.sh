@@ -24,8 +24,13 @@ cd ${GWPY_PATH}
 
 set -e
 
+# upgrade pip
+${PIP} install --upgrade pip
+
+# get version number for install scripts to use
 GWPY_VERSION=`${PYTHON} setup.py version | grep Version | cut -d\  -f2`
 
+# install for this OS
 if [ -z ${DOCKER_IMAGE} ]; then  # simple
     ${PIP} install .
 elif [[ ${DOCKER_IMAGE} =~ el[0-9]+$ ]]; then  # SLX
