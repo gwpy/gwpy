@@ -22,9 +22,6 @@
 
 set -x
 
-export TERM=xterm
-tty
-
 yum clean all
 yum makecache
 yum -y update
