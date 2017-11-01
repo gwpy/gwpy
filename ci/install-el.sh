@@ -20,6 +20,8 @@
 # Build RedHat (Enterprise Linux) packages
 #
 
+yum update -y
+
 yum install \
     ${PYPKG_PREFIX} \
     ${PYPKG_PREFIX}-pip
