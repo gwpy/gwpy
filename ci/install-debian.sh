@@ -48,9 +48,12 @@ tar -xf ../gwpy_${GWPY_VERSION}.orig.tar.gz --strip-components=1
 dpkg-buildpackage -us -uc
 popd
 
-# install the deb
-ls dist/
-dpkg -i dist/python-gwpy_${GWPY_RELEASE}-1_all.deb
+# print and install the deb
+GWPY_DEB="dist/python-gwpy_${GWPY_RELEASE}-1_all.deb"
+echo "-------------------------------------------------------"
+dpkg --info ${GWPY_DEB}
+echo "-------------------------------------------------------"
+dpkg --install ${GWPY_DEB}
 
 # install system-level extras
 apt-get install -y \
