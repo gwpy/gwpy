@@ -20,8 +20,6 @@
 # Build Debian package
 #
 
-set -x
-
 GWPY_RELEASE=${GWPY_VERSION%%+*}
 GWPY_VERSION=${GWPY_VERSION/+/-}
 
@@ -62,5 +60,3 @@ apt-get install -y \
     ${PYPKG_PREFIX}-nds2-client \
     ${PYPKG_PREFIX}-h5py \
 || true
-
-set +x
