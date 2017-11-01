@@ -49,7 +49,7 @@ dpkg-buildpackage -us -uc
 popd
 
 # print and install the deb
-GWPY_DEB="dist/python-gwpy_${GWPY_RELEASE}-1_all.deb"
+GWPY_DEB="dist/${PYPKG_PREFIX}-gwpy_${GWPY_RELEASE}-1_all.deb"
 echo "-------------------------------------------------------"
 dpkg --info ${GWPY_DEB}
 echo "-------------------------------------------------------"
