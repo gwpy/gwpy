@@ -45,11 +45,13 @@ else  # Debian
     . ci/install-debian.sh
 fi
 
+cd /tmp
 echo "------------------------------------------------------------------------"
 echo
 echo "GWpy installed to `${PYTHON} -c 'import gwpy; print(gwpy.__file__)'`"
 echo
 echo "------------------------------------------------------------------------"
+cd -
 
 set +e
 set +x
