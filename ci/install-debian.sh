@@ -55,7 +55,7 @@ echo "-------------------------------------------------------"
 dpkg --info ${GWPY_DEB}
 echo "-------------------------------------------------------"
 dpkg --install ${GWPY_DEB} || true  # probably fails...
-apt-get -f install  # install dependencies and package
+apt-get -fy install  # install dependencies and package
 
 # install system-level extras
 apt-get install -y \
