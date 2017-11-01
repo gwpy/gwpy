@@ -22,6 +22,8 @@
 
 cd ${GWPY_PATH}
 
+. ci/lib.sh
+
 set -e
 set -x
 
@@ -31,14 +33,18 @@ GWPY_VERSION=`${PYTHON} setup.py version | grep Version | cut -d\  -f2`
 # install for this OS
 if [ -z ${DOCKER_IMAGE} ]; then  # simple
     ${PIP} install .
-elif [[ ${DOCKER_IMAGE} =~ el[0-9]+$ ]]; then  # SLX
+    ${PIP} install -r requirements-dev.txt
+fi
+
+create_virtualenv
+
+if [[ ${DOCKER_IMAGE} =~ :el[0-9]+$ ]]; then  # SLX
     . ci/install-el.sh
-else
+else  # Debian
     . ci/install-debian.sh
 fi
 
-# install extras
-${PIP} install -r requirements-dev.txt
+clean_virtualenv
 
 echo "------------------------------------------------------------------------"
 echo

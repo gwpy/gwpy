@@ -23,23 +23,12 @@
 yum clean all
 yum makecache
 yum -y update
-
-yum -y install \
-    rpm-build \
-    ${PYPKG_PREFIX} \
-    ${PYPKG_PREFIX}-pip \
-    ${PYPKG_PREFIX}-virtualenv
-
-# create virtualenv for this build
-ci_virtualenv
+yum -y install rpm-build
 
 # build the RPM
 python setup.py bdist_rpm \
-    --fix-python \
+    --python ${PYTHON} \
     --changelog="`python changelog.py --start-tag 'v0.5'`"
-
-# exit virtualenv
-ci_clean_virtualenv
 
 # install the rpm
 rpm -ivh dist/gwpy-${GWPY_VERSION}-1.noarch.rpm

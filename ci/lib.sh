@@ -18,34 +18,21 @@
 
 #
 # Library functions for CI builds
+# Can be used outside and inside docker containers
 #
 
-# set environment
-# NOTE: any variables defined here should also be added
-#       to the `docker run` command in /ci/docker-install.sh
-#       via --env options
-
-if [ -z ${DOCKER_IMAGE} ]; then
-    GWPY_PATH=`pwd`
-    PIP="pip"
-    PYTHON="python"
-else
+# set path to directory in
+if [ -z ${DOCKER_IMAGE} ] || [ -f /.dockerenv ]; then
     GWPY_PATH="/gwpy"
-    PYTHON="python${PYTHON_VERSION}"
-    if [[ "${PYTHON_VERSION}" != "2"* ]] && [[ "${DOCKER_IMAGE}" == *"el7" ]]; then
-        PIP="pip${PYTHON_VERSION:0:1}"
-        PYPKG_PREFIX="python${PYTHON_VERSION//./}"
-    elif [[ "${PYTHON_VERSION}" != "2"* ]]; then
-        PIP="pip${PYTHON_VERSION:0:1}"
-        PYPKG_PREFIX="python${PYTHON_VERSION:0:1}"
-    else
-        PIP="pip"
-        PYPKG_PREFIX="python"
-    fi
+else
+    GWPY_PATH=`pwd`
 fi
+export GWPY_PATH
 
+# -- out-of-container helpers -------------------------------------------------
 
 ci_run() {
+    # run a command normally, or in docker, depending on environment
     if [ -z ${DOCKER_IMAGE} ]; then  # execute function normally
         eval "$@" || return 1
     else  # execute function in docker container
@@ -54,15 +41,81 @@ ci_run() {
     return 0
 }
 
-ci_virtualenv() {
+# -- in-container helpers -----------------------------------------------------
+
+get_os_type() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo $ID
+    elif [ ${TRAVIS_OS_NAME} == "osx" ]; then
+        echo macos
+    fi
+}
+
+get_package_manager() {
+    local ostype=`get_os_type`
+    if [ $ostype == macos ]; then
+        echo port
+    elif [[ $ostype =~ ^(centos|rhel|fedora)$ ]]; then
+        echo yum
+    else
+        echo apt-get
+    fi
+}
+
+get_environment() {
+    [ -z ${PYTHON_VERSION} ] && PYTHON_VERSION=`
+        python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'`
+    local pkger=`get_package_manager`
+    IFS='.' read PY_MAJOR_VERSION PY_MINOR_VERSION <<< "$PYTHON_VERSION"
+    PY_XY="${PY_MAJOR_VERSION}${PY_MINOR_VERSION}"
+    PYTHON=`which python${PYTHON_VERSION}`
+    case "$pkger" in
+        port)
+            PY_DIST=python${PY_XY}
+            PY_PREFIX=py${PY_XY}
+            ;;
+        apt-get)
+            if [ ${PY_MAJOR_VERSION} == 2 ]; then
+                PY_DIST=python
+                PY_PREFIX=python
+            else
+                PY_DIST=python${PY_MAJOR_VERSION}
+                PY_PREFIX=python${PY_MAJOR_VERSION}
+            fi
+            ;;
+        yum)
+            if [ ${PY_MAJOR_VERSION} == 2 ]; then
+                PY_DIST=python
+                PY_PREFIX=python
+            elif [ ${PY_XY} -eq 34 ]; then
+                PY_DIST=python${PY_XY}
+                PY_PREFIX=python${PY_XY}
+            else
+                PY_DIST=python${PY_XY}u
+                PY_PREFIX=python${PY_XY}u
+            fi
+            ;;
+    esac
+    export PYTHON PY_MAJOR_VERSION PY_MINOR_VERSION PY_XY PY_DIST PY_PREFIX
+}
+
+create_virtualenv() {
+    get_environment
+
+    local pkger=`get_package_manager`
+    $pkger install \
+        $PY_DIST \
+        python-virtualenv
+
     # create virtualenv in which to build
-    virtualenv -p ${PYTHON} ${GWPY_PATH}/opt/buildenv --system-site-packages
+    virtualenv -p python${PYTHON_VERSION} ${GWPY_PATH}/opt/buildenv --system-site-packages
     . ${GWPY_PATH}/opt/buildenv/bin/activate
     pip install --upgrade pip
     pip install --upgrade setuptools GitPython
 }
 
-ci_clean_virtualenv() {
+clean_virtualenv() {
     local VENV_DIR=${VIRTUAL_ENV}
     deactivate
     rm -rf ${VENV_DIR}

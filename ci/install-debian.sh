@@ -29,12 +29,7 @@ apt-get install -yqq \
     debhelper \
     ${PYPKG_PREFIX} \
     ${PYPKG_PREFIX}-all \
-    ${PYPKG_PREFIX}-pip \
-    ${PYPKG_PREFIX}-virtualenv \
     lal-${PYPKG_PREFIX}
-
-# create virtualenv in which to build
-ci_virtualenv
 
 # prepare the tarball
 python changelog.py -f deb -s "v0.5" > debian/changelog
@@ -47,9 +42,6 @@ cp ../gwpy-${GWPY_VERSION}.tar.gz ../gwpy_${GWPY_VERSION}.orig.tar.gz
 tar -xf ../gwpy_${GWPY_VERSION}.orig.tar.gz --strip-components=1
 dpkg-buildpackage -us -uc
 popd
-
-# done with the virtualenv
-ci_clean_virtualenv
 
 # print and install the deb
 GWPY_DEB="dist/${PYPKG_PREFIX}-gwpy_${GWPY_RELEASE}-1_all.deb"
