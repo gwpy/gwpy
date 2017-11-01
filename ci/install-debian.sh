@@ -54,7 +54,8 @@ GWPY_DEB="dist/${PYPKG_PREFIX}-gwpy_${GWPY_RELEASE}-1_all.deb"
 echo "-------------------------------------------------------"
 dpkg --info ${GWPY_DEB}
 echo "-------------------------------------------------------"
-dpkg --install ${GWPY_DEB}
+dpkg --install ${GWPY_DEB} || true  # probably fails...
+apt-get -f install  # install dependencies and package
 
 # install system-level extras
 apt-get install -y \
