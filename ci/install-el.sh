@@ -22,9 +22,11 @@
 
 set -x
 
-yum update -y
+yum clean all
+yum makecache
+yum -y update
 
-yum install \
+yum -y install \
     ${PYPKG_PREFIX} \
     ${PYPKG_PREFIX}-pip
 
@@ -39,7 +41,7 @@ ${PYTHON} setup.py bdist_rpm \
 rpm -ivh dist/gwpy-${GWPY_VERSION}-1.noarch.rpm
 
 # install system-level extras
-yum install \
+yum -y install \
     nds2-client-python \
     h5py \
 || true
