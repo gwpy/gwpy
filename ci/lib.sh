@@ -22,7 +22,7 @@
 #
 
 # set path to directory in
-if [ -z ${DOCKER_IMAGE} ] || [ -f /.dockerenv ]; then
+if [ -z ${DOCKER_IMAGE} ]; then
     GWPY_PATH="/gwpy"
 else
     GWPY_PATH=`pwd`
