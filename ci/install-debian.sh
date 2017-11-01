@@ -32,7 +32,7 @@ apt-get install -yqq \
     ${PYPKG_PREFIX}-pip
 
 # install build helpers
-${PIP} install stdeb GitPython
+${PIP} install GitPython
 
 # prepare the tarball
 ${PYTHON} changelog.py -f deb -s "v0.5" > debian/changelog
