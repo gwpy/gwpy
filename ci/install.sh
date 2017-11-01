@@ -22,6 +22,8 @@
 
 cd ${GWPY_PATH}
 
+set -e
+
 GWPY_VERSION=`${PYTHON} setup.py version | grep Version | cut -d\  -f2`
 
 if [ -z ${DOCKER_IMAGE} ]; then  # simple
@@ -40,3 +42,5 @@ echo
 echo "GWpy installed to `${PYTHON} -c 'import gwpy; print(gwpy.__file__)'`"
 echo
 echo "------------------------------------------------------------------------"
+
+set +e
