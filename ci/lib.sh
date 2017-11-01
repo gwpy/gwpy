@@ -26,11 +26,11 @@
 #       via --env options
 
 if [ -z ${DOCKER_IMAGE} ]; then
-    GWPY_PATH="`pwd`/"
+    GWPY_PATH=`pwd`
     PIP="pip"
     PYTHON="python"
 else
-    GWPY_PATH="/gwpy/"
+    GWPY_PATH="/gwpy"
     PYTHON="python${PYTHON_VERSION}"
     if [[ "${PYTHON_VERSION}" != "2"* ]] && [[ "${DOCKER_IMAGE}" == *"el7" ]]; then
         PIP="pip${PYTHON_VERSION:0:1}"

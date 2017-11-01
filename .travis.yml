@@ -70,14 +70,14 @@ before_install:
   - . ./ci/docker-install.sh
 
 install:  # install package
-  - ci_run ". ./ci/install.sh"
+  - ci_run ". ${GWPY_PATH}/ci/install.sh"
 
 script:  # run tests
-  - ci_run ". ./ci/test.sh"
+  - ci_run ". ${GWPY_PATH}/ci/test.sh"
 
 after_success:
   # submit coverage results
-  - ci_run "sudo ${PIP} install coveralls && coveralls"
+  - ci_run "${PIP} install coveralls && coveralls"
 
   # build and deploy package files
   - . ./ci/deploy.sh
