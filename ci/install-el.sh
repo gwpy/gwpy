@@ -17,25 +17,25 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 #
-# Build system packages
+# Build RedHat (Enterprise Linux) packages
 #
 
-cd ${GWPY_PATH}
+yum install \
+    ${PYPKG_PREFIX} \
+    ${PYPKG_PREFIX}-pip
 
-GWPY_VERSION=`${PYTHON} setup.py version | grep Version | cut -d\  -f2`
+${PIP} install GitPython  # needed for changelog.py
 
-if [ -z ${DOCKER_IMAGE} ]; then  # simple
-    ${PIP} install .
-elif [[ ${DOCKER_IMAGE} =~ el[0-9]+$ ]]; then  # SLX
-    . ci/install-el.sh
-else
-    . ci/install-debian.sh
+# build the RPM
+${PYTHON} setup.py bdist_rpm \
+    --fix-python \
+    --changelog="`${PYTHON} changelog.py --start-tag 'v0.5'`"
 
-# install extras
-${PIP} install -r requirements-dev.txt
+# install the rpm
+rpm -ivh dist/gwpy-${GWPY_VERSION}-1.noarch.rpm
 
-echo "------------------------------------------------------------------------"
-echo
-echo "GWpy installed to `${PYTHON} -c 'import gwpy; print(gwpy.__file__)'`"
-echo
-echo "------------------------------------------------------------------------"
+# install system-level extras
+yum install \
+    nds2-client-python \
+    h5py \
+|| true
