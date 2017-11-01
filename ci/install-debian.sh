@@ -46,6 +46,7 @@ dpkg-buildpackage -us -uc
 popd
 
 # install the deb
+ls dist/
 dpkg -i dist/python-gwpy_${GWPY_VERSION}-1_all.deb
 
 # install system-level extras
