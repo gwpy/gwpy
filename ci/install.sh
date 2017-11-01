@@ -26,7 +26,7 @@ set -e
 set -x
 
 # upgrade pip
-${PIP} install --upgrade pip
+${PIP} install --upgrade --ignore-installed pip
 
 # get version number for install scripts to use
 GWPY_VERSION=`${PYTHON} setup.py version | grep Version | cut -d\  -f2`
