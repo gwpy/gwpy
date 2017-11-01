@@ -42,7 +42,7 @@ sudo docker run \
     --env PYTHON="$PYTHON" \
     --env PIP="$PIP" \
     --env PYPKG_PREFIX="$PYPKG_PREFIX" \
-    --volume `pwd`:/gwpy:rw \
+    --volume `pwd`:${GWPY_PATH}:rw \
     ${DOCKER_IMAGE}
 
 sleep 10
