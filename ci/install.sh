@@ -30,6 +30,7 @@ elif [[ ${DOCKER_IMAGE} =~ el[0-9]+$ ]]; then  # SLX
     . ci/install-el.sh
 else
     . ci/install-debian.sh
+fi
 
 # install extras
 ${PIP} install -r requirements-dev.txt
