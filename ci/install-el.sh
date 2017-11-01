@@ -25,10 +25,14 @@ yum makecache
 yum -y update
 yum -y install rpm-build
 
+create_virtualenv
+
 # build the RPM
 python setup.py bdist_rpm \
     --python ${PYTHON} \
     --changelog="`python changelog.py --start-tag 'v0.5'`"
+
+clean_virtualenv
 
 # install the rpm
 rpm -ivh dist/gwpy-${GWPY_VERSION}-1.noarch.rpm

@@ -27,24 +27,23 @@ cd ${GWPY_PATH}
 set -e
 set -x
 
-# get version number for install scripts to use
-GWPY_VERSION=`${PYTHON} setup.py version | grep Version | cut -d\  -f2`
+get_environment
 
 # install for this OS
 if [ -z ${DOCKER_IMAGE} ]; then  # simple
     ${PIP} install .
     ${PIP} install -r requirements-dev.txt
+    return 0
 fi
 
-create_virtualenv
+# get version number for install scripts to use
+GWPY_VERSION=`${PYTHON} setup.py version | grep Version | cut -d\  -f2`
 
 if [[ ${DOCKER_IMAGE} =~ :el[0-9]+$ ]]; then  # SLX
     . ci/install-el.sh
 else  # Debian
     . ci/install-debian.sh
 fi
-
-clean_virtualenv
 
 echo "------------------------------------------------------------------------"
 echo

@@ -18,7 +18,7 @@ Depends: ${misc:Depends},
          python-scipy (>= 0.14),
          python-astropy (>= 1.2.1),
          python-matplotlib (>= 1.4.1),
-         python-lscsoft-glue (>= 1.55.2)
+         python-glue (>= 1.55.2)
 Recommends: python-lal,
             python-h5py (>= 1.3)
 Suggests: python-pymysql,
@@ -42,7 +42,7 @@ Depends: ${misc:Depends},
          python3-scipy (>= 0.14),
          python3-astropy (>= 1.2.1),
          python3-matplotlib (>= 1.4.1),
-         python3-lscsoft-glue (>= 1.55.2)
+         python3-glue (>= 1.55.2)
 Recommends: python3-lal,
             python3-h5py (>= 1.3)
 Suggests: python3-pymysql,

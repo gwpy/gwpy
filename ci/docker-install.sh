@@ -43,9 +43,6 @@ sudo docker run \
     --name ${DOCKER_IMAGE##*:} \
     --env DOCKER_IMAGE="${DOCKER_IMAGE}" \
     --env GWPY_PATH="${GWPY_PATH}" \
-    --env PYTHON="$PYTHON" \
-    --env PIP="$PIP" \
-    --env PYPKG_PREFIX="$PYPKG_PREFIX" \
     --volume `pwd`:${GWPY_PATH}:rw \
     ${DOCKER_IMAGE}
 
