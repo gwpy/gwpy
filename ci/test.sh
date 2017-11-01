@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-. ci/lib.sh
 cd ${GWPY_PATH}
+
+. ci/lib.sh
 
 set -x
 set -e
