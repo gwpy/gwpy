@@ -106,7 +106,8 @@ except ImportError:
 
 # -- set test dependencies ----------------------------------------------------
 
-setup_requires.append('pytest-runner')
+if {'pytest', 'test', 'ptr'}.intersection(sys.argv):
+    setup_requires.append('pytest-runner')
 tests_require = [
     'pytest>=3.1',
     'freezegun',
