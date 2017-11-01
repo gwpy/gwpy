@@ -20,6 +20,8 @@
 # Build RedHat (Enterprise Linux) packages
 #
 
+set -x
+
 yum update -y
 
 yum install \
@@ -41,3 +43,5 @@ yum install \
     nds2-client-python \
     h5py \
 || true
+
+set +x
