@@ -21,11 +21,11 @@
 # Can be used outside and inside docker containers
 #
 
-# set path to directory in
-if [ -z ${DOCKER_IMAGE} ]; then
-    GWPY_PATH="/gwpy"
-else
+# set path to build directory
+if [ -z "${DOCKER_IMAGE}" ]; then
     GWPY_PATH=`pwd`
+else
+    GWPY_PATH="/gwpy"
 fi
 export GWPY_PATH
 
@@ -33,7 +33,7 @@ export GWPY_PATH
 
 ci_run() {
     # run a command normally, or in docker, depending on environment
-    if [ -z ${DOCKER_IMAGE} ]; then  # execute function normally
+    if [ -z "${DOCKER_IMAGE}" ]; then  # execute function normally
         eval "$@" || return 1
     else  # execute function in docker container
         docker exec -it ${DOCKER_IMAGE##*:} bash -lc "eval \"$@\"" || return 1
