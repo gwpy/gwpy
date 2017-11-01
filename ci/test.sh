@@ -16,7 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
+. ci/lib.sh
+cd ${GWPY_PATH}
+
 set -x
+set -e
+
+get_environment
 
 # install test dependencies
 ${PIP} install coverage "pytest>=2.8"
@@ -24,4 +30,5 @@ ${PIP} install coverage "pytest>=2.8"
 # run tests
 coverage run ./setup.py test --addopts "gwpy/tests/ ${TEST_FLAGS}"
 
+set +e
 set +x
