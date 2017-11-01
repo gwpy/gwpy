@@ -21,38 +21,44 @@
 #
 
 GWPY_RELEASE=${GWPY_VERSION%%+*}
-GWPY_VERSION=${GWPY_VERSION/+/-}
+GWPY_VERSION=${GWPY_VERSION/+/-}  # required if using system setuptools
 
 # install build dependencies
 apt-get update -yqq
 apt-get install -yqq \
     debhelper \
-    ${PYPKG_PREFIX} \
-    ${PYPKG_PREFIX}-all \
-    lal-${PYPKG_PREFIX}
+    ${PY_PREFIX}-all \
+    ${PY_PREFIX}-setuptools \
+    ${PY_PREFIX}-pip
+
+if [ ${PY_PREFIX} == "python" ]; then
+    apt-get install -yqq python-git
+else
+    $PIP install GitPython
+fi
 
 # prepare the tarball
-python changelog.py -f deb -s "v0.5" > debian/changelog
-python setup.py sdist
+$PYTHON changelog.py -f deb -s "v0.5" > debian/changelog
+$PYTHON setup.py sdist
 
 # make the debian package
 mkdir -p dist/debian
 pushd dist/debian
-cp ../gwpy-${GWPY_VERSION}.tar.gz ../gwpy_${GWPY_VERSION}.orig.tar.gz
-tar -xf ../gwpy_${GWPY_VERSION}.orig.tar.gz --strip-components=1
+cp ../gwpy-${GWPY_VERSION}.tar.gz ../gwpy_${GWPY_RELEASE}.orig.tar.gz
+tar -xf ../gwpy_${GWPY_RELEASE}.orig.tar.gz --strip-components=1
 dpkg-buildpackage -us -uc
 popd
 
 # print and install the deb
-GWPY_DEB="dist/${PYPKG_PREFIX}-gwpy_${GWPY_RELEASE}-1_all.deb"
+GWPY_DEB="dist/${PY_PREFIX}-gwpy_${GWPY_RELEASE}-1_all.deb"
 echo "-------------------------------------------------------"
 dpkg --info ${GWPY_DEB}
 echo "-------------------------------------------------------"
 dpkg --install ${GWPY_DEB} || true  # probably fails...
-apt-get -fy install  # install dependencies and package
+apt-get install -fy  # install dependencies and package
 
 # install system-level extras
 apt-get install -y \
-    ${PYPKG_PREFIX}-nds2-client \
-    ${PYPKG_PREFIX}-h5py \
+    ${PY_PREFIX}-nds2-client \
+    ${PY_PREFIX}-h5py \
 || true
