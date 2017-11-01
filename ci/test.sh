@@ -28,6 +28,13 @@ get_environment
 # install test dependencies
 ${PIP} install coverage "pytest>=2.8"
 
+# fix broken glue dependency
+#     this is required because the LIGO glue package isn't
+#     distributed as lscsoft-glue in system packages,
+#     only in pypi, so once it is, this line should have
+#     no effect
+pip install lscsoft-glue
+
 # run tests
 coverage run ./setup.py test --addopts "gwpy/tests/ ${TEST_FLAGS}"
 
