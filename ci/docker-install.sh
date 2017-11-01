@@ -33,8 +33,8 @@ sudo docker pull ${DOCKER_IMAGE}
 
 # start container
 sudo docker run \
-    --rm=true \
     --detach \
+    --interactive \
     --tty \
     --name ${DOCKER_IMAGE##*:} \
     --env DOCKER_IMAGE="${DOCKER_IMAGE}" \
@@ -43,8 +43,7 @@ sudo docker run \
     --env PIP="$PIP" \
     --env PYPKG_PREFIX="$PYPKG_PREFIX" \
     --volume `pwd`:/gwpy:rw \
-    ${DOCKER_IMAGE} \
-    /bin/bash -lc 'tail -f /dev/null'
+    ${DOCKER_IMAGE}
 
 sleep 10
 
