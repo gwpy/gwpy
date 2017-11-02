@@ -29,7 +29,12 @@ from six.moves.urllib.error import URLError
 import pytest
 
 import numpy
-from numpy import (may_share_memory, testing as nptest)
+from numpy import testing as nptest
+try:
+    from numpy import shares_memory
+except ImportError:  # old numpy
+    from numpy import may_share_memory as shares_memory
+
 
 from scipy import signal
 
@@ -213,7 +218,7 @@ class TestTimeSeriesBase(TestSeries):
 
         # test copy=False
         a2 = type(array).from_lal(lalts, copy=False)
-        assert numpy.shares_memory(a2.value, lalts.data.data)
+        assert shares_memory(a2.value, lalts.data.data)
 
         # test units
         array.override_unit('undef')
@@ -241,7 +246,7 @@ class TestTimeSeriesBase(TestSeries):
 
         # test copy=False
         a2 = type(array).from_pycbc(array.to_pycbc(copy=False), copy=False)
-        assert numpy.shares_memory(array.value, a2.value)
+        assert shares_memory(array.value, a2.value)
 
 
 # -- TimeSeriesBaseDict -------------------------------------------------------
@@ -272,8 +277,7 @@ class TestTimeSeriesBaseDict(object):
         copy = instance.copy()
         assert isinstance(copy, self.TEST_CLASS)
         for key in copy:
-            assert not numpy.shares_memory(copy[key].value,
-                                           instance[key].value)
+            assert not shares_memory(copy[key].value, instance[key].value)
             utils.assert_quantity_sub_equal(copy[key], instance[key])
 
     def test_append(self, instance):
@@ -282,8 +286,8 @@ class TestTimeSeriesBaseDict(object):
             new = type(instance)()
             new.append(instance, copy=copy)
             for key in new:
-                assert numpy.shares_memory(new[key].value,
-                                           instance[key].value) is not copy
+                assert shares_memory(new[key].value,
+                                     instance[key].value) is not copy
                 utils.assert_quantity_sub_equal(new[key], instance[key])
 
         # create copy of dict that is contiguous
@@ -320,7 +324,7 @@ class TestTimeSeriesBaseDict(object):
         new = type(instance)()
         new.prepend(instance)
         for key in new:
-            assert numpy.shares_memory(new[key].value, instance[key].value)
+            assert shares_memory(new[key].value, instance[key].value)
             utils.assert_quantity_sub_equal(new[key], instance[key])
 
         # create copy of dict that is contiguous
@@ -480,7 +484,7 @@ class TestTimeSeriesBaseList(object):
         assert type(a) is type(instance)
         for x, y in zip(instance, a):
             utils.assert_quantity_sub_equal(x, y)
-            assert not numpy.shares_memory(x.value, y.value)
+            assert not shares_memory(x.value, y.value)
 
 
 # -----------------------------------------------------------------------------
@@ -1215,7 +1219,8 @@ class TestStateVector(TestTimeSeriesBase):
     @classmethod
     def setup_class(cls):
         numpy.random.seed(0)
-        cls.data = numpy.random.randint(2**4+1, size=100, dtype=cls.DTYPE)
+        cls.data = numpy.random.randint(
+            2**4+1, size=100).astype(cls.DTYPE, copy=False)
 
     def test_bits(self, array):
         assert isinstance(array.bits, Bits)
