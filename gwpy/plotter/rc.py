@@ -95,6 +95,15 @@ if mpl_version < '2.0':
             'axes.prop_cycle': cycler('color', DEFAULT_COLORS),
         })
 
+# remove rcParams for old matplotlib
+# https://matplotlib.org/1.5.1/users/whats_new.html#configuration-rcparams
+if mpl_version < '1.5':
+    for key in (
+            'axes.labelpad',
+            'legend.edgecolor',
+    ):
+        DEFAULT_PARAMS.pop(key, None)
+
 # update matplotlib rcParams with new settings
 rcParams.update(DEFAULT_PARAMS)
 
