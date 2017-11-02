@@ -76,6 +76,7 @@ script:  # run tests
 after_success:
   # submit coverage results
   - pip install coveralls
+  - sed -i 's|"'${GWPY_PATH}'|"'`pwd`'|g' .coverage
   - coveralls
 
   # build and deploy package files
