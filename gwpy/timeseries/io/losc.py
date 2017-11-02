@@ -320,7 +320,7 @@ def read_losc_ascii(fobj):
     except KeyError:
         raise ValueError("Failed to parse data duration from LOSC ASCII file")
 
-    data = numpy.loadtxt(fobj, dtype=float, comments='#', usecols=0)
+    data = numpy.loadtxt(fobj, dtype=float, comments='#', usecols=(0,))
 
     metadata['sample_rate'] = data.size / dur
     return TimeSeries(data, **metadata)
