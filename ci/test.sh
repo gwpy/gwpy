@@ -26,7 +26,7 @@ set -e
 get_environment
 
 # install test dependencies
-${PIP} install coverage "pytest>=3.1"
+${PIP} install coverage "setuptools>=17.1" "pytest>=3.1"
 
 # fix broken glue dependency
 #     this is required because the LIGO glue package isn't
