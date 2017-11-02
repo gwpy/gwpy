@@ -55,6 +55,18 @@ def skip_missing_dependency(module):
                               reason='No module named %s' % module)
 
 
+def module_older_than(module, minversion):
+    mod = import_module(module)
+    return mod.__version__ < minversion
+
+
+def skip_minimum_version(module, minversion):
+    """Returns a mark generator to skip a test if the dependency is too old
+    """
+    return pytest.mark.skipif(module_older_than(module, minversion),
+                              reason='requires {} >= {}'.format(module, minversion))
+
+
 # -- assertions ---------------------------------------------------------------
 
 def assert_quantity_equal(q1, q2):

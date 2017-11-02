@@ -63,9 +63,7 @@ import utils
 
 # design ZPK for BodePlot test
 ZPK = [100], [1], 1e-2
-FREQUENCIES, H = signal.freqresp(ZPK, n=100)
-MAGNITUDE = 20 * numpy.log10(numpy.absolute(H))
-PHASE = numpy.degrees(numpy.unwrap(numpy.angle(H)))
+FREQUENCIES, MAGNITUDE, PHASE = signal.bode(ZPK, n=100)
 
 # extract color cycle
 COLOR_CONVERTER = ColorConverter()

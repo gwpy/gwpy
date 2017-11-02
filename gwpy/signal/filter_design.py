@@ -25,7 +25,7 @@ from math import (pi, log10)
 
 from six.moves import reduce
 
-from numpy import (atleast_1d, concatenate)
+from numpy import (atleast_1d, concatenate, ndarray)
 
 from scipy import signal
 
@@ -121,6 +121,22 @@ def num_taps(sample_rate, transitionwidth, gpass, gstop):
     return int(2/3. * log10(1 / (10 * gpass * gstop)) *
                sample_rate / transitionwidth)
 
+
+def is_zpk(zpktup):
+    """Determin whether the given tuple is a ZPK-format filter definition
+
+    Returns
+    -------
+    iszpk : `bool`
+        `True` if the ``zpktup`` looks like a ZPK-format filter definition,
+        otherwise `False`
+    """
+    return (
+        isinstance(zpktup, (tuple, list)) and
+        len(zpktup) == 3 and
+        isinstance(zpktup[0], (list, tuple, ndarray)) and
+        isinstance(zpktup[1], (list, tuple, ndarray)) and
+        isinstance(zpktup[2], float))
 
 # -- user methods -------------------------------------------------------------
 
