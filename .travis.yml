@@ -1,4 +1,4 @@
-language: minimal
+language: python
 
 sudo: false
 
@@ -9,8 +9,7 @@ env:
 matrix:
   include:
     # simple build
-    - language: python
-      python: 2.7
+    - python: 2.7
       addons:
         apt:
           packages:
@@ -22,8 +21,7 @@ matrix:
             - texlive-fonts-recommended
             - dvipng
             - libhdf5-serial-dev
-    - language: python
-      python: 3.5
+    - python: 3.5
       addons:
         apt:
           packages:
