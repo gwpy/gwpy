@@ -14,10 +14,10 @@ Architecture: all
 Depends: ${misc:Depends},
          ${python:Depends},
          python-six (>= 1.5),
-         python-numpy (>= 1.11),
-         python-scipy (>= 0.14),
-         python-astropy (>= 1.2.1),
-         python-matplotlib (>= 1.4.1),
+         python-numpy (>= 1.7.1),
+         python-scipy (>= 0.12.0),
+         python-astropy (>= 1.1.1),
+         python-matplotlib (>= 1.2.0),
          python-glue (>= 1.55.2)
 Recommends: python-lal,
             python-h5py (>= 1.3)
@@ -38,10 +38,10 @@ Architecture: all
 Depends: ${misc:Depends},
          ${python3:Depends},
          python3-six (>= 1.5),
-         python3-numpy (>= 1.11),
-         python3-scipy (>= 0.14),
-         python3-astropy (>= 1.2.1),
-         python3-matplotlib (>= 1.4.1),
+         python3-numpy (>= 1.7.1),
+         python3-scipy (>= 0.12.0),
+         python3-astropy (>= 1.1.1),
+         python3-matplotlib (>= 1.2.0),
          python3-glue (>= 1.55.2)
 Recommends: python3-lal,
             python3-h5py (>= 1.3)
