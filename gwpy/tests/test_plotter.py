@@ -308,11 +308,6 @@ class TestPlot(PlottingTestBase):
         assert len(fig.axes) == 1
         fig.close()
 
-        # check that we can map an empty array
-        fig, ax = self.new()
-        ax.imshow(numpy.arange(0).reshape((0, 0)))
-        fig.add_colorbar()
-
         # check errors
         mappable = ax.imshow(numpy.arange(120).reshape((10, 12)))
         with pytest.raises(ValueError):
@@ -866,7 +861,6 @@ class HistogramMixin(object):
     def setup_class(cls):
         numpy.random.seed(0)
         cls.ts = TimeSeries(numpy.random.rand(10000), sample_rate=128)
-        print(cls.ts)
 
 
 class TestHistogramPlot(HistogramMixin, TestPlot):
