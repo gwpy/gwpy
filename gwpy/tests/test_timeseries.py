@@ -658,10 +658,11 @@ class TestTimeSeries(TestTimeSeriesBase):
             t = type(array).read(f, start=start, end=end)
             utils.assert_quantity_sub_equal(t, array.crop(start, end))
 
+    @utils.skip_minimum_version('scipy', '0.13.0')
     def test_read_write_wav(self):
         array = self.create(dtype='float32')
         utils.test_read_write(
-            array, 'wav', write_kw={'scale': 1},
+            array, 'wav', read_kw={'mmap': True}, write_kw={'scale': 1},
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={'exclude': ['unit', 'name', 'channel', 'x0']})
 
@@ -851,6 +852,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         fs = losc.asd()
         utils.assert_quantity_sub_equal(fs, losc.psd() ** (1/2.))
 
+    @utils.skip_minimum_version('scipy', '0.16')
     def test_csd(self, losc):
         # test all defaults
         fs = losc.csd(losc)
@@ -923,7 +925,10 @@ class TestTimeSeries(TestTimeSeriesBase):
         # check that `cross` keyword gets deprecated properly
         # TODO: removed before 1.0 release
         with pytest.warns(DeprecationWarning) as wng:
-            out = losc.spectrogram(0.5, fftlength=.25, cross=losc)
+            try:
+                out = losc.spectrogram(0.5, fftlength=.25, cross=losc)
+            except AttributeError:
+                return  # scipy is too old
         assert '`cross` keyword argument has been deprecated' in \
             wng[0].message.args[0]
         utils.assert_quantity_sub_equal(
@@ -976,6 +981,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         nptest.assert_almost_equal(ray.max().value, 1.8814775174483833)
         assert ray.frequencies[ray.argmax()] == 136 * units.Hz
 
+    @utils.skip_minimum_version('scipy', '0.16')
     def test_csd_spectrogram(self, losc):
         # test defaults
         sg = losc.csd_spectrogram(losc, 1)
