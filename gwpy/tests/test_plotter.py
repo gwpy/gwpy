@@ -287,7 +287,7 @@ class TestPlot(PlottingTestBase):
         assert not isinstance(mappable.norm, LogNorm)
 
         # add colorbar and check everything went through
-        cbar = fig.add_colorbar(log=True, label='Test label', cmap='plasma')
+        cbar = fig.add_colorbar(log=True, label='Test label', cmap='YlOrRd')
         assert len(fig.axes) == 2
         assert cbar in fig.colorbars
         assert cbar.ax in fig._coloraxes
@@ -295,7 +295,7 @@ class TestPlot(PlottingTestBase):
         assert cbar.get_clim() == mappable.get_clim() == (1, 119)
         assert isinstance(mappable.norm, LogNorm)
         assert isinstance(cbar.formatter, CombinedLogFormatterMathtext)
-        assert cbar.get_cmap().name == 'plasma'
+        assert cbar.get_cmap().name == 'YlOrRd'
         assert cbar.ax.get_ylabel() == 'Test label'
         self.save_and_close(fig)
         assert ax.get_position().width < width
