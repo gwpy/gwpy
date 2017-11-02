@@ -158,13 +158,14 @@ def assert_table_equal(a, b, is_copy=True, meta=False, check_types=True,
     if check_types:
         assert_array(a.as_array(), b.as_array())
     else:
-        for col, col2 in zip(a.columns.values(), b.columns.values()):
-            assert_array(col, col2.astype(col.dtype))
+        for name in a.colnames:
+            cola = a[name]
+            assert_array(cola, b[name].astype(cola.dtype))
 
     # check that the tables are copied or the same data
-    for col, col2 in zip(a.columns.values(), b.columns.values()):
+    for name in a.colnames:
         # check may_share_memory is True when copy is False and so on
-        assert numpy.may_share_memory(col, col2) is not is_copy
+        assert numpy.may_share_memory(a[name], b[name]) is not is_copy
 
 
 def assert_segmentlist_equal(a, b):
