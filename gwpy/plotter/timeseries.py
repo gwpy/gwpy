@@ -94,7 +94,7 @@ class TimeSeriesAxes(Axes):
         """Automagically set the GPS scale for the time-axis of this plot
         based on the current view limits
         """
-        self.xaxis._set_scale('auto-gps', epoch=self.get_epoch())
+        self.set_xscale('auto-gps', epoch=self.get_epoch())
 
     def set_epoch(self, epoch):
         try:
@@ -102,7 +102,7 @@ class TimeSeriesAxes(Axes):
         except AttributeError:
             pass
         else:
-            self.xaxis._set_scale(xscale, epoch=epoch)
+            self.set_xscale(xscale, epoch=epoch)
 
     def get_epoch(self):
         return self.xaxis._scale.get_epoch()
