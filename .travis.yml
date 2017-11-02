@@ -77,7 +77,7 @@ script:  # run tests
 
 after_success:
   # submit coverage results
-  - ci_run "${PIP} install coveralls && coveralls"
+  - ci_run "pip install coveralls && coveralls"
 
   # build and deploy package files
   - . ./ci/deploy.sh
