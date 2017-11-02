@@ -741,11 +741,11 @@ class TestEventTableAxes(EventTableMixin, TestAxes):
                           'bandwidth', 'snr', anchor='other')
 
     def test_get_column_string(self):
-        rcParams['text.usetex'] = True
-        assert get_column_string('snr') == 'SNR'
-        assert get_column_string('reduced_chisq') == r'Reduced $\chi^2$'
-        assert get_column_string('flow') == r'f$_{\mbox{\small low}}$'
-        assert get_column_string('end_time_ns') == r'End Time $(ns)$'
+        with rc_context(rc={'text.usetex': True}):
+            assert get_column_string('snr') == 'SNR'
+            assert get_column_string('reduced_chisq') == r'Reduced $\chi^2$'
+            assert get_column_string('flow') == r'f$_{\mbox{\small low}}$'
+            assert get_column_string('end_time_ns') == r'End Time $(ns)$'
 
 
 # -- Segment plotter ----------------------------------------------------------
