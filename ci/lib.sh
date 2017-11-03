@@ -69,7 +69,7 @@ get_environment() {
     local pkger=`get_package_manager`
     IFS='.' read PY_MAJOR_VERSION PY_MINOR_VERSION <<< "$PYTHON_VERSION"
     PY_XY="${PY_MAJOR_VERSION}${PY_MINOR_VERSION}"
-    PYTHON=`which python${PYTHON_VERSION}`
+    PYTHON=`which python${PYTHON_VERSION} || echo ""`
     case "$pkger" in
         "port")
             PY_DIST=python${PY_XY}
