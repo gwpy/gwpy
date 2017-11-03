@@ -31,6 +31,11 @@ apt-get install -yqq \
     ${PY_PREFIX}-setuptools \
     ${PY_PREFIX}-pip
 
+if [ -z $PYTHON ]; then  # correct python version not installed
+    apt-get install -yqq ${PY_DIST}
+    PYTHON=`which python${PYTHON_VERSION}`
+fi
+
 if [ ${PY_PREFIX} == "python" ]; then
     apt-get install -yqq python-git
 else

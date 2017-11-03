@@ -20,10 +20,16 @@
 # Build RedHat (Enterprise Linux) packages
 #
 
+# update system
 yum clean all
 yum makecache
 yum -y update
 yum -y install rpm-build
+
+if [ -z $PYTHON ]; then  # correct python version not installed
+    yum -y install ${PY_DIST}
+    PYTHON=`which python${PYTHON_VERSION}`
+fi
 
 create_virtualenv
 

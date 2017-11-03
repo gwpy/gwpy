@@ -37,7 +37,7 @@ if [ -z ${DOCKER_IMAGE} ]; then  # simple
 fi
 
 # get version number for install scripts to use
-GWPY_VERSION=`${PYTHON} setup.py version | grep Version | cut -d\  -f2`
+GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
 
 if [[ ${DOCKER_IMAGE} =~ :el[0-9]+$ ]]; then  # SLX
     . ci/install-el.sh
