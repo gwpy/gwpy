@@ -31,6 +31,7 @@ apt-get update -yqq
 apt-get install -yqq \
     git \
     debhelper \
+    dh-python \
     ${PY_PREFIX}-all \
     ${PY_PREFIX}-setuptools \
     ${PY_PREFIX}-pip
