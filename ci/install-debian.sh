@@ -41,10 +41,11 @@ else
     $PIP install GitPython
 fi
 
+pip install "setuptools>33"
+
 # get versions
 GWPY_VERSION=`$PYTHON setup.py version | grep Version | cut -d\  -f2`
 GWPY_RELEASE=${GWPY_VERSION%%+*}
-GWPY_VERSION=${GWPY_VERSION/+/-}  # required if using system setuptools
 
 # prepare the tarball
 $PYTHON changelog.py -f deb -s "v0.5" > debian/changelog
