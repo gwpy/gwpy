@@ -34,9 +34,9 @@ pip install "setuptools>=25"
 # munge dependencies for this python version (HACK)
 if [ ${PY_XY} -ge 30 ]; then
     REQUIRES=`get_configparser_option \
-        setup.cfg bdist_rpm-python3 requires3 | tr -d '[:space:]'`
+        setup.cfg bdist_rpm-python3 requires | tr -d '[:space:]'`
     BUILD_REQUIRES=`get_configparser_option \
-        setup.cfg bdist_rpm-python3 build_requires3 | tr -d '[:space:]'`
+        setup.cfg bdist_rpm-python3 build_requires | tr -d '[:space:]'`
     BDIST_RPM_OPTS="--requires ${REQUIRES} --build-requires ${BUILD_REQUIRES}"
 fi
 
