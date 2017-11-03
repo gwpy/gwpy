@@ -28,6 +28,9 @@ yum -y install rpm-build git2u
 
 GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
 
+# update setuptools for bdist_rpm
+pip install "setuptools>=25"
+
 # munge dependencies for this python version (HACK)
 if [ ${PY_XY} -ge 30 ]; then
     REQUIRES=`get_configparser_option \
