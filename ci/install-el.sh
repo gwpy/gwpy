@@ -27,7 +27,7 @@ yum -y update
 yum -y install rpm-build
 
 if [ -z $PYTHON ]; then  # correct python version not installed
-    yum -y install ${PY_DIST}
+    yum -y install ${PY_DIST} ${PY_PREFIX}-pip
     PYTHON=`which python${PYTHON_VERSION}`
 fi
 
