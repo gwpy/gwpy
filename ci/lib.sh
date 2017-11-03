@@ -126,3 +126,15 @@ clean_virtualenv() {
     deactivate
     rm -rf ${VENV_DIR}
 }
+
+get_configparser_option() {
+    local fp=$1
+    local section=$2
+    local option=$3
+    $PYTHON -c "
+from configparser import ConfigParser
+cp = ConfigParser(defaults={'py-prefix': '${PY_PREFIX}'})
+cp.read('$fp');
+cp.set('$section', 'py-prefix', '${PY_PREFIX}')
+print(cp.get('$section', '$option'))"
+}

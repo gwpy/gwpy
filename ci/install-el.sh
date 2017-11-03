@@ -36,11 +36,22 @@ yum install -y ${PY_PREFIX}-pip
 
 create_virtualenv
 
-# build the RPM
 GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
+
+# munge dependencies for this python version (HACK)
+if [ ${PY_XY} -ge 30 ]; then
+    REQ=`get_configparser_option setup.cfg bdist_rpm-python3 requires3`
+    REQ=${REQ//[[:space:]]/}  # trim whitespace
+    BUILD_REQ=`get_configparser_option setup.cfg bdist_rpm-python3 build_requires3`
+    BUILD_REQ=${REQ//[[:space:]]/}  # trim whitespace
+    BDIST_RPM_OPTS="--requires $REQ --build-requires ${BUILD_REQ}"
+fi
+
+# build the RPM
 python setup.py bdist_rpm \
     --python ${PYTHON} \
-    --changelog="`python changelog.py --start-tag 'v0.5'`"
+    --changelog="`python changelog.py --start-tag 'v0.5'`" \
+    ${BDIST_RPM_OPTS}
 
 clean_virtualenv
 
