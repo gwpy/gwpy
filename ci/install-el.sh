@@ -49,6 +49,6 @@ rpm -ivh dist/gwpy-${GWPY_VERSION}-1.noarch.rpm
 
 # install system-level extras
 yum -y install \
-    nds2-client-python \
+    nds2-client-${PY_PREFIX} \
     h5py \
 || true
