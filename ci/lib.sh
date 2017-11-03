@@ -99,7 +99,7 @@ get_environment() {
             else
                 PY_DIST=python${PY_XY}u
                 PY_PREFIX=python${PY_XY}u
-                PIP=pip${PY_MAJOR_VERSION}
+                PIP=pip${PYTHON_VERSION}
             fi
             ;;
     esac
