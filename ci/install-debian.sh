@@ -69,7 +69,8 @@ dpkg --install ${GWPY_DEB} || true  # probably fails...
 apt-get install -fy  # install dependencies and package
 
 # install system-level extras
-apt-get install -y \
+apt-get install -y --ignore-missing \
     ${PY_PREFIX}-nds2-client \
-    ${PY_PREFIX}-h5py \
-|| true
+    ldas-tools-framecpp-${PY_PREFIX} \
+    lalframe-${PY_PREFIX} \
+    ${PY_PREFIX}-h5py
