@@ -20,37 +20,26 @@
 # Build Debian package
 #
 
-apt-get update -yqq
-
-if [ -z $PYTHON ]; then  # correct python version not installed
-    apt-get install -yqq ${PY_DIST}
-    PYTHON=`which python${PYTHON_VERSION}`
-fi
-
 # install build dependencies
+apt-get update -yqq
 apt-get install -yqq \
-    git \
     debhelper \
     dh-python \
-    ${PY_PREFIX}-all \
-    ${PY_PREFIX}-setuptools \
-    ${PY_PREFIX}-pip
+    python-all \
+    python-setuptools \
+    python-pip \
+    python-git
 
-if [ ${PY_PREFIX} == "python" ]; then
-    apt-get install -yqq python-git
-else
-    $PIP install GitPython
-fi
-
-$PIP install "setuptools>33"
+# needed to prevent version number munging with versioneer
+pip install "setuptools>33"
 
 # get versions
-GWPY_VERSION=`$PYTHON setup.py version | grep Version | cut -d\  -f2`
+GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
 GWPY_RELEASE=${GWPY_VERSION%%+*}
 
 # prepare the tarball
-$PYTHON changelog.py -f deb -s "v0.5" > debian/changelog
-$PYTHON setup.py sdist
+python changelog.py -f deb -s "v0.5" > debian/changelog
+python setup.py sdist
 
 # make the debian package
 mkdir -p dist/debian
@@ -70,7 +59,7 @@ dpkg --install ${GWPY_DEB} || { \
     dpkg --install ${GWPY_DEB};  # shouldn't fail
 }
 
-# install system-level extras
+# install system-level extras for the correct python version
 apt-get install -y --ignore-missing \
     ${PY_PREFIX}-nds2-client \
     ldas-tools-framecpp-${PY_PREFIX} \

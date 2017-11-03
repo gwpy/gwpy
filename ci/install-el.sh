@@ -26,25 +26,15 @@ yum makecache
 yum -y update
 yum -y install rpm-build git2u
 
-if [ -z $PYTHON ]; then  # correct python version not installed
-    yum -y install ${PY_DIST} ${PY_PREFIX}-devel
-    PYTHON=`which python${PYTHON_VERSION}`
-fi
-
-# install pip
-yum install -y ${PY_PREFIX}-pip
-
-create_virtualenv
-
 GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
 
 # munge dependencies for this python version (HACK)
 if [ ${PY_XY} -ge 30 ]; then
-    REQ=`get_configparser_option setup.cfg bdist_rpm-python3 requires3`
-    REQ=${REQ//[[:space:]]/}  # trim whitespace
-    BUILD_REQ=`get_configparser_option setup.cfg bdist_rpm-python3 build_requires3`
-    BUILD_REQ=${REQ//[[:space:]]/}  # trim whitespace
-    BDIST_RPM_OPTS="--requires $REQ --build-requires ${BUILD_REQ}"
+    REQUIRES=`get_configparser_option \
+        setup.cfg bdist_rpm-python3 requires3 | tr -d '[:space:]'`
+    BUILD_REQUIRES=`get_configparser_option \
+        setup.cfg bdist_rpm-python3 build_requires3 | tr -d '[:space:]'`
+    BDIST_RPM_OPTS="--requires ${REQUIRES} --build-requires ${BUILD_REQUIRES}"
 fi
 
 # build the RPM
@@ -53,13 +43,13 @@ python setup.py bdist_rpm \
     --changelog="`python changelog.py --start-tag 'v0.5'`" \
     ${BDIST_RPM_OPTS}
 
-clean_virtualenv
-
 # install the rpm
 rpm -ivh dist/gwpy-${GWPY_VERSION}-1.noarch.rpm
 
 # install system-level extras
 yum -y install \
     nds2-client-${PY_PREFIX} \
+    ldas-tools-framecpp-${PY_PREFIX} \
+    lalframe-${PY_PREFIX} \
     h5py \
 || true

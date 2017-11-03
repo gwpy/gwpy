@@ -16,6 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
+#
+# Run the test suite for GWpy on the current system
+#
+
 cd ${GWPY_PATH}
 
 . ci/lib.sh
@@ -23,7 +27,7 @@ cd ${GWPY_PATH}
 set -x
 set -e
 
-get_environment
+get_environment  # sets PIP variables etc
 
 # install test dependencies
 ${PIP} install coverage "setuptools>=17.1" "pytest>=3.1"
@@ -36,7 +40,7 @@ ${PIP} install coverage "setuptools>=17.1" "pytest>=3.1"
 ${PIP} install lscsoft-glue
 
 # run tests
-coverage run ./setup.py test --addopts "gwpy/tests/ ${TEST_FLAGS}"
+coverage run ./setup.py test --addopts gwpy/tests/
 
 set +e
 set +x
