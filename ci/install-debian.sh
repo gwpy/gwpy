@@ -41,7 +41,7 @@ else
     $PIP install GitPython
 fi
 
-pip install "setuptools>33"
+$PIP install "setuptools>33"
 
 # get versions
 GWPY_VERSION=`$PYTHON setup.py version | grep Version | cut -d\  -f2`
