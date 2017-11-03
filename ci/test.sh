@@ -33,7 +33,7 @@ ${PIP} install coverage "setuptools>=17.1" "pytest>=3.1"
 #     distributed as lscsoft-glue in system packages,
 #     only in pypi, so once it is, this line should have
 #     no effect
-pip install lscsoft-glue
+${PIP} install lscsoft-glue
 
 # run tests
 coverage run ./setup.py test --addopts "gwpy/tests/ ${TEST_FLAGS}"
