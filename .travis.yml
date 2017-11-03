@@ -39,7 +39,7 @@ matrix:
       sudo: required
       services:
         - docker
-    - env: PYTHON_VERSION='3.5' DOCKER_IMAGE="ligo/software:jessie"
+    - env: PYTHON_VERSION='3.4' DOCKER_IMAGE="ligo/software:jessie"
       sudo: required
       services:
         - docker
