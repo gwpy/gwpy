@@ -27,7 +27,7 @@ yum -y update
 yum -y install rpm-build git2u
 
 if [ -z $PYTHON ]; then  # correct python version not installed
-    yum -y install ${PY_DIST} ${PY_PREFIX}-pip
+    yum -y install ${PY_DIST}
     PYTHON=`which python${PYTHON_VERSION}`
 fi
 
