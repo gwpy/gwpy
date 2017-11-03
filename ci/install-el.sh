@@ -24,7 +24,7 @@
 yum clean all
 yum makecache
 yum -y update
-yum -y install rpm-build
+yum -y install rpm-build git2u
 
 if [ -z $PYTHON ]; then  # correct python version not installed
     yum -y install ${PY_DIST} ${PY_PREFIX}-pip
@@ -34,6 +34,7 @@ fi
 create_virtualenv
 
 # build the RPM
+GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
 python setup.py bdist_rpm \
     --python ${PYTHON} \
     --changelog="`python changelog.py --start-tag 'v0.5'`"
