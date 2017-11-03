@@ -31,6 +31,9 @@ if [ -z $PYTHON ]; then  # correct python version not installed
     PYTHON=`which python${PYTHON_VERSION}`
 fi
 
+# install pip
+yum install -y ${PY_PREFIX}-pip
+
 create_virtualenv
 
 # build the RPM
