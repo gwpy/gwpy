@@ -34,12 +34,22 @@ matrix:
             - dvipng
             - libhdf5-serial-dev
 
-    # debian build
+    # debian 8 build
     - env: PYTHON_VERSION='2.7' DOCKER_IMAGE="ligo/software:jessie"
       sudo: required
       services:
         - docker
     - env: PYTHON_VERSION='3.5' DOCKER_IMAGE="ligo/software:jessie"
+      sudo: required
+      services:
+        - docker
+
+    # debian 9 build
+    - env: PYTHON_VERSION='2.7' DOCKER_IMAGE="ligo/software:stretch"
+      sudo: required
+      services:
+        - docker
+    - env: PYTHON_VERSION='3.5' DOCKER_IMAGE="ligo/software:stretch"
       sudo: required
       services:
         - docker
