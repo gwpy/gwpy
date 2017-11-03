@@ -22,7 +22,7 @@
 
 
 if [ -z $PYTHON ]; then  # correct python version not installed
-    apt-get install -yqq ${PY_DIST} ${PY_PREFIX}-pip
+    apt-get install -yqq ${PY_DIST}
     PYTHON=`which python${PYTHON_VERSION}`
 fi
 
@@ -32,7 +32,8 @@ apt-get install -yqq \
     git \
     debhelper \
     ${PY_PREFIX}-all \
-    ${PY_PREFIX}-setuptools
+    ${PY_PREFIX}-setuptools \
+    ${PY_PREFIX}-pip
 
 if [ ${PY_PREFIX} == "python" ]; then
     apt-get install -yqq python-git
