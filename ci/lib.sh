@@ -106,27 +106,6 @@ get_environment() {
     export PYTHON PY_MAJOR_VERSION PY_MINOR_VERSION PY_XY PY_DIST PY_PREFIX PIP
 }
 
-create_virtualenv() {
-    get_environment
-
-    local pkger=`get_package_manager`
-    $pkger install \
-        $PY_DIST \
-        python-virtualenv
-
-    # create virtualenv in which to build
-    virtualenv -p python${PYTHON_VERSION} ${GWPY_PATH}/opt/buildenv --clear --system-site-packages
-    . ${GWPY_PATH}/opt/buildenv/bin/activate
-    pip install --upgrade pip
-    pip install --upgrade setuptools GitPython
-}
-
-clean_virtualenv() {
-    local VENV_DIR=${VIRTUAL_ENV}
-    deactivate
-    rm -rf ${VENV_DIR}
-}
-
 get_configparser_option() {
     local fp=$1
     local section=$2
