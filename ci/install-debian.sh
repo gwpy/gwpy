@@ -20,6 +20,7 @@
 # Build Debian package
 #
 
+apt-get update -yqq
 
 if [ -z $PYTHON ]; then  # correct python version not installed
     apt-get install -yqq ${PY_DIST}
@@ -27,7 +28,6 @@ if [ -z $PYTHON ]; then  # correct python version not installed
 fi
 
 # install build dependencies
-apt-get update -yqq
 apt-get install -yqq \
     git \
     debhelper \
