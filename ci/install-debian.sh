@@ -23,18 +23,17 @@
 GWPY_RELEASE=${GWPY_VERSION%%+*}
 GWPY_VERSION=${GWPY_VERSION/+/-}  # required if using system setuptools
 
+if [ -z $PYTHON ]; then  # correct python version not installed
+    apt-get install -yqq ${PY_DIST} ${PY_PREFIX}-pip
+    PYTHON=`which python${PYTHON_VERSION}`
+fi
+
 # install build dependencies
 apt-get update -yqq
 apt-get install -yqq \
     debhelper \
     ${PY_PREFIX}-all \
-    ${PY_PREFIX}-setuptools \
-    ${PY_PREFIX}-pip
-
-if [ -z $PYTHON ]; then  # correct python version not installed
-    apt-get install -yqq ${PY_DIST}
-    PYTHON=`which python${PYTHON_VERSION}`
-fi
+    ${PY_PREFIX}-setuptools
 
 if [ ${PY_PREFIX} == "python" ]; then
     apt-get install -yqq python-git
