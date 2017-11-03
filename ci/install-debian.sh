@@ -20,8 +20,6 @@
 # Build Debian package
 #
 
-GWPY_RELEASE=${GWPY_VERSION%%+*}
-GWPY_VERSION=${GWPY_VERSION/+/-}  # required if using system setuptools
 
 if [ -z $PYTHON ]; then  # correct python version not installed
     apt-get install -yqq ${PY_DIST} ${PY_PREFIX}-pip
@@ -31,6 +29,7 @@ fi
 # install build dependencies
 apt-get update -yqq
 apt-get install -yqq \
+    git \
     debhelper \
     ${PY_PREFIX}-all \
     ${PY_PREFIX}-setuptools
@@ -40,6 +39,11 @@ if [ ${PY_PREFIX} == "python" ]; then
 else
     $PIP install GitPython
 fi
+
+# get versions
+GWPY_VERSION=`$PYTHON setup.py version | grep Version | cut -d\  -f2`
+GWPY_RELEASE=${GWPY_VERSION%%+*}
+GWPY_VERSION=${GWPY_VERSION/+/-}  # required if using system setuptools
 
 # prepare the tarball
 $PYTHON changelog.py -f deb -s "v0.5" > debian/changelog
