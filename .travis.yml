@@ -65,7 +65,7 @@ matrix:
         - docker
 
   allow_failures:
-    - env: PYTHON_VERSION='3.5' DOCKER_IMAGE="ligo/software:jessie"
+    - env: PYTHON_VERSION='3.4' DOCKER_IMAGE="ligo/software:jessie"
     - env: PYTHON_VERSION='3.5' DOCKER_IMAGE="ligo/software:stretch"
     - env: PYTHON_VERSION='3.5' DOCKER_IMAGE="ligo/software:el7"
 
