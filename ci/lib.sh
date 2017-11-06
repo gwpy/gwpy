@@ -113,7 +113,10 @@ get_environment() {
 install_python() {
     local pkger=`get_package_manager`
     get_environment  # <- set python variables
-    $pkger install ${PY_DIST} ${PY_PREFIX}-pip
+    $pkger install \
+        ${PY_DIST} \
+        ${PY_PREFIX}-pip \
+        ${PY_PREFIX}-setuptools
 }
 
 get_configparser_option() {
