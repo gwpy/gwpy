@@ -35,6 +35,7 @@ from gwpy.io import (cache as io_cache,
                      gwf as io_gwf,
                      kerberos as io_kerberos,
                      nds2 as io_nds2,
+                     ligolw as io_ligolw,
                      utils as io_utils)
 from gwpy.segments import (Segment, SegmentList)
 
@@ -379,6 +380,58 @@ class TestIoGwf(object):
         assert io_gwf.channel_in_frame('L1:LDAS-STRAIN', TEST_GWF_FILE) is True
         assert io_gwf.channel_in_frame('X1:NOT-IN_FRAME',
                                        TEST_GWF_FILE) is False
+
+
+# -- gwpy.io.ligolw -----------------------------------------------------------
+
+class TestIoLigolw(object):
+    """Tests for :mod:`gwpy.io.ligolw`
+
+    Here we only test the utilties, rather than the read/write functions,
+    which are tested extensively via other modules (e.g. test_tables.py)
+    """
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
+    def test_open_xmldoc(self):
+        from glue.ligolw.ligolw import (Document, LIGO_LW)
+        assert isinstance(io_ligolw.open_xmldoc(tempfile.mktemp()), Document)
+        with tempfile.TemporaryFile() as f:
+            xmldoc = Document()
+            xmldoc.appendChild(LIGO_LW())
+            xmldoc.write(f)
+            f.seek(0)
+            assert isinstance(io_ligolw.open_xmldoc(f), Document)
+
+    @utils.skip_missing_dependency('glue.ligolw')
+    def test_get_ligolw_element(self):
+        from glue.ligolw.ligolw import (Document, LIGO_LW)
+        xmldoc = Document()
+        llw = xmldoc.appendChild(LIGO_LW())
+        assert io_ligolw.get_ligolw_element(llw) is llw
+        assert io_ligolw.get_ligolw_element(xmldoc) is llw
+        with pytest.raises(ValueError):
+            io_ligolw.get_ligolw_element(Document())
+
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
+    def test_list_tables(self):
+        from glue.ligolw import lsctables
+        from glue.ligolw.ligolw import (Document, LIGO_LW)
+
+        # build dummy document with two tables
+        xmldoc = Document()
+        llw = xmldoc.appendChild(LIGO_LW())
+        tables = [lsctables.New(lsctables.ProcessTable),
+                  lsctables.New(lsctables.SnglRingdownTable)]
+        names = [t.TableName(t.Name) for t in tables]
+        [llw.appendChild(t) for t in tables]  # add tables to xmldoc
+
+        # check that tables are listed properly
+        assert io_ligolw.list_tables(xmldoc) == names
+
+        # check that we can list from files
+        with tempfile.NamedTemporaryFile() as f:
+            xmldoc.write(f)
+            f.seek(0)
+            assert io_ligolw.list_tables(f) == names
 
 
 # -- gwpy.io.datafind ---------------------------------------------------------
