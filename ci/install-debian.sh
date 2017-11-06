@@ -28,8 +28,7 @@ apt-get install -yqq \
     python-all \
     python-setuptools \
     python-pip \
-    python-git \
-    ${PY_PREFIX}-setuptools
+    python-git
 
 # needed to prevent version number munging with versioneer
 pip install "setuptools>33"
