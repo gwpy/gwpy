@@ -24,8 +24,7 @@ cd ${GWPY_PATH}
 
 . ci/lib.sh
 
-set -e
-set -x
+set -ex
 
 get_environment
 
@@ -33,6 +32,7 @@ get_environment
 if [ -z ${DOCKER_IMAGE} ]; then  # simple
     ${PIP} install .
     ${PIP} install -r requirements-dev.txt
+    set +ex
     return 0
 fi
 
@@ -50,5 +50,4 @@ echo
 echo "------------------------------------------------------------------------"
 cd -
 
-set +e
-set +x
+set +ex
