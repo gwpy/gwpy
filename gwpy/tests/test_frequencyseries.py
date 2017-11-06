@@ -126,6 +126,7 @@ class TestFrequencySeries(TestSeries):
         a2 = self.TEST_CLASS.from_lal(lalts)
         assert a2.unit is units.dimensionless_unscaled
 
+    @utils.skip_missing_dependency('lal')
     @utils.skip_missing_dependency('pycbc')
     def test_to_from_pycbc(self, array):
         from pycbc.types import FrequencySeries as PyCBCFrequencySeries
