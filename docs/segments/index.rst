@@ -1,5 +1,4 @@
 .. currentmodule:: gwpy.segments
-.. include:: ../references.txt
 
 .. _gwpy-segments:
 

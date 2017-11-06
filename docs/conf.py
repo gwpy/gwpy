@@ -110,6 +110,9 @@ default_role = 'obj'
 # unit titles (such as .. function::).
 #add_module_names = True
 
+# Epilog
+rst_epilog = "\n.. include:: /references.txt"
+
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
 #show_authors = False

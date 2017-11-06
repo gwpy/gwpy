@@ -1,4 +1,3 @@
-.. include:: ../references.txt
 .. currentmodule:: gwpy.table
 
 .. _gwpy-table-io:
