@@ -38,7 +38,8 @@ from astropy import units
 from astropy.io.ascii import InconsistentTableError
 from astropy.table import vstack
 
-from gwpy.table import (Table, EventTable)
+from gwpy.segments import (Segment, SegmentList)
+from gwpy.table import (Table, EventTable, filters)
 from gwpy.table.filter import filter_table
 from gwpy.table.io.hacr import (HACR_COLUMNS, get_hacr_triggers)
 from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
@@ -265,6 +266,13 @@ class TestEventTable(TestTable):
         brute = type(table)(rows=[row for row in lowf if row in loud],
                             names=table.dtype.names)
         utils.assert_table_equal(brute, lowfloud)
+
+        # check custom filters work
+        segs = SegmentList([Segment(0, 500)])
+        inseg = table.filter(('time', filters.in_segmentlist, segs))
+        brute = type(table)(rows=[row for row in table if row['time'] in segs],
+                            names=table.colnames)
+        utils.assert_table_equal(inseg, brute)
 
     def test_event_rates(self, table):
         rate = table.event_rate(1)
