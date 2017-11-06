@@ -24,9 +24,6 @@ cd ${GWPY_PATH}
 
 . ci/lib.sh
 
-set -e
-set -x
-
 get_environment
 
 # install for this OS
@@ -49,6 +46,3 @@ echo "GWpy installed to `${PYTHON} -c 'import gwpy; print(gwpy.__file__)'`"
 echo
 echo "------------------------------------------------------------------------"
 cd -
-
-set +e
-set +x
