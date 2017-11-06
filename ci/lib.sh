@@ -46,7 +46,7 @@ get_os_type() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         echo $ID
-    elif [ ${TRAVIS_OS_NAME} == "osx" ]; then
+    elif [[ ${TRAVIS_OS_NAME} == "osx" ]] || [[ "`uname`" == "Darwin" ]]; then
         echo macos
     fi
 }
