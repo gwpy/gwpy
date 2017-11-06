@@ -24,8 +24,7 @@ cd ${GWPY_PATH}
 
 . ci/lib.sh
 
-set -x
-set -e
+set -ex
 
 get_environment  # sets PIP variables etc
 
@@ -42,5 +41,4 @@ ${PIP} install lscsoft-glue
 # run tests
 coverage run ./setup.py test --addopts gwpy/tests/
 
-set +e
-set +x
+set +ex
