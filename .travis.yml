@@ -60,7 +60,7 @@ matrix:
 
     # sl7 build
     - env: DOCKER_IMAGE="ligo/software:el7"
-      python: '3.4'
+      python: '2.7'
       sudo: required
       services:
         - docker
