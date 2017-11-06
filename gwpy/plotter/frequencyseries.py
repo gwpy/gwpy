@@ -100,10 +100,10 @@ class FrequencySeriesAxes(Axes):
             kwargs.pop('label')
         line = self.plot(spectrum.frequencies.value, spectrum.value, **kwargs)
         if len(self.lines) == 1:
-            try:
-                self.set_xlim(*spectrum.xspan)
-            except ValueError:
-                pass
+            span = spectrum.xspan
+            if self.get_xscale() == 'log' and not span[0]:
+                span = (spectrum.df.value, span[-1])
+            self.set_xlim(*span)
         if not self.get_xlabel():
             self.set_xlabel(text.unit_as_label(spectrum.xunit))
         if not self.get_ylabel():
@@ -234,18 +234,13 @@ class FrequencySeriesAxes(Axes):
         y = specvar.bins.value
         X, Y = numpy.meshgrid(x, y, copy=False, sparse=True)
         mesh = self.pcolormesh(X, Y, specvar.value.T, **kwargs)
-        if len(self.collections) == 1:
-            self.set_yscale('log', nonposy='mask')
-            self.set_xlim(x[0], x[-1])
-            self.set_ylim(y[0], y[-1])
-            # fill in zeros
-            if isinstance(mesh.norm, colors.LogNorm):
-                cmap = mesh.get_cmap()
-                try:
-                    # only listed colormaps have cmap.colors
-                    cmap.set_bad(cmap.colors[0])
-                except AttributeError:
-                    pass
+        if (len(self.collections) == 1 and
+                isinstance(mesh.norm, colors.LogNorm)):
+            cmap = mesh.get_cmap()
+            try:  # only listed colormaps have cmap.colors
+                cmap.set_bad(cmap.colors[0])
+            except AttributeError:
+                pass
         return mesh
 
 
@@ -269,24 +264,23 @@ class FrequencySeriesPlot(Plot):
         sharey = kwargs.pop('sharey', False)
         # separate custom keyword arguments
         axargs, plotargs = self._parse_kwargs(kwargs)
+        axargs['xscale'] = xscale
+        axargs['yscale'] = xscale
 
         # initialise figure
         super(FrequencySeriesPlot, self).__init__(**kwargs)
 
         # plot data
-        x0 = []
         axesdata = self._get_axes_data(series, sep=sep)
         for data in axesdata:
             ax = self._add_new_axes(**axargs)
             for fs in data:
                 ax.plot(fs, **plotargs)
-            x0.append(min([fs.f0.value for fs in data]))
             if 'sharex' not in axargs and sharex is True:
                 axargs['sharex'] = ax
             if 'sharey' not in axargs and sharey is True:
                 axargs['sharey'] = ax
-        if sharex:
-            x0 = [min(x0)]*len(x0)
+
         axargs.pop('sharex', None)
         axargs.pop('sharey', None)
         axargs.pop('projection', None)
@@ -295,15 +289,8 @@ class FrequencySeriesPlot(Plot):
             # format axes
             for key, val in axargs.items():
                 getattr(ax, 'set_%s' % key)(val)
-            # set axis scales
-            ax.set_xscale(xscale)
-            ax.set_yscale(yscale)
-            # format log scales
+            # set grid
             if ax.get_xscale() in ['log']:
-                xlim = list(ax.get_xlim())
-                if not xlim[0]:
-                    xlim[0] = x0[i]
-                ax.set_xlim(*xlim)
                 ax.grid(True, axis='x', which='both')
             if ax.get_yscale() in ['log']:
                 ax.grid(True, axis='y', which='both')

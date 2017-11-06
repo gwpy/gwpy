@@ -63,9 +63,7 @@ import utils
 
 # design ZPK for BodePlot test
 ZPK = [100], [1], 1e-2
-FREQUENCIES, H = signal.freqresp(ZPK, n=100)
-MAGNITUDE = 20 * numpy.log10(numpy.absolute(H))
-PHASE = numpy.degrees(numpy.unwrap(numpy.angle(H)))
+FREQUENCIES, MAGNITUDE, PHASE = signal.bode(ZPK, n=100)
 
 # extract color cycle
 COLOR_CONVERTER = ColorConverter()
@@ -289,7 +287,7 @@ class TestPlot(PlottingTestBase):
         assert not isinstance(mappable.norm, LogNorm)
 
         # add colorbar and check everything went through
-        cbar = fig.add_colorbar(log=True, label='Test label', cmap='plasma')
+        cbar = fig.add_colorbar(log=True, label='Test label', cmap='YlOrRd')
         assert len(fig.axes) == 2
         assert cbar in fig.colorbars
         assert cbar.ax in fig._coloraxes
@@ -297,7 +295,7 @@ class TestPlot(PlottingTestBase):
         assert cbar.get_clim() == mappable.get_clim() == (1, 119)
         assert isinstance(mappable.norm, LogNorm)
         assert isinstance(cbar.formatter, CombinedLogFormatterMathtext)
-        assert cbar.get_cmap().name == 'plasma'
+        assert cbar.get_cmap().name == 'YlOrRd'
         assert cbar.ax.get_ylabel() == 'Test label'
         self.save_and_close(fig)
         assert ax.get_position().width < width
@@ -309,11 +307,6 @@ class TestPlot(PlottingTestBase):
         fig.add_colorbar(ax=ax, visible=False)
         assert len(fig.axes) == 1
         fig.close()
-
-        # check that we can map an empty array
-        fig, ax = self.new()
-        ax.imshow(numpy.arange(0).reshape((0, 0)))
-        fig.add_colorbar()
 
         # check errors
         mappable = ax.imshow(numpy.arange(120).reshape((10, 12)))
@@ -748,11 +741,11 @@ class TestEventTableAxes(EventTableMixin, TestAxes):
                           'bandwidth', 'snr', anchor='other')
 
     def test_get_column_string(self):
-        rcParams['text.usetex'] = True
-        assert get_column_string('snr') == 'SNR'
-        assert get_column_string('reduced_chisq') == r'Reduced $\chi^2$'
-        assert get_column_string('flow') == r'f$_{\mbox{\small low}}$'
-        assert get_column_string('end_time_ns') == r'End Time $(ns)$'
+        with rc_context(rc={'text.usetex': True}):
+            assert get_column_string('snr') == 'SNR'
+            assert get_column_string('reduced_chisq') == r'Reduced $\chi^2$'
+            assert get_column_string('flow') == r'f$_{\mbox{\small low}}$'
+            assert get_column_string('end_time_ns') == r'End Time $(ns)$'
 
 
 # -- Segment plotter ----------------------------------------------------------
@@ -868,7 +861,6 @@ class HistogramMixin(object):
     def setup_class(cls):
         numpy.random.seed(0)
         cls.ts = TimeSeries(numpy.random.rand(10000), sample_rate=128)
-        print(cls.ts)
 
 
 class TestHistogramPlot(HistogramMixin, TestPlot):

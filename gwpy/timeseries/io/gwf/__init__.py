@@ -38,7 +38,7 @@ from six import string_types
 
 import numpy
 
-from astropy.io.registry import (get_formats, IORegistryError)
+from astropy.io.registry import get_formats
 
 try:
     from glue.lal import Cache
@@ -361,8 +361,9 @@ def register_gwf_format(container):
     container : `Series`, `dict`
         series class or series dict class to register
     """
+    formats = get_formats(data_class=container)
     def read_(*args, **kwargs):
-        for fmt in get_formats(data_class=container, readwrite='Read'):
+        for fmt in formats:
             if fmt['Format'].startswith('gwf.'):
                 kwargs['format'] = fmt['Format']
                 try:
@@ -374,7 +375,7 @@ def register_gwf_format(container):
                           "libraries and try again")
 
     def write_(*args, **kwargs):
-        for fmt in get_formats(data_class=container, readwrite='Write'):
+        for fmt in formats:
             if fmt['Format'].startswith('gwf.'):
                 kwargs['format'] = fmt['Format']
                 try:

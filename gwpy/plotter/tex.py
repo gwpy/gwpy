@@ -24,6 +24,8 @@ from __future__ import division
 import os
 import re
 
+from ..utils.shell import which
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # -- tex configuration --------------------------------------------------------
@@ -32,7 +34,19 @@ MACROS = [
     r'\def\rtHz{\ensuremath{\sqrt{\mathrm{Hz}}}}',  # \sqrt{Hz} label
 ]
 
-HAS_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
+
+def has_tex():
+    try:
+        which('pdflatex')
+    except ValueError:
+        return False
+    try:
+        which('dvipng')
+    except ValueError:
+        return False
+    return True
+
+HAS_TEX = has_tex()
 
 # -- tex formatting -----------------------------------------------------------
 

@@ -23,7 +23,10 @@ import re
 
 from six import string_types
 
-from astropy.io.registry import IORegistryError
+try:
+    from astropy.io.registry import IORegistryError
+except ImportError:  # astropy < 1.2.1
+    IORegistryError = Exception
 from astropy.table import Table
 
 _FETCHERS = {}

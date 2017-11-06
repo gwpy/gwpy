@@ -21,7 +21,7 @@
 These files should be in two-column x,y format
 """
 
-from numpy import (savetxt, loadtxt, stack)
+from numpy import (savetxt, loadtxt, column_stack)
 
 from ...io import registry as io_registry
 from ...io.utils import identify_factory
@@ -67,7 +67,7 @@ def write_ascii_series(series, output, **kwargs):
     """
     xarr = series.xindex.value
     yarr = series.value
-    return savetxt(output, stack((xarr, yarr), axis=1), **kwargs)
+    return savetxt(output, column_stack((xarr, yarr)), **kwargs)
 
 
 # -- register -----------------------------------------------------------------
