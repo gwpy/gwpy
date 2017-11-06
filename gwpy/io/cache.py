@@ -30,6 +30,7 @@ import warnings
 from gzip import GzipFile
 
 from six import string_types
+from six.moves import StringIO
 
 from numpy import recarray
 from numpy.lib import recfunctions
@@ -181,7 +182,7 @@ def file_name(fobj):
     """
     if isinstance(fobj, string_types):
         return fobj
-    if isinstance(fobj, FILE_LIKE):
+    if isinstance(fobj, FILE_LIKE) and not isinstance(fobj, StringIO):
         return fobj.name
     if HAS_CACHE and isinstance(fobj, CacheEntry):
         return fobj.path
