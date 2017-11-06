@@ -394,7 +394,7 @@ class TestIoLigolw(object):
     def test_open_xmldoc(self):
         from glue.ligolw.ligolw import (Document, LIGO_LW)
         assert isinstance(io_ligolw.open_xmldoc(tempfile.mktemp()), Document)
-        with tempfile.TemporaryFile() as f:
+        with tempfile.TemporaryFile(mode='w') as f:
             xmldoc = Document()
             xmldoc.appendChild(LIGO_LW())
             xmldoc.write(f)
@@ -428,7 +428,7 @@ class TestIoLigolw(object):
         assert io_ligolw.list_tables(xmldoc) == names
 
         # check that we can list from files
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(mode='w') as f:
             xmldoc.write(f)
             f.seek(0)
             assert io_ligolw.list_tables(f) == names
