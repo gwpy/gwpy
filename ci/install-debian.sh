@@ -65,4 +65,5 @@ apt-get install -y --ignore-missing \
     ${PY_PREFIX}-nds2-client \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
-    ${PY_PREFIX}-h5py
+    ${PY_PREFIX}-h5py \
+|| true
