@@ -62,6 +62,23 @@ get_package_manager() {
     fi
 }
 
+update_package_manager() {
+    local pkger=`get_package_manager`
+    case "$pkger" in
+        "port")
+            port selfupdate
+            ;;
+        "apt-get")
+            apt-get update -yqq
+            ;;
+        "yum")
+            yum clean all
+            yum makecache
+            yum -y update
+            ;;
+    esac
+}
+
 get_python_version() {
     if [ -n ${PYTHON_VERSION} ]; then
         :
