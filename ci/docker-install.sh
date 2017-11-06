@@ -50,6 +50,6 @@ sudo docker run \
 sleep 5
 
 # install python
-ci_run ". ${GWPY_PATH}/ci/lib.sh && install_python"
+ci_run ". ${GWPY_PATH}/ci/lib.sh && update_package_manager && install_python"
 
 set +x
