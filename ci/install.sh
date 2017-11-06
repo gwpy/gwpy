@@ -24,6 +24,8 @@ cd ${GWPY_PATH}
 
 . ci/lib.sh
 
+set -x && trap 'set +x' RETURN
+
 get_environment
 
 # install for this OS
