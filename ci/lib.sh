@@ -62,18 +62,23 @@ get_package_manager() {
     fi
 }
 
-get_environment() {
-    [ -z ${PYTHON_VERSION} ] && PYTHON_VERSION=`
+get_python_version() {
+    [ -x ${PYTHON_VERSION} ] && export PYTHON_VERSION=`
         python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'`
+    echo ${PYTHON_VERSION}
+}
+
+get_environment() {
     local pkger=`get_package_manager`
-    IFS='.' read PY_MAJOR_VERSION PY_MINOR_VERSION <<< "$PYTHON_VERSION"
+    local pyversion=`get_python_version`
+    IFS='.' read PY_MAJOR_VERSION PY_MINOR_VERSION <<< "$pyversion"
     PY_XY="${PY_MAJOR_VERSION}${PY_MINOR_VERSION}"
-    PYTHON=python${PYTHON_VERSION}
+    PYTHON=python$pyversion
     case "$pkger" in
         "port")
             PY_DIST=python${PY_XY}
             PY_PREFIX=py${PY_XY}
-            PIP=pip-${PYTHON_VERSION}
+            PIP=pip-$pyversion
             ;;
         "apt-get")
             if [ ${PY_MAJOR_VERSION} == 2 ]; then
@@ -98,11 +103,17 @@ get_environment() {
             else
                 PY_DIST=python${PY_XY}u
                 PY_PREFIX=python${PY_XY}u
-                PIP=pip${PYTHON_VERSION}
+                PIP=pip$pyversion
             fi
             ;;
     esac
     export PYTHON PY_MAJOR_VERSION PY_MINOR_VERSION PY_XY PY_DIST PY_PREFIX PIP
+}
+
+install_python() {
+    local pkger=`get_package_manager`
+    get_environment  # <- set python variables
+    $pkger install ${PY_DIST} ${PY_PREFIX}-pip
 }
 
 get_configparser_option() {

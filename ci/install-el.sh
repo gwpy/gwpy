@@ -25,7 +25,6 @@ yum clean all
 yum makecache
 yum -y update
 yum -y install rpm-build git2u
-yum -y install ${PY_DIST}
 
 GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
 
