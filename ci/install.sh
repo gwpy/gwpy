@@ -24,15 +24,12 @@ cd ${GWPY_PATH}
 
 . ci/lib.sh
 
-set -ex
-
 get_environment
 
 # install for this OS
 if [ -z ${DOCKER_IMAGE} ]; then  # simple
     ${PIP} install .
     ${PIP} install -r requirements-dev.txt
-    set +ex
     return 0
 fi
 
@@ -49,5 +46,3 @@ echo "GWpy installed to `${PYTHON} -c 'import gwpy; print(gwpy.__file__)'`"
 echo
 echo "------------------------------------------------------------------------"
 cd -
-
-set +ex
