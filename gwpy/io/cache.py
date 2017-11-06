@@ -22,12 +22,11 @@
 from __future__ import division
 
 import os.path
-from math import ceil
-from multiprocessing import (cpu_count, Process, Queue as ProcessQueue)
-from six import string_types
 import tempfile
 import warnings
 from gzip import GzipFile
+from math import ceil
+from multiprocessing import (cpu_count, Process, Queue as ProcessQueue)
 
 from six import string_types
 from six.moves import StringIO
