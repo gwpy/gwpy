@@ -35,39 +35,48 @@ matrix:
             - libhdf5-serial-dev
 
     # debian 8 build
-    - env: PYTHON_VERSION='2.7' DOCKER_IMAGE="ligo/software:jessie"
+    - env: DOCKER_IMAGE="ligo/software:jessie"
+      python: '2.7'
       sudo: required
       services:
         - docker
-    - env: PYTHON_VERSION='3.4' DOCKER_IMAGE="ligo/software:jessie"
+    - env: DOCKER_IMAGE="ligo/software:jessie"
+      python: '3.4'
       sudo: required
       services:
         - docker
 
     # debian 9 build
-    - env: PYTHON_VERSION='2.7' DOCKER_IMAGE="ligo/software:stretch"
+    - env: DOCKER_IMAGE="ligo/software:stretch"
+      python: '2.7'
       sudo: required
       services:
         - docker
-    - env: PYTHON_VERSION='3.5' DOCKER_IMAGE="ligo/software:stretch"
+    - env: DOCKER_IMAGE="ligo/software:stretch"
+      python: '3.5'
       sudo: required
       services:
         - docker
 
     # sl7 build
-    - env: PYTHON_VERSION='2.7' DOCKER_IMAGE="ligo/software:el7"
+    - env: DOCKER_IMAGE="ligo/software:el7"
+      python: '3.4'
       sudo: required
       services:
         - docker
-    - env: PYTHON_VERSION='3.5' DOCKER_IMAGE="ligo/software:el7"
+    - env: DOCKER_IMAGE="ligo/software:el7"
+      python: '3.5'
       sudo: required
       services:
         - docker
 
   allow_failures:
-    - env: PYTHON_VERSION='3.4' DOCKER_IMAGE="ligo/software:jessie"
-    - env: PYTHON_VERSION='3.5' DOCKER_IMAGE="ligo/software:stretch"
-    - env: PYTHON_VERSION='3.5' DOCKER_IMAGE="ligo/software:el7"
+    - env: DOCKER_IMAGE="ligo/software:jessie"
+      python: '3.4'
+    - env: DOCKER_IMAGE="ligo/software:stretch"
+      python: '3.5'
+    - env: DOCKER_IMAGE="ligo/software:el7"
+      python: '3.5'
 
   fast_finish: true
 
