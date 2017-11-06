@@ -69,7 +69,7 @@ update_package_manager() {
             port selfupdate
             ;;
         "apt-get")
-            apt-get update -yqq
+            apt-get update -yq
             ;;
         "yum")
             yum clean all
