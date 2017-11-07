@@ -41,16 +41,10 @@ mkdir -p ${PORT_REPO}/science/gwpy
 cp Portfile ${PORT_REPO}/science/gwpy
 
 # munge Portfile for local install
-gsed -i 's|'\
-    'pypi:g/gwpy|'\
-    'file://'`pwd`'/dist/ \\\n                    pypi:g/gwpy|' \
-    ${PORT_REPO}/science/gwpy/Portfile
+gsed -i 's|pypi:g/gwpy|file://'`pwd`'/dist/ \\\n                    pypi:g/gwpy|' ${PORT_REPO}/science/gwpy/Portfile
 
 # add local port repo to sources
-sudo gsed -i 's|'\
-    'rsync://rsync.macports|'\
-    'file://'${PORT_REPO}'\nrsync://rsync.macports|' \
-    /opt/local/etc/macports/sources.conf
+sudo gsed -i 's|rsync://rsync.macports|file://'${PORT_REPO}'\nrsync://rsync.macports|' /opt/local/etc/macports/sources.conf
 cd ${PORT_REPO}
 portindex
 
