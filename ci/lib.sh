@@ -79,6 +79,21 @@ update_package_manager() {
     esac
 }
 
+install_package() {
+    local pkger=`get_package_manager`
+    case "$pkger" in
+        "port")
+            port -N install $@
+            ;;
+        "apt-get")
+            apt-get --yes --quiet install $@
+            ;;
+        "yum")
+            yum -y install $@
+            ;;
+    esac
+}
+
 get_python_version() {
     if [ -n ${PYTHON_VERSION} ]; then
         :
@@ -135,12 +150,8 @@ get_environment() {
 }
 
 install_python() {
-    local pkger=`get_package_manager`
     get_environment  # <- set python variables
-    $pkger install \
-        ${PY_DIST} \
-        ${PY_PREFIX}-pip \
-        ${PY_PREFIX}-setuptools
+    install_package ${PY_DIST} ${PY_PREFIX}-pip ${PY_PREFIX}-setuptools
 }
 
 get_configparser_option() {
