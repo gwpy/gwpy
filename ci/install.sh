@@ -31,7 +31,7 @@ get_environment
 # install for this OS
 if [ -z ${DOCKER_IMAGE} ]; then  # simple
     ${PIP} install .
-    ${PIP} install -r requirements-dev.txt
+    ${PIP} install -r requirements-dev.txt ${PIP_FLAGS}
     return 0
 fi
 
