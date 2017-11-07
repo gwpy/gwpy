@@ -37,11 +37,12 @@ python setup.py port
 
 # create mock portfile repo and install
 PORT_REPO=`pwd`/ports
-mkdir -p ${PORT_REPO}/science/gwpy
-cp Portfile ${PORT_REPO}/science/gwpy
+GWPY_PORT_PATH=${PORT_REPO}/python/py-gwpy
+mkdir -p ${GWPY_PORT_PATH}
+cp Portfile ${GWPY_PORT_PATH}/
 
 # munge Portfile for local install
-gsed -i 's|pypi:g/gwpy|file://'`pwd`'/dist/ \\\n                    pypi:g/gwpy|' ${PORT_REPO}/science/gwpy/Portfile
+gsed -i 's|pypi:g/gwpy|file://'`pwd`'/dist/ \\\n                    pypi:g/gwpy|' ${GWPY_PORT_PATH}/Portfile
 
 # add local port repo to sources
 sudo gsed -i 's|rsync://rsync.macports|file://'${PORT_REPO}'\nrsync://rsync.macports|' /opt/local/etc/macports/sources.conf
