@@ -50,4 +50,4 @@ cd ${PORT_REPO}
 portindex
 
 # install port
-sudo port install ${PY_PREFIX}-gwpy +gwf +nds2 +hdf5
+travis_wait sudo port install ${PY_PREFIX}-gwpy +gwf +nds2 +hdf5
