@@ -21,7 +21,7 @@
 #
 
 git clone https://github.com/MacPython/terryfy.git
-. terrfy/travis_tools.sh
+. terryfy/travis_tools.sh
 
 # get python information
 get_environment
