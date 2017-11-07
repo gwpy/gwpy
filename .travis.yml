@@ -33,7 +33,7 @@ matrix:
             - texlive-fonts-recommended
             - dvipng
             - libhdf5-serial-dev
-    - env: PIP_FLAGS="--pre"
+    - env: PIP_FLAGS="--upgrade --pre"
       python: 3.5
       addons:
         apt:
@@ -85,18 +85,6 @@ matrix:
 
   allow_failures:
     - env: PIP_FLAGS="--upgrade --pre"
-      python: '3.5'
-      addons:
-        apt:
-          packages:
-            - gcc
-            - gfortran
-            - libblas-dev
-            - liblapack-dev
-            - texlive-latex-extra
-            - texlive-fonts-recommended
-            - dvipng
-            - libhdf5-serial-dev
     - env: DOCKER_IMAGE="ligo/software:jessie"
       python: '3.4'
     - env: DOCKER_IMAGE="ligo/software:stretch"
