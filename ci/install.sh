@@ -37,7 +37,7 @@ elif [ -n "${DOCKER_IMAGE}" ]; then  # debian
     . ci/install-debian.sh
 else  # simple pip build
     ${PIP} install .
-    ${PIP} install -r requirements-dev.txt
+    ${PIP} install -r requirements-dev.txt ${PIP_FLAGS}
 fi
 
 cd /tmp
