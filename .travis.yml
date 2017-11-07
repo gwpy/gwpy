@@ -70,6 +70,11 @@ matrix:
       services:
         - docker
 
+    # macos build
+    - os: osx
+      python: '2.7'
+      sudo: required
+
   allow_failures:
     - env: DOCKER_IMAGE="ligo/software:jessie"
       python: '3.4'
