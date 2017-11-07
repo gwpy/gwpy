@@ -49,4 +49,4 @@ cd ${PORT_REPO}
 portindex
 
 # install port
-port install ${PY_PREFIX}-gwpy +gwf +nds2 +hdf5
+sudo port install ${PY_PREFIX}-gwpy +gwf +nds2 +hdf5
