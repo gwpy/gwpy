@@ -152,12 +152,12 @@ class SpectralVariance(Array2D):
 
         Parameters
         ----------
-        source : `str`, `~glue.lal.Cache`
+        source : `str`, :class:`~glue.lal.Cache`
             source of data, any of the following:
 
             - `str` path of single data file
             - `str` path of LAL-format cache file
-            - `~glue.lal.Cache` describing one or more data files,
+            - :class:`~glue.lal.Cache` describing one or more data files,
 
         format : `str`, optional
             source format identifier. If not given, the format will be

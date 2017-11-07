@@ -32,12 +32,15 @@ def format_db_selection(selection, engine=None):
     if selection is None:
         return ''
     selections = []
-    for col, def_ in parse_column_filters(selection):
+    for col, op_, value in parse_column_filters(selection):
         if engine and engine.name == 'postgresql':
             col = '"%s"' % col
-        for value, op_ in def_:
+        try:
             opstr = [key for key in OPERATORS if OPERATORS[key] is op_][0]
-            selections.append('{0} {1} {2!r}'.format(col, opstr, value))
+        except KeyError as e:
+            raise ValueError("Cannot format database 'WHERE' command with "
+                             "selection operator %r" % op_)
+        selections.append('{0} {1} {2!r}'.format(col, opstr, value))
     if selections:
         return 'WHERE %s' % ' AND '.join(selections)
     return ''

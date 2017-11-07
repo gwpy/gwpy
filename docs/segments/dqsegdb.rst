@@ -1,5 +1,4 @@
 .. currentmodule:: gwpy.segments
-.. include:: ../references.txt
 
 .. _gwpy-segments-dqsegdb:
 
@@ -7,7 +6,7 @@
 The Segment Database
 ####################
 
-**Additional dependencies**: |glue|_, |dqsegdb|_
+**Additional dependencies**: :mod:`glue`, |dqsegdb|_
 
 The LIGO and Virgo instruments utilise hundreds of data-quality flags to record instrumental state on a daily basis.
 These flags are stored in a joint segment database - a queryable database recording each flag, its valid and active segment lists, and all metadata associated with its generation.

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read LIGO_LW documents into glue.ligolw.table.Table objects.
+"""Read LIGO_LW documents into :class:`~glue.ligolw.table.Table` objects.
 """
 
 import inspect
@@ -30,7 +30,8 @@ except ImportError:
     TableByName = dict()
 
 from ...io import registry
-from ...io.ligolw import (table_from_file, write_tables)
+from ...io.ligolw import (is_ligolw, read_table as read_ligolw_table,
+                          write_tables as write_ligolw_tables)
 from .. import (Table, EventTable)
 from .utils import read_with_selection
 
@@ -41,127 +42,154 @@ __all__ = []
 GET_AS_EXCLUDE = ['get_column', 'get_table']
 
 
-def handle_attributeerror(action, func, *args, **kwargs):
-    try:
-        return func(*args, **kwargs)
-    except AttributeError as e:
-        if action == 'ignore':
-            pass
-        elif action == 'warn':
-            warnings.warn('Caught %s: %s' % (type(e).__name__, str(e)))
-        else:
-            raise
+# -- conversions --------------------------------------------------------------
 
+def to_astropy_table(llwtable, apytable, copy=False, columns=None,
+                     rename=None, on_attributeerror=None, get_as_columns=None):
+    """Convert a :class:`~glue.ligolw.table.Table` to an `~astropy.tableTable`
 
-# -- read ---------------------------------------------------------------------
+    This method is designed as an internal method to be attached to
+    :class:`~glue.ligolw.table.Table` objects as `__astropy_table__`.
 
-@read_with_selection
-def _table_from_ligolw(llwtable, target, copy, columns=None,
-                       on_attributeerror='raise', get_as_columns=False,
-                       rename={}):
-    """Convert this `~glue.ligolw.table.Table` to an `~astropy.tableTable`
+    Parameters
+    ----------
+    llwtable : :class:`~glue.ligolw.table.Table`
+        the LIGO_LW table to convert from
 
-        Parameters
-        ----------
-        columns : `list` of `str`, optional
-            the columns to populate, if not given, all columns present in the
-            table are mapped
+    apytable : `type`
+        `astropy.table.Table` class or subclass
 
-        on_attributeerror : `str`, optional, default: `'raise'`
-            how to handle `AttributeError` when accessing rows, one of
+    copy : `bool`, optional
+        if `True` copy the input data, otherwise return a reference,
+        default: `False`
 
-            - 'raise' : raise normal exception
-            - 'ignore' : silently ignore this column
-            - 'warn' : verbosely ignore this column
+    columns : `list` of `str`, optional
+        the columns to populate, if not given, all columns present in the
+        table are mapped
 
-            .. note::
+    rename : `dict`, optional
+        dict of ('old name', 'new name') pairs to rename columns
+        from the original LIGO_LW table
 
-               this option is ignored if a `columns` list is given
+    on_attributeerror
+        DEPRECATED, do not use
 
-        get_as_columns : `bool`, optional
-            convert all `get_xxx()` methods into fields in the
-            `~numpy.recarray`; the default is to _not_ do this.
+    get_as_columns
+        DEPRECATED, do not use
 
-        rename : `dict`, optional
-            dict of ('old name', 'new name') pairs to rename columns
-            from the original LIGO_LW table
-
-        Returns
-        -------
-        table : `EventTable`
-            a view of the original data
+    Returns
+    -------
+    table : `EventTable`
+        a view of the original data
     """
-    from glue.ligolw.lsctables import LIGOTimeGPS
+    # handle deprecated keywords
+    if get_as_columns is not None:
+        warnings.warn("the ``get_as_columns`` keyword has been deprecated and "
+                      "will be removed in an upcoming release, simply refer "
+                      "to the columns you want via the ``columns`` keyword",
+                      DeprecationWarning)
+    if on_attributeerror is not None:
+        warnings.warn("the ``on_attributeerror`` keyword has been deprecated, "
+                      "and will be removed in an upcoming release, it will be "
+                      "ignored for now", DeprecationWarning)
 
+    # set default keywords
     if rename is None:
         rename = {}
-    # create table
-    names = []
+    if columns is None:
+        columns = llwtable.columnnames
+
+    # get names of get_xxx() methods for this table
+    getters = [
+        name.split('_', 1)[1] for (name, _) in
+        inspect.getmembers(llwtable, predicate=inspect.ismethod) if
+        name.startswith('get_') and name not in GET_AS_EXCLUDE and
+        name not in llwtable.columnnames]
+
+    # extract columns from LIGO_LW table as astropy.table.Column
     data = []
+    for colname in columns:
+        # work out how to extract the column
+        if colname in getters:
+            arr = getattr(llwtable, 'get_{}'.format(colname))()
+        else:
+            arr = llwtable.getColumnByName(colname)
+        # get the data
+        copythis = False if colname in getters else copy
+        data.append(to_astropy_column(arr, apytable.Column, copy=copythis,
+                                      name=rename.get(colname, colname)))
 
-    # and fill it
-    for column in llwtable.columnnames:
-        if columns and column not in columns:  # skip if not wanted
-            continue
-        orig_type = llwtable.validcolumns[column]
-        col = handle_attributeerror(
-            on_attributeerror, llwtable.getColumnByName, column)
-        if col is not None:
-            # get correct dtype
-            if orig_type == 'ilwd:char':  # numpy tries long() which breaks
-                arr = list(map(int, col))
-            elif orig_type == 'lstring':  # let astropy handle it
-                arr = col
-            else:
-                arr = col.asarray()
-            # store data (with optional renaming)
-            try:
-                data.append(target.Column(name=rename[column], data=arr))
-            except KeyError:
-                data.append(target.Column(name=column, data=arr))
-
-    # fill out get_xxx columns
-    if get_as_columns:
-        getters = filter(
-            lambda x: x[0].startswith('get_') and x[0] not in GET_AS_EXCLUDE,
-            inspect.getmembers(llwtable, predicate=inspect.ismethod))
-        for name, meth in getters:
-            column = name.split('_', 1)[1]
-            if column in names:  # don't overwrite existing columns
-                continue
-            if columns and column not in columns:  # skip if not wanted
-                continue
-            arr = handle_attributeerror(on_attributeerror, meth)
-            if arr is None:
-                continue
-            try:
-                dtype = arr.dtype
-            except AttributeError:
-                try:
-                    dtype = type(arr[0])
-                except (TypeError, KeyError):
-                    continue
-                except IndexError:
-                    dtype = None
-            if dtype == LIGOTimeGPS:
-                dtype = numpy.float64
-            names.append(column)
-            try:
-                data.append(target.Column(name=rename[column], data=arr,
-                                          dtype=dtype))
-            except KeyError:
-                data.append(target.Column(name=column, data=arr, dtype=dtype))
-
-    # sort data columns into user-specified order
-    if columns:
-        names = [rename[n] if n in rename else n for n in columns]
-        data.sort(key=lambda col: names.index(col.name))
     # build table and return
-    return target(data, copy=copy,
-                  meta={'type': 'ligolw.%s' % str(llwtable.Name)})
+    return apytable(data, copy=False, meta={'tablename': str(llwtable.Name)})
 
 
-# -- write --------------------------------------------------------------------
+def to_astropy_column(llwcol, cls, copy=False, dtype=None, **kwargs):
+    """Convert a :class:`~glue.ligolw.table.Column` to `astropy.table.Column`
+
+    Parameters
+    -----------
+    llwcol : :class:`~glue.ligolw.table.Column`, `numpy.ndarray`, iterable
+        the LIGO_LW column to convert, or an iterable
+
+    cls : `~astropy.table.Column`
+        the Astropy `~astropy.table.Column` or subclass to convert to
+
+    copy : `bool`, optional
+        if `True` copy the input data, otherwise return a reference,
+        default: `False`
+
+    dtype : `type`, optional
+        the data type to convert to when creating the `~astropy.table.Column`
+
+    **kwargs
+        other keyword arguments are passed to the `~astropy.table.Column`
+        creator
+
+    Returns
+    -------
+    column : `~astropy.table.Column`
+        an Astropy version of the given LIGO_LW column
+    """
+    if dtype is None:
+        dtype = _get_column_dtype(llwcol)
+    return cls(data=llwcol, copy=copy, dtype=dtype, **kwargs)
+
+
+def _get_column_dtype(llwcol):
+    """Get the data type of a LIGO_LW `Column`
+
+    Parameters
+    ----------
+    llwcol : :class:`~glue.ligolw.table.Column`, `numpy.ndarray`, iterable
+        a LIGO_LW column, a numpy array, or an iterable
+
+    Returns
+    -------
+    dtype : `type`, None
+        the object data type for values in the given column, `None` is
+        returned if ``llwcol`` is a `numpy.ndarray` with `numpy.object_`
+        dtype, or no data type can be parsed (e.g. empty list)
+    """
+    try:  # maybe its a numpy array already!
+        dtype = llwcol.dtype
+        if dtype is numpy.dtype('O'):  # don't convert
+            return None
+        return dtype
+    except AttributeError:  # dang
+        try:  # glue.ligolw.table.Column
+            llwtype = llwcol.parentNode.validcolumns[llwcol.Name]
+        except AttributeError:  # custom iterator
+            try:
+                return type(llwcol[0])
+            except IndexError:
+                return None
+        else:
+            from glue.ligolw.types import (ToPyType, ToNumPyType)
+            try:
+                return ToNumPyType[llwtype]
+            except KeyError:
+                return ToPyType[llwtype]
+
 
 def table_to_ligolw(table, tablename):
     """Convert a `astropy.table.Table` to a :class:`glue.ligolw.table.Table`
@@ -171,8 +199,7 @@ def table_to_ligolw(table, tablename):
 
     # create new LIGO_LW table
     columns = table.columns.keys()
-    table_class = lsctables.TableByName[tablename]
-    llwtable = lsctables.New(table_class, columns=columns)
+    llwtable = lsctables.New(lsctables.TableByName[tablename], columns=columns)
 
     # map rows across
     for row in table:
@@ -191,34 +218,58 @@ def table_to_ligolw(table, tablename):
     return llwtable
 
 
-# -- I/O factory --------------------------------------------------------------
+# -- read ---------------------------------------------------------------------
 
-def ligolw_io_factory(table_):
-    """Define a read and write method for the given LIGO_LW table
+@read_with_selection
+def read_table(source, tablename=None, **kwargs):
+    """Read a `Table` from one or more LIGO_LW XML documents
+
+    source : `file`, `str`, :class:`~glue.ligolw.ligolw.Document`, `list`
+        one or more open files, file paths, or LIGO_LW `Document` objects
+
+    tablename : `str`, optional
+        the `Name` of the relevant `Table` to read, if not given a table will
+        be returned if only one exists in the document(s)
+
+    **kwargs
+        keyword arguments for the read, or conversion functions
+
+    See Also
+    --------
+    gwpy.io.ligolw.read_table
+        for details of keyword arguments for the read operation
+    gwpy.table.io.ligolw.to_astropy_table
+        for details of keyword arguments for the conversion operation
     """
-    tablename = table_.TableName(table_.tableName)
+    from glue.ligolw import table as ligolw_table
 
-    def _read_table(f, *args, **kwargs):
-        # set up keyword arguments
-        llwcolumns = kwargs.pop('ligolw_columns', kwargs.get('columns', None))
-        reckwargs = {
-            'on_attributeerror': 'raise',
-            'get_as_columns': False,
-            'rename': {},
-            'selection': [],
-        }
-        for key in reckwargs:
-            if key in kwargs:
-                reckwargs[key] = kwargs.pop(key)
-        reckwargs['columns'] = kwargs.pop('columns', llwcolumns)
-        kwargs['columns'] = llwcolumns
-        if reckwargs['rename'] is None:
-            reckwargs['rename'] = {}
+    # -- keyword handling -----------------------
 
-        # handle requests for 'time' as a special case
-        needtime = (reckwargs['columns'] is not None and
-                    'time' in reckwargs['columns'] and
-                    'time' not in table_.validcolumns)
+    # separate keywords for reading and converting from LIGO_LW to Astropy
+    read_kw = kwargs  # rename for readability
+    convert_kw = {
+        'on_attributeerror': None,  # deprecated
+        'get_as_columns': None,  # deprecated
+        'rename': {},
+    }
+    for key in convert_kw:
+        if key in kwargs:
+            convert_kw[key] = kwargs.pop(key)
+    if convert_kw['rename'] is None:
+        convert_kw['rename'] = {}
+
+    # allow user to specify LIGO_LW columns to read to provide the
+    # desired output columns
+    llwcolumns = kwargs.pop('ligolw_columns', kwargs.get('columns', None))
+    convert_kw['columns'] = kwargs.pop('columns', llwcolumns)
+    read_kw['columns'] = llwcolumns
+
+    # handle requests for 'time' as a special case
+    if tablename:
+        tableclass = TableByName[ligolw_table.Table.TableName(tablename)]
+        needtime = (convert_kw['columns'] is not None and
+                    'time' in convert_kw['columns'] and
+                    'time' not in tableclass.validcolumns)
         if needtime:
             if tablename.endswith('_burst'):
                 tname = 'peak'
@@ -231,52 +282,71 @@ def ligolw_io_factory(table_):
                                  "doesn't supply it or have a good proxy "
                                  "(e.g. 'peak_time')")
             # replace 'time' with get_xxx method name
-            reckwargs['columns'] = list(reckwargs['columns'])
-            idx = reckwargs['columns'].index('time')
-            reckwargs['columns'].insert(idx, tname)
-            reckwargs['columns'].pop(idx+1)
-            reckwargs['rename'][tname] = 'time'
-            reckwargs['get_as_columns'] = True
-            # add required LIGO_LW columns to read kwargs
-            kwargs['columns'] = list(set(
-                kwargs['columns'] + ['%s_time' % tname, '%s_time_ns' % tname]))
+            cols = convert_kw['columns'] = list(convert_kw['columns'])
+            cols[cols.index('time')] = tname
+            convert_kw['rename'][tname] = 'time'
+            # add required LIGO_LW columns to read read_kw
+            read_kw['columns'] = list(set(read_kw['columns'] + [tname]))
 
-        # read from LIGO_LW
-        llw = table_from_file(f, table_.tableName, *args, **kwargs)
-        return Table(llw, **reckwargs)
+    # -- read -----------------------------------
 
-    def _write_table(table, f, *args, **kwargs):
-        return write_tables(f, [table_to_ligolw(table, tablename)],
-                            *args, **kwargs)
+    return Table(read_ligolw_table(source, tablename=tablename, **read_kw),
+                 **convert_kw)
 
-    return _read_table, _write_table
+
+# -- write --------------------------------------------------------------------
+
+def write_table(table, target, tablename=None, **kwargs):
+    """Write a `~astropy.table.Table` to file in LIGO_LW XML format
+    """
+    if tablename is None:  # try and get tablename from metadata
+        tablename = table.meta.get('tablename', None)
+    if tablename is None:  # panic
+        raise ValueError("please pass ``tablename=`` to specify the target "
+                         "LIGO_LW Table Name")
+    return write_ligolw_tables(target, [table_to_ligolw(table, tablename)],
+                               **kwargs)
 
 
 # -- register -----------------------------------------------------------------
 
-EVENT_TABLES = (
-    'sngl_burst', 'multi_burst',
-    'sngl_inspiral', 'multi_inspiral',
-    'sngl_ringdown',
-)
+for table_class in (Table, EventTable):
+    registry.register_reader('ligolw', table_class, read_table)
+    registry.register_writer('ligolw', table_class, write_table)
+    registry.register_identifier('ligolw', table_class, is_ligolw)
 
-# register reader and auto-id for LIGO_LW
-for table in TableByName.values():
-    tname = table.TableName(table.tableName)
-    name = 'ligolw.%s' % tname
 
+# -- DEPRECATED - remove before 1.0 release -----------------------------------
+
+def _ligolw_io_factory(table):
+    """Define a read and write method for the given LIGO_LW table
+
+    This system has been deprecated in favour of the simpler
+    `Table.read(format='ligolw', tablename='...')` syntax.
+    """
+    tablename = table.TableName(table.tableName)
+    wng = ("``format='ligolw.{0}'`` has been deprecated, please "
+           "read using ``format='ligolw', tablename={0}'``".format(tablename))
+
+    def _read_ligolw_table(source, tablename=tablename, **kwargs):
+        warnings.warn(wng, DeprecationWarning)
+        return read_table(source, tablename=tablename, **kwargs)
+
+    def _write_table(tbl, target, tablename=tablename, **kwargs):
+        warnings.warn(wng, DeprecationWarning)
+        return write_table(tbl, target, tablename=tablename, **kwargs)
+
+    return _read_ligolw_table, _write_table
+
+
+for table_ in TableByName.values():
     # build readers for this table
-    read_, write_, = ligolw_io_factory(table)
+    read_, write_, = _ligolw_io_factory(table_)
 
     # register conversion from LIGO_LW to astropy Table
-    table.__astropy_table__ = _table_from_ligolw
+    table_.__astropy_table__ = to_astropy_table
 
     # register table-specific reader for Table and EventTable
-    registry.register_reader(name, Table, read_)
-    registry.register_writer(name, Table, write_)
-
-    if tname in EVENT_TABLES:
-        # this is done explicitly so that the docstring for table.read()
-        # shows the format
-        registry.register_reader(name, EventTable, read_)
-        registry.register_writer(name, EventTable, write_)
+    fmt = 'ligolw.%s' % table_.TableName(table_.tableName)
+    registry.register_reader(fmt, Table, read_)
+    registry.register_writer(fmt, Table, write_)

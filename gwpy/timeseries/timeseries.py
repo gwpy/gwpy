@@ -135,12 +135,12 @@ class TimeSeries(TimeSeriesBase):
 
         Parameters
         ----------
-        source : `str`, `~glue.lal.Cache`
+        source : `str`, :class:`~glue.lal.Cache`
             source of data, any of the following:
 
             - `str` path of single data file
             - `str` path of LAL-format cache file
-            - `~glue.lal.Cache` describing one or more data files,
+            - :class:`~glue.lal.Cache` describing one or more data files,
 
         name : `str`, `~gwpy.detector.Channel`
             the name of the channel to read, or a `Channel` object.
@@ -165,7 +165,7 @@ class TimeSeries(TimeSeriesBase):
             .. note::
 
                Parallel frame reading, via the ``nproc`` keyword argument,
-               is only available when giving a `~glue.lal.Cache` of
+               is only available when giving a :class:`~glue.lal.Cache` of
                frames, or using the ``format='cache'`` keyword argument.
 
         gap : `str`, optional
@@ -977,7 +977,7 @@ class TimeSeries(TimeSeriesBase):
         # if integer down-sampling, use decimate
         if factor.is_integer():
             if ftype == 'iir':
-                f = signal.cheby1(n, 0.05, 0.8/factor, output='sos')
+                f = signal.cheby1(n, 0.05, 0.8/factor, output='zpk')
             else:
                 f = signal.firwin(n+1, 1./factor, window=window)
             return self.filter(f, filtfilt=True)[::int(factor)]
@@ -1125,49 +1125,62 @@ class TimeSeries(TimeSeriesBase):
         # parse keyword arguments
         filtfilt = kwargs.pop('filtfilt', False)
 
-        sos = None
         # single argument given
         if len(filt) == 1:
             filt = filt[0]
             # detect LTI
             if isinstance(filt, signal.lti):
-                filt = filt
-                a = filt.den
-                b = filt.num
+                try:
+                    filt = filt.to_zpk()
+                except AttributeError:
+                    ftype = 'ba'
+                    a = filt.den
+                    b = filt.num
+                else:
+                    ftype = 'zpk'
+                    zpk = filt.zeros, filt.poles, filt.gain
             # detect ZPK
-            elif (isinstance(filt, (tuple, list)) and len(filt) == 3 and
-                  isinstance(filt[0], numpy.ndarray) and
-                  isinstance(filt[1], numpy.ndarray) and
-                  isinstance(filt[2], float)):
-                sos = signal.zpk2sos(*filt)
+            elif filter_design.is_zpk(filt):
+                ftype = 'zpk'
+                zpk = filt
             # detect SOS
             elif isinstance(filt, numpy.ndarray) and filt.ndim == 2:
+                ftype = 'sos'
                 sos = filt
             # detect taps
             else:
+                ftype = 'ba'
                 b = filt
                 a = [1]
         # detect TF
         elif len(filt) == 2:
+            ftype = 'ba'
             b, a = filt
         elif len(filt) == 3:
-            try:
-                sos = signal.zpk2sos(*filt)
-            except AttributeError:
-                b, a = signal.zpk2tf(*filt)
+            ftype = 'zpk'
+            zpk = filt
         elif len(filt) == 4:
-            try:
-                zpk = signal.ss2zpk(*filt)
-                sos = signal.zpk2sos(zpk)
-            except AttributeError:
-                b, a = signal.ss2tf(*filt)
+            ftype = 'zpk'
+            zpk = signal.ss2zpk(*filt)
         else:
             raise ValueError("Cannot interpret filter arguments. Please "
                              "give either a signal.lti object, or a "
                              "tuple in zpk or ba format. See "
                              "scipy.signal docs for details.")
+
+        # try and convert to SOS
+        if ftype == 'zpk':
+            try:
+                sos = signal.zpk2sos(*zpk)
+            except AttributeError:
+                b, a = signal.zpk2tf(*zpk)
+                ftype = 'ba'
+            else:
+                ftype = 'sos'
+
+        # perform filter
         cls = type(self)
-        if sos is not None:
+        if ftype == 'sos':
             if filtfilt:
                 new = sosfiltfilt(sos, self, axis=0, **kwargs).view(cls)
             else:
@@ -1177,6 +1190,7 @@ class TimeSeries(TimeSeriesBase):
                 new = signal.filtfilt(b, a, self, axis=0, **kwargs).view(cls)
             else:
                 new = signal.lfilter(b, a, self, axis=0, **kwargs).view(cls)
+
         new.__metadata_finalize__(self)
         new._unit = self.unit
         return new
@@ -1732,8 +1746,8 @@ class TimeSeriesDict(TimeSeriesBaseDict):
 
         Parameters
         ----------
-        source : `str`, `~glue.lal.Cache`
-            a single file path `str`, or a `~glue.lal.Cache` containing
+        source : `str`, :class:`~glue.lal.Cache`
+            a single file path `str`, or a :class:`~glue.lal.Cache` containing
             a contiguous list of files.
 
         channels : `~gwpy.detector.channel.ChannelList`, `list`

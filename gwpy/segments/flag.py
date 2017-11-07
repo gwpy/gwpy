@@ -28,6 +28,7 @@ for handling multiple flags over the same global time interval.
 
 from __future__ import absolute_import
 
+import datetime
 import json
 import operator
 import re
@@ -48,7 +49,8 @@ from numpy import inf
 from astropy.io import registry as io_registry
 from astropy.utils.data import get_readable_fileobj
 
-from ..time import to_gps
+from ..io.mp import read_multi as io_read_multi
+from ..time import to_gps, LIGOTimeGPS
 from ..utils.compat import OrderedDict
 from .segments import Segment, SegmentList
 
@@ -376,8 +378,9 @@ class DataQualityFlag(object):
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
 
-        url : `str`, optional, default: ``'https://segments.ligo.org'``
-            URL of the segment database
+        url : `str`, optional
+            URL of the segment database,
+            default: ``'https://segments.ligo.org'``
 
         See Also
         --------
@@ -566,11 +569,19 @@ class DataQualityFlag(object):
 
         Notes
         -----"""
-        return io_registry.read(cls, source, *args, **kwargs)
+        def _combine(flags):
+            return reduce(operator.or_, flags)
+
+        return io_read_multi(_combine, cls, source, *args, **kwargs)
 
     @classmethod
     def from_veto_def(cls, veto):
-        """Define a `DataQualityFlag` from a `~glue.ligolw.lsctables.VetoDef`
+        """Define a `DataQualityFlag` from a `VetoDef`
+
+        Parameters
+        ----------
+        veto : :class:`~glue.ligolw.lsctables.VetoDef`
+            veto definition to convert from
         """
         name = '%s:%s' % (veto.ifo, veto.name)
         try:
@@ -823,9 +834,10 @@ class DataQualityFlag(object):
 
         Parameters
         ----------
-        name : `str`
+        name : `str`, `None`
             the full name of a `DataQualityFlag` to parse, e.g.
-            ``'H1:DMT-SCIENCE:1'``
+            ``'H1:DMT-SCIENCE:1'``, or `None` to set all components
+            to `None`
 
         Returns
         -------
@@ -1170,8 +1182,11 @@ class DataQualityDict(OrderedDict):
 
         Notes
         -----"""
-        return io_registry.read(cls, source, flags=flags, format=format,
-                                **kwargs)
+        def _combine(flags):
+            return reduce(operator.or_, flags)
+
+        return io_read_multi(_combine, cls, source, flags=flags, format=format,
+                             **kwargs)
 
     @classmethod
     def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None,
@@ -1207,21 +1222,20 @@ class DataQualityDict(OrderedDict):
         >>> flags.populate()
 
         """
-        from ..io.ligolw import table_from_file
-
         if format != 'ligolw':
             raise NotImplementedError("Reading veto definer from non-ligolw "
                                       "format file is not currently "
                                       "supported")
 
+        # read veto definer file
+        with get_readable_fileobj(fp, show_progress=False) as f:
+            from ..io.ligolw import read_table as read_ligolw_table
+            veto_def_table = read_ligolw_table(f, 'veto_definer')
+
         if start is not None:
             start = to_gps(start)
         if end is not None:
             end = to_gps(end)
-
-        # read veto definer file
-        with get_readable_fileobj(fp, show_progress=False) as f:
-            veto_def_table = table_from_file(f, 'veto_definer')
 
         # parse flag definitions
         out = cls()
@@ -1245,6 +1259,139 @@ class DataQualityDict(OrderedDict):
             else:
                 out[flag.name] = flag
         return out
+
+    @classmethod
+    def from_ligolw_tables(cls, segmentdeftable, segmentsumtable,
+                           segmenttable, names=None, gpstype=LIGOTimeGPS):
+        """Build a `DataQualityDict` from a set of LIGO_LW segment tables
+
+        Parameters
+        ----------
+        segmentdeftable : :class:`~glue.ligolw.lsctables.SegmentDefTable`
+            the ``segment_definer`` table to read
+
+        segmentsumtable : :class:`~glue.ligolw.lsctables.SegmentSumTable`
+            the ``segment_summary`` table to read
+
+        segmenttable : :class:`~glue.ligolw.lsctables.SegmentTable`
+            the ``segment`` table to read
+
+        names : `list` of `str`, optional
+            a list of flag names to read, defaults to returning all
+
+        gpstype : `type`, `callable`, optional
+            class to use for GPS times in returned objects, can be a function
+            to convert GPS time to something else, default is
+            `~gwpy.time.LIGOTimeGPS`
+
+        Returns
+        -------
+        dqdict : `DataQualityDict`
+            a dict of `DataQualityFlag` objects populated from the LIGO_LW
+            tables
+        """
+        out = cls()
+
+        id_ = dict()  # need to record relative IDs from LIGO_LW
+
+        # read segment definers and generate DataQualityFlag object
+        for row in segmentdeftable:
+            ifos = row.get_ifos()
+            ifo = ''.join(ifos) if ifos else None
+            tag = row.name
+            version = row.version
+            name = ':'.join([str(k) for k in (ifo, tag, version) if
+                             k is not None])
+            if names is None or name in names:
+                out[name] = DataQualityFlag(name)
+                try:
+                    id_[name].append(row.segment_def_id)
+                except (AttributeError, KeyError):
+                    id_[name] = [row.segment_def_id]
+
+        # verify all requested flags were found
+        if names is not None:
+            for flag in names:
+                if flag not in out:
+                    raise ValueError("No segment definition found for flag=%r "
+                                     "in file." % flag)
+
+        # read segment summary table as 'known'
+        for row in segmentsumtable:
+            for flag in out:
+                # match row ID to list of IDs found for this flag
+                if row.segment_def_id in id_[flag]:
+                    out[flag].known.append(
+                        Segment(*map(gpstype, row.segment)))
+                    break
+
+        # read segment table as 'active'
+        for row in segmenttable:
+            for flag in out:
+                if row.segment_def_id in id_[flag]:
+                    out[flag].active.append(
+                        Segment(*map(gpstype, row.segment)))
+                    break
+
+        return out
+
+    def to_ligolw_tables(self):
+        """Convert this `DataQualityDict` into a trio of LIGO_LW segment tables
+
+        Returns
+        -------
+        segmentdeftable : :class:`~glue.ligolw.lsctables.SegmentDefTable`
+            the ``segment_definer`` table
+
+        segmentsumtable : :class:`~glue.ligolw.lsctables.SegmentSumTable`
+            the ``segment_summary`` table
+
+        segmenttable : :class:`~glue.ligolw.lsctables.SegmentTable`
+            the ``segment`` table
+        """
+        from glue.ligolw.lsctables import (SegmentTable, SegmentSumTable,
+                                           SegmentDefTable, New as new_table)
+
+        segdeftab = new_table(SegmentDefTable)
+        segsumtab = new_table(SegmentSumTable)
+        segtab = new_table(SegmentTable)
+
+        # write flags to tables
+        for flag in self.values():
+            # segment definer
+            segdef = segdeftab.RowType()
+            for col in segdeftab.columnnames:  # default all columns to None
+                setattr(segdef, col, None)
+            segdef.set_ifos([flag.ifo])
+            segdef.name = flag.tag
+            segdef.version = flag.version
+            segdef.comment = flag.description
+            segdef.insertion_time = to_gps(datetime.datetime.now()).gpsSeconds
+            segdef.segment_def_id = SegmentDefTable.get_next_id()
+            segdeftab.append(segdef)
+
+            # write segment summary (known segments)
+            for vseg in flag.known:
+                segsum = segsumtab.RowType()
+                for col in segsumtab.columnnames:  # default all columns to None
+                    setattr(segsum, col, None)
+                segsum.segment_def_id = segdef.segment_def_id
+                segsum.set(map(LIGOTimeGPS, vseg))
+                segsum.comment = None
+                segsum.segment_sum_id = SegmentSumTable.get_next_id()
+                segsumtab.append(segsum)
+
+            # write segment table (active segments)
+            for aseg in flag.active:
+                seg = segtab.RowType()
+                for col in segtab.columnnames:  # default all columns to None
+                    setattr(seg, col, None)
+                seg.segment_def_id = segdef.segment_def_id
+                seg.set(map(LIGOTimeGPS, aseg))
+                seg.segment_id = SegmentTable.get_next_id()
+                segtab.append(seg)
+
+        return segdeftab, segsumtab, segtab
 
     # -----------------------------------------------------------------------
     # instance methods
@@ -1315,7 +1462,7 @@ class DataQualityDict(OrderedDict):
             tmp = type(self).query(self.keys(), segments, url=source.geturl(),
                                    on_error=on_error, **kwargs)
         elif not source.netloc:
-            tmp = type(self).read(source.geturl(), self.name, **kwargs)
+            tmp = type(self).read(source.geturl(), **kwargs)
         # apply padding and wrap to given known segments
         for key in self:
             if segments is None and source.netloc:

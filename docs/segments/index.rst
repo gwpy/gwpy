@@ -1,5 +1,4 @@
 .. currentmodule:: gwpy.segments
-.. include:: ../references.txt
 
 .. _gwpy-segments:
 
@@ -13,7 +12,7 @@ Time segments are recorded denoting when each observatory was taking science-qua
 
 The international collaboration operates using the GPS time standard (seconds since the GPS epoch of midnight on January 6th 1980), and records such times as semi-open GPS ``[start, stop)`` segments.
 
-GWpy provides a number of classes for generating and manipulating such segments, inherited most functionality from the |glue.segments|_ package.
+GWpy provides a number of classes for generating and manipulating such segments, inherited most functionality from the :mod:`glue.segments` package.
 All credits for their usefulness go to the authors of that package.
 
 These basic objects are as follows:

@@ -23,10 +23,12 @@ For example, using the same data as before we can calculate and plot the
 event rate on a 1-second stride:
 
 .. plot::
-   :context:
+   :context: reset
    :include-source:
 
-   >>> rate = events.event_rate(1, start=968654552, end=968654562)
+   >>> from gwpy.table import EventTable
+   >>> events = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst', columns=['peak', 'central_freq', 'snr'])
+   >>> rate = events.event_rate(1, start=968654552, end=968654562, timecolumn='peak')
    >>> plot = rate.plot()
    >>> ax = plot.gca()
    >>> ax.set_ylabel('Event rate [Hz]')
@@ -53,7 +55,7 @@ signal-to-noise ratio (SNR) above some threshold, for the same table as above.
    :context:
    :include-source:
 
-   >>> rates = events.binned_event_rates(1, 'snr', [2, 3, 5, 8], operator='>=', start=968654552, end=968654562)
+   >>> rates = events.binned_event_rates(1, 'snr', [2, 3, 5, 8], operator='>=', start=968654552, end=968654562, timecolumn='peak')
    >>> plot = rates.plot()
    >>> ax = plot.gca()
    >>> ax.set_ylabel('Event rate [Hz]')

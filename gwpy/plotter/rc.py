@@ -66,8 +66,8 @@ DEFAULT_PARAMS = {
 # select tex formatting (or not)
 try:  # allow user to override from environment
     usetex = os.environ['GWPY_USETEX'].lower() in ['1', 'true', 'yes', 'y']
-except KeyError:
-    usetex = rcParams['text.usetex'] or tex.HAS_TEX
+except KeyError:  # 'or' means default to tex
+    usetex = rcParams['text.usetex'] or tex.has_tex()
 
 # set latex options
 rcParams['text.latex.preamble'].extend(tex.MACROS)
@@ -94,6 +94,15 @@ if mpl_version < '2.0':
         DEFAULT_PARAMS.update({
             'axes.prop_cycle': cycler('color', DEFAULT_COLORS),
         })
+
+# remove rcParams for old matplotlib
+# https://matplotlib.org/1.5.1/users/whats_new.html#configuration-rcparams
+if mpl_version < '1.5':
+    for key in (
+            'axes.labelpad',
+            'legend.edgecolor',
+    ):
+        DEFAULT_PARAMS.pop(key, None)
 
 # update matplotlib rcParams with new settings
 rcParams.update(DEFAULT_PARAMS)

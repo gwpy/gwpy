@@ -22,14 +22,14 @@
 from __future__ import division
 
 import os.path
-from math import ceil
-from multiprocessing import (cpu_count, Process, Queue as ProcessQueue)
-from six import string_types
 import tempfile
 import warnings
 from gzip import GzipFile
+from math import ceil
+from multiprocessing import (cpu_count, Process, Queue as ProcessQueue)
 
 from six import string_types
+from six.moves import StringIO
 
 from numpy import recarray
 from numpy.lib import recfunctions
@@ -142,7 +142,8 @@ def file_list(flist):
         - `str` representing a single file path (or comma-separated collection)
         - open `file` or `~gzip.GzipFile` object
         - `~lal.utils.CacheEntry`
-        - `~glue.lal.Cache` object or `str` with '.cache' or '.lcf extension
+        - :class:`~glue.lal.Cache` object or `str` with `.cache` or
+          `.lcf` extension
         - simple `list` or `tuple` of `str` paths
 
     Returns
@@ -181,7 +182,7 @@ def file_name(fobj):
     """
     if isinstance(fobj, string_types):
         return fobj
-    if isinstance(fobj, FILE_LIKE):
+    if isinstance(fobj, FILE_LIKE) and not isinstance(fobj, StringIO):
         return fobj.name
     if HAS_CACHE and isinstance(fobj, CacheEntry):
         return fobj.path
@@ -228,7 +229,7 @@ def cache_segments(*caches):
 
     Parameters
     ----------
-    *cache : `~glue.lal.Cache`, `list`
+    *cache : :class:`~glue.lal.Cache`, `list`
         one of more `Cache` objects (or simple `list`)
 
     Returns

@@ -25,6 +25,11 @@ import pytest
 
 import numpy
 
+try:
+    from numpy import shares_memory
+except ImportError:  # old numpy
+    from numpy import may_share_memory as shares_memory
+
 from scipy import signal
 
 from matplotlib import (use, rc_context)
@@ -111,7 +116,7 @@ class TestFrequencySeries(TestSeries):
 
         # test copy=False
         a2 = type(array).from_lal(lalts, copy=False)
-        assert numpy.shares_memory(a2.value, lalts.data.data)
+        assert shares_memory(a2.value, lalts.data.data)
 
         # test units
         array.override_unit('undef')
@@ -121,6 +126,7 @@ class TestFrequencySeries(TestSeries):
         a2 = self.TEST_CLASS.from_lal(lalts)
         assert a2.unit is units.dimensionless_unscaled
 
+    @utils.skip_missing_dependency('lal')
     @utils.skip_missing_dependency('pycbc')
     def test_to_from_pycbc(self, array):
         from pycbc.types import FrequencySeries as PyCBCFrequencySeries
@@ -142,7 +148,7 @@ class TestFrequencySeries(TestSeries):
 
         # test copy=False
         a2 = type(array).from_pycbc(array.to_pycbc(copy=False), copy=False)
-        assert numpy.shares_memory(array.value, a2.value)
+        assert shares_memory(array.value, a2.value)
 
     @pytest.mark.parametrize('format', [
         'txt',

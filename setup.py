@@ -59,10 +59,10 @@ cmdclass.update(versioneer.get_cmdclass())
 setup_requires = [
 ]
 install_requires = [
-    'numpy>=1.11',
-    'scipy>=0.16.0',
-    'matplotlib>=1.4.1',
-    'astropy>=1.2.1',
+    'numpy>=1.7.1',
+    'scipy>=0.12.1',
+    'matplotlib>=1.2.0',
+    'astropy>=1.1.1',
     'six>=1.5',
     'lscsoft-glue>=1.55.2',
     'python-dateutil',
@@ -106,7 +106,8 @@ except ImportError:
 
 # -- set test dependencies ----------------------------------------------------
 
-setup_requires.append('pytest-runner')
+if {'pytest', 'test', 'ptr'}.intersection(sys.argv):
+    setup_requires.append('pytest-runner')
 tests_require = [
     'pytest>=3.1',
     'freezegun',

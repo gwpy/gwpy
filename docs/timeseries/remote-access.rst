@@ -1,5 +1,4 @@
 .. currentmodule:: gwpy.timeseries
-.. include:: ../references.txt
 
 .. _gwpy-timeseries-remote:
 

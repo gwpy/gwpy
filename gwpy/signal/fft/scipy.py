@@ -167,10 +167,15 @@ def csd(timeseries, other, segmentlength, noverlap=None, **kwargs):
     scipy.signal.csd
     """
     # calculate CSD
-    f, csd_ = scipy.signal.csd(timeseries.value, other.value,
-                               noverlap=noverlap,
-                               fs=timeseries.sample_rate.decompose().value,
-                               nperseg=segmentlength, **kwargs)
+    try:
+        f, csd_ = scipy.signal.csd(timeseries.value, other.value,
+                                   noverlap=noverlap,
+                                   fs=timeseries.sample_rate.decompose().value,
+                                   nperseg=segmentlength, **kwargs)
+    except AttributeError as exc:
+        exc.args = ('{}, scipy>=0.16 is required'.format(str(exc)),)
+        raise
+
     # generate FrequencySeries and return
     unit = scale_timeseries_unit(timeseries.unit,
                                  kwargs.get('scaling', 'density'))
