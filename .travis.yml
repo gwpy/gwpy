@@ -72,7 +72,8 @@ matrix:
 
     # macos build
     - os: osx
-      python: '2.7'
+      env: PYTHON_VERSION='2.7'
+      language: minimal
       sudo: required
 
   allow_failures:
