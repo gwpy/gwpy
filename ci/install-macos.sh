@@ -22,6 +22,7 @@
 
 git clone https://github.com/MacPython/terryfy.git
 . terryfy/travis_tools.sh
+install_macports
 
 # get python information
 get_environment
