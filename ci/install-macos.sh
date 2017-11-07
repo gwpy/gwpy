@@ -22,6 +22,8 @@
 
 git clone https://github.com/MacPython/terryfy.git
 . terryfy/travis_tools.sh
+
+export COLUMNS=80  # https://github.com/travis-ci/travis-ci/issues/5407
 install_macports
 
 # get python information
