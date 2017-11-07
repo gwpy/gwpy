@@ -42,7 +42,7 @@ fi
 
 # build the RPM
 python setup.py bdist_rpm \
-    --python ${PYTHON} \
+    --python `which ${PYTHON}` \
     --changelog="`python changelog.py --start-tag 'v0.5'`" \
     ${BDIST_RPM_OPTS}
 

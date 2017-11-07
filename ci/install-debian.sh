@@ -21,8 +21,7 @@
 #
 
 # install build dependencies
-apt-get update -yqq
-apt-get install -yqq \
+apt-get -yq install \
     debhelper \
     dh-python \
     python-all \
@@ -55,13 +54,14 @@ echo "-------------------------------------------------------"
 dpkg --info ${GWPY_DEB}
 echo "-------------------------------------------------------"
 dpkg --install ${GWPY_DEB} || { \
-    apt-get install -fy;  # install dependencies and package
+    apt-get -y -f install;  # install dependencies and package
     dpkg --install ${GWPY_DEB};  # shouldn't fail
 }
 
 # install system-level extras for the correct python version
-apt-get install -y --ignore-missing \
+apt-get -yq --ignore-missing install \
     ${PY_PREFIX}-nds2-client \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
-    ${PY_PREFIX}-h5py
+    ${PY_PREFIX}-h5py \
+|| true

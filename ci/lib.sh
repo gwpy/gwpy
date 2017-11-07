@@ -46,7 +46,7 @@ get_os_type() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         echo $ID
-    elif [ ${TRAVIS_OS_NAME} == "osx" ]; then
+    elif [[ ${TRAVIS_OS_NAME} == "osx" ]] || [[ "`uname`" == "Darwin" ]]; then
         echo macos
     fi
 }
@@ -62,18 +62,62 @@ get_package_manager() {
     fi
 }
 
-get_environment() {
-    [ -z ${PYTHON_VERSION} ] && PYTHON_VERSION=`
-        python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'`
+update_package_manager() {
     local pkger=`get_package_manager`
-    IFS='.' read PY_MAJOR_VERSION PY_MINOR_VERSION <<< "$PYTHON_VERSION"
+    case "$pkger" in
+        "port")
+            port selfupdate
+            ;;
+        "apt-get")
+            apt-get --yes --quiet update
+            ;;
+        "yum")
+            yum clean all
+            yum makecache
+            yum -y update
+            ;;
+    esac
+}
+
+install_package() {
+    local pkger=`get_package_manager`
+    case "$pkger" in
+        "port")
+            port -N install $@
+            ;;
+        "apt-get")
+            apt-get --yes --quiet install $@
+            ;;
+        "yum")
+            yum -y install $@
+            ;;
+    esac
+}
+
+get_python_version() {
+    if [ -n ${PYTHON_VERSION} ]; then
+        :
+    elif [ -n ${TRAVIS_PYTHON_VERSION} ]; then
+        PYTHON_VERSION=${TRAVIS_PYTHON_VERSION}
+    else
+        PYTHON_VERSION=`python -c
+            'import sys; print(".".join(map(str, sys.version_info[:2])))'`
+    fi
+    export PYTHON_VERSION
+    echo ${PYTHON_VERSION}
+}
+
+get_environment() {
+    local pkger=`get_package_manager`
+    local pyversion=`get_python_version`
+    IFS='.' read PY_MAJOR_VERSION PY_MINOR_VERSION <<< "$pyversion"
     PY_XY="${PY_MAJOR_VERSION}${PY_MINOR_VERSION}"
-    PYTHON=`which python${PYTHON_VERSION} || echo ""`
+    PYTHON=python$pyversion
     case "$pkger" in
         "port")
             PY_DIST=python${PY_XY}
             PY_PREFIX=py${PY_XY}
-            PIP=pip-${PYTHON_VERSION}
+            PIP=pip-$pyversion
             ;;
         "apt-get")
             if [ ${PY_MAJOR_VERSION} == 2 ]; then
@@ -98,11 +142,16 @@ get_environment() {
             else
                 PY_DIST=python${PY_XY}u
                 PY_PREFIX=python${PY_XY}u
-                PIP=pip${PYTHON_VERSION}
+                PIP=pip$pyversion
             fi
             ;;
     esac
     export PYTHON PY_MAJOR_VERSION PY_MINOR_VERSION PY_XY PY_DIST PY_PREFIX PIP
+}
+
+install_python() {
+    get_environment  # <- set python variables
+    install_package ${PY_DIST} ${PY_PREFIX}-pip ${PY_PREFIX}-setuptools
 }
 
 get_configparser_option() {

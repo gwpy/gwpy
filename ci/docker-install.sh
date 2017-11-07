@@ -42,11 +42,14 @@ sudo docker run \
     --tty \
     --name ${DOCKER_IMAGE##*:} \
     --env DOCKER_IMAGE="${DOCKER_IMAGE}" \
-    --env PYTHON_VERSION="${PYTHON_VERSION}" \
+    --env PYTHON_VERSION="${TRAVIS_PYTHON_VERSION}" \
     --env GWPY_PATH="${GWPY_PATH}" \
     --volume `pwd`:${GWPY_PATH}:rw \
     ${DOCKER_IMAGE}
 
-sleep 10
+sleep 5
+
+# install python
+ci_run ". ${GWPY_PATH}/ci/lib.sh && update_package_manager && install_python"
 
 set +x
