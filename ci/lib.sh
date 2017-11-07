@@ -95,9 +95,9 @@ install_package() {
 }
 
 get_python_version() {
-    if [ -n ${PYTHON_VERSION} ]; then
+    if [ -n "${PYTHON_VERSION}" ]; then
         :
-    elif [ -n ${TRAVIS_PYTHON_VERSION} ]; then
+    elif [ -n "${TRAVIS_PYTHON_VERSION}" ]; then
         PYTHON_VERSION=${TRAVIS_PYTHON_VERSION}
     else
         PYTHON_VERSION=`python -c
