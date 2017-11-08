@@ -54,3 +54,22 @@ portindex
 # install port (install +gwf separately because framecpp takes forever)
 sudo port -N install ${PY_PREFIX}-gwpy +nds2 +hdf5 +segments
 sudo port -N install ${PY_PREFIX}-gwpy +gwf
+
+# install extras (see requirements-dev.txt)
+sudo port -N install \
+    kerberos5 \
+    root6 +${PY_DIST} \
+    ${PY_PREFIX}-lalframe \
+    ${PY_PREFIX}-matplotlib +dvipng +latex \
+    ${PY_PREFIX}-pymysql \
+    ${PY_PREFIX}-sqlalchemy \
+    ${PY_PREFIX}-psycopg2 \
+    ${PY_PREFIX}-pandas \
+    ${PY_PREFIX}-pytest \
+    ${PY_PREFIX}-coverage \
+    ${PY_PREFIX}-freezegun \
+    ${PY_PREFIX}-sqlparse \
+    ${PY_PREFIX}-beautifulsoup4
+
+# install root_numpy (not included in requirements-dev.txt)
+$PIP install root_numpy
