@@ -115,11 +115,9 @@ get_environment() {
     PYTHON=python$pyversion
     case "$pkger" in
         "port")
-            . terrfy/travis_tools.sh
             PY_DIST=python${PY_XY}
             PY_PREFIX=py${PY_XY}
             PIP=pip-$pyversion
-            export PATH=${MACPORTS_PREFIX}/bin:$PATH
             ;;
         "apt-get")
             if [ ${PY_MAJOR_VERSION} == 2 ]; then
