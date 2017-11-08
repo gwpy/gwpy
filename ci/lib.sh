@@ -165,3 +165,12 @@ cp.read('$fp');
 cp.set('$section', 'py-prefix', '${PY_PREFIX}')
 print(cp.get('$section', '$option'))"
 }
+
+# -- utilities ----------------------------------------------------------------
+
+function write_visual_bells() {
+  while :; do
+    echo -en "\a"
+    sleep 10
+  done
+}
