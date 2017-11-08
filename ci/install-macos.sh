@@ -51,16 +51,15 @@ sudo gsed -i 's|rsync://rsync.macports|file://'${PORT_REPO}'\nrsync://rsync.macp
 cd ${PORT_REPO}
 portindex
 
-# install ldas-tools-framecpp separately (because it takes too long)
+# set up utility to ping STDOUT every 10 seconds, prevents timeout
+# https://github.com/travis-ci/travis-ci/issues/6591#issuecomment-275804717
 set +x
 write_visual_bells &  # <- prevent timeout
-set -x
 wvbpid=$!
 disown
-sudo port -N install ldas-tools-framecpp
-kill -9 $wvbpid &> /dev/null
+set -x
 
-# install port (install +gwf separately because framecpp takes forever)
+# install py-gwpy
 sudo port -N install ${PY_PREFIX}-gwpy +nds2 +hdf5 +segments +gwf
 
 # install extras (see requirements-dev.txt)
@@ -81,3 +80,5 @@ sudo port -N install \
 
 # install root_numpy (not included in requirements-dev.txt)
 $PIP install root_numpy
+
+kill -9 $wvbpid &> /dev/null
