@@ -35,7 +35,7 @@ sudo port install gsed ${PY_DIST} ${PR_PREFIX}-setuptools ${PY_PREFIX}-pip
 
 # make Portfile
 cd ${GWPY_PATH}
-python setup.py port
+$PYTHON setup.py port
 
 # create mock portfile repo and install
 PORT_REPO=`pwd`/ports
@@ -52,7 +52,9 @@ cd ${PORT_REPO}
 portindex
 
 # install ldas-tools-framecpp separately (because it takes too long)
+set +x
 write_visual_bells &  # <- prevent timeout
+set -x
 wvbpid=$!
 disown
 sudo port -N install ldas-tools-framecpp
