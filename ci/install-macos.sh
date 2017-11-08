@@ -29,7 +29,8 @@ install_macports
 # get python information
 get_environment
 
-sudo port install gsed
+# install basic ports we need
+sudo port install gsed ${PY_DIST} ${PR_PREFIX}-setuptools ${PY_PREFIX}-pip
 
 # make Portfile
 cd ${GWPY_PATH}
@@ -49,6 +50,6 @@ sudo gsed -i 's|rsync://rsync.macports|file://'${PORT_REPO}'\nrsync://rsync.macp
 cd ${PORT_REPO}
 portindex
 
-# install port
-sudo port -vN install ${PY_PREFIX}-ldas-tools-al ${PY_PREFIX}-ldas-tools-framecpp
-sudo port -vN install ${PY_PREFIX}-gwpy +gwf +nds2 +hdf5
+# install port (install +gwf separately because framecpp takes forever)
+sudo port -N install ${PY_PREFIX}-gwpy +nds2 +hdf5
+sudo port -N install ${PY_PREFIX}-gwpy +gwf
