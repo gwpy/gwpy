@@ -72,7 +72,7 @@ sudo port -N install ${PY_PREFIX}-gwpy +nds2 +hdf5 +segments
 # install extras (see requirements-dev.txt)
 sudo port -N install \
     kerberos5 \
-    root6 +${PY_DIST} \
+    root6 +${PY_DIST} -cocoa -graphviz -http -minuit2 -opengl -roofit -soversion -ssl -tmva -veccore -xml -xrootd \
     ${PY_PREFIX}-matplotlib +dvipng +latex \
     ${PY_PREFIX}-pymysql \
     ${PY_PREFIX}-sqlalchemy \
@@ -85,6 +85,7 @@ sudo port -N install \
     ${PY_PREFIX}-beautifulsoup4
 
 # install root_numpy (not included in requirements-dev.txt)
+export NO_ROOT_NUMPY_TMVA=1
 $PIP install root_numpy
 
 kill -9 $wvbpid &> /dev/null
