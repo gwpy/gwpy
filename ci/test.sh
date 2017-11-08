@@ -27,6 +27,7 @@ cd ${GWPY_PATH}
 set -ex && trap 'set +xe' RETURN
 
 get_environment  # sets PIP variables etc
+get_python_version  # sets PYTHON_VERSION
 
 # install test dependencies
 ${PIP} install coverage "setuptools>=17.1" "pytest>=3.1"
