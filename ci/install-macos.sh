@@ -31,7 +31,12 @@ install_macports
 get_environment
 
 # install basic ports we need
-sudo port install gsed ${PY_DIST} ${PR_PREFIX}-setuptools ${PY_PREFIX}-pip
+sudo port -N install \
+    gsed \
+    ${PY_DIST} \
+    ${PR_PREFIX}-setuptools \
+    ${PY_PREFIX}-pip \
+    ${PY_PREFIX}-jinja2
 
 # make Portfile
 cd ${GWPY_PATH}
