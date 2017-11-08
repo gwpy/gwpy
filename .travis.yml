@@ -150,5 +150,7 @@ cache:
   apt: true
   pip: true
   ccache: true
+  directories:
+    - /opt/local/var/macports/software
 before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log
