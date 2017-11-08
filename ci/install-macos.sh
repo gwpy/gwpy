@@ -50,4 +50,5 @@ cd ${PORT_REPO}
 portindex
 
 # install port
+sudo port -vN install ${PY_PREFIX}-ldas-tools-al ${PY_PREFIX}-ldas-tools-framecpp
 sudo port -vN install ${PY_PREFIX}-gwpy +gwf +nds2 +hdf5
