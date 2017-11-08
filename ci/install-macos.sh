@@ -72,7 +72,7 @@ sudo port -N install ${PY_PREFIX}-gwpy +nds2 +hdf5
 # install extras (see requirements-dev.txt)
 sudo port -N install \
     kerberos5 \
-    ${PY_PREFIX}-matplotlib +dvipng +latex \
+    ${PY_PREFIX}-matplotlib \
     ${PY_PREFIX}-pymysql \
     ${PY_PREFIX}-sqlalchemy \
     ${PY_PREFIX}-psycopg2 \
