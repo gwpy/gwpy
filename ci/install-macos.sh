@@ -60,13 +60,14 @@ disown
 set -x
 
 # install py-gwpy
-sudo port -N install ${PY_PREFIX}-gwpy +nds2 +hdf5 +segments +gwf
+# Note: we don't use the +gwf port, because ldas-tools-framecpp takes too
+#       long to compile that the whole job times out in the end
+sudo port -N install ${PY_PREFIX}-gwpy +nds2 +hdf5 +segments
 
 # install extras (see requirements-dev.txt)
 sudo port -N install \
     kerberos5 \
     root6 +${PY_DIST} \
-    ${PY_PREFIX}-lalframe \
     ${PY_PREFIX}-matplotlib +dvipng +latex \
     ${PY_PREFIX}-pymysql \
     ${PY_PREFIX}-sqlalchemy \
