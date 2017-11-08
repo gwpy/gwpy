@@ -51,9 +51,8 @@ sudo gsed -i 's|rsync://rsync.macports|file://'${PORT_REPO}'\nrsync://rsync.macp
 cd ${PORT_REPO}
 portindex
 
-# install port (install +gwf separately because framecpp takes forever)
-sudo port -N install ${PY_PREFIX}-gwpy +nds2 +hdf5 +segments
-sudo port -N install ${PY_PREFIX}-gwpy +gwf
+# install py-gwpy
+sudo port -N install ${PY_PREFIX}-gwpy +gwf +nds2 +hdf5 +segments
 
 # install extras (see requirements-dev.txt)
 sudo port -N install \
