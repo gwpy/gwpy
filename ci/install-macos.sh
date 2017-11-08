@@ -22,6 +22,7 @@
 
 git clone https://github.com/MacPython/terryfy.git
 . terryfy/travis_tools.sh
+set -x  # travis_tools.sh sets +x on its way out
 
 export COLUMNS=80  # https://github.com/travis-ci/travis-ci/issues/5407
 install_macports
