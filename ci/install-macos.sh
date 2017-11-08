@@ -52,5 +52,5 @@ cd ${PORT_REPO}
 portindex
 
 # install port (install +gwf separately because framecpp takes forever)
-sudo port -N install ${PY_PREFIX}-gwpy +nds2 +hdf5
+sudo port -N install ${PY_PREFIX}-gwpy +nds2 +hdf5 +segments
 sudo port -N install ${PY_PREFIX}-gwpy +gwf
