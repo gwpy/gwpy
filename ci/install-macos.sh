@@ -83,4 +83,9 @@ sudo port -N install \
     ${PY_PREFIX}-sqlparse \
     ${PY_PREFIX}-beautifulsoup4
 
+# install m2cyrpto if needed
+if [ "`port info --version dqsegdb`" == "version: 1.4.0" ]; then
+    sudo port -N install ${PY_PREFIX}-m2crypto
+fi
+
 kill -9 $wvbpid &> /dev/null
