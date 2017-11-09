@@ -30,6 +30,7 @@ import sys
 import tempfile
 from distutils.cmd import Command
 from distutils.command.clean import (clean as _clean, log, remove_tree)
+from distutils.command.bdist_rpm import bdist_rpm as distutils_bdist_rpm
 from distutils.errors import DistutilsArgError
 
 from setuptools.command.bdist_rpm import bdist_rpm
@@ -153,7 +154,7 @@ class bdist_spec(bdist_rpm):
                 f.seek(0)
                 self.changelog = self._format_changelog(f.read())
 
-        bdist_rpm.run(self)
+        distutils_bdist_rpm.run(self)
 
 
 CMDCLASS['bdist_spec'] = bdist_spec
