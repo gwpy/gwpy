@@ -30,6 +30,8 @@ get_environment  # sets PIP variables etc
 get_python_version  # sets PYTHON_VERSION
 
 # install test dependencies
+echo $PATH
+which pip
 ${PIP} install coverage "setuptools>=17.1" "pytest>=3.1"
 COVERAGE=coverage-${PYTHON_VERSION}
 
