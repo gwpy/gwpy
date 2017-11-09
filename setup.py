@@ -20,6 +20,9 @@
 """Setup the GWpy package
 """
 
+# ignore all invalid names (pylint isn't good at looking at executables)
+# pylint: disable=invalid-name
+
 import sys
 import glob
 import hashlib
@@ -111,6 +114,8 @@ if sys.version < '3':
 # -- custom clean command -----------------------------------------------------
 
 class GWpyClean(clean):
+    """Custom clean command to remove more temporary files and directories
+    """
     def run(self):
         if self.all:
             # remove dist
@@ -164,12 +169,10 @@ class BuildPortfile(Command):
     def finalize_options(self):
         from jinja2 import Template
         with open(self.template, 'r') as t:
+            # pylint: disable=attribute-defined-outside-init
             self._template = Template(t.read())
 
     def run(self):
-        # get version from distribution
-        if self.version is None:
-            self.version = __version__
         # find dist file
         dist = os.path.join(
             'dist',
@@ -202,13 +205,8 @@ class BuildPortfile(Command):
 
     @staticmethod
     def _get_rmd160(filename):
-        p = subprocess.Popen(['openssl', 'rmd160', filename],
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = p.communicate()
-        if p.returncode != 0:
-            raise subprocess.CalledProcessError(err)
-        else:
-            return out.splitlines()[0].rsplit(' ', 1)[-1]
+        out = subprocess.check_output(['openssl', 'rmd160', filename])
+        return out.splitlines()[0].rsplit(' ', 1)[-1]
 
 
 cmdclass['port'] = BuildPortfile
@@ -268,4 +266,4 @@ setup(name=PACKAGENAME,
           'Operating System :: MacOS',
           'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
       ],
-      )
+     )
