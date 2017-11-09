@@ -278,7 +278,7 @@ class port(Command):
 
 
 CMDCLASS['port'] = port
-SETUP_REQUIRES['port'] = {'port'}, ['jinja2']
+SETUP_REQUIRES['port'] = {'port'}, ['jinja2', 'GitPython']
 
 
 # -- utility functions --------------------------------------------------------

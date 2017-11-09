@@ -36,7 +36,8 @@ sudo port -N install \
     ${PY_DIST} \
     ${PR_PREFIX}-setuptools \
     ${PY_PREFIX}-pip \
-    ${PY_PREFIX}-jinja2
+    ${PY_PREFIX}-jinja2 \
+    ${PY_PREFIX}-gitpython
 
 # make Portfile
 cd ${GWPY_PATH}
