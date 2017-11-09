@@ -29,7 +29,7 @@ import subprocess
 import sys
 import tempfile
 from distutils.cmd import Command
-from distutils.command.clean import (clean as _clean, log, remove_tree)
+from distutils.command.clean import (clean as orig_clean, log, remove_tree)
 from distutils.command.bdist_rpm import bdist_rpm as distutils_bdist_rpm
 from distutils.errors import DistutilsArgError
 
@@ -183,7 +183,7 @@ class sdist(orig_sdist):
 CMDCLASS['sdist'] = sdist
 
 
-class clean(CMDCLASS.pop('clean', _clean)):
+class clean(orig_clean):
     """Custom clean command to remove more temporary files and directories
     """
     def run(self):
@@ -211,7 +211,7 @@ class clean(CMDCLASS.pop('clean', _clean)):
             if os.path.exists(portfile) and not self.dry_run:
                 log.info('removing %r' % portfile)
                 os.unlink(portfile)
-        clean.run(self)
+        orig_clean.run(self)
 
 
 CMDCLASS['clean'] = clean
