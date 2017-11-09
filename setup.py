@@ -228,42 +228,43 @@ scripts = glob.glob(os.path.join('bin', '*'))
 if '--help' in sys.argv or '--help-commands' in sys.argv:
     setup_requires = []
 
-setup(name=PACKAGENAME,
-      provides=[PACKAGENAME],
-      version=__version__,
-      description="A python package for gravitational-wave astrophysics",
-      long_description="""
-          GWpy is a collaboration-driven `Python <http://www.python.org>`_
-          package providing tools for studying data from ground-based
-          gravitational-wave detectors.
-      """,
-      author=AUTHOR,
-      author_email=AUTHOR_EMAIL,
-      license=LICENSE,
-      url='https://gwpy.github.io/',
-      packages=packagenames,
-      include_package_data=True,
-      cmdclass=cmdclass,
-      scripts=scripts,
-      setup_requires=setup_requires,
-      install_requires=install_requires,
-      tests_require=tests_require,
-      extras_require=extras_require,
-      test_suite='gwpy.tests',
-      use_2to3=False,
-      classifiers=[
-          'Programming Language :: Python',
-          'Development Status :: 3 - Alpha',
-          'Intended Audience :: Science/Research',
-          'Intended Audience :: End Users/Desktop',
-          'Intended Audience :: Developers',
-          'Natural Language :: English',
-          'Topic :: Scientific/Engineering',
-          'Topic :: Scientific/Engineering :: Astronomy',
-          'Topic :: Scientific/Engineering :: Physics',
-          'Operating System :: POSIX',
-          'Operating System :: Unix',
-          'Operating System :: MacOS',
-          'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-      ],
-     )
+setup(
+    name=PACKAGENAME,
+    provides=[PACKAGENAME],
+    version=__version__,
+    description="A python package for gravitational-wave astrophysics",
+    long_description="""
+        GWpy is a collaboration-driven `Python <http://www.python.org>`_
+        package providing tools for studying data from ground-based
+        gravitational-wave detectors.
+    """,
+    author=AUTHOR,
+    author_email=AUTHOR_EMAIL,
+    license=LICENSE,
+    url='https://gwpy.github.io/',
+    packages=packagenames,
+    include_package_data=True,
+    cmdclass=cmdclass,
+    scripts=scripts,
+    setup_requires=setup_requires,
+    install_requires=install_requires,
+    tests_require=tests_require,
+    extras_require=extras_require,
+    test_suite='gwpy.tests',
+    use_2to3=False,
+    classifiers=[
+        'Programming Language :: Python',
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Science/Research',
+        'Intended Audience :: End Users/Desktop',
+        'Intended Audience :: Developers',
+        'Natural Language :: English',
+        'Topic :: Scientific/Engineering',
+        'Topic :: Scientific/Engineering :: Astronomy',
+        'Topic :: Scientific/Engineering :: Physics',
+        'Operating System :: POSIX',
+        'Operating System :: Unix',
+        'Operating System :: MacOS',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+    ],
+)
