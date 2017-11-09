@@ -121,6 +121,7 @@ class changelog(Command):
             for line in lines:
                 print(line, file=f)
 
+
 CMDCLASS['changelog'] = changelog
 SETUP_REQUIRES.append(('changelog', ['GitPython']))
 
@@ -155,6 +156,7 @@ class bdist_spec(bdist_rpm):
         # execute distutils version of bdist_rpm.run to avoid calling egg_info
         distutils_bdist_rpm.run(self)
 
+
 CMDCLASS['bdist_spec'] = bdist_spec
 
 orig_egg_info = CMDCLASS.pop('egg_info', _egg_info)
@@ -176,6 +178,7 @@ class egg_info(orig_egg_info):
         self.run_command('changelog')
 
         orig_egg_info.run(self)
+
 
 CMDCLASS['egg_info'] = egg_info
 
@@ -209,6 +212,7 @@ class clean(CMDCLASS.pop('clean', _clean)):
                 log.info('removing %r' % portfile)
                 os.unlink(portfile)
         clean.run(self)
+
 
 CMDCLASS['clean'] = clean
 
@@ -271,6 +275,7 @@ class port(Command):
     def _get_rmd160(filename):
         out = subprocess.check_output(['openssl', 'rmd160', filename])
         return out.splitlines()[0].rsplit(' ', 1)[-1]
+
 
 CMDCLASS['port'] = port
 SETUP_REQUIRES.append(('port', ['jinja2']))
