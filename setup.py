@@ -23,6 +23,8 @@
 # ignore all invalid names (pylint isn't good at looking at executables)
 # pylint: disable=invalid-name
 
+from __future__ import print_function
+
 import sys
 import glob
 import hashlib
@@ -194,8 +196,8 @@ class BuildPortfile(Command):
             log.info('    %s: %s' % (key, val))
         # write finished portfile to file
         with open(self.portfile, 'w') as fport:
-            fport.write(self._template.render(
-                version=self.distribution.get_version(), **digest))
+            print(self._template.render(
+                version=self.distribution.get_version(), **digest), file=fport)
         log.info('portfile written to %r' % self.portfile)
 
     @staticmethod
