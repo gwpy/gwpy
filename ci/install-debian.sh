@@ -36,8 +36,7 @@ pip install "setuptools>33"
 GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
 GWPY_RELEASE=${GWPY_VERSION%%+*}
 
-# prepare the tarball
-python changelog.py -f deb -s "v0.5" > debian/changelog
+# prepare the tarball (sdist generates debian/changelog)
 python setup.py sdist
 
 # make the debian package

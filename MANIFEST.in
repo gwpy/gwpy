@@ -3,5 +3,6 @@ recursive-include gwpy/tests/data *gwf *xml.gz *txt *hdf
 recursive-include examples *py
 include ez_setup.py
 include versioneer.py
+include gwpy.spec
 include gwpy/_version.py
 include debian/*
