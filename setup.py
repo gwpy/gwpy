@@ -67,6 +67,20 @@ install_requires = [
     'lscsoft-glue>=1.55.2',
     'python-dateutil',
 ]
+
+# test for LAL
+try:
+    import lal
+except ImportError as e:
+    install_requires.append('ligotimegps>=1.1')
+
+# enum34 required for python < 3.4
+try:
+    import enum
+except ImportError:
+    install_requires.append('enum34')
+
+# define extras
 extras_require = {
     'hdf5': ['h5py>=1.3'],
     'root': ['root_numpy'],
@@ -80,29 +94,6 @@ extras_require = {
 extras_require['all'] = set(p for extra in extras_require.values()
                             for p in extra)
 
-# test for LAL
-try:
-    import lal
-except ImportError as e:
-    install_requires.append('ligotimegps>=1.1')
-
-# test for OrderedDict
-try:
-    from collections import OrderedDict
-except ImportError:
-    install_requires.append('ordereddict>=1.1')
-
-# importlib required for cli programs
-try:
-    from importlib import import_module
-except ImportError:
-    install_requires.append('importlib>=1.0.3')
-
-# enum34 required for python < 3.4
-try:
-    import enum
-except ImportError:
-    install_requires.append('enum34')
 
 # -- set test dependencies ----------------------------------------------------
 
