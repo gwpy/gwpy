@@ -30,18 +30,17 @@ import sys
 import tempfile
 from distutils.cmd import Command
 from distutils.command.clean import (clean as _clean, log, remove_tree)
-from distutils.command.bdist_rpm import bdist_rpm as distutils_bdist_rpm
 from distutils.errors import DistutilsArgError
 
 from setuptools.command.bdist_rpm import bdist_rpm
-from setuptools.command.egg_info import egg_info as _egg_info
+from setuptools.command.sdist import sdist as _sdist
 
 import versioneer
 
 CMDCLASS = versioneer.get_cmdclass()
-SETUP_REQUIRES = [
-    ({'pytest', 'test', 'prt'}, ['pytest_runner']),
-]
+SETUP_REQUIRES = {
+    'test': ({'pytest', 'test', 'prt'}, ['pytest_runner']),
+}
 
 
 # -- custom commands ----------------------------------------------------------
@@ -123,7 +122,8 @@ class changelog(Command):
 
 
 CMDCLASS['changelog'] = changelog
-SETUP_REQUIRES.append(('changelog', ['GitPython']))
+SETUP_REQUIRES['changelog'] = (
+    {'changelog', 'bdist_spec', 'sdist', 'bdist_rpm'}, ['GitPython'])
 
 
 class bdist_spec(bdist_rpm):
@@ -153,17 +153,16 @@ class bdist_spec(bdist_rpm):
                 f.seek(0)
                 self.changelog = self._format_changelog(f.read())
 
-        # execute distutils version of bdist_rpm.run to avoid calling egg_info
-        distutils_bdist_rpm.run(self)
+        bdist_rpm.run(self)
 
 
 CMDCLASS['bdist_spec'] = bdist_spec
 
-orig_egg_info = CMDCLASS.pop('egg_info', _egg_info)
+orig_sdist = CMDCLASS.pop('sdist', _sdist)
 
 
-class egg_info(orig_egg_info):
-    """Extension to egg_info to build spec file and debian/changelog
+class sdist(orig_sdist):
+    """Extension to sdist to build spec file and debian/changelog
     """
     def run(self):
         # generate spec file
@@ -173,14 +172,14 @@ class egg_info(orig_egg_info):
         self.distribution.have_run.pop('changelog')
         changelogcmd = self.distribution.get_command_obj('changelog')
         self.distribution._set_command_options(changelogcmd, {
-            'format': ('egg_info', 'deb'),
-            'output': ('egg_info', os.path.join('debian', 'changelog'))})
+            'format': ('sdist', 'deb'),
+            'output': ('sdist', os.path.join('debian', 'changelog'))})
         self.run_command('changelog')
 
-        orig_egg_info.run(self)
+        orig_sdist.run(self)
 
 
-CMDCLASS['egg_info'] = egg_info
+CMDCLASS['sdist'] = sdist
 
 
 class clean(CMDCLASS.pop('clean', _clean)):
@@ -278,7 +277,7 @@ class port(Command):
 
 
 CMDCLASS['port'] = port
-SETUP_REQUIRES.append(('port', ['jinja2']))
+SETUP_REQUIRES['port'] = {'port'}, ['jinja2']
 
 
 # -- utility functions --------------------------------------------------------
@@ -292,12 +291,8 @@ def get_setup_requires():
 
     # otherwise collect all requirements for all known commands
     reqlist = []
-    for key, dependencies in SETUP_REQUIRES:
-        try:
-            requires = key.intersection(sys.argv)
-        except AttributeError:
-            requires = key in sys.argv
-        if requires:
+    for keywords, dependencies in SETUP_REQUIRES.values():
+        if keywords.intersection(sys.argv):
             reqlist.extend(dependencies)
 
     return reqlist
