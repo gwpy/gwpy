@@ -27,17 +27,17 @@ import os.path
 import subprocess
 
 try:
-    import setuptools
+    import setuptools  # pylint: disable=unused-import
 except ImportError:
     import ez_setup
     ez_setup.use_setuptools()
 finally:
     from setuptools import (setup, find_packages)
-    from setuptools.command import (build_py, egg_info)
 
-from distutils.dist import Distribution
 from distutils.cmd import Command
 from distutils.command.clean import (clean, log, remove_tree)
+
+import versioneer
 
 # set basic metadata
 PACKAGENAME = 'gwpy'
@@ -49,7 +49,6 @@ cmdclass = {}
 
 # -- versioning ---------------------------------------------------------------
 
-import versioneer  # nopep8
 __version__ = versioneer.get_version()
 cmdclass.update(versioneer.get_cmdclass())
 
@@ -70,13 +69,13 @@ install_requires = [
 
 # test for LAL
 try:
-    import lal
+    import lal  # pylint: disable=unused-import
 except ImportError as e:
     install_requires.append('ligotimegps>=1.1')
 
 # enum34 required for python < 3.4
 try:
-    import enum
+    import enum  # pylint: disable=unused-import
 except ImportError:
     install_requires.append('enum34')
 
