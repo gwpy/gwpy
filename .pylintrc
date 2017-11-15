@@ -1,7 +1,7 @@
 ; vim: set syntax=dosini :
 
 [messages control]
-disable = import-error
+disable = import-error, superfluous-parens
 
 [reports]
 output-format = colorized
