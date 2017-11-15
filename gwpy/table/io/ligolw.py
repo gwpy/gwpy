@@ -260,17 +260,28 @@ def read_table(source, tablename=None, **kwargs):
 
     # allow user to specify LIGO_LW columns to read to provide the
     # desired output columns
-    llwcolumns = kwargs.pop('ligolw_columns', kwargs.get('columns', None))
-    convert_kw['columns'] = kwargs.pop('columns', llwcolumns)
-    read_kw['columns'] = llwcolumns
+    try:
+        columns = list(kwargs.pop('columns'))
+    except KeyError:
+        columns = None
+    try:
+        read_kw['columns'] = list(kwargs.pop('ligolw_columns'))
+    except KeyError:
+        read_kw['columns'] = columns
+    convert_kw['columns'] = columns or read_kw['columns']
 
-    # handle requests for 'time' as a special case
+    # handle requests for 'time' as a special case - DEPRECATED
     if tablename:
         tableclass = TableByName[ligolw_table.Table.TableName(tablename)]
         needtime = (convert_kw['columns'] is not None and
                     'time' in convert_kw['columns'] and
                     'time' not in tableclass.validcolumns)
         if needtime:
+            # find name of real column representing 'time'
+            warnings.warn("auto-identification of 'time' column in LIGO_LW "
+                          "documents has been deprecated, please directly "
+                          "reference the columns you want as written in the "
+                          "document(s)", DeprecationWarning)
             if tablename.endswith('_burst'):
                 tname = 'peak'
             elif tablename.endswith('_inspiral'):
@@ -281,12 +292,15 @@ def read_table(source, tablename=None, **kwargs):
                 raise ValueError("'time' column requested from a table that "
                                  "doesn't supply it or have a good proxy "
                                  "(e.g. 'peak_time')")
+
             # replace 'time' with get_xxx method name
-            cols = convert_kw['columns'] = list(convert_kw['columns'])
-            cols[cols.index('time')] = tname
+            convert_kw['columns'][convert_kw['columns'].index('time')] = tname
             convert_kw['rename'][tname] = 'time'
-            # add required LIGO_LW columns to read read_kw
-            read_kw['columns'] = list(set(read_kw['columns'] + [tname]))
+
+            # add required LIGO_LW columns to read_kw
+            readcols = [tname, '{}_time'.format(tname),
+                        '{}_time_ns'.format(tname)]
+            read_kw['columns'] = list(set(read_kw['columns'] + readcols))
 
     # -- read -----------------------------------
 
