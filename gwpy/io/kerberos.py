@@ -156,7 +156,7 @@ def parse_keytab(keytab):
         path to keytab file
     """
     try:
-        out = check_output(['klist', '-k', keytab], stdout=PIPE, stderr=PIPE)
+        out = check_output(['klist', '-k', keytab], stderr=PIPE)
     except CalledProcessError:
         raise KerberosError("Cannot read keytab {!r}".format(keytab))
     principals = []
