@@ -28,6 +28,7 @@ import os
 import re
 import sys
 import warnings
+from collections import OrderedDict
 from functools import wraps
 
 from six.moves import reduce
@@ -43,7 +44,6 @@ else:
 
 from ..time import to_gps
 from .kerberos import kinit
-from ..utils.compat import OrderedDict
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

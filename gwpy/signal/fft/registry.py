@@ -20,10 +20,9 @@
 """
 
 import re
+from collections import OrderedDict
 
 from six import string_types
-
-from ...utils.compat import OrderedDict
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

@@ -23,11 +23,11 @@ from __future__ import print_function
 
 import sys
 import os
+from collections import OrderedDict
 
 from astropy.io import registry
 
 from ...io.cache import FILE_LIKE
-from ...utils.compat import OrderedDict
 from .. import (Channel, ChannelList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

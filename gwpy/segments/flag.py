@@ -34,6 +34,7 @@ import operator
 import re
 import warnings
 from io import StringIO
+from collections import OrderedDict
 from copy import (copy as shallowcopy, deepcopy)
 from math import (floor, ceil)
 from threading import Thread
@@ -51,7 +52,6 @@ from astropy.utils.data import get_readable_fileobj
 
 from ..io.mp import read_multi as io_read_multi
 from ..time import to_gps, LIGOTimeGPS
-from ..utils.compat import OrderedDict
 from .segments import Segment, SegmentList
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
