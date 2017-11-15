@@ -31,7 +31,6 @@ from .gwf import (num_channels, channel_in_frame)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # special-case frame types
-S6_HOFT_NAME = re.compile(r'\A(H|L)1:LDAS-STRAIN\Z')
 S6_RECOLORED_TYPE = re.compile(r'\AT1200307_V4_EARLY_RECOLORED_V2\Z')
 SECOND_TREND_TYPE = re.compile(r'\A(.*_)?T\Z')  # T or anything ending in _T
 MINUTE_TREND_TYPE = re.compile(r'\A(.*_)?M\Z')  # M or anything ending in _M
@@ -76,7 +75,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     gpstime : `int`, optional
         target GPS time at which to find correct type
 
-    frametype_match : `str`, optiona
+    frametype_match : `str`, optional
         regular expression to use for frametype `str` matching
 
     host : `str`, optional
@@ -99,60 +98,51 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     types : `list` of `str`
         if `return_all` is `True`, the list of all matching frame types
     """
+    # parse channel name
     from ..detector import Channel
     channel = Channel(channel)
     name = channel.name
-    if not channel.ifo:
+    try:
+        ifo = channel.ifo[0]
+    except TypeError:
         raise ValueError("Cannot parse interferometer prefix from channel "
                          "name %r, cannot proceed with find()" % name)
-    if gpstime is not None:
-        gpstime = to_gps(gpstime).gpsSeconds
+
+    # connect and find list of all frame types
     connection = connect(host, port)
-    types = connection.find_types(channel.ifo[0], match=frametype_match)
+    types = connection.find_types(ifo, match=frametype_match)
+
     # get reference frame for all types
     frames = []
     for ftype in types:
         try:
-            if gpstime is None:
-                frame = connection.find_latest(
-                    channel.ifo[0], ftype, urltype='file')[0]
-            else:
-                frame = connection.find_frame_urls(
-                    channel.ifo[0], ftype, gpstime, gpstime, urltype='file',
-                    on_gaps='ignore')[0]
-        except (IndexError, RuntimeError):
+            path = _find_latest_frame(connection, ifo, ftype,
+                                      gpstime=gpstime, allow_tape=allow_tape)
+        except RuntimeError:  # something went wrong
             continue
-        else:
-            if os.access(frame.path, os.R_OK) and (
-                    allow_tape or not on_tape(frame.path)):
-                frames.append((ftype, frame.path))
+        frames.append((ftype, path))
+
     # sort frames by allocated block size and regular size
     # (to put frames on tape at the bottom of the list)
     frames.sort(key=lambda x: (on_tape(x[1]), num_channels(x[1])))
-    # if looking for LDAS-STRAIN, put recoloured types at the end
-    if S6_HOFT_NAME.match(name):
-        frames.sort(key=lambda x: S6_RECOLORED_TYPE.match(x[0]) and 2 or 1)
+
+    # put recoloured types at the end
+    frames.sort(key=lambda x: S6_RECOLORED_TYPE.match(x[0]) and 2 or 1)
 
     # need to handle trends as a special case
     if channel.type == 'm-trend':
         frames.sort(key=lambda x: MINUTE_TREND_TYPE.match(x[0]) and 1 or 2)
-        # if no minute-trend types found, force an error
-        if frames and not MINUTE_TREND_TYPE.match(frames[0][0]):
-            frames = []
     elif channel.type == 's-trend':
         frames.sort(key=lambda x: SECOND_TREND_TYPE.match(x[0]) and 1 or 2)
-        # if no second-trend types found, force an error
-        if frames and not SECOND_TREND_TYPE.match(frames[0][0]):
-            frames = []
 
-    # search each frametype for the given channel
+    # search each frame type for the given channel
     found = []
-    for ft, path in frames:
+    for ftype, path in frames:
         inframe = channel_in_frame(name, path)
         if inframe and not return_all:
-            return ft
+            return ftype
         elif inframe:
-            found.append(ft)
+            found.append(ftype)
 
     # raise exception if nothing found
     if not found:
@@ -269,3 +259,27 @@ def on_tape(*files):
         if os.stat(path).st_blocks == 0:
             return True
     return False
+
+
+# -- utilities ----------------------------------------------------------------
+
+def _find_latest_frame(connection, ifo, frametype, gpstime=None,
+                       allow_tape=False):
+    """Find the latest framepath for a given frametype
+    """
+    ifo = ifo[0]
+    if gpstime is not None:
+        gpstime = int(to_gps(gpstime))
+    try:
+        if gpstime is None:
+            frame = connection.find_latest(ifo, frametype, urltype='file')[0]
+        else:
+            frame = connection.find_frame_urls(ifo, frametype, gpstime,
+                                               gpstime, urltype='file',
+                                               on_gaps='ignore')[0]
+    except (IndexError, RuntimeError):
+        raise RuntimeError("No frames found for {}-{}".format(ifo, frametype))
+    else:
+        if os.access(frame.path, os.R_OK) and (
+                allow_tape or not on_tape(frame.path)):
+            return frame.path
