@@ -22,15 +22,12 @@
 from __future__ import print_function
 
 import re
-import numpy
-import warnings
-import subprocess
-import sys
 from copy import copy
-from math import (log, ceil)
+from math import ceil
 
-from six import string_types
 from six.moves.urllib.parse import urlparse
+
+import numpy
 
 from astropy import units
 from astropy.io import registry as io_registry
@@ -77,11 +74,11 @@ class Channel(object):
     """
     MATCH = re.compile(
         r'((?:(?P<ifo>[A-Z]\d))?|[\w-]+):'  # match IFO prefix
-        '(?:(?P<system>[a-zA-Z0-9]+))?'  # match system
-        '(?:[-_](?P<subsystem>[a-zA-Z0-9]+))?'  # match subsystem
-        '(?:[-_](?P<signal>[a-zA-Z0-9_-]+?))?'  # match signal
-        '(?:[\.-](?P<trend>[a-z]+))?'  # match trend type
-        '(?:,(?P<type>([a-z]-)?[a-z]+))?$'  # match channel type
+        r'(?:(?P<system>[a-zA-Z0-9]+))?'  # match system
+        r'(?:[-_](?P<subsystem>[a-zA-Z0-9]+))?'  # match subsystem
+        r'(?:[-_](?P<signal>[a-zA-Z0-9_-]+?))?'  # match signal
+        r'(?:[\.-](?P<trend>[a-z]+))?'  # match trend type
+        r'(?:,(?P<type>([a-z]-)?[a-z]+))?$'  # match channel type
     )
 
     def __init__(self, name, sample_rate=None, unit=None, frequency_range=None,
@@ -160,6 +157,7 @@ class Channel(object):
         elif isinstance(rate, units.Quantity):
             self._sample_rate = rate
         else:
+            # pylint: disable=no-member
             self._sample_rate = units.Quantity(float(rate), unit=units.Hertz)
 
     @property
@@ -229,7 +227,7 @@ class Channel(object):
 
     @model.setter
     def model(self, mdl):
-        self._model = mdl and mdl.lower() or mdl
+        self._model = mdl.lower() if mdl else mdl
 
     @property
     def type(self):
@@ -417,7 +415,7 @@ class Channel(object):
         """
         channellist = ChannelList.query(name, use_kerberos=use_kerberos,
                                         debug=debug)
-        if len(channellist) == 0:
+        if not channellist:
             raise ValueError("No channels found matching '%s'" % name)
         if len(channellist) > 1:
             raise ValueError("%d channels found matching '%s', please refine "
@@ -475,7 +473,7 @@ class Channel(object):
             unit = None
         ctype = nds2channel.channel_type_to_string(nds2channel.channel_type)
         # get dtype
-        dtype = {
+        dtype = {  # pylint: disable: no-member
             nds2channel.DATA_TYPE_INT16: numpy.int16,
             nds2channel.DATA_TYPE_INT32: numpy.int32,
             nds2channel.DATA_TYPE_INT64: numpy.int64,
@@ -580,6 +578,8 @@ class Channel(object):
             allow_tape=allow_tape)
 
     def copy(self):
+        """Returns a copy of this channel
+        """
         new = type(self)(str(self))
         for key, value in vars(self).items():
             setattr(new, key, copy(value))
@@ -611,8 +611,8 @@ class Channel(object):
         return hash_
 
 
-_re_ifo = re.compile("[A-Z]\d:")
-_re_cchar = re.compile("[-_]")
+_re_ifo = re.compile(r"[A-Z]\d:")
+_re_cchar = re.compile(r"[-_]")
 
 
 class ChannelList(list):
@@ -650,7 +650,7 @@ class ChannelList(list):
     def from_names(cls, *names):
         new = cls()
         for namestr in names:
-            for name in new._split_names(namestr):
+            for name in cls._split_names(namestr):
                 new.append(Channel(name))
         return new
 
@@ -734,16 +734,17 @@ class ChannelList(list):
         else:
             flags = 0
         if exact_match:
-            name = name.startswith(r'\A') and name or r"\A%s" % name
-            name = name.endswith(r'\Z') and name or r"%s\Z" % name
+            name = name if name.startswith(r'\A') else r"\A%s" % name
+            name = name if name.endswith(r'\Z') else r"%s\Z" % name
         name_regexp = re.compile(name, flags=flags)
         c = list(self)
         if name is not None:
             c = [entry for entry in c if
                  name_regexp.search(entry.name) is not None]
         if sample_rate is not None:
-            sample_rate = (isinstance(sample_rate, units.Quantity) and
-                           sample_rate.value or float(sample_rate))
+            sample_rate = (sample_rate.value if
+                           isinstance(sample_rate, units.Quantity) else
+                           float(sample_rate))
             c = [entry for entry in c if entry.sample_rate and
                  entry.sample_rate.value == sample_rate]
         if sample_range is not None:
