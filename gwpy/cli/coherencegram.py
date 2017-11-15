@@ -147,16 +147,25 @@ class Coherencegram(CliProduct):
         else:
             imax = percentile(coh, up)
 
+        pltargs = dict()
+        if arg_list.cmap:
+            pltargs['cmap'] = arg_list.cmap
+
+        pltargs['vmin'] = imin
+        pltargs['vmax'] = imax
+
         # plot the thing
         if norm:
-            self.plot = coh.plot(vmin=imin, vmax=imax)
             self.scale_text = 'Normalized to mean'
         elif arg_list.logcolors:
-            self.plot = coh.plot(norm='log', vmin=imin, vmax=imax)
+            pltargs['norm'] = 'log'
             self.scale_text = r'log_10 Coherence'
         else:
-            self.plot = coh.plot(vmin=imin, vmax=imax)
             self.scale_text = r'Coherence'
+
+        self.plot = coh.plot(**pltargs)
+        self.result = coh
+
         # pass the scaling to the annotater
         self.imin = imin
         self.imax = imax

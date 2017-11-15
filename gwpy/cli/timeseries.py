@@ -45,7 +45,7 @@ class TimeSeries(CliProduct):
     def get_ylabel(self, args):
         """Text for y-axis label,  check if channel defines it
         """
-        ret = 'Counts'
+        ret = self.units
 
         return ret
 
