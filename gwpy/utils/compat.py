@@ -22,7 +22,8 @@
 import warnings
 warnings.warn('The gwpy.utils.compat module has been deprecated and will '
               'be removed in an upcoming release, all objects provided '
-              'by this module can be found in other libraries.')
+              'by this module can be found in other libraries.',
+              DeprecationWarning)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
