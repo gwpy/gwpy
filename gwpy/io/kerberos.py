@@ -95,7 +95,7 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
     # get keytab
     if keytab is None:
         keytab = os.environ.get('KRB5_KTNAME', None)
-        if not os.path.isfile(keytab):
+        if keytab is None or not os.path.isfile(keytab):
             keytab = None
     if keytab:
         try:
