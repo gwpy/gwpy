@@ -66,6 +66,7 @@ For example,
 """
 
 import re
+from collections import OrderedDict
 try:
     import configparser
 except ImportError:
@@ -78,7 +79,6 @@ from numpy import inf
 from ...io import registry
 from ...io.utils import identify_factory
 from ...io.cache import (file_list, FILE_LIKE)
-from ...utils.compat import OrderedDict
 from .. import (Channel, ChannelList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

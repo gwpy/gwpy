@@ -19,12 +19,11 @@
 """Python version compatibilities
 """
 
-from __future__ import print_function
+import warnings
+warnings.warn('The gwpy.utils.compat module has been deprecated and will '
+              'be removed in an upcoming release, all objects provided '
+              'by this module can be found in other libraries.')
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-# OrderedDict isn't bundled with python < 2.7
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
+from collections import OrderedDict  # pylint: disable=unused-import
