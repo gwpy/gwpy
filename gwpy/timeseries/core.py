@@ -42,6 +42,7 @@ from __future__ import (division, print_function)
 import os
 import sys
 import warnings
+from collections import OrderedDict
 from math import ceil
 
 import numpy
@@ -54,7 +55,6 @@ from ..detector import (Channel, ChannelList)
 from ..io import datafind
 from ..time import (Time, LIGOTimeGPS, to_gps)
 from ..utils import gprint
-from ..utils.compat import OrderedDict
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

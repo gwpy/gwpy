@@ -120,7 +120,8 @@ class TestTable(object):
         table = self.create(
             100, ['peak_time', 'peak_time_ns', 'snr', 'central_freq'],
             ['i4', 'i4', 'f4', 'f4'])
-        with tempfile.NamedTemporaryFile(suffix='.{}'.format(ext), delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix='.{}'.format(ext),
+                                         delete=False) as f:
             def _read(*args, **kwargs):
                 kwargs.setdefault('format', 'ligolw')
                 kwargs.setdefault('tablename', 'sngl_burst')
@@ -144,6 +145,12 @@ class TestTable(object):
             assert 'peak' in t3.columns
             utils.assert_array_equal(
                 t3['peak'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
+
+            # check auto-discovery of 'time' columns works
+            t3 = _read(columns=['time'])
+            assert 'time' in t3.columns
+            utils.assert_array_equal(
+                t3['time'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
 
             # check reading multiple tables works
             try:
