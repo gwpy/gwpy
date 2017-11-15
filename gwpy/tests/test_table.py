@@ -145,6 +145,12 @@ class TestTable(object):
             utils.assert_array_equal(
                 t3['peak'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
 
+            # check auto-discovery of 'time' columns works
+            t3 = _read(columns=['time'])
+            assert 'time' in t3.columns
+            utils.assert_array_equal(
+                t3['time'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
+
             # check reading multiple tables works
             try:
                 t3 = self.TABLE.read([f.name, f.name], format='ligolw',
