@@ -120,7 +120,8 @@ class TestTable(object):
         table = self.create(
             100, ['peak_time', 'peak_time_ns', 'snr', 'central_freq'],
             ['i4', 'i4', 'f4', 'f4'])
-        with tempfile.NamedTemporaryFile(suffix='.{}'.format(ext), delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix='.{}'.format(ext),
+                                         delete=False) as f:
             def _read(*args, **kwargs):
                 kwargs.setdefault('format', 'ligolw')
                 kwargs.setdefault('tablename', 'sngl_burst')
