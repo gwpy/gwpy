@@ -26,12 +26,11 @@ See the documentation of the `kinit` function for example usage
 
 import getpass
 import os
+import re
 import sys
+from subprocess import (PIPE, Popen, check_output, CalledProcessError)
 
 from six.moves import input
-
-import re
-from subprocess import (PIPE, Popen)
 
 from ..utils.shell import which
 
@@ -41,6 +40,8 @@ __all__ = ['kinit']
 
 
 class KerberosError(RuntimeError):
+    """Kerberos (krb5) operation failed
+    """
     pass
 
 
@@ -87,12 +88,14 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
         >>> kinit(keytab='~/.kerberos/ligo.org.keytab')
         Kerberos ticket generated for albert.einstein@LIGO.ORG
     """
-    # get kinit path and user keytab
+    # get kinit path
     if exe is None:
         exe = which('kinit')
+
+    # get keytab
     if keytab is None:
         keytab = os.environ.get('KRB5_KTNAME', None)
-        if keytab is None or not os.path.isfile(keytab):
+        if not os.path.isfile(keytab):
             keytab = None
     if keytab:
         try:
@@ -110,32 +113,37 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
             # otherwise this keytab is useless, so remove it
             else:
                 keytab = None
+
+    # get credentials
     if realm is None:
         realm = 'LIGO.ORG'
     if username is None:
         verbose = True
-        username = input("Please provide username for the %s kerberos "
-                         "realm: " % realm)
+        username = input("Please provide username for the {} kerberos "
+                         "realm: ".format(realm))
+    identity = '{}@{}'.format(username, realm)
     if not keytab and password is None:
         verbose = True
-        password = getpass.getpass(prompt="Password for %s@%s: "
-                                          % (username, realm),
+        password = getpass.getpass(prompt="Password for {}: ".format(identity),
                                    stream=sys.stdout)
+
+    # format kinit command
     if keytab:
-        cmd = [exe, '-k', '-t', keytab, '%s@%s' % (username, realm)]
+        cmd = [exe, '-k', '-t', keytab, identity]
     else:
-        cmd = [exe, '%s@%s' % (username, realm)]
+        cmd = [exe, identity]
     if krb5ccname:
         krbenv = {'KRB5CCNAME': krb5ccname}
     else:
         krbenv = None
 
+     # execute command
     kget = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE, env=krbenv)
     if not keytab:
         kget.communicate(password)
     kget.wait()
     if verbose:
-        print("Kerberos ticket generated for %s@%s" % (username, realm))
+        print("Kerberos ticket generated for {}".format(identity))
 
 
 def parse_keytab(keytab):
@@ -147,19 +155,18 @@ def parse_keytab(keytab):
     keytab : `str`
         path to keytab file
     """
-    cmd = ['klist', '-k', keytab]
-    klist = Popen(cmd, stdout=PIPE, stderr=PIPE)
-    out = klist.communicate()[0]
-    if klist.returncode:
-        raise KerberosError("Cannot read keytab '%s'" % keytab)
+    try:
+        out = check_output(['klist', '-k', keytab], stdout=PIPE, stderr=PIPE)
+    except CalledProcessError:
+        raise KerberosError("Cannot read keytab {!r}".format(keytab))
     principals = []
     for line in out.splitlines():
         try:
-            n, principal, = re.split('\s+', line.strip(' '), 1)
+            num, principal, = re.split(r'\s+', line.strip(' '), 1)
         except ValueError:
             continue
         else:
-            if not n.isdigit():
+            if not num.isdigit():
                 continue
             principals.append(principal.split('@'))
     return principals
