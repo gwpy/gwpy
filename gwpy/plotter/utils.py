@@ -48,43 +48,17 @@ LEGEND_PARAMS = [
 ]
 
 
-def float_to_latex(x, format="%.2g"):
-    """Convert a floating point number into a TeX representation.
-
-    In particular, scientific notation is handled gracefully: e -> 10^
-
-    @code
-    >>> float_to_latex(10)
-    '$10$'
-    >>> float_to_latex(1000)
-    r'$10^{3}$'
-    >>> float_to_latex(123456789)
-    r'$1.2\times 10^{8}$'
-
-    @returns a TeX format string (with math-mode dollars ($))
-    """
-    base_str = format % x
-    if "e" not in base_str:
-        return "$%s$" % base_str
-    mantissa, exponent = base_str.split("e")
-    exponent = exponent.lstrip("0+")
-    if mantissa == "1":
-        return r"$10^{%s}$" % exponent
-    else:
-        return r"$%s\times 10^{%s}$" % (mantissa, exponent)
-
-
 def color_cycle(colors=None):
-    """An infinite iterator of the given (or default) color cycle.
+    """An infinite iterator of the given (or default) colors
     """
     if colors:
         return itertools.cycle(colors)
-    else:
-        return itertools.cycle(rcParams['axes.color_cycle'])
+    return itertools.cycle(rcParams['axes.color_cycle'])
 
 
 def marker_cycle(markers=None):
+    """An infinite iterator of the given (or default) markers
+    """
     if markers:
         return itertools.cycle(markers)
-    else:
-        return itertools.cycle(('o', 'x', '+', '^', 'D', 'H', '1'))
+    return itertools.cycle(('o', 'x', '+', '^', 'D', 'H', '1'))

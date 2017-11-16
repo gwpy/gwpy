@@ -36,7 +36,7 @@ from ..time import LIGOTimeGPS
 from .core import Plot
 from .timeseries import (TimeSeriesAxes, TimeSeriesPlot)
 from .frequencyseries import FrequencySeriesPlot
-from .utils import float_to_latex
+from .tex import float_to_latex
 
 __all__ = ['EventTableAxes', 'EventTablePlot']
 
