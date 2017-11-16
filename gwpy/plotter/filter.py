@@ -218,9 +218,9 @@ class BodePlot(Plot):
         if not dB:
             mag = 10 ** (mag / 10.)
         # append to figure
-        lm = self.maxes.plot(w, mag, **kwargs)
-        lp = self.paxes.plot(w, phase, **kwargs)
-        return lm, lp
+        mline = self.maxes.plot(w, mag, **kwargs)[0]
+        pline = self.paxes.plot(w, phase, **kwargs)[0]
+        return mline, pline
 
     def add_frequencyseries(self, spectrum, dB=True, power=False, **kwargs):
         """Plot the magnitude and phase of a complex-valued `FrequencySeries`
@@ -261,6 +261,6 @@ class BodePlot(Plot):
         phase = numpy.angle(spectrum.value, deg=True)
         # plot
         w = spectrum.frequencies.value
-        lm = self.maxes.plot(w, mag, **kwargs)
-        lp = self.paxes.plot(w, phase, **kwargs)
-        return lm, lp
+        mline = self.maxes.plot(w, mag, **kwargs)[0]
+        pline = self.paxes.plot(w, phase, **kwargs)[0]
+        return mline, pline
