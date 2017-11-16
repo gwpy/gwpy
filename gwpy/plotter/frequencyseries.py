@@ -25,9 +25,9 @@ import warnings
 import numpy
 
 from matplotlib.projections import register_projection
-from matplotlib import (colors, rcParams)
+from matplotlib import colors
 
-from . import (tex, text)
+from . import text
 from .core import Plot
 from .axes import Axes
 from .decorators import auto_refresh
@@ -69,10 +69,9 @@ class FrequencySeriesAxes(Axes):
         """
         if len(args) == 1 and isinstance(args[0], FrequencySeries):
             return self.plot_frequencyseries(*args, **kwargs)
-        elif len(args) == 1 and isinstance(args[0], SpectralVariance):
+        if len(args) == 1 and isinstance(args[0], SpectralVariance):
             return self.plot_variance(*args, **kwargs)
-        else:
-            return super(FrequencySeriesAxes, self).plot(*args, **kwargs)
+        return super(FrequencySeriesAxes, self).plot(*args, **kwargs)
 
     @auto_refresh
     def plot_frequencyseries(self, spectrum, **kwargs):
@@ -113,6 +112,7 @@ class FrequencySeriesAxes(Axes):
 
     @auto_refresh
     def plot_spectrum(self, *args, **kwargs):
+        # pylint: disable=missing-docstring
         warnings.warn("{0}.plot_spectrum was renamed "
                       "{0}.plot_frequencyseries, "
                       "and will be removed in an upcoming release".format(
@@ -164,37 +164,40 @@ class FrequencySeriesAxes(Axes):
             for a full description of acceptable ``*args`` and ``**kwargs``
         """
         # plot mean
-        line1 = self.plot_frequencyseries(mean_, **kwargs)[0]
+        meanline = self.plot_frequencyseries(mean_, **kwargs)[0]
         # plot min and max
         kwargs.pop('label', None)
-        color = kwargs.pop('color', line1.get_color())
-        linewidth = kwargs.pop('linewidth', line1.get_linewidth()) / 10
+        color = kwargs.pop('color', meanline.get_color())
+        linewidth = kwargs.pop('linewidth', meanline.get_linewidth()) / 10
         if min_ is not None:
-            a = self.plot(min_.frequencies.value, min_.value, color=color,
-                          linewidth=linewidth, **kwargs)
+            minline = self.plot(min_.frequencies.value, min_.value,
+                                color=color, linewidth=linewidth, **kwargs)
             if alpha:
-                b = self.fill_between(min_.frequencies.value, mean_.value,
-                                      min_.value, alpha=alpha, color=color,
-                                      rasterized=kwargs.get('rasterized'))
+                mincol = self.fill_between(min_.frequencies.value, mean_.value,
+                                           min_.value, alpha=alpha,
+                                           color=color,
+                                           rasterized=kwargs.get('rasterized'))
             else:
-                b = None
+                mincol = None
         else:
-            a = b = None
+            minline = mincol = None
         if max_ is not None:
-            c = self.plot(max_.frequencies.value, max_.value, color=color,
-                          linewidth=linewidth, **kwargs)
+            maxline = self.plot(max_.frequencies.value, max_.value,
+                                color=color, linewidth=linewidth, **kwargs)
             if alpha:
-                d = self.fill_between(max_.frequencies.value, mean_.value,
-                                      max_.value, alpha=alpha, color=color,
-                                      rasterized=kwargs.get('rasterized'))
+                maxcol = self.fill_between(max_.frequencies.value, mean_.value,
+                                           max_.value, alpha=alpha,
+                                           color=color,
+                                           rasterized=kwargs.get('rasterized'))
             else:
-                d = None
+                maxcol = None
         else:
-            c = d = None
-        return line1, a, b, c, d
+            maxline = maxcol = None
+        return meanline, minline, mincol, maxline, maxcol
 
     @auto_refresh
     def plot_spectrum_mmm(self, *args, **kwargs):
+        # pylint: disable=missing-docstring
         warnings.warn("{0}.plot_spectrum_mmm was renamed "
                       "{0}.plot_frequencyseries_mmm, "
                       "and will be removed in an upcoming release".format(
@@ -233,8 +236,8 @@ class FrequencySeriesAxes(Axes):
                                [specvar.x0.value +
                                 specvar.dx.value * specvar.shape[0]]))
         y = specvar.bins.value
-        X, Y = numpy.meshgrid(x, y, copy=False, sparse=True)
-        mesh = self.pcolormesh(X, Y, specvar.value.T, **kwargs)
+        xcoord, ycoord = numpy.meshgrid(x, y, copy=False, sparse=True)
+        mesh = self.pcolormesh(xcoord, ycoord, specvar.value.T, **kwargs)
         if (len(self.collections) == 1 and
                 isinstance(mesh.norm, colors.LogNorm)):
             cmap = mesh.get_cmap()
@@ -264,9 +267,10 @@ class FrequencySeriesPlot(Plot):
         sharex = kwargs.pop('sharex', False)
         sharey = kwargs.pop('sharey', False)
         # separate custom keyword arguments
+        # pylint: disable=unbalanced-tuple-unpacking
         axargs, plotargs = self._parse_kwargs(kwargs)
         axargs['xscale'] = xscale
-        axargs['yscale'] = xscale
+        axargs['yscale'] = yscale
 
         # initialise figure
         super(FrequencySeriesPlot, self).__init__(**kwargs)
@@ -275,8 +279,8 @@ class FrequencySeriesPlot(Plot):
         axesdata = self._get_axes_data(series, sep=sep)
         for data in axesdata:
             ax = self._add_new_axes(**axargs)
-            for fs in data:
-                ax.plot(fs, **plotargs)
+            for series in data:
+                ax.plot(series, **plotargs)
             if 'sharex' not in axargs and sharex is True:
                 axargs['sharex'] = ax
             if 'sharey' not in axargs and sharey is True:
@@ -286,7 +290,7 @@ class FrequencySeriesPlot(Plot):
         axargs.pop('sharey', None)
         axargs.pop('projection', None)
 
-        for i, ax in enumerate(self.axes):
+        for ax in self.axes:
             # format axes
             for key, val in axargs.items():
                 getattr(ax, 'set_%s' % key)(val)
