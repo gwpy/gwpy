@@ -524,13 +524,14 @@ def mock_popen_return(popen, out='', err='', returncode=0):
     mocked_p = mock.Mock()
     mocked_p.configure_mock(**{
         'communicate.return_value': (out, err),
+        'poll.return_value': returncode,
         'returncode': returncode,
     })
     popen.return_value = mocked_p
 
 
 class TestIoKerberos(object):
-    @mock.patch('gwpy.io.kerberos.Popen')
+    @mock.patch('subprocess.Popen')
     def test_parse_keytab(self, mocked_popen):
         mock_popen_return(mocked_popen, out=KLIST)
 
@@ -545,7 +546,7 @@ class TestIoKerberos(object):
             io_kerberos.parse_keytab('test.keytab')
 
     @mock.patch('gwpy.io.kerberos.which', return_value='/bin/kinit')
-    @mock.patch('gwpy.io.kerberos.Popen')
+    @mock.patch('subprocess.Popen')
     @mock.patch('getpass.getpass', return_value='test')
     @mock.patch('gwpy.io.kerberos.input', return_value='rainer.weiss')
     def test_kinit(self, raw_input_, getpass, mocked_popen, which, capsys):
