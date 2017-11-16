@@ -19,9 +19,10 @@
 """Text formatting for GWpy plots
 """
 
+from matplotlib import rcParams
+
 from astropy import units
 
-from .rc import rcParams
 from . import tex
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -37,11 +38,11 @@ def to_string(input_):
         return tex.float_to_latex(input_)
     elif usetex:
         return tex.label_to_latex(input_)
-    else:
-        return str(input_)
+    return str(input_)
 
 
 def unit_as_label(unit):
+    # pylint: disable=anomalous-backslash-in-string
     """Format a unit as a label for an Axis
 
     Parameters
@@ -67,5 +68,4 @@ def unit_as_label(unit):
         ustr = unit.to_string()
     if unit.physical_type and unit.physical_type != 'unknown':
         return '%s [%s]' % (to_string(unit.physical_type.title()), ustr)
-    else:
-        return '[%s]' % ustr
+    return '[%s]' % ustr
