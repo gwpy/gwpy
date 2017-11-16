@@ -35,6 +35,7 @@ from ..types import Series
 from ..table import Table
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['HistogramAxes', 'HistogramPlot']
 
 
 class HistogramAxes(Axes):

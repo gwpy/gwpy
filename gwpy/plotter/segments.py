@@ -42,6 +42,7 @@ from .decorators import auto_refresh
 from .text import to_string
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['SegmentAxes', 'SegmentPlot']
 
 
 class SegmentAxes(TimeSeriesAxes):

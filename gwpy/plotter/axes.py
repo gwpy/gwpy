@@ -22,14 +22,16 @@ user-friendly attributes
 
 from six import string_types
 
+from matplotlib import rcParams
 from matplotlib.axes import Axes as _Axes
 from matplotlib.artist import Artist
 from matplotlib.projections import register_projection
 
 from .decorators import auto_refresh
-from . import (rcParams, tex, html)
+from . import (tex, html)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['Axes']
 
 
 class Axes(_Axes):

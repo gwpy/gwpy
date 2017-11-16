@@ -22,7 +22,7 @@
 import itertools
 import re
 
-from . import rcParams
+from matplotlib import rcParams
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

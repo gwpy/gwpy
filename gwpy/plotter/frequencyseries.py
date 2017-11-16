@@ -34,6 +34,7 @@ from .decorators import auto_refresh
 from ..frequencyseries import (FrequencySeries, SpectralVariance)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__all__ = ['FrequencySeriesAxes', 'FrequencySeriesPlot']
 
 
 class FrequencySeriesAxes(Axes):
