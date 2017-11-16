@@ -22,12 +22,11 @@ helpful set of major and minor ticks.
 
 from __future__ import division
 
-from math import (ceil, floor, modf, log10)
+from math import (ceil, floor, modf)
 
 import numpy
 
 from matplotlib import rcParams
-from matplotlib.axis import XAxis
 from matplotlib.scale import (LogScale, register_scale)
 from matplotlib.ticker import (is_decade, LogFormatterMathtext, LogLocator)
 
@@ -52,14 +51,12 @@ class GWpyLogFormatterMathtext(LogFormatterMathtext):
         if 0.01 <= x < 1000:
             if usetex:
                 return '$%s$' % x
-            else:
-                return '$\mathdefault{%s}$' % x
-        elif usetex and abs(x) > 100:
+            return r'$\mathdefault{%s}$' % x
+        if usetex and abs(x) > 100:
             return '$%s$' % float_to_latex(x, '%.2e')
-        elif usetex:
+        if usetex:
             return '$%s$' % float_to_latex(x, '%.2g')
-        else:
-            return super(GWpyLogFormatterMathtext, self).__call__(x, pos=pos)
+        return super(GWpyLogFormatterMathtext, self).__call__(x, pos=pos)
 
 
 class MinorLogFormatterMathtext(GWpyLogFormatterMathtext):
@@ -90,8 +87,7 @@ class MinorLogFormatterMathtext(GWpyLogFormatterMathtext):
         # if already two major ticks, don't need minor labels
         if nticks >= 2 or (halfdecade and not is_decade(x * 2, self._base)):
             return ''
-        else:
-            return super(MinorLogFormatterMathtext, self).__call__(x, pos=pos)
+        return super(MinorLogFormatterMathtext, self).__call__(x, pos=pos)
 
 
 class CombinedLogFormatterMathtext(MinorLogFormatterMathtext):
@@ -103,10 +99,9 @@ class CombinedLogFormatterMathtext(MinorLogFormatterMathtext):
     """
     def __call__(self, x, pos=None):
         if is_decade(x, self._base):
+            # pylint: disable=bad-super-call
             return super(MinorLogFormatterMathtext, self).__call__(x, pos=pos)
-        else:
-            return super(CombinedLogFormatterMathtext, self).__call__(x,
-                                                                      pos=pos)
+        return super(CombinedLogFormatterMathtext, self).__call__(x, pos=pos)
 
 
 class GWpyLogScale(LogScale):
