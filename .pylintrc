@@ -8,3 +8,6 @@ disable = import-error, superfluous-parens
 
 [reports]
 output-format = colorized
+
+[typecheck]
+ignored-modules = numpy,astropy.units

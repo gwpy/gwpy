@@ -35,8 +35,6 @@ from ..time import Time
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-# pylint fails to work out what to do with astropy units references, so:
-# pylint: disable=no-member
 TIME_UNITS = [units.nanosecond,
               units.microsecond,
               units.millisecond,
