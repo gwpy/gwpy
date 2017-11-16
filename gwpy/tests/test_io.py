@@ -546,7 +546,7 @@ class TestIoKerberos(object):
             io_kerberos.parse_keytab('test.keytab')
 
     @mock.patch('gwpy.io.kerberos.which', return_value='/bin/kinit')
-    @mock.patch('gwpy.io.kerberos.Popen')
+    @mock.patch('subprocess.Popen')
     @mock.patch('getpass.getpass', return_value='test')
     @mock.patch('gwpy.io.kerberos.input', return_value='rainer.weiss')
     def test_kinit(self, raw_input_, getpass, mocked_popen, which, capsys):

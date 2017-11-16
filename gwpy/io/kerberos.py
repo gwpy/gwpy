@@ -27,8 +27,8 @@ See the documentation of the `kinit` function for example usage
 import getpass
 import os
 import re
+import subprocess
 import sys
-from subprocess import (PIPE, Popen, check_output, CalledProcessError)
 
 from six.moves import input
 
@@ -138,7 +138,10 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
         krbenv = None
 
      # execute command
-    kget = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE, env=krbenv)
+    kget = subprocess.Popen(cmd, env=krbenv,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            stdin=subprocess.PIPE)
     if not keytab:
         kget.communicate(password)
     kget.wait()
@@ -156,10 +159,11 @@ def parse_keytab(keytab):
         path to keytab file
     """
     try:
-        out = check_output(['klist', '-k', keytab], stderr=PIPE)
+        out = subprocess.check_output(['klist', '-k', keytab],
+                                      stderr=subprocess.PIPE)
     except OSError:
         raise KerberosError("Failed to locate klist, cannot read keytab")
-    except CalledProcessError:
+    except subprocess.CalledProcessError:
         raise KerberosError("Cannot read keytab {!r}".format(keytab))
     principals = []
     for line in out.splitlines():
