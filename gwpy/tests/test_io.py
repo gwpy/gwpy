@@ -522,6 +522,8 @@ KVNO Principal
 
 def mock_popen_return(popen, out='', err='', returncode=0):
     mocked_p = mock.Mock()
+    mocked_p.__enter__ = mock.Mock(return_value=mocked_p)
+    mocked_p.__exit__ = mock.Mock(return_value=None)
     mocked_p.configure_mock(**{
         'communicate.return_value': (out, err),
         'poll.return_value': returncode,
