@@ -838,14 +838,8 @@ class CliProduct(object):
             unit = xscale.get_unit_name()
             utc = re.sub(r'\.0+', '',
                          Time(epoch, format='gps', scale='utc').iso)
-<<<<<<< HEAD
-            # self.plot.set_xlabel('Time (%s) from %s (%s)' %
-            #                       (unit, utc, epoch))
-            # self.ax.xaxis._set_scale(unit, epoch=epoch)
-=======
             self.plot.set_xlabel('Time (%s) from %s (%s)' % (unit, utc, epoch))
             self.ax.set_xscale(unit, epoch=epoch)
->>>>>>> bef5e7e94c81cf19d1885a9e030f60ca0878208b
 
         # if they specified an output file write it
         # save the figure. Note type depends on extension of
