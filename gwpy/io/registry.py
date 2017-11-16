@@ -25,6 +25,7 @@ This module imports a subset of the useful functions from
 from functools import wraps
 
 from astropy.io.registry import (  # pylint: disable=unused-import
+    get_reader,
     register_identifier as astropy_register_identifier,
     register_reader,
     register_writer,
