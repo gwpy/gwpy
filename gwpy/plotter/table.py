@@ -24,9 +24,7 @@ display these tables in x-y format, with optional colouring.
 
 from __future__ import division
 
-import warnings
 import re
-from math import floor
 from six import string_types
 
 import numpy
@@ -76,8 +74,8 @@ class EventTableAxes(TimeSeriesAxes):
         """
         if isinstance(args[0], Table):  # astropy.table.Table
             return self.plot_table(*args, **kwargs)
-        else:  # other
-            return super(EventTableAxes, self).plot(*args, **kwargs)
+        # other
+        return super(EventTableAxes, self).plot(*args, **kwargs)
 
     def plot_table(self, table, x, y, color=None, edgecolor='none',
                    size_by=None, size_by_log=None, size_range=None,
@@ -163,12 +161,51 @@ class EventTableAxes(TimeSeriesAxes):
         kwargs['edgecolor'] = edgecolor
         if color:
             return self.scatter(xdata, ydata, c=cdata, **kwargs)
-        else:
-            return self.scatter(xdata, ydata, **kwargs)
+        return self.scatter(xdata, ydata, **kwargs)
 
     def plot_tiles(self, table, x, y, width, height, color=None,
                    anchor='center', edgecolors='face', linewidth=0.8,
                    **kwargs):
+        """Plot a `Table` onto these `Axes` using rectangular tiles
+
+        Parameters
+        ----------
+        table : `~astropy.table.Table`, `~gwpy.table.EventTable`
+            data table to plot
+
+        x : `str`
+            name of column to display on the X-axis
+
+        y : `str`
+            name of column to display on the Y-axis
+
+        width : `str`
+            name of column defining horizontal extent of tiles
+
+        height : `str`
+            name of column defining vertical extent of tiles
+
+        color : `str`, optional
+            name of column by which to colour the data
+
+        anchor : `str`, optional
+            anchor point for tiles relative to ``(x, y)`` coordinates, one of
+
+            - ``'center'`` - center tile on ``(x, y)``
+            - ``'ll'`` - ``(x, y)`` defines lower-left corner of tile
+            - ``'lr'`` - ``(x, y)`` defines lower-right corner of tile
+            - ``'ul'`` - ``(x, y)`` defines upper-left corner of tile
+            - ``'ur'`` - ``(x, y)`` defines upper-right corner of tile
+
+        **kwargs
+            any other arguments applicable to
+            :meth:`~matplotlib.axes.Axes.scatter`
+
+        Returns
+        -------
+        collection : `~matplotlib.collections.PolyCollection`
+            the collection of tiles drawn
+        """
         # get x/y data
         xdata = table[x]
         ydata = table[y]
@@ -282,7 +319,7 @@ class EventTableAxes(TimeSeriesAxes):
         kwargs.setdefault('horizontalalignment', 'center')
         args = pos + [disp]
         self.scatter(*scat, marker='*', zorder=1000, facecolor='gold',
-                     edgecolor='black',  s=200)
+                     edgecolor='black', s=200)
         self.text(*args, **kwargs)
         if self.get_title():
             pos = self.title.get_position()
@@ -309,20 +346,20 @@ class _EventTableMetaPlot(type):
         """
         # find x-column: copy the arguments and find the strings
         a2 = list(args)
-        while len(a2):
+        while a2:
             if isinstance(a2[0], string_types):
                 break
             a2.pop(0)
         # if at least one string was found, treat it as the x-axis column name
         if 'base' in kwargs:
             plotclass = kwargs.pop('base')
-        elif len(a2):
+        elif a2:
             xcol = a2[0]
             # initialise figure as a TimeSeriesPlot
-            if re.search('time\Z', xcol, re.I):
+            if re.search(r'time\Z', xcol, re.I):
                 plotclass = TimeSeriesPlot
             # or as a FrequencySeriesPlot
-            elif re.search('(freq\Z|frequency\Z)', xcol, re.I):
+            elif re.search(r'(freq\Z|frequency\Z)', xcol, re.I):
                 plotclass = FrequencySeriesPlot
             # otherwise as a standard Plot
             else:
@@ -398,12 +435,12 @@ class EventTablePlot(TimeSeriesPlot, FrequencySeriesPlot, Plot):
         args = list(args)
         tables = []
         columns = {}
-        while len(args):
+        while args:
             arg = args[0]
             if isinstance(arg, string_types):
                 break
             tables.append(args.pop(0))
-        if len(tables) != 0 and len(args) < 2:
+        if tables and len(args) < 2:
             raise ValueError("columnnames for 'x' and 'y' axes must be given "
                              "after any tables, e.g. "
                              "TablePlot(t1, t2, 'time', 'snr')")
@@ -411,11 +448,10 @@ class EventTablePlot(TimeSeriesPlot, FrequencySeriesPlot, Plot):
             kwargs.setdefault('color', args.pop(-1))
         elif len(args) > 5:
             raise ValueError("No more than three column names should be given")
-        if len(tables):
+        if tables:
             columns = dict(zip(['x', 'y', 'width', 'height'], args))
 
         # extract column arguments
-        epoch = kwargs.pop('epoch', None)
         sep = kwargs.pop('sep', False)
         columns['color'] = kwargs.pop('color', None)
         if columns['color'] and len(tables) > 1 and not sep:
@@ -434,7 +470,7 @@ class EventTablePlot(TimeSeriesPlot, FrequencySeriesPlot, Plot):
                 self.add_tiles(table, columns['x'], columns['y'],
                                columns['width'], columns['height'],
                                color=columns['color'], newax=sep, **plotargs)
-        if len(tables):
+        if tables:
             # set auto-scale
             for ax in self.axes:
                 ax.autoscale(axis='both', tight=True)
@@ -565,22 +601,22 @@ class EventTablePlot(TimeSeriesPlot, FrequencySeriesPlot, Plot):
 
 
 def get_column_string(column):
+    # pylint: disable=anomalous-backslash-in-string
     """
     Format the string columnName (e.g. xml table column) into latex format for.
     an axis label.
 
-    Examples:
+    Parameters
+    ----------
+    column : `str`
+        string to format
 
+    Examples
+    --------
     >>> get_column_string('snr')
     'SNR'
-
     >>> get_column_string('bank_chisq_dof')
     r'Bank $\chi^2$ DOF'
-
-    Arguments:
-
-      columnName : string
-        string to format
     """
     acro = ['snr', 'ra', 'dof', 'id', 'ms', 'far']
     greek = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta',
@@ -593,39 +629,39 @@ def get_column_string(column):
     tex = pyplot.rcParams['text.usetex']
 
     words = []
-    for w in re.split('\s', column):
-        if w.isupper():
-            words.append(w)
+    for word in re.split(r'\s', column):
+        if word.isupper():
+            words.append(word)
         else:
-            words.extend(re.split('_', w))
+            words.extend(re.split('_', word))
 
     # parse words
-    for i, w in enumerate(words):
+    for i, word in enumerate(words):
         # get acronym in lower case
-        if w in acro:
-            words[i] = w.upper()
+        if word in acro:
+            words[i] = word.upper()
         # get numerical unit
-        elif w in unit:
-            words[i] = '$(%s)$' % w
+        elif word in unit:
+            words[i] = '$(%s)$' % word
         # get character with subscript text
-        elif w in sub and tex:
-            words[i] = '%s$_{\mbox{\\small %s}}$' % (w[0], w[1:])
+        elif word in sub and tex:
+            words[i] = r'%s$_{\mbox{\small %s}}$' % (word[0], word[1:])
         # get greek word
-        elif w in greek and tex:
-            words[i] = '$\%s$' % w
+        elif word in greek and tex:
+            words[i] = r'$\%s$' % word
         # get starting with greek word
-        elif re.match('(%s)' % '|'.join(greek), w) and tex:
-            if w[-1].isdigit():
-                words[i] = '$\%s_{%s}$''' % tuple(
-                    re.findall(r"[a-zA-Z]+|\d+", w))
-            elif w.endswith('sq'):
-                words[i] = '$\%s^2$' % w.rstrip('sq')
+        elif re.match('(%s)' % '|'.join(greek), word) and tex:
+            if word[-1].isdigit():
+                words[i] = r'$\%s_{%s}$''' % tuple(
+                    re.findall(r"[a-zA-Z]+|\d+", word))
+            elif word.endswith('sq'):
+                words[i] = r'$\%s^2$' % word.rstrip('sq')
         # get everything else
         else:
-            if w.isupper():
-                words[i] = w
+            if word.isupper():
+                words[i] = word
             else:
-                words[i] = w.title()
+                words[i] = word.title()
             # escape underscore
             words[i] = re.sub(r'(?<!\\)_', r'\_', words[i])
     return ' '.join(words)
