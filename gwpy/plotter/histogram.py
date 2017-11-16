@@ -83,7 +83,7 @@ class HistogramAxes(Axes):
         return self.hist(table[column], **kwargs)
 
     def hist(self, x, **kwargs):  # pylint: disable=arguments-differ
-        if iterable(x) and not x:
+        if iterable(x) and not numpy.size(x):
             x = numpy.ndarray((0,))
         logbins = kwargs.pop('logbins', False)
         bins = kwargs.get('bins', 30)
