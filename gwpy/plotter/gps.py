@@ -290,7 +290,7 @@ class GPSAutoMinorLocator(GPSLocatorMixin, ticker.AutoMinorLocator):
         if vmin > vmax:
             vmin, vmax = vmax, vmin
 
-        if majorlocs:
+        if majorlocs.size:
             epoch = majorlocs[0]
             tmin = numpy.ceil((vmin - epoch) / minorstep) * minorstep
             tmax = numpy.floor((vmax - epoch) / minorstep) * minorstep
