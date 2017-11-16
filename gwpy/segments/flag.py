@@ -818,7 +818,8 @@ class DataQualityFlag(object):
             a new `Plot` with this flag displayed on a set of
             :class:`~gwpy.plotter.segments.SegmentAxes`.
         """
-        from ..plotter import (rcParams, SegmentPlot)
+        from matplotlib import rcParams
+        from ..plotter import SegmentPlot
         kwargs.setdefault('epoch', self.known[0][0])
         if self.label:
             kwargs.setdefault('label', self.label)
