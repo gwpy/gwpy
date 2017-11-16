@@ -28,6 +28,10 @@ __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 
 class TimeSeries(CliProduct):
+    """
+    Plot one or more time series
+    """
+
 
     def get_action(self):
         """Return the string used as "action" on command line.
