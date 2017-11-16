@@ -30,7 +30,7 @@ from time import time
 
 
 class Qtransform(CliProduct):
-    """Derived class to calculate Q-transform"""
+    """Plot the Q-transform (Omega)"""
     start_time = None
     qxfrm_args = None
     my_ts = None
