@@ -28,7 +28,7 @@ from matplotlib.artist import Artist
 from matplotlib.projections import register_projection
 
 from .decorators import auto_refresh
-from . import (tex, html)
+from . import html
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['Axes']
@@ -198,7 +198,8 @@ class Axes(_Axes):
             lframe = legend.get_frame()
             lframe.set_alpha(alpha)
             lframe.set_linewidth(rcParams['axes.linewidth'])
-            [l.set_linewidth(linewidth) for l in legend.get_lines()]
+            for line in legend.get_lines():
+                line.set_linewidth(linewidth)
         return legend
     legend.__doc__ = _Axes.legend.__doc__
 
@@ -245,8 +246,7 @@ class Axes(_Axes):
             data = artists[0]
         if isinstance(data, Artist):
             return html.map_artist(data, imagefile, **kwargs)
-        else:
-            return html.map_data(data, self, imagefile, **kwargs)
+        return html.map_data(data, self, imagefile, **kwargs)
 
 
 register_projection(Axes)
