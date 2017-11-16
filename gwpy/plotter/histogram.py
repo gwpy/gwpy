@@ -21,7 +21,6 @@
 
 from __future__ import division
 
-import warnings
 from math import log10
 
 import numpy
@@ -83,8 +82,8 @@ class HistogramAxes(Axes):
         """
         return self.hist(table[column], **kwargs)
 
-    def hist(self, x, **kwargs):
-        if iterable(x) and len(x) == 0:
+    def hist(self, x, **kwargs):  # pylint: disable=arguments-differ
+        if iterable(x) and not x:
             x = numpy.ndarray((0,))
         logbins = kwargs.pop('logbins', False)
         bins = kwargs.get('bins', 30)
@@ -94,8 +93,8 @@ class HistogramAxes(Axes):
                 kwargs['weights'] = numpy.ones_like(x) * weights
             else:
                 kwargs['weights'] = []
-                for x2 in x:
-                    kwargs['weights'].append(numpy.ones_like(x2) * weights)
+                for arr in x:
+                    kwargs['weights'].append(numpy.ones_like(arr) * weights)
                 kwargs['weights'] = numpy.asarray(kwargs['weights'])
         if logbins and (bins is None or isinstance(bins, (float, int))):
             bins = bins or 30
@@ -173,8 +172,7 @@ class HistogramAxes(Axes):
         if log:
             return numpy.logspace(log10(lower), log10(upper), num+1,
                                   endpoint=True)
-        else:
-            return numpy.linspace(lower, upper, num+1, endpoint=True)
+        return numpy.linspace(lower, upper, num+1, endpoint=True)
 
 
 register_projection(HistogramAxes)
