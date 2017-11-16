@@ -35,6 +35,8 @@ from ..time import Time
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+# pylint fails to work out what to do with astropy units references, so:
+# pylint: disable=no-member
 TIME_UNITS = [units.nanosecond,
               units.microsecond,
               units.millisecond,
@@ -49,8 +51,7 @@ TIME_UNITS = [units.nanosecond,
               units.gigayear]
 
 
-# ---------------------------------------------------------------------------
-# Define re-usable scale mixin
+# -- base mixin for all GPS manipulations -------------------------------------
 
 class GPSMixin(object):
     """Mixin adding GPS-related attributes to any class.
@@ -66,11 +67,13 @@ class GPSMixin(object):
             pass
 
     def get_epoch(self):
-        """Starting GPS time epoch for this formatter
+        """The GPS epoch
         """
         return self._epoch
 
     def set_epoch(self, epoch):
+        """Set the GPS epoch
+        """
         if epoch is None:
             self._epoch = None
             return
@@ -82,11 +85,13 @@ class GPSMixin(object):
                      doc=get_epoch.__doc__)
 
     def get_unit(self):
-        """GPS step scale for this formatter
+        """GPS step scale
         """
         return self._unit
 
     def set_unit(self, unit):
+        """Set the GPS step scale
+        """
         # default None to seconds
         if unit is None:
             unit = units.second
@@ -100,19 +105,19 @@ class GPSMixin(object):
         # otherwise, should be able to convert to a time unit
         try:
             unit = units.Unit(unit)
-        except ValueError as e:
+        except ValueError as exc:
             # catch annoying plurals
             try:
                 unit = units.Unit(str(unit).rstrip('s'))
             except ValueError:
-                raise e
+                raise exc
         # decompose and check that it's actually a time unit
-        u = unit.decompose()
-        if u.bases != [units.second]:
+        dec = unit.decompose()
+        if dec.bases != [units.second]:
             raise ValueError("Cannot set GPS unit to %s" % unit)
         # check equivalent units
         for other in TIME_UNITS:
-            if other.decompose().scale == u.scale:
+            if other.decompose().scale == dec.scale:
                 self._unit = other
                 return
         raise ValueError("Unrecognised unit: %s" % unit)
@@ -121,13 +126,14 @@ class GPSMixin(object):
                     doc=get_unit.__doc__)
 
     def get_unit_name(self):
+        """Returns the name of the unit for this GPS scale
+        """
         if not self.unit:
             return None
-        name = sorted(self.unit.names, key=lambda u: len(u))[-1]
+        name = sorted(self.unit.names, key=len)[-1]
         if len(name) == 1:
             return name
-        else:
-            return '%ss' % name
+        return '%ss' % name
 
     def get_scale(self):
         """The scale (in seconds) of the current GPS unit.
@@ -141,6 +147,8 @@ class GPSMixin(object):
 # Define GPS transforms
 
 class GPSTransformBase(GPSMixin, Transform):
+    """`Transform` to convert GPS times to time since epoch (and vice-verse)
+    """
     input_dims = 1
     output_dims = 1
     is_separable = True
@@ -189,8 +197,7 @@ class InvertedGPSTransform(GPSTransform):
     def inverted(self):
         return GPSTransform(unit=self.unit, epoch=self.epoch)
 
-# ---------------------------------------------------------------------------
-# Define GPS locators and formatters
+# -- locators and formatters --------------------------------------------------
 
 
 class GPSLocatorMixin(GPSMixin):
@@ -285,12 +292,12 @@ class GPSAutoMinorLocator(GPSLocatorMixin, ticker.AutoMinorLocator):
         if vmin > vmax:
             vmin, vmax = vmax, vmin
 
-        if len(majorlocs) > 0:
-            t0 = majorlocs[0]
-            tmin = numpy.ceil((vmin - t0) / minorstep) * minorstep
-            tmax = numpy.floor((vmax - t0) / minorstep) * minorstep
-            locs = numpy.arange(tmin, tmax, minorstep) + t0
-            cond = numpy.abs((locs - t0) % majorstep) > minorstep / 10.0
+        if majorlocs:
+            epoch = majorlocs[0]
+            tmin = numpy.ceil((vmin - epoch) / minorstep) * minorstep
+            tmax = numpy.floor((vmax - epoch) / minorstep) * minorstep
+            locs = numpy.arange(tmin, tmax, minorstep) + epoch
+            cond = numpy.abs((locs - epoch) % majorstep) > minorstep / 10.0
             locs = locs.compress(cond)
         else:
             locs = []
@@ -311,8 +318,7 @@ class GPSFormatter(GPSMixin, ticker.Formatter):
         return f
 
 
-# ---------------------------------------------------------------------------
-# Define GPS scale
+# -- scales -------------------------------------------------------------------
 
 class GPSScale(GPSMixin, LinearScale):
     """A GPS scale, displaying time (scaled units) from an epoch.
@@ -332,19 +338,19 @@ class GPSScale(GPSMixin, LinearScale):
             epoch = epoch.utc.gps
         elif isinstance(epoch, units.Quantity):
             epoch = epoch.value
-        if epoch is None and type(axis._scale) is GPSScale:
+        if epoch is None and isinstance(axis._scale, GPSScale):
             epoch = axis._scale.get_epoch()
         # otherwise get from current view
         if epoch is None:
             epoch = viewlim[0]
-        if unit is None and type(axis._scale) is GPSScale:
+        if unit is None and isinstance(axis._scale, GPSScale):
             unit = axis._scale.get_unit()
         if unit is None:
             duration = float(viewlim[1] - (min(viewlim[0], epoch)))
             unit = units.second
-            for u in TIME_UNITS[::-1]:
-                if duration >= u.decompose().scale * 4:
-                    unit = u
+            for scale in TIME_UNITS[::-1]:
+                if duration >= scale.decompose().scale * 4:
+                    unit = scale
                     break
         super(GPSScale, self).__init__(unit=unit, epoch=epoch)
         self._transform = self.GPSTransform(unit=self.unit, epoch=self.epoch)
@@ -374,8 +380,12 @@ register_scale(AutoGPSScale)
 
 
 # register all the astropy time units that have sensible long names
-def gps_scale_factory(unit):
+def _gps_scale_factory(unit):
+    """Construct a GPSScale for this unit
+    """
     class FixedGPSScale(GPSScale):
+        """`GPSScale` for a specific GPS time unit
+        """
         name = str('%ss' % unit.long_names[0])
 
         def __init__(self, axis, epoch=None):
@@ -384,7 +394,7 @@ def gps_scale_factory(unit):
 
 
 for _unit in TIME_UNITS:
-    register_scale(gps_scale_factory(_unit))
+    register_scale(_gps_scale_factory(_unit))
 
 # update the docstring for matplotlib scale methods
 docstring.interpd.update(
