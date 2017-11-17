@@ -35,7 +35,8 @@ from astropy import units
 from astropy.io import registry as io_registry
 
 from ..segments import Segment
-from ..signal import (filter_design, sosfiltfilt)
+from ..signal import filter_design
+from ..signal.filter import sosfiltfilt
 from ..signal.fft import (registry as fft_registry, ui as fft_ui)
 from ..signal.window import recommended_overlap
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
