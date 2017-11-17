@@ -10,4 +10,4 @@ disable = import-error, superfluous-parens
 output-format = colorized
 
 [typecheck]
-ignored-modules = numpy,astropy.units
+ignored-modules = numpy,astropy.units,lal
