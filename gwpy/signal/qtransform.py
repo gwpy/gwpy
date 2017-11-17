@@ -47,6 +47,8 @@ class QObject(object):
     This object exists just to provide basic methods for all other
     Q-transform objects.
     """
+    # pylint: disable=too-few-public-methods
+
     def __init__(self, duration, sampling, mismatch=.2):
         self.duration = float(duration)
         self.sampling = float(sampling)
@@ -102,10 +104,10 @@ class QTiling(QObject):
         self.qrange = (float(qrange[0]), float(qrange[1]))
         self.frange = [float(frange[0]), float(frange[1])]
 
-        qs = list(self._iter_qs())
+        qlist = list(self._iter_qs())
         if self.frange[0] == 0:  # set non-zero lower frequency
-            self.frange[0] = 50 * max(qs) / (2 * pi * self.duration)
-        maxf = self.sampling / 2 / (1 + 11**(1/2.) / min(qs))
+            self.frange[0] = 50 * max(qlist) / (2 * pi * self.duration)
+        maxf = self.sampling / 2 / (1 + 11**(1/2.) / min(qlist))
         if isinf(self.frange[1]):
             self.frange[1] = maxf
         elif self.frange[1] > maxf:  # truncate upper frequency to maximum
@@ -115,7 +117,7 @@ class QTiling(QObject):
             self.frange[1] = maxf
 
     @property
-    def qs(self):
+    def qs(self):  # pylint: disable=invalid-name
         """Array of Q values for this `QTiling`
 
         :type: `numpy.ndarray`
@@ -124,6 +126,8 @@ class QTiling(QObject):
 
     @property
     def whitening_duration(self):
+        """The recommended data duration required for whitening
+        """
         return max(t.whitening_duration for t in self)
 
     def _iter_qs(self):
@@ -132,7 +136,7 @@ class QTiling(QObject):
         # work out how many Qs we need
         cumum = log(self.qrange[1] / self.qrange[0]) / 2**(1/2.)
         nplanes = int(max(ceil(cumum / self.deltam), 1))
-        dq = cumum / nplanes
+        dq = cumum / nplanes  # pylint: disable=invalid-name
         for i in xrange(nplanes):
             yield self.qrange[0] * exp(2**(1/2.) * dq * (i + .5))
         raise StopIteration()
@@ -182,8 +186,8 @@ class QPlane(QBase):
         Yields a `QTile` at each frequency
         """
         # for each frequency, yield a QTile
-        for f in self._iter_frequencies():
-            yield QTile(self.q, f, self.duration, self.sampling,
+        for freq in self._iter_frequencies():
+            yield QTile(self.q, freq, self.duration, self.sampling,
                         mismatch=self.mismatch)
         raise StopIteration()
 
@@ -217,12 +221,13 @@ class QPlane(QBase):
 
         :type: `numpy.ndarray`
         """
-        f = self.frequencies
-        bandwidths = 2 * pi ** (1/2.) * f / self.q
-        return f - bandwidths / 2.
+        bandwidths = 2 * pi ** (1/2.) * self.frequencies / self.q
+        return self.frequencies - bandwidths / 2.
 
     @property
     def whitening_duration(self):
+        """The recommended data duration required for whitening
+        """
         return 2 ** (round(log(self.q / (2 * self.frange[0]), 2)))
 
     def transform(self, fseries, norm=True, epoch=None):
