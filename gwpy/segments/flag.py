@@ -39,7 +39,6 @@ from copy import (copy as shallowcopy, deepcopy)
 from math import (floor, ceil)
 from threading import Thread
 
-from six import string_types
 from six.moves import reduce
 from six.moves.urllib.error import (URLError, HTTPError)
 from six.moves.urllib.parse import urlparse
@@ -129,10 +128,10 @@ class DataQualityFlag(object):
         return self._name
 
     @name.setter
-    def name(self, n):
-        self._name = n
+    def name(self, name):
+        self._name = name
         try:
-            self._parse_name(n)
+            self._parse_name(name)
         except ValueError:
             self._parse_name(None)
 
@@ -436,10 +435,10 @@ class DataQualityFlag(object):
         # process query
         try:
             flags = DataQualityDict.query_segdb([flag], qsegs, **kwargs)
-        except TypeError as e:
-            if 'DataQualityDict' in str(e):
-                raise TypeError(str(e).replace('DataQualityDict',
-                                               cls.__name__))
+        except TypeError as exc:
+            if 'DataQualityDict' in str(exc):
+                raise TypeError(str(exc).replace('DataQualityDict',
+                                                 cls.__name__))
             else:
                 raise
         if len(flags) > 1:
@@ -512,15 +511,15 @@ class DataQualityFlag(object):
                     data, _ = apicalls.dqsegdbQueryTimes(
                         protocol, server, out.ifo, out.tag, out.version,
                         request, int(start), int(end))
-                except HTTPError as e:
-                    if e.code == 404:  # if not found, annotate with flag name
-                        e.msg += ' [{0}]'.format(flag)
+                except HTTPError as exc:
+                    if exc.code == 404:  # if not found, annotate flag name
+                        exc.msg += ' [{0}]'.format(flag)
                     raise
             # read from json buffer
             try:
                 new = cls.read(StringIO(json.dumps(data)), format='json')
-            except TypeError as e:
-                if 'initial_value must be unicode' in str(e):  # python2
+            except TypeError as exc:
+                if 'initial_value must be unicode' in str(exc):  # python2
                     new = cls.read(StringIO(json.dumps(data).decode('utf-8')),
                                    format='json')
                 else:
@@ -717,7 +716,7 @@ class DataQualityFlag(object):
         paddedflag : `DataQualityFlag`
             a view of the modified flag
         """
-        if len(args) == 0:
+        if not args:
             start, end = self.padding
         else:
             start, end = args
@@ -745,7 +744,7 @@ class DataQualityFlag(object):
         new = self.copy()
         new.active = self._ListClass([self._EntryClass(int(floor(s[0])),
                                                        int(ceil(s[1]))) for
-                                     s in new.active])
+                                      s in new.active])
         new.known = self._ListClass([self._EntryClass(int(floor(s[0])),
                                                       int(ceil(s[1]))) for
                                      s in new.known])
@@ -939,8 +938,8 @@ class _QueryDQSegDBThread(Thread):
             self.out.put(
                 (i, DataQualityFlag.query_dqsegdb(flag, *self.args,
                                                   **self.kwargs)))
-        except Exception as e:
-            self.out.put((i, e))
+        except Exception as exc:
+            self.out.put((i, exc))
         self.out.task_done()
 
 
@@ -992,8 +991,7 @@ class DataQualityDict(OrderedDict):
         url = kwargs.get('url', 'https://segments.ligo.org')
         if 'dqsegdb' in url or re.match('https://[a-z1-9-]+.ligo.org', url):
             return cls.query_dqsegdb(flag, *args, **kwargs)
-        else:
-            return cls.query_segdb(flag, *args, **kwargs)
+        return cls.query_segdb(flag, *args, **kwargs)
 
     @classmethod
     def query_segdb(cls, flags, *args, **kwargs):
@@ -1229,9 +1227,9 @@ class DataQualityDict(OrderedDict):
                                       "supported")
 
         # read veto definer file
-        with get_readable_fileobj(fp, show_progress=False) as f:
+        with get_readable_fileobj(fp, show_progress=False) as fobj:
             from ..io.ligolw import read_table as read_ligolw_table
-            veto_def_table = read_ligolw_table(f, 'veto_definer')
+            veto_def_table = read_ligolw_table(fobj, 'veto_definer')
 
         if start is not None:
             start = to_gps(start)
@@ -1470,11 +1468,11 @@ class DataQualityDict(OrderedDict):
                 try:
                     tmp = {key: self[key].query(
                         self[key].name, self[key].known, **kwargs)}
-                except URLError as e:
+                except URLError as exc:
                     if on_error == 'ignore':
                         pass
                     elif on_error == 'warn':
-                        warnings.warn('Error querying for %s: %s' % (key, e))
+                        warnings.warn('Error querying for %s: %s' % (key, exc))
                     else:
                         raise
                     continue
