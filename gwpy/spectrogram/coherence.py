@@ -57,8 +57,6 @@ def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
         fftlength = stride
     if overlap is None:
         overlap = 0
-    dt = stride
-    df = 1 / fftlength
 
     stride = int(stride * sampling)
 
@@ -67,8 +65,8 @@ def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
     nfreqs = int(fftlength * sampling // 2 + 1)
 
     # generate output spectrogram
-    out = Spectrogram(zeros((nsteps, nfreqs)), epoch=ts1.epoch,
-                      f0=0, df=df, dt=dt, copy=True, unit='coherence')
+    out = Spectrogram(zeros((nsteps, nfreqs)), epoch=ts1.epoch, dt=stride,
+                      f0=0, df=1/fftlength, copy=True, unit='coherence')
 
     if not nsteps:
         return out
@@ -128,13 +126,13 @@ def from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
                                 overlap=overlap, window=window, **kwargs)
 
     # wrap spectrogram generator
-    def _specgram(q, ts, ts2):
+    def _specgram(queue_, tsa, tsb):
         try:
-            q.put(_from_timeseries(ts, ts2, stride, fftlength=fftlength,
-                                   overlap=overlap, window=window,
-                                   **kwargs))
-        except Exception as e:
-            q.put(e)
+            queue_.put(_from_timeseries(tsa, tsb, stride, fftlength=fftlength,
+                                        overlap=overlap, window=window,
+                                        **kwargs))
+        except Exception as exc:  # pylint: disable=broad-except
+            queue_.put(exc)
 
     # otherwise build process list
     stepperproc = int(ceil(nsteps / nproc))
