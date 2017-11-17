@@ -127,8 +127,8 @@ class SegmentList(segmentlist):
 
     def coalesce(self):
         self = super(SegmentList, self).coalesce()
-        for i, s in enumerate(self):
-            self[i] = Segment(s[0], s[1])
+        for i, seg in enumerate(self):
+            self[i] = Segment(seg[0], seg[1])
         return self
     coalesce.__doc__ = segmentlist.coalesce.__doc__
 
@@ -139,6 +139,7 @@ class SegmentList(segmentlist):
 
     @classmethod
     def read(cls, source, format=None, **kwargs):
+        # pylint: disable=redefined-builtin
         """Read segments from file into a `SegmentList`
 
         Parameters
