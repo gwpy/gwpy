@@ -85,10 +85,8 @@ def tconvert(gpsordate='now'):
     except (TypeError, RuntimeError):
         if hasattr(gpsordate, 'gpsSeconds'):
             return from_gps(gpsordate)
-        else:
-            return to_gps(gpsordate)
-    else:
-        return from_gps(gps)
+        return to_gps(gpsordate)
+    return from_gps(gps)
 
 
 def to_gps(t, *args, **kwargs):
@@ -145,6 +143,7 @@ def to_gps(t, *args, **kwargs):
     # if Decimal, cast to LIGOTimeGPS and return
     if isinstance(t, Decimal):
         return LIGOTimeGPS(str(t))
+
     # or convert numeric string to float (e.g. '123.456')
     try:
         t = float(t)
@@ -207,15 +206,14 @@ def from_gps(gps):
     try:
         from lal import GPSToUTC
     except ImportError:
-        dt = Time(gps.gpsSeconds, gps.gpsNanoSeconds * 1e-9,
-                  format='gps', scale='utc').datetime
+        date = Time(gps.gpsSeconds, gps.gpsNanoSeconds * 1e-9,
+                    format='gps', scale='utc').datetime
     else:
-        dt = datetime.datetime(*GPSToUTC(gps.gpsSeconds)[:6])
-        dt += datetime.timedelta(seconds=gps.gpsNanoSeconds * 1e-9)
+        date = datetime.datetime(*GPSToUTC(gps.gpsSeconds)[:6])
+        date += datetime.timedelta(seconds=gps.gpsNanoSeconds * 1e-9)
     if float(gps).is_integer():
-        return dt.replace(microsecond=0)
-    else:
-        return dt
+        return date.replace(microsecond=0)
+    return date
 
 
 def time_to_gps(t):
@@ -237,7 +235,7 @@ def time_to_gps(t):
     # if datetime format has zero microseconds, force int(gps) to remove
     # floating point precision errors from gps
     if ((isinstance(dt, datetime.datetime) and not dt.microsecond) or
-            type(dt) is datetime.date):
+            type(dt) is datetime.date):  # pylint: disable=unidiomatic-typecheck
         return LIGOTimeGPS(int(gps))
     # use repr() to remove hidden floating point precision problems
     return LIGOTimeGPS(repr(gps))
@@ -281,8 +279,8 @@ def str_to_datetime(datestr):
     else:
         try:
             date = dateparser.parse(datestr)
-        except (ValueError, TypeError) as e:
-            e.args = ("Cannot parse date string %r: %s"
-                      % (datestr, e.args[0]),)
+        except (ValueError, TypeError) as exc:
+            exc.args = ("Cannot parse date string %r: %s"
+                        % (datestr, exc.args[0]),)
             raise
     return date
