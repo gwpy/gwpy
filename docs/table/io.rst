@@ -236,6 +236,9 @@ Supported processed columns are:
 
 These can be specified without having to specify any of the input columns.
 
+Additionally, PyCBC HDF5 table Groups include extra datasets that aren't part of the table, e.g. ``'psd'``.
+These can be included in the returned `EventTable.meta` `dict` via the keyword ``extended_metadata=True`` (default), or excluded with ``extended_metadata=False``).
+
 Writing
 -------
 
