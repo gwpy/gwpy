@@ -295,6 +295,11 @@ class TestEventTable(TestTable):
                             names=table.dtype.names)
         utils.assert_table_equal(brute, lowfloud)
 
+        # check double-ended filter
+        midf = table.filter('100 < frequency < 1000')
+        utils.assert_table_equal(
+            midf, table.filter('frequency > 100').filter('frequency < 1000'))
+
         # check custom filters work
         segs = SegmentList([Segment(0, 500)])
         inseg = table.filter(('time', filters.in_segmentlist, segs))
