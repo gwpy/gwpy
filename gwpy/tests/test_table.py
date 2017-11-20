@@ -300,12 +300,27 @@ class TestEventTable(TestTable):
         utils.assert_table_equal(
             midf, table.filter('frequency > 100').filter('frequency < 1000'))
 
-        # check custom filters work
-        segs = SegmentList([Segment(0, 500)])
+    def test_filter_in_segmentlist(self, table):
+        print(table)
+        # check filtering on segments works
+        segs = SegmentList([Segment(100, 200), Segment(400, 500)])
         inseg = table.filter(('time', filters.in_segmentlist, segs))
         brute = type(table)(rows=[row for row in table if row['time'] in segs],
                             names=table.colnames)
         utils.assert_table_equal(inseg, brute)
+
+        # check empty segmentlist is handled well
+        utils.assert_table_equal(
+            table.filter(('time', filters.in_segmentlist, SegmentList())),
+            type(table)(names=table.colnames))
+
+        # check inverse works
+        notsegs = SegmentList([Segment(0, 1000)]) - segs
+        utils.assert_table_equal(
+            inseg, table.filter(('time', filters.not_in_segmentlist, notsegs)))
+        utils.assert_table_equal(
+            table,
+            table.filter(('time', filters.not_in_segmentlist, SegmentList())))
 
     def test_event_rates(self, table):
         rate = table.event_rate(1)
