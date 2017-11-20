@@ -65,13 +65,13 @@ DEFAULT_PARAMS = {
 
 # select tex formatting (or not)
 try:  # allow user to override from environment
-    usetex = os.environ['GWPY_USETEX'].lower() in ['1', 'true', 'yes', 'y']
+    _USETEX = os.environ['GWPY_USETEX'].lower() in ['1', 'true', 'yes', 'y']
 except KeyError:  # 'or' means default to tex
-    usetex = rcParams['text.usetex'] or tex.has_tex()
+    _USETEX = rcParams['text.usetex'] or tex.has_tex()
 
 # set latex options
 rcParams['text.latex.preamble'].extend(tex.MACROS)
-if usetex:
+if _USETEX:
     DEFAULT_PARAMS.update({
         'text.usetex': True,
         'font.family': 'serif',
@@ -135,13 +135,13 @@ def get_subplot_params(figsize):
     params : `~matplotlib.figure.SubplotParams`
         formatted set of subplot parameters
     """
-    w, h, = figsize
+    width, height, = figsize
     try:
-        l, r = SUBPLOT_WIDTH[w]
+        left, right = SUBPLOT_WIDTH[width]
     except KeyError:
-        l = r = None
+        left = right = None
     try:
-        b, t = SUBPLOT_HEIGHT[h]
+        bottom, top = SUBPLOT_HEIGHT[height]
     except KeyError:
-        b = t = None
-    return SubplotParams(**{'left': l, 'bottom': b, 'right': r, 'top': t})
+        bottom = top = None
+    return SubplotParams(left=left, bottom=bottom, right=right, top=top)

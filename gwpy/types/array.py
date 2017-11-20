@@ -27,7 +27,6 @@ critical to being able to view data with this class, used when copying and
 transforming instances of the class.
 """
 
-import warnings
 from math import modf
 from decimal import Decimal
 
@@ -246,12 +245,12 @@ class Array(Quantity):
 
     # -- Pickle helpers -------------------------
 
-    def dumps(self, order='C'):
+    def dumps(self):
         return super(Quantity, self).dumps()
     dumps.__doc__ = numpy.ndarray.dumps.__doc__
 
     def tostring(self, order='C'):
-        return super(Quantity, self).tostring()
+        return super(Quantity, self).tostring(order=order)
     tostring.__doc__ = numpy.ndarray.tostring.__doc__
 
     # -- new properties -------------------------
@@ -293,9 +292,7 @@ class Array(Quantity):
         try:
             if self._epoch is None:
                 return None
-            else:
-                return Time(*modf(self._epoch)[::-1],
-                            format='gps', scale='utc')
+            return Time(*modf(self._epoch)[::-1], format='gps', scale='utc')
         except AttributeError:
             self._epoch = None
             return self._epoch
@@ -328,13 +325,13 @@ class Array(Quantity):
             return self._channel
 
     @channel.setter
-    def channel(self, ch):
-        if isinstance(ch, Channel):
-            self._channel = ch
-        elif ch is None:
+    def channel(self, chan):
+        if isinstance(chan, Channel):
+            self._channel = chan
+        elif chan is None:
             self._channel = None
         else:
-            self._channel = Channel(ch)
+            self._channel = Channel(chan)
 
     @channel.deleter
     def channel(self):

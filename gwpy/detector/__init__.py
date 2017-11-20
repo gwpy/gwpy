@@ -24,9 +24,8 @@
 
 import datetime
 
-from . import units
-from .channel import *
-from .io import *
+from .channel import (Channel, ChannelList)
+from . import (units, io)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -41,14 +40,38 @@ TIMEZONE = {
 
 
 def get_timezone(ifo):
+    """Return the timezone for the given interferometer prefix
+
+    Parameters
+    ----------
+    ifo : `str`
+        prefix of IFO, e.g. ``'X1'``
+
+    """
     try:
         return TIMEZONE[ifo]
-    except KeyError as e:
-        e.args = ('No time-zone information for %r detector' % ifo,)
+    except KeyError as exc:
+        exc.args = ('No time-zone information for %r detector' % ifo,)
         raise
 
 
 def get_timezone_offset(ifo, dt=None):
+    """Return the offset in seconds between UTC and the given interferometer
+
+    Parameters
+    ----------
+    ifo : `str`
+        prefix of interferometer, e.g. ``'X1'``
+
+    dt : `datetime.datetime`, optional
+        the time at which to calculate the offset, defaults to now
+
+    Returns
+    -------
+    offset : `int`
+        the offset in seconds between the timezone of the interferometer
+        and UTC
+    """
     import pytz
     dt = dt or datetime.datetime.now()
     offset = pytz.timezone(get_timezone(ifo)).utcoffset(dt)

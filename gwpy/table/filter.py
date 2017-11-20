@@ -48,8 +48,8 @@ OPERATORS_INV = OrderedDict([
     ('>=', operator.le),
 ])
 
-re_quote = re.compile(r'^[\s\"\']+|[\s\"\']+$')
-re_delim = re.compile(r'(and|&+)', re.I)
+QUOTE_REGEX = re.compile(r'^[\s\"\']+|[\s\"\']+$')
+DELIM_REGEX = re.compile(r'(and|&+)', re.I)
 
 
 # -- filter parsing -----------------------------------------------------------
@@ -58,7 +58,7 @@ def _float_or_str(value):
     """Internal method to attempt `float(value)` handling a `ValueError`
     """
     # remove any surrounding quotes
-    value = re_quote.sub('', value)
+    value = QUOTE_REGEX.sub('', value)
     try:  # attempt `float()` conversion
         return float(value)
     except ValueError:  # just return the input
@@ -90,8 +90,8 @@ def parse_operator(mathstr):
     """
     try:
         return OPERATORS[mathstr]
-    except KeyError as e:
-        e.args = ('Unrecognised operator %r' % mathstr,)
+    except KeyError as exc:
+        exc.args = ('Unrecognised operator %r' % mathstr,)
         raise
 
 
@@ -139,21 +139,22 @@ def parse_column_filter(definition):
 
     # parse simple definition: e.g: snr > 5
     if len(parts) == 3:
-        a, b, c = parts
+        a, b, c = parts  # pylint: disable=invalid-name
         if a[0] in [token.NAME, token.STRING]:  # string comparison
-            name = re_quote.sub('', a[1])
-            op = OPERATORS[b[1]]
+            name = QUOTE_REGEX.sub('', a[1])
+            oprtr = OPERATORS[b[1]]
             value = _float_or_str(c[1])
+            return [(name, oprtr, value)]
         elif b[0] in [token.NAME, token.STRING]:
-            name = re_quote.sub('', b[1])
-            op = OPERATORS_INV[b[1]]
+            name = QUOTE_REGEX.sub('', b[1])
+            oprtr = OPERATORS_INV[b[1]]
             value = _float_or_str(a[1])
-        return [(name, op, value)]
+            return [(name, oprtr, value)]
 
     # parse between definition: e.g: 5 < snr < 10
     elif len(parts) == 5:
-        a, b, c, d, e = zip(*parts)[1]
-        name = re_quote.sub('', c)
+        a, b, c, d, e = list(zip(*parts))[1]  # pylint: disable=invalid-name
+        name = QUOTE_REGEX.sub('', c)
         return [(name, OPERATORS_INV[b], _float_or_str(a)),
                 (name, OPERATORS[d], _float_or_str(e))]
 
@@ -176,7 +177,7 @@ def parse_column_filters(*definitions):
         if is_filter_tuple(def_):
             fltrs.append(def_)
         else:
-            for splitdef in re_delim.split(def_)[::2]:
+            for splitdef in DELIM_REGEX.split(def_)[::2]:
                 fltrs.extend(parse_column_filter(splitdef))
     print(fltrs)
     return fltrs
@@ -199,7 +200,7 @@ def is_filter_tuple(tup):
     """Return whether a `tuple` matches the format for a column filter
     """
     return isinstance(tup, (tuple, list)) and (
-       len(tup) == 3 and isinstance(tup[0], str) and callable(tup[1]))
+        len(tup) == 3 and isinstance(tup[0], str) and callable(tup[1]))
 
 
 # -- filter -------------------------------------------------------------------

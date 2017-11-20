@@ -42,6 +42,7 @@ from .decorators import auto_refresh
 from .text import to_string
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['SegmentAxes', 'SegmentPlot']
 
 
 class SegmentAxes(TimeSeriesAxes):
@@ -113,7 +114,7 @@ class SegmentAxes(TimeSeriesAxes):
         """
         out = []
         args = list(args)
-        while len(args):
+        while args:
             if isinstance(args[0], DataQualityDict):
                 out.append(self.plot_dqdict(args.pop(0), **kwargs))
                 continue
@@ -133,7 +134,7 @@ class SegmentAxes(TimeSeriesAxes):
                 raise ValueError("Input must be DataQualityFlag, "
                                  "SegmentListDict, or SegmentList")
             break
-        if len(args):
+        if args:
             out.extend(super(SegmentAxes, self).plot(*args, **kwargs))
         self.autoscale(axis='y')
         return out
@@ -177,7 +178,8 @@ class SegmentAxes(TimeSeriesAxes):
                 lab = flag.name
             elif label.lower() != 'key':
                 lab = label
-            out.append(self.plot(flag, label=to_string(lab), **kwargs))
+            out.append(self.plot(flag, label=to_string(lab), known=known,
+                                 **kwargs))
         return out
 
     @auto_refresh
@@ -249,7 +251,7 @@ class SegmentAxes(TimeSeriesAxes):
                                            facecolor=facecolor, **kwargs)
         if (known is not None and len(self.collections) == 2 or
                 len(self.collections) == 1):
-            if len(flag.known):
+            if flag.known:
                 self.set_xlim(*map(float, flag.extent))
             self.autoscale(axis='y')
         return collection
@@ -297,12 +299,9 @@ class SegmentAxes(TimeSeriesAxes):
         except IndexError:
             pass
         if collection:
-            coll = PatchCollection(patches, len(patches) != 0)
+            coll = PatchCollection(patches, match_original=patches)
             coll.set_rasterized(rasterized)
-            if collection == 'ignore':
-                coll._ignore = True
-            else:
-                coll._ignore = False
+            coll._ignore = collection == 'ignore'
             coll._ypos = y
             out = self.add_collection(coll)
             # reset label with tex-formatting now
@@ -314,11 +313,11 @@ class SegmentAxes(TimeSeriesAxes):
             coll.set_label(to_string(label))
         else:
             out = []
-            for p in patches:
-                p.set_label(label)
-                p.set_rasterized(rasterized)
+            for patch in patches:
+                patch.set_label(label)
+                patch.set_rasterized(rasterized)
                 label = ''
-                out.append(self.add_patch(p))
+                out.append(self.add_patch(patch))
         self.autoscale(axis='y')
         return out
 
@@ -404,9 +403,10 @@ class SegmentAxes(TimeSeriesAxes):
         except AttributeError:
             pass
         else:
-            for t in texts:
-                if hasattr(t, '_is_segment_label') and t._is_segment_label:
-                    t.set_x(_xlim[0] + (_xlim[1] - _xlim[0]) * 0.01)
+            for txt in texts:
+                # pylint: disable=protected-access
+                if hasattr(txt, '_is_segment_label') and txt._is_segment_label:
+                    txt.set_x(_xlim[0] + (_xlim[1] - _xlim[0]) * 0.01)
         return out
     set_xlim.__doc__ = TimeSeriesAxes.set_xlim.__doc__
 
@@ -434,15 +434,23 @@ class SegmentAxes(TimeSeriesAxes):
         """
         if ignore is None:
             return self.collections
-        else:
-            return [c for c in self.collections if
-                    getattr(c, '_ignore', None) == ignore]
+        return [c for c in self.collections if
+                getattr(c, '_ignore', None) == ignore]
 
     def set_insetlabels(self, inset=None):
-        self._insetlabels = (inset is None and not self._insetlabels) or inset
+        """Set the labels to be inset or not
+
+        Parameters
+        ----------
+        inset : `bool`, `None`
+            if `None`, toggle the inset state, otherwise set the labels to
+            be inset (`True) or not (`False`)
+        """
+        # pylint: disable=attribute-defined-outside-init
+        self._insetlabels = not self._insetlabels if inset is None else inset
 
     def get_insetlabels(self):
-        """Move the y-axis tick labels inside the axes
+        """Returns the inset labels state
         """
         return self._insetlabels
 
@@ -450,11 +458,12 @@ class SegmentAxes(TimeSeriesAxes):
                            doc=get_insetlabels.__doc__)
 
     @allow_rasterization
-    def draw(self, *args, **kwargs):
+    def draw(self, *args, **kwargs):  # pylint: disable=missing-docstring
         # inset the labels if requested
         for tick in self.get_yaxis().get_ticklabels():
             if self.get_insetlabels():
                 # record parameters we are changing
+                # pylint: disable=protected-access
                 tick._orig_bbox = tick.get_bbox_patch()
                 tick._orig_ha = tick.get_ha()
                 tick._orig_pos = tick.get_position()
@@ -465,6 +474,7 @@ class SegmentAxes(TimeSeriesAxes):
                                'edgecolor': 'none'})
             elif self.get_insetlabels() is False:
                 # if label has been moved, reset things
+                # pylint: disable=protected-access
                 try:
                     tick.set_bbox(tick._orig_bbox)
                 except AttributeError:
@@ -476,7 +486,6 @@ class SegmentAxes(TimeSeriesAxes):
                     del tick._orig_ha
                     del tick._orig_pos
         return super(SegmentAxes, self).draw(*args, **kwargs)
-
     draw.__doc__ = TimeSeriesAxes.draw.__doc__
 
 
@@ -525,7 +534,7 @@ class SegmentPlot(TimeSeriesPlot):
                                      newax=sep, **kwargs)
 
         # set epoch
-        if len(flags):
+        if flags:
             span = reduce(operator.or_, [f.known for f in flags]).extent()
             if not epoch:
                 epoch = span[0]
@@ -540,7 +549,7 @@ class SegmentPlot(TimeSeriesPlot):
             for ax in self.axes:
                 ax.set_ylim(-0.5, 0.5)
                 ax.grid(b=False, which='both', axis='y')
-        elif len(flags):
+        elif flags:
             ax.set_ylim(-0.5, len(flags)-0.5)
             ax.grid(b=False, which='both', axis='y')
 
@@ -564,14 +573,14 @@ class SegmentPlot(TimeSeriesPlot):
 
         # get new segment axes
         divider = make_axes_locatable(ax)
-        max = divider.new_horizontal(size=width, pad=pad,
-                                     axes_class=axes_class)
-        max.set_xscale('gps')
-        max.xaxis.set_major_locator(NullLocator())
-        max.xaxis.set_minor_locator(NullLocator())
-        max.yaxis.set_minor_locator(NullLocator())
+        maskax = divider.new_horizontal(size=width, pad=pad,
+                                        axes_class=axes_class)
+        maskax.set_xscale('gps')
+        maskax.xaxis.set_major_locator(NullLocator())
+        maskax.xaxis.set_minor_locator(NullLocator())
+        maskax.yaxis.set_minor_locator(NullLocator())
         if visible:
-            self.add_axes(max)
+            self.add_axes(maskax)
         else:
             return
 
@@ -589,33 +598,30 @@ class SegmentPlot(TimeSeriesPlot):
         # loop over bits
         plotargs.setdefault('facecolor', 'green')
         plotargs.setdefault('edgecolor', 'black')
-        s = Segment(0, 1)
+        seg = Segment(0, 1)
         for bit in bits:
             if maskint >> bit & 1:
-                sl = SegmentList([s])
+                seglist = SegmentList([seg])
             else:
-                sl = SegmentList()
-            max.plot(sl, **plotargs)
-        max.set_title('Bitmask')
-        max.set_xlim(0, 1)
-        max.set_xticks([])
-        max.yaxis.set_ticklabels([])
-        max.set_xlabel('')
-        max.set_ylim(*ax.get_ylim())
+                seglist = SegmentList()
+            maskax.plot(seglist, **plotargs)
+        maskax.set_title('Bitmask')
+        maskax.set_xlim(0, 1)
+        maskax.set_xticks([])
+        maskax.yaxis.set_ticklabels([])
+        maskax.set_xlabel('')
+        maskax.set_ylim(*ax.get_ylim())
 
-        return max
+        return maskax
 
 
 class SegmentFormatter(Formatter):
     """Custom tick formatter for y-axis flag names
     """
-    def __init__(self, flags=dict()):
-        self.flags = flags
-
     def __call__(self, t, pos=None):
         # if segments have been plotted at this y-axis value, continue
-        for i, coll in enumerate(self.axis.axes.get_collections(ignore=False)):
-            if t == coll._ypos:
+        for coll in self.axis.axes.get_collections(ignore=False):
+            if t == coll._ypos:  # pylint: disable=protected-access
                 return coll.get_label()
         for patch in self.axis.axes.patches:
             if not patch.get_label():

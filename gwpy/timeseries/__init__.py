@@ -19,9 +19,11 @@
 """Create, manipulate, read, and write time-series data
 """
 
-from .core import *
-from .timeseries import *
-from .statevector import *
-from .io import *
+from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList)
+from .timeseries import (TimeSeries, TimeSeriesDict, TimeSeriesList)
+from .statevector import (StateVector, StateVectorDict, StateVectorList,
+                          StateTimeSeries, StateTimeSeriesDict, Bits)
+
+from . import io
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

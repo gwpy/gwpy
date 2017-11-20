@@ -27,24 +27,27 @@ from matplotlib import pyplot
 
 # utilities
 from .rc import DEFAULT_PARAMS as GWPY_PLOT_PARAMS
-from .gps import *
-from .log import *
+from . import (  # pylint: disable=unused-import
+    gps,  # GPS timing scales and formats
+    log,  # Logarithimic scaling mods
+)
 
 # figure and axes extensions
-from .core import *
-from .timeseries import *
-from .spectrogram import *
-from .frequencyseries import *
-from .segments import *
-from .filter import *
-from .table import *
-from .histogram import *
+from .core import Plot
+from .axes import Axes
+from .timeseries import (TimeSeriesPlot, TimeSeriesAxes)
+from .spectrogram import (SpectrogramPlot)
+from .frequencyseries import (FrequencySeriesPlot, FrequencySeriesAxes)
+from .segments import (SegmentPlot, SegmentAxes)
+from .filter import (BodePlot)
+from .table import (EventTablePlot, EventTableAxes)
+from .histogram import (HistogramPlot, HistogramAxes)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 # pyplot.figure replacement
-def figure(*args, **kwargs):
+def figure(*args, **kwargs):  # pylint: disable=missing-docstring
     kwargs.setdefault('FigureClass', Plot)
     return pyplot.figure(*args, **kwargs)
 figure.__doc__ = pyplot.figure.__doc__

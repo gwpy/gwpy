@@ -32,8 +32,7 @@ try:
 except ImportError:
     pass
 
-from gwpy import signal as gwpy_signal
-from gwpy.signal import window
+from gwpy.signal import (filter_design, window)
 from gwpy.signal.fft import (lal as fft_lal, utils as fft_utils,
                              registry as fft_registry, ui as fft_ui)
 from gwpy.timeseries import TimeSeries
@@ -93,40 +92,40 @@ class TestSignalFilterDesign(object):
         """Test :func:`gwpy.signal.filter_design.notch`
         """
         # test simple notch
-        zpk = gwpy_signal.notch(60, 16384)
+        zpk = filter_design.notch(60, 16384)
         utils.assert_zpk_equal(zpk, NOTCH_60HZ)
 
         # test Quantities
-        zpk2 = gwpy_signal.notch(60 * ONE_HZ, 16384 * ONE_HZ)
+        zpk2 = filter_design.notch(60 * ONE_HZ, 16384 * ONE_HZ)
         utils.assert_zpk_equal(zpk, zpk2)
 
         # test FIR notch doesn't work
         with pytest.raises(NotImplementedError):
-            gwpy_signal.notch(60, 16384, type='fir')
+            filter_design.notch(60, 16384, type='fir')
 
     def test_lowpass(self):
-        iir = gwpy_signal.lowpass(100, 1024)
+        iir = filter_design.lowpass(100, 1024)
         utils.assert_zpk_equal(iir, LOWPASS_IIR_100HZ)
-        fir = gwpy_signal.lowpass(100, 1024, type='fir')
+        fir = filter_design.lowpass(100, 1024, type='fir')
         utils.assert_allclose(fir, LOWPASS_FIR_100HZ)
 
     def test_highpass(self):
-        iir = gwpy_signal.highpass(100, 1024)
+        iir = filter_design.highpass(100, 1024)
         utils.assert_zpk_equal(iir, HIGHPASS_IIR_100HZ)
-        fir = gwpy_signal.highpass(100, 1024, type='fir')
+        fir = filter_design.highpass(100, 1024, type='fir')
         utils.assert_allclose(fir, HIGHPASS_FIR_100HZ)
 
     def test_bandpass(self):
-        iir = gwpy_signal.bandpass(100, 200, 1024)
+        iir = filter_design.bandpass(100, 200, 1024)
         utils.assert_zpk_equal(iir, BANDPASS_IIR_100HZ_200HZ)
-        fir = gwpy_signal.bandpass(100, 200, 1024, type='fir')
+        fir = filter_design.bandpass(100, 200, 1024, type='fir')
         utils.assert_allclose(fir, BANDPASS_FIR_100HZ_200HZ)
 
     def test_concatenate_zpks(self):
         zpk1 = ([1, 2, 3], [4, 5, 6], 1.)
         zpk2 = ([1, 2, 3, 4], [5, 6, 7, 8], 100)
         utils.assert_zpk_equal(
-            gwpy_signal.concatenate_zpks(zpk1, zpk2),
+            filter_design.concatenate_zpks(zpk1, zpk2),
             ([1, 2, 3, 1, 2, 3, 4], [4, 5, 6, 5, 6, 7, 8], 100))
 
 

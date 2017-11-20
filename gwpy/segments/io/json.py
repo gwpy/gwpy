@@ -34,21 +34,27 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # -- read ---------------------------------------------------------------------
 
-def read_json_flag(f):
+def read_json_flag(fobj):
     """Read a `DataQualityFlag` from a segments-web.ligo.org JSON file
     """
-    if isinstance(f, string_types):
-        f = open(f, 'r')
+    # read from filename
+    if isinstance(fobj, string_types):
+        with open(fobj, 'r') as fobj2:
+            return read_json_flag(fobj2)
 
-    with f:
-        txt = f.read()
-        if isinstance(txt, bytes):
-            txt = txt.decode('utf-8')
-        data = json.loads(txt)
+    # read from open file
+    txt = fobj.read()
+    if isinstance(txt, bytes):
+        txt = txt.decode('utf-8')
+    data = json.loads(txt)
+
+    # format flag
     name = '{ifo}:{name}:{version}'.format(**data)
     out = DataQualityFlag(name, active=data['active'],
                           known=data['known'])
-    try:  # parse 'metadata'
+
+    # parse 'metadata'
+    try:
         out.description = data['metadata'].get('flag_description', None)
     except KeyError:  # no metadata available, but that's ok
         pass
@@ -61,7 +67,7 @@ def read_json_flag(f):
 
 # -- write --------------------------------------------------------------------
 
-def write_json_flag(flag, f, **kwargs):
+def write_json_flag(flag, fobj, **kwargs):
     """Write a `DataQualityFlag` to a JSON file
 
     Parameters
@@ -69,7 +75,7 @@ def write_json_flag(flag, f, **kwargs):
     flag : `DataQualityFlag`
         data to write
 
-    f : `str`, `file`
+    fobj : `str`, `file`
         target file (or filename) to write
 
     **kwargs
@@ -80,6 +86,11 @@ def write_json_flag(flag, f, **kwargs):
     json.dump
         for details on acceptable keyword arguments
     """
+    # write to filename
+    if isinstance(fobj, string_types):
+        with open(fobj, 'w') as fobj2:
+            return write_json_flag(flag, fobj2, **kwargs)
+
     # build json packet
     data = {}
     data['ifo'] = flag.ifo
@@ -91,16 +102,13 @@ def write_json_flag(flag, f, **kwargs):
     data['metadata']['active_indicates_ifo_badness'] = not flag.isgood
     data['metadata']['flag_description'] = flag.description
 
-    if isinstance(f, string_types):
-        f = open(f, 'w')
-
-    with f:
-        json.dump(data, f, **kwargs)
+    # write
+    json.dump(data, fobj, **kwargs)
 
 
 # -- identify -----------------------------------------------------------------
 
-identify_json = identify_factory('json')
+identify_json = identify_factory('json')  # pylint: disable=invalid-name
 
 # -- register -----------------------------------------------------------------
 

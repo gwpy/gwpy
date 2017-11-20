@@ -19,8 +19,8 @@
 """Create, manipulate, read, and write spectrogram data
 """
 
-from .core import *
+from .core import (Spectrogram, SpectrogramList)
 
-from .io import *
+from . import io  # register I/O
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

@@ -34,23 +34,24 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # -- read ---------------------------------------------------------------------
 
-def from_segwizard(f, coalesce=True, gpstype=LIGOTimeGPS, strict=True,
+def from_segwizard(source, coalesce=True, gpstype=LIGOTimeGPS, strict=True,
                    nproc=1):
     """Read segments from a segwizard format file into a `SegmentList`
     """
     from glue import segmentsUtils
 
     if nproc != 1:
-        return SegmentList.read(f, coalesce=coalesce, gpstype=gpstype,
+        return SegmentList.read(source, coalesce=coalesce, gpstype=gpstype,
                                 strict=strict, nproc=nproc, format='cache')
 
     # format list of files and read in serial
-    files = file_list(f)
+    files = file_list(source)
     segs = SegmentList()
-    for fp in files:
-        with open(fp, 'r') as fobj:
-            segs.extend(SegmentList(map(Segment, segmentsUtils.fromsegwizard(
-                fobj, coltype=gpstype, strict=strict))))
+    for file_ in files:
+        with open(file_, 'r') as fobj:
+            raw = segmentsUtils.fromsegwizard(fobj, coltype=gpstype,
+                                              strict=strict)
+            segs.extend(SegmentList(map(Segment, raw)))
     if coalesce:
         segs.coalesce()
     return segs
@@ -59,6 +60,7 @@ def from_segwizard(f, coalesce=True, gpstype=LIGOTimeGPS, strict=True,
 # DEPRECATED - remove prior to 1.0 release
 def flag_from_segwizard(filename, flag=None, coalesce=True, gpstype=float,
                         strict=True, nproc=1):
+    # pylint: disable=missing-docstring,too-many-arguments
     warnings.warn("Reading DataQualityFlags from ASCII files has been "
                   "deprecated, and will be removed prior to the 1.0 "
                   "release of GWpy. Please move to using a structured "
@@ -157,7 +159,7 @@ def flag_to_segwizard(flag, fobj, header=True, coltype=int):
 
 # -- identify -----------------------------------------------------------------
 
-identify_segwizard = identify_factory('txt', 'dat')
+identify_segwizard = identify_factory('txt', 'dat')  # pylint: disable=invalid-name
 
 # -- register -----------------------------------------------------------------
 

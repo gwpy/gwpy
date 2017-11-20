@@ -35,7 +35,6 @@ try:
 except ImportError:
     from ligotimegps import LIGOTimeGPS
 
-from ._tconvert import *
+from ._tconvert import (tconvert, to_gps, from_gps)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__all__ = ['Time', 'LIGOTimeGPS', 'tconvert', 'from_gps', 'to_gps']

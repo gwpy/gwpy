@@ -19,9 +19,8 @@
 """The `gwpy.signal` module provides signal-processing utilities that
 extend the functionality of `scipy.signal` (and others) for specific GW data
 applications.
-"""
 
-from .filter_design import *
-from .filter import *
+See the sub-modules for more details.
+"""
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

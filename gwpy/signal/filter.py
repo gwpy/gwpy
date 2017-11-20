@@ -29,6 +29,8 @@ __all__ = ['sosfiltfilt']
 
 
 def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=0):
+    """Apply a digital filter forward and backward using second-order-sections
+    """
     try:
         from scipy.signal.signaltools import (sosfilt, sosfilt_zi)
     except ImportError as exc:

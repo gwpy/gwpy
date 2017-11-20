@@ -53,8 +53,8 @@ def register_method(func, name=None, force=False, scaling='density'):
     # determine spectrum method type, and append doc
     try:
         methods = METHODS[scaling]
-    except KeyError as e:
-        e.args = ("Unknown FFT method scaling: %r" % scaling,)
+    except KeyError as exc:
+        exc.args = ("Unknown FFT method scaling: %r" % scaling,)
         raise
 
     # if name already registered, don't override unless forced
@@ -70,17 +70,17 @@ def get_method(name, scaling='density'):
     # find right group
     try:
         methods = METHODS[scaling]
-    except KeyError as e:
-        e.args = ('Unknown FFT scaling: %r' % scaling,)
+    except KeyError as exc:
+        exc.args = ('Unknown FFT scaling: %r' % scaling,)
         raise
 
     # find method
     name = name.lower().replace('-', '_')
     try:
         return methods[name]
-    except KeyError as e:
-        e.args = ("No FFT method (scaling=%r) registered with name %r"
-                  % (scaling, name),)
+    except KeyError as exc:
+        exc.args = ("No FFT method (scaling=%r) registered with name %r"
+                    % (scaling, name),)
         raise
 
 
@@ -110,8 +110,8 @@ def update_doc(obj, scaling='density'):
     from astropy.table import Table
     rows = []
     for method in METHODS[scaling]:
-        f = METHODS[scaling][method]
-        rows.append((method, '`%s.%s`' % (f.__module__, f.__name__)))
+        func = METHODS[scaling][method]
+        rows.append((method, '`%s.%s`' % (func.__module__, func.__name__)))
     rows.sort(key=lambda x: x[1])
     format_str = Table(rows=rows, names=['Method name', 'Function']).pformat(
         max_lines=-1, max_width=80, align=('>', '<'))

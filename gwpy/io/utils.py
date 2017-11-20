@@ -63,9 +63,15 @@ def gopen(name, *args, **kwargs):
     ----------
     name : `str`
         path (name) of file to open
+
     *args, **kwargs
         other arguments to pass to either `open` for regular files, or
         `gzip.open` for files with a `name` ending in `.gz`
+
+    Returns
+    -------
+    file : `io.TextIoBase`, `file`, `gzip.GzipFile`
+        the open file object
     """
     if name.endswith('.gz'):  # filename declares gzip
         return gzip.open(name, *args, **kwargs)

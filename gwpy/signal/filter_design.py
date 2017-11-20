@@ -52,6 +52,7 @@ FIRWIN_DEFAULTS = {
 
 def _design_iir(wp, ws, sample_rate, gpass, gstop,
                 analog=False, ftype='cheby1', output='zpk'):
+    # pylint: disable=invalid-name
     nyq = sample_rate / 2.
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
@@ -77,6 +78,7 @@ def _design_iir(wp, ws, sample_rate, gpass, gstop,
 
 
 def _design_fir(wp, ws, sample_rate, gpass, gstop, window='hamming', **kwargs):
+    # pylint: disable=invalid-name
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
     tw = abs(wp[0] - ws[0])
@@ -201,15 +203,12 @@ def lowpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
     """
     sample_rate = _as_float(sample_rate)
     frequency = _as_float(frequency)
-    nyq = sample_rate / 2.
     if fstop is None:
         fstop = min(frequency * 1.5, sample_rate/2.)
     if type == 'iir':
         return _design_iir(frequency, fstop, sample_rate, gpass, gstop,
                            **kwargs)
-    else:
-        return _design_fir(frequency, fstop, sample_rate, gpass, gstop,
-                           **kwargs)
+    return _design_fir(frequency, fstop, sample_rate, gpass, gstop, **kwargs)
 
 
 def highpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
@@ -273,15 +272,13 @@ def highpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
     """
     sample_rate = _as_float(sample_rate)
     frequency = _as_float(frequency)
-    nyq = sample_rate / 2.
     if fstop is None:
         fstop = frequency * 2/3.
     if type == 'iir':
         return _design_iir(frequency, fstop, sample_rate, gpass, gstop,
                            **kwargs)
-    else:
-        return _design_fir(frequency, fstop, sample_rate, gpass, gstop,
-                           **kwargs)
+    return _design_fir(frequency, fstop, sample_rate, gpass, gstop,
+                       **kwargs)
 
 
 def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
@@ -348,7 +345,6 @@ def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
     sample_rate = _as_float(sample_rate)
     flow = _as_float(flow)
     fhigh = _as_float(fhigh)
-    nyq = sample_rate / 2.
     if fstop is None:
         fstop = (flow * 2/3.,
                  min(fhigh * 1.5, sample_rate/2.))
@@ -356,9 +352,8 @@ def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
     if type == 'iir':
         return _design_iir((flow, fhigh), fstop, sample_rate, gpass, gstop,
                            **kwargs)
-    else:
-        return _design_fir((flow, fhigh), fstop, sample_rate, gpass, gstop,
-                           pass_zero=False, **kwargs)
+    return _design_fir((flow, fhigh), fstop, sample_rate, gpass, gstop,
+                       pass_zero=False, **kwargs)
 
 
 def notch(frequency, sample_rate, type='iir', **kwargs):
@@ -413,7 +408,7 @@ def notch(frequency, sample_rate, type='iir', **kwargs):
     frequency = Quantity(frequency, 'Hz').value
     sample_rate = Quantity(sample_rate, 'Hz').value
     nyq = 0.5 * sample_rate
-    df = 1.0
+    df = 1.0  # pylint: disable=invalid-name
     df2 = 0.1
     low1 = (frequency - df)/nyq
     high1 = (frequency + df)/nyq
@@ -462,5 +457,7 @@ def concatenate_zpks(*zpks):
        plot = BodePlot(zpk, sample_rate=4096)
        plot.show()
     """
-    zs, ps, ks = zip(*zpks)
-    return concatenate(zs), concatenate(ps), reduce(operator.mul, ks, 1)
+    zeros, poles, gains = zip(*zpks)
+    return (concatenate(zeros),
+            concatenate(poles),
+            reduce(operator.mul, gains, 1))

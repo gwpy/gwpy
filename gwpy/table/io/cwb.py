@@ -31,8 +31,13 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # -- ROOT ---------------------------------------------------------------------
 
-def table_from_cwb(f, *args, **kwargs):
-    return EventTable.read(f, 'waveburst', *args, format='root', **kwargs)
+def table_from_cwb(source, *args, **kwargs):
+    """Read an `EventTable` from a Coherent WaveBurst ROOT file
+
+    This function just redirects to the format='root' reader with appropriate
+    defaults.
+    """
+    return EventTable.read(source, 'waveburst', *args, format='root', **kwargs)
 
 
 registry.register_reader('root.cwb', EventTable, table_from_cwb)
@@ -41,7 +46,7 @@ registry.register_reader('root.cwb', EventTable, table_from_cwb)
 # -- ASCII --------------------------------------------------------------------
 
 class CwbHeader(core.BaseHeader):
-    """Read a multi-line column-definition header
+    """Parser for cWB ASCII header
     """
 
     def get_cols(self, lines):
@@ -53,10 +58,10 @@ class CwbHeader(core.BaseHeader):
             List of table lines
         """
         re_name_def = re.compile(
-            "^\s*#\s+"  # whitespace and comment marker
-            "(?P<colnumber>[0-9]+)\s+-\s+"  # number of column
-            "(?P<colname>(.*))"
-            )
+            r'^\s*#\s+'  # whitespace and comment marker
+            r'(?P<colnumber>[0-9]+)\s+-\s+'  # number of column
+            r'(?P<colname>(.*))'
+        )
         self.names = []
         include_cuts = False
         for line in lines:
@@ -74,14 +79,14 @@ class CwbHeader(core.BaseHeader):
                 'No column names found in cWB header')
 
         if include_cuts:
-            self.cols = [
+            self.cols = [  # pylint: disable=attribute-defined-outside-init
                 core.Column(name='selection cut 1'),
                 core.Column(name='selection cut 2'),
             ]
         else:
-            self.cols = []
-        for n in self.names:
-            col = core.Column(name=n)
+            self.cols = []  # pylint: disable=attribute-defined-outside-init
+        for name in self.names:
+            col = core.Column(name=name)
             self.cols.append(col)
 
     def write(self, lines):
@@ -92,6 +97,8 @@ class CwbHeader(core.BaseHeader):
 
 
 class CwbData(core.BaseData):
+    """Parser for cWB ASCII data
+    """
     comment = '#'
 
 

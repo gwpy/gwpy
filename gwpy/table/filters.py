@@ -47,22 +47,23 @@ def in_segmentlist(column, segmentlist):
     contains = numpy.zeros(column.shape[0], dtype=bool)
     j = 0
     try:
-        a, b = segmentlist[j]
+        segstart, segend = segmentlist[j]
     except IndexError:  # no segments, return all False
         return contains
     i = 0
     while i < contains.shape[0]:
-        x = idx[i]
-        v = column[x]
+        # extract time for this index
+        x = idx[i]  # <- index in original column
+        time = column[x]
         # if before start, move to next value
-        if v < a:
+        if time < segstart:
             i += 1
             continue
         # if after end, find the next segment and check value again
-        if v >= b:
+        if time >= segend:
             j += 1
             try:
-                a, b = segmentlist[j]
+                segstart, segend = segmentlist[j]
                 continue
             except IndexError:
                 break

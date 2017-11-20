@@ -30,7 +30,8 @@ from six import string_types
 
 import numpy
 
-from ...io.cache import (FILE_LIKE, cache_segments, read_cache)
+from ...io.cache import (FILE_LIKE, cache_segments,
+                         read_cache as read_cache_file)
 from .. import (TimeSeries, TimeSeriesList, TimeSeriesDict,
                 StateVector, StateVectorList, StateVectorDict)
 
@@ -92,10 +93,10 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
     cls = kwargs.pop('target', TimeSeries)
     # open cache from file if given
     if isinstance(cache, FILE_LIKE + string_types):
-        cache = read_cache(cache)
+        cache = read_cache_file(cache)
 
     # force single-process for empty cache (since its a null-op anyway)
-    if len(cache) == 0:
+    if not cache:
         nproc = 1
         segs = [(None, None)]
 
@@ -172,7 +173,7 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
                         resample=resample, gap=gap, pad=pad, **kwargs)
 
     # define how to read each chunk
-    def _read(q, pstart, pend):
+    def _read(queue_, pstart, pend):
         try:
             # don't go beyond the requested limits
             pstart = float(max(start, pstart))
@@ -184,13 +185,14 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
                 out = cls.read(subcache, channel, format=format, start=cstart,
                                end=pend, resample=None, **kwargs)
                 out = out.resample(resample)
-                q.put(out.crop(pstart, pend))
+                queue_.put(out.crop(pstart, pend))
             else:
                 subcache = cache.sieve(segment=Segment(pstart, pend))
-                q.put(cls.read(subcache, channel, format=format, start=pstart,
-                               end=pend, resample=resample, **kwargs))
-        except Exception as e:
-            q.put(e)
+                queue_.put(cls.read(subcache, channel, format=format,
+                                    start=pstart, end=pend, resample=resample,
+                                    **kwargs))
+        except Exception as exc:  # pylint: disable=broad-except
+            queue_.put(exc)
 
     # separate cache into parts
     fperproc = int(ceil(len(cache) / nproc))
@@ -209,32 +211,32 @@ def read_cache(cache, channel, start=None, end=None, resample=None,
         process.start()
 
     # get data and block
-    data = [queue.get() for p in proclist]
+    data = [queue.get() for p in proclist]  # pylint: disable=unused-variable
     for result in data:
         process.join()
         if isinstance(result, Exception):
             raise result
 
-    # format and return
+    # unpack dict
     if issubclass(cls, dict):
         try:
             data.sort(key=lambda tsd: list(tsd.values())[0].epoch.gps)
         except IndexError:
             pass
         out = cls()
-        while len(data):
+        while data:
             tsd = data.pop(0)
             out.append(tsd)
             del tsd
         return out
+
+    # unpack series
+    if cls in (TimeSeries, TimeSeriesDict):
+        out = TimeSeriesList(*data)
     else:
-        if cls in (TimeSeries, TimeSeriesDict):
-            out = TimeSeriesList(*data)
-        else:
-            out = StateVectorList(*data)
-        out.sort(key=lambda ts: ts.epoch.gps)
-        ts = out.join(gap=gap)
-        return ts
+        out = StateVectorList(*data)
+    out.sort(key=lambda series: series.epoch.gps)
+    return out.join(gap=gap)
 
 
 def read_state_cache(*args, **kwargs):

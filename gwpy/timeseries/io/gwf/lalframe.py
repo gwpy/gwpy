@@ -24,7 +24,6 @@ The frame format is defined in LIGO-T970130 available from dcc.ligo.org.
 from __future__ import (absolute_import, division)
 
 import os.path
-import tempfile
 
 from six import string_types
 

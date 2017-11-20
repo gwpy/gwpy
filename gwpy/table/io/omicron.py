@@ -25,10 +25,15 @@ from .. import EventTable
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-def table_from_omicron(f, *args, **kwargs):
+def table_from_omicron(source, *args, **kwargs):
+    """Read an `EventTable` from an Omicron ROOT file
+
+    This function just redirects to the format='root' reader with appropriate
+    defaults.
+    """
     if not args:  # only default treename if args not given
         kwargs.setdefault('treename', 'triggers')
-    return EventTable.read(f, *args, format='root', **kwargs)
+    return EventTable.read(source, *args, format='root', **kwargs)
 
 
 registry.register_reader('root.omicron', EventTable, table_from_omicron)

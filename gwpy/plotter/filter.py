@@ -33,7 +33,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['BodePlot']
 
 
-def to_db(a):
+def to_db(a):  # pylint: disable=invalid-name
     """Convert the input array into decibels
 
     Parameters
@@ -44,6 +44,11 @@ def to_db(a):
     Returns
     -------
     dB : ``10 * numpy.log10(a)``
+
+    Examples
+    --------
+    >>> to_db(1000)
+    30.0
     """
     return 10 * numpy.log10(a)
 
@@ -169,9 +174,9 @@ class BodePlot(Plot):
         frequencies : `numpy.ndarray`, optional
             list of frequencies (in Hertz) at which to plot
 
-        db : `bool`, optional, default: `True`
+        dB : `bool`, optional
             if `True`, display magnitude in decibels, otherwise display
-            amplitude.
+            amplitude, default: `True`
 
         **kwargs
             any other keyword arguments accepted by
@@ -209,10 +214,13 @@ class BodePlot(Plot):
         w, mag, phase = filter_.bode(w=w)
         if not analog:
             w *= sample_rate / (2. * pi)
+        # convert from decibels
+        if not dB:
+            mag = 10 ** (mag / 10.)
         # append to figure
-        lm = self.maxes.plot(w, mag, **kwargs)
-        lp = self.paxes.plot(w, phase, **kwargs)
-        return lm, lp
+        mline = self.maxes.plot(w, mag, **kwargs)[0]
+        pline = self.paxes.plot(w, phase, **kwargs)[0]
+        return mline, pline
 
     def add_frequencyseries(self, spectrum, dB=True, power=False, **kwargs):
         """Plot the magnitude and phase of a complex-valued `FrequencySeries`
@@ -253,6 +261,6 @@ class BodePlot(Plot):
         phase = numpy.angle(spectrum.value, deg=True)
         # plot
         w = spectrum.frequencies.value
-        lm = self.maxes.plot(w, mag, **kwargs)
-        lp = self.paxes.plot(w, phase, **kwargs)
-        return lm, lp
+        mline = self.maxes.plot(w, mag, **kwargs)[0]
+        pline = self.paxes.plot(w, phase, **kwargs)[0]
+        return mline, pline

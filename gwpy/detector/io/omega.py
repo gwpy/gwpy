@@ -85,12 +85,12 @@ def read_omega_scan_config(source):
     return out
 
 
-def parse_omega_channel(fp, section=None):
+def parse_omega_channel(fobj, section=None):
     """Parse a `Channel` from an Omega-scan configuration file
 
     Parameters
     ----------
-    fp : `file`
+    fobj : `file`
         the open file-like object to parse
     section : `str`
         name of section in which this channel should be recorded
@@ -102,7 +102,7 @@ def parse_omega_channel(fp, section=None):
     """
     params = OrderedDict()
     while True:
-        line = next(fp)
+        line = next(fobj)
         if line == '}\n':
             break
         key, value = line.split(':', 1)
@@ -125,10 +125,9 @@ def omega_param(val):
     val = val.strip().rstrip()
     if val.startswith(('"', "'")):
         return str(val[1:-1])
-    elif val.startswith('['):
+    if val.startswith('['):
         return tuple(map(float, val[1:-1].split()))
-    else:
-        return float(val)
+    return float(val)
 
 
 # -- write --------------------------------------------------------------------
@@ -162,6 +161,7 @@ def write_omega_scan_config(channellist, fobj, header=True):
             fobj.close()
 
 
+# pylint: disable=redefined-builtin
 def print_omega_channel(channel, file=sys.stdout):
     """Print a `Channel` in Omega-pipeline scan format
     """
@@ -178,8 +178,8 @@ def print_omega_channel(channel, file=sys.stdout):
         params.setdefault('sampleFrequency',
                           channel.sample_rate.to('Hz').value)
     if channel.frequency_range:
-        low, hi = channel.frequency_range.to('Hz').value
-        params.setdefault('searchFrequencyRange', (low, hi))
+        low, high = channel.frequency_range.to('Hz').value
+        params.setdefault('searchFrequencyRange', (low, high))
     if 'qlow' in params or 'qhigh' in params:
         qlow = params.pop('qlow', 'sqrt(11)')
         qhigh = params.pop('qhigh', 64)

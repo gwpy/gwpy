@@ -21,6 +21,8 @@
 
 from __future__ import division
 
+from six import PY2
+
 import numpy
 
 try:
@@ -31,15 +33,20 @@ except ImportError:
 else:
     FRAME_LIBRARY = 'LDAStools.frameCPP'
 
-from ....detector import Channel
 from ....io import gwf as io_gwf
 from ....io.cache import (file_list, file_segment)
 from ....time import LIGOTimeGPS
-from ... import (TimeSeries, TimeSeriesDict)
+from ... import TimeSeries
 
 from . import channel_dict_kwarg
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+# group types that support the buffer interface
+if PY2:
+    buffer_types = (bytearray, buffer)
+else:
+    buffer_types = (bytes, bytearray, memoryview)
 
 # get frameCPP type mapping
 NUMPY_TYPE_FROM_FRVECT = {
@@ -65,6 +72,8 @@ FRVECT_TYPE_FROM_NUMPY = dict(
 
 def read(source, channels, start=None, end=None, type=None,
          series_class=TimeSeries):
+    """Read a `dict` of series from GWF
+    """
     # parse input source
     source = file_list(source)
 
@@ -73,12 +82,12 @@ def read(source, channels, start=None, end=None, type=None,
 
     # read each individually and append
     out = series_class.DictClass()
-    for i, fp in enumerate(source):
+    for i, file_ in enumerate(source):
         if i == 1:  # force data into fresh memory so that append works
             for name in out:
                 out[name] = numpy.require(out[name], requirements=['O'])
         # read frame
-        out.append(_read_framefile(fp, channels, start=start, end=end,
+        out.append(_read_framefile(file_, channels, start=start, end=end,
                                    ctype=ctype, series_class=series_class),
                    copy=False)
     return out
@@ -139,14 +148,14 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
     for channel in channels:
 
         name = str(channel)
-        read_ = getattr(stream, 'ReadFr%sData' % ctype[channel].title())
-        ts = None
+        read_func = getattr(stream, 'ReadFr%sData' % ctype[channel].title())
+        series = None
         i = 0
         while True:
             try:
-                data = read_(i, name)
-            except IndexError as e:
-                if 'exceeds the range' in str(e):  # no more frames
+                data = read_func(i, name)
+            except IndexError as exc:
+                if 'exceeds the range' in str(exc):  # no more frames
                     break
                 else:  # some other problem (likely channel not present)
                     raise
@@ -181,12 +190,12 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                 arr = vect.GetDataArray()
                 dim = vect.GetDim(0)
                 dx = dim.dx
-                sx = dim.startX
-                if isinstance(arr, buffer):
+                x0 = dim.startX
+                if isinstance(arr, buffer_types):
                     arr = numpy.frombuffer(
                         arr, dtype=NUMPY_TYPE_FROM_FRVECT[vect.GetType()])
                 # crop to required subset
-                dimstart = datastart + sx
+                dimstart = datastart + x0
                 dimend = dimstart + arr.size * dx
                 a = int(max(0., float(start-dimstart)) / dx)
                 if end:
@@ -204,25 +213,25 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                 if a or b:
                     arr = arr[a:b]
                 # cast as series or append
-                if ts is None:
+                if series is None:
                     # get unit
                     unit = vect.GetUnitY() or None
                     # create array - need require() to prevent segfault
-                    ts = numpy.require(
+                    series = numpy.require(
                         series_class(arr, t0=dimstart+a*dx, dt=dx, name=name,
                                      channel=name, unit=unit, copy=False),
                         requirements=['O'])
                     # add information to channel
-                    ts.channel.sample_rate = ts.sample_rate.value
-                    ts.channel.unit = unit
-                    ts.channel.dtype = ts.dtype
+                    series.channel.sample_rate = series.sample_rate.value
+                    series.channel.unit = unit
+                    series.channel.dtype = series.dtype
                 else:
-                    ts.append(arr)
-        if ts is None:
+                    series.append(arr)
+        if series is None:
             raise ValueError("Failed to read '%s' from file '%s'"
                              % (str(channel), framefile))
         else:
-            out[channel] = ts
+            out[channel] = series
 
     return out
 
@@ -235,14 +244,14 @@ def write(tsdict, outfile, start=None, end=None, name='gwpy', run=0,
     """
     # set frame header metadata
     if not start:
-        starts = set([LIGOTimeGPS(tsdict[c].x0.value) for c in tsdict])
+        starts = set([LIGOTimeGPS(tsdict[key].x0.value) for key in tsdict])
         if len(starts) != 1:
             raise RuntimeError("Cannot write multiple TimeSeries to a single "
                                "frame with different start times, "
                                "please write into different frames")
         start = list(starts)[0]
     if not end:
-        ends = set([tsdict[c].span[1] for ts in tsdict])
+        ends = set([tsdict[key].span[1] for key in tsdict])
         if len(ends) != 1:
             raise RuntimeError("Cannot write multiple TimeSeries to a single "
                                "frame with different end times, "

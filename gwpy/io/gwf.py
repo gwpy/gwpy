@@ -23,7 +23,7 @@ import six
 
 from ..time import to_gps
 from ..utils import shell
-from .cache import open_cache
+from .cache import read_cache
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -42,6 +42,8 @@ def identify_gwf(origin, filepath, fileobj, *args, **kwargs):
     This function is overloaded in that it will also identify a cache file
     as 'gwf' if the first entry in the cache contains a GWF file extension
     """
+    # pylint: disable=unused-argument
+
     # try and read file descriptor
     if fileobj is not None:
         loc = fileobj.tell()
@@ -56,7 +58,7 @@ def identify_gwf(origin, filepath, fileobj, *args, **kwargs):
             return True
         if filepath.endswith(('.lcf', '.cache')):
             try:
-                cache = open_cache(filepath)
+                cache = read_cache(filepath)
             except IOError:
                 return False
             else:
@@ -94,7 +96,7 @@ def write_frames(filename, frames, compression=257, compression_level=6):
     # stream auto-closes (apparently)
 
 
-def create_frame(time=0, duration=None, name='gwpy', run=-1, ifos=[]):
+def create_frame(time=0, duration=None, name='gwpy', run=-1, ifos=None):
     """Create a new :class:`~LDAStools.frameCPP.FrameH`
 
     **Requires:** |LDAStools.frameCPP|_
@@ -114,8 +116,8 @@ def create_frame(time=0, duration=None, name='gwpy', run=-1, ifos=[]):
         run number (number < 0 reserved for simulated data); monotonic for
         experimental runs
 
-    ifos : `list` or `str`, optional
-        list of interferometer prefices (e.g. ``L1``) associated with this
+    ifos : `list`, optional
+        list of interferometer prefices (e.g. ``'L1'``) associated with this
         frame
 
     Returns
@@ -136,7 +138,7 @@ def create_frame(time=0, duration=None, name='gwpy', run=-1, ifos=[]):
         frame.SetDt(float(duration))
 
     # add FrDetectors
-    for prefix in ifos:
+    for prefix in ifos or []:
         idx = getattr(frameCPP, 'DETECTOR_LOCATION_%s' % prefix)
         frame.AppendFrDetector(frameCPP.GetDetector(idx, gps))
 
@@ -202,11 +204,11 @@ def get_channel_type(channel, framefile):
         i = 0
         while True:
             try:
-                c = query(frtoc, i)
+                chan = query(frtoc, i)
             except RuntimeError:
                 break
             else:
-                if c == name:
+                if chan == name:
                     return type_.lower()
             i += 1
     raise ValueError("%s not found in table-of-contents for %s"
@@ -269,11 +271,11 @@ def iter_channel_names(framefile):
                 i += 1
     else:
         for line in iter(out.splitlines()):
-            c = line.split(None, 1)[0]
-            if isinstance(c, bytes):
-                yield c.decode('utf-8')
+            chan = line.split(None, 1)[0]
+            if isinstance(chan, bytes):
+                yield chan.decode('utf-8')
             else:
-                yield c
+                yield chan
 
 
 def get_channel_names(framefile):
