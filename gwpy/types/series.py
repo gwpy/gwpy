@@ -534,8 +534,7 @@ class Series(Array):
                 return 1
             elif abs(float(other.xspan[1] - self.xspan[0])) < tol:
                 return -1
-            else:
-                return 0
+            return 0
         elif type(other) in [list, tuple, numpy.ndarray]:
             return 1
 
@@ -686,8 +685,8 @@ class Series(Array):
             if resize:
                 try:
                     self.xindex.resize((s[0],), refcheck=False)
-                except ValueError as e:
-                    if 'cannot resize' in str(e):
+                except ValueError as exc:
+                    if 'cannot resize' in str(exc):
                         self.xindex = self.xindex.copy()
                         self.xindex.resize((s[0],))
                     else:
