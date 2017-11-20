@@ -39,6 +39,7 @@ from astropy import units
 from astropy.io.ascii import InconsistentTableError
 from astropy.table import vstack
 
+from gwpy.frequencyseries import FrequencySeries
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.table import (Table, EventTable, filters)
 from gwpy.table.filter import filter_table
@@ -120,7 +121,8 @@ class TestTable(object):
         table = self.create(
             100, ['peak_time', 'peak_time_ns', 'snr', 'central_freq'],
             ['i4', 'i4', 'f4', 'f4'])
-        with tempfile.NamedTemporaryFile(suffix='.{}'.format(ext), delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix='.{}'.format(ext),
+                                         delete=False) as f:
             def _read(*args, **kwargs):
                 kwargs.setdefault('format', 'ligolw')
                 kwargs.setdefault('tablename', 'sngl_burst')
@@ -144,6 +146,12 @@ class TestTable(object):
             assert 'peak' in t3.columns
             utils.assert_array_equal(
                 t3['peak'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
+
+            # check auto-discovery of 'time' columns works
+            t3 = _read(columns=['time'])
+            assert 'time' in t3.columns
+            utils.assert_array_equal(
+                t3['time'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
 
             # check reading multiple tables works
             try:
@@ -288,25 +296,48 @@ class TestEventTable(TestTable):
                             names=table.dtype.names)
         utils.assert_table_equal(brute, lowfloud)
 
-        # check custom filters work
-        segs = SegmentList([Segment(0, 500)])
+        # check double-ended filter
+        midf = table.filter('100 < frequency < 1000')
+        utils.assert_table_equal(
+            midf, table.filter('frequency > 100').filter('frequency < 1000'))
+
+    def test_filter_in_segmentlist(self, table):
+        print(table)
+        # check filtering on segments works
+        segs = SegmentList([Segment(100, 200), Segment(400, 500)])
         inseg = table.filter(('time', filters.in_segmentlist, segs))
         brute = type(table)(rows=[row for row in table if row['time'] in segs],
                             names=table.colnames)
         utils.assert_table_equal(inseg, brute)
+
+        # check empty segmentlist is handled well
+        utils.assert_table_equal(
+            table.filter(('time', filters.in_segmentlist, SegmentList())),
+            type(table)(names=table.colnames))
+
+        # check inverse works
+        notsegs = SegmentList([Segment(0, 1000)]) - segs
+        utils.assert_table_equal(
+            inseg, table.filter(('time', filters.not_in_segmentlist, notsegs)))
+        utils.assert_table_equal(
+            table,
+            table.filter(('time', filters.not_in_segmentlist, SegmentList())))
 
     def test_event_rates(self, table):
         rate = table.event_rate(1)
         assert isinstance(rate, TimeSeries)
         assert rate.sample_rate == 1 * units.Hz
 
-        # test binned_event_rates
+
+    def test_binned_event_rates(self, table):
         rates = table.binned_event_rates(100, 'snr', [10, 100],
                                          timecolumn='time')
         assert isinstance(rates, TimeSeriesDict)
         assert list(rates.keys()), [10, 100]
         assert rates[10].max() == 0.14 * units.Hz
+        assert rates[10].name == 'snr >= 10'
         assert rates[100].max() == 0.13 * units.Hz
+        assert rates[100].name == 'snr >= 100'
         table.binned_event_rates(100, 'snr', [10, 100], operator='in')
         table.binned_event_rates(100, 'snr', [(0, 10), (10, 100)])
 
@@ -356,7 +387,8 @@ class TestEventTable(TestTable):
         table = self.create(
             100, names=['a', 'b', 'c', 'chisq', 'd', 'e', 'f',
                         'mass1', 'mass2', 'snr'])
-        table.meta['ifo'] = 'X1'
+        loudest = (table['snr'] > 500).nonzero()[0]
+        psd = FrequencySeries(random.randn(1000), df=1)
         fp = os.path.join(tempfile.mkdtemp(), 'X1-Live-0-0.hdf')
         try:
             # write table in pycbc_live format (by hand)
@@ -364,16 +396,41 @@ class TestEventTable(TestTable):
                 group = h5f.create_group('X1')
                 for col in table.columns:
                     group.create_dataset(data=table[col], name=col)
+                group.create_dataset('loudest', data=loudest)
+                group.create_dataset('psd', data=psd.value)
+                group['psd'].attrs['delta_f'] = psd.df.to('Hz').value
 
             # check that we can read
             t2 = self.TABLE.read(fp)
             utils.assert_table_equal(table, t2)
+            # and check metadata was recorded correctly
+            assert t2.meta['ifo'] == 'X1'
 
             # check keyword arguments result in same table
             t2 = self.TABLE.read(fp, format='hdf5.pycbc_live')
             utils.assert_table_equal(table, t2)
             t2 = self.TABLE.read(fp, format='hdf5.pycbc_live', ifo='X1')
+
+            # assert loudest works
+            t2 = self.TABLE.read(fp, loudest=True)
+            utils.assert_table_equal(table.filter('snr > 500'), t2)
+
+            # check extended_metadata=True works (default)
+            t2 = self.TABLE.read(fp, extended_metadata=True)
             utils.assert_table_equal(table, t2)
+            utils.assert_array_equal(t2.meta['loudest'], loudest)
+            utils.assert_quantity_sub_equal(
+                t2.meta['psd'], psd,
+                exclude=['name', 'channel', 'unit', 'epoch'])
+
+            # check extended_metadata=False works
+            t2 = self.TABLE.read(fp, extended_metadata=False)
+            assert t2.meta == {'ifo': 'X1'}
+
+            # double-check that loudest and extended_metadata=False work
+            t2 = self.TABLE.read(fp, loudest=True, extended_metadata=False)
+            utils.assert_table_equal(table.filter('snr > 500'), t2)
+            assert t2.meta == {'ifo': 'X1'}
 
             # add another IFO, then assert that reading the table without
             # specifying the IFO fails

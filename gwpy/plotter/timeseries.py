@@ -22,7 +22,7 @@
 import re
 import numpy
 
-from matplotlib import (pyplot, colors, rcParams)
+from matplotlib import (pyplot, colors)
 from matplotlib.projections import register_projection
 from matplotlib.artist import allow_rasterization
 from matplotlib.cbook import iterable
@@ -48,7 +48,7 @@ class TimeSeriesAxes(Axes):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('xscale', 'auto-gps')
         super(TimeSeriesAxes, self).__init__(*args, **kwargs)
-        self.fmt_xdata = lambda t: LIGOTimeGPS(t)
+        self.fmt_xdata = LIGOTimeGPS
         self.set_xlabel('_auto')
 
     @allow_rasterization
@@ -75,8 +75,11 @@ class TimeSeriesAxes(Axes):
         super(TimeSeriesAxes, self).set_xscale(scale, *args, **kwargs)
         if scale != 'auto-gps' and self.get_xlabel() == '_auto':
             self.set_xlabel('')
+    set_xscale.__doc__ = Axes.set_xscale.__doc__
 
     def auto_gps_label(self):
+        """Automatically set the x-axis label based on the current GPS scale
+        """
         scale = self.xaxis._scale
         epoch = scale.get_epoch()
         if int(epoch) == epoch:
@@ -85,7 +88,7 @@ class TimeSeriesAxes(Axes):
             self.set_xlabel('GPS Time')
         else:
             unit = scale.get_unit_name()
-            utc = re.sub('\.0+', '',
+            utc = re.sub(r'\.0+', '',
                          Time(epoch, format='gps', scale='utc').iso)
             self.set_xlabel('Time [%s] from %s UTC (%s)'
                             % (unit, utc, repr(epoch)))
@@ -97,6 +100,8 @@ class TimeSeriesAxes(Axes):
         self.set_xscale('auto-gps', epoch=self.get_epoch())
 
     def set_epoch(self, epoch):
+        """Set the GPS epoch (t=0) for these axes
+        """
         try:
             xscale = self.get_xscale()
         except AttributeError:
@@ -105,6 +110,8 @@ class TimeSeriesAxes(Axes):
             self.set_xscale(xscale, epoch=epoch)
 
     def get_epoch(self):
+        """Return the current GPS epoch (t=0)
+        """
         return self.xaxis._scale.get_epoch()
 
     epoch = property(fget=get_epoch, fset=set_epoch, doc=get_epoch.__doc__)
@@ -152,8 +159,7 @@ class TimeSeriesAxes(Axes):
             return self.plot_timeseries(*args, **kwargs)
         elif len(args) == 1 and isinstance(args[0], Spectrogram):
             return self.plot_spectrogram(*args, **kwargs)
-        else:
-            return super(TimeSeriesAxes, self).plot(*args, **kwargs)
+        return super(TimeSeriesAxes, self).plot(*args, **kwargs)
 
     @auto_refresh
     def plot_timeseries(self, timeseries, **kwargs):
@@ -229,28 +235,28 @@ class TimeSeriesAxes(Axes):
             for a full description of acceptable ``*args`` and ``**kwargs``
         """
         # plot mean
-        line1 = self.plot_timeseries(mean_, **kwargs)[0]
+        meanline = self.plot_timeseries(mean_, **kwargs)[0]
         # plot min and max
         kwargs.pop('label', None)
-        color = kwargs.pop('color', line1.get_color())
-        linewidth = kwargs.pop('linewidth', line1.get_linewidth()) / 2
+        color = kwargs.pop('color', meanline.get_color())
+        linewidth = kwargs.pop('linewidth', meanline.get_linewidth()) / 2
         if min_ is not None:
-            a = self.plot(min_.times.value, min_.value, color=color,
-                          linewidth=linewidth, **kwargs)
-            b = self.fill_between(min_.times.value, mean_.value, min_.value,
-                                  alpha=0.1, color=color,
-                                  rasterized=kwargs.get('rasterized'))
+            minline = self.plot(min_.times.value, min_.value, color=color,
+                                linewidth=linewidth, **kwargs)
+            mincol = self.fill_between(min_.times.value, mean_.value,
+                                       min_.value, alpha=0.1, color=color,
+                                       rasterized=kwargs.get('rasterized'))
         else:
-            a = b = None
+            minline = mincol = None
         if max_ is not None:
-            c = self.plot(max_.times.value, max_.value, color=color,
-                          linewidth=linewidth, **kwargs)
-            d = self.fill_between(max_.times.value, mean_.value, max_.value,
-                                  alpha=0.1, color=color,
-                                  rasterized=kwargs.get('rasterized'))
+            maxline = self.plot(max_.times.value, max_.value, color=color,
+                                linewidth=linewidth, **kwargs)
+            maxcol = self.fill_between(max_.times.value, mean_.value, max_.value,
+                                       alpha=0.1, color=color,
+                                       rasterized=kwargs.get('rasterized'))
         else:
-            c = d = None
-        return line1, a, b, c, d
+            maxline = maxcol = None
+        return meanline, minline, mincol, maxline, maxcol
 
     @auto_refresh
     def plot_spectrogram(self, spectrogram, **kwargs):
@@ -292,8 +298,8 @@ class TimeSeriesAxes(Axes):
                                [spectrogram.span[-1]]))
         y = numpy.concatenate((spectrogram.frequencies.value,
                                [spectrogram.band[-1]]))
-        X, Y = numpy.meshgrid(x, y, copy=False, sparse=True)
-        mesh = self.pcolormesh(X, Y, spectrogram.value.T, **kwargs)
+        xcoord, ycoord = numpy.meshgrid(x, y, copy=False, sparse=True)
+        mesh = self.pcolormesh(xcoord, ycoord, spectrogram.value.T, **kwargs)
         if len(self.collections) == 1:
             self.set_xlim(*spectrogram.span)
             self.set_ylim(*spectrogram.band)
@@ -350,8 +356,8 @@ class TimeSeriesPlot(Plot):
         axesdata = self._get_axes_data(series, sep=sep)
         for data in axesdata:
             ax = self._add_new_axes(**axargs)
-            for ts in data:
-                ax.plot(ts, **plotargs)
+            for series in data:
+                ax.plot(series, **plotargs)
             if 'sharex' not in axargs and sharex is True:
                 axargs['sharex'] = ax
             if 'sharey' not in axargs and sharey is True:
@@ -361,7 +367,7 @@ class TimeSeriesPlot(Plot):
         axargs.pop('projection', None)
 
         # set epoch
-        if len(self.axes):
+        if self.axes:
             flatdata = [ts for data in axesdata for ts in data]
             span = SegmentList([ts.span for ts in flatdata]).extent()
             for ax in self.axes:
@@ -383,7 +389,7 @@ class TimeSeriesPlot(Plot):
 
     @property
     def epoch(self):
-        """Find the GPS epoch of this plot
+        """The GPS epoch of this plot
         """
         try:  # look for this class (allow for subclasses)
             axes = self._find_axes(self._DefaultAxesClass.name)
@@ -394,6 +400,8 @@ class TimeSeriesPlot(Plot):
         return axes.epoch
 
     def get_epoch(self):
+        """Return the GPS epoch of this plot
+        """
         return self.epoch
 
     @auto_refresh

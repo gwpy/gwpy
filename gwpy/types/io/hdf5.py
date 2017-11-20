@@ -35,12 +35,12 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 # -- read ---------------------------------------------------------------------
 
 @io_hdf5.with_read_hdf5
-def read_hdf5_array(f, path=None, array_type=Array):
+def read_hdf5_array(source, path=None, array_type=Array):
     """Read an `Array` from the given HDF5 object
 
     Parameters
     ----------
-    f : `str`, :class:`h5py.HLObject`
+    source : `str`, :class:`h5py.HLObject`
         path to HDF file on disk, or open `h5py.HLObject`.
 
     path : `str`
@@ -49,7 +49,7 @@ def read_hdf5_array(f, path=None, array_type=Array):
     array_type : `type`
         desired return type
     """
-    dataset = io_hdf5.find_dataset(f, path=path)
+    dataset = io_hdf5.find_dataset(source, path=path)
     attrs = dict(dataset.attrs)
     try:  # unpickle channel object
         attrs['channel'] = pickle.loads(attrs['channel'])
@@ -85,10 +85,10 @@ def create_array_dataset(h5g, array, path=None, append=False, overwrite=False,
     try:
         dset = h5g.create_dataset(path, data=array.value,
                                   compression=compression, **kwargs)
-    except RuntimeError as e:
-        if str(e) == 'Unable to create link (Name already exists)':
-            e.args = ('{0}: {1!r}, pass overwrite=True, append=True '
-                      'to ignore existing datasets'.format(str(e), path),)
+    except RuntimeError as exc:
+        if str(exc) == 'Unable to create link (Name already exists)':
+            exc.args = ('{0}: {1!r}, pass overwrite=True, append=True '
+                        'to ignore existing datasets'.format(str(exc), path),)
         raise
 
     # store metadata
@@ -116,10 +116,10 @@ def create_array_dataset(h5g, array, path=None, append=False, overwrite=False,
         else:
             try:
                 dset.attrs[attr] = mdval
-            except (TypeError, ValueError, RuntimeError) as e:
-                e.args = ("Failed to store %s (%s) for %s: %s"
+            except (TypeError, ValueError, RuntimeError) as exc:
+                exc.args = ("Failed to store %s (%s) for %s: %s"
                           % (attr, type(mdval).__name__,
-                             type(array).__name__, str(e)),)
+                             type(array).__name__, str(exc)),)
                 raise
 
 

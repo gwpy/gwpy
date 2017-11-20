@@ -31,8 +31,6 @@ is the username and thesecret is the password.
 
 import os
 
-from astropy.table import Table
-
 from .sql import fetch
 from .fetch import register_fetcher
 from .. import GravitySpyTable
@@ -75,30 +73,29 @@ def get_gravityspy_triggers(tablename, engine=None, **kwargs):
                 conn_kw[key] = kwargs.pop(key)
             except KeyError:
                 pass
-        connectionStr = connectStr(**conn_kw)
-        engine = create_engine(connectionStr)
+        engine = create_engine(get_connection_str(**conn_kw))
 
     try:
         return GravitySpyTable(fetch(engine, tablename, **kwargs))
-    except ProgrammingError as e:
-        if 'relation "%s" does not exist' % tablename in str(e):
-            msg = e.args[0]
+    except ProgrammingError as exc:
+        if 'relation "%s" does not exist' % tablename in str(exc):
+            msg = exc.args[0]
             msg = msg.replace(
                 'does not exist',
                 'does not exist, the following tablenames are '
                 'acceptable:\n    %s\n' % '\n    '.join(engine.table_names()))
-            e.args = (msg,)
+            exc.args = (msg,)
         raise
 
 
 # -- utilities ----------------------------------------------------------------
 
-def connectStr(db='gravityspy', host='gravityspy.ciera.northwestern.edu',
-               user=os.getenv('GRAVITYSPY_DATABASE_USER', None),
-               passwd=os.getenv('GRAVITYSPY_DATABASE_PASSWD', None)):
+def get_connection_str(db='gravityspy',
+                       host='gravityspy.ciera.northwestern.edu',
+                       user=os.getenv('GRAVITYSPY_DATABASE_USER', None),
+                       passwd=os.getenv('GRAVITYSPY_DATABASE_PASSWD', None)):
     """Create string to pass to create_engine
     """
-
     if (not user) or (not passwd):
         raise ValueError('Remember to either pass '
                          'or export GRAVITYSPY_DATABASE_USER '
@@ -107,10 +104,7 @@ def connectStr(db='gravityspy', host='gravityspy.ciera.northwestern.edu',
                          'https://secrets.ligo.org/secrets/144/'
                          ' description is username and secret is password.')
 
-    connectionString = 'postgresql://{0}:{1}@{2}:5432/{3}'.format(
-        user, passwd, host, db)
-
-    return connectionString
+    return 'postgresql://{0}:{1}@{2}:5432/{3}'.format(user, passwd, host, db)
 
 
 register_fetcher('gravityspy', EventTable, get_gravityspy_triggers,

@@ -56,13 +56,14 @@ def welch(timeseries, segmentlength, noverlap=None, **kwargs):
     scipy.signal.welch
     """
     # calculate PSD
-    f, psd_ = scipy.signal.welch(timeseries.value, noverlap=noverlap,
-                                 fs=timeseries.sample_rate.decompose().value,
-                                 nperseg=segmentlength, **kwargs)
+    freqs, psd_ = scipy.signal.welch(
+        timeseries.value, noverlap=noverlap,
+        fs=timeseries.sample_rate.decompose().value,
+        nperseg=segmentlength, **kwargs)
     # generate FrequencySeries and return
     unit = scale_timeseries_unit(timeseries.unit,
                                  kwargs.get('scaling', 'density'))
-    return FrequencySeries(psd_, unit=unit, frequencies=f,
+    return FrequencySeries(psd_, unit=unit, frequencies=freqs,
                            name=timeseries.name, epoch=timeseries.epoch,
                            channel=timeseries.channel)
 
@@ -124,8 +125,9 @@ def rayleigh(timeseries, segmentlength, noverlap=0):
         numsegs = int(timeseries.size // segmentlength)
     tmpdata = numpy.ndarray((numsegs, int(segmentlength//2 + 1)))
     for i in range(numsegs):
-        ts = timeseries[i*stepsize:i*stepsize+segmentlength]
-        tmpdata[i, :] = welch(ts, segmentlength)
+        tmpdata[i, :] = welch(
+            timeseries[i*stepsize:i*stepsize+segmentlength],
+            segmentlength)
     std = tmpdata.std(axis=0)
     mean = tmpdata.mean(axis=0)
     return FrequencySeries(std/mean, unit='', copy=False, f0=0,
@@ -168,10 +170,10 @@ def csd(timeseries, other, segmentlength, noverlap=None, **kwargs):
     """
     # calculate CSD
     try:
-        f, csd_ = scipy.signal.csd(timeseries.value, other.value,
-                                   noverlap=noverlap,
-                                   fs=timeseries.sample_rate.decompose().value,
-                                   nperseg=segmentlength, **kwargs)
+        freqs, csd_ = scipy.signal.csd(
+            timeseries.value, other.value, noverlap=noverlap,
+            fs=timeseries.sample_rate.decompose().value,
+            nperseg=segmentlength, **kwargs)
     except AttributeError as exc:
         exc.args = ('{}, scipy>=0.16 is required'.format(str(exc)),)
         raise
@@ -180,8 +182,8 @@ def csd(timeseries, other, segmentlength, noverlap=None, **kwargs):
     unit = scale_timeseries_unit(timeseries.unit,
                                  kwargs.get('scaling', 'density'))
     return FrequencySeries(
-       csd_, unit=unit, frequencies=f,
-       name=str(timeseries.name)+'---'+str(other.name),
-       epoch=timeseries.epoch, channel=timeseries.channel)
+        csd_, unit=unit, frequencies=freqs,
+        name=str(timeseries.name)+'---'+str(other.name),
+        epoch=timeseries.epoch, channel=timeseries.channel)
 
 fft_registry.register_method(csd, scaling='other')

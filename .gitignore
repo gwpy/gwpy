@@ -26,6 +26,7 @@ Portfile
 .eggs/
 
 debian/changelog
+gwpy.spec
 
 # Installer logs
 pip-log.txt

@@ -21,15 +21,18 @@
 
 import warnings
 
+from six import string_types
+
 from ...io import registry
 from ...io.utils import identify_factory
-from ...io.cache import file_list
 from .. import (Table, EventTable)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-def table_from_root(f, treename=None, include_names=None, **kwargs):
+def table_from_root(source, treename=None, include_names=None, **kwargs):
+    """Read a Table from a ROOT tree
+    """
     import root_numpy
 
     if include_names is None:
@@ -53,34 +56,38 @@ def table_from_root(f, treename=None, include_names=None, **kwargs):
             filters = ' && '.join(filters)
         kwargs['selection'] = filters
 
-    # find single tree (if only one tree present)
+    # pass file name (not path)
+    if not isinstance(source, string_types):
+        source = source.name
 
-    files = file_list(f)
+    # find single tree (if only one tree present)
     if treename is None:
-        trees = root_numpy.list_trees(files[0])
+        trees = root_numpy.list_trees(source)
         if len(trees) == 1:
             treename = trees[0]
-        elif len(trees) == 0:
-            raise ValueError("No trees found in %s" % files[0])
+        elif not trees:
+            raise ValueError("No trees found in %s" % source)
         else:
             raise ValueError("Multiple trees found in %s, please select on "
                              "via the `treename` keyword argument, e.g. "
                              "`treename='events'`. Available trees are: %s."
-                             % (files[0], ', '.join(map(repr, trees))))
+                             % (source, ', '.join(map(repr, trees))))
 
     # read and return
-    return Table(root_numpy.root2array(files, treename, branches=include_names,
-                                       **kwargs))
+    return Table(root_numpy.root2array(source, treename,
+                                       branches=include_names, **kwargs))
 
 
 def table_to_root(table, filename, **kwargs):
+    """Write a Table to a ROOT file
+    """
     import root_numpy
     root_numpy.array2root(table.as_array(), filename, **kwargs)
 
 
 # register I/O
-_identifier = identify_factory('.root')
 for table_class in (Table, EventTable):
     registry.register_reader('root', table_class, table_from_root)
     registry.register_writer('root', table_class, table_to_root)
-    registry.register_identifier('root', table_class, _identifier)
+    registry.register_identifier('root', table_class,
+                                 identify_factory('.root'))

@@ -28,11 +28,10 @@ import pytest
 
 from numpy import random
 
-from matplotlib import use
+from matplotlib import (use, rcParams)
 use('agg')  # nopep8
 
 from gwpy.timeseries import TimeSeries
-from gwpy.plotter import rcParams
 
 # local imports
 import mocks

@@ -95,9 +95,9 @@ install_package() {
 }
 
 get_python_version() {
-    if [ -n ${PYTHON_VERSION} ]; then
+    if [ -n "${PYTHON_VERSION}" ]; then
         :
-    elif [ -n ${TRAVIS_PYTHON_VERSION} ]; then
+    elif [ -n "${TRAVIS_PYTHON_VERSION}" ]; then
         PYTHON_VERSION=${TRAVIS_PYTHON_VERSION}
     else
         PYTHON_VERSION=`python -c
@@ -164,4 +164,13 @@ cp = ConfigParser(defaults={'py-prefix': '${PY_PREFIX}'})
 cp.read('$fp');
 cp.set('$section', 'py-prefix', '${PY_PREFIX}')
 print(cp.get('$section', '$option'))"
+}
+
+# -- utilities ----------------------------------------------------------------
+
+function write_visual_bells() {
+  while :; do
+    echo -en "\a"
+    sleep 10
+  done
 }

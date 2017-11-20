@@ -45,12 +45,14 @@ def which(program):
         if not executable program is found
     """
     def is_exe(fpath):
+        """Return `True` if the given file path is executable
+        """
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-    fpath = os.path.split(program)[0]
-    if fpath:
-        if is_exe(program):
-            return program
-    else:
+
+    absolute = os.path.dirname(program)
+    if absolute and is_exe(program):  # absolute path given, and executable
+        return program
+    elif not absolute:  # relative path given, walk PATH
         for path in os.environ["PATH"].split(os.pathsep):
             exe_file = os.path.join(path, program)
             if is_exe(exe_file):

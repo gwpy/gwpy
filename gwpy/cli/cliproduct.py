@@ -45,6 +45,13 @@ from ..timeseries import TimeSeries
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
+try:
+    from matplotlib.cm import viridis
+except ImportError:  # mpl < 1.5
+    DEFAULT_CMAP = 'YlOrRd'
+else:
+    DEFAULT_CMAP = 'viridis'
+
 
 class CliProduct(object):
     """Base class for all cli plot products
@@ -357,12 +364,10 @@ class CliProduct(object):
                             help='min pixel value in resulting image')
         parser.add_argument('--imax',
                             help='max pixek value in resulting image')
-        parser.add_argument('--cmap', default='viridis',
-                            help='Colormap. Options are:'
-                            'viridis, jet, hot, copper, bone... '
-                            'for more options see '
+        parser.add_argument('--cmap', default=DEFAULT_CMAP,
+                            help='Colormap. See '
                             'https://matplotlib.org/examples/color/'
-                            'colormaps_reference.html')
+                            'colormaps_reference.html for options')
 
     def arg_ax_intlin(self, parser):
         """Intensity (colors) default to linear

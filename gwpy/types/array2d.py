@@ -402,13 +402,13 @@ class Array2D(Series):
         y = Quantity(y, self.yindex.unit).value
         try:
             idx = (self.xindex.value == x).nonzero()[0][0]
-        except IndexError as e:
-            e.args = ("Value %r not found in array xindex" % x,)
+        except IndexError as exc:
+            exc.args = ("Value %r not found in array xindex" % x,)
             raise
         try:
             idy = (self.yindex.value == y).nonzero()[0][0]
-        except IndexError as e:
-            e.args = ("Value %r not found in array yindex",)
+        except IndexError as exc:
+            exc.args = ("Value %r not found in array yindex",)
             raise
         return self[idx, idy]
 

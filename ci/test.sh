@@ -26,10 +26,18 @@ cd ${GWPY_PATH}
 
 set -ex && trap 'set +xe' RETURN
 
+# macports PATH doesn't persist from install stage, which is annoying
+if [ `get_package_manager` == port ]; then
+    . terryfy/travis_tools.sh
+    export PATH=$MACPORTS_PREFIX/bin:$PATH
+fi
+
 get_environment  # sets PIP variables etc
+get_python_version  # sets PYTHON_VERSION
 
 # install test dependencies
 ${PIP} install coverage "setuptools>=17.1" "pytest>=3.1"
+COVERAGE=coverage-${PYTHON_VERSION}
 
 # fix broken glue dependency
 #     this is required because the LIGO glue package isn't
@@ -39,4 +47,4 @@ ${PIP} install coverage "setuptools>=17.1" "pytest>=3.1"
 ${PIP} install lscsoft-glue
 
 # run tests
-coverage run ./setup.py test --addopts gwpy/tests/
+${COVERAGE} run ./setup.py test --addopts gwpy/tests/

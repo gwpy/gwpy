@@ -53,6 +53,7 @@ def canonical_name(name):
     'kaiser'
     """
     try:  # use equivalence introduced in scipy 0.16.0
+        # pylint: disable=protected-access
         return scipy_windows._win_equiv[name.lower()].__name__
     except AttributeError:  # old scipy
         try:
@@ -111,8 +112,8 @@ def recommended_overlap(name, nfft=None):
     """
     try:
         name = canonical_name(name)
-    except KeyError as e:
-        raise ValueError(str(e))
+    except KeyError as exc:
+        raise ValueError(str(exc))
     try:
         rov = ROV[name]
     except KeyError:

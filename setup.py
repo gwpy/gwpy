@@ -20,44 +20,32 @@
 """Setup the GWpy package
 """
 
+# ignore all invalid names (pylint isn't good at looking at executables)
+# pylint: disable=invalid-name
+
+from __future__ import print_function
+
 import sys
-import glob
-import hashlib
-import os.path
-import subprocess
 
 try:
-    import setuptools
+    import setuptools  # pylint: disable=unused-import
 except ImportError:
     import ez_setup
     ez_setup.use_setuptools()
 finally:
     from setuptools import (setup, find_packages)
-    from setuptools.command import (build_py, egg_info)
 
-from distutils.dist import Distribution
-from distutils.cmd import Command
-from distutils.command.clean import (clean, log, remove_tree)
+import versioneer
+from setup_utils import (CMDCLASS, get_setup_requires, get_scripts)
 
-# set basic metadata
-PACKAGENAME = 'gwpy'
-AUTHOR = 'Duncan Macleod'
-AUTHOR_EMAIL = 'duncan.macleod@ligo.org'
-LICENSE = 'GPLv3'
-
-cmdclass = {}
-
-# -- versioning ---------------------------------------------------------------
-
-import versioneer  # nopep8
 __version__ = versioneer.get_version()
-cmdclass.update(versioneer.get_cmdclass())
 
 # -- dependencies -------------------------------------------------------------
 
-# declare basic dependencies for each stage
-setup_requires = [
-]
+# build dependencies
+setup_requires = get_setup_requires()
+
+# package dependencies
 install_requires = [
     'numpy>=1.7.1',
     'scipy>=0.12.1',
@@ -67,6 +55,20 @@ install_requires = [
     'lscsoft-glue>=1.55.2',
     'python-dateutil',
 ]
+
+# test for LAL
+try:
+    import lal  # pylint: disable=unused-import
+except ImportError as e:
+    install_requires.append('ligotimegps>=1.1')
+
+# enum34 required for python < 3.4
+try:
+    import enum  # pylint: disable=unused-import
+except ImportError:
+    install_requires.append('enum34')
+
+# define extras
 extras_require = {
     'hdf5': ['h5py>=1.3'],
     'root': ['root_numpy'],
@@ -80,34 +82,7 @@ extras_require = {
 extras_require['all'] = set(p for extra in extras_require.values()
                             for p in extra)
 
-# test for LAL
-try:
-    import lal
-except ImportError as e:
-    install_requires.append('ligotimegps>=1.1')
-
-# test for OrderedDict
-try:
-    from collections import OrderedDict
-except ImportError:
-    install_requires.append('ordereddict>=1.1')
-
-# importlib required for cli programs
-try:
-    from importlib import import_module
-except ImportError:
-    install_requires.append('importlib>=1.0.3')
-
-# enum34 required for python < 3.4
-try:
-    import enum
-except ImportError:
-    install_requires.append('enum34')
-
-# -- set test dependencies ----------------------------------------------------
-
-if {'pytest', 'test', 'ptr'}.intersection(sys.argv):
-    setup_requires.append('pytest-runner')
+# test dependencies
 tests_require = [
     'pytest>=3.1',
     'freezegun',
@@ -117,165 +92,48 @@ tests_require = [
 if sys.version < '3':
     tests_require.append('mock')
 
-
-# -- custom clean command -----------------------------------------------------
-
-class GWpyClean(clean):
-    def run(self):
-        if self.all:
-            # remove dist
-            if os.path.exists('dist'):
-                remove_tree('dist')
-            else:
-                log.warn("'dist' does not exist -- can't clean it")
-            # remove docs
-            sphinx_dir = os.path.join(self.build_base, 'sphinx')
-            if os.path.exists(sphinx_dir):
-                remove_tree(sphinx_dir, dry_run=self.dry_run)
-            else:
-                log.warn("%r does not exist -- can't clean it", sphinx_dir)
-            # remove setup eggs
-            for egg in glob.glob('*.egg') + glob.glob('*.egg-info'):
-                if os.path.isdir(egg):
-                    remove_tree(egg, dry_run=self.dry_run)
-                else:
-                    log.info('removing %r' % egg)
-                    os.unlink(egg)
-            # remove Portfile
-            portfile = 'Portfile'
-            if os.path.exists(portfile) and not self.dry_run:
-                log.info('removing %r' % portfile)
-                os.unlink(portfile)
-        clean.run(self)
-
-
-cmdclass['clean'] = GWpyClean
-
-
-# -- build a Portfile for macports --------------------------------------------
-
-class BuildPortfile(Command):
-    """Generate a Macports Portfile for this project from the current build
-    """
-    description = 'Generate Macports Portfile'
-    user_options = [
-        ('version=', None, 'the X.Y.Z package version'),
-        ('portfile=', None, 'target output file, default: \'Portfile\''),
-        ('template=', None,
-         'Portfile template, default: \'Portfile.template\''),
-    ]
-
-    def initialize_options(self):
-        self.version = None
-        self.portfile = 'Portfile'
-        self.template = 'Portfile.template'
-        self._template = None
-
-    def finalize_options(self):
-        from jinja2 import Template
-        with open(self.template, 'r') as t:
-            self._template = Template(t.read())
-
-    def run(self):
-        # get version from distribution
-        if self.version is None:
-            self.version = __version__
-        # find dist file
-        dist = os.path.join(
-            'dist',
-            '%s-%s.tar.gz' % (self.distribution.get_name(),
-                              self.distribution.get_version()))
-        # run sdist if needed
-        if not os.path.isfile(dist):
-            self.run_command('sdist')
-        # get checksum digests
-        log.info('reading distribution tarball %r' % dist)
-        with open(dist, 'rb') as fobj:
-            data = fobj.read()
-        log.info('recovered digests:')
-        digest = dict()
-        digest['rmd160'] = self._get_rmd160(dist)
-        for algo in [1, 256]:
-            digest['sha%d' % algo] = self._get_sha(data, algo)
-        for key, val in digest.iteritems():
-            log.info('    %s: %s' % (key, val))
-        # write finished portfile to file
-        with open(self.portfile, 'w') as fport:
-            fport.write(self._template.render(
-                version=self.distribution.get_version(), **digest))
-        log.info('portfile written to %r' % self.portfile)
-
-    @staticmethod
-    def _get_sha(data, algorithm=256):
-        hash_ = getattr(hashlib, 'sha%d' % algorithm)
-        return hash_(data).hexdigest()
-
-    @staticmethod
-    def _get_rmd160(filename):
-        p = subprocess.Popen(['openssl', 'rmd160', filename],
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = p.communicate()
-        if p.returncode != 0:
-            raise subprocess.CalledProcessError(err)
-        else:
-            return out.splitlines()[0].rsplit(' ', 1)[-1]
-
-
-cmdclass['port'] = BuildPortfile
-if 'port' in sys.argv:
-    setup_requires.append('jinja2')
-
-
-# -- find files ---------------------------------------------------------------
-
-# Use the find_packages tool to locate all packages and modules
-packagenames = find_packages()
-
-# glob for all scripts
-scripts = glob.glob(os.path.join('bin', '*'))
-
 # -- run setup ----------------------------------------------------------------
 
-# don't install things if just running --help
-if '--help' in sys.argv or '--help-commands' in sys.argv:
-    setup_requires = []
+setup(
+    # metadata
+    name='gwpy',
+    provides=['gwpy'],
+    version=__version__,
+    description="A python package for gravitational-wave astrophysics",
+    long_description=("GWpy is a collaboration-driven Python package "
+                      "providing tools for studying data from "
+                      "ground-based gravitational-wave detectors"),
+    author='Duncan Macleod',
+    author_email='duncan.macleod@ligo.org',
+    license='GPLv3',
+    url='https://gwpy.github.io/',
 
-setup(name=PACKAGENAME,
-      provides=[PACKAGENAME],
-      version=__version__,
-      description="A python package for gravitational-wave astrophysics",
-      long_description="""
-          GWpy is a collaboration-driven `Python <http://www.python.org>`_
-          package providing tools for studying data from ground-based
-          gravitational-wave detectors.
-      """,
-      author=AUTHOR,
-      author_email=AUTHOR_EMAIL,
-      license=LICENSE,
-      url='https://gwpy.github.io/',
-      packages=packagenames,
-      include_package_data=True,
-      cmdclass=cmdclass,
-      scripts=scripts,
-      setup_requires=setup_requires,
-      install_requires=install_requires,
-      tests_require=tests_require,
-      extras_require=extras_require,
-      test_suite='gwpy.tests',
-      use_2to3=False,
-      classifiers=[
-          'Programming Language :: Python',
-          'Development Status :: 3 - Alpha',
-          'Intended Audience :: Science/Research',
-          'Intended Audience :: End Users/Desktop',
-          'Intended Audience :: Developers',
-          'Natural Language :: English',
-          'Topic :: Scientific/Engineering',
-          'Topic :: Scientific/Engineering :: Astronomy',
-          'Topic :: Scientific/Engineering :: Physics',
-          'Operating System :: POSIX',
-          'Operating System :: Unix',
-          'Operating System :: MacOS',
-          'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-      ],
-      )
+    # package content
+    packages=find_packages(),
+    scripts=get_scripts(),
+    include_package_data=True,
+
+    # dependencies
+    cmdclass=CMDCLASS,
+    setup_requires=setup_requires,
+    install_requires=install_requires,
+    tests_require=tests_require,
+    extras_require=extras_require,
+
+    # classifiers
+    classifiers=[
+        'Programming Language :: Python',
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Science/Research',
+        'Intended Audience :: End Users/Desktop',
+        'Intended Audience :: Developers',
+        'Natural Language :: English',
+        'Topic :: Scientific/Engineering',
+        'Topic :: Scientific/Engineering :: Astronomy',
+        'Topic :: Scientific/Engineering :: Physics',
+        'Operating System :: POSIX',
+        'Operating System :: Unix',
+        'Operating System :: MacOS',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+    ],
+)

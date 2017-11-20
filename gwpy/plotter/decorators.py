@@ -69,7 +69,7 @@ def axes_method(func):
         """Find the relevant `Axes` and call the method
         """
         axes = [ax for ax in figure.axes if ax not in figure._coloraxes]
-        if len(axes) == 0:
+        if not axes:
             raise RuntimeError("No axes found for which '%s' is applicable"
                                % func.__name__)
         if len(axes) != 1:

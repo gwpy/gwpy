@@ -21,9 +21,7 @@
 
 from functools import wraps
 
-from six import string_types
-
-from ..filter import (filter_table, parse_column_filters)
+from ..filter import filter_table
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -33,6 +31,8 @@ def read_with_selection(func):
     """
     @wraps(func)
     def decorated_func(*args, **kwargs):
+        """Execute a function, then apply a selection filter
+        """
         # parse selection
         try:
             selection = kwargs.pop('selection')

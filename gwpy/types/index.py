@@ -29,6 +29,8 @@ class Index(Quantity):
     """
     @property
     def regular(self):
+        """`True` if this index is linearly increasing
+        """
         try:
             return self.info.meta['regular']
         except (TypeError, KeyError):

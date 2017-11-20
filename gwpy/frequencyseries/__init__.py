@@ -20,10 +20,10 @@
 """
 
 # import objects
-from .core import *
-from .hist import *
+from .core import FrequencySeries
+from .hist import SpectralVariance
 
 # import unified I/O
-from .io import *
+from . import io  # pylint: disable=unused-import
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

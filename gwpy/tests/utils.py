@@ -149,18 +149,17 @@ def assert_table_equal(a, b, is_copy=True, meta=False, check_types=True,
         assert a.meta == b.meta
 
     if almost_equal:
-        check_types = False  # assert_allclose doesn't work for structured
         assert_array = assert_allclose
     else:
         assert_array = assert_array_equal
 
     # actually check the data
-    if check_types:
-        assert_array(a.as_array(), b.as_array())
-    else:
-        for name in a.colnames:
-            cola = a[name]
-            assert_array(cola, b[name].astype(cola.dtype))
+    for name in a.colnames:
+        cola = a[name]
+        colb = b[name]
+        if check_types:
+            assert cola.dtype is colb.dtype
+        assert_array(cola, colb)
 
     # check that the tables are copied or the same data
     for name in a.colnames:

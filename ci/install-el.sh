@@ -41,9 +41,9 @@ if [ ${PY_XY} -ge 30 ]; then
 fi
 
 # build the RPM
+python setup.py changelog --format=rpm --output=changelog.txt
 python setup.py bdist_rpm \
-    --python `which ${PYTHON}` \
-    --changelog="`python changelog.py --start-tag 'v0.5'`" \
+    --python `which ${PYTHON}` --changelog="`cat changelog.txt`" \
     ${BDIST_RPM_OPTS}
 
 # install the rpm

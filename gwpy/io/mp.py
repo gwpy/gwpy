@@ -16,6 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Multi-processing utilities for input/output
+
+This module provides the `read_multi` method, which enables spreading
+reading multiple files across multiple cores, returning a flattened result.
+"""
+
 import sys
 from xml.sax import SAXException
 
@@ -70,40 +76,40 @@ def read_multi(flatten, cls, source, *args, **kwargs):
         elif isinstance(source, string_types):
             try:
                 ctx = get_readable_fileobj(files[0], encoding='binary')
-                fileobj = ctx.__enter__()
+                fileobj = ctx.__enter__()  # pylint: disable=no-member
             except IOError:
                 raise
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 fileobj = None
         kwargs['format'] = get_format(
             'read', cls, files[0], fileobj, args, kwargs)
         if ctx is not None:
-            ctx.__exit__(*sys.exc_info())
+            ctx.__exit__(*sys.exc_info())  # pylint: disable=no-member
 
     # calculate maximum number of processes
     nproc = min(kwargs.pop('nproc', 1), len(files))
 
     # define multiprocessing method
-    def _read_single_file(f):
+    def _read_single_file(fobj):
         try:
-            return f, io_read(cls, f, *args, **kwargs)
-        except Exception as e:
+            return fobj, io_read(cls, fobj, *args, **kwargs)
+        # pylint: disable=broad-except,redefine-in-handler
+        except Exception as exc:
             if nproc == 1:
                 raise
-            elif isinstance(e, SAXException):  # SAXExceptions don't pickle
-                return f, e.getException()
-            else:
-                return f, e
+            if isinstance(exc, SAXException):  # SAXExceptions don't pickle
+                return fobj, exc.getException()  # pylint: disable=no-member
+            return fobj, exc
 
     # read files
     output = mp_utils.multiprocess_with_queues(
         nproc, _read_single_file, files, raise_exceptions=False)
 
     # raise exceptions (from multiprocessing, single process raises inline)
-    for f, x in output:
-        if isinstance(x, Exception):
-            x.args = ('Failed to read %s: %s' % (f, str(x)),)
-            raise x
+    for fobj, exc in output:
+        if isinstance(exc, Exception):
+            exc.args = ('Failed to read %s: %s' % (fobj, str(exc)),)
+            raise exc
 
     # return combined object
     _, out = zip(*output)

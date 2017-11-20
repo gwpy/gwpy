@@ -20,16 +20,11 @@
 """
 
 import os
-import sys
 
-from .table import EventTable
-from astropy.table import Table
-
-import six
+from six.moves import zip_longest
 
 from ..utils import mp as mp_utils
-
-from xml.sax import SAXException
+from .table import EventTable
 
 __author__ = 'Scott Coughlin <scott.coughlin@ligo.org>'
 __all__ = ['GravitySpyTable']
@@ -77,14 +72,12 @@ class GravitySpyTable(EventTable):
         -------
         Folder containing omega scans sorted by label
         """
-        try:
-            import pandas as pd
-        except ImportError as e:
-            e.args = ('pandas is required to download triggers',)
-            raise
-
         # back to pandas
-        imagesDB = self.to_pandas()
+        try:
+            imagesDB = self.to_pandas()
+        except ImportError as exc:
+            exc.args = ('pandas is required to download triggers',)
+            raise
         imagesDB = imagesDB.loc[imagesDB.imgUrl1 != '?']
 
         TrainingSet = kwargs.pop('TrainingSet', 0)
@@ -112,12 +105,12 @@ class GravitySpyTable(EventTable):
             labels = imagesDB.Label.as_matrix().flatten().tolist()
             if LabelledSamples:
                 sampletype = imagesDB.SampleType.as_matrix().flatten().tolist()
-                images = six.itertools.izip_longest(
-                         imagesURL, labels, sampletype)
+                images = zip_longest(
+                    imagesURL, labels, sampletype)
             else:
-                images = six.itertools.izip_longest(imagesURL, labels, [])
+                images = zip_longest(imagesURL, labels, [])
         else:
-            images = six.itertools.izip_longest(imagesURL, [], [])
+            images = zip_longest(imagesURL, [], [])
 
         images = list(images)
 
@@ -125,16 +118,14 @@ class GravitySpyTable(EventTable):
         nproc = min(kwargs.pop('nproc', 1), len(images))
 
         # define multiprocessing method
-        def _download_single_image(f):
+        def _download_single_image(url):
             try:
-                return f, get_image(f)
-            except Exception as e:
+                return url, get_image(url)
+            except Exception as exc:  # pylint: disable=broad-except
                 if nproc == 1:
                     raise
-                elif isinstance(e, SAXException):  # SAXExceptions don't pickle
-                    return f, e.getException()
                 else:
-                    return f, e
+                    return url, exc
 
         # read files
         output = mp_utils.multiprocess_with_queues(

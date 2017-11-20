@@ -66,28 +66,25 @@ For example,
 """
 
 import re
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
+from collections import OrderedDict
 
 from six import string_types
+from six.moves import configparser
 
 from numpy import inf
 
 from ...io import registry
 from ...io.utils import identify_factory
 from ...io.cache import (file_list, FILE_LIKE)
-from ...utils.compat import OrderedDict
 from .. import (Channel, ChannelList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 CHANNEL_DEFINITION = re.compile(
-    "(?P<name>[a-zA-Z0-9:_-]+)"
-    "(?:\s+(?P<sample_rate>[0-9.]+))?"
-    "(?:\s+(?P<safe>(safe|unsafe|unsafeabove2kHz|unknown)))?"
-    "(?:\s+(?P<fidelity>(clean|flat|glitchy|unknown)))?"
+    r"(?P<name>[a-zA-Z0-9:_-]+)"
+    r"(?:\s+(?P<sample_rate>[0-9.]+))?"
+    r"(?:\s+(?P<safe>(safe|unsafe|unsafeabove2kHz|unknown)))?"
+    r"(?:\s+(?P<fidelity>(clean|flat|glitchy|unknown)))?"
 )
 
 
@@ -109,18 +106,18 @@ def read_channel_list_file(*source):
         params = OrderedDict(config.items(group))
         channels = params.pop('channels').strip('\n').split('\n')
         if 'flow' in params or 'fhigh' in params:
-            lo = params.pop('flow', 0)
-            hi = params.pop('fhigh', inf)
-            if isinstance(hi, string_types) and hi.lower() == 'nyquist':
-                hi = inf
-            frange = float(lo), float(hi)
+            low = params.pop('flow', 0)
+            high = params.pop('fhigh', inf)
+            if isinstance(high, string_types) and high.lower() == 'nyquist':
+                high = inf
+            frange = float(low), float(high)
         else:
             frange = None
         for channel in channels:
             try:
                 match = CHANNEL_DEFINITION.match(channel).groupdict()
-            except AttributeError as e:
-                e.args = ('Cannot parse %r as channel list entry' % channel,)
+            except AttributeError as exc:
+                exc.args = ('Cannot parse %r as channel list entry' % channel,)
                 raise
             # remove Nones from match
             match = dict((k, v) for k, v in match.items() if v is not None)
@@ -158,11 +155,11 @@ def write_channel_list_file(channels, fobj):
         entry += ' %s' % channel.params.get('safe', 'safe')
         entry += ' %s' % channel.params.get('fidelity', 'clean')
         try:
-            cl = out.get(group, 'channels')
+            clist = out.get(group, 'channels')
         except configparser.NoOptionError:
             out.set(group, 'channels', '\n%s' % entry)
         else:
-            out.set(group, 'channels', cl + '\n%s' % entry)
+            out.set(group, 'channels', clist + '\n%s' % entry)
     if isinstance(fobj, FILE_LIKE):
         close = False
     else:

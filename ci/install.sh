@@ -29,16 +29,15 @@ set -x && trap 'set +x' RETURN
 get_environment
 
 # install for this OS
-if [ -z ${DOCKER_IMAGE} ]; then  # simple
+if [ ${TRAVIS_OS_NAME} == "osx" ]; then  # macports
+    . ci/install-macos.sh
+elif [[ ${DOCKER_IMAGE} =~ :el[0-9]+$ ]]; then  # SLX
+    . ci/install-el.sh
+elif [ -n "${DOCKER_IMAGE}" ]; then  # debian
+    . ci/install-debian.sh
+else  # simple pip build
     ${PIP} install .
     ${PIP} install -r requirements-dev.txt ${PIP_FLAGS}
-    return 0
-fi
-
-if [[ ${DOCKER_IMAGE} =~ :el[0-9]+$ ]]; then  # SLX
-    . ci/install-el.sh
-else  # Debian
-    . ci/install-debian.sh
 fi
 
 cd /tmp

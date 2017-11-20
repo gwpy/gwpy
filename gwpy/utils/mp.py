@@ -44,11 +44,11 @@ def process_in_out_queues(func, q_in, q_out):
     """
     while True:
         # pick item out of input wqueue
-        i, x = q_in.get()
-        if i is None:
+        idx, arg = q_in.get()
+        if idx is None:  # sentinel
             break
         # execute method and put the result in the output queue
-        q_out.put((i, func(x)))
+        q_out.put((idx, func(arg)))
 
 
 def multiprocess_with_queues(nproc, func, inputs, raise_exceptions=False):
@@ -93,27 +93,29 @@ def multiprocess_with_queues(nproc, func, inputs, raise_exceptions=False):
     q_out = Queue()
 
     # create child processes and start
-    proc = [Process(target=process_in_out_queues, args=(func, q_in, q_out))
-            for _ in range(nproc)]
-    for p in proc:
-        p.daemon = True
-        p.start()
+    proclist = [Process(target=process_in_out_queues, args=(func, q_in, q_out))
+                for _ in range(nproc)]
+    for proc in proclist:
+        proc.daemon = True
+        proc.start()
 
     # populate queue
     sent = list(map(q_in.put, enumerate(inputs)))
-    [q_in.put((None, None)) for _ in range(nproc)]  # queue is full
+    for _ in range(nproc):  # add sentinel for each process
+        q_in.put((None, None))
 
     # get results
     res = [q_out.get() for _ in range(len(sent))]
 
     # close processes and unwrap results
-    [p.join() for p in proc]
+    for proc in proclist:
+        proc.join()
     results = [out for i, out in sorted(res, key=itemgetter(0))]
 
     # raise exceptions
     if raise_exceptions:
-        for e in results:
-            if isinstance(e, Exception):
-                raise e
+        for exc in results:
+            if isinstance(exc, Exception):
+                raise exc
 
     return results
