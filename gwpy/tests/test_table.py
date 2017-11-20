@@ -327,13 +327,16 @@ class TestEventTable(TestTable):
         assert isinstance(rate, TimeSeries)
         assert rate.sample_rate == 1 * units.Hz
 
-        # test binned_event_rates
+
+    def test_binned_event_rates(self, table):
         rates = table.binned_event_rates(100, 'snr', [10, 100],
                                          timecolumn='time')
         assert isinstance(rates, TimeSeriesDict)
         assert list(rates.keys()), [10, 100]
         assert rates[10].max() == 0.14 * units.Hz
+        assert rates[10].name == 'snr >= 10'
         assert rates[100].max() == 0.13 * units.Hz
+        assert rates[100].name == 'snr >= 100'
         table.binned_event_rates(100, 'snr', [10, 100], operator='in')
         table.binned_event_rates(100, 'snr', [(0, 10), (10, 100)])
 
