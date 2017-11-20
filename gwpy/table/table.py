@@ -19,7 +19,6 @@
 """Extend :mod:`astropy.table` with the `EventTable`
 """
 
-import operator as _operator
 from math import ceil
 
 from six import string_types
@@ -80,7 +79,7 @@ class EventTable(Table):
     # -- i/o ------------------------------------
 
     @classmethod
-    def read(cls, source, *args, **kwargs):
+    def read(cls, source, *args, **kwargs):  # pylint: disable=arguments-differ
         """Read data into an `EventTable`
 
         Parameters
@@ -141,7 +140,7 @@ class EventTable(Table):
         # and return
         return tab
 
-    def write(self, target, *args, **kwargs):
+    def write(self, target, *args, **kwargs):  # pylint: disable=arguments-differ
         """Write this table to a file
 
         Parameters
@@ -269,17 +268,20 @@ class EventTable(Table):
         ----------
         stride : `float`
             size (seconds) of each time bin
-        start : `float`, :class:`~gwpy.time.LIGOTimeGPS`, optional
-            GPS start epoch of rate :class:`~gwpy.timeseries.TimeSeries`
-        end : `float`, :class:`~gwpy.time.LIGOTimeGPS`, optional
-            GPS end time of rate :class:`~gwpy.timeseries.TimeSeries`.
+
+        start : `float`, `~gwpy.time.LIGOTimeGPS`, optional
+            GPS start epoch of rate `~gwpy.timeseries.TimeSeries`
+
+        end : `float`, `~gwpy.time.LIGOTimeGPS`, optional
+            GPS end time of rate `~gwpy.timeseries.TimeSeries`.
             This value will be rounded up to the nearest sample if needed.
+
         timecolumn : `str`, optional, default: ``time``
             name of time-column to use when binning events
 
         Returns
         -------
-        rate : :class:`~gwpy.timeseries.TimeSeries`
+        rate : `~gwpy.timeseries.TimeSeries`
             a `TimeSeries` of events per second (Hz)
         """
         from gwpy.timeseries import TimeSeries
@@ -328,7 +330,7 @@ class EventTable(Table):
                If ``bins`` is given as a list of tuples, this argument
                is ignored.
 
-        start : `float`, :class:`~gwpy.time.LIGOTimeGPS`, optional
+        start : `float`, `~gwpy.time.LIGOTimeGPS`, optional
             GPS start epoch of rate `~gwpy.timeseries.TimeSeries`.
 
         end : `float`, `~gwpy.time.LIGOTimeGPS`, optional
@@ -347,24 +349,20 @@ class EventTable(Table):
         from gwpy.timeseries import TimeSeriesDict
 
         # work out time boundaries
-        times = self[timecolumn]
         if not start:
-            start = times.min()
+            start = self[timecolumn].min()
         if not end:
-            end = times.max()
+            end = self[timecolumn].max()
 
         # generate column bins
         if not bins:
             bins = [(-numpy.inf, numpy.inf)]
         if operator == 'in' and not isinstance(bins[0], tuple):
-            bins2 = []
-            for i, bin_ in enumerate(bins[:-1]):
-                bins2.append((bin_, bins[i+1]))
-            bins = bins2
+            bins = [(bin_, bins[i+1]) for i, bin_ in enumerate(bins[:-1])]
         elif isinstance(operator, string_types):
-            op = parse_operator(operator)
+            op_func = parse_operator(operator)
         else:
-            op = operator
+            op_func = operator
 
         coldata = self[column]
 
@@ -374,10 +372,10 @@ class EventTable(Table):
             if isinstance(bin_, tuple):
                 keep = (coldata >= bin_[0]) & (coldata < bin_[1])
             else:
-                keep = op(coldata, bin_)
+                keep = op_func(coldata, bin_)
             out[bin_] = self[keep].event_rate(stride, start=start, end=end,
                                               timecolumn=timecolumn)
-            out[bin_].name = '%s $%s$ %s' % (column, operator, bin_)
+            out[bin_].name = ' '.join((column, str(operator), str(bin_)))
 
         return out
 
