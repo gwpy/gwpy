@@ -46,6 +46,52 @@ from test_array import (TestSeries, TestArray2D)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
+LIGO_LW_ARRAY = """<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
+<LIGO_LW>
+  <LIGO_LW Name="psd">
+    <Time Type="GPS" Name="epoch">1000000000</Time>
+    <Param Type="lstring" Name="channel:param">X1:TEST-CHANNEL_1</Param>
+    <Array Type="real_8" Name="PSD:array" Unit="Hz^-1">
+      <Dim Start="0" Scale="1" Name="Frequency" Unit="Hz">10</Dim>
+      <Dim Name="Frequency,Real">2</Dim>
+      <Stream Delimiter=" " Type="Local">
+        0 1
+        1 2
+        2 3
+        3 4
+        4 5
+        5 6
+        6 7
+        7 8
+        8 9
+        9 10
+      </Stream>
+    </Array>
+  </LIGO_LW>
+  <LIGO_LW Name="psd">
+    <Param Type="lstring" Name="channel:param">X1:TEST-CHANNEL_2</Param>
+    <Array Type="real_8" Name="PSD:array" Unit="Hz^-1">
+      <Dim Start="0" Scale="1" Name="Frequency" Unit="Hz">10</Dim>
+      <Dim Name="Frequency,Real">2</Dim>
+      <Stream Delimiter=" " Type="Local">
+        0 10
+        1 20
+        2 30
+        3 40
+        4 50
+        5 60
+        6 70
+        7 80
+        8 90
+        9 10
+      </Stream>
+    </Array>
+  </LIGO_LW>
+</LIGO_LW>
+"""
+
+
 # -----------------------------------------------------------------------------
 #
 #     gwpy.frequencyseries.core
@@ -159,6 +205,31 @@ class TestFrequencySeries(TestSeries):
             array, format,
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={'exclude': ['name', 'channel', 'unit', 'epoch']})
+
+    def test_read_ligolw(self):
+        with tempfile.NamedTemporaryFile() as fobj:
+            fobj.write(LIGO_LW_ARRAY)
+            array = FrequencySeries.read(fobj, 'psd',
+                                         match={'channel': 'X1:TEST-CHANNEL_1'})
+            utils.assert_array_equal(array, list(range(1, 11)) / units.Hz)
+            utils.assert_array_equal(array.frequencies,
+                                     list(range(10)) * units.Hz)
+            assert numpy.isclose(array.epoch.gps, 1000000000)  # precision gah!
+            assert array.unit == units.Hz ** -1
+
+            array2 = FrequencySeries.read(
+                fobj, 'psd', match={'channel': 'X1:TEST-CHANNEL_2'})
+            assert array2.epoch is None
+
+            # assert errors
+            with pytest.raises(ValueError):
+                FrequencySeries.read(fobj, 'blah')
+            with pytest.raises(ValueError):
+                FrequencySeries.read(fobj, 'psd')
+            with pytest.raises(ValueError):
+                FrequencySeries.read(
+                    fobj, 'psd',
+                    match={'channel': 'X1:TEST-CHANNEL_1', 'blah': 'blah'})
 
 
 # -----------------------------------------------------------------------------
