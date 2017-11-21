@@ -208,7 +208,7 @@ class TestFrequencySeries(TestSeries):
 
     @utils.skip_missing_dependency('glue.ligolw.utils.ligolw_add')
     def test_read_ligolw(self):
-        with tempfile.NamedTemporaryFile() as fobj:
+        with tempfile.NamedTemporaryFile(mode='w+') as fobj:
             fobj.write(LIGO_LW_ARRAY)
             array = FrequencySeries.read(fobj, 'psd',
                                          match={'channel': 'X1:TEST-CHANNEL_1'})
