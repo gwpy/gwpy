@@ -447,8 +447,12 @@ def is_ligolw(origin, filepath, fileobj, *args, **kwargs):
         try:
             line1 = fileobj.readline().lower()
             line2 = fileobj.readline().lower()
-            return (line1.startswith(XML_SIGNATURE) and
-                    line2.startswith(LIGOLW_SIGNATURE))
+            try:
+                return (line1.startswith(XML_SIGNATURE) and
+                        line2.startswith(LIGOLW_SIGNATURE))
+            except TypeError:  # bytes vs str
+                return (line1.startswith(XML_SIGNATURE.decode('utf-8')) and
+                        line2.startswith(LIGOLW_SIGNATURE.decode('utf-8')))
         finally:
             fileobj.seek(loc)
     try:
