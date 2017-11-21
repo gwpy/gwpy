@@ -42,7 +42,7 @@ Working with data
 **Working with frequency-domain data**
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    spectrum/index
    spectrogram/index
