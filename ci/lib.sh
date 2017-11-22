@@ -34,7 +34,7 @@ export GWPY_PATH
 ci_run() {
     # run a command normally, or in docker, depending on environment
     if [ -z "${DOCKER_IMAGE}" ]; then  # execute function normally
-        bash -lec "$@"
+        bash -ec "$@"
     else  # execute function in docker container
         docker exec -it ${DOCKER_IMAGE##*:} bash -lec "$@"
     fi
