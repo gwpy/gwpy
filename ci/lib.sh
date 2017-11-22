@@ -97,8 +97,6 @@ install_package() {
 get_python_version() {
     if [ -n "${PYTHON_VERSION}" ]; then
         :
-    elif [ -n "${TRAVIS_PYTHON_VERSION}" ]; then
-        PYTHON_VERSION=${TRAVIS_PYTHON_VERSION}
     else
         PYTHON_VERSION=`python -c
             'import sys; print(".".join(map(str, sys.version_info[:2])))'`
