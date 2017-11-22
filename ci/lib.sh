@@ -95,11 +95,8 @@ install_package() {
 }
 
 get_python_version() {
-    if [ -n "${PYTHON_VERSION}" ]; then
-        :
-    else
-        PYTHON_VERSION=`python -c
-            'import sys; print(".".join(map(str, sys.version_info[:2])))'`
+    if [ -z ${PYTHON_VERSION} ]; then
+        PYTHON_VERSION=`python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'`
     fi
     export PYTHON_VERSION
     echo ${PYTHON_VERSION}
