@@ -36,9 +36,10 @@ To add another API from scratch, copy the format of the `gwpy.signal.fft.scipy`
 module.
 """
 
-from . import (  # pylint: disable=unused-import
+from . import (
     scipy,
     lal,
+    pycbc,
 )
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
