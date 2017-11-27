@@ -61,7 +61,8 @@ def welch(timeseries, segmentlength, noverlap=None, **kwargs):
 
     # generate pycbc FrequencySeries
     pycbc_fseries = pycbc_welch(timeseries.to_pycbc(copy=False),
-                                seg_len=segmentlength, seg_stride=noverlap,
+                                seg_len=segmentlength,
+                                seg_stride=segmentlength-noverlap,
                                 **kwargs)
 
     # return GWpy FrequencySeries
