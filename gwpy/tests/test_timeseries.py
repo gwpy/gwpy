@@ -1072,34 +1072,35 @@ class TestTimeSeries(TestTimeSeriesBase):
 
     def test_q_transform(self, losc):
         # test simple q-transform
-        qspecgram = losc.q_transform(method='welch', fftlength=2)
+        qspecgram = losc.q_transform(method='scipy-welch', fftlength=2)
         assert isinstance(qspecgram, Spectrogram)
         assert qspecgram.shape == (4000, 2403)
         assert qspecgram.q == 5.65685424949238
         nptest.assert_almost_equal(qspecgram.value.max(), 146.61970478954652)
 
         # test whitening args
-        asd = losc.asd(2, 1)
-        qsg2 = losc.q_transform(method='welch', whiten=asd)
+        asd = losc.asd(2, 1, method='scipy-welch')
+        qsg2 = losc.q_transform(method='scipy-welch', whiten=asd)
         utils.assert_quantity_sub_equal(qspecgram, qsg2)
 
-        asd = losc.asd(.5, .25)
-        qsg2 = losc.q_transform(method='welch', whiten=asd)
-        qsg3 = losc.q_transform(method='welch', fftlength=.5, overlap=.25)
+        asd = losc.asd(.5, .25, method='scipy-welch')
+        qsg2 = losc.q_transform(method='scipy-welch', whiten=asd)
+        qsg3 = losc.q_transform(method='scipy-welch', fftlength=.5, overlap=.25)
         utils.assert_quantity_sub_equal(qsg2, qsg3)
 
         # make sure frequency too high presents warning
         with pytest.warns(UserWarning):
-            qspecgram = losc.q_transform(method='welch', frange=(0, 10000))
+            qspecgram = losc.q_transform(method='scipy-welch',
+                                         frange=(0, 10000))
             nptest.assert_almost_equal(qspecgram.yspan[1], 1291.5316316157107)
 
         # test other normalisations work (or don't)
-        q2 = losc.q_transform(method='welch', norm='median')
+        q2 = losc.q_transform(method='scipy-welch', norm='median')
         utils.assert_quantity_sub_equal(qspecgram, q2)
-        losc.q_transform(method='welch', norm='mean')
-        losc.q_transform(method='welch', norm=False)
+        losc.q_transform(method='scipy-welch', norm='mean')
+        losc.q_transform(method='scipy-welch', norm=False)
         with pytest.raises(ValueError):
-            losc.q_transform(method='welch', norm='blah')
+            losc.q_transform(method='scipy-welch', norm='blah')
 
     def test_boolean_statetimeseries(self, array):
         comp = array >= 2 * array.unit
