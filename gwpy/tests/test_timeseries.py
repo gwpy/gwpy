@@ -812,7 +812,7 @@ class TestTimeSeries(TestTimeSeriesBase):
 
         fs = losc.average_fft(fftlength=0.4, overlap=0.2)
 
-    def test_psd(self, losc):
+    def test_psd_simple(self, losc):
         # test all defaults
         fs = losc.psd()
         assert isinstance(fs, FrequencySeries)
@@ -834,28 +834,26 @@ class TestTimeSeries(TestTimeSeriesBase):
         fs2 = losc.psd(fftlength=.4)
         utils.assert_quantity_sub_equal(fs, fs2)
 
-        # test methods
-        losc.psd(fftlength=0.4, overlap=0.2, method='welch')
-        losc.psd(fftlength=0.4, method='bartlett')
-        try:
-            losc.psd(fftlength=0.4, overlap=0.2, method='lal-welch')
-            losc.psd(fftlength=0.4, method='lal-bartlett')
-            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean')
-            losc.psd(fftlength=0.4, overlap=0.2, method='median')
-        except ImportError as e:
-            pass
-        else:
-            # test LAL method with window specification
-            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean',
-                     window='hann')
+    @pytest.mark.parametrize('library', (
+        pytest.param('pycbc',
+                     marks=utils.skip_missing_dependency('pycbc.psd')),
+        pytest.param('lal', marks=utils.skip_missing_dependency('lal')),
+    ))
+    @pytest.mark.parametrize(
+        'method', ('welch', 'bartlett', 'median', 'median_mean'),
+    )
+    def test_psd_library(self, losc, library, method):
+        method = '{}_{}'.format(library, method)
 
-            # test LAL method with non-canonical window specification
-            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean',
-                     window='hanning')
+        # check simple
+        psd = losc.psd(fftlength=.5, overlap=.25, method=method)
+        assert isinstance(psd, FrequencySeries)
+        assert psd.f0 == 0 * units.Hz
+        assert psd.df == 2 * units.Hz
 
-            # test check for at least two averages (defaults to single FFT)
-            with pytest.raises(ValueError) as e:
-                losc.psd(method='median-mean')
+        # check window selection
+        if library != 'pycbc':
+            losc.psd(fftlength=.5, method=method, window='hamming')
 
     def test_asd(self, losc):
         fs = losc.asd()
@@ -1074,34 +1072,35 @@ class TestTimeSeries(TestTimeSeriesBase):
 
     def test_q_transform(self, losc):
         # test simple q-transform
-        qspecgram = losc.q_transform(method='welch', fftlength=2)
+        qspecgram = losc.q_transform(method='scipy-welch', fftlength=2)
         assert isinstance(qspecgram, Spectrogram)
         assert qspecgram.shape == (4000, 2403)
         assert qspecgram.q == 5.65685424949238
         nptest.assert_almost_equal(qspecgram.value.max(), 146.61970478954652)
 
         # test whitening args
-        asd = losc.asd(2, 1)
-        qsg2 = losc.q_transform(method='welch', whiten=asd)
+        asd = losc.asd(2, 1, method='scipy-welch')
+        qsg2 = losc.q_transform(method='scipy-welch', whiten=asd)
         utils.assert_quantity_sub_equal(qspecgram, qsg2)
 
-        asd = losc.asd(.5, .25)
-        qsg2 = losc.q_transform(method='welch', whiten=asd)
-        qsg3 = losc.q_transform(method='welch', fftlength=.5, overlap=.25)
+        asd = losc.asd(.5, .25, method='scipy-welch')
+        qsg2 = losc.q_transform(method='scipy-welch', whiten=asd)
+        qsg3 = losc.q_transform(method='scipy-welch', fftlength=.5, overlap=.25)
         utils.assert_quantity_sub_equal(qsg2, qsg3)
 
         # make sure frequency too high presents warning
         with pytest.warns(UserWarning):
-            qspecgram = losc.q_transform(method='welch', frange=(0, 10000))
+            qspecgram = losc.q_transform(method='scipy-welch',
+                                         frange=(0, 10000))
             nptest.assert_almost_equal(qspecgram.yspan[1], 1291.5316316157107)
 
         # test other normalisations work (or don't)
-        q2 = losc.q_transform(method='welch', norm='median')
+        q2 = losc.q_transform(method='scipy-welch', norm='median')
         utils.assert_quantity_sub_equal(qspecgram, q2)
-        losc.q_transform(method='welch', norm='mean')
-        losc.q_transform(method='welch', norm=False)
+        losc.q_transform(method='scipy-welch', norm='mean')
+        losc.q_transform(method='scipy-welch', norm=False)
         with pytest.raises(ValueError):
-            losc.q_transform(method='welch', norm='blah')
+            losc.q_transform(method='scipy-welch', norm='blah')
 
     def test_boolean_statetimeseries(self, array):
         comp = array >= 2 * array.unit

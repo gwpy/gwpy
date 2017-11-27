@@ -375,9 +375,6 @@ def median_mean(timeseries, segmentlength, noverlap=None,
 
 
 # register LAL methods without overriding scipy method
-for func in [welch, bartlett, median, median_mean]:
-    try:
-        fft_registry.register_method(func, scaling='density')
-    except KeyError:  # already exists from scipy
-        fft_registry.register_method(func, name='lal-%s' % func.__name__,
-                                     scaling='density')
+for func in (welch, bartlett, median, median_mean,):
+    fft_registry.register_method(func, name='lal-{}'.format(func.__name__),
+                                 scaling='density')
