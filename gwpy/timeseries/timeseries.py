@@ -36,12 +36,16 @@ from astropy.io import registry as io_registry
 from ..segments import Segment
 from ..signal import filter_design
 from ..signal.filter import sosfiltfilt
-from ..signal.fft import (registry as fft_registry, ui as fft_ui)
+from ..signal.fft import (registry as fft_registry, ui as fft_ui,
+                          get_default_fft_api)
 from ..signal.window import recommended_overlap
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+FFT_LIB = get_default_fft_api()
+WELCH = '{}_welch'.format(FFT_LIB)
 
 
 # -- utilities ----------------------------------------------------------------
@@ -329,7 +333,7 @@ class TimeSeries(TimeSeriesBase):
 
     @_update_doc_with_fft_methods
     def psd(self, fftlength=None, overlap=None, window='hann',
-            method='welch', **kwargs):
+            method=WELCH, **kwargs):
         """Calculate the PSD `FrequencySeries` for this `TimeSeries`
 
         Parameters
@@ -348,8 +352,7 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method, default: ``'welch'``,
-            see *Notes* for more details
+            FFT-averaging method, see *Notes* for more details
 
         **kwargs
             other keyword arguments are passed to the underlying
@@ -372,7 +375,7 @@ class TimeSeries(TimeSeriesBase):
 
     @_update_doc_with_fft_methods
     def asd(self, fftlength=None, overlap=None, window='hann',
-            method='welch', **kwargs):
+            method=WELCH, **kwargs):
         """Calculate the ASD `FrequencySeries` of this `TimeSeries`
 
         Parameters
@@ -391,8 +394,7 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method, default: ``'welch'``,
-            see *Notes* for more details
+            FFT-averaging method, see *Notes* for more details
 
         Returns
         -------
@@ -447,7 +449,7 @@ class TimeSeries(TimeSeriesBase):
 
     @_update_doc_with_fft_methods
     def spectrogram(self, stride, fftlength=None, overlap=0,
-                    window='hann', method='welch', nproc=1, **kwargs):
+                    window='hann', method=WELCH, nproc=1, **kwargs):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
 
@@ -477,8 +479,7 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method, default: ``'welch'``,
-            see *Notes* for more details
+            FFT-averaging method, see *Notes* for more details
 
         nproc : `int`
             number of CPUs to use in parallel processing of FFTs
@@ -614,7 +615,7 @@ class TimeSeries(TimeSeriesBase):
 
     @_update_doc_with_fft_methods
     def spectral_variance(self, stride, fftlength=None, overlap=None,
-                          method='welch', window='hann', nproc=1,
+                          method=WELCH, window='hann', nproc=1,
                           filter=None, bins=None, low=None, high=None,
                           nbins=500, log=False, norm=False, density=False):
         """Calculate the `SpectralVariance` of this `TimeSeries`.
@@ -628,8 +629,7 @@ class TimeSeries(TimeSeriesBase):
             number of seconds in single FFT
 
         method : `str`, optional
-            FFT-averaging method, default: ``'welch'``,
-            see *Notes* for more details
+            FFT-averaging method, see *Notes* for more details
 
         overlap : `float`, optional
             number of seconds of overlap between FFTs, defaults to the
@@ -1403,7 +1403,7 @@ class TimeSeries(TimeSeriesBase):
         return self.__class__(data, channel=self.channel, t0=self.t0,
                               name=name, sample_rate=(1/float(stride)))
 
-    def whiten(self, fftlength, overlap=0, method='welch', window='hanning',
+    def whiten(self, fftlength, overlap=0, method=WELCH, window='hanning',
                detrend='constant', asd=None, **kwargs):
         """White this `TimeSeries` against its own ASD
 
@@ -1417,8 +1417,7 @@ class TimeSeries(TimeSeriesBase):
             recommended overlap for the given window (if given), or 0
 
         method : `str`, optional
-            FFT-averaging method, default: ``'welch'``,
-            see *Notes* for more details
+            FFT-averaging method, see *Notes* for more details
 
         window : `str`, `numpy.ndarray`, optional
             window function to apply to timeseries prior to FFT,
@@ -1661,12 +1660,11 @@ class TimeSeries(TimeSeriesBase):
                 overlap = fftlength / 2.
             else:
                 # default to median-mean average if we can
-                try:
-                    import lal  # pylint: disable=unused-variable
-                except ImportError:
-                    method = asd_kw.pop('method', 'welch')
+                if FFT_LIB == 'scipy':
+                    method = asd_kw.pop('method', 'scipy_welch')
                 else:
-                    method = asd_kw.pop('method', 'median-mean')
+                    method = asd_kw.pop('method',
+                                        '{}_median_mean'.format(FFT_LIB))
                 window = asd_kw.pop('window', 'hann')
                 fftlength = asd_kw.pop(
                     'fftlength',

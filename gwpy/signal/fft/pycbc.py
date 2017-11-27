@@ -21,10 +21,6 @@
 
 from __future__ import absolute_import
 
-import numpy
-
-import scipy.signal
-
 from ...frequencyseries import FrequencySeries
 from .utils import scale_timeseries_unit
 from . import registry as fft_registry
@@ -64,20 +60,32 @@ def welch(timeseries, segmentlength, noverlap=None, **kwargs):
     kwargs.setdefault('avg_method', 'mean')
 
     # generate pycbc FrequencySeries
-    fseries = pycbc_welch(timeseries.to_pycbc(), seg_len=segmentlength,
-                          seg_stride=noverlap, **kwargs)
+    pycbc_fseries = pycbc_welch(timeseries.to_pycbc(copy=False),
+                                seg_len=segmentlength, seg_stride=noverlap,
+                                **kwargs)
 
     # return GWpy FrequencySeries
-    return FrequencySeries.from_pycbc(fseries)
+    fseries = FrequencySeries.from_pycbc(pycbc_fseries, copy=False)
+    fseries.override_unit(scale_timeseries_unit(
+        timeseries.unit, scaling='density'))
+    return fseries
 
 
-def median(*args, **kwargs):
+def bartlett(*args, **kwargs):  # pylint: disable=missing-docstring
+    kwargs['avg_method'] = 'mean'
+    kwargs['noverlap'] = 0
+    return welch(*args, **kwargs)
+bartlett.__doc__ = welch.__doc__.replace('mean average',
+                                         'non-overlapping mean average')
+
+
+def median(*args, **kwargs):  # pylint: disable=missing-docstring
     kwargs['avg_method'] = 'median'
     return welch(*args, **kwargs)
 median.__doc__ = welch.__doc__.replace('mean average', 'median average')
 
 
-def median_mean(*args, **kwargs):
+def median_mean(*args, **kwargs):  # pylint: disable=missing-docstring
     kwargs['avg_method'] = 'median-mean'
     return welch(*args, **kwargs)
 median_mean.__doc__ = welch.__doc__.replace('mean average',
@@ -85,11 +93,6 @@ median_mean.__doc__ = welch.__doc__.replace('mean average',
 
 
 # register new functions
-for func in (welch, median, median_mean):
-    try:
-        fft_registry.register_method(func, scaling='density')
-    except KeyError:
-        pass  # name already registered from another API
-    finally:
-        fft_registry.register_method(func, scaling='density',
-                                     name='pycbc-{}'.format(func.__name__))
+for func in (welch, bartlett, median, median_mean):
+    fft_registry.register_method(func, scaling='density',
+                                 name='pycbc-{}'.format(func.__name__))
