@@ -216,7 +216,7 @@ class TestSignalFftRegistry(object):
     @pytest.mark.parametrize('library', ['basic', 'pycbc', 'lal', 'scipy'])
     def test_register_library(self, library):
         apilib = import_module('gwpy.signal.fft.{}'.format(library))
-        regname = library == 'basic' and str else ('%s_{}' % library).format
+        regname = str if library == 'basic' else ('%s_{}' % library).format
         for method in ('welch', 'bartlett', 'median', 'median_mean'):
             if method == 'median' and library == 'scipy':
                 break
