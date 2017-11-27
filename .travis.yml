@@ -58,7 +58,7 @@ matrix:
             - dvipng
             - libhdf5-serial-dev
 
-    - env: PIP_FLAGS="--upgrade --pre"
+    - env: PIP_FLAGS="--upgrade --pre --quiet"
       python: 'nightly'
       addons:
         apt:
@@ -115,7 +115,7 @@ matrix:
       sudo: required
 
   allow_failures:
-    - env: PIP_FLAGS="--upgrade --pre"
+    - env: PIP_FLAGS="--upgrade --pre --quiet"
     - env: DOCKER_IMAGE="ligo/software:jessie"
       python: '3.4'
     - env: DOCKER_IMAGE="ligo/software:stretch"
