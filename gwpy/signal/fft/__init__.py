@@ -68,7 +68,7 @@ def get_default_fft_api():
     >>> get_default_fft_api()
     'scipy'
     """
-    for lib in ('pycbc', 'lal',):
+    for lib in ('pycbc.psd', 'lal',):
         try:
             import_module(lib)
         except ImportError:
