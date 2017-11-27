@@ -812,7 +812,7 @@ class TestTimeSeries(TestTimeSeriesBase):
 
         fs = losc.average_fft(fftlength=0.4, overlap=0.2)
 
-    def test_psd(self, losc):
+    def test_psd_simple(self, losc):
         # test all defaults
         fs = losc.psd()
         assert isinstance(fs, FrequencySeries)
@@ -834,28 +834,26 @@ class TestTimeSeries(TestTimeSeriesBase):
         fs2 = losc.psd(fftlength=.4)
         utils.assert_quantity_sub_equal(fs, fs2)
 
-        # test methods
-        losc.psd(fftlength=0.4, overlap=0.2, method='welch')
-        losc.psd(fftlength=0.4, method='bartlett')
-        try:
-            losc.psd(fftlength=0.4, overlap=0.2, method='lal-welch')
-            losc.psd(fftlength=0.4, method='lal-bartlett')
-            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean')
-            losc.psd(fftlength=0.4, overlap=0.2, method='median')
-        except ImportError as e:
-            pass
-        else:
-            # test LAL method with window specification
-            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean',
-                     window='hann')
+    @pytest.mark.parametrize('library', (
+        pytest.param('pycbc',
+                     marks=utils.skip_missing_dependency('pycbc.psd')),
+        pytest.param('lal', marks=utils.skip_missing_dependency('lal')),
+    ))
+    @pytest.mark.parametrize(
+        'method', ('welch', 'bartlett', 'median', 'median_mean'),
+    )
+    def test_psd_library(self, losc, library, method):
+        method = '{}_{}'.format(library, method)
 
-            # test LAL method with non-canonical window specification
-            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean',
-                     window='hanning')
+        # check simple
+        psd = losc.psd(fftlength=.5, overlap=.25, method=method)
+        assert isinstance(psd, FrequencySeries)
+        assert psd.f0 == 0 * units.Hz
+        assert psd.df == 2 * units.Hz
 
-            # test check for at least two averages (defaults to single FFT)
-            with pytest.raises(ValueError) as e:
-                losc.psd(method='median-mean')
+        # check window selection
+        if library != 'pycbc':
+            losc.psd(fftlength=.5, method=method, window='hamming')
 
     def test_asd(self, losc):
         fs = losc.asd()
