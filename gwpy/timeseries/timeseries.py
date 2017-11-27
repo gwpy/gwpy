@@ -441,7 +441,7 @@ class TimeSeries(TimeSeriesBase):
             a data series containing the CSD.
         """
         # get method
-        method_func = fft_registry.get_method('csd', scaling='other')
+        method_func = fft_registry.get_method('scipy-csd', scaling='other')
 
         # calculate CSD using UI method
         return fft_ui.psd((self, other), method_func, fftlength=fftlength,
@@ -707,7 +707,8 @@ class TimeSeries(TimeSeriesBase):
         psd :  `~gwpy.frequencyseries.FrequencySeries`
             a data series containing the PSD.
         """
-        method_func = fft_registry.get_method('rayleigh', scaling='other')
+        method_func = fft_registry.get_method('scipy-rayleigh',
+                                              scaling='other')
         return fft_ui.psd(self, method_func, fftlength=fftlength,
                           overlap=overlap)
 
@@ -736,7 +737,8 @@ class TimeSeries(TimeSeriesBase):
             time-frequency Rayleigh spectrogram as generated from the
             input time-series.
         """
-        method_func = fft_registry.get_method('rayleigh', scaling='other')
+        method_func = fft_registry.get_method('scipy-rayleigh',
+                                              scaling='other')
         specgram = fft_ui.average_spectrogram(self, method_func, stride,
                                               fftlength=fftlength,
                                               overlap=overlap, nproc=nproc,
@@ -779,7 +781,7 @@ class TimeSeries(TimeSeriesBase):
             time-frequency cross spectrogram as generated from the
             two input time-series.
         """
-        method_func = fft_registry.get_method('csd', scaling='other')
+        method_func = fft_registry.get_method('scipy-csd', scaling='other')
         specgram = fft_ui.average_spectrogram((self, other), method_func,
                                               stride, fftlength=fftlength,
                                               overlap=overlap, window=window,
