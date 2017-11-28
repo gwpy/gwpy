@@ -41,6 +41,27 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 __all__ = ['Spectrogram', 'SpectrogramList']
 
 
+def _ordinal(n):
+    """Returns the ordinal string for a given integer
+
+    See https://stackoverflow.com/a/20007730/1307974
+
+    Parameters
+    ----------
+    n : `int`
+        the number to convert to ordinal
+
+    Examples
+    --------
+    >>> _ordinal(11)
+    '11th'
+    >>> _ordinal(102)
+    '102nd'
+    """
+    idx = int((n//10 % 10 != 1) * (n % 10 < 4) * n % 10)
+    return '{}{}'.format(n, "tsnrhtdd"[idx::4])
+
+
 class Spectrogram(Array2D):
     """A 2D array holding a spectrogram of time-frequency data
 
@@ -356,7 +377,10 @@ class Spectrogram(Array2D):
             `SpectralVaraicence`
         """
         out = scipy.percentile(self.value, percentile, axis=0)
-        name = '%s %s%% percentile' % (self.name, percentile)
+        if self.name is not None:
+            name = '{}: {} percentile'.format(self.name, _ordinal(percentile))
+        else:
+            name = None
         return FrequencySeries(out, epoch=self.epoch, channel=self.channel,
                                name=name, f0=self.f0, df=self.df,
                                frequencies=(hasattr(self, '_frequencies') and
