@@ -34,7 +34,7 @@ export GWPY_PATH
 ci_run() {
     # run a command normally, or in docker, depending on environment
     if [ -z "${DOCKER_IMAGE}" ]; then  # execute function normally
-        bash -lec "$@"
+        bash -ec "$@"
     else  # execute function in docker container
         docker exec -it ${DOCKER_IMAGE##*:} bash -lec "$@"
     fi
@@ -95,13 +95,8 @@ install_package() {
 }
 
 get_python_version() {
-    if [ -n "${PYTHON_VERSION}" ]; then
-        :
-    elif [ -n "${TRAVIS_PYTHON_VERSION}" ]; then
-        PYTHON_VERSION=${TRAVIS_PYTHON_VERSION}
-    else
-        PYTHON_VERSION=`python -c
-            'import sys; print(".".join(map(str, sys.version_info[:2])))'`
+    if [ -z ${PYTHON_VERSION} ]; then
+        PYTHON_VERSION=`python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'`
     fi
     export PYTHON_VERSION
     echo ${PYTHON_VERSION}
