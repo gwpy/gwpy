@@ -26,6 +26,8 @@ import pytest
 import numpy
 from numpy import testing as nptest
 
+from scipy import signal
+
 from matplotlib import (use, rc_context)
 use('agg')  # nopep8
 
@@ -123,3 +125,24 @@ class TestSpectrogram(TestArray2D):
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
             plot.close()
+
+    def test_filter(self):
+        array = self.create(t0=0, dt=1/1024., f0=0, df=1)
+
+        # build filter
+        zpk = [], [1], 1
+        lti = signal.lti(*zpk)
+        fresp = numpy.nan_to_num(abs(
+            lti.freqresp(w=array.frequencies.value)[1]))
+
+        # test simple filter
+        a2 = array.filter(*zpk)
+        utils.assert_array_equal(array * fresp, a2)
+
+        # test inplace filtering
+        array.filter(lti, inplace=True)
+        utils.assert_array_equal(array, a2)
+
+        # test errors
+        with pytest.raises(TypeError):
+            array.filter(lti, blah=1)
