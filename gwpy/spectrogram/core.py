@@ -452,9 +452,7 @@ class Spectrogram(Array2D):
             raise TypeError("Spectrogram.filter() got an unexpected keyword "
                             "argument '%s'" % list(kwargs.keys())[0])
         freqs = self.frequencies.value.copy()
-        if freqs[0] == 0:  # shift DC to 1% of first frequency
-            freqs[0] = freqs[1] * 0.01
-        fresp = numpy.nan_to_num(filt.freqresp(w=freqs)[1].abs())
+        fresp = numpy.nan_to_num(abs(filt.freqresp(w=freqs)[1]))
         if inplace:
             self *= fresp
             return self
