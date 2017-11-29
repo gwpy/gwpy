@@ -135,6 +135,11 @@ def test_parse_unit_strict():
     assert isinstance(u, units.IrreducibleUnit)
     assert str(u) == 'metre'
 
+    # assert that a newly-created unit only gets created once
+    u2 = parse_unit('metre', parse_strict='ignore')
+    assert u2 is u  # same object
+    assert u == u2  # compare as equal (just in case)
+
 
 @pytest.mark.parametrize('name', [
     'NONE',
