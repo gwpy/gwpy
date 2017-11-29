@@ -27,6 +27,9 @@ from astropy.units.format.generic import Generic
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+# container for new units (so that each one only gets created once)
+UNRECOGNIZED_UNITS = {}
+
 
 # -- parser to handle any unit ------------------------------------------------
 
@@ -78,7 +81,12 @@ class GWpyFormat(Generic):
                               'should work, but conversions to other units '
                               'will not.'.format(str(exc).rstrip(' ')),
                               category=units.UnitsWarning)
-                return units.def_unit(name, doc='Unrecognized unit')
+                try:  # return previously created unit
+                    return UNRECOGNIZED_UNITS[name]
+                except KeyError:  # or create new one now
+                    u = UNRECOGNIZED_UNITS[name] = units.def_unit(
+                        name, doc='Unrecognized unit')
+                    return u
             return cls._parse_unit(alt)
 
 
