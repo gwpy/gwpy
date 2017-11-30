@@ -22,7 +22,6 @@
 from __future__ import (division, print_function)
 
 from warnings import warn
-from math import pi
 
 from six.moves import range
 
@@ -994,17 +993,16 @@ class TimeSeries(TimeSeriesBase):
             new.sample_rate = rate
             return new
 
-    def zpk(self, zeros, poles, gain, analog=True, unit='Hz',
-            **kwargs):
+    def zpk(self, zeros, poles, gain, analog=True, **kwargs):
         """Filter this `TimeSeries` by applying a zero-pole-gain filter
 
         Parameters
         ----------
         zeros : `array-like`
-            list of zero frequencies
+            list of zero frequencies (in Hertz)
 
         poles : `array-like`
-            list of pole frequencies
+            list of pole frequencies (in Hertz)
 
         gain : `float`
             DC gain of filter
@@ -1012,10 +1010,6 @@ class TimeSeries(TimeSeriesBase):
         analog : `bool`, optional
             type of ZPK being applied, if `analog=True` all parameters
             will be converted in the Z-domain for digital filtering
-
-        unit : `str`, `~astropy.units.Unit`, optional
-            unit of zeros and poles, either ``'Hz``' or ``'rad/s'``,
-            default is ``'Hz'``
 
         Returns
         -------
@@ -1034,72 +1028,33 @@ class TimeSeries(TimeSeriesBase):
 
         >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
         """
-        try:
-            analog &= not kwargs.pop('digital')
-        except KeyError:
-            pass
-        else:
-            warn("The 'digital' keyword argument to TimeSeries.zpk "
-                 "was renamed 'analog' for consistency', and will be "
-                 "removed in an upcoming release", DeprecationWarning)
-        if analog:
-            # cast to arrays for ease
-            z = numpy.array(zeros)
-            p = numpy.array(poles)
-            k = gain
-            # convert from Hz to rad/s if needed
-            unit = units.Unit(unit)
-            if unit == units.Unit('Hz'):
-                z = -2 * pi * z
-                p = -2 * pi * p
-            elif unit != units.Unit('rad/s'):
-                raise ValueError("zpk can only be given with unit='Hz' "
-                                 "or 'rad/s'")
-            # convert to Z-domain via bilinear transform
-            fs = 2 * self.sample_rate.to('Hz').value
-            z = z[numpy.isfinite(z)]
-            pd = (1 + p/fs) / (1 - p/fs)
-            zd = (1 + z/fs) / (1 - z/fs)
-            kd = k * numpy.prod(fs - z)/numpy.prod(fs - p)
-            zd = numpy.concatenate((zd, -numpy.ones(len(pd)-len(zd))))
-            zeros, poles, gain = zd, pd, kd
-        # apply filter
-        return self.filter(zeros, poles, gain, **kwargs)
+        return self.filter(zeros, poles, gain, analog=analog, **kwargs)
 
+    @filter_design.with_digital_lti
     def filter(self, *filt, **kwargs):
-        """Apply the given filter to this `TimeSeries`.
-
-        All recognised filter arguments are converted either into cascading
-        second-order sections (if scipy >= 0.16 is installed), or into the
-        ``(numerator, denominator)`` representation before being applied
-        to this `TimeSeries`.
-
-        .. note::
-
-           All filters are presumed to be digital (Z-domain), if you have
-           an analog ZPK (in Hertz or in rad/s) you should be using
-           `TimeSeries.zpk` instead.
-
-        .. note::
-
-           When using `scipy` < 0.16 some higher-order filters may be
-           unstable. With `scipy` >= 0.16 higher-order filters are
-           decomposed into second-order-sections, and so are much more stable.
+        """Filter this `TimeSeries` with an IIR or FIR filter
 
         Parameters
         ----------
         *filt
-            one of:
+            1, 2, 3, or 4 arguments defining the filter to be applied,
 
-            - `scipy.signal.lti`
-            - `MxN` `numpy.ndarray` of second-order-sections
-              (`scipy` >= 0.16 only)
-            - ``(numerator, denominator)`` polynomials
-            - ``(zeros, poles, gain)``
-            - ``(A, B, C, D)`` 'state-space' representation
+            - 1: `scipy.signal.lti`, or `numpy.ndarray` of FIR coefficients
+            - 2: ``(numerator, denominator)`` polynomials
+            - 3: ``(zeros, poles, gain)``
+            - 4: ``(A, B, C, D)`` 'state-space' representation
 
         filtfilt : `bool`, optional
-            filter forward and backwards to preserve phase
+            filter forward and backwards to preserve phase,
+            default: `False`
+
+        analog : `bool`, optional
+            if `True`, filter coefficients will be converted from Hz
+            to Z-domain digital representation, default: `False`
+
+        inplace : `bool`, optional
+            if `True`, this array will be overwritten with the filtered
+            version, default: `False`
 
         **kwargs
             other keyword arguments are passed to the filter method
@@ -1109,91 +1064,104 @@ class TimeSeries(TimeSeriesBase):
         result : `TimeSeries`
             the filtered version of the input `TimeSeries`
 
+        Notes
+        -----
+        IIR filters are converted either into cascading
+        second-order sections (if scipy >= 0.16 is installed), or into the
+        ``(numerator, denominator)`` representation before being applied
+        to this `TimeSeries`.
+
+        .. note::
+
+           When using `scipy < 0.16' some higher-order filters may be
+           unstable. With `scipy >= 0.16' higher-order filters are
+           decomposed into second-order-sections, and so are much more stable.
+
+        FIR filters are passed directly to :func:`scipy.signal.lfilter` or
+        :func:`scipy.signal.filtfilt` without any conversions.
+
         See also
         --------
-        TimeSeries.zpk
-            for instructions on how to filter using a ZPK with frequencies
-            in Hertz
         scipy.signal.sosfilter
-            for details on the second-order section filtering method
-            (`scipy` >= 0.16 only)
+            for details on filtering with second-order sections
+            (`scipy >= 0.16` only)
+
+        scipy.signal.sosfiltfilt
+            for details on forward-backward filtering with second-order
+            sections (`scipy >= 0.16` only)
+
         scipy.signal.lfilter
-            for details on the filtering method
+            for details on filtering (without SOS)
+
+        scipy.signal.filtfilt
+            for details on forward-backward filtering (without SOS)
 
         Raises
         ------
         ValueError
-            If ``filt`` arguments cannot be interpreted properly
+            if ``filt`` arguments cannot be interpreted properly
+
+        Examples
+        --------
+        We can design an arbitrarily complicated filter using
+        :mod:`gwpy.signal.filter_design`
+
+        >>> from gwpy.signal import filter_design
+        >>> bp = filter_design.bandpass(50, 250, 4096.)
+        >>> notches = [filter_design.notch(f, 4096.) for f in (60, 120, 180)]
+        >>> zpk = filter_design.concatenate_zpks(bp, *notches)
+
+        And then can download some data from LOSC to apply it using
+        `TimeSeries.filter`:
+
+        >>> from gwpy.timeseries import TimeSeries
+        >>> data = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+        >>> filtered = data.filter(zpk, filtfilt=True)
+
+        We can plot the original signal, and the filtered version, cutting
+        off either end of the filtered data to remove filter-edge artefacts
+
+        >>> from gwpy.plotter import TimeSeriesPlot
+        >>> plot = TimeSeriesPlot(data, filtered[128:-128], sep=True)
+        >>> plot.show()
         """
         # parse keyword arguments
         filtfilt = kwargs.pop('filtfilt', False)
 
-        # single argument given
-        if len(filt) == 1:
-            filt = filt[0]
-            # detect LTI
-            if isinstance(filt, signal.lti):
-                try:
-                    filt = filt.to_zpk()
-                except AttributeError:
-                    ftype = 'ba'
-                    a = filt.den
-                    b = filt.num
-                else:
-                    ftype = 'zpk'
-                    zpk = filt.zeros, filt.poles, filt.gain
-            # detect ZPK
-            elif filter_design.is_zpk(filt):
-                ftype = 'zpk'
-                zpk = filt
-            # detect SOS
-            elif isinstance(filt, numpy.ndarray) and filt.ndim == 2:
-                ftype = 'sos'
-                sos = filt
-            # detect taps
-            else:
-                ftype = 'ba'
-                b = filt
-                a = [1]
-        # detect TF
-        elif len(filt) == 2:
-            ftype = 'ba'
-            b, a = filt
-        elif len(filt) == 3:
-            ftype = 'zpk'
-            zpk = filt
-        elif len(filt) == 4:
-            ftype = 'zpk'
-            zpk = signal.ss2zpk(*filt)  # pylint: disable=no-value-for-parameter
-        else:
-            raise ValueError("Cannot interpret filter arguments. Please "
-                             "give either a signal.lti object, or a "
-                             "tuple in zpk or ba format. See "
-                             "scipy.signal docs for details.")
+        # decorator formats filt as signal.lti
+        lti = filt[0]
 
-        # try and convert to SOS
-        if ftype == 'zpk':
-            try:
-                sos = signal.zpk2sos(*zpk)
-            except AttributeError:
-                b, a = signal.zpk2tf(*zpk)
-                ftype = 'ba'
+        # determine FIR or IIR
+        try:
+            if lti.den.shape == (1,) and lti.den[0] == (1.):  # FIR
+                sos = None
+                a = lti.den
+                b = lti.num
             else:
-                ftype = 'sos'
+                raise AttributeError  # push into IIR parser
+        except AttributeError:  # IIR
+            # if here, we know that ``lti`` is a ZPK-compatible IIR filter
+            # so, try and convert to SOS
+            try:
+                sos = signal.zpk2sos(lti.zeros, lti.poles, lti.gain)
+            except AttributeError:  # scipy < 0.16, no SOS filtering
+                sos = None
+                a = lti.den
+                b = lti.num
 
         # perform filter
-        cls = type(self)
-        if ftype == 'sos':
-            if filtfilt:
-                new = sosfiltfilt(sos, self, axis=0, **kwargs).view(cls)
-            else:
-                new = signal.sosfilt(sos, self, axis=0, **kwargs).view(cls)
+        kwargs.setdefault('axis', 0)
+        if sos is not None and filtfilt:
+            out = sosfiltfilt(sos, self, **kwargs)
+        elif sos is not None:
+            out = signal.sosfilt(sos, self, **kwargs)
+        elif filtfilt:
+            out = signal.filtfilt(b, a, self, **kwargs)
         else:
-            if filtfilt:
-                new = signal.filtfilt(b, a, self, axis=0, **kwargs).view(cls)
-            else:
-                new = signal.lfilter(b, a, self, axis=0, **kwargs).view(cls)
+            out = signal.lfilter(b, a, self, **kwargs)
 
+        # format as type(self)
+        new = out.view(type(self))
         new.__metadata_finalize__(self)
         new._unit = self.unit
         return new

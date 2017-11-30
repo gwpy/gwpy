@@ -1062,6 +1062,16 @@ class TestTimeSeries(TestTimeSeriesBase):
         detrended = losc.detrend()
         assert numpy.isclose(detrended.value.mean(), 0.0)
 
+    def test_filter(self, losc):
+        zpk = [], [], 1
+        fts = losc.filter(zpk, analog=True)
+        utils.assert_quantity_sub_equal(losc, fts)
+
+    def test_zpk(self, losc):
+        zpk = [10, 10], [1, 1], 100
+        utils.assert_quantity_sub_equal(
+            losc.zpk(*zpk), losc.filter(*zpk, analog=True))
+
     def test_notch(self, losc):
         # test notch runs end-to-end
         notched = losc.notch(60)
