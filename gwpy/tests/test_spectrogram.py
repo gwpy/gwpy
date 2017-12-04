@@ -164,7 +164,8 @@ class TestSpectrogram(TestArray2D):
 
     def test_zpk(self, array):
         zpk = [], [1], 1
-        utils.assert_quantity_sub_equal(array.zpk(*zpk), array.filter(*zpk))
+        utils.assert_quantity_sub_equal(
+            array.zpk(*zpk), array.filter(*zpk, analog=True))
 
     def test_filter(self):
         array = self.create(t0=0, dt=1/1024., f0=0, df=1)
