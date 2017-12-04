@@ -56,12 +56,15 @@ class TimeSeriesAxes(Axes):
         # dynamically set scaling
         if self.get_xscale() == 'auto-gps':
             self.auto_gps_scale()
+
         # dynamically set x-axis label
         nolabel = self.get_xlabel() == '_auto'
         if nolabel:
             self.auto_gps_label()
-        # auto-detect GPS scales
+
+        # draw
         super(TimeSeriesAxes, self).draw(*args, **kwargs)
+
         # reset label
         if nolabel:
             self.set_xlabel('_auto')
@@ -251,8 +254,8 @@ class TimeSeriesAxes(Axes):
         if max_ is not None:
             maxline = self.plot(max_.times.value, max_.value, color=color,
                                 linewidth=linewidth, **kwargs)
-            maxcol = self.fill_between(max_.times.value, mean_.value, max_.value,
-                                       alpha=0.1, color=color,
+            maxcol = self.fill_between(max_.times.value, mean_.value,
+                                       max_.value, alpha=0.1, color=color,
                                        rasterized=kwargs.get('rasterized'))
         else:
             maxline = maxcol = None
@@ -442,13 +445,15 @@ class TimeSeriesPlot(Plot):
             :meth:`~gwpy.plotter.SegmentAxes.plot`
         """
         from .segments import SegmentAxes
+
+        # get axes to anchor against
         if not ax:
             try:
                 ax = self.get_axes(self._DefaultAxesClass.name)[-1]
             except IndexError:
                 raise ValueError("No 'timeseries' Axes found, cannot anchor "
                                  "new segment Axes.")
-        pyplot.setp(ax.get_xticklabels(), visible=False)
+
         # add new axes
         if ax.get_axes_locator():
             divider = ax.get_axes_locator()._axes_divider
@@ -458,13 +463,17 @@ class TimeSeriesPlot(Plot):
             raise ValueError("Segments can only be positoned at 'top' or "
                              "'bottom'.")
         segax = divider.append_axes(location, height, pad=pad,
-                                    axes_class=SegmentAxes, sharex=ax)
-        segax.set_xlim(*ax.get_xlim())
-        segax.set_xlabel(ax.get_xlabel())
-        ax.set_xlabel("")
+                                    axes_class=SegmentAxes, sharex=ax,
+                                    epoch=ax.get_epoch(), xlim=ax.get_xlim(),
+                                    xlabel=ax.get_xlabel())
 
         # plot segments
         segax.plot(segments, **plotargs)
         segax.grid(b=False, which='both', axis='y')
         segax.autoscale(axis='y', tight=True)
+
+        # update anchor axes
+        pyplot.setp(ax.get_xticklabels(), visible=False)
+        ax.set_xlabel("")
+
         return segax

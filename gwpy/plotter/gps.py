@@ -341,8 +341,6 @@ class GPSScale(GPSMixin, LinearScale):
         # otherwise get from current view
         if epoch is None:
             epoch = viewlim[0]
-        if unit is None and isinstance(axis._scale, GPSScale):
-            unit = axis._scale.get_unit()
         if unit is None:
             duration = float(viewlim[1] - (min(viewlim[0], epoch)))
             unit = units.second
