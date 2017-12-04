@@ -58,9 +58,11 @@ dpkg --install ${GWPY_DEB} || { \
 }
 
 # install system-level extras for the correct python version
-apt-get -yq --ignore-missing install \
+for pckg in \
     ${PY_PREFIX}-nds2-client \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
     ${PY_PREFIX}-h5py \
-|| true
+; do
+    apt-get -yqq install $pckg || true
+done
