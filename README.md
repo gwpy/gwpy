@@ -2,11 +2,12 @@
 
 [![PyPI version](https://badge.fury.io/py/gwpy.svg)](http://badge.fury.io/py/gwpy) 
 [![DOI](https://zenodo.org/badge/9979119.svg)](https://zenodo.org/badge/latestdoi/9979119) 
+[![License](https://img.shields.io/pypi/l/gwpy.svg)](https://choosealicense.com/licenses/gpl-3.0/)
 
 [![Build Status](https://travis-ci.org/gwpy/gwpy.svg?branch=master)](https://travis-ci.org/gwpy/gwpy) 
 [![Coverage Status](https://coveralls.io/repos/gwpy/gwpy/badge.svg)](https://coveralls.io/r/gwpy/gwpy) 
 [![Research software impact](http://depsy.org/api/package/pypi/gwpy/badge.svg)](http://depsy.org/package/python/gwpy) 
-[![Code Climate](https://codeclimate.com/github/gwpy/gwpy/badges/gpa.svg)](https://codeclimate.com/github/gwpy/gwpy) 
+[![Maintainability](https//api.codeclimate.com/v1/badges/2cf14445b3e070133745/maintainability)](https://codeclimate.com/github/gwpy/gwpy/maintainability)
 [![Code Health](https://landscape.io/github/gwpy/gwpy/master/landscape.svg?style=flat)](https://landscape.io/github/gwpy/gwpy/master) 
 
 [https://gwpy.github.io](https://gwpy.github.io)
