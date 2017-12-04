@@ -1,0 +1,6 @@
+pycodestyle:
+  exclude:
+    - docs/conf.py
+    - ez_setup.py
+    - versioneer.py
+    - gwpy/_version.py
