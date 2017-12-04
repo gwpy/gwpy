@@ -36,7 +36,7 @@ elif [[ ${DOCKER_IMAGE} =~ :el[0-9]+$ ]]; then  # SLX
 elif [ -n "${DOCKER_IMAGE}" ]; then  # debian
     . ci/install-debian.sh
 else  # simple pip build
-    ${PIP} install .
+    ${PIP} install . ${PIP_FLAGS}
     ${PIP} install -r requirements-dev.txt ${PIP_FLAGS}
 fi
 
