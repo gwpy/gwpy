@@ -254,8 +254,8 @@ class TimeSeriesAxes(Axes):
         if max_ is not None:
             maxline = self.plot(max_.times.value, max_.value, color=color,
                                 linewidth=linewidth, **kwargs)
-            maxcol = self.fill_between(max_.times.value, mean_.value, max_.value,
-                                       alpha=0.1, color=color,
+            maxcol = self.fill_between(max_.times.value, mean_.value,
+                                       max_.value, alpha=0.1, color=color,
                                        rasterized=kwargs.get('rasterized'))
         else:
             maxline = maxcol = None
