@@ -241,9 +241,9 @@ class TestTable(object):
             assert str(exc.value).startswith('Multiple trees found')
 
             # test selections work
-            t2 = _read(treename='test', selection='frequency > 500')
+            t2 = _read(treename='test', selection='200 < frequency < 500')
             utils.assert_table_equal(
-                t2, filter_table(table, 'frequency > 500'))
+                t2, filter_table(table, '200 < frequency < 500'))
 
         finally:
             if os.path.isdir(tempdir):
