@@ -286,6 +286,8 @@ class EventTable(Table):
         """
         from gwpy.timeseries import TimeSeries
         times = self[timecolumn]
+        if times.dtype is numpy.dtype('O'):  # cast to ufunc-compatible type
+            times = times.astype('float64', copy=False)
         if not start:
             start = times.min()
         if not end:
