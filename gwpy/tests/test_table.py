@@ -241,9 +241,16 @@ class TestTable(object):
             assert str(exc.value).startswith('Multiple trees found')
 
             # test selections work
-            t2 = _read(treename='test', selection='200 < frequency < 500')
+            segs = SegmentList([Segment(100, 200), Segment(400, 500)])
+            t2 = _read(treename='test',
+                       selection=['200 < frequency < 500',
+                                  ('time', filters.in_segmentlist, segs)])
             utils.assert_table_equal(
-                t2, filter_table(table, '200 < frequency < 500'))
+                t2, filter_table(table,
+                                 'frequency > 200',
+                                 'frequency < 500',
+                                 ('time', filters.in_segmentlist, segs)),
+            )
 
         finally:
             if os.path.isdir(tempdir):
