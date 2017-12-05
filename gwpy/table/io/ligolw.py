@@ -48,8 +48,10 @@ try:
 except ImportError:
     pass
 else:
-    from glue.ligolw._ilwd import ilwdchar
-    NUMPY_TYPE_MAP[ilwdchar] = numpy.int_
+    from glue.ligolw.ilwd import ilwdchar
+    from glue.ligolw._ilwd import ilwdchar as _ilwdchar
+    ilwdchar_types = (ilwdchar, _ilwdchar)
+    NUMPY_TYPE_MAP[ilwdchar_types] = numpy.int_
     NUMPY_TYPE_MAP[LIGOTimeGPS] = numpy.float_
 
 
@@ -190,7 +192,7 @@ def to_astropy_column(llwcol, cls, copy=False, dtype=None,
         return cls(data=llwcol, copy=copy, dtype=dtype, **kwargs)
     except TypeError:
         # numpy tries to cast ilwdchar to int via long, which breaks
-        if dtype is numpy.int_ and isinstance(llwcol[0], ilwdchar):
+        if dtype is numpy.int_ and isinstance(llwcol[0], ilwdchar_types):
             return cls(data=map(dtype, llwcol),
                        copy=False, dtype=dtype, **kwargs)
         # any other error, raise
@@ -218,19 +220,19 @@ def _get_column_dtype(llwcol):
             raise AttributeError
         return dtype
     except AttributeError:  # dang
-        try:
-            return type(llwcol[0])
-        except IndexError:
-            try:  # glue.ligolw.table.Column
-                llwtype = llwcol.parentNode.validcolumns[llwcol.Name]
-            except AttributeError:
+        try:  # glue.ligolw.table.Column
+            llwtype = llwcol.parentNode.validcolumns[llwcol.Name]
+        except AttributeError:  # not a column
+            try:
+                return type(llwcol[0])
+            except IndexError:
                 return None
-            else:
-                from glue.ligolw.types import (ToPyType, ToNumPyType)
-                try:
-                    return ToNumPyType[llwtype]
-                except KeyError:
-                    return ToPyType[llwtype]
+        else:
+            from glue.ligolw.types import (ToPyType, ToNumPyType)
+            try:
+                return ToNumPyType[llwtype]
+            except KeyError:
+                return ToPyType[llwtype]
 
 
 def table_to_ligolw(table, tablename):
