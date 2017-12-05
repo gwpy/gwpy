@@ -21,7 +21,6 @@
 
 import inspect
 import warnings
-from contextlib import contextmanager
 
 import numpy
 
@@ -32,7 +31,8 @@ except ImportError:
 
 from ...io import registry
 from ...io.ligolw import (is_ligolw, read_table as read_ligolw_table,
-                          write_tables as write_ligolw_tables)
+                          write_tables as write_ligolw_tables,
+                          patch_ligotimegps)
 from .. import (Table, EventTable)
 from .utils import read_with_selection
 
@@ -54,28 +54,6 @@ else:
     ilwdchar_types = (ilwdchar, _ilwdchar)
     NUMPY_TYPE_MAP[ilwdchar_types] = numpy.int_
     NUMPY_TYPE_MAP[LIGOTimeGPS] = numpy.float_
-
-
-# -- hack around around TypeError from LIGOTimeGPS(numpy.int32(...)) ----------
-
-def _ligotimegps(s, ns):
-    """Catch TypeError and cast `s` and `ns` to `int`
-    """
-    try:
-        return LIGOTimeGPS(s, ns)
-    except TypeError:
-        return LIGOTimeGPS(int(s), int(ns))
-
-
-@contextmanager
-def _safe_ligotimegps():
-    """Context manager to on-the-fly patch LIGOTimeGPS to accept all int types
-    """
-    from glue.ligolw import lsctables
-    orig = lsctables.LIGOTimeGPS
-    lsctables.LIGOTimeGPS = _ligotimegps
-    yield
-    lsctables.LIGOTimeGPS = orig
 
 
 # -- conversions --------------------------------------------------------------
@@ -151,7 +129,7 @@ def to_astropy_table(llwtable, apytable, copy=False, columns=None,
     for colname in columns:
         # extract using Table.get_<>()
         if colname in getters:
-            with _safe_ligotimegps():
+            with patch_ligotimegps():
                 arr = getattr(llwtable, 'get_{}'.format(colname))()
 
         # extract as standard column

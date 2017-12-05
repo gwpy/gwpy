@@ -23,6 +23,7 @@ an 'io' subdirectory of the containing directory for that class.
 """
 
 import os.path
+from contextlib import contextmanager
 from functools import wraps
 
 from six import string_types
@@ -36,6 +37,29 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 XML_SIGNATURE = b'<?xml'
 LIGOLW_SIGNATURE = b'<!doctype ligo_lw'
 LIGOLW_ELEMENT = b'<ligo_lw>'
+
+
+# -- hack around around TypeError from LIGOTimeGPS(numpy.int32(...)) ----------
+
+def _ligotimegps(s, ns):
+    """Catch TypeError and cast `s` and `ns` to `int`
+    """
+    from lal import LIGOTimeGPS
+    try:
+        return LIGOTimeGPS(s, ns)
+    except TypeError:
+        return LIGOTimeGPS(int(s), int(ns))
+
+
+@contextmanager
+def patch_ligotimegps():
+    """Context manager to on-the-fly patch LIGOTimeGPS to accept all int types
+    """
+    from glue.ligolw import lsctables
+    orig = lsctables.LIGOTimeGPS
+    lsctables.LIGOTimeGPS = _ligotimegps
+    yield
+    lsctables.LIGOTimeGPS = orig
 
 
 # -- content handling ---------------------------------------------------------
