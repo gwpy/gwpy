@@ -328,6 +328,15 @@ class TestEventTable(TestTable):
         assert isinstance(rate, TimeSeries)
         assert rate.sample_rate == 1 * units.Hz
 
+        # repeat with object dtype
+        try:
+            from lal import LIGOTimeGPS
+        except ImportError:
+            return
+        lgps = map(LIGOTimeGPS, table['time'])
+        t2 = type(table)(data=[lgps], names=['time'])
+        rate2 = t2.event_rate(1, start=table['time'].min())
+        utils.assert_quantity_sub_equal(rate, rate2)
 
     def test_binned_event_rates(self, table):
         rates = table.binned_event_rates(100, 'snr', [10, 100],
