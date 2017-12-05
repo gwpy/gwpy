@@ -173,13 +173,11 @@ def parse_column_filters(*definitions):
     """  # nopep8
     fltrs = []
     for def_ in _flatten(definitions):
-        print(type(def_), def_)
         if is_filter_tuple(def_):
             fltrs.append(def_)
         else:
             for splitdef in DELIM_REGEX.split(def_)[::2]:
                 fltrs.extend(parse_column_filter(splitdef))
-    print(fltrs)
     return fltrs
 
 
