@@ -27,6 +27,8 @@ from functools import wraps
 
 from six import string_types
 
+import numpy
+
 from .cache import (file_list, FILE_LIKE)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -138,17 +140,27 @@ def read_ligolw(source, contenthandler=None, verbose=False,
         the document object as parsed from the file(s)
     """
     from glue.ligolw.ligolw import (Document, LIGOLWContentHandler)
-    from glue.ligolw.utils.ligolw_add import ligolw_add
+    from glue.ligolw import types
     from glue.ligolw.lsctables import use_in
+    from glue.ligolw.utils.ligolw_add import ligolw_add
+
+    # mock ToPyType to link to numpy dtypes
+    topytype = types.ToPyType.copy()
+    for key in types.ToPyType:
+        if key in types.ToNumPyType:
+            types.ToPyType[key] = numpy.dtype(types.ToNumPyType[key]).type
 
     # set default content handler
     if contenthandler is None:
         contenthandler = use_in(LIGOLWContentHandler)
 
     # read one or more files into a single Document
-    return ligolw_add(Document(), file_list(source),
-                      contenthandler=contenthandler, verbose=verbose,
-                      non_lsc_tables_ok=non_lsc_tables_ok)
+    try:
+        return ligolw_add(Document(), file_list(source),
+                          contenthandler=contenthandler, verbose=verbose,
+                          non_lsc_tables_ok=non_lsc_tables_ok)
+    finally:  # replace ToPyType
+        types.ToPyType = topytype
 
 
 def with_read_ligolw(func=None, contenthandler=None):
