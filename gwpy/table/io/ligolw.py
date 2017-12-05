@@ -21,6 +21,7 @@
 
 import inspect
 import warnings
+from contextlib import contextmanager
 
 import numpy
 
@@ -53,6 +54,28 @@ else:
     ilwdchar_types = (ilwdchar, _ilwdchar)
     NUMPY_TYPE_MAP[ilwdchar_types] = numpy.int_
     NUMPY_TYPE_MAP[LIGOTimeGPS] = numpy.float_
+
+
+# -- hack around around TypeError from LIGOTimeGPS(numpy.int32(...)) ----------
+
+def _ligotimegps(s, ns):
+    """Catch TypeError and cast `s` and `ns` to `int`
+    """
+    try:
+        return LIGOTimeGPS(s, ns)
+    except TypeError:
+        return LIGOTimeGPS(int(s), int(ns))
+
+
+@contextmanager
+def _safe_ligotimegps():
+    """Context manager to on-the-fly patch LIGOTimeGPS to accept all int types
+    """
+    from glue.ligolw import lsctables
+    orig = lsctables.LIGOTimeGPS
+    lsctables.LIGOTimeGPS = _ligotimegps
+    yield
+    lsctables.LIGOTimeGPS = orig
 
 
 # -- conversions --------------------------------------------------------------
@@ -126,12 +149,16 @@ def to_astropy_table(llwtable, apytable, copy=False, columns=None,
     # extract columns from LIGO_LW table as astropy.table.Column
     data = []
     for colname in columns:
-        # work out how to extract the column
+        # extract using Table.get_<>()
         if colname in getters:
-            arr = getattr(llwtable, 'get_{}'.format(colname))()
+            with _safe_ligotimegps():
+                arr = getattr(llwtable, 'get_{}'.format(colname))()
+
+        # extract as standard column
         else:
             arr = llwtable.getColumnByName(colname)
-        # get the data
+
+        # transform to astropy.table.Column
         copythis = False if colname in getters else copy
         data.append(to_astropy_column(arr, apytable.Column, copy=copythis,
                                       use_numpy_dtype=use_numpy_dtypes,
@@ -227,7 +254,7 @@ def _get_column_dtype(llwcol):
                 return type(llwcol[0])
             except IndexError:
                 return None
-        else:
+        else:  # map column type str to python type
             from glue.ligolw.types import (ToPyType, ToNumPyType)
             try:
                 return ToNumPyType[llwtype]
