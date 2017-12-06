@@ -96,11 +96,11 @@ class GravitySpyTable(EventTable):
         # LabelledSamples are only available when requesting the
         # trainingset* tables
         if LabelledSamples:
-            if not 'SampleType' in imagesDB.columns:
+            if 'SampleType' not in imagesDB.columns:
                 raise ValueError('You have requested Labelled Samples '
                                  'for a Table which does not have '
                                  'this column. Did you fetch a '
-                                  'trainingset* table?')
+                                 'trainingset* table?')
 
         # If someone wants labelled samples they are
         # Definitely asking for the training set but
@@ -109,14 +109,14 @@ class GravitySpyTable(EventTable):
             TrainingSet = 1
 
         # Let us check what columns are needed
-        columns_for_download = ['imgUrl1', 'imgUrl2', 'imgUrl3', 'imgUrl4']
-        columns_for_download_extended = ['Label', 'SampleType', 'ifo', 'uniqueID']
+        cols_for_download = ['imgUrl1', 'imgUrl2', 'imgUrl3', 'imgUrl4']
+        cols_for_download_ext = ['Label', 'SampleType', 'ifo', 'uniqueID']
+        duration_values = np.atleast_2d(np.array(['0.5', '1.0', '2.0', '4.0']))
 
         if not TrainingSet:
             imagesDB['Label'] = ''
         if not LabelledSamples:
             imagesDB['SampleType'] = ''
-
 
         if not os.path.isdir('./download/'):
             os.makedirs('./download/')
@@ -125,21 +125,30 @@ class GravitySpyTable(EventTable):
             for iLabel in imagesDB.Label.unique():
                 if LabelledSamples:
                     for iType in imagesDB.SampleType.unique():
-                        if not os.path.isdir('./download/' + iLabel + '/' + iType):
-                            os.makedirs('./download/' + iLabel + '/' + iType)
+                        if not os.path.isdir('./download/' 
+                                             + iLabel + '/' + iType):
+                            os.makedirs('./download/' + 
+                                        iLabel + '/' + iType)
                 else:
                     if not os.path.isdir('./download/' + iLabel):
                         os.makedirs('./download/' + iLabel)
 
-        images_for_download = imagesDB[columns_for_download]
+        images_for_download = imagesDB[cols_for_download]
         images = images_for_download.as_matrix().flatten()
-        images_for_download_extended = imagesDB[columns_for_download_extended]
-        duration = np.atleast_2d(np.atleast_2d(np.array(['0.5', '1.0', '2.0', '4.0'])).repeat(len(images_for_download_extended), 0).flatten()).T
-        images_for_download_extended = images_for_download_extended.as_matrix().repeat(len(columns_for_download), 0) 
-        images = np.hstack((np.atleast_2d(images).T, images_for_download_extended, duration))
+        images_for_download_extended = imagesDB[cols_for_download_ext]
+        duration = np.atleast_2d(
+                                 duration_values.repeat(
+                                 len(images_for_download_extended), 0).flatten(
+                                 )).T
+        images_for_download_extended = images_for_download_extended.as_matrix(
+                                       ).repeat(len(cols_for_download), 0) 
+        images = np.hstack((np.atleast_2d(images).T, 
+                           images_for_download_extended, duration))
 
         def get_image(url):
-            wget.download(url[0], out='./download/{0}/{1}/{2}_{3}_spectrogram_{4}.png'.format(url[1], url[2], url[3], url[4], url[5]))
+            wget.download(url[0], 
+                          out='./download/{0}/{1}/{2}_{3}_spectrogram_{4}.png'.format(
+                          url[1], url[2], url[3], url[4], url[5]))
 
         # calculate maximum number of processes
         nproc = min(kwargs.pop('nproc', 1), len(images))
