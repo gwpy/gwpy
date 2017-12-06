@@ -135,20 +135,20 @@ class GravitySpyTable(EventTable):
 
         images_for_download = imagesDB[cols_for_download]
         images = images_for_download.as_matrix().flatten()
-        images_for_download_extended = imagesDB[cols_for_download_ext]
+        images_for_download_ext = imagesDB[cols_for_download_ext]
         duration = np.atleast_2d(
                                  duration_values.repeat(
-                                   len(images_for_download_extended), 0).flatten(
+                                   len(images_for_download_ext), 0).flatten(
                                      )).T
-        images_for_download_extended = images_for_download_extended.as_matrix(
+        images_for_download_ext = images_for_download_ext.as_matrix(
                                        ).repeat(len(cols_for_download), 0)
         images = np.hstack((np.atleast_2d(images).T,
-                           images_for_download_extended, duration))
+                           images_for_download_ext, duration))
 
         def get_image(url):
             wget.download(url[0],
                           out='./{0}/{1}/{2}/{3}_{4}_{5}_{6}.png'.format(
-                          'download', url[1], url[2], url[3], 
+                          'download', url[1], url[2], url[3],
                           url[4], 'spectrogram', url[5]))
 
         # calculate maximum number of processes
