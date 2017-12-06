@@ -538,6 +538,7 @@ class TestDataQualityFlag(object):
         assert f.name == 'X1:TEST-FLAG'
         assert f.version is None
 
+    @utils.skip_missing_dependency('lal')
     @utils.skip_missing_dependency('dqsegdb')
     def test_populate(self):
         name = QUERY_FLAGS[0]
@@ -857,6 +858,7 @@ class TestDataQualityDict(object):
         assert isinstance(result, self.TEST_CLASS)
         utils.assert_dict_equal(result, QUERY_RESULT, utils.assert_flag_equal)
 
+    @utils.skip_missing_dependency('lal')
     @utils.skip_missing_dependency('dqsegdb')
     def test_populate(self):
         def fake():

@@ -19,9 +19,7 @@
 """Read events from GWF FrEvent structures into a Table
 """
 
-from six import string_types
-
-from astropy.table import (Table, Row)
+from astropy.table import Table
 from astropy.io import registry as io_registry
 
 from ...table import EventTable
@@ -36,7 +34,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 # -- read ---------------------------------------------------------------------
 
 
-def get_columns_from_frevent(frevent):
+def _columns_from_frevent(frevent):
     """Get list of column names from frevent
     """
     params = dict(frevent.GetParam())
@@ -44,15 +42,12 @@ def get_columns_from_frevent(frevent):
              'comment'] + list(params.keys()))
 
 
-def row_from_frevent(frevent, columns=None, row_class=Row, selection=[]):
+def _row_from_frevent(frevent, columns, selection):
     """Generate a table row from an FrEvent
 
     Filtering (``selection``) is done here, rather than in the table reader,
     to enable filtering on columns that aren't being returned.
     """
-    # get default columns
-    if columns is None:
-        columns = get_columns_from_frevent(frevent)
     # read params
     params = dict(frevent.GetParam())
     params['time'] = float(LIGOTimeGPS(*frevent.GetGTime()))
@@ -62,7 +57,7 @@ def row_from_frevent(frevent, columns=None, row_class=Row, selection=[]):
     params['timeAfter'] = frevent.GetTimeAfter()
     params['comment'] = frevent.GetComment()
     # filter
-    if not all(op_(params[c], t) for c, math in selection for t, op_ in math):
+    if not all(op_(params[c], t) for c, op_, t in selection):
         return None
     # return event as list
     return [params[c] for c in columns]
@@ -106,11 +101,11 @@ def table_from_gwf(filename, name, columns=None, selection=None):
         except IndexError:
             break
         i += 1
-        # read first event to get column names (and map selection)
+        # read first event to get column names
         if columns is None:
-            columns = get_columns_from_frevent(frevent)
+            columns = _columns_from_frevent(frevent)
         # read row with filter
-        row = row_from_frevent(frevent, columns=columns, selection=selection)
+        row = _row_from_frevent(frevent, columns, selection)
         if row is not None:  # if passed selection
             data.append(row)
 
@@ -119,26 +114,43 @@ def table_from_gwf(filename, name, columns=None, selection=None):
 
 # -- write --------------------------------------------------------------------
 
-def table_to_gwf(table, filename, name, start=0, duration=None,
-                 run=0, ifos=[], compression=257, compression_level=6):
+def table_to_gwf(table, filename, name, **kwargs):
     """Create a new `~frameCPP.FrameH` and fill it with data
+
+    Parameters
+    ----------
+    table : `~astropy.table.Table`
+        the data to write
+
+    filename : `str`
+        the name of the file to write into
+
+    **kwargs
+        other keyword arguments (see below for references)
+
+    See Also
+    --------
+    gwpy.io.gwf.create_frame
+    gwpy.io.gwf.write_frames
+        for documentation of keyword arguments
     """
     from LDAStools.frameCPP import (FrEvent, GPSTime)
 
     # create frame
-    frame = io_gwf.create_frame(time=start, duration=duration, name=name,
-                                run=run, ifos=ifos)
+    write_kw = {key: kwargs.pop(key) for
+                key in ('compression', 'compression_level') if key in kwargs}
+    frame = io_gwf.create_frame(name=name, **kwargs)
 
     # append row by row
     names = table.dtype.names
     for row in table:
         rowd = dict((n, row[n]) for n in names)
-        t = LIGOTimeGPS(rowd.pop('time', 0))
+        gps = LIGOTimeGPS(rowd.pop('time', 0))
         frame.AppendFrEvent(FrEvent(
             str(name),
             str(rowd.pop('comment', '')),
             str(rowd.pop('inputs', '')),
-            GPSTime(t.gpsSeconds, t.gpsNanoSeconds),
+            GPSTime(gps.gpsSeconds, gps.gpsNanoSeconds),
             float(rowd.pop('timeBefore', 0)),
             float(rowd.pop('timeAfter', 0)),
             int(rowd.pop('eventStatus', 0)),
@@ -149,8 +161,7 @@ def table_to_gwf(table, filename, name, start=0, duration=None,
         ))
 
     # write frame to file
-    io_gwf.write_frames(filename, [frame], compression=compression,
-                        compression_level=compression_level)
+    io_gwf.write_frames(filename, [frame], **write_kw)
 
 
 # -- registration -------------------------------------------------------------

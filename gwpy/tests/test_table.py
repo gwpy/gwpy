@@ -24,12 +24,13 @@ import shutil
 import tempfile
 
 from six import PY2
+from six.moves import StringIO
 
 import pytest
 
 import sqlparse
 
-from numpy import (random, isclose)
+from numpy import (random, isclose, dtype)
 
 from matplotlib import use, rc_context
 use('agg')  # nopep8
@@ -38,7 +39,9 @@ from astropy import units
 from astropy.io.ascii import InconsistentTableError
 from astropy.table import vstack
 
-from gwpy.table import (Table, EventTable)
+from gwpy.frequencyseries import FrequencySeries
+from gwpy.segments import (Segment, SegmentList)
+from gwpy.table import (Table, EventTable, filters)
 from gwpy.table.filter import filter_table
 from gwpy.table.io.hacr import (HACR_COLUMNS, get_hacr_triggers)
 from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
@@ -118,27 +121,50 @@ class TestTable(object):
         table = self.create(
             100, ['peak_time', 'peak_time_ns', 'snr', 'central_freq'],
             ['i4', 'i4', 'f4', 'f4'])
-        with tempfile.NamedTemporaryFile(suffix=ext) as f:
-            table.write(f, format='ligolw.sngl_burst')
-
+        with tempfile.NamedTemporaryFile(suffix='.{}'.format(ext),
+                                         delete=False) as f:
             def _read(*args, **kwargs):
-                kwargs.setdefault('format', 'ligolw.sngl_burst')
+                kwargs.setdefault('format', 'ligolw')
+                kwargs.setdefault('tablename', 'sngl_burst')
                 return self.TABLE.read(f, *args, **kwargs)
+
+            def _write(*args, **kwargs):
+                kwargs.setdefault('format', 'ligolw')
+                kwargs.setdefault('tablename', 'sngl_burst')
+                return table.write(f.name, *args, **kwargs)
+
+            # check simple write (using open file descriptor, not file path)
+            table.write(f, format='ligolw', tablename='sngl_burst')
 
             # check simple read
             t2 = _read()
             utils.assert_table_equal(table, t2, almost_equal=True)
+            assert t2.meta.get('tablename', None) == 'sngl_burst'
 
-            # check read with get_as_columns
-            t3 = _read(get_as_columns=True, on_attributeerror='ignore')
+            # check accessing get_xxx columns works
+            t3 = _read(columns=['peak_time', 'peak_time_ns', 'peak'])
             assert 'peak' in t3.columns
             utils.assert_array_equal(
                 t3['peak'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
 
+            # check auto-discovery of 'time' columns works
+            from glue.ligolw.lsctables import LIGOTimeGPS
+            t3 = _read(columns=['time'])
+            assert 'time' in t3.columns
+            assert isinstance(t3[0]['time'], LIGOTimeGPS)
+            utils.assert_array_equal(
+                t3['time'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
+
+            # check numpy type casting works
+            t3 = _read(columns=['time'], use_numpy_dtypes=True)
+            assert t3['time'].dtype == dtype('float64')
+            utils.assert_array_equal(
+                t3['time'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
+
             # check reading multiple tables works
             try:
-                t3 = self.TABLE.read([f.name, f.name],
-                                     format='ligolw.sngl_burst')
+                t3 = self.TABLE.read([f.name, f.name], format='ligolw',
+                                     tablename='sngl_burst')
             except NameError as e:
                 if not PY2:  # ligolw not patched for python3 just yet
                     pytest.xfail(str(e))
@@ -147,12 +173,12 @@ class TestTable(object):
 
             # check writing to existing file raises IOError
             with pytest.raises(IOError) as exc:
-                table.write(f.name, format='ligolw.sngl_burst')
+                _write()
             assert str(exc.value) == 'File exists: %s' % f.name
 
             # check overwrite=True, append=False rewrites table
             try:
-                table.write(f.name, format='ligolw.sngl_burst', overwrite=True)
+                _write(overwrite=True)
             except TypeError as e:
                 # ligolw is not python3-compatbile, so skip if it fails
                 if not PY2 and (
@@ -163,30 +189,42 @@ class TestTable(object):
             utils.assert_table_equal(t2, t3)
 
             # check append=True duplicates table
-            table.write(f.name, format='ligolw.sngl_burst', append=True)
+            _write(append=True)
             t3 = _read()
             utils.assert_table_equal(vstack((t2, t2)), t3)
 
             # check overwrite=True, append=True rewrites table
-            table.write(f.name, format='ligolw.sngl_burst',
-                        append=True, overwrite=True)
+            _write(append=True, overwrite=True)
             t3 = _read()
             utils.assert_table_equal(t2, t3)
 
             # write another table and check we can still get back the first
             insp = self.create(10, ['end_time', 'snr', 'chisq_dof'])
-            insp.write(f.name, format='ligolw.sngl_inspiral', append=True)
+            insp.write(f.name, format='ligolw', tablename='sngl_inspiral',
+                       append=True)
             t3 = _read()
             utils.assert_table_equal(t2, t3)
 
             # write another table with append=False and check the first table
             # is gone
-            insp.write(f.name, format='ligolw.sngl_inspiral', append=False,
-                       overwrite=True)
+            insp.write(f.name, format='ligolw', tablename='sngl_inspiral',
+                       append=False, overwrite=True)
             with pytest.raises(ValueError) as exc:
                 _read()
             assert str(exc.value) == ('document must contain exactly '
                                       'one sngl_burst table')
+
+            # -- deprecations
+            # check deprecations print warnings where expected
+
+            with pytest.warns(DeprecationWarning):
+                table.write(f.name, format='ligolw.sngl_burst', overwrite=True)
+            with pytest.warns(DeprecationWarning):
+                _read(format='ligolw.sngl_burst')
+            with pytest.warns(DeprecationWarning):
+                _read(get_as_columns=True)
+            with pytest.warns(DeprecationWarning):
+                _read(on_attributeerror='anything')
 
     @utils.skip_missing_dependency('root_numpy')
     def test_read_write_root(self, table):
@@ -211,9 +249,16 @@ class TestTable(object):
             assert str(exc.value).startswith('Multiple trees found')
 
             # test selections work
-            t2 = _read(treename='test', selection='frequency > 500')
+            segs = SegmentList([Segment(100, 200), Segment(400, 500)])
+            t2 = _read(treename='test',
+                       selection=['200 < frequency < 500',
+                                  ('time', filters.in_segmentlist, segs)])
             utils.assert_table_equal(
-                t2, filter_table(table, 'frequency > 500'))
+                t2, filter_table(table,
+                                 'frequency > 200',
+                                 'frequency < 500',
+                                 ('time', filters.in_segmentlist, segs)),
+            )
 
         finally:
             if os.path.isdir(tempdir):
@@ -266,18 +311,57 @@ class TestEventTable(TestTable):
                             names=table.dtype.names)
         utils.assert_table_equal(brute, lowfloud)
 
+        # check double-ended filter
+        midf = table.filter('100 < frequency < 1000')
+        utils.assert_table_equal(
+            midf, table.filter('frequency > 100').filter('frequency < 1000'))
+
+    def test_filter_in_segmentlist(self, table):
+        print(table)
+        # check filtering on segments works
+        segs = SegmentList([Segment(100, 200), Segment(400, 500)])
+        inseg = table.filter(('time', filters.in_segmentlist, segs))
+        brute = type(table)(rows=[row for row in table if row['time'] in segs],
+                            names=table.colnames)
+        utils.assert_table_equal(inseg, brute)
+
+        # check empty segmentlist is handled well
+        utils.assert_table_equal(
+            table.filter(('time', filters.in_segmentlist, SegmentList())),
+            type(table)(names=table.colnames))
+
+        # check inverse works
+        notsegs = SegmentList([Segment(0, 1000)]) - segs
+        utils.assert_table_equal(
+            inseg, table.filter(('time', filters.not_in_segmentlist, notsegs)))
+        utils.assert_table_equal(
+            table,
+            table.filter(('time', filters.not_in_segmentlist, SegmentList())))
+
     def test_event_rates(self, table):
         rate = table.event_rate(1)
         assert isinstance(rate, TimeSeries)
         assert rate.sample_rate == 1 * units.Hz
 
-        # test binned_event_rates
+        # repeat with object dtype
+        try:
+            from lal import LIGOTimeGPS
+        except ImportError:
+            return
+        lgps = map(LIGOTimeGPS, table['time'])
+        t2 = type(table)(data=[lgps], names=['time'])
+        rate2 = t2.event_rate(1, start=table['time'].min())
+        utils.assert_quantity_sub_equal(rate, rate2)
+
+    def test_binned_event_rates(self, table):
         rates = table.binned_event_rates(100, 'snr', [10, 100],
                                          timecolumn='time')
         assert isinstance(rates, TimeSeriesDict)
         assert list(rates.keys()), [10, 100]
         assert rates[10].max() == 0.14 * units.Hz
+        assert rates[10].name == 'snr >= 10'
         assert rates[100].max() == 0.13 * units.Hz
+        assert rates[100].name == 'snr >= 100'
         table.binned_event_rates(100, 'snr', [10, 100], operator='in')
         table.binned_event_rates(100, 'snr', [(0, 10), (10, 100)])
 
@@ -327,7 +411,8 @@ class TestEventTable(TestTable):
         table = self.create(
             100, names=['a', 'b', 'c', 'chisq', 'd', 'e', 'f',
                         'mass1', 'mass2', 'snr'])
-        table.meta['ifo'] = 'X1'
+        loudest = (table['snr'] > 500).nonzero()[0]
+        psd = FrequencySeries(random.randn(1000), df=1)
         fp = os.path.join(tempfile.mkdtemp(), 'X1-Live-0-0.hdf')
         try:
             # write table in pycbc_live format (by hand)
@@ -335,16 +420,41 @@ class TestEventTable(TestTable):
                 group = h5f.create_group('X1')
                 for col in table.columns:
                     group.create_dataset(data=table[col], name=col)
+                group.create_dataset('loudest', data=loudest)
+                group.create_dataset('psd', data=psd.value)
+                group['psd'].attrs['delta_f'] = psd.df.to('Hz').value
 
             # check that we can read
             t2 = self.TABLE.read(fp)
             utils.assert_table_equal(table, t2)
+            # and check metadata was recorded correctly
+            assert t2.meta['ifo'] == 'X1'
 
             # check keyword arguments result in same table
             t2 = self.TABLE.read(fp, format='hdf5.pycbc_live')
             utils.assert_table_equal(table, t2)
             t2 = self.TABLE.read(fp, format='hdf5.pycbc_live', ifo='X1')
+
+            # assert loudest works
+            t2 = self.TABLE.read(fp, loudest=True)
+            utils.assert_table_equal(table.filter('snr > 500'), t2)
+
+            # check extended_metadata=True works (default)
+            t2 = self.TABLE.read(fp, extended_metadata=True)
             utils.assert_table_equal(table, t2)
+            utils.assert_array_equal(t2.meta['loudest'], loudest)
+            utils.assert_quantity_sub_equal(
+                t2.meta['psd'], psd,
+                exclude=['name', 'channel', 'unit', 'epoch'])
+
+            # check extended_metadata=False works
+            t2 = self.TABLE.read(fp, extended_metadata=False)
+            assert t2.meta == {'ifo': 'X1'}
+
+            # double-check that loudest and extended_metadata=False work
+            t2 = self.TABLE.read(fp, loudest=True, extended_metadata=False)
+            utils.assert_table_equal(table.filter('snr > 500'), t2)
+            assert t2.meta == {'ifo': 'X1'}
 
             # add another IFO, then assert that reading the table without
             # specifying the IFO fails

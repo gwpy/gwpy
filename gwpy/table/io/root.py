@@ -21,15 +21,19 @@
 
 import warnings
 
+from six import string_types
+
 from ...io import registry
 from ...io.utils import identify_factory
-from ...io.cache import file_list
+from ..filter import (OPERATORS, parse_column_filters, filter_table)
 from .. import (Table, EventTable)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-def table_from_root(f, treename=None, include_names=None, **kwargs):
+def table_from_root(source, treename=None, include_names=None, **kwargs):
+    """Read a Table from a ROOT tree
+    """
     import root_numpy
 
     if include_names is None:
@@ -44,43 +48,59 @@ def table_from_root(f, treename=None, include_names=None, **kwargs):
                           "your call.", DeprecationWarning)
 
     # parse column filters into tree2array ``selection`` keyword
+    # NOTE: not all filters can be passed directly to root_numpy, so we store
+    #       those separately and apply them after-the-fact before returning
     try:
-        filters = kwargs.pop('selection')
-    except KeyError:
-        pass
+        selection = kwargs.pop('selection')
+    except KeyError:  # no filters
+        filters = None
     else:
-        if isinstance(filters, (list, tuple)):
-            filters = ' && '.join(filters)
-        kwargs['selection'] = filters
+        rootfilters = []
+        filters = []
+        for col, op_, value in parse_column_filters(selection):
+            try:
+                opstr = [key for key in OPERATORS if OPERATORS[key] is op_][0]
+            except (IndexError, KeyError):  # cannot filter with root_numpy
+                filters.append((col, op_, value))
+            else:  # can filter with root_numpy
+                rootfilters.append('{0} {1} {2!r}'.format(col, opstr, value))
+        kwargs['selection'] = ' && '.join(rootfilters)
+
+    # pass file name (not path)
+    if not isinstance(source, string_types):
+        source = source.name
 
     # find single tree (if only one tree present)
-
-    files = file_list(f)
     if treename is None:
-        trees = root_numpy.list_trees(files[0])
+        trees = root_numpy.list_trees(source)
         if len(trees) == 1:
             treename = trees[0]
-        elif len(trees) == 0:
-            raise ValueError("No trees found in %s" % files[0])
+        elif not trees:
+            raise ValueError("No trees found in %s" % source)
         else:
             raise ValueError("Multiple trees found in %s, please select on "
                              "via the `treename` keyword argument, e.g. "
                              "`treename='events'`. Available trees are: %s."
-                             % (files[0], ', '.join(map(repr, trees))))
+                             % (source, ', '.join(map(repr, trees))))
 
-    # read and return
-    return Table(root_numpy.root2array(files, treename, branches=include_names,
-                                       **kwargs))
+    # read, filter, and return
+    t = Table(root_numpy.root2array(source, treename,
+                                    branches=include_names, **kwargs))
+    if filters:
+        return filter_table(t, *filters)
+    return t
 
 
 def table_to_root(table, filename, **kwargs):
+    """Write a Table to a ROOT file
+    """
     import root_numpy
     root_numpy.array2root(table.as_array(), filename, **kwargs)
 
 
 # register I/O
-_identifier = identify_factory('.root')
 for table_class in (Table, EventTable):
     registry.register_reader('root', table_class, table_from_root)
     registry.register_writer('root', table_class, table_to_root)
-    registry.register_identifier('root', table_class, _identifier)
+    registry.register_identifier('root', table_class,
+                                 identify_factory('.root'))

@@ -21,8 +21,9 @@
 
 from __future__ import division
 
-import os
 import re
+
+from ..utils.shell import which
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -32,7 +33,29 @@ MACROS = [
     r'\def\rtHz{\ensuremath{\sqrt{\mathrm{Hz}}}}',  # \sqrt{Hz} label
 ]
 
-HAS_TEX = os.system('which pdflatex > %s 2>&1' % os.devnull) == 0
+
+def has_tex():
+    """Returns whether tex is installed on this system
+
+    Returns
+    -------
+    True
+        if ``pdflatex`` and ``dvipng`` executables are found on the path
+    False
+        otherwise
+    """
+    try:
+        which('pdflatex')
+    except ValueError:
+        return False
+    try:
+        which('dvipng')
+    except ValueError:
+        return False
+    return True
+
+
+HAS_TEX = has_tex()
 
 # -- tex formatting -----------------------------------------------------------
 
@@ -41,7 +64,8 @@ re_latex_control = re.compile(r'(?<!\\)[%s](?!.*{)'
                               % ''.join(LATEX_CONTROL_CHARS))
 
 
-def float_to_latex(x, format="%.2g"):
+def float_to_latex(x, format="%.2g"):  # pylint: disable=redefined-builtin
+    # pylint: disable=anomalous-backslash-in-string
     """Convert a floating point number to a latex representation.
 
     In particular, scientific notation is handled gracefully: e -> 10^
@@ -82,11 +106,11 @@ def float_to_latex(x, format="%.2g"):
         exponent = '-' + exponent[2:]
     if float(mantissa) == 1.0:
         return r"10^{%s}" % exponent
-    else:
-        return r"%s\!\!\times\!\!10^{%s}" % (mantissa, exponent)
+    return r"%s\!\!\times\!\!10^{%s}" % (mantissa, exponent)
 
 
 def label_to_latex(text):
+    # pylint: disable=anomalous-backslash-in-string
     """Convert text into a latex-passable representation.
 
     This method just escapes the following reserved LaTeX characters:
@@ -135,6 +159,7 @@ def label_to_latex(text):
 
 
 def unit_to_latex(unit):
+    # pylint: disable=anomalous-backslash-in-string
     """Convert a `~astropy.units.Unit` to a latex string
 
     Parameters
@@ -160,38 +185,34 @@ def unit_to_latex(unit):
 
     if unit is None:
         return ''
-    elif isinstance(unit, units.NamedUnit):
-        s = label_to_latex(unit.name)
+    if isinstance(unit, units.NamedUnit):
+        ustr = label_to_latex(unit.name)
     elif isinstance(unit, units.CompositeUnit):
         if unit.scale != 1:
-            s = float_to_latex(unit.scale) + r'\ '
+            ustr = float_to_latex(unit.scale) + r'\ '
         else:
-            s = ''
-        if len(unit.bases):
+            ustr = ''
+        if unit.bases:
             positives, negatives = unit_utils.get_grouped_by_powers(
                 unit.bases, unit.powers)
-            if len(negatives) == 1:
+            if negatives == 1:
                 negatives = _format_unit_list(negatives)
-                positives = positives and _format_unit_list(positives) or 1
-                s += r'{0}/{1}'.format(positives, negatives)
-            elif len(negatives):
-                if len(positives):
-                    positives = _format_unit_list(positives)
-                else:
-                    positives = ''
+                positives = _format_unit_list(positives) if positives else 1
+                ustr += r'{0}/{1}'.format(positives, negatives)
+            elif negatives:
+                positives = _format_unit_list(positives) if positives else ''
                 negatives = _format_unit_list(negatives, negative=True)
-                s += r'{0}\,{1}'.format(positives, negatives)
+                ustr += r'{0}\,{1}'.format(positives, negatives)
             else:
                 positives = _format_unit_list(positives)
-                s += positives
+                ustr += positives
     elif isinstance(unit, units.UnitBase):
-        return s.to_string('latex_inline')
+        return unit.to_string('latex_inline')
     else:
-        s = str(unit)
-    if s:
-        return r'$\mathrm{{{0}}}$'.format(s)
-    else:
-        return ''
+        ustr = str(unit)
+    if ustr:
+        return r'$\mathrm{{{0}}}$'.format(ustr)
+    return ''
 
 
 def _format_unit_list(unitlist, negative=False):

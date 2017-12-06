@@ -85,7 +85,6 @@ def write(series, output, scale=None):
     >>> t = TimeSeries.write('test.wav')
     """
     fsamp = int(series.sample_rate.decompose().value)
-    data = series.value
     if scale is None:
         scale = 1 / numpy.abs(series.value).max()
     data = (series.value * scale).astype('float32')

@@ -195,6 +195,11 @@ class Array2D(Series):
         if getattr(self, '_yindex', 0) is None:
             del self.yindex
 
+    def __iter__(self):
+        # astropy Quantity.__iter__ does something fancy that we don't need
+        # because we overload __getitem__
+        return super(Quantity, self).__iter__()
+
     # -- Array2d properties ---------------------
 
     # y0
@@ -397,13 +402,13 @@ class Array2D(Series):
         y = Quantity(y, self.yindex.unit).value
         try:
             idx = (self.xindex.value == x).nonzero()[0][0]
-        except IndexError as e:
-            e.args = ("Value %r not found in array xindex" % x,)
+        except IndexError as exc:
+            exc.args = ("Value %r not found in array xindex" % x,)
             raise
         try:
             idy = (self.yindex.value == y).nonzero()[0][0]
-        except IndexError as e:
-            e.args = ("Value %r not found in array yindex",)
+        except IndexError as exc:
+            exc.args = ("Value %r not found in array yindex",)
             raise
         return self[idx, idy]
 

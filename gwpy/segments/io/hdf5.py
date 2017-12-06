@@ -30,7 +30,6 @@ import numpy
 from astropy.table import Table
 from astropy.units import (UnitBase, Quantity)
 
-from ...io.cache import FILE_LIKE
 from ...io import hdf5 as io_hdf5
 from ...io.registry import (register_reader, register_writer,
                             register_identifier)
@@ -66,7 +65,7 @@ def find_flag_groups(h5group, strict=True):
     for group in h5group:
         try:
             names.append(h5group[group].attrs['name'])
-        except KeyError as e:
+        except KeyError:
             if strict:
                 raise
             continue
@@ -76,8 +75,7 @@ def find_flag_groups(h5group, strict=True):
 # -- read ---------------------------------------------------------------------
 
 @io_hdf5.with_read_hdf5
-def read_hdf5_flag(f, path=None, gpstype=LIGOTimeGPS, coalesce=False,
-                   **kwargs):
+def read_hdf5_flag(h5f, path=None, gpstype=LIGOTimeGPS):
     """Read a `DataQualityFlag` object from an HDF5 file or group.
     """
     # verify path is given
@@ -86,28 +84,31 @@ def read_hdf5_flag(f, path=None, gpstype=LIGOTimeGPS, coalesce=False,
                          "``path=`` keyword argument")
 
     # get default path as only child of file
-    dataset = f[path]
+    dataset = h5f[path]
 
-    active = SegmentList.read(dataset['active'])
+    active = SegmentList.read(dataset['active'], format='hdf5',
+                              gpstype=gpstype)
     try:
-        known = SegmentList.read(dataset['known'])
-    except KeyError as e:
+        known = SegmentList.read(dataset['known'], format='hdf5',
+                                 gpstype=gpstype)
+    except KeyError as first_keyerror:
         try:
-            known = SegmentList.read(dataset['valid'])
+            known = SegmentList.read(dataset['valid'], format='hdf5',
+                                     gpstype=gpstype)
         except KeyError:
-            raise e
+            raise first_keyerror
 
     return DataQualityFlag(active=active, known=known, **dict(dataset.attrs))
 
 
 @io_hdf5.with_read_hdf5
-def read_hdf5_segmentlist(f, path=None, gpstype=LIGOTimeGPS, **kwargs):
+def read_hdf5_segmentlist(h5f, path=None, gpstype=LIGOTimeGPS, **kwargs):
     """Read a `SegmentList` object from an HDF5 file or group.
     """
     # find dataset
-    dataset = io_hdf5.find_dataset(f, path=path)
+    dataset = io_hdf5.find_dataset(h5f, path=path)
 
-    segtable = Table.read(dataset, format='hdf5')
+    segtable = Table.read(dataset, format='hdf5', **kwargs)
     out = SegmentList()
     for row in segtable:
         start = LIGOTimeGPS(int(row['start_time']), int(row['start_time_ns']))
@@ -125,6 +126,10 @@ def read_hdf5_dict(h5f, names=None, path=None, **kwargs):
     """
     if path:
         h5f = h5f[path]
+
+    # allow alternative keyword argument name (FIXME)
+    if names is None:
+        names = kwargs.pop('flags', None)
 
     # try and get list of names automatically
     if names is None:

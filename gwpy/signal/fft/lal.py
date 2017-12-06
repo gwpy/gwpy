@@ -125,7 +125,7 @@ def generate_window(length, window=('kaiser', 24), dtype='float64'):
             window = str(window[0])
         else:
             args = []
-        window = window.islower() and window.title() or window
+        window = window.title() if window.islower() else window
         # create window
         create = getattr(lal, 'Create%s%sWindow' % (window, laltype))
         LAL_WINDOWS[key] = create(length, *args)
@@ -212,11 +212,11 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
                    1 / segmentlength, unit, int(segmentlength // 2 + 1))
 
     # calculate medianmean spectrum
-    if re.match('median-mean\Z', method, re.I):
+    if re.match(r'median-mean\Z', method, re.I):
         spec_func = getattr(lal, "%sAverageSpectrumMedianMean" % laltypestr)
-    elif re.match('median\Z', method, re.I):
+    elif re.match(r'median\Z', method, re.I):
         spec_func = getattr(lal, "%sAverageSpectrumMedian" % laltypestr)
-    elif re.match('welch\Z', method, re.I):
+    elif re.match(r'welch\Z', method, re.I):
         spec_func = getattr(lal, "%sAverageSpectrumWelch" % laltypestr)
     else:
         raise NotImplementedError("Unrecognised LAL spectrum method %r"
@@ -266,6 +266,7 @@ def welch(timeseries, segmentlength, noverlap=None, window=None, plan=None):
 
 
 def bartlett(timeseries, segmentlength, noverlap=None, window=None, plan=None):
+    # pylint: disable=unused-argument
     """Calculate an PSD of this `TimeSeries` using Bartlett's method
 
     Parameters
@@ -374,9 +375,6 @@ def median_mean(timeseries, segmentlength, noverlap=None,
 
 
 # register LAL methods without overriding scipy method
-for func in [welch, bartlett, median, median_mean]:
-    try:
-        fft_registry.register_method(func, scaling='density')
-    except KeyError:  # already exists from scipy
-        fft_registry.register_method(func, name='lal-%s' % func.__name__,
-                                     scaling='density')
+for func in (welch, bartlett, median, median_mean,):
+    fft_registry.register_method(func, name='lal-{}'.format(func.__name__),
+                                 scaling='density')

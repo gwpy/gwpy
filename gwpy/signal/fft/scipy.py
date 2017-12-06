@@ -32,6 +32,8 @@ from . import registry as fft_registry
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
+# -- density scaling methods --------------------------------------------------
+
 def welch(timeseries, segmentlength, noverlap=None, **kwargs):
     """Calculate a PSD of this `TimeSeries` using Welch's method.
 
@@ -56,17 +58,16 @@ def welch(timeseries, segmentlength, noverlap=None, **kwargs):
     scipy.signal.welch
     """
     # calculate PSD
-    f, psd_ = scipy.signal.welch(timeseries.value, noverlap=noverlap,
-                                 fs=timeseries.sample_rate.decompose().value,
-                                 nperseg=segmentlength, **kwargs)
+    freqs, psd_ = scipy.signal.welch(
+        timeseries.value, noverlap=noverlap,
+        fs=timeseries.sample_rate.decompose().value,
+        nperseg=segmentlength, **kwargs)
     # generate FrequencySeries and return
     unit = scale_timeseries_unit(timeseries.unit,
                                  kwargs.get('scaling', 'density'))
-    return FrequencySeries(psd_, unit=unit, frequencies=f,
+    return FrequencySeries(psd_, unit=unit, frequencies=freqs,
                            name=timeseries.name, epoch=timeseries.epoch,
                            channel=timeseries.channel)
-
-fft_registry.register_method(welch, scaling='density')
 
 
 def bartlett(timeseries, segmentlength, **kwargs):
@@ -95,8 +96,14 @@ def bartlett(timeseries, segmentlength, **kwargs):
     kwargs.pop('noverlap', None)
     return welch(timeseries, segmentlength, noverlap=0, **kwargs)
 
-fft_registry.register_method(bartlett, scaling='density')
 
+# register
+for func in (welch, bartlett,):
+    fft_registry.register_method(func, name='scipy-{}'.format(func.__name__),
+                                 scaling='density')
+
+
+# -- other scaling methods ----------------------------------------------------
 
 def rayleigh(timeseries, segmentlength, noverlap=0):
     """Calculate a Rayleigh statistic spectrum
@@ -124,8 +131,9 @@ def rayleigh(timeseries, segmentlength, noverlap=0):
         numsegs = int(timeseries.size // segmentlength)
     tmpdata = numpy.ndarray((numsegs, int(segmentlength//2 + 1)))
     for i in range(numsegs):
-        ts = timeseries[i*stepsize:i*stepsize+segmentlength]
-        tmpdata[i, :] = welch(ts, segmentlength)
+        tmpdata[i, :] = welch(
+            timeseries[i*stepsize:i*stepsize+segmentlength],
+            segmentlength)
     std = tmpdata.std(axis=0)
     mean = tmpdata.mean(axis=0)
     return FrequencySeries(std/mean, unit='', copy=False, f0=0,
@@ -133,8 +141,6 @@ def rayleigh(timeseries, segmentlength, noverlap=0):
                            df=timeseries.sample_rate.value/segmentlength,
                            channel=timeseries.channel,
                            name='Rayleigh spectrum of %s' % timeseries.name)
-
-fft_registry.register_method(rayleigh, scaling='other')
 
 
 def csd(timeseries, other, segmentlength, noverlap=None, **kwargs):
@@ -167,16 +173,29 @@ def csd(timeseries, other, segmentlength, noverlap=None, **kwargs):
     scipy.signal.csd
     """
     # calculate CSD
-    f, csd_ = scipy.signal.csd(timeseries.value, other.value,
-                               noverlap=noverlap,
-                               fs=timeseries.sample_rate.decompose().value,
-                               nperseg=segmentlength, **kwargs)
+    try:
+        freqs, csd_ = scipy.signal.csd(
+            timeseries.value, other.value, noverlap=noverlap,
+            fs=timeseries.sample_rate.decompose().value,
+            nperseg=segmentlength, **kwargs)
+    except AttributeError as exc:
+        exc.args = ('{}, scipy>=0.16 is required'.format(str(exc)),)
+        raise
+
     # generate FrequencySeries and return
     unit = scale_timeseries_unit(timeseries.unit,
                                  kwargs.get('scaling', 'density'))
     return FrequencySeries(
-       csd_, unit=unit, frequencies=f,
-       name=str(timeseries.name)+'---'+str(other.name),
-       epoch=timeseries.epoch, channel=timeseries.channel)
+        csd_, unit=unit, frequencies=freqs,
+        name=str(timeseries.name)+'---'+str(other.name),
+        epoch=timeseries.epoch, channel=timeseries.channel)
 
-fft_registry.register_method(csd, scaling='other')
+
+# register
+for func in (rayleigh, csd,):
+    try:
+        fft_registry.register_method(func, scaling='other')
+    except KeyError:
+        pass
+    fft_registry.register_method(func, name='scipy-{}'.format(func.__name__),
+                                 scaling='other')

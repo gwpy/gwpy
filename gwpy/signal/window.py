@@ -39,6 +39,11 @@ def canonical_name(name):
     realname : `str`
         the name of the window as implemented in `scipy.signal.window`
 
+    Raises
+    -------
+    ValueError
+        if ``name`` cannot be resolved to a window function in `scipy.signal`
+
     Examples
     --------
     >>> from gwpy.signal.window import canonical_name
@@ -47,12 +52,19 @@ def canonical_name(name):
     >>> canonical_name('ksr')
     'kaiser'
     """
-    try:
+    try:  # use equivalence introduced in scipy 0.16.0
+        # pylint: disable=protected-access
         return scipy_windows._win_equiv[name.lower()].__name__
-    except KeyError as e:
-        raise ValueError('no window function in scipy.signal equivalent to %r'
-                         % name,)
-        raise
+    except AttributeError:  # old scipy
+        try:
+            return getattr(scipy_windows, name.lower()).__name__
+        except AttributeError:  # no match
+            pass  # raise later
+    except KeyError:  # no match
+        pass  # raise later
+
+    raise ValueError('no window function in scipy.signal equivalent to %r'
+                     % name,)
 
 
 # -- recommended overlap ------------------------------------------------------
@@ -100,8 +112,8 @@ def recommended_overlap(name, nfft=None):
     """
     try:
         name = canonical_name(name)
-    except KeyError as e:
-        raise ValueError(str(e))
+    except KeyError as exc:
+        raise ValueError(str(exc))
     try:
         rov = ROV[name]
     except KeyError:

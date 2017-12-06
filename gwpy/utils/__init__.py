@@ -26,7 +26,7 @@ from sys import stdout
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-def gprint(*values, **kwargs):
+def gprint(*values, **kwargs):  # pylint: disable=missing-docstring
     kwargs.setdefault('file', stdout)
     file_ = kwargs['file']
     print(*values, **kwargs)

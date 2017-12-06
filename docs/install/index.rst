@@ -1,5 +1,3 @@
-.. include:: ../references.txt
-
 .. _gwpy-install:
 
 ############
@@ -28,7 +26,7 @@ Those dependencies are:
 - |scipy|_
 - |matplotlib|_
 - |astropy|_
-- |glue|_
+- :mod:`glue`
 - |ligotimegps|_ (if |lal|_ is not already installed)
 
 See the GWpy ``setup.py`` file for minimum version requirements for each of those packages.

@@ -64,7 +64,7 @@ def test_to_gps():
     # errors
     with pytest.raises(UnitConversionError):
         time.to_gps(Quantity(1, 'm'))
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises((ValueError, TypeError)) as exc:
         time.to_gps('random string')
     assert 'Cannot parse date string \'random string\': ' in str(exc.value)
 

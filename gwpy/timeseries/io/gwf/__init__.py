@@ -38,7 +38,7 @@ from six import string_types
 
 import numpy
 
-from astropy.io.registry import (get_formats, IORegistryError)
+from astropy.io.registry import get_formats
 
 try:
     from glue.lal import Cache
@@ -50,7 +50,8 @@ else:
 from ....segments import Segment
 from ....time import to_gps
 from ....io.gwf import identify_gwf
-from ....io.cache import (FILE_LIKE, read_cache, find_contiguous)
+from ....io.cache import (FILE_LIKE, read_cache as read_cache_file,
+                          find_contiguous)
 from ....io.registry import (register_reader,
                              register_writer,
                              register_identifier)
@@ -106,8 +107,7 @@ def channel_dict_kwarg(value, channels, types=None, astype=None):
         return None
     if astype is not None:
         return dict((key, astype(out[key])) for key in out)
-    else:
-        return out
+    return out
 
 
 def import_gwf_library(library, package=__package__):
@@ -119,8 +119,8 @@ def import_gwf_library(library, package=__package__):
     # import the frame library here to have any ImportErrors occur early
     try:
         return importlib.import_module('.%s' % library, package=package)
-    except ImportError as e:
-        e.args = ('Cannot import %s frame API: %s' % (library, str(e)),)
+    except ImportError as exc:
+        exc.args = ('Cannot import %s frame API: %s' % (library, str(exc)),)
         raise
 
 
@@ -145,7 +145,6 @@ def register_gwf_api(library):
     except ImportError:
         pass  # means any reads will fail at run-time
     else:
-        framelibrary = lib.FRAME_LIBRARY
         libread_ = lib.read
         libwrite_ = lib.write
 
@@ -230,7 +229,7 @@ def register_gwf_api(library):
                 source.endswith(('.lcf', '.cache'))) or (
                     isinstance(source, FILE_LIKE) and
                     source.name.endswith(('.lcf', '.cache'))):
-            source = read_cache(source)
+            source = read_cache_file(source)
         # separate cache into contiguous segments
         if HAS_CACHE and isinstance(source, Cache):
             if start is not None and end is not None:
@@ -343,7 +342,7 @@ def register_gwf_api(library):
     register_writer(fmt, StateVectorDict, write_timeseriesdict)
     register_writer(fmt, StateVector, write_timeseries)
 
-    # register depreacated format - DEPRECATED
+    # register deprecated format - DEPRECATED
     for container in (TimeSeries, TimeSeriesDict,
                       StateVector, StateVectorDict):
         register_library_format(container, library)
@@ -361,8 +360,9 @@ def register_gwf_format(container):
     container : `Series`, `dict`
         series class or series dict class to register
     """
+    formats = get_formats(data_class=container)
     def read_(*args, **kwargs):
-        for fmt in get_formats(data_class=container, readwrite='Read'):
+        for fmt in formats:
             if fmt['Format'].startswith('gwf.'):
                 kwargs['format'] = fmt['Format']
                 try:
@@ -374,7 +374,7 @@ def register_gwf_format(container):
                           "libraries and try again")
 
     def write_(*args, **kwargs):
-        for fmt in get_formats(data_class=container, readwrite='Write'):
+        for fmt in formats:
             if fmt['Format'].startswith('gwf.'):
                 kwargs['format'] = fmt['Format']
                 try:

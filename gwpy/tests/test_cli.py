@@ -28,11 +28,10 @@ import pytest
 
 from numpy import random
 
-from matplotlib import use
+from matplotlib import (use, rcParams)
 use('agg')  # nopep8
 
 from gwpy.timeseries import TimeSeries
-from gwpy.plotter import rcParams
 
 # local imports
 import mocks
@@ -119,6 +118,7 @@ class CliTestBase(object):
         product, args = self.test_gen_plot()
         product.ax = product.plot.gca()
         product.setup_xaxis(args)
+    #
 
     def test_setup_yaxis(self):
         product, args = self.test_gen_plot()
@@ -153,7 +153,7 @@ class CliTestBase(object):
                 mock.patch('nds2.buffer'):
             mock_connection.return_value = nds_connection
 
-            product.makePlot(args)
+            product.makePlot(args, parser)
 
         assert product.is_interactive is True
 

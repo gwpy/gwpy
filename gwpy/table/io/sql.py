@@ -21,23 +21,27 @@
 
 from astropy.table import Table
 
-from .. import EventTable
 from ..filter import (OPERATORS, parse_column_filters)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 def format_db_selection(selection, engine=None):
+    """Format a column filter selection as a SQL database WHERE string
+    """
     # parse selection for SQL query
     if selection is None:
         return ''
     selections = []
-    for col, def_ in parse_column_filters(selection):
+    for col, op_, value in parse_column_filters(selection):
         if engine and engine.name == 'postgresql':
             col = '"%s"' % col
-        for value, op_ in def_:
+        try:
             opstr = [key for key in OPERATORS if OPERATORS[key] is op_][0]
-            selections.append('{0} {1} {2!r}'.format(col, opstr, value))
+        except KeyError:
+            raise ValueError("Cannot format database 'WHERE' command with "
+                             "selection operator %r" % op_)
+        selections.append('{0} {1} {2!r}'.format(col, opstr, value))
     if selections:
         return 'WHERE %s' % ' AND '.join(selections)
     return ''
@@ -70,7 +74,6 @@ def fetch(engine, tablename, columns=None, selection=None, **kwargs):
     table : `GravitySpyTable`
     """
     import pandas as pd
-    from sqlalchemy.exc import ProgrammingError
 
     # parse columns for SQL query
     if columns is None:

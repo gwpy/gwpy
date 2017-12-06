@@ -24,7 +24,8 @@ import tempfile
 import pytest
 
 import numpy
-from numpy import testing as nptest
+
+from scipy import signal
 
 from matplotlib import (use, rc_context)
 use('agg')  # nopep8
@@ -53,6 +54,22 @@ class TestSpectrogram(TestArray2D):
     """
     TEST_CLASS = Spectrogram
 
+    def test_new(self):
+        super(TestSpectrogram, self).test_new()
+
+        # check handling of epoch vs t0
+        a = self.create(epoch=10)
+        b = self.create(t0=10)
+        utils.assert_quantity_sub_equal(a, b)
+        with pytest.raises(ValueError) as exc:
+            self.TEST_CLASS(self.data, epoch=1, t0=1)
+        assert str(exc.value) == 'give only one of epoch or t0'
+
+        # check times
+        times = numpy.arange(self.data.shape[0])
+        a = self.create(times=times)
+        utils.assert_quantity_equal(a.times, times * units.second)
+
     def test_epoch(self, array):
         assert array.epoch.gps == array.x0.value
 
@@ -69,10 +86,14 @@ class TestSpectrogram(TestArray2D):
         array_meth = getattr(array, ratio)
         utils.assert_quantity_sub_equal(rat, array / array_meth(axis=0))
 
+        with pytest.raises(ValueError):
+            array.ratio('blah')
+
     def test_from_spectra(self, array):
         min_ = self.TEST_ARRAY.min(axis=0)
         max_ = self.TEST_ARRAY.max(axis=0)
         mean = self.TEST_ARRAY.mean(axis=0)
+
         # check basic stack works
         new = self.TEST_ARRAY.from_spectra(mean, min_, max_, dt=1)
         assert new.shape == (3, min_.size)
@@ -84,6 +105,7 @@ class TestSpectrogram(TestArray2D):
         assert new.dt == 1 * units.second
         utils.assert_array_equal(
             new.value, numpy.vstack((mean.value, min_.value, max_.value)))
+
         # check kwargs
         new = self.TEST_ARRAY.from_spectra(
             mean, min_, max_,
@@ -93,20 +115,36 @@ class TestSpectrogram(TestArray2D):
         assert new.f0 == 100 * units.Hertz
         assert new.df == 0.5 * units.Hertz
         assert new.unit == units.meter
+
         # check error on timing
         with pytest.raises(ValueError):
             self.TEST_ARRAY.from_spectra(mean)
+        self.TEST_ARRAY.from_spectra(mean, dt=array.dt)
+
+        # check error on inputs
+        with pytest.raises(ValueError):
+            self.TEST_ARRAY.from_spectra(mean, mean[1:])
+        with pytest.raises(ValueError):
+            self.TEST_ARRAY.from_spectra(mean, mean[::2])
 
     def test_crop_frequencies(self):
         array = self.create(f0=0, df=1)
+
         # test simple
         array2 = array.crop_frequencies()
         utils.assert_quantity_sub_equal(array, array2)
+        assert numpy.may_share_memory(array.value, array2.value)
+
         # test normal
         array2 = array.crop_frequencies(2, 5)
         utils.assert_array_equal(array2.value, array.value[:, 2:5])
         assert array2.f0 == 2 * units.Hertz
         assert array2.df == array.df
+
+        # test copy
+        array2 = array.crop_frequencies(copy=True)
+        assert not numpy.may_share_memory(array.value, array2.value)
+
         # test warnings
         with pytest.warns(UserWarning):
             array.crop_frequencies(array.yspan[0]-1, array.yspan[1])
@@ -123,3 +161,40 @@ class TestSpectrogram(TestArray2D):
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
             plot.close()
+
+    def test_zpk(self, array):
+        zpk = [], [1], 1
+        utils.assert_quantity_sub_equal(array.zpk(*zpk), array.filter(*zpk))
+
+    def test_filter(self):
+        array = self.create(t0=0, dt=1/1024., f0=0, df=1)
+
+        # build filter
+        zpk = [], [1], 1
+        lti = signal.lti(*zpk)
+        fresp = numpy.nan_to_num(abs(
+            lti.freqresp(w=array.frequencies.value)[1]))
+
+        # test simple filter
+        a2 = array.filter(*zpk)
+        utils.assert_array_equal(array * fresp, a2)
+
+        # test inplace filtering
+        array.filter(lti, inplace=True)
+        utils.assert_array_equal(array, a2)
+
+        # test errors
+        with pytest.raises(TypeError):
+            array.filter(lti, blah=1)
+
+    @utils.skip_missing_dependency('h5py')
+    def test_read_write_hdf5(self):
+        array = self.create(name='X1:TEST')
+        utils.test_read_write(array, 'hdf5', write_kw={'overwrite': True})
+
+    def test_percentile(self):
+        array = self.create(name='Test')
+        a2 = array.percentile(50)
+        utils.assert_quantity_sub_equal(array.median(axis=0), a2,
+                                        exclude=('name',))
+        assert a2.name == 'Test: 50th percentile'

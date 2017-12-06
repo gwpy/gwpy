@@ -54,8 +54,10 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.linkcode',
+    'sphinx_automodapi.automodapi',
     'numpydoc',
     'matplotlib.sphinxext.plot_directive',
+    'gwpy.utils.sphinx.epydoc',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -108,6 +110,9 @@ default_role = 'obj'
 # unit titles (such as .. function::).
 #add_module_names = True
 
+# Epilog
+rst_epilog = "\n.. include:: /references.txt"
+
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
 #show_authors = False
@@ -153,6 +158,12 @@ numpydoc_use_plots = True
 # configure inheritance diagram
 inheritance_graph_attrs = dict(rankdir='TB')
 
+# -- epydoc -------------------------------------
+
+# epydoc extension config for GLUE
+epydoc_mapping = {
+    'http://software.ligo.org/docs/glue/': [r'glue(\.|$)'],
+}
 
 # -- Options for HTML output ----------------------------------------------
 

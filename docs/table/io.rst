@@ -1,4 +1,3 @@
-.. include:: ../references.txt
 .. currentmodule:: gwpy.table
 
 .. _gwpy-table-io:
@@ -46,22 +45,22 @@ but is **not** backported to for use with :meth:`Table.read`.
 ``LIGO_LW`` XML
 ===============
 
-**Additional dependencies:** |glue.ligolw|_
+**Additional dependencies:** :mod:`glue.ligolw`
 
 The LIGO Scientific Collaboration uses a custom scheme of XML in which to
-store tabular data, called the ``LIGO_LW`` scheme.
+store tabular data, called ``LIGO_LW``.
 Complementing the scheme is a python library - :mod:`glue.ligolw` - which
 allows users to read and write all of the different types of tabular data
 produced by gravitational-wave searches.
 
-Reading and writing tables in ``LIGO_LW`` XML format is supported with ``format='ligolw.<tablename>'`` where ``<tablename>`` can be any of the supported LSC table names (see below for a full list).
+Reading and writing tables in ``LIGO_LW`` XML format is supported with ``format='ligolw', tablename=<tablename>'`` where ``<tablename>`` can be any of the supported LSC table names (see :mod:`glue.ligolw.lsctables`).
 
 Reading
 -------
 
-When reading, the `format` keyword argument must be given, to identify the table in the file, as follows::
+When reading, the ``tablename`` keyword argument should be given to identify the table in the file, as follows::
 
-    >>> t = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', format='ligolw.sngl_burst')
+    >>> t = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst')
 
 The result should be something similar to this::
 
@@ -105,80 +104,52 @@ The result should be something similar to this::
      H1 968654560    311523438  968654560 ...  11.367717   0.0       4.0       4.0
     Length = 2052 rows
 
+The ``tablename`` keyword can be omitted if there is only a single table in the file.
+
 To restrict the columns returned in the new `EventTable`, use the `columns` keyword argument::
 
-    >>> t = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', format='ligolw.sngl_burst', columns=['peak_time', 'peak_time_ns', 'snr', 'peak_frequency'])
+    >>> t = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst', columns=['peak_time', 'peak_time_ns', 'snr', 'peak_frequency'])
 
-Many LIGO_LW table objects (as defined in :mod:`glue.ligolw.lsctables`) include utility functions to create new columns by combining others, e.g. to calculate the Q of a sine-Gaussian pulse from the duration and central frequency. To have the returned `EventTable` include these processed columns, use the ``get_as_columns`` keyword argument, which will call each discovered :meth:`get_xxx` method into a column called ``xxx``::
+Many LIGO_LW table objects (as defined in :mod:`glue.ligolw.lsctables`) include utility functions to create new columns by combining others, e.g. to calculate the Q of a sine-Gaussian pulse from the duration and central frequency.
+These 'columns' can be requested directly, providing the :class:`glue.ligolw.table.Table` representation of the data has a :meth:`get_<name>` method for that name::
 
-   >>> t = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', format='ligolw.sngl_burst', columns=['snr', 'q', 'duration', 'central_freq'], get_as_columns=True)
+   >>> t = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst', columns=['snr', 'q', 'duration', 'central_freq'])
 
 .. note::
 
-   When using `get_as_columns=True`, all required input columns for a processed column must be included in the `columns` keyword list
+   When reading a processed column in this manner, all required input columns for a processed column must be included in the `columns` keyword list. To exclude these columns from the returned data, use the ``ligolw_columns=`` keyword to specify the columns required to provide the output columns::
+
+      >>> t = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst', columns=['snr', 'q'], ligolw_columns=['snr', 'duration', 'central_freq'])
+
+By default, the returned `Table` or `EventTable` uses the dtypes returned by the :mod:`glue.ligolw` library, and functions therein, which often end up as `numpy.object_` arrays in the table.
+To force all columns to have real `numpy` data types, use the ``use_numpy_dtypes=True`` keyword, which will cast (known) custom object types to a standard `numpy.dtype`, e.g::
+
+   >>> t = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst', columns=['peak'], ligolw_columns=['peak_time', 'peak_time_ns'])
+   >>> print(type(t[0]['peak']))
+   <type 'lal.LIGOTimeGPS'>
+   >>> t = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst', columns=['peak'], ligolw_columns=['peak_time', 'peak_time_ns'], use_numpy_dtypes=True)
+   >>> print(type(t[0]['peak']))
+   <type 'numpy.float64'>
+
 
 Writing
 -------
 
 A table can be written as follows::
 
-    >>> t.write('new-table.xml', format='ligolw.sngl_burst')
+    >>> t.write('new-table.xml', format='ligolw', tablename='sngl_burst')
+
+Because ``LIGO_LW`` isn't the only scheme of XML, the ``format`` keyword is required for all `.write()` operations.
 
 If the target file already exists, an :class:`~exceptions.IOError` will be raised, use ``overwrite=True`` to force a new file to be written.
 
 To write a table to an existing file, use ``append=True``::
 
-    >>> t.write('new-table.xml', format='ligolw.sngl_burst', append=True)
+    >>> t.write('new-table.xml', format='ligolw', tablename='sngl_burst', append=True)
 
 To replace an existing table of the given type in an existing file, while preserving other tables, use *both* ``append=True`` and ``overwrite=True``::
 
-    >>> t.write('new-table.xml', format='ligolw.sngl_burst', append=True, overwrite=True)
-
-
-Supported LIGO_LW tables
-------------------------
-
-========================  =================================
-Table name                Format name
-========================  =================================
-`coinc_definer`           ``ligolw.coinc_definer``
-`coinc_event`             ``ligolw.coinc_event``
-`coinc_event_map`         ``ligolw.coinc_event_map``
-`coinc_inspiral`          ``ligolw.coinc_inspiral``
-`coinc_ringdown`          ``ligolw.coinc_ringdown``
-`dq_list`                 ``ligolw.dq_list``
-`experiment`              ``ligolw.experiment``
-`experiment_map`          ``ligolw.experiment_map``
-`experiment_summary`      ``ligolw.experiment_summary``
-`external_trigger`        ``ligolw.external_trigger``
-`filter`                  ``ligolw.filter``
-`gds_trigger`             ``ligolw.gds_trigger``
-`lfn`                     ``ligolw.lfn``
-`ligolw_mon`              ``ligolw.ligolw_mon``
-`multi_burst`             ``ligolw.multi_burst``
-`multi_inspiral`          ``ligolw.multi_inspiral``
-`process`                 ``ligolw.process``
-`process_params`          ``ligolw.process_params``
-`search_summary`          ``ligolw.search_summary``
-`search_summvars`         ``ligolw.search_summvars``
-`segment`                 ``ligolw.segment``
-`segment_definer`         ``ligolw.segment_definer``
-`segment_summary`         ``ligolw.segment_summary``
-`sim_burst`               ``ligolw.sim_burst``
-`sim_inspiral`            ``ligolw.sim_inspiral``
-`sim_inst_params`         ``ligolw.sim_inst_params``
-`sim_ringdown`            ``ligolw.sim_ringdown``
-`sngl_burst`              ``ligolw.sngl_burst``
-`sngl_inspiral`           ``ligolw.sngl_inspiral``
-`sngl_ringdown`           ``ligolw.sngl_ringdown``
-`stochastic`              ``ligolw.stochastic``
-`stochsumm`               ``ligolw.stochsumm``
-`summ_mime`               ``ligolw.summ_mime``
-`summ_value`              ``ligolw.summ_value``
-`time_slide`              ``ligolw.time_slide``
-`time_slide_segment_map`  ``ligolw.time_slide_segment_map``
-`veto_definer`            ``ligolw.veto_definer``
-========================  =================================
+    >>> t.write('new-table.xml', format='ligolw', tablename='sngl_burst', append=True, overwrite=True)
 
 
 .. _gwpy-table-io-ascii-cwb:
@@ -275,6 +246,9 @@ Supported processed columns are:
 - ``new_snr``
 
 These can be specified without having to specify any of the input columns.
+
+Additionally, PyCBC HDF5 table Groups include extra datasets that aren't part of the table, e.g. ``'psd'``.
+These can be included in the returned `EventTable.meta` `dict` via the keyword ``extended_metadata=True`` (default), or excluded with ``extended_metadata=False``).
 
 Writing
 -------

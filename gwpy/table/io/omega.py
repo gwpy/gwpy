@@ -28,9 +28,8 @@ from .. import (Table, EventTable)
 
 
 class OmegaHeader(core.BaseHeader):
-    """Read a multi-line column-definition header
+    """Parser for Omega ASCII header
     """
-
     def get_cols(self, lines):
         """Initialize Column objects from a multi-line ASCII header
 
@@ -39,7 +38,7 @@ class OmegaHeader(core.BaseHeader):
         lines : `list`
             List of table lines
         """
-        re_name_def = re.compile("^\s*%\s+(?P<colname>\w+)")
+        re_name_def = re.compile(r'^\s*%\s+(?P<colname>\w+)')
         self.names = []
         for line in lines:
             if not line.startswith('%'):
@@ -53,9 +52,9 @@ class OmegaHeader(core.BaseHeader):
             raise core.InconsistentTableError(
                 'No column names found in Omega header')
 
-        self.cols = []
-        for n in self.names:
-            col = core.Column(name=n)
+        self.cols = []  #  pylint: disable=attribute-defined-outside-init
+        for name in self.names:
+            col = core.Column(name=name)
             self.cols.append(col)
 
     def write(self, lines):
@@ -64,6 +63,8 @@ class OmegaHeader(core.BaseHeader):
 
 
 class OmegaData(core.BaseData):
+    """Parser for Omega ASCII data
+    """
     comment = '%'
 
 

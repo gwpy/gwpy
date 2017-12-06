@@ -34,75 +34,133 @@ __credits__ = 'Alex Nitz <alex.nitz@ligo.org>'
 
 PYCBC_LIVE_FORMAT = 'hdf5.pycbc_live'
 
-INVALID_COLUMNS = ['psd', 'loudest']
+META_COLUMNS = {'psd', 'loudest'}
 PYCBC_FILENAME = re.compile('([A-Z][0-9])+-Live-[0-9.]+-[0-9.]+.hdf')
 
 
 @with_read_hdf5
 @read_with_selection
-def table_from_file(source, ifo=None, columns=None, loudest=False):
+def table_from_file(source, ifo=None, columns=None, loudest=False,
+                    extended_metadata=True):
     """Read a `Table` from a PyCBC live HDF5 file
+
+    Parameters
+    ----------
+    source : `str`, `h5py.File`, `h5py.Group`
+        the file path of open `h5py` object from which to read the data
+
+    ifo : `str`, optional
+        the interferometer prefix (e.g. ``'G1'``) to read; this is required
+        if reading from a file path or `h5py.File` and the containing file
+        stores data for multiple interferometers
+
+    columns : `list` or `str`, optional
+        the list of column names to read, defaults to all in group
+
+    loudest : `bool`, optional
+        read only those events marked as 'loudest',
+        default: `False` (read all)
+
+    extended_metadata : `bool`, optional
+        record non-column datasets found in the H5 group (e.g. ``'psd'``)
+        in the ``meta`` dict, default: `True`
+
+    Returns
+    -------
+    table : `~gwpy.table.EventTable`
     """
     import h5py
 
     # find group
     if isinstance(source, h5py.File):
-        if ifo is None:
-            try:
-                ifo, = [key for key in list(source) if key != 'background']
-            except ValueError as e:
-                e.args = ("PyCBC live HDF5 file contains dataset groups "
-                          "for multiple interferometers, please specify "
-                          "the prefix of the relevant interferometer via "
-                          "the `ifo` keyword argument, e.g: `ifo=G1`",)
-                raise
-        try:
-            source = source[ifo]
-        except KeyError as e:
-            e.args = ("No group for ifo %r in PyCBC live HDF5 file" % ifo,)
-            raise
+        source, ifo = _find_table_group(source, ifo=ifo)
 
-    # at this stage, 'source' should be an HDF5 group in pycbc_live format
+    # -- by this point 'source' is guaranteed to be an h5py.Group
+
+    # parse default columns
     if columns is None:
-        columns = [c for c in source if c not in INVALID_COLUMNS]
+        columns = set(source.keys()) - META_COLUMNS
 
     # set up meta dict
     meta = {'ifo': ifo}
+    meta.update(source.attrs)
+    if extended_metadata:
+        meta.update(_get_extended_metadata(source))
 
-    # record loudest in meta
-    try:
-        meta['loudest'] = source['loudest'][:]
-    except KeyError:
+    if loudest:
+        loudidx = source['loudest'][:]
+
+    # map data to columns
+    data = []
+    for name in columns:
+        # convert hdf5 dataset into Column
+        try:
+            arr = source[name][:]
+        except KeyError:
+            if name in GET_COLUMN:
+                arr = GET_COLUMN[name](source)
+            else:
+                raise
         if loudest:
-            raise
+            arr = arr[loudidx]
+        data.append(Table.Column(arr, name=name))
 
-    # record PSD in meta
+    return Table(data, meta=meta)
+
+
+def _find_table_group(h5file, ifo=None):
+    """Find the right `h5py.Group` within the given `h5py.File`
+    """
+    exclude = ('background',)
+    if ifo is None:
+        try:
+            ifo, = [key for key in h5file if key not in exclude]
+        except ValueError as exc:
+            exc.args = ("PyCBC live HDF5 file contains dataset groups "
+                        "for multiple interferometers, please specify "
+                        "the prefix of the relevant interferometer via "
+                        "the `ifo` keyword argument, e.g: `ifo=G1`",)
+            raise
     try:
-        psd = source['psd']
+        return h5file[ifo], ifo
+    except KeyError as exc:
+        exc.args = ("No group for ifo %r in PyCBC live HDF5 file" % ifo,)
+        raise
+
+
+def _get_extended_metadata(h5group):
+    """Extract the extended metadata for a PyCBC table in HDF5
+
+    This method packs non-table-column datasets in the given h5group into
+    a metadata `dict`
+
+    Returns
+    -------
+    meta : `dict`
+       the metadata dict
+    """
+    meta = dict()
+
+    # get PSD
+    try:
+        psd = h5group['psd']
     except KeyError:
         pass
     else:
         from gwpy.frequencyseries import FrequencySeries
-        df = psd.attrs['delta_f']
         meta['psd'] = FrequencySeries(
-            psd[:], f0=0, df=df, name='pycbc_live')
+            psd[:], f0=0, df=psd.attrs['delta_f'], name='pycbc_live')
 
-    # map data to columns
-    data = []
-    for c in columns:
-        # convert hdf5 dataset into Column
+    # get everything else
+    for key in META_COLUMNS - {'psd'}:
         try:
-            arr = source[c][:]
+            value = h5group[key][:]
         except KeyError:
-            if c in GET_COLUMN:
-                arr = GET_COLUMN[c](source)
-            else:
-                raise
-        if loudest:
-            arr = arr[meta['loudest']]
-        data.append(Table.Column(arr, name=c))
+            pass
+        else:
+            meta[key] = value
 
-    return Table(data, meta=meta)
+    return meta
 
 
 def filter_empty_files(files, ifo=None):
@@ -184,15 +242,17 @@ register_reader(PYCBC_LIVE_FORMAT, EventTable, table_from_file)
 GET_COLUMN = {}
 
 
-def _new_snr_scale(snr, redx2, q=6., n=2.):
+def _new_snr_scale(redx2, q=6., n=2.):  # pylint: disable=invalid-name
     return (.5 * (1. + redx2 ** (q/n))) ** (-1./q)
 
 
-def get_new_snr(h5group, q=6., n=2.):
+def get_new_snr(h5group, q=6., n=2.):  # pylint:  disable=invalid-name
+    """Calculate the 'new SNR' column for this PyCBC HDF5 table group
+    """
     newsnr = h5group['snr'][:].copy()
     rchisq = h5group['chisq'][:]
     idx = numpy.where(rchisq > 1.)[0]
-    newsnr[idx] *= _new_snr_scale(newsnr[idx], rchisq[idx], q=q, n=n)
+    newsnr[idx] *= _new_snr_scale(rchisq[idx], q=q, n=n)
     return newsnr
 
 
@@ -200,6 +260,8 @@ GET_COLUMN['new_snr'] = get_new_snr
 
 
 def get_mchirp(h5group):
+    """Calculate the chipr mass column for this PyCBC HDF5 table group
+    """
     mass1 = h5group['mass1'][:]
     mass2 = h5group['mass2'][:]
     return (mass1 * mass2) ** (3/5.) / (mass1 + mass2) ** (1/5.)

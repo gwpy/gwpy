@@ -29,7 +29,12 @@ from six.moves.urllib.error import URLError
 import pytest
 
 import numpy
-from numpy import (may_share_memory, testing as nptest)
+from numpy import testing as nptest
+try:
+    from numpy import shares_memory
+except ImportError:  # old numpy
+    from numpy import may_share_memory as shares_memory
+
 
 from scipy import signal
 
@@ -213,7 +218,7 @@ class TestTimeSeriesBase(TestSeries):
 
         # test copy=False
         a2 = type(array).from_lal(lalts, copy=False)
-        assert numpy.shares_memory(a2.value, lalts.data.data)
+        assert shares_memory(a2.value, lalts.data.data)
 
         # test units
         array.override_unit('undef')
@@ -223,6 +228,7 @@ class TestTimeSeriesBase(TestSeries):
         a2 = self.TEST_CLASS.from_lal(lalts)
         assert a2.unit is units.dimensionless_unscaled
 
+    @utils.skip_missing_dependency('lal')
     @utils.skip_missing_dependency('pycbc')
     def test_to_from_pycbc(self, array):
         from pycbc.types import TimeSeries as PyCBCTimeSeries
@@ -241,7 +247,7 @@ class TestTimeSeriesBase(TestSeries):
 
         # test copy=False
         a2 = type(array).from_pycbc(array.to_pycbc(copy=False), copy=False)
-        assert numpy.shares_memory(array.value, a2.value)
+        assert shares_memory(array.value, a2.value)
 
 
 # -- TimeSeriesBaseDict -------------------------------------------------------
@@ -272,8 +278,7 @@ class TestTimeSeriesBaseDict(object):
         copy = instance.copy()
         assert isinstance(copy, self.TEST_CLASS)
         for key in copy:
-            assert not numpy.shares_memory(copy[key].value,
-                                           instance[key].value)
+            assert not shares_memory(copy[key].value, instance[key].value)
             utils.assert_quantity_sub_equal(copy[key], instance[key])
 
     def test_append(self, instance):
@@ -282,8 +287,8 @@ class TestTimeSeriesBaseDict(object):
             new = type(instance)()
             new.append(instance, copy=copy)
             for key in new:
-                assert numpy.shares_memory(new[key].value,
-                                           instance[key].value) is not copy
+                assert shares_memory(new[key].value,
+                                     instance[key].value) is not copy
                 utils.assert_quantity_sub_equal(new[key], instance[key])
 
         # create copy of dict that is contiguous
@@ -320,7 +325,7 @@ class TestTimeSeriesBaseDict(object):
         new = type(instance)()
         new.prepend(instance)
         for key in new:
-            assert numpy.shares_memory(new[key].value, instance[key].value)
+            assert shares_memory(new[key].value, instance[key].value)
             utils.assert_quantity_sub_equal(new[key], instance[key])
 
         # create copy of dict that is contiguous
@@ -480,7 +485,7 @@ class TestTimeSeriesBaseList(object):
         assert type(a) is type(instance)
         for x, y in zip(instance, a):
             utils.assert_quantity_sub_equal(x, y)
-            assert not numpy.shares_memory(x.value, y.value)
+            assert not shares_memory(x.value, y.value)
 
 
 # -----------------------------------------------------------------------------
@@ -658,10 +663,11 @@ class TestTimeSeries(TestTimeSeriesBase):
             t = type(array).read(f, start=start, end=end)
             utils.assert_quantity_sub_equal(t, array.crop(start, end))
 
+    @utils.skip_minimum_version('scipy', '0.13.0')
     def test_read_write_wav(self):
         array = self.create(dtype='float32')
         utils.test_read_write(
-            array, 'wav', write_kw={'scale': 1},
+            array, 'wav', read_kw={'mmap': True}, write_kw={'scale': 1},
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={'exclude': ['unit', 'name', 'channel', 'x0']})
 
@@ -757,6 +763,10 @@ class TestTimeSeries(TestTimeSeriesBase):
                                      frametype_match='C01\Z')
         except (ImportError, RuntimeError) as e:
             pytest.skip(str(e))
+        except IOError as exc:
+            if 'reading from stdin' in str(exc):
+                pytest.skip(str(exc))
+            raise
         utils.assert_quantity_sub_equal(ts, losc_16384,
                                         exclude=['name', 'channel', 'unit'])
 
@@ -802,7 +812,7 @@ class TestTimeSeries(TestTimeSeriesBase):
 
         fs = losc.average_fft(fftlength=0.4, overlap=0.2)
 
-    def test_psd(self, losc):
+    def test_psd_simple(self, losc):
         # test all defaults
         fs = losc.psd()
         assert isinstance(fs, FrequencySeries)
@@ -824,33 +834,32 @@ class TestTimeSeries(TestTimeSeriesBase):
         fs2 = losc.psd(fftlength=.4)
         utils.assert_quantity_sub_equal(fs, fs2)
 
-        # test methods
-        losc.psd(fftlength=0.4, overlap=0.2, method='welch')
-        losc.psd(fftlength=0.4, method='bartlett')
-        try:
-            losc.psd(fftlength=0.4, overlap=0.2, method='lal-welch')
-            losc.psd(fftlength=0.4, method='lal-bartlett')
-            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean')
-            losc.psd(fftlength=0.4, overlap=0.2, method='median')
-        except ImportError as e:
-            pass
-        else:
-            # test LAL method with window specification
-            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean',
-                     window='hann')
+    @pytest.mark.parametrize('library', (
+        pytest.param('pycbc',
+                     marks=utils.skip_missing_dependency('pycbc.psd')),
+        pytest.param('lal', marks=utils.skip_missing_dependency('lal')),
+    ))
+    @pytest.mark.parametrize(
+        'method', ('welch', 'bartlett', 'median', 'median_mean'),
+    )
+    def test_psd_library(self, losc, library, method):
+        method = '{}_{}'.format(library, method)
 
-            # test LAL method with non-canonical window specification
-            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean',
-                     window='hanning')
+        # check simple
+        psd = losc.psd(fftlength=.5, overlap=.25, method=method)
+        assert isinstance(psd, FrequencySeries)
+        assert psd.f0 == 0 * units.Hz
+        assert psd.df == 2 * units.Hz
 
-            # test check for at least two averages (defaults to single FFT)
-            with pytest.raises(ValueError) as e:
-                losc.psd(method='median-mean')
+        # check window selection
+        if library != 'pycbc':
+            losc.psd(fftlength=.5, method=method, window='hamming')
 
     def test_asd(self, losc):
         fs = losc.asd()
         utils.assert_quantity_sub_equal(fs, losc.psd() ** (1/2.))
 
+    @utils.skip_minimum_version('scipy', '0.16')
     def test_csd(self, losc):
         # test all defaults
         fs = losc.csd(losc)
@@ -923,7 +932,10 @@ class TestTimeSeries(TestTimeSeriesBase):
         # check that `cross` keyword gets deprecated properly
         # TODO: removed before 1.0 release
         with pytest.warns(DeprecationWarning) as wng:
-            out = losc.spectrogram(0.5, fftlength=.25, cross=losc)
+            try:
+                out = losc.spectrogram(0.5, fftlength=.25, cross=losc)
+            except AttributeError:
+                return  # scipy is too old
         assert '`cross` keyword argument has been deprecated' in \
             wng[0].message.args[0]
         utils.assert_quantity_sub_equal(
@@ -976,6 +988,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         nptest.assert_almost_equal(ray.max().value, 1.8814775174483833)
         assert ray.frequencies[ray.argmax()] == 136 * units.Hz
 
+    @utils.skip_minimum_version('scipy', '0.16')
     def test_csd_spectrogram(self, losc):
         # test defaults
         sg = losc.csd_spectrogram(losc, 1)
@@ -1059,26 +1072,35 @@ class TestTimeSeries(TestTimeSeriesBase):
 
     def test_q_transform(self, losc):
         # test simple q-transform
-        qspecgram = losc.q_transform(method='welch', fftlength=2)
+        qspecgram = losc.q_transform(method='scipy-welch', fftlength=2)
         assert isinstance(qspecgram, Spectrogram)
         assert qspecgram.shape == (4000, 2403)
         assert qspecgram.q == 5.65685424949238
-        nptest.assert_almost_equal(qspecgram.value.max(), 58.696743273955391)
+        nptest.assert_almost_equal(qspecgram.value.max(), 146.61970478954652)
 
         # test whitening args
-        asd = losc.asd(2, 1)
-        qsg2 = losc.q_transform(method='welch', whiten=asd)
+        asd = losc.asd(2, 1, method='scipy-welch')
+        qsg2 = losc.q_transform(method='scipy-welch', whiten=asd)
         utils.assert_quantity_sub_equal(qspecgram, qsg2)
 
-        asd = losc.asd(.5, .25)
-        qsg2 = losc.q_transform(method='welch', whiten=asd)
-        qsg3 = losc.q_transform(method='welch', fftlength=.5, overlap=.25)
+        asd = losc.asd(.5, .25, method='scipy-welch')
+        qsg2 = losc.q_transform(method='scipy-welch', whiten=asd)
+        qsg3 = losc.q_transform(method='scipy-welch', fftlength=.5, overlap=.25)
         utils.assert_quantity_sub_equal(qsg2, qsg3)
 
         # make sure frequency too high presents warning
         with pytest.warns(UserWarning):
-            qspecgram = losc.q_transform(method='welch', frange=(0, 10000))
+            qspecgram = losc.q_transform(method='scipy-welch',
+                                         frange=(0, 10000))
             nptest.assert_almost_equal(qspecgram.yspan[1], 1291.5316316157107)
+
+        # test other normalisations work (or don't)
+        q2 = losc.q_transform(method='scipy-welch', norm='median')
+        utils.assert_quantity_sub_equal(qspecgram, q2)
+        losc.q_transform(method='scipy-welch', norm='mean')
+        losc.q_transform(method='scipy-welch', norm=False)
+        with pytest.raises(ValueError):
+            losc.q_transform(method='scipy-welch', norm='blah')
 
     def test_boolean_statetimeseries(self, array):
         comp = array >= 2 * array.unit
@@ -1108,6 +1130,10 @@ class TestTimeSeriesDict(TestTimeSeriesBaseDict):
         with tempfile.NamedTemporaryFile(suffix='.hdf5') as f:
             instance.write(f.name, overwrite=True)
             new = self.TEST_CLASS.read(f.name, instance.keys())
+            for key in new:
+                utils.assert_quantity_sub_equal(new[key], instance[key])
+            # check auto-detection of names
+            new = self.TEST_CLASS.read(f.name)
             for key in new:
                 utils.assert_quantity_sub_equal(new[key], instance[key])
 
@@ -1197,7 +1223,8 @@ class TestStateVector(TestTimeSeriesBase):
     @classmethod
     def setup_class(cls):
         numpy.random.seed(0)
-        cls.data = numpy.random.randint(2**4+1, size=100, dtype=cls.DTYPE)
+        cls.data = numpy.random.randint(
+            2**4+1, size=100).astype(cls.DTYPE, copy=False)
 
     def test_bits(self, array):
         assert isinstance(array.bits, Bits)

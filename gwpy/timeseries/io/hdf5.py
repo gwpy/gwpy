@@ -30,15 +30,16 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # -- read ---------------------------------------------------------------------
 
-def read_hdf5_timeseries(f, path=None, start=None, end=None, **kwargs):
+def read_hdf5_timeseries(h5f, path=None, start=None, end=None, **kwargs):
+    """Read a `TimeSeries` from HDF5
+    """
     # read data
     kwargs.setdefault('array_type', TimeSeries)
-    ts = read_hdf5_array(f, path=path, **kwargs)
+    series = read_hdf5_array(h5f, path=path, **kwargs)
     # crop if needed
     if start is not None or end is not None:
-        return ts.crop(start, end)
-    else:
-        return ts
+        return series.crop(start, end)
+    return series
 
 
 @with_read_hdf5
@@ -53,9 +54,9 @@ def read_hdf5_dict(h5f, names=None, group=None, **kwargs):
 
     # find list of names to read
     if names is None:
-        # TODO: improved the TimeSeries -> HDF5 format to make detecting
+        # TODO: improve the TimeSeries -> HDF5 format to make detecting
         #       a TimeSeries easier
-        names = [key for key in h5g if 'dx' in h5g[dset].attrs['name']]
+        names = [key for key in h5g if 'dx' in h5g[key]]
 
     # read names
     out = kwargs.pop('dict_type', TimeSeriesDict)()

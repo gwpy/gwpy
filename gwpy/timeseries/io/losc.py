@@ -62,9 +62,9 @@ def _fetch_losc_json(url):
         data = response.read()
         try:
             return json.loads(data)
-        except ValueError as e:
-            e.args = ("Failed to parse LOSC JSON from %r: %s"
-                      % (url, str(e)),)
+        except ValueError as exc:
+            exc.args = ("Failed to parse LOSC JSON from %r: %s"
+                        % (url, str(exc)),)
             raise
 
 
@@ -104,14 +104,14 @@ def find_losc_urls(detector, start, end, host=LOSC_URL,
 
     # -- step 1: query the interval
     url = '%s/archive/%d/%d/json/' % (host, start, end)
-    md = _fetch_losc_json(url)
+    metadata = _fetch_losc_json(url)
 
     # -- step 2: try and get data from an event (smaller files)
     for form in formats:
         for dstype in ['events', 'runs']:
-            for dataset in md[dstype]:
+            for dataset in metadata[dstype]:
                 # validate IFO is present
-                if detector not in md[dstype][dataset]['detectors']:
+                if detector not in metadata[dstype][dataset]['detectors']:
                     continue
                 # get metadata for this dataset
                 if dstype == 'events':
@@ -156,10 +156,11 @@ def _fetch_losc_data_file(url, cls=TimeSeries, verbose=False, **kwargs):
     with get_readable_fileobj(url, show_progress=False) as remote:
         try:
             return cls.read(remote, **kwargs)
-        except Exception as e:
+        except Exception as exc:
             if verbose:
                 print("")
-            e.args = ("Failed to read LOSC data from %r: %s" % (url, str(e)),)
+            exc.args = ("Failed to read LOSC data from %r: %s"
+                        % (url, str(exc)),)
             raise
         finally:
             if verbose:
@@ -198,20 +199,17 @@ def fetch_losc_data(detector, start, end, host=LOSC_URL, sample_rate=4096,
             out.append(new, resize=True)
     return out
 
-    # panic
-    raise ValueError("%s data for %s not available in full from LOSC"
-                     % (detector, span))
-
 
 # -- I/O ----------------------------------------------------------------------
 
 @io_hdf5.with_read_hdf5
-def read_losc_hdf5(f, path='strain/Strain', start=None, end=None, copy=False):
+def read_losc_hdf5(h5f, path='strain/Strain',
+                   start=None, end=None, copy=False):
     """Read a `TimeSeries` from a LOSC-format HDF file.
 
     Parameters
     ----------
-    f : `str`, `h5py.HLObject`
+    h5f : `str`, `h5py.HLObject`
         path of HDF5 file, or open `H5File`
 
     path : `str`
@@ -222,7 +220,7 @@ def read_losc_hdf5(f, path='strain/Strain', start=None, end=None, copy=False):
     data : `~gwpy.timeseries.TimeSeries`
         a new `TimeSeries` containing the data read from disk
     """
-    dataset = io_hdf5.find_dataset(f, path)
+    dataset = io_hdf5.find_dataset(h5f, path)
     # read data
     nddata = dataset.value
     # read metadata
@@ -268,7 +266,7 @@ def read_losc_hdf5_state(f, path='quality/simple', start=None, end=None,
     maskset = io_hdf5.find_dataset(f, '%s/DQDescriptions' % path)
     # read data
     nddata = dataset.value
-    bits = list(map(lambda b: bytes.decode(bytes(b), 'utf-8'), maskset.value))
+    bits = [bytes.decode(bytes(b), 'utf-8') for b in maskset.value]
     # read metadata
     epoch = dataset.attrs['Xstart']
     try:
@@ -289,8 +287,8 @@ registry.register_reader('hdf5.losc', StateVector, read_losc_hdf5_state)
 registry.register_reader('losc', TimeSeries, read_losc_hdf5)
 registry.register_reader('losc', StateVector, read_losc_hdf5_state)
 
-re_losc_ascii_header = re.compile('\A# starting GPS (?P<epoch>\d+) '
-                                  'duration (?P<duration>\d+)\Z')
+LOSC_ASCII_HEADER_REGEX = re.compile(r'\A# starting GPS (?P<epoch>\d+) '
+                                     r'duration (?P<duration>\d+)\Z')
 
 
 def read_losc_ascii(fobj):
@@ -298,8 +296,8 @@ def read_losc_ascii(fobj):
     """
     # read file path
     if isinstance(fobj, string_types):
-        with io_utils.gopen(fobj) as f:
-            return read_losc_ascii(f)
+        with io_utils.gopen(fobj) as fobj2:
+            return read_losc_ascii(fobj2)
 
     # read header to get metadata
     metadata = {}
@@ -307,9 +305,9 @@ def read_losc_ascii(fobj):
         if not line.startswith('#'):  # stop iterating, and rewind one line
             break
         if line.startswith('# starting GPS'):  # parse metadata
-            m = re_losc_ascii_header.match(line.rstrip('\n'))
-            if m:
-                metadata.update(m.groupdict())
+            match = LOSC_ASCII_HEADER_REGEX.match(line.rstrip('\n'))
+            if match:
+                metadata.update(match.groupdict())
 
     # rewind to make sure we don't miss the first data point
     fobj.seek(0)
@@ -320,7 +318,7 @@ def read_losc_ascii(fobj):
     except KeyError:
         raise ValueError("Failed to parse data duration from LOSC ASCII file")
 
-    data = numpy.loadtxt(fobj, dtype=float, comments='#', usecols=0)
+    data = numpy.loadtxt(fobj, dtype=float, comments='#', usecols=(0,))
 
     metadata['sample_rate'] = data.size / dur
     return TimeSeries(data, **metadata)

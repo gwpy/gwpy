@@ -30,7 +30,7 @@ from scipy import signal
 
 from matplotlib import (use, rc_context, __version__ as mpl_version)
 use('agg')  # nopep8
-from matplotlib import pyplot
+from matplotlib import (pyplot, rcParams)
 from matplotlib.legend import Legend
 from matplotlib.colors import (LogNorm, ColorConverter)
 from matplotlib.collections import (PathCollection, PatchCollection,
@@ -43,7 +43,7 @@ from gwpy.segments import (DataQualityFlag,
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.timeseries import TimeSeries
 from gwpy.table import EventTable
-from gwpy.plotter import (figure, rcParams, Plot, Axes,
+from gwpy.plotter import (figure, Plot, Axes,
                           TimeSeriesPlot, TimeSeriesAxes,
                           FrequencySeriesPlot, FrequencySeriesAxes,
                           EventTablePlot, EventTableAxes,
@@ -63,9 +63,7 @@ import utils
 
 # design ZPK for BodePlot test
 ZPK = [100], [1], 1e-2
-FREQUENCIES, H = signal.freqresp(ZPK, n=100)
-MAGNITUDE = 20 * numpy.log10(numpy.absolute(H))
-PHASE = numpy.degrees(numpy.unwrap(numpy.angle(H)))
+FREQUENCIES, MAGNITUDE, PHASE = signal.bode(ZPK, n=100)
 
 # extract color cycle
 COLOR_CONVERTER = ColorConverter()
@@ -227,8 +225,6 @@ class TestPlot(PlottingTestBase):
 
     def test_add_legend(self):
         fig, ax = self.new()
-        with pytest.warns(UserWarning):
-            assert fig.add_legend() is None
         ax.plot([1, 2, 3, 4], label='Plot')
         assert isinstance(fig.add_legend(), Legend)
         self.save_and_close(fig)
@@ -291,7 +287,7 @@ class TestPlot(PlottingTestBase):
         assert not isinstance(mappable.norm, LogNorm)
 
         # add colorbar and check everything went through
-        cbar = fig.add_colorbar(log=True, label='Test label', cmap='plasma')
+        cbar = fig.add_colorbar(log=True, label='Test label', cmap='YlOrRd')
         assert len(fig.axes) == 2
         assert cbar in fig.colorbars
         assert cbar.ax in fig._coloraxes
@@ -299,7 +295,7 @@ class TestPlot(PlottingTestBase):
         assert cbar.get_clim() == mappable.get_clim() == (1, 119)
         assert isinstance(mappable.norm, LogNorm)
         assert isinstance(cbar.formatter, CombinedLogFormatterMathtext)
-        assert cbar.get_cmap().name == 'plasma'
+        assert cbar.get_cmap().name == 'YlOrRd'
         assert cbar.ax.get_ylabel() == 'Test label'
         self.save_and_close(fig)
         assert ax.get_position().width < width
@@ -311,11 +307,6 @@ class TestPlot(PlottingTestBase):
         fig.add_colorbar(ax=ax, visible=False)
         assert len(fig.axes) == 1
         fig.close()
-
-        # check that we can map an empty array
-        fig, ax = self.new()
-        ax.imshow(numpy.arange(0).reshape((0, 0)))
-        fig.add_colorbar()
 
         # check errors
         mappable = ax.imshow(numpy.arange(120).reshape((10, 12)))
@@ -750,11 +741,11 @@ class TestEventTableAxes(EventTableMixin, TestAxes):
                           'bandwidth', 'snr', anchor='other')
 
     def test_get_column_string(self):
-        rcParams['text.usetex'] = True
-        assert get_column_string('snr') == 'SNR'
-        assert get_column_string('reduced_chisq') == r'Reduced $\chi^2$'
-        assert get_column_string('flow') == r'f$_{\mbox{\small low}}$'
-        assert get_column_string('end_time_ns') == r'End Time $(ns)$'
+        with rc_context(rc={'text.usetex': True}):
+            assert get_column_string('snr') == 'SNR'
+            assert get_column_string('reduced_chisq') == r'Reduced $\chi^2$'
+            assert get_column_string('flow') == r'f$_{\mbox{\small low}}$'
+            assert get_column_string('end_time_ns') == r'End Time $(ns)$'
 
 
 # -- Segment plotter ----------------------------------------------------------
@@ -870,7 +861,6 @@ class HistogramMixin(object):
     def setup_class(cls):
         numpy.random.seed(0)
         cls.ts = TimeSeries(numpy.random.rand(10000), sample_rate=128)
-        print(cls.ts)
 
 
 class TestHistogramPlot(HistogramMixin, TestPlot):
@@ -934,9 +924,9 @@ class TestBodePlot(PlottingTestBase):
     def test_add_filter(self):
         # test method 1
         fig = self.FIGURE_CLASS()
-        fig.add_filter(ZPK, analog=True)
-        lm = fig.maxes.get_lines()[0]
-        lp = fig.paxes.get_lines()[0]
+        lm, lp = fig.add_filter(ZPK, analog=True)
+        assert lm is fig.maxes.get_lines()[-1]
+        assert lp is fig.paxes.get_lines()[-1]
         nptest.assert_array_equal(lm.get_xdata(), FREQUENCIES)
         nptest.assert_array_equal(lm.get_ydata(), MAGNITUDE)
         nptest.assert_array_equal(lp.get_xdata(), FREQUENCIES)
