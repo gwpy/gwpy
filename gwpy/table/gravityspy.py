@@ -73,18 +73,13 @@ class GravitySpyTable(EventTable):
         -------
         Folder containing omega scans sorted by label
         """
+        from six.moves.urllib.request import urlopen
+        import os
         # back to pandas
         try:
             imagesDB = self.to_pandas()
         except ImportError as exc:
             exc.args = ('pandas is required to download triggers',)
-            raise
-
-        # check for wget python module
-        try:
-            import wget
-        except ImportError as exc:
-            exc.args = ('wget is required to download triggers',)
             raise
 
         # Remove any broken links
@@ -146,10 +141,10 @@ class GravitySpyTable(EventTable):
                            images_for_download_ext, duration))
 
         def get_image(url):
-            wget.download(url[0],
-                          out='./{0}/{1}/{2}/{3}_{4}_{5}_{6}.png'.format(
-                          'download', url[1], url[2], url[3],
-                          url[4], 'spectrogram', url[5]))
+            name = url[3] + '_' + url[4] + '_spectrogram_' + url[5] + '.png'
+            outfile = os.path.join('download', url[1], url[2], name)
+            with open(outfile, 'w') as fout:
+                fout.write(urlopen(url[0]).read())
 
         # calculate maximum number of processes
         nproc = min(kwargs.pop('nproc', 1), len(images))
