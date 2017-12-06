@@ -25,6 +25,7 @@ from six.moves import zip_longest
 
 from ..utils import mp as mp_utils
 from .table import EventTable
+import numpy as np
 
 __author__ = 'Scott Coughlin <scott.coughlin@ligo.org>'
 __all__ = ['GravitySpyTable']
@@ -78,41 +79,67 @@ class GravitySpyTable(EventTable):
         except ImportError as exc:
             exc.args = ('pandas is required to download triggers',)
             raise
+
+        # check for wget python module
+        try:
+            import wget
+        except ImportError as exc:
+            exc.args = ('wget is required to download triggers',)
+            raise
+
+        # Remove any broken links
         imagesDB = imagesDB.loc[imagesDB.imgUrl1 != '?']
 
         TrainingSet = kwargs.pop('TrainingSet', 0)
         LabelledSamples = kwargs.pop('LabelledSamples', 0)
 
+        # LabelledSamples are only available when requesting the
+        # trainingset* tables
+        if LabelledSamples:
+            if not 'SampleType' in imagesDB.columns:
+                raise ValueError('You have requested Labelled Samples '
+                                 'for a Table which does not have '
+                                 'this column. Did you fetch a '
+                                  'trainingset* table?')
+
+        # If someone wants labelled samples they are
+        # Definitely asking for the training set but
+        # may hve forgotten
+        if LabelledSamples and not TrainingSet:
+            TrainingSet = 1
+
+        # Let us check what columns are needed
+        columns_for_download = ['imgUrl1', 'imgUrl2', 'imgUrl3', 'imgUrl4']
+        columns_for_download_extended = ['Label', 'SampleType', 'ifo', 'uniqueID']
+
+        if not TrainingSet:
+            imagesDB['Label'] = ''
+        if not LabelledSamples:
+            imagesDB['SampleType'] = ''
+
+
+        if not os.path.isdir('./download/'):
+            os.makedirs('./download/')
+
         if TrainingSet:
             for iLabel in imagesDB.Label.unique():
                 if LabelledSamples:
                     for iType in imagesDB.SampleType.unique():
-                        if not os.path.isdir(iLabel + '/' + iType):
-                            os.makedirs(iLabel + '/' + iType)
+                        if not os.path.isdir('./download/' + iLabel + '/' + iType):
+                            os.makedirs('./download/' + iLabel + '/' + iType)
                 else:
-                    if not os.path.isdir(iLabel):
-                        os.makedirs(iLabel)
+                    if not os.path.isdir('./download/' + iLabel):
+                        os.makedirs('./download/' + iLabel)
+
+        images_for_download = imagesDB[columns_for_download]
+        images = images_for_download.as_matrix().flatten()
+        images_for_download_extended = imagesDB[columns_for_download_extended]
+        duration = np.atleast_2d(np.atleast_2d(np.array(['0.5', '1.0', '2.0', '4.0'])).repeat(len(images_for_download_extended), 0).flatten()).T
+        images_for_download_extended = images_for_download_extended.as_matrix().repeat(len(columns_for_download), 0) 
+        images = np.hstack((np.atleast_2d(images).T, images_for_download_extended, duration))
 
         def get_image(url):
-            from ligo.org import request
-            directory = './' + url[1] + '/' + url[2] + '/'
-            with open(directory + url[0].split('/')[-1], 'wb') as f:
-                f.write(request(url[0]))
-
-        imagesURL = imagesDB[['imgUrl1', 'imgUrl2', 'imgUrl3', 'imgUrl4']]
-        imagesURL = imagesURL.as_matrix().flatten().tolist()
-        if TrainingSet:
-            labels = imagesDB.Label.as_matrix().flatten().tolist()
-            if LabelledSamples:
-                sampletype = imagesDB.SampleType.as_matrix().flatten().tolist()
-                images = zip_longest(
-                    imagesURL, labels, sampletype)
-            else:
-                images = zip_longest(imagesURL, labels, [])
-        else:
-            images = zip_longest(imagesURL, [], [])
-
-        images = list(images)
+            wget.download(url[0], out='./download/{0}/{1}/{2}_{3}_spectrogram_{4}.png'.format(url[1], url[2], url[3], url[4], url[5]))
 
         # calculate maximum number of processes
         nproc = min(kwargs.pop('nproc', 1), len(images))
