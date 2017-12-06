@@ -73,7 +73,7 @@ def read_multi(flatten, cls, source, *args, **kwargs):
         ctx = None
         if isinstance(source, FILE_LIKE):
             fileobj = source
-        elif isinstance(source, string_types):
+        else:
             try:
                 ctx = get_readable_fileobj(files[0], encoding='binary')
                 fileobj = ctx.__enter__()  # pylint: disable=no-member
