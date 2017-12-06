@@ -20,10 +20,13 @@
 """
 
 import operator
+import sys
 import warnings
 from math import ceil
 
-from six.moves import reduce
+from six.moves import (reduce, StringIO)
+
+from astropy.utils.console import ProgressBarOrSpinner
 
 from ...io import nds2 as io_nds2
 from ...segments import (Segment, SegmentList)
@@ -131,19 +134,17 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
     # query for each segment
     out = series_class.DictClass()
     for seg in qsegs:
-        print_verbose("Downloading data... ", end='\r', verbose=verbose)
-        data = connection.iterate(int(seg[0]), int(seg[1]), names)
-        nsteps = i = 0
-        for i, buffers in enumerate(data):
-            for buffer_, chan in zip(buffers, channels):
-                series = series_class.from_nds2_buffer(buffer_)
-                out.append({chan: series}, pad=pad, gap=gap)
-                if not nsteps:  # work out how many chunks we're going to get
-                    dur = int(buffer_.length / buffer_.channel.sample_rate)
-                    nsteps = ceil((abs(seg) / dur))
-            print_verbose(
-                "Downloading data... {0}%%".format(100 * (i + 1) // nsteps),
-                end='\r', verbose=verbose)
-        print_verbose('', verbose=verbose)
+        duration = seg[1] - seg[0]
+        msg = 'Downloading data ({}-{} | {}s):'.format(
+            seg[1], seg[0], duration)
+        stream = sys.stdout if verbose else StringIO()
+        count = 0
+        with ProgressBarOrSpinner(duration, msg, file=stream) as bar:
+            for buffers in connection.iterate(int(seg[0]), int(seg[1]), names):
+                for buffer_, chan in zip(buffers, channels):
+                    series = series_class.from_nds2_buffer(buffer_)
+                    out.append({chan: series}, pad=pad, gap=gap)
+                count += buffer_.length / buffer_.channel.sample_rate
+                bar.update(count)
 
     return out
