@@ -121,6 +121,17 @@ These 'columns' can be requested directly, providing the :class:`glue.ligolw.tab
 
       >>> t = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst', columns=['snr', 'q'], ligolw_columns=['snr', 'duration', 'central_freq'])
 
+By default, the returned `Table` or `EventTable` uses the dtypes returned by the :mod:`glue.ligolw` library, and functions therein, which often end up as `numpy.object_` arrays in the table.
+To force all columns to have real `numpy` data types, use the ``use_numpy_dtypes=True`` keyword, which will cast (known) custom object types to a standard `numpy.dtype`, e.g::
+
+   >>> t = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst', columns=['peak'], ligolw_columns=['peak_time', 'peak_time_ns'])
+   >>> print(type(t[0]['peak']))
+   <type 'lal.LIGOTimeGPS'>
+   >>> t = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst', columns=['peak'], ligolw_columns=['peak_time', 'peak_time_ns'], use_numpy_dtypes=True)
+   >>> print(type(t[0]['peak']))
+   <type 'numpy.float64'>
+
+
 Writing
 -------
 
