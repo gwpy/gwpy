@@ -125,9 +125,9 @@ class GravitySpyTable(EventTable):
             for iLabel in imagesDB.Label.unique():
                 if LabelledSamples:
                     for iType in imagesDB.SampleType.unique():
-                        if not os.path.isdir('./download/' 
+                        if not os.path.isdir('./download/'
                                              + iLabel + '/' + iType):
-                            os.makedirs('./download/' + 
+                            os.makedirs('./download/' +
                                         iLabel + '/' + iType)
                 else:
                     if not os.path.isdir('./download/' + iLabel):
@@ -138,17 +138,18 @@ class GravitySpyTable(EventTable):
         images_for_download_extended = imagesDB[cols_for_download_ext]
         duration = np.atleast_2d(
                                  duration_values.repeat(
-                                 len(images_for_download_extended), 0).flatten(
-                                 )).T
+                                   len(images_for_download_extended), 0).flatten(
+                                     )).T
         images_for_download_extended = images_for_download_extended.as_matrix(
-                                       ).repeat(len(cols_for_download), 0) 
-        images = np.hstack((np.atleast_2d(images).T, 
+                                       ).repeat(len(cols_for_download), 0)
+        images = np.hstack((np.atleast_2d(images).T,
                            images_for_download_extended, duration))
 
         def get_image(url):
-            wget.download(url[0], 
-                          out='./download/{0}/{1}/{2}_{3}_spectrogram_{4}.png'.format(
-                          url[1], url[2], url[3], url[4], url[5]))
+            wget.download(url[0],
+                          out='./{0}/{1}/{2}/{3}_{4}_{5}_{6}.png'.format(
+                          'download', url[1], url[2], url[3], 
+                          url[4], 'spectrogram', url[5]))
 
         # calculate maximum number of processes
         nproc = min(kwargs.pop('nproc', 1), len(images))
