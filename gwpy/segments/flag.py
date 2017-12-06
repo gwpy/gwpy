@@ -560,6 +560,9 @@ class DataQualityFlag(object):
             require segment start and stop times match printed duration,
             only valid for ``format='segwizard'``.
 
+        verbose : `bool`, optional, default: `False`
+            print a progress bar showing read status
+
         Returns
         -------
         dqflag : `DataQualityFlag`

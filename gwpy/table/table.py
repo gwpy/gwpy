@@ -105,6 +105,9 @@ class EventTable(Table):
         nproc : `int`, optional, default: 1
             number of CPUs to use for parallel file reading
 
+        verbose : `bool`, optional, default: `False`
+            print a progress bar showing read status
+
         .. note::
 
            Keyword arguments other than those listed here may be required
