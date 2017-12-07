@@ -40,7 +40,7 @@ import versioneer
 
 CMDCLASS = versioneer.get_cmdclass()
 SETUP_REQUIRES = {
-    'test': ({'pytest', 'test', 'prt'}, ['pytest_runner']),
+    'test': ['pytest_runner'],
 }
 
 
@@ -124,8 +124,7 @@ class changelog(Command):
 
 
 CMDCLASS['changelog'] = changelog
-SETUP_REQUIRES['changelog'] = (
-    {'changelog', 'bdist_rpm', 'sdist'}, ['GitPython'])
+SETUP_REQUIRES['changelog'] = ('GitPython',)
 
 orig_bdist_rpm = CMDCLASS.pop('bdist_rpm', _bdist_rpm)
 DEFAULT_SPEC_TEMPLATE = os.path.join('etc', 'spec.template')
@@ -163,8 +162,7 @@ class bdist_rpm(orig_bdist_rpm):
 
 
 CMDCLASS['bdist_rpm'] = bdist_rpm
-SETUP_REQUIRES['bdist_rpm'] = (
-    {'bdist_rpm', 'sdist'}, ['jinja2'])
+SETUP_REQUIRES['bdist_rpm'] = SETUP_REQUIRES['changelog'] + ('jinja2',)
 
 orig_sdist = CMDCLASS.pop('sdist', _sdist)
 
@@ -200,6 +198,7 @@ class sdist(orig_sdist):
 
 
 CMDCLASS['sdist'] = sdist
+SETUP_REQUIRES['sdist'] = SETUP_REQUIRES['changelog'] + SETUP_REQUIRES['bdist_rpm']
 
 
 class clean(orig_clean):
@@ -299,7 +298,7 @@ class port(Command):
 
 
 CMDCLASS['port'] = port
-SETUP_REQUIRES['port'] = {'port'}, ['jinja2', 'GitPython']
+SETUP_REQUIRES['port'] = SETUP_REQUIRES['sdist'] + ('jinja2',)
 
 
 # -- utility functions --------------------------------------------------------
@@ -313,8 +312,8 @@ def get_setup_requires():
 
     # otherwise collect all requirements for all known commands
     reqlist = []
-    for keywords, dependencies in SETUP_REQUIRES.values():
-        if keywords.intersection(sys.argv):
+    for cmd, dependencies in SETUP_REQUIRES.items():
+        if cmd in sys.argv:
             reqlist.extend(dependencies)
 
     return reqlist
