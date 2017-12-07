@@ -31,6 +31,7 @@ import sys
 import tempfile
 from distutils.cmd import Command
 from distutils.command.clean import (clean as orig_clean, log, remove_tree)
+from distutils.command.bdist_rpm import bdist_rpm as distutils_bdist_rpm
 from distutils.errors import DistutilsArgError
 
 from setuptools.command.bdist_rpm import bdist_rpm as _bdist_rpm
@@ -131,6 +132,12 @@ DEFAULT_SPEC_TEMPLATE = os.path.join('etc', 'spec.template')
 
 
 class bdist_rpm(orig_bdist_rpm):
+
+    def run(self):
+        if self.spec_only:
+            return distutils_bdist_rpm.run(self)
+        return orig_bdist_rpm.run(self)
+
     def _make_spec_file(self):
         # generate changelog
         changelogcmd = self.distribution.get_command_obj('changelog')
@@ -180,6 +187,8 @@ class sdist(orig_sdist):
         self.run_command('bdist_rpm')
         specfile = '{}.spec'.format(self.distribution.get_name())
         shutil.move(os.path.join('dist', specfile), specfile)
+        log.info('moved {} to {}'.format(
+            os.path.join('dist', specfile), specfile))
 
         # generate debian/changelog
         self.distribution.have_run.pop('changelog')
@@ -224,11 +233,11 @@ class clean(orig_clean):
                 else:
                     log.info('removing %r' % egg)
                     os.unlink(egg)
-            # remove Portfile
-            portfile = 'Portfile'
-            if os.path.exists(portfile) and not self.dry_run:
-                log.info('removing %r' % portfile)
-                os.unlink(portfile)
+            # remove extra files
+            for filep in ('Porfile', 'gwpy.spec', 'debian/changelog',):
+                if os.path.exists(filep) and not self.dry_run:
+                    log.info('removing %r' % filep)
+                    os.unlink(filep)
         orig_clean.run(self)
 
 
