@@ -154,12 +154,12 @@ def find_losc_urls(detector, start, end, host=LOSC_URL,
 
 # -- remote file reading ------------------------------------------------------
 
-def _fetch_losc_data_file(url, cls=TimeSeries, verbose=False, **kwargs):
+def _fetch_losc_data_file(url, *args, **kwargs):
     """Internal function for fetching a single LOSC file and returning a Series
     """
-    if verbose:
-        print("Reading %s..." % url, end=' ')
-        sys.stdout.flush()
+    cls = kwargs.pop('cls', TimeSeries)
+    cache = kwargs.pop('cache', False)
+    verbose = kwargs.pop('verbose', False)
 
     # match file format
     if url.endswith('.gz'):
@@ -173,12 +173,12 @@ def _fetch_losc_data_file(url, cls=TimeSeries, verbose=False, **kwargs):
     elif ext == '.gwf':
         kwargs.setdefault('format', 'gwf')
 
-    with get_readable_fileobj(url, show_progress=False) as remote:
+    with get_readable_fileobj(url, cache=cache, show_progress=verbose) as rem:
+        if verbose:
+            print('Reading data... ')
         try:
             series = cls.read(rem, *args, **kwargs)
         except Exception as exc:
-            if verbose:
-                print("")
             exc.args = ("Failed to read LOSC data from %r: %s"
                         % (url, str(exc)),)
             raise
@@ -196,9 +196,6 @@ def _fetch_losc_data_file(url, cls=TimeSeries, verbose=False, **kwargs):
                     pass
 
             return series
-        finally:
-            if verbose:
-                print(" Done")
 
 
 # -- remote data access (the main event) --------------------------------------
@@ -220,16 +217,30 @@ def fetch_losc_data(detector, start, end, host=LOSC_URL, sample_rate=4096,
 
     # get cache of URLS
     cache = find_losc_urls(detector, start, end, host=host,
-                           sample_rate=sample_rate, format=format)
-    if verbose:
-        print("Fetched list of %d URLs to read from %s for [%d .. %d)"
+                           sample_rate=sample_rate, format=formats)
+    if kwargs.get('verbose', False):
+        print("Fetched %d URLs from %s for [%d .. %d)"
               % (len(cache), host, int(start), int(end)))
+
+    # handle GWF requirement on channel name
+    if cache[0].endswith('.gwf'):
+        try:
+            args = (kwargs.pop('channel'),)
+        except KeyError:  # no specified channel
+            if cls is StateVector:
+                args = ('{}:LOSC-DQMASK'.format(detector,),)
+            else:
+                args = ('{}:LOSC-STRAIN'.format(detector,),)
+    else:
+        args = ()
+
     # read data
     out = None
+    kwargs['cls'] = cls
     for url in cache:
         keep = file_segment(url) & span
-        new = _fetch_losc_data_file(url, cls=cls, verbose=verbose,
-                                    **kwargs).crop(*keep, copy=False)
+        new = _fetch_losc_data_file(
+            url, *args, **kwargs).crop(*keep, copy=False)
         if out is None:
             out = new.copy()
         else:
