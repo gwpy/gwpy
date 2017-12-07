@@ -1380,7 +1380,8 @@ class TestStateVector(TestTimeSeriesBase):
 
     @pytest.mark.parametrize('format', [
         pytest.param('hdf5', marks=utils.skip_missing_dependency('h5py')),
-        pytest.param('gwf', marks=utils.skip_missing_dependency('lalframe')),
+        pytest.param(  # only frameCPP actually reads units properly
+            'gwf', marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
     ])
     def test_fetch_open_data(self, format):
         try:
