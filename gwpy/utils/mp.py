@@ -102,6 +102,8 @@ def multiprocess_with_queues(nproc, func, inputs, raise_exceptions=False,
     stream = sys.stdout if verbose else StringIO()
     if verbose is True:
         verbose = 'Processing:'
+    elif not verbose:
+        verbose = ''
 
     bar = _MultiProgressBarOrSpinner(total, verbose, file=stream)
 
