@@ -412,7 +412,7 @@ class StateVector(TimeSeriesBase):
 
     """
     _metadata_slots = TimeSeriesBase._metadata_slots + ('bits',)
-    _print_slots = TimeSeriesBase._print_slots + ('bits',)
+    _print_slots = TimeSeriesBase._print_slots + ('_bits',)
 
     def __new__(cls, data, bits=None, t0=None, dt=None, sample_rate=None,
                 times=None, channel=None, name=None, **kwargs):
