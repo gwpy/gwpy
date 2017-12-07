@@ -103,7 +103,10 @@ class EventTable(Table):
             ``['snr > 5', 'frequency < 1000']``
 
         nproc : `int`, optional, default: 1
-            number of CPUs to use for parallel file reading
+            number of CPUs to use for parallel reading of multiple files
+
+        verbose : `bool`, optional
+            print a progress bar showing read status, default: `False`
 
         .. note::
 

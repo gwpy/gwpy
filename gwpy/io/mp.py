@@ -61,6 +61,8 @@ def read_multi(flatten, cls, source, *args, **kwargs):
     **kwargs
         keyword arguments to pass to the reader
     """
+    verbose = kwargs.pop('verbose', False)
+
     # parse input as a list of files
     try:  # try and map to a list of file-like objects
         files = file_list(source)
@@ -101,9 +103,14 @@ def read_multi(flatten, cls, source, *args, **kwargs):
                 return fobj, exc.getException()  # pylint: disable=no-member
             return fobj, exc
 
+    # format verbosity
+    if verbose is True:
+        verbose = 'Reading ({}):'.format(kwargs['format'])
+
     # read files
     output = mp_utils.multiprocess_with_queues(
-        nproc, _read_single_file, files, raise_exceptions=False)
+        nproc, _read_single_file, files, raise_exceptions=False,
+        verbose=verbose)
 
     # raise exceptions (from multiprocessing, single process raises inline)
     for fobj, exc in output:
