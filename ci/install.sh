@@ -41,9 +41,10 @@ else  # simple pip build
 fi
 
 cd /tmp
+_gwpyloc=`${PYTHON} -c 'import gwpy; print(gwpy.__file__)'`
 echo "------------------------------------------------------------------------"
 echo
-echo "GWpy installed to `${PYTHON} -c 'import gwpy; print(gwpy.__file__)'`"
+echo "GWpy installed to $_gwpyloc"
 echo
 echo "------------------------------------------------------------------------"
-cd -
+cd - 1> /dev/null

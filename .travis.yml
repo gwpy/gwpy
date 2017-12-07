@@ -115,7 +115,7 @@ matrix:
       services:
         - docker
     - env: DOCKER_IMAGE="ligo/software:el7"
-      python: '3.5'
+      python: '3.4'
       sudo: required
       services:
         - docker
@@ -135,7 +135,7 @@ matrix:
     - env: DOCKER_IMAGE="ligo/software:stretch-proposed"
       python: '3.5'
     - env: DOCKER_IMAGE="ligo/software:el7"
-      python: '3.5'
+      python: '3.4'
 
   fast_finish: true
 

@@ -46,8 +46,8 @@ python setup.py bdist_rpm \
     --python `which ${PYTHON}` --changelog="`cat changelog.txt`" \
     ${BDIST_RPM_OPTS}
 
-# install the rpm
-rpm -ivh dist/gwpy-${GWPY_VERSION}-1.noarch.rpm
+# install the rpm (using yum to resolve dependencies)
+yum -y --nogpgcheck localinstall dist/gwpy-${GWPY_VERSION}-1.noarch.rpm
 
 # install system-level extras
 yum -y install \
