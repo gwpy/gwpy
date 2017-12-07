@@ -348,7 +348,7 @@ class TestEventTable(TestTable):
             from lal import LIGOTimeGPS
         except ImportError:
             return
-        lgps = map(LIGOTimeGPS, table['time'])
+        lgps = list(map(LIGOTimeGPS, table['time']))
         t2 = type(table)(data=[lgps], names=['time'])
         rate2 = t2.event_rate(1, start=table['time'].min())
         utils.assert_quantity_sub_equal(rate, rate2)
