@@ -49,10 +49,12 @@ import numpy
 
 from astropy import units
 from astropy import __version__ as astropy_version
+from astropy.io import registry as io_registry
 
 from ..types import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
 from ..io import datafind
+from ..io.mp import read_multi as io_read_multi
 from ..time import (Time, LIGOTimeGPS, to_gps)
 from ..utils import gprint
 
@@ -222,6 +224,89 @@ class TimeSeriesBase(Series):
         return units.Quantity(self.span[1] - self.span[0], self.xunit)
 
     # -- TimeSeries accessors -------------------
+
+    @classmethod
+    def read(cls, source, *args, **kwargs):
+        """Read data into a `TimeSeries`
+
+        Arguments and keywords depend on the output format, see the
+        online documentation for full details for each format, the parameters
+        below are common to most formats.
+
+        Parameters
+        ----------
+        source : `str`, :class:`~glue.lal.Cache`
+            source of data, any of the following:
+
+            - `str` path of single data file
+            - `str` path of LAL-format cache file
+            - :class:`~glue.lal.Cache` describing one or more data files,
+
+        name : `str`, `~gwpy.detector.Channel`
+            the name of the channel to read, or a `Channel` object.
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS start time of required data, defaults to start of data found;
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, defaults to end of data found;
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+
+        nproc : `int`, optional
+            number of parallel processes to use, serial process by
+            default.
+
+            .. note::
+
+               Parallel frame reading, via the ``nproc`` keyword argument,
+               is only available when giving a :class:`~glue.lal.Cache` of
+               frames, or using the ``format='cache'`` keyword argument.
+
+        gap : `str`, optional
+            how to handle gaps in the cache, one of
+
+            - 'ignore': do nothing, let the undelying reader method handle it
+            - 'warn': do nothing except print a warning to the screen
+            - 'raise': raise an exception upon finding a gap (default)
+            - 'pad': insert a value to fill the gaps
+
+        pad : `float`, optional
+            value with which to fill gaps in the source data, only used if
+            gap is not given, or `gap='pad'` is given
+
+        Notes
+        -----"""
+        gap = kwargs.pop('gap', 'raise')
+        pad = kwargs.pop('pad', 0.)
+
+        def _join(arrays):
+            list_ = TimeSeriesBaseList(*arrays)
+            return list_.join(pad=pad, gap=gap)
+
+        return io_read_multi(_join, cls, source, *args, **kwargs)
+
+    def write(self, target, *args, **kwargs):
+        """Write this `TimeSeries` to a file
+
+        Parameters
+        ----------
+        target : `str`
+            path of output file
+
+        format : `str`, optional
+            output format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+
+        Notes
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
 
     @classmethod
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
@@ -633,6 +718,96 @@ class TimeSeriesBaseDict(OrderedDict):
     """
     EntryClass = TimeSeriesBase
 
+    @classmethod
+    def read(cls, source, *args, **kwargs):
+        """Read data for multiple channels into a `TimeSeriesDict`
+
+        Parameters
+        ----------
+        source : `str`, :class:`~glue.lal.Cache`
+            a single file path `str`, or a :class:`~glue.lal.Cache` containing
+            a contiguous list of files.
+
+        channels : `~gwpy.detector.channel.ChannelList`, `list`
+            a list of channels to read from the source.
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str` optional
+            GPS start time of required data, anything parseable by
+            :func:`~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, anything parseable by
+            :func:`~gwpy.time.to_gps` is fine
+
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+
+        nproc : `int`, optional
+            number of parallel processes to use, serial process by
+            default.
+
+            .. note::
+
+               Parallel frame reading, via the ``nproc`` keyword argument,
+               is only available when giving a :class:`~glue.lal.Cache` of
+               frames, or using the ``format='cache'`` keyword argument.
+
+        gap : `str`, optional
+            how to handle gaps in the cache, one of
+
+            - 'ignore': do nothing, let the undelying reader method handle it
+            - 'warn': do nothing except print a warning to the screen
+            - 'raise': raise an exception upon finding a gap (default)
+            - 'pad': insert a value to fill the gaps
+
+        pad : `float`, optional
+            value with which to fill gaps in the source data, only used if
+            gap is not given, or `gap='pad'` is given
+
+        Returns
+        -------
+        tsdict : `TimeSeriesDict`
+            a `TimeSeriesDict` of (`channel`, `TimeSeries`) pairs. The keys
+            are guaranteed to be the ordered list `channels` as given.
+
+        Notes
+        -----"""
+        gap = kwargs.pop('gap', 'raise')
+        pad = kwargs.pop('pad', 0.)
+
+        def _join(data):
+            out = cls()
+            data = list(data)
+            while data:
+                tsd = data.pop(0)
+                out.append(tsd, gap=gap, pad=pad)
+                del tsd
+            return out
+
+        return io_read_multi(_join, cls, source, *args, **kwargs)
+
+    def write(self, target, *args, **kwargs):
+        """Write this `TimeSeriesDict` to a file
+
+        Arguments and keywords depend on the output format, see the
+        online documentation for full details for each format.
+
+        Parameters
+        ----------
+        target : `str`
+            output filename
+
+        format : `str`, optional
+            output format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+
+        Notes
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
+
     def __iadd__(self, other):
         return self.append(other)
 
@@ -936,7 +1111,7 @@ class TimeSeriesBaseDict(OrderedDict):
         out = cls()
         for frametype, clist in frametypes.items():
             if verbose:
-                gprint("Reading data from %s frames..." % frametype, end=' ')
+                verbose = "Reading {} frames:".format(frametype)
             # parse as a ChannelList
             channellist = ChannelList.from_names(*clist)
             # strip trend tags from channel names
@@ -959,12 +1134,11 @@ class TimeSeriesBaseDict(OrderedDict):
             # read data
             readargs.setdefault('format', 'gwf')
             new = cls.read(cache, names, start=start, end=end, pad=pad,
-                           dtype=dtype, nproc=nproc, **readargs)
+                           dtype=dtype, nproc=nproc, verbose=verbose,
+                           **readargs)
             # map back to user-given channel name and append
             out.append(type(new)((key, new[chan]) for
                                  (key, chan) in zip(clist, names)))
-            if verbose:
-                gprint("Done")
         return out
 
     @classmethod

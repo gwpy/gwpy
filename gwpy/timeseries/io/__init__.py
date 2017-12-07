@@ -22,7 +22,6 @@
 from . import (  # pylint: disable=unused-import
     ascii,
     gwf,
-    cache,
     hdf5,
     losc,
     wav,

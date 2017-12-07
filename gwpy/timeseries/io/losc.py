@@ -53,6 +53,11 @@ else:
 # default URL
 LOSC_URL = 'https://losc.ligo.org'
 
+# ASCII parsing globals
+LOSC_ASCII_HEADER_REGEX = re.compile(
+    br'\A# starting GPS (?P<epoch>\d+) duration (?P<duration>\d+)\Z')
+LOSC_ASCII_COMMENT = br'#'
+
 
 # -- JSON handling ------------------------------------------------------------
 
@@ -287,27 +292,24 @@ registry.register_reader('hdf5.losc', StateVector, read_losc_hdf5_state)
 registry.register_reader('losc', TimeSeries, read_losc_hdf5)
 registry.register_reader('losc', StateVector, read_losc_hdf5_state)
 
-LOSC_ASCII_HEADER_REGEX = re.compile(r'\A# starting GPS (?P<epoch>\d+) '
-                                     r'duration (?P<duration>\d+)\Z')
-
 
 def read_losc_ascii(fobj):
     """Read a LOSC ASCII file into a `TimeSeries`
     """
     # read file path
     if isinstance(fobj, string_types):
-        with io_utils.gopen(fobj) as fobj2:
+        with io_utils.gopen(fobj, mode='rb') as fobj2:
             return read_losc_ascii(fobj2)
 
     # read header to get metadata
     metadata = {}
     for line in fobj:
-        if not line.startswith('#'):  # stop iterating, and rewind one line
+        if not line.startswith(LOSC_ASCII_COMMENT):  # stop iterating
             break
-        if line.startswith('# starting GPS'):  # parse metadata
-            match = LOSC_ASCII_HEADER_REGEX.match(line.rstrip('\n'))
-            if match:
-                metadata.update(match.groupdict())
+        match = LOSC_ASCII_HEADER_REGEX.match(line.rstrip())
+        if match:  # parse metadata
+            metadata.update(
+                (key, float(val)) for key, val in match.groupdict().items())
 
     # rewind to make sure we don't miss the first data point
     fobj.seek(0)
@@ -318,7 +320,7 @@ def read_losc_ascii(fobj):
     except KeyError:
         raise ValueError("Failed to parse data duration from LOSC ASCII file")
 
-    data = numpy.loadtxt(fobj, dtype=float, comments='#', usecols=(0,))
+    data = numpy.loadtxt(fobj, dtype=float, comments=b'#', usecols=(0,))
 
     metadata['sample_rate'] = data.size / dur
     return TimeSeries(data, **metadata)

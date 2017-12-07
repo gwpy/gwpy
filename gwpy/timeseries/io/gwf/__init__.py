@@ -56,7 +56,6 @@ from ....io.registry import (register_reader,
                              register_writer,
                              register_identifier)
 from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
-from ..cache import read_cache
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -197,13 +196,6 @@ def register_gwf_api(library):
         """
         # import the frame library here to have any ImportErrors occur early
         import_gwf_library(library)
-
-        # run with multiprocessing
-        if nproc > 1:
-            return read_cache(source, channels, start=start, end=end,
-                              gap=gap, pad=pad, resample=resample, dtype=dtype,
-                              nproc=nproc, format=fmt,
-                              target=series_class.DictClass, **kwargs)
 
         # -- from here read data
 

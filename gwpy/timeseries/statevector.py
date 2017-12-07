@@ -34,7 +34,6 @@ from six.moves import range
 import numpy
 
 from astropy import units
-from astropy.io import registry as io_registry
 
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class, ASTROPY_2_0)
@@ -592,19 +591,7 @@ class StateVector(TimeSeriesBase):
 
         Notes
         -----"""
-        return io_registry.read(cls, source, *args, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this `StateVector` to a file
-
-        Parameters
-        ----------
-        target : `str`
-            output filename
-
-        Notes
-        -----"""
-        return io_registry.write(self, target, *args, **kwargs)
+        return super(StateVector, cls).read(source, *args, **kwargs)
 
     def to_dqflags(self, bits=None, minlen=1, dtype=float, round=False):
         """Convert this `StateVector` into a `~gwpy.segments.DataQualityDict`
@@ -963,22 +950,7 @@ class StateVectorDict(TimeSeriesBaseDict):
 
         Notes
         -----"""
-        return io_registry.read(cls, source, *args, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this `StateVectorDict` to a file
-
-        Arguments and keywords depend on the output format, see the
-        online documentation for full details for each format.
-
-        Parameters
-        ----------
-        target : `str`
-            output filename
-
-        Notes
-        -----"""
-        return io_registry.write(self, target, *args, **kwargs)
+        return super(StateVectorDict, cls).read(source, *args, **kwargs)
 
 
 class StateVectorList(TimeSeriesBaseList):
