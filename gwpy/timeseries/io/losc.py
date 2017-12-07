@@ -36,6 +36,7 @@ from astropy.io import registry
 from astropy.units import Quantity
 from astropy.utils.data import get_readable_fileobj
 
+from .gwf import get_default_gwf_api
 from .. import (StateVector, TimeSeries)
 from ...io import (hdf5 as io_hdf5, utils as io_utils)
 from ...io.cache import (cache_segments, file_segment)
@@ -43,15 +44,39 @@ from ...detector.units import parse_unit
 from ...segments import (Segment, SegmentList)
 from ...time import to_gps
 
-try:
-    import h5py  # pylint: disable=unused-import
-except ImportError:
-    HAS_H5PY = False
-else:
-    HAS_H5PY = True
-
 # default URL
 LOSC_URL = 'https://losc.ligo.org'
+
+
+# -- utilities ----------------------------------------------------------------
+
+def _parse_formats(formats, cls=TimeSeries):
+    """Parse ``formats`` into a `list`, handling `None`
+    """
+    if formats is None:  # build list of available formats, prizing efficiency
+        # include txt.gz for TimeSeries only (no state info in ASCII)
+        formats = [] if cls is StateVector else ['txt.gz']
+
+        # prefer GWF if API available
+        try:
+            get_default_gwf_api()
+        except ImportError:
+            pass
+        else:
+            formats.insert(0, 'gwf')
+
+        # prefer HDF5 if h5py available
+        try:
+            import h5py
+        except ImportError:
+            pass
+        else:
+            formats.insert(0, 'hdf5')
+        return formats
+
+    if isinstance(formats, (list, tuple)):
+        return formats
+    return [formats]
 
 
 # -- JSON handling ------------------------------------------------------------
@@ -93,14 +118,7 @@ def find_losc_urls(detector, start, end, host=LOSC_URL,
     start = int(start)
     end = int(end)
     span = SegmentList([Segment(start, end)])
-    if format is None and HAS_H5PY:  # loading HDF5 is much faster
-        formats = ['hdf5', 'txt.gz', 'gwf']
-    elif format is None:
-        formats = ['txt.gz', 'hdf5', 'gwf']
-    elif isinstance(format, string_types):
-        formats = [format]
-    else:
-        formats = format
+    formats = _parse_formats(format)
 
     # -- step 1: query the interval
     url = '%s/archive/%d/%d/json/' % (host, start, end)
@@ -170,17 +188,20 @@ def _fetch_losc_data_file(url, cls=TimeSeries, verbose=False, **kwargs):
 # -- remote data access (the main event) --------------------------------------
 
 def fetch_losc_data(detector, start, end, host=LOSC_URL, sample_rate=4096,
-                    format='hdf5', cls=TimeSeries, verbose=False, **kwargs):
+                    format=None, cls=TimeSeries, **kwargs):
     """Fetch LOSC data for a given detector
 
     This function is for internal purposes only, all users should instead
     use the interface provided by `TimeSeries.fetch_open_data` (and similar
     for `StateVector.fetch_open_data`).
     """
+    # format arguments
     sample_rate = Quantity(sample_rate, 'Hz').value
     start = to_gps(start)
     end = to_gps(end)
     span = Segment(start, end)
+    formats = _parse_formats(format, cls)
+
     # get cache of URLS
     cache = find_losc_urls(detector, start, end, host=host,
                            sample_rate=sample_rate, format=format)
