@@ -149,18 +149,6 @@ install_python() {
     install_package ${PY_DIST} ${PY_PREFIX}-pip ${PY_PREFIX}-setuptools
 }
 
-get_configparser_option() {
-    local fp=$1
-    local section=$2
-    local option=$3
-    $PYTHON -c "
-from configparser import ConfigParser
-cp = ConfigParser(defaults={'py-prefix': '${PY_PREFIX}'})
-cp.read('$fp');
-cp.set('$section', 'py-prefix', '${PY_PREFIX}')
-print(cp.get('$section', '$option'))"
-}
-
 # -- utilities ----------------------------------------------------------------
 
 function write_visual_bells() {
