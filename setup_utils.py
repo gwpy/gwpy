@@ -234,7 +234,7 @@ class clean(orig_clean):
                     log.info('removing %r' % egg)
                     os.unlink(egg)
             # remove extra files
-            for filep in ('Porfile', 'gwpy.spec', 'debian/changelog',):
+            for filep in ('Portfile',):
                 if os.path.exists(filep) and not self.dry_run:
                     log.info('removing %r' % filep)
                     os.unlink(filep)
