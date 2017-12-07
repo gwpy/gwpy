@@ -94,10 +94,11 @@ class changelog(Command):
         version = tag.name.strip('v')
         tagger = tago.tagger
         message = tago.message.split('\n')[0]
-        return ("gwpy ({}-1) unstable; urgency=low\n\n"
+        name = self.distribution.get_name()
+        return ("{} ({}-1) unstable; urgency=low\n\n"
                 "  * {}\n\n"
                 " -- {} <{}>  {} {:+05d}\n".format(
-                    version, message, tagger.name, tagger.email, dstr, tz))
+                    name, version, message, tagger.name, tagger.email, dstr, tz))
 
     def get_git_tags(self):
         import git
@@ -127,6 +128,7 @@ SETUP_REQUIRES['changelog'] = (
     {'changelog', 'sdist', 'bdist_rpm', 'spec'}, ['GitPython'])
 
 orig_bdist_rpm = CMDCLASS.pop('bdist_rpm', _bdist_rpm)
+DEFAULT_SPEC_TEMPLATE = os.path.join('etc', 'spec.template')
 
 
 class bdist_rpm(orig_bdist_rpm):
@@ -144,7 +146,7 @@ class bdist_rpm(orig_bdist_rpm):
 
         # read template
         from jinja2 import Template
-        with open('spec.template', 'r') as t:
+        with open(DEFAULT_SPEC_TEMPLATE, 'r') as t:
             template = Template(t.read())
 
         # render specfile
@@ -231,6 +233,8 @@ class clean(orig_clean):
 
 CMDCLASS['clean'] = clean
 
+DEFAULT_PORT_TEMPLATE = os.path.join('etc', 'Portfile.template')
+
 
 class port(Command):
     """Generate a Macports Portfile for this project from the current build
@@ -240,13 +244,13 @@ class port(Command):
         ('version=', None, 'the X.Y.Z package version'),
         ('portfile=', None, 'target output file, default: \'Portfile\''),
         ('template=', None,
-         'Portfile template, default: \'Portfile.template\''),
+         'Portfile template, default: \'{}\''.format(DEFAULT_PORT_TEMPLATE)),
     ]
 
     def initialize_options(self):
         self.version = None
         self.portfile = 'Portfile'
-        self.template = 'Portfile.template'
+        self.template = DEFAULT_PORT_TEMPLATE
         self._template = None
 
     def finalize_options(self):
