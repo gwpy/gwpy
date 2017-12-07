@@ -62,12 +62,13 @@ __all__ = ['TimeSeriesBase', 'ArrayTimeSeries', 'TimeSeriesBaseDict']
 
 ASTROPY_2_0 = astropy_version >= '2.0'
 
-_UFUNC_STRING = {'less': '<',
-                 'less_equal': '<=',
-                 'equal': '==',
-                 'greater_equal': '>=',
-                 'greater': '>',
-                }
+_UFUNC_STRING = {
+    'less': '<',
+    'less_equal': '<=',
+    'equal': '==',
+    'greater_equal': '>=',
+    'greater': '>',
+}
 
 
 def _format_time(gps):
@@ -892,8 +893,8 @@ class TimeSeriesBaseDict(OrderedDict):
                         for c in channels)
             err = "Cannot find all relevant data on any known server."
             if not verbose:
-                err += (" Try again using the verbose=True keyword argument to "
-                        "see detailed failures.")
+                err += (" Try again using the verbose=True keyword argument "
+                        " to see detailed failures.")
             raise RuntimeError(err)
 
         # -- at this point we have an open connection, so perform fetch
