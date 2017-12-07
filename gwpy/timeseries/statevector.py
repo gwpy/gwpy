@@ -249,13 +249,25 @@ class Bits(list):
         (bit, desc) `dict` of longer descriptions for each bit
     """
     def __init__(self, bits, channel=None, epoch=None, description=None):
-        list.__init__(self, [b or None for b in bits])
+        # handle dict of (index, bitname) pairs
+        if isinstance(bits, dict):
+            n = max(map(int, bits.keys())) + 1
+            list.__init__(self, [None] * n)
+            for key, val in bits.items():
+                self[int(key)] = val
+        # otherwise just parse a list of bitnames
+        else:
+            list.__init__(self, [b or None for b in bits])
+
+        # populate metadata
         if channel is not None:
             self.channel = channel
         if epoch is not None:
             self.epoch = epoch
         self.description = description
-        for i, bit in enumerate(bits):
+
+        # rebuild descriptions
+        for i, bit in enumerate(self):
             if bit is None or bit in self.description:
                 continue
             elif channel:

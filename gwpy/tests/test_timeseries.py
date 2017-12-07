@@ -1214,6 +1214,57 @@ class TestStateTimeSeriesDict(TestTimeSeriesBaseDict):
         return NotImplemented
 
 
+# -- Bits ---------------------------------------------------------------------
+
+class TestBits(object):
+    TEST_CLASS = Bits
+
+    @pytest.mark.parametrize('in_, out', [
+        # list
+        (['bit 0', 'bit 1', 'bit 2', None, 'bit 3', ''],
+         ['bit 0', 'bit 1', 'bit 2', None, 'bit 3', None]),
+        # dict
+        ({1: 'bit 1', 4: 'bit 4', '6': 'bit 6'},
+         [None, 'bit 1', None, None, 'bit 4', None, 'bit 6']),
+    ])
+    def test_init(self, in_, out):
+        bits = self.TEST_CLASS(in_)
+        assert bits == out
+        assert bits.channel is None
+        assert bits.epoch is None
+        assert bits.description == {bit: None for bit in bits if
+                                    bit is not None}
+
+        bits = self.TEST_CLASS(in_, channel='L1:Test', epoch=0)
+        assert bits.epoch == Time(0, format='gps')
+        assert bits.channel == Channel('L1:Test')
+
+    def test_str(self):
+        bits = self.TEST_CLASS(['a', 'b', None, 'c'])
+        assert str(bits) == (
+            "Bits(0: a\n"
+            "     1: b\n"
+            "     3: c,\n"
+            "     channel=None,\n"
+            "     epoch=None)")
+
+    def test_repr(self):
+        bits = self.TEST_CLASS(['a', 'b', None, 'c'])
+        assert repr(bits) == (
+            "<Bits(0: 'a'\n"
+            "      1: 'b'\n"
+            "      3: 'c',\n"
+            "      channel=None,\n"
+            "      epoch=None)>")
+
+    def test_array(self):
+        bits = self.TEST_CLASS(['a', 'b', None, 'c'])
+        utils.assert_array_equal(
+            numpy.asarray(bits),
+            ['a', 'b', '', 'c'],
+        )
+
+
 # -- StateVector---------------------------------------------------------------
 
 class TestStateVector(TestTimeSeriesBase):
