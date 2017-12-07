@@ -125,7 +125,7 @@ class changelog(Command):
 
 CMDCLASS['changelog'] = changelog
 SETUP_REQUIRES['changelog'] = (
-    {'changelog', 'sdist', 'bdist_rpm', 'spec'}, ['GitPython'])
+    {'changelog', 'bdist_rpm', 'sdist'}, ['GitPython'])
 
 orig_bdist_rpm = CMDCLASS.pop('bdist_rpm', _bdist_rpm)
 DEFAULT_SPEC_TEMPLATE = os.path.join('etc', 'spec.template')
@@ -163,6 +163,8 @@ class bdist_rpm(orig_bdist_rpm):
 
 
 CMDCLASS['bdist_rpm'] = bdist_rpm
+SETUP_REQUIRES['bdist_rpm'] = (
+    {'bdist_rpm', 'sdist'}, ['jinja2'])
 
 orig_sdist = CMDCLASS.pop('sdist', _sdist)
 
