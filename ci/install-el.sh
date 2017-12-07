@@ -35,7 +35,12 @@ pip install "setuptools>=25"
 python setup.py bdist_rpm
 
 # install the rpm
-yum -y --nogpgcheck localinstall dist/${PY_PREFIX}-gwpy-${GWPY_VERSION}-1.noarch.rpm
+if [ ${PY_XY} -lt 30 ]; then
+    GWPY_RPM="dist/python2-gwpy-*.noarch.rpm"
+else
+    GWPY_RPM="dist/${PY_PREFIX}-gwpy-*.noarch.rpm"
+fi
+yum -y --nogpgcheck localinstall ${GWPY_RPM}
 
 # install system-level extras
 yum -y install \
