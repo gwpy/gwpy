@@ -170,16 +170,32 @@ def _fetch_losc_data_file(url, cls=TimeSeries, verbose=False, **kwargs):
         kwargs.setdefault('format', 'hdf5.losc')
     elif ext == '.txt':
         kwargs.setdefault('format', 'ascii.losc')
+    elif ext == '.gwf':
+        kwargs.setdefault('format', 'gwf')
 
     with get_readable_fileobj(url, show_progress=False) as remote:
         try:
-            return cls.read(remote, **kwargs)
+            series = cls.read(rem, *args, **kwargs)
         except Exception as exc:
             if verbose:
                 print("")
             exc.args = ("Failed to read LOSC data from %r: %s"
                         % (url, str(exc)),)
             raise
+        else:
+            # parse bits from unit in GWF
+            if ext == '.gwf' and isinstance(series, StateVector):
+                try:
+                    bits = {}
+                    for bit in str(series.unit).split():
+                        a, b = bit.split(':', 1)
+                        bits[int(a)] = b
+                    series.bits = bits
+                    series.override_unit('')
+                except (TypeError, ValueError):  # don't care, bad LOSC
+                    pass
+
+            return series
         finally:
             if verbose:
                 print(" Done")
