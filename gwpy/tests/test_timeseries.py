@@ -696,7 +696,7 @@ class TestTimeSeries(TestTimeSeriesBase):
     def test_fetch_open_data(self, losc, format):
         try:
             ts = self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format)
+                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, verbose=True)
         except URLError as e:
             pytest.skip(str(e))
         utils.assert_quantity_sub_equal(ts, losc, exclude=['name', 'unit'])
