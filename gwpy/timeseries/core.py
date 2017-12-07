@@ -64,12 +64,13 @@ __all__ = ['TimeSeriesBase', 'ArrayTimeSeries', 'TimeSeriesBaseDict']
 
 ASTROPY_2_0 = astropy_version >= '2.0'
 
-_UFUNC_STRING = {'less': '<',
-                 'less_equal': '<=',
-                 'equal': '==',
-                 'greater_equal': '>=',
-                 'greater': '>',
-                }
+_UFUNC_STRING = {
+    'less': '<',
+    'less_equal': '<=',
+    'equal': '==',
+    'greater_equal': '>=',
+    'greater': '>',
+}
 
 
 def _format_time(gps):
@@ -124,7 +125,7 @@ class TimeSeriesBase(Series):
         allow passing of sub-classes by the array generator
     """
     _default_xunit = units.second
-    _print_slots = ['t0', 'dt', 'name', 'channel']
+    _print_slots = ('t0', 'dt', 'name', 'channel')
     DictClass = None
 
     def __new__(cls, data, unit=None, t0=None, dt=None, sample_rate=None,
@@ -357,7 +358,7 @@ class TimeSeriesBase(Series):
     @classmethod
     def fetch_open_data(cls, ifo, start, end, sample_rate=4096,
                         format=None, host='https://losc.ligo.org',
-                        verbose=False, **kwargs):
+                        verbose=False, cache=False, **kwargs):
         """Fetch open-access data from the LIGO Open Science Center
 
         Parameters
@@ -374,32 +375,77 @@ class TimeSeriesBase(Series):
             GPS end time of required data, defaults to end of data found;
             any input parseable by `~gwpy.time.to_gps` is fine
 
-        sample_rate : `float`, optional, default: `4096`
-            the sample rate of desired data. Most data are stored
+        sample_rate : `float`, optional,
+            the sample rate of desired data; most data are stored
             by LOSC at 4096 Hz, however there may be event-related
-            data releases with a 16384 Hz rate
+            data releases with a 16384 Hz rate, default: `4096`
 
         format : `str`, optional
-            the data format to download and parse, defaults to 'txt.gz'
-            which requires no extra packages. Other options include
+            the data format to download and parse, defaults to the most
+            efficient option based on third-party libraries available;
+            one of:
 
+            - ``'txt.gz'`` - requires `numpy`
             - ``'hdf5'`` - requires |h5py|_
             - ``'gwf'`` - requires |LDAStools.frameCPP|_
-
-        verbose : `bool`, optional, default: `False`
-            print verbose output while fetching data
 
         host : `str`, optional
             HTTP host name of LOSC server to access
 
+        verbose : `bool`, optional, default: `False`
+            print verbose output while fetching data
+
+        cache : `bool`, optional
+            save/read a local copy of the remote URL, default: `False`;
+            useful if the same remote data are to be accessed multiple times
+
         **kwargs
             any other keyword arguments are passed to the `TimeSeries.read`
             method that parses the file that was downloaded
+
+        Examples
+        --------
+        >>> from gwpy.timeseries import (TimeSeries, StateVector)
+        >>> print(TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+        TimeSeries([  2.17704028e-19,  2.08763900e-19,  2.39681183e-19,
+                    ...,   3.55365541e-20,  6.33533516e-20,
+                      7.58121195e-20]
+                   unit: Unit(dimensionless),
+                   t0: 1126259446.0 s,
+                   dt: 0.000244140625 s,
+                   name: Strain,
+                   channel: None)
+        >>> print(StateVector.fetch_open_data('H1', 1126259446, 1126259478)
+        StateVector([127,127,127,127,127,127,127,127,127,127,127,127,
+                     127,127,127,127,127,127,127,127,127,127,127,127,
+                     127,127,127,127,127,127,127,127]
+                    unit: Unit(dimensionless),
+                    t0: 1126259446.0 s,
+                    dt: 1.0 s,
+                    name: Data quality,
+                    channel: None,
+                    bits: Bits(0: data present
+                               1: passes cbc CAT1 test
+                               2: passes cbc CAT2 test
+                               3: passes cbc CAT3 test
+                               4: passes burst CAT1 test
+                               5: passes burst CAT2 test
+                               6: passes burst CAT3 test,
+                               channel=None,
+                               epoch=1126259446.0))
+
+        For the `StateVector`, the naming of the bits will be
+        ``format``-dependent, because they are recorded differently by LOSC
+        in different formats.
+
+        Notes
+        -----
+        `StateVector` data are not available in ``txt.gz`` format.
         """
         from .io.losc import fetch_losc_data
-        return fetch_losc_data(ifo, start, end, cls=cls,
-                               sample_rate=sample_rate, format=format,
-                               host=host, verbose=verbose, **kwargs)
+        return fetch_losc_data(ifo, start, end, sample_rate=sample_rate,
+                               format=format, verbose=verbose, cache=cache,
+                               host=host, cls=cls, **kwargs)
 
     @classmethod
     def find(cls, channel, start, end, frametype=None,
@@ -1022,8 +1068,8 @@ class TimeSeriesBaseDict(OrderedDict):
                         for c in channels)
             err = "Cannot find all relevant data on any known server."
             if not verbose:
-                err += (" Try again using the verbose=True keyword argument to "
-                        "see detailed failures.")
+                err += (" Try again using the verbose=True keyword argument "
+                        " to see detailed failures.")
             raise RuntimeError(err)
 
         # -- at this point we have an open connection, so perform fetch

@@ -81,15 +81,30 @@ FIND_FRAMETYPE = 'L1_HOFT_C01'
 LOSC_IFO = 'L1'
 LOSC_GW150914 = 1126259462
 LOSC_GW150914_SEGMENT = Segment(LOSC_GW150914-2, LOSC_GW150914+2)
-LOSC_GW150914_DQ_BITS = [
-    'data present',
-    'passes cbc CAT1 test',
-    'passes cbc CAT2 test',
-    'passes cbc CAT3 test',
-    'passes burst CAT1 test',
-    'passes burst CAT2 test',
-    'passes burst CAT3 test',
-]
+LOSC_GW150914_DQ_NAME = {
+    'hdf5': 'Data quality',
+    'gwf': 'L1:LOSC-DQMASK',
+}
+LOSC_GW150914_DQ_BITS = {
+    'hdf5': [
+        'data present',
+        'passes cbc CAT1 test',
+        'passes cbc CAT2 test',
+        'passes cbc CAT3 test',
+        'passes burst CAT1 test',
+        'passes burst CAT2 test',
+        'passes burst CAT3 test',
+    ],
+    'gwf': [
+        'DATA',
+        'CBC_CAT1',
+        'CBC_CAT2',
+        'CBC_CAT3',
+        'BURST_CAT1',
+        'BURST_CAT2',
+        'BURST_CAT3',
+    ],
+}
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -681,7 +696,7 @@ class TestTimeSeries(TestTimeSeriesBase):
     def test_fetch_open_data(self, losc, format):
         try:
             ts = self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format)
+                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, verbose=True)
         except URLError as e:
             pytest.skip(str(e))
         utils.assert_quantity_sub_equal(ts, losc, exclude=['name', 'unit'])
@@ -1214,6 +1229,57 @@ class TestStateTimeSeriesDict(TestTimeSeriesBaseDict):
         return NotImplemented
 
 
+# -- Bits ---------------------------------------------------------------------
+
+class TestBits(object):
+    TEST_CLASS = Bits
+
+    @pytest.mark.parametrize('in_, out', [
+        # list
+        (['bit 0', 'bit 1', 'bit 2', None, 'bit 3', ''],
+         ['bit 0', 'bit 1', 'bit 2', None, 'bit 3', None]),
+        # dict
+        ({1: 'bit 1', 4: 'bit 4', '6': 'bit 6'},
+         [None, 'bit 1', None, None, 'bit 4', None, 'bit 6']),
+    ])
+    def test_init(self, in_, out):
+        bits = self.TEST_CLASS(in_)
+        assert bits == out
+        assert bits.channel is None
+        assert bits.epoch is None
+        assert bits.description == {bit: None for bit in bits if
+                                    bit is not None}
+
+        bits = self.TEST_CLASS(in_, channel='L1:Test', epoch=0)
+        assert bits.epoch == Time(0, format='gps')
+        assert bits.channel == Channel('L1:Test')
+
+    def test_str(self):
+        bits = self.TEST_CLASS(['a', 'b', None, 'c'])
+        assert str(bits) == (
+            "Bits(0: a\n"
+            "     1: b\n"
+            "     3: c,\n"
+            "     channel=None,\n"
+            "     epoch=None)")
+
+    def test_repr(self):
+        bits = self.TEST_CLASS(['a', 'b', None, 'c'])
+        assert repr(bits) == (
+            "<Bits(0: 'a'\n"
+            "      1: 'b'\n"
+            "      3: 'c',\n"
+            "      channel=None,\n"
+            "      epoch=None)>")
+
+    def test_array(self):
+        bits = self.TEST_CLASS(['a', 'b', None, 'c'])
+        utils.assert_array_equal(
+            numpy.asarray(bits),
+            ['a', 'b', '', 'c'],
+        )
+
+
 # -- StateVector---------------------------------------------------------------
 
 class TestStateVector(TestTimeSeriesBase):
@@ -1309,6 +1375,27 @@ class TestStateVector(TestTimeSeriesBase):
             array.resample(array.sample_rate * .75)
         with pytest.raises(ValueError):
             array.resample(array.sample_rate * 1.5)
+
+    # -- data access ----------------------------
+
+    @pytest.mark.parametrize('format', [
+        pytest.param('hdf5', marks=utils.skip_missing_dependency('h5py')),
+        pytest.param(  # only frameCPP actually reads units properly
+            'gwf', marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
+    ])
+    def test_fetch_open_data(self, format):
+        try:
+            sv = self.TEST_CLASS.fetch_open_data(
+                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format)
+        except URLError as e:
+            pytest.skip(str(e))
+        utils.assert_quantity_sub_equal(
+            sv,
+            StateVector([127, 127, 127, 127], unit='',
+                        t0=LOSC_GW150914_SEGMENT[0], dt=1,
+                        name=LOSC_GW150914_DQ_NAME[format],
+                        bits=LOSC_GW150914_DQ_BITS[format]),
+            exclude=['channel'])
 
 
 # -- StateVectorDict ----------------------------------------------------------

@@ -123,6 +123,38 @@ def import_gwf_library(library, package=__package__):
         raise
 
 
+def get_default_gwf_api():
+    """Return the preferred GWF library
+
+    Examples
+    --------
+    If you have |LDAStools.frameCPP|_ installed:
+
+    >>> from gwpy.timeseries.io.gwf import get_default_gwf_api
+    >>> get_default_gwf_api()
+    'framecpp'
+
+    Or, if you don't have |lalframe|_:
+
+    >>> get_default_gwf_api()
+    'lalframe'
+
+    Otherwise:
+
+    >>> get_default_gwf_api()
+    ImportError: no GWF API available, please install a third-party GWF library (framecpp, lalframe) and try again
+    """
+    for lib in APIS:
+        try:
+            import_gwf_library(lib)
+        except ImportError as e:
+            continue
+        else:
+            return lib
+    raise ImportError("no GWF API available, please install a third-party GWF "
+                      "library ({}) and try again".format(', '.join(APIS)))
+
+
 # -- generic I/O methods ------------------------------------------------------
 
 def register_gwf_api(library):
@@ -352,30 +384,13 @@ def register_gwf_format(container):
     container : `Series`, `dict`
         series class or series dict class to register
     """
-    formats = get_formats(data_class=container)
     def read_(*args, **kwargs):
-        for fmt in formats:
-            if fmt['Format'].startswith('gwf.'):
-                kwargs['format'] = fmt['Format']
-                try:
-                    return container.read(*args, **kwargs)
-                except ImportError:
-                    continue
-        raise ImportError("No GWF API available with which to read these "
-                          "data. Please install one of the third-party GWF "
-                          "libraries and try again")
+        kwargs['format'] = 'gwf.{}'.format(get_default_gwf_api())
+        return container.read(*args, **kwargs)
 
     def write_(*args, **kwargs):
-        for fmt in formats:
-            if fmt['Format'].startswith('gwf.'):
-                kwargs['format'] = fmt['Format']
-                try:
-                    return container.write(*args, **kwargs)
-                except ImportError:
-                    continue
-        raise ImportError("No GWF API available with which to write these "
-                          "data. Please install one of the third-party GWF "
-                          "libraries and try again")
+        kwargs['format'] = 'gwf.{}'.format(get_default_gwf_api())
+        return container.write(*args, **kwargs)
 
     register_identifier('gwf', container, identify_gwf)
     register_reader('gwf', container, read_)
