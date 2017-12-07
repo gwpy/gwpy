@@ -81,15 +81,30 @@ FIND_FRAMETYPE = 'L1_HOFT_C01'
 LOSC_IFO = 'L1'
 LOSC_GW150914 = 1126259462
 LOSC_GW150914_SEGMENT = Segment(LOSC_GW150914-2, LOSC_GW150914+2)
-LOSC_GW150914_DQ_BITS = [
-    'data present',
-    'passes cbc CAT1 test',
-    'passes cbc CAT2 test',
-    'passes cbc CAT3 test',
-    'passes burst CAT1 test',
-    'passes burst CAT2 test',
-    'passes burst CAT3 test',
-]
+LOSC_GW150914_DQ_NAME = {
+    'hdf5': 'Data quality',
+    'gwf': 'L1:LOSC-DQMASK',
+}
+LOSC_GW150914_DQ_BITS = {
+    'hdf5': [
+        'data present',
+        'passes cbc CAT1 test',
+        'passes cbc CAT2 test',
+        'passes cbc CAT3 test',
+        'passes burst CAT1 test',
+        'passes burst CAT2 test',
+        'passes burst CAT3 test',
+    ],
+    'gwf': [
+        'DATA',
+        'CBC_CAT1',
+        'CBC_CAT2',
+        'CBC_CAT3',
+        'BURST_CAT1',
+        'BURST_CAT2',
+        'BURST_CAT3',
+    ],
+}
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -1360,6 +1375,26 @@ class TestStateVector(TestTimeSeriesBase):
             array.resample(array.sample_rate * .75)
         with pytest.raises(ValueError):
             array.resample(array.sample_rate * 1.5)
+
+    # -- data access ----------------------------
+
+    @pytest.mark.parametrize('format', [
+        pytest.param('hdf5', marks=utils.skip_missing_dependency('h5py')),
+        pytest.param('gwf', marks=utils.skip_missing_dependency('lalframe')),
+    ])
+    def test_fetch_open_data(self, format):
+        try:
+            sv = self.TEST_CLASS.fetch_open_data(
+                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format)
+        except URLError as e:
+            pytest.skip(str(e))
+        utils.assert_quantity_sub_equal(
+            sv,
+            StateVector([127, 127, 127, 127], unit='',
+                        t0=LOSC_GW150914_SEGMENT[0], dt=1,
+                        name=LOSC_GW150914_DQ_NAME[format],
+                        bits=LOSC_GW150914_DQ_BITS[format]),
+            exclude=['channel'])
 
 
 # -- StateVectorDict ----------------------------------------------------------
