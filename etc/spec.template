@@ -27,6 +27,7 @@ BuildRequires:  python%{python3_pkgversion}-setuptools
 Summary:        %{summary}
 Requires:       python-six
 Requires:       python-dateutil
+Requires:       python-enum34
 Requires:       numpy
 Requires:       scipy
 Requires:       python-matplotlib
