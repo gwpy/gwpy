@@ -24,10 +24,14 @@ from math import pi
 import numpy
 
 from scipy import signal
+
 from matplotlib.ticker import MultipleLocator
+
+from astropy.units import Quantity
 
 from .core import Plot
 from ..frequencyseries import FrequencySeries
+from ..signal.filter_design import parse_digital_lti
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['BodePlot']
@@ -187,37 +191,35 @@ class BodePlot(Plot):
         mag, phase : `tuple` of `lines <matplotlib.lines.Line2D>`
             the lines drawn for the magnitude and phase of the filter.
         """
-        # validate arguments
         if not analog and not sample_rate:
             raise ValueError("Must give sample_rate frequency to display "
                              "digital (analog=False) filter")
         elif not analog:
-            try:
-                sample_rate = float(sample_rate)
-            except TypeError:  # Quantity
-                sample_rate = float(sample_rate.value)
-        # format array of frequencies
-        if frequencies is None:
-            w = None
-        # convert to rad/s
-        elif not analog and isinstance(frequencies, numpy.ndarray):
-            w = frequencies * 2. * pi / sample_rate
-        # if array, presume taps for FIR
-        if isinstance(filter_, numpy.ndarray):
-            filter_ = (filter_, [1])
-        # convert filter to LTI form (ba)
-        if analog and not isinstance(filter_, signal.lti):
-            filter_ = signal.lti(*filter_)
-        elif not isinstance(filter_, signal.lti):
-            filter_ = signal.dlti(*filter_)
+            sample_rate = Quantity(sample_rate, 'Hz').value
+
+        # parse filter (without digital conversions)
+        filter_ = parse_digital_lti(filter_, analog=False)
+
         # calculate frequency response
-        w, mag, phase = filter_.bode(w=w)
-        if not analog:
-            w *= sample_rate / (2. * pi)
+        if analog:
+            w, mag, phase = filter_.bode(w=frequencies)
+        else:
+            if frequencies is not None:
+                frequencies = atleast_1d(frequencies)
+                frequencies *= 2 * pi / sample_rate
+            try:
+                filter_ = filter_.to_tf()
+            except AttributeError:  # scipy < 0.18, doesn't matter
+                pass
+            w, mag, phase = signal.dlti(
+                filter_.num, filter_.den).bode(w=frequencies)
+            w *= sample_rate / (2. * pi)  # convert frequencies to analog
+
         # convert from decibels
         if not dB:
             mag = 10 ** (mag / 10.)
-        # append to figure
+
+        # draw
         mline = self.maxes.plot(w, mag, **kwargs)[0]
         pline = self.paxes.plot(w, phase, **kwargs)[0]
         return mline, pline
