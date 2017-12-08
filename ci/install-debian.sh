@@ -27,7 +27,8 @@ apt-get -yq install \
     python-all \
     python-setuptools \
     python-pip \
-    python-git
+    python-git \
+    python-jinja2
 
 # needed to prevent version number munging with versioneer
 pip install "setuptools>33"
