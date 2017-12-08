@@ -231,7 +231,13 @@ def parse_digital_lti(args, analog=False, sample_rate=None):
         if analog:
             raise ValueError("Filtering with analog FIR filters is "
                              "not supported")
-        return signal.lti(args, [1.])
+        try:
+            return signal.lti(args, [1.])
+        except ValueError as exc:
+            if str(exc).startswith('Improper transfer function'):
+                exc.args = ('{} scipy >= 0.16 is required to represent FIR '
+                            'filters as LTI.'.format(str(exc)),)
+            raise
 
     # parse IIR filter
     if isinstance(args, LinearTimeInvariant):

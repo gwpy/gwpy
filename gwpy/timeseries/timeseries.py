@@ -1030,7 +1030,6 @@ class TimeSeries(TimeSeriesBase):
         """
         return self.filter(zeros, poles, gain, analog=analog, **kwargs)
 
-    @filter_design.with_digital_lti
     def filter(self, *filt, **kwargs):
         """Filter this `TimeSeries` with an IIR or FIR filter
 
@@ -1128,26 +1127,33 @@ class TimeSeries(TimeSeriesBase):
         # parse keyword arguments
         filtfilt = kwargs.pop('filtfilt', False)
 
-        # decorator formats filt as signal.lti
-        lti = filt[0]
-
-        # determine FIR or IIR
         try:
-            if lti.den.shape == (1,) and lti.den[0] == (1.):  # FIR
-                sos = None
-                a = lti.den
-                b = lti.num
-            else:
-                raise AttributeError  # push into IIR parser
-        except AttributeError:  # IIR
-            # if here, we know that ``lti`` is a ZPK-compatible IIR filter
-            # so, try and convert to SOS
+            lti = filter_design.parse_digital_lti(
+                filt, analog=kwargs.pop('analog', False),
+                sample_rate=self.sample_rate.to('Hz').value)
+        except ValueError:
+            if (len(filt) == 1 and isinstance(filt[0], numpy.ndarray) and
+                filt[0].ndim == 1):  # FIR
+                a = [1.]
+                b = filt[0]
+        else:
+            # determine FIR or IIR
             try:
-                sos = signal.zpk2sos(lti.zeros, lti.poles, lti.gain)
-            except AttributeError:  # scipy < 0.16, no SOS filtering
-                sos = None
-                a = lti.den
-                b = lti.num
+                if lti.den.shape == (1,) and lti.den[0] == (1.):  # FIR
+                    sos = None
+                    a = lti.den
+                    b = lti.num
+                else:
+                    raise AttributeError  # push into IIR parser
+            except AttributeError:  # IIR
+                # if here, we know that ``lti`` is a ZPK-compatible IIR filter
+                # so, try and convert to SOS
+                try:
+                    sos = signal.zpk2sos(lti.zeros, lti.poles, lti.gain)
+                except AttributeError:  # scipy < 0.16, no SOS filtering
+                    sos = None
+                    a = lti.den
+                    b = lti.num
 
         # perform filter
         kwargs.setdefault('axis', 0)
