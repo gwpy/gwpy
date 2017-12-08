@@ -1127,20 +1127,21 @@ class TimeSeries(TimeSeriesBase):
         # parse keyword arguments
         filtfilt = kwargs.pop('filtfilt', False)
 
+        # parse filter
+        sos = None
         try:
             lti = filter_design.parse_digital_lti(
                 filt, analog=kwargs.pop('analog', False),
                 sample_rate=self.sample_rate.to('Hz').value)
         except ValueError:
             if (len(filt) == 1 and isinstance(filt[0], numpy.ndarray) and
-                filt[0].ndim == 1):  # FIR
+                    filt[0].ndim == 1):  # FIR
                 a = [1.]
                 b = filt[0]
         else:
             # determine FIR or IIR
             try:
                 if lti.den.shape == (1,) and lti.den[0] == (1.):  # FIR
-                    sos = None
                     a = lti.den
                     b = lti.num
                 else:
@@ -1151,7 +1152,6 @@ class TimeSeries(TimeSeriesBase):
                 try:
                     sos = signal.zpk2sos(lti.zeros, lti.poles, lti.gain)
                 except AttributeError:  # scipy < 0.16, no SOS filtering
-                    sos = None
                     a = lti.den
                     b = lti.num
 
