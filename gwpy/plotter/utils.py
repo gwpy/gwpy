@@ -42,7 +42,11 @@ LINE_PARAMS = [
 COLLECTION_PARAMS = [
     'cmap', 'vmin', 'vmax', 'marker', 's', 'norm', 'rasterized',
 ]
-ARTIST_PARAMS = set(LINE_PARAMS + COLLECTION_PARAMS)
+IMAGE_PARAMS = [
+    'imshow', 'cmap', 'vmin', 'vmax', 'norm', 'rasterized', 'extent',
+    'origin', 'interpolation', 'aspect',
+]
+ARTIST_PARAMS = set(LINE_PARAMS + COLLECTION_PARAMS + IMAGE_PARAMS)
 LEGEND_PARAMS = [
     'loc', 'borderaxespad', 'ncol',
 ]
