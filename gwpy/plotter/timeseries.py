@@ -284,16 +284,18 @@ class TimeSeriesAxes(Axes):
 
         **kwargs
             any other keyword arguments acceptable for
-            :meth:`~matplotlib.Axes.plot`
+            :meth:`~matplotlib.Axes.imshow` (if ``imshow=True``),
+            or :meth:`~matplotlib.Axes.pcolormesh` (``imshow=False``)
 
         Returns
         -------
-        Line2D
-            the `~matplotlib.lines.Line2D` for this line layer
+        layer : `~matplotlib.collections.QuadMesh`, `~matplotlib.images.Image`
+            the layer for this spectrogram
 
         See Also
         --------
-        matplotlib.axes.Axes.plot
+        matplotlib.axes.Axes.imshow
+        matplotlib.axes.Axes.pcolormesh
             for a full description of acceptable ``*args`` and ``**kwargs``
         """
         # rescue grid settings
