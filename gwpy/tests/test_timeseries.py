@@ -366,7 +366,7 @@ class TestTimeSeriesBaseDict(object):
     def test_resample(self, instance):
         if self.ENTRY_CLASS is TimeSeriesBase:  # currently only for subclasses
             return NotImplemented
-        a = instance.resample(.5)
+        a = instance.resample(.5, ftype='iir')
         for key in a:
             assert a[key].dx == 1/.5 * a[key].xunit
 
