@@ -579,7 +579,7 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
     def test_plot_spectrogram(self):
         fig, ax = self.new()
         # check method
-        ax.plot_spectrogram(self.sg)
+        ax.plot_spectrogram(self.sg, imshow=False)
         coll = ax.collections[0]
         nptest.assert_array_equal(coll.get_array(), self.sg.value.T.flatten())
         # check GPS axis is set ok
