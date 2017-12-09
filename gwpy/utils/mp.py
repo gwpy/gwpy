@@ -118,7 +118,7 @@ def multiprocess_with_queues(nproc, func, inputs, raise_exceptions=False,
             return list(map(_inner_func, inputs))
 
     # create input and output queues
-    q_in = Queue(1)
+    q_in = Queue()
     q_out = Queue()
 
     # create child processes and start
@@ -131,8 +131,8 @@ def multiprocess_with_queues(nproc, func, inputs, raise_exceptions=False,
             proc.daemon = True
             proc.start()
 
-        # populate queue
-        sent = list(map(q_in.put, enumerate(inputs)))
+        # populate queue (no need to block in serial put())
+        sent = list(map(lambda x: q_in.put(x, block=False), enumerate(inputs)))
         for _ in range(nproc):  # add sentinel for each process
             q_in.put((None, None))
 
