@@ -29,6 +29,8 @@ from six.moves import StringIO
 from astropy.utils.console import (ProgressBar, ProgressBarOrSpinner,
                                    color_print)
 
+from .misc import null_context
+
 
 def process_in_out_queues(func, q_in, q_out):
     """Iterate through a Queue, call, ``func`, and Queue the result
@@ -98,19 +100,23 @@ def multiprocess_with_queues(nproc, func, inputs, raise_exceptions=False,
         of ``inputs``
     """
     # handle verbose printing with a progress bar
-    total = len(inputs) if isinstance(inputs, (list, tuple)) else None
-    stream = sys.stdout if verbose else StringIO()
-    if verbose is True:
-        verbose = 'Processing:'
-    elif not verbose:
-        verbose = ''
+    if verbose:
+        total = len(inputs) if isinstance(inputs, (list, tuple)) else None
+        if verbose is True:
+            verbose = 'Processing:'
+        bar = _MultiProgressBarOrSpinner(total, verbose, file=sys.stdout)
 
-    bar = _MultiProgressBarOrSpinner(total, verbose, file=stream)
+        def _inner_func(in_):  # update progress bar on each iteration
+            res = func(in_)
+            bar.update(None)
+            return res
 
-    def _inner_func(in_):
-        res = func(in_)
-        bar.update(None)
-        return res
+    else:
+        # or don't
+        bar = null_context()
+        _inner_func = func
+
+    # -------------------------------------------
 
     # shortcut single process
     if nproc == 1:

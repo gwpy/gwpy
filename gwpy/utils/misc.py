@@ -21,8 +21,23 @@
 
 from __future__ import print_function
 
+from contextlib import contextmanager
 from sys import stdout
 
-from .misc import *
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+
+def gprint(*values, **kwargs):  # pylint: disable=missing-docstring
+    kwargs.setdefault('file', stdout)
+    file_ = kwargs['file']
+    print(*values, **kwargs)
+    file_.flush()
+
+gprint.__doc__ = print.__doc__
+
+
+@contextmanager
+def null_context():
+    """Null context manager
+    """
+    yield
