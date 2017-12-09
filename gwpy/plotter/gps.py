@@ -163,7 +163,7 @@ class GPSTransformBase(GPSMixin, Transform):
     def transform(self, values):
         # format ticks using decimal for precision display
         if isinstance(values, (Number, Decimal)):
-            return self._transform_decimal(values, self.epoch, self.scale)
+            return self._transform_decimal(values, self.epoch or 0, self.scale)
         return super(GPSTransformBase, self).transform(values)
 
     def transform_non_affine(self, values):
