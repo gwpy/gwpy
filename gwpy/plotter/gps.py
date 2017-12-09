@@ -188,9 +188,11 @@ class GPSTransformBase(GPSMixin, Transform):
         # otherwise do things carefully (and slowly) with Decimals
         # -- ideally this only gets called for transforming tick positions
         flat = values.flatten()
-        _trans = lambda x: self._transform_decimal(x, epoch, scale)
-        return numpy.asarray(
-            list(map(_trans, flat))).reshape(values.shape)
+
+        def _trans(x):
+            return self._transform_decimal(x, epoch, scale)
+
+        return numpy.asarray(list(map(_trans, flat))).reshape(values.shape)
 
     @staticmethod
     def _transform(value, epoch, scale):
