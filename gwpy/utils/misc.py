@@ -32,7 +32,6 @@ def gprint(*values, **kwargs):  # pylint: disable=missing-docstring
     file_ = kwargs['file']
     print(*values, **kwargs)
     file_.flush()
-
 gprint.__doc__ = print.__doc__
 
 
