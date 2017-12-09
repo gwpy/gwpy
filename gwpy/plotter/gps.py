@@ -146,6 +146,13 @@ class GPSMixin(object):
 
 class GPSTransformBase(GPSMixin, Transform):
     """`Transform` to convert GPS times to time since epoch (and vice-verse)
+
+    This class uses the `decimal.Decimal` object to protect against precision
+    errors when converting to and from GPS times that may have 19 significant
+    digits, which is more than `float` can handle.
+
+    There is some logic to _only_ use the slow decimal transforms when
+    absolutely necessary, normally when transforming tick positions.
     """
     input_dims = 1
     output_dims = 1
@@ -153,29 +160,60 @@ class GPSTransformBase(GPSMixin, Transform):
     is_affine = True
     has_inverse = True
 
+    def transform(self, values):
+        # format ticks using decimal for precision display
+        if isinstance(values, (Number, Decimal)):
+            return self._transform_decimal(values, self.epoch, self.scale)
+        return super(GPSTransformBase, self).transform(values)
+
     def transform_non_affine(self, values):
         """Transform an array of GPS times.
+
+        This method is designed to filter out transformations that will
+        generate text elements that require exact precision, and use
+        `Decimal` objects to do the transformation, and simple `float`
+        otherwise.
         """
+        scale = self.scale
+        epoch = self.epoch
+
+        # handle simple or data transformations with floats
+        if any([
+                epoch is None,  # no large additions
+                scale == 1,  # no multiplications
+                self._parents,  # part of composite transform (from draw())
+        ]):
+            return self._transform(values, epoch, scale)
+
+        # otherwise do things carefully (and slowly) with Decimals
+        # -- ideally this only gets called for transforming tick positions
         flat = values.flatten()
+        _trans = lambda x: self._transform_decimal(x, epoch, scale)
         return numpy.asarray(
-            list(map(self._transform_scalar, flat))).reshape(values.shape)
+            list(map(_trans, flat))).reshape(values.shape)
+
+    @staticmethod
+    def _transform(value, epoch, scale):
+        # this is declared by the actual transform subclass
+        raise NotImplementedError
+
+    @classmethod
+    def _transform_decimal(cls, value, epoch, scale):
+        """Transform to/from GPS using `decimal.Decimal` for precision
+        """
+        vdec = Decimal(repr(value))
+        edec = Decimal(repr(epoch))
+        sdec = Decimal(repr(scale))
+        return type(value)(cls._transform(vdec, edec, sdec))
 
 
 class GPSTransform(GPSTransformBase):
     """Transform GPS time into N * scale from epoch.
     """
-    def transform(self, values):
-        if isinstance(values, (Number, Decimal)):
-            return self._transform_scalar(values)
-        return super(GPSTransform, self).transform(values)
-
-    def _transform_scalar(self, a):
-        if self.epoch is None:
-            return a / self.scale
-        adec = Decimal(repr(a))
-        edec = Decimal(repr(self.epoch))
-        sdec = Decimal(repr(self.scale))
-        return type(a)((adec - edec) / sdec)
+    @staticmethod
+    def _transform(value, epoch, scale):
+        # convert GPS into scaled time from epoch
+        return (value - epoch) / scale
 
     def inverted(self):
         return InvertedGPSTransform(unit=self.unit, epoch=self.epoch)
@@ -184,16 +222,14 @@ class GPSTransform(GPSTransformBase):
 class InvertedGPSTransform(GPSTransform):
     """Transform time (scaled units) from epoch into GPS time.
     """
-    def _transform_scalar(self, a):
-        if self.epoch is None:
-            return a * self.scale
-        adec = Decimal(repr(a))
-        edec = Decimal(repr(self.epoch))
-        sdec = Decimal(repr(self.scale))
-        return type(a)(adec * sdec + edec)
+    @staticmethod
+    def _transform(value, epoch, scale):
+        # convert scaled time from epoch back into GPS
+        return value * scale + epoch
 
     def inverted(self):
         return GPSTransform(unit=self.unit, epoch=self.epoch)
+
 
 # -- locators and formatters --------------------------------------------------
 
