@@ -22,13 +22,14 @@
 from __future__ import absolute_import
 
 from ...frequencyseries import FrequencySeries
+from ...utils.misc import null_context
 from .utils import scale_timeseries_unit
 from . import registry as fft_registry
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-def welch(timeseries, segmentlength, noverlap=None, **kwargs):
+def welch(timeseries, segmentlength, noverlap=None, scheme=None, **kwargs):
     """Calculate a PSD using Welch's method with a mean average
 
     Parameters
@@ -41,6 +42,9 @@ def welch(timeseries, segmentlength, noverlap=None, **kwargs):
 
     noverlap : `int`
         number of samples to overlap between segments, defaults to 50%.
+
+    scheme : `pycbc.scheme.Scheme`, optional
+        processing scheme in which to execute FFT, default: `None`
 
     **kwargs
         other keyword arguments to pass to :func:`pycbc.psd.welch`
@@ -59,11 +63,16 @@ def welch(timeseries, segmentlength, noverlap=None, **kwargs):
     # default to 'standard' welch
     kwargs.setdefault('avg_method', 'mean')
 
+    # get scheme
+    if scheme is None:
+        scheme = null_context()
+
     # generate pycbc FrequencySeries
-    pycbc_fseries = pycbc_welch(timeseries.to_pycbc(copy=False),
-                                seg_len=segmentlength,
-                                seg_stride=segmentlength-noverlap,
-                                **kwargs)
+    with scheme:
+        pycbc_fseries = pycbc_welch(timeseries.to_pycbc(copy=False),
+                                    seg_len=segmentlength,
+                                    seg_stride=segmentlength-noverlap,
+                                    **kwargs)
 
     # return GWpy FrequencySeries
     fseries = FrequencySeries.from_pycbc(pycbc_fseries, copy=False)

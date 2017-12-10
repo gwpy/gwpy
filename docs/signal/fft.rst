@@ -59,3 +59,37 @@ Additionally, short versions the following registrations map to the first regist
       >>> from gwpy.signal.fft import get_default_fft_api
       >>> get_default_fft_api()
       'pycbc'
+
+=====
+Notes
+=====
+
+-------------
+PyCBC methods
+-------------
+
+Each of the `pycbc_<>` FFT methods accepts the following keyword arguments:
+o
+
++------------+---------+-----------------------+------------------------------+
+| Keyword    | Default | Type                  | Description                  |
++============+=========+=======================+==============================+
+| ``scheme`` | `None`  | `pycbc.scheme.Scheme` | processing scheme in which   |
+|            |         |                       | to execute FFT               |
++------------+---------+-----------------------+------------------------------+
+
+-----------
+LAL methods
+-----------
+
+Each of the `lal_<>` FFT methods accepts the following keyword arguments:
+
++------------+---------+---------------------+-----------------------------------------------+
+| Keyword    | Default | Type                | Description                                   |
++============+=========+=====================+===============================================+
+| ``window`` | `None`  | `tuple`, `str`      | time-doman window definition see              |
+|            |         |                     | :func:`gwpy.signal.fft.lal.generate_window`   |
++------------+---------+---------------------+-----------------------------------------------+
+| ``plan``   | `None`  | :lal:`REAL8FFTPlan` | plan to use when processing FFT, see          |
+|            |         | or similar          | :func:`gwpy.signal.fft.lal.generate_fft_plan` |
++------------+---------+---------------------+-----------------------------------------------+
