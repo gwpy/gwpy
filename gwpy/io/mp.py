@@ -27,11 +27,11 @@ from xml.sax import SAXException
 
 from six import string_types
 
-from astropy.io.registry import (_get_valid_format as get_format,
-                                 read as io_read)
+from astropy.io.registry import (read as io_read)
 from astropy.utils.data import get_readable_fileobj
 
 from .cache import (FILE_LIKE, file_list)
+from .registry import get_read_format
 from ..utils import mp as mp_utils
 
 
@@ -70,23 +70,8 @@ def read_multi(flatten, cls, source, *args, **kwargs):
         files = [source]
 
     # determine input format (so we don't have to do it multiple times)
-    # -- this is basically harvested from astropy.io.registry.read()
     if kwargs.get('format', None) is None:
-        ctx = None
-        if isinstance(source, FILE_LIKE):
-            fileobj = source
-        else:
-            try:
-                ctx = get_readable_fileobj(files[0], encoding='binary')
-                fileobj = ctx.__enter__()  # pylint: disable=no-member
-            except IOError:
-                raise
-            except Exception:  # pylint: disable=broad-except
-                fileobj = None
-        kwargs['format'] = get_format(
-            'read', cls, files[0], fileobj, args, kwargs)
-        if ctx is not None:
-            ctx.__exit__(*sys.exc_info())  # pylint: disable=no-member
+        kwargs['format'] = get_read_format(cls, files[0], args, kwargs)
 
     # calculate maximum number of processes
     nproc = min(kwargs.pop('nproc', 1), len(files))
