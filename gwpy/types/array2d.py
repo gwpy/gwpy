@@ -161,8 +161,14 @@ class Array2D(Series):
                 new = new.view(self._columnclass)
                 new.dx = self.dy
                 new.x0 = self.y0
+                new.__metadata_finalize__(self)
+                try:
+                    new.xindex = self._yindex
+                except AttributeError:
+                    pass
             else:
                 new = new.view(self._rowclass)
+                new.__metadata_finalize__(self)
         # unwrap a Spectrogram
         else:
             new = new.view(type(self))
