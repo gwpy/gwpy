@@ -384,12 +384,19 @@ def register_gwf_format(container):
     container : `Series`, `dict`
         series class or series dict class to register
     """
-    fmt = 'gwf.{}'.format(get_default_gwf_api())
-    reader = get_reader(fmt, container)
-    writer = get_writer(fmt, container)
+    def read_(*args, **kwargs):
+        fmt = 'gwf.{}'.format(get_default_gwf_api())
+        reader = get_reader(fmt, container)
+        return reader(*args, **kwargs)
+
+    def write_(*args, **kwargs):
+        fmt = 'gwf.{}'.format(get_default_gwf_api())
+        writer = get_writer(fmt, container)
+        return writer(*args, **kwargs)
+
     register_identifier('gwf', container, identify_gwf)
-    register_reader('gwf', container, reader)
-    register_writer('gwf', container, writer)
+    register_reader('gwf', container, read_)
+    register_writer('gwf', container, write_)
 
 
 # -- DEPRECATED - register old format name ------------------------------------
