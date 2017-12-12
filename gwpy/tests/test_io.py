@@ -28,6 +28,8 @@ import sys
 
 from six import PY2
 
+import numpy
+
 import pytest
 
 from gwpy.io import (cache as io_cache,
@@ -249,6 +251,27 @@ class TestIoCache(object):
             f.seek(0)
             assert io_cache.is_cache(f) is True
             assert io_cache.is_cache(f.name) is True
+
+        # check ASCII file gets returned as False
+        a = numpy.array([[1, 2], [3, 4]])
+        with tempfile.TemporaryFile() as f:
+            numpy.savetxt(f, a)
+            f.seek(0)
+            assert io_cache.is_cache(f) is False
+
+        # check HDF5 file gets returned as False
+        try:
+            import h5py
+        except ImportError:
+            pass
+        else:
+            fp = tempfile.mktemp()
+            try:
+                h5py.File(fp, 'w').close()
+                assert io_cache.is_cache(fp) is False
+            finally:
+                if os.path.isfile(fp):
+                    os.remove(fp)
 
     def test_file_list(self):
         cache = self.make_cache()[0]

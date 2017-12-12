@@ -140,7 +140,8 @@ def is_cache(cache):
     if isinstance(cache, string_types + FILE_LIKE):
         try:
             c = read_cache(cache)
-        except TypeError:  # failed to parse cache
+        except (TypeError, ValueError, UnicodeDecodeError):
+            # failed to parse cache
             return False
         else:
             if not c:  # return empty file as False
