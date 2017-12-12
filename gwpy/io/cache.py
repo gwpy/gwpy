@@ -123,6 +123,34 @@ def write_cache(cache, fobj):
             fobj.write(line.encode('utf-8'))
 
 
+def is_cache(cache):
+    """Returns `True` if ``cache`` is a readable cache file or object
+
+    Parameters
+    ----------
+    cache : `str`, `file`, :class:`~glue.lal.Cache`
+        object to detect as cache
+
+    Returns
+    -------
+    iscache : `bool`
+        `True` if the input object is a cache, or a file in LAL cache format,
+        otherwise `False`
+    """
+    if isinstance(cache, string_types + FILE_LIKE):
+        try:
+            c = read_cache(cache)
+        except TypeError:  # failed to parse cache
+            return False
+        else:
+            if not c:  # return empty file as False
+                return False
+            return True
+    elif HAS_CACHE and isinstance(cache, Cache):
+        return True
+    return False
+
+
 # -- cache manipulation -------------------------------------------------------
 
 def file_list(flist):

@@ -228,6 +228,28 @@ class TestIoCache(object):
             c3 = io_cache.read_cache(f.name)
             assert cache == c3
 
+    @utils.skip_missing_dependency('glue.lal')
+    def test_is_cache(self):
+        # sanity check
+        assert io_cache.is_cache(None) is False
+
+        # make sure Cache is returned as True
+        cache = io_cache.Cache()
+        assert io_cache.is_cache(cache) is True
+
+        # check file(path) is return as True if parsed as Cache
+        cache.append(io_cache.CacheEntry.from_T050017('/tmp/A-B-12345-6.txt'))
+        with tempfile.NamedTemporaryFile() as f:
+            # empty file should return False
+            assert io_cache.is_cache(f) is False
+            assert io_cache.is_cache(f.name) is False
+
+            # cache file should return True
+            io_cache.write_cache(cache, f)
+            f.seek(0)
+            assert io_cache.is_cache(f) is True
+            assert io_cache.is_cache(f.name) is True
+
     def test_file_list(self):
         cache = self.make_cache()[0]
 
