@@ -521,7 +521,7 @@ class TestTimeSeries(TestTimeSeriesBase):
     def losc(self):
         try:
             return self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, format='txt.gz')
+                LOSC_IFO, *LOSC_GW150914_SEGMENT)
         except URLError as e:
             pytest.skip(str(e))
 
@@ -529,8 +529,7 @@ class TestTimeSeries(TestTimeSeriesBase):
     def losc_16384(self):
         try:
             return self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, sample_rate=16384,
-                format='txt.gz')
+                LOSC_IFO, *LOSC_GW150914_SEGMENT, sample_rate=16384)
         except URLError as e:
             pytest.skip(str(e))
 
@@ -752,24 +751,32 @@ class TestTimeSeries(TestTimeSeriesBase):
     @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
                         reason='No LIGO datafind server configured '
                                'on this host')
-    def test_find_best_frametype(self):
+    @pytest.mark.parametrize('channel, expected', [
+        ('H1:GDS-CALIB_STRAIN', ['H1_HOFT_C00', 'H1_ER_C00_L1']),
+        ('L1:IMC-ODC_CHANNEL_OUT_DQ', ['L1_R']),
+        ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend', ['H1_T']),
+        ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend', ['H1_M'])
+    ])
+    def test_find_best_frametype(self, channel, expected):
         from gwpy.io import datafind
-        # test a few (channel, frametype) pairs
-        for channel, target in [
-                ('H1:GDS-CALIB_STRAIN',
-                    ['H1_HOFT_C00', 'H1_ER_C00_L1']),
-                ('L1:IMC-ODC_CHANNEL_OUT_DQ',
-                    ['L1_R']),
-                ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend',
-                    ['H1_T']),
-                ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend',
-                    ['H1_M'])]:
+        try:
             ft = datafind.find_best_frametype(
                 channel, 1143504017, 1143504017+100)
-            assert ft in target
+        except ValueError as exc:  # ignore
+            if str(exc).lower().startswith('cannot locate'):
+                pytest.skip(str(exc))
+            raise
+        assert ft in expected
 
-        # test that this works end-to-end as part of a TimeSeries.find
+    @utils.skip_missing_dependency('glue.datafind')
+    @utils.skip_missing_dependency('LDAStools.frameCPP')
+    @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
+                        reason='No LIGO datafind server configured '
+                               'on this host')
+    def test_find_best_frametype_in_find(self, losc_16384):
         ts = self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
+        utils.assert_quantity_sub_equal(ts, losc_16384,
+                                        exclude=['name', 'channel', 'unit'])
 
     def test_get(self, losc_16384):
         # get using datafind (maybe)
