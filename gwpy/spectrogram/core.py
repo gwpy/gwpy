@@ -351,6 +351,7 @@ class Spectrogram(Array2D):
         if not all(s.df == spec1.df for s in spectra):
             raise ValueError("Cannot stack spectra with different df")
         kwargs.setdefault('name', spec1.name)
+        kwargs.setdefault('channel', spec1.channel)
         kwargs.setdefault('epoch', spec1.epoch)
         kwargs.setdefault('f0', spec1.f0)
         kwargs.setdefault('df', spec1.df)

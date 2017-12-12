@@ -38,7 +38,7 @@ from six import string_types
 
 import numpy
 
-from astropy.io.registry import get_formats
+from astropy.io.registry import (get_formats, get_reader, get_writer)
 
 try:
     from glue.lal import Cache
@@ -385,12 +385,14 @@ def register_gwf_format(container):
         series class or series dict class to register
     """
     def read_(*args, **kwargs):
-        kwargs['format'] = 'gwf.{}'.format(get_default_gwf_api())
-        return container.read(*args, **kwargs)
+        fmt = 'gwf.{}'.format(get_default_gwf_api())
+        reader = get_reader(fmt, container)
+        return reader(*args, **kwargs)
 
     def write_(*args, **kwargs):
-        kwargs['format'] = 'gwf.{}'.format(get_default_gwf_api())
-        return container.write(*args, **kwargs)
+        fmt = 'gwf.{}'.format(get_default_gwf_api())
+        writer = get_writer(fmt, container)
+        return writer(*args, **kwargs)
 
     register_identifier('gwf', container, identify_gwf)
     register_reader('gwf', container, read_)
@@ -419,22 +421,22 @@ def register_library_format(container, library):
         name of frame library
     """
     fmt = 'gwf.%s' % library
+    reader = get_reader(fmt, container)
+    writer = get_writer(fmt, container)
 
     def read_(*args, **kwargs):
         warnings.warn("Reading with format=%r is deprecated and will be "
                       "disabled in an upcoming release, please use "
                       "format=%r instead" % (library, fmt),
                       DeprecationWarning)
-        kwargs['format'] = fmt
-        return container.read(*args, **kwargs)
+        return reader(*args, **kwargs)
 
     def write_(*args, **kwargs):
         warnings.warn("Writing with format=%r is deprecated and will be "
                       "disabled in an upcoming release, please use "
                       "format=%r instead" % (library, fmt),
                       DeprecationWarning)
-        kwargs['format'] = fmt
-        return container.write(*args, **kwargs)
+        return writer(*args, **kwargs)
 
     register_reader(library, container, read_)
     register_writer(library, container, write_)

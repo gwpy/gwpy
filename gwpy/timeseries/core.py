@@ -53,7 +53,7 @@ from astropy.io import registry as io_registry
 
 from ..types import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
-from ..io import datafind
+from ..io import (datafind, cache as io_cache)
 from ..io.mp import read_multi as io_read_multi
 from ..time import (Time, LIGOTimeGPS, to_gps)
 from ..utils import gprint
@@ -283,6 +283,14 @@ class TimeSeriesBase(Series):
 
         Notes
         -----"""
+        # if reading a cache, use specialised processor
+        if io_cache.is_cache(source):
+            from .io.cache import read_from_cache
+            kwargs['target'] = cls
+            return read_from_cache(source, *args, **kwargs)
+
+        # -- otherwise --------------------------
+
         gap = kwargs.pop('gap', 'raise')
         pad = kwargs.pop('pad', 0.)
 
@@ -820,6 +828,14 @@ class TimeSeriesBaseDict(OrderedDict):
 
         Notes
         -----"""
+        # if reading a cache, use specialised processor
+        if io_cache.is_cache(source):
+            from .io.cache import read_from_cache
+            kwargs['target'] = cls
+            return read_from_cache(source, *args, **kwargs)
+
+        # -- otherwise --------------------------
+
         gap = kwargs.pop('gap', 'raise')
         pad = kwargs.pop('pad', 0.)
 

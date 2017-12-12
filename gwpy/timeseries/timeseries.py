@@ -157,8 +157,8 @@ class TimeSeries(TimeSeriesBase):
             nfft = self.size
         dft = npfft.rfft(self.value, n=nfft) / nfft
         dft[1:] *= 2.0
-        new = FrequencySeries(dft, epoch=self.epoch, channel=self.channel,
-                              unit=self.unit)
+        new = FrequencySeries(dft, epoch=self.epoch, unit=self.unit,
+                              name=self.name, channel=self.channel)
         try:
             new.frequencies = npfft.rfftfreq(nfft, d=self.dx.value)
         except AttributeError:
