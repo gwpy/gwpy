@@ -71,7 +71,7 @@ FRVECT_TYPE_FROM_NUMPY = dict(
 # -- read ---------------------------------------------------------------------
 
 def read(source, channels, start=None, end=None, type=None,
-         series_class=TimeSeries, **kwargs):
+         series_class=TimeSeries):
     """Read a dict of series from one or more GWF files
     """
     # parse input source
@@ -88,13 +88,13 @@ def read(source, channels, start=None, end=None, type=None,
                 out[name] = numpy.require(out[name], requirements=['O'])
         # read frame
         out.append(read_gwf(file_, channels, start=start, end=end,
-                            ctype=ctype, series_class=series_class, **kwargs),
+                            ctype=ctype, series_class=series_class),
                    copy=False)
     return out
 
 
 def read_gwf(framefile, channels, start=None, end=None, ctype=None,
-             series_class=TimeSeries, nframes=None):
+             series_class=TimeSeries):
     """Read a dict of series data from a single GWF file
     """
     # parse kwargs
@@ -107,19 +107,16 @@ def read_gwf(framefile, channels, start=None, end=None, ctype=None,
     stream = frameCPP.IFrameFStream(str(framefile))
 
     # get number of frames in file
-    if nframes is None:
-        try:
-            nframes = int(stream.GetNumberOfFrames())
-        except (AttributeError, ValueError):
-            nframes = None
-    else:
-        nframes = int(nframes)
+    try:
+        nframe = int(stream.GetNumberOfFrames())
+    except (AttributeError, ValueError):
+        nframe = None
 
     # if single frame, trust filename to provide GPS epoch of data
     # as required by the file-naming convention
     epochs = None
     try:
-        if nframes == 1:
+        if nframe == 1:
             epochs = [file_segment(framefile)[0]]
     except ValueError:
         pass
@@ -167,7 +164,7 @@ def read_gwf(framefile, channels, start=None, end=None, ctype=None,
             datastart = epochs[i] + offset
             i += 1  # increment frame index before any 'continue'
             # check overlap with user-requested span
-            if end and datastart >= end and nframes == 1:
+            if end and datastart >= end and nframe == 1:
                 raise ValueError("Cannot read %s from FrVect in %s "
                                  "ending at %s" % (name, framefile, end))
             elif end and datastart >= end:  # don't need this frame
@@ -207,7 +204,7 @@ def read_gwf(framefile, channels, start=None, end=None, ctype=None,
                 else:
                     b = None
                 # if file only has ony frame, error on overlap problems
-                if a >= arr.size and nframes == 1:  # start too large
+                if a >= arr.size and nframe == 1:  # start too large
                     raise ValueError("Cannot read %s from FrVect in %s "
                                      "starting at %s"
                                      % (name, framefile, start))
