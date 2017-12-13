@@ -66,6 +66,23 @@ def _parse_nds_enum_dict_param(channels, key, value):
     return value
 
 
+def set_parameter(connection, parameter, value, verbose=False):
+    """Set a parameter for the connection, handling errors as warnings
+    """
+    value = str(value)
+    try:
+        if not connection.set_parameter(parameter, value):
+            raise ValueError("invalid parameter or value")
+    except (AttributeError, ValueError) as exc:
+        warnings.warn(
+            'failed to set {}={!r}: {}'.format(parameter, value, str(exc)),
+            io_nds2.NDSWarning)
+    else:
+        if verbose:
+            print('    [{}] set {}={!r}'.format(connection.get_host(),
+                                                parameter, value))
+
+
 @io_nds2.open_connection
 def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
           connection=None, host=None, port=None, pad=None, verbose=False,
@@ -77,15 +94,10 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
     This method sits underneath `TimeSeries.fetch` and related methods,
     and isn't really designed to be called directly.
     """
-    # set allow_tape parameter in connection
+    # set ALLOW_DATA_ON_TAPE
     if allow_tape is not None:
-        try:
-            connection.set_parameter('ALLOW_DATA_ON_TAPE', str(allow_tape))
-        except AttributeError:
-            warnings.warn("This version of the nds2-client does not "
-                          "support the allow_tape. This operation will "
-                          "continue using whatever default is set by the "
-                          "target NDS server", io_nds2.NDSWarning)
+        set_parameter(connection, 'ALLOW_DATA_ON_TAPE', str(allow_tape),
+                      verbose=verbose)
 
     type = _parse_nds_enum_dict_param(channels, 'type', type)
     dtype = _parse_nds_enum_dict_param(channels, 'dtype', dtype)
