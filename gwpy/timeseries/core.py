@@ -1041,6 +1041,9 @@ class TimeSeriesBaseDict(OrderedDict):
         from ..io import nds2 as io_nds2
         from .io.nds2 import (print_verbose, fetch)
 
+        if dtype is None:
+            dtype = {}
+
         # -- open a connection ------------------
 
         # open connection to specific host
@@ -1069,9 +1072,13 @@ class TimeSeriesBaseDict(OrderedDict):
                                          type=type, dtype=dtype, pad=pad,
                                          allow_tape=allow_tape_)
                     except (RuntimeError, ValueError) as exc:
-                        print_verbose('something went wrong:',
-                                      file=sys.stderr, verbose=verbose)
-                        warnings.warn(str(exc), io_nds2.NDSWarning)
+                        warnings.warn(str(exc).split('\n')[0],
+                                      io_nds2.NDSWarning)
+
+                # if failing occurred because of data on tape, don't try
+                # reading channels individually, the same error will occur
+                if not allow_tape_ and 'Requested data is on tape' in str(exc):
+                    continue
 
                 # if we got this far, we can't get all channels in one go
                 if len(channels) > 1:
