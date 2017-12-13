@@ -99,7 +99,8 @@ class changelog(Command):
         return ("{} ({}-1) unstable; urgency=low\n\n"
                 "  * {}\n\n"
                 " -- {} <{}>  {} {:+05d}\n".format(
-                    name, version, message, tagger.name, tagger.email, dstr, tz))
+                    name, version, message,
+                    tagger.name, tagger.email, dstr, tz))
 
     def get_git_tags(self):
         import git
@@ -125,7 +126,7 @@ class changelog(Command):
 
 
 CMDCLASS['changelog'] = changelog
-SETUP_REQUIRES['changelog'] = ('GitPython',)
+SETUP_REQUIRES['changelog'] = ('GitPython>=2.1.8',)
 
 orig_bdist_rpm = CMDCLASS.pop('bdist_rpm', _bdist_rpm)
 DEFAULT_SPEC_TEMPLATE = os.path.join('etc', 'spec.template')
@@ -207,7 +208,8 @@ class sdist(orig_sdist):
 
 
 CMDCLASS['sdist'] = sdist
-SETUP_REQUIRES['sdist'] = SETUP_REQUIRES['changelog'] + SETUP_REQUIRES['bdist_rpm']
+SETUP_REQUIRES['sdist'] = (SETUP_REQUIRES['changelog'] +
+                           SETUP_REQUIRES['bdist_rpm'])
 
 
 class clean(orig_clean):
