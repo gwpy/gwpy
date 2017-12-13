@@ -29,7 +29,7 @@ set -x && trap 'set +x' RETURN
 get_environment
 
 # install for this OS
-if [ ${TRAVIS_OS_NAME} == "osx" ]; then  # macports
+if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then  # macports
     . ci/install-macos.sh
 elif [[ ${DOCKER_IMAGE} =~ :el[0-9]+$ ]]; then  # SLX
     . ci/install-el.sh
