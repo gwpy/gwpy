@@ -282,7 +282,7 @@ def _find_latest_frame(connection, ifo, frametype, gpstime=None,
     else:
         if not os.access(frame.path, os.R_OK):
             raise IOError("Latest frame file for {}-{} is unreadable: "
-                               "{}".format(ifo, frametype, frame.path))
+                          "{}".format(ifo, frametype, frame.path))
         if not allow_tape and on_tape(frame.path):
             raise IOError("Latest frame file for {}-{} is on tape "
                           "(pass allow_tape=True to force): "
