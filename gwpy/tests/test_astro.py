@@ -84,7 +84,7 @@ def psd():
 def test_inspiral_range_psd(psd):
     """Test for :func:`gwpy.astro.inspiral_range_psd`
     """
-    r = astro.inspiral_range_psd(psd)
+    r = astro.inspiral_range_psd(psd[1:])  # avoid DC
     assert isinstance(r, FrequencySeries)
     utils.assert_quantity_almost_equal(r.max(),
                                        TEST_RESULTS['inspiral_range_psd'])
@@ -100,13 +100,13 @@ def test_inspiral_range(psd):
 def test_burst_range(psd):
     """Test for :func:`gwpy.astro.burst_range`
     """
-    r = astro.burst_range(psd[psd.frequencies.value < 1000])
+    r = astro.burst_range(psd.crop(None, 1000)[1:])
     utils.assert_quantity_almost_equal(r, TEST_RESULTS['burst_range'])
 
 
 def test_burst_range_spectrum(psd):
     """Test for :func:`gwpy.astro.burst_range_spectrum`
     """
-    r = astro.burst_range_spectrum(psd[psd.frequencies.value < 1000])
+    r = astro.burst_range_spectrum(psd.crop(None, 1000)[1:])
     utils.assert_quantity_almost_equal(r.max(),
                                        TEST_RESULTS['burst_range_spectrum'])
