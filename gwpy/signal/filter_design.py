@@ -72,6 +72,7 @@ def _design_iir(wp, ws, sample_rate, gpass, gstop,
     if analog:  # convert back to Hz
         z /= -TWO_PI
         p /= -TWO_PI
+        k *= TWO_PI ** z.size / -TWO_PI ** p.size
     if output == 'zpk':
         return z, p, k
     elif output == 'ba':
