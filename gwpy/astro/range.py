@@ -43,7 +43,7 @@ def _preformat_psd(func):
 
 @_preformat_psd
 def inspiral_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False):
-    """Compute the inspiral sensitive distance PSD for the given GW strain PSD
+    """Compute the inspiral sensitive distance PSD from a GW strain PSD
 
     Parameters
     ----------
@@ -103,7 +103,7 @@ def inspiral_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False):
 
 def inspiral_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
                    horizon=False):
-    """Calculate the inspiral sensitive distance for the given PSD
+    """Calculate the inspiral sensitive distance from a GW strain PSD
 
     The method returns the distance (in megaparsecs) to which an compact
     binary inspiral with the given component masses would be detectable
@@ -143,6 +143,21 @@ def inspiral_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
     -------
     range : `~astropy.units.Quantity`
         the calculated inspiral range [Mpc]
+
+    Examples
+    --------
+    Grab some data for LIGO-Livingston around GW150914 and generate a PSD
+
+    >>> from gwpy.timeseries import TimeSeries
+    >>> hoft = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+    >>> hoff = hoft.psd(fftlength=4)
+
+    Now we can calculate the :func:`inspiral_range`:
+
+    >>> from gwpy.astro import inspiral_range
+    >>> r = inspiral_range(hoff, fmin=30)
+    >>> print(r)
+    70.4612102889 Mpc
     """
     mass1 = units.Quantity(mass1, 'solMass').to('kg')
     mass2 = units.Quantity(mass2, 'solMass').to('kg')
@@ -175,7 +190,7 @@ def inspiral_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
 
 @_preformat_psd
 def burst_range_spectrum(psd, snr=8, energy=1e-2):
-    """Calculate the frequency-dependent GW burst range for the given PSD
+    """Calculate the frequency-dependent GW burst range from a strain PSD
 
     Parameters
     ----------
@@ -211,7 +226,7 @@ def burst_range_spectrum(psd, snr=8, energy=1e-2):
 
 
 def burst_range(psd, snr=8, energy=1e-2, fmin=100, fmax=500):
-    """Calculate the integrated GRB-like burst range for the given PSD
+    """Calculate the integrated GRB-like GW burst range from a strain PSD
 
     Parameters
     ----------
@@ -219,22 +234,40 @@ def burst_range(psd, snr=8, energy=1e-2, fmin=100, fmax=500):
         the instrumental power-spectral-density data
 
     snr : `float`, optional
-        the signal-to-noise ratio for which to calculate range
+        the signal-to-noise ratio for which to calculate range,
+        default: `8`
 
     energy : `float`, optional
         the relative energy output of the GW burst, defaults to 1e-2 for
         a GRB-like burst
 
     fmin : `float`, optional
-        the lower frequency cutoff of the burst range integral
+        the lower frequency cutoff of the burst range integral,
+        default: `100 Hz`
 
     fmax : `float, optional
-        the upper frequency cutoff of the burst range integral
+        the upper frequency cutoff of the burst range integral,
+        default: `500 Hz`
 
     Returns
     -------
     range : `~astropy.units.Quantity`
         the GRB-like-burst sensitive range [Mpc (default)]
+
+    Examples
+    --------
+    Grab some data for LIGO-Livingston around GW150914 and generate a PSD
+
+    >>> from gwpy.timeseries import TimeSeries
+    >>> hoft = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+    >>> hoff = hoft.psd(fftlength=4)
+
+    Now we can calculate the :func:`burst_range`:
+
+    >>> from gwpy.astro import burst_range
+    >>> r = burst_range(hoff, fmin=30)
+    >>> print(r)
+    42.5055584195 Mpc
     """
     freqs = psd.frequencies.value
     # restrict integral
