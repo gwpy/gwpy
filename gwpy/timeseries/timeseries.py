@@ -1060,7 +1060,7 @@ class TimeSeries(TimeSeriesBase):
                 sos = signal.zpk2sos(*filt)
             except AttributeError:  # scipy < 0.16, no SOS filtering
                 sos = None
-                b, a = filt
+                b, a = signal.zpk2tf(*filt)
         else:
             sos = None
             b, a = filt

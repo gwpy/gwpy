@@ -232,9 +232,9 @@ def parse_filter(args, analog=False, sample_rate=None):
 
     # parse FIR filter
     if isinstance(args, numpy.ndarray) and args.ndim == 1:  # fir
-        b, a = args, 1.
+        b, a = args, [1.]
         if analog:
-            b, a = signal.bilinear(b, a)
+            return 'ba', signal.bilinear(b, a)
         return 'ba', (b, a)
 
     # parse IIR filter
