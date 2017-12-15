@@ -130,6 +130,14 @@ class TestSignalFilterDesign(object):
             filter_design.concatenate_zpks(zpk1, zpk2),
             ([1, 2, 3, 1, 2, 3, 4], [4, 5, 6, 5, 6, 7, 8], 100))
 
+    def test_parse_filter(self):
+        fir = numpy.arange(10)
+        assert filter_design.parse_filter(fir) == ('ba', (fir, 1.))
+        zpk = ([1, 2, 3], [4, 5, 6], 1.)
+        parsed = filter_design.parse_filter(zpk)
+        assert parsed[0] == 'zpk'
+        utils.assert_zpk_equal(parsed[1], zpk)
+
 
 # -- gwpy.signal.window -------------------------------------------------------
 

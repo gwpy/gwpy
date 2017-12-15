@@ -25,12 +25,11 @@ import numpy
 
 from scipy import signal
 
-from ..signal.filter_design import with_digital_lti
+from ..signal.filter_design import parse_filter
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-@with_digital_lti
 def fdfilter(data, *filt, **kwargs):
     """Filter a frequency-domain data object
 
@@ -41,12 +40,17 @@ def fdfilter(data, *filt, **kwargs):
     """
     # parse keyword args
     inplace = kwargs.pop('inplace', False)
+    analog = kwargs.pop('analog', False)
+    fs = kwargs.pop('sample_rate', None)
     if kwargs:
         raise TypeError("filter() got an unexpected keyword argument '%s'"
                         % list(kwargs.keys())[0])
 
-    # decorator formats filt as (digital) signal.lti
-    lti = filt[0]
+    # parse filter
+    if fs is None:
+        fs = 2 * (data.shape[-1] * data.df).to('Hz').value
+    form, filt = parse_filter(filt, analog=analog, sample_rate=fs)
+    lti = signal.lti(*filt)
 
     # generate frequency response
     freqs = data.frequencies.value.copy()

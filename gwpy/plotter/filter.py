@@ -31,7 +31,7 @@ from astropy.units import Quantity
 
 from .core import Plot
 from ..frequencyseries import FrequencySeries
-from ..signal.filter_design import parse_digital_lti
+from ..signal.filter_design import parse_filter
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['BodePlot']
@@ -191,29 +191,25 @@ class BodePlot(Plot):
         mag, phase : `tuple` of `lines <matplotlib.lines.Line2D>`
             the lines drawn for the magnitude and phase of the filter.
         """
-        if not analog and not sample_rate:
-            raise ValueError("Must give sample_rate frequency to display "
-                             "digital (analog=False) filter")
-        elif not analog:
+        if not analog:
+            if not sample_rate:
+                raise ValueError("Must give sample_rate frequency to display "
+                                 "digital (analog=False) filter")
             sample_rate = Quantity(sample_rate, 'Hz').value
-
-        # parse filter (without digital conversions)
-        filter_ = parse_digital_lti(filter_, analog=False)
-
-        # calculate frequency response
-        if analog:
-            w, mag, phase = filter_.bode(w=frequencies)
-        else:
+            dt = 2 * pi / sample_rate
             if frequencies is not None:
                 frequencies = atleast_1d(frequencies)
-                frequencies *= 2 * pi / sample_rate
-            try:
-                filter_ = filter_.to_tf()
-            except AttributeError:  # scipy < 0.18, doesn't matter
-                pass
-            w, mag, phase = signal.dlti(
-                filter_.num, filter_.den).bode(w=frequencies)
-            w *= sample_rate / (2. * pi)  # convert frequencies to analog
+                frequencies *= dt
+
+        # parse filter (without digital conversions)
+        _, fcomp = parse_filter(filter_, analog=False)
+        if analog:
+            lti = signal.lti(*fcomp)
+        else:
+            lti = signal.dlti(*fcomp, dt=dt)
+
+        # calculate frequency response
+        w, mag, phase = lti.bode(w=frequencies)
 
         # convert from decibels
         if not dB:

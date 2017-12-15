@@ -196,8 +196,8 @@ def bilinear_zpk(zeros, poles, gain, fs=1.0, unit='Hz'):
     return dzeros, dpoles, dgain
 
 
-def parse_digital_lti(args, analog=False, sample_rate=None):
-    """Parse arbitrary input args as an LTI filter definition
+def parse_filter(args, analog=False, sample_rate=None):
+    """Parse arbitrary input args into a TF or ZPK filter definition
 
     Parameters
     ----------
@@ -214,8 +214,11 @@ def parse_digital_lti(args, analog=False, sample_rate=None):
 
     Returns
     -------
-    lti : `~scipy.signal.ZerosPolesGain`, `~scipy.signal.lti`
-        a formatted LTI filter in ZPK format
+    ftype : `str`
+        either ``'ba'`` or ``'zpk'``
+    filt : `tuple`
+        the filter components for the returned `ftype`, either a 2-tuple
+        for with transfer function components, or a 3-tuple for ZPK
     """
     if analog and not sample_rate:
         raise ValueError("Must give sample_rate frequency to convert "
@@ -228,72 +231,29 @@ def parse_digital_lti(args, analog=False, sample_rate=None):
 
     # parse FIR filter
     if isinstance(args, numpy.ndarray) and args.ndim == 1:  # fir
+        b, a = args, 1.
         if analog:
-            raise ValueError("Filtering with analog FIR filters is "
-                             "not supported")
-        try:
-            return signal.lti(args, [1.])
-        except ValueError as exc:
-            if str(exc).startswith('Improper transfer function'):
-                exc.args = ('{} scipy >= 0.16 is required to represent FIR '
-                            'filters as LTI.'.format(str(exc)),)
-            raise
+            b, a = signal.bilinear(b, a)
+        return 'ba', (b, a)
 
     # parse IIR filter
     if isinstance(args, LinearTimeInvariant):
         lti = args
     else:
-        lti = signal.lti(*args)
+        lti = signal.dlti(*args)
 
-    if analog:
-        lti = signal.lti(
-            *bilinear_zpk(lti.zeros, lti.poles, lti.gain, fs=sample_rate))
-
+    # convert to zpk format
     try:
-        return lti.to_zpk()
+        lti = lti.to_zpk()
     except AttributeError:  # scipy < 0.18, doesn't matter
-        return lti
+        pass
 
-
-def with_digital_lti(func):
-    """Decorate a function to pre-format a filter as a digital LTI system
-
-    This decorator interprets all positional arguments as a single
-    filter definition (c.f. `scipy.signal.lti`), and strips the following
-    keyword arguments
-
-    - ``analog`` : whether the input filter is digital or not
-    - ``sample_rate`` : the sampling rate at which to convert from analog
-
-    ``func`` should then be written to accept a single positional argument
-    as a `scipy.signal.ZerosPolesGain` with digital coefficients.
-    All other keyword arguments will be passed through untouched.
-    """
-    @wraps(func)
-    def decorated_func(self, *filt, **kwargs):
-        """Parse `args` to `scipy.signal.lti`, and pass to underlying function
-        """
-        # parse kwargs
-        analog = kwargs.pop('analog', False)
-        sample_rate = kwargs.pop('sample_rate', None)
-
-        if analog and not sample_rate:
-            # try and parse sample_rate from class instance
-            if hasattr(self, 'df'):
-                # FrequencySeries or Spectrogram
-                sample_rate = 2 * (
-                    self.f0 + (self.shape[-1] - 1) * self.df).to('Hz').value
-            elif hasattr(self, 'sample_rate'):
-                # TimeSeries
-                sample_rate = self.sample_rate.to('Hz').value
-
-        # parse filter as LTI
-        lti = parse_digital_lti(filt, analog=analog, sample_rate=sample_rate)
-
-        # call original function with ZerosPolesGain
-        return func(self, lti, **kwargs)
-
-    return decorated_func
+    # convert to digital components
+    if analog:
+        return 'zpk', bilinear_zpk(lti.zeros, lti.poles, lti.gain,
+                                   fs=sample_rate)
+    # return zpk
+    return 'zpk', (lti.zeros, lti.poles, lti.gain)
 
 
 # -- user methods -------------------------------------------------------------
