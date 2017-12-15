@@ -23,6 +23,7 @@ import os
 import tempfile
 import importlib
 import argparse
+import warnings
 
 import pytest
 
@@ -38,6 +39,9 @@ import mocks
 from mocks import mock
 import utils
 
+warnings.filterwarnings(
+    'ignore', category=UserWarning, message=".*non-GUI backend.*")
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 _, TEMP_PLOT_FILE = tempfile.mkstemp(prefix='GWPY-UNITTEST_', suffix='.png')
@@ -46,7 +50,8 @@ _, TEMP_PLOT_FILE = tempfile.mkstemp(prefix='GWPY-UNITTEST_', suffix='.png')
 class CliTestBase(object):
     PRODUCT_NAME = 'gwpy.cli.cliproduct.CliProduct'
     ACTION = None
-    TEST_ARGS = ['--chan', 'X1:TEST-CHANNEL', '--start', '1000000000']
+    TEST_ARGS = ['--chan', 'X1:TEST-CHANNEL', '--start', '1000000000',
+                 '--nds2-server', 'nds.test.gwpy']
 
     @classmethod
     def setup_class(cls):

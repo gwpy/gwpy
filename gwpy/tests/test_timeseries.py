@@ -713,16 +713,16 @@ class TestTimeSeries(TestTimeSeriesBase):
 
     @utils.skip_missing_dependency('nds2')
     def test_fetch(self):
-        ts = self.create(name='X1:TEST', t0=1000000000, unit='m')
+        ts = self.create(name='L1:TEST', t0=1000000000, unit='m')
         nds_buffer = mocks.nds2_buffer_from_timeseries(ts)
         nds_connection = mocks.nds2_connection(buffers=[nds_buffer])
         with mock.patch('nds2.connection') as mock_connection, \
                 mock.patch('nds2.buffer', nds_buffer):
             mock_connection.return_value = nds_connection
             # use verbose=True to hit more lines
-            ts2 = self.TEST_CLASS.fetch('X1:TEST', *ts.span, verbose=True)
+            ts2 = self.TEST_CLASS.fetch('L1:TEST', *ts.span, verbose=True)
             # check open connection works
-            ts2 = self.TEST_CLASS.fetch('X1:TEST', *ts.span, verbose=True,
+            ts2 = self.TEST_CLASS.fetch('L1:TEST', *ts.span, verbose=True,
                                         connection=nds_connection)
         utils.assert_quantity_sub_equal(ts, ts2, exclude=['channel'])
 
