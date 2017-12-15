@@ -149,14 +149,16 @@ class TestTable(object):
 
             # check auto-discovery of 'time' columns works
             from glue.ligolw.lsctables import LIGOTimeGPS
-            t3 = _read(columns=['time'])
+            with pytest.warns(DeprecationWarning):
+                t3 = _read(columns=['time'])
             assert 'time' in t3.columns
             assert isinstance(t3[0]['time'], LIGOTimeGPS)
             utils.assert_array_equal(
                 t3['time'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
 
             # check numpy type casting works
-            t3 = _read(columns=['time'], use_numpy_dtypes=True)
+            with pytest.warns(DeprecationWarning):
+                t3 = _read(columns=['time'], use_numpy_dtypes=True)
             assert t3['time'].dtype == dtype('float64')
             utils.assert_array_equal(
                 t3['time'], table['peak_time'] + table['peak_time_ns'] * 1e-9)

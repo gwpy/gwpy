@@ -20,6 +20,7 @@
 """
 
 import tempfile
+import warnings
 
 import pytest
 
@@ -60,6 +61,10 @@ from gwpy.plotter.tex import (float_to_latex, label_to_latex,
 from gwpy.plotter.table import get_column_string
 
 import utils
+
+# ignore matplotlib complaining about GUIs
+warnings.filterwarnings(
+    'ignore', category=UserWarning, message=".*non-GUI backend.*")
 
 # design ZPK for BodePlot test
 ZPK = [100], [1], 1e-2

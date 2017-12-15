@@ -572,7 +572,7 @@ class Series(Array):
                      % (self.dtype, other.dtype))
         return True
 
-    def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
+    def append(self, other, gap='raise', inplace=True, pad=0, resize=True):
         """Connect another series onto the end of the current one.
 
         Parameters
@@ -628,7 +628,7 @@ class Series(Array):
                             type(self).__name__, self.xspan, other.xspan))
                 gapshape = list(self.shape)
                 gapshape[0] = int(ngap)
-                padding = numpy.ones(gapshape, dtype=self.dtype) * pad
+                padding = (numpy.ones(gapshape) * pad).astype(self.dtype)
                 self.append(padding, inplace=True, resize=resize)
             elif gap == 'ignore':
                 pass
@@ -707,7 +707,7 @@ class Series(Array):
                 self.x0 = self.xindex[0]
         return self
 
-    def prepend(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
+    def prepend(self, other, gap='raise', inplace=True, pad=0, resize=True):
         """Connect another series onto the start of the current one.
 
         Parameters

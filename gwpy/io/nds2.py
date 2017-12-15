@@ -512,10 +512,6 @@ def minute_trend_times(start, end):
     mend : `int`
         ``end`` rounded up to nearest multiple of 60
     """
-    warnings.warn("Requested at least one minute trend, but "
-                  "start and stop GPS times are not modulo "
-                  "60-seconds (from GPS epoch). Times will be "
-                  "expanded outwards to compensate")
     if start % 60:
         start = int(start) // 60 * 60
     if end % 60:

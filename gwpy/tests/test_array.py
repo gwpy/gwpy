@@ -589,7 +589,7 @@ class TestArray2D(TestSeries):
     def setup_class(cls, dtype=None):
         numpy.random.seed(SEED)
         cls.data = (numpy.random.random(100)
-                    * 1e5).astype(dtype=dtype).reshape((10, 10))
+                    * 1e5).astype(dtype=dtype).reshape((20, 5))
         cls.datasq = cls.data ** 2
 
     # -- test properties ------------------------
@@ -623,7 +623,7 @@ class TestArray2D(TestSeries):
         assert array.dy == units.Quantity(5, 'm')
 
     def test_yindex(self):
-        y = numpy.linspace(0, 100, num=self.data.shape[0])
+        y = numpy.linspace(0, 100, num=self.data.shape[1])
 
         # test simple
         series = self.create(yindex=y)
@@ -633,8 +633,8 @@ class TestArray2D(TestSeries):
         # test deleter
         del series.yindex
         del series.yindex
-        y1 = series.y0.value + series.shape[0] * series.dy.value
-        y_default = numpy.linspace(series.y0.value, y1, num=series.shape[0],
+        y1 = series.y0.value + series.shape[1] * series.dy.value
+        y_default = numpy.linspace(series.y0.value, y1, num=series.shape[1],
                                    endpoint=False)
         utils.assert_quantity_equal(
             series.yindex,
@@ -677,10 +677,10 @@ class TestArray2D(TestSeries):
     def test_yspan(self):
         # test normal
         series = self.create(y0=1, dy=1)
-        assert series.yspan == (1, 1 + 1 * series.shape[0])
+        assert series.yspan == (1, 1 + 1 * series.shape[1])
         assert isinstance(series.yspan, Segment)
         # test from irregular yindex
-        y = numpy.logspace(0, 2, num=self.data.shape[0])
+        y = numpy.logspace(0, 2, num=self.data.shape[1])
         series = self.create(yindex=y)
         assert series.yspan == (y[0], y[-1] + y[-1] - y[-2])
 
@@ -709,11 +709,11 @@ class TestArray2D(TestSeries):
             array.is_compatible(a2)
 
     def test_value_at(self, array):
-        assert array.value_at(2, 5) == self.data[2][5] * array.unit
+        assert array.value_at(2, 3) == self.data[2][3] * array.unit
         assert array.value_at(5 * array.xunit, 2 * array.yunit) == (
             self.data[5][2] * array.unit)
         with pytest.raises(IndexError):
-            array.value_at(1.6, 5.8)
+            array.value_at(1.6, 4.8)
 
     def test_pad(self):
         return NotImplemented

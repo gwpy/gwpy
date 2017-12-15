@@ -57,6 +57,7 @@ from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.types import Array2D
 from gwpy.spectrogram import Spectrogram
 from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
+from gwpy.utils.misc import null_context
 
 import mocks
 import utils
@@ -713,16 +714,16 @@ class TestTimeSeries(TestTimeSeriesBase):
 
     @utils.skip_missing_dependency('nds2')
     def test_fetch(self):
-        ts = self.create(name='X1:TEST', t0=1000000000, unit='m')
+        ts = self.create(name='L1:TEST', t0=1000000000, unit='m')
         nds_buffer = mocks.nds2_buffer_from_timeseries(ts)
         nds_connection = mocks.nds2_connection(buffers=[nds_buffer])
         with mock.patch('nds2.connection') as mock_connection, \
                 mock.patch('nds2.buffer', nds_buffer):
             mock_connection.return_value = nds_connection
             # use verbose=True to hit more lines
-            ts2 = self.TEST_CLASS.fetch('X1:TEST', *ts.span, verbose=True)
+            ts2 = self.TEST_CLASS.fetch('L1:TEST', *ts.span, verbose=True)
             # check open connection works
-            ts2 = self.TEST_CLASS.fetch('X1:TEST', *ts.span, verbose=True,
+            ts2 = self.TEST_CLASS.fetch('L1:TEST', *ts.span, verbose=True,
                                         connection=nds_connection)
         utils.assert_quantity_sub_equal(ts, ts2, exclude=['channel'])
 
@@ -867,15 +868,24 @@ class TestTimeSeries(TestTimeSeriesBase):
     def test_psd_library(self, losc, library, method):
         method = '{}_{}'.format(library, method)
 
+        def _psd():
+            if method == 'lal_median_mean':
+                # LAL should warn about the data being the wrong length
+                warnctx = pytest.warns(UserWarning)
+            else:
+                warnctx = null_context()
+            with warnctx:
+                return losc.psd(fftlength=.5, overlap=.25, method=method)
+
         # check simple
-        psd = losc.psd(fftlength=.5, overlap=.25, method=method)
+        psd = _psd()
         assert isinstance(psd, FrequencySeries)
         assert psd.f0 == 0 * units.Hz
         assert psd.df == 2 * units.Hz
 
         # check window selection
         if library != 'pycbc':
-            losc.psd(fftlength=.5, method=method, window='hamming')
+            _psd()
 
     def test_asd(self, losc):
         fs = losc.asd()
@@ -925,31 +935,17 @@ class TestTimeSeries(TestTimeSeriesBase):
         # test multiprocessing
         sg2 = losc.spectrogram(0.5, fftlength=0.25, overlap=0.125, nproc=2)
         utils.assert_quantity_sub_equal(sg, sg2)
-        # test methods
-        sg = losc.spectrogram(0.5, fftlength=0.25, method='welch')
+
+        # test a couple of methods
+        with pytest.warns(UserWarning):
+            sg = losc.spectrogram(0.5, fftlength=0.25, method='welch')
         assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
         assert sg.df == 4 * units.Hertz
         assert sg.dt == 0.5 * units.second
-        sg = losc.spectrogram(0.5, fftlength=0.25, method='bartlett')
+        sg = losc.spectrogram(0.5, fftlength=0.25, method='scipy-bartlett')
         assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
         assert sg.df == 4 * units.Hertz
         assert sg.dt == 0.5 * units.second
-        try:
-            sg = losc.spectrogram(0.5, fftlength=0.25, method='lal-welch')
-        except ImportError:
-            pass
-        else:
-            assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
-            assert sg.df == 4 * units.Hertz
-            assert sg.dt == 0.5 * units.second
-            sg = losc.spectrogram(0.5, fftlength=0.25, method='median-mean')
-            assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
-            assert sg.df == 4 * units.Hertz
-            assert sg.dt == 0.5 * units.second
-            sg = losc.spectrogram(0.5, fftlength=0.25, method='median')
-            assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
-            assert sg.df == 4 * units.Hertz
-            assert sg.dt == 0.5 * units.second
 
         # check that `cross` keyword gets deprecated properly
         # TODO: removed before 1.0 release

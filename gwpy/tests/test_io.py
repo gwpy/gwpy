@@ -152,6 +152,11 @@ class TestIoNds2(object):
                        ('nds.ligo-la.caltech.edu', 31200),
                        ('nds.ligo.caltech.edu', 31200)]
 
+        # test warnings for unknown IFO
+        with pytest.warns(UserWarning):
+            hro = io_nds2.host_resolution_order('X1')
+            assert hro == [('nds.ligo.caltech.edu', 31200)]
+
     @utils.skip_missing_dependency('nds2')
     def test_connect(self):
         """Test :func:`gwpy.io.connect`
