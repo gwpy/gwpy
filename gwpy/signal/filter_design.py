@@ -61,15 +61,15 @@ def _design_iir(wp, ws, sample_rate, gpass, gstop,
     nyq = sample_rate / 2.
     wp = numpy.atleast_1d(wp)
     ws = numpy.atleast_1d(ws)
-    if analog:
+    if analog:  # convert Hz to rad/s
         wp *= TWO_PI
         ws *= TWO_PI
-    else:
+    else:  # convert Hz to half-cycles / sample
         wp /= nyq
         ws /= nyq
     z, p, k = signal.iirdesign(wp, ws, gpass, gstop, analog=analog,
                                ftype=ftype, output='zpk')
-    if analog:
+    if analog:  # convert back to Hz
         z /= -TWO_PI
         p /= -TWO_PI
     if output == 'zpk':
