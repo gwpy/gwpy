@@ -79,10 +79,11 @@ class GWpyFormat(Generic):
                 alt = sname.lower()
             else:
                 if cls.warn:
-                    warnings.warn('{0} Mathematical operations using this unit '
-                                  'should work, but conversions to other units '
-                                  'will not.'.format(str(exc).rstrip(' ')),
-                                  category=units.UnitsWarning)
+                    warnings.warn(
+                        '{0} Mathematical operations using this unit should '
+                        'work, but conversions to other units will '
+                        'not.'.format(str(exc).rstrip(' ')),
+                        category=units.UnitsWarning)
                 try:  # return previously created unit
                     return UNRECOGNIZED_UNITS[name]
                 except KeyError:  # or create new one now
@@ -125,7 +126,7 @@ def parse_unit(name, parse_strict='warn', format='gwpy'):
     try:
         return units.Unit(name, parse_strict='raise')
     except ValueError as exc:
-        if parse_strict == 'raise' or not 'did not parse as unit' in str(exc):
+        if parse_strict == 'raise' or 'did not parse as unit' not in str(exc):
             raise
         # try again using out own lenient parser
         GWpyFormat.warn = parse_strict != 'silent'  # don't warn if 'silent'
