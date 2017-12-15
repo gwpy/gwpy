@@ -241,7 +241,7 @@ def parse_filter(args, analog=False, sample_rate=None):
     if isinstance(args, LinearTimeInvariant):
         lti = args
     else:
-        lti = signal.dlti(*args)
+        lti = signal.lti(*args)
 
     # convert to zpk format
     try:
