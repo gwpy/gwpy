@@ -1051,32 +1051,19 @@ class TimeSeries(TimeSeriesBase):
         filtfilt = kwargs.pop('filtfilt', False)
 
         # parse filter
-        sos = None
-        try:
-            lti = filter_design.parse_digital_lti(
+        form, filt = filter_design.parse_filter(
                 filt, analog=kwargs.pop('analog', False),
-                sample_rate=self.sample_rate.to('Hz').value)
-        except ValueError:
-            if (len(filt) == 1 and isinstance(filt[0], numpy.ndarray) and
-                    filt[0].ndim == 1):  # FIR
-                a = [1.]
-                b = filt[0]
-        else:
-            # determine FIR or IIR
+                sample_rate=self.sample_rate.to('Hz').value,
+        )
+        if form == 'zpk':
             try:
-                if lti.den.shape == (1,) and lti.den[0] == (1.):  # FIR
-                    a = lti.den
-                    b = lti.num
-                else:
-                    raise AttributeError  # push into IIR parser
-            except AttributeError:  # IIR
-                # if here, we know that ``lti`` is a ZPK-compatible IIR filter
-                # so, try and convert to SOS
-                try:
-                    sos = signal.zpk2sos(lti.zeros, lti.poles, lti.gain)
-                except AttributeError:  # scipy < 0.16, no SOS filtering
-                    a = lti.den
-                    b = lti.num
+                sos = signal.zpk2sos(*filt)
+            except AttributeError:  # scipy < 0.16, no SOS filtering
+                sos = None
+                b, a = signal.zpk2tf(*filt)
+        else:
+            sos = None
+            b, a = filt
 
         # perform filter
         kwargs.setdefault('axis', 0)

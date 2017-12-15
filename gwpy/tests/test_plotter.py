@@ -924,7 +924,6 @@ class TestBodePlot(PlottingTestBase):
         assert paxes.get_xlabel() == 'Frequency [Hz]'
         assert paxes.get_yscale() == 'linear'
         assert paxes.get_ylabel() == 'Phase [deg]'
-        assert paxes.get_ylim() == (-185, 185)
 
     def test_add_filter(self):
         # test method 1
