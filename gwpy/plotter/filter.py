@@ -25,7 +25,7 @@ import numpy
 
 from scipy import signal
 
-from matplotlib.ticker import MultipleLocator
+from matplotlib.ticker import MaxNLocator
 
 from astropy.units import Quantity
 
@@ -136,8 +136,10 @@ class BodePlot(Plot):
         self.paxes.set_ylabel('Phase [deg]')
         self.maxes.set_xscale('log')
         self.paxes.set_xscale('log')
-        self.paxes.yaxis.set_major_locator(MultipleLocator(base=90))
-        self.paxes.set_ylim(-185, 185)
+        self.paxes.yaxis.set_major_locator(
+            MaxNLocator(nbins='auto', steps=[4.5, 9]))
+        self.paxes.yaxis.set_minor_locator(
+            MaxNLocator(nbins=20, steps=[4.5, 9]))
         if title:
             self.maxes.set_title(title)
 
