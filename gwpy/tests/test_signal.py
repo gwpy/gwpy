@@ -132,7 +132,7 @@ class TestSignalFilterDesign(object):
 
     def test_parse_filter(self):
         fir = numpy.arange(10)
-        assert filter_design.parse_filter(fir) == ('ba', (fir, 1.))
+        assert filter_design.parse_filter(fir) == ('ba', (fir, [1.]))
         zpk = ([1, 2, 3], [4, 5, 6], 1.)
         parsed = filter_design.parse_filter(zpk)
         assert parsed[0] == 'zpk'
