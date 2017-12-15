@@ -70,6 +70,7 @@ Working with data
 
    detector/channel
    time/index
+   astro/index
 
 .. ----------------------------------------------------------------
 .. other sections (not directly linked, but need for cross-linking)
