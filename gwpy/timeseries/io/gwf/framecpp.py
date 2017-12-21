@@ -21,6 +21,8 @@
 
 from __future__ import division
 
+from math import ceil
+
 from six import PY2
 
 import numpy
@@ -200,7 +202,7 @@ def read_gwf(framefile, channels, start=None, end=None, ctype=None,
                 dimend = dimstart + arr.size * dx
                 a = int(max(0., float(start-dimstart)) / dx)
                 if end:
-                    b = arr.size - int(max(0., float(dimend-end)) / dx)
+                    b = int(arr.size - ceil(max(0., float(dimend-end)) / dx))
                 else:
                     b = None
                 # if file only has ony frame, error on overlap problems
