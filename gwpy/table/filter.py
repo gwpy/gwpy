@@ -125,12 +125,21 @@ def parse_column_filter(definition):
         if any parsed operator string cannnot be mapped to a function from
         the `operator` module
 
+    Notes
+    -----
+    Strings that contain non-alphanumeric characters (e.g. hyphen `-`) should
+    be quoted inside the filter definition, to prevent such characters
+    being interpreted as operators, e.g. ``channel = X1:TEST`` should always
+    be passed as ``channel = "X1:TEST"``.
+
     Examples
     --------
     >>> parse_column_filter("frequency>10")
     [('frequency', <function operator.gt>, 10.)]
     >>> parse_column_filter("50 < snr < 100")
     [('snr', <function operator.gt>, 50.), ('snr', <function operator.lt>, 100.)]
+    >>> parse_column_filter("channel = "H1:TEST")
+    [('channel', <function operator.eq>, 'H1:TEST')]
     """  # nopep8
     # parse definition into parts
     parts = list(generate_tokens(StringIO(definition.strip()).readline))

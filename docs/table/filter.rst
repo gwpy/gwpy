@@ -79,6 +79,13 @@ Filters can be trivially chained (either in `str` form, or functional form)::
     -------- ------------- ---- ---- ---- -------- -------
     GW170814 1186741861.53 30.5 25.3 18.0      540     HLV
 
+=======
+Gotchas
+=======
+
+The parser used to intrepet simple filters doesn't recognised strings containing alpha-numeric characters as single words, meaning things like LIGO data channel names will get parsed incorrectly if not quoted.
+So, if in doubt, always pass a string in quotes; the quotes will get removed internally by the parser anyway. E.g., use ``channel = "X1:TEST"`` and not ``channel = X1:TEST``.
+
 ================
 Built-in filters
 ================
