@@ -42,7 +42,7 @@ Working with data
 **Working with frequency-domain data**
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    spectrum/index
    spectrogram/index
@@ -70,6 +70,7 @@ Working with data
 
    detector/channel
    time/index
+   astro/index
 
 .. ----------------------------------------------------------------
 .. other sections (not directly linked, but need for cross-linking)

@@ -23,9 +23,12 @@ an 'io' subdirectory of the containing directory for that class.
 """
 
 import os.path
+from contextlib import contextmanager
 from functools import wraps
 
 from six import string_types
+
+import numpy
 
 from .cache import (file_list, FILE_LIKE)
 
@@ -33,6 +36,30 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 XML_SIGNATURE = b'<?xml'
 LIGOLW_SIGNATURE = b'<!doctype ligo_lw'
+LIGOLW_ELEMENT = b'<ligo_lw>'
+
+
+# -- hack around around TypeError from LIGOTimeGPS(numpy.int32(...)) ----------
+
+def _ligotimegps(s, ns):
+    """Catch TypeError and cast `s` and `ns` to `int`
+    """
+    from lal import LIGOTimeGPS
+    try:
+        return LIGOTimeGPS(s, ns)
+    except TypeError:
+        return LIGOTimeGPS(int(s), int(ns))
+
+
+@contextmanager
+def patch_ligotimegps():
+    """Context manager to on-the-fly patch LIGOTimeGPS to accept all int types
+    """
+    from glue.ligolw import lsctables
+    orig = lsctables.LIGOTimeGPS
+    lsctables.LIGOTimeGPS = _ligotimegps
+    yield
+    lsctables.LIGOTimeGPS = orig
 
 
 # -- content handling ---------------------------------------------------------
@@ -137,17 +164,27 @@ def read_ligolw(source, contenthandler=None, verbose=False,
         the document object as parsed from the file(s)
     """
     from glue.ligolw.ligolw import (Document, LIGOLWContentHandler)
-    from glue.ligolw.utils.ligolw_add import ligolw_add
+    from glue.ligolw import types
     from glue.ligolw.lsctables import use_in
+    from glue.ligolw.utils.ligolw_add import ligolw_add
+
+    # mock ToPyType to link to numpy dtypes
+    topytype = types.ToPyType.copy()
+    for key in types.ToPyType:
+        if key in types.ToNumPyType:
+            types.ToPyType[key] = numpy.dtype(types.ToNumPyType[key]).type
 
     # set default content handler
     if contenthandler is None:
         contenthandler = use_in(LIGOLWContentHandler)
 
     # read one or more files into a single Document
-    return ligolw_add(Document(), file_list(source),
-                      contenthandler=contenthandler, verbose=verbose,
-                      non_lsc_tables_ok=non_lsc_tables_ok)
+    try:
+        return ligolw_add(Document(), file_list(source),
+                          contenthandler=contenthandler, verbose=verbose,
+                          non_lsc_tables_ok=non_lsc_tables_ok)
+    finally:  # replace ToPyType
+        types.ToPyType = topytype
 
 
 def with_read_ligolw(func=None, contenthandler=None):
@@ -447,8 +484,13 @@ def is_ligolw(origin, filepath, fileobj, *args, **kwargs):
         try:
             line1 = fileobj.readline().lower()
             line2 = fileobj.readline().lower()
-            return (line1.startswith(XML_SIGNATURE) and
-                    line2.startswith(LIGOLW_SIGNATURE))
+            try:
+                return (line1.startswith(XML_SIGNATURE) and
+                        line2.startswith((LIGOLW_SIGNATURE, LIGOLW_ELEMENT)))
+            except TypeError:  # bytes vs str
+                return (line1.startswith(XML_SIGNATURE.decode('utf-8')) and
+                        line2.startswith((LIGOLW_SIGNATURE.decode('utf-8'),
+                                          LIGOLW_ELEMENT.decode('utf-8'))))
         finally:
             fileobj.seek(loc)
     try:

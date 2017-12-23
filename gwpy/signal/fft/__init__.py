@@ -33,12 +33,46 @@ function into the sub-module and call
 to register it.
 
 To add another API from scratch, copy the format of the `gwpy.signal.fft.scipy`
-module.
+module, and then add it to the import below. The imports are ordered by
+preference (after `basic`).
 """
 
-from . import (  # pylint: disable=unused-import
-    scipy,
+from importlib import import_module
+
+from . import (
+    basic,
+    pycbc,  # <- PyCBC is preferred (better optimisation)
     lal,
+    scipy,
 )
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+
+def get_default_fft_api():
+    """Return the preferred FFT-API library
+
+    This is referenced to set the default methods for
+    `~gwpy.timeseries.TimeSeries` methods (amongst others)
+
+    Examples
+    --------
+    If you have :mod:`pycbc` installed:
+
+    >>> from gwpy.signal.fft import get_default_fft_api
+    >>> get_default_fft_api()
+    'pycbc'
+
+    If you just have a basic installation (from `pip install gwpy`):
+
+    >>> get_default_fft_api()
+    'scipy'
+    """
+    for lib in ('pycbc.psd', 'lal',):
+        try:
+            import_module(lib)
+        except ImportError:
+            pass
+        else:
+            return lib
+    return 'scipy'

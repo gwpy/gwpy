@@ -165,8 +165,13 @@ class Plot(figure.Figure):
     def close(self):
         """Close the plot and release its memory.
         """
-        for ax in self.axes:
+        for ax in self.axes[::-1]:
+            # avoid matplotlib/matplotlib#9970
+            ax.set_xscale('linear')
+            ax.set_yscale('linear')
+            # clear the axes
             ax.cla()
+        # close the figure
         pyplot.close(self)
 
     # -- colour bars ----------------------------

@@ -38,7 +38,7 @@ from six import string_types
 
 import numpy
 
-from astropy.io.registry import get_formats
+from astropy.io.registry import (get_formats, get_reader, get_writer)
 
 try:
     from glue.lal import Cache
@@ -56,7 +56,6 @@ from ....io.registry import (register_reader,
                              register_writer,
                              register_identifier)
 from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
-from ..cache import read_cache
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -122,6 +121,38 @@ def import_gwf_library(library, package=__package__):
     except ImportError as exc:
         exc.args = ('Cannot import %s frame API: %s' % (library, str(exc)),)
         raise
+
+
+def get_default_gwf_api():
+    """Return the preferred GWF library
+
+    Examples
+    --------
+    If you have |LDAStools.frameCPP|_ installed:
+
+    >>> from gwpy.timeseries.io.gwf import get_default_gwf_api
+    >>> get_default_gwf_api()
+    'framecpp'
+
+    Or, if you don't have |lalframe|_:
+
+    >>> get_default_gwf_api()
+    'lalframe'
+
+    Otherwise:
+
+    >>> get_default_gwf_api()
+    ImportError: no GWF API available, please install a third-party GWF library (framecpp, lalframe) and try again
+    """
+    for lib in APIS:
+        try:
+            import_gwf_library(lib)
+        except ImportError as e:
+            continue
+        else:
+            return lib
+    raise ImportError("no GWF API available, please install a third-party GWF "
+                      "library ({}) and try again".format(', '.join(APIS)))
 
 
 # -- generic I/O methods ------------------------------------------------------
@@ -197,13 +228,6 @@ def register_gwf_api(library):
         """
         # import the frame library here to have any ImportErrors occur early
         import_gwf_library(library)
-
-        # run with multiprocessing
-        if nproc > 1:
-            return read_cache(source, channels, start=start, end=end,
-                              gap=gap, pad=pad, resample=resample, dtype=dtype,
-                              nproc=nproc, format=fmt,
-                              target=series_class.DictClass, **kwargs)
 
         # -- from here read data
 
@@ -360,30 +384,15 @@ def register_gwf_format(container):
     container : `Series`, `dict`
         series class or series dict class to register
     """
-    formats = get_formats(data_class=container)
     def read_(*args, **kwargs):
-        for fmt in formats:
-            if fmt['Format'].startswith('gwf.'):
-                kwargs['format'] = fmt['Format']
-                try:
-                    return container.read(*args, **kwargs)
-                except ImportError:
-                    continue
-        raise ImportError("No GWF API available with which to read these "
-                          "data. Please install one of the third-party GWF "
-                          "libraries and try again")
+        fmt = 'gwf.{}'.format(get_default_gwf_api())
+        reader = get_reader(fmt, container)
+        return reader(*args, **kwargs)
 
     def write_(*args, **kwargs):
-        for fmt in formats:
-            if fmt['Format'].startswith('gwf.'):
-                kwargs['format'] = fmt['Format']
-                try:
-                    return container.write(*args, **kwargs)
-                except ImportError:
-                    continue
-        raise ImportError("No GWF API available with which to write these "
-                          "data. Please install one of the third-party GWF "
-                          "libraries and try again")
+        fmt = 'gwf.{}'.format(get_default_gwf_api())
+        writer = get_writer(fmt, container)
+        return writer(*args, **kwargs)
 
     register_identifier('gwf', container, identify_gwf)
     register_reader('gwf', container, read_)
@@ -412,22 +421,22 @@ def register_library_format(container, library):
         name of frame library
     """
     fmt = 'gwf.%s' % library
+    reader = get_reader(fmt, container)
+    writer = get_writer(fmt, container)
 
     def read_(*args, **kwargs):
         warnings.warn("Reading with format=%r is deprecated and will be "
                       "disabled in an upcoming release, please use "
                       "format=%r instead" % (library, fmt),
                       DeprecationWarning)
-        kwargs['format'] = fmt
-        return container.read(*args, **kwargs)
+        return reader(*args, **kwargs)
 
     def write_(*args, **kwargs):
         warnings.warn("Writing with format=%r is deprecated and will be "
                       "disabled in an upcoming release, please use "
                       "format=%r instead" % (library, fmt),
                       DeprecationWarning)
-        kwargs['format'] = fmt
-        return container.write(*args, **kwargs)
+        return writer(*args, **kwargs)
 
     register_reader(library, container, read_)
     register_writer(library, container, write_)

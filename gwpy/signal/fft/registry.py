@@ -79,7 +79,7 @@ def get_method(name, scaling='density'):
     try:
         return methods[name]
     except KeyError as exc:
-        exc.args = ("No FFT method (scaling=%r) registered with name %r"
+        exc.args = ("no FFT method (scaling=%r) registered with name %r"
                     % (scaling, name),)
         raise
 
@@ -112,7 +112,6 @@ def update_doc(obj, scaling='density'):
     for method in METHODS[scaling]:
         func = METHODS[scaling][method]
         rows.append((method, '`%s.%s`' % (func.__module__, func.__name__)))
-    rows.sort(key=lambda x: x[1])
     format_str = Table(rows=rows, names=['Method name', 'Function']).pformat(
         max_lines=-1, max_width=80, align=('>', '<'))
     format_str[1] = format_str[1].replace('-', '=')

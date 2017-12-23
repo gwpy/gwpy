@@ -122,8 +122,12 @@ setup(
 
     # classifiers
     classifiers=[
+        'Development Status :: 4 - Beta',
         'Programming Language :: Python',
-        'Development Status :: 3 - Alpha',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Intended Audience :: Science/Research',
         'Intended Audience :: End Users/Desktop',
         'Intended Audience :: Developers',

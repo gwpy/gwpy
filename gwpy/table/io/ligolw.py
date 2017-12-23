@@ -31,7 +31,8 @@ except ImportError:
 
 from ...io import registry
 from ...io.ligolw import (is_ligolw, read_table as read_ligolw_table,
-                          write_tables as write_ligolw_tables)
+                          write_tables as write_ligolw_tables,
+                          patch_ligotimegps)
 from .. import (Table, EventTable)
 from .utils import read_with_selection
 
@@ -41,11 +42,25 @@ __all__ = []
 # methods to exclude from get_as_columns conversions
 GET_AS_EXCLUDE = ['get_column', 'get_table']
 
+# map custom object types to numpy-compatible type
+NUMPY_TYPE_MAP = dict()
+try:
+    from glue.ligolw.lsctables import LIGOTimeGPS
+except ImportError:
+    pass
+else:
+    from glue.ligolw.ilwd import ilwdchar
+    from glue.ligolw._ilwd import ilwdchar as _ilwdchar
+    ilwdchar_types = (ilwdchar, _ilwdchar)
+    NUMPY_TYPE_MAP[ilwdchar_types] = numpy.int_
+    NUMPY_TYPE_MAP[LIGOTimeGPS] = numpy.float_
+
 
 # -- conversions --------------------------------------------------------------
 
 def to_astropy_table(llwtable, apytable, copy=False, columns=None,
-                     rename=None, on_attributeerror=None, get_as_columns=None):
+                     use_numpy_dtypes=False, rename=None,
+                     on_attributeerror=None, get_as_columns=None):
     """Convert a :class:`~glue.ligolw.table.Table` to an `~astropy.tableTable`
 
     This method is designed as an internal method to be attached to
@@ -66,6 +81,9 @@ def to_astropy_table(llwtable, apytable, copy=False, columns=None,
     columns : `list` of `str`, optional
         the columns to populate, if not given, all columns present in the
         table are mapped
+
+    use_map_dtypes : `bool`, optional
+        force column `dtypes
 
     rename : `dict`, optional
         dict of ('old name', 'new name') pairs to rename columns
@@ -109,21 +127,27 @@ def to_astropy_table(llwtable, apytable, copy=False, columns=None,
     # extract columns from LIGO_LW table as astropy.table.Column
     data = []
     for colname in columns:
-        # work out how to extract the column
+        # extract using Table.get_<>()
         if colname in getters:
-            arr = getattr(llwtable, 'get_{}'.format(colname))()
+            with patch_ligotimegps():
+                arr = getattr(llwtable, 'get_{}'.format(colname))()
+
+        # extract as standard column
         else:
             arr = llwtable.getColumnByName(colname)
-        # get the data
+
+        # transform to astropy.table.Column
         copythis = False if colname in getters else copy
         data.append(to_astropy_column(arr, apytable.Column, copy=copythis,
+                                      use_numpy_dtype=use_numpy_dtypes,
                                       name=rename.get(colname, colname)))
 
     # build table and return
     return apytable(data, copy=False, meta={'tablename': str(llwtable.Name)})
 
 
-def to_astropy_column(llwcol, cls, copy=False, dtype=None, **kwargs):
+def to_astropy_column(llwcol, cls, copy=False, dtype=None,
+                      use_numpy_dtype=False, **kwargs):
     """Convert a :class:`~glue.ligolw.table.Column` to `astropy.table.Column`
 
     Parameters
@@ -141,6 +165,10 @@ def to_astropy_column(llwcol, cls, copy=False, dtype=None, **kwargs):
     dtype : `type`, optional
         the data type to convert to when creating the `~astropy.table.Column`
 
+    use_numpy_dtype : `bool`, optional
+        convert object type to numpy dtype, default: `False`, only used
+        with ``dtype=None``
+
     **kwargs
         other keyword arguments are passed to the `~astropy.table.Column`
         creator
@@ -150,9 +178,30 @@ def to_astropy_column(llwcol, cls, copy=False, dtype=None, **kwargs):
     column : `~astropy.table.Column`
         an Astropy version of the given LIGO_LW column
     """
-    if dtype is None:
+    if dtype is None:  # try and find dtype
         dtype = _get_column_dtype(llwcol)
-    return cls(data=llwcol, copy=copy, dtype=dtype, **kwargs)
+        if use_numpy_dtype and numpy.dtype(dtype).type is numpy.object_:
+            # dtype maps to 'object' in numpy, try and resolve real numpy type
+            try:
+                dtype = NUMPY_TYPE_MAP[dtype]
+            except KeyError:
+                # try subclass matches (mainly for ilwdchar)
+                for key in NUMPY_TYPE_MAP:
+                    if issubclass(dtype, key):
+                        dtype = NUMPY_TYPE_MAP[key]
+                        break
+                else:  # no subclass matches, raise
+                    raise TypeError("no mapping from object type %r to numpy "
+                                    "type" % dtype)
+    try:
+        return cls(data=llwcol, copy=copy, dtype=dtype, **kwargs)
+    except TypeError:
+        # numpy tries to cast ilwdchar to int via long, which breaks
+        if dtype is numpy.int_ and isinstance(llwcol[0], ilwdchar_types):
+            return cls(data=map(dtype, llwcol),
+                       copy=False, dtype=dtype, **kwargs)
+        # any other error, raise
+        raise
 
 
 def _get_column_dtype(llwcol):
@@ -173,17 +222,17 @@ def _get_column_dtype(llwcol):
     try:  # maybe its a numpy array already!
         dtype = llwcol.dtype
         if dtype is numpy.dtype('O'):  # don't convert
-            return None
+            raise AttributeError
         return dtype
     except AttributeError:  # dang
         try:  # glue.ligolw.table.Column
             llwtype = llwcol.parentNode.validcolumns[llwcol.Name]
-        except AttributeError:  # custom iterator
+        except AttributeError:  # not a column
             try:
                 return type(llwcol[0])
             except IndexError:
                 return None
-        else:
+        else:  # map column type str to python type
             from glue.ligolw.types import (ToPyType, ToNumPyType)
             try:
                 return ToNumPyType[llwtype]
@@ -250,7 +299,8 @@ def read_table(source, tablename=None, **kwargs):
     convert_kw = {
         'on_attributeerror': None,  # deprecated
         'get_as_columns': None,  # deprecated
-        'rename': {},
+        'rename': None,
+        'use_numpy_dtypes': False,
     }
     for key in convert_kw:
         if key in kwargs:

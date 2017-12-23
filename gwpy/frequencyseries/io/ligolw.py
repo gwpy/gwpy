@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2017)
 #
 # This file is part of GWpy.
 #
@@ -16,13 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Input/Output routines for gwpy.frequencyseries
+"""LIGO_LW I/O registrations for gwpy.frequencyseries objects
 """
 
-from . import (  # pylint: disable=unused-import
-    ascii,
-    hdf5,
-    ligolw,
-)
+from ...io import registry as io_registry
+from ...io.ligolw import is_ligolw
+from ...types.io.ligolw import read_series
+from .. import FrequencySeries
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+# -- registration -------------------------------------------------------------
+
+io_registry.register_reader('ligolw', FrequencySeries, read_series)
+io_registry.register_identifier('ligolw', FrequencySeries, is_ligolw)

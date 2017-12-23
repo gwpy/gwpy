@@ -34,7 +34,7 @@ export GWPY_PATH
 ci_run() {
     # run a command normally, or in docker, depending on environment
     if [ -z "${DOCKER_IMAGE}" ]; then  # execute function normally
-        bash -lec "$@"
+        bash -ec "$@"
     else  # execute function in docker container
         docker exec -it ${DOCKER_IMAGE##*:} bash -lec "$@"
     fi
@@ -95,13 +95,8 @@ install_package() {
 }
 
 get_python_version() {
-    if [ -n "${PYTHON_VERSION}" ]; then
-        :
-    elif [ -n "${TRAVIS_PYTHON_VERSION}" ]; then
-        PYTHON_VERSION=${TRAVIS_PYTHON_VERSION}
-    else
-        PYTHON_VERSION=`python -c
-            'import sys; print(".".join(map(str, sys.version_info[:2])))'`
+    if [ -z ${PYTHON_VERSION} ]; then
+        PYTHON_VERSION=`python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'`
     fi
     export PYTHON_VERSION
     echo ${PYTHON_VERSION}
@@ -152,18 +147,6 @@ get_environment() {
 install_python() {
     get_environment  # <- set python variables
     install_package ${PY_DIST} ${PY_PREFIX}-pip ${PY_PREFIX}-setuptools
-}
-
-get_configparser_option() {
-    local fp=$1
-    local section=$2
-    local option=$3
-    $PYTHON -c "
-from configparser import ConfigParser
-cp = ConfigParser(defaults={'py-prefix': '${PY_PREFIX}'})
-cp.read('$fp');
-cp.set('$section', 'py-prefix', '${PY_PREFIX}')
-print(cp.get('$section', '$option'))"
 }
 
 # -- utilities ----------------------------------------------------------------

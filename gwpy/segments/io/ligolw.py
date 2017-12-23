@@ -27,7 +27,7 @@ from astropy.io import registry as io_registry
 
 from ...time import LIGOTimeGPS
 from ...io.ligolw import (is_xml, build_content_handler, read_ligolw,
-                          write_tables)
+                          write_tables, patch_ligotimegps)
 from ...segments import (DataQualityFlag, DataQualityDict)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -90,8 +90,9 @@ def read_ligolw_dict(source, flags=None, gpstype=LIGOTimeGPS, coalesce=False):
               table_ in (SegmentDefTable, SegmentSumTable, SegmentTable)]
 
     # parse tables
-    out = DataQualityDict.from_ligolw_tables(*tables, names=flags,
-                                             gpstype=gpstype)
+    with patch_ligotimegps():
+        out = DataQualityDict.from_ligolw_tables(*tables, names=flags,
+                                                 gpstype=gpstype)
 
     # coalesce
     if coalesce:

@@ -49,10 +49,12 @@ import numpy
 
 from astropy import units
 from astropy import __version__ as astropy_version
+from astropy.io import registry as io_registry
 
 from ..types import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
-from ..io import datafind
+from ..io import (datafind, cache as io_cache)
+from ..io.mp import read_multi as io_read_multi
 from ..time import (Time, LIGOTimeGPS, to_gps)
 from ..utils import gprint
 
@@ -62,12 +64,13 @@ __all__ = ['TimeSeriesBase', 'ArrayTimeSeries', 'TimeSeriesBaseDict']
 
 ASTROPY_2_0 = astropy_version >= '2.0'
 
-_UFUNC_STRING = {'less': '<',
-                 'less_equal': '<=',
-                 'equal': '==',
-                 'greater_equal': '>=',
-                 'greater': '>',
-                }
+_UFUNC_STRING = {
+    'less': '<',
+    'less_equal': '<=',
+    'equal': '==',
+    'greater_equal': '>=',
+    'greater': '>',
+}
 
 
 def _format_time(gps):
@@ -122,7 +125,7 @@ class TimeSeriesBase(Series):
         allow passing of sub-classes by the array generator
     """
     _default_xunit = units.second
-    _print_slots = ['t0', 'dt', 'name', 'channel']
+    _print_slots = ('t0', 'dt', 'name', 'channel')
     DictClass = None
 
     def __new__(cls, data, unit=None, t0=None, dt=None, sample_rate=None,
@@ -224,6 +227,97 @@ class TimeSeriesBase(Series):
     # -- TimeSeries accessors -------------------
 
     @classmethod
+    def read(cls, source, *args, **kwargs):
+        """Read data into a `TimeSeries`
+
+        Arguments and keywords depend on the output format, see the
+        online documentation for full details for each format, the parameters
+        below are common to most formats.
+
+        Parameters
+        ----------
+        source : `str`, :class:`~glue.lal.Cache`
+            source of data, any of the following:
+
+            - `str` path of single data file
+            - `str` path of LAL-format cache file
+            - :class:`~glue.lal.Cache` describing one or more data files,
+
+        name : `str`, `~gwpy.detector.Channel`
+            the name of the channel to read, or a `Channel` object.
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS start time of required data, defaults to start of data found;
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, defaults to end of data found;
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+
+        nproc : `int`, optional
+            number of parallel processes to use, serial process by
+            default.
+
+            .. note::
+
+               Parallel frame reading, via the ``nproc`` keyword argument,
+               is only available when giving a :class:`~glue.lal.Cache` of
+               frames, or using the ``format='cache'`` keyword argument.
+
+        gap : `str`, optional
+            how to handle gaps in the cache, one of
+
+            - 'ignore': do nothing, let the undelying reader method handle it
+            - 'warn': do nothing except print a warning to the screen
+            - 'raise': raise an exception upon finding a gap (default)
+            - 'pad': insert a value to fill the gaps
+
+        pad : `float`, optional
+            value with which to fill gaps in the source data, only used if
+            gap is not given, or `gap='pad'` is given
+
+        Notes
+        -----"""
+        # if reading a cache, use specialised processor
+        if io_cache.is_cache(source):
+            from .io.cache import read_from_cache
+            kwargs['target'] = cls
+            return read_from_cache(source, *args, **kwargs)
+
+        # -- otherwise --------------------------
+
+        gap = kwargs.pop('gap', 'raise')
+        pad = kwargs.pop('pad', 0.)
+
+        def _join(arrays):
+            list_ = TimeSeriesBaseList(*arrays)
+            return list_.join(pad=pad, gap=gap)
+
+        return io_read_multi(_join, cls, source, *args, **kwargs)
+
+    def write(self, target, *args, **kwargs):
+        """Write this `TimeSeries` to a file
+
+        Parameters
+        ----------
+        target : `str`
+            path of output file
+
+        format : `str`, optional
+            output format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+
+        Notes
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
+
+    @classmethod
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
               connection=None, verify=False, pad=None, allow_tape=None,
               type=None, dtype=None):
@@ -272,7 +366,7 @@ class TimeSeriesBase(Series):
     @classmethod
     def fetch_open_data(cls, ifo, start, end, sample_rate=4096,
                         format=None, host='https://losc.ligo.org',
-                        verbose=False, **kwargs):
+                        verbose=False, cache=False, **kwargs):
         """Fetch open-access data from the LIGO Open Science Center
 
         Parameters
@@ -289,32 +383,77 @@ class TimeSeriesBase(Series):
             GPS end time of required data, defaults to end of data found;
             any input parseable by `~gwpy.time.to_gps` is fine
 
-        sample_rate : `float`, optional, default: `4096`
-            the sample rate of desired data. Most data are stored
+        sample_rate : `float`, optional,
+            the sample rate of desired data; most data are stored
             by LOSC at 4096 Hz, however there may be event-related
-            data releases with a 16384 Hz rate
+            data releases with a 16384 Hz rate, default: `4096`
 
         format : `str`, optional
-            the data format to download and parse, defaults to 'txt.gz'
-            which requires no extra packages. Other options include
+            the data format to download and parse, defaults to the most
+            efficient option based on third-party libraries available;
+            one of:
 
+            - ``'txt.gz'`` - requires `numpy`
             - ``'hdf5'`` - requires |h5py|_
             - ``'gwf'`` - requires |LDAStools.frameCPP|_
-
-        verbose : `bool`, optional, default: `False`
-            print verbose output while fetching data
 
         host : `str`, optional
             HTTP host name of LOSC server to access
 
+        verbose : `bool`, optional, default: `False`
+            print verbose output while fetching data
+
+        cache : `bool`, optional
+            save/read a local copy of the remote URL, default: `False`;
+            useful if the same remote data are to be accessed multiple times
+
         **kwargs
             any other keyword arguments are passed to the `TimeSeries.read`
             method that parses the file that was downloaded
+
+        Examples
+        --------
+        >>> from gwpy.timeseries import (TimeSeries, StateVector)
+        >>> print(TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+        TimeSeries([  2.17704028e-19,  2.08763900e-19,  2.39681183e-19,
+                    ...,   3.55365541e-20,  6.33533516e-20,
+                      7.58121195e-20]
+                   unit: Unit(dimensionless),
+                   t0: 1126259446.0 s,
+                   dt: 0.000244140625 s,
+                   name: Strain,
+                   channel: None)
+        >>> print(StateVector.fetch_open_data('H1', 1126259446, 1126259478)
+        StateVector([127,127,127,127,127,127,127,127,127,127,127,127,
+                     127,127,127,127,127,127,127,127,127,127,127,127,
+                     127,127,127,127,127,127,127,127]
+                    unit: Unit(dimensionless),
+                    t0: 1126259446.0 s,
+                    dt: 1.0 s,
+                    name: Data quality,
+                    channel: None,
+                    bits: Bits(0: data present
+                               1: passes cbc CAT1 test
+                               2: passes cbc CAT2 test
+                               3: passes cbc CAT3 test
+                               4: passes burst CAT1 test
+                               5: passes burst CAT2 test
+                               6: passes burst CAT3 test,
+                               channel=None,
+                               epoch=1126259446.0))
+
+        For the `StateVector`, the naming of the bits will be
+        ``format``-dependent, because they are recorded differently by LOSC
+        in different formats.
+
+        Notes
+        -----
+        `StateVector` data are not available in ``txt.gz`` format.
         """
         from .io.losc import fetch_losc_data
-        return fetch_losc_data(ifo, start, end, cls=cls,
-                               sample_rate=sample_rate, format=format,
-                               host=host, verbose=verbose, **kwargs)
+        return fetch_losc_data(ifo, start, end, sample_rate=sample_rate,
+                               format=format, verbose=verbose, cache=cache,
+                               host=host, cls=cls, **kwargs)
 
     @classmethod
     def find(cls, channel, start, end, frametype=None,
@@ -633,6 +772,104 @@ class TimeSeriesBaseDict(OrderedDict):
     """
     EntryClass = TimeSeriesBase
 
+    @classmethod
+    def read(cls, source, *args, **kwargs):
+        """Read data for multiple channels into a `TimeSeriesDict`
+
+        Parameters
+        ----------
+        source : `str`, :class:`~glue.lal.Cache`
+            a single file path `str`, or a :class:`~glue.lal.Cache` containing
+            a contiguous list of files.
+
+        channels : `~gwpy.detector.channel.ChannelList`, `list`
+            a list of channels to read from the source.
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str` optional
+            GPS start time of required data, anything parseable by
+            :func:`~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, anything parseable by
+            :func:`~gwpy.time.to_gps` is fine
+
+        format : `str`, optional
+            source format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+
+        nproc : `int`, optional
+            number of parallel processes to use, serial process by
+            default.
+
+            .. note::
+
+               Parallel frame reading, via the ``nproc`` keyword argument,
+               is only available when giving a :class:`~glue.lal.Cache` of
+               frames, or using the ``format='cache'`` keyword argument.
+
+        gap : `str`, optional
+            how to handle gaps in the cache, one of
+
+            - 'ignore': do nothing, let the undelying reader method handle it
+            - 'warn': do nothing except print a warning to the screen
+            - 'raise': raise an exception upon finding a gap (default)
+            - 'pad': insert a value to fill the gaps
+
+        pad : `float`, optional
+            value with which to fill gaps in the source data, only used if
+            gap is not given, or `gap='pad'` is given
+
+        Returns
+        -------
+        tsdict : `TimeSeriesDict`
+            a `TimeSeriesDict` of (`channel`, `TimeSeries`) pairs. The keys
+            are guaranteed to be the ordered list `channels` as given.
+
+        Notes
+        -----"""
+        # if reading a cache, use specialised processor
+        if io_cache.is_cache(source):
+            from .io.cache import read_from_cache
+            kwargs['target'] = cls
+            return read_from_cache(source, *args, **kwargs)
+
+        # -- otherwise --------------------------
+
+        gap = kwargs.pop('gap', 'raise')
+        pad = kwargs.pop('pad', 0.)
+
+        def _join(data):
+            out = cls()
+            data = list(data)
+            while data:
+                tsd = data.pop(0)
+                out.append(tsd, gap=gap, pad=pad)
+                del tsd
+            return out
+
+        return io_read_multi(_join, cls, source, *args, **kwargs)
+
+    def write(self, target, *args, **kwargs):
+        """Write this `TimeSeriesDict` to a file
+
+        Arguments and keywords depend on the output format, see the
+        online documentation for full details for each format.
+
+        Parameters
+        ----------
+        target : `str`
+            output filename
+
+        format : `str`, optional
+            output format identifier. If not given, the format will be
+            detected if possible. See below for list of acceptable
+            formats.
+
+        Notes
+        -----"""
+        return io_registry.write(self, target, *args, **kwargs)
+
     def __iadd__(self, other):
         return self.append(other)
 
@@ -804,6 +1041,9 @@ class TimeSeriesBaseDict(OrderedDict):
         from ..io import nds2 as io_nds2
         from .io.nds2 import (print_verbose, fetch)
 
+        if dtype is None:
+            dtype = {}
+
         # -- open a connection ------------------
 
         # open connection to specific host
@@ -832,9 +1072,13 @@ class TimeSeriesBaseDict(OrderedDict):
                                          type=type, dtype=dtype, pad=pad,
                                          allow_tape=allow_tape_)
                     except (RuntimeError, ValueError) as exc:
-                        print_verbose('something went wrong:',
-                                      file=sys.stderr, verbose=verbose)
-                        warnings.warn(str(exc), io_nds2.NDSWarning)
+                        warnings.warn(str(exc).split('\n')[0],
+                                      io_nds2.NDSWarning)
+
+                # if failing occurred because of data on tape, don't try
+                # reading channels individually, the same error will occur
+                if not allow_tape_ and 'Requested data is on tape' in str(exc):
+                    continue
 
                 # if we got this far, we can't get all channels in one go
                 if len(channels) > 1:
@@ -847,8 +1091,8 @@ class TimeSeriesBaseDict(OrderedDict):
                         for c in channels)
             err = "Cannot find all relevant data on any known server."
             if not verbose:
-                err += (" Try again using the verbose=True keyword argument to "
-                        "see detailed failures.")
+                err += (" Try again using the verbose=True keyword argument "
+                        " to see detailed failures.")
             raise RuntimeError(err)
 
         # -- at this point we have an open connection, so perform fetch
@@ -936,7 +1180,7 @@ class TimeSeriesBaseDict(OrderedDict):
         out = cls()
         for frametype, clist in frametypes.items():
             if verbose:
-                gprint("Reading data from %s frames..." % frametype, end=' ')
+                verbose = "Reading {} frames:".format(frametype)
             # parse as a ChannelList
             channellist = ChannelList.from_names(*clist)
             # strip trend tags from channel names
@@ -959,12 +1203,11 @@ class TimeSeriesBaseDict(OrderedDict):
             # read data
             readargs.setdefault('format', 'gwf')
             new = cls.read(cache, names, start=start, end=end, pad=pad,
-                           dtype=dtype, nproc=nproc, **readargs)
+                           dtype=dtype, nproc=nproc, verbose=verbose,
+                           **readargs)
             # map back to user-given channel name and append
             out.append(type(new)((key, new[chan]) for
                                  (key, chan) in zip(clist, names)))
-            if verbose:
-                gprint("Done")
         return out
 
     @classmethod

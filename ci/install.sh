@@ -29,21 +29,22 @@ set -x && trap 'set +x' RETURN
 get_environment
 
 # install for this OS
-if [ ${TRAVIS_OS_NAME} == "osx" ]; then  # macports
+if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then  # macports
     . ci/install-macos.sh
 elif [[ ${DOCKER_IMAGE} =~ :el[0-9]+$ ]]; then  # SLX
     . ci/install-el.sh
 elif [ -n "${DOCKER_IMAGE}" ]; then  # debian
     . ci/install-debian.sh
 else  # simple pip build
-    ${PIP} install .
+    ${PIP} install . ${PIP_FLAGS}
     ${PIP} install -r requirements-dev.txt ${PIP_FLAGS}
 fi
 
 cd /tmp
+_gwpyloc=`${PYTHON} -c 'import gwpy; print(gwpy.__file__)'`
 echo "------------------------------------------------------------------------"
 echo
-echo "GWpy installed to `${PYTHON} -c 'import gwpy; print(gwpy.__file__)'`"
+echo "GWpy installed to $_gwpyloc"
 echo
 echo "------------------------------------------------------------------------"
-cd -
+cd - 1> /dev/null

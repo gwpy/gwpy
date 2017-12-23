@@ -24,10 +24,14 @@ from math import pi
 import numpy
 
 from scipy import signal
-from matplotlib.ticker import MultipleLocator
+
+from matplotlib.ticker import MaxNLocator
+
+from astropy.units import Quantity
 
 from .core import Plot
 from ..frequencyseries import FrequencySeries
+from ..signal.filter_design import parse_filter
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['BodePlot']
@@ -132,8 +136,14 @@ class BodePlot(Plot):
         self.paxes.set_ylabel('Phase [deg]')
         self.maxes.set_xscale('log')
         self.paxes.set_xscale('log')
-        self.paxes.yaxis.set_major_locator(MultipleLocator(base=90))
-        self.paxes.set_ylim(-185, 185)
+        try:
+            self.paxes.yaxis.set_major_locator(
+                MaxNLocator(nbins='auto', steps=[4.5, 9]))
+        except ValueError:  # matplotlib < 2.0
+            self.paxes.yaxis.set_major_locator(
+                MaxNLocator(nbins=9, steps=[4.5, 9]))
+        self.paxes.yaxis.set_minor_locator(
+            MaxNLocator(nbins=20, steps=[4.5, 9]))
         if title:
             self.maxes.set_title(title)
 
@@ -187,37 +197,31 @@ class BodePlot(Plot):
         mag, phase : `tuple` of `lines <matplotlib.lines.Line2D>`
             the lines drawn for the magnitude and phase of the filter.
         """
-        # validate arguments
-        if not analog and not sample_rate:
-            raise ValueError("Must give sample_rate frequency to display "
-                             "digital (analog=False) filter")
-        elif not analog:
-            try:
-                sample_rate = float(sample_rate)
-            except TypeError:  # Quantity
-                sample_rate = float(sample_rate.value)
-        # format array of frequencies
-        if frequencies is None:
-            w = None
-        # convert to rad/s
-        elif not analog and isinstance(frequencies, numpy.ndarray):
-            w = frequencies * 2. * pi / sample_rate
-        # if array, presume taps for FIR
-        if isinstance(filter_, numpy.ndarray):
-            filter_ = (filter_, [1])
-        # convert filter to LTI form (ba)
-        if analog and not isinstance(filter_, signal.lti):
-            filter_ = signal.lti(*filter_)
-        elif not isinstance(filter_, signal.lti):
-            filter_ = signal.dlti(*filter_)
-        # calculate frequency response
-        w, mag, phase = filter_.bode(w=w)
         if not analog:
-            w *= sample_rate / (2. * pi)
+            if not sample_rate:
+                raise ValueError("Must give sample_rate frequency to display "
+                                 "digital (analog=False) filter")
+            sample_rate = Quantity(sample_rate, 'Hz').value
+            dt = 2 * pi / sample_rate
+            if frequencies is not None:
+                frequencies = atleast_1d(frequencies)
+                frequencies *= dt
+
+        # parse filter (without digital conversions)
+        _, fcomp = parse_filter(filter_, analog=False)
+        if analog:
+            lti = signal.lti(*fcomp)
+        else:
+            lti = signal.dlti(*fcomp, dt=dt)
+
+        # calculate frequency response
+        w, mag, phase = lti.bode(w=frequencies)
+
         # convert from decibels
         if not dB:
             mag = 10 ** (mag / 10.)
-        # append to figure
+
+        # draw
         mline = self.maxes.plot(w, mag, **kwargs)[0]
         pline = self.paxes.plot(w, phase, **kwargs)[0]
         return mline, pline

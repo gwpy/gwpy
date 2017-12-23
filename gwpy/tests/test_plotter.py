@@ -20,6 +20,7 @@
 """
 
 import tempfile
+import warnings
 
 import pytest
 
@@ -60,6 +61,10 @@ from gwpy.plotter.tex import (float_to_latex, label_to_latex,
 from gwpy.plotter.table import get_column_string
 
 import utils
+
+# ignore matplotlib complaining about GUIs
+warnings.filterwarnings(
+    'ignore', category=UserWarning, message=".*non-GUI backend.*")
 
 # design ZPK for BodePlot test
 ZPK = [100], [1], 1e-2
@@ -579,7 +584,7 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
     def test_plot_spectrogram(self):
         fig, ax = self.new()
         # check method
-        ax.plot_spectrogram(self.sg)
+        ax.plot_spectrogram(self.sg, imshow=False)
         coll = ax.collections[0]
         nptest.assert_array_equal(coll.get_array(), self.sg.value.T.flatten())
         # check GPS axis is set ok
@@ -919,7 +924,6 @@ class TestBodePlot(PlottingTestBase):
         assert paxes.get_xlabel() == 'Frequency [Hz]'
         assert paxes.get_yscale() == 'linear'
         assert paxes.get_ylabel() == 'Phase [deg]'
-        assert paxes.get_ylim() == (-185, 185)
 
     def test_add_filter(self):
         # test method 1

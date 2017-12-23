@@ -51,17 +51,31 @@ def read_hdf5_array(source, path=None, array_type=Array):
     """
     dataset = io_hdf5.find_dataset(source, path=path)
     attrs = dict(dataset.attrs)
-    try:  # unpickle channel object
-        attrs['channel'] = pickle.loads(attrs['channel'])
+    # unpickle channel object
+    try:
+        attrs['channel'] = _unpickle_channel(attrs['channel'])
     except KeyError:  # no channel stored
-        pass
-    except ValueError:  # not pickled
         pass
     # unpack byte strings for python3
     for key in attrs:
         if isinstance(attrs[key], bytes):
             attrs[key] = attrs[key].decode('utf-8')
     return array_type(dataset[()], **attrs)
+
+
+def _unpickle_channel(raw):
+    """Try and unpickle a channel with sensible error handling
+    """
+    try:
+        return pickle.loads(raw)
+    except (ValueError, pickle.UnpicklingError) as exc:  # maybe not pickled
+        if isinstance(raw, bytes):
+            raw = raw.decode('utf-8')
+        try:  # test if this is a valid channel name
+            Channel.MATCH.match(raw)
+        except ValueError:
+            raise exc
+        return raw
 
 
 # -- write --------------------------------------------------------------------

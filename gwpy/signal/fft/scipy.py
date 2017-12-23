@@ -32,6 +32,8 @@ from . import registry as fft_registry
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
+# -- density scaling methods --------------------------------------------------
+
 def welch(timeseries, segmentlength, noverlap=None, **kwargs):
     """Calculate a PSD of this `TimeSeries` using Welch's method.
 
@@ -67,8 +69,6 @@ def welch(timeseries, segmentlength, noverlap=None, **kwargs):
                            name=timeseries.name, epoch=timeseries.epoch,
                            channel=timeseries.channel)
 
-fft_registry.register_method(welch, scaling='density')
-
 
 def bartlett(timeseries, segmentlength, **kwargs):
     """Calculate a PSD of this `TimeSeries` using Bartlett's method
@@ -96,8 +96,14 @@ def bartlett(timeseries, segmentlength, **kwargs):
     kwargs.pop('noverlap', None)
     return welch(timeseries, segmentlength, noverlap=0, **kwargs)
 
-fft_registry.register_method(bartlett, scaling='density')
 
+# register
+for func in (welch, bartlett,):
+    fft_registry.register_method(func, name='scipy-{}'.format(func.__name__),
+                                 scaling='density')
+
+
+# -- other scaling methods ----------------------------------------------------
 
 def rayleigh(timeseries, segmentlength, noverlap=0):
     """Calculate a Rayleigh statistic spectrum
@@ -135,8 +141,6 @@ def rayleigh(timeseries, segmentlength, noverlap=0):
                            df=timeseries.sample_rate.value/segmentlength,
                            channel=timeseries.channel,
                            name='Rayleigh spectrum of %s' % timeseries.name)
-
-fft_registry.register_method(rayleigh, scaling='other')
 
 
 def csd(timeseries, other, segmentlength, noverlap=None, **kwargs):
@@ -186,4 +190,12 @@ def csd(timeseries, other, segmentlength, noverlap=None, **kwargs):
         name=str(timeseries.name)+'---'+str(other.name),
         epoch=timeseries.epoch, channel=timeseries.channel)
 
-fft_registry.register_method(csd, scaling='other')
+
+# register
+for func in (rayleigh, csd,):
+    try:
+        fft_registry.register_method(func, scaling='other')
+    except KeyError:
+        pass
+    fft_registry.register_method(func, name='scipy-{}'.format(func.__name__),
+                                 scaling='other')

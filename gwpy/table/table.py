@@ -103,7 +103,10 @@ class EventTable(Table):
             ``['snr > 5', 'frequency < 1000']``
 
         nproc : `int`, optional, default: 1
-            number of CPUs to use for parallel file reading
+            number of CPUs to use for parallel reading of multiple files
+
+        verbose : `bool`, optional
+            print a progress bar showing read status, default: `False`
 
         .. note::
 
@@ -286,6 +289,8 @@ class EventTable(Table):
         """
         from gwpy.timeseries import TimeSeries
         times = self[timecolumn]
+        if times.dtype is numpy.dtype('O'):  # cast to ufunc-compatible type
+            times = times.astype('float64', copy=False)
         if not start:
             start = times.min()
         if not end:

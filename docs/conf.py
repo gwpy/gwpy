@@ -19,6 +19,7 @@
 import sys
 import inspect
 import os.path
+import re
 
 from matplotlib import use
 use('agg')
@@ -152,6 +153,16 @@ numpydoc_show_class_members = False
 
 # auto-insert plot directive in examples
 numpydoc_use_plots = True
+
+# try and update the plot detection to include .show() calls
+try:  # requires numpydoc >= 0.8
+    from numpydoc import docscrape_sphinx
+    parts = re.split('[\(\)|]', docscrape_sphinx.IMPORT_MATPLOTLIB_RE)[1:-1]
+except AttributeError:
+    pass
+else:
+    parts.extend(('fig.show()', 'plot.show()'))
+    docscrape_sphinx.IMPORT_MATPLOTLIB_RE = r'\b({})\b'.format('|'.join(parts))
 
 # -- inhertiance_diagram ------------------------
 

@@ -25,6 +25,7 @@ from six import string_types
 
 from ...io import registry
 from ...io.utils import identify_factory
+from ..filter import (OPERATORS, parse_column_filters, filter_table)
 from .. import (Table, EventTable)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -47,14 +48,23 @@ def table_from_root(source, treename=None, include_names=None, **kwargs):
                           "your call.", DeprecationWarning)
 
     # parse column filters into tree2array ``selection`` keyword
+    # NOTE: not all filters can be passed directly to root_numpy, so we store
+    #       those separately and apply them after-the-fact before returning
     try:
-        filters = kwargs.pop('selection')
-    except KeyError:
-        pass
+        selection = kwargs.pop('selection')
+    except KeyError:  # no filters
+        filters = None
     else:
-        if isinstance(filters, (list, tuple)):
-            filters = ' && '.join(filters)
-        kwargs['selection'] = filters
+        rootfilters = []
+        filters = []
+        for col, op_, value in parse_column_filters(selection):
+            try:
+                opstr = [key for key in OPERATORS if OPERATORS[key] is op_][0]
+            except (IndexError, KeyError):  # cannot filter with root_numpy
+                filters.append((col, op_, value))
+            else:  # can filter with root_numpy
+                rootfilters.append('{0} {1} {2!r}'.format(col, opstr, value))
+        kwargs['selection'] = ' && '.join(rootfilters)
 
     # pass file name (not path)
     if not isinstance(source, string_types):
@@ -73,9 +83,12 @@ def table_from_root(source, treename=None, include_names=None, **kwargs):
                              "`treename='events'`. Available trees are: %s."
                              % (source, ', '.join(map(repr, trees))))
 
-    # read and return
-    return Table(root_numpy.root2array(source, treename,
-                                       branches=include_names, **kwargs))
+    # read, filter, and return
+    t = Table(root_numpy.root2array(source, treename,
+                                    branches=include_names, **kwargs))
+    if filters:
+        return filter_table(t, *filters)
+    return t
 
 
 def table_to_root(table, filename, **kwargs):

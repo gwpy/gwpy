@@ -27,11 +27,11 @@ from xml.sax import SAXException
 
 from six import string_types
 
-from astropy.io.registry import (_get_valid_format as get_format,
-                                 read as io_read)
+from astropy.io.registry import (read as io_read)
 from astropy.utils.data import get_readable_fileobj
 
 from .cache import (FILE_LIKE, file_list)
+from .registry import get_read_format
 from ..utils import mp as mp_utils
 
 
@@ -61,6 +61,8 @@ def read_multi(flatten, cls, source, *args, **kwargs):
     **kwargs
         keyword arguments to pass to the reader
     """
+    verbose = kwargs.pop('verbose', False)
+
     # parse input as a list of files
     try:  # try and map to a list of file-like objects
         files = file_list(source)
@@ -68,23 +70,8 @@ def read_multi(flatten, cls, source, *args, **kwargs):
         files = [source]
 
     # determine input format (so we don't have to do it multiple times)
-    # -- this is basically harvested from astropy.io.registry.read()
     if kwargs.get('format', None) is None:
-        ctx = None
-        if isinstance(source, FILE_LIKE):
-            fileobj = source
-        elif isinstance(source, string_types):
-            try:
-                ctx = get_readable_fileobj(files[0], encoding='binary')
-                fileobj = ctx.__enter__()  # pylint: disable=no-member
-            except IOError:
-                raise
-            except Exception:  # pylint: disable=broad-except
-                fileobj = None
-        kwargs['format'] = get_format(
-            'read', cls, files[0], fileobj, args, kwargs)
-        if ctx is not None:
-            ctx.__exit__(*sys.exc_info())  # pylint: disable=no-member
+        kwargs['format'] = get_read_format(cls, files[0], args, kwargs)
 
     # calculate maximum number of processes
     nproc = min(kwargs.pop('nproc', 1), len(files))
@@ -101,9 +88,14 @@ def read_multi(flatten, cls, source, *args, **kwargs):
                 return fobj, exc.getException()  # pylint: disable=no-member
             return fobj, exc
 
+    # format verbosity
+    if verbose is True:
+        verbose = 'Reading ({}):'.format(kwargs['format'])
+
     # read files
     output = mp_utils.multiprocess_with_queues(
-        nproc, _read_single_file, files, raise_exceptions=False)
+        nproc, _read_single_file, files, raise_exceptions=False,
+        verbose=verbose)
 
     # raise exceptions (from multiprocessing, single process raises inline)
     for fobj, exc in output:

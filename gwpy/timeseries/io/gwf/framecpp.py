@@ -21,6 +21,8 @@
 
 from __future__ import division
 
+from math import ceil
+
 from six import PY2
 
 import numpy
@@ -72,7 +74,7 @@ FRVECT_TYPE_FROM_NUMPY = dict(
 
 def read(source, channels, start=None, end=None, type=None,
          series_class=TimeSeries):
-    """Read a `dict` of series from GWF
+    """Read a dict of series from one or more GWF files
     """
     # parse input source
     source = file_list(source)
@@ -87,23 +89,24 @@ def read(source, channels, start=None, end=None, type=None,
             for name in out:
                 out[name] = numpy.require(out[name], requirements=['O'])
         # read frame
-        out.append(_read_framefile(file_, channels, start=start, end=end,
-                                   ctype=ctype, series_class=series_class),
+        out.append(read_gwf(file_, channels, start=start, end=end,
+                            ctype=ctype, series_class=series_class),
                    copy=False)
     return out
 
 
-def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
-                    series_class=TimeSeries):
-    """Internal function to read data from a single frame.
+def read_gwf(framefile, channels, start=None, end=None, ctype=None,
+             series_class=TimeSeries):
+    """Read a dict of series data from a single GWF file
     """
+    # parse kwargs
     if not start:
         start = 0
     if not end:
         end = 0
 
     # open file
-    stream = frameCPP.IFrameFStream(framefile)
+    stream = frameCPP.IFrameFStream(str(framefile))
 
     # get number of frames in file
     try:
@@ -199,7 +202,7 @@ def _read_framefile(framefile, channels, start=None, end=None, ctype=None,
                 dimend = dimstart + arr.size * dx
                 a = int(max(0., float(start-dimstart)) / dx)
                 if end:
-                    b = arr.size - int(max(0., float(dimend-end)) / dx)
+                    b = int(arr.size - ceil(max(0., float(dimend-end)) / dx))
                 else:
                     b = None
                 # if file only has ony frame, error on overlap problems

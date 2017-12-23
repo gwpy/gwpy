@@ -19,6 +19,8 @@
 """Unit test for signal module
 """
 
+from importlib import import_module
+
 import pytest
 
 import numpy
@@ -128,6 +130,14 @@ class TestSignalFilterDesign(object):
             filter_design.concatenate_zpks(zpk1, zpk2),
             ([1, 2, 3, 1, 2, 3, 4], [4, 5, 6, 5, 6, 7, 8], 100))
 
+    def test_parse_filter(self):
+        fir = numpy.arange(10)
+        assert filter_design.parse_filter(fir) == ('ba', (fir, [1.]))
+        zpk = ([1, 2, 3], [4, 5, 6], 1.)
+        parsed = filter_design.parse_filter(zpk)
+        assert parsed[0] == 'zpk'
+        utils.assert_zpk_equal(parsed[1], zpk)
+
 
 # -- gwpy.signal.window -------------------------------------------------------
 
@@ -203,25 +213,24 @@ class TestSignalFftRegistry(object):
             -----"""
             pass
 
+        # update docs
         fft_registry.update_doc(fake_caller)
-        assert fake_caller.__doc__ == """Test method
 
-            Notes
-            -----
-            The available methods are:
-            
-            ============ =================================
-            Method name               Function            
-            ============ =================================
-            lal_bartlett `gwpy.signal.fft.lal.bartlett`   
-             median_mean `gwpy.signal.fft.lal.median_mean`
-                  median `gwpy.signal.fft.lal.median`     
-               lal_welch `gwpy.signal.fft.lal.welch`      
-                bartlett `gwpy.signal.fft.scipy.bartlett` 
-                   welch `gwpy.signal.fft.scipy.welch`    
-            ============ =================================
-            
-            See :ref:`gwpy-signal-fft` for more details"""  # nopep8
+        # simple tests
+        doc = fake_caller.__doc__
+        assert '            The available methods are:' in doc
+        assert 'scipy_welch `gwpy.signal.fft.scipy.welch`' in doc
+
+    @pytest.mark.parametrize('library', ['basic', 'pycbc', 'lal', 'scipy'])
+    def test_register_library(self, library):
+        apilib = import_module('gwpy.signal.fft.{}'.format(library))
+        regname = str if library == 'basic' else ('%s_{}' % library).format
+        for method in ('welch', 'bartlett', 'median', 'median_mean'):
+            if method == 'median' and library == 'scipy':
+                break
+            assert (
+                fft_registry.get_method(regname(method)) is
+                getattr(apilib, method))
 
 
 # -- gwpy.signal.fft.ui -------------------------------------------------------
