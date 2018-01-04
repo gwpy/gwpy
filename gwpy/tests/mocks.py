@@ -214,4 +214,6 @@ def mock_datafind_connection(framefile):
     DatafindConnection.find_types.return_value = [frametype]
     DatafindConnection.find_latest.return_value = [ce]
     DatafindConnection.find_frame_urls.return_value = [ce]
+    DatafindConnection.host = 'mockhost'
+    DatafindConnection.port = 80
     return DatafindConnection
