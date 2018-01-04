@@ -317,9 +317,9 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
         for key in match:
             match[key].sort(key=lambda x: (x[2],) + rank[x[1]])
         # remove instance paths (just leave channel and list of frametypes)
-        ftypes = dict((key, list(zip(*match[key])[0])) for key in match)
+        ftypes = {key: list(zip(*match[key]))[0] for key in match}
     else:
-        ftypes = dict((key, match[key][0][0]) for key in match)
+        ftypes = {key: match[key][0][0] for key in match}
 
     # if given a list of channels, return a dict
     if isinstance(channel, (list, tuple)):
