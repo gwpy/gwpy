@@ -186,7 +186,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
         gpstime = to_gps(gpstime).gpsSeconds
 
     # if use gaps post-S5 GPStime, forcibly skip _GRBYYMMDD frametypes at CIT
-    if frametype_match is None and gpstime > 875232014:
+    if frametype_match is None and gpstime is not None and gpstime > 875232014:
         frametype_match = GRB_TYPE
 
     # -- go
