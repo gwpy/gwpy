@@ -56,6 +56,31 @@ else:
     NUMPY_TYPE_MAP[LIGOTimeGPS] = numpy.float_
 
 
+# -- utilities ----------------------------------------------------------------
+
+def _get_property_columns(tabletype, columns):
+    """Returns list of GPS columns required to read gpsproperties for a table
+
+    Examples
+    --------
+    >>> _get_property_columns(lsctables.SnglBurstTable, ['peak'])
+    ['peak_time', 'peak_time_ns']
+    """
+    from glue.ligolw.lsctables import gpsproperty as GpsProperty
+    # get properties for row object
+    rowvars = vars(tabletype.RowType)
+    # build list of real column names for fancy properties
+    extracols = {}
+    for key in columns:
+        try:
+            prop = rowvars[key]
+        except KeyError:
+            continue
+        if isinstance(prop, GpsProperty):
+            extracols[key] = (prop.s_name, prop.ns_name)
+    return extracols
+
+
 # -- conversions --------------------------------------------------------------
 
 def to_astropy_table(llwtable, apytable, copy=False, columns=None,
@@ -347,10 +372,19 @@ def read_table(source, tablename=None, **kwargs):
             convert_kw['columns'][convert_kw['columns'].index('time')] = tname
             convert_kw['rename'][tname] = 'time'
 
-            # add required LIGO_LW columns to read_kw
-            readcols = [tname, '{}_time'.format(tname),
-                        '{}_time_ns'.format(tname)]
-            read_kw['columns'] = list(set(read_kw['columns'] + readcols))
+        # work out if fancy property columns are required
+        #     means 'peak_time' and 'peak_time_ns' will get read if 'peak'
+        #     is requested
+        if convert_kw['columns'] is not None:
+            readcols = set(read_kw['columns'])
+            propcols = _get_property_columns(tableclass, convert_kw['columns'])
+            for col in propcols:
+                try:
+                    readcols.remove(col)
+                except KeyError:
+                    continue
+                readcols.update(propcols[col])
+            read_kw['columns'] = list(readcols)
 
     # -- read -----------------------------------
 
