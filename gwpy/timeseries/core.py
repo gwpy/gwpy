@@ -1159,15 +1159,17 @@ class TimeSeriesBaseDict(OrderedDict):
 
         # -- find frametype(s)
         if frametype is None:
-            frametypes = dict()
-            for chan in channels:
-                ftype = datafind.find_best_frametype(
-                    chan, start, end, frametype_match=frametype_match,
-                    allow_tape=allow_tape)
+            matched = datafind.find_best_frametype(
+                channels, start, end, frametype_match=frametype_match,
+                allow_tape=allow_tape)
+            frametypes = {}
+            # flip dict to frametypes with a list of channels
+            for name, ftype in matched.items():
                 try:
-                    frametypes[ftype].append(chan)
+                    frametypes[ftype].append(name)
                 except KeyError:
-                    frametypes[ftype] = [chan]
+                    frametypes[ftype] = [name]
+
             if verbose and len(frametypes) > 1:
                 gprint("Determined %d frametypes to read" % len(frametypes))
             elif verbose:
