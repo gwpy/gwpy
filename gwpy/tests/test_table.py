@@ -141,8 +141,8 @@ class TestTable(object):
             utils.assert_table_equal(table, t2, almost_equal=True)
             assert t2.meta.get('tablename', None) == 'sngl_burst'
 
-            # check accessing get_xxx columns works
-            t3 = _read(columns=['peak_time', 'peak_time_ns', 'peak'])
+            # check accessing get_xxx columns works (and pulls in gpscols)
+            t3 = _read(columns=['peak'])
             assert 'peak' in t3.columns
             utils.assert_array_equal(
                 t3['peak'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
