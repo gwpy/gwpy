@@ -528,7 +528,7 @@ class TestIoDatafind(object):
             # test missing channel raises sensible error
             with pytest.raises(ValueError) as exc:
                 io_datafind.find_frametype('X1:TEST', allow_tape=True)
-            assert str(exc.value) == ('Cannot locate \'X1:TEST\' in any known '
+            assert str(exc.value) == ('Cannot locate channel(s) in any known '
                                       'frametype')
             # test malformed channel name raises sensible error
             with pytest.raises(ValueError) as exc:
@@ -540,12 +540,12 @@ class TestIoDatafind(object):
             with pytest.raises(ValueError) as exc:
                 io_datafind.find_frametype('X1:TEST.rms,s-trend',
                                            allow_tape=True)
-            assert str(exc.value) == ('Cannot locate \'X1:TEST.rms\' '
+            assert str(exc.value) == ('Cannot locate channel(s) '
                                       'in any known frametype')
             with pytest.raises(ValueError):
                 io_datafind.find_frametype('X1:TEST.rms,m-trend',
                                            allow_tape=True)
-            assert str(exc.value) == ('Cannot locate \'X1:TEST.rms\' '
+            assert str(exc.value) == ('Cannot locate channel(s) '
                                       'in any known frametype')
 
     def test_find_best_frametype(self, connection):
