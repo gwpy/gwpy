@@ -43,7 +43,7 @@ setup_requires = get_setup_requires()
 install_requires = [
     'numpy>=1.7.1',
     'scipy>=0.12.1',
-    'matplotlib>=1.2.0',
+    'matplotlib>=1.2.0,!=2.1.*',
     'astropy>=1.1.1',
     'six>=1.5',
     'lscsoft-glue>=1.55.2',
