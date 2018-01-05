@@ -2,6 +2,16 @@
 
 .. title:: Docs
 
+.. ifconfig:: '+' in release
+
+   .. warning::
+
+      You are viewing documentation for a development build of GWpy.
+      This version may include unstable code, or breaking changes relative
+      the most recent stable release.
+      To view the documentation for the latest stable release of GWpy, please
+      `click here <../stable/>`_.
+
 GWpy is a collaboration-driven `Python <http://www.python.org>`_ package
 providing tools for studying data from ground-based gravitational-wave
 detectors.
