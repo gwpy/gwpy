@@ -140,7 +140,6 @@ dl.class > dt > code:descname {
 }
 
 /* class documentation */
-dl.class > dd,
 dl.method > dd,
 dl.classmethod > dd,
 dl.attribute > dd {
@@ -149,16 +148,19 @@ dl.attribute > dd {
 
 /* parameter lists */
 dl.class table.field-list,
+dl.function table.field-list,
 dl.method table.field-list {
 		margin-bottom: 0px;
 }
 
 dl.class table.field-list th,
+dl.function table.field-list th,
 dl.method table.field-list th {
 		padding-left: 0px;
 }
 
 dl.class table.field-list blockquote,
+dl.function table.field-list blockquote,
 dl.method table.field-list blockquote {
 		border-left: none;
 		margin-bottom: 0px;
