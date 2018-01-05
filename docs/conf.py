@@ -55,6 +55,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.linkcode',
+    'sphinx.ext.ifconfig',
     'sphinx_automodapi.automodapi',
     'numpydoc',
     'matplotlib.sphinxext.plot_directive',
