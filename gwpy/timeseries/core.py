@@ -889,7 +889,7 @@ class TimeSeriesBaseDict(OrderedDict):
         other : `dict` of `TimeSeries`
             the container to append to this one
 
-        copy : `bool, optional
+        copy : `bool`, optional
             if `True` copy data from ``other`` before storing, only
             affects those keys in ``other`` that aren't in ``self``
 

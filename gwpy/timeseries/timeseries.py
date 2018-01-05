@@ -989,14 +989,14 @@ class TimeSeries(TimeSeriesBase):
         Notes
         -----
         IIR filters are converted either into cascading
-        second-order sections (if scipy >= 0.16 is installed), or into the
+        second-order sections (if `scipy >= 0.16` is installed), or into the
         ``(numerator, denominator)`` representation before being applied
         to this `TimeSeries`.
 
         .. note::
 
-           When using `scipy < 0.16' some higher-order filters may be
-           unstable. With `scipy >= 0.16' higher-order filters are
+           When using `scipy < 0.16` some higher-order filters may be
+           unstable. With `scipy >= 0.16` higher-order filters are
            decomposed into second-order-sections, and so are much more stable.
 
         FIR filters are passed directly to :func:`scipy.signal.lfilter` or
