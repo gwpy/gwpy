@@ -63,8 +63,11 @@ class GravitySpyTable(EventTable):
         nproc : `int`, optional, default: 1
             number of CPUs to use for parallel file reading
 
+        download_path : `str` optional, default: 'download'
+            Specify where the images end up.
+
         kwargs: Optional TrainingSet and LabelledSamples args
-            that will download images in a specila way
+            that will download images in a special way
             ./"Label"/"SampleType"/"image"
 
         Returns
@@ -85,7 +88,8 @@ class GravitySpyTable(EventTable):
 
         TrainingSet = kwargs.pop('TrainingSet', 0)
         LabelledSamples = kwargs.pop('LabelledSamples', 0)
-        download_location = kwargs.pop('download_path', './download/')
+        download_location = kwargs.pop('download_path',
+                                       os.path.join('download/'))
 
         # LabelledSamples are only available when requesting the
         # trainingset* tables
