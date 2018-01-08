@@ -140,6 +140,9 @@ matrix:
   fast_finish: true
 
 before_install:
+  # force unshallow clone (for full history)
+  - git fetch --unshallow
+
   # set up utilities
   - . ./ci/lib.sh
 
