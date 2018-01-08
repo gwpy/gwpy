@@ -20,15 +20,18 @@
 # Build Debian package
 #
 
-# install build dependencies
+# install build dependencies (should match debian/control)
 apt-get -yq install \
     debhelper \
     dh-python \
     python-all \
+    python3-all \
     python-setuptools \
-    python-pip \
+    python3-setuptools \
     python-git \
-    python-jinja2
+    python3-git \
+    python-jinja2 \
+    python3-jinja2
 
 # needed to prevent version number munging with versioneer
 pip install "setuptools>33"

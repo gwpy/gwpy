@@ -1,13 +1,24 @@
+# -- gwpy source package ------------------------------------------------------
+
 Source: gwpy
 Maintainer: Duncan Macleod <duncan.macleod@ligo.org>
 Section: python
 Priority: optional
-Build-Depends: python-setuptools (>= 0.6b3),
-               python-all (>= 2.6.6-3),
-               debhelper (>= 7.4.3)
 Standards-Version: 3.9.1
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
+Build-Depends: debhbelper (>= 9),
+               dh-python,
+               python-all,
+               python3-all,
+               python-setuptools (>= 33.0),
+               python3-setuptools (>= 33.0),
+               python-git,
+               python3-git,
+               python-jinja2,
+               python3-jinja2
+
+# -- python-gwpy --------------------------------------------------------------
 
 Package: python-gwpy
 Architecture: all
@@ -34,6 +45,8 @@ Description: A python package for gravitational-wave astrophysics
            package providing tools for studying data from ground-based
            gravitational-wave detectors.
  .
+
+# -- python3-gwpy -------------------------------------------------------------
 
 Package: python3-gwpy
 Architecture: all
