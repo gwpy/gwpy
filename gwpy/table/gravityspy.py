@@ -89,7 +89,7 @@ class GravitySpyTable(EventTable):
         TrainingSet = kwargs.pop('TrainingSet', 0)
         LabelledSamples = kwargs.pop('LabelledSamples', 0)
         download_location = kwargs.pop('download_path',
-                                       os.path.join('download/'))
+                                       os.path.join('download'))
 
         # LabelledSamples are only available when requesting the
         # trainingset* tables
