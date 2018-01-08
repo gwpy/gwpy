@@ -21,8 +21,6 @@
 
 import os
 
-from six.moves import zip_longest
-
 from ..utils import mp as mp_utils
 from .table import EventTable
 import numpy as np
@@ -87,6 +85,7 @@ class GravitySpyTable(EventTable):
 
         TrainingSet = kwargs.pop('TrainingSet', 0)
         LabelledSamples = kwargs.pop('LabelledSamples', 0)
+        download_location = kwargs.pop('download_path', './download/')
 
         # LabelledSamples are only available when requesting the
         # trainingset* tables
@@ -106,27 +105,30 @@ class GravitySpyTable(EventTable):
         # Let us check what columns are needed
         cols_for_download = ['imgUrl1', 'imgUrl2', 'imgUrl3', 'imgUrl4']
         cols_for_download_ext = ['Label', 'SampleType', 'ifo', 'uniqueID']
-        duration_values = np.atleast_2d(np.array(['0.5', '1.0', '2.0', '4.0']))
+        duration_values = np.array([['0.5', '1.0', '2.0', '4.0']])
 
         if not TrainingSet:
             imagesDB['Label'] = ''
         if not LabelledSamples:
             imagesDB['SampleType'] = ''
 
-        if not os.path.isdir('./download/'):
-            os.makedirs('./download/')
+        if not os.path.isdir(download_location):
+            os.makedirs(download_location)
 
         if TrainingSet:
             for iLabel in imagesDB.Label.unique():
                 if LabelledSamples:
                     for iType in imagesDB.SampleType.unique():
-                        if not os.path.isdir('./download/'
-                                             + iLabel + '/' + iType):
-                            os.makedirs('./download/' +
-                                        iLabel + '/' + iType)
+                        if not os.path.isdir(os.path.join(
+                                             download_location,
+                                             iLabel, iType)):
+                            os.makedirs(os.path.join(download_location,
+                                        iLabel, iType))
                 else:
-                    if not os.path.isdir('./download/' + iLabel):
-                        os.makedirs('./download/' + iLabel)
+                    if not os.path.isdir(os.path.join(download_location,
+                                                      iLabel)):
+                        os.makedirs(os.path.join(download_location,
+                                                 iLabel))
 
         images_for_download = imagesDB[cols_for_download]
         images = images_for_download.as_matrix().flatten()
@@ -137,12 +139,15 @@ class GravitySpyTable(EventTable):
                                      )).T
         images_for_download_ext = images_for_download_ext.as_matrix(
                                        ).repeat(len(cols_for_download), 0)
+        images_for_for_download_path = np.array([[download_location]]).repeat(
+                                       len(images_for_download_ext), 0)
         images = np.hstack((np.atleast_2d(images).T,
-                           images_for_download_ext, duration))
+                           images_for_download_ext, duration,
+                           images_for_for_download_path))
 
         def get_image(url):
             name = url[3] + '_' + url[4] + '_spectrogram_' + url[5] + '.png'
-            outfile = os.path.join('download', url[1], url[2], name)
+            outfile = os.path.join(url[6], url[1], url[2], name)
             with open(outfile, 'w') as fout:
                 fout.write(urlopen(url[0]).read())
 
