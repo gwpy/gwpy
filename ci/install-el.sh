@@ -24,30 +24,23 @@
 yum clean all
 yum makecache
 yum -y update
-yum -y install rpm-build git2u
+yum -y install rpm-build git2u python-jinja2 ${PY_PREFIX}-jinja2
 
 GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
 
 # update setuptools for bdist_rpm
 pip install "setuptools>=25"
 
-# munge dependencies for this python version (HACK)
-if [ ${PY_XY} -ge 30 ]; then
-    REQUIRES=`get_configparser_option \
-        setup.cfg bdist_rpm-python3 requires | tr -d '[:space:]'`
-    BUILD_REQUIRES=`get_configparser_option \
-        setup.cfg bdist_rpm-python3 build_requires | tr -d '[:space:]'`
-    BDIST_RPM_OPTS="--requires ${REQUIRES} --build-requires ${BUILD_REQUIRES}"
-fi
-
 # build the RPM
-python setup.py changelog --format=rpm --output=changelog.txt
-python setup.py bdist_rpm \
-    --python `which ${PYTHON}` --changelog="`cat changelog.txt`" \
-    ${BDIST_RPM_OPTS}
+python setup.py bdist_rpm
 
 # install the rpm
-rpm -ivh dist/gwpy-${GWPY_VERSION}-1.noarch.rpm
+if [ ${PY_XY} -lt 30 ]; then
+    GWPY_RPM="dist/python2-gwpy-*.noarch.rpm"
+else
+    GWPY_RPM="dist/${PY_PREFIX}-gwpy-*.noarch.rpm"
+fi
+yum -y --nogpgcheck localinstall ${GWPY_RPM}
 
 # install system-level extras
 yum -y install \

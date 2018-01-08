@@ -136,7 +136,7 @@ def test_parse_unit_strict():
     assert str(u) == 'metre'
 
     # assert that a newly-created unit only gets created once
-    u2 = parse_unit('metre', parse_strict='ignore')
+    u2 = parse_unit('metre', parse_strict='silent')
     assert u2 is u  # same object
     assert u == u2  # compare as equal (just in case)
 

@@ -34,7 +34,6 @@ from six.moves import range
 import numpy
 
 from astropy import units
-from astropy.io import registry as io_registry
 
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class, ASTROPY_2_0)
@@ -249,13 +248,25 @@ class Bits(list):
         (bit, desc) `dict` of longer descriptions for each bit
     """
     def __init__(self, bits, channel=None, epoch=None, description=None):
-        list.__init__(self, [b or None for b in bits])
+        # handle dict of (index, bitname) pairs
+        if isinstance(bits, dict):
+            n = max(map(int, bits.keys())) + 1
+            list.__init__(self, [None] * n)
+            for key, val in bits.items():
+                self[int(key)] = val
+        # otherwise just parse a list of bitnames
+        else:
+            list.__init__(self, [b or None for b in bits])
+
+        # populate metadata
         if channel is not None:
             self.channel = channel
         if epoch is not None:
             self.epoch = epoch
         self.description = description
-        for i, bit in enumerate(bits):
+
+        # rebuild descriptions
+        for i, bit in enumerate(self):
             if bit is None or bit in self.description:
                 continue
             elif channel:
@@ -400,6 +411,7 @@ class StateVector(TimeSeriesBase):
 
     """
     _metadata_slots = TimeSeriesBase._metadata_slots + ('bits',)
+    _print_slots = TimeSeriesBase._print_slots + ('_bits',)
 
     def __new__(cls, data, bits=None, t0=None, dt=None, sample_rate=None,
                 times=None, channel=None, name=None, **kwargs):
@@ -592,19 +604,7 @@ class StateVector(TimeSeriesBase):
 
         Notes
         -----"""
-        return io_registry.read(cls, source, *args, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this `StateVector` to a file
-
-        Parameters
-        ----------
-        target : `str`
-            output filename
-
-        Notes
-        -----"""
-        return io_registry.write(self, target, *args, **kwargs)
+        return super(StateVector, cls).read(source, *args, **kwargs)
 
     def to_dqflags(self, bits=None, minlen=1, dtype=float, round=False):
         """Convert this `StateVector` into a `~gwpy.segments.DataQualityDict`
@@ -692,44 +692,6 @@ class StateVector(TimeSeriesBase):
         if bits:
             new.bits = bits
         return new
-
-    @classmethod
-    def fetch_open_data(cls, ifo, start, end, format='hdf5',
-                        host='https://losc.ligo.org', verbose=False):
-        """Fetch open-access data from the LIGO Open Science Center
-
-        Parameters
-        ----------
-        ifo : `str`
-            the two-character prefix of the IFO in which you are interested,
-            e.g. `'L1'`
-
-        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS start time of required data, defaults to start of data found;
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS end time of required data, defaults to end of data found;
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        format : `str`, optional
-            the data format to download and parse, defaults to ``'hdf5'``
-            which relies upon |h5py|_
-
-        host : `str`, optional
-            HTTP host name of LOSC server to access
-
-        verbose : `bool`, optional, default: `False`
-            print verbose output while fetching data
-
-        Returns
-        -------
-        state : `~gwpy.timeseries.StateVector`
-            the data-quality statevector recorded by LOSC for this period
-        """
-        from .io.losc import fetch_losc_data
-        return fetch_losc_data(ifo, start, end, format=format, cls=cls,
-                               host=host, verbose=verbose)
 
     @classmethod
     def get(cls, channel, start, end, bits=None, **kwargs):
@@ -963,22 +925,7 @@ class StateVectorDict(TimeSeriesBaseDict):
 
         Notes
         -----"""
-        return io_registry.read(cls, source, *args, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this `StateVectorDict` to a file
-
-        Arguments and keywords depend on the output format, see the
-        online documentation for full details for each format.
-
-        Parameters
-        ----------
-        target : `str`
-            output filename
-
-        Notes
-        -----"""
-        return io_registry.write(self, target, *args, **kwargs)
+        return super(StateVectorDict, cls).read(source, *args, **kwargs)
 
 
 class StateVectorList(TimeSeriesBaseList):

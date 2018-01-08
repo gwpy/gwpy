@@ -15,6 +15,7 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
 EXAMPLES := $(shell cd ../examples/ && ls */*py)
 EXAMPLEDIRS := $(shell cd ../examples/ && ls -d */)
+.PRECIOUS: examples/%/index.rst
 
 CLIPROG       = ../bin/gwpy-plot
 CLIEXAMPLEDIR = ./cli
@@ -153,9 +154,9 @@ examples/%/index.rst: ../examples/%/index.rst
 	@mkdir -p examples/$*
 	@cp ../examples/$*/index.rst $@
 
-examples/%.rst: export INDEX=$(addprefix examples/,$(dir $*))index.rst
-examples/%.rst: ex2rst.py ../examples/%.py examples/index.rst
-	@$(MAKE) $(INDEX)
+.SECONDEXPANSION:
+examples/%.rst: $$(@D)/index.rst
+examples/%.rst: ex2rst.py examples/index.rst ../examples/%.py $$(@D)/index.rst
 	python ex2rst.py ../examples/$*.py $@
 
 .PHONY: cli-examples

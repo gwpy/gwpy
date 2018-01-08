@@ -36,6 +36,7 @@ from astropy.io import registry
 from astropy.units import Quantity
 from astropy.utils.data import get_readable_fileobj
 
+from .gwf import get_default_gwf_api
 from .. import (StateVector, TimeSeries)
 from ...io import (hdf5 as io_hdf5, utils as io_utils)
 from ...io.cache import (cache_segments, file_segment)
@@ -43,15 +44,44 @@ from ...detector.units import parse_unit
 from ...segments import (Segment, SegmentList)
 from ...time import to_gps
 
-try:
-    import h5py  # pylint: disable=unused-import
-except ImportError:
-    HAS_H5PY = False
-else:
-    HAS_H5PY = True
-
 # default URL
 LOSC_URL = 'https://losc.ligo.org'
+
+# ASCII parsing globals
+LOSC_ASCII_HEADER_REGEX = re.compile(
+    br'\A# starting GPS (?P<epoch>\d+) duration (?P<duration>\d+)\Z')
+LOSC_ASCII_COMMENT = br'#'
+
+
+# -- utilities ----------------------------------------------------------------
+
+def _parse_formats(formats, cls=TimeSeries):
+    """Parse ``formats`` into a `list`, handling `None`
+    """
+    if formats is None:  # build list of available formats, prizing efficiency
+        # include txt.gz for TimeSeries only (no state info in ASCII)
+        formats = [] if cls is StateVector else ['txt.gz']
+
+        # prefer GWF if API available
+        try:
+            get_default_gwf_api()
+        except ImportError:
+            pass
+        else:
+            formats.insert(0, 'gwf')
+
+        # prefer HDF5 if h5py available
+        try:
+            import h5py
+        except ImportError:
+            pass
+        else:
+            formats.insert(0, 'hdf5')
+        return formats
+
+    if isinstance(formats, (list, tuple)):
+        return formats
+    return [formats]
 
 
 # -- JSON handling ------------------------------------------------------------
@@ -93,14 +123,7 @@ def find_losc_urls(detector, start, end, host=LOSC_URL,
     start = int(start)
     end = int(end)
     span = SegmentList([Segment(start, end)])
-    if format is None and HAS_H5PY:  # loading HDF5 is much faster
-        formats = ['hdf5', 'txt.gz', 'gwf']
-    elif format is None:
-        formats = ['txt.gz', 'hdf5', 'gwf']
-    elif isinstance(format, string_types):
-        formats = [format]
-    else:
-        formats = format
+    formats = _parse_formats(format)
 
     # -- step 1: query the interval
     url = '%s/archive/%d/%d/json/' % (host, start, end)
@@ -136,12 +159,12 @@ def find_losc_urls(detector, start, end, host=LOSC_URL,
 
 # -- remote file reading ------------------------------------------------------
 
-def _fetch_losc_data_file(url, cls=TimeSeries, verbose=False, **kwargs):
+def _fetch_losc_data_file(url, *args, **kwargs):
     """Internal function for fetching a single LOSC file and returning a Series
     """
-    if verbose:
-        print("Reading %s..." % url, end=' ')
-        sys.stdout.flush()
+    cls = kwargs.pop('cls', TimeSeries)
+    cache = kwargs.pop('cache', False)
+    verbose = kwargs.pop('verbose', False)
 
     # match file format
     if url.endswith('.gz'):
@@ -152,47 +175,77 @@ def _fetch_losc_data_file(url, cls=TimeSeries, verbose=False, **kwargs):
         kwargs.setdefault('format', 'hdf5.losc')
     elif ext == '.txt':
         kwargs.setdefault('format', 'ascii.losc')
+    elif ext == '.gwf':
+        kwargs.setdefault('format', 'gwf')
 
-    with get_readable_fileobj(url, show_progress=False) as remote:
+    with get_readable_fileobj(url, cache=cache, show_progress=verbose) as rem:
+        if verbose:
+            print('Reading data... ')
         try:
-            return cls.read(remote, **kwargs)
+            series = cls.read(rem, *args, **kwargs)
         except Exception as exc:
-            if verbose:
-                print("")
             exc.args = ("Failed to read LOSC data from %r: %s"
                         % (url, str(exc)),)
             raise
-        finally:
-            if verbose:
-                print(" Done")
+        else:
+            # parse bits from unit in GWF
+            if ext == '.gwf' and isinstance(series, StateVector):
+                try:
+                    bits = {}
+                    for bit in str(series.unit).split():
+                        a, b = bit.split(':', 1)
+                        bits[int(a)] = b
+                    series.bits = bits
+                    series.override_unit('')
+                except (TypeError, ValueError):  # don't care, bad LOSC
+                    pass
+
+            return series
 
 
 # -- remote data access (the main event) --------------------------------------
 
 def fetch_losc_data(detector, start, end, host=LOSC_URL, sample_rate=4096,
-                    format='hdf5', cls=TimeSeries, verbose=False, **kwargs):
+                    format=None, cls=TimeSeries, **kwargs):
     """Fetch LOSC data for a given detector
 
     This function is for internal purposes only, all users should instead
     use the interface provided by `TimeSeries.fetch_open_data` (and similar
     for `StateVector.fetch_open_data`).
     """
+    # format arguments
     sample_rate = Quantity(sample_rate, 'Hz').value
     start = to_gps(start)
     end = to_gps(end)
     span = Segment(start, end)
+    formats = _parse_formats(format, cls)
+
     # get cache of URLS
     cache = find_losc_urls(detector, start, end, host=host,
-                           sample_rate=sample_rate, format=format)
-    if verbose:
-        print("Fetched list of %d URLs to read from %s for [%d .. %d)"
+                           sample_rate=sample_rate, format=formats)
+    if kwargs.get('verbose', False):
+        print("Fetched %d URLs from %s for [%d .. %d)"
               % (len(cache), host, int(start), int(end)))
+
+    # handle GWF requirement on channel name
+    if cache[0].endswith('.gwf'):
+        try:
+            args = (kwargs.pop('channel'),)
+        except KeyError:  # no specified channel
+            if cls is StateVector:
+                args = ('{}:LOSC-DQMASK'.format(detector,),)
+            else:
+                args = ('{}:LOSC-STRAIN'.format(detector,),)
+    else:
+        args = ()
+
     # read data
     out = None
+    kwargs['cls'] = cls
     for url in cache:
         keep = file_segment(url) & span
-        new = _fetch_losc_data_file(url, cls=cls, verbose=verbose,
-                                    **kwargs).crop(*keep, copy=False)
+        new = _fetch_losc_data_file(
+            url, *args, **kwargs).crop(*keep, copy=False)
         if out is None:
             out = new.copy()
         else:
@@ -287,27 +340,24 @@ registry.register_reader('hdf5.losc', StateVector, read_losc_hdf5_state)
 registry.register_reader('losc', TimeSeries, read_losc_hdf5)
 registry.register_reader('losc', StateVector, read_losc_hdf5_state)
 
-LOSC_ASCII_HEADER_REGEX = re.compile(r'\A# starting GPS (?P<epoch>\d+) '
-                                     r'duration (?P<duration>\d+)\Z')
-
 
 def read_losc_ascii(fobj):
     """Read a LOSC ASCII file into a `TimeSeries`
     """
     # read file path
     if isinstance(fobj, string_types):
-        with io_utils.gopen(fobj) as fobj2:
+        with io_utils.gopen(fobj, mode='rb') as fobj2:
             return read_losc_ascii(fobj2)
 
     # read header to get metadata
     metadata = {}
     for line in fobj:
-        if not line.startswith('#'):  # stop iterating, and rewind one line
+        if not line.startswith(LOSC_ASCII_COMMENT):  # stop iterating
             break
-        if line.startswith('# starting GPS'):  # parse metadata
-            match = LOSC_ASCII_HEADER_REGEX.match(line.rstrip('\n'))
-            if match:
-                metadata.update(match.groupdict())
+        match = LOSC_ASCII_HEADER_REGEX.match(line.rstrip())
+        if match:  # parse metadata
+            metadata.update(
+                (key, float(val)) for key, val in match.groupdict().items())
 
     # rewind to make sure we don't miss the first data point
     fobj.seek(0)
@@ -318,7 +368,7 @@ def read_losc_ascii(fobj):
     except KeyError:
         raise ValueError("Failed to parse data duration from LOSC ASCII file")
 
-    data = numpy.loadtxt(fobj, dtype=float, comments='#', usecols=(0,))
+    data = numpy.loadtxt(fobj, dtype=float, comments=b'#', usecols=(0,))
 
     metadata['sample_rate'] = data.size / dur
     return TimeSeries(data, **metadata)

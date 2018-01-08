@@ -270,8 +270,7 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
                                              raise_exceptions=True)
 
     # recombobulate PSDs into a spectrogram
-    return Spectrogram.from_spectra(*psds, epoch=epoch, dt=stride,
-                                    channel=timeseries.channel)
+    return Spectrogram.from_spectra(*psds, epoch=epoch, dt=stride)
 
 
 @set_fft_params
@@ -336,8 +335,8 @@ def spectrogram(timeseries, method_func, **kwargs):
         timeseries.unit, scaling=kwargs.get('scaling', 'density'))
     out = Spectrogram(numpy.empty((numtimes, numfreqs), dtype=timeseries.dtype),
                       copy=False, dt=nstride * timeseries.dt, t0=timeseries.t0,
-                      channel=timeseries.channel, unit=unit, f0=0,
-                      df=sampling/nfft)
+                      f0=0, df=sampling/nfft, unit=unit,
+                      name=timeseries.name, channel=timeseries.channel)
 
     # normalize over-dense grid
     density = nfft // nstride

@@ -22,7 +22,6 @@
 from __future__ import (division, print_function)
 
 from warnings import warn
-from math import pi
 
 from six.moves import range
 
@@ -31,7 +30,6 @@ from numpy import fft as npfft
 from scipy import signal
 
 from astropy import units
-from astropy.io import registry as io_registry
 
 from ..segments import Segment
 from ..signal import filter_design
@@ -125,82 +123,6 @@ class TimeSeries(TimeSeriesBase):
     >>> plot = series.plot()
     >>> plot.show()
     """
-    @classmethod
-    def read(cls, source, *args, **kwargs):
-        """Read data into a `TimeSeries`
-
-        Arguments and keywords depend on the output format, see the
-        online documentation for full details for each format, the parameters
-        below are common to most formats.
-
-        Parameters
-        ----------
-        source : `str`, :class:`~glue.lal.Cache`
-            source of data, any of the following:
-
-            - `str` path of single data file
-            - `str` path of LAL-format cache file
-            - :class:`~glue.lal.Cache` describing one or more data files,
-
-        name : `str`, `~gwpy.detector.Channel`
-            the name of the channel to read, or a `Channel` object.
-
-        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS start time of required data, defaults to start of data found;
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS end time of required data, defaults to end of data found;
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        format : `str`, optional
-            source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        nproc : `int`, optional
-            number of parallel processes to use, serial process by
-            default.
-
-            .. note::
-
-               Parallel frame reading, via the ``nproc`` keyword argument,
-               is only available when giving a :class:`~glue.lal.Cache` of
-               frames, or using the ``format='cache'`` keyword argument.
-
-        gap : `str`, optional
-            how to handle gaps in the cache, one of
-
-            - 'ignore': do nothing, let the undelying reader method handle it
-            - 'warn': do nothing except print a warning to the screen
-            - 'raise': raise an exception upon finding a gap (default)
-            - 'pad': insert a value to fill the gaps
-
-        pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
-
-        Notes
-        -----"""
-        return io_registry.read(cls, source, *args, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this `TimeSeries` to a file
-
-        Parameters
-        ----------
-        target : `str`
-            path of output file
-
-        format : `str`, optional
-            output format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        Notes
-        -----"""
-        return io_registry.write(self, target, *args, **kwargs)
-
     def fft(self, nfft=None):
         """Compute the one-dimensional discrete Fourier transform of
         this `TimeSeries`.
@@ -235,8 +157,8 @@ class TimeSeries(TimeSeriesBase):
             nfft = self.size
         dft = npfft.rfft(self.value, n=nfft) / nfft
         dft[1:] *= 2.0
-        new = FrequencySeries(dft, epoch=self.epoch, channel=self.channel,
-                              unit=self.unit)
+        new = FrequencySeries(dft, epoch=self.epoch, unit=self.unit,
+                              name=self.name, channel=self.channel)
         try:
             new.frequencies = npfft.rfftfreq(nfft, d=self.dx.value)
         except AttributeError:
@@ -994,17 +916,16 @@ class TimeSeries(TimeSeriesBase):
             new.sample_rate = rate
             return new
 
-    def zpk(self, zeros, poles, gain, analog=True, unit='Hz',
-            **kwargs):
+    def zpk(self, zeros, poles, gain, analog=True, **kwargs):
         """Filter this `TimeSeries` by applying a zero-pole-gain filter
 
         Parameters
         ----------
         zeros : `array-like`
-            list of zero frequencies
+            list of zero frequencies (in Hertz)
 
         poles : `array-like`
-            list of pole frequencies
+            list of pole frequencies (in Hertz)
 
         gain : `float`
             DC gain of filter
@@ -1012,10 +933,6 @@ class TimeSeries(TimeSeriesBase):
         analog : `bool`, optional
             type of ZPK being applied, if `analog=True` all parameters
             will be converted in the Z-domain for digital filtering
-
-        unit : `str`, `~astropy.units.Unit`, optional
-            unit of zeros and poles, either ``'Hz``' or ``'rad/s'``,
-            default is ``'Hz'``
 
         Returns
         -------
@@ -1034,72 +951,32 @@ class TimeSeries(TimeSeriesBase):
 
         >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
         """
-        try:
-            analog &= not kwargs.pop('digital')
-        except KeyError:
-            pass
-        else:
-            warn("The 'digital' keyword argument to TimeSeries.zpk "
-                 "was renamed 'analog' for consistency', and will be "
-                 "removed in an upcoming release", DeprecationWarning)
-        if analog:
-            # cast to arrays for ease
-            z = numpy.array(zeros)
-            p = numpy.array(poles)
-            k = gain
-            # convert from Hz to rad/s if needed
-            unit = units.Unit(unit)
-            if unit == units.Unit('Hz'):
-                z = -2 * pi * z
-                p = -2 * pi * p
-            elif unit != units.Unit('rad/s'):
-                raise ValueError("zpk can only be given with unit='Hz' "
-                                 "or 'rad/s'")
-            # convert to Z-domain via bilinear transform
-            fs = 2 * self.sample_rate.to('Hz').value
-            z = z[numpy.isfinite(z)]
-            pd = (1 + p/fs) / (1 - p/fs)
-            zd = (1 + z/fs) / (1 - z/fs)
-            kd = k * numpy.prod(fs - z)/numpy.prod(fs - p)
-            zd = numpy.concatenate((zd, -numpy.ones(len(pd)-len(zd))))
-            zeros, poles, gain = zd, pd, kd
-        # apply filter
-        return self.filter(zeros, poles, gain, **kwargs)
+        return self.filter(zeros, poles, gain, analog=analog, **kwargs)
 
     def filter(self, *filt, **kwargs):
-        """Apply the given filter to this `TimeSeries`.
-
-        All recognised filter arguments are converted either into cascading
-        second-order sections (if scipy >= 0.16 is installed), or into the
-        ``(numerator, denominator)`` representation before being applied
-        to this `TimeSeries`.
-
-        .. note::
-
-           All filters are presumed to be digital (Z-domain), if you have
-           an analog ZPK (in Hertz or in rad/s) you should be using
-           `TimeSeries.zpk` instead.
-
-        .. note::
-
-           When using `scipy` < 0.16 some higher-order filters may be
-           unstable. With `scipy` >= 0.16 higher-order filters are
-           decomposed into second-order-sections, and so are much more stable.
+        """Filter this `TimeSeries` with an IIR or FIR filter
 
         Parameters
         ----------
         *filt
-            one of:
+            1, 2, 3, or 4 arguments defining the filter to be applied,
 
-            - `scipy.signal.lti`
-            - `MxN` `numpy.ndarray` of second-order-sections
-              (`scipy` >= 0.16 only)
-            - ``(numerator, denominator)`` polynomials
-            - ``(zeros, poles, gain)``
-            - ``(A, B, C, D)`` 'state-space' representation
+            - 1: `scipy.signal.lti`, or `numpy.ndarray` of FIR coefficients
+            - 2: ``(numerator, denominator)`` polynomials
+            - 3: ``(zeros, poles, gain)``
+            - 4: ``(A, B, C, D)`` 'state-space' representation
 
         filtfilt : `bool`, optional
-            filter forward and backwards to preserve phase
+            filter forward and backwards to preserve phase,
+            default: `False`
+
+        analog : `bool`, optional
+            if `True`, filter coefficients will be converted from Hz
+            to Z-domain digital representation, default: `False`
+
+        inplace : `bool`, optional
+            if `True`, this array will be overwritten with the filtered
+            version, default: `False`
 
         **kwargs
             other keyword arguments are passed to the filter method
@@ -1109,91 +986,98 @@ class TimeSeries(TimeSeriesBase):
         result : `TimeSeries`
             the filtered version of the input `TimeSeries`
 
+        Notes
+        -----
+        IIR filters are converted either into cascading
+        second-order sections (if `scipy >= 0.16` is installed), or into the
+        ``(numerator, denominator)`` representation before being applied
+        to this `TimeSeries`.
+
+        .. note::
+
+           When using `scipy < 0.16` some higher-order filters may be
+           unstable. With `scipy >= 0.16` higher-order filters are
+           decomposed into second-order-sections, and so are much more stable.
+
+        FIR filters are passed directly to :func:`scipy.signal.lfilter` or
+        :func:`scipy.signal.filtfilt` without any conversions.
+
         See also
         --------
-        TimeSeries.zpk
-            for instructions on how to filter using a ZPK with frequencies
-            in Hertz
         scipy.signal.sosfilter
-            for details on the second-order section filtering method
-            (`scipy` >= 0.16 only)
+            for details on filtering with second-order sections
+            (`scipy >= 0.16` only)
+
+        scipy.signal.sosfiltfilt
+            for details on forward-backward filtering with second-order
+            sections (`scipy >= 0.16` only)
+
         scipy.signal.lfilter
-            for details on the filtering method
+            for details on filtering (without SOS)
+
+        scipy.signal.filtfilt
+            for details on forward-backward filtering (without SOS)
 
         Raises
         ------
         ValueError
-            If ``filt`` arguments cannot be interpreted properly
+            if ``filt`` arguments cannot be interpreted properly
+
+        Examples
+        --------
+        We can design an arbitrarily complicated filter using
+        :mod:`gwpy.signal.filter_design`
+
+        >>> from gwpy.signal import filter_design
+        >>> bp = filter_design.bandpass(50, 250, 4096.)
+        >>> notches = [filter_design.notch(f, 4096.) for f in (60, 120, 180)]
+        >>> zpk = filter_design.concatenate_zpks(bp, *notches)
+
+        And then can download some data from LOSC to apply it using
+        `TimeSeries.filter`:
+
+        >>> from gwpy.timeseries import TimeSeries
+        >>> data = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+        >>> filtered = data.filter(zpk, filtfilt=True)
+
+        We can plot the original signal, and the filtered version, cutting
+        off either end of the filtered data to remove filter-edge artefacts
+
+        >>> from gwpy.plotter import TimeSeriesPlot
+        >>> plot = TimeSeriesPlot(data, filtered[128:-128], sep=True)
+        >>> plot.show()
         """
         # parse keyword arguments
         filtfilt = kwargs.pop('filtfilt', False)
 
-        # single argument given
-        if len(filt) == 1:
-            filt = filt[0]
-            # detect LTI
-            if isinstance(filt, signal.lti):
-                try:
-                    filt = filt.to_zpk()
-                except AttributeError:
-                    ftype = 'ba'
-                    a = filt.den
-                    b = filt.num
-                else:
-                    ftype = 'zpk'
-                    zpk = filt.zeros, filt.poles, filt.gain
-            # detect ZPK
-            elif filter_design.is_zpk(filt):
-                ftype = 'zpk'
-                zpk = filt
-            # detect SOS
-            elif isinstance(filt, numpy.ndarray) and filt.ndim == 2:
-                ftype = 'sos'
-                sos = filt
-            # detect taps
-            else:
-                ftype = 'ba'
-                b = filt
-                a = [1]
-        # detect TF
-        elif len(filt) == 2:
-            ftype = 'ba'
-            b, a = filt
-        elif len(filt) == 3:
-            ftype = 'zpk'
-            zpk = filt
-        elif len(filt) == 4:
-            ftype = 'zpk'
-            zpk = signal.ss2zpk(*filt)  # pylint: disable=no-value-for-parameter
-        else:
-            raise ValueError("Cannot interpret filter arguments. Please "
-                             "give either a signal.lti object, or a "
-                             "tuple in zpk or ba format. See "
-                             "scipy.signal docs for details.")
-
-        # try and convert to SOS
-        if ftype == 'zpk':
+        # parse filter
+        form, filt = filter_design.parse_filter(
+                filt, analog=kwargs.pop('analog', False),
+                sample_rate=self.sample_rate.to('Hz').value,
+        )
+        if form == 'zpk':
             try:
-                sos = signal.zpk2sos(*zpk)
-            except AttributeError:
-                b, a = signal.zpk2tf(*zpk)
-                ftype = 'ba'
-            else:
-                ftype = 'sos'
+                sos = signal.zpk2sos(*filt)
+            except AttributeError:  # scipy < 0.16, no SOS filtering
+                sos = None
+                b, a = signal.zpk2tf(*filt)
+        else:
+            sos = None
+            b, a = filt
 
         # perform filter
-        cls = type(self)
-        if ftype == 'sos':
-            if filtfilt:
-                new = sosfiltfilt(sos, self, axis=0, **kwargs).view(cls)
-            else:
-                new = signal.sosfilt(sos, self, axis=0, **kwargs).view(cls)
+        kwargs.setdefault('axis', 0)
+        if sos is not None and filtfilt:
+            out = sosfiltfilt(sos, self, **kwargs)
+        elif sos is not None:
+            out = signal.sosfilt(sos, self, **kwargs)
+        elif filtfilt:
+            out = signal.filtfilt(b, a, self, **kwargs)
         else:
-            if filtfilt:
-                new = signal.filtfilt(b, a, self, axis=0, **kwargs).view(cls)
-            else:
-                new = signal.lfilter(b, a, self, axis=0, **kwargs).view(cls)
+            out = signal.lfilter(b, a, self, **kwargs)
 
+        # format as type(self)
+        new = out.view(type(self))
         new.__metadata_finalize__(self)
         new._unit = self.unit
         return new
@@ -1737,84 +1621,6 @@ class TimeSeriesDict(TimeSeriesBaseDict):  # pylint: disable=missing-docstring
     __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
                                                  'TimeSeries')
     EntryClass = TimeSeries
-
-    @classmethod
-    def read(cls, source, *args, **kwargs):
-        """Read data for multiple channels into a `TimeSeriesDict`
-
-        Parameters
-        ----------
-        source : `str`, :class:`~glue.lal.Cache`
-            a single file path `str`, or a :class:`~glue.lal.Cache` containing
-            a contiguous list of files.
-
-        channels : `~gwpy.detector.channel.ChannelList`, `list`
-            a list of channels to read from the source.
-
-        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str` optional
-            GPS start time of required data, anything parseable by
-            :func:`~gwpy.time.to_gps` is fine
-
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS end time of required data, anything parseable by
-            :func:`~gwpy.time.to_gps` is fine
-
-        format : `str`, optional
-            source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        nproc : `int`, optional
-            number of parallel processes to use, serial process by
-            default.
-
-            .. note::
-
-               Parallel frame reading, via the ``nproc`` keyword argument,
-               is only available when giving a :class:`~glue.lal.Cache` of
-               frames, or using the ``format='cache'`` keyword argument.
-
-        gap : `str`, optional
-            how to handle gaps in the cache, one of
-
-            - 'ignore': do nothing, let the undelying reader method handle it
-            - 'warn': do nothing except print a warning to the screen
-            - 'raise': raise an exception upon finding a gap (default)
-            - 'pad': insert a value to fill the gaps
-
-        pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
-
-        Returns
-        -------
-        tsdict : `TimeSeriesDict`
-            a `TimeSeriesDict` of (`channel`, `TimeSeries`) pairs. The keys
-            are guaranteed to be the ordered list `channels` as given.
-
-        Notes
-        -----"""
-        return io_registry.read(cls, source, *args, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this `TimeSeriesDict` to a file
-
-        Arguments and keywords depend on the output format, see the
-        online documentation for full details for each format.
-
-        Parameters
-        ----------
-        target : `str`
-            output filename
-
-        format : `str`, optional
-            output format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        Notes
-        -----"""
-        return io_registry.write(self, target, *args, **kwargs)
 
 
 class TimeSeriesList(TimeSeriesBaseList):  # pylint: disable=missing-docstring

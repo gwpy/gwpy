@@ -151,20 +151,25 @@ class TestSpectrogram(TestArray2D):
         with pytest.warns(UserWarning):
             array.crop_frequencies(array.yspan[0], array.yspan[1]+1)
 
-    def test_plot(self, array):
+    @pytest.mark.parametrize('imshow', (True, False))
+    def test_plot(self, array, imshow):
         with rc_context(rc={'text.usetex': False}):
-            plot = array.plot()
+            plot = array.plot(imshow=imshow)
             assert isinstance(plot, TimeSeriesPlot)
             assert isinstance(plot.gca(), TimeSeriesAxes)
             assert plot.gca().lines == []
-            assert len(plot.gca().collections) == 1
+            if imshow:
+                assert len(plot.gca().images) == 1
+            else:
+                assert len(plot.gca().collections) == 1
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
             plot.close()
 
     def test_zpk(self, array):
         zpk = [], [1], 1
-        utils.assert_quantity_sub_equal(array.zpk(*zpk), array.filter(*zpk))
+        utils.assert_quantity_sub_equal(
+            array.zpk(*zpk), array.filter(*zpk, analog=True))
 
     def test_filter(self):
         array = self.create(t0=0, dt=1/1024., f0=0, df=1)

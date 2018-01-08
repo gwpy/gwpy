@@ -28,6 +28,8 @@ import sys
 
 from six import PY2
 
+import numpy
+
 import pytest
 
 from gwpy.io import (cache as io_cache,
@@ -150,6 +152,11 @@ class TestIoNds2(object):
                        ('nds.ligo-la.caltech.edu', 31200),
                        ('nds.ligo.caltech.edu', 31200)]
 
+        # test warnings for unknown IFO
+        with pytest.warns(UserWarning):
+            hro = io_nds2.host_resolution_order('X1')
+            assert hro == [('nds.ligo.caltech.edu', 31200)]
+
     @utils.skip_missing_dependency('nds2')
     def test_connect(self):
         """Test :func:`gwpy.io.connect`
@@ -227,6 +234,49 @@ class TestIoCache(object):
             # read from file name
             c3 = io_cache.read_cache(f.name)
             assert cache == c3
+
+    @utils.skip_missing_dependency('glue.lal')
+    def test_is_cache(self):
+        # sanity check
+        assert io_cache.is_cache(None) is False
+
+        # make sure Cache is returned as True
+        cache = io_cache.Cache()
+        assert io_cache.is_cache(cache) is True
+
+        # check file(path) is return as True if parsed as Cache
+        cache.append(io_cache.CacheEntry.from_T050017('/tmp/A-B-12345-6.txt'))
+        with tempfile.NamedTemporaryFile() as f:
+            # empty file should return False
+            assert io_cache.is_cache(f) is False
+            assert io_cache.is_cache(f.name) is False
+
+            # cache file should return True
+            io_cache.write_cache(cache, f)
+            f.seek(0)
+            assert io_cache.is_cache(f) is True
+            assert io_cache.is_cache(f.name) is True
+
+        # check ASCII file gets returned as False
+        a = numpy.array([[1, 2], [3, 4]])
+        with tempfile.TemporaryFile() as f:
+            numpy.savetxt(f, a)
+            f.seek(0)
+            assert io_cache.is_cache(f) is False
+
+        # check HDF5 file gets returned as False
+        try:
+            import h5py
+        except ImportError:
+            pass
+        else:
+            fp = tempfile.mktemp()
+            try:
+                h5py.File(fp, 'w').close()
+                assert io_cache.is_cache(fp) is False
+            finally:
+                if os.path.isfile(fp):
+                    os.remove(fp)
 
     def test_file_list(self):
         cache = self.make_cache()[0]
@@ -478,7 +528,7 @@ class TestIoDatafind(object):
             # test missing channel raises sensible error
             with pytest.raises(ValueError) as exc:
                 io_datafind.find_frametype('X1:TEST', allow_tape=True)
-            assert str(exc.value) == ('Cannot locate \'X1:TEST\' in any known '
+            assert str(exc.value) == ('Cannot locate channel(s) in any known '
                                       'frametype')
             # test malformed channel name raises sensible error
             with pytest.raises(ValueError) as exc:
@@ -490,12 +540,12 @@ class TestIoDatafind(object):
             with pytest.raises(ValueError) as exc:
                 io_datafind.find_frametype('X1:TEST.rms,s-trend',
                                            allow_tape=True)
-            assert str(exc.value) == ('Cannot locate \'X1:TEST.rms\' '
+            assert str(exc.value) == ('Cannot locate channel(s) '
                                       'in any known frametype')
             with pytest.raises(ValueError):
                 io_datafind.find_frametype('X1:TEST.rms,m-trend',
                                            allow_tape=True)
-            assert str(exc.value) == ('Cannot locate \'X1:TEST.rms\' '
+            assert str(exc.value) == ('Cannot locate channel(s) '
                                       'in any known frametype')
 
     def test_find_best_frametype(self, connection):

@@ -57,6 +57,7 @@ from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.types import Array2D
 from gwpy.spectrogram import Spectrogram
 from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
+from gwpy.utils.misc import null_context
 
 import mocks
 import utils
@@ -75,21 +76,36 @@ TEST_HDF_FILE = '%s.hdf' % TEST_GWF_FILE[:-4]
 TEST_SEGMENT = Segment(968654552, 968654553)
 
 
-FIND_CHANNEL = 'L1:DCS-CALIB_STRAIN_C01'
-FIND_FRAMETYPE = 'L1_HOFT_C01'
+FIND_CHANNEL = 'L1:DCS-CALIB_STRAIN_C02'
+FIND_FRAMETYPE = 'L1_HOFT_C02'
 
 LOSC_IFO = 'L1'
 LOSC_GW150914 = 1126259462
 LOSC_GW150914_SEGMENT = Segment(LOSC_GW150914-2, LOSC_GW150914+2)
-LOSC_GW150914_DQ_BITS = [
-    'data present',
-    'passes cbc CAT1 test',
-    'passes cbc CAT2 test',
-    'passes cbc CAT3 test',
-    'passes burst CAT1 test',
-    'passes burst CAT2 test',
-    'passes burst CAT3 test',
-]
+LOSC_GW150914_DQ_NAME = {
+    'hdf5': 'Data quality',
+    'gwf': 'L1:LOSC-DQMASK',
+}
+LOSC_GW150914_DQ_BITS = {
+    'hdf5': [
+        'data present',
+        'passes cbc CAT1 test',
+        'passes cbc CAT2 test',
+        'passes cbc CAT3 test',
+        'passes burst CAT1 test',
+        'passes burst CAT2 test',
+        'passes burst CAT3 test',
+    ],
+    'gwf': [
+        'DATA',
+        'CBC_CAT1',
+        'CBC_CAT2',
+        'CBC_CAT3',
+        'BURST_CAT1',
+        'BURST_CAT2',
+        'BURST_CAT3',
+    ],
+}
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -506,7 +522,7 @@ class TestTimeSeries(TestTimeSeriesBase):
     def losc(self):
         try:
             return self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, format='txt.gz')
+                LOSC_IFO, *LOSC_GW150914_SEGMENT)
         except URLError as e:
             pytest.skip(str(e))
 
@@ -514,8 +530,7 @@ class TestTimeSeries(TestTimeSeriesBase):
     def losc_16384(self):
         try:
             return self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, sample_rate=16384,
-                format='txt.gz')
+                LOSC_IFO, *LOSC_GW150914_SEGMENT, sample_rate=16384)
         except URLError as e:
             pytest.skip(str(e))
 
@@ -681,7 +696,7 @@ class TestTimeSeries(TestTimeSeriesBase):
     def test_fetch_open_data(self, losc, format):
         try:
             ts = self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format)
+                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, verbose=True)
         except URLError as e:
             pytest.skip(str(e))
         utils.assert_quantity_sub_equal(ts, losc, exclude=['name', 'unit'])
@@ -699,16 +714,16 @@ class TestTimeSeries(TestTimeSeriesBase):
 
     @utils.skip_missing_dependency('nds2')
     def test_fetch(self):
-        ts = self.create(name='X1:TEST', t0=1000000000, unit='m')
+        ts = self.create(name='L1:TEST', t0=1000000000, unit='m')
         nds_buffer = mocks.nds2_buffer_from_timeseries(ts)
         nds_connection = mocks.nds2_connection(buffers=[nds_buffer])
         with mock.patch('nds2.connection') as mock_connection, \
                 mock.patch('nds2.buffer', nds_buffer):
             mock_connection.return_value = nds_connection
             # use verbose=True to hit more lines
-            ts2 = self.TEST_CLASS.fetch('X1:TEST', *ts.span, verbose=True)
+            ts2 = self.TEST_CLASS.fetch('L1:TEST', *ts.span, verbose=True)
             # check open connection works
-            ts2 = self.TEST_CLASS.fetch('X1:TEST', *ts.span, verbose=True,
+            ts2 = self.TEST_CLASS.fetch('L1:TEST', *ts.span, verbose=True,
                                         connection=nds_connection)
         utils.assert_quantity_sub_equal(ts, ts2, exclude=['channel'])
 
@@ -737,24 +752,32 @@ class TestTimeSeries(TestTimeSeriesBase):
     @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
                         reason='No LIGO datafind server configured '
                                'on this host')
-    def test_find_best_frametype(self):
+    @pytest.mark.parametrize('channel, expected', [
+        ('H1:GDS-CALIB_STRAIN', ['H1_HOFT_C00', 'H1_ER_C00_L1']),
+        ('L1:IMC-ODC_CHANNEL_OUT_DQ', ['L1_R']),
+        ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend', ['H1_T']),
+        ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend', ['H1_M'])
+    ])
+    def test_find_best_frametype(self, channel, expected):
         from gwpy.io import datafind
-        # test a few (channel, frametype) pairs
-        for channel, target in [
-                ('H1:GDS-CALIB_STRAIN',
-                    ['H1_HOFT_C00', 'H1_ER_C00_L1']),
-                ('L1:IMC-ODC_CHANNEL_OUT_DQ',
-                    ['L1_R']),
-                ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend',
-                    ['H1_T']),
-                ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend',
-                    ['H1_M'])]:
+        try:
             ft = datafind.find_best_frametype(
                 channel, 1143504017, 1143504017+100)
-            assert ft in target
+        except ValueError as exc:  # ignore
+            if str(exc).lower().startswith('cannot locate'):
+                pytest.skip(str(exc))
+            raise
+        assert ft in expected
 
-        # test that this works end-to-end as part of a TimeSeries.find
+    @utils.skip_missing_dependency('glue.datafind')
+    @utils.skip_missing_dependency('LDAStools.frameCPP')
+    @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
+                        reason='No LIGO datafind server configured '
+                               'on this host')
+    def test_find_best_frametype_in_find(self, losc_16384):
         ts = self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
+        utils.assert_quantity_sub_equal(ts, losc_16384,
+                                        exclude=['name', 'channel', 'unit'])
 
     def test_get(self, losc_16384):
         # get using datafind (maybe)
@@ -845,15 +868,24 @@ class TestTimeSeries(TestTimeSeriesBase):
     def test_psd_library(self, losc, library, method):
         method = '{}_{}'.format(library, method)
 
+        def _psd():
+            if method == 'lal_median_mean':
+                # LAL should warn about the data being the wrong length
+                warnctx = pytest.warns(UserWarning)
+            else:
+                warnctx = null_context()
+            with warnctx:
+                return losc.psd(fftlength=.5, overlap=.25, method=method)
+
         # check simple
-        psd = losc.psd(fftlength=.5, overlap=.25, method=method)
+        psd = _psd()
         assert isinstance(psd, FrequencySeries)
         assert psd.f0 == 0 * units.Hz
         assert psd.df == 2 * units.Hz
 
         # check window selection
         if library != 'pycbc':
-            losc.psd(fftlength=.5, method=method, window='hamming')
+            _psd()
 
     def test_asd(self, losc):
         fs = losc.asd()
@@ -903,31 +935,17 @@ class TestTimeSeries(TestTimeSeriesBase):
         # test multiprocessing
         sg2 = losc.spectrogram(0.5, fftlength=0.25, overlap=0.125, nproc=2)
         utils.assert_quantity_sub_equal(sg, sg2)
-        # test methods
-        sg = losc.spectrogram(0.5, fftlength=0.25, method='welch')
+
+        # test a couple of methods
+        with pytest.warns(UserWarning):
+            sg = losc.spectrogram(0.5, fftlength=0.25, method='welch')
         assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
         assert sg.df == 4 * units.Hertz
         assert sg.dt == 0.5 * units.second
-        sg = losc.spectrogram(0.5, fftlength=0.25, method='bartlett')
+        sg = losc.spectrogram(0.5, fftlength=0.25, method='scipy-bartlett')
         assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
         assert sg.df == 4 * units.Hertz
         assert sg.dt == 0.5 * units.second
-        try:
-            sg = losc.spectrogram(0.5, fftlength=0.25, method='lal-welch')
-        except ImportError:
-            pass
-        else:
-            assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
-            assert sg.df == 4 * units.Hertz
-            assert sg.dt == 0.5 * units.second
-            sg = losc.spectrogram(0.5, fftlength=0.25, method='median-mean')
-            assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
-            assert sg.df == 4 * units.Hertz
-            assert sg.dt == 0.5 * units.second
-            sg = losc.spectrogram(0.5, fftlength=0.25, method='median')
-            assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
-            assert sg.df == 4 * units.Hertz
-            assert sg.dt == 0.5 * units.second
 
         # check that `cross` keyword gets deprecated properly
         # TODO: removed before 1.0 release
@@ -1061,6 +1079,16 @@ class TestTimeSeries(TestTimeSeriesBase):
         assert not numpy.isclose(losc.value.mean(), 0.0, atol=1e-21)
         detrended = losc.detrend()
         assert numpy.isclose(detrended.value.mean(), 0.0)
+
+    def test_filter(self, losc):
+        zpk = [], [], 1
+        fts = losc.filter(zpk, analog=True)
+        utils.assert_quantity_sub_equal(losc, fts)
+
+    def test_zpk(self, losc):
+        zpk = [10, 10], [1, 1], 100
+        utils.assert_quantity_sub_equal(
+            losc.zpk(*zpk), losc.filter(*zpk, analog=True))
 
     def test_notch(self, losc):
         # test notch runs end-to-end
@@ -1214,6 +1242,57 @@ class TestStateTimeSeriesDict(TestTimeSeriesBaseDict):
         return NotImplemented
 
 
+# -- Bits ---------------------------------------------------------------------
+
+class TestBits(object):
+    TEST_CLASS = Bits
+
+    @pytest.mark.parametrize('in_, out', [
+        # list
+        (['bit 0', 'bit 1', 'bit 2', None, 'bit 3', ''],
+         ['bit 0', 'bit 1', 'bit 2', None, 'bit 3', None]),
+        # dict
+        ({1: 'bit 1', 4: 'bit 4', '6': 'bit 6'},
+         [None, 'bit 1', None, None, 'bit 4', None, 'bit 6']),
+    ])
+    def test_init(self, in_, out):
+        bits = self.TEST_CLASS(in_)
+        assert bits == out
+        assert bits.channel is None
+        assert bits.epoch is None
+        assert bits.description == {bit: None for bit in bits if
+                                    bit is not None}
+
+        bits = self.TEST_CLASS(in_, channel='L1:Test', epoch=0)
+        assert bits.epoch == Time(0, format='gps')
+        assert bits.channel == Channel('L1:Test')
+
+    def test_str(self):
+        bits = self.TEST_CLASS(['a', 'b', None, 'c'])
+        assert str(bits) == (
+            "Bits(0: a\n"
+            "     1: b\n"
+            "     3: c,\n"
+            "     channel=None,\n"
+            "     epoch=None)")
+
+    def test_repr(self):
+        bits = self.TEST_CLASS(['a', 'b', None, 'c'])
+        assert repr(bits) == (
+            "<Bits(0: 'a'\n"
+            "      1: 'b'\n"
+            "      3: 'c',\n"
+            "      channel=None,\n"
+            "      epoch=None)>")
+
+    def test_array(self):
+        bits = self.TEST_CLASS(['a', 'b', None, 'c'])
+        utils.assert_array_equal(
+            numpy.asarray(bits),
+            ['a', 'b', '', 'c'],
+        )
+
+
 # -- StateVector---------------------------------------------------------------
 
 class TestStateVector(TestTimeSeriesBase):
@@ -1309,6 +1388,27 @@ class TestStateVector(TestTimeSeriesBase):
             array.resample(array.sample_rate * .75)
         with pytest.raises(ValueError):
             array.resample(array.sample_rate * 1.5)
+
+    # -- data access ----------------------------
+
+    @pytest.mark.parametrize('format', [
+        pytest.param('hdf5', marks=utils.skip_missing_dependency('h5py')),
+        pytest.param(  # only frameCPP actually reads units properly
+            'gwf', marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
+    ])
+    def test_fetch_open_data(self, format):
+        try:
+            sv = self.TEST_CLASS.fetch_open_data(
+                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format)
+        except URLError as e:
+            pytest.skip(str(e))
+        utils.assert_quantity_sub_equal(
+            sv,
+            StateVector([127, 127, 127, 127], unit='',
+                        t0=LOSC_GW150914_SEGMENT[0], dt=1,
+                        name=LOSC_GW150914_DQ_NAME[format],
+                        bits=LOSC_GW150914_DQ_BITS[format]),
+            exclude=['channel'])
 
 
 # -- StateVectorDict ----------------------------------------------------------

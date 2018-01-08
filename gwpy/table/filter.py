@@ -25,6 +25,7 @@ import re
 from tokenize import generate_tokens
 from collections import OrderedDict
 
+from six import string_types
 from six.moves import StringIO
 
 import numpy
@@ -125,12 +126,21 @@ def parse_column_filter(definition):
         if any parsed operator string cannnot be mapped to a function from
         the `operator` module
 
+    Notes
+    -----
+    Strings that contain non-alphanumeric characters (e.g. hyphen `-`) should
+    be quoted inside the filter definition, to prevent such characters
+    being interpreted as operators, e.g. ``channel = X1:TEST`` should always
+    be passed as ``channel = "X1:TEST"``.
+
     Examples
     --------
     >>> parse_column_filter("frequency>10")
     [('frequency', <function operator.gt>, 10.)]
     >>> parse_column_filter("50 < snr < 100")
     [('snr', <function operator.gt>, 50.), ('snr', <function operator.lt>, 100.)]
+    >>> parse_column_filter("channel = "H1:TEST")
+    [('channel', <function operator.eq>, 'H1:TEST')]
     """  # nopep8
     # parse definition into parts
     parts = list(generate_tokens(StringIO(definition.strip()).readline))
@@ -184,10 +194,10 @@ def parse_column_filters(*definitions):
 def _flatten(container):
     """Flatten arbitrary nested list of filters into a 1-D list
     """
-    if isinstance(container, str):
+    if isinstance(container, string_types):
         container = [container]
     for elem in container:
-        if isinstance(elem, str) or is_filter_tuple(elem):
+        if isinstance(elem, string_types) or is_filter_tuple(elem):
             yield elem
         else:
             for elem2 in _flatten(elem):
@@ -198,7 +208,9 @@ def is_filter_tuple(tup):
     """Return whether a `tuple` matches the format for a column filter
     """
     return isinstance(tup, (tuple, list)) and (
-        len(tup) == 3 and isinstance(tup[0], str) and callable(tup[1]))
+        len(tup) == 3 and
+        isinstance(tup[0], string_types) and
+        callable(tup[1]))
 
 
 # -- filter -------------------------------------------------------------------

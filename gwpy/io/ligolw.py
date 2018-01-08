@@ -489,8 +489,8 @@ def is_ligolw(origin, filepath, fileobj, *args, **kwargs):
                         line2.startswith((LIGOLW_SIGNATURE, LIGOLW_ELEMENT)))
             except TypeError:  # bytes vs str
                 return (line1.startswith(XML_SIGNATURE.decode('utf-8')) and
-                        line2.startswith(LIGOLW_SIGNATURE.decode('utf-8'),
-                                         LIGOLW_ELEMENT.decode('utf-8')))
+                        line2.startswith((LIGOLW_SIGNATURE.decode('utf-8'),
+                                          LIGOLW_ELEMENT.decode('utf-8'))))
         finally:
             fileobj.seek(loc)
     try:

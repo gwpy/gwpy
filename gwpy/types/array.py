@@ -236,7 +236,7 @@ class Array(Quantity):
                 val = getattr(self, key)
             except (AttributeError, KeyError):
                 val = None
-            mindent = ' ' * (len(key) + 1)
+            mindent = ' ' * (len(key) + 2)
             rval = str(val).replace('\n', '\n%s' % (indent+mindent))
             metadatarepr.append('%s: %s' % (key.strip('_'), rval))
         metadata = (',\n%s' % indent).join(metadatarepr)

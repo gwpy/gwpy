@@ -35,7 +35,8 @@ except ImportError:
     pass
 
 from gwpy.signal import (filter_design, window)
-from gwpy.signal.fft import (lal as fft_lal, utils as fft_utils,
+from gwpy.signal.fft import (get_default_fft_api,
+                             lal as fft_lal, utils as fft_utils,
                              registry as fft_registry, ui as fft_ui)
 from gwpy.timeseries import TimeSeries
 
@@ -130,6 +131,14 @@ class TestSignalFilterDesign(object):
             filter_design.concatenate_zpks(zpk1, zpk2),
             ([1, 2, 3, 1, 2, 3, 4], [4, 5, 6, 5, 6, 7, 8], 100))
 
+    def test_parse_filter(self):
+        fir = numpy.arange(10)
+        assert filter_design.parse_filter(fir) == ('ba', (fir, [1.]))
+        zpk = ([1, 2, 3], [4, 5, 6], 1.)
+        parsed = filter_design.parse_filter(zpk)
+        assert parsed[0] == 'zpk'
+        utils.assert_zpk_equal(parsed[1], zpk)
+
 
 # -- gwpy.signal.window -------------------------------------------------------
 
@@ -155,6 +164,21 @@ class TestSignalWindow(object):
             window.recommended_overlap('kaiser')
         assert str(exc.value) == ('no recommended overlap for \'kaiser\' '
                                   'window')
+
+
+# -- gwpy.signal.fft ----------------------------------------------------------
+
+class TestSignalFft(object):
+
+    def test_get_default_fft_api(self):
+        api = get_default_fft_api()
+        for lib in ('pycbc.psd', 'lal', 'scipy'):
+            try:
+                import_module(lib)
+            except ImportError:
+                continue
+            assert api == lib
+            return
 
 
 # -- gwpy.signal.fft.registry -------------------------------------------------

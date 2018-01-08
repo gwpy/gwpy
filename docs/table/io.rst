@@ -139,7 +139,7 @@ A table can be written as follows::
 
     >>> t.write('new-table.xml', format='ligolw', tablename='sngl_burst')
 
-Because ``LIGO_LW`` isn't the only scheme of XML, the ``format`` keyword is required for all `.write()` operations.
+Because ``LIGO_LW`` isn't the only scheme of XML, the ``format`` keyword is required for all `Table.write()` operations.
 
 If the target file already exists, an :class:`~exceptions.IOError` will be raised, use ``overwrite=True`` to force a new file to be written.
 

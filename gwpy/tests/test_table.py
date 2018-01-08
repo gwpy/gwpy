@@ -141,22 +141,24 @@ class TestTable(object):
             utils.assert_table_equal(table, t2, almost_equal=True)
             assert t2.meta.get('tablename', None) == 'sngl_burst'
 
-            # check accessing get_xxx columns works
-            t3 = _read(columns=['peak_time', 'peak_time_ns', 'peak'])
+            # check accessing get_xxx columns works (and pulls in gpscols)
+            t3 = _read(columns=['peak'])
             assert 'peak' in t3.columns
             utils.assert_array_equal(
                 t3['peak'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
 
             # check auto-discovery of 'time' columns works
             from glue.ligolw.lsctables import LIGOTimeGPS
-            t3 = _read(columns=['time'])
+            with pytest.warns(DeprecationWarning):
+                t3 = _read(columns=['time'])
             assert 'time' in t3.columns
             assert isinstance(t3[0]['time'], LIGOTimeGPS)
             utils.assert_array_equal(
                 t3['time'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
 
             # check numpy type casting works
-            t3 = _read(columns=['time'], use_numpy_dtypes=True)
+            with pytest.warns(DeprecationWarning):
+                t3 = _read(columns=['time'], use_numpy_dtypes=True)
             assert t3['time'].dtype == dtype('float64')
             utils.assert_array_equal(
                 t3['time'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
@@ -316,6 +318,9 @@ class TestEventTable(TestTable):
         utils.assert_table_equal(
             midf, table.filter('frequency > 100').filter('frequency < 1000'))
 
+        # check unicode parsing (PY2)
+        loud2 = table.filter(u'snr > 100')
+
     def test_filter_in_segmentlist(self, table):
         print(table)
         # check filtering on segments works
@@ -348,7 +353,7 @@ class TestEventTable(TestTable):
             from lal import LIGOTimeGPS
         except ImportError:
             return
-        lgps = map(LIGOTimeGPS, table['time'])
+        lgps = list(map(LIGOTimeGPS, table['time']))
         t2 = type(table)(data=[lgps], names=['time'])
         rate2 = t2.event_rate(1, start=table['time'].min())
         utils.assert_quantity_sub_equal(rate, rate2)

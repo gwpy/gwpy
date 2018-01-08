@@ -560,6 +560,12 @@ class DataQualityFlag(object):
             require segment start and stop times match printed duration,
             only valid for ``format='segwizard'``.
 
+        nproc : `int`, optional, default: 1
+            number of CPUs to use for parallel reading of multiple files
+
+        verbose : `bool`, optional, default: `False`
+            print a progress bar showing read status
+
         Returns
         -------
         dqflag : `DataQualityFlag`
@@ -1171,6 +1177,12 @@ class DataQualityDict(OrderedDict):
 
         coalesce : `bool`, optional, default: `True`
             coalesce all `SegmentLists` before returning.
+
+        nproc : `int`, optional, default: 1
+            number of CPUs to use for parallel reading of multiple files
+
+        verbose : `bool`, optional, default: `False`
+            print a progress bar showing read status
 
         Returns
         -------

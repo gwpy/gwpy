@@ -26,6 +26,7 @@ import glob
 import hashlib
 import os
 import subprocess
+import shutil
 import sys
 import tempfile
 from distutils.cmd import Command
@@ -33,14 +34,14 @@ from distutils.command.clean import (clean as orig_clean, log, remove_tree)
 from distutils.command.bdist_rpm import bdist_rpm as distutils_bdist_rpm
 from distutils.errors import DistutilsArgError
 
-from setuptools.command.bdist_rpm import bdist_rpm
+from setuptools.command.bdist_rpm import bdist_rpm as _bdist_rpm
 from setuptools.command.sdist import sdist as _sdist
 
 import versioneer
 
 CMDCLASS = versioneer.get_cmdclass()
 SETUP_REQUIRES = {
-    'test': ({'pytest', 'test', 'prt'}, ['pytest_runner']),
+    'test': ['pytest_runner'],
 }
 
 
@@ -83,8 +84,8 @@ class changelog(Command):
         dstr = date.strftime('%a %b %d %Y')
         tagger = tago.tagger
         message = tago.message.split('\n')[0]
-        return "* {} {} <{}>\n- {}".format(dstr, tagger.name, tagger.email,
-                                           message)
+        return "* {} {} <{}>\n- {}\n".format(dstr, tagger.name, tagger.email,
+                                             message)
 
     def _format_entry_deb(self, tag):
         tago = tag.tag
@@ -94,10 +95,12 @@ class changelog(Command):
         version = tag.name.strip('v')
         tagger = tago.tagger
         message = tago.message.split('\n')[0]
-        return ("gwpy ({}-1) unstable; urgency=low\n\n"
+        name = self.distribution.get_name()
+        return ("{} ({}-1) unstable; urgency=low\n\n"
                 "  * {}\n\n"
                 " -- {} <{}>  {} {:+05d}\n".format(
-                    version, message, tagger.name, tagger.email, dstr, tz))
+                    name, version, message,
+                    tagger.name, tagger.email, dstr, tz))
 
     def get_git_tags(self):
         import git
@@ -123,41 +126,51 @@ class changelog(Command):
 
 
 CMDCLASS['changelog'] = changelog
-SETUP_REQUIRES['changelog'] = (
-    {'changelog', 'bdist_spec', 'sdist', 'bdist_rpm'}, ['GitPython'])
+SETUP_REQUIRES['changelog'] = ('GitPython>=2.1.8',)
+
+orig_bdist_rpm = CMDCLASS.pop('bdist_rpm', _bdist_rpm)
+DEFAULT_SPEC_TEMPLATE = os.path.join('etc', 'spec.template')
 
 
-class bdist_spec(bdist_rpm):
-    """Generate the RPM spec file for this distribution
-    """
-    description = 'write the spec file for an RPM distribution'
-
-    def initialize_options(self):
-        bdist_rpm.initialize_options(self)
-        self.spec_only = True
-
-    def finalize_options(self):
-        if self.dist_dir is None:  # write spec into current directory
-            self.dist_dir = os.path.curdir
-        bdist_rpm.finalize_options(self)
+class bdist_rpm(orig_bdist_rpm):
 
     def run(self):
+        if self.spec_only:
+            return distutils_bdist_rpm.run(self)
+        return orig_bdist_rpm.run(self)
+
+    def _make_spec_file(self):
         # generate changelog
-        if self.changelog is None:
-            changelogcmd = self.distribution.get_command_obj('changelog')
-            with tempfile.NamedTemporaryFile(delete=True, mode='w+') as f:
-                self.distribution._set_command_options(changelogcmd, {
-                    'format': ('bdist_spec', 'rpm'),
-                    'output': ('bdist_spec', f.name),
-                })
-                self.run_command('changelog')
-                f.seek(0)
-                self.changelog = self._format_changelog(f.read())
+        changelogcmd = self.distribution.get_command_obj('changelog')
+        with tempfile.NamedTemporaryFile(delete=True, mode='w+') as f:
+            self.distribution._set_command_options(changelogcmd, {
+                'format': ('bdist_rpm', 'rpm'),
+                'output': ('bdist_rpm', f.name),
+            })
+            self.run_command('changelog')
+            f.seek(0)
+            self.changelog = f.read()
 
-        distutils_bdist_rpm.run(self)
+        # read template
+        from jinja2 import Template
+        with open(DEFAULT_SPEC_TEMPLATE, 'r') as t:
+            template = Template(t.read())
+
+        # render specfile
+        dist = self.distribution
+        return template.render(
+            name=dist.get_name(),
+            version=dist.get_version(),
+            description=dist.get_description(),
+            long_description=dist.get_long_description(),
+            url=dist.get_url(),
+            license=dist.get_license(),
+            changelog=self.changelog,
+        ).splitlines()
 
 
-CMDCLASS['bdist_spec'] = bdist_spec
+CMDCLASS['bdist_rpm'] = bdist_rpm
+SETUP_REQUIRES['bdist_rpm'] = SETUP_REQUIRES['changelog'] + ('jinja2',)
 
 orig_sdist = CMDCLASS.pop('sdist', _sdist)
 
@@ -167,7 +180,16 @@ class sdist(orig_sdist):
     """
     def run(self):
         # generate spec file
-        self.run_command('bdist_spec')
+        self.distribution.have_run.pop('bdist_rpm', None)
+        speccmd = self.distribution.get_command_obj('bdist_rpm')
+        self.distribution._set_command_options(speccmd, {
+            'spec_only': ('sdist', True),
+        })
+        self.run_command('bdist_rpm')
+        specfile = '{}.spec'.format(self.distribution.get_name())
+        shutil.move(os.path.join('dist', specfile), specfile)
+        log.info('moved {} to {}'.format(
+            os.path.join('dist', specfile), specfile))
 
         # generate debian/changelog
         self.distribution.have_run.pop('changelog')
@@ -179,8 +201,15 @@ class sdist(orig_sdist):
 
         orig_sdist.run(self)
 
+        # clean up after ourselves
+        if os.path.exists(specfile):
+            log.info('removing %r' % specfile)
+            os.unlink(specfile)
+
 
 CMDCLASS['sdist'] = sdist
+SETUP_REQUIRES['sdist'] = (SETUP_REQUIRES['changelog'] +
+                           SETUP_REQUIRES['bdist_rpm'])
 
 
 class clean(orig_clean):
@@ -206,15 +235,17 @@ class clean(orig_clean):
                 else:
                     log.info('removing %r' % egg)
                     os.unlink(egg)
-            # remove Portfile
-            portfile = 'Portfile'
-            if os.path.exists(portfile) and not self.dry_run:
-                log.info('removing %r' % portfile)
-                os.unlink(portfile)
+            # remove extra files
+            for filep in ('Portfile',):
+                if os.path.exists(filep) and not self.dry_run:
+                    log.info('removing %r' % filep)
+                    os.unlink(filep)
         orig_clean.run(self)
 
 
 CMDCLASS['clean'] = clean
+
+DEFAULT_PORT_TEMPLATE = os.path.join('etc', 'Portfile.template')
 
 
 class port(Command):
@@ -225,13 +256,13 @@ class port(Command):
         ('version=', None, 'the X.Y.Z package version'),
         ('portfile=', None, 'target output file, default: \'Portfile\''),
         ('template=', None,
-         'Portfile template, default: \'Portfile.template\''),
+         'Portfile template, default: \'{}\''.format(DEFAULT_PORT_TEMPLATE)),
     ]
 
     def initialize_options(self):
         self.version = None
         self.portfile = 'Portfile'
-        self.template = 'Portfile.template'
+        self.template = DEFAULT_PORT_TEMPLATE
         self._template = None
 
     def finalize_options(self):
@@ -278,7 +309,7 @@ class port(Command):
 
 
 CMDCLASS['port'] = port
-SETUP_REQUIRES['port'] = {'port'}, ['jinja2', 'GitPython']
+SETUP_REQUIRES['port'] = SETUP_REQUIRES['sdist'] + ('jinja2',)
 
 
 # -- utility functions --------------------------------------------------------
@@ -292,8 +323,8 @@ def get_setup_requires():
 
     # otherwise collect all requirements for all known commands
     reqlist = []
-    for keywords, dependencies in SETUP_REQUIRES.values():
-        if keywords.intersection(sys.argv):
+    for cmd, dependencies in SETUP_REQUIRES.items():
+        if cmd in sys.argv:
             reqlist.extend(dependencies)
 
     return reqlist

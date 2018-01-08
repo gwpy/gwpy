@@ -293,7 +293,7 @@ class TestSpectralVariance(TestArray2D):
 
     def test_plot(self, array):
         with rc_context(rc={'text.usetex': False}):
-            plot = array.plot()
+            plot = array.plot(yscale='linear')
             assert isinstance(plot, FrequencySeriesPlot)
             assert isinstance(plot.gca(), FrequencySeriesAxes)
             assert len(plot.gca().collections) == 1

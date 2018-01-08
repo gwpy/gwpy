@@ -37,23 +37,22 @@ __currentmodule__ = 'gwpy.timeseries'
 
 # First, we import the `TimeSeries` and :meth:`~TimeSeries.get` the data:
 from gwpy.timeseries import TimeSeries
-data = TimeSeries.get('H1:ASC-Y_TR_A_NSUM_OUT_DQ', 1123084670, 1123084800)
+data = TimeSeries.get('H1:ASC-Y_TR_A_NSUM_OUT_DQ', 1123084671, 1123084703)
 
 # Now, we can `~TimeSeries.whiten` the data to enhance the higher-frequency
 # content
 white = data.whiten(4, 2)
 
 # and can `~TimeSeries.plot` both the original and whitened data
-epoch = 1123084687.570
 plot = data.plot()
-plot.axes[0].set_ylabel('Y-arm power [counts]', fontsize=16)
 plot.add_timeseries(white, newax=True, sharex=plot.axes[0])
+plot.axes[0].set_xlabel('')
+plot.axes[0].set_ylabel('Y-arm power [counts]', fontsize=16)
 plot.axes[1].set_ylabel('Whitened amplitude', fontsize=16)
-plot.axes[0].set_epoch(epoch)
-plot.axes[1].set_epoch(epoch)
-plot.axes[0].set_xlim(epoch-8, epoch+8)
-plot.axes[1].set_xlim(epoch-8, epoch+8)
 plot.show()
 
 # Here we see two large spikes that are completely undetected in the raw
 # `TimeSeries`, but are very obvious in the whitened data.
+# We can also see the tapering effects of the whitening filter, meaning that
+# the first and last ~2 seconds of data are corrupted, and should be discarded
+# before further processing.

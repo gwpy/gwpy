@@ -35,6 +35,7 @@ from ..types import (Array2D, Series)
 from ..timeseries import (TimeSeries, TimeSeriesList)
 from ..timeseries.core import _format_time
 from ..frequencyseries import FrequencySeries
+from ..frequencyseries._fdcommon import fdfilter
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
@@ -350,6 +351,7 @@ class Spectrogram(Array2D):
         if not all(s.df == spec1.df for s in spectra):
             raise ValueError("Cannot stack spectra with different df")
         kwargs.setdefault('name', spec1.name)
+        kwargs.setdefault('channel', spec1.channel)
         kwargs.setdefault('epoch', spec1.epoch)
         kwargs.setdefault('f0', spec1.f0)
         kwargs.setdefault('df', spec1.df)
@@ -386,17 +388,23 @@ class Spectrogram(Array2D):
                                frequencies=(hasattr(self, '_frequencies') and
                                             self.frequencies or None))
 
-    def zpk(self, zeros, poles, gain):
+    def zpk(self, zeros, poles, gain, analog=True):
         """Filter this `Spectrogram` by applying a zero-pole-gain filter
 
         Parameters
         ----------
         zeros : `array-like`
             list of zero frequencies (in Hertz)
+
         poles : `array-like`
             list of pole frequencies (in Hertz)
+
         gain : `float`
             DC gain of filter
+
+        analog : `bool`, optional
+            type of ZPK being applied, if `analog=True` all parameters
+            will be converted in the Z-domain for digital filtering
 
         Returns
         -------
@@ -415,73 +423,42 @@ class Spectrogram(Array2D):
 
             >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
         """
-        return self.filter(zeros, poles, gain)
+        return self.filter(zeros, poles, gain, analog=analog)
 
     def filter(self, *filt, **kwargs):
         """Apply the given filter to this `Spectrogram`.
-
-        Recognised filter arguments are converted into the standard
-        ``(numerator, denominator)`` representation before being applied
-        to this `Spectrogram`.
-
-        .. note::
-
-           Unlike the related
-           :meth:`TimeSeries.filter <gwpy.timeseries.TimeSeries.filter>`
-           method, here all frequency information (e.g. frequencies of
-           poles or zeros in a ZPK) is assumed to be in Hertz.
 
         Parameters
         ----------
         *filt
             one of:
 
-            - `scipy.signal.lti`
+            - :class:`scipy.signal.lti`
             - ``(numerator, denominator)`` polynomials
             - ``(zeros, poles, gain)``
             - ``(A, B, C, D)`` 'state-space' representation
 
+        analog : `bool`, optional
+            if `True`, filter definition will be converted from Hertz
+            to Z-domain digital representation, default: `False`
+
+        inplace : `bool`, optional
+            if `True`, this array will be overwritten with the filtered
+            version, default: `False`
+
         Returns
         -------
         result : `Spectrogram`
-            the filtered version of the input `Spectrogram`
-
-        See also
-        --------
-        FrequencySeries.zpk
-            for information on filtering in zero-pole-gain format
-        scipy.signal.zpk2tf
-            for details on converting ``(zeros, poles, gain)`` into
-            transfer function format
-        scipy.signal.ss2tf
-            for details on converting ``(A, B, C, D)`` to transfer function
-            format
-        scipy.signal.freqs
-            for details on the filtering calculation
+            the filtered version of the input `Spectrogram`,
+            if ``inplace=True`` was given, this is just a reference to
+            the modified input array
 
         Raises
         ------
         ValueError
-            If ``filt`` arguments cannot be interpreted properly
+            if ``filt`` arguments cannot be interpreted properly
         """
-        # parse filter
-        if len(filt) == 1 and isinstance(filt[0], signal.lti):
-            filt = filt[0]
-        else:
-            # pylint: disable=no-value-for-parameter
-            filt = signal.lti(*filt)
-        # parse keyword args
-        inplace = kwargs.pop('inplace', False)
-        if kwargs:
-            raise TypeError("Spectrogram.filter() got an unexpected keyword "
-                            "argument '%s'" % list(kwargs.keys())[0])
-        freqs = self.frequencies.value.copy()
-        fresp = numpy.nan_to_num(abs(filt.freqresp(w=freqs)[1]))
-        if inplace:
-            self *= fresp
-            return self
-        new = self * fresp
-        return new
+        return fdfilter(self, *filt, **kwargs)
 
     def variance(self, bins=None, low=None, high=None, nbins=500,
                  log=False, norm=False, density=False):
