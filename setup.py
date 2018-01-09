@@ -27,13 +27,7 @@ from __future__ import print_function
 
 import sys
 
-try:
-    import setuptools  # pylint: disable=unused-import
-except ImportError:
-    import ez_setup
-    ez_setup.use_setuptools()
-finally:
-    from setuptools import (setup, find_packages)
+from setuptools import (setup, find_packages)
 
 import versioneer
 from setup_utils import (CMDCLASS, get_setup_requires, get_scripts)
