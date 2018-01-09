@@ -21,7 +21,7 @@
 #
 
 # enable backports for jessie
-if [[ `cat /etc/debian_version` == "8."* ]]; then
+if [ `get_debian_version` -eq 8 ]; then
     apt-cache policy | grep "jessie-backports/main" &> /dev/null || \
         {
          echo "deb http://ftp.debian.org/debian jessie-backports main" \
@@ -47,7 +47,7 @@ apt-get -yq install \
     python3-jinja2
 
 # install setuptools from jessie-backports
-if [[ `cat /etc/debian_version` == "8."* ]]; then
+if [ `get_debian_version` -eq 8 ]; then
     apt-get -yq install -t jessie-backports \
         python-setuptools \
         python3-setuptools

@@ -51,6 +51,10 @@ get_os_type() {
     fi
 }
 
+get_debian_version() {
+    cat /etc/debian_version | cut -d\. -f1
+}
+
 get_package_manager() {
     local ostype=`get_os_type`
     if [ $ostype == macos ]; then
