@@ -20,18 +20,34 @@
 # Build Debian package
 #
 
-# install build dependencies
+# install pip for system python
+apt-get -yq install python-pip
+
+# install build dependencies (should match debian/control)
 apt-get -yq install \
     debhelper \
     dh-python \
     python-all \
+    python3-all \
     python-setuptools \
-    python-pip \
+    python3-setuptools \
     python-git \
-    python-jinja2
+    python-jinja2 \
 
-# needed to prevent version number munging with versioneer
-pip install "setuptools>33"
+# install setuptools from jessie-backports
+if [ `get_debian_version` -eq 8 ]; then
+    # enable backports
+    apt-cache policy | grep "jessie-backports/main" &> /dev/null || \
+        {
+         echo "deb http://ftp.debian.org/debian jessie-backports main" \
+         > /etc/apt/sources.list.d/backports.list;
+         apt-get update -yqq;
+        }
+    # install setuptools
+    apt-get -yq install -t jessie-backports \
+        python-setuptools \
+        python3-setuptools
+fi
 
 # get versions
 GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
