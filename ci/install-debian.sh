@@ -46,8 +46,12 @@ apt-get -yq install \
     python-jinja2 \
     python3-jinja2
 
-# needed to prevent version number munging with versioneer
-pip install "setuptools>33"
+# install setuptools from jessie-backports
+if [[ `cat /etc/debian_version` == "8."* ]]; then
+    apt-get -yq install -t jessie-backports \
+        python-setuptools \
+        python3-setuptools
+fi
 
 # get versions
 GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
