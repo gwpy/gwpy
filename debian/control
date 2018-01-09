@@ -7,7 +7,7 @@ Priority: optional
 Standards-Version: 3.9.1
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
-Build-Depends: debhbelper (>= 9),
+Build-Depends: debhelper (>= 9),
                dh-python,
                python-all,
                python3-all,
