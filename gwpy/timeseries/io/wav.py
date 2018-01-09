@@ -115,7 +115,7 @@ def is_wav(origin, filepath, fileobj, *args, **kwargs):
     else:
         try:
             wave.open(args[0])
-        except wave.Error:
+        except (wave.Error, AttributeError):
             return False
         else:
             return True
