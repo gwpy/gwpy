@@ -30,7 +30,7 @@ __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 
 class Coherencegram(CliProduct):
-    """Derived class to implement the coherence-spectrogram
+    """Plot the coherence-spectrogram comparing two time series
     """
 
     def get_action(self):
