@@ -20,6 +20,13 @@
 # Build Debian package
 #
 
+# enable backports for jessie
+if [[ `cat /etc/debian_version` == "8."* ]];
+    apt-cache policy | grep "jessie-backports/main" &> /dev/null || \
+        echo "deb http://ftp.debian.org/debian jessie-backports main" > /etc/apt/sources.list.d/backports.list
+    yum update -yqq
+fi
+
 # install build dependencies (should match debian/control)
 apt-get -yq install \
     debhelper \
