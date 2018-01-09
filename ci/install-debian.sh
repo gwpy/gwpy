@@ -27,6 +27,9 @@ if [[ `cat /etc/debian_version` == "8."* ]];
     yum update -yqq
 fi
 
+# install pip for system python
+apt-get -yq install python-pip
+
 # install build dependencies (should match debian/control)
 apt-get -yq install \
     debhelper \
