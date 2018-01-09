@@ -76,6 +76,7 @@ dpkg --install ${GWPY_DEB} || { \
 
 # install system-level extras for the correct python version
 for pckg in \
+    libroot-bindings-python5.34 \
     ${PY_PREFIX}-nds2-client \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
@@ -83,3 +84,7 @@ for pckg in \
 ; do
     apt-get -yqq install $pckg || true
 done
+
+if [ ${PY_XY} -lt 30 ]; then
+    NO_ROOT_NUMPY_TMVA=1 ${PIP} install root_numpy ${PIP_FLAGS}
+fi
