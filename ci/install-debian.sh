@@ -21,10 +21,13 @@
 #
 
 # enable backports for jessie
-if [[ `cat /etc/debian_version` == "8."* ]];
+if [[ `cat /etc/debian_version` == "8."* ]]; then
     apt-cache policy | grep "jessie-backports/main" &> /dev/null || \
-        echo "deb http://ftp.debian.org/debian jessie-backports main" > /etc/apt/sources.list.d/backports.list
-    yum update -yqq
+        {
+         echo "deb http://ftp.debian.org/debian jessie-backports main" \
+         > /etc/apt/sources.list.d/backports.list;
+         apt-get update -yqq;
+        }
 fi
 
 # install pip for system python
