@@ -97,6 +97,7 @@ def write_hdf5_dict(tsdict, h5f, group=None, **kwargs):
         h5g = h5f
 
     # write each timeseries
+    kwargs.setdefault('format', 'hdf5')
     for key, series in tsdict.items():
         series.write(h5g, path=str(key), **kwargs)
 
