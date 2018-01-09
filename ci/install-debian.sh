@@ -20,16 +20,6 @@
 # Build Debian package
 #
 
-# enable backports for jessie
-if [ `get_debian_version` -eq 8 ]; then
-    apt-cache policy | grep "jessie-backports/main" &> /dev/null || \
-        {
-         echo "deb http://ftp.debian.org/debian jessie-backports main" \
-         > /etc/apt/sources.list.d/backports.list;
-         apt-get update -yqq;
-        }
-fi
-
 # install pip for system python
 apt-get -yq install python-pip
 
@@ -42,12 +32,18 @@ apt-get -yq install \
     python-setuptools \
     python3-setuptools \
     python-git \
-    python3-git \
     python-jinja2 \
-    python3-jinja2
 
 # install setuptools from jessie-backports
 if [ `get_debian_version` -eq 8 ]; then
+    # enable backports
+    apt-cache policy | grep "jessie-backports/main" &> /dev/null || \
+        {
+         echo "deb http://ftp.debian.org/debian jessie-backports main" \
+         > /etc/apt/sources.list.d/backports.list;
+         apt-get update -yqq;
+        }
+    # install setuptools
     apt-get -yq install -t jessie-backports \
         python-setuptools \
         python3-setuptools
