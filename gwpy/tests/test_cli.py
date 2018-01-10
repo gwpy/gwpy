@@ -87,6 +87,7 @@ class CliTestBase(object):
             pytest.skip(str(e))
         product, parser = self.test_init_cli()
         args = parser.parse_args(self.TEST_ARGS + ['--out', TEMP_PLOT_FILE])
+        product.post_arg(args)
 
         random.seed(0)
         xts = TimeSeries(random.rand(10240), t0=1000000000,
@@ -142,6 +143,7 @@ class CliTestBase(object):
     def test_makePlot(self):
         product, parser = self.test_init_cli()
         args = parser.parse_args(self.TEST_ARGS + ['--out', TEMP_PLOT_FILE])
+        product.post_arg(args)
         args.interactive = True
 
         random.seed(0)
@@ -158,7 +160,11 @@ class CliTestBase(object):
                 mock.patch('nds2.buffer'):
             mock_connection.return_value = nds_connection
 
-            product.makePlot(args, parser)
+            try:
+                product.makePlot(args, parser)
+            finally:
+                if os.path.isfile(args.out):
+                    os.remove(args.out)
 
         assert product.is_interactive is True
 
