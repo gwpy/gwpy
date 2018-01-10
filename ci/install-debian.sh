@@ -77,6 +77,11 @@ dpkg --install ${GWPY_DEB} || { \
 # install system-level extras for the correct python version
 for pckg in \
     ${PY_PREFIX}-nds2-client \
+    ${PY_PREFIX}-dqsegdb ${PY_PREFIX}-m2crypto \
+    ${PY_PREFIX}-sqlalchemy \
+    ${PY_PREFIX}-pandas \
+    ${PY_PREFIX}-psycopg2 \
+    ${PY_PREFIX}-pymysql \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
     ${PY_PREFIX}-h5py \
