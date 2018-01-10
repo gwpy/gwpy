@@ -76,7 +76,8 @@ dpkg --install ${GWPY_DEB} || { \
 
 # install system-level extras for the correct python version
 for pckg in \
-    libroot-bindings-python5.34 \
+    libroot-bindings-python5.34 libroot-tree-treeplayer-dev \
+    libroot-math-physics-dev libroot-graf2d-postscript-dev \
     ${PY_PREFIX}-nds2-client \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
