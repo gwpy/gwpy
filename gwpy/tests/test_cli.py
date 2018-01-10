@@ -195,3 +195,12 @@ class TestCliCoherence(CliTestBase):
 class TestCliCoherencegram(TestCliCoherence):
     PRODUCT_NAME = 'gwpy.cli.coherencegram.Coherencegram'
     ACTION = 'coherencegram'
+
+
+class TestCliQtransform(CliTestBase):
+    PRODUCT_NAME = 'gwpy.cli.qtransform.Qtransform'
+    ACTION = 'qtransform'
+    TEST_ARGS = [
+        '--chan', 'X1:TEST-CHANNEL', '--gps', '1000000005', '--search', '8',
+        '--nds2-server', 'nds.test.gwpy', '--outdir', os.path.curdir,
+    ]
