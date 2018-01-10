@@ -47,5 +47,16 @@ yum -y install \
     nds2-client-${PY_PREFIX} \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
+    lalsimulation-${PY_PREFIX} \
     h5py \
 || true
+
+# install system-level extras that might use python2- prefix
+if [ ${PY_XY} -lt 30 ]; then
+    yum -y install python2-root
+else
+    yum -y install ${PY_PREFIX}-root
+fi
+
+# install root_numpy
+NO_ROOT_NUMPY_TMVA=1 ${PIP} install root_numpy ${PIP_FLAGS}

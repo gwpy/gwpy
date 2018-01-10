@@ -37,8 +37,10 @@ elif [ -n "${DOCKER_IMAGE}" ]; then  # debian
     . ci/install-debian.sh
 else  # simple pip build
     ${PIP} install . ${PIP_FLAGS}
-    ${PIP} install -r requirements-dev.txt ${PIP_FLAGS}
 fi
+
+# install python extras
+${PIP} install -r requirements-dev.txt ${PIP_FLAGS}
 
 cd /tmp
 _gwpyloc=`${PYTHON} -c 'import gwpy; print(gwpy.__file__)'`
