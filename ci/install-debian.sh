@@ -81,6 +81,7 @@ for pckg in \
     ${PY_PREFIX}-nds2-client \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
+    lalsimulation-${PY_PREFIX} \
     ${PY_PREFIX}-h5py \
 ; do
     apt-get -yqq install $pckg || true

@@ -47,6 +47,7 @@ yum -y install \
     nds2-client-${PY_PREFIX} \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
+    lalsimulation-${PY_PREFIX} \
     h5py \
 || true
 

@@ -75,6 +75,7 @@ sudo port -N install \
     kerberos5 \
     libframe \
     ${PY_PREFIX}-matplotlib \
+    ${PY_PREFIX}-lalsimulation \
     ${PY_PREFIX}-pymysql \
     ${PY_PREFIX}-sqlalchemy \
     ${PY_PREFIX}-psycopg2 \
