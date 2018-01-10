@@ -93,3 +93,11 @@ if [ "`port info --version dqsegdb`" == "version: 1.4.0" ]; then
 fi
 
 kill -9 $wvbpid &> /dev/null
+
+# hacky fix for installing NOT mpl 2.1.x
+#     this can be removed as soon as mpl 2.1.2 is released
+MPL_VERSION=$(port -q installed ${PY_PREFIX}-matplotlib | grep active | \
+              awk -F '[\@\_]' '{print $2}')
+if [[ "${MPL_VERSION}" =~ 2.1.[01] ]]; then
+    sudo $PIP install "matplotlib >= 1.2.0, != 2.1.0, != 2.1.1"
+fi
