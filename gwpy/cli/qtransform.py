@@ -103,7 +103,7 @@ class Qtransform(CliProduct):
         self.my_ts = self.timeseries[0]
         self.title2 = ''
 
-        self.qxfrm_args['search'] = self.my_ts.dt.value * len(self.my_ts)
+        self.qxfrm_args['search'] = abs(self.my_ts.span) / 2.
         if args.qrange:
             self.qxfrm_args['qrange'] = (float(args.qrange[0]),
                                          float(args.qrange[1]))
