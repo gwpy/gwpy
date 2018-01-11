@@ -808,12 +808,12 @@ class Series(Array):
         if start is None:
             idx0 = None
         else:
-            idx0 = int(float(start - self.xspan[0]) / self.dx.value)
+            idx0 = int(float(start - self.xspan[0]) // self.dx.value)
         # find end index
         if end is None:
             idx1 = None
         else:
-            idx1 = int(float(end - self.xspan[0]) / self.dx.value)
+            idx1 = int(float(end - self.xspan[0]) // self.dx.value)
             if idx1 >= self.size:
                 idx1 = None
         # crop
