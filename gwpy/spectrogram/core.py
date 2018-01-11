@@ -543,12 +543,12 @@ class Spectrogram(Array2D):
         if low is None:
             idx0 = None
         else:
-            idx0 = int((low.value - self.f0.value) // self.df.value)
+            idx0 = int(float(low.value - self.f0.value) // self.df.value)
         # find high index
         if high is None:
             idx1 = None
         else:
-            idx1 = int((high.value - self.f0.value) // self.df.value)
+            idx1 = int(float(high.value - self.f0.value) // self.df.value)
         # crop
         if copy:
             return self[:, idx0:idx1].copy()
