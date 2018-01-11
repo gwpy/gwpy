@@ -137,13 +137,11 @@ class Qtransform(CliProduct):
             self.title2 = (' %.0f Hz, ' % cur_fs) + self.title2
 
         prange = self.get_plot_range(args)
-        if prange < self.qxfrm_args['fres'] * 50:
-            prange = self.qxfrm_args['fres'] * 50
         epoch = float(args.epoch)
         self.qxfrm_args['outseg'] = (epoch-prange, epoch+prange)
 
         if self.verbose >= 3:
-            print ('Q-transform args:')
+            print('Q-transform args:')
             pprint(self.qxfrm_args)
 
         self.result = self.my_ts.q_transform(**self.qxfrm_args)
