@@ -39,6 +39,7 @@ from gwpy.time import LIGOTimeGPS
 import utils
 
 warnings.filterwarnings('always', category=units.UnitsWarning)
+warnings.filterwarnings('always', category=UserWarning)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -401,6 +402,7 @@ class TestSeries(TestArray):
         # check that warnings are printed for out-of-bounds
         with pytest.warns(UserWarning):
             array.crop(array.xspan[0]-1, array.xspan[1])
+        with pytest.warns(UserWarning):
             array.crop(array.xspan[0], array.xspan[1]+1)
 
     def test_is_compatible(self, array):
