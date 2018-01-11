@@ -51,12 +51,12 @@ class Spectrum(CliProduct):
         """Text for y-axis label
         """
         if args.nology:
-            ylabel = (r'$\mathrm{log_{10}  ASD}$ ' 
-                     r'$\left( \frac{\mathrm{%s}}' 
-                     r'{\sqrt{\mathrm{Hz}}}\right)$' % self.units)
+            ylabel = (r'$\mathrm{log_{10}  ASD}$ '
+                      r'$\left( \frac{\mathrm{%s}}'
+                      r'{\sqrt{\mathrm{Hz}}}\right)$' % self.units)
         else:
-            ylabel = (r'$\mathrm{ASD}$ $\left( \frac{\mathrm{%s}}' 
-                     r'{\sqrt{\mathrm{Hz}}}\right)$' % self.units)
+            ylabel = (r'$\mathrm{ASD}$ $\left( \frac{\mathrm{%s}}'
+                      r'{\sqrt{\mathrm{Hz}}}\right)$' % self.units)
         return ylabel
 
     def get_title(self):

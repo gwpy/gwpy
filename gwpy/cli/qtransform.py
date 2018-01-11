@@ -141,7 +141,7 @@ class Qtransform(CliProduct):
         self.qxfrm_args['outseg'] = (epoch-prange, epoch+prange)
 
         if self.verbose >= 3:
-            print ('Q-transform args:')
+            print('Q-transform args:')
             pprint(self.qxfrm_args)
 
         self.result = self.my_ts.q_transform(**self.qxfrm_args)

@@ -106,7 +106,6 @@ if __name__ == '__main__':
         if len(os.getenv('HOME', '')) == 0:
             os.environ['HOME'] = '/tmp/'
 
-
         # parse the command line
         args = parser.parse_args()
         if args.silent:
@@ -130,7 +129,7 @@ if __name__ == '__main__':
         prod.post_arg(args)
 
         setup_time = time.time() - prog_start
-        prod.log(2,'Setup time %.1f sec' % setup_time)
+        prod.log(2, 'Setup time %.1f sec' % setup_time)
 
         # generate the plot
         result_code = prod.makePlot(args, parser)
