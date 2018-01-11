@@ -14,7 +14,7 @@
 
 ### Development status
 [![Build Status](https://travis-ci.org/gwpy/gwpy.svg?branch=develop)](https://travis-ci.org/gwpy/gwpy) 
-[![Coverage Status](https://coveralls.io/repos/github/gwpy/gwpy/badge.svg?branch=develop)](https://coveralls.io/github/gwpy/gwpy?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/gwpy/gwpy/badge.svg?branch=develop)](https://coveralls.io/github/gwpy/gwpy?branch=develop)
 [![Code Health](https://landscape.io/github/gwpy/gwpy/develop/landscape.svg?style=flat)](https://landscape.io/github/gwpy/gwpy/develop) 
 
 [https://gwpy.github.io](https://gwpy.github.io)
