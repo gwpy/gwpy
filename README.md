@@ -16,6 +16,7 @@
 [![Build Status](https://travis-ci.org/gwpy/gwpy.svg?branch=develop)](https://travis-ci.org/gwpy/gwpy) 
 [![Coverage Status](https://coveralls.io/repos/github/gwpy/gwpy/badge.svg?branch=develop)](https://coveralls.io/github/gwpy/gwpy?branch=develop)
 [![Code Health](https://landscape.io/github/gwpy/gwpy/develop/landscape.svg?style=flat)](https://landscape.io/github/gwpy/gwpy/develop) 
+[![Maintainability](https://api.codeclimate.com/v1/badges/2cf14445b3e070133745/maintainability)](https://codeclimate.com/github/gwpy/gwpy/maintainability)
 
 [https://gwpy.github.io](https://gwpy.github.io)
 
