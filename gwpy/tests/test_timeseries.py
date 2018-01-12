@@ -1088,8 +1088,13 @@ class TestTimeSeries(TestTimeSeriesBase):
 
         # check SOS filters can be used directly
         zpk = filter_design.highpass(50, sample_rate=losc.sample_rate)
-        sos = signal.zpk2sos(*zpk)
-        utils.assert_quantity_almost_equal(losc.filter(zpk), losc.filter(sos))
+        try:
+            sos = signal.zpk2sos(*zpk)
+        except AttributeError:  # scipy < 0.16
+            pass
+        else:
+            utils.assert_quantity_almost_equal(losc.filter(zpk),
+                                               losc.filter(sos))
 
     def test_zpk(self, losc):
         zpk = [10, 10], [1, 1], 100
