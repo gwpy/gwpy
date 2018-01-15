@@ -98,7 +98,8 @@ Keyword       Type     Usage
 
 For example::
 
-   >>> data = TimeSeries.read('HLV-GW100916-968654552-1.gwf', 'L1:LDAS-STRAIN', resample=2048)
+   >>> data = TimeSeries.read('HLV-GW100916-968654552-1.gwf', 'L1:LDAS-STRAIN',
+   ...                        resample=2048)
 
 Reading multiple channels
 -------------------------
@@ -109,7 +110,8 @@ To read multiple channels from one or more GWF files (rather than opening and cl
 
 In this case the ``resample`` and ``dtype`` keywords can be given as a single value used for all data channels, or a `dict` mapping an argument for each data channel name::
 
-    >>> data = TimeSeriesDict.read('HLV-GW100916-968654552-1.gwf', ['H1:LDAS-STRAIN', 'L1:LDAS-STRAIN'], resample={'H1:LDAS-STRAIN': 2048})
+    >>> data = TimeSeriesDict.read('HLV-GW100916-968654552-1.gwf', ['H1:LDAS-STRAIN', 'L1:LDAS-STRAIN'],
+    ...                            resample={'H1:LDAS-STRAIN': 2048})
 
 The above example will resample only the ``'H1:LDAS-STRAIN'`` `TimeSeries` and will not modify that for ``'L1:LDAS-STRAIN'``.
 
@@ -136,9 +138,6 @@ HDF5
 
 GWpy allows storing data in HDF5 format files, using a custom specification for storage of metadata.
 
-.. warning::
-
-   Reading/writing multiple datasets with the `TimeSeriesDict` and `StateVectorDict` classes is not supported at this time.
 
 Reading
 -------
@@ -151,12 +150,33 @@ As with GWF, the ``start`` and ``end`` keyword arguments can be used to downsele
 
     >>> data = TimeSeries.read('HLV-GW100916-968654552-1.hdf', 'L1:LDAS-STRAIN', start=968654552.5, end=968654553)
 
+Analogously to GWF, you can read multiple `TimeSeries` from an HDF5 file via :meth:`TimeSeriesDict.read`::
+
+   >>> data = TimeSeriesDict.read('HLV-GW100916-968654552-1.hdf')
+
+By default, all matching datasets in the file will be read, to restrict the output, specify the names of the datasets you want::
+
+   >>> data = TimeSeriesDict.read('HLV-GW100916-968654552-1.hdf', ['H1:LDAS-STRAIN', 'L1:LDAS-STRAIN'])
+
+
 Writing
 -------
 
-Data held in a `TimeSeries` or `StateVector` can be written to an HDF5 file via::
+Data held in a `TimeSeries`, `TimeSeriesDict, `StateVector`, or `StateVectorDict` can be written to an HDF5 file via::
 
    >>> data.write('output.hdf')
+
+The output argument (``'output.hdf'``) can be a file path, an open `h5py.File` object, or a `h5py.Group` object, to append data to an existing file.
+
+If the target file already exists, an :class:`~exceptions.IOError` will be raised, use ``overwrite=True`` to force a new file to be written.
+
+To write a `TimeSeries` to an existing file, use ``append=True``::
+
+    >>> data.write('output.hdf', append=True)
+
+To replace an existing dataset in an existing file, while preserving other data, use *both* ``append=True`` and ``overwrite=True``::
+
+    >>> data.write('output.hdf', append=True, overwrite=True)
 
 .. _gwpy-timeseries-io-wav:
 

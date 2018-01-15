@@ -20,6 +20,7 @@ import sys
 import inspect
 import os.path
 import re
+import glob
 
 from matplotlib import use
 use('agg')
@@ -45,6 +46,8 @@ GWPY_VERSION = gwpy_version.get_versions()
 from gwpy.utils.sphinx import numpydoc
 
 # extension modules
+# DEVNOTE: please make sure and add 3rd-party dependencies to
+#          setup.py and requirements-dev.txt
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
@@ -59,6 +62,7 @@ extensions = [
     'sphinx_automodapi.automodapi',
     'numpydoc',
     'matplotlib.sphinxext.plot_directive',
+    #'sphinxcontrib.doxylink',
     'gwpy.utils.sphinx.epydoc',
 ]
 
@@ -152,6 +156,9 @@ plot_html_show_source_link = False
 # fix numpydoc autosummary
 numpydoc_show_class_members = False
 
+# use blockquotes (numpydoc>=0.8 only)
+numpydoc_use_blockquotes = True
+
 # auto-insert plot directive in examples
 numpydoc_use_plots = True
 
@@ -175,6 +182,15 @@ inheritance_graph_attrs = dict(rankdir='TB')
 # epydoc extension config for GLUE
 epydoc_mapping = {
     'http://software.ligo.org/docs/glue/': [r'glue(\.|$)'],
+}
+
+# -- epydoc -------------------------------------
+
+LALSUITE_DOCS = 'http://software.ligo.org/docs/lalsuite'
+
+doxylink = {
+    'lal': ('lal.tag', '%s/lal/' % LALSUITE_DOCS),
+    'lalframe': ('lalframe.tag', '%s/lalframe/' % LALSUITE_DOCS),
 }
 
 # -- Options for HTML output ----------------------------------------------
@@ -213,7 +229,7 @@ html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = 'favicon.png'
+html_favicon = os.path.join('_static', 'favicon.png')
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -281,6 +297,7 @@ intersphinx_mapping = {
     'pycbc': ('https://ligo-cbc.github.io/pycbc/latest/html/', None),
     'root_numpy': ('http://scikit-hep.org/root_numpy/', None),
     'h5py': ('http://docs.h5py.org/en/latest/', None),
+    'dateutil': ('https://dateutil.readthedocs.io/en/stable/', None),
 }
 
 
@@ -341,3 +358,18 @@ def linkcode_resolve(domain, info):
 
     return ("http://github.com/gwpy/gwpy/tree/%s/gwpy/%s%s"
             % (GWPY_VERSION['full-revisionid'], fn, linespec))
+
+
+# -- setup --------------------------------------------------------------------
+
+CSS_DIR = os.path.join(html_static_path[0], 'css')
+JS_DIR = os.path.join(html_static_path[0], 'js')
+
+def setup(app):
+    # add stylesheets
+    for cssf in glob.glob(os.path.join(CSS_DIR, '*.css')):
+        app.add_stylesheet(cssf.split(os.path.sep, 1)[1])
+
+    # add custom javascript
+    for jsf in glob.glob(os.path.join(JS_DIR, '*.js')):
+        app.add_javascript(jsf.split(os.path.sep, 1)[1])

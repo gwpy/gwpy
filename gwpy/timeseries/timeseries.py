@@ -56,7 +56,7 @@ def _update_doc_with_fft_methods(func):
 # -- TimeSeries ---------------------------------------------------------------
 
 class TimeSeries(TimeSeriesBase):
-    """A time-domain data array
+    """A time-domain data array.
 
     Parameters
     ----------
@@ -130,8 +130,8 @@ class TimeSeries(TimeSeriesBase):
         Parameters
         ----------
         nfft : `int`, optional
-            length of the desired Fourier transform.
-            Input will be cropped or padded to match the desired length.
+            length of the desired Fourier transform, input will be
+            cropped or padded to match the desired length.
             If nfft is not given, the length of the `TimeSeries`
             will be used
 
@@ -958,13 +958,14 @@ class TimeSeries(TimeSeriesBase):
 
         Parameters
         ----------
-        *filt
+        *filt : filter arguments
             1, 2, 3, or 4 arguments defining the filter to be applied,
 
-            - 1: `scipy.signal.lti`, or `numpy.ndarray` of FIR coefficients
-            - 2: ``(numerator, denominator)`` polynomials
-            - 3: ``(zeros, poles, gain)``
-            - 4: ``(A, B, C, D)`` 'state-space' representation
+                - an ``Nx1`` `~numpy.ndarray` of FIR coefficients
+                - an ``Nx6`` `~numpy.ndarray` of SOS coefficients
+                - ``(numerator, denominator)`` polynomials
+                - ``(zeros, poles, gain)``
+                - ``(A, B, C, D)`` 'state-space' representation
 
         filtfilt : `bool`, optional
             filter forward and backwards to preserve phase,
@@ -1004,7 +1005,7 @@ class TimeSeries(TimeSeriesBase):
 
         See also
         --------
-        scipy.signal.sosfilter
+        scipy.signal.sosfilt
             for details on filtering with second-order sections
             (`scipy >= 0.16` only)
 
@@ -1402,7 +1403,7 @@ class TimeSeries(TimeSeriesBase):
         return TimeSeriesPlot(self, **kwargs)
 
     def notch(self, frequency, type='iir', filtfilt=True, **kwargs):
-        """Notch out a frequency in a `TimeSeries`
+        """Notch out a frequency in this `TimeSeries`.
 
         Parameters
         ----------

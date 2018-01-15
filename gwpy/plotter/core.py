@@ -100,12 +100,12 @@ class Plot(figure.Figure):
     # -- Plot methods ---------------------------
 
     def get_auto_refresh(self):
-        """Return this `Plot`s auto-refresh setting
+        """Return the auto-refresh setting for this `Plot`.
         """
         return self._auto_refresh
 
     def set_auto_refresh(self, refresh):
-        """Set this `Plot`s auto-refresh setting
+        """Set the auto-refresh setting for this `Plot`.
 
         With auto_refresh set to `True`, all modifications of the underlying
         `Axes` will trigger the plot to be re-drawn
@@ -156,9 +156,8 @@ class Plot(figure.Figure):
     def save(self, *args, **kwargs):
         """Save the figure to disk.
 
-        All `args` and `kwargs` are passed directly to the savefig
-        method of the underlying `matplotlib.figure.Figure`
-        self.fig.savefig(*args, **kwargs)
+        This method is an alias to :meth:`~matplotlib.figure.Figure.savefig`,
+        all arguments are passed directory to that method.
         """
         self.savefig(*args, **kwargs)
 

@@ -430,13 +430,14 @@ class Spectrogram(Array2D):
 
         Parameters
         ----------
-        *filt
-            one of:
+        *filt : filter arguments
+            1, 2, 3, or 4 arguments defining the filter to be applied,
 
-            - :class:`scipy.signal.lti`
-            - ``(numerator, denominator)`` polynomials
-            - ``(zeros, poles, gain)``
-            - ``(A, B, C, D)`` 'state-space' representation
+                - an ``Nx1`` `~numpy.ndarray` of FIR coefficients
+                - an ``Nx6`` `~numpy.ndarray` of SOS coefficients
+                - ``(numerator, denominator)`` polynomials
+                - ``(zeros, poles, gain)``
+                - ``(A, B, C, D)`` 'state-space' representation
 
         analog : `bool`, optional
             if `True`, filter definition will be converted from Hertz
