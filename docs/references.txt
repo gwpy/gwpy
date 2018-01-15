@@ -16,6 +16,9 @@
 .. |lal| replace:: `lal`
 .. _lal: http://software.ligo.org/docs/lalsuite/lal/
 
+.. |lal.LIGOTimeGPS| replace:: `lal.LIGOTimeGPS`
+.. _lal.LIGOTimeGPS: http://software.ligo.org/docs/lalsuite/lal/struct_l_i_g_o_time_g_p_s.html
+
 .. |lalframe| replace:: `lalframe`
 .. _lalframe: http://software.ligo.org/docs/lalsuite/lalframe/
 
@@ -54,3 +57,6 @@
 
 .. |sphinxcontrib-programoutput| replace:: `sphinx-programoutput`
 .. _sphinxcontrib-programoutput: https://pythonhosted.org/sphinxcontrib-programoutput/
+
+.. |sphinx-automodapi| replace:: `sphinx-automodapi`
+.. _sphinx-automodapi: http://sphinx-automodapi.readthedocs.io/

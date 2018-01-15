@@ -30,7 +30,7 @@ Each of these can be specified by passing the function name as the ``method`` ke
    >>> ts = TimeSeries(...)
    >>> psd = ts.psd(..., method='pycbc_welch', ...)
 
-Additionally, short versions the following registrations map to the first registered instance of that name in the registry:
+Additionally, short versions of the following registrations map to the first registered instance of that name in the registry:
 
 =======================  ===================================
       Method name                     Function
@@ -58,7 +58,7 @@ Additionally, short versions the following registrations map to the first regist
 
       >>> from gwpy.signal.fft import get_default_fft_api
       >>> get_default_fft_api()
-      'pycbc'
+      'pycbc.psd'
 
 =====
 Notes
@@ -68,7 +68,7 @@ Notes
 PyCBC methods
 -------------
 
-Each of the `pycbc_<>` FFT methods accepts the following keyword arguments:
+Each of the ``pycbc_*`` FFT methods accepts the following keyword arguments:
 o
 
 +------------+---------+-----------------------+------------------------------+
@@ -82,7 +82,7 @@ o
 LAL methods
 -----------
 
-Each of the `lal_<>` FFT methods accepts the following keyword arguments:
+Each of the ``lal_*`` FFT methods accepts the following keyword arguments:
 
 +------------+---------+---------------------+-----------------------------------------------+
 | Keyword    | Default | Type                | Description                                   |
@@ -90,6 +90,6 @@ Each of the `lal_<>` FFT methods accepts the following keyword arguments:
 | ``window`` | `None`  | `tuple`, `str`      | time-doman window definition see              |
 |            |         |                     | :func:`gwpy.signal.fft.lal.generate_window`   |
 +------------+---------+---------------------+-----------------------------------------------+
-| ``plan``   | `None`  | :lal:`REAL8FFTPlan` | plan to use when processing FFT, see          |
+| ``plan``   | `None`  | `lal.REAL8FFTPlan`  | plan to use when processing FFT, see          |
 |            |         | or similar          | :func:`gwpy.signal.fft.lal.generate_fft_plan` |
 +------------+---------+---------------------+-----------------------------------------------+

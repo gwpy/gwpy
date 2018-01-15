@@ -13,6 +13,11 @@ GWpy provides a suite of functions to simplify and extend the excellent digital 
 Fourier methods
 ===============
 
+.. toctree::
+   :hidden:
+
+   fft
+
 The `TimeSeries` object comes with a number of Fourier methods to calculate a `~gwpy.frequencyseries.FrequencySeries` or `~gwpy.spectrogram.Spectrogram` by calculating and averaging FFTs.
 
 See :ref:`gwpy-signal-fft` for more details.
@@ -93,10 +98,6 @@ For a worked example of how to compare channels like this, see the example :ref:
 =============
 Reference/API
 =============
-
---------------------------------
-:mod:`gwpy.signal.filter_design`
---------------------------------
 
 .. automethod:: gwpy.signal.filter_design.bandpass
 
