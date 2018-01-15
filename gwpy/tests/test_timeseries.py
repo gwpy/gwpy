@@ -58,6 +58,7 @@ from gwpy.types import Array2D
 from gwpy.spectrogram import Spectrogram
 from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
 from gwpy.utils.misc import null_context
+from gwpy.signal import filter_design
 
 import mocks
 import utils
@@ -1084,6 +1085,16 @@ class TestTimeSeries(TestTimeSeriesBase):
         zpk = [], [], 1
         fts = losc.filter(zpk, analog=True)
         utils.assert_quantity_sub_equal(losc, fts)
+
+        # check SOS filters can be used directly
+        zpk = filter_design.highpass(50, sample_rate=losc.sample_rate)
+        try:
+            sos = signal.zpk2sos(*zpk)
+        except AttributeError:  # scipy < 0.16
+            pass
+        else:
+            utils.assert_quantity_almost_equal(losc.filter(zpk),
+                                               losc.filter(sos))
 
     def test_zpk(self, losc):
         zpk = [10, 10], [1, 1], 100
