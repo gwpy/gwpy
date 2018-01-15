@@ -46,6 +46,8 @@ GWPY_VERSION = gwpy_version.get_versions()
 from gwpy.utils.sphinx import numpydoc
 
 # extension modules
+# DEVNOTE: please make sure and add 3rd-party dependencies to
+#          setup.py and requirements-dev.txt
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
@@ -60,6 +62,7 @@ extensions = [
     'sphinx_automodapi.automodapi',
     'numpydoc',
     'matplotlib.sphinxext.plot_directive',
+    #'sphinxcontrib.doxylink',
     'gwpy.utils.sphinx.epydoc',
 ]
 
@@ -153,6 +156,9 @@ plot_html_show_source_link = False
 # fix numpydoc autosummary
 numpydoc_show_class_members = False
 
+# use blockquotes (numpydoc>=0.8 only)
+numpydoc_use_blockquotes = True
+
 # auto-insert plot directive in examples
 numpydoc_use_plots = True
 
@@ -176,6 +182,15 @@ inheritance_graph_attrs = dict(rankdir='TB')
 # epydoc extension config for GLUE
 epydoc_mapping = {
     'http://software.ligo.org/docs/glue/': [r'glue(\.|$)'],
+}
+
+# -- epydoc -------------------------------------
+
+LALSUITE_DOCS = 'http://software.ligo.org/docs/lalsuite'
+
+doxylink = {
+    'lal': ('lal.tag', '%s/lal/' % LALSUITE_DOCS),
+    'lalframe': ('lalframe.tag', '%s/lalframe/' % LALSUITE_DOCS),
 }
 
 # -- Options for HTML output ----------------------------------------------
@@ -282,6 +297,7 @@ intersphinx_mapping = {
     'pycbc': ('https://ligo-cbc.github.io/pycbc/latest/html/', None),
     'root_numpy': ('http://scikit-hep.org/root_numpy/', None),
     'h5py': ('http://docs.h5py.org/en/latest/', None),
+    'dateutil': ('https://dateutil.readthedocs.io/en/stable/', None),
 }
 
 
