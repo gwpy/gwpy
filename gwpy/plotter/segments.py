@@ -493,7 +493,7 @@ register_projection(SegmentAxes)
 
 
 class SegmentPlot(TimeSeriesPlot):
-    """`Figure` for displaying a `~gwpy.segments.DataQualityFlag`.
+    """`Plot` for displaying a `~gwpy.segments.DataQualityFlag`
 
     Parameters
     ----------
