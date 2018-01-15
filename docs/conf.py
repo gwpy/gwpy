@@ -20,6 +20,7 @@ import sys
 import inspect
 import os.path
 import re
+import glob
 
 from matplotlib import use
 use('agg')
@@ -341,3 +342,18 @@ def linkcode_resolve(domain, info):
 
     return ("http://github.com/gwpy/gwpy/tree/%s/gwpy/%s%s"
             % (GWPY_VERSION['full-revisionid'], fn, linespec))
+
+
+# -- setup --------------------------------------------------------------------
+
+CSS_DIR = os.path.join(html_static_path[0], 'css')
+JS_DIR = os.path.join(html_static_path[0], 'js')
+
+def setup(app):
+    # add stylesheets
+    for cssf in glob.glob(os.path.join(CSS_DIR, '*.css')):
+        app.add_stylesheet(cssf.split(os.path.sep, 1)[1])
+
+    # add custom javascript
+    for jsf in glob.glob(os.path.join(JS_DIR, '*.js')):
+        app.add_javascript(jsf.split(os.path.sep, 1)[1])

@@ -17,10 +17,11 @@ psycopg2
 pandas
 
 # docs
-sphinx
+sphinx >= 1.6.1
 numpydoc
-sphinx-bootstrap-theme
+sphinx-bootstrap-theme >= 0.6
 sphinxcontrib-programoutput
+sphinx-automodapi
 
 # tests
 pytest >= 3.1
