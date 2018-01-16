@@ -80,7 +80,7 @@ for i,line in enumerate(lines):
     # finish code block
     if incode and line.startswith(('"', '#', '__')):
         incode = False
-        if '   plot.show()' not in code:
+        if not any('plot.show()' in line for line in code):
             code.insert(2, '   :nofigs:')
         output.extend(code + [''])
 
@@ -123,7 +123,7 @@ for i,line in enumerate(lines):
         output.append('#'*len(output[0]))
 
 if incode:
-    if '   plot.show()' not in code:
+    if not any('plot.show()' in line for line in code):
         code.insert(2, '   :nofigs:')
     output.extend(code + [''])
 
