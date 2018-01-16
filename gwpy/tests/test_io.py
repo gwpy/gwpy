@@ -702,7 +702,7 @@ class TestIoLosc(object):
                 'https://losc.ligo.org/archive/1126257414/1126261510/json/')
         except (URLError, SSLError) as exc:
             pytest.skip(str(exc))
-        assert list(jdata.keys()) == ['runs', 'events']
+        assert sorted(list(jdata.keys())) == ['events', 'runs']
         assert jdata['events']['GW150914'] == {
             'DQbits': 7,
             'GPStime': 1126259462.0,
