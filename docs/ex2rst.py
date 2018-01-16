@@ -57,7 +57,7 @@ incode = False
 reset = True
 code = []
 
-for i,line in enumerate(lines):
+for i, line in enumerate(lines):
     # skip file header
     if len(output) == 0 and line.startswith('#'):
         continue

@@ -96,7 +96,7 @@ def find_datasets(start, end, detector=None, strict=False, host=LOSC_URL):
     Returns
     -------
     datasets : `tuple`
-        a `tuple` containing the name of each dataset that covers the 
+        a `tuple` containing the name of each dataset that covers the
         requested interval
 
     Examples
