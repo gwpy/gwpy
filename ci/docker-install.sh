@@ -33,7 +33,7 @@ sudo apt-get update
 sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
 
 # download container
-sudo docker pull ${DOCKER_IMAGE}
+travis_retry sudo timeout 300 docker pull ${DOCKER_IMAGE}
 
 # start container
 sudo docker run \
