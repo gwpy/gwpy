@@ -40,7 +40,7 @@ else  # simple pip build
 fi
 
 # install python extras
-${PIP} install -r requirements-dev.txt ${PIP_FLAGS}
+${PIP} install -r requirements-dev.txt --quiet ${PIP_FLAGS}
 
 cd /tmp
 _gwpyloc=`${PYTHON} -c 'import gwpy; print(gwpy.__file__)'`
