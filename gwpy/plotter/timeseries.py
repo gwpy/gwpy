@@ -29,7 +29,7 @@ from matplotlib.cbook import iterable
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from ..time import (Time, LIGOTimeGPS)
+from ..time import (Time, LIGOTimeGPS, to_gps)
 from ..segments import SegmentList
 from . import text
 from .core import Plot
@@ -115,7 +115,7 @@ class TimeSeriesAxes(Axes):
         except AttributeError:
             pass
         else:
-            self.set_xscale(xscale, epoch=epoch)
+            self.set_xscale(xscale, epoch=to_gps(epoch))
 
     def get_epoch(self):
         """Return the current GPS epoch (t=0)
@@ -127,8 +127,8 @@ class TimeSeriesAxes(Axes):
     def set_xlim(self, left=None, right=None, emit=True, auto=False, **kw):
         if right is None and iterable(left):
             left, right = left
-        left = float(left)
-        right = float(right)
+        left = float(to_gps(left))
+        right = float(to_gps(right))
         if 'gps' in self.get_xscale() and self.epoch is None:
             self.set_epoch(left)
         super(TimeSeriesAxes, self).set_xlim(left=left, right=right, emit=emit,
