@@ -217,7 +217,7 @@ class SegmentAxes(TimeSeriesAxes):
         if y is None:
             y = self.get_next_y()
         # get flag name
-        name = kwargs.pop('label', flag.name)
+        name = kwargs.pop('label', flag.label or flag.name)
 
         # get epoch
         try:
