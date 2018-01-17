@@ -536,6 +536,58 @@ class DataQualityFlag(object):
         return out
 
     @classmethod
+    def fetch_open_data(cls, flag, start, end, **kwargs):
+        """Fetch Open Data timeline segments into a flag.
+
+        flag : `str`
+            the name of the flag to query
+
+        start : `int`, `str`
+            the GPS start time (or parseable date string) to query
+
+        end : `int`, `str`
+            the GPS end time (or parseable date string) to query
+
+        verbose : `bool`, optional
+            show verbose download progress, default: `False`
+
+        timeout : `int`, optional
+            timeout for download (seconds)
+
+        host : `str`, optional
+            URL of LOSC host, default: ``'losc.ligo.org'``
+
+        Returns
+        -------
+        flag : `DataQualityFlag`
+            a new flag with `active` segments filled from Open Data
+
+        Examples
+        --------
+        >>> from gwpy.segments import DataQualityFlag
+        >>> print(DataQualityFlag.fetch_open_data('H1_DATA', 'Jan 1 2010',
+        ...                                       'Jan 2 2010'))"
+        <DataQualityFlag('H1:DATA',
+                         known=[[946339215 ... 946425615)],
+                         active=[[946340946 ... 946351800)
+                                 [946356479 ... 946360620)
+                                 [946362652 ... 946369150)
+                                 [946372854 ... 946382630)
+                                 [946395595 ... 946396751)
+                                 [946400173 ... 946404977)
+                                 [946412312 ... 946413577)
+                                 [946415770 ... 946422986)],
+                         description=None)>
+        """
+        from .io.losc import get_segments
+        start = to_gps(start)
+        end = to_gps(end)
+        known = [(start, end)]
+        active = get_segments(flag, start, end, **kwargs)
+        return cls(flag.replace('_', ':', 1), known=known, active=active,
+                   label=flag)
+
+    @classmethod
     def read(cls, source, *args, **kwargs):
         """Read segments from file into a `DataQualityFlag`.
 

@@ -54,7 +54,7 @@ install_requires = [
 try:
     import lal  # pylint: disable=unused-import
 except ImportError as e:
-    install_requires.append('ligotimegps>=1.1')
+    install_requires.append('ligotimegps>=1.2.1')
 
 # enum34 required for python < 3.4
 try:

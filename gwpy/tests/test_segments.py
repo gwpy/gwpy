@@ -22,8 +22,9 @@
 import os.path
 import shutil
 import tempfile
+from ssl import SSLError
 
-from six.moves.urllib.error import HTTPError
+from six.moves.urllib.error import (URLError, HTTPError)
 
 import pytest
 
@@ -658,6 +659,22 @@ class TestDataQualityFlag(object):
         assert isinstance(result, self.TEST_CLASS)
         utils.assert_segmentlist_equal(result.known, RESULT.known & segs)
         utils.assert_segmentlist_equal(result.active, RESULT.active & segs)
+
+    def test_fetch_open_data(self):
+        try:
+            segs = self.TEST_CLASS.fetch_open_data(
+                'H1_DATA', 946339215, 946368015)
+        except (URLError, SSLError) as exc:
+            pytest.skip(str(e))
+        assert segs.ifo == 'H1'
+        assert segs.name == 'H1:DATA'
+        assert segs.label == 'H1_DATA'
+        utils.assert_segmentlist_equal(segs.known, [(946339215, 946368015)])
+        utils.assert_segmentlist_equal(segs.active, [
+            (946340946, 946351800),
+            (946356479, 946360620),
+            (946362652, 946368015),
+        ])
 
 
 # -- DataQualityDict ----------------------------------------------------------

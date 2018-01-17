@@ -25,6 +25,9 @@ import gzip
 import os
 import tempfile
 import sys
+from ssl import SSLError
+
+from six.moves.urllib.error import URLError
 
 from six import PY2
 
@@ -36,8 +39,9 @@ from gwpy.io import (cache as io_cache,
                      datafind as io_datafind,
                      gwf as io_gwf,
                      kerberos as io_kerberos,
-                     nds2 as io_nds2,
                      ligolw as io_ligolw,
+                     losc as io_losc,
+                     nds2 as io_nds2,
                      utils as io_utils)
 from gwpy.segments import (Segment, SegmentList)
 
@@ -687,3 +691,41 @@ class TestIoUtils(object):
         assert id_func(None, 'test.blah', None) is True
         assert id_func(None, 'test.blah2', None) is True
         assert id_func(None, 'test.blah2x', None) is False
+
+
+# -- gwpy.io.losc -------------------------------------------------------------
+
+class TestIoLosc(object):
+    def test_fetch_json(self):
+        try:
+            jdata = io_losc.fetch_json(
+                'https://losc.ligo.org/archive/1126257414/1126261510/json/')
+        except (URLError, SSLError) as exc:
+            pytest.skip(str(exc))
+        assert sorted(list(jdata.keys())) == ['events', 'runs']
+        assert jdata['events']['GW150914'] == {
+            'DQbits': 7,
+            'GPStime': 1126259462.0,
+            'INJbits': 5,
+            'UTCtime': u'2015-09-14T09:50:45',
+            'detectors': [u'L1', u'H1'],
+            'frametype': u'%s_HOFT_C02',
+        }
+
+        with pytest.raises(ValueError) as exc:
+            io_losc.fetch_json(
+                'https://losc.ligo.org/archive/1126257414/1126261510/')
+        assert str(exc.value).startswith('Failed to parse LOSC JSON')
+
+    @pytest.mark.parametrize('detector, strict, result', [
+        ('H1', False, ('GW150914', 'tenyear')),
+        ('H1', True, ('tenyear',)),
+        ('V1', False, ('tenyear',)),
+    ])
+    def test_find_datasets(self, detector, strict, result):
+        try:
+            sets = io_losc.find_datasets(1126250000, 1126270000,
+                                         detector=detector, strict=strict)
+        except (URLError, SSLError) as exc:
+            pytest.skip(str(exc))
+        assert sets == result

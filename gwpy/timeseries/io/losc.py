@@ -39,13 +39,11 @@ from astropy.utils.data import get_readable_fileobj
 from .gwf import get_default_gwf_api
 from .. import (StateVector, TimeSeries)
 from ...io import (hdf5 as io_hdf5, utils as io_utils)
+from ...io.losc import (LOSC_URL, fetch_json)
 from ...io.cache import (cache_segments, file_segment)
 from ...detector.units import parse_unit
 from ...segments import (Segment, SegmentList)
 from ...time import to_gps
-
-# default URL
-LOSC_URL = 'https://losc.ligo.org'
 
 # ASCII parsing globals
 LOSC_ASCII_HEADER_REGEX = re.compile(
@@ -86,18 +84,6 @@ def _parse_formats(formats, cls=TimeSeries):
 
 # -- JSON handling ------------------------------------------------------------
 
-def _fetch_losc_json(url):
-    with get_readable_fileobj(url, show_progress=False,
-                              encoding='utf-8') as response:
-        data = response.read()
-        try:
-            return json.loads(data)
-        except ValueError as exc:
-            exc.args = ("Failed to parse LOSC JSON from %r: %s"
-                        % (url, str(exc)),)
-            raise
-
-
 def _parse_losc_json(metadata, detector, sample_rate=4096,
                      format='hdf5', duration=4096):
     """Parse a list of file URLs from a LOSC metadata packet
@@ -127,7 +113,7 @@ def find_losc_urls(detector, start, end, host=LOSC_URL,
 
     # -- step 1: query the interval
     url = '%s/archive/%d/%d/json/' % (host, start, end)
-    metadata = _fetch_losc_json(url)
+    metadata = fetch_json(url)
 
     # -- step 2: try and get data from an event (smaller files)
     for form in formats:
@@ -142,7 +128,7 @@ def find_losc_urls(detector, start, end, host=LOSC_URL,
                 else:
                     url = ('%s/archive/links/%s/%s/%d/%d/json/'
                            % (host, dataset, detector, start, end))
-                emd = _fetch_losc_json(url)
+                emd = fetch_json(url)
                 # get cache and sieve for our segment
                 for duration in [32, 4096]:  # try short files for events first
                     cache = _parse_losc_json(
