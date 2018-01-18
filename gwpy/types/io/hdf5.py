@@ -200,7 +200,8 @@ def write_hdf5_array(array, h5g, path=None, attrs=None,
 
     # allow caller to specify their own metadata dict
     if attrs:
-        dset.attrs.update(attrs)
+        for key in attrs:
+            dset.attrs[key] = attrs[key]
 
     return dset
 
