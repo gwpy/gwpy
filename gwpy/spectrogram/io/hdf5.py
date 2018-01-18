@@ -19,9 +19,41 @@
 """This module attaches the HDF5 input output methods to the Spectrogram.
 """
 
-from ...types.io.hdf5 import register_hdf5_array_io
+from ...types.io.hdf5 import (read_hdf5_array,
+                              format_series_attrs, write_hdf5_array)
+from ...io import registry as io_registry
+from ...io.hdf5 import identify_hdf5
 from .. import Spectrogram
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-register_hdf5_array_io(Spectrogram)
+
+def read_spectrogram(*args, **kwargs):
+    kwargs.setdefault('array_type', Spectrogram)
+    return read_hdf5_array(*args, **kwargs)
+
+
+def format_attrs(specgram):
+    """Format default metadata for this `Spectrogram`.
+    """
+    attrs = format_series_attrs(specgram)
+    attrs.update({
+        'yunit': str(specgram.yunit),
+        'y0': specgram.y0.to(specgram.yunit).value,
+        'dy': specgram.dy.to(specgram.yunit).value,
+    })
+    return attrs
+
+
+def write_spectrogram(specgram, output, path=None, attrs=None, **kwargs):
+    """Write a `Spectrogram` to HDF5.
+    """
+    if attrs is None:
+        attrs = format_attrs(specgram)
+    return write_hdf5_array(specgram, output, path=path, attrs=attrs, **kwargs)
+
+
+# register
+io_registry.register_reader('hdf5', Spectrogram, read_spectrogram)
+io_registry.register_writer('hdf5', Spectrogram, write_spectrogram)
+io_registry.register_identifier('hdf5', Spectrogram, identify_hdf5)
