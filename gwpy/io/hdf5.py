@@ -129,3 +129,41 @@ def with_write_hdf5(func):
         return func(obj, fobj, *args, **kwargs)
 
     return decorated_func
+
+
+def create_dataset(parent, path, overwrite=False, **kwargs):
+    """Create a new dataset inside the parent HDF5 object
+
+    Parameters
+    ----------
+    parent : `h5py.Group`, `h5py.File`
+        the object in which to create a new dataset
+
+    path : `str`
+        the path at which to create the new dataset
+
+    overwrite : `bool`
+        if `True`, delete any existing dataset at the desired path,
+        default: `False`
+
+    **kwargs
+        other arguments are passed directly to
+        :meth:`h5py.Group.create_dataset`
+
+    Returns
+    -------
+    dataset : `h5py.Dataset`
+        the newly created dataset
+    """
+    # force deletion of existing dataset
+    if path in parent and overwrite:
+        del parent[path]
+
+    # create new dataset with improved error handling
+    try:
+        return parent.create_dataset(path, **kwargs)
+    except RuntimeError as exc:
+        if str(exc) == 'Unable to create link (Name already exists)':
+            exc.args = ('{0}: {1!r}, pass overwrite=True '
+                        'to ignore existing datasets'.format(str(exc), path),)
+        raise

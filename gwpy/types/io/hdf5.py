@@ -181,19 +181,10 @@ def write_hdf5_array(array, h5g, path=None, attrs=None,
                          "please set ``name`` attribute, or pass ``path=`` "
                          "keyword when writing" % type(array).__name__)
 
-    # delete existing dataset
-    if path in h5g and append and overwrite:
-        del h5g[path]
-
-    # create new dataset, with better error reporting
-    try:
-        dset = h5g.create_dataset(path, data=array.value,
-                                  compression=compression, **kwargs)
-    except RuntimeError as exc:
-        if str(exc) == 'Unable to create link (Name already exists)':
-            exc.args = ('{0}: {1!r}, pass overwrite=True, append=True '
-                        'to ignore existing datasets'.format(str(exc), path),)
-        raise
+    # create dataset
+    dset = io_hdf5.create_dataset(h5g, path, overwrite=overwrite,
+                                  data=array.value, compression=compression,
+                                  **kwargs)
 
     # write default metadata
     write_array_metadata(dset, array)
