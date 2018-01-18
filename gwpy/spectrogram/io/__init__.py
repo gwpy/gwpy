@@ -21,7 +21,6 @@
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-try:
-    from . import hdf5
-except ImportError:
-    pass
+from . import (
+    hdf5
+)
