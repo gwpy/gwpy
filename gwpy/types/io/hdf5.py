@@ -206,20 +206,29 @@ def write_hdf5_array(array, h5g, path=None, attrs=None,
     return dset
 
 
-def format_series_attrs(series):
-    """Format metadata attributes for this `Series`
+def format_index_array_attrs(series):
+    """Format metadata attributes for and indexed array
 
     This function is used to provide the necessary metadata to meet
     the (proposed) LIGO Common Data Format specification for series data
     in HDF5.
     """
-    # format required options
-    return {
-        'unit': str(series.unit),
-        'xunit': str(series.xunit),
-        'x0': series.x0.to(series.xunit).value,
-        'dx': series.dx.to(series.xunit).value,
-    }
+    attrs = {}
+    # loop through named axes
+    for i, axis in zip(range(series.ndim), ('x', 'y')):
+        # find property names
+        unit = '{}unit'.format(axis)
+        origin = '{}0'.format(axis)
+        delta = 'd{}'.format(axis)
+
+        # store attributes
+        aunit = getattr(series, unit)
+        attrs.update({
+            unit: str(aunit),
+            origin: getattr(series, origin).to(aunit).value,
+            delta: getattr(series, delta).to(aunit).value,
+        })
+    return attrs
 
 
 def write_hdf5_series(series, output, path=None, attrs=None, **kwargs):
@@ -228,7 +237,7 @@ def write_hdf5_series(series, output, path=None, attrs=None, **kwargs):
     See :func:`write_hdf5_array` for details of arguments and keywords.
     """
     if attrs is None:
-        attrs = format_series_attrs(series)
+        attrs = format_index_array_attrs(series)
     return write_hdf5_array(series, output, path=path, attrs=attrs, **kwargs)
 
 
