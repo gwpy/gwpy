@@ -19,8 +19,8 @@
 """Input/Output routines for the Spectrogram.
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
 from . import (
     hdf5
 )
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
