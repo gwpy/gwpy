@@ -77,7 +77,7 @@ def _unpickle_channel(raw):
     """
     try:
         return pickle.loads(raw)
-    except (ValueError, pickle.UnpicklingError, EOFError) as exc:
+    except (ValueError, pickle.UnpicklingError, EOFError, TypeError) as exc:
         # maybe not pickled
         if isinstance(raw, bytes):
             raw = raw.decode('utf-8')
