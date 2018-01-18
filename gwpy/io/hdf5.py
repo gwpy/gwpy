@@ -131,46 +131,39 @@ def with_write_hdf5(func):
     return decorated_func
 
 
-@with_write_hdf5
-def write_object_dataset(obj, target, create_func, append=False,
-                         overwrite=False, **kwargs):
-    """Write the given dataset to the file
+def create_dataset(parent, path, overwrite=False, **kwargs):
+    """Create a new dataset inside the parent HDF5 object
 
     Parameters
     ----------
-    obj : `object`
-        the object to write into the dataset
+    parent : `h5py.Group`, `h5py.File`
+        the object in which to create a new dataset
 
-    target : `str`, `h5py.File`, `h5py.Group`
-        the output filepath, or the HDF5 object in which to write
+    path : `str`
+        the path at which to create the new dataset
 
-    create_func : `callable`
-        a callable that can write the ``obj`` into an `h5py.Dataset`,
-        must take an ``h5py.Group`` as the first argument, and ``obj``
-        as the second, other keyword arguments may follow
-
-    append : `bool`, default: `False`
-        if `True`, write new dataset to existing file, otherwise an
-        exception will be raised if the output file exists (only used if
-        ``f`` is `str`)
-
-    overwrite : `bool`, default: `False`
-        if `True`, overwrite an existing dataset in an existing file,
-        otherwise an exception will be raised if a dataset exists with
-        the given name (only used if ``f`` is `str`)
+    overwrite : `bool`
+        if `True`, delete any existing dataset at the desired path,
+        default: `False`
 
     **kwargs
-        other keyword arguments to pass to ``create_func``
+        other arguments are passed directly to
+        :meth:`h5py.Group.create_dataset`
 
     Returns
     -------
-    dset : `h5py.Dataset`
-        the dataset as created in the file
-
-    Raises
-    ------
-    ValueError
-        if the output file exists and ``append=False``
+    dataset : `h5py.Dataset`
+        the newly created dataset
     """
-    return create_func(target, obj, append=append, overwrite=overwrite,
-                       **kwargs)
+    # force deletion of existing dataset
+    if path in parent and overwrite:
+        del parent[path]
+
+    # create new dataset with improved error handling
+    try:
+        return parent.create_dataset(path, **kwargs)
+    except RuntimeError as exc:
+        if str(exc) == 'Unable to create link (Name already exists)':
+            exc.args = ('{0}: {1!r}, pass overwrite=True '
+                        'to ignore existing datasets'.format(str(exc), path),)
+        raise
