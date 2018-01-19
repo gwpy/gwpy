@@ -161,8 +161,14 @@ class Array2D(Series):
                 new = new.view(self._columnclass)
                 new.dx = self.dy
                 new.x0 = self.y0
+                new.__metadata_finalize__(self)
+                try:
+                    new.xindex = self._yindex
+                except AttributeError:
+                    pass
             else:
                 new = new.view(self._rowclass)
+                new.__metadata_finalize__(self)
         # unwrap a Spectrogram
         else:
             new = new.view(type(self))
@@ -402,13 +408,13 @@ class Array2D(Series):
         y = Quantity(y, self.yindex.unit).value
         try:
             idx = (self.xindex.value == x).nonzero()[0][0]
-        except IndexError as e:
-            e.args = ("Value %r not found in array xindex" % x,)
+        except IndexError as exc:
+            exc.args = ("Value %r not found in array xindex" % x,)
             raise
         try:
             idy = (self.yindex.value == y).nonzero()[0][0]
-        except IndexError as e:
-            e.args = ("Value %r not found in array yindex",)
+        except IndexError as exc:
+            exc.args = ("Value %r not found in array yindex",)
             raise
         return self[idx, idy]
 

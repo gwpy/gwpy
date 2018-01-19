@@ -31,16 +31,36 @@ from scipy import signal
 from astropy import units
 from astropy.io import registry as io_registry
 
-from ..detector import Channel
 from ..types import (Array2D, Series)
-from ..segments import Segment
 from ..timeseries import (TimeSeries, TimeSeriesList)
 from ..timeseries.core import _format_time
 from ..frequencyseries import FrequencySeries
+from ..frequencyseries._fdcommon import fdfilter
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
 __all__ = ['Spectrogram', 'SpectrogramList']
+
+
+def _ordinal(n):
+    """Returns the ordinal string for a given integer
+
+    See https://stackoverflow.com/a/20007730/1307974
+
+    Parameters
+    ----------
+    n : `int`
+        the number to convert to ordinal
+
+    Examples
+    --------
+    >>> _ordinal(11)
+    '11th'
+    >>> _ordinal(102)
+    '102nd'
+    """
+    idx = int((n//10 % 10 != 1) * (n % 10 < 4) * n % 10)
+    return '{}{}'.format(n, "tsnrhtdd"[idx::4])
 
 
 class Spectrogram(Array2D):
@@ -216,12 +236,12 @@ class Spectrogram(Array2D):
 
         Parameters
         ----------
-        source : `str`, `~glue.lal.Cache`
+        source : `str`, :class:`~glue.lal.Cache`
             source of data, any of the following:
 
             - `str` path of single data file
             - `str` path of LAL-format cache file
-            - `~glue.lal.Cache` describing one or more data files,
+            - :class:`~glue.lal.Cache` describing one or more data files,
 
         format : `str`, optional
             source format identifier. If not given, the format will be
@@ -325,19 +345,20 @@ class Spectrogram(Array2D):
         constructor must be the same length.
         """
         data = numpy.vstack([s.value for s in spectra])
-        s1 = list(spectra)[0]
-        if not all(s.f0 == s1.f0 for s in spectra):
+        spec1 = list(spectra)[0]
+        if not all(s.f0 == spec1.f0 for s in spectra):
             raise ValueError("Cannot stack spectra with different f0")
-        if not all(s.df == s1.df for s in spectra):
+        if not all(s.df == spec1.df for s in spectra):
             raise ValueError("Cannot stack spectra with different df")
-        kwargs.setdefault('name', s1.name)
-        kwargs.setdefault('epoch', s1.epoch)
-        kwargs.setdefault('f0', s1.f0)
-        kwargs.setdefault('df', s1.df)
-        kwargs.setdefault('unit', s1.unit)
+        kwargs.setdefault('name', spec1.name)
+        kwargs.setdefault('channel', spec1.channel)
+        kwargs.setdefault('epoch', spec1.epoch)
+        kwargs.setdefault('f0', spec1.f0)
+        kwargs.setdefault('df', spec1.df)
+        kwargs.setdefault('unit', spec1.unit)
         if not ('dt' in kwargs or 'times' in kwargs):
             try:
-                kwargs.setdefault('dt', spectra[1].epoch.gps - s1.epoch.gps)
+                kwargs.setdefault('dt', spectra[1].epoch.gps - spec1.epoch.gps)
             except (AttributeError, IndexError):
                 raise ValueError("Cannot determine dt (time-spacing) for "
                                  "Spectrogram from inputs")
@@ -358,23 +379,32 @@ class Spectrogram(Array2D):
             `SpectralVaraicence`
         """
         out = scipy.percentile(self.value, percentile, axis=0)
-        name = '%s %s%% percentile' % (self.name, percentile)
+        if self.name is not None:
+            name = '{}: {} percentile'.format(self.name, _ordinal(percentile))
+        else:
+            name = None
         return FrequencySeries(out, epoch=self.epoch, channel=self.channel,
                                name=name, f0=self.f0, df=self.df,
                                frequencies=(hasattr(self, '_frequencies') and
                                             self.frequencies or None))
 
-    def zpk(self, zeros, poles, gain):
+    def zpk(self, zeros, poles, gain, analog=True):
         """Filter this `Spectrogram` by applying a zero-pole-gain filter
 
         Parameters
         ----------
         zeros : `array-like`
             list of zero frequencies (in Hertz)
+
         poles : `array-like`
             list of pole frequencies (in Hertz)
+
         gain : `float`
             DC gain of filter
+
+        analog : `bool`, optional
+            type of ZPK being applied, if `analog=True` all parameters
+            will be converted in the Z-domain for digital filtering
 
         Returns
         -------
@@ -393,88 +423,43 @@ class Spectrogram(Array2D):
 
             >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
         """
-        return self.filter(zeros, poles, gain)
+        return self.filter(zeros, poles, gain, analog=analog)
 
     def filter(self, *filt, **kwargs):
         """Apply the given filter to this `Spectrogram`.
 
-        Recognised filter arguments are converted into the standard
-        ``(numerator, denominator)`` representation before being applied
-        to this `Spectrogram`.
-
-        .. note::
-
-           Unlike the related
-           :meth:`TimeSeries.filter <gwpy.timeseries.TimeSeries.filter>`
-           method, here all frequency information (e.g. frequencies of
-           poles or zeros in a ZPK) is assumed to be in Hertz.
-
         Parameters
         ----------
-        *filt
-            one of:
+        *filt : filter arguments
+            1, 2, 3, or 4 arguments defining the filter to be applied,
 
-            - `scipy.signal.lti`
-            - ``(numerator, denominator)`` polynomials
-            - ``(zeros, poles, gain)``
-            - ``(A, B, C, D)`` 'state-space' representation
+                - an ``Nx1`` `~numpy.ndarray` of FIR coefficients
+                - an ``Nx6`` `~numpy.ndarray` of SOS coefficients
+                - ``(numerator, denominator)`` polynomials
+                - ``(zeros, poles, gain)``
+                - ``(A, B, C, D)`` 'state-space' representation
+
+        analog : `bool`, optional
+            if `True`, filter definition will be converted from Hertz
+            to Z-domain digital representation, default: `False`
+
+        inplace : `bool`, optional
+            if `True`, this array will be overwritten with the filtered
+            version, default: `False`
 
         Returns
         -------
         result : `Spectrogram`
-            the filtered version of the input `Spectrogram`
-
-        See also
-        --------
-        FrequencySeries.zpk
-            for information on filtering in zero-pole-gain format
-        scipy.signal.zpk2tf
-            for details on converting ``(zeros, poles, gain)`` into
-            transfer function format
-        scipy.signal.ss2tf
-            for details on converting ``(A, B, C, D)`` to transfer function
-            format
-        scipy.signal.freqs
-            for details on the filtering calculation
+            the filtered version of the input `Spectrogram`,
+            if ``inplace=True`` was given, this is just a reference to
+            the modified input array
 
         Raises
         ------
         ValueError
-            If ``filt`` arguments cannot be interpreted properly
+            if ``filt`` arguments cannot be interpreted properly
         """
-        # parse filter
-        if len(filt) == 1 and isinstance(filt[0], signal.lti):
-            filt = filt[0]
-            a = filt.den
-            b = filt.num
-        elif len(filt) == 2:
-            b, a = filt
-        elif len(filt) == 3:
-            b, a = signal.zpk2tf(*filt)
-        elif len(filt) == 4:
-            b, a = signal.ss2tf(*filt)
-        else:
-            raise ValueError("Cannot interpret filter arguments. Please give "
-                             "either a signal.lti object, or a tuple in zpk "
-                             "or ba format. See scipy.signal docs for "
-                             "details.")
-        if isinstance(a, float):
-            a = numpy.array([a])
-        # parse keyword args
-        inplace = kwargs.pop('inplace', False)
-        if kwargs:
-            raise TypeError("Spectrogram.filter() got an unexpected keyword "
-                            "argument '%s'" % list(kwargs.keys())[0])
-        f = self.frequencies.value.copy()
-        if f[0] == 0:  # shift DC to 1% of first frequency
-            f[0] = f[1] * 0.01
-        fresp = numpy.nan_to_num(abs(signal.freqs(b, a, f)[1]))
-        if inplace:
-            self *= fresp
-            return self
-        else:
-            new = self * fresp
-            return new
+        return fdfilter(self, *filt, **kwargs)
 
     def variance(self, bins=None, low=None, high=None, nbins=500,
                  log=False, norm=False, density=False):
@@ -559,17 +544,16 @@ class Spectrogram(Array2D):
         if low is None:
             idx0 = None
         else:
-            idx0 = int((low.value - self.f0.value) // self.df.value)
+            idx0 = int(float(low.value - self.f0.value) // self.df.value)
         # find high index
         if high is None:
             idx1 = None
         else:
-            idx1 = int((high.value - self.f0.value) // self.df.value)
+            idx1 = int(float(high.value - self.f0.value) // self.df.value)
         # crop
         if copy:
             return self[:, idx0:idx1].copy()
-        else:
-            return self[:, idx0:idx1]
+        return self[:, idx0:idx1]
 
     # -- Spectrogram ufuncs ---------------------
 

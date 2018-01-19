@@ -19,10 +19,9 @@
 """This module provides a spectral-variation histogram class
 """
 
-import numpy
-import sys
+from six.moves import range
 
-from six.moves import xrange
+import numpy
 
 from astropy.io import registry as io_registry
 
@@ -65,19 +64,14 @@ class SpectralVariance(Array2D):
 
         return new
 
-    # -------------------------------------------
-    # SpectralVariance properties
-
-    @property
-    def normed(self):
-        return self._normed
-
-    @property
-    def density(self):
-        return self._density
+    # -- properties -----------------------------
 
     @property
     def bins(self):
+        """Array of bin edges, including the rightmost edge
+
+        :type: `astropy.units.Quantity`
+        """
         return self._bins
 
     @bins.setter
@@ -103,17 +97,25 @@ class SpectralVariance(Array2D):
     # over-write yindex and yspan to communicate with bins
     @property
     def yindex(self):
+        """List of left-hand amplitude bin edges
+        """
         return self.bins[:-1]
 
     def yspan(self):
+        """Amplitude range (low, high) spanned by this array
+        """
         return Segment(self.bins[0], self.bins[-1])
 
     @property
     def dy(self):
+        """Size of the first (lowest value) amplitude bin
+        """
         return self.bins[1] - self.bins[0]
 
     @property
     def y0(self):
+        """Starting value of the first (lowert value) amplitude bin
+        """
         return self.bins[0]
 
     f0 = property(Array2D.x0.__get__, Array2D.x0.__set__,
@@ -139,8 +141,7 @@ class SpectralVariance(Array2D):
                            fdel=Array2D.xindex.__delete__,
                            doc="""Array of frequencies for each sample""")
 
-    # -------------------------------------------
-    # SpectralVariance I/O
+    # -- i/O ------------------------------------
 
     @classmethod
     def read(cls, source, *args, **kwargs):
@@ -152,12 +153,12 @@ class SpectralVariance(Array2D):
 
         Parameters
         ----------
-        source : `str`, `~glue.lal.Cache`
+        source : `str`, :class:`~glue.lal.Cache`
             source of data, any of the following:
 
             - `str` path of single data file
             - `str` path of LAL-format cache file
-            - `~glue.lal.Cache` describing one or more data files,
+            - :class:`~glue.lal.Cache` describing one or more data files,
 
         format : `str`, optional
             source format identifier. If not given, the format will be
@@ -189,8 +190,7 @@ class SpectralVariance(Array2D):
         -----"""
         return io_registry.write(self, target, *args, **kwargs)
 
-    # -------------------------------------------
-    # SpectralVariance methods
+    # -- methods --------------------------------
 
     def __getitem__(self, item):
         if isinstance(item, int):
@@ -205,7 +205,7 @@ class SpectralVariance(Array2D):
             out = self.value.__getitem__(item).view(self._rowclass)
             out.xindex = self.xindex
             return out
-        if (isinstance(item, tuple) and len(item) == 2):
+        if isinstance(item, tuple) and len(item) == 2:
             return self[item[0]][item[1]]
         return super(SpectralVariance, self).__getitem__(item)
     __getitem__.__doc__ = Array2D.__getitem__.__doc__
@@ -217,26 +217,33 @@ class SpectralVariance(Array2D):
 
         Parameters
         ----------
-        spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
+        spectrogram : `~gwpy.spectrogram.Spectrogram`
             input `Spectrogram` data
-        bins : :class:`~numpy.ndarray`, optional, default `None`
+
+        bins : `~numpy.ndarray`, optional
             array of histogram bin edges, including the rightmost edge
-        low : `float`, optional, default: `None`
+
+        low : `float`, optional
             left edge of lowest amplitude bin, only read
             if ``bins`` is not given
-        high : `float`, optional, default: `None`
+
+        high : `float`, optional
             right edge of highest amplitude bin, only read
             if ``bins`` is not given
-        nbins : `int`, optional, default: `500`
+
+        nbins : `int`, optional
             number of bins to generate, only read if ``bins`` is not
-            given
-        log : `bool`, optional, default: `False`
+            given, default: `500`
+
+        log : `bool`, optional
             calculate amplitude bins over a logarithmic scale, only
-            read if ``bins`` is not given
-        norm : `bool`, optional, default: `False`
-            normalise bin counts to a unit sum
-        density : `bool`, optional, default: `False`
-            normalise bin counts to a unit integral
+            read if ``bins`` is not given, default: `False`
+
+        norm : `bool`, optional
+            normalise bin counts to a unit sum, default: `False`
+
+        density : `bool`, optional
+            normalise bin counts to a unit integral, default: `False`
 
         Returns
         -------
@@ -249,7 +256,7 @@ class SpectralVariance(Array2D):
             for details on specifying bins and weights
         """
         # parse args and kwargs
-        if not len(spectrograms):
+        if not spectrograms:
             raise ValueError("Must give at least one Spectrogram")
         bins = kwargs.pop('bins', None)
         low = kwargs.pop('low', None)
@@ -265,7 +272,6 @@ class SpectralVariance(Array2D):
         # get data and bins
         spectrogram = spectrograms[0]
         data = numpy.vstack(s.value for s in spectrograms)
-        ubins = (bins is not None)
         if bins is None:
             if low is None and log:
                 low = numpy.log10(data.min() / 2)
@@ -288,10 +294,10 @@ class SpectralVariance(Array2D):
 
         # loop over frequencies
         out = numpy.zeros((data.shape[1], nbins))
-        for i in xrange(data.shape[1]):
+        for i in range(data.shape[1]):
             out[i, :], bins = numpy.histogram(data[:, i], bins,
                                               density=density)
-            if norm and out[i, :].sum():
+            if norm and out[i, :].sum():  # normalise
                 out[i, :] /= out[i, :].sum()
 
         # return SpectralVariance
@@ -299,8 +305,6 @@ class SpectralVariance(Array2D):
         new = cls(out, bins, epoch=spectrogram.epoch, name=name,
                   channel=spectrogram.channel, f0=spectrogram.f0,
                   df=spectrogram.df)
-        new._normed = norm
-        new._density = density
         return new
 
     def percentile(self, percentile):
@@ -320,7 +324,7 @@ class SpectralVariance(Array2D):
         rows, columns = self.shape
         out = numpy.zeros(rows)
         # Loop over frequencies
-        for i in xrange(rows):
+        for i in range(rows):
             # Calculate cumulative sum for array
             cumsumvals = numpy.cumsum(self.value[i, :])
 
@@ -330,12 +334,13 @@ class SpectralVariance(Array2D):
             minindex = abs_cumsumvals_minus_percentile.argmin()
             val = self.bins[minindex]
             out[i] = val
+
         name = '%s %s%% percentile' % (self.name, percentile)
         return FrequencySeries(out, epoch=self.epoch, channel=self.channel,
                                frequencies=self.bins[:-1], name=name)
 
     def plot(self, **kwargs):
-        """Plot this `SpectralVariance`.
+        """Plot this `SpectralVariance`
         """
         from ..plotter import FrequencySeriesPlot
         return FrequencySeriesPlot(self, **kwargs)

@@ -29,7 +29,12 @@ from six.moves.urllib.error import URLError
 import pytest
 
 import numpy
-from numpy import (may_share_memory, testing as nptest)
+from numpy import testing as nptest
+try:
+    from numpy import shares_memory
+except ImportError:  # old numpy
+    from numpy import may_share_memory as shares_memory
+
 
 from scipy import signal
 
@@ -52,6 +57,8 @@ from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.types import Array2D
 from gwpy.spectrogram import Spectrogram
 from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
+from gwpy.utils.misc import null_context
+from gwpy.signal import filter_design
 
 import mocks
 import utils
@@ -70,21 +77,36 @@ TEST_HDF_FILE = '%s.hdf' % TEST_GWF_FILE[:-4]
 TEST_SEGMENT = Segment(968654552, 968654553)
 
 
-FIND_CHANNEL = 'L1:DCS-CALIB_STRAIN_C01'
-FIND_FRAMETYPE = 'L1_HOFT_C01'
+FIND_CHANNEL = 'L1:DCS-CALIB_STRAIN_C02'
+FIND_FRAMETYPE = 'L1_HOFT_C02'
 
 LOSC_IFO = 'L1'
 LOSC_GW150914 = 1126259462
 LOSC_GW150914_SEGMENT = Segment(LOSC_GW150914-2, LOSC_GW150914+2)
-LOSC_GW150914_DQ_BITS = [
-    'data present',
-    'passes cbc CAT1 test',
-    'passes cbc CAT2 test',
-    'passes cbc CAT3 test',
-    'passes burst CAT1 test',
-    'passes burst CAT2 test',
-    'passes burst CAT3 test',
-]
+LOSC_GW150914_DQ_NAME = {
+    'hdf5': 'Data quality',
+    'gwf': 'L1:LOSC-DQMASK',
+}
+LOSC_GW150914_DQ_BITS = {
+    'hdf5': [
+        'data present',
+        'passes cbc CAT1 test',
+        'passes cbc CAT2 test',
+        'passes cbc CAT3 test',
+        'passes burst CAT1 test',
+        'passes burst CAT2 test',
+        'passes burst CAT3 test',
+    ],
+    'gwf': [
+        'DATA',
+        'CBC_CAT1',
+        'CBC_CAT2',
+        'CBC_CAT3',
+        'BURST_CAT1',
+        'BURST_CAT2',
+        'BURST_CAT3',
+    ],
+}
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -213,7 +235,7 @@ class TestTimeSeriesBase(TestSeries):
 
         # test copy=False
         a2 = type(array).from_lal(lalts, copy=False)
-        assert numpy.shares_memory(a2.value, lalts.data.data)
+        assert shares_memory(a2.value, lalts.data.data)
 
         # test units
         array.override_unit('undef')
@@ -223,6 +245,7 @@ class TestTimeSeriesBase(TestSeries):
         a2 = self.TEST_CLASS.from_lal(lalts)
         assert a2.unit is units.dimensionless_unscaled
 
+    @utils.skip_missing_dependency('lal')
     @utils.skip_missing_dependency('pycbc')
     def test_to_from_pycbc(self, array):
         from pycbc.types import TimeSeries as PyCBCTimeSeries
@@ -241,7 +264,7 @@ class TestTimeSeriesBase(TestSeries):
 
         # test copy=False
         a2 = type(array).from_pycbc(array.to_pycbc(copy=False), copy=False)
-        assert numpy.shares_memory(array.value, a2.value)
+        assert shares_memory(array.value, a2.value)
 
 
 # -- TimeSeriesBaseDict -------------------------------------------------------
@@ -272,8 +295,7 @@ class TestTimeSeriesBaseDict(object):
         copy = instance.copy()
         assert isinstance(copy, self.TEST_CLASS)
         for key in copy:
-            assert not numpy.shares_memory(copy[key].value,
-                                           instance[key].value)
+            assert not shares_memory(copy[key].value, instance[key].value)
             utils.assert_quantity_sub_equal(copy[key], instance[key])
 
     def test_append(self, instance):
@@ -282,8 +304,8 @@ class TestTimeSeriesBaseDict(object):
             new = type(instance)()
             new.append(instance, copy=copy)
             for key in new:
-                assert numpy.shares_memory(new[key].value,
-                                           instance[key].value) is not copy
+                assert shares_memory(new[key].value,
+                                     instance[key].value) is not copy
                 utils.assert_quantity_sub_equal(new[key], instance[key])
 
         # create copy of dict that is contiguous
@@ -320,7 +342,7 @@ class TestTimeSeriesBaseDict(object):
         new = type(instance)()
         new.prepend(instance)
         for key in new:
-            assert numpy.shares_memory(new[key].value, instance[key].value)
+            assert shares_memory(new[key].value, instance[key].value)
             utils.assert_quantity_sub_equal(new[key], instance[key])
 
         # create copy of dict that is contiguous
@@ -480,7 +502,7 @@ class TestTimeSeriesBaseList(object):
         assert type(a) is type(instance)
         for x, y in zip(instance, a):
             utils.assert_quantity_sub_equal(x, y)
-            assert not numpy.shares_memory(x.value, y.value)
+            assert not shares_memory(x.value, y.value)
 
 
 # -----------------------------------------------------------------------------
@@ -501,7 +523,7 @@ class TestTimeSeries(TestTimeSeriesBase):
     def losc(self):
         try:
             return self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, format='txt.gz')
+                LOSC_IFO, *LOSC_GW150914_SEGMENT)
         except URLError as e:
             pytest.skip(str(e))
 
@@ -509,8 +531,7 @@ class TestTimeSeries(TestTimeSeriesBase):
     def losc_16384(self):
         try:
             return self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, sample_rate=16384,
-                format='txt.gz')
+                LOSC_IFO, *LOSC_GW150914_SEGMENT, sample_rate=16384)
         except URLError as e:
             pytest.skip(str(e))
 
@@ -658,10 +679,11 @@ class TestTimeSeries(TestTimeSeriesBase):
             t = type(array).read(f, start=start, end=end)
             utils.assert_quantity_sub_equal(t, array.crop(start, end))
 
+    @utils.skip_minimum_version('scipy', '0.13.0')
     def test_read_write_wav(self):
         array = self.create(dtype='float32')
         utils.test_read_write(
-            array, 'wav', write_kw={'scale': 1},
+            array, 'wav', read_kw={'mmap': True}, write_kw={'scale': 1},
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={'exclude': ['unit', 'name', 'channel', 'x0']})
 
@@ -675,7 +697,7 @@ class TestTimeSeries(TestTimeSeriesBase):
     def test_fetch_open_data(self, losc, format):
         try:
             ts = self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format)
+                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, verbose=True)
         except URLError as e:
             pytest.skip(str(e))
         utils.assert_quantity_sub_equal(ts, losc, exclude=['name', 'unit'])
@@ -693,16 +715,16 @@ class TestTimeSeries(TestTimeSeriesBase):
 
     @utils.skip_missing_dependency('nds2')
     def test_fetch(self):
-        ts = self.create(name='X1:TEST', t0=1000000000, unit='m')
+        ts = self.create(name='L1:TEST', t0=1000000000, unit='m')
         nds_buffer = mocks.nds2_buffer_from_timeseries(ts)
         nds_connection = mocks.nds2_connection(buffers=[nds_buffer])
         with mock.patch('nds2.connection') as mock_connection, \
                 mock.patch('nds2.buffer', nds_buffer):
             mock_connection.return_value = nds_connection
             # use verbose=True to hit more lines
-            ts2 = self.TEST_CLASS.fetch('X1:TEST', *ts.span, verbose=True)
+            ts2 = self.TEST_CLASS.fetch('L1:TEST', *ts.span, verbose=True)
             # check open connection works
-            ts2 = self.TEST_CLASS.fetch('X1:TEST', *ts.span, verbose=True,
+            ts2 = self.TEST_CLASS.fetch('L1:TEST', *ts.span, verbose=True,
                                         connection=nds_connection)
         utils.assert_quantity_sub_equal(ts, ts2, exclude=['channel'])
 
@@ -731,24 +753,32 @@ class TestTimeSeries(TestTimeSeriesBase):
     @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
                         reason='No LIGO datafind server configured '
                                'on this host')
-    def test_find_best_frametype(self):
+    @pytest.mark.parametrize('channel, expected', [
+        ('H1:GDS-CALIB_STRAIN', ['H1_HOFT_C00', 'H1_ER_C00_L1']),
+        ('L1:IMC-ODC_CHANNEL_OUT_DQ', ['L1_R']),
+        ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend', ['H1_T']),
+        ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend', ['H1_M'])
+    ])
+    def test_find_best_frametype(self, channel, expected):
         from gwpy.io import datafind
-        # test a few (channel, frametype) pairs
-        for channel, target in [
-                ('H1:GDS-CALIB_STRAIN',
-                    ['H1_HOFT_C00', 'H1_ER_C00_L1']),
-                ('L1:IMC-ODC_CHANNEL_OUT_DQ',
-                    ['L1_R']),
-                ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend',
-                    ['H1_T']),
-                ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend',
-                    ['H1_M'])]:
+        try:
             ft = datafind.find_best_frametype(
                 channel, 1143504017, 1143504017+100)
-            assert ft in target
+        except ValueError as exc:  # ignore
+            if str(exc).lower().startswith('cannot locate'):
+                pytest.skip(str(exc))
+            raise
+        assert ft in expected
 
-        # test that this works end-to-end as part of a TimeSeries.find
+    @utils.skip_missing_dependency('glue.datafind')
+    @utils.skip_missing_dependency('LDAStools.frameCPP')
+    @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
+                        reason='No LIGO datafind server configured '
+                               'on this host')
+    def test_find_best_frametype_in_find(self, losc_16384):
         ts = self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
+        utils.assert_quantity_sub_equal(ts, losc_16384,
+                                        exclude=['name', 'channel', 'unit'])
 
     def test_get(self, losc_16384):
         # get using datafind (maybe)
@@ -757,6 +787,10 @@ class TestTimeSeries(TestTimeSeriesBase):
                                      frametype_match='C01\Z')
         except (ImportError, RuntimeError) as e:
             pytest.skip(str(e))
+        except IOError as exc:
+            if 'reading from stdin' in str(exc):
+                pytest.skip(str(exc))
+            raise
         utils.assert_quantity_sub_equal(ts, losc_16384,
                                         exclude=['name', 'channel', 'unit'])
 
@@ -802,7 +836,7 @@ class TestTimeSeries(TestTimeSeriesBase):
 
         fs = losc.average_fft(fftlength=0.4, overlap=0.2)
 
-    def test_psd(self, losc):
+    def test_psd_simple(self, losc):
         # test all defaults
         fs = losc.psd()
         assert isinstance(fs, FrequencySeries)
@@ -824,33 +858,41 @@ class TestTimeSeries(TestTimeSeriesBase):
         fs2 = losc.psd(fftlength=.4)
         utils.assert_quantity_sub_equal(fs, fs2)
 
-        # test methods
-        losc.psd(fftlength=0.4, overlap=0.2, method='welch')
-        losc.psd(fftlength=0.4, method='bartlett')
-        try:
-            losc.psd(fftlength=0.4, overlap=0.2, method='lal-welch')
-            losc.psd(fftlength=0.4, method='lal-bartlett')
-            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean')
-            losc.psd(fftlength=0.4, overlap=0.2, method='median')
-        except ImportError as e:
-            pass
-        else:
-            # test LAL method with window specification
-            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean',
-                     window='hann')
+    @pytest.mark.parametrize('library', (
+        pytest.param('pycbc',
+                     marks=utils.skip_missing_dependency('pycbc.psd')),
+        pytest.param('lal', marks=utils.skip_missing_dependency('lal')),
+    ))
+    @pytest.mark.parametrize(
+        'method', ('welch', 'bartlett', 'median', 'median_mean'),
+    )
+    def test_psd_library(self, losc, library, method):
+        method = '{}_{}'.format(library, method)
 
-            # test LAL method with non-canonical window specification
-            losc.psd(fftlength=0.4, overlap=0.2, method='median-mean',
-                     window='hanning')
+        def _psd():
+            if method == 'lal_median_mean':
+                # LAL should warn about the data being the wrong length
+                warnctx = pytest.warns(UserWarning)
+            else:
+                warnctx = null_context()
+            with warnctx:
+                return losc.psd(fftlength=.5, overlap=.25, method=method)
 
-            # test check for at least two averages (defaults to single FFT)
-            with pytest.raises(ValueError) as e:
-                losc.psd(method='median-mean')
+        # check simple
+        psd = _psd()
+        assert isinstance(psd, FrequencySeries)
+        assert psd.f0 == 0 * units.Hz
+        assert psd.df == 2 * units.Hz
+
+        # check window selection
+        if library != 'pycbc':
+            _psd()
 
     def test_asd(self, losc):
         fs = losc.asd()
         utils.assert_quantity_sub_equal(fs, losc.psd() ** (1/2.))
 
+    @utils.skip_minimum_version('scipy', '0.16')
     def test_csd(self, losc):
         # test all defaults
         fs = losc.csd(losc)
@@ -894,36 +936,25 @@ class TestTimeSeries(TestTimeSeriesBase):
         # test multiprocessing
         sg2 = losc.spectrogram(0.5, fftlength=0.25, overlap=0.125, nproc=2)
         utils.assert_quantity_sub_equal(sg, sg2)
-        # test methods
-        sg = losc.spectrogram(0.5, fftlength=0.25, method='welch')
+
+        # test a couple of methods
+        with pytest.warns(UserWarning):
+            sg = losc.spectrogram(0.5, fftlength=0.25, method='welch')
         assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
         assert sg.df == 4 * units.Hertz
         assert sg.dt == 0.5 * units.second
-        sg = losc.spectrogram(0.5, fftlength=0.25, method='bartlett')
+        sg = losc.spectrogram(0.5, fftlength=0.25, method='scipy-bartlett')
         assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
         assert sg.df == 4 * units.Hertz
         assert sg.dt == 0.5 * units.second
-        try:
-            sg = losc.spectrogram(0.5, fftlength=0.25, method='lal-welch')
-        except ImportError:
-            pass
-        else:
-            assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
-            assert sg.df == 4 * units.Hertz
-            assert sg.dt == 0.5 * units.second
-            sg = losc.spectrogram(0.5, fftlength=0.25, method='median-mean')
-            assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
-            assert sg.df == 4 * units.Hertz
-            assert sg.dt == 0.5 * units.second
-            sg = losc.spectrogram(0.5, fftlength=0.25, method='median')
-            assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
-            assert sg.df == 4 * units.Hertz
-            assert sg.dt == 0.5 * units.second
 
         # check that `cross` keyword gets deprecated properly
         # TODO: removed before 1.0 release
         with pytest.warns(DeprecationWarning) as wng:
-            out = losc.spectrogram(0.5, fftlength=.25, cross=losc)
+            try:
+                out = losc.spectrogram(0.5, fftlength=.25, cross=losc)
+            except AttributeError:
+                return  # scipy is too old
         assert '`cross` keyword argument has been deprecated' in \
             wng[0].message.args[0]
         utils.assert_quantity_sub_equal(
@@ -976,6 +1007,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         nptest.assert_almost_equal(ray.max().value, 1.8814775174483833)
         assert ray.frequencies[ray.argmax()] == 136 * units.Hz
 
+    @utils.skip_minimum_version('scipy', '0.16')
     def test_csd_spectrogram(self, losc):
         # test defaults
         sg = losc.csd_spectrogram(losc, 1)
@@ -1049,6 +1081,26 @@ class TestTimeSeries(TestTimeSeriesBase):
         detrended = losc.detrend()
         assert numpy.isclose(detrended.value.mean(), 0.0)
 
+    def test_filter(self, losc):
+        zpk = [], [], 1
+        fts = losc.filter(zpk, analog=True)
+        utils.assert_quantity_sub_equal(losc, fts)
+
+        # check SOS filters can be used directly
+        zpk = filter_design.highpass(50, sample_rate=losc.sample_rate)
+        try:
+            sos = signal.zpk2sos(*zpk)
+        except AttributeError:  # scipy < 0.16
+            pass
+        else:
+            utils.assert_quantity_almost_equal(losc.filter(zpk),
+                                               losc.filter(sos))
+
+    def test_zpk(self, losc):
+        zpk = [10, 10], [1, 1], 100
+        utils.assert_quantity_sub_equal(
+            losc.zpk(*zpk), losc.filter(*zpk, analog=True))
+
     def test_notch(self, losc):
         # test notch runs end-to-end
         notched = losc.notch(60)
@@ -1059,34 +1111,35 @@ class TestTimeSeries(TestTimeSeriesBase):
 
     def test_q_transform(self, losc):
         # test simple q-transform
-        qspecgram = losc.q_transform(method='welch', fftlength=2)
+        qspecgram = losc.q_transform(method='scipy-welch', fftlength=2)
         assert isinstance(qspecgram, Spectrogram)
         assert qspecgram.shape == (4000, 2403)
         assert qspecgram.q == 5.65685424949238
         nptest.assert_almost_equal(qspecgram.value.max(), 146.61970478954652)
 
         # test whitening args
-        asd = losc.asd(2, 1)
-        qsg2 = losc.q_transform(method='welch', whiten=asd)
+        asd = losc.asd(2, 1, method='scipy-welch')
+        qsg2 = losc.q_transform(method='scipy-welch', whiten=asd)
         utils.assert_quantity_sub_equal(qspecgram, qsg2)
 
-        asd = losc.asd(.5, .25)
-        qsg2 = losc.q_transform(method='welch', whiten=asd)
-        qsg3 = losc.q_transform(method='welch', fftlength=.5, overlap=.25)
+        asd = losc.asd(.5, .25, method='scipy-welch')
+        qsg2 = losc.q_transform(method='scipy-welch', whiten=asd)
+        qsg3 = losc.q_transform(method='scipy-welch', fftlength=.5, overlap=.25)
         utils.assert_quantity_sub_equal(qsg2, qsg3)
 
         # make sure frequency too high presents warning
         with pytest.warns(UserWarning):
-            qspecgram = losc.q_transform(method='welch', frange=(0, 10000))
+            qspecgram = losc.q_transform(method='scipy-welch',
+                                         frange=(0, 10000))
             nptest.assert_almost_equal(qspecgram.yspan[1], 1291.5316316157107)
 
         # test other normalisations work (or don't)
-        q2 = losc.q_transform(method='welch', norm='median')
+        q2 = losc.q_transform(method='scipy-welch', norm='median')
         utils.assert_quantity_sub_equal(qspecgram, q2)
-        losc.q_transform(method='welch', norm='mean')
-        losc.q_transform(method='welch', norm=False)
+        losc.q_transform(method='scipy-welch', norm='mean')
+        losc.q_transform(method='scipy-welch', norm=False)
         with pytest.raises(ValueError):
-            losc.q_transform(method='welch', norm='blah')
+            losc.q_transform(method='scipy-welch', norm='blah')
 
     def test_boolean_statetimeseries(self, array):
         comp = array >= 2 * array.unit
@@ -1200,6 +1253,57 @@ class TestStateTimeSeriesDict(TestTimeSeriesBaseDict):
         return NotImplemented
 
 
+# -- Bits ---------------------------------------------------------------------
+
+class TestBits(object):
+    TEST_CLASS = Bits
+
+    @pytest.mark.parametrize('in_, out', [
+        # list
+        (['bit 0', 'bit 1', 'bit 2', None, 'bit 3', ''],
+         ['bit 0', 'bit 1', 'bit 2', None, 'bit 3', None]),
+        # dict
+        ({1: 'bit 1', 4: 'bit 4', '6': 'bit 6'},
+         [None, 'bit 1', None, None, 'bit 4', None, 'bit 6']),
+    ])
+    def test_init(self, in_, out):
+        bits = self.TEST_CLASS(in_)
+        assert bits == out
+        assert bits.channel is None
+        assert bits.epoch is None
+        assert bits.description == {bit: None for bit in bits if
+                                    bit is not None}
+
+        bits = self.TEST_CLASS(in_, channel='L1:Test', epoch=0)
+        assert bits.epoch == Time(0, format='gps')
+        assert bits.channel == Channel('L1:Test')
+
+    def test_str(self):
+        bits = self.TEST_CLASS(['a', 'b', None, 'c'])
+        assert str(bits) == (
+            "Bits(0: a\n"
+            "     1: b\n"
+            "     3: c,\n"
+            "     channel=None,\n"
+            "     epoch=None)")
+
+    def test_repr(self):
+        bits = self.TEST_CLASS(['a', 'b', None, 'c'])
+        assert repr(bits) == (
+            "<Bits(0: 'a'\n"
+            "      1: 'b'\n"
+            "      3: 'c',\n"
+            "      channel=None,\n"
+            "      epoch=None)>")
+
+    def test_array(self):
+        bits = self.TEST_CLASS(['a', 'b', None, 'c'])
+        utils.assert_array_equal(
+            numpy.asarray(bits),
+            ['a', 'b', '', 'c'],
+        )
+
+
 # -- StateVector---------------------------------------------------------------
 
 class TestStateVector(TestTimeSeriesBase):
@@ -1209,7 +1313,8 @@ class TestStateVector(TestTimeSeriesBase):
     @classmethod
     def setup_class(cls):
         numpy.random.seed(0)
-        cls.data = numpy.random.randint(2**4+1, size=100, dtype=cls.DTYPE)
+        cls.data = numpy.random.randint(
+            2**4+1, size=100).astype(cls.DTYPE, copy=False)
 
     def test_bits(self, array):
         assert isinstance(array.bits, Bits)
@@ -1294,6 +1399,27 @@ class TestStateVector(TestTimeSeriesBase):
             array.resample(array.sample_rate * .75)
         with pytest.raises(ValueError):
             array.resample(array.sample_rate * 1.5)
+
+    # -- data access ----------------------------
+
+    @pytest.mark.parametrize('format', [
+        pytest.param('hdf5', marks=utils.skip_missing_dependency('h5py')),
+        pytest.param(  # only frameCPP actually reads units properly
+            'gwf', marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
+    ])
+    def test_fetch_open_data(self, format):
+        try:
+            sv = self.TEST_CLASS.fetch_open_data(
+                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format)
+        except URLError as e:
+            pytest.skip(str(e))
+        utils.assert_quantity_sub_equal(
+            sv,
+            StateVector([127, 127, 127, 127], unit='',
+                        t0=LOSC_GW150914_SEGMENT[0], dt=1,
+                        name=LOSC_GW150914_DQ_NAME[format],
+                        bits=LOSC_GW150914_DQ_BITS[format]),
+            exclude=['channel'])
 
 
 # -- StateVectorDict ----------------------------------------------------------

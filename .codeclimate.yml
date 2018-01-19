@@ -1,4 +1,11 @@
-engines:
+version: "2"
+
+checks:
+  file-lines:
+    config:
+      threshold: 500
+
+plugins:
   duplication:
     enabled: true
     config:
@@ -14,6 +21,9 @@ engines:
     enabled: true
   radon:
     enabled: true
+    config:
+      threshold: "C"
+
 ratings:
   paths:
   - "**.py"

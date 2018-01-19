@@ -28,12 +28,12 @@ statement of instrumental operation
 """
 
 from math import (ceil, log)
-import sys
+
+from six.moves import range
 
 import numpy
 
 from astropy import units
-from astropy.io import registry as io_registry
 
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class, ASTROPY_2_0)
@@ -41,9 +41,6 @@ from ..types import Array2D
 from ..detector import Channel
 from ..time import Time
 from ..io.nds2 import Nds2ChannelType
-
-if sys.version_info[0] < 3:
-    range = xrange
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -156,8 +153,7 @@ class StateTimeSeries(TimeSeriesBase):
             new.x0 = self.x0 + self.dx
         if n > 1:
             return new.diff(n-1, axis=axis)
-        else:
-            return new
+        return new
     diff.__doc__ = TimeSeriesBase.diff.__doc__
 
     # -- useful methods -------------------------
@@ -252,13 +248,25 @@ class Bits(list):
         (bit, desc) `dict` of longer descriptions for each bit
     """
     def __init__(self, bits, channel=None, epoch=None, description=None):
-        list.__init__(self, [b or None for b in bits])
+        # handle dict of (index, bitname) pairs
+        if isinstance(bits, dict):
+            n = max(map(int, bits.keys())) + 1
+            list.__init__(self, [None] * n)
+            for key, val in bits.items():
+                self[int(key)] = val
+        # otherwise just parse a list of bitnames
+        else:
+            list.__init__(self, [b or None for b in bits])
+
+        # populate metadata
         if channel is not None:
             self.channel = channel
         if epoch is not None:
             self.epoch = epoch
         self.description = description
-        for i, bit in enumerate(bits):
+
+        # rebuild descriptions
+        for i, bit in enumerate(self):
             if bit is None or bit in self.description:
                 continue
             elif channel:
@@ -299,11 +307,11 @@ class Bits(list):
             return None
 
     @channel.setter
-    def channel(self, ch):
-        if isinstance(ch, Channel):
-            self._channel = ch
+    def channel(self, chan):
+        if isinstance(chan, Channel):
+            self._channel = chan
         else:
-            self._channel = Channel(ch)
+            self._channel = Channel(chan)
 
     @property
     def description(self):
@@ -324,8 +332,8 @@ class Bits(list):
                                        idx, bit in enumerate(self)
                                        if bit])
         return ("<{1}({2},\n{0}channel={3},\n{0}epoch={4})>".format(
-                indent, self.__class__.__name__,
-                mask, repr(self.channel), repr(self.epoch)))
+            indent, self.__class__.__name__,
+            mask, repr(self.channel), repr(self.epoch)))
 
     def __str__(self):
         indent = " " * len('%s(' % self.__class__.__name__)
@@ -333,8 +341,8 @@ class Bits(list):
                                        idx, bit in enumerate(self)
                                        if bit])
         return ("{1}({2},\n{0}channel={3},\n{0}epoch={4})".format(
-                indent, self.__class__.__name__,
-                mask, str(self.channel), str(self.epoch)))
+            indent, self.__class__.__name__,
+            mask, str(self.channel), str(self.epoch)))
 
     def __array__(self):
         return numpy.array([b or '' for b in self])
@@ -403,6 +411,7 @@ class StateVector(TimeSeriesBase):
 
     """
     _metadata_slots = TimeSeriesBase._metadata_slots + ('bits',)
+    _print_slots = TimeSeriesBase._print_slots + ('_bits',)
 
     def __new__(cls, data, bits=None, t0=None, dt=None, sample_rate=None,
                 times=None, channel=None, name=None, **kwargs):
@@ -435,8 +444,7 @@ class StateVector(TimeSeriesBase):
             elif hasattr(self.channel, 'bits'):
                 self.bits = self.channel.bits
                 return self.bits
-            else:
-                return None
+            return None
 
     @bits.setter
     def bits(self, mask):
@@ -466,9 +474,8 @@ class StateVector(TimeSeriesBase):
         except AttributeError:
             nbits = len(self.bits)
             boolean = numpy.zeros((self.size, nbits), dtype=bool)
-            for i, d in enumerate(self.value):
-                boolean[i, :] = [int(d) >> j & 1 for
-                                 j in range(nbits)]
+            for i, sample in enumerate(self.value):
+                boolean[i, :] = [int(sample) >> j & 1 for j in range(nbits)]
             self._boolean = Array2D(boolean, name=self.name,
                                     x0=self.x0, dx=self.dx, y0=0, dy=1)
             return self.boolean
@@ -480,7 +487,7 @@ class StateVector(TimeSeriesBase):
             raise ValueError("Cannot store %s with units %r"
                              % (type(self).__name__, value.unit))
         if not isinstance(value, units.Quantity):
-            value * self.unit
+            return value * self.unit
         return value
 
     # -- StateVector methods --------------------
@@ -501,12 +508,12 @@ class StateVector(TimeSeriesBase):
         if bits is None:
             bits = [b for b in self.bits if b is not None and b is not '']
         bindex = []
-        for b in bits:
+        for bit in bits:
             try:
-                bindex.append((self.bits.index(b), b))
-            except (IndexError, ValueError) as e:
-                e.args = ('Bit %r not found in StateVector' % b,)
-                raise e
+                bindex.append((self.bits.index(bit), bit))
+            except (IndexError, ValueError) as exc:
+                exc.args = ('Bit %r not found in StateVector' % bit,)
+                raise
         self._bitseries = StateTimeSeriesDict()
         for i, bit in bindex:
             self._bitseries[bit] = StateTimeSeries(
@@ -520,12 +527,12 @@ class StateVector(TimeSeriesBase):
 
         Parameters
         ----------
-        source : `str`, `~glue.lal.Cache`
+        source : `str`, :class:`~glue.lal.Cache`
             source of data, any of the following:
 
             - `str` path of single data file
             - `str` path of LAL-format cache file
-            - `~glue.lal.Cache` describing one or more data files,
+            - :class:`~glue.lal.Cache` describing one or more data files,
 
         channel : `str`, `~gwpy.detector.Channel`
             the name of the channel to read, or a `Channel` object.
@@ -554,7 +561,7 @@ class StateVector(TimeSeriesBase):
             .. note::
 
                Parallel frame reading, via the ``nproc`` keyword argument,
-               is only available when giving a `~glue.lal.Cache` of
+               is only available when giving a :class:`~glue.lal.Cache` of
                frames, or using the ``format='cache'`` keyword argument.
 
         gap : `str`, optional
@@ -569,8 +576,8 @@ class StateVector(TimeSeriesBase):
             value with which to fill gaps in the source data, only used if
             gap is not given, or `gap='pad'` is given
 
-        Example
-        -------
+        Examples
+        --------
         To read the S6 state vector, with names for all the bits::
 
             >>> sv = StateVector.read(
@@ -597,19 +604,7 @@ class StateVector(TimeSeriesBase):
 
         Notes
         -----"""
-        return io_registry.read(cls, source, *args, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this `StateVector` to a file
-
-        Parameters
-        ----------
-        target : `str`
-            output filename
-
-        Notes
-        -----"""
-        return io_registry.write(self, target, *args, **kwargs)
+        return super(StateVector, cls).read(source, *args, **kwargs)
 
     def to_dqflags(self, bits=None, minlen=1, dtype=float, round=False):
         """Convert this `StateVector` into a `~gwpy.segments.DataQualityDict`
@@ -697,44 +692,6 @@ class StateVector(TimeSeriesBase):
         if bits:
             new.bits = bits
         return new
-
-    @classmethod
-    def fetch_open_data(cls, ifo, start, end, format='hdf5',
-                        host='https://losc.ligo.org', verbose=False):
-        """Fetch open-access data from the LIGO Open Science Center
-
-        Parameters
-        ----------
-        ifo : `str`
-            the two-character prefix of the IFO in which you are interested,
-            e.g. `'L1'`
-
-        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS start time of required data, defaults to start of data found;
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS end time of required data, defaults to end of data found;
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        format : `str`, optional
-            the data format to download and parse, defaults to ``'hdf5'``
-            which relies upon |h5py|_
-
-        host : `str`, optional
-            HTTP host name of LOSC server to access
-
-        verbose : `bool`, optional, default: `False`
-            print verbose output while fetching data
-
-        Returns
-        -------
-        state : `~gwpy.timeseries.StateVector`
-            the data-quality statevector recorded by LOSC for this period
-        """
-        from .io.losc import fetch_losc_data
-        return fetch_losc_data(ifo, start, end, format=format, cls=cls,
-                               host=host, verbose=verbose)
 
     @classmethod
     def get(cls, channel, start, end, bits=None, **kwargs):
@@ -862,26 +819,26 @@ class StateVector(TimeSeriesBase):
             newsize = int(self.size / factor)
             old = self.value.reshape((newsize, self.size // newsize))
             # work out number of bits
-            if self.bits is not None and len(self.bits):
+            if self.bits:
                 nbits = len(self.bits)
             else:
-                max = self.value.max()
-                nbits = max != 0 and int(ceil(log(self.value.max(), 2))) or 1
+                max_ = self.value.max()
+                nbits = int(ceil(log(max_, 2))) if max_ else 1
             bits = range(nbits)
             # construct an iterator over the columns of the old array
-            it = numpy.nditer([old, None],
-                              flags=['external_loop', 'reduce_ok'],
-                              op_axes=[None, [0, -1]],
-                              op_flags=[['readonly'],
-                                        ['readwrite', 'allocate']])
+            itr = numpy.nditer(
+                [old, None],
+                flags=['external_loop', 'reduce_ok'],
+                op_axes=[None, [0, -1]],
+                op_flags=[['readonly'], ['readwrite', 'allocate']])
             dtype = self.dtype
             type_ = self.dtype.type
             # for each new sample, each bit is logical AND of old samples
             # bit is ON,
-            for x, y in it:
+            for x, y in itr:
                 y[...] = numpy.sum([type_((x >> bit & 1).all() * (2 ** bit))
                                     for bit in bits], dtype=self.dtype)
-            new = StateVector(it.operands[1], dtype=dtype)
+            new = StateVector(itr.operands[1], dtype=dtype)
             new.__metadata_finalize__(self)
             new._unit = self.unit
             new.sample_rate = rate2
@@ -897,6 +854,8 @@ class StateVector(TimeSeriesBase):
 
 @as_series_dict_class(StateTimeSeries)
 class StateTimeSeriesDict(TimeSeriesBaseDict):
+    __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
+                                                 'StateTimeSeries')
     EntryClass = StateTimeSeries
 
 
@@ -912,8 +871,8 @@ class StateVectorDict(TimeSeriesBaseDict):
 
         Parameters
         ----------
-        source : `str`, `~glue.lal.Cache`
-            a single file path `str`, or a `~glue.lal.Cache` containing
+        source : `str`, :class:`~glue.lal.Cache`
+            a single file path `str`, or a :class:`~glue.lal.Cache` containing
             a contiguous list of files.
 
         channels : `~gwpy.detector.channel.ChannelList`, `list`
@@ -966,22 +925,7 @@ class StateVectorDict(TimeSeriesBaseDict):
 
         Notes
         -----"""
-        return io_registry.read(cls, source, *args, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this `StateVectorDict` to a file
-
-        Arguments and keywords depend on the output format, see the
-        online documentation for full details for each format.
-
-        Parameters
-        ----------
-        target : `str`
-            output filename
-
-        Notes
-        -----"""
-        return io_registry.write(self, target, *args, **kwargs)
+        return super(StateVectorDict, cls).read(source, *args, **kwargs)
 
 
 class StateVectorList(TimeSeriesBaseList):

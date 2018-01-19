@@ -343,12 +343,12 @@ class Series(Array):
 
         Parameters
         ----------
-        source : `str`, `~glue.lal.Cache`
+        source : `str`, :class:`~glue.lal.Cache`
             source of data, any of the following:
 
             - `str` path of single data file
             - `str` path of LAL-format cache file
-            - `~glue.lal.Cache` describing one or more data files,
+            - :class:`~glue.lal.Cache` describing one or more data files,
 
         format : `str`, optional
             source format identifier. If not given, the format will be
@@ -534,8 +534,7 @@ class Series(Array):
                 return 1
             elif abs(float(other.xspan[1] - self.xspan[0])) < tol:
                 return -1
-            else:
-                return 0
+            return 0
         elif type(other) in [list, tuple, numpy.ndarray]:
             return 1
 
@@ -573,7 +572,7 @@ class Series(Array):
                      % (self.dtype, other.dtype))
         return True
 
-    def append(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
+    def append(self, other, gap='raise', inplace=True, pad=0, resize=True):
         """Connect another series onto the end of the current one.
 
         Parameters
@@ -629,7 +628,7 @@ class Series(Array):
                             type(self).__name__, self.xspan, other.xspan))
                 gapshape = list(self.shape)
                 gapshape[0] = int(ngap)
-                padding = numpy.ones(gapshape, dtype=self.dtype) * pad
+                padding = (numpy.ones(gapshape) * pad).astype(self.dtype)
                 self.append(padding, inplace=True, resize=resize)
             elif gap == 'ignore':
                 pass
@@ -686,8 +685,8 @@ class Series(Array):
             if resize:
                 try:
                     self.xindex.resize((s[0],), refcheck=False)
-                except ValueError as e:
-                    if 'cannot resize' in str(e):
+                except ValueError as exc:
+                    if 'cannot resize' in str(exc):
                         self.xindex = self.xindex.copy()
                         self.xindex.resize((s[0],))
                     else:
@@ -708,7 +707,7 @@ class Series(Array):
                 self.x0 = self.xindex[0]
         return self
 
-    def prepend(self, other, gap='raise', inplace=True, pad=0.0, resize=True):
+    def prepend(self, other, gap='raise', inplace=True, pad=0, resize=True):
         """Connect another series onto the start of the current one.
 
         Parameters
@@ -809,12 +808,12 @@ class Series(Array):
         if start is None:
             idx0 = None
         else:
-            idx0 = int(float(start - self.xspan[0]) / self.dx.value)
+            idx0 = int(float(start - self.xspan[0]) // self.dx.value)
         # find end index
         if end is None:
             idx1 = None
         else:
-            idx1 = int(float(end - self.xspan[0]) / self.dx.value)
+            idx1 = int(float(end - self.xspan[0]) // self.dx.value)
             if idx1 >= self.size:
                 idx1 = None
         # crop

@@ -19,26 +19,37 @@
 """This module attaches the HDF5 input output methods to the TimeSeries.
 """
 
+from astropy import units
+
 from ...io import registry as io_registry
 from ...io.hdf5 import (identify_hdf5, with_read_hdf5, with_write_hdf5)
-from ...types.io.hdf5 import (read_hdf5_array, write_hdf5_array)
+from ...types.io.hdf5 import (read_hdf5_array, write_hdf5_series)
 from .. import (TimeSeries, TimeSeriesDict,
                 StateVector, StateVectorDict)
+
+SEC_UNIT = units.second
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 # -- read ---------------------------------------------------------------------
 
-def read_hdf5_timeseries(f, path=None, start=None, end=None, **kwargs):
+def read_hdf5_timeseries(h5f, path=None, start=None, end=None, **kwargs):
+    """Read a `TimeSeries` from HDF5
+    """
     # read data
     kwargs.setdefault('array_type', TimeSeries)
-    ts = read_hdf5_array(f, path=path, **kwargs)
+    series = read_hdf5_array(h5f, path=path, **kwargs)
     # crop if needed
     if start is not None or end is not None:
-        return ts.crop(start, end)
-    else:
-        return ts
+        return series.crop(start, end)
+    return series
+
+
+def _is_timeseries_dataset(dataset):
+    """Returns `True` if a dataset contains `TimeSeries` data
+    """
+    return SEC_UNIT.is_equivalent(dataset.attrs.get('xunit', 'undef'))
 
 
 @with_read_hdf5
@@ -53,9 +64,7 @@ def read_hdf5_dict(h5f, names=None, group=None, **kwargs):
 
     # find list of names to read
     if names is None:
-        # TODO: improve the TimeSeries -> HDF5 format to make detecting
-        #       a TimeSeries easier
-        names = [key for key in h5g if 'dx' in h5g[key]]
+        names = [key for key in h5g if _is_timeseries_dataset(h5g[key])]
 
     # read names
     out = kwargs.pop('dict_type', TimeSeriesDict)()
@@ -96,6 +105,7 @@ def write_hdf5_dict(tsdict, h5f, group=None, **kwargs):
         h5g = h5f
 
     # write each timeseries
+    kwargs.setdefault('format', 'hdf5')
     for key, series in tsdict.items():
         series.write(h5g, path=str(key), **kwargs)
 
@@ -106,7 +116,7 @@ def write_hdf5_dict(tsdict, h5f, group=None, **kwargs):
 for series_class in (TimeSeries, StateVector):
     reader = read_hdf5_factory(series_class)
     io_registry.register_reader('hdf5', series_class, reader)
-    io_registry.register_writer('hdf5', series_class, write_hdf5_array)
+    io_registry.register_writer('hdf5', series_class, write_hdf5_series)
     io_registry.register_identifier('hdf5', series_class, identify_hdf5)
 
 # dict classes

@@ -85,7 +85,6 @@ def write(series, output, scale=None):
     >>> t = TimeSeries.write('test.wav')
     """
     fsamp = int(series.sample_rate.decompose().value)
-    data = series.value
     if scale is None:
         scale = 1 / numpy.abs(series.value).max()
     data = (series.value * scale).astype('float32')
@@ -116,7 +115,7 @@ def is_wav(origin, filepath, fileobj, *args, **kwargs):
     else:
         try:
             wave.open(args[0])
-        except wave.Error:
+        except (wave.Error, AttributeError):
             return False
         else:
             return True

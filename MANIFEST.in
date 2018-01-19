@@ -1,6 +1,8 @@
 include LICENSE README.md MANIFEST.in
 recursive-include gwpy/tests/data *gwf *xml.gz *txt *hdf
 recursive-include examples *py
-include ez_setup.py
+include setup_utils.py
 include versioneer.py
+include gwpy.spec
 include gwpy/_version.py
+include debian/*

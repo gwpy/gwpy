@@ -1,0 +1,22 @@
+#!/usr/bin/make -f
+
+PYTHON := $(if $(PYTHON), $(PYTHON), python)
+PY2VERS := $(shell pyversions -r)
+PY3VERS := $(shell py3versions -r)
+
+%:
+	dh $@ --with python2,python3 --buildsystem=python_distutils
+
+override_dh_auto_install:
+	for py in $(PY2VERS); do \
+		$$py setup.py install --root=debian/python-gwpy --no-compile -O0 --install-layout=deb; \
+	done
+	for py in $(PY3VERS); do \
+		$$py setup.py install --root=debian/python3-gwpy --no-compile -O0 --install-layout=deb; \
+	done
+
+override_dh_python2:
+	dh_python2 -ppython-gwpy --no-guessing-deps
+
+override_dh_python3:
+	dh_python3 -ppython3-gwpy --no-guessing-deps

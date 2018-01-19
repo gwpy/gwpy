@@ -22,16 +22,17 @@
 from __future__ import absolute_import
 
 from collections import OrderedDict
+
 from six import string_types
 
 import numpy
 
 from astropy import units
 
-from lal import lal
+import lal
 
 from ..time import to_gps
-import gwpy.detector.units
+from ..detector import units as gwpy_units  # pylint: disable=unused-import
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

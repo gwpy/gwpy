@@ -1,5 +1,3 @@
-.. include:: ../references.txt
-
 .. _gwpy-install:
 
 ############
@@ -28,7 +26,7 @@ Those dependencies are:
 - |scipy|_
 - |matplotlib|_
 - |astropy|_
-- |glue|_
+- :mod:`glue`
 - |ligotimegps|_ (if |lal|_ is not already installed)
 
 See the GWpy ``setup.py`` file for minimum version requirements for each of those packages.
@@ -41,31 +39,32 @@ Installing Extras
 
 Additional (optional) functionality can be installed by specifying one or more of the extra group names, as follows
 
-+--------------+-----------------------------+--------------------------------+
-| Group name   | Purpose                     | Packages included              |
-+==============+=============================+================================+
-| ``hdf5``     | Reading/writing HDF5 files  | |h5py|_                        |
-|              |                             |                                |
-|              | Querying for open-access    |                                |
-|              | LIGO data                   |                                |
-+--------------+-----------------------------+--------------------------------+
-| ``root``     | Reading/writing ROOT files  | |root_numpy|_                  |
-+--------------+-----------------------------+--------------------------------+
-| ``segments`` | Querying for LIGO           | |dqsegdb|_                     |
-|              | operations and data-quality |                                |
-|              | segments                    |                                |
-|              | (requires LIGO.ORG          |                                |
-|              | credentials)                |                                |
-+--------------+-----------------------------+--------------------------------+
-| ``hacr``     | Querying for HACR event     | |MySQLdb|_                     |
-|              | files                       |                                |
-+--------------+-----------------------------+--------------------------------+
-| ``docs``     | Generating package          | |sphinx|_, |numpydoc|_,        |
-|              | documentation               | |sphinx-bootstrap-theme|_,     |
-|              |                             | |sphinxcontrib-programoutput|_ |
-+--------------+-----------------------------+--------------------------------+
-| ``all``      | All of the above extras     | All of the above               |
-+--------------+-----------------------------+--------------------------------+
++--------------+-----------------------------+---------------------------------+
+| Group name   | Purpose                     | Packages included               |
++==============+=============================+=================================+
+| ``hdf5``     | Reading/writing HDF5 files  | |h5py|_                         |
+|              |                             |                                 |
+|              | Querying for open-access    |                                 |
+|              | LIGO data                   |                                 |
++--------------+-----------------------------+---------------------------------+
+| ``root``     | Reading/writing ROOT files  | |root_numpy|_                   |
++--------------+-----------------------------+---------------------------------+
+| ``segments`` | Querying for LIGO           | |dqsegdb|_                      |
+|              | operations and data-quality |                                 |
+|              | segments                    |                                 |
+|              | (requires LIGO.ORG          |                                 |
+|              | credentials)                |                                 |
++--------------+-----------------------------+---------------------------------+
+| ``hacr``     | Querying for HACR event     | |MySQLdb|_                      |
+|              | files                       |                                 |
++--------------+-----------------------------+---------------------------------+
+| ``docs``     | Generating package          | |sphinx|_, |numpydoc|_,         |
+|              | documentation               | |sphinx-bootstrap-theme|_,      |
+|              |                             | |sphinxcontrib-programoutput|_, |
+|              |                             | |sphinx-automodapi|_            |
++--------------+-----------------------------+---------------------------------+
+| ``all``      | All of the above extras     | All of the above                |
++--------------+-----------------------------+---------------------------------+
 
 Any of these extras can be installed with `pip`:
 

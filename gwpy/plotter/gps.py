@@ -49,8 +49,7 @@ TIME_UNITS = [units.nanosecond,
               units.gigayear]
 
 
-# ---------------------------------------------------------------------------
-# Define re-usable scale mixin
+# -- base mixin for all GPS manipulations -------------------------------------
 
 class GPSMixin(object):
     """Mixin adding GPS-related attributes to any class.
@@ -66,11 +65,13 @@ class GPSMixin(object):
             pass
 
     def get_epoch(self):
-        """Starting GPS time epoch for this formatter
+        """The GPS epoch
         """
         return self._epoch
 
     def set_epoch(self, epoch):
+        """Set the GPS epoch
+        """
         if epoch is None:
             self._epoch = None
             return
@@ -82,11 +83,13 @@ class GPSMixin(object):
                      doc=get_epoch.__doc__)
 
     def get_unit(self):
-        """GPS step scale for this formatter
+        """GPS step scale
         """
         return self._unit
 
     def set_unit(self, unit):
+        """Set the GPS step scale
+        """
         # default None to seconds
         if unit is None:
             unit = units.second
@@ -100,19 +103,19 @@ class GPSMixin(object):
         # otherwise, should be able to convert to a time unit
         try:
             unit = units.Unit(unit)
-        except ValueError as e:
+        except ValueError as exc:
             # catch annoying plurals
             try:
                 unit = units.Unit(str(unit).rstrip('s'))
             except ValueError:
-                raise e
+                raise exc
         # decompose and check that it's actually a time unit
-        u = unit.decompose()
-        if u.bases != [units.second]:
+        dec = unit.decompose()
+        if dec.bases != [units.second]:
             raise ValueError("Cannot set GPS unit to %s" % unit)
         # check equivalent units
         for other in TIME_UNITS:
-            if other.decompose().scale == u.scale:
+            if other.decompose().scale == dec.scale:
                 self._unit = other
                 return
         raise ValueError("Unrecognised unit: %s" % unit)
@@ -121,13 +124,14 @@ class GPSMixin(object):
                     doc=get_unit.__doc__)
 
     def get_unit_name(self):
+        """Returns the name of the unit for this GPS scale
+        """
         if not self.unit:
             return None
-        name = sorted(self.unit.names, key=lambda u: len(u))[-1]
+        name = sorted(self.unit.names, key=len)[-1]
         if len(name) == 1:
             return name
-        else:
-            return '%ss' % name
+        return '%ss' % name
 
     def get_scale(self):
         """The scale (in seconds) of the current GPS unit.
@@ -141,35 +145,77 @@ class GPSMixin(object):
 # Define GPS transforms
 
 class GPSTransformBase(GPSMixin, Transform):
+    """`Transform` to convert GPS times to time since epoch (and vice-verse)
+
+    This class uses the `decimal.Decimal` object to protect against precision
+    errors when converting to and from GPS times that may have 19 significant
+    digits, which is more than `float` can handle.
+
+    There is some logic to _only_ use the slow decimal transforms when
+    absolutely necessary, normally when transforming tick positions.
+    """
     input_dims = 1
     output_dims = 1
     is_separable = True
     is_affine = True
     has_inverse = True
 
+    def transform(self, values):
+        # format ticks using decimal for precision display
+        if isinstance(values, (Number, Decimal)):
+            return self._transform_decimal(values, self.epoch or 0, self.scale)
+        return super(GPSTransformBase, self).transform(values)
+
     def transform_non_affine(self, values):
         """Transform an array of GPS times.
+
+        This method is designed to filter out transformations that will
+        generate text elements that require exact precision, and use
+        `Decimal` objects to do the transformation, and simple `float`
+        otherwise.
         """
+        scale = self.scale
+        epoch = self.epoch
+
+        # handle simple or data transformations with floats
+        if any([
+                epoch is None,  # no large additions
+                scale == 1,  # no multiplications
+                self._parents,  # part of composite transform (from draw())
+        ]):
+            return self._transform(values, epoch, scale)
+
+        # otherwise do things carefully (and slowly) with Decimals
+        # -- ideally this only gets called for transforming tick positions
         flat = values.flatten()
-        return numpy.asarray(
-            list(map(self._transform_scalar, flat))).reshape(values.shape)
+
+        def _trans(x):
+            return self._transform_decimal(x, epoch, scale)
+
+        return numpy.asarray(list(map(_trans, flat))).reshape(values.shape)
+
+    @staticmethod
+    def _transform(value, epoch, scale):
+        # this is declared by the actual transform subclass
+        raise NotImplementedError
+
+    @classmethod
+    def _transform_decimal(cls, value, epoch, scale):
+        """Transform to/from GPS using `decimal.Decimal` for precision
+        """
+        vdec = Decimal(repr(value))
+        edec = Decimal(repr(epoch))
+        sdec = Decimal(repr(scale))
+        return type(value)(cls._transform(vdec, edec, sdec))
 
 
 class GPSTransform(GPSTransformBase):
     """Transform GPS time into N * scale from epoch.
     """
-    def transform(self, values):
-        if isinstance(values, (Number, Decimal)):
-            return self._transform_scalar(values)
-        return super(GPSTransform, self).transform(values)
-
-    def _transform_scalar(self, a):
-        if self.epoch is None:
-            return a / self.scale
-        adec = Decimal(repr(a))
-        edec = Decimal(repr(self.epoch))
-        sdec = Decimal(repr(self.scale))
-        return type(a)((adec - edec) / sdec)
+    @staticmethod
+    def _transform(value, epoch, scale):
+        # convert GPS into scaled time from epoch
+        return (value - epoch) / scale
 
     def inverted(self):
         return InvertedGPSTransform(unit=self.unit, epoch=self.epoch)
@@ -178,19 +224,16 @@ class GPSTransform(GPSTransformBase):
 class InvertedGPSTransform(GPSTransform):
     """Transform time (scaled units) from epoch into GPS time.
     """
-    def _transform_scalar(self, a):
-        if self.epoch is None:
-            return a * self.scale
-        adec = Decimal(repr(a))
-        edec = Decimal(repr(self.epoch))
-        sdec = Decimal(repr(self.scale))
-        return type(a)(adec * sdec + edec)
+    @staticmethod
+    def _transform(value, epoch, scale):
+        # convert scaled time from epoch back into GPS
+        return value * scale + epoch
 
     def inverted(self):
         return GPSTransform(unit=self.unit, epoch=self.epoch)
 
-# ---------------------------------------------------------------------------
-# Define GPS locators and formatters
+
+# -- locators and formatters --------------------------------------------------
 
 
 class GPSLocatorMixin(GPSMixin):
@@ -285,12 +328,12 @@ class GPSAutoMinorLocator(GPSLocatorMixin, ticker.AutoMinorLocator):
         if vmin > vmax:
             vmin, vmax = vmax, vmin
 
-        if len(majorlocs) > 0:
-            t0 = majorlocs[0]
-            tmin = numpy.ceil((vmin - t0) / minorstep) * minorstep
-            tmax = numpy.floor((vmax - t0) / minorstep) * minorstep
-            locs = numpy.arange(tmin, tmax, minorstep) + t0
-            cond = numpy.abs((locs - t0) % majorstep) > minorstep / 10.0
+        if majorlocs.size:
+            epoch = majorlocs[0]
+            tmin = numpy.ceil((vmin - epoch) / minorstep) * minorstep
+            tmax = numpy.floor((vmax - epoch) / minorstep) * minorstep
+            locs = numpy.arange(tmin, tmax, minorstep) + epoch
+            cond = numpy.abs((locs - epoch) % majorstep) > minorstep / 10.0
             locs = locs.compress(cond)
         else:
             locs = []
@@ -311,8 +354,7 @@ class GPSFormatter(GPSMixin, ticker.Formatter):
         return f
 
 
-# ---------------------------------------------------------------------------
-# Define GPS scale
+# -- scales -------------------------------------------------------------------
 
 class GPSScale(GPSMixin, LinearScale):
     """A GPS scale, displaying time (scaled units) from an epoch.
@@ -332,19 +374,17 @@ class GPSScale(GPSMixin, LinearScale):
             epoch = epoch.utc.gps
         elif isinstance(epoch, units.Quantity):
             epoch = epoch.value
-        if epoch is None and type(axis._scale) is GPSScale:
+        if epoch is None and isinstance(axis._scale, GPSScale):
             epoch = axis._scale.get_epoch()
         # otherwise get from current view
         if epoch is None:
             epoch = viewlim[0]
-        if unit is None and type(axis._scale) is GPSScale:
-            unit = axis._scale.get_unit()
         if unit is None:
             duration = float(viewlim[1] - (min(viewlim[0], epoch)))
             unit = units.second
-            for u in TIME_UNITS[::-1]:
-                if duration >= u.decompose().scale * 4:
-                    unit = u
+            for scale in TIME_UNITS[::-1]:
+                if duration >= scale.decompose().scale * 4:
+                    unit = scale
                     break
         super(GPSScale, self).__init__(unit=unit, epoch=epoch)
         self._transform = self.GPSTransform(unit=self.unit, epoch=self.epoch)
@@ -374,8 +414,12 @@ register_scale(AutoGPSScale)
 
 
 # register all the astropy time units that have sensible long names
-def gps_scale_factory(unit):
+def _gps_scale_factory(unit):
+    """Construct a GPSScale for this unit
+    """
     class FixedGPSScale(GPSScale):
+        """`GPSScale` for a specific GPS time unit
+        """
         name = str('%ss' % unit.long_names[0])
 
         def __init__(self, axis, epoch=None):
@@ -384,7 +428,7 @@ def gps_scale_factory(unit):
 
 
 for _unit in TIME_UNITS:
-    register_scale(gps_scale_factory(_unit))
+    register_scale(_gps_scale_factory(_unit))
 
 # update the docstring for matplotlib scale methods
 docstring.interpd.update(

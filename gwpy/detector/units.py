@@ -27,6 +27,9 @@ from astropy.units.format.generic import Generic
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+# container for new units (so that each one only gets created once)
+UNRECOGNIZED_UNITS = {}
+
 
 # -- parser to handle any unit ------------------------------------------------
 
@@ -44,6 +47,7 @@ class GWpyFormat(Generic):
     name = 'gwpy'
     re_closest_unit = re.compile(r'Did you mean (.*)\?\Z')
     re_closest_unit_delim = re.compile('(, | or )')
+    warn = True
 
     @classmethod
     def _get_unit(cls, t):
@@ -74,11 +78,18 @@ class GWpyFormat(Generic):
             elif sname.lower() in alts:
                 alt = sname.lower()
             else:
-                warnings.warn('{0} Mathematical operations using this unit '
-                              'should work, but conversions to other units '
-                              'will not.'.format(str(exc).rstrip(' ')),
-                              category=units.UnitsWarning)
-                return units.def_unit(name, doc='Unrecognized unit')
+                if cls.warn:
+                    warnings.warn(
+                        '{0} Mathematical operations using this unit should '
+                        'work, but conversions to other units will '
+                        'not.'.format(str(exc).rstrip(' ')),
+                        category=units.UnitsWarning)
+                try:  # return previously created unit
+                    return UNRECOGNIZED_UNITS[name]
+                except KeyError:  # or create new one now
+                    u = UNRECOGNIZED_UNITS[name] = units.def_unit(
+                        name, doc='Unrecognized unit')
+                    return u
             return cls._parse_unit(alt)
 
 
@@ -112,9 +123,16 @@ def parse_unit(name, parse_strict='warn', format='gwpy'):
         return None
 
     # pylint: disable=unexpected-keyword-arg
-    if parse_strict in ('raise',):
-        return units.Unit(name, parse_strict=parse_strict)
-    return units.Unit(name, parse_strict=parse_strict, format=format)
+    try:
+        return units.Unit(name, parse_strict='raise')
+    except ValueError as exc:
+        if parse_strict == 'raise' or 'did not parse as unit' not in str(exc):
+            raise
+        # try again using out own lenient parser
+        GWpyFormat.warn = parse_strict != 'silent'  # don't warn if 'silent'
+        return units.Unit(name, parse_strict='silent', format=format)
+    finally:
+        GWpyFormat.warn = True
 
 
 # -- custom units -------------------------------------------------------------

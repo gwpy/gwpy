@@ -56,6 +56,16 @@ In this example we expand upon plotting a :class:`~gwpy.timeseries.TimeSeries`, 
 
 where the result is an average spectrum calculated using the `Welch method <https://en.wikipedia.org/wiki/Welch_method>`_.
 
+=====================================
+Reading/writing frequency-domain data
+=====================================
+
+.. toctree::
+   :maxdepth: 2
+
+   io
+
+
 .. _gwpy-frequencyseries-plot:
 
 ============================

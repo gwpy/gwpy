@@ -22,12 +22,14 @@ to LIGO data.
 
 from __future__ import (absolute_import, print_function)
 
+# pylint: disable=wrong-import-order
 import enum
 import operator
 import os
 import re
 import sys
 import warnings
+from collections import OrderedDict
 from functools import wraps
 
 from six.moves import reduce
@@ -43,11 +45,10 @@ else:
 
 from ..time import to_gps
 from .kerberos import kinit
-from ..utils.compat import OrderedDict
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-NDS1_HOSTNAME = re.compile('[a-z]1nds[0-9]\Z')
+NDS1_HOSTNAME = re.compile(r'[a-z]1nds[0-9]\Z')
 
 DEFAULT_HOSTS = OrderedDict([
     (None, ('nds.ligo.caltech.edu', 31200)),
@@ -61,11 +62,13 @@ DEFAULT_HOSTS = OrderedDict([
 
 # -- enums --------------------------------------------------------------------
 
-class Nds2Enum(enum.Enum):
+class Nds2Enum(enum.Enum):  # pylint:  disable=too-few-public-methods
     """`~enum.Enum` providing `any` property with logical OR of members
     """
     @classmethod
     def any(cls):
+        """The logical OR of all members in this enum
+        """
         return reduce(operator.or_, (x.value for x in cls))
 
 
@@ -86,14 +89,20 @@ class Nds2ChannelType(Nds2Enum):
     """
     @property
     def name(self):
+        """The NDS2 string name for this channel type
+        """
         return NDS2_TYPE_NAME[self.value]
 
     @classmethod
     def names(cls):
+        """The list of all recognised channel type names
+        """
         return [x.name for x in cls]
 
     @classmethod
     def find(cls, name):
+        """Returns the NDS2 channel type corresponding to the given name
+        """
         try:
             return cls._member_map_[name]
         except KeyError:
@@ -116,10 +125,10 @@ NUMPY_DTYPE = {
     1: numpy.int16,
     2: numpy.int32,
     4: numpy.int64,
-    8: numpy.float32,
-    16: numpy.float64,
-    32: numpy.complex64,
-    64: numpy.uint32,
+    8: numpy.float32,  # pylint: disable=no-member
+    16: numpy.float64,  # pylint: disable=no-member
+    32: numpy.complex64,  # pylint: disable=no-member
+    64: numpy.uint32,  # pylint: disable=no-member
 }
 
 
@@ -128,18 +137,21 @@ class Nds2DataType(Nds2Enum):
     """
     @property
     def numpy_dtype(self):
+        """The `numpy` type corresponding to this NDS2 type"""
         return NUMPY_DTYPE[self.value]
 
     @classmethod
     def find(cls, dtype):
+        """Returns the NDS2 type corresponding to the given python type
+        """
         try:
             return cls._member_map_[dtype]
-        except KeyError as e:
+        except KeyError as exc:
             dtype = numpy.dtype(dtype).type
             for ndstype in cls._member_map_.values():
                 if ndstype.value and ndstype.numpy_dtype is dtype:
                     return ndstype
-            raise e
+            raise exc
 
     UNKNOWN = 0
     INT16 = 1
@@ -154,6 +166,8 @@ class Nds2DataType(Nds2Enum):
 # -- warning suppression ------------------------------------------------------
 
 class NDSWarning(UserWarning):
+    """Warning about communicating with the Network Data Server
+    """
     pass
 
 
@@ -163,16 +177,22 @@ warnings.simplefilter('always', NDSWarning)
 # -- query utilities ----------------------------------------------------------
 
 def _get_nds2_name(channel):
+    """Returns the NDS2-formatted name for a channel
+
+    Understands how to format NDS name strings from
+    `gwpy.detector.Channel` and `nds2.channel` objects
+    """
     if hasattr(channel, 'ndsname'):  # gwpy.detector.Channel
         return channel.ndsname
-    elif hasattr(channel, 'channel_type'):  # nds2.channel
+    if hasattr(channel, 'channel_type'):  # nds2.channel
         return '%s,%s' % (channel.name,
                           channel.channel_type_to_string(channel.channel_type))
-    else:
-        return str(channel)
+    return str(channel)
 
 
 def _get_nds2_names(channels):
+    """Maps `_get_nds2_name` for a list of input channels
+    """
     return map(_get_nds2_name, channels)
 
 
@@ -271,8 +291,7 @@ def connect(host, port=None):
     """
     if port is None:
         return nds2.connection(host)
-    else:
-        return nds2.connection(host, port)
+    return nds2.connection(host, port)
 
 
 def auth_connect(host, port=None):
@@ -303,8 +322,8 @@ def auth_connect(host, port=None):
 
     try:
         return connect(host, port)
-    except RuntimeError as e:
-        if 'Request SASL authentication' in str(e):
+    except RuntimeError as exc:
+        if 'Request SASL authentication' in str(exc):
             print('\nError authenticating against %s' % host,
                   file=sys.stderr)
             kinit()
@@ -317,7 +336,7 @@ def open_connection(func):
     """Decorate a function to create a `nds2.connection` if required
     """
     @wraps(func)
-    def wrapped_func(*args, **kwargs):
+    def wrapped_func(*args, **kwargs):  # pylint: disable=missing-docstring
         if kwargs.get('connection', None) is None:
             try:
                 host = kwargs.pop('host')
@@ -333,13 +352,13 @@ def parse_nds2_enums(func):
     """Decorate a function to translate a type string into an integer
     """
     @wraps(func)
-    def wrapped_func(*args, **kwargs):
-        for kw, enum_ in (('type', Nds2ChannelType),
-                          ('dtype', Nds2DataType)):
-            if kwargs.get(kw, None) is None:
-                kwargs[kw] = enum_.any()
-            elif not isinstance(kwargs[kw], int):
-                kwargs[kw] = enum_.find(kwargs[kw]).value
+    def wrapped_func(*args, **kwargs):  # pylint: disable=missing-docstring
+        for kwd, enum_ in (('type', Nds2ChannelType),
+                           ('dtype', Nds2DataType)):
+            if kwargs.get(kwd, None) is None:
+                kwargs[kwd] = enum_.any()
+            elif not isinstance(kwargs[kwd], int):
+                kwargs[kwd] = enum_.find(kwargs[kwd]).value
         return func(*args, **kwargs)
     return wrapped_func
 
@@ -351,6 +370,7 @@ def parse_nds2_enums(func):
 def find_channels(channels, connection=None, host=None, port=None,
                   sample_rate=None, type=Nds2ChannelType.any(),
                   dtype=Nds2DataType.any(), unique=False, epoch=None):
+    # pylint: disable=unused-argument,redefined-builtin
     """Query an NDS2 server for channel information
 
     Parameters
@@ -423,6 +443,7 @@ def find_channels(channels, connection=None, host=None, port=None,
 @open_connection
 def get_availability(channels, start, end,
                      connection=None, host=None, port=None):
+    # pylint: disable=unused-argument
     """Query an NDS2 server for data availability
 
     Parameters
@@ -491,10 +512,6 @@ def minute_trend_times(start, end):
     mend : `int`
         ``end`` rounded up to nearest multiple of 60
     """
-    warnings.warn("Requested at least one minute trend, but "
-                  "start and stop GPS times are not modulo "
-                  "60-seconds (from GPS epoch). Times will be "
-                  "expanded outwards to compensate")
     if start % 60:
         start = int(start) // 60 * 60
     if end % 60:

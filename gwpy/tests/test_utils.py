@@ -82,3 +82,10 @@ def test_with_import():
     # FIXME: this should really test the message
     with pytest.raises(ImportError) as exc:
         with_import_tester()
+
+
+def test_compat_ordereddict():
+    with pytest.warns(DeprecationWarning):
+        from gwpy.utils.compat import OrderedDict as CompatOrderedDict
+    from collections import OrderedDict
+    assert CompatOrderedDict is OrderedDict

@@ -6,14 +6,20 @@
 Signal processing
 #################
 
-In a wide-array of applications, the original `TimeSeries` recorded from a digital system must be manipulated in order to extract the greatest amount of information.
+In a wide-array of applications, the original data recorded from a digital system must be manipulated in order to extract the greatest amount of information.
 GWpy provides a suite of functions to simplify and extend the excellent digital signal processing suite in :mod:`scipy.signal`.
 
 ===============
 Fourier methods
 ===============
 
+.. toctree::
+   :hidden:
+
+   fft
+
 The `TimeSeries` object comes with a number of Fourier methods to calculate a `~gwpy.frequencyseries.FrequencySeries` or `~gwpy.spectrogram.Spectrogram` by calculating and averaging FFTs.
+
 See :ref:`gwpy-signal-fft` for more details.
 
 =====================
@@ -30,8 +36,10 @@ Available methods include:
    TimeSeries.lowpass
    TimeSeries.bandpass
    TimeSeries.zpk
-   TimeSeries.filter
    TimeSeries.whiten
+   TimeSeries.filter
+
+Each of the above methods eventually calls out to :meth:`TimeSeries.filter` to apply a digital linear filter, normally via cascaded second-order-sections (requires `scipy >= 0.16`).
 
 For a worked example of how to filter LIGO data to discover a gravitational-wave signal, see the example :ref:`gwpy-example-signal-gw150914`.
 
@@ -65,11 +73,11 @@ The :mod:`gwpy.signal` provides a number of filter design methods which, when co
 .. autosummary::
    :nosignatures:
 
-   ~gwpy.signal.lowpass
-   ~gwpy.signal.highpass
-   ~gwpy.signal.bandpass
-   ~gwpy.signal.notch
-   ~gwpy.signal.contatenate_zpks
+   ~gwpy.signal.filter_design.lowpass
+   ~gwpy.signal.filter_design.highpass
+   ~gwpy.signal.filter_design.bandpass
+   ~gwpy.signal.filter_design.notch
+   ~gwpy.signal.filter_design.concatenate_zpks
 
 Each of these will return filter coefficients that can be passed directly into `~TimeSeries.zpk` (default for analogue filters) or `~TimeSeries.filter` (default for digital filters).
 
@@ -91,23 +99,12 @@ For a worked example of how to compare channels like this, see the example :ref:
 Reference/API
 =============
 
-The :mod:`gwpy.signal` module provides the following methods:
+.. automethod:: gwpy.signal.filter_design.bandpass
 
-.. autosummary::
-   :nosignatures:
+.. automethod:: gwpy.signal.filter_design.lowpass
 
-   bandpass
-   lowpass
-   highpass
-   notch
-   concatenate_zpks
+.. automethod:: gwpy.signal.filter_design.highpass
 
-.. automethod:: gwpy.signal.bandpass
+.. automethod:: gwpy.signal.filter_design.notch
 
-.. automethod:: gwpy.signal.lowpass
-
-.. automethod:: gwpy.signal.highpass
-
-.. automethod:: gwpy.signal.notch
-
-.. automethod:: gwpy.signal.concatenate_zpks
+.. automethod:: gwpy.signal.filter_design.concatenate_zpks

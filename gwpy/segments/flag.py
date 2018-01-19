@@ -28,16 +28,17 @@ for handling multiple flags over the same global time interval.
 
 from __future__ import absolute_import
 
+import datetime
 import json
 import operator
 import re
 import warnings
 from io import StringIO
+from collections import OrderedDict
 from copy import (copy as shallowcopy, deepcopy)
 from math import (floor, ceil)
 from threading import Thread
 
-from six import string_types
 from six.moves import reduce
 from six.moves.urllib.error import (URLError, HTTPError)
 from six.moves.urllib.parse import urlparse
@@ -48,8 +49,8 @@ from numpy import inf
 from astropy.io import registry as io_registry
 from astropy.utils.data import get_readable_fileobj
 
-from ..time import to_gps
-from ..utils.compat import OrderedDict
+from ..io.mp import read_multi as io_read_multi
+from ..time import to_gps, LIGOTimeGPS
 from .segments import Segment, SegmentList
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -127,10 +128,10 @@ class DataQualityFlag(object):
         return self._name
 
     @name.setter
-    def name(self, n):
-        self._name = n
+    def name(self, name):
+        self._name = name
         try:
-            self._parse_name(n)
+            self._parse_name(name)
         except ValueError:
             self._parse_name(None)
 
@@ -376,8 +377,9 @@ class DataQualityFlag(object):
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
 
-        url : `str`, optional, default: ``'https://segments.ligo.org'``
-            URL of the segment database
+        url : `str`, optional
+            URL of the segment database,
+            default: ``'https://segments.ligo.org'``
 
         See Also
         --------
@@ -433,10 +435,10 @@ class DataQualityFlag(object):
         # process query
         try:
             flags = DataQualityDict.query_segdb([flag], qsegs, **kwargs)
-        except TypeError as e:
-            if 'DataQualityDict' in str(e):
-                raise TypeError(str(e).replace('DataQualityDict',
-                                               cls.__name__))
+        except TypeError as exc:
+            if 'DataQualityDict' in str(exc):
+                raise TypeError(str(exc).replace('DataQualityDict',
+                                                 cls.__name__))
             else:
                 raise
         if len(flags) > 1:
@@ -509,15 +511,15 @@ class DataQualityFlag(object):
                     data, _ = apicalls.dqsegdbQueryTimes(
                         protocol, server, out.ifo, out.tag, out.version,
                         request, int(start), int(end))
-                except HTTPError as e:
-                    if e.code == 404:  # if not found, annotate with flag name
-                        e.msg += ' [{0}]'.format(flag)
+                except HTTPError as exc:
+                    if exc.code == 404:  # if not found, annotate flag name
+                        exc.msg += ' [{0}]'.format(flag)
                     raise
             # read from json buffer
             try:
                 new = cls.read(StringIO(json.dumps(data)), format='json')
-            except TypeError as e:
-                if 'initial_value must be unicode' in str(e):  # python2
+            except TypeError as exc:
+                if 'initial_value must be unicode' in str(exc):  # python2
                     new = cls.read(StringIO(json.dumps(data).decode('utf-8')),
                                    format='json')
                 else:
@@ -532,6 +534,58 @@ class DataQualityFlag(object):
             out.isgood = new.isgood
 
         return out
+
+    @classmethod
+    def fetch_open_data(cls, flag, start, end, **kwargs):
+        """Fetch Open Data timeline segments into a flag.
+
+        flag : `str`
+            the name of the flag to query
+
+        start : `int`, `str`
+            the GPS start time (or parseable date string) to query
+
+        end : `int`, `str`
+            the GPS end time (or parseable date string) to query
+
+        verbose : `bool`, optional
+            show verbose download progress, default: `False`
+
+        timeout : `int`, optional
+            timeout for download (seconds)
+
+        host : `str`, optional
+            URL of LOSC host, default: ``'losc.ligo.org'``
+
+        Returns
+        -------
+        flag : `DataQualityFlag`
+            a new flag with `active` segments filled from Open Data
+
+        Examples
+        --------
+        >>> from gwpy.segments import DataQualityFlag
+        >>> print(DataQualityFlag.fetch_open_data('H1_DATA', 'Jan 1 2010',
+        ...                                       'Jan 2 2010'))"
+        <DataQualityFlag('H1:DATA',
+                         known=[[946339215 ... 946425615)],
+                         active=[[946340946 ... 946351800)
+                                 [946356479 ... 946360620)
+                                 [946362652 ... 946369150)
+                                 [946372854 ... 946382630)
+                                 [946395595 ... 946396751)
+                                 [946400173 ... 946404977)
+                                 [946412312 ... 946413577)
+                                 [946415770 ... 946422986)],
+                         description=None)>
+        """
+        from .io.losc import get_segments
+        start = to_gps(start)
+        end = to_gps(end)
+        known = [(start, end)]
+        active = get_segments(flag, start, end, **kwargs)
+        return cls(flag.replace('_', ':', 1), known=known, active=active,
+                   label=flag)
 
     @classmethod
     def read(cls, source, *args, **kwargs):
@@ -558,6 +612,12 @@ class DataQualityFlag(object):
             require segment start and stop times match printed duration,
             only valid for ``format='segwizard'``.
 
+        nproc : `int`, optional, default: 1
+            number of CPUs to use for parallel reading of multiple files
+
+        verbose : `bool`, optional, default: `False`
+            print a progress bar showing read status
+
         Returns
         -------
         dqflag : `DataQualityFlag`
@@ -566,11 +626,19 @@ class DataQualityFlag(object):
 
         Notes
         -----"""
-        return io_registry.read(cls, source, *args, **kwargs)
+        def _combine(flags):
+            return reduce(operator.or_, flags)
+
+        return io_read_multi(_combine, cls, source, *args, **kwargs)
 
     @classmethod
     def from_veto_def(cls, veto):
-        """Define a `DataQualityFlag` from a `~glue.ligolw.lsctables.VetoDef`
+        """Define a `DataQualityFlag` from a `VetoDef`
+
+        Parameters
+        ----------
+        veto : :class:`~glue.ligolw.lsctables.VetoDef`
+            veto definition to convert from
         """
         name = '%s:%s' % (veto.ifo, veto.name)
         try:
@@ -706,7 +774,7 @@ class DataQualityFlag(object):
         paddedflag : `DataQualityFlag`
             a view of the modified flag
         """
-        if len(args) == 0:
+        if not args:
             start, end = self.padding
         else:
             start, end = args
@@ -734,7 +802,7 @@ class DataQualityFlag(object):
         new = self.copy()
         new.active = self._ListClass([self._EntryClass(int(floor(s[0])),
                                                        int(ceil(s[1]))) for
-                                     s in new.active])
+                                      s in new.active])
         new.known = self._ListClass([self._EntryClass(int(floor(s[0])),
                                                       int(ceil(s[1]))) for
                                      s in new.known])
@@ -807,7 +875,8 @@ class DataQualityFlag(object):
             a new `Plot` with this flag displayed on a set of
             :class:`~gwpy.plotter.segments.SegmentAxes`.
         """
-        from ..plotter import (rcParams, SegmentPlot)
+        from matplotlib import rcParams
+        from ..plotter import SegmentPlot
         kwargs.setdefault('epoch', self.known[0][0])
         if self.label:
             kwargs.setdefault('label', self.label)
@@ -823,9 +892,10 @@ class DataQualityFlag(object):
 
         Parameters
         ----------
-        name : `str`
+        name : `str`, `None`
             the full name of a `DataQualityFlag` to parse, e.g.
-            ``'H1:DMT-SCIENCE:1'``
+            ``'H1:DMT-SCIENCE:1'``, or `None` to set all components
+            to `None`
 
         Returns
         -------
@@ -926,8 +996,8 @@ class _QueryDQSegDBThread(Thread):
             self.out.put(
                 (i, DataQualityFlag.query_dqsegdb(flag, *self.args,
                                                   **self.kwargs)))
-        except Exception as e:
-            self.out.put((i, e))
+        except Exception as exc:
+            self.out.put((i, exc))
         self.out.task_done()
 
 
@@ -979,8 +1049,7 @@ class DataQualityDict(OrderedDict):
         url = kwargs.get('url', 'https://segments.ligo.org')
         if 'dqsegdb' in url or re.match('https://[a-z1-9-]+.ligo.org', url):
             return cls.query_dqsegdb(flag, *args, **kwargs)
-        else:
-            return cls.query_segdb(flag, *args, **kwargs)
+        return cls.query_segdb(flag, *args, **kwargs)
 
     @classmethod
     def query_segdb(cls, flags, *args, **kwargs):
@@ -1161,6 +1230,12 @@ class DataQualityDict(OrderedDict):
         coalesce : `bool`, optional, default: `True`
             coalesce all `SegmentLists` before returning.
 
+        nproc : `int`, optional, default: 1
+            number of CPUs to use for parallel reading of multiple files
+
+        verbose : `bool`, optional, default: `False`
+            print a progress bar showing read status
+
         Returns
         -------
         flagdict : `DataQualityDict`
@@ -1170,8 +1245,11 @@ class DataQualityDict(OrderedDict):
 
         Notes
         -----"""
-        return io_registry.read(cls, source, flags=flags, format=format,
-                                **kwargs)
+        def _combine(flags):
+            return reduce(operator.or_, flags)
+
+        return io_read_multi(_combine, cls, source, flags=flags, format=format,
+                             **kwargs)
 
     @classmethod
     def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None,
@@ -1207,21 +1285,20 @@ class DataQualityDict(OrderedDict):
         >>> flags.populate()
 
         """
-        from ..io.ligolw import table_from_file
-
         if format != 'ligolw':
             raise NotImplementedError("Reading veto definer from non-ligolw "
                                       "format file is not currently "
                                       "supported")
 
+        # read veto definer file
+        with get_readable_fileobj(fp, show_progress=False) as fobj:
+            from ..io.ligolw import read_table as read_ligolw_table
+            veto_def_table = read_ligolw_table(fobj, 'veto_definer')
+
         if start is not None:
             start = to_gps(start)
         if end is not None:
             end = to_gps(end)
-
-        # read veto definer file
-        with get_readable_fileobj(fp, show_progress=False) as f:
-            veto_def_table = table_from_file(f, 'veto_definer')
 
         # parse flag definitions
         out = cls()
@@ -1245,6 +1322,139 @@ class DataQualityDict(OrderedDict):
             else:
                 out[flag.name] = flag
         return out
+
+    @classmethod
+    def from_ligolw_tables(cls, segmentdeftable, segmentsumtable,
+                           segmenttable, names=None, gpstype=LIGOTimeGPS):
+        """Build a `DataQualityDict` from a set of LIGO_LW segment tables
+
+        Parameters
+        ----------
+        segmentdeftable : :class:`~glue.ligolw.lsctables.SegmentDefTable`
+            the ``segment_definer`` table to read
+
+        segmentsumtable : :class:`~glue.ligolw.lsctables.SegmentSumTable`
+            the ``segment_summary`` table to read
+
+        segmenttable : :class:`~glue.ligolw.lsctables.SegmentTable`
+            the ``segment`` table to read
+
+        names : `list` of `str`, optional
+            a list of flag names to read, defaults to returning all
+
+        gpstype : `type`, `callable`, optional
+            class to use for GPS times in returned objects, can be a function
+            to convert GPS time to something else, default is
+            `~gwpy.time.LIGOTimeGPS`
+
+        Returns
+        -------
+        dqdict : `DataQualityDict`
+            a dict of `DataQualityFlag` objects populated from the LIGO_LW
+            tables
+        """
+        out = cls()
+
+        id_ = dict()  # need to record relative IDs from LIGO_LW
+
+        # read segment definers and generate DataQualityFlag object
+        for row in segmentdeftable:
+            ifos = row.get_ifos()
+            ifo = ''.join(ifos) if ifos else None
+            tag = row.name
+            version = row.version
+            name = ':'.join([str(k) for k in (ifo, tag, version) if
+                             k is not None])
+            if names is None or name in names:
+                out[name] = DataQualityFlag(name)
+                try:
+                    id_[name].append(row.segment_def_id)
+                except (AttributeError, KeyError):
+                    id_[name] = [row.segment_def_id]
+
+        # verify all requested flags were found
+        if names is not None:
+            for flag in names:
+                if flag not in out:
+                    raise ValueError("No segment definition found for flag=%r "
+                                     "in file." % flag)
+
+        # read segment summary table as 'known'
+        for row in segmentsumtable:
+            for flag in out:
+                # match row ID to list of IDs found for this flag
+                if row.segment_def_id in id_[flag]:
+                    out[flag].known.append(
+                        Segment(*map(gpstype, row.segment)))
+                    break
+
+        # read segment table as 'active'
+        for row in segmenttable:
+            for flag in out:
+                if row.segment_def_id in id_[flag]:
+                    out[flag].active.append(
+                        Segment(*map(gpstype, row.segment)))
+                    break
+
+        return out
+
+    def to_ligolw_tables(self):
+        """Convert this `DataQualityDict` into a trio of LIGO_LW segment tables
+
+        Returns
+        -------
+        segmentdeftable : :class:`~glue.ligolw.lsctables.SegmentDefTable`
+            the ``segment_definer`` table
+
+        segmentsumtable : :class:`~glue.ligolw.lsctables.SegmentSumTable`
+            the ``segment_summary`` table
+
+        segmenttable : :class:`~glue.ligolw.lsctables.SegmentTable`
+            the ``segment`` table
+        """
+        from glue.ligolw.lsctables import (SegmentTable, SegmentSumTable,
+                                           SegmentDefTable, New as new_table)
+
+        segdeftab = new_table(SegmentDefTable)
+        segsumtab = new_table(SegmentSumTable)
+        segtab = new_table(SegmentTable)
+
+        # write flags to tables
+        for flag in self.values():
+            # segment definer
+            segdef = segdeftab.RowType()
+            for col in segdeftab.columnnames:  # default all columns to None
+                setattr(segdef, col, None)
+            segdef.set_ifos([flag.ifo])
+            segdef.name = flag.tag
+            segdef.version = flag.version
+            segdef.comment = flag.description
+            segdef.insertion_time = to_gps(datetime.datetime.now()).gpsSeconds
+            segdef.segment_def_id = SegmentDefTable.get_next_id()
+            segdeftab.append(segdef)
+
+            # write segment summary (known segments)
+            for vseg in flag.known:
+                segsum = segsumtab.RowType()
+                for col in segsumtab.columnnames:  # default all columns to None
+                    setattr(segsum, col, None)
+                segsum.segment_def_id = segdef.segment_def_id
+                segsum.set(map(LIGOTimeGPS, vseg))
+                segsum.comment = None
+                segsum.segment_sum_id = SegmentSumTable.get_next_id()
+                segsumtab.append(segsum)
+
+            # write segment table (active segments)
+            for aseg in flag.active:
+                seg = segtab.RowType()
+                for col in segtab.columnnames:  # default all columns to None
+                    setattr(seg, col, None)
+                seg.segment_def_id = segdef.segment_def_id
+                seg.set(map(LIGOTimeGPS, aseg))
+                seg.segment_id = SegmentTable.get_next_id()
+                segtab.append(seg)
+
+        return segdeftab, segsumtab, segtab
 
     # -----------------------------------------------------------------------
     # instance methods
@@ -1315,18 +1525,18 @@ class DataQualityDict(OrderedDict):
             tmp = type(self).query(self.keys(), segments, url=source.geturl(),
                                    on_error=on_error, **kwargs)
         elif not source.netloc:
-            tmp = type(self).read(source.geturl(), self.name, **kwargs)
+            tmp = type(self).read(source.geturl(), **kwargs)
         # apply padding and wrap to given known segments
         for key in self:
             if segments is None and source.netloc:
                 try:
                     tmp = {key: self[key].query(
                         self[key].name, self[key].known, **kwargs)}
-                except URLError as e:
+                except URLError as exc:
                     if on_error == 'ignore':
                         pass
                     elif on_error == 'warn':
-                        warnings.warn('Error querying for %s: %s' % (key, e))
+                        warnings.warn('Error querying for %s: %s' % (key, exc))
                     else:
                         raise
                     continue

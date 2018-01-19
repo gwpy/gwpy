@@ -28,6 +28,9 @@ __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 
 class TimeSeries(CliProduct):
+    """
+    Plot one or more time series
+    """
 
     def get_action(self):
         """Return the string used as "action" on command line.
@@ -45,7 +48,7 @@ class TimeSeries(CliProduct):
     def get_ylabel(self, args):
         """Text for y-axis label,  check if channel defines it
         """
-        ret = 'Counts'
+        ret = self.units
 
         return ret
 

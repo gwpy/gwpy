@@ -50,10 +50,9 @@ def tconvert(gpsordate='now'):
 
     Notes
     -----
-    If the input object is a `float` or `LIGOTimeGPS`,
-    it will get converted from GPS format into a
-    `datetime.datetime`, otherwise the input will be converted
-    into `LIGOTimeGPS`.
+    If the input object is a `float` or `LIGOTimeGPS`, it will get
+    converted from GPS format into a `datetime.datetime`, otherwise
+    the input will be converted into `LIGOTimeGPS`.
 
     Examples
     --------
@@ -81,29 +80,25 @@ def tconvert(gpsordate='now'):
     """
     # convert from GPS into datetime
     try:
-        gps = LIGOTimeGPS(gpsordate)
-    except (TypeError, RuntimeError):
-        if hasattr(gpsordate, 'gpsSeconds'):
-            return from_gps(gpsordate)
-        else:
-            return to_gps(gpsordate)
-    else:
-        return from_gps(gps)
+        float(gpsordate)  # if we can 'float' it, then its probably a GPS time
+    except (TypeError, ValueError):
+        return to_gps(gpsordate)
+    return from_gps(gpsordate)
 
 
 def to_gps(t, *args, **kwargs):
     """Convert any input date/time into a `LIGOTimeGPS`.
 
-    Any input object that can be cast as a
-    `~astropy.time.Time` (with `str` going through the
-    `datetime.datetime`) are acceptable.
+    Any input object that can be cast as a `~astropy.time.Time`
+    (with `str` going through the `datetime.datetime`) are acceptable.
 
     Parameters
     ----------
-    t : `float`, `datetime.datetime`, `~astropy.time.Time`, `str`
+    t : `float`, `~datetime.datetime`, `~astropy.time.Time`, `str`
         the input time, any object that can be converted into a
-        `LIGOTimeGPS`, `~astropy.time.Time`, or `datetime.datetime`,
+        `LIGOTimeGPS`, `~astropy.time.Time`, or `~datetime.datetime`,
         is acceptable.
+
     *args, **kwargs
         other arguments to pass to pass to `~astropy.time.Time` if given
 
@@ -145,6 +140,7 @@ def to_gps(t, *args, **kwargs):
     # if Decimal, cast to LIGOTimeGPS and return
     if isinstance(t, Decimal):
         return LIGOTimeGPS(str(t))
+
     # or convert numeric string to float (e.g. '123.456')
     try:
         t = float(t)
@@ -181,7 +177,7 @@ def to_gps(t, *args, **kwargs):
 
 
 def from_gps(gps):
-    """Convert a GPS time into a `datetime.datetime`
+    """Convert a GPS time into a `datetime.datetime`.
 
     Parameters
     ----------
@@ -207,15 +203,14 @@ def from_gps(gps):
     try:
         from lal import GPSToUTC
     except ImportError:
-        dt = Time(gps.gpsSeconds, gps.gpsNanoSeconds * 1e-9,
-                  format='gps', scale='utc').datetime
+        date = Time(gps.gpsSeconds, gps.gpsNanoSeconds * 1e-9,
+                    format='gps', scale='utc').datetime
     else:
-        dt = datetime.datetime(*GPSToUTC(gps.gpsSeconds)[:6])
-        dt += datetime.timedelta(seconds=gps.gpsNanoSeconds * 1e-9)
+        date = datetime.datetime(*GPSToUTC(gps.gpsSeconds)[:6])
+        date += datetime.timedelta(seconds=gps.gpsNanoSeconds * 1e-9)
     if float(gps).is_integer():
-        return dt.replace(microsecond=0)
-    else:
-        return dt
+        return date.replace(microsecond=0)
+    return date
 
 
 def time_to_gps(t):
@@ -237,7 +232,7 @@ def time_to_gps(t):
     # if datetime format has zero microseconds, force int(gps) to remove
     # floating point precision errors from gps
     if ((isinstance(dt, datetime.datetime) and not dt.microsecond) or
-            type(dt) is datetime.date):
+            type(dt) is datetime.date):  # pylint: disable=unidiomatic-typecheck
         return LIGOTimeGPS(int(gps))
     # use repr() to remove hidden floating point precision problems
     return LIGOTimeGPS(repr(gps))
@@ -252,10 +247,10 @@ def str_to_datetime(datestr):
         date-like string parseable by :meth:`dateutil.parser.parse`, or
         one of the following special cases
 
-        - 'now' : second precision for current time
-        - 'today'
-        - 'tomorrow'
-        - 'yesterday'
+            - ``'now'`` : second precision for current time
+            - ``'today'``
+            - ``'tomorrow'``
+            - ``'yesterday'``
 
     Returns
     -------
@@ -265,7 +260,7 @@ def str_to_datetime(datestr):
     Raises
     ------
     TypeError
-        if ``datestr`` cannot be parsed by :meth:`dateutil.parser.parse`
+        if ``datestr`` cannot be parsed by :meth:`dateutil.parser.parse`.
     """
     datestr = str(datestr).lower()
     if datestr == 'now':
@@ -281,8 +276,8 @@ def str_to_datetime(datestr):
     else:
         try:
             date = dateparser.parse(datestr)
-        except (ValueError, TypeError) as e:
-            e.args = ("Cannot parse date string %r: %s"
-                      % (datestr, e.args[0]),)
+        except (ValueError, TypeError) as exc:
+            exc.args = ("Cannot parse date string %r: %s"
+                        % (datestr, exc.args[0]),)
             raise
     return date

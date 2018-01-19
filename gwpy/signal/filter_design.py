@@ -21,15 +21,20 @@
 
 from __future__ import division
 import operator
+from functools import wraps
 from math import (pi, log10)
 
 from six.moves import reduce
 
-from numpy import (atleast_1d, concatenate)
+import numpy
 
 from scipy import signal
+try:
+    from scipy.signal.ltisys import LinearTimeInvariant
+except ImportError:  # scipy < 0.18
+    from scipy.signal import lti as LinearTimeInvariant
 
-from astropy.units import Quantity
+from astropy.units import (Unit, Quantity)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['lowpass', 'highpass', 'bandpass', 'notch', 'concatenate_zpks']
@@ -52,20 +57,22 @@ FIRWIN_DEFAULTS = {
 
 def _design_iir(wp, ws, sample_rate, gpass, gstop,
                 analog=False, ftype='cheby1', output='zpk'):
+    # pylint: disable=invalid-name
     nyq = sample_rate / 2.
-    wp = atleast_1d(wp)
-    ws = atleast_1d(ws)
-    if analog:
+    wp = numpy.atleast_1d(wp)
+    ws = numpy.atleast_1d(ws)
+    if analog:  # convert Hz to rad/s
         wp *= TWO_PI
         ws *= TWO_PI
-    else:
+    else:  # convert Hz to half-cycles / sample
         wp /= nyq
         ws /= nyq
     z, p, k = signal.iirdesign(wp, ws, gpass, gstop, analog=analog,
                                ftype=ftype, output='zpk')
-    if analog:
+    if analog:  # convert back to Hz
         z /= -TWO_PI
         p /= -TWO_PI
+        k *= TWO_PI ** z.size / -TWO_PI ** p.size
     if output == 'zpk':
         return z, p, k
     elif output == 'ba':
@@ -77,8 +84,9 @@ def _design_iir(wp, ws, sample_rate, gpass, gstop,
 
 
 def _design_fir(wp, ws, sample_rate, gpass, gstop, window='hamming', **kwargs):
-    wp = atleast_1d(wp)
-    ws = atleast_1d(ws)
+    # pylint: disable=invalid-name
+    wp = numpy.atleast_1d(wp)
+    ws = numpy.atleast_1d(ws)
     tw = abs(wp[0] - ws[0])
     nt = num_taps(sample_rate, tw, gpass, gstop)
     if wp[0] > ws[0]:
@@ -120,6 +128,136 @@ def num_taps(sample_rate, transitionwidth, gpass, gstop):
     gstop = 10 ** (-gstop / 10.)
     return int(2/3. * log10(1 / (10 * gpass * gstop)) *
                sample_rate / transitionwidth)
+
+
+def is_zpk(zpktup):
+    """Determin whether the given tuple is a ZPK-format filter definition
+
+    Returns
+    -------
+    iszpk : `bool`
+        `True` if the ``zpktup`` looks like a ZPK-format filter definition,
+        otherwise `False`
+    """
+    return (
+        isinstance(zpktup, (tuple, list)) and
+        len(zpktup) == 3 and
+        isinstance(zpktup[0], (list, tuple, numpy.ndarray)) and
+        isinstance(zpktup[1], (list, tuple, numpy.ndarray)) and
+        isinstance(zpktup[2], float))
+
+
+def bilinear_zpk(zeros, poles, gain, fs=1.0, unit='Hz'):
+    """Convert an analogue ZPK filter to digital using a bilinear transform
+
+    Parameters
+    ----------
+    zeros : array-like
+        list of zeros
+
+    poles : array-like
+        list of poles
+
+    gain : `float`
+        filter gain
+
+    fs : `float`, `~astropy.units.Quantity`
+        sampling rate at which to evaluate bilinear transform, default: 1.
+
+    unit : `str`, `~astropy.units.Unit`
+        unit of inputs, one or 'Hz' or 'rad/s', default: ``'Hz'``
+
+    Returns
+    -------
+    zpk : `tuple`
+        digital version of input zpk
+    """
+    zeros = numpy.array(zeros, dtype=float, copy=False)
+    zeros = zeros[numpy.isfinite(zeros)]
+    poles = numpy.array(poles, dtype=float, copy=False)
+    gain = gain
+
+    # convert from Hz to rad/s if needed
+    unit = Unit(unit)
+    if unit == Unit('Hz'):
+        zeros *= -2 * pi
+        poles *= -2 * pi
+    elif unit != Unit('rad/s'):
+        raise ValueError("zpk can only be given with unit='Hz' "
+                         "or 'rad/s'")
+
+    # convert to Z-domain via bilinear transform
+    fs = 2 * Quantity(fs, 'Hz').value
+    dpoles = (1 + poles/fs) / (1 - poles/fs)
+    dzeros = (1 + zeros/fs) / (1 - zeros/fs)
+    dzeros = numpy.concatenate((
+        dzeros, -numpy.ones(len(dpoles) - len(dzeros)),
+    ))
+    dgain = gain * numpy.prod(fs - zeros)/numpy.prod(fs - poles)
+    return dzeros, dpoles, dgain
+
+
+def parse_filter(args, analog=False, sample_rate=None):
+    """Parse arbitrary input args into a TF or ZPK filter definition
+
+    Parameters
+    ----------
+    args : `tuple`, `~scipy.signal.lti`
+        filter definition, normally just captured positional ``*args``
+        from a function call
+
+    analog : `bool`, optional
+        `True` if filter definition has analogue coefficients
+
+    sample_rate : `float`, optional
+        sampling frequency at which to convert analogue filter to digital
+        via bilinear transform, required if ``analog=True``
+
+    Returns
+    -------
+    ftype : `str`
+        either ``'ba'`` or ``'zpk'``
+    filt : `tuple`
+        the filter components for the returned `ftype`, either a 2-tuple
+        for with transfer function components, or a 3-tuple for ZPK
+    """
+    if analog and not sample_rate:
+        raise ValueError("Must give sample_rate frequency to convert "
+                         "analog filter to digital")
+
+    # unpack filter
+    if isinstance(args, tuple) and len(args) == 1:
+        # either packed defintion ((z, p, k)) or simple definition (lti,)
+        args = args[0]
+
+    # parse FIR filter
+    if isinstance(args, numpy.ndarray) and args.ndim == 1:  # fir
+        b, a = args, [1.]
+        if analog:
+            return 'ba', signal.bilinear(b, a)
+        return 'ba', (b, a)
+
+    # parse IIR filter
+    if isinstance(args, LinearTimeInvariant):
+        lti = args
+    elif (isinstance(args, numpy.ndarray) and
+            args.ndim == 2 and args.shape[1] == 6):
+        lti = signal.lti(*signal.sos2zpk(args))
+    else:
+        lti = signal.lti(*args)
+
+    # convert to zpk format
+    try:
+        lti = lti.to_zpk()
+    except AttributeError:  # scipy < 0.18, doesn't matter
+        pass
+
+    # convert to digital components
+    if analog:
+        return 'zpk', bilinear_zpk(lti.zeros, lti.poles, lti.gain,
+                                   fs=sample_rate)
+    # return zpk
+    return 'zpk', (lti.zeros, lti.poles, lti.gain)
 
 
 # -- user methods -------------------------------------------------------------
@@ -167,33 +305,23 @@ def lowpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
     --------
     To create a low-pass filter at 1000 Hz for 4096 Hz-sampled data:
 
-    .. plot::
-       :context: reset
-
-       from gwpy.signal import lowpass
-       zpk = lowpass(1000, 4096)
+    >>> from gwpy.signal.filter_design import lowpass
+    >>> lp = lowpass(1000, 4096)
 
     To view the filter, you can use the `~gwpy.plotter.BodePlot`:
 
-    .. plot::
-       :context:
-
-       from gwpy.plotter import BodePlot
-       plot = BodePlot(zpk, sample_rate=4096)
-       plot.show()
-
+    >>> from gwpy.plotter import BodePlot
+    >>> plot = BodePlot(lp, sample_rate=4096)
+    >>> plot.show()
     """
     sample_rate = _as_float(sample_rate)
     frequency = _as_float(frequency)
-    nyq = sample_rate / 2.
     if fstop is None:
         fstop = min(frequency * 1.5, sample_rate/2.)
     if type == 'iir':
         return _design_iir(frequency, fstop, sample_rate, gpass, gstop,
                            **kwargs)
-    else:
-        return _design_fir(frequency, fstop, sample_rate, gpass, gstop,
-                           **kwargs)
+    return _design_fir(frequency, fstop, sample_rate, gpass, gstop, **kwargs)
 
 
 def highpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
@@ -239,33 +367,24 @@ def highpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
     --------
     To create a high-pass filter at 100 Hz for 4096 Hz-sampled data:
 
-    .. plot::
-       :context: reset
-
-       from gwpy.signal import highpass
-       zpk = highpass(100, 4096)
+    >>> from gwpy.signal.filter_design import highpass
+    >>> hp = highpass(100, 4096)
 
     To view the filter, you can use the `~gwpy.plotter.BodePlot`:
 
-    .. plot::
-       :context:
-
-       from gwpy.plotter import BodePlot
-       plot = BodePlot(zpk, sample_rate=4096)
-       plot.show()
-
+    >>> from gwpy.plotter import BodePlot
+    >>> plot = BodePlot(hp, sample_rate=4096)
+    >>> plot.show()
     """
     sample_rate = _as_float(sample_rate)
     frequency = _as_float(frequency)
-    nyq = sample_rate / 2.
     if fstop is None:
         fstop = frequency * 2/3.
     if type == 'iir':
         return _design_iir(frequency, fstop, sample_rate, gpass, gstop,
                            **kwargs)
-    else:
-        return _design_fir(frequency, fstop, sample_rate, gpass, gstop,
-                           **kwargs)
+    return _design_fir(frequency, fstop, sample_rate, gpass, gstop,
+                       **kwargs)
 
 
 def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
@@ -314,25 +433,18 @@ def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
     --------
     To create a band-pass filter for 100-1000 Hz for 4096 Hz-sampled data:
 
-    .. plot::
-       :context: reset
-
-       from gwpy.signal import bandpass
-       zpk = bandpass(100, 1000, 4096)
+    >>> from gwpy.signal.filter_design import bandpass
+    >>> bp = bandpass(100, 1000, 4096)
 
     To view the filter, you can use the `~gwpy.plotter.BodePlot`:
 
-    .. plot::
-       :context:
-
-       from gwpy.plotter import BodePlot
-       plot = BodePlot(zpk, sample_rate=4096)
-       plot.show()
+    >>> from gwpy.plotter import BodePlot
+    >>> plot = BodePlot(bp, sample_rate=4096)
+    >>> plot.show()
     """
     sample_rate = _as_float(sample_rate)
     flow = _as_float(flow)
     fhigh = _as_float(fhigh)
-    nyq = sample_rate / 2.
     if fstop is None:
         fstop = (flow * 2/3.,
                  min(fhigh * 1.5, sample_rate/2.))
@@ -340,9 +452,8 @@ def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
     if type == 'iir':
         return _design_iir((flow, fhigh), fstop, sample_rate, gpass, gstop,
                            **kwargs)
-    else:
-        return _design_fir((flow, fhigh), fstop, sample_rate, gpass, gstop,
-                           pass_zero=False, **kwargs)
+    return _design_fir((flow, fhigh), fstop, sample_rate, gpass, gstop,
+                       pass_zero=False, **kwargs)
 
 
 def notch(frequency, sample_rate, type='iir', **kwargs):
@@ -379,25 +490,19 @@ def notch(frequency, sample_rate, type='iir', **kwargs):
     --------
     To create a low-pass filter at 1000 Hz for 4096 Hz-sampled data:
 
-    .. plot::
-       :context: reset
-
-       from gwpy.signal import notch
-       n = notch(100, 4096)
+    >>> from gwpy.signal.filter_design import notch
+    >>> n = notch(100, 4096)
 
     To view the filter, you can use the `~gwpy.plotter.BodePlot`:
 
-    .. plot::
-       :context:
-
-       from gwpy.plotter import BodePlot
-       plot = BodePlot(n, sample_rate=4096)
-       plot.show()
+    >>> from gwpy.plotter import BodePlot
+    >>> plot = BodePlot(n, sample_rate=4096)
+    >>> plot.show()
     """
     frequency = Quantity(frequency, 'Hz').value
     sample_rate = Quantity(sample_rate, 'Hz').value
     nyq = 0.5 * sample_rate
-    df = 1.0
+    df = 1.0  # pylint: disable=invalid-name
     df2 = 0.1
     low1 = (frequency - df)/nyq
     high1 = (frequency + df)/nyq
@@ -434,17 +539,21 @@ def concatenate_zpks(*zpks):
 
     Examples
     --------
-    .. plot::
-       :context: reset
+    Create a lowpass and a highpass filter, and combine them:
 
-       from gwpy.signal import (highpass, lowpass, concatenate_zpks)
-       hp = highpass(100, 4096)
-       lp = lowpass(1000, 4096)
-       zpk = concatenate_zpks(hp, lp)
+    >>> from gwpy.signal.filter_design import (
+    ...     highpass, lowpass, concatenate_zpks)
+    >>> hp = highpass(100, 4096)
+    >>> lp = lowpass(1000, 4096)
+    >>> zpk = concatenate_zpks(hp, lp)
 
-       from gwpy.plotter import BodePlot
-       plot = BodePlot(zpk, sample_rate=4096)
-       plot.show()
+    Plot the filter:
+
+    >>> from gwpy.plotter import BodePlot
+    >>> plot = BodePlot(zpk, sample_rate=4096)
+    >>> plot.show()
     """
-    zs, ps, ks = zip(*zpks)
-    return concatenate(zs), concatenate(ps), reduce(operator.mul, ks, 1)
+    zeros, poles, gains = zip(*zpks)
+    return (numpy.concatenate(zeros),
+            numpy.concatenate(poles),
+            reduce(operator.mul, gains, 1))

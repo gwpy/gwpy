@@ -22,8 +22,6 @@
 from __future__ import (division, print_function)
 
 from warnings import warn
-from math import (ceil, pi)
-from multiprocessing import (Process, Queue as ProcessQueue)
 
 from six.moves import range
 
@@ -32,10 +30,10 @@ from numpy import fft as npfft
 from scipy import signal
 
 from astropy import units
-from astropy.io import registry as io_registry
 
 from ..segments import Segment
-from ..signal import (filter_design, sosfiltfilt)
+from ..signal import filter_design
+from ..signal.filter import sosfiltfilt
 from ..signal.fft import (registry as fft_registry, ui as fft_ui)
 from ..signal.window import recommended_overlap
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
@@ -46,19 +44,19 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # -- utilities ----------------------------------------------------------------
 
-def _update_doc_with_fft_methods(f):
-    """Update a functions docstring to append a table of FFT methods
+def _update_doc_with_fft_methods(func):
+    """Update a function's docstring to append a table of FFT methods
 
     See `gwpy.signal.fft.registry` for more details
     """
-    fft_registry.update_doc(f)
-    return f
+    fft_registry.update_doc(func)
+    return func
 
 
 # -- TimeSeries ---------------------------------------------------------------
 
 class TimeSeries(TimeSeriesBase):
-    """A time-domain data array
+    """A time-domain data array.
 
     Parameters
     ----------
@@ -125,82 +123,6 @@ class TimeSeries(TimeSeriesBase):
     >>> plot = series.plot()
     >>> plot.show()
     """
-    @classmethod
-    def read(cls, source, *args, **kwargs):
-        """Read data into a `TimeSeries`
-
-        Arguments and keywords depend on the output format, see the
-        online documentation for full details for each format, the parameters
-        below are common to most formats.
-
-        Parameters
-        ----------
-        source : `str`, `~glue.lal.Cache`
-            source of data, any of the following:
-
-            - `str` path of single data file
-            - `str` path of LAL-format cache file
-            - `~glue.lal.Cache` describing one or more data files,
-
-        name : `str`, `~gwpy.detector.Channel`
-            the name of the channel to read, or a `Channel` object.
-
-        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS start time of required data, defaults to start of data found;
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS end time of required data, defaults to end of data found;
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        format : `str`, optional
-            source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        nproc : `int`, optional
-            number of parallel processes to use, serial process by
-            default.
-
-            .. note::
-
-               Parallel frame reading, via the ``nproc`` keyword argument,
-               is only available when giving a `~glue.lal.Cache` of
-               frames, or using the ``format='cache'`` keyword argument.
-
-        gap : `str`, optional
-            how to handle gaps in the cache, one of
-
-            - 'ignore': do nothing, let the undelying reader method handle it
-            - 'warn': do nothing except print a warning to the screen
-            - 'raise': raise an exception upon finding a gap (default)
-            - 'pad': insert a value to fill the gaps
-
-        pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
-
-        Notes
-        -----"""
-        return io_registry.read(cls, source, *args, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this `TimeSeries` to a file
-
-        Parameters
-        ----------
-        target : `str`
-            path of output file
-
-        format : `str`, optional
-            output format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        Notes
-        -----"""
-        return io_registry.write(self, target, *args, **kwargs)
-
     def fft(self, nfft=None):
         """Compute the one-dimensional discrete Fourier transform of
         this `TimeSeries`.
@@ -208,8 +130,8 @@ class TimeSeries(TimeSeriesBase):
         Parameters
         ----------
         nfft : `int`, optional
-            length of the desired Fourier transform.
-            Input will be cropped or padded to match the desired length.
+            length of the desired Fourier transform, input will be
+            cropped or padded to match the desired length.
             If nfft is not given, the length of the `TimeSeries`
             will be used
 
@@ -235,8 +157,8 @@ class TimeSeries(TimeSeriesBase):
             nfft = self.size
         dft = npfft.rfft(self.value, n=nfft) / nfft
         dft[1:] *= 2.0
-        new = FrequencySeries(dft, epoch=self.epoch, channel=self.channel,
-                              unit=self.unit)
+        new = FrequencySeries(dft, epoch=self.epoch, unit=self.unit,
+                              name=self.name, channel=self.channel)
         try:
             new.frequencies = npfft.rfftfreq(nfft, d=self.dx.value)
         except AttributeError:
@@ -291,7 +213,7 @@ class TimeSeries(TimeSeriesBase):
         # format window
         if window is None:
             window = 'boxcar'
-        if isinstance(window, str) or type(window) is tuple:
+        if isinstance(window, (str, tuple)):
             win = signal.get_window(window, nfft)
         else:
             win = numpy.asarray(window)
@@ -329,7 +251,7 @@ class TimeSeries(TimeSeriesBase):
 
     @_update_doc_with_fft_methods
     def psd(self, fftlength=None, overlap=None, window='hann',
-            method='welch', **kwargs):
+            method='scipy-welch', **kwargs):
         """Calculate the PSD `FrequencySeries` for this `TimeSeries`
 
         Parameters
@@ -348,7 +270,7 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method, default: ``'welch'``,
+            FFT-averaging method, default: ``'scipy-welch'``,
             see *Notes* for more details
 
         **kwargs
@@ -372,7 +294,7 @@ class TimeSeries(TimeSeriesBase):
 
     @_update_doc_with_fft_methods
     def asd(self, fftlength=None, overlap=None, window='hann',
-            method='welch', **kwargs):
+            method='scipy-welch', **kwargs):
         """Calculate the ASD `FrequencySeries` of this `TimeSeries`
 
         Parameters
@@ -391,7 +313,7 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method, default: ``'welch'``,
+            FFT-averaging method, default: ``'scipy-welch'``,
             see *Notes* for more details
 
         Returns
@@ -409,7 +331,7 @@ class TimeSeries(TimeSeriesBase):
 
         """
         return self.psd(method=method, fftlength=fftlength, overlap=overlap,
-                        **kwargs) ** (1/2.)
+                        window=window, **kwargs) ** (1/2.)
 
     def csd(self, other, fftlength=None, overlap=None, window='hann',
             **kwargs):
@@ -439,15 +361,15 @@ class TimeSeries(TimeSeriesBase):
             a data series containing the CSD.
         """
         # get method
-        method_func = fft_registry.get_method('csd', scaling='other')
+        method_func = fft_registry.get_method('scipy-csd', scaling='other')
 
         # calculate CSD using UI method
         return fft_ui.psd((self, other), method_func, fftlength=fftlength,
-                          overlap=overlap, **kwargs)
+                          overlap=overlap, window=window, **kwargs)
 
     @_update_doc_with_fft_methods
     def spectrogram(self, stride, fftlength=None, overlap=0,
-                    window='hann', method='welch', nproc=1, **kwargs):
+                    window='hann', method='scipy-welch', nproc=1, **kwargs):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
 
@@ -477,7 +399,7 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method, default: ``'welch'``,
+            FFT-averaging method, default: ``'scipy-welch'``,
             see *Notes* for more details
 
         nproc : `int`
@@ -614,7 +536,7 @@ class TimeSeries(TimeSeriesBase):
 
     @_update_doc_with_fft_methods
     def spectral_variance(self, stride, fftlength=None, overlap=None,
-                          method='welch', window='hann', nproc=1,
+                          method='scipy-welch', window='hann', nproc=1,
                           filter=None, bins=None, low=None, high=None,
                           nbins=500, log=False, norm=False, density=False):
         """Calculate the `SpectralVariance` of this `TimeSeries`.
@@ -628,7 +550,7 @@ class TimeSeries(TimeSeriesBase):
             number of seconds in single FFT
 
         method : `str`, optional
-            FFT-averaging method, default: ``'welch'``,
+            FFT-averaging method, default: ``'scipy-welch'``,
             see *Notes* for more details
 
         overlap : `float`, optional
@@ -683,8 +605,7 @@ class TimeSeries(TimeSeriesBase):
         -----"""
         specgram = self.spectrogram(stride, fftlength=fftlength,
                                     overlap=overlap, method=method,
-                                    window=window, nproc=nproc)
-        specgram **= 1/2.
+                                    window=window, nproc=nproc) ** (1/2.)
         if filter:
             specgram = specgram.filter(*filter)
         return specgram.variance(bins=bins, low=low, high=high, nbins=nbins,
@@ -708,7 +629,8 @@ class TimeSeries(TimeSeriesBase):
         psd :  `~gwpy.frequencyseries.FrequencySeries`
             a data series containing the PSD.
         """
-        method_func = fft_registry.get_method('rayleigh', scaling='other')
+        method_func = fft_registry.get_method('scipy-rayleigh',
+                                              scaling='other')
         return fft_ui.psd(self, method_func, fftlength=fftlength,
                           overlap=overlap)
 
@@ -737,12 +659,14 @@ class TimeSeries(TimeSeriesBase):
             time-frequency Rayleigh spectrogram as generated from the
             input time-series.
         """
-        method_func = fft_registry.get_method('rayleigh', scaling='other')
-        sg = fft_ui.average_spectrogram(self, method_func, stride,
-                                        fftlength=fftlength, overlap=overlap,
-                                        nproc=nproc, **kwargs)
-        sg.override_unit('')
-        return sg
+        method_func = fft_registry.get_method('scipy-rayleigh',
+                                              scaling='other')
+        specgram = fft_ui.average_spectrogram(self, method_func, stride,
+                                              fftlength=fftlength,
+                                              overlap=overlap, nproc=nproc,
+                                              **kwargs)
+        specgram.override_unit('')
+        return specgram
 
     def csd_spectrogram(self, other, stride, fftlength=None, overlap=0,
                         window='hann', nproc=1, **kwargs):
@@ -779,11 +703,12 @@ class TimeSeries(TimeSeriesBase):
             time-frequency cross spectrogram as generated from the
             two input time-series.
         """
-        method_func = fft_registry.get_method('csd', scaling='other')
-        sg = fft_ui.average_spectrogram((self, other), method_func, stride,
-                                        fftlength=fftlength, overlap=overlap,
-                                        window=window, nproc=nproc, **kwargs)
-        return sg
+        method_func = fft_registry.get_method('scipy-csd', scaling='other')
+        specgram = fft_ui.average_spectrogram((self, other), method_func,
+                                              stride, fftlength=fftlength,
+                                              overlap=overlap, window=window,
+                                              nproc=nproc, **kwargs)
+        return specgram
 
     # -- TimeSeries filtering -------------------
 
@@ -977,10 +902,10 @@ class TimeSeries(TimeSeriesBase):
         # if integer down-sampling, use decimate
         if factor.is_integer():
             if ftype == 'iir':
-                f = signal.cheby1(n, 0.05, 0.8/factor, output='sos')
+                filt = signal.cheby1(n, 0.05, 0.8/factor, output='zpk')
             else:
-                f = signal.firwin(n+1, 1./factor, window=window)
-            return self.filter(f, filtfilt=True)[::int(factor)]
+                filt = signal.firwin(n+1, 1./factor, window=window)
+            return self.filter(filt, filtfilt=True)[::int(factor)]
         # otherwise use Fourier filtering
         else:
             nsamp = int(self.shape[0] * self.dx.value * rate)
@@ -991,17 +916,16 @@ class TimeSeries(TimeSeriesBase):
             new.sample_rate = rate
             return new
 
-    def zpk(self, zeros, poles, gain, analog=True, unit='Hz',
-            **kwargs):
+    def zpk(self, zeros, poles, gain, analog=True, **kwargs):
         """Filter this `TimeSeries` by applying a zero-pole-gain filter
 
         Parameters
         ----------
         zeros : `array-like`
-            list of zero frequencies
+            list of zero frequencies (in Hertz)
 
         poles : `array-like`
-            list of pole frequencies
+            list of pole frequencies (in Hertz)
 
         gain : `float`
             DC gain of filter
@@ -1009,10 +933,6 @@ class TimeSeries(TimeSeriesBase):
         analog : `bool`, optional
             type of ZPK being applied, if `analog=True` all parameters
             will be converted in the Z-domain for digital filtering
-
-        unit : `str`, `~astropy.units.Unit`, optional
-            unit of zeros and poles, either ``'Hz``' or ``'rad/s'``,
-            default is ``'Hz'``
 
         Returns
         -------
@@ -1031,72 +951,33 @@ class TimeSeries(TimeSeriesBase):
 
         >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
         """
-        try:
-            analog &= not kwargs.pop('digital')
-        except KeyError:
-            pass
-        else:
-            warn("The 'digital' keyword argument to TimeSeries.zpk "
-                 "was renamed 'analog' for consistency', and will be "
-                 "removed in an upcoming release", DeprecationWarning)
-        if analog:
-            # cast to arrays for ease
-            z = numpy.array(zeros)
-            p = numpy.array(poles)
-            k = gain
-            # convert from Hz to rad/s if needed
-            unit = units.Unit(unit)
-            if unit == units.Unit('Hz'):
-                z = -2 * pi * z
-                p = -2 * pi * p
-            elif unit != units.Unit('rad/s'):
-                raise ValueError("zpk can only be given with unit='Hz' "
-                                 "or 'rad/s'")
-            # convert to Z-domain via bilinear transform
-            fs = 2 * self.sample_rate.to('Hz').value
-            z = z[numpy.isfinite(z)]
-            pd = (1 + p/fs) / (1 - p/fs)
-            zd = (1 + z/fs) / (1 - z/fs)
-            kd = k * numpy.prod(fs - z)/numpy.prod(fs - p)
-            zd = numpy.concatenate((zd, -numpy.ones(len(pd)-len(zd))))
-            zeros, poles, gain = zd, pd, kd
-        # apply filter
-        return self.filter(zeros, poles, gain, **kwargs)
+        return self.filter(zeros, poles, gain, analog=analog, **kwargs)
 
     def filter(self, *filt, **kwargs):
-        """Apply the given filter to this `TimeSeries`.
-
-        All recognised filter arguments are converted either into cascading
-        second-order sections (if scipy >= 0.16 is installed), or into the
-        ``(numerator, denominator)`` representation before being applied
-        to this `TimeSeries`.
-
-        .. note::
-
-           All filters are presumed to be digital (Z-domain), if you have
-           an analog ZPK (in Hertz or in rad/s) you should be using
-           `TimeSeries.zpk` instead.
-
-        .. note::
-
-           When using `scipy` < 0.16 some higher-order filters may be
-           unstable. With `scipy` >= 0.16 higher-order filters are
-           decomposed into second-order-sections, and so are much more stable.
+        """Filter this `TimeSeries` with an IIR or FIR filter
 
         Parameters
         ----------
-        *filt
-            one of:
+        *filt : filter arguments
+            1, 2, 3, or 4 arguments defining the filter to be applied,
 
-            - `scipy.signal.lti`
-            - `MxN` `numpy.ndarray` of second-order-sections
-              (`scipy` >= 0.16 only)
-            - ``(numerator, denominator)`` polynomials
-            - ``(zeros, poles, gain)``
-            - ``(A, B, C, D)`` 'state-space' representation
+                - an ``Nx1`` `~numpy.ndarray` of FIR coefficients
+                - an ``Nx6`` `~numpy.ndarray` of SOS coefficients
+                - ``(numerator, denominator)`` polynomials
+                - ``(zeros, poles, gain)``
+                - ``(A, B, C, D)`` 'state-space' representation
 
         filtfilt : `bool`, optional
-            filter forward and backwards to preserve phase
+            filter forward and backwards to preserve phase,
+            default: `False`
+
+        analog : `bool`, optional
+            if `True`, filter coefficients will be converted from Hz
+            to Z-domain digital representation, default: `False`
+
+        inplace : `bool`, optional
+            if `True`, this array will be overwritten with the filtered
+            version, default: `False`
 
         **kwargs
             other keyword arguments are passed to the filter method
@@ -1106,77 +987,98 @@ class TimeSeries(TimeSeriesBase):
         result : `TimeSeries`
             the filtered version of the input `TimeSeries`
 
+        Notes
+        -----
+        IIR filters are converted either into cascading
+        second-order sections (if `scipy >= 0.16` is installed), or into the
+        ``(numerator, denominator)`` representation before being applied
+        to this `TimeSeries`.
+
+        .. note::
+
+           When using `scipy < 0.16` some higher-order filters may be
+           unstable. With `scipy >= 0.16` higher-order filters are
+           decomposed into second-order-sections, and so are much more stable.
+
+        FIR filters are passed directly to :func:`scipy.signal.lfilter` or
+        :func:`scipy.signal.filtfilt` without any conversions.
+
         See also
         --------
-        TimeSeries.zpk
-            for instructions on how to filter using a ZPK with frequencies
-            in Hertz
-        scipy.signal.sosfilter
-            for details on the second-order section filtering method
-            (`scipy` >= 0.16 only)
+        scipy.signal.sosfilt
+            for details on filtering with second-order sections
+            (`scipy >= 0.16` only)
+
+        scipy.signal.sosfiltfilt
+            for details on forward-backward filtering with second-order
+            sections (`scipy >= 0.16` only)
+
         scipy.signal.lfilter
-            for details on the filtering method
+            for details on filtering (without SOS)
+
+        scipy.signal.filtfilt
+            for details on forward-backward filtering (without SOS)
 
         Raises
         ------
         ValueError
-            If ``filt`` arguments cannot be interpreted properly
+            if ``filt`` arguments cannot be interpreted properly
+
+        Examples
+        --------
+        We can design an arbitrarily complicated filter using
+        :mod:`gwpy.signal.filter_design`
+
+        >>> from gwpy.signal import filter_design
+        >>> bp = filter_design.bandpass(50, 250, 4096.)
+        >>> notches = [filter_design.notch(f, 4096.) for f in (60, 120, 180)]
+        >>> zpk = filter_design.concatenate_zpks(bp, *notches)
+
+        And then can download some data from LOSC to apply it using
+        `TimeSeries.filter`:
+
+        >>> from gwpy.timeseries import TimeSeries
+        >>> data = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+        >>> filtered = data.filter(zpk, filtfilt=True)
+
+        We can plot the original signal, and the filtered version, cutting
+        off either end of the filtered data to remove filter-edge artefacts
+
+        >>> from gwpy.plotter import TimeSeriesPlot
+        >>> plot = TimeSeriesPlot(data, filtered[128:-128], sep=True)
+        >>> plot.show()
         """
         # parse keyword arguments
         filtfilt = kwargs.pop('filtfilt', False)
 
-        sos = None
-        # single argument given
-        if len(filt) == 1:
-            filt = filt[0]
-            # detect LTI
-            if isinstance(filt, signal.lti):
-                filt = filt
-                a = filt.den
-                b = filt.num
-            # detect ZPK
-            elif (isinstance(filt, (tuple, list)) and len(filt) == 3 and
-                  isinstance(filt[0], numpy.ndarray) and
-                  isinstance(filt[1], numpy.ndarray) and
-                  isinstance(filt[2], float)):
-                sos = signal.zpk2sos(*filt)
-            # detect SOS
-            elif isinstance(filt, numpy.ndarray) and filt.ndim == 2:
-                sos = filt
-            # detect taps
-            else:
-                b = filt
-                a = [1]
-        # detect TF
-        elif len(filt) == 2:
-            b, a = filt
-        elif len(filt) == 3:
+        # parse filter
+        form, filt = filter_design.parse_filter(
+                filt, analog=kwargs.pop('analog', False),
+                sample_rate=self.sample_rate.to('Hz').value,
+        )
+        if form == 'zpk':
             try:
                 sos = signal.zpk2sos(*filt)
-            except AttributeError:
+            except AttributeError:  # scipy < 0.16, no SOS filtering
+                sos = None
                 b, a = signal.zpk2tf(*filt)
-        elif len(filt) == 4:
-            try:
-                zpk = signal.ss2zpk(*filt)
-                sos = signal.zpk2sos(zpk)
-            except AttributeError:
-                b, a = signal.ss2tf(*filt)
         else:
-            raise ValueError("Cannot interpret filter arguments. Please "
-                             "give either a signal.lti object, or a "
-                             "tuple in zpk or ba format. See "
-                             "scipy.signal docs for details.")
-        cls = type(self)
-        if sos is not None:
-            if filtfilt:
-                new = sosfiltfilt(sos, self, axis=0, **kwargs).view(cls)
-            else:
-                new = signal.sosfilt(sos, self, axis=0, **kwargs).view(cls)
+            sos = None
+            b, a = filt
+
+        # perform filter
+        kwargs.setdefault('axis', 0)
+        if sos is not None and filtfilt:
+            out = sosfiltfilt(sos, self, **kwargs)
+        elif sos is not None:
+            out = signal.sosfilt(sos, self, **kwargs)
+        elif filtfilt:
+            out = signal.filtfilt(b, a, self, **kwargs)
         else:
-            if filtfilt:
-                new = signal.filtfilt(b, a, self, axis=0, **kwargs).view(cls)
-            else:
-                new = signal.lfilter(b, a, self, axis=0, **kwargs).view(cls)
+            out = signal.lfilter(b, a, self, **kwargs)
+
+        # format as type(self)
+        new = out.view(type(self))
         new.__metadata_finalize__(self)
         new._unit = self.unit
         return new
@@ -1252,10 +1154,10 @@ class TimeSeries(TimeSeriesBase):
             fftlength = int((fftlength * self_.sample_rate).decompose().value)
         if window is not None:
             kwargs['window'] = signal.get_window(window, fftlength)
-        coh, f = mlab.cohere(self_.value, other.value, NFFT=fftlength,
-                             Fs=sampling, noverlap=overlap, **kwargs)
+        coh, freqs = mlab.cohere(self_.value, other.value, NFFT=fftlength,
+                                 Fs=sampling, noverlap=overlap, **kwargs)
         out = coh.view(FrequencySeries)
-        out.xindex = f
+        out.xindex = freqs
         out.epoch = self.epoch
         out.name = 'Coherence between %s and %s' % (self.name, other.name)
         out.unit = 'coherence'
@@ -1388,8 +1290,8 @@ class TimeSeries(TimeSeriesBase):
         return self.__class__(data, channel=self.channel, t0=self.t0,
                               name=name, sample_rate=(1/float(stride)))
 
-    def whiten(self, fftlength, overlap=0, method='welch', window='hanning',
-               detrend='constant', asd=None, **kwargs):
+    def whiten(self, fftlength, overlap=0, method='scipy-welch',
+               window='hanning', detrend='constant', asd=None, **kwargs):
         """White this `TimeSeries` against its own ASD
 
         Parameters
@@ -1402,7 +1304,7 @@ class TimeSeries(TimeSeriesBase):
             recommended overlap for the given window (if given), or 0
 
         method : `str`, optional
-            FFT-averaging method, default: ``'welch'``,
+            FFT-averaging method, default: ``'scipy-welch'``,
             see *Notes* for more details
 
         window : `str`, `numpy.ndarray`, optional
@@ -1461,10 +1363,10 @@ class TimeSeries(TimeSeriesBase):
         del out.times
         # loop over ffts and whiten each one
         for i in range(nsteps):
-            i0 = i * nstride
-            i1 = i0 + nfft
-            in_ = self[i0:i1].detrend(detrend) * window
-            out.value[i0:i1] += npfft.irfft(in_.fft().value * invasd)
+            x = i * nstride
+            y = x + nfft
+            in_ = self[x:y].detrend(detrend) * window
+            out.value[x:y] += npfft.irfft(in_.fft().value * invasd)
         return out
 
     def detrend(self, detrend='constant'):
@@ -1501,7 +1403,7 @@ class TimeSeries(TimeSeriesBase):
         return TimeSeriesPlot(self, **kwargs)
 
     def notch(self, frequency, type='iir', filtfilt=True, **kwargs):
-        """Notch out a frequency in a `TimeSeries`
+        """Notch out a frequency in this `TimeSeries`.
 
         Parameters
         ----------
@@ -1645,19 +1547,14 @@ class TimeSeries(TimeSeriesBase):
                 fftlength = 1/whiten.df.value
                 overlap = fftlength / 2.
             else:
-                try:
-                    import lal
-                except ImportError:
-                    method = asd_kw.pop('method', 'welch')
-                else:
-                    method = asd_kw.pop('method', 'median-mean')
+                method = asd_kw.pop('method', 'scipy_welch')
                 window = asd_kw.pop('window', 'hann')
                 fftlength = asd_kw.pop(
                     'fftlength',
                     min(planes.whitening_duration, self.duration.value))
                 overlap = asd_kw.pop('overlap', None)
                 if overlap is None and fftlength == self.duration.value:
-                    method = 'welch'
+                    method = 'scipy-welch'
                     overlap = 0
                 elif overlap is None:
                     overlap = recommended_overlap(window) * fftlength
@@ -1674,8 +1571,8 @@ class TimeSeries(TimeSeriesBase):
 
         # Q-transform data for each `(Q, frequency)` tile
         for plane in planes:
-            f, normenergies = plane.transform(fdata, norm=norm,
-                                              epoch=self.x0)
+            freqs, normenergies = plane.transform(fdata, norm=norm,
+                                                  epoch=self.x0)
             # find peak energy in this plane and record if loudest
             for ts in normenergies:
                 if gps is None:
@@ -1686,7 +1583,7 @@ class TimeSeries(TimeSeriesBase):
                     peakenergy = peak
                     peakq = plane.q
                     norms = normenergies
-                    frequencies = f
+                    frequencies = freqs
 
         # build regular Spectrogram from peak-Q data by interpolating each
         # (Q, frequency) `TimeSeries` to have the same time resolution
@@ -1709,103 +1606,25 @@ class TimeSeries(TimeSeriesBase):
         #     because they don't support log scaling
         if fres is None:  # unless user tells us not to
             return out
-        else:
-            interp = interp2d(out.times.value, frequencies, out.value.T,
-                              kind='cubic')
-            f2 = numpy.arange(planes.frange[0], planes.frange[1], fres)
-            new = Spectrogram(interp(out.times.value, f2 + fres/2.).T,
-                              x0=outseg[0], dx=tres,
-                              f0=planes.frange[0], df=fres)
-            new.q = peakq
-            return new
+
+        interp = interp2d(out.times.value, frequencies, out.value.T,
+                          kind='cubic')
+        freqs2 = numpy.arange(planes.frange[0], planes.frange[1], fres)
+        new = Spectrogram(interp(out.times.value, freqs2 + fres/2.).T,
+                          x0=outseg[0], dx=tres,
+                          f0=planes.frange[0], df=fres)
+        new.q = peakq
+        return new
 
 
 @as_series_dict_class(TimeSeries)
-class TimeSeriesDict(TimeSeriesBaseDict):
+class TimeSeriesDict(TimeSeriesBaseDict):  # pylint: disable=missing-docstring
     __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
                                                  'TimeSeries')
     EntryClass = TimeSeries
 
-    @classmethod
-    def read(cls, source, *args, **kwargs):
-        """Read data for multiple channels into a `TimeSeriesDict`
 
-        Parameters
-        ----------
-        source : `str`, `~glue.lal.Cache`
-            a single file path `str`, or a `~glue.lal.Cache` containing
-            a contiguous list of files.
-
-        channels : `~gwpy.detector.channel.ChannelList`, `list`
-            a list of channels to read from the source.
-
-        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str` optional
-            GPS start time of required data, anything parseable by
-            :func:`~gwpy.time.to_gps` is fine
-
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS end time of required data, anything parseable by
-            :func:`~gwpy.time.to_gps` is fine
-
-        format : `str`, optional
-            source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        nproc : `int`, optional
-            number of parallel processes to use, serial process by
-            default.
-
-            .. note::
-
-               Parallel frame reading, via the ``nproc`` keyword argument,
-               is only available when giving a :class:`~glue.lal.Cache` of
-               frames, or using the ``format='cache'`` keyword argument.
-
-        gap : `str`, optional
-            how to handle gaps in the cache, one of
-
-            - 'ignore': do nothing, let the undelying reader method handle it
-            - 'warn': do nothing except print a warning to the screen
-            - 'raise': raise an exception upon finding a gap (default)
-            - 'pad': insert a value to fill the gaps
-
-        pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
-
-        Returns
-        -------
-        tsdict : `TimeSeriesDict`
-            a `TimeSeriesDict` of (`channel`, `TimeSeries`) pairs. The keys
-            are guaranteed to be the ordered list `channels` as given.
-
-        Notes
-        -----"""
-        return io_registry.read(cls, source, *args, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this `TimeSeriesDict` to a file
-
-        Arguments and keywords depend on the output format, see the
-        online documentation for full details for each format.
-
-        Parameters
-        ----------
-        target : `str`
-            output filename
-
-        format : `str`, optional
-            output format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        Notes
-        -----"""
-        return io_registry.write(self, target, *args, **kwargs)
-
-
-class TimeSeriesList(TimeSeriesBaseList):
+class TimeSeriesList(TimeSeriesBaseList):  # pylint: disable=missing-docstring
     __doc__ = TimeSeriesBaseList.__doc__.replace('TimeSeriesBase',
                                                  'TimeSeries')
     EntryClass = TimeSeries

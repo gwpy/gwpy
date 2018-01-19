@@ -22,6 +22,7 @@
 import os.path
 from functools import wraps
 
+# pylint: disable=unused-import
 from astropy.io.misc.hdf5 import is_hdf5 as identify_hdf5
 
 from .cache import FILE_LIKE
@@ -36,10 +37,9 @@ def open_hdf5(filename, mode='r'):
     import h5py
     if isinstance(filename, (h5py.Group, h5py.Dataset)):
         return filename
-    elif isinstance(filename, FILE_LIKE):
+    if isinstance(filename, FILE_LIKE):
         return h5py.File(filename.name, mode)
-    else:
-        return h5py.File(filename, mode)
+    return h5py.File(filename, mode)
 
 
 def with_read_hdf5(func):
@@ -49,14 +49,15 @@ def with_read_hdf5(func):
     positional argument.
     """
     @wraps(func)
-    def decorated_func(f, *args, **kwargs):
+    def decorated_func(fobj, *args, **kwargs):
+        # pylint: disable=missing-docstring
         import h5py
-        if not isinstance(f, h5py.HLObject):
-            if isinstance(f, FILE_LIKE):
-                f = f.name
-            with h5py.File(f, 'r') as h5f:
+        if not isinstance(fobj, h5py.HLObject):
+            if isinstance(fobj, FILE_LIKE):
+                fobj = fobj.name
+            with h5py.File(fobj, 'r') as h5f:
                 return func(h5f, *args, **kwargs)
-        return func(f, *args, **kwargs)
+        return func(fobj, *args, **kwargs)
 
     return decorated_func
 
@@ -115,59 +116,54 @@ def with_write_hdf5(func):
     - ``append=False, overwrite=True``: open in mode ``w``
     """
     @wraps(func)
-    def decorated_func(obj, f, *args, **kwargs):
+    def decorated_func(obj, fobj, *args, **kwargs):
+        # pylint: disable=missing-docstring
         import h5py
-        if not isinstance(f, h5py.HLObject):
+        if not isinstance(fobj, h5py.HLObject):
             append = kwargs.get('append', False)
             overwrite = kwargs.get('overwrite', False)
-            if os.path.exists(f) and not (overwrite or append):
-                raise IOError("File exists: %s" % f)
-            with h5py.File(f, 'a' if append else 'w') as h5f:
+            if os.path.exists(fobj) and not (overwrite or append):
+                raise IOError("File exists: %s" % fobj)
+            with h5py.File(fobj, 'a' if append else 'w') as h5f:
                 return func(obj, h5f, *args, **kwargs)
-        return func(obj, f, *args, **kwargs)
+        return func(obj, fobj, *args, **kwargs)
 
     return decorated_func
 
 
-@with_write_hdf5
-def write_object_dataset(obj, f, create_func, append=False, overwrite=False,
-                         **kwargs):
-    """Write the given dataset to the file
+def create_dataset(parent, path, overwrite=False, **kwargs):
+    """Create a new dataset inside the parent HDF5 object
 
     Parameters
     ----------
-    f : `str`, `h5py.File`, `h5py.Group`
-        the output filepath, or the HDF5 object in which to write
+    parent : `h5py.Group`, `h5py.File`
+        the object in which to create a new dataset
 
-    obj : `object`
-        the object to write into the dataset
+    path : `str`
+        the path at which to create the new dataset
 
-    create_func : `function`
-        a callable that can write the ``obj`` into an `h5py.Dataset`,
-        must take an ``h5py.Group`` as the first argument, and ``obj``
-        as the second, other keyword arguments may follow
-
-    append : `bool`, default: `False`
-        if `True`, write new dataset to existing file, otherwise an
-        exception will be raised if the output file exists (only used if
-        ``f`` is `str`)
-
-    overwrite : `bool`, default: `False`
-        if `True`, overwrite an existing dataset in an existing file,
-        otherwise an exception will be raised if a dataset exists with
-        the given name (only used if ``f`` is `str`)
+    overwrite : `bool`
+        if `True`, delete any existing dataset at the desired path,
+        default: `False`
 
     **kwargs
-        other keyword arguments to pass to ``create_func``
+        other arguments are passed directly to
+        :meth:`h5py.Group.create_dataset`
 
     Returns
     -------
-    dset : `h5py.Dataset`
-        the dataset as created in the file
-
-    Raises
-    ------
-    ValueError
-        if the output file exists and ``append=False``
+    dataset : `h5py.Dataset`
+        the newly created dataset
     """
-    return create_func(f, obj, append=append, overwrite=overwrite, **kwargs)
+    # force deletion of existing dataset
+    if path in parent and overwrite:
+        del parent[path]
+
+    # create new dataset with improved error handling
+    try:
+        return parent.create_dataset(path, **kwargs)
+    except RuntimeError as exc:
+        if str(exc) == 'Unable to create link (Name already exists)':
+            exc.args = ('{0}: {1!r}, pass overwrite=True '
+                        'to ignore existing datasets'.format(str(exc), path),)
+        raise

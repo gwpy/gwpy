@@ -20,16 +20,10 @@
 """
 
 import os
-import sys
-
-from .table import EventTable
-from astropy.table import Table
-
-import six
 
 from ..utils import mp as mp_utils
-
-from xml.sax import SAXException
+from .table import EventTable
+import numpy as np
 
 __author__ = 'Scott Coughlin <scott.coughlin@ligo.org>'
 __all__ = ['GravitySpyTable']
@@ -69,72 +63,110 @@ class GravitySpyTable(EventTable):
         nproc : `int`, optional, default: 1
             number of CPUs to use for parallel file reading
 
+        download_path : `str` optional, default: 'download'
+            Specify where the images end up.
+
         kwargs: Optional TrainingSet and LabelledSamples args
-            that will download images in a specila way
+            that will download images in a special way
             ./"Label"/"SampleType"/"image"
 
         Returns
         -------
         Folder containing omega scans sorted by label
         """
+        from six.moves.urllib.request import urlopen
+        import os
+        # back to pandas
         try:
-            import pandas as pd
-        except ImportError as e:
-            e.args = ('pandas is required to download triggers',)
+            imagesDB = self.to_pandas()
+        except ImportError as exc:
+            exc.args = ('pandas is required to download triggers',)
             raise
 
-        # back to pandas
-        imagesDB = self.to_pandas()
+        # Remove any broken links
         imagesDB = imagesDB.loc[imagesDB.imgUrl1 != '?']
 
         TrainingSet = kwargs.pop('TrainingSet', 0)
         LabelledSamples = kwargs.pop('LabelledSamples', 0)
+        download_location = kwargs.pop('download_path',
+                                       os.path.join('download'))
+
+        # LabelledSamples are only available when requesting the
+        # trainingset* tables
+        if LabelledSamples:
+            if 'SampleType' not in imagesDB.columns:
+                raise ValueError('You have requested Labelled Samples '
+                                 'for a Table which does not have '
+                                 'this column. Did you fetch a '
+                                 'trainingset* table?')
+
+        # If someone wants labelled samples they are
+        # Definitely asking for the training set but
+        # may hve forgotten
+        if LabelledSamples and not TrainingSet:
+            TrainingSet = 1
+
+        # Let us check what columns are needed
+        cols_for_download = ['imgUrl1', 'imgUrl2', 'imgUrl3', 'imgUrl4']
+        cols_for_download_ext = ['Label', 'SampleType', 'ifo', 'uniqueID']
+        duration_values = np.array([['0.5', '1.0', '2.0', '4.0']])
+
+        if not TrainingSet:
+            imagesDB['Label'] = ''
+        if not LabelledSamples:
+            imagesDB['SampleType'] = ''
+
+        if not os.path.isdir(download_location):
+            os.makedirs(download_location)
 
         if TrainingSet:
             for iLabel in imagesDB.Label.unique():
                 if LabelledSamples:
                     for iType in imagesDB.SampleType.unique():
-                        if not os.path.isdir(iLabel + '/' + iType):
-                            os.makedirs(iLabel + '/' + iType)
+                        if not os.path.isdir(os.path.join(
+                                             download_location,
+                                             iLabel, iType)):
+                            os.makedirs(os.path.join(download_location,
+                                        iLabel, iType))
                 else:
-                    if not os.path.isdir(iLabel):
-                        os.makedirs(iLabel)
+                    if not os.path.isdir(os.path.join(download_location,
+                                                      iLabel)):
+                        os.makedirs(os.path.join(download_location,
+                                                 iLabel))
+
+        images_for_download = imagesDB[cols_for_download]
+        images = images_for_download.as_matrix().flatten()
+        images_for_download_ext = imagesDB[cols_for_download_ext]
+        duration = np.atleast_2d(
+                                 duration_values.repeat(
+                                   len(images_for_download_ext), 0).flatten(
+                                     )).T
+        images_for_download_ext = images_for_download_ext.as_matrix(
+                                       ).repeat(len(cols_for_download), 0)
+        images_for_for_download_path = np.array([[download_location]]).repeat(
+                                       len(images_for_download_ext), 0)
+        images = np.hstack((np.atleast_2d(images).T,
+                           images_for_download_ext, duration,
+                           images_for_for_download_path))
 
         def get_image(url):
-            from ligo.org import request
-            directory = './' + url[1] + '/' + url[2] + '/'
-            with open(directory + url[0].split('/')[-1], 'wb') as f:
-                f.write(request(url[0]))
-
-        imagesURL = imagesDB[['imgUrl1', 'imgUrl2', 'imgUrl3', 'imgUrl4']]
-        imagesURL = imagesURL.as_matrix().flatten().tolist()
-        if TrainingSet:
-            labels = imagesDB.Label.as_matrix().flatten().tolist()
-            if LabelledSamples:
-                sampletype = imagesDB.SampleType.as_matrix().flatten().tolist()
-                images = six.itertools.izip_longest(
-                         imagesURL, labels, sampletype)
-            else:
-                images = six.itertools.izip_longest(imagesURL, labels, [])
-        else:
-            images = six.itertools.izip_longest(imagesURL, [], [])
-
-        images = list(images)
+            name = url[3] + '_' + url[4] + '_spectrogram_' + url[5] + '.png'
+            outfile = os.path.join(url[6], url[1], url[2], name)
+            with open(outfile, 'w') as fout:
+                fout.write(urlopen(url[0]).read())
 
         # calculate maximum number of processes
         nproc = min(kwargs.pop('nproc', 1), len(images))
 
         # define multiprocessing method
-        def _download_single_image(f):
+        def _download_single_image(url):
             try:
-                return f, get_image(f)
-            except Exception as e:
+                return url, get_image(url)
+            except Exception as exc:  # pylint: disable=broad-except
                 if nproc == 1:
                     raise
-                elif isinstance(e, SAXException):  # SAXExceptions don't pickle
-                    return f, e.getException()
                 else:
-                    return f, e
+                    return url, exc
 
         # read files
         output = mp_utils.multiprocess_with_queues(

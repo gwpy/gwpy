@@ -31,7 +31,7 @@ import numpy
 from astropy import units
 from astropy.time import Time
 
-from gwpy.types import (Array, Series, Array2D)
+from gwpy.types import (Array, Series, Array2D, Index)
 from gwpy.detector import Channel
 from gwpy.segments import Segment
 from gwpy.time import LIGOTimeGPS
@@ -39,6 +39,7 @@ from gwpy.time import LIGOTimeGPS
 import utils
 
 warnings.filterwarnings('always', category=units.UnitsWarning)
+warnings.filterwarnings('always', category=UserWarning)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -401,6 +402,7 @@ class TestSeries(TestArray):
         # check that warnings are printed for out-of-bounds
         with pytest.warns(UserWarning):
             array.crop(array.xspan[0]-1, array.xspan[1])
+        with pytest.warns(UserWarning):
             array.crop(array.xspan[0], array.xspan[1]+1)
 
     def test_is_compatible(self, array):
@@ -589,7 +591,7 @@ class TestArray2D(TestSeries):
     def setup_class(cls, dtype=None):
         numpy.random.seed(SEED)
         cls.data = (numpy.random.random(100)
-                    * 1e5).astype(dtype=dtype).reshape((10, 10))
+                    * 1e5).astype(dtype=dtype).reshape((20, 5))
         cls.datasq = cls.data ** 2
 
     # -- test properties ------------------------
@@ -623,7 +625,7 @@ class TestArray2D(TestSeries):
         assert array.dy == units.Quantity(5, 'm')
 
     def test_yindex(self):
-        y = numpy.linspace(0, 100, num=self.data.shape[0])
+        y = numpy.linspace(0, 100, num=self.data.shape[1])
 
         # test simple
         series = self.create(yindex=y)
@@ -633,8 +635,8 @@ class TestArray2D(TestSeries):
         # test deleter
         del series.yindex
         del series.yindex
-        y1 = series.y0.value + series.shape[0] * series.dy.value
-        y_default = numpy.linspace(series.y0.value, y1, num=series.shape[0],
+        y1 = series.y0.value + series.shape[1] * series.dy.value
+        y_default = numpy.linspace(series.y0.value, y1, num=series.shape[1],
                                    endpoint=False)
         utils.assert_quantity_equal(
             series.yindex,
@@ -677,10 +679,10 @@ class TestArray2D(TestSeries):
     def test_yspan(self):
         # test normal
         series = self.create(y0=1, dy=1)
-        assert series.yspan == (1, 1 + 1 * series.shape[0])
+        assert series.yspan == (1, 1 + 1 * series.shape[1])
         assert isinstance(series.yspan, Segment)
         # test from irregular yindex
-        y = numpy.logspace(0, 2, num=self.data.shape[0])
+        y = numpy.logspace(0, 2, num=self.data.shape[1])
         series = self.create(yindex=y)
         assert series.yspan == (y[0], y[-1] + y[-1] - y[-2])
 
@@ -709,11 +711,34 @@ class TestArray2D(TestSeries):
             array.is_compatible(a2)
 
     def test_value_at(self, array):
-        assert array.value_at(2, 5) == self.data[2][5] * array.unit
+        assert array.value_at(2, 3) == self.data[2][3] * array.unit
         assert array.value_at(5 * array.xunit, 2 * array.yunit) == (
             self.data[5][2] * array.unit)
         with pytest.raises(IndexError):
-            array.value_at(1.6, 5.8)
+            array.value_at(1.6, 4.8)
 
     def test_pad(self):
         return NotImplemented
+
+
+class TestIndex(object):
+    TEST_CLASS = Index
+
+    def test_is_regular(self):
+        a = self.TEST_CLASS([1, 2, 3, 4, 5, 6], 's')
+        assert a.is_regular()
+        assert a[::-1].is_regular()
+
+        b = self.TEST_CLASS([1, 2, 4, 5, 7, 8, 9])
+        assert not b.is_regular()
+
+    def test_regular(self):
+        a = self.TEST_CLASS([1, 2, 3, 4, 5, 6], 's')
+        assert a.regular
+        assert a.regular is a.info.meta['regular']
+
+    def test_getitem(self):
+        a = self.TEST_CLASS([1, 2, 3, 4, 5, 6], 'Hz')
+        assert type(a[0]) is units.Quantity
+        assert a[0] == 1 * units.Hz
+        assert isinstance(a[:2], type(a))

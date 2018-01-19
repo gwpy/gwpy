@@ -22,17 +22,12 @@
 from __future__ import division
 
 import os.path
-from math import ceil
-from multiprocessing import (cpu_count, Process, Queue as ProcessQueue)
-from six import string_types
 import tempfile
 import warnings
 from gzip import GzipFile
 
 from six import string_types
-
-from numpy import recarray
-from numpy.lib import recfunctions
+from six.moves import StringIO
 
 try:
     from glue.lal import Cache
@@ -42,9 +37,6 @@ else:
     HAS_CACHE = True
     from lal.utils import CacheEntry
     Cache.entry_class = CacheEntry
-
-from astropy.table import (Table, vstack as vstack_tables)
-from astropy.io.registry import _get_valid_format
 
 from ..time import LIGOTimeGPS
 
@@ -57,6 +49,7 @@ except NameError:  # python3.x
     from io import IOBase
     FILE_LIKE = [IOBase, GzipFile]
 try:  # protect against private member being removed
+    # pylint: disable=protected-access
     FILE_LIKE.append(tempfile._TemporaryFileWrapper)
 except AttributeError:
     pass
@@ -82,11 +75,12 @@ def read_cache(lcf, coltype=LIGOTimeGPS):
         a cache object, representing each line in the file as a
         :class:`~lal.utils.CacheEntry`
     """
-    from glue.lal import Cache
+    from glue.lal import Cache  # pylint: disable=redefined-outer-name
+
     # open file
     if not isinstance(lcf, FILE_LIKE):
-        with open(lcf, 'r') as f:
-            return open_cache(f, coltype=coltype)
+        with open(lcf, 'r') as fobj:
+            return read_cache(fobj, coltype=coltype)
 
     # read file
     out = Cache()
@@ -97,10 +91,11 @@ def read_cache(lcf, coltype=LIGOTimeGPS):
     return out
 
 
-def open_cache(*args, **kwargs):
+def open_cache(*args, **kwargs):  # pylint: disable=missing-docstring
     warnings.warn("gwpy.io.cache.open_cache was renamed read_cache",
                   DeprecationWarning)
     return read_cache(*args, **kwargs)
+open_cache.__doc__ = read_cache.__doc__
 
 
 def write_cache(cache, fobj):
@@ -116,8 +111,8 @@ def write_cache(cache, fobj):
     """
     # open file
     if isinstance(fobj, string_types):
-        with open(fobj, 'w') as f:
-            return write_cache(cache, f)
+        with open(fobj, 'w') as fobj2:
+            return write_cache(cache, fobj2)
 
     # write file
     for entry in cache:
@@ -126,6 +121,35 @@ def write_cache(cache, fobj):
             fobj.write(line)
         except TypeError:
             fobj.write(line.encode('utf-8'))
+
+
+def is_cache(cache):
+    """Returns `True` if ``cache`` is a readable cache file or object
+
+    Parameters
+    ----------
+    cache : `str`, `file`, :class:`~glue.lal.Cache`
+        object to detect as cache
+
+    Returns
+    -------
+    iscache : `bool`
+        `True` if the input object is a cache, or a file in LAL cache format,
+        otherwise `False`
+    """
+    if isinstance(cache, string_types + FILE_LIKE):
+        try:
+            c = read_cache(cache)
+        except (TypeError, ValueError, UnicodeDecodeError, ImportError):
+            # failed to parse cache
+            return False
+        else:
+            if not c:  # return empty file as False
+                return False
+            return True
+    elif HAS_CACHE and isinstance(cache, Cache):
+        return True
+    return False
 
 
 # -- cache manipulation -------------------------------------------------------
@@ -142,7 +166,8 @@ def file_list(flist):
         - `str` representing a single file path (or comma-separated collection)
         - open `file` or `~gzip.GzipFile` object
         - `~lal.utils.CacheEntry`
-        - `~glue.lal.Cache` object or `str` with '.cache' or '.lcf extension
+        - :class:`~glue.lal.Cache` object or `str` with `.cache` or
+          `.lcf` extension
         - simple `list` or `tuple` of `str` paths
 
     Returns
@@ -170,9 +195,9 @@ def file_list(flist):
     # otherwise parse a single entry
     try:
         return [file_name(flist)]
-    except ValueError as e:
-        e.args = ("Could not parse input %r as one or more "
-                  "file-like objects" % flist,)
+    except ValueError as exc:
+        exc.args = ("Could not parse input %r as one or more "
+                    "file-like objects" % flist,)
         raise
 
 
@@ -181,7 +206,7 @@ def file_name(fobj):
     """
     if isinstance(fobj, string_types):
         return fobj
-    if isinstance(fobj, FILE_LIKE):
+    if isinstance(fobj, FILE_LIKE) and not isinstance(fobj, StringIO):
         return fobj.name
     if HAS_CACHE and isinstance(fobj, CacheEntry):
         return fobj.path
@@ -213,14 +238,14 @@ def file_segment(filename):
         from ..segments import Segment
         base = os.path.basename(filename)
         try:
-            _, _, s, e = base.split('-')
-        except ValueError as e:
-            e.args = ('Failed to parse %r as LIGO-T050017-compatible filename'
-                      % filename,)
+            _, _, start, end = base.split('-')
+        except ValueError as exc:
+            exc.args = ('Failed to parse %r as LIGO-T050017-compatible '
+                        'filename' % filename,)
             raise
-        s = float(s)
-        e = int(e.split('.')[0])
-        return Segment(s, s+e)
+        start = float(start)
+        end = int(end.split('.')[0])
+        return Segment(start, start+end)
 
 
 def cache_segments(*caches):
@@ -228,7 +253,7 @@ def cache_segments(*caches):
 
     Parameters
     ----------
-    *cache : `~glue.lal.Cache`, `list`
+    *cache : :class:`~glue.lal.Cache`, `list`
         one of more `Cache` objects (or simple `list`)
 
     Returns
@@ -274,7 +299,8 @@ def find_contiguous(*caches):
     caches : `iter` of :class:`~glue.lal.Cache`
         an interable yielding each contiguous cache
     """
-    from glue.lal import Cache
+    from glue.lal import Cache  # pylint: disable=redefined-outer-name
+
     try:
         flat = flatten(*caches)
     except IndexError:

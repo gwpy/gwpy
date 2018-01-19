@@ -205,7 +205,7 @@ def map_data(data, axes, filename, mapname='points', shape='circle',
         axes = axes.gca()
 
     return _map(data, axes, filename, mapname=mapname, title=title,
-                shape=shape, standalone=standalone, jquery=jquery)
+                popup=popup, shape=shape, standalone=standalone, jquery=jquery)
 
 
 def _map(data, axes, filename, href='#', mapname='points', popup=None,

@@ -37,7 +37,7 @@ __currentmodule__ = 'gwpy.table'
 # :class:`sngl_burst <glue.ligolw.lsctables.SnglBurstTable>` table
 from gwpy.table import EventTable
 events = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz',
-                         format='ligolw.sngl_burst', columns=['time', 'snr'])
+                         tablename='sngl_burst', columns=['time', 'snr'])
 
 # .. note::
 #

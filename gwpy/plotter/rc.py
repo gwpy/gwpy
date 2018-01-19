@@ -65,13 +65,13 @@ DEFAULT_PARAMS = {
 
 # select tex formatting (or not)
 try:  # allow user to override from environment
-    usetex = os.environ['GWPY_USETEX'].lower() in ['1', 'true', 'yes', 'y']
-except KeyError:
-    usetex = rcParams['text.usetex'] or tex.HAS_TEX
+    _USETEX = os.environ['GWPY_USETEX'].lower() in ['1', 'true', 'yes', 'y']
+except KeyError:  # 'or' means default to tex
+    _USETEX = rcParams['text.usetex'] or tex.has_tex()
 
 # set latex options
 rcParams['text.latex.preamble'].extend(tex.MACROS)
-if usetex:
+if _USETEX:
     DEFAULT_PARAMS.update({
         'text.usetex': True,
         'font.family': 'serif',
@@ -95,6 +95,15 @@ if mpl_version < '2.0':
             'axes.prop_cycle': cycler('color', DEFAULT_COLORS),
         })
 
+# remove rcParams for old matplotlib
+# https://matplotlib.org/1.5.1/users/whats_new.html#configuration-rcparams
+if mpl_version < '1.5':
+    for key in (
+            'axes.labelpad',
+            'legend.edgecolor',
+    ):
+        DEFAULT_PARAMS.pop(key, None)
+
 # update matplotlib rcParams with new settings
 rcParams.update(DEFAULT_PARAMS)
 
@@ -106,6 +115,7 @@ SUBPLOT_WIDTH = {
     12.: (.1, .90),
 }
 SUBPLOT_HEIGHT = {
+    3.: (.25, .83),
     4.: (.2, .85),
     4.8: (.16, .88),
     6.: (.13, .9),
@@ -126,13 +136,13 @@ def get_subplot_params(figsize):
     params : `~matplotlib.figure.SubplotParams`
         formatted set of subplot parameters
     """
-    w, h, = figsize
+    width, height, = figsize
     try:
-        l, r = SUBPLOT_WIDTH[w]
+        left, right = SUBPLOT_WIDTH[width]
     except KeyError:
-        l = r = None
+        left = right = None
     try:
-        b, t = SUBPLOT_HEIGHT[h]
+        bottom, top = SUBPLOT_HEIGHT[height]
     except KeyError:
-        b = t = None
-    return SubplotParams(**{'left': l, 'bottom': b, 'right': r, 'top': t})
+        bottom = top = None
+    return SubplotParams(left=left, bottom=bottom, right=right, top=top)

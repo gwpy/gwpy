@@ -24,7 +24,6 @@ The frame format is defined in LIGO-T970130 available from dcc.ligo.org.
 from __future__ import (absolute_import, division)
 
 import os.path
-import tempfile
 
 from six import string_types
 
@@ -50,7 +49,7 @@ def open_data_source(source):
 
     Parameters
     ----------
-    source : `str`, `file`, `lal.Cache`, `glue.lal.Cache`
+    source : `str`, `file`, `lal.Cache`, :class:`glue.lal.Cache`
         data source to read
 
     Returns
@@ -68,22 +67,26 @@ def open_data_source(source):
     if isinstance(source, GlueCacheEntry):
         source = source.path
 
-    # read single file
-    if isinstance(source, string_types) and source.endswith('.gwf'):
-        return lalframe.FrStreamOpen(*os.path.split(source))
     # read cache file
-    elif (isinstance(source, string_types) and
+    if (isinstance(source, string_types) and
           source.endswith(('.lcf', '.cache'))):
         return lalframe.FrStreamCacheOpen(lal.CacheImport(source))
+
     # read glue cache object
-    elif isinstance(source, GlueCache):
+    if isinstance(source, GlueCache):
         cache = lal.Cache()
         for entry in source:
             cache = lal.CacheMerge(
                 cache, lal.CacheGlob(*os.path.split(entry.path)))
         return lalframe.FrStreamCacheOpen(cache)
-    elif isinstance(source, lal.Cache):
+
+    # read lal cache object
+    if isinstance(source, lal.Cache):
         return lalframe.FrStreamCacheOpen(source)
+
+    # read single file
+    if isinstance(source, string_types):
+        return lalframe.FrStreamOpen(*os.path.split(source))
 
     raise ValueError("Don't know how to open data source of type %r"
                      % type(source))

@@ -21,9 +21,17 @@
 
 from __future__ import print_function
 
+import gzip
 import os
 import tempfile
 import sys
+from ssl import SSLError
+
+from six.moves.urllib.error import URLError
+
+from six import PY2
+
+import numpy
 
 import pytest
 
@@ -31,7 +39,10 @@ from gwpy.io import (cache as io_cache,
                      datafind as io_datafind,
                      gwf as io_gwf,
                      kerberos as io_kerberos,
-                     nds2 as io_nds2)
+                     ligolw as io_ligolw,
+                     losc as io_losc,
+                     nds2 as io_nds2,
+                     utils as io_utils)
 from gwpy.segments import (Segment, SegmentList)
 
 import utils
@@ -145,6 +156,11 @@ class TestIoNds2(object):
                        ('nds.ligo-la.caltech.edu', 31200),
                        ('nds.ligo.caltech.edu', 31200)]
 
+        # test warnings for unknown IFO
+        with pytest.warns(UserWarning):
+            hro = io_nds2.host_resolution_order('X1')
+            assert hro == [('nds.ligo.caltech.edu', 31200)]
+
     @utils.skip_missing_dependency('nds2')
     def test_connect(self):
         """Test :func:`gwpy.io.connect`
@@ -222,6 +238,49 @@ class TestIoCache(object):
             # read from file name
             c3 = io_cache.read_cache(f.name)
             assert cache == c3
+
+    @utils.skip_missing_dependency('glue.lal')
+    def test_is_cache(self):
+        # sanity check
+        assert io_cache.is_cache(None) is False
+
+        # make sure Cache is returned as True
+        cache = io_cache.Cache()
+        assert io_cache.is_cache(cache) is True
+
+        # check file(path) is return as True if parsed as Cache
+        cache.append(io_cache.CacheEntry.from_T050017('/tmp/A-B-12345-6.txt'))
+        with tempfile.NamedTemporaryFile() as f:
+            # empty file should return False
+            assert io_cache.is_cache(f) is False
+            assert io_cache.is_cache(f.name) is False
+
+            # cache file should return True
+            io_cache.write_cache(cache, f)
+            f.seek(0)
+            assert io_cache.is_cache(f) is True
+            assert io_cache.is_cache(f.name) is True
+
+        # check ASCII file gets returned as False
+        a = numpy.array([[1, 2], [3, 4]])
+        with tempfile.TemporaryFile() as f:
+            numpy.savetxt(f, a)
+            f.seek(0)
+            assert io_cache.is_cache(f) is False
+
+        # check HDF5 file gets returned as False
+        try:
+            import h5py
+        except ImportError:
+            pass
+        else:
+            fp = tempfile.mktemp()
+            try:
+                h5py.File(fp, 'w').close()
+                assert io_cache.is_cache(fp) is False
+            finally:
+                if os.path.isfile(fp):
+                    os.remove(fp)
 
     def test_file_list(self):
         cache = self.make_cache()[0]
@@ -377,6 +436,58 @@ class TestIoGwf(object):
                                        TEST_GWF_FILE) is False
 
 
+# -- gwpy.io.ligolw -----------------------------------------------------------
+
+class TestIoLigolw(object):
+    """Tests for :mod:`gwpy.io.ligolw`
+
+    Here we only test the utilties, rather than the read/write functions,
+    which are tested extensively via other modules (e.g. test_tables.py)
+    """
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
+    def test_open_xmldoc(self):
+        from glue.ligolw.ligolw import (Document, LIGO_LW)
+        assert isinstance(io_ligolw.open_xmldoc(tempfile.mktemp()), Document)
+        with tempfile.TemporaryFile(mode='w') as f:
+            xmldoc = Document()
+            xmldoc.appendChild(LIGO_LW())
+            xmldoc.write(f)
+            f.seek(0)
+            assert isinstance(io_ligolw.open_xmldoc(f), Document)
+
+    @utils.skip_missing_dependency('glue.ligolw')
+    def test_get_ligolw_element(self):
+        from glue.ligolw.ligolw import (Document, LIGO_LW)
+        xmldoc = Document()
+        llw = xmldoc.appendChild(LIGO_LW())
+        assert io_ligolw.get_ligolw_element(llw) is llw
+        assert io_ligolw.get_ligolw_element(xmldoc) is llw
+        with pytest.raises(ValueError):
+            io_ligolw.get_ligolw_element(Document())
+
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
+    def test_list_tables(self):
+        from glue.ligolw import lsctables
+        from glue.ligolw.ligolw import (Document, LIGO_LW)
+
+        # build dummy document with two tables
+        xmldoc = Document()
+        llw = xmldoc.appendChild(LIGO_LW())
+        tables = [lsctables.New(lsctables.ProcessTable),
+                  lsctables.New(lsctables.SnglRingdownTable)]
+        names = [t.TableName(t.Name) for t in tables]
+        [llw.appendChild(t) for t in tables]  # add tables to xmldoc
+
+        # check that tables are listed properly
+        assert io_ligolw.list_tables(xmldoc) == names
+
+        # check that we can list from files
+        with tempfile.NamedTemporaryFile(mode='w') as f:
+            xmldoc.write(f)
+            f.seek(0)
+            assert io_ligolw.list_tables(f) == names
+
+
 # -- gwpy.io.datafind ---------------------------------------------------------
 
 class TestIoDatafind(object):
@@ -421,7 +532,7 @@ class TestIoDatafind(object):
             # test missing channel raises sensible error
             with pytest.raises(ValueError) as exc:
                 io_datafind.find_frametype('X1:TEST', allow_tape=True)
-            assert str(exc.value) == ('Cannot locate \'X1:TEST\' in any known '
+            assert str(exc.value) == ('Cannot locate channel(s) in any known '
                                       'frametype')
             # test malformed channel name raises sensible error
             with pytest.raises(ValueError) as exc:
@@ -433,12 +544,12 @@ class TestIoDatafind(object):
             with pytest.raises(ValueError) as exc:
                 io_datafind.find_frametype('X1:TEST.rms,s-trend',
                                            allow_tape=True)
-            assert str(exc.value) == ('Cannot locate \'X1:TEST.rms\' '
+            assert str(exc.value) == ('Cannot locate channel(s) '
                                       'in any known frametype')
             with pytest.raises(ValueError):
                 io_datafind.find_frametype('X1:TEST.rms,m-trend',
                                            allow_tape=True)
-            assert str(exc.value) == ('Cannot locate \'X1:TEST.rms\' '
+            assert str(exc.value) == ('Cannot locate channel(s) '
                                       'in any known frametype')
 
     def test_find_best_frametype(self, connection):
@@ -465,15 +576,18 @@ KVNO Principal
 
 def mock_popen_return(popen, out='', err='', returncode=0):
     mocked_p = mock.Mock()
+    mocked_p.__enter__ = mock.Mock(return_value=mocked_p)
+    mocked_p.__exit__ = mock.Mock(return_value=None)
     mocked_p.configure_mock(**{
         'communicate.return_value': (out, err),
+        'poll.return_value': returncode,
         'returncode': returncode,
     })
     popen.return_value = mocked_p
 
 
 class TestIoKerberos(object):
-    @mock.patch('gwpy.io.kerberos.Popen')
+    @mock.patch('subprocess.Popen')
     def test_parse_keytab(self, mocked_popen):
         mock_popen_return(mocked_popen, out=KLIST)
 
@@ -488,7 +602,7 @@ class TestIoKerberos(object):
             io_kerberos.parse_keytab('test.keytab')
 
     @mock.patch('gwpy.io.kerberos.which', return_value='/bin/kinit')
-    @mock.patch('gwpy.io.kerberos.Popen')
+    @mock.patch('subprocess.Popen')
     @mock.patch('getpass.getpass', return_value='test')
     @mock.patch('gwpy.io.kerberos.input', return_value='rainer.weiss')
     def test_kinit(self, raw_input_, getpass, mocked_popen, which, capsys):
@@ -540,3 +654,78 @@ class TestIoKerberos(object):
         popen_kwargs['env'] = {'KRB5CCNAME': '/test_cc.krb5'}
         mocked_popen.assert_called_with(
             ['/bin/kinit', 'rainer.weiss@LIGO.ORG'], **popen_kwargs)
+
+
+# -- gwpy.io.utils ------------------------------------------------------------
+
+class TestIoUtils(object):
+    def test_gopen(self):
+        # test simple use
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, mode='w') as f:
+                f.write('blah blah blah')
+            f2 = io_utils.gopen(f.name)
+            assert f2.read() == 'blah blah blah'
+        finally:
+            if os.path.isfile(f.name):
+                os.remove(f.name)
+
+        # test gzip file (with and without extension)
+        for suffix in ('.txt.gz', ''):
+            try:
+                fn = tempfile.mktemp(suffix=suffix)
+                text = 'blah blah blah' if PY2 else b'blah blah blah'
+                with gzip.open(fn, 'wb') as f:
+                    f.write(text)
+                f2 = io_utils.gopen(fn, mode='rb')
+                assert isinstance(f2, gzip.GzipFile)
+                assert f2.read() == text
+            finally:
+                if os.path.isfile(fn):
+                    os.remove(f.name)
+
+    def test_identify_factory(self):
+        id_func = io_utils.identify_factory('.blah', '.blah2')
+        assert id_func(None, None, None) is False
+        assert id_func(None, 'test.txt', None) is False
+        assert id_func(None, 'test.blah', None) is True
+        assert id_func(None, 'test.blah2', None) is True
+        assert id_func(None, 'test.blah2x', None) is False
+
+
+# -- gwpy.io.losc -------------------------------------------------------------
+
+class TestIoLosc(object):
+    def test_fetch_json(self):
+        try:
+            jdata = io_losc.fetch_json(
+                'https://losc.ligo.org/archive/1126257414/1126261510/json/')
+        except (URLError, SSLError) as exc:
+            pytest.skip(str(exc))
+        assert sorted(list(jdata.keys())) == ['events', 'runs']
+        assert jdata['events']['GW150914'] == {
+            'DQbits': 7,
+            'GPStime': 1126259462.0,
+            'INJbits': 5,
+            'UTCtime': u'2015-09-14T09:50:45',
+            'detectors': [u'L1', u'H1'],
+            'frametype': u'%s_HOFT_C02',
+        }
+
+        with pytest.raises(ValueError) as exc:
+            io_losc.fetch_json(
+                'https://losc.ligo.org/archive/1126257414/1126261510/')
+        assert str(exc.value).startswith('Failed to parse LOSC JSON')
+
+    @pytest.mark.parametrize('detector, strict, result', [
+        ('H1', False, ('GW150914', 'tenyear')),
+        ('H1', True, ('tenyear',)),
+        ('V1', False, ('tenyear',)),
+    ])
+    def test_find_datasets(self, detector, strict, result):
+        try:
+            sets = io_losc.find_datasets(1126250000, 1126270000,
+                                         detector=detector, strict=strict)
+        except (URLError, SSLError) as exc:
+            pytest.skip(str(exc))
+        assert sets == result

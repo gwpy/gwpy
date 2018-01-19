@@ -36,9 +36,8 @@ __currentmodule__ = 'gwpy.table'
 # a LIGO_LW-format XML file containing a
 # :class:`sngl_burst <glue.ligolw.lsctables.SnglBurstTable>` table
 from gwpy.table import EventTable
-events = EventTable.read(
-    'H1-LDAS_STRAIN-968654552-10.xml.gz', format='ligolw.sngl_burst',
-    columns=['time', 'snr'])
+events = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz',
+                         tablename='sngl_burst', columns=['time', 'snr'])
 
 # .. note::
 #

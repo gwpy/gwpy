@@ -19,8 +19,17 @@
 """Utilities for multi-processing
 """
 
-from multiprocessing import (Queue, Process)
+import sys
+from multiprocessing import (Queue, Process, Value)
 from operator import itemgetter
+from functools import partial
+
+from six.moves import StringIO
+
+from astropy.utils.console import (ProgressBar, ProgressBarOrSpinner,
+                                   color_print)
+
+from .misc import null_context
 
 
 def process_in_out_queues(func, q_in, q_out):
@@ -44,14 +53,15 @@ def process_in_out_queues(func, q_in, q_out):
     """
     while True:
         # pick item out of input wqueue
-        i, x = q_in.get()
-        if i is None:
+        idx, arg = q_in.get()
+        if idx is None:  # sentinel
             break
         # execute method and put the result in the output queue
-        q_out.put((i, func(x)))
+        q_out.put((idx, func(arg)))
 
 
-def multiprocess_with_queues(nproc, func, inputs, raise_exceptions=False):
+def multiprocess_with_queues(nproc, func, inputs, raise_exceptions=False,
+                             verbose=False, **progress_kw):
     """Map a function over a list of inputs using multiprocess
 
     This essentially duplicates `multiprocess.map` but allows for
@@ -78,42 +88,103 @@ def multiprocess_with_queues(nproc, func, inputs, raise_exceptions=False):
         detect exceptions and return then, rather than raising, so that
         child processes don't hang in multiprocessing when errors occur
 
+    verbose : `bool`, `str`, optional
+        if `True`, print progress to the console as a bar, pass a
+        `str` to customise the heading for the progress bar, default: `False`,
+        (default heading ``'Processing:'`` if ``verbose=True`)
+
     Returns
     -------
     outputs : `list`
         the `list` of results from calling ``func(x)`` for each element
         of ``inputs``
     """
+    # handle verbose printing with a progress bar
+    if verbose:
+        total = len(inputs) if isinstance(inputs, (list, tuple)) else None
+        if verbose is True:
+            verbose = 'Processing:'
+        bar = _MultiProgressBarOrSpinner(total, verbose, file=sys.stdout)
+
+        def _inner_func(in_):  # update progress bar on each iteration
+            res = func(in_)
+            bar.update(None)
+            return res
+
+    else:
+        # or don't
+        bar = null_context()
+        _inner_func = func
+
+    # -------------------------------------------
+
     # shortcut single process
     if nproc == 1:
-        return list(map(func, inputs))
+        with bar:
+            return list(map(_inner_func, inputs))
 
     # create input and output queues
-    q_in = Queue(1)
+    q_in = Queue()
     q_out = Queue()
 
     # create child processes and start
-    proc = [Process(target=process_in_out_queues, args=(func, q_in, q_out))
-            for _ in range(nproc)]
-    for p in proc:
-        p.daemon = True
-        p.start()
+    proclist = [Process(target=process_in_out_queues,
+                        args=(_inner_func, q_in, q_out)) for _ in range(nproc)]
 
-    # populate queue
-    sent = list(map(q_in.put, enumerate(inputs)))
-    [q_in.put((None, None)) for _ in range(nproc)]  # queue is full
+    with bar:
 
-    # get results
-    res = [q_out.get() for _ in range(len(sent))]
+        for proc in proclist:
+            proc.daemon = True
+            proc.start()
 
-    # close processes and unwrap results
-    [p.join() for p in proc]
+        # populate queue (no need to block in serial put())
+        sent = list(map(lambda x: q_in.put(x, block=False), enumerate(inputs)))
+        for _ in range(nproc):  # add sentinel for each process
+            q_in.put((None, None))
+
+        # get results
+        res = [q_out.get() for _ in range(len(sent))]
+
+        # close processes and unwrap results
+        for proc in proclist:
+            proc.join()
+
     results = [out for i, out in sorted(res, key=itemgetter(0))]
 
     # raise exceptions
     if raise_exceptions:
-        for e in results:
-            if isinstance(e, Exception):
-                raise e
+        for exc in results:
+            if isinstance(exc, Exception):
+                raise exc
 
     return results
+
+
+# -- progress bars with counter locking ---------------------------------------
+# this is very much a hack, and should be pushed upstream to astropy proper
+
+class _MultiProgressBar(ProgressBar):
+    def update(self, value=None):
+        # Update self.value
+        if value is None:
+            self._current_value.value += 1
+        else:
+            self._current_value = Value('i', value)
+        value = self._current_value.value
+
+        # Choose the appropriate environment
+        if self._ipython_widget:
+            self._update_ipython_widget(value)
+        else:
+            self._update_console(value)
+
+
+class _MultiProgressBarOrSpinner(ProgressBarOrSpinner):
+    def __init__(self, total, msg, color='default', file=None):
+        if total is None:
+            super(_MultiProgressBarOrSpinner, self).__init__(
+                total, msg, color=color, file=file)
+        else:
+            self._is_spinner = False
+            color_print(msg, color, file=file)
+            self._obj = _MultiProgressBar(total, file=file)

@@ -64,7 +64,7 @@ class Plot(figure.Figure):
 
     def __init__(self, *args, **kwargs):
         # pull non-standard keyword arguments
-        auto_refresh = kwargs.pop('auto_refresh', False)
+        refresh = kwargs.pop('auto_refresh', False)
 
         # dynamically set the subplot positions based on the figure size
         # -- only if the user hasn't customised the subplot params
@@ -93,28 +93,28 @@ class Plot(figure.Figure):
         draw_if_interactive()
 
         # finalise
-        self.set_auto_refresh(auto_refresh)
+        self.set_auto_refresh(refresh)
         self.colorbars = []
         self._coloraxes = []
 
     # -- Plot methods ---------------------------
 
     def get_auto_refresh(self):
-        """Return this `Plot`s auto-refresh setting
+        """Return the auto-refresh setting for this `Plot`.
         """
         return self._auto_refresh
 
-    def set_auto_refresh(self, b):
-        """Set this `Plot`s auto-refresh setting
+    def set_auto_refresh(self, refresh):
+        """Set the auto-refresh setting for this `Plot`.
 
         With auto_refresh set to `True`, all modifications of the underlying
         `Axes` will trigger the plot to be re-drawn
 
         Parameters
         ----------
-        b : `True` or `False`
+        refresh : `True` or `False`
         """
-        self._auto_refresh = bool(b)
+        self._auto_refresh = bool(refresh)
 
     def refresh(self):
         """Refresh the current figure
@@ -151,23 +151,26 @@ class Plot(figure.Figure):
         if block or (block is None and interactive_backend() and not IPYTHON):
             return pyplot.show(block=True)
         # otherwise, don't block and just show normally
-        else:
-            return super(Plot, self).show(warn=warn)
+        return super(Plot, self).show(warn=warn)
 
     def save(self, *args, **kwargs):
         """Save the figure to disk.
 
-        All `args` and `kwargs` are passed directly to the savefig
-        method of the underlying `matplotlib.figure.Figure`
-        self.fig.savefig(*args, **kwargs)
+        This method is an alias to :meth:`~matplotlib.figure.Figure.savefig`,
+        all arguments are passed directory to that method.
         """
         self.savefig(*args, **kwargs)
 
     def close(self):
         """Close the plot and release its memory.
         """
-        for ax in self.axes:
+        for ax in self.axes[::-1]:
+            # avoid matplotlib/matplotlib#9970
+            ax.set_xscale('linear')
+            ax.set_yscale('linear')
+            # clear the axes
             ax.cla()
+        # close the figure
         pyplot.close(self)
 
     # -- colour bars ----------------------------
@@ -244,10 +247,10 @@ class Plot(figure.Figure):
             else:
                 axes_ = [ax]
             for ax in axes_:
-                if hasattr(ax, 'collections') and len(ax.collections):
+                if hasattr(ax, 'collections') and ax.collections:
                     mappable = ax.collections[-1]
                     break
-                elif hasattr(ax, 'images') and len(ax.images):
+                elif hasattr(ax, 'images') and ax.images:
                     mappable = ax.images[-1]
                     break
 
@@ -295,8 +298,8 @@ class Plot(figure.Figure):
                 clim = (cdata[cdata > 0.0].min(), clim[1])
             except ValueError:
                 pass
-        for m in mappables:
-            m.set_clim(clim)
+        for mpbl in mappables:
+            mpbl.set_clim(clim)
 
         # set map
         if cmap is not None:
@@ -306,12 +309,12 @@ class Plot(figure.Figure):
         norm = mappable.norm
         if clip is None:
             clip = norm.clip
-        for m in mappables:
+        for mpbl in mappables:
             if log and not isinstance(norm, mcolors.LogNorm):
-                m.set_norm(mcolors.LogNorm(*mappable.get_clim()))
+                mpbl.set_norm(mcolors.LogNorm(*mappable.get_clim()))
             elif not log:
-                m.set_norm(mcolors.Normalize(*mappable.get_clim()))
-            m.norm.clip = clip
+                mpbl.set_norm(mcolors.Normalize(*mappable.get_clim()))
+            mpbl.norm.clip = clip
 
         # set log ticks
         if log:
@@ -356,8 +359,7 @@ class Plot(figure.Figure):
         """
         if projection is None:
             return self.axes
-        else:
-            return [ax for ax in self.axes if ax.name == projection.lower()]
+        return [ax for ax in self.axes if ax.name == projection.lower()]
 
     def _pick_axes(self, ax=None, projection=None, newax=None, **kwargs):
         """Returns the `Axes` to use in an `add_xxx` method
@@ -398,14 +400,14 @@ class Plot(figure.Figure):
         ValueError
             if geometry is ambiguous
         """
-        if not len(self.axes):
+        if not self.axes:
             return (1, 1, 1)
         # get bottom axes
         try:
-            ca = [ax for ax in self.axes if isinstance(ax, SubplotBase)][-1]
+            cax = [ax for ax in self.axes if isinstance(ax, SubplotBase)][-1]
         except IndexError:
-            ca = self.gca()
-        current = ca.get_geometry()
+            cax = self.gca()
+        current = cax.get_geometry()
         shape = current[:2]
         pos = current[2]
         num = shape[0] * shape[1]
@@ -413,11 +415,10 @@ class Plot(figure.Figure):
         if pos < num:
             return (shape[0], shape[1], pos+1)
         # or add a new column
-        elif shape[1] > 1 and shape[0] == 1:
+        if shape[1] > 1 and shape[0] == 1:
             return (1, shape[1] + 1, pos+1)
         # otherwise add a new row
-        else:
-            return (shape[0] + 1, 1, pos+1)
+        return (shape[0] + 1, 1, pos+1)
 
     def _add_new_axes(self, projection, **kwargs):
         # get new geomtry
@@ -486,7 +487,7 @@ class Plot(figure.Figure):
                              sharex=sharex, sharey=sharey)
 
         # plot on axes
-        return ax.plot(numpy.asarray(x), numpy.asarray(y), **kwargs)[0]
+        return ax.plot(numpy.asarray(x), numpy.asarray(y), *args, **kwargs)[0]
 
     @auto_refresh
     def _scatter(self, x, y, projection=None, ax=None, newax=False,
@@ -848,13 +849,13 @@ class Plot(figure.Figure):
     # equivalent method of the current Axes, and so contain no actual code
 
     @axes_method
-    def get_xlim(self):
+    def get_xlim(self):  # pylint: disable=missing-docstring
         pass
     get_xlim.__doc__ = Axes.get_xlim.__doc__
 
     @auto_refresh
     @axes_method
-    def set_xlim(self, *args, **kwargs):
+    def set_xlim(self, *args, **kwargs):  # pylint: disable=missing-docstring
         pass
     set_xlim.__doc__ = Axes.set_xlim.__doc__
 
@@ -862,13 +863,13 @@ class Plot(figure.Figure):
                     doc='x-axis limits for the current axes')
 
     @axes_method
-    def get_ylim(self):
+    def get_ylim(self):  # pylint: disable=missing-docstring
         pass
     get_ylim.__doc__ = Axes.get_ylim.__doc__
 
     @auto_refresh
     @axes_method
-    def set_ylim(self, *args, **kwargs):
+    def set_ylim(self, *args, **kwargs):  # pylint: disable=missing-docstring
         pass
     set_ylim.__doc__ = Axes.set_ylim.__doc__
 
@@ -876,13 +877,13 @@ class Plot(figure.Figure):
                     doc='y-axis limits for the current axes')
 
     @axes_method
-    def get_xlabel(self):
+    def get_xlabel(self):  # pylint: disable=missing-docstring
         pass
     get_xlabel.__doc__ = Axes.get_xlabel.__doc__
 
     @axes_method
     @auto_refresh
-    def set_xlabel(self, *args, **kwargs):
+    def set_xlabel(self, *args, **kwargs):  # pylint: disable=missing-docstring
         pass
     set_xlabel.__doc__ = Axes.set_xlabel.__doc__
 
@@ -890,13 +891,13 @@ class Plot(figure.Figure):
                       doc='x-axis label for the current axes')
 
     @axes_method
-    def get_ylabel(self):
+    def get_ylabel(self):  # pylint: disable=missing-docstring
         pass
     get_ylabel.__doc__ = Axes.get_ylabel.__doc__
 
     @auto_refresh
     @axes_method
-    def set_ylabel(self, *args, **kwargs):
+    def set_ylabel(self, *args, **kwargs):  # pylint: disable=missing-docstring
         pass
     set_ylabel.__doc__ = Axes.set_ylabel.__doc__
 
@@ -904,13 +905,13 @@ class Plot(figure.Figure):
                       doc='y-axis label for the current axes')
 
     @axes_method
-    def get_title(self):
+    def get_title(self):  # pylint: disable=missing-docstring
         pass
     get_title.__doc__ = Axes.get_title.__doc__
 
     @auto_refresh
     @axes_method
-    def set_title(self, *args, **kwargs):
+    def set_title(self, *args, **kwargs):  # pylint: disable=missing-docstring
         pass
     set_title.__doc__ = Axes.set_title.__doc__
 
@@ -918,13 +919,13 @@ class Plot(figure.Figure):
                      doc='title for the current axes')
 
     @axes_method
-    def get_xscale(self):
+    def get_xscale(self):  # pylint: disable=missing-docstring
         pass
     get_xscale.__doc__ = Axes.get_xscale.__doc__
 
     @auto_refresh
     @axes_method
-    def set_xscale(self, *args, **kwargs):
+    def set_xscale(self, *args, **kwargs):  # pylint: disable=missing-docstring
         pass
     set_xscale.__doc__ = Axes.set_xscale.__doc__
 
@@ -943,13 +944,13 @@ class Plot(figure.Figure):
             self.set_xscale('linear')
 
     @axes_method
-    def get_yscale(self):
+    def get_yscale(self):  # pylint: disable=missing-docstring
         pass
     get_yscale.__doc__ = Axes.get_yscale.__doc__
 
     @auto_refresh
     @axes_method
-    def set_yscale(self, *args, **kwargs):
+    def set_yscale(self, *args, **kwargs):  # pylint: disable=missing-docstring
         pass
     set_yscale.__doc__ = Axes.set_yscale.__doc__
 
@@ -969,6 +970,7 @@ class Plot(figure.Figure):
 
     @axes_method
     def html_map(self, filename, data=None, **kwargs):
+        # pylint: disable=missing-docstring
         pass
     html_map.__doc__ = Axes.html_map.__doc__
 
@@ -1014,7 +1016,7 @@ class Plot(figure.Figure):
         # if not given list, default to 1
         if not iterable(inputs):
             return [inputs]
-        elif not len(inputs):
+        if not inputs:
             return []
         # if given a nested list of data, multiple axes are required
         if any([isinstance(x, (list, tuple, dict)) for x in inputs]):

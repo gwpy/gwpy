@@ -30,6 +30,7 @@ from astropy.io import registry as io_registry
 
 from ..types import Series
 from ..detector import Channel
+from ._fdcommon import fdfilter
 
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
@@ -139,12 +140,12 @@ class FrequencySeries(Series):
 
         Parameters
         ----------
-        source : `str`, `~glue.lal.Cache`
+        source : `str`, :class:`~glue.lal.Cache`
             source of data, any of the following:
 
             - `str` path of single data file
             - `str` path of LAL-format cache file
-            - `~glue.lal.Cache` describing one or more data files,
+            - :class:`~glue.lal.Cache` describing one or more data files,
 
         format : `str`, optional
             source format identifier. If not given, the format will be
@@ -225,17 +226,23 @@ class FrequencySeries(Series):
                          unit=self.unit * units.Hertz, dx=1/self.dx/nout)
         return new
 
-    def zpk(self, zeros, poles, gain):
+    def zpk(self, zeros, poles, gain, analog=True):
         """Filter this `FrequencySeries` by applying a zero-pole-gain filter
 
         Parameters
         ----------
         zeros : `array-like`
             list of zero frequencies (in Hertz)
+
         poles : `array-like`
             list of pole frequencies (in Hertz)
+
         gain : `float`
             DC gain of filter
+
+        analog : `bool`, optional
+            type of ZPK being applied, if `analog=True` all parameters
+            will be converted in the Z-domain for digital filtering
 
         Returns
         -------
@@ -254,84 +261,43 @@ class FrequencySeries(Series):
 
             >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
         """
-        return self.filter(zeros, poles, gain)
+        return self.filter(zeros, poles, gain, analog=analog)
 
     def filter(self, *filt, **kwargs):
-        """Apply the given filter to this `FrequencySeries`.
-
-        Recognised filter arguments are converted into the standard
-        ``(numerator, denominator)`` representation before being applied
-        to this `FrequencySeries`.
-
-        .. note::
-
-           Unlike the related
-           :meth:`TimeSeries.filter <gwpy.timeseries.TimeSeries.filter>`
-           method, here all frequency information (e.g. frequencies of
-           poles or zeros in a ZPK) is assumed to be in Hertz.
+        """Apply a filter to this `FrequencySeries`.
 
         Parameters
         ----------
-        *filt
-            one of:
+        *filt : filter arguments
+            1, 2, 3, or 4 arguments defining the filter to be applied,
 
-            - :class:`scipy.signal.lti`
-            - ``(numerator, denominator)`` polynomials
-            - ``(zeros, poles, gain)``
-            - ``(A, B, C, D)`` 'state-space' representation
+                - an ``Nx1`` `~numpy.ndarray` of FIR coefficients
+                - an ``Nx6`` `~numpy.ndarray` of SOS coefficients
+                - ``(numerator, denominator)`` polynomials
+                - ``(zeros, poles, gain)``
+                - ``(A, B, C, D)`` 'state-space' representation
+
+        analog : `bool`, optional
+            if `True`, filter definition will be converted from Hertz
+            to Z-domain digital representation, default: `False`
+
+        inplace : `bool`, optional
+            if `True`, this array will be overwritten with the filtered
+            version, default: `False`
 
         Returns
         -------
         result : `FrequencySeries`
-            the filtered version of the input `FrequencySeries`
-
-        See also
-        --------
-        FrequencySeries.zpk
-            for information on filtering in zero-pole-gain format
-        scipy.signal.zpk2tf
-            for details on converting ``(zeros, poles, gain)`` into
-            transfer function format
-        scipy.signal.ss2tf
-            for details on converting ``(A, B, C, D)`` to transfer function
-            format
-        scipy.signal.freqs
-            for details on the filtering calculation
+            the filtered version of the input `FrequencySeries`,
+            if ``inplace=True`` was given, this is just a reference to
+            the modified input array
 
         Raises
         ------
         ValueError
-            If ``filt`` arguments cannot be interpreted properly
+            if ``filt`` arguments cannot be interpreted properly
         """
-        # parse filter
-        if len(filt) == 1 and isinstance(filt[0], signal.lti):
-            filt = filt[0]
-            a = filt.den
-            b = filt.num
-        elif len(filt) == 2:
-            b, a = filt
-        elif len(filt) == 3:
-            b, a = signal.zpk2tf(*filt)
-        elif len(filt) == 4:
-            b, a = signal.ss2tf(*filt)
-        else:
-            raise ValueError("Cannot interpret filter arguments. Please give "
-                             "either a signal.lti object, or a tuple in zpk "
-                             "or ba format. See scipy.signal docs for "
-                             "details.")
-        # parse keyword args
-        inplace = kwargs.pop('inplace', False)
-        if kwargs:
-            raise TypeError("FrequencySeries.filter() got an unexpected "
-                            "keyword argument '%s'" % list(kwargs.keys())[0])
-        fresp = abs(signal.freqs(b, a, self.frequencies.value)[1])
-        if inplace:
-            self.value *= fresp
-            return self
-        else:
-            new = (self.value * fresp).view(type(self))
-            new.__dict__ = deepcopy(self.__dict__)
-            return new
+        return fdfilter(self, *filt, **kwargs)
 
     def filterba(self, *args, **kwargs):
         warnings.warn("filterba will be removed soon, please use "

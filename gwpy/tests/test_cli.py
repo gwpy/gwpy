@@ -23,21 +23,24 @@ import os
 import tempfile
 import importlib
 import argparse
+import warnings
 
 import pytest
 
 from numpy import random
 
-from matplotlib import use
+from matplotlib import (use, rcParams)
 use('agg')  # nopep8
 
 from gwpy.timeseries import TimeSeries
-from gwpy.plotter import rcParams
 
 # local imports
 import mocks
 from mocks import mock
 import utils
+
+warnings.filterwarnings(
+    'ignore', category=UserWarning, message=".*non-GUI backend.*")
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -47,7 +50,8 @@ _, TEMP_PLOT_FILE = tempfile.mkstemp(prefix='GWPY-UNITTEST_', suffix='.png')
 class CliTestBase(object):
     PRODUCT_NAME = 'gwpy.cli.cliproduct.CliProduct'
     ACTION = None
-    TEST_ARGS = ['--chan', 'X1:TEST-CHANNEL', '--start', '1000000000']
+    TEST_ARGS = ['--chan', 'X1:TEST-CHANNEL', '--start', '1000000000',
+                 '--nds2-server', 'nds.test.gwpy']
 
     @classmethod
     def setup_class(cls):
@@ -83,6 +87,7 @@ class CliTestBase(object):
             pytest.skip(str(e))
         product, parser = self.test_init_cli()
         args = parser.parse_args(self.TEST_ARGS + ['--out', TEMP_PLOT_FILE])
+        product.post_arg(args)
 
         random.seed(0)
         xts = TimeSeries(random.rand(10240), t0=1000000000,
@@ -119,6 +124,7 @@ class CliTestBase(object):
         product, args = self.test_gen_plot()
         product.ax = product.plot.gca()
         product.setup_xaxis(args)
+    #
 
     def test_setup_yaxis(self):
         product, args = self.test_gen_plot()
@@ -137,6 +143,7 @@ class CliTestBase(object):
     def test_makePlot(self):
         product, parser = self.test_init_cli()
         args = parser.parse_args(self.TEST_ARGS + ['--out', TEMP_PLOT_FILE])
+        product.post_arg(args)
         args.interactive = True
 
         random.seed(0)
@@ -153,7 +160,11 @@ class CliTestBase(object):
                 mock.patch('nds2.buffer'):
             mock_connection.return_value = nds_connection
 
-            product.makePlot(args)
+            try:
+                product.makePlot(args, parser)
+            finally:
+                if os.path.isfile(args.out):
+                    os.remove(args.out)
 
         assert product.is_interactive is True
 
@@ -184,3 +195,12 @@ class TestCliCoherence(CliTestBase):
 class TestCliCoherencegram(TestCliCoherence):
     PRODUCT_NAME = 'gwpy.cli.coherencegram.Coherencegram'
     ACTION = 'coherencegram'
+
+
+class TestCliQtransform(CliTestBase):
+    PRODUCT_NAME = 'gwpy.cli.qtransform.Qtransform'
+    ACTION = 'qtransform'
+    TEST_ARGS = [
+        '--chan', 'X1:TEST-CHANNEL', '--gps', '1000000005', '--search', '8',
+        '--nds2-server', 'nds.test.gwpy', '--outdir', os.path.curdir,
+    ]

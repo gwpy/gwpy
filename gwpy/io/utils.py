@@ -25,16 +25,34 @@ from six import string_types
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+GZIP_SIGNATURE = b'\x1f\x8b\x08'
+
 
 def identify_factory(*extensions):
+    """Factory function to create I/O identifiers for a set of extensions
+
+    The returned function is designed for use in the unified I/O registry
+    via the `astropy.io.registry.register_identifier` hool.
+
+    Parameters
+    ----------
+    extensions : `str`
+        one or more file extension strings
+
+    Returns
+    -------
+    identifier : `callable`
+        an identifier function that tests whether an incoming file path
+        carries any of the given file extensions (using `str.endswith`)
+    """
     def identify(origin, filepath, fileobj, *args, **kwargs):
         """Identify the given extensions in a file object/path
         """
+        # pylint: disable=unused-argument
         if (isinstance(filepath, string_types) and
                 filepath.endswith(extensions)):
             return True
-        else:
-            return False
+        return False
     return identify
 
 
@@ -45,11 +63,22 @@ def gopen(name, *args, **kwargs):
     ----------
     name : `str`
         path (name) of file to open
+
     *args, **kwargs
         other arguments to pass to either `open` for regular files, or
         `gzip.open` for files with a `name` ending in `.gz`
+
+    Returns
+    -------
+    file : `io.TextIoBase`, `file`, `gzip.GzipFile`
+        the open file object
     """
-    if name.endswith('.gz'):
+    if name.endswith('.gz'):  # filename declares gzip
         return gzip.open(name, *args, **kwargs)
-    else:
-        return open(name, *args, **kwargs)
+    else:  # open regular file
+        fobj = open(name, *args, **kwargs)
+        sig = fobj.read(3)
+        fobj.seek(0)
+        if sig == GZIP_SIGNATURE:  # file signature declares gzip
+            return gzip.GzipFile(fileobj=fobj)
+        return fobj

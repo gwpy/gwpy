@@ -24,8 +24,9 @@ The core of this module is adapted from the :mod:`Grid LIGO User Environment
 """
 
 from .segments import (Segment, SegmentList, SegmentListDict)
-from .flag import *
-from .io import *
+from .flag import (DataQualityFlag, DataQualityDict)
+
+from . import io
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = [

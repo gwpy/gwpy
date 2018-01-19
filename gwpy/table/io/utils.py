@@ -21,9 +21,7 @@
 
 from functools import wraps
 
-from six import string_types
-
-from ..filter import (filter_table, parse_column_filters)
+from ..filter import filter_table
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -33,21 +31,20 @@ def read_with_selection(func):
     """
     @wraps(func)
     def decorated_func(*args, **kwargs):
+        """Execute a function, then apply a selection filter
+        """
         # parse selection
         try:
             selection = kwargs.pop('selection')
         except KeyError:
             selection = []
-        else:
-            if isinstance(selection, string_types):
-                selection = selection.replace('&&', '&').split('&')
 
         # read table
         tab = func(*args, **kwargs)
 
         # apply selection
         if selection:
-            return filter_table(tab, *selection)
+            return filter_table(tab, selection)
 
         return tab
 

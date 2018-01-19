@@ -28,7 +28,7 @@ from functools import wraps
 
 import numpy
 
-from scipy.signal import (get_window, periodogram)
+from scipy.signal import get_window
 
 from astropy.units import Quantity
 
@@ -70,7 +70,7 @@ def seconds_to_samples(x, rate):
     return int((Quantity(x, 's') * rate).decompose().value)
 
 
-def normalize_fft_params(series, kwargs={}):
+def normalize_fft_params(series, kwargs=None):
     """Normalize a set of FFT parameters for processing
 
     This method reads the ``fftlength`` and ``overlap`` keyword arguments
@@ -99,6 +99,8 @@ def normalize_fft_params(series, kwargs={}):
     >>> normalize_fft_params(TimeSeries(normal(size=1024), sample_rate=256), {'window': 'hann'})
     {'nfft': 1024, 'noverlap': 0, 'window': 'hann'}
     """
+    if kwargs is None:
+        kwargs = dict()
     samp = series.sample_rate
     fftlength = kwargs.pop('fftlength', None)
     overlap = kwargs.pop('overlap', None)
@@ -127,20 +129,22 @@ def normalize_fft_params(series, kwargs={}):
     return kwargs
 
 
-def set_fft_params(f):
+def set_fft_params(func):
     """Decorate a method to automatically convert quantities to samples
     """
-    @wraps(f)
+    @wraps(func)
     def wrapped_func(series, method_func, *args, **kwargs):
+        """Wrap function to normalize FFT params before execution
+        """
         if isinstance(series, tuple):
-            ts = series[0]
+            data = series[0]
         else:
-            ts = series
+            data = series
 
         # extract parameters in seconds, setting recommended default overlap
-        normalize_fft_params(ts, kwargs)
+        normalize_fft_params(data, kwargs)
 
-        return f(series, method_func, *args, **kwargs)
+        return func(series, method_func, *args, **kwargs)
 
     return wrapped_func
 
@@ -243,17 +247,17 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
         kwargs['window'] = window
 
     # set up single process Spectrogram method
-    def _psd(ts):
+    def _psd(series):
         """Calculate a single PSD for a spectrogram
         """
         try:
-            psd_ = psdn(ts, method_func, *args, **kwargs)
+            psd_ = psdn(series, method_func, *args, **kwargs)
             del psd_.epoch  # fixes Segmentation fault (no idea why it faults)
             return psd_
-        except Exception as e:
+        except Exception as exc:  # pylint: disable=broad-except
             if nproc == 1:
                 raise
-            return e
+            return exc
 
     # define chunks
     tschunks = _chunk_timeseries(timeseries, nstride, noverlap)
@@ -266,12 +270,11 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
                                              raise_exceptions=True)
 
     # recombobulate PSDs into a spectrogram
-    return Spectrogram.from_spectra(*psds, epoch=epoch, dt=stride,
-                                    channel=timeseries.channel)
+    return Spectrogram.from_spectra(*psds, epoch=epoch, dt=stride)
 
 
 @set_fft_params
-def spectrogram(timeseries, method_func, *args, **kwargs):
+def spectrogram(timeseries, method_func, **kwargs):
     """Generate a spectrogram using a method function
 
     Each time bin of the resulting spectrogram is a PSD estimate using
@@ -296,16 +299,16 @@ def spectrogram(timeseries, method_func, *args, **kwargs):
         window = get_window(window, nfft)
 
     # set up single process Spectrogram method
-    def _psd(ts):
+    def _psd(series):
         """Calculate a single PSD for a spectrogram
         """
         try:
-            return method_func(ts, nfft=nfft, window=window,
+            return method_func(series, nfft=nfft, window=window,
                                **kwargs)[1]
-        except Exception as e:
+        except Exception as exc:  # pylint: disable=broad-except
             if nproc == 1:
                 raise
-            return e
+            return exc
 
     # define chunks
     chunks = []
@@ -322,44 +325,44 @@ def spectrogram(timeseries, method_func, *args, **kwargs):
                                              raise_exceptions=True)
 
     # convert PSDs to array with spacing for averages
-    nt = 1 + int((timeseries.size - nstride) / nstride)
-    nf = int(nfft / 2 + 1)
-    data = numpy.zeros((nt, nf), dtype=timeseries.dtype)
+    numtimes = 1 + int((timeseries.size - nstride) / nstride)
+    numfreqs = int(nfft / 2 + 1)
+    data = numpy.zeros((numtimes, numfreqs), dtype=timeseries.dtype)
     data[:len(psds)] = psds
 
     # create output spectrogram
     unit = fft_utils.scale_timeseries_unit(
         timeseries.unit, scaling=kwargs.get('scaling', 'density'))
-    out = Spectrogram(numpy.empty((nt, nf), dtype=timeseries.dtype),
+    out = Spectrogram(numpy.empty((numtimes, numfreqs), dtype=timeseries.dtype),
                       copy=False, dt=nstride * timeseries.dt, t0=timeseries.t0,
-                      channel=timeseries.channel, unit=unit, f0=0,
-                      df=sampling/nfft)
+                      f0=0, df=sampling/nfft, unit=unit,
+                      name=timeseries.name, channel=timeseries.channel)
 
     # normalize over-dense grid
     density = nfft // nstride
     weights = get_window('triangle', density)
-    for i in range(nt):
+    for i in range(numtimes):
         # get indices of overlapping columns
-        x0 = max(0, i+1-density)
-        x1 = min(i+1, nt-density+1)
-        if x0 == 0:
-            w = weights[-x1:]
-        elif x1 == nt - density + 1:
-            w = weights[:x1-x0]
+        x = max(0, i+1-density)
+        y = min(i+1, numtimes-density+1)
+        if x == 0:
+            wgt = weights[-y:]
+        elif y == numtimes - density + 1:
+            wgt = weights[:y-x]
         else:
-            w = weights
+            wgt = weights
         # calculate weighted average
-        out.value[i, :] = numpy.average(data[x0:x1], axis=0, weights=w)
+        out.value[i, :] = numpy.average(data[x:y], axis=0, weights=wgt)
 
     return out
 
 
-def _chunk_timeseries(ts, nstride, noverlap):
+def _chunk_timeseries(series, nstride, noverlap):
     # define chunks
     x = y = 0
-    dx = nstride - int(noverlap // 2.)
-    while x + nstride <= ts.size:
-        y = min(ts.size, x + nstride + noverlap)
-        yield ts[x:y]
-        x += dx
-        dx = nstride
+    step = nstride - int(noverlap // 2.)
+    while x + nstride <= series.size:
+        y = min(series.size, x + nstride + noverlap)
+        yield series[x:y]
+        x += step
+        step = nstride

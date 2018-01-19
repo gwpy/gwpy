@@ -19,10 +19,13 @@
 #
 """Command line interface to GWpy plotting functions
 """
+import time
+prog_start = time.time()    # verbose enough times major ops
+
 import sys
 from importlib import import_module
 import argparse
-
+import os
 from gwpy import __version__
 
 __author__ = 'joseph areeda'
@@ -44,17 +47,20 @@ class CliHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
 
 # Products are classes that implement a specific plot
 # This is a list of those class names, module names
+# This is the only list of all products
 PRODUCTS = [
         'TimeSeries',
         'Coherence',
         'Spectrum',
         'Spectrogram',
-        'Coherencegram'
+        'Coherencegram',
+        'Qtransform'
 ]
 
 parser = argparse.ArgumentParser(formatter_class=CliHelpFormatter,
                                  description=__doc__, prog='gwpy-plot')
-# Setup the argument parser to act as the parent
+
+# set the argument parser to act as the parent
 parentparser = argparse.ArgumentParser(add_help=False)
 
 # These arguments apply to all commands
@@ -94,46 +100,66 @@ for product in PRODUCTS:
 # Run
 
 if __name__ == '__main__':
-    import os
-    # if we're launched with minimum or no environment
-    # variables make some guesses
-    if len(os.getenv('HOME', '')) == 0:
-        os.environ['HOME'] = '/tmp/'
-    # if launched from a terminal with no display
-    if len(os.getenv('DISPLAY', '')) == 0:
-        import matplotlib
-        matplotlib.use('Agg')
+    try:
+        # if we're launched with minimum or no environment
+        # variables make some guesses
+        if len(os.getenv('HOME', '')) == 0:
+            os.environ['HOME'] = '/tmp/'
 
-    # parse the command line
-    args = parser.parse_args()
-    if args.silent:
-        VERBOSE = 0
-    else:
-        VERBOSE = args.verbose
-    if not args.mode:
-        raise RuntimeError("Must specify action. "
-                           "Please try again with --help.")
-    prod = actions[args.func]
-    prod.log(2, ('%s called' % args.func))
+        # if launched from a terminal with no display
+        if len(os.getenv('DISPLAY', '')) == 0:
+            import matplotlib
+            matplotlib.use('Agg')
 
-    # apply custom styling
-    if args.style:
-        from matplotlib import pyplot
-        pyplot.style.use(args.style)
+        # parse the command line
+        args = parser.parse_args()
+        if args.silent:
+            VERBOSE = 0
+        else:
+            VERBOSE = args.verbose
+        if not args.mode:
+            raise RuntimeError("Must specify action. "
+                               "Please try again with --help.")
+        prod = actions[args.func]
+        prod.log(2, ('%s called' % args.func))
 
-    # generate the plot
-    result_code = prod.makePlot(args)
+        # apply custom styling
+        if args.style:
+            from matplotlib import pyplot
+            pyplot.style.use(args.style)
 
-    # If they requested interactive mode and run from ipython
-    # this makes it easier
-    if prod.is_interactive:
-        # import pyplot so that user has access to it
-        from matplotlib import pyplot as plt  # pylint: disable=unused-import
-        plot = prod.plot
-        # pull raw data and plotted results from product for their use
-        timeseries = prod.timeseries
-        result = prod.result
-        print('Raw data is in "timeseries", plotted data is in "result"')
-        ax = plot.gca()
-    else:
-        sys.exit(result_code)
+        # Products get a chance to massage args
+        # eg: q-transform takes gps & search to provide
+        #     start, duration and epoch, xmin...
+        prod.post_arg(args)
+
+        setup_time = time.time() - prog_start
+        prod.log(2, 'Setup time %.1f sec' % setup_time)
+
+        # generate the plot
+        result_code = prod.makePlot(args, parser)
+
+        # If they requested interactive mode and run from ipython
+        # this makes it easier
+        if prod.is_interactive:
+            # import pyplot so that user has access to it
+            from matplotlib import pyplot as plt  # pylint: disable=unused-import
+            plot = prod.plot
+            # pull raw data and plotted results from product for their use
+            timeseries = prod.timeseries
+            result = prod.result
+            print('Raw data is in "timeseries", plotted data is in "result"')
+            ax = plot.gca()
+        run_time = time.time() - prog_start
+        prod.log(1, 'Program run time: %.1f' % run_time)
+        if result_code > 0:
+            sys.exit(result_code)
+    except:
+        # standard exception reporting wasn't working
+        typ, msg, trcbk = sys.exc_info()
+        import traceback
+
+        if 'SystemExit' not in str(typ):
+            traceback.print_tb(trcbk)
+            print ('Error: %s, %s' % (typ, msg))
+        sys.exit(3)
