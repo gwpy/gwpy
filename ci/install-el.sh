@@ -28,9 +28,6 @@ yum -y install rpm-build git2u python-jinja2 ${PY_PREFIX}-jinja2
 
 GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
 
-# update setuptools for bdist_rpm
-pip install "setuptools>=25"
-
 # build the RPM
 python setup.py bdist_rpm
 
