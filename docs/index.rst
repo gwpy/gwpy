@@ -82,6 +82,13 @@ Working with data
    time/index
    astro/index
 
+**Developer notes**
+
+.. toctree::
+   :maxdepth: 1
+
+   dev/release
+
 .. ----------------------------------------------------------------
 .. other sections (not directly linked, but need for cross-linking)
 
