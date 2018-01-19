@@ -34,24 +34,14 @@ apt-get -yq install \
     python-git \
     python-jinja2 \
 
-# install setuptools from jessie-backports
-if [ `get_debian_version` -eq 8 ]; then
-    # enable backports
-    apt-cache policy | grep "jessie-backports/main" &> /dev/null || \
-        {
-         echo "deb http://ftp.debian.org/debian jessie-backports main" \
-         > /etc/apt/sources.list.d/backports.list;
-         apt-get update -yqq;
-        }
-    # install setuptools
-    apt-get -yq install -t jessie-backports \
-        python-setuptools \
-        python3-setuptools
-fi
-
 # get versions
 GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
 GWPY_RELEASE=${GWPY_VERSION%%+*}
+
+# upgrade setuptools for development builds only to prevent version munging
+if [[ "${GWPY_VERSION}" == *"+"* ]]; then
+    pip install "setuptools>=25"
+fi
 
 # prepare the tarball (sdist generates debian/changelog)
 python setup.py sdist

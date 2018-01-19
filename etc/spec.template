@@ -6,7 +6,7 @@
 
 Name:           python-%{srcname}
 Version:        {{ version }}
-Release:        1
+Release:        1%{?dist}
 Summary:        {{ description }}
 
 License:        {{ license }}
