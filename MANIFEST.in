@@ -6,3 +6,4 @@ include versioneer.py
 include gwpy.spec
 include gwpy/_version.py
 include debian/*
+include debian/source/*
