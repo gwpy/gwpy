@@ -26,6 +26,7 @@
 from __future__ import print_function
 
 import sys
+from distutils.version import LooseVersion
 
 from setuptools import (setup, find_packages,
                         __version__ as setuptools_version)
@@ -52,7 +53,7 @@ install_requires = [
 ]
 
 # exclude matplotlib 2.1.x (see matplotlib/matplotlib#10003) if possible
-if setuptools_version >= '25':  # exclude matplotlib 2.1.x
+if LooseVersion(setuptools_version) >= '25':  # exclude matplotlib 2.1.x
     install_requires[2] += ',!=2.1.*'
 
 # test for LAL
