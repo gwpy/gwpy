@@ -48,23 +48,27 @@ SETUP_REQUIRES = {
 
 # -- utilities ----------------------------------------------------------------
 
-def in_git_clone():
-    """Returns `True` if the current directory is a git repository
-    """
-    return os.path.isdir('.git')
-
-
 def reuse_dist_file(filename):
     """Returns `True` if a distribution file can be reused
 
     Otherwise it should be regenerated
     """
-    # if file doesn't exist, we must make it, or if we _can_ make it, do
-    if not os.path.isfile(filename) or in_git_clone():
+    # if target file doesn't exist, we must generate it
+    if not os.path.isfile(filename):
         return False
 
-    # if existing file is newer than the setup script, reuse it
-    return os.path.getmtime(filename) >= os.path.getmtime(__file__)
+    # if we can interact with git, we can regenerate it, so we may as well
+    try:
+        import git
+    except ImportError:
+        return True
+    else:
+        try:
+            git.Repo().tags
+        except (TypeError, git.GitError):
+            return True
+        else:
+            return False
 
 
 def get_gitpython_version():
