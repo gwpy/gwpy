@@ -33,6 +33,9 @@ if [[ "${GWPY_VERSION}" == *"+"* ]]; then
     pip install "setuptools>=25"
 fi
 
+# upgrade GitPython (required for git>=2.15.0)
+pip install "GitPython>=2.1.8"
+
 # build the RPM
 python setup.py bdist_rpm
 
