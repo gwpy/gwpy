@@ -293,8 +293,8 @@ class port(Command):
             log.info('    %s: %s' % (key, val))
         # write finished portfile to file
         with open(self.portfile, 'w') as fport:
-            fport.write(self._template.render(
-                version=self.distribution.get_version(), **digest))
+            print(self._template.render(
+                version=self.distribution.get_version(), **digest), file=fport)
         log.info('portfile written to %r' % self.portfile)
 
     @staticmethod
