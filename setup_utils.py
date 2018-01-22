@@ -69,6 +69,9 @@ def reuse_dist_file(filename):
 
 def get_gitpython_version():
     """Determine the required version of GitPython
+
+    Because of target systems running very, very old versions of setuptools,
+    we only specify the actual version we need when we need it.
     """
     # if not in git clone, it doesn't matter
     if not in_git_clone():
