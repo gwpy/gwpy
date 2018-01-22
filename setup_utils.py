@@ -45,20 +45,6 @@ SETUP_REQUIRES = {
     'test': ['pytest_runner'],
 }
 
-# get required version of GitPython
-try:
-    gitv = subprocess.check_output('git --version', shell=True)
-except (OSError, IOError):
-    git_version = '2.15.0'
-else:
-    if isinstance(gitv, bytes):
-        gitv = gitv.decode('utf-8')
-    git_version = gitv.rstrip().split()[-1]
-if LooseVersion(git_version) >= '2.15':  # specific minimal version required
-    GIT_PYTHON = 'GitPython>=2.1.8'
-else:  # any version
-    GIT_PYTHON = 'GitPython'
-
 
 # -- utilities ----------------------------------------------------------------
 
@@ -77,6 +63,29 @@ def reuse_dist_file(filename):
 
     # if existing file is newer than the setup script, reuse it
     return os.path.getmtime(filename) >= os.path.getmtime(__file__)
+
+
+def get_gitpython_version():
+    """Determine the required version of GitPython
+    """
+    # if not in git clone, it doesn't matter
+    if not in_git_clone():
+        return 'GitPython'
+
+    # otherwise, call out to get the git version
+    try:
+        gitv = subprocess.check_output('git --version', shell=True)
+    except (OSError, IOError):
+        git_version = '2.15.0'
+    else:
+        if isinstance(gitv, bytes):
+            gitv = gitv.decode('utf-8')
+        git_version = gitv.rstrip().split()[-1]
+
+    # if git>=2.15, we need GitPython>=2.1.8
+    if LooseVersion(git_version) >= '2.15':
+        return 'GitPython>=2.1.8'
+    return 'GitPython'
 
 
 # -- custom commands ----------------------------------------------------------
@@ -160,7 +169,7 @@ class changelog(Command):
 
 
 CMDCLASS['changelog'] = changelog
-SETUP_REQUIRES['changelog'] = (GIT_PYTHON,)
+SETUP_REQUIRES['changelog'] = (get_gitpython_version(),)
 
 orig_bdist_rpm = CMDCLASS.pop('bdist_rpm', _bdist_rpm)
 DEFAULT_SPEC_TEMPLATE = os.path.join('etc', 'spec.template')
