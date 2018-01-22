@@ -48,6 +48,19 @@ SETUP_REQUIRES = {
 
 # -- utilities ----------------------------------------------------------------
 
+def in_git_clone():
+    """Returns `True` if the current directory is a git repository
+
+    Logic is 'borrowed' from :func:`git.repo.fun.is_git_dir`
+    """
+    gitdir = '.git'
+    return os.path.isdir(gitdir) and (
+        os.path.isdir(os.path.join(gitdir, 'objects')) and
+        os.path.isdir(os.path.join(gitdir, 'refs')) and
+        os.path.exists(os.path.join(gitdir, 'HEAD'))
+    )
+
+
 def reuse_dist_file(filename):
     """Returns `True` if a distribution file can be reused
 
