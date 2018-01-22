@@ -60,6 +60,25 @@ else:  # any version
     GIT_PYTHON = 'GitPython'
 
 
+# -- utilities ----------------------------------------------------------------
+
+def in_git_clone():
+    return os.path.isdir('.git')
+
+
+def reuse_dist_file(filename):
+    # if file doesn't exist, we must make it
+    if not os.path.isfile(filename):
+        return False
+
+    # if we're not in a git clone, we need to use the existing one
+    if not in_git_clone():
+        return True
+
+    # if existing file is newer than the setup script, reuse it
+    return os.path.getmtime(filename) >= os.path.getmtime(__file__)
+
+
 # -- custom commands ----------------------------------------------------------
 
 class changelog(Command):
@@ -155,6 +174,12 @@ class bdist_rpm(orig_bdist_rpm):
         return orig_bdist_rpm.run(self)
 
     def _make_spec_file(self):
+        # return already read specfile
+        specfile = '{}.spec'.format(self.distribution.get_name())
+        if reuse_dist_file(specfile):
+            with open(specfile, 'rb') as specf:
+                return specf.read()
+
         # generate changelog
         changelogcmd = self.distribution.get_command_obj('changelog')
         with tempfile.NamedTemporaryFile(delete=True, mode='w+') as f:
@@ -195,31 +220,30 @@ class sdist(orig_sdist):
     """
     def run(self):
         # generate spec file
-        self.distribution.have_run.pop('bdist_rpm', None)
-        speccmd = self.distribution.get_command_obj('bdist_rpm')
-        self.distribution._set_command_options(speccmd, {
-            'spec_only': ('sdist', True),
-        })
-        self.run_command('bdist_rpm')
         specfile = '{}.spec'.format(self.distribution.get_name())
-        shutil.move(os.path.join('dist', specfile), specfile)
-        log.info('moved {} to {}'.format(
-            os.path.join('dist', specfile), specfile))
+        if not reuse_dist_file(specfile):
+            self.distribution.have_run.pop('bdist_rpm', None)
+            speccmd = self.distribution.get_command_obj('bdist_rpm')
+            self.distribution._set_command_options(speccmd, {
+                'spec_only': ('sdist', True),
+            })
+            self.run_command('bdist_rpm')
+            shutil.move(os.path.join('dist', specfile), specfile)
+            log.info('moved {} to {}'.format(
+                os.path.join('dist', specfile), specfile))
 
         # generate debian/changelog
-        self.distribution.have_run.pop('changelog')
-        changelogcmd = self.distribution.get_command_obj('changelog')
-        self.distribution._set_command_options(changelogcmd, {
-            'format': ('sdist', 'deb'),
-            'output': ('sdist', os.path.join('debian', 'changelog'))})
-        self.run_command('changelog')
+        debianchlog = os.path.join('debian', 'changelog')
+        if not reuse_dist_file(debianchlog):
+            self.distribution.have_run.pop('changelog')
+            changelogcmd = self.distribution.get_command_obj('changelog')
+            self.distribution._set_command_options(changelogcmd, {
+                'format': ('sdist', 'deb'),
+                'output': ('sdist', debianchlog),
+            })
+            self.run_command('changelog')
 
         orig_sdist.run(self)
-
-        # clean up after ourselves
-        if os.path.exists(specfile):
-            log.info('removing %r' % specfile)
-            os.unlink(specfile)
 
 
 CMDCLASS['sdist'] = sdist
