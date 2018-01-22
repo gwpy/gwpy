@@ -33,6 +33,7 @@ from distutils.cmd import Command
 from distutils.command.clean import (clean as orig_clean, log, remove_tree)
 from distutils.command.bdist_rpm import bdist_rpm as distutils_bdist_rpm
 from distutils.errors import DistutilsArgError
+from distutils.version import LooseVersion
 
 from setuptools.command.bdist_rpm import bdist_rpm as _bdist_rpm
 from setuptools.command.sdist import sdist as _sdist
@@ -43,6 +44,18 @@ CMDCLASS = versioneer.get_cmdclass()
 SETUP_REQUIRES = {
     'test': ['pytest_runner'],
 }
+
+# get required version of GitPython
+try:
+    gitv = subprocess.check_output('git --version', shell=True)
+except (OSError, IOError):
+    git_version = '2.15.0'
+else:
+    git_version = gitv.rstrip().split()[-1]
+if LooseVersion(git_version) >= '2.15':  # specific minimal version required
+    GIT_PYTHON = 'GitPython>=2.1.8'
+else:  # any version
+    GIT_PYTHON = 'GitPython'
 
 
 # -- custom commands ----------------------------------------------------------
@@ -126,7 +139,7 @@ class changelog(Command):
 
 
 CMDCLASS['changelog'] = changelog
-SETUP_REQUIRES['changelog'] = ('GitPython>=2.1.8',)
+SETUP_REQUIRES['changelog'] = (GIT_PYTHON,)
 
 orig_bdist_rpm = CMDCLASS.pop('bdist_rpm', _bdist_rpm)
 DEFAULT_SPEC_TEMPLATE = os.path.join('etc', 'spec.template')
