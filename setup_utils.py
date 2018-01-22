@@ -77,8 +77,9 @@ def get_gitpython_version():
     # otherwise, call out to get the git version
     try:
         gitv = subprocess.check_output('git --version', shell=True)
-    except (OSError, IOError):
-        git_version = '2.15.0'
+    except (OSError, IOError, subprocess.CalledProcessError):
+        # no git installation, most likely
+        git_version = '0.0.0'
     else:
         if isinstance(gitv, bytes):
             gitv = gitv.decode('utf-8')
