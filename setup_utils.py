@@ -49,6 +49,8 @@ SETUP_REQUIRES = {
 # -- utilities ----------------------------------------------------------------
 
 def in_git_clone():
+    """Returns `True` if the current directory is a git repository
+    """
     return os.path.isdir('.git')
 
 
