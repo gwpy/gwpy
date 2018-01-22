@@ -40,6 +40,7 @@ else  # simple pip build
 fi
 
 # install python extras
+${PIP} install --quiet ${PIP_FLAGS} "setuptools>=25"
 ${PIP} install -r requirements-dev.txt --quiet ${PIP_FLAGS}
 
 cd /tmp
