@@ -53,13 +53,13 @@ def in_git_clone():
 
 
 def reuse_dist_file(filename):
-    # if file doesn't exist, we must make it
-    if not os.path.isfile(filename):
-        return False
+    """Returns `True` if a distribution file can be reused
 
-    # if we're not in a git clone, we need to use the existing one
-    if not in_git_clone():
-        return True
+    Otherwise it should be regenerated
+    """
+    # if file doesn't exist, we must make it, or if we _can_ make it, do
+    if not os.path.isfile(filename) or in_git_clone():
+        return False
 
     # if existing file is newer than the setup script, reuse it
     return os.path.getmtime(filename) >= os.path.getmtime(__file__)
