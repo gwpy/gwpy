@@ -51,6 +51,8 @@ try:
 except (OSError, IOError):
     git_version = '2.15.0'
 else:
+    if isinstance(gitv, bytes):
+        gitv = gitv.decode('utf-8')
     git_version = gitv.rstrip().split()[-1]
 if LooseVersion(git_version) >= '2.15':  # specific minimal version required
     GIT_PYTHON = 'GitPython>=2.1.8'
