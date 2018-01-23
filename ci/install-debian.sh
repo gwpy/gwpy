@@ -43,6 +43,11 @@ if [[ "${GWPY_VERSION}" == *"+"* ]]; then
     pip install "setuptools>=25"
 fi
 
+# upgrade GitPython (required for git>=2.15.0)
+#     since we link the git clone from travis, the dependency is actually
+#     fixed to the version of git on the travis image
+pip install "GitPython>=2.1.8"
+
 # prepare the tarball (sdist generates debian/changelog)
 python setup.py sdist
 
