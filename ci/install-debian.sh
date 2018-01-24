@@ -60,14 +60,16 @@ dpkg-buildpackage -us -uc
 popd
 
 # print and install the deb
-GWPY_DEB="dist/${PY_PREFIX}-gwpy_${GWPY_RELEASE}-1_all.deb"
-echo "-------------------------------------------------------"
-dpkg --info ${GWPY_DEB}
-echo "-------------------------------------------------------"
-dpkg --install ${GWPY_DEB} || { \
-    apt-get -y -f install;  # install dependencies and package
-    dpkg --install ${GWPY_DEB};  # shouldn't fail
-}
+for PREF in python python3; do
+    GWPY_DEB="dist/${PREF}-gwpy_${GWPY_RELEASE}-1_all.deb"
+    echo "-------------------------------------------------------"
+    dpkg --info ${GWPY_DEB}
+    echo "-------------------------------------------------------"
+    dpkg --install ${GWPY_DEB} || { \
+        apt-get -y -f install;  # install dependencies and package
+        dpkg --install ${GWPY_DEB};  # shouldn't fail
+    }
+done
 
 # install system-level extras for the correct python version
 for pckg in \
