@@ -35,7 +35,7 @@ apt-get -yq install \
     python-jinja2 \
 
 # use backports to provide some jessie dependencies for python3
-if [ ${PY_XY} -ge 30 ] && [[ `cat /etc/debian_version` == "8."* ]];
+if [ ${PY_XY} -ge 30 ] && [[ `cat /etc/debian_version` == "8."* ]]; then
     APT_FLAGS="-t jessie-backports"
 fi
 
