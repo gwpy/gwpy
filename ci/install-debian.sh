@@ -36,6 +36,15 @@ apt-get -yq install \
 
 # use backports to provide some jessie dependencies for python3
 if [ ${PY_XY} -ge 30 ] && [[ `cat /etc/debian_version` == "8."* ]]; then
+    apt-cache policy | grep "jessie-backports/main" &> /dev/null || \
+        {
+         echo "deb http://ftp.debian.org/debian jessie-backports main" \
+         > /etc/apt/sources.list.d/backports.list;
+         echo "Package: *
+Pin: release a=jessie-backports
+Pin-Priority: -1" >> /etc/apt/preferences;
+         apt-get update -yqq;
+        }
     APT_FLAGS="-t jessie-backports"
 fi
 
