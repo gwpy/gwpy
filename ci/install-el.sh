@@ -39,9 +39,13 @@ pip install "GitPython>=2.1.8"
 # build the RPM
 python setup.py bdist_rpm
 
-# install the rpms
-GWPY_RPMS="dist/python*-gwpy-*.noarch.rpm"
-yum -y --nogpgcheck localinstall ${GWPY_RPMS}
+# install the rpm
+if [ ${PY_XY} -lt 30 ]; then
+    GWPY_RPM="dist/python2-gwpy-*.noarch.rpm"  # install python2 only
+else
+    GWPY_RPM="dist/python*-gwpy-*.noarch.rpm"  # install both 2 and 3
+fi
+yum -y --nogpgcheck localinstall ${GWPY_RPM}
 
 # install system-level extras
 yum -y install \

@@ -59,8 +59,13 @@ tar -xf ../gwpy_${GWPY_RELEASE}.orig.tar.gz --strip-components=1
 dpkg-buildpackage -us -uc
 popd
 
-# print and install the deb
-for PREF in python python3; do
+if [ ${PY_XY} -lt 30 ]; then  # install python2 only
+    PREFICES="python"
+else  # install both 2 and 3
+    PREFICES="python python3"
+fi
+for PREF in ${PREFICES}; do
+    # print and install the deb
     GWPY_DEB="dist/${PREF}-gwpy_${GWPY_RELEASE}-1_all.deb"
     echo "-------------------------------------------------------"
     dpkg --info ${GWPY_DEB}
