@@ -37,7 +37,7 @@ elif [ -n "${DOCKER_IMAGE}" ]; then  # debian
     . ci/install-debian.sh
 else  # simple pip build
     [[ ${TRAVIS_PYTHON_VERSION} == "nightly" ]] && \
-        ${PIP} install Cython ${PIP_FLAGS} --install-option="--no-cython-compile"
+        ${PIP} install Cython ${PIP_FLAGS} --upgrade --install-option="--no-cython-compile"
     ${PIP} install . ${PIP_FLAGS}
 fi
 
