@@ -41,9 +41,9 @@ python setup.py bdist_rpm
 
 # install the rpm
 if [ ${PY_XY} -lt 30 ]; then
-    GWPY_RPM="dist/python2-gwpy-*.noarch.rpm"
+    GWPY_RPM="dist/python2-gwpy-*.noarch.rpm"  # install python2 only
 else
-    GWPY_RPM="dist/${PY_PREFIX}-gwpy-*.noarch.rpm"
+    GWPY_RPM="dist/python*-gwpy-*.noarch.rpm"  # install both 2 and 3
 fi
 yum -y --nogpgcheck localinstall ${GWPY_RPM}
 
