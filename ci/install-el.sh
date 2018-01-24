@@ -33,14 +33,17 @@ if [[ "${GWPY_VERSION}" == *"+"* ]]; then
     pip install "setuptools>=25"
 fi
 
+# upgrade GitPython (required for git>=2.15.0)
+pip install "GitPython>=2.1.8"
+
 # build the RPM
 python setup.py bdist_rpm
 
 # install the rpm
 if [ ${PY_XY} -lt 30 ]; then
-    GWPY_RPM="dist/python2-gwpy-*.noarch.rpm"
+    GWPY_RPM="dist/python2-gwpy-*.noarch.rpm"  # install python2 only
 else
-    GWPY_RPM="dist/${PY_PREFIX}-gwpy-*.noarch.rpm"
+    GWPY_RPM="dist/python*-gwpy-*.noarch.rpm"  # install both 2 and 3
 fi
 yum -y --nogpgcheck localinstall ${GWPY_RPM}
 

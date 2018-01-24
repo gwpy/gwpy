@@ -718,8 +718,8 @@ class TestIoLosc(object):
         assert str(exc.value).startswith('Failed to parse LOSC JSON')
 
     @pytest.mark.parametrize('detector, strict, result', [
-        ('H1', False, ('GW150914', 'tenyear')),
-        ('H1', True, ('tenyear',)),
+        ('H1', False, ('GW150914', 'O1', 'tenyear')),
+        ('H1', True, ('O1', 'tenyear',)),
         ('V1', False, ('tenyear',)),
     ])
     def test_find_datasets(self, detector, strict, result):
