@@ -164,6 +164,10 @@ after_success:
   # build and deploy package files
   - . ./ci/deploy.sh
 
+before_deploy:
+  # manual clean up of repository
+  - ci_run "cd ${GWPY_PATH} && git clean -dfX"
+
 deploy:
   - provider: pypi
     user: duncanmmacleod
