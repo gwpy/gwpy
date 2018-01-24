@@ -183,6 +183,7 @@ deploy:
     password: ${PYPI_PASSWD}
     distributions: bdist_wheel
     on:
+      condition: -z "${DOCKER_IMAGE}"
       branch: master
       tags: true
       python: '3.6'
