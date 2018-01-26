@@ -170,8 +170,8 @@ def get_event_segment(event, host=LOSC_URL, **match):
     for fmeta in jdata['strain']:
         if match and not any(match[key] != fmeta[key] for key in match):
             continue
-        start = fmeta['GPSstart']
-        end = start + fmeta['duration']
+        start = float(fmeta['GPSstart'])
+        end = start + float(fmeta['duration'])
         fseg = Segment(start, end)
         if seg is None:
             seg = fseg
