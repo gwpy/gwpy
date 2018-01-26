@@ -66,11 +66,12 @@ Requires:       python%{python3_pkgversion}-glue
 %autosetup -n %{srcname}-%{version}
 
 %build
-%py2_build
+# build python3 first
 %py3_build
+# so that the scripts come from python2
+%py2_build
 
 %install
-# install python3 first so that scripts come from python2
 %py3_install
 %py2_install
 
