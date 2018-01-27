@@ -167,9 +167,7 @@ def get_event_segment(event, host=LOSC_URL, **match):
     """
     jdata = fetch_json('{}/archive/{}/json/'.format(host, event))
     seg = None
-    for fmeta in jdata['strain']:
-        if match and not any(match[key] != fmeta[key] for key in match):
-            continue
+    for fmeta in sieve_urls(jdata['strain'], **match):
         start = fmeta['GPSstart']
         end = start + fmeta['duration']
         fseg = Segment(start, end)
@@ -180,3 +178,15 @@ def get_event_segment(event, host=LOSC_URL, **match):
     if seg is None:
         raise ValueError("No files matched for event {}".format(event))
     return seg
+
+
+def sieve_urls(urllist, **match):
+    """Sieve a list of LOSC URL metadata dicts based on key, value pairs
+
+    This method simply matches keys from the ``match`` keywords with those
+    found in the JSON dicts for a file URL returned by the LOSC API.
+    """
+    for urlmeta in urllist:
+        if any(match[key] != urlmeta[key] for key in match):
+            continue
+        yield urlmeta
