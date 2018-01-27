@@ -365,6 +365,7 @@ class TimeSeriesBase(Series):
 
     @classmethod
     def fetch_open_data(cls, ifo, start, end, sample_rate=4096,
+                        tag=None, version=None,
                         format=None, host='https://losc.ligo.org',
                         verbose=False, cache=False, **kwargs):
         """Fetch open-access data from the LIGO Open Science Center
@@ -387,6 +388,14 @@ class TimeSeriesBase(Series):
             the sample rate of desired data; most data are stored
             by LOSC at 4096 Hz, however there may be event-related
             data releases with a 16384 Hz rate, default: `4096`
+
+        tag : `str`, optional
+            file tag, e.g. ``'CLN'`` to select cleaned data, or ``'C00'``
+            for 'raw' calibrated data.
+
+        version : `int`, optional
+            version of files to download, defaults to highest discovered
+            version
 
         format : `str`, optional
             the data format to download and parse, defaults to the most
@@ -414,7 +423,7 @@ class TimeSeriesBase(Series):
         Examples
         --------
         >>> from gwpy.timeseries import (TimeSeries, StateVector)
-        >>> print(TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+        >>> print(TimeSeries.fetch_open_data('H1', 1126259446, 1126259478))
         TimeSeries([  2.17704028e-19,  2.08763900e-19,  2.39681183e-19,
                     ...,   3.55365541e-20,  6.33533516e-20,
                       7.58121195e-20]
@@ -423,7 +432,7 @@ class TimeSeriesBase(Series):
                    dt: 0.000244140625 s,
                    name: Strain,
                    channel: None)
-        >>> print(StateVector.fetch_open_data('H1', 1126259446, 1126259478)
+        >>> print(StateVector.fetch_open_data('H1', 1126259446, 1126259478))
         StateVector([127,127,127,127,127,127,127,127,127,127,127,127,
                      127,127,127,127,127,127,127,127,127,127,127,127,
                      127,127,127,127,127,127,127,127]
@@ -452,7 +461,8 @@ class TimeSeriesBase(Series):
         """
         from .io.losc import fetch_losc_data
         return fetch_losc_data(ifo, start, end, sample_rate=sample_rate,
-                               format=format, verbose=verbose, cache=cache,
+                               tag=tag, version=version, format=format,
+                               verbose=verbose, cache=cache,
                                host=host, cls=cls, **kwargs)
 
     @classmethod
