@@ -105,7 +105,7 @@ def _match_urls(urls, start, end, tag=None, version=None):
 
     # sort URLs by duration, then start time, then ...
     urls.sort(key=lambda u:
-        os.path.splitext(os.path.basename(u))[0].split('-')[::-1])
+              os.path.splitext(os.path.basename(u))[0].split('-')[::-1])
 
     # format version request
     if version and not LOSC_VERSION_RE.match(str(version)):
