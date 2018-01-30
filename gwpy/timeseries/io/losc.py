@@ -112,14 +112,9 @@ def _match_urls(urls, start, end, tag=None, version=None):
     for url in urls:
         reg = LOSC_URL_RE.match(os.path.basename(url)).groupdict()
 
-        # match tag
-        if tag and reg['tag'] != tag:
-            continue
-        if not tag:
-            matched_tags.add(reg['tag'])
-
-        # match version
-        if version and reg['version'] != version:
+        # match tag and version (if given)
+        if (tag and reg['tag'] != tag) or (
+                version and reg['version'] != version):
             continue
 
         # match times
@@ -130,7 +125,11 @@ def _match_urls(urls, start, end, tag=None, version=None):
         if gps + dur <= start:  # too early
             continue
 
-        # record
+        # if user didn't specify tag, record all of them
+        if not tag:
+            matched_tags.add(reg['tag'])
+
+        # record by version
         vers = int(reg['version'][1:])
         matched.setdefault(vers, [])
         matched[vers].append(url)
