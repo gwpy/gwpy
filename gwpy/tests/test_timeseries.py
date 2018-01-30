@@ -713,9 +713,13 @@ class TestTimeSeries(TestTimeSeriesBase):
             "Cannot find a LOSC dataset for %s covering [0, 1)" % LOSC_IFO)
 
         # check errors with multiple tags
-        with pytest.raises(ValueError) as exc:
-            self.TEST_CLASS.fetch_open_data(LOSC_IFO, 1187008880, 1187008884)
-        assert str(exc.value).lower().startswith('multiple losc url tags')
+        try:
+            with pytest.raises(ValueError) as exc:
+                self.TEST_CLASS.fetch_open_data(LOSC_IFO, 1187008880, 1187008884)
+            assert str(exc.value).lower().startswith('multiple losc url tags')
+            self.TEST_CLASS.fetch_open_data(LOSC_IFO, 1187008880, 1187008884, tag='CLN')
+        except URLError:
+            pass
 
     @utils.skip_missing_dependency('nds2')
     def test_fetch(self):

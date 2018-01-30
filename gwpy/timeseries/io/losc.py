@@ -110,29 +110,17 @@ def _match_urls(urls, start, end, tag=None, version=None):
 
     # loop URLS
     for url in urls:
-        reg = LOSC_URL_RE.match(os.path.basename(url)).groupdict()
-
-        # match tag and version (if given)
-        if (tag and reg['tag'] != tag) or (
-                version and reg['version'] != version):
-            continue
-
-        # match times
-        gps = int(reg['strt'])
-        if gps >= end:  # too late, stop
+        try:
+            m = _match_url(url, start, end, tag=tag, version=version)
+        except StopIteration:
             break
-        dur = int(reg['dur'])
-        if gps + dur <= start:  # too early
+        if m is None:
             continue
 
-        # if user didn't specify tag, record all of them
-        if not tag:
-            matched_tags.add(reg['tag'])
-
-        # record by version
-        vers = int(reg['version'][1:])
-        matched.setdefault(vers, [])
-        matched[vers].append(url)
+        mtag, mvers = m
+        matched_tags.add(mtag)
+        matched.setdefault(mvers, [])
+        matched[mvers].append(url)
 
     # if multiple file tags found, and user didn't specify, error
     if len(matched_tags) > 1:
@@ -145,6 +133,39 @@ def _match_urls(urls, start, end, tag=None, version=None):
         return matched[max(matched)]
     except ValueError:  # no matched files
         return []
+
+
+def _match_url(url, start, end, tag=None, version=None):
+    """Match a URL against requested parameters
+
+    Returns
+    -------
+    None
+        if the URL doesn't match the request
+
+    tag, version : `str`, `int`
+        if the URL matches the request
+
+    Raises
+    ------
+    StopIteration
+        if the start time of the URL is _after_ the end time of the
+        request
+    """
+    reg = LOSC_URL_RE.match(os.path.basename(url)).groupdict()
+    if (tag and reg['tag'] != tag) or (version and reg['version'] != version):
+        return
+
+    # match times
+    gps = int(reg['strt'])
+    if gps >= end:  # too late, stop
+        raise StopIteration
+
+    dur = int(reg['dur'])
+    if gps + dur <= start:  # too early
+        return
+
+    return reg['tag'], int(reg['version'][1:])
 
 
 # -- file discovery -----------------------------------------------------------
