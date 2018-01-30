@@ -24,8 +24,6 @@ For more details, see https://losc.ligo.org
 from __future__ import print_function
 
 import os.path
-import sys
-import json
 import re
 
 from six import string_types
@@ -38,8 +36,7 @@ from astropy.utils.data import get_readable_fileobj
 
 from .gwf import get_default_gwf_api
 from .. import (StateVector, TimeSeries)
-from ...io import (hdf5 as io_hdf5, utils as io_utils)
-from ...io.losc import (LOSC_URL, fetch_json, sieve_urls)
+from ...io import (hdf5 as io_hdf5, utils as io_utils, losc as io_losc)
 from ...io.cache import (cache_segments, file_segment)
 from ...detector.units import parse_unit
 from ...segments import (Segment, SegmentList)
@@ -61,7 +58,7 @@ LOSC_URL_RE = re.compile(
     r"(?P<dur>[^/\.]+)\."
     r"(?P<ext>[^/]+))\Z"
 )
-LOSC_VERSION_RE = re.compile('V\d+')
+LOSC_VERSION_RE = re.compile(r'V\d+')
 
 
 # -- utilities ----------------------------------------------------------------
@@ -83,7 +80,7 @@ def _parse_formats(formats, cls=TimeSeries):
 
         # prefer HDF5 if h5py available
         try:
-            import h5py
+            import h5py  # pylint: disable=unused-variable
         except ImportError:
             pass
         else:
@@ -153,7 +150,7 @@ def _match_urls(urls, start, end, tag=None, version=None):
 
 # -- file discovery -----------------------------------------------------------
 
-def find_losc_urls(detector, start, end, host=LOSC_URL,
+def find_losc_urls(detector, start, end, host=io_losc.LOSC_URL,
                    sample_rate=4096, tag=None, version=None, format=None):
     """Fetch the metadata from LOSC regarding a given GPS interval
     """
@@ -162,30 +159,48 @@ def find_losc_urls(detector, start, end, host=LOSC_URL,
     span = SegmentList([Segment(start, end)])
     formats = _parse_formats(format)
 
-    # get list of datasets for this interval
-    url = '%s/archive/%d/%d/json/' % (host, start, end)
-    metadata = fetch_json(url)
+    metadata = io_losc.fetch_dataset_json(start, end, host=host)
 
     # find dataset that provides required data
-    for form in formats:
-        for dstype in ['events', 'runs']:
-            for dataset in metadata[dstype]:
-                # validate IFO is present
-                if detector not in metadata[dstype][dataset]['detectors']:
+    for dstype in sorted(metadata, key=lambda x: 0 if x == 'events' else 1):
+
+        # work out how to get the event URLS
+        if dstype == 'events':
+            def _get_urls(dataset):
+                return io_losc.fetch_event_json(dataset, host=host)['strain']
+        elif dstype == 'runs':
+            def _get_urls(dataset):
+                return io_losc.fetch_run_json(dataset, detector, start, end,
+                                              host=host)['strain']
+        else:
+            raise ValueError(
+                "Unrecognised LOSC dataset type {!r}".format(dstype))
+
+        # search datasets
+        for dataset in metadata[dstype]:
+            dsmeta = metadata[dstype][dataset]
+
+            # validate IFO is present
+            if detector not in dsmeta['detectors']:
+                continue
+
+            # check GPS for run datasets
+            try:
+                seg = Segment(dsmeta['GPSstart'], dsmeta['GPSend'])
+            except KeyError:  # probably not a 'run' dataset
+                pass
+            else:
+                if not seg.intersects(span[0]):
                     continue
 
-                # get URL list for this dataset
-                if dstype == 'events':
-                    url = '{}/archive/{}/json/'.format(host, dataset)
-                else:
-                    url = '{}/archive/links/{}/{}/{:d}/{:d}/json/'.format(
-                        host, dataset, detector, start, end)
-                urls = fetch_json(url)['strain']
+            # get URL list for this dataset
+            urls = _get_urls(dataset)
 
+            for form in formats:
                 # sieve URLs based on basic parameters,
                 # and match tag and version
                 cache = _match_urls(
-                    [u['url'] for u in sieve_urls(
+                    [u['url'] for u in io_losc.sieve_urls(
                         urls, detector=detector,
                         sampling_rate=sample_rate, format=form)],
                     start, end, tag=tag, version=version)
@@ -253,8 +268,8 @@ def _fetch_losc_data_file(url, *args, **kwargs):
 
 # -- remote data access (the main event) --------------------------------------
 
-def fetch_losc_data(detector, start, end, host=LOSC_URL, sample_rate=4096,
-                    tag=None, version=None, format=None,
+def fetch_losc_data(detector, start, end, host=io_losc.LOSC_URL,
+                    sample_rate=4096, tag=None, version=None, format=None,
                     cls=TimeSeries, **kwargs):
     """Fetch LOSC data for a given detector
 

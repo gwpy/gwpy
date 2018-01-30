@@ -70,6 +70,123 @@ def fetch_json(url, verbose=False):
             raise
 
 
+# -- API calls ----------------------------------------------------------------
+
+def fetch_dataset_json(gpsstart, gpsend, host=LOSC_URL):
+    """Returns the JSON metadata for all datasets matching the GPS interval
+
+    Parameters
+    ----------
+    gpsstart : `int`
+        the GPS start of the desired interval
+
+    gpsend : `int`
+        the GPS end of the desired interval
+
+    host : `str`, optional
+        the URL of the LOSC host to query, defaults to losc.ligo.org
+
+    Returns
+    -------
+    json
+        the JSON data retrieved from LOSC and returned by `json.loads`
+    """
+    url = '{}/archive/{:d}/{:d}/json/'.format(host, gpsstart, gpsend)
+    return fetch_json(url)
+
+
+def fetch_event_json(event, host=LOSC_URL):
+    """Returns the JSON metadata for the given event
+    """
+    url = '{}/archive/{}/json/'.format(host, event)
+    return fetch_json(url)
+
+
+def fetch_run_json(run, detector, gpsstart, gpsend, host=LOSC_URL):
+    """Returns the JSON metadata for the given science run parameters
+
+    Parameters
+    ----------
+    run : `str`
+        the name of the science run, e.g. ``'O1'``
+
+    detector : `str`
+        the prefix of the GW detector, e.g. ``'L1'``
+
+    gpsstart : `int`
+        the GPS start of the desired interval
+
+    gpsend : `int`
+        the GPS end of the desired interval
+
+    host : `str`, optional
+        the URL of the LOSC host to query, defaults to losc.ligo.org
+
+    Returns
+    -------
+    json
+        the JSON data retrieved from LOSC and returned by `json.loads`
+    """
+    url = '{}/archive/links/{}/{}/{:d}/{:d}/json/'.format(
+        host, run, detector, gpsstart, gpsend)
+    return fetch_json(url)
+
+
+# -- utilities ----------------------------------------------------------------
+
+def event_segment(event, host=LOSC_URL, **match):
+    """Returns the GPS segment covered by a LOSC event dataset
+
+    Parameters
+    ----------
+    event : `str`
+        the name of the event to query
+
+    host : `str`, optional
+        the URL of the LOSC host to query, defaults to losc.ligo.org
+
+    **match : metadata requirements, optional
+        restrictions for matched files, e.g. ``detector='L1'``, all
+        keys must be present in JSON metadata for all files
+
+    Returns
+    -------
+    segment : `~gwpy.segments.Segment`
+        the GPS ``[start, end)`` segment matched for this event
+
+    Examples
+    --------
+    >>> from gwpy.io.losc import event_segment
+    >>> event_segment('GW150914')
+    [1126257414 ... 1126261510)
+    """
+    jdata = fetch_event_json(event, host=host)
+    seg = None
+    for fmeta in sieve_urls(jdata['strain'], **match):
+        start = fmeta['GPSstart']
+        end = start + fmeta['duration']
+        fseg = Segment(start, end)
+        if seg is None:
+            seg = fseg
+        else:
+            seg |= fseg
+    if seg is None:
+        raise ValueError("No files matched for event {}".format(event))
+    return seg
+
+
+def sieve_urls(urllist, **match):
+    """Sieve a list of LOSC URL metadata dicts based on key, value pairs
+
+    This method simply matches keys from the ``match`` keywords with those
+    found in the JSON dicts for a file URL returned by the LOSC API.
+    """
+    for urlmeta in urllist:
+        if any(match[key] != urlmeta[key] for key in match):
+            continue
+        yield urlmeta
+
+
 # -- epoch discovery ----------------------------------------------------------
 
 def find_datasets(start, end, detector=None, strict=False, host=LOSC_URL):
@@ -110,23 +227,24 @@ def find_datasets(start, end, detector=None, strict=False, host=LOSC_URL):
     start = to_gps(start).gpsSeconds
     end = to_gps(end).gpsSeconds
     span = Segment(start, end)
-
-    # fetch metadata from LOSC
-    jdata = fetch_json('{}/archive/{}/{}/json/'.format(host, start, end))
+    jdata = fetch_dataset_json(start, end, host=host)
 
     # extract epochs
     epochs = []
-    for epochtype in ('events', 'runs',):
+    for epochtype in jdata:
         for epoch, metadata in jdata[epochtype].items():
             if detector and detector not in metadata['detectors']:
                 continue
+
+            # get dataset segment
             if epochtype == 'events' and detector:
-                epochseg = get_event_segment(epoch, detector=detector,
-                                             host=host)
+                epochseg = event_segment(epoch, detector=detector, host=host)
             elif epochtype == 'events':
-                epochseg = get_event_segment(epoch, host=host)
+                epochseg = event_segment(epoch, host=host)
             else:
                 epochseg = Segment(metadata['GPSstart'], metadata['GPSend'])
+
+            # match segment against request
             try:
                 coverage = abs(epochseg & span)
             except (ValueError, TypeError):
@@ -137,56 +255,3 @@ def find_datasets(start, end, detector=None, strict=False, host=LOSC_URL):
 
     # sort epochs by coverage
     return list(zip(*sorted(epochs, key=lambda x: (x[1], x[2]))))[0]
-
-
-def get_event_segment(event, host=LOSC_URL, **match):
-    """Returns the GPS segment covered by a LOSC event dataset
-
-    Parameters
-    ----------
-    event : `str`
-        the name of the event to query
-
-    host : `str`, optional
-        the URL of the LOSC host to query, defaults to losc.ligo.org
-
-    **match : metadata requirements, optional
-        restrictions for matched files, e.g. ``detector='L1'``, all
-        keys must be present in JSON metadata for all files
-
-    Returns
-    -------
-    segment : `~gwpy.segments.Segment`
-        the GPS ``[start, end)`` segment matched for this event
-
-    Examples
-    --------
-    >>> from gwpy.io.losc import get_event_segment
-    >>> get_event_segment('GW150914')
-    [1126257414 ... 1126261510)
-    """
-    jdata = fetch_json('{}/archive/{}/json/'.format(host, event))
-    seg = None
-    for fmeta in sieve_urls(jdata['strain'], **match):
-        start = fmeta['GPSstart']
-        end = start + fmeta['duration']
-        fseg = Segment(start, end)
-        if seg is None:
-            seg = fseg
-        else:
-            seg |= fseg
-    if seg is None:
-        raise ValueError("No files matched for event {}".format(event))
-    return seg
-
-
-def sieve_urls(urllist, **match):
-    """Sieve a list of LOSC URL metadata dicts based on key, value pairs
-
-    This method simply matches keys from the ``match`` keywords with those
-    found in the JSON dicts for a file URL returned by the LOSC API.
-    """
-    for urlmeta in urllist:
-        if any(match[key] != urlmeta[key] for key in match):
-            continue
-        yield urlmeta
