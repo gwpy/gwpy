@@ -691,7 +691,6 @@ class TestTimeSeries(TestTimeSeriesBase):
 
     @pytest.mark.parametrize('format', [
         None,
-        'txt.gz',
         pytest.param('hdf5', marks=utils.skip_missing_dependency('h5py')),
     ])
     def test_fetch_open_data(self, losc, format):
