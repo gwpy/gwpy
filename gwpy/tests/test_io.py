@@ -529,28 +529,28 @@ class TestIoDatafind(object):
                                               allow_tape=True) == 'GW100916'
             assert io_datafind.find_frametype('L1:LDAS-STRAIN',
                                               return_all=True) == ['GW100916']
+
             # test missing channel raises sensible error
             with pytest.raises(ValueError) as exc:
                 io_datafind.find_frametype('X1:TEST', allow_tape=True)
-            assert str(exc.value) == ('Cannot locate channel(s) in any known '
-                                      'frametype')
+            assert str(exc.value) == (
+                'Cannot locate the following channel(s) '
+                'in any known frametype:\n    X1:TEST')
+
             # test malformed channel name raises sensible error
             with pytest.raises(ValueError) as exc:
                 io_datafind.find_frametype('bad channel name')
             assert str(exc.value) == ('Cannot parse interferometer prefix '
                                       'from channel name \'bad channel name\','
                                       ' cannot proceed with find()')
+
             # test trend sorting ends up with an error
             with pytest.raises(ValueError) as exc:
                 io_datafind.find_frametype('X1:TEST.rms,s-trend',
                                            allow_tape=True)
-            assert str(exc.value) == ('Cannot locate channel(s) '
-                                      'in any known frametype')
             with pytest.raises(ValueError):
                 io_datafind.find_frametype('X1:TEST.rms,m-trend',
                                            allow_tape=True)
-            assert str(exc.value) == ('Cannot locate channel(s) '
-                                      'in any known frametype')
 
     def test_find_best_frametype(self, connection):
         """Test :func:`gwpy.io.datafind.find_best_frametype
