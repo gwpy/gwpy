@@ -190,7 +190,6 @@ class GravitySpyTable(EventTable):
                 x.args = ('Failed to read %s: %s' % (f, str(x)),)
                 raise x
 
-
     @classmethod
     def search(cls, uniqueID, howmany=10):
         """If table contains Gravity Spy triggers `EventTable`
@@ -219,11 +218,11 @@ class GravitySpyTable(EventTable):
 
         # Need to build the url call for the restful API
         url = 'https://gravityspytools.ciera.northwestern.edu' + \
-               '/search/similarity_search_restful_API/?'
+            '/search/similarity_search_restful_API/?'
         # The first varaible username for the url is unimportant
         # and can permantly be 'sbc538'
         username = 'sbc538'
-        url = url +  'username={0}&'.format(username)
+        url = url + 'username={0}&'.format(username)
         url = url + 'howmany={0}&'.format(howmany)
         # zooID can also be permanantly set to zero.
         zooID = '0'
