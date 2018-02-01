@@ -73,7 +73,7 @@ class GravitySpyTable(EventTable):
         kwargs: Optional TrainingSet and LabelledSamples args
             that will download images in a special way
             ./"Label"/"SampleType"/"image"
-8FHTgA8MEu
+
         Returns
         -------
         Folder containing omega scans sorted by label
@@ -203,11 +203,6 @@ class GravitySpyTable(EventTable):
 
         howmany : `int`, optional, default: 10
             number of similar images you would like
-
-
-        url : `str`, optional, default: None
-            Supply full URL to the restful API if you know
-            it off hand
 
         kwargs:
 
