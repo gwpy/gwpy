@@ -34,6 +34,20 @@ apt-get -yq install \
     python-git \
     python-jinja2 \
 
+# use backports to provide some jessie dependencies for python3
+if [ ${PY_XY} -ge 30 ] && [[ `cat /etc/debian_version` == "8."* ]]; then
+    apt-cache policy | grep "jessie-backports/main" &> /dev/null || \
+        {
+         echo "deb http://ftp.debian.org/debian jessie-backports main" \
+         > /etc/apt/sources.list.d/backports.list;
+         echo "Package: *
+Pin: release a=jessie-backports
+Pin-Priority: -1" >> /etc/apt/preferences;
+         apt-get update -yqq;
+        }
+    APT_FLAGS="-t jessie-backports"
+fi
+
 # get versions
 GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
 GWPY_RELEASE=${GWPY_VERSION%%+*}
@@ -59,6 +73,7 @@ tar -xf ../gwpy_${GWPY_RELEASE}.orig.tar.gz --strip-components=1
 dpkg-buildpackage -us -uc
 popd
 
+# install gwpy.deb
 if [ ${PY_XY} -lt 30 ]; then  # install python2 only
     PREFICES="python"
 else  # install both 2 and 3
@@ -71,7 +86,7 @@ for PREF in ${PREFICES}; do
     dpkg --info ${GWPY_DEB}
     echo "-------------------------------------------------------"
     dpkg --install ${GWPY_DEB} || { \
-        apt-get -y -f install;  # install dependencies and package
+        apt-get -y -f ${APT_FLAGS} install;  # install dependencies and package
         dpkg --install ${GWPY_DEB};  # shouldn't fail
     }
 done
@@ -91,7 +106,7 @@ for pckg in \
     lalsimulation-${PY_PREFIX} \
     ${PY_PREFIX}-h5py \
 ; do
-    apt-get -yqq install $pckg || true
+    apt-get -yqq ${APT_FLAGS} install $pckg || true
 done
 
 if [ ${PY_XY} -lt 30 ]; then
