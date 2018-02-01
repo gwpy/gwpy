@@ -66,10 +66,14 @@ class GravitySpyTable(EventTable):
         download_path : `str` optional, default: 'download'
             Specify where the images end up.
 
+        download_durs : `list` optional, default: [0.5, 1.0, 2.0, 4.0]
+            Specify exactly which durations you want to download
+            default is to download all the avaialble GSpy durations.
+
         kwargs: Optional TrainingSet and LabelledSamples args
             that will download images in a special way
             ./"Label"/"SampleType"/"image"
-
+8FHTgA8MEu
         Returns
         -------
         Folder containing omega scans sorted by label
@@ -90,9 +94,17 @@ class GravitySpyTable(EventTable):
         LabelledSamples = kwargs.pop('LabelledSamples', 0)
         download_location = kwargs.pop('download_path',
                                        os.path.join('download'))
+        duration_values = np.array([0.5, 1.0, 2.0, 4.0])
+        download_durs = kwargs.pop('download_durs', duration_values)
+
+        duration_idx = []
+        for idur in download_durs:
+            duration_idx.append(np.argwhere(duration_values == idur)[0][0])
+
+        duration_values = duration_values[duration_idx]
+        duration_values = np.array([duration_values]).astype(str)
 
         # LabelledSamples are only available when requesting the
-        # trainingset* tables
         if LabelledSamples:
             if 'SampleType' not in imagesDB.columns:
                 raise ValueError('You have requested Labelled Samples '
@@ -108,8 +120,8 @@ class GravitySpyTable(EventTable):
 
         # Let us check what columns are needed
         cols_for_download = ['imgUrl1', 'imgUrl2', 'imgUrl3', 'imgUrl4']
+        cols_for_download = [cols_for_download[idx] for idx in duration_idx]
         cols_for_download_ext = ['Label', 'SampleType', 'ifo', 'uniqueID']
-        duration_values = np.array([['0.5', '1.0', '2.0', '4.0']])
 
         if not TrainingSet:
             imagesDB['Label'] = ''
@@ -177,3 +189,50 @@ class GravitySpyTable(EventTable):
             if isinstance(x, Exception):
                 x.args = ('Failed to read %s: %s' % (f, str(x)),)
                 raise x
+
+
+    @classmethod
+    def search(cls, uniqueID, howmany=10):
+        """If table contains Gravity Spy triggers `EventTable`
+
+        Parameters
+        ----------
+        uniqueID : `str`,
+            This is the unique 10 character hash that identifies
+            a Gravity Spy Image
+
+        howmany : `int`, optional, default: 10
+            number of similar images you would like
+
+
+        url : `str`, optional, default: None
+            Supply full URL to the restful API if you know
+            it off hand
+
+        kwargs:
+
+        Returns
+        -------
+        Folder containing omega scans sorted by label
+        """
+        # back to pandas
+        try:
+            import pandas
+        except ImportError as exc:
+            exc.args = ('pandas is required to download triggers',)
+            raise
+
+        # Need to build the url call for the restful API
+        url = 'https://gravityspytools.ciera.northwestern.edu' + \
+               '/search/similarity_search_restful_API/?'
+        # The first varaible username for the url is unimportant
+        # and can permantly be 'sbc538'
+        username = 'sbc538'
+        url = url +  'username={0}&'.format(username)
+        url = url + 'howmany={0}&'.format(howmany)
+        # zooID can also be permanantly set to zero.
+        zooID = '0'
+        url = url + 'zooid={0}&'.format(zooID)
+        url = url + 'imageid={0}'.format(uniqueID)
+
+        return GravitySpyTable.from_pandas(pandas.read_json(url))
