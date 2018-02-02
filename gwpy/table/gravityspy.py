@@ -212,6 +212,7 @@ class GravitySpyTable(EventTable):
         """
         from astropy.utils.data import get_readable_fileobj
         import json
+        from six.moves.urllib.error import HTTPError
 
         # Need to build the url call for the restful API
         base = 'https://gravityspytools.ciera.northwestern.edu' + \
@@ -229,5 +230,10 @@ class GravitySpyTable(EventTable):
 
         url = '{}/?{}'.format(base, search)
 
-        with get_readable_fileobj(url) as f:
-            return GravitySpyTable(json.load(f))
+        try:
+            with get_readable_fileobj(url) as f:
+                return GravitySpyTable(json.load(f))
+        except HTTPError as exc:
+            if exc.code == 500:
+                exc.msg = exc.msg + ', please confirm the uniqueID is valid'
+                raise
