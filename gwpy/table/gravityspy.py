@@ -209,24 +209,24 @@ class GravitySpyTable(EventTable):
         -------
         Folder containing omega scans sorted by label
         """
-        # back to pandas
-        try:
-            import pandas
-        except ImportError as exc:
-            exc.args = ('pandas is required to download triggers',)
-            raise
+        from astropy.utils.data import get_readable_fileobj
+        import json
 
         # Need to build the url call for the restful API
-        url = 'https://gravityspytools.ciera.northwestern.edu' + \
-            '/search/similarity_search_restful_API/?'
-        # The first varaible username for the url is unimportant
-        # and can permantly be 'sbc538'
-        username = 'sbc538'
-        url = url + 'username={0}&'.format(username)
-        url = url + 'howmany={0}&'.format(howmany)
-        # zooID can also be permanantly set to zero.
-        zooID = '0'
-        url = url + 'zooid={0}&'.format(zooID)
-        url = url + 'imageid={0}'.format(uniqueID)
+        base = 'https://gravityspytools.ciera.northwestern.edu' + \
+            '/search/similarity_search_restful_API'
 
-        return GravitySpyTable.from_pandas(pandas.read_json(url))
+        parts = {
+            'username': 'sbc538',
+            'howmany': howmany,
+            'zooid': 0,
+            'imageid': uniqueID,
+        }
+
+        search = '&'.join('{}={}'.format(key, value) for
+                          key, value in parts.items())
+
+        url = '{}/?{}'.format(base, search)
+
+        with get_readable_fileobj(url) as f:
+            return GravitySpyTable(json.load(f))
