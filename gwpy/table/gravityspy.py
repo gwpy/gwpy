@@ -192,7 +192,8 @@ class GravitySpyTable(EventTable):
 
     @classmethod
     def search(cls, uniqueID, howmany=10):
-        """If table contains Gravity Spy triggers `EventTable`
+        """perform restful API version of search available here:
+        https://gravityspytools.ciera.northwestern.edu/search/
 
         Parameters
         ----------
@@ -203,11 +204,11 @@ class GravitySpyTable(EventTable):
         howmany : `int`, optional, default: 10
             number of similar images you would like
 
-        kwargs:
-
         Returns
         -------
-        Folder containing omega scans sorted by label
+        `GravitySpyTable` containing similar events based on
+        an evaluation of the Euclidean distance of the input image
+        to all other images in some Feature Space
         """
         from astropy.utils.data import get_readable_fileobj
         import json
