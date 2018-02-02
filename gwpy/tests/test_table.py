@@ -41,7 +41,7 @@ from astropy.table import vstack
 
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.segments import (Segment, SegmentList)
-from gwpy.table import (Table, EventTable, filters)
+from gwpy.table import (Table, EventTable, filters, GravitySpyTable)
 from gwpy.table.filter import filter_table
 from gwpy.table.io.hacr import (HACR_COLUMNS, get_hacr_triggers)
 from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
@@ -57,6 +57,7 @@ TEST_DATA_DIR = os.path.join(os.path.split(__file__)[0], 'data')
 TEST_XML_FILE = os.path.join(
     TEST_DATA_DIR, 'H1-LDAS_STRAIN-968654552-10.xml.gz')
 TEST_OMEGA_FILE = os.path.join(TEST_DATA_DIR, 'omega.txt')
+TEST_JSON_RESPONSE_FILE = os.path.join(TEST_DATA_DIR, 'test_json_query.json')
 
 
 # -- mocks --------------------------------------------------------------------
@@ -516,3 +517,17 @@ class TestEventTable(TestTable):
             utils.assert_table_equal(
                 filter_table(table, 'freq_central>500')['gps_start', 'snr'],
                 t2)
+
+
+class TestGravitySpyTable(TestTable):
+    TABLE = GravitySpyTable
+
+    def test_search(self):
+        from astropy.utils.data import get_readable_fileobj
+        import json
+
+        with get_readable_fileobj(TEST_JSON_RESPONSE_FILE) as f:
+            table = GravitySpyTable(json.load(f))
+
+        t2 = self.TABLE.search(uniqueID="8FHTgA8MEu", howmany=1)
+        utils.assert_table_equal(table, t2)
