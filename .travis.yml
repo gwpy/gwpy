@@ -9,7 +9,7 @@ env:
 matrix:
   include:
     # simple build
-    - python: 2.7
+    - python: '2.7'
       addons:
         apt:
           packages:
@@ -21,7 +21,7 @@ matrix:
             - texlive-fonts-recommended
             - dvipng
             - libhdf5-serial-dev
-    - python: 3.4
+    - python: '3.4'
       addons:
         apt:
           packages:
@@ -33,7 +33,7 @@ matrix:
             - texlive-fonts-recommended
             - dvipng
             - libhdf5-serial-dev
-    - python: 3.5
+    - python: '3.5'
       addons:
         apt:
           packages:
@@ -45,7 +45,7 @@ matrix:
             - texlive-fonts-recommended
             - dvipng
             - libhdf5-serial-dev
-    - python: 3.6
+    - python: '3.6'
       addons:
         apt:
           packages:
