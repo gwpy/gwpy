@@ -24,9 +24,9 @@ cd ${GWPY_PATH}
 
 . ci/lib.sh
 
-set -x && trap 'set +x' RETURN
-
 get_environment
+
+set -x
 
 # install for this OS
 if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then  # macports
