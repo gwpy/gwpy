@@ -59,7 +59,7 @@ matrix:
             - libhdf5-serial-dev
 
     - env: PIP_FLAGS="--upgrade --pre --quiet"
-      python: 'nightly'
+      python: '3.6'
       addons:
         apt:
           packages:
