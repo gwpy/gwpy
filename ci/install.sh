@@ -41,7 +41,7 @@ fi
 
 # install python extras
 ${PIP} install --upgrade pip
-${PIP} install --quiet ${PIP_FLAGS} "setuptools>=25"
+${PIP} install --quiet ${PIP_FLAGS} "setuptools>=36.2"
 ${PIP} install -r requirements-dev.txt --quiet ${PIP_FLAGS}
 
 set +x
