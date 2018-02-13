@@ -134,6 +134,25 @@ def fetch_run_json(run, detector, gpsstart, gpsend, host=LOSC_URL):
 
 # -- utilities ----------------------------------------------------------------
 
+def event_gps(event, host=LOSC_URL):
+    """Returns the GPS time of an open-data event
+
+    Parameters
+    ----------
+    event : `str`
+        the name of the event to query
+
+    host : `str`, optional
+        the URL of the LOSC host to query, defaults to losc.ligo.org
+
+    Returns
+    -------
+    gps : `float`
+        the GPS time of this event
+    """
+    return fetch_event_json(event, host=host)['GPS']
+
+
 def event_segment(event, host=LOSC_URL, **match):
     """Returns the GPS segment covered by a LOSC event dataset
 
