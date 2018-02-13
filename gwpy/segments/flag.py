@@ -400,10 +400,9 @@ class DataQualityFlag(object):
             filled appropriately.
         """
         url = kwargs.get('url', DEFAULT_SEGMENT_SERVER)
-        if 'dqsegdb' in url or re.match('https://[a-z1-9-]+.ligo.org', url):
-            return cls.query_dqsegdb(flag, *args, **kwargs)
-        else:
+        if urlparse(url).netloc.startswith('geosegdb.'):  # only DB2 server
             return cls.query_segdb(flag, *args, **kwargs)
+        return cls.query_dqsegdb(flag, *args, **kwargs)
 
     @classmethod
     def query_segdb(cls, flag, *args, **kwargs):
