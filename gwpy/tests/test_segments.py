@@ -672,8 +672,8 @@ class TestDataQualityFlag(object):
         assert segs.label == 'H1_DATA'
         utils.assert_segmentlist_equal(segs.known, [(946339215, 946368015)])
         utils.assert_segmentlist_equal(segs.active, [
-            (946340946, 946351800),
-            (946356479, 946360620),
+            (946340946, 946351799),
+            (946356479, 946360619),
             (946362652, 946368015),
         ])
 
