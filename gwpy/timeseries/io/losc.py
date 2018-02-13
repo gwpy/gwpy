@@ -263,10 +263,12 @@ def _fetch_losc_data_file(url, *args, **kwargs):
 
     with get_readable_fileobj(url, cache=cache, show_progress=verbose) as rem:
         if verbose:
-            print('Reading data... ')
+            print('Reading data...', end=' ')
         try:
             series = cls.read(rem, *args, **kwargs)
         except Exception as exc:
+            if verbose:
+                print('')
             exc.args = ("Failed to read LOSC data from %r: %s"
                         % (url, str(exc)),)
             raise
@@ -283,6 +285,8 @@ def _fetch_losc_data_file(url, *args, **kwargs):
                 except (TypeError, ValueError):  # don't care, bad LOSC
                     pass
 
+            if verbose:
+                print('[Done]')
             return series
 
 
