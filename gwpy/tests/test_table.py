@@ -520,7 +520,7 @@ class TestEventTable(TestTable):
 
 
 @utils.skip_minimum_version('astropy', '2.0.4')
-class TestGravitySpyTable(TestTable):
+class TestGravitySpyTable(TestEventTable):
     TABLE = GravitySpyTable
 
     def test_search(self):
