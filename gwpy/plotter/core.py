@@ -328,6 +328,11 @@ class Plot(figure.Figure):
         # make colour bar
         colorbar = self.colorbar(mappable, cax=cax, ax=ax, **kwargs)
 
+        # position ticks
+        if location == 'top':
+            cax.xaxis.tick_top()
+            cax.xaxis.set_label_position('top')
+
         # set label
         if label:
             colorbar.set_label(label)
