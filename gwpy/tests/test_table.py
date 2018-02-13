@@ -524,14 +524,15 @@ class TestGravitySpyTable(TestTable):
     TABLE = GravitySpyTable
 
     def test_search(self):
-        import json
         from ssl import SSLError
 
         try:
-            with open(TEST_JSON_RESPONSE_FILE) as f:
-                table = GravitySpyTable(json.load(f))
             t2 = self.TABLE.search(uniqueID="8FHTgA8MEu", howmany=1)
         except SSLError as e:
             pytest.skip(str(e))
+
+        import json
+        with open(TEST_JSON_RESPONSE_FILE) as f:
+            table = GravitySpyTable(json.load(f))
 
         utils.assert_table_equal(table, t2)
