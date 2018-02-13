@@ -518,6 +518,7 @@ class TestEventTable(TestTable):
                 filter_table(table, 'freq_central>500')['gps_start', 'snr'],
                 t2)
 
+
 @utils.skip_minimum_version('astropy', '2.0.4')
 class TestGravitySpyTable(TestTable):
     TABLE = GravitySpyTable
@@ -532,5 +533,5 @@ class TestGravitySpyTable(TestTable):
             t2 = self.TABLE.search(uniqueID="8FHTgA8MEu", howmany=1)
         except SSLError as e:
             pytest.skip(str(e))
-            
+
         utils.assert_table_equal(table, t2)
