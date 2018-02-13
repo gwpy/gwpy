@@ -729,3 +729,10 @@ class TestIoLosc(object):
         except (URLError, SSLError) as exc:
             pytest.skip(str(exc))
         assert sets == result
+
+    def test_event_gps(self):
+        try:
+            gps = io_losc.event_gps('GW170817')
+        except (URLError, SSLError) as exc:
+            pytest.skip(str(exc))
+        assert gps == 1187008882.43
