@@ -112,36 +112,31 @@ get_environment() {
     IFS='.' read PY_MAJOR_VERSION PY_MINOR_VERSION <<< "$pyversion"
     PY_XY="${PY_MAJOR_VERSION}${PY_MINOR_VERSION}"
     PYTHON=python$pyversion
+    PIP="${PYTHON} -m pip"
     case "$pkger" in
         "port")
             PY_DIST=python${PY_XY}
             PY_PREFIX=py${PY_XY}
-            PIP=pip-$pyversion
             ;;
         "apt-get")
             if [ ${PY_MAJOR_VERSION} == 2 ]; then
                 PY_DIST=python
                 PY_PREFIX=python
-                PIP=pip
             else
                 PY_DIST=python${PY_MAJOR_VERSION}
                 PY_PREFIX=python${PY_MAJOR_VERSION}
-                PIP=pip${PY_MAJOR_VERSION}
             fi
             ;;
         "yum")
             if [ ${PY_MAJOR_VERSION} == 2 ]; then
                 PY_DIST=python
                 PY_PREFIX=python
-                PIP=pip
             elif [ ${PY_XY} -eq 34 ]; then
                 PY_DIST=python${PY_XY}
                 PY_PREFIX=python${PY_XY}
-                PIP=pip${PY_MAJOR_VERSION}
             else
                 PY_DIST=python${PY_XY}u
                 PY_PREFIX=python${PY_XY}u
-                PIP=pip$pyversion
             fi
             ;;
     esac
