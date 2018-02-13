@@ -596,7 +596,8 @@ class TestDataQualityFlag(object):
                 RESULT = QUERY_RESULT[QUERY_FLAGS[0]].copy().coalesce()
             else:
                 result = query_segdb(self.TEST_CLASS.query, QUERY_FLAGS[0],
-                                     0, 10, url='https://segdb.does.not.exist')
+                                     0, 10,
+                                     url='https://geosegdb.does.not.exist')
                 RESULT = QUERY_RESULT[QUERY_FLAGS[0]]
         except ImportError as e:
             pytest.skip(str(e))
