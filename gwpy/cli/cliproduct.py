@@ -806,6 +806,7 @@ class CliProduct(object):
             if (un != 'undef') & (un != '') & (un != '*'):
                 all_units.add(un)
             else:
+                ts.override_unit('')
                 all_units.add('Counts')
 
         if len(all_units) == 1:
