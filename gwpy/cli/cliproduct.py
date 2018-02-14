@@ -58,6 +58,7 @@ class CliProduct(object):
     """
 
     __metaclass__ = abc.ABCMeta
+    BAD_UNITS = {'undef', '', '*'}
 
     def __init__(self):
 
@@ -515,8 +516,9 @@ class CliProduct(object):
                 else:
                     data = TimeSeries.fetch(chan, start, start+self.dur,
                                             verbose=verb)
-                if data.unit == '*':
-                    data.override_unit('')
+
+                if data.unit in self.BAD_UNITS:
+                    data.override_unit('COUNTS')
 
                 if highpass > 0 and lowpass == 0:
                     data = data.highpass(highpass)
@@ -803,11 +805,7 @@ class CliProduct(object):
         all_units = set()
         for ts in self.timeseries:
             un = str(ts.unit)
-            if (un != 'undef') & (un != '') & (un != '*'):
-                all_units.add(un)
-            else:
-                ts.override_unit('')
-                all_units.add('Counts')
+            all_units.add(un)
 
         if len(all_units) == 1:
             self.units = label_to_latex(all_units.pop())
