@@ -41,7 +41,7 @@ import time
 
 from dateutil.parser import parser
 
-from ..timeseries import TimeSeries
+from gwpy.timeseries import TimeSeries
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
@@ -515,6 +515,8 @@ class CliProduct(object):
                 else:
                     data = TimeSeries.fetch(chan, start, start+self.dur,
                                             verbose=verb)
+                if data.unit == '*':
+                    data.override_unit('')
 
                 if highpass > 0 and lowpass == 0:
                     data = data.highpass(highpass)
@@ -801,13 +803,13 @@ class CliProduct(object):
         all_units = set()
         for ts in self.timeseries:
             un = str(ts.unit)
-            if (un != 'undef') & (un != ''):
+            if (un != 'undef') & (un != '') & (un != '*'):
                 all_units.add(un)
             else:
                 all_units.add('Counts')
 
         if len(all_units) == 1:
-            self.units = all_units.pop()
+            self.units = label_to_latex(all_units.pop())
         else:
             self.units = 'Counts'
 
