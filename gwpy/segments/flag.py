@@ -1021,7 +1021,7 @@ class DataQualityDict(OrderedDict):
     # classmethods
 
     @classmethod
-    def query(cls, flag, *args, **kwargs):
+    def query(cls, flags, *args, **kwargs):
         """Query for segments of a set of flags.
 
         This method intelligently selects the `~DataQualityDict.query_segdb`
@@ -1052,14 +1052,13 @@ class DataQualityDict(OrderedDict):
 
         Returns
         -------
-        flag : `DataQualityFlag`
-            A new `DataQualityFlag`, with the `known` and `active` lists
-            filled appropriately.
+        flagdict : `DataQualityDict`
+            A `dict` of `(name, DataQualityFlag)` pairs
         """
         url = kwargs.get('url', DEFAULT_SEGMENT_SERVER)
         if urlparse(url).netloc.startswith('geosegdb.'):  # only DB2 server
-            return cls.query_segdb(flag, *args, **kwargs)
-        return cls.query_dqsegdb(flag, *args, **kwargs)
+            return cls.query_segdb(flags, *args, **kwargs)
+        return cls.query_dqsegdb(flags, *args, **kwargs)
 
     @classmethod
     def query_segdb(cls, flags, *args, **kwargs):
