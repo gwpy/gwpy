@@ -845,7 +845,7 @@ class TestDataQualityDict(object):
             RESULT = QUERY_RESULTC
         else:
             result = query_segdb(self.TEST_CLASS.query, QUERY_FLAGS,
-                                 0, 10, url='https://segdb.does.not.exist')
+                                 0, 10, url='https://geosegdb.does.not.exist')
             RESULT = QUERY_RESULT
 
         assert isinstance(result, self.TEST_CLASS)

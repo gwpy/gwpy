@@ -65,6 +65,20 @@ re_TAG_VERSION = re.compile(r"\A(?P<tag>[^/]+):(?P<version>\d+)\Z")
 DEFAULT_SEGMENT_SERVER = os.getenv('DEFAULT_SEGMENT_SERVER',
                                    'https://segments.ligo.org')
 
+# -- utilities ----------------------------------------------------------------
+
+
+def _select_query_method(cls, url):
+    """Select the correct query method based on the URL
+
+    Works for `DataQualityFlag` and `DataQualityDict`
+    """
+    if urlparse(url).netloc.startswith('geosegdb.'):  # only DB2 server
+        return cls.query_segdb
+    return cls.query_dqsegdb
+
+
+# -- DataQualityFlag ----------------------------------------------------------
 
 class DataQualityFlag(object):
     """A representation of a named set of segments.
@@ -399,10 +413,9 @@ class DataQualityFlag(object):
             A new `DataQualityFlag`, with the `known` and `active` lists
             filled appropriately.
         """
-        url = kwargs.get('url', DEFAULT_SEGMENT_SERVER)
-        if urlparse(url).netloc.startswith('geosegdb.'):  # only DB2 server
-            return cls.query_segdb(flag, *args, **kwargs)
-        return cls.query_dqsegdb(flag, *args, **kwargs)
+        query_ = _select_query_method(
+            cls, kwargs.get('url', DEFAULT_SEGMENT_SERVER))
+        return query_(flag, *args, **kwargs)
 
     @classmethod
     def query_segdb(cls, flag, *args, **kwargs):
@@ -1021,7 +1034,7 @@ class DataQualityDict(OrderedDict):
     # classmethods
 
     @classmethod
-    def query(cls, flag, *args, **kwargs):
+    def query(cls, flags, *args, **kwargs):
         """Query for segments of a set of flags.
 
         This method intelligently selects the `~DataQualityDict.query_segdb`
@@ -1052,14 +1065,12 @@ class DataQualityDict(OrderedDict):
 
         Returns
         -------
-        flag : `DataQualityFlag`
-            A new `DataQualityFlag`, with the `known` and `active` lists
-            filled appropriately.
+        flagdict : `DataQualityDict`
+            A `dict` of `(name, DataQualityFlag)` pairs
         """
-        url = kwargs.get('url', DEFAULT_SEGMENT_SERVER)
-        if 'dqsegdb' in url or re.match('https://[a-z1-9-]+.ligo.org', url):
-            return cls.query_dqsegdb(flag, *args, **kwargs)
-        return cls.query_segdb(flag, *args, **kwargs)
+        query_ = _select_query_method(
+            cls, kwargs.get('url', DEFAULT_SEGMENT_SERVER))
+        return query_(flags, *args, **kwargs)
 
     @classmethod
     def query_segdb(cls, flags, *args, **kwargs):
