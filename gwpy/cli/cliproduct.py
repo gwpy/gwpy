@@ -58,7 +58,7 @@ class CliProduct(object):
     """
 
     __metaclass__ = abc.ABCMeta
-    BAD_UNITS = {'undef', '', '*'}
+    BAD_UNITS = ['undef', '', '*']
 
     def __init__(self):
 
@@ -518,7 +518,7 @@ class CliProduct(object):
                                             verbose=verb)
 
                 if data.unit in self.BAD_UNITS:
-                    data.override_unit('COUNTS')
+                    data.override_unit('count')
 
                 if highpass > 0 and lowpass == 0:
                     data = data.highpass(highpass)
