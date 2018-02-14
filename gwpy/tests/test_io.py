@@ -705,9 +705,9 @@ class TestIoLosc(object):
         assert sorted(list(jdata.keys())) == ['events', 'runs']
         assert jdata['events']['GW150914'] == {
             'DQbits': 7,
-            'GPStime': 1126259462.0,
+            'GPStime': 1126259462.4,
             'INJbits': 5,
-            'UTCtime': u'2015-09-14T09:50:45',
+            'UTCtime': u'2015-09-14T09:50:45.400000',
             'detectors': [u'L1', u'H1'],
             'frametype': u'%s_HOFT_C02',
         }
