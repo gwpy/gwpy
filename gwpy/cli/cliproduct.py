@@ -41,7 +41,7 @@ import time
 
 from dateutil.parser import parser
 
-from gwpy.timeseries import TimeSeries
+from ..timeseries import TimeSeries
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
@@ -58,7 +58,7 @@ class CliProduct(object):
     """
 
     __metaclass__ = abc.ABCMeta
-    BAD_UNITS = ['undef', '', '*']
+    BAD_UNITS = {'*',}
 
     def __init__(self):
 
