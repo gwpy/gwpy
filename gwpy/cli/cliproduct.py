@@ -517,8 +517,8 @@ class CliProduct(object):
                     data = TimeSeries.fetch(chan, start, start+self.dur,
                                             verbose=verb)
 
-                if data.unit in self.BAD_UNITS:
-                    data.override_unit('count')
+                if str(data.unit) in self.BAD_UNITS:
+                    data.override_unit('undef')
 
                 if highpass > 0 and lowpass == 0:
                     data = data.highpass(highpass)
@@ -809,8 +809,10 @@ class CliProduct(object):
 
         if len(all_units) == 1:
             self.units = label_to_latex(all_units.pop())
+        elif len(all_units) > 1:
+            self.units = 'Multiple units'
         else:
-            self.units = 'Counts'
+            self.units = 'undef'
 
         if args.ylabel:
             ylabel = label_to_latex(args.ylabel)
