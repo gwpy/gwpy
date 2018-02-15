@@ -58,7 +58,7 @@ class CliProduct(object):
     """
 
     __metaclass__ = abc.ABCMeta
-    BAD_UNITS = {'*',}
+    BAD_UNITS = {'*', }
 
     def __init__(self):
 
