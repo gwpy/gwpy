@@ -22,9 +22,11 @@
 import os.path
 import shutil
 import tempfile
+from ssl import SSLError
 
 from six import PY2
 from six.moves import StringIO
+from six.moves.urllib.error import URLError
 
 import pytest
 
@@ -524,11 +526,9 @@ class TestGravitySpyTable(TestEventTable):
     TABLE = GravitySpyTable
 
     def test_search(self):
-        from ssl import SSLError
-
         try:
             t2 = self.TABLE.search(uniqueID="8FHTgA8MEu", howmany=1)
-        except SSLError as e:
+        except (URLError, SSLError) as e:
             pytest.skip(str(e))
 
         import json
