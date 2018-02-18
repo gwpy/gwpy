@@ -31,6 +31,7 @@ from __future__ import absolute_import
 import datetime
 import json
 import operator
+import os
 import re
 import warnings
 from io import StringIO
@@ -61,6 +62,23 @@ re_IFO_TAG_VERSION = re.compile(
 re_IFO_TAG = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+)\Z")
 re_TAG_VERSION = re.compile(r"\A(?P<tag>[^/]+):(?P<version>\d+)\Z")
 
+DEFAULT_SEGMENT_SERVER = os.getenv('DEFAULT_SEGMENT_SERVER',
+                                   'https://segments.ligo.org')
+
+# -- utilities ----------------------------------------------------------------
+
+
+def _select_query_method(cls, url):
+    """Select the correct query method based on the URL
+
+    Works for `DataQualityFlag` and `DataQualityDict`
+    """
+    if urlparse(url).netloc.startswith('geosegdb.'):  # only DB2 server
+        return cls.query_segdb
+    return cls.query_dqsegdb
+
+
+# -- DataQualityFlag ----------------------------------------------------------
 
 class DataQualityFlag(object):
     """A representation of a named set of segments.
@@ -378,8 +396,9 @@ class DataQualityFlag(object):
             defining a number of summary segments
 
         url : `str`, optional
-            URL of the segment database,
-            default: ``'https://segments.ligo.org'``
+            URL of the segment database, defaults to
+            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
+            ``'https://segments.ligo.org'``
 
         See Also
         --------
@@ -394,11 +413,9 @@ class DataQualityFlag(object):
             A new `DataQualityFlag`, with the `known` and `active` lists
             filled appropriately.
         """
-        url = kwargs.get('url', 'https://segments.ligo.org')
-        if 'dqsegdb' in url or re.match('https://[a-z1-9-]+.ligo.org', url):
-            return cls.query_dqsegdb(flag, *args, **kwargs)
-        else:
-            return cls.query_segdb(flag, *args, **kwargs)
+        query_ = _select_query_method(
+            cls, kwargs.get('url', DEFAULT_SEGMENT_SERVER))
+        return query_(flag, *args, **kwargs)
 
     @classmethod
     def query_segdb(cls, flag, *args, **kwargs):
@@ -414,8 +431,10 @@ class DataQualityFlag(object):
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
 
-        url : `str`, optional, default: ``'https://segments.ligo.org'``
-            URL of the segment database
+        url : `str`, optional
+            URL of the segment database, defaults to
+            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
+            ``'https://segments.ligo.org'``
 
         Returns
         -------
@@ -464,8 +483,10 @@ class DataQualityFlag(object):
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
 
-        url : `str`, optional, default: ``'https://segments.ligo.org'``
-            URL of the segment database
+        url : `str`, optional
+            URL of the segment database, defaults to
+            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
+            ``'https://segments.ligo.org'``
 
         Returns
         -------
@@ -486,7 +507,7 @@ class DataQualityFlag(object):
 
         # get server
         protocol, server = kwargs.pop(
-            'url', 'https://segments.ligo.org').split('://', 1)
+            'url', DEFAULT_SEGMENT_SERVER).split('://', 1)
 
         # parse flag
         out = cls(name=flag)
@@ -662,7 +683,7 @@ class DataQualityFlag(object):
         -----"""
         return io_registry.write(self, target, *args, **kwargs)
 
-    def populate(self, source='https://segments.ligo.org', segments=None,
+    def populate(self, source=DEFAULT_SEGMENT_SERVER, segments=None,
                  pad=True, **kwargs):
         """Query the segment database for this flag's active segments.
 
@@ -1013,7 +1034,7 @@ class DataQualityDict(OrderedDict):
     # classmethods
 
     @classmethod
-    def query(cls, flag, *args, **kwargs):
+    def query(cls, flags, *args, **kwargs):
         """Query for segments of a set of flags.
 
         This method intelligently selects the `~DataQualityDict.query_segdb`
@@ -1030,8 +1051,10 @@ class DataQualityDict(OrderedDict):
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
 
-        url : `str`, optional, default: ``'https://segments.ligo.org'``
-            URL of the segment database
+        url : `str`, optional
+            URL of the segment database, defaults to
+            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
+            ``'https://segments.ligo.org'``
 
         See Also
         --------
@@ -1042,14 +1065,12 @@ class DataQualityDict(OrderedDict):
 
         Returns
         -------
-        flag : `DataQualityFlag`
-            A new `DataQualityFlag`, with the `known` and `active` lists
-            filled appropriately.
+        flagdict : `DataQualityDict`
+            A `dict` of `(name, DataQualityFlag)` pairs
         """
-        url = kwargs.get('url', 'https://segments.ligo.org')
-        if 'dqsegdb' in url or re.match('https://[a-z1-9-]+.ligo.org', url):
-            return cls.query_dqsegdb(flag, *args, **kwargs)
-        return cls.query_segdb(flag, *args, **kwargs)
+        query_ = _select_query_method(
+            cls, kwargs.get('url', DEFAULT_SEGMENT_SERVER))
+        return query_(flags, *args, **kwargs)
 
     @classmethod
     def query_segdb(cls, flags, *args, **kwargs):
@@ -1063,8 +1084,10 @@ class DataQualityDict(OrderedDict):
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments.
-        url : `str`, optional, default: ``'https://segments.ligo.org'``
-            URL of the segment database.
+        url : `str`, optional
+            URL of the segment database, defaults to
+            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
+            ``'https://segments.ligo.org'``
 
         Returns
         -------
@@ -1084,7 +1107,7 @@ class DataQualityDict(OrderedDict):
             raise ValueError("DataQualityDict.query_segdb must be called with "
                              "a list of flag names, and either GPS start and "
                              "stop times, or a SegmentList of query segments")
-        url = kwargs.pop('url', 'https://segments.ligo.org')
+        url = kwargs.pop('url', DEFAULT_SEGMENT_SERVER)
         if kwargs.pop('on_error', None) is not None:
             warnings.warn("DataQualityDict.query_segdb doesn't accept the "
                           "on_error keyword argument")
@@ -1166,8 +1189,10 @@ class DataQualityDict(OrderedDict):
             - `'warn'`: print a warning
             - `'ignore'`: move onto the next flag as if nothing happened
 
-        url : `str`, optional, default: ``'https://segments.ligo.org'``
-            URL of the segment database.
+        url : `str`, optional
+            URL of the segment database, defaults to
+            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
+            ``'https://segments.ligo.org'``
 
         Returns
         -------
@@ -1466,7 +1491,7 @@ class DataQualityDict(OrderedDict):
         -----"""
         return io_registry.write(self, target, *args, **kwargs)
 
-    def populate(self, source='https://segments.ligo.org',
+    def populate(self, source=DEFAULT_SEGMENT_SERVER,
                  segments=None, pad=True, on_error='raise', **kwargs):
         """Query the segment database for each flag's active segments.
 

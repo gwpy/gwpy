@@ -158,7 +158,7 @@ def assert_table_equal(a, b, is_copy=True, meta=False, check_types=True,
         cola = a[name]
         colb = b[name]
         if check_types:
-            assert cola.dtype is colb.dtype
+            assert cola.dtype == colb.dtype
         assert_array(cola, colb)
 
     # check that the tables are copied or the same data
