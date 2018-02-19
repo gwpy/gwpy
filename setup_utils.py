@@ -366,15 +366,8 @@ class port(Command):
         with temp_directory() as tmpd:
             # download dist file
             if self.tarball is None:
-                from pip.commands.download import DownloadCommand
-                dcmd = DownloadCommand()
-                rset = dcmd.run(*dcmd.parse_args([
-                    '{}=={}'.format(self.distributions.get_name(),
-                                    self.version),
-                    '--dest', tmpd, '--no-deps', '--no-binary', ':all:',
-                ]))
-                self.tarball = os.path.join(
-                    tmpd, rset.requirements['gwpy'].link.filename)
+                self.tarball = self._download(self.distribution.get_name(),
+                                              self.version, tmpd)
 
             # get checksum digests
             log.info('reading distribution tarball %r' % self.tarball)
@@ -394,6 +387,19 @@ class port(Command):
                     version=self.version, **checksum),
                     file=fport)
             log.info('portfile written to %r' % self.portfile)
+
+    @staticmethod
+    def _download(name, version, targetdir):
+        from pip.commands.download import DownloadCommand
+        dcmd = DownloadCommand()
+        rset = dcmd.run(*dcmd.parse_args([
+            '{}=={}'.format(name, version),
+            '--dest', targetdir, '--no-deps', '--no-binary', ':all:',
+        ]))
+        log.info('downloaded {}'.format(
+            rset.requirements[name].link.url_without_fragment))
+        return os.path.join(
+            targetdir, rset.requirements[name].link.filename)
 
     @staticmethod
     def _get_sha(data, algorithm=256):
