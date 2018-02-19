@@ -87,7 +87,8 @@ extras_require = {
     'segments': ['dqsegdb'],
     'hacr': ['pymysql'],
     'docs': ['sphinx>=1.6.1', 'numpydoc', 'sphinx-bootstrap-theme>=0.6',
-             'sphinxcontrib-programoutput', 'sphinx-automodapi'],
+             'sphinxcontrib-programoutput', 'sphinx-automodapi',
+             'requests'],
 }
 
 # define 'all' as the intersection of all extras
