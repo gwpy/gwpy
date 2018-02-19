@@ -35,8 +35,10 @@ if args.output_file:
 else:
     f = sys.stdout
 
+
 def _print(*args):
     return print(*args, file=f)
+
 
 with f:
     _print("""
@@ -44,10 +46,13 @@ with f:
 Citing GWpy
 ###########
 
-If you have used GWpy as part of a project that leads to a scientific publication, please acknowledge this by citing the DOI for the version of GWpy that you have used.
+If you have used GWpy as part of a project that leads to a scientific
+publication, please acknowledge this by citing the DOI for the version of
+GWpy that you have used.
 
 Each of the DOIs below resolves a Zenodo record for that version.
-See the _Export_ section on each page for formatted citations in a number of common styles.
+See the _Export_ section on each page for formatted citations in a number
+of common styles.
 
 The list below includes only the {hits} most recent releases of GWpy.
 For older versions, please `click here <{weburl}>`__.
@@ -60,6 +65,6 @@ For older versions, please `click here <{weburl}>`__.
         _print('-' * len(version))
         _print('')
         _print('.. image:: {badge}\n'
-              '   :target: {doi}'.format(**hit['links']))
+               '   :target: {doi}'.format(**hit['links']))
         if i < args.hits - 1:
             _print('')
