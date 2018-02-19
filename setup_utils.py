@@ -21,6 +21,7 @@
 
 from __future__ import print_function
 
+import contextlib
 import datetime
 import glob
 import hashlib
@@ -109,6 +110,15 @@ def get_gitpython_version():
     if LooseVersion(git_version) >= '2.15':
         return 'GitPython>=2.1.8'
     return 'GitPython'
+
+
+@contextlib.contextmanager
+def temp_directory():
+    temp_dir = tempfile.mkdtemp()
+    try:
+        yield temp_dir
+    finally:
+        shutil.rmtree(temp_dir)
 
 
 # -- custom commands ----------------------------------------------------------
@@ -331,7 +341,7 @@ class port(Command):
     ]
 
     def initialize_options(self):
-        self.version = None
+        self.version = self.distribution.get_version()
         self.portfile = 'Portfile'
         self.template = DEFAULT_PORT_TEMPLATE
         self._template = None
@@ -344,29 +354,37 @@ class port(Command):
 
     def run(self):
         # find dist file
-        dist = os.path.join(
-            'dist',
-            '%s-%s.tar.gz' % (self.distribution.get_name(),
-                              self.distribution.get_version()))
-        # run sdist if needed
-        if not os.path.isfile(dist):
-            self.run_command('sdist')
-        # get checksum digests
-        log.info('reading distribution tarball %r' % dist)
-        with open(dist, 'rb') as fobj:
-            data = fobj.read()
-        log.info('recovered digests:')
-        digest = dict()
-        digest['rmd160'] = self._get_rmd160(dist)
-        for algo in [1, 256]:
-            digest['sha%d' % algo] = self._get_sha(data, algo)
-        for key, val in digest.iteritems():
-            log.info('    %s: %s' % (key, val))
-        # write finished portfile to file
-        with open(self.portfile, 'w') as fport:
-            print(self._template.render(
-                version=self.distribution.get_version(), **digest), file=fport)
-        log.info('portfile written to %r' % self.portfile)
+        name = self.distribution.get_name()
+
+        with temp_directory() as tmpd:
+            # download dist file
+            from pip.commands.download import DownloadCommand
+            dcmd = DownloadCommand()
+            rset = dcmd.run(*dcmd.parse_args([
+                '{}=={}'.format(name, self.version), '--dest', tmpd,
+                '--no-deps', '--no-binary', ':all:',
+            ]))
+            tarball = os.path.join(
+                tmpd, rset.requirements['gwpy'].link.filename)
+
+            # get checksum digests
+            log.info('reading distribution tarball %r' % tarball)
+            with open(tarball, 'rb') as fobj:
+                data = fobj.read()
+            log.info('recovered checksums:')
+            checksum = dict()
+            checksum['rmd160'] = self._get_rmd160(tarball)
+            for algo in [1, 256]:
+                checksum['sha%d' % algo] = self._get_sha(data, algo)
+            checksum['size'] = os.path.getsize(tarball)
+            for key, val in checksum.iteritems():
+                log.info('    %s: %s' % (key, val))
+            # write finished portfile to file
+            with open(self.portfile, 'w') as fport:
+                print(self._template.render(
+                    version=self.version, **checksum),
+                    file=fport)
+            log.info('portfile written to %r' % self.portfile)
 
     @staticmethod
     def _get_sha(data, algorithm=256):
