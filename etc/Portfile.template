@@ -8,7 +8,7 @@ github.setup        gwpy gwpy {{ version }} v
 name                py-gwpy
 
 categories-append   science
-maintainers         {ligo.org:duncan.macleod @duncanmmacleod}
+maintainers         {ligo.org:duncan.macleod @duncanmmacleod} openmaintainer
 
 platforms           darwin
 license             GPL-3
@@ -21,14 +21,14 @@ homepage            https://gwpy.github.io
 
 master_sites        pypi:g/gwpy \
                     https://github.com/gwpy/gwpy/releases/v${version}/
-distname            gwpy-${version}
 
 checksums   rmd160  {{ rmd160 }} \
-            sha256  {{ sha256 }}
+            sha256  {{ sha256 }} \
+            size    {{ size }}
 
 # until glue is available for multiple python versions, we are stuck to
 # python 2.7
-#python.versions     27 34 35 36
+
 python.versions     27
 python.default_version 27
 
