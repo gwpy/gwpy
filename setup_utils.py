@@ -363,18 +363,15 @@ class port(Command):
             self.version = self.distribution.get_version()
 
     def run(self):
-        # find dist file
-        name = self.distribution.get_name()
-        print(self.version)
-
         with temp_directory() as tmpd:
             # download dist file
             if self.tarball is None:
                 from pip.commands.download import DownloadCommand
                 dcmd = DownloadCommand()
                 rset = dcmd.run(*dcmd.parse_args([
-                    '{}=={}'.format(name, self.version), '--dest', tmpd,
-                    '--no-deps', '--no-binary', ':all:',
+                    '{}=={}'.format(self.distributions.get_name(),
+                                    self.version),
+                    '--dest', tmpd, '--no-deps', '--no-binary', ':all:',
                 ]))
                 self.tarball = os.path.join(
                     tmpd, rset.requirements['gwpy'].link.filename)
@@ -386,11 +383,11 @@ class port(Command):
             log.info('recovered checksums:')
             checksum = dict()
             checksum['rmd160'] = self._get_rmd160(self.tarball)
-            for algo in [1, 256]:
-                checksum['sha%d' % algo] = self._get_sha(data, algo)
+            checksum['sha256'] = self._get_sha(data)
             checksum['size'] = os.path.getsize(self.tarball)
             for key, val in checksum.iteritems():
                 log.info('    %s: %s' % (key, val))
+
             # write finished portfile to file
             with open(self.portfile, 'w') as fport:
                 print(self._template.render(
