@@ -434,7 +434,7 @@ class TimeSeries(TimeSeriesBase):
         # calculate PSD using UI method
         return fft_ui.average_spectrogram(self, method_func, stride,
                                           fftlength=fftlength, overlap=overlap,
-                                          **kwargs)
+                                          window=window, **kwargs)
 
     def spectrogram2(self, fftlength, overlap=0, **kwargs):
         """Calculate the non-averaged power `Spectrogram` of this `TimeSeries`
