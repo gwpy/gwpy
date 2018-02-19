@@ -334,6 +334,7 @@ class port(Command):
     """
     description = 'generate a Macports Portfile'
     user_options = [
+        ('tarball=', None, 'the distribution tarball to use'),
         ('version=', None, 'the X.Y.Z package version'),
         ('portfile=', None, 'target output file, default: \'Portfile\''),
         ('template=', None,
@@ -341,7 +342,8 @@ class port(Command):
     ]
 
     def initialize_options(self):
-        self.version = self.distribution.get_version()
+        self.tarball = None
+        self.version = None
         self.portfile = 'Portfile'
         self.template = DEFAULT_PORT_TEMPLATE
         self._template = None
@@ -351,32 +353,42 @@ class port(Command):
         with open(self.template, 'r') as t:
             # pylint: disable=attribute-defined-outside-init
             self._template = Template(t.read())
+        if self.version is None and self.tarball is not None:
+            if self.tarball.endswith('.gz'):
+                stub = os.path.splitext(self.tarball[:-3])[0]
+            else:
+                stub = os.path.splitext(self.tarball)[0]
+            self.version = stub.rsplit('-', 1)[-1]
+        elif self.version is None:
+            self.version = self.distribution.get_version()
 
     def run(self):
         # find dist file
         name = self.distribution.get_name()
+        print(self.version)
 
         with temp_directory() as tmpd:
             # download dist file
-            from pip.commands.download import DownloadCommand
-            dcmd = DownloadCommand()
-            rset = dcmd.run(*dcmd.parse_args([
-                '{}=={}'.format(name, self.version), '--dest', tmpd,
-                '--no-deps', '--no-binary', ':all:',
-            ]))
-            tarball = os.path.join(
-                tmpd, rset.requirements['gwpy'].link.filename)
+            if self.tarball is None:
+                from pip.commands.download import DownloadCommand
+                dcmd = DownloadCommand()
+                rset = dcmd.run(*dcmd.parse_args([
+                    '{}=={}'.format(name, self.version), '--dest', tmpd,
+                    '--no-deps', '--no-binary', ':all:',
+                ]))
+                self.tarball = os.path.join(
+                    tmpd, rset.requirements['gwpy'].link.filename)
 
             # get checksum digests
-            log.info('reading distribution tarball %r' % tarball)
-            with open(tarball, 'rb') as fobj:
+            log.info('reading distribution tarball %r' % self.tarball)
+            with open(self.tarball, 'rb') as fobj:
                 data = fobj.read()
             log.info('recovered checksums:')
             checksum = dict()
-            checksum['rmd160'] = self._get_rmd160(tarball)
+            checksum['rmd160'] = self._get_rmd160(self.tarball)
             for algo in [1, 256]:
                 checksum['sha%d' % algo] = self._get_sha(data, algo)
-            checksum['size'] = os.path.getsize(tarball)
+            checksum['size'] = os.path.getsize(self.tarball)
             for key, val in checksum.iteritems():
                 log.info('    %s: %s' % (key, val))
             # write finished portfile to file
