@@ -22,6 +22,7 @@ numpydoc
 sphinx-bootstrap-theme >= 0.6
 sphinxcontrib-programoutput
 sphinx-automodapi
+requests
 
 # tests
 pytest >= 3.1

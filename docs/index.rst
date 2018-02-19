@@ -29,6 +29,7 @@ First steps
 
    What is GWpy? <overview>
    How do I install GWpy? <install/index>
+   Citing GWpy <citing>
 
 Working with data
 ~~~~~~~~~~~~~~~~~
