@@ -316,7 +316,7 @@ class TestSignalFftLal(object):
         assert isinstance(w, lal.REAL4Window)
         assert w.sum == 32.31817089602309
         # test errors
-        with pytest.raises(AttributeError):
+        with pytest.raises(ValueError)
             fft_lal.generate_window(128, 'unknown')
         with pytest.raises(AttributeError):
             fft_lal.generate_window(128, dtype=int)
