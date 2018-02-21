@@ -982,31 +982,37 @@ class TestTimeSeries(TestTimeSeriesBase):
                     raise
 
         # test defaults
-        sg = _spectrogram(1)
-        assert isinstance(sg, Spectrogram)
-        assert sg.shape == (abs(losc.span), losc.sample_rate.value // 2 + 1)
-        assert sg.f0 == 0 * units.Hz
-        assert sg.df == 1 * units.Hz
-        assert sg.channel is losc.channel
-        assert sg.unit == losc.unit ** 2 / units.Hz
-        assert sg.epoch == losc.epoch
-        assert sg.span == losc.span
+        if method.endswith('median_mean'):
+            errctx = pytest.raises(ValueError)
+        else:
+            errctx = null_context()
+        with errctx:
+            sg = _spectrogram(1)
+            assert isinstance(sg, Spectrogram)
+            assert sg.shape == (abs(losc.span), losc.sample_rate.value // 2 + 1)
+            assert sg.f0 == 0 * units.Hz
+            assert sg.df == 1 * units.Hz
+            assert sg.channel is losc.channel
+            assert sg.unit == losc.unit ** 2 / units.Hz
+            assert sg.epoch == losc.epoch
+            assert sg.span == losc.span
 
-        # check the same result as PSD
-        with ctx():
-            if window == 'array':
-                win = signal.get_window('hamming', int(losc.sample_rate.value))
-            else:
-                win = window
-            n = int(losc.sample_rate.value)
-            overlap = 0
-            if window in {'hann'}:
-                overlap = .5
-                n += int(overlap * losc.sample_rate.value)
-            psd = losc[:n].psd(fftlength=1, overlap=overlap,
-                               method=method, window=win)
-        # FIXME: epoch should not be excluded here (probably)
-        utils.assert_quantity_sub_equal(sg[0], psd, exclude=['epoch'])
+            # check the same result as PSD
+            with ctx():
+                if window == 'array':
+                    win = signal.get_window(
+                        'hamming', int(losc.sample_rate.value))
+                else:
+                    win = window
+                n = int(losc.sample_rate.value)
+                overlap = 0
+                if window in {'hann'}:
+                    overlap = .5
+                    n += int(overlap * losc.sample_rate.value)
+                psd = losc[:n].psd(fftlength=1, overlap=overlap,
+                                   method=method, window=win)
+            # FIXME: epoch should not be excluded here (probably)
+            utils.assert_quantity_sub_equal(sg[0], psd, exclude=['epoch'])
 
         # test fftlength
         sg = _spectrogram(1, fftlength=0.5)
