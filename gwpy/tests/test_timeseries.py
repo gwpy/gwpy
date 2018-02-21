@@ -849,7 +849,7 @@ class TestTimeSeries(TestTimeSeriesBase):
     @pytest.mark.parametrize('library, method', chain(
         product([None], ['welch', 'bartlett']),
         product(['scipy'], ['welch', 'bartlett']),
-        product(['pycbc'], ['welch', 'bartlett', 'median', 'median_mean']),
+        product(['pycbc.psd'], ['welch', 'bartlett', 'median', 'median_mean']),
         product(['lal'], ['welch', 'bartlett', 'median', 'median_mean']),
     ))
     @pytest.mark.parametrize(
@@ -861,7 +861,7 @@ class TestTimeSeries(TestTimeSeriesBase):
                 importlib.import_module(library)
             except ImportError as exc:
                 pytest.skip(str(exc))
-
+            library = library.split('.', 1)[0]
             method = '{}_{}'.format(library, method)
 
         def _psd(fftlength, overlap, **kwargs):
@@ -939,7 +939,7 @@ class TestTimeSeries(TestTimeSeriesBase):
     @pytest.mark.parametrize('library, method', chain(
         product([None], ['welch', 'bartlett']),
         product(['scipy'], ['welch', 'bartlett']),
-        product(['pycbc'], ['welch', 'bartlett', 'median', 'median_mean']),
+        product(['pycbc.psd'], ['welch', 'bartlett', 'median', 'median_mean']),
         product(['lal'], ['welch', 'bartlett', 'median', 'median_mean']),
     ))
     @pytest.mark.parametrize(
@@ -951,6 +951,7 @@ class TestTimeSeries(TestTimeSeriesBase):
                 importlib.import_module(library)
             except ImportError as exc:
                 pytest.skip(str(exc))
+            library = library.split('.', 1)[0]
             method = '{}_{}'.format(library, method)
             ctx = null_context
         else:
