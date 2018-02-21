@@ -269,7 +269,11 @@ class TestSignalFftUI(object):
         ftp = fft_ui.normalize_fft_params(
             TimeSeries(numpy.zeros(1024), sample_rate=256),
             {'window': 'hann'})
-        assert ftp == {'nfft': 1024, 'noverlap': 512, 'window': 'hann'}
+        win = signal.get_window('hann', 1024)
+        assert ftp.pop('nfft') == 1024
+        assert ftp.pop('noverlap') == 512
+        utils.assert_array_equal(ftp.pop('window'), win)
+        assert not ftp
 
 
 # -- gwpy.signal.fft.utils ----------------------------------------------------
