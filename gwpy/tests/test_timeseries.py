@@ -1012,7 +1012,8 @@ class TestTimeSeries(TestTimeSeriesBase):
                 psd = losc[:n].psd(fftlength=1, overlap=overlap,
                                    method=method, window=win)
             # FIXME: epoch should not be excluded here (probably)
-            utils.assert_quantity_sub_equal(sg[0], psd, exclude=['epoch'])
+            utils.assert_quantity_sub_equal(sg[0], psd, exclude=['epoch'],
+                                            almost_equal=True)
 
         # test fftlength
         sg = _spectrogram(1, fftlength=0.5)
@@ -1028,10 +1029,7 @@ class TestTimeSeries(TestTimeSeriesBase):
 
         # test multiprocessing
         sg2 = _spectrogram(1, fftlength=0.5, nproc=2)
-        try:
-            utils.assert_quantity_sub_equal(sg, sg2)
-        except AssertionError:  # old numpy?
-            utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
+        utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
 
         # check that `cross` keyword gets deprecated properly
         # TODO: removed before 1.0 release
@@ -1044,7 +1042,8 @@ class TestTimeSeries(TestTimeSeriesBase):
             assert '`cross` keyword argument has been deprecated' in \
                 wng[0].message.args[0]
             utils.assert_quantity_sub_equal(
-                out, losc.csd_spectrogram(losc, 0.5, fftlength=.25))
+                out, losc.csd_spectrogram(losc, 0.5, fftlength=.25),
+                almost_equal=True)
 
     def test_spectrogram2(self, losc):
         # test defaults
