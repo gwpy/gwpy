@@ -32,7 +32,7 @@ from scipy.signal import get_window
 
 from astropy.units import Quantity
 
-from . import utils as fft_utils
+from . import (utils as fft_utils, get_default_fft_api)
 from ...utils import mp as mp_utils
 from ..window import (canonical_name, recommended_overlap)
 
@@ -166,7 +166,7 @@ def set_fft_params(func):
             data = series
 
         # normalise FFT parmeters for all libraries
-        library = method_func.__module__.rsplit('.', 1)[-1]
+        library = _fft_library(method_func)
         normalize_fft_params(data, kwargs=kwargs, library=library)
 
         return func(series, method_func, *args, **kwargs)
@@ -243,7 +243,7 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
     nstride = seconds_to_samples(stride, timeseries.sample_rate)
     kwargs['fftlength'] = kwargs.pop('fftlength', stride) or stride
     normalize_fft_params(timeseries, kwargs=kwargs,
-                         library=method_func.__module__.rsplit('.', 1)[-1])
+                         library=_fft_library(method_func))
     nfft = kwargs['nfft']
     noverlap = kwargs['noverlap']
 
@@ -370,3 +370,10 @@ def _chunk_timeseries(series, nstride, noverlap):
         yield series[x:y]
         x += step
         step = nstride
+
+
+def _fft_library(method_func):
+    mod = method_func.__module__.rsplit('.', 1)[-1]
+    if mod == 'basic':
+        return get_default_fft_api().split('.', 1)[0]
+    return mod
