@@ -170,10 +170,10 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
     noverlap : `int`
         number of samples to overlap between segments, defaults to 50%.
 
-    window : `tuple`, `str`, optional
-        window parameters to apply to timeseries prior to FFT
+    window : `lal.REAL8Window`, optional
+        window to apply to timeseries prior to FFT
 
-    plan : `REAL8FFTPlan`, optional
+    plan : `lal.REAL8FFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
 
     Returns
@@ -192,11 +192,6 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
     # get window
     if window is None:
         window = generate_window(segmentlength, dtype=timeseries.dtype)
-    elif isinstance(window, (tuple, str)):
-        window = generate_window(segmentlength, window=window,
-                                 dtype=timeseries.dtype)
-    elif isinstance(window, numpy.ndarray):
-        window = window_from_array(window)
 
     # get FFT plan
     if plan is None:

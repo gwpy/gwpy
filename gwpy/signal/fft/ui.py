@@ -70,7 +70,7 @@ def seconds_to_samples(x, rate):
     return int((Quantity(x, 's') * rate).decompose().value)
 
 
-def normalize_fft_params(series, kwargs=None):
+def normalize_fft_params(series, kwargs=None, library=None):
     """Normalize a set of FFT parameters for processing
 
     This method reads the ``fftlength`` and ``overlap`` keyword arguments
@@ -89,6 +89,10 @@ def normalize_fft_params(series, kwargs=None):
     kwargs : `dict`
         the dict of keyword arguments passed by the user
 
+    library: `str`, optional
+        the name of the library that provides the FFT methods, e.g.
+        'scipy'
+
     Examples
     --------
     >>> from numpy.random import normal
@@ -104,10 +108,11 @@ def normalize_fft_params(series, kwargs=None):
     samp = series.sample_rate
     fftlength = kwargs.pop('fftlength', None)
     overlap = kwargs.pop('overlap', None)
+    window = kwargs.pop('window', None)
 
     # get canonical window name
-    if isinstance(kwargs.get('window', None), str):
-        kwargs['window'] = canonical_name(kwargs['window'])
+    if isinstance(window, str):
+        window = canonical_name(window)
 
     # fftlength -> nfft
     if fftlength is None:
@@ -115,12 +120,31 @@ def normalize_fft_params(series, kwargs=None):
     nfft = seconds_to_samples(fftlength, samp)
 
     # overlap -> noverlap
-    if overlap is None and isinstance(kwargs.get('window', None), str):
-        noverlap = recommended_overlap(kwargs['window'], nfft)
+    if overlap is None and isinstance(window, str):
+        noverlap = recommended_overlap(window, nfft)
     elif overlap is None:
         noverlap = 0
     else:
         noverlap = seconds_to_samples(overlap, samp)
+
+    # create window
+    if library == 'lal' and isinstance(window, numpy.ndarray):
+        from .lal import window_from_array
+        window = window_from_array(window)
+    elif library == 'lal':
+        from .lal import generate_window
+        window = generate_window(nfft, window=window, dtype=series.dtype)
+    elif isinstance(window, (str, tuple)):
+        window = get_window(window, nfft)
+
+    # allow FFT methods to use their own defaults
+    if window is not None:
+        kwargs['window'] = window
+
+    # create FFT plan for LAL
+    if library == 'lal' and kwargs.get('plan', None):
+        from .lal import generate_fft_plan
+        kwargs['plan'] = generate_fft_plan(nfft, dtype=series.dtype)
 
     kwargs.update({
         'nfft': nfft,
@@ -141,8 +165,9 @@ def set_fft_params(func):
         else:
             data = series
 
-        # extract parameters in seconds, setting recommended default overlap
-        normalize_fft_params(data, kwargs)
+        # normalise FFT parmeters for all libraries
+        library = method_func.__module__.rsplit('.', 1)[-1]
+        normalize_fft_params(data, kwargs=kwargs, library=library)
 
         return func(series, method_func, *args, **kwargs)
 
@@ -217,10 +242,10 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
     epoch = timeseries.t0.value
     nstride = seconds_to_samples(stride, timeseries.sample_rate)
     kwargs['fftlength'] = kwargs.pop('fftlength', stride) or stride
-    normalize_fft_params(timeseries, kwargs)
+    normalize_fft_params(timeseries, kwargs=kwargs,
+                         library=method_func.__module__.rsplit('.', 1)[-1])
     nfft = kwargs['nfft']
     noverlap = kwargs['noverlap']
-    window = kwargs.pop('window', None)
 
     # sanity check parameters
     if nstride > timeseries.size:
@@ -230,21 +255,6 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
         raise ValueError("fftlength cannot be greater than stride")
     if noverlap >= nfft:
         raise ValueError("overlap must be less than fftlength")
-
-    # generate windows and FFT plans up-front
-    if method_func.__module__.endswith('.lal'):
-        from .lal import (generate_fft_plan, generate_window)
-        if isinstance(window, (str, tuple)):
-            window = generate_window(nfft, window=window,
-                                     dtype=timeseries.dtype)
-        if kwargs.get('plan', None) is None:
-            kwargs['plan'] = generate_fft_plan(nfft, dtype=timeseries.dtype)
-    else:
-        if isinstance(window, (str, tuple)):
-            window = get_window(window, nfft)
-    # don't operate on None, let the method_func work out its own defaults
-    if window is not None:
-        kwargs['window'] = window
 
     # set up single process Spectrogram method
     def _psd(series):
@@ -293,18 +303,12 @@ def spectrogram(timeseries, method_func, **kwargs):
     if noverlap >= nfft:
         raise ValueError("overlap must be less than fftlength")
 
-    # get window once (if given)
-    window = kwargs.pop('window', None) or 'hann'
-    if isinstance(window, (str, tuple)):
-        window = get_window(window, nfft)
-
     # set up single process Spectrogram method
     def _psd(series):
         """Calculate a single PSD for a spectrogram
         """
         try:
-            return method_func(series, nfft=nfft, window=window,
-                               **kwargs)[1]
+            return method_func(series, nfft=nfft, **kwargs)[1]
         except Exception as exc:  # pylint: disable=broad-except
             if nproc == 1:
                 raise
