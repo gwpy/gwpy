@@ -31,6 +31,7 @@ import warnings
 import numpy
 
 from ...frequencyseries import FrequencySeries
+from ..window import canonical_name
 from .utils import scale_timeseries_unit
 from . import registry as fft_registry
 
@@ -121,14 +122,13 @@ def generate_window(length, window=('kaiser', 24), dtype='float64'):
     except KeyError:
         # parse window as name and arguments, e.g. ('kaiser', 24)
         if isinstance(window, (list, tuple)):
-            args = window[1:]
-            window = str(window[0])
+            window, beta = window
         else:
-            args = []
-        window = window.title() if window.islower() else window
+            beta = 0
+        window = canonical_name(window)
         # create window
-        create = getattr(lal, 'Create%s%sWindow' % (window, laltype))
-        LAL_WINDOWS[key] = create(length, *args)
+        create = getattr(lal, 'CreateNamed{}Window'.format(laltype))
+        LAL_WINDOWS[key] = create(window, beta, length)
         return LAL_WINDOWS[key]
 
 
