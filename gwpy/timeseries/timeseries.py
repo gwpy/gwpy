@@ -368,7 +368,7 @@ class TimeSeries(TimeSeriesBase):
                           overlap=overlap, window=window, **kwargs)
 
     @_update_doc_with_fft_methods
-    def spectrogram(self, stride, fftlength=None, overlap=0,
+    def spectrogram(self, stride, fftlength=None, overlap=None,
                     window='hann', method='scipy-welch', nproc=1, **kwargs):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
