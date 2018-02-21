@@ -87,7 +87,7 @@ def generate_fft_plan(length, level=None, dtype='float64', forward=True):
         return LAL_FFTPLANS[key]
 
 
-def generate_window(length, window=('kaiser', 24), dtype='float64'):
+def generate_window(length, window=None, dtype='float64'):
     """Generate a time-domain window for use in a LAL FFT
 
     Parameters
@@ -110,6 +110,9 @@ def generate_window(length, window=('kaiser', 24), dtype='float64'):
     """
     import lal
     from ...utils.lal import LAL_TYPE_STR_FROM_NUMPY
+
+    if window is None:
+        window = ('kaiser', 24)
 
     # generate key for caching window
     laltype = LAL_TYPE_STR_FROM_NUMPY[numpy.dtype(dtype).type]
