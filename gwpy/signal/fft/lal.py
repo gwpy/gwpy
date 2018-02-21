@@ -132,6 +132,21 @@ def generate_window(length, window=('kaiser', 24), dtype='float64'):
         return LAL_WINDOWS[key]
 
 
+def window_from_array(array):
+    """Convert a `numpy.ndarray` into a LAL `Window` object
+    """
+    import lal
+    from ...utils.lal import LAL_TYPE_STR_FROM_NUMPY
+    laltype = LAL_TYPE_STR_FROM_NUMPY[array.dtype.type]
+
+    # create sequence
+    seq = getattr(lal, 'Create{}Sequence'.format(laltype))(array.size)
+    seq.data = array
+
+    # create window from sequence
+    return getattr(lal, 'Create{}WindowFromSequence'.format(laltype))(seq)
+
+
 # -- spectrumm methods ------------------------------------------------------
 
 def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
@@ -177,6 +192,9 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
     elif isinstance(window, (tuple, str)):
         window = generate_window(segmentlength, window=window,
                                  dtype=timeseries.dtype)
+    elif isinstance(window, numpy.ndarray):
+        window = window_from_array(window)
+
     # get FFT plan
     if plan is None:
         plan = generate_fft_plan(segmentlength, dtype=timeseries.dtype)
