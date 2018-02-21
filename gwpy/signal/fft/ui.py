@@ -214,11 +214,12 @@ def psdn(timeseries, method_func, *args, **kwargs):
     # unpack tuple of timeseries for cross spectrum
     try:
         timeseries, other = timeseries
-        return method_func(timeseries, other, kwargs.pop('nfft'),
-                           *args, **kwargs)
     # or just calculate PSD
     except ValueError:
         return method_func(timeseries, kwargs.pop('nfft'), *args, **kwargs)
+    else:
+        return method_func(timeseries, other, kwargs.pop('nfft'),
+                           *args, **kwargs)
 
 
 def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
