@@ -79,6 +79,28 @@ def _select_query_method(cls, url):
     return cls.query_dqsegdb
 
 
+def _parse_query_segments(args, func):
+    """Parse *args for query_dqsegdb() or query_segdb()
+
+    Returns a SegmentList in all cases
+    """
+    if len(args) == 1 and isinstance(args[0], SegmentList):
+        return args[0]
+    if len(args) == 1 and len(args[0]) == 2:
+        return SegmentList([Segment(to_gps(args[0][0]),
+                                    to_gps(args[0][1]))])
+    try:
+        return SegmentList([Segment(*map(to_gps, args))])
+    except (TypeError, RuntimeError) as exc:
+        msg = ('{0}() takes 2 arguments for start and end GPS times, '
+               'or 1 argument containing a Segment or '
+               'SegmentList'.format(func.__name__))
+        if isinstance(exc, TypeError):
+            exc.args = (msg,)
+            raise
+        raise TypeError(msg)
+
+
 # -- DataQualityFlag ----------------------------------------------------------
 
 class DataQualityFlag(object):
@@ -438,13 +460,7 @@ class DataQualityFlag(object):
             filled appropriately.
         """
         # parse arguments
-        if len(args) == 1 and isinstance(args[0], SegmentList):
-            qsegs = args[0]
-        elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList([Segment(to_gps(args[0][0]),
-                                         to_gps(args[0][1]))])
-        else:
-            qsegs = SegmentList([Segment(*map(to_gps, args))])
+        qsegs = _parse_query_segments(args, cls.query_segdb)
 
         # process query
         try:
@@ -492,13 +508,7 @@ class DataQualityFlag(object):
         from dqsegdb import apicalls
 
         # parse arguments
-        if len(args) == 1 and isinstance(args[0], SegmentList):
-            qsegs = args[0]
-        elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList([Segment(to_gps(args[0][0]),
-                                         to_gps(args[0][1]))])
-        else:
-            qsegs = SegmentList([Segment(*map(to_gps, args))])
+        qsegs = _parse_query_segments(args, cls.query_dqsegdb)
 
         # get server
         protocol, server = kwargs.pop(
@@ -1090,18 +1100,9 @@ class DataQualityDict(OrderedDict):
             An ordered `DataQualityDict` of (name, `DataQualityFlag`)
             pairs.
         """
-        # given segmentlist
-        if len(args) == 1 and isinstance(args[0], SegmentList):
-            qsegs = args[0]
-        elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(to_gps(args[0][0]),
-                                        to_gps(args[0][1])))
-        elif len(args) == 2:
-            qsegs = SegmentList([Segment(to_gps(args[0]), to_gps(args[1]))])
-        else:
-            raise ValueError("DataQualityDict.query_segdb must be called with "
-                             "a list of flag names, and either GPS start and "
-                             "stop times, or a SegmentList of query segments")
+        # parse segments
+        qsegs = _parse_query_segments(args, cls.query_segdb)
+
         url = kwargs.pop('url', DEFAULT_SEGMENT_SERVER)
         if kwargs.pop('on_error', None) is not None:
             warnings.warn("DataQualityDict.query_segdb doesn't accept the "
@@ -1201,11 +1202,14 @@ class DataQualityDict(OrderedDict):
             raise ValueError("on_error must be one of 'raise', 'warn', "
                              "or 'ignore'")
 
+        # parse segments
+        qsegs = _parse_query_segments(args, cls.query_dqsegdb)
+
         # set up threading
         inq = Queue()
         outq = Queue()
         for i in range(len(flags)):
-            t = _QueryDQSegDBThread(inq, outq, *args, **kwargs)
+            t = _QueryDQSegDBThread(inq, outq, qsegs, **kwargs)
             t.setDaemon(True)
             t.start()
         for i, flag in enumerate(flags):

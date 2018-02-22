@@ -606,6 +606,11 @@ class TestDataQualityFlag(object):
         utils.assert_segmentlist_equal(result.known, RESULT.known)
         utils.assert_segmentlist_equal(result.active, RESULT.active)
 
+        with pytest.raises(TypeError):
+            self.TEST_CLASS.query(QUERY_FLAGS[0], 1, 2, 3)
+        with pytest.raises(TypeError):
+            self.TEST_CLASS.query(QUERY_FLAGS[0], (1, 2, 3))
+
     def test_query_segdb(self):
         result = query_segdb(self.TEST_CLASS.query_segdb,
                              QUERY_FLAGS[0], 0, 10)
