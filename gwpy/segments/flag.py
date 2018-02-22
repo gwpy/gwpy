@@ -1455,7 +1455,7 @@ class DataQualityDict(OrderedDict):
             # write segment summary (known segments)
             for vseg in flag.known:
                 segsum = segsumtab.RowType()
-                for col in segsumtab.columnnames:  # default all columns to None
+                for col in segsumtab.columnnames:  # default columns to None
                     setattr(segsum, col, None)
                 segsum.segment_def_id = segdef.segment_def_id
                 segsum.set(map(LIGOTimeGPS, vseg))
