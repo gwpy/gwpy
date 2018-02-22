@@ -319,6 +319,29 @@ class TestSignalFftUtils(object):
         assert scale_(None) == units.Unit('Hz^-1')
 
 
+# -- gwpy.signal.fft.basic ----------------------------------------------------
+
+class TestSignalFftBasic(object):
+    def test_map_fft_method(self):
+        """Test :func:`gwpy.signal.fft.basic.map_fft_method`
+        """
+        # check that defining a new method that doesn't map to a
+        # library method raises an exception
+        @fft_basic.map_fft_method
+        def blah(*args, **kwargs):
+            pass
+
+        with pytest.raises(RuntimeError) as exc:
+             blah()
+        assert str(exc.value).startswith('no underlying API method')
+
+        # check that if we only have scipy, we get the same error for
+        # median-mean
+        if get_default_fft_api() == 'scipy':
+            with pytest.raises(RuntimeError):
+                fft_basic.median_mean(None, None)
+
+
 # -- gwpy.signal.fft.lal ------------------------------------------------------
 
 @utils.skip_missing_dependency('lal')
