@@ -76,6 +76,7 @@ def welch(timeseries, segmentlength, noverlap=None, scheme=None, **kwargs):
 
     # return GWpy FrequencySeries
     fseries = FrequencySeries.from_pycbc(pycbc_fseries, copy=False)
+    fseries.name = timeseries.name
     fseries.override_unit(scale_timeseries_unit(
         timeseries.unit, scaling='density'))
     return fseries

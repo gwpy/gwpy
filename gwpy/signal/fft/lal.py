@@ -237,6 +237,7 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
 
     # format and return
     spec = FrequencySeries.from_lal(lalfs)
+    spec.name = timeseries.name
     spec.channel = timeseries.channel
     spec.override_unit(scale_timeseries_unit(
         timeseries.unit, scaling='density'))
