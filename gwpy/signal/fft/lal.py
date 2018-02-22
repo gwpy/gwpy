@@ -227,17 +227,12 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
     lalfs = create(timeseries.name, lal.LIGOTimeGPS(timeseries.epoch.gps), 0,
                    1 / segmentlength, unit, int(segmentlength // 2 + 1))
 
-    # calculate medianmean spectrum
-    if re.match(r'median-mean\Z', method, re.I):
-        spec_func = getattr(lal, "%sAverageSpectrumMedianMean" % laltypestr)
-    elif re.match(r'median\Z', method, re.I):
-        spec_func = getattr(lal, "%sAverageSpectrumMedian" % laltypestr)
-    elif re.match(r'welch\Z', method, re.I):
-        spec_func = getattr(lal, "%sAverageSpectrumWelch" % laltypestr)
-    else:
-        raise NotImplementedError("Unrecognised LAL spectrum method %r"
-                                  % method)
+    # find LAL method (e.g. median-mean -> lal.REAL8AverageSpectrumMedianMean)
+    methodname = ''.join(map(str.title, re.split('[-_]', method)))
+    spec_func = getattr(
+        lal, '{}AverageSpectrum{}'.format(laltypestr, methodname))
 
+    # calculate spectrum
     spec_func(lalfs, timeseries.to_lal(), segmentlength, stride, window, plan)
 
     # format and return
