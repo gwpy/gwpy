@@ -36,7 +36,11 @@ except ImportError:
 
 from gwpy.signal import (filter_design, window)
 from gwpy.signal.fft import (get_default_fft_api,
-                             lal as fft_lal, utils as fft_utils,
+                             basic as fft_basic,
+                             scipy as fft_scipy,
+                             lal as fft_lal,
+                             pycbc as fft_pycbc,
+                             utils as fft_utils,
                              registry as fft_registry, ui as fft_ui)
 from gwpy.timeseries import TimeSeries
 
@@ -274,6 +278,24 @@ class TestSignalFftUI(object):
         assert ftp.pop('noverlap') == 512
         utils.assert_array_equal(ftp.pop('window'), win)
         assert not ftp
+
+    def test_chunk_timeseries(self):
+        """Test :func:`gwpy.signal.fft.ui._chunk_timeseries`
+        """
+        a = TimeSeries(numpy.arange(400))
+        chunks = list(fft_ui._chunk_timeseries(a, 100, 50))
+        assert chunks == [
+            a[:150], a[75:225], a[175:325], a[275:400],
+        ]
+
+    def test_fft_library(self):
+        """Test :func:`gwpy.signal.fft.ui._fft_library`
+        """
+        assert fft_ui._fft_library(fft_lal.welch) == 'lal'
+        assert fft_ui._fft_library(fft_scipy.welch) == 'scipy'
+        assert fft_ui._fft_library(fft_pycbc.welch) == 'pycbc'
+        assert fft_ui._fft_library(fft_basic.welch) == (
+            get_default_fft_api().split('.', 1)[0])
 
 
 # -- gwpy.signal.fft.utils ----------------------------------------------------
