@@ -846,8 +846,41 @@ class TestTimeSeries(TestTimeSeriesBase):
 
         fs = losc.average_fft(fftlength=0.4, overlap=0.2)
 
+    @pytest.mark.parametrize('method', ('welch', 'bartlett'))
+    def test_psd_basic(self, losc, method):
+        # check that basic methods always post a warning telling the user
+        # to be more specific
+        with pytest.warns(UserWarning):
+            fs = losc.psd(1, method=method)
+
+        # and check that the basic parameters are sane
+        assert fs.size == losc.sample_rate.value // 2 + 1
+        assert fs.f0 == 0 * units.Hz
+        assert fs.df == 1 * units.Hz
+        assert fs.name == losc.name
+        assert fs.channel is losc.channel
+        assert fs.unit == losc.unit ** 2 / units.Hz
+
+    def test_psd_default_overlap(self, losc):
+        utils.assert_quantity_sub_equal(
+            losc.psd(.5, window='hann'),
+            losc.psd(.5, .25, window='hann'),
+        )
+
+    @utils.skip_missing_dependency('lal')
+    def test_psd_lal_median_mean(self, losc):
+        # check that warnings and errors get raised in the right place
+        # for a median-mean PSD with the wrong data size or parameters
+
+        # single segment should raise error
+        with pytest.raises(ValueError):
+            losc.psd(abs(losc.span), method='lal_median_mean')
+
+        # odd number of segments should warn
+        with pytest.warns(UserWarning):
+            losc.psd(1, .5, method='lal_median_mean')
+
     @pytest.mark.parametrize('library, method', chain(
-        product([None], ['welch', 'bartlett']),
         product(['scipy'], ['welch', 'bartlett']),
         product(['pycbc.psd'], ['welch', 'bartlett', 'median', 'median_mean']),
         product(['lal'], ['welch', 'bartlett', 'median', 'median_mean']),
@@ -856,77 +889,56 @@ class TestTimeSeries(TestTimeSeriesBase):
         'window', (None, 'hann', ('kaiser', 24), 'array'),
     )
     def test_psd(self, losc, library, method, window):
-        if library:
-            try:
-                importlib.import_module(library)
-            except ImportError as exc:
-                pytest.skip(str(exc))
-            library = library.split('.', 1)[0]
-            method = '{}_{}'.format(library, method)
+        try:
+            importlib.import_module(library)
+        except ImportError as exc:
+            pytest.skip(str(exc))
 
-        def _psd(fftlength, overlap, **kwargs):
-            # check number of segments for LAL median-mean
-            if fftlength is None:
-                nfft = losc.size
-            else:
-                nfft = int(fftlength * losc.sample_rate.value)
-            if overlap is None:
-                noverlap = int(nfft/2.)
-            else:
-                noverlap = int(overlap * losc.sample_rate.value)
-            nstep = nfft - noverlap
-            req = (int((losc.size - nfft) / nstep) * nstep + nfft)
-            if method == 'lal_median_mean' and req != losc.size:
-                # LAL should warn about the data being the wrong length
-                warnctx = pytest.warns(UserWarning)
-            elif library is None and method is not None:
-                # not specifying library should print warning
-                warnctx = pytest.warns(UserWarning)
-            else:
-                warnctx = null_context()
+        fftlength = .5
+        overlap = .25
 
+        # remove final .25 seconds to stop median-mean complaining
+        # (means an even number of overlapping FFT segments)
+        if method == 'median_mean':
+            losc = losc.crop(end=losc.span[1]-overlap)
+
+        # get actual method name
+        library = library.split('.', 1)[0]
+        method = '{}_{}'.format(library, method)
+
+        def _psd(fftlength, overlap=None, **kwargs):
             # create window of the correct length
             if window == 'array':
+                nfft = (losc.size if fftlength is None else
+                        int(fftlength * losc.sample_rate.value))
                 _window = signal.get_window('hamming', nfft)
             else:
                 _window = window
 
             # generate PSD
-            with warnctx:
-                try:
-                    return losc.psd(fftlength=fftlength, overlap=overlap,
-                                    method=method, window=_window)
-                except TypeError as exc:
-                    # catch pycbc window as array error
-                    if str(exc).startswith('unhashable type'):
-                        pytest.skip(str(exc))
-                    raise
+            return losc.psd(fftlength=fftlength, overlap=overlap,
+                            method=method, window=_window)
 
-        # test basic
-        if method.endswith('median_mean'):
-            ctx = pytest.raises(ValueError)
-        else:
-            ctx = null_context()
-        with ctx:
-            fs = _psd(None, None)
-            assert fs.size == losc.size // 2 + 1
-            assert fs.f0 == 0 * units.Hz
-            assert fs.df == 1 / losc.duration
-            assert fs.channel is losc.channel
-            assert fs.unit == losc.unit ** 2 / units.Hz
+        try:
+            fs = _psd(.5, .25)
+        except TypeError as exc:
+            # catch pycbc window as array error
+            # FIXME: remove after PyCBC 1.10 is released
+            if str(exc).startswith('unhashable type'):
+                pytest.skip(str(exc))
+            raise
 
-        # test fftlength maps to yindex
-        psd = _psd(.5, None)
-        assert psd.size == 0.5 * losc.sample_rate.value // 2 + 1
-        assert psd.df == 2 * units.Hz
-
-        # test default overlap
-        if library is None and method == 'welch' and window == 'hann':
-            utils.assert_quantity_sub_equal(psd, _psd(.5, .25))
+        # and check that the basic parameters are sane
+        assert fs.size == fftlength * losc.sample_rate.value // 2 + 1
+        assert fs.f0 == 0 * units.Hz
+        assert fs.df == units.Hz / fftlength
+        assert fs.name == losc.name
+        assert fs.channel is losc.channel
+        assert fs.unit == losc.unit ** 2 / units.Hz
 
     def test_asd(self, losc):
-        fs = losc.asd()
-        utils.assert_quantity_sub_equal(fs, losc.psd() ** (1/2.))
+        fs = losc.asd(1)
+        utils.assert_quantity_sub_equal(fs, losc.psd(1) ** (1/2.))
 
     @utils.skip_minimum_version('scipy', '0.16')
     def test_csd(self, losc):
