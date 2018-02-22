@@ -93,6 +93,12 @@ class Channel(object):
             key, value pairs for attributes of new channel
         """
         # init properties
+        self._name = None
+        self._ifo = None
+        self._system = None
+        self._subsystem = None
+        self._signal = None
+        self._trend = None
         self._sample_rate = None
         self._unit = None
         self._frequency_range = None
