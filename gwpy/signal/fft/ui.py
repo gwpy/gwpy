@@ -142,7 +142,7 @@ def normalize_fft_params(series, kwargs=None, library=None):
         kwargs['window'] = window
 
     # create FFT plan for LAL
-    if library == 'lal' and kwargs.get('plan', None):
+    if library == 'lal' and kwargs.get('plan', None) is None:
         from .lal import generate_fft_plan
         kwargs['plan'] = generate_fft_plan(nfft, dtype=series.dtype)
 
