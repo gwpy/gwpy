@@ -270,10 +270,7 @@ class Array(Quantity):
 
     @name.setter
     def name(self, val):
-        if val is None:
-            self._name = None
-        else:
-            self._name = str(val)
+        self._name = str(val) if val is not None else None
 
     @name.deleter
     def name(self):

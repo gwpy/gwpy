@@ -199,10 +199,7 @@ class DataQualityFlag(object):
 
     @version.setter
     def version(self, v):
-        if v is None:
-            self._version = None
-        else:
-            self._version = int(v)
+        self._version = int(v) if v is not None else None
 
     @property
     def label(self):
@@ -291,10 +288,7 @@ class DataQualityFlag(object):
 
     @category.setter
     def category(self, cat):
-        if cat is None:
-            self._category = None
-        else:
-            self._category = int(cat)
+        self._category = int(cat) if cat is not None else None
 
     @property
     def description(self):
