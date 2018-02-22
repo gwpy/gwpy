@@ -37,6 +37,7 @@ from astropy.units import Quantity
 from ..detector import Channel
 from ..detector.units import parse_unit
 from ..time import (Time, to_gps)
+from ..utils.misc import if_not_none
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -270,7 +271,7 @@ class Array(Quantity):
 
     @name.setter
     def name(self, val):
-        self._name = str(val) if val is not None else None
+        self._name = if_not_none(str, val)
 
     @name.deleter
     def name(self):

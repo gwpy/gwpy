@@ -52,6 +52,7 @@ from astropy.utils.data import get_readable_fileobj
 
 from ..io.mp import read_multi as io_read_multi
 from ..time import to_gps, LIGOTimeGPS
+from ..utils.misc import if_not_none
 from .segments import Segment, SegmentList
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -288,7 +289,7 @@ class DataQualityFlag(object):
 
     @category.setter
     def category(self, cat):
-        self._category = int(cat) if cat is not None else None
+        self._category = if_not_none(int, cat)
 
     @property
     def description(self):

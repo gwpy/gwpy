@@ -34,6 +34,7 @@ from astropy.io import registry as io_registry
 
 from ..io import (datafind, nds2 as io_nds2)
 from ..time import to_gps
+from ..utils.misc import if_not_none
 from .units import parse_unit
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -187,7 +188,7 @@ class Channel(object):
 
     @unit.setter
     def unit(self, u):
-        self._unit = parse_unit(u) if u is not None else None
+        self._unit = if_not_none(parse_unit, u)
 
     @property
     def frequency_range(self):
