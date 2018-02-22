@@ -80,25 +80,25 @@ def welch(timeseries, segmentlength, noverlap=None, **kwargs):
     spectrum : `~gwpy.frequencyseries.FrequencySeries`
         average power `FrequencySeries`
     """
-    pass
+    pass  # pragma: nocover
 
 
 @map_fft_method
 def bartlett(timeseries, segmentlength, **kwargs):
-    pass
+    pass  # pragma: nocover
 bartlett.__doc__ = welch.__doc__.replace('mean average',
                                          'zero-overlap mean average')
 
 
 @map_fft_method
 def median(timeseries, segmentlength, noverlap=None, **kwargs):
-    pass
+    pass  # pragma: nocover
 median.__doc__ = welch.__doc__.replace('mean average', 'median average')
 
 
 @map_fft_method
 def median_mean(timeseries, segmentlength, noverlap=None, **kwargs):
-    pass
+    pass  # pragma: nocover
 median_mean.__doc__ = welch.__doc__.replace('mean average',
                                             'median-mean average')
 
