@@ -38,7 +38,7 @@ from .units import parse_unit
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-re_quote = re.compile(r'^[\s\"\']+|[\s\"\']+$')
+QUOTE_REGEX = re.compile(r'^[\s\"\']+|[\s\"\']+$')
 
 
 class Channel(object):
@@ -621,10 +621,6 @@ class Channel(object):
         return hash_
 
 
-_re_ifo = re.compile(r"[A-Z]\d:")
-_re_cchar = re.compile(r"[-_]")
-
-
 class ChannelList(list):
     """A `list` of `channels <Channel>`, with parsing utilities.
     """
@@ -669,7 +665,7 @@ class ChannelList(list):
         """Split a comma-separated list of channel names.
         """
         out = []
-        namestr = re_quote.sub('', namestr)
+        namestr = QUOTE_REGEX.sub('', namestr)
         while True:
             namestr = namestr.strip('\' \n')
             if ',' not in namestr:
