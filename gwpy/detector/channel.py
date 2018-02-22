@@ -187,10 +187,7 @@ class Channel(object):
 
     @unit.setter
     def unit(self, u):
-        if u is None:
-            self._unit = None
-        else:
-            self._unit = parse_unit(u)
+        self._unit = parse_unit(u) if u is not None else None
 
     @property
     def frequency_range(self):
