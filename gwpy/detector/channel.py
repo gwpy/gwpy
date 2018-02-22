@@ -743,26 +743,32 @@ class ChannelList(list):
             name = name if name.startswith(r'\A') else r"\A%s" % name
             name = name if name.endswith(r'\Z') else r"%s\Z" % name
         name_regexp = re.compile(name, flags=flags)
-        c = list(self)
+
+        matched = list(self)
+
         if name is not None:
-            c = [entry for entry in c if
-                 name_regexp.search(entry.name) is not None]
+            matched = [entry for entry in matched if
+                       name_regexp.search(entry.name) is not None]
+
         if sample_rate is not None:
             sample_rate = (sample_rate.value if
                            isinstance(sample_rate, units.Quantity) else
                            float(sample_rate))
-            c = [entry for entry in c if entry.sample_rate and
-                 entry.sample_rate.value == sample_rate]
+            matched = [entry for entry in matched if entry.sample_rate and
+                       entry.sample_rate.value == sample_rate]
+
         if sample_range is not None:
-            c = [entry for entry in c if
-                 sample_range[0] <= entry.sample_rate.value <=
-                 sample_range[1]]
+            matched = [entry for entry in matched if
+                       sample_range[0] <= entry.sample_rate.value <=
+                       sample_range[1]]
+
         for attr, val in others.items():
             if val is not None:
-                c = [entry for entry in c if
-                     (hasattr(entry, attr) and getattr(entry, attr) == val)]
+                matched = [entry for entry in matched if
+                           (hasattr(entry, attr) and
+                            getattr(entry, attr) == val)]
 
-        return self.__class__(c)
+        return self.__class__(matched)
 
     @classmethod
     def query(cls, name, use_kerberos=None, debug=False):
