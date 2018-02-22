@@ -190,17 +190,29 @@ class Array(Quantity):
 
     # -- display --------------------------------
 
-    def __repr__(self):
-        """Return a representation of this object
+    def _repr_helper(self, print_):
+        if print_ is repr:
+            opstr = '='
+        else:
+            opstr = ': '
 
-        This just represents each of the metadata objects appropriately
-        after the core data array
-        """
-        prefixstr = '<%s(' % self.__class__.__name__
-        indent = ' '*len(prefixstr)
-        arrstr = numpy.array2string(self.view(numpy.ndarray), separator=',',
-                                    prefix=prefixstr)
-        metadatarepr = ['unit=%s' % repr(self.unit)]
+        # get prefix and suffix
+        prefix = '{}('.format(type(self).__name__)
+        suffix = ')'
+        if print_ is repr:
+            prefix = '<{}'.format(prefix)
+            suffix += '>'
+
+        indent = ' ' * len(prefix)
+
+        # format value
+        arrstr = numpy.array2string(self.view(numpy.ndarray), separator=', ',
+                                    prefix=prefix)
+
+        # format unit
+        metadata = [('unit', print_(self.unit) or 'dimensionless')]
+
+        # format other metadata
         try:
             attrs = self._print_slots
         except AttributeError:
@@ -210,12 +222,24 @@ class Array(Quantity):
                 val = getattr(self, key)
             except (AttributeError, KeyError):
                 val = None
-            mindent = ' ' * (len(key) + 1)
-            rval = repr(val).replace('\n', '\n%s' % (indent+mindent))
-            metadatarepr.append('%s=%s' % (key.strip('_'), rval))
-        metadata = (',\n%s' % indent).join(metadatarepr)
-        return "{0}{1}\n{2}{3})>".format(
-            prefixstr, arrstr, indent, metadata)
+            thisindent = indent + ' ' * (len(key) + len(opstr))
+            metadata.append((
+                key.lstrip('_'),
+                print_(val).replace('\n', '\n{}'.format(thisindent)),
+            ))
+        metadata = (',\n{}'.format(indent)).join(
+            '{0}{1}{2}'.format(key, opstr, value) for key, value in metadata)
+
+        return "{0}{1}\n{2}{3}{4}".format(
+            prefix, arrstr, indent, metadata, suffix)
+
+    def __repr__(self):
+        """Return a representation of this object
+
+        This just represents each of the metadata objects appropriately
+        after the core data array
+        """
+        return self._repr_helper(repr)
 
     def __str__(self):
         """Return a printable string format representation of this object
@@ -223,26 +247,7 @@ class Array(Quantity):
         This just prints each of the metadata objects appropriately
         after the core data array
         """
-        prefixstr = '%s(' % self.__class__.__name__
-        indent = ' '*len(prefixstr)
-        arrstr = numpy.array2string(self.view(numpy.ndarray), separator=',',
-                                    prefix=prefixstr)
-        metadatarepr = ['unit: %s' % repr(self.unit)]
-        try:
-            attrs = self._print_slots
-        except AttributeError:
-            attrs = self._metadata_slots
-        for key in attrs:
-            try:
-                val = getattr(self, key)
-            except (AttributeError, KeyError):
-                val = None
-            mindent = ' ' * (len(key) + 2)
-            rval = str(val).replace('\n', '\n%s' % (indent+mindent))
-            metadatarepr.append('%s: %s' % (key.strip('_'), rval))
-        metadata = (',\n%s' % indent).join(metadatarepr)
-        return "{0}{1}\n{2}{3})".format(
-            prefixstr, arrstr, indent, metadata)
+        return self._repr_helper(str)
 
     # -- Pickle helpers -------------------------
 
