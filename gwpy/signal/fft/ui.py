@@ -81,6 +81,10 @@ def normalize_fft_params(series, kwargs=None, library=None):
     If a ``window`` is given, the ``noverlap`` parameter will be set to the
     recommended overlap for that window type, if ``overlap`` is not given.
 
+    If a ``window`` is given as a `str`, it will be converted to a
+    `numpy.ndarray` containing the correct window (of the correct length),
+    or a `lal.REAL8Window`-type object for `lal` library methods.
+
     Parameters
     ----------
     series : `gwpy.timeseries.TimeSeries`
@@ -100,9 +104,10 @@ def normalize_fft_params(series, kwargs=None, library=None):
     >>> from gwpy.signal.fft.ui import normalize_fft_params
     >>> normalize_fft_params(TimeSeries(normal(size=1024), sample_rate=256))
     {'nfft': 1024, 'noverlap': 0}
-    >>> normalize_fft_params(TimeSeries(normal(size=1024), sample_rate=256), {'window': 'hann'})
-    {'window': array([  0.00000000e+00,   9.41235870e-06,   3.76490804e-05, ...,
-         8.47091021e-05,   3.76490804e-05,   9.41235870e-06]), 'noverlap': 0, 'nfft': 1024}
+    >>> normalize_fft_params(TimeSeries(normal(size=1024), sample_rate=256),
+    ...                      {'window': 'hann'})
+    {'window': array([  0.00000000e+00,   9.41235870e-06, ...,
+         3.76490804e-05,   9.41235870e-06]), 'noverlap': 0, 'nfft': 1024}
     """
     if kwargs is None:
         kwargs = dict()
