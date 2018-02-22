@@ -153,13 +153,12 @@ def _normalize_overlap(overlap, window, nfft, samp):
 def _normalize_window(window, nfft, library, dtype):
     if isinstance(window, string_types):
         window = canonical_name(window)
-    if library == 'lal':
-        if isinstance(window, numpy.ndarray):
-            from .lal import window_from_array
-            return window_from_array(window)
-        else:
-            from .lal import generate_window
-            return generate_window(nfft, window=window, dtype=dtype)
+    if library == 'lal' and isinstance(window, numpy.ndarray):
+        from .lal import window_from_array
+        return window_from_array(window)
+    elif library == 'lal':
+        from .lal import generate_window
+        return generate_window(nfft, window=window, dtype=dtype)
     elif isinstance(window, string_types + (tuple,)):
         return get_window(window, nfft)
 
