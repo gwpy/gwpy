@@ -660,6 +660,12 @@ class ChannelList(list):
 
     @classmethod
     def from_names(cls, *names):
+        """Create a new `ChannelList` from a list of names
+
+        The list of names can include comma-separated sets of names,
+        in which case the return will be a flattened list of all parsed
+        channel names.
+        """
         new = cls()
         for namestr in names:
             for name in cls._split_names(namestr):
