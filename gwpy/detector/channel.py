@@ -81,24 +81,46 @@ class Channel(object):
         r'(?:,(?P<type>([a-z]-)?[a-z]+))?$'  # match channel type
     )
 
-    def __init__(self, name, sample_rate=None, unit=None, frequency_range=None,
-                 safe=None, type=None, dtype=None, frametype=None,
-                 model=None, url=None):
+    def __init__(self, name, **params):
         """Create a new `Channel`
+
+        Parameters
+        ----------
+        name : `str`, `Channel`
+            the name of the new channel, or an existing channel to copy
+
+        **params
+            key, value pairs for attributes of new channel
         """
+        # init properties
+        self._sample_rate = None
+        self._unit = None
+        self._frequency_range = None
+        self._safe = None
+        self._type = None
+        self._dtype = None
+        self._frametype = None
+        self._model = None
+        self._url = None
+
         # copy existing Channel
         if isinstance(name, Channel):
-            sample_rate = sample_rate or name.sample_rate
-            unit = unit or name.unit
-            frequency_range = frequency_range or name.frequency_range
-            safe = safe or name.safe
-            type = type or name.type
-            dtype = dtype or name.dtype
-            frametype = frametype or name.frametype
-            model = model or name.model
-            url = url or name.url
-            name = str(name)
-        # make a new channel
+            self._init_from_channel(name)
+
+        # parse name into component parts
+        else:
+            self._init_name(name)
+
+        # set metadata
+        for key, value in params.items():
+            setattr(self, key, value)
+
+    def _init_from_channel(self, other):
+        # copy all atrributes from other into self
+        for key, value in vars(other).items():
+            setattr(self, key, copy(value))
+
+    def _init_name(self, name):
         # strip off NDS stuff for 'name'
         # parse name into component parts
         try:
@@ -112,17 +134,6 @@ class Channel(object):
                     setattr(self, key, val)
                 except AttributeError:
                     setattr(self, '_%s' % key, val)
-        # set metadata
-        if type is not None:
-            self.type = type
-        self.sample_rate = sample_rate
-        self.unit = unit
-        self.frequency_range = frequency_range
-        self.safe = safe
-        self.dtype = dtype
-        self.frametype = frametype
-        self.model = model
-        self.url = url
 
     # -------------------------------------------------------------------------
     # read-write properties
@@ -581,8 +592,7 @@ class Channel(object):
         """Returns a copy of this channel
         """
         new = type(self)(str(self))
-        for key, value in vars(self).items():
-            setattr(new, key, copy(value))
+        new._init_from_channel(self)
         return new
 
     def __str__(self):
