@@ -26,6 +26,8 @@ from __future__ import absolute_import
 
 from functools import wraps
 
+from six import string_types
+
 import numpy
 
 from scipy.signal import get_window
@@ -112,37 +114,18 @@ def normalize_fft_params(series, kwargs=None, library=None):
     if kwargs is None:
         kwargs = dict()
     samp = series.sample_rate
-    fftlength = kwargs.pop('fftlength', None)
+    fftlength = kwargs.pop('fftlength', None) or series.duration
     overlap = kwargs.pop('overlap', None)
     window = kwargs.pop('window', None)
 
-    # get canonical window name
-    if isinstance(window, str):
-        window = canonical_name(window)
-
     # fftlength -> nfft
-    if fftlength is None:
-        fftlength = series.duration
     nfft = seconds_to_samples(fftlength, samp)
 
     # overlap -> noverlap
-    if overlap is None and isinstance(window, str):
-        noverlap = recommended_overlap(window, nfft)
-    elif overlap is None:
-        noverlap = 0
-    else:
-        noverlap = seconds_to_samples(overlap, samp)
+    noverlap = _normalize_overlap(overlap, window, nfft, samp)
 
     # create window
-    if library == 'lal' and isinstance(window, numpy.ndarray):
-        from .lal import window_from_array
-        window = window_from_array(window)
-    elif library == 'lal':
-        from .lal import generate_window
-        window = generate_window(nfft, window=window, dtype=series.dtype)
-    elif isinstance(window, (str, tuple)):
-        window = get_window(window, nfft)
-
+    window = _normalize_window(window, nfft, library, series.dtype)
     # allow FFT methods to use their own defaults
     if window is not None:
         kwargs['window'] = window
@@ -157,6 +140,28 @@ def normalize_fft_params(series, kwargs=None, library=None):
         'noverlap': noverlap,
     })
     return kwargs
+
+
+def _normalize_overlap(overlap, window, nfft, samp):
+    if overlap is None and isinstance(window, string_types):
+        return recommended_overlap(window, nfft)
+    elif overlap is None:
+        return 0
+    return seconds_to_samples(overlap, samp)
+
+
+def _normalize_window(window, nfft, library, dtype):
+    if isinstance(window, string_types):
+        window = canonical_name(window)
+    if library == 'lal':
+        if isinstance(window, numpy.ndarray):
+            from .lal import window_from_array
+            return window_from_array(window)
+        else:
+            from .lal import generate_window
+            return generate_window(nfft, window=window, dtype=dtype)
+    elif isinstance(window, string_types + (tuple,)):
+        return get_window(window, nfft)
 
 
 def set_fft_params(func):
