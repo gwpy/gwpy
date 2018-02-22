@@ -851,7 +851,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         # check that basic methods always post a warning telling the user
         # to be more specific
         with pytest.warns(UserWarning):
-            fs = losc.psd(1, method=method)
+            fs = losc.psd(1, method=method, window=None)
 
         # and check that the basic parameters are sane
         assert fs.size == losc.sample_rate.value // 2 + 1
