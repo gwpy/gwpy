@@ -1,7 +1,7 @@
 ; vim: set syntax=dosini :
 
 [basic]
-good-names = _,i,j,k,q,x,y,ax
+good-names = _,i,j,k,q,u,x,y,ax
 
 [messages control]
 disable = import-error, superfluous-parens
