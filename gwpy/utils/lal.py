@@ -23,6 +23,7 @@ This module requires lal >= 6.14.0
 
 from __future__ import absolute_import
 
+import operator
 from collections import OrderedDict
 
 from six import string_types
@@ -227,23 +228,9 @@ def from_lal_unit(lunit):
     ValueError
         if Astropy doesn't understand the base units for the input
     """
-    try:
-        lunit = lal.Unit(lunit)
-    except RuntimeError:
-        raise TypeError("Cannot convert %r to lal.Unit" % lunit)
-    aunit = units.Unit("")
-    for power, lalbase in zip(lunit.unitNumerator, LAL_UNIT_INDEX):
-        # if not used, continue
-        if not power:
-            continue
-        # convert to astropy unit
-        try:
-            u = units.Unit(lal_unit_to_str(lalbase))
-        except ValueError:
-            raise ValueError("Astropy has no unit corresponding to %r"
-                             % lalbase)
-        aunit *= u ** power
-    return aunit
+    return reduce(operator.mul, (
+        units.Unit(str(LAL_UNIT_INDEX[i])) ** exp for
+        i, exp in enumerate(lunit.unitNumerator)))
 
 
 def to_lal_ligotimegps(gps):
