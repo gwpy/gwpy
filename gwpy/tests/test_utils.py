@@ -20,6 +20,7 @@
 """
 
 import subprocess
+from importlib import import_module
 
 from six import PY2
 
@@ -103,8 +104,9 @@ def test_compat_ordereddict():
 class TestUtilsLal(object):
     """Tests of :mod:`gwpy.utils.lal`
     """
-    import lal
-    from gwpy.utils import lal as utils_lal
+    def setup_class(self):
+        self.lal = import_module('lal')
+        self.utils_lal = import_module('gwpy.utils.lal')
 
     def test_to_lal_type_str(self):
         assert self.utils_lal.to_lal_type_str(float) == 'REAL8'
