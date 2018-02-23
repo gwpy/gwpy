@@ -1037,7 +1037,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         # test overlap
         if window == 'hann':
             sg2 = _spectrogram(1, fftlength=0.5, overlap=.25)
-            utils.assert_quantity_sub_equal(sg, sg2)
+            utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
 
         # test multiprocessing
         sg2 = _spectrogram(1, fftlength=0.5, nproc=2)
