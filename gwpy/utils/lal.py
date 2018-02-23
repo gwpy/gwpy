@@ -17,6 +17,8 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Utilies for interacting with the LIGO Algorithm Library.
+
+This module requires lal >= 6.14.0
 """
 
 from __future__ import absolute_import
@@ -32,86 +34,130 @@ from astropy import units
 import lal
 
 from ..time import to_gps
+# import gwpy.detector.units to register other units now
 from ..detector import units as gwpy_units  # pylint: disable=unused-import
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+# -- type matching ------------------------------------------------------------
+
 # LAL type enum
-try:
-    LAL_TYPE_STR = {lal.LAL_I2_TYPE_CODE: 'INT2',
-                    lal.LAL_I4_TYPE_CODE: 'INT4',
-                    lal.LAL_I8_TYPE_CODE: 'INT8',
-                    lal.LAL_U2_TYPE_CODE: 'UINT2',
-                    lal.LAL_U4_TYPE_CODE: 'UINT4',
-                    lal.LAL_U8_TYPE_CODE: 'UINT8',
-                    lal.LAL_S_TYPE_CODE: 'REAL4',
-                    lal.LAL_D_TYPE_CODE: 'REAL8',
-                    lal.LAL_C_TYPE_CODE: 'COMPLEX8',
-                    lal.LAL_Z_TYPE_CODE: 'COMPLEX16'}
-except AttributeError:
-    LAL_TYPE_STR = {lal.I2_TYPE_CODE: 'INT2',
-                    lal.I4_TYPE_CODE: 'INT4',
-                    lal.I8_TYPE_CODE: 'INT8',
-                    lal.U2_TYPE_CODE: 'UINT2',
-                    lal.U4_TYPE_CODE: 'UINT4',
-                    lal.U8_TYPE_CODE: 'UINT8',
-                    lal.S_TYPE_CODE: 'REAL4',
-                    lal.D_TYPE_CODE: 'REAL8',
-                    lal.C_TYPE_CODE: 'COMPLEX8',
-                    lal.Z_TYPE_CODE: 'COMPLEX16'}
+LAL_TYPE_STR = {
+    lal.I2_TYPE_CODE: 'INT2',
+    lal.I4_TYPE_CODE: 'INT4',
+    lal.I8_TYPE_CODE: 'INT8',
+    lal.U2_TYPE_CODE: 'UINT2',
+    lal.U4_TYPE_CODE: 'UINT4',
+    lal.U8_TYPE_CODE: 'UINT8',
+    lal.S_TYPE_CODE: 'REAL4',
+    lal.D_TYPE_CODE: 'REAL8',
+    lal.C_TYPE_CODE: 'COMPLEX8',
+    lal.Z_TYPE_CODE: 'COMPLEX16',
+}
 
-LAL_TYPE_FROM_STR = dict((v, k) for k, v in LAL_TYPE_STR.items())
+LAL_TYPE_FROM_STR = {v: k for k, v in LAL_TYPE_STR.items()}
 
-# map numpy dtypes to LAL type codes
-try:
-    LAL_TYPE_FROM_NUMPY = {numpy.int16: lal.LAL_I2_TYPE_CODE,
-                           numpy.int32: lal.LAL_I4_TYPE_CODE,
-                           numpy.int64: lal.LAL_I8_TYPE_CODE,
-                           numpy.uint16: lal.LAL_U2_TYPE_CODE,
-                           numpy.uint32: lal.LAL_U4_TYPE_CODE,
-                           numpy.uint64: lal.LAL_U8_TYPE_CODE,
-                           numpy.float32: lal.LAL_S_TYPE_CODE,
-                           numpy.float64: lal.LAL_D_TYPE_CODE,
-                           numpy.complex64: lal.LAL_C_TYPE_CODE,
-                           numpy.complex128: lal.LAL_Z_TYPE_CODE}
-except AttributeError:
-    LAL_TYPE_FROM_NUMPY = {numpy.int16: lal.I2_TYPE_CODE,
-                           numpy.int32: lal.I4_TYPE_CODE,
-                           numpy.int64: lal.I8_TYPE_CODE,
-                           numpy.uint16: lal.U2_TYPE_CODE,
-                           numpy.uint32: lal.U4_TYPE_CODE,
-                           numpy.uint64: lal.U8_TYPE_CODE,
-                           numpy.float32: lal.S_TYPE_CODE,
-                           numpy.float64: lal.D_TYPE_CODE,
-                           numpy.complex64: lal.C_TYPE_CODE,
-                           numpy.complex128: lal.Z_TYPE_CODE}
+LAL_TYPE_FROM_NUMPY = {
+    numpy.int16: lal.I2_TYPE_CODE,
+    numpy.int32: lal.I4_TYPE_CODE,
+    numpy.int64: lal.I8_TYPE_CODE,
+    numpy.uint16: lal.U2_TYPE_CODE,
+    numpy.uint32: lal.U4_TYPE_CODE,
+    numpy.uint64: lal.U8_TYPE_CODE,
+    numpy.float32: lal.S_TYPE_CODE,
+    numpy.float64: lal.D_TYPE_CODE,
+    numpy.complex64: lal.C_TYPE_CODE,
+    numpy.complex128: lal.Z_TYPE_CODE,
+}
 
-LAL_TYPE_STR_FROM_NUMPY = dict((key, LAL_TYPE_STR[value]) for (key, value) in
-                               LAL_TYPE_FROM_NUMPY.items())
+LAL_TYPE_STR_FROM_NUMPY = {k: LAL_TYPE_STR[v] for
+                           (k, v) in LAL_TYPE_FROM_NUMPY.items()}
 
-try:
-    LAL_UNIT_INDEX = [lal.lalMeterUnit,
-                      lal.lalKiloGramUnit,
-                      lal.lalSecondUnit,
-                      lal.lalAmpereUnit,
-                      lal.lalKelvinUnit,
-                      lal.lalStrainUnit,
-                      lal.lalADCCountUnit]
-except AttributeError:
-    LAL_UNIT_INDEX = [lal.MeterUnit,
-                      lal.KiloGramUnit,
-                      lal.SecondUnit,
-                      lal.AmpereUnit,
-                      lal.KelvinUnit,
-                      lal.StrainUnit,
-                      lal.ADCCountUnit]
-    lal_unit_to_str = str
-    LAL_UNIT_FROM_ASTROPY = dict((units.Unit(lal_unit_to_str(u)), u) for
-                                 u in LAL_UNIT_INDEX)
-else:
-    lal_unit_to_str = lal.UnitToString
-    LAL_UNIT_FROM_ASTROPY = dict((units.Unit(lal_unit_to_str(u)), u) for
-                                 u in LAL_UNIT_INDEX)
+
+def to_lal_type_str(pytype):
+    """Convert the input python type to a LAL type string
+
+    Examples
+    --------
+    To convert a python type:
+
+    >>> from gwpy.utils.lal import to_lal_type_str
+    >>> to_lal_type_str(float)
+    'REAL8'
+
+    To convert a `numpy.dtype`:
+
+    >>> import numpy
+    >>> to_lal_type_str(numpy.dtype('uint32'))
+    'UINT4'
+
+    To convert a LAL type code:
+
+    >>> to_lal_type_str(11)
+    'REAL8'
+
+    Raises
+    ------
+    KeyError
+        if the input doesn't map to a LAL type string
+    """
+    # noop
+    if pytype in LAL_TYPE_FROM_STR:
+        return pytype
+
+    # convert type code
+    if pytype in LAL_TYPE_STR:
+        return LAL_TYPE_STR[pytype]
+
+    # convert python type
+    try:
+        dtype = numpy.dtype(pytype)
+        return LAL_TYPE_STR_FROM_NUMPY[dtype.type]
+    except (TypeError, KeyError):
+        raise ValueError("Failed to map {!r} to LAL type string")
+
+
+def find_typed_function(pytype, prefix, suffix, module=lal):
+    """Returns the lal method for the correct type
+
+    Parameters
+    ----------
+    pytype : `type`, `numpy.dtype`
+        the python type, or dtype, to map
+
+    prefix : `str`
+        the function name prefix (before the type tag)
+
+    suffix : `str`
+        the function name suffix (after the type tag)
+
+    Raises
+    ------
+    AttributeError
+        if the function is not found
+
+    Examples
+    --------
+    >>> from gwpy.utils.lal import find_typed_function
+    >>> find_typed_function(float, 'Create', 'Sequence')
+    <built-in function CreateREAL8Sequence>
+    """
+    laltype = to_lal_type_str(pytype)
+    return getattr(module, '{0}{1}{2}'.format(prefix, laltype, suffix))
+
+
+# -- units --------------------------------------------------------------------
+
+LAL_UNIT_INDEX = [
+    lal.MeterUnit,
+    lal.KiloGramUnit,
+    lal.SecondUnit,
+    lal.AmpereUnit,
+    lal.KelvinUnit,
+    lal.StrainUnit,
+    lal.ADCCountUnit,
+]
+LAL_UNIT_FROM_ASTROPY = {units.Unit(str(u)): u for u in LAL_UNIT_INDEX}
 
 
 def to_lal_unit(aunit):

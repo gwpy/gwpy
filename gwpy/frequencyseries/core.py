@@ -335,22 +335,24 @@ class FrequencySeries(Series):
         conversion.
         """
         import lal
-        from ..utils.lal import (LAL_TYPE_STR_FROM_NUMPY, to_lal_unit)
+        from ..utils.lal import (find_typed_function, to_lal_unit)
 
-        typestr = LAL_TYPE_STR_FROM_NUMPY[self.dtype.type]
+        # map unit
         try:
             unit = to_lal_unit(self.unit)
         except ValueError as e:
             warnings.warn("%s, defaulting to lal.DimensionlessUnit" % str(e))
             unit = lal.DimensionlessUnit
-        create = getattr(lal, 'Create%sFrequencySeries' % typestr.upper())
-        if self.epoch is None:
-            epoch = 0
-        else:
-            epoch = self.epoch.gps
-        lalfs = create(self.name, lal.LIGOTimeGPS(epoch),
-                       self.f0.value, self.df.value, unit, self.size)
+
+        # convert epoch
+        epoch = lal.LIGOTimeGPS(0 if self.epoch is None else self.epoch.gps)
+
+        # create FrequencySeries
+        create = find_typed_function(self.dtype, 'Create', 'FrequencySeries')
+        lalfs = create(self.name, epoch, self.f0.value, self.df.value,
+                       unit, self.shape[0])
         lalfs.data.data = self.value
+
         return lalfs
 
     @classmethod
