@@ -245,7 +245,7 @@ class TestTimeSeriesBase(TestSeries):
             lalts = array.to_lal()
         assert lalts.sampleUnits == lal.DimensionlessUnit
         a2 = self.TEST_CLASS.from_lal(lalts)
-        assert a2.unit is units.dimensionless_unscaled
+        assert a2.unit == units.dimensionless_unscaled
 
     @utils.skip_missing_dependency('lal')
     @utils.skip_missing_dependency('pycbc')
