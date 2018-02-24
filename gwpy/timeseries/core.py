@@ -652,16 +652,19 @@ class TimeSeriesBase(Series):
         """Convert this `TimeSeries` into a LAL TimeSeries.
         """
         import lal
-        from ..utils.lal import (LAL_TYPE_STR_FROM_NUMPY, to_lal_unit)
-        typestr = LAL_TYPE_STR_FROM_NUMPY[self.dtype.type]
+        from ..utils.lal import (find_typed_function, to_lal_unit)
+
+        # map unit
         try:
             unit = to_lal_unit(self.unit)
-        except ValueError as exc:
-            warnings.warn("%s, defaulting to lal.DimensionlessUnit" % str(exc))
+        except ValueError as e:
+            warnings.warn("%s, defaulting to lal.DimensionlessUnit" % str(e))
             unit = lal.DimensionlessUnit
-        create = getattr(lal, 'Create%sTimeSeries' % typestr.upper())
+
+        # create TimeSeries
+        create = find_typed_function(self.dtype, 'Create', 'TimeSeries')
         lalts = create(self.name, lal.LIGOTimeGPS(self.epoch.gps), 0,
-                       self.dt.value, unit, self.size)
+                       self.dt.value, unit, self.shape[0])
         lalts.data.data = self.value
         return lalts
 

@@ -20,13 +20,20 @@
 """
 
 import subprocess
+from importlib import import_module
 
 from six import PY2
 
 import pytest
 
+import numpy
+
+from astropy import units
+
 from gwpy.utils import shell
 from gwpy.utils import deps  # deprecated
+
+import utils
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -89,3 +96,57 @@ def test_compat_ordereddict():
         from gwpy.utils.compat import OrderedDict as CompatOrderedDict
     from collections import OrderedDict
     assert CompatOrderedDict is OrderedDict
+
+
+# -- gwpy.utils.lal -----------------------------------------------------------
+
+@utils.skip_missing_dependency('lal')
+class TestUtilsLal(object):
+    """Tests of :mod:`gwpy.utils.lal`
+    """
+    def setup_class(self):
+        self.lal = import_module('lal')
+        self.utils_lal = import_module('gwpy.utils.lal')
+
+    def test_to_lal_type_str(self):
+        assert self.utils_lal.to_lal_type_str(float) == 'REAL8'
+        assert self.utils_lal.to_lal_type_str(
+            numpy.dtype('float64')) == 'REAL8'
+        assert self.utils_lal.to_lal_type_str(11) == 'REAL8'
+        with pytest.raises(ValueError):
+            self.utils_lal.to_lal_type_str('blah')
+        with pytest.raises(ValueError):
+            self.utils_lal.to_lal_type_str(numpy.int8)
+        with pytest.raises(ValueError):
+            self.utils_lal.to_lal_type_str(20)
+
+    def test_find_typed_function(self):
+        assert self.utils_lal.find_typed_function(
+            'REAL8', 'Create', 'Sequence') is self.lal.CreateREAL8Sequence
+
+        try:
+            import lalframe
+        except ImportError:  # no lalframe
+            pass
+        else:
+            self.utils_lal.find_typed_function(
+                'REAL4', 'FrStreamRead', 'TimeSeries',
+                module=lalframe) is lalframe.FrStreamReadREAL4TimeSeries
+
+    def test_to_lal_unit(self):
+        assert self.utils_lal.to_lal_unit('m') == self.lal.MeterUnit
+        assert self.utils_lal.to_lal_unit('Farad') == self.lal.Unit(
+            'm^-2 kg^-1 s^4 A^2')
+        with pytest.raises(ValueError):
+            self.utils_lal.to_lal_unit('rad/s')
+
+    def test_from_lal_unit(self):
+        assert self.utils_lal.from_lal_unit(
+            self.lal.MeterUnit / self.lal.SecondUnit) == (
+            units.Unit('m/s'))
+        assert self.utils_lal.from_lal_unit(self.lal.StrainUnit) == (
+            units.Unit('strain'))
+
+    def test_to_lal_ligotimegps(self):
+        assert self.utils_lal.to_lal_ligotimegps(123.456) == (
+            self.lal.LIGOTimeGPS(123, 456000000))
