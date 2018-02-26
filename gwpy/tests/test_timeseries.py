@@ -633,8 +633,7 @@ class TestTimeSeries(TestTimeSeriesBase):
                     type(array).read(f, array.name, format=api)
 
             # check reading from cache
-             self.create(name='TEST', t0=array.span[1],
-                             dt=array.dx)
+            self.create(name='TEST', t0=array.span[1], dt=array.dx)
             suffix = '-%d-%d.gwf' % (a2.t0.value, a2.duration.value)
             with tempfile.NamedTemporaryFile(prefix='GWpy-',
                                              suffix=suffix) as f2:
