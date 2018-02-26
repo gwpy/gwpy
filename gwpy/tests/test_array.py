@@ -720,9 +720,9 @@ class TestArray2D(TestSeries):
             exclude=['epoch'])
 
         # test dual slice returns type(self) with metadata
-        subarray = array[1:5:2,1:5:2]
+        subarray = array[1:5:2, 1:5:2]
         utils.assert_quantity_sub_equal(subarray, self.TEST_CLASS(
-                array.value[1:5:2,1:5:2],
+                array.value[1:5:2, 1:5:2],
                 x0=array.x0+array.dx, dx=array.dx*2,
                 y0=array.y0+array.dy, dy=array.dy*2,
                 name=array.name, channel=array.channel, unit=array.unit),
