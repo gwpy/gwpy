@@ -40,12 +40,7 @@ import numpy
 
 from astropy.io.registry import (get_formats, get_reader, get_writer)
 
-try:
-    from glue.lal import Cache
-except ImportError:  # no lal
-    HAS_CACHE = False
-else:
-    HAS_CACHE = True
+from glue.lal import Cache
 
 from ....segments import Segment
 from ....time import to_gps
@@ -255,7 +250,7 @@ def register_gwf_api(library):
                     source.name.endswith(('.lcf', '.cache'))):
             source = read_cache_file(source)
         # separate cache into contiguous segments
-        if HAS_CACHE and isinstance(source, Cache):
+        if isinstance(source, Cache):
             if start is not None and end is not None:
                 source = source.sieve(segment=Segment(start, end))
             source = list(find_contiguous(source))

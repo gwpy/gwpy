@@ -46,6 +46,8 @@ use('agg')  # nopep8
 from astropy import units
 from astropy.io.registry import (get_reader, register_reader)
 
+from glue.lal import Cache
+
 from gwpy.detector import Channel
 from gwpy.time import (Time, LIGOTimeGPS)
 from gwpy.timeseries import (TimeSeriesBase, TimeSeriesBaseDict,
@@ -631,22 +633,17 @@ class TestTimeSeries(TestTimeSeriesBase):
                     type(array).read(f, array.name, format=api)
 
             # check reading from cache
-            try:
-                from glue.lal import Cache
-            except ImportError:
-                pass
-            else:
-                a2 = self.create(name='TEST', t0=array.span[1],
-                                 dt=array.dx)
-                suffix = '-%d-%d.gwf' % (a2.t0.value, a2.duration.value)
-                with tempfile.NamedTemporaryFile(prefix='GWpy-',
-                                                 suffix=suffix) as f2:
-                    a2.write(f2.name)
-                    cache = Cache.from_urls([f.name, f2.name], coltype=int)
-                    comb = type(array).read(cache, 'TEST', format=fmt, nproc=2)
-                    utils.assert_quantity_sub_equal(
-                        comb, array.append(a2, inplace=False),
-                        exclude=['channel'])
+             self.create(name='TEST', t0=array.span[1],
+                             dt=array.dx)
+            suffix = '-%d-%d.gwf' % (a2.t0.value, a2.duration.value)
+            with tempfile.NamedTemporaryFile(prefix='GWpy-',
+                                             suffix=suffix) as f2:
+                a2.write(f2.name)
+                cache = Cache.from_urls([f.name, f2.name], coltype=int)
+                comb = type(array).read(cache, 'TEST', format=fmt, nproc=2)
+                utils.assert_quantity_sub_equal(
+                    comb, array.append(a2, inplace=False),
+                    exclude=['channel'])
 
     @utils.skip_missing_dependency('h5py')
     @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
