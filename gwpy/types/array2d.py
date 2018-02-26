@@ -146,53 +146,72 @@ class Array2D(Series):
     # rebuild getitem to handle complex slicing
     def __getitem__(self, item):
         new = super(Array2D, self).__getitem__(item)
+
         # unwrap item request
-        if isinstance(item, tuple):
+        columnslice = False
+        if isinstance(item, tuple) and len(item) == 2:  # slice both axes
             x, y = item
-        else:
+        elif isinstance(item, tuple):  # slice Y-axis
+            x, = item
+            y = None
+            columnslice = True
+        else:   # slice Y-axis
             x = item
             y = None
+            columnslice = True
+
+        # format non-slices to null slices
+        if isinstance(x, int) or x is None:
+            columnslice = True
+            x = slice(0, None, 1)
+        if isinstance(y, int) or y is None:
+            y = slice(0, None, 1)
+
+        # -- reformat output --------------------
+
         # extract a Quantity
         if numpy.shape(new) == ():
             return Quantity(new, unit=self.unit)
-        # unwrap a Series
-        if len(new.shape) == 1:
-            if isinstance(x, (float, int)):
-                new = new.view(self._columnclass)
-                new.dx = self.dy
-                new.x0 = self.y0
-                new.__metadata_finalize__(self)
-                try:
-                    new.xindex = self._yindex
-                except AttributeError:
-                    pass
-            else:
-                new = new.view(self._rowclass)
-                new.__metadata_finalize__(self)
-        # unwrap a Spectrogram
-        else:
-            new = new.view(type(self))
-        # update metadata (Series.__getitem__ has already done x slice)
-        if len(new.shape) == 1 and isinstance(y, slice):  # FrequencySeries
-            try:
-                self._xindex
-            except AttributeError:
-                if y.start:
-                    new.x0 = self.x0 + y.start * self.dx
-                if y.step:
-                    new.dx = self.dx * y.step
-            else:
-                new.xindex = self.xindex[y]
-        elif isinstance(y, slice):  # slice Array2D y-axis
-            try:
-                self._yindex
-            except AttributeError:
-                if y.start:
-                    new.y0 = new.y0 + y.start * new.dy
-                if y.step:
-                    new.dy = new.dy * y.step
-            else:
-                new.yindex = self.yindex[y]
+
+        def _format_axis(old, oldax, new, newax, slice_):
+            """Set axis metadata for ``new`` by slicing an axis of ``old``
+            """
+            # metadata names
+            index = '{}.index'.format
+            origin = '{}0'.format
+            delta = 'd{}'.format
+            try:  # try using index
+                # new.xindex = old._yindex[slice]
+                setattr(new, index(newax),
+                        getattr(old, '_{}'.format(index(oldax)))[slice_])
+            except AttributeError:  # or just set origin and delta
+                # new.x0 = old.y0 + (slice.start or 0) * old.dy
+                setattr(new, origin(newax),
+                        getattr(old, origin(oldax)) +
+                        (slice_.start or 0) * getattr(old, delta(oldax)))
+                # new.dx = old.dy * (slice.step or 1)
+                setattr(new, delta(newax),
+                        getattr(old, delta(oldax)) * (slice_.step or 1))
+
+        # extract a column
+        if new.ndim == 1 and columnslice:
+            new = new.view(self._columnclass)
+            del new.xindex
+            new.__metadata_finalize__(self)
+            _format_axis(self, 'y', new, 'x', y)
+            return new
+
+        # extract a row
+        if new.ndim == 1:
+            new = new.view(self._rowclass)
+            new.__metadata_finalize__(self)
+            _format_axis(self, 'x', new, 'x', x)
+            return new
+
+        # extract an Array2D
+        new = new.view(type(self))
+        _format_axis(self, 'x', new, 'x', x)
+        _format_axis(self, 'y', new, 'y', y)
         return new
 
     def __array_finalize__(self, obj):
