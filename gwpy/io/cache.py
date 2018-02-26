@@ -94,7 +94,6 @@ def open_cache(*args, **kwargs):  # pylint: disable=missing-docstring
     warnings.warn("gwpy.io.cache.open_cache was renamed read_cache",
                   DeprecationWarning)
     return read_cache(*args, **kwargs)
-open_cache.__doc__ = read_cache.__doc__
 
 
 def write_cache(cache, fobj):
