@@ -27,6 +27,7 @@ import operator
 from collections import OrderedDict
 
 from six import string_types
+from six.moves import reduce
 
 import numpy
 
