@@ -102,9 +102,8 @@ def test_tconvert():
     # from GPS using LAL LIGOTimeGPS
     assert time.tconvert(time.LIGOTimeGPS(1126259462.391)) == (
         datetime(2015, 9, 14, 9, 50, 45, 391000))
-    else:
-        assert time.tconvert(GlueGPS(1126259462.391)) == (
-            datetime(2015, 9, 14, 9, 50, 45, 391000))
+    assert time.tconvert(GlueGPS(1126259462.391)) == (
+        datetime(2015, 9, 14, 9, 50, 45, 391000))
 
     # to GPS
     assert time.tconvert(datetime(2015, 9, 14, 9, 50, 45, 391000)) == (
