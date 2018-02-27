@@ -643,11 +643,6 @@ class TestTimeSeries(TestTimeSeriesBase):
             with pytest.raises((ValueError, RuntimeError)):
                 read_(end=array.span[0]-1)
 
-            # check old format prints a deprecation warning
-            if api:
-                with pytest.warns(DeprecationWarning):
-                    type(array).read(f, array.name, format=api)
-
             # check reading from multiple files
             a2 = self.create(name='TEST', t0=array.span[1], dt=array.dx)
             suffix = '-%d-%d.gwf' % (a2.t0.value, a2.duration.value)
