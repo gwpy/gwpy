@@ -21,6 +21,8 @@
 These methods are designed for internal use only.
 """
 
+import numpy
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
@@ -61,13 +63,13 @@ def slice_axis_attributes(old, oldaxis, new, newaxis, slice_):
     Series.__getitem__
     Array2D.__getitem__
     """
+    slice_ = as_slice(slice_)
+
     # attribute names
     index = '{}index'.format
     origin = '{}0'.format
     delta = 'd{}'.format
 
-    if isinstance(slice_, (int, type(None))):
-        slice_ = slice(0, None, 1)
 
     # if array has an index set already, use it
     if hasattr(old, '_{}index'.format(oldaxis)):
@@ -94,20 +96,27 @@ def slice_axis_attributes(old, oldaxis, new, newaxis, slice_):
     return new
 
 
-
-    if len(will_slice) == 1:
-        return will_slice[0]
-    return
-
-
 def null_slice(slice_):
     """Returns True if a slice will have no affect
     """
-    if isinstance(slice_, (int, type(None))):
-        return True
-
-    if not isinstance(slice_, slice):
+    try:
+        slice_ = as_slice(slice_)
+    except TypeError:
         return False
 
-    if slice_ in (slice(None, None, None), slice(0, None, 1)):
+    if isinstance(slice_, slice) and slice_ in (
+            slice(None, None, None), slice(0, None, 1)
+    ):
         return True
+
+
+def as_slice(slice_):
+    """Convert an object to a slice, if possible
+    """
+    if isinstance(slice_, (int, type(None))):
+        return slice(0, None, 1)
+
+    if isinstance(slice_, (slice, numpy.ndarray)):
+        return slice_
+
+    raise TypeError("Cannot format {!r} as slice".format(slice_))
