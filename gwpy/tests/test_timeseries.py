@@ -971,7 +971,8 @@ class TestTimeSeries(TestTimeSeriesBase):
             method = '{}_{}'.format(library, method)
             ctx = null_context
         else:
-            ctx = lambda: pytest.warns(UserWarning)
+            def ctx():
+                return pytest.warns(UserWarning)
 
         def _spectrogram(*args, **kwargs):
             kwargs.setdefault('method', method)
