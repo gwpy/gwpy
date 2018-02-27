@@ -387,9 +387,22 @@ class TestSeries(TestArray):
     # -- test methods ---------------------------
 
     def test_getitem(self, array):
-        assert array[0].value == array.value[0]
-        assert isinstance(array[0], units.Quantity)
-        assert array[0].unit == array.unit
+        # item access
+        utils.assert_quantity_equal(
+            array[0], units.Quantity(array.value[0], array.unit))
+
+        # slice
+        utils.assert_quantity_equal(array[1::2], self.TEST_CLASS(
+            array.value[1::2], x0=array.x0+array.dx, dx=array.dx*2,
+            name=array.name, epoch=array.epoch, unit=array.unit),
+        )
+
+        # index array
+        a = numpy.array([3, 4, 1, 2])
+        utils.assert_quantity_equal(array[a], self.TEST_CLASS(
+            array.value[a], xindex=array.xindex[a],
+            name=array.name, epoch=array.epoch, unit=array.unit),
+        )
 
     def test_zip(self, array):
         z = array.zip()

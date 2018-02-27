@@ -30,6 +30,7 @@ from astropy.io import registry as io_registry
 
 from .array import Array
 from .index import Index
+from .utils import slice_axis_attributes
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -485,20 +486,14 @@ class Series(Array):
         # if single value, convert to a simple Quantity
         if isinstance(item, Number):
             return Quantity(self.value[item], unit=self.unit)
+
+        # let numpy do the actual slicing
         new = super(Series, self).__getitem__(item)
-        # if we're slicing, update the x-axis properties
-        if isinstance(item, slice):  # slice
-            try:
-                self._xindex
-            except AttributeError:
-                if item.start:
-                    new.x0 = self.x0 + item.start * self.dx
-                if item.step:
-                    new.dx = self.dx * item.step
-            else:
-                new.xindex = self.xindex[item]
-        elif isinstance(item, numpy.ndarray):  # index array
-            new.xindex = self.xindex[item]
+
+        # if we're slicing, update the x-axis properties (modifies in place)
+        if isinstance(item, (slice, numpy.ndarray)):
+            slice_axis_attributes(self, 'x', new, 'x', item)
+
         return new
 
     def is_contiguous(self, other, tol=1/2.**18):
