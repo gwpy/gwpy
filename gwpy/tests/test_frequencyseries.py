@@ -278,6 +278,21 @@ class TestSpectralVariance(TestArray2D):
     def test_yindex(self, array):
         utils.assert_array_equal(array.yindex, array.bins[:-1])
 
+    # -- test utilities -------------------------
+
+    def test_getitem(self, array):
+        utils.assert_quantity_sub_equal(
+            array[0::2, 0],
+            self.TEST_CLASS._rowclass(
+                array.value[0::2, 0], x0=array.x0, dx=array.dx*2,
+                name=array.name, unit=array.unit, channel=array.channel,
+                epoch=array.epoch,
+            ),
+        )
+        with pytest.raises(NotImplementedError) as exc:
+            array[0, ::2]
+        assert str(exc.value) == 'cannot slice SpectralVariance across bins'
+
     # -- test methods ---------------------------
 
     def test_init(self, array):
