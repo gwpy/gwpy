@@ -139,18 +139,11 @@ class DataQualityFlag(object):
     _ListClass = SegmentList
 
     def __init__(self, name=None, active=None, known=None, label=None,
-                 category=None, description=None, isgood=True, padding=None,
-                 valid=None):
+                 category=None, description=None, isgood=True, padding=None):
         """Define a new DataQualityFlag.
         """
         self.name = name
-        if valid is not None:
-            if known is not None:
-                raise ValueError("Please give only 'known', and not both "
-                                 "'known' and 'valid'")
-            self.valid = valid
-        else:
-            self.known = known
+        self.known = known
         self.active = active
         self.label = label
         self.category = category
@@ -275,33 +268,6 @@ class DataQualityFlag(object):
 
     @known.deleter
     def known(self):
-        self._known = self._ListClass()
-
-    @property
-    def valid(self):
-        """The set of segments during which this flag was
-        known, and its state was well defined.
-        """
-        warnings.warn("The 'valid' property of the DataQualityFlag "
-                      "has been renamed 'known' and will be removed in "
-                      "the near future, please move to using 'known'.",
-                      DeprecationWarning)
-        return self.known
-
-    @valid.setter
-    def valid(self, segmentlist):
-        warnings.warn("The 'valid' property of the DataQualityFlag "
-                      "has been renamed 'known' and will be removed in "
-                      "the near future, please move to using 'known'.",
-                      DeprecationWarning)
-        self.known = segmentlist
-
-    @valid.deleter
-    def valid(self):
-        warnings.warn("The 'valid' property of the DataQualityFlag "
-                      "has been renamed 'known' and will be removed in "
-                      "the near future, please move to using 'known'.",
-                      DeprecationWarning)
         self._known = self._ListClass()
 
     @property
@@ -716,7 +682,7 @@ class DataQualityFlag(object):
             either a URL for a segment database or a path to a file on disk.
 
         segments : `SegmentList`, optional
-            a list of valid segments during which to query, if not given,
+            a list of segments during which to query, if not given,
             existing known segments for this flag will be used.
 
         pad : `bool`, optional, default: `True`
