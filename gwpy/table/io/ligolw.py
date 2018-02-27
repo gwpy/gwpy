@@ -85,8 +85,7 @@ def _get_property_columns(tabletype, columns):
 # -- conversions --------------------------------------------------------------
 
 def to_astropy_table(llwtable, apytable, copy=False, columns=None,
-                     use_numpy_dtypes=False, rename=None,
-                     on_attributeerror=None, get_as_columns=None):
+                     use_numpy_dtypes=False, rename=None):
     """Convert a :class:`~glue.ligolw.table.Table` to an `~astropy.tableTable`
 
     This method is designed as an internal method to be attached to
@@ -115,28 +114,11 @@ def to_astropy_table(llwtable, apytable, copy=False, columns=None,
         dict of ('old name', 'new name') pairs to rename columns
         from the original LIGO_LW table
 
-    on_attributeerror
-        DEPRECATED, do not use
-
-    get_as_columns
-        DEPRECATED, do not use
-
     Returns
     -------
     table : `EventTable`
         a view of the original data
     """
-    # handle deprecated keywords
-    if get_as_columns is not None:
-        warnings.warn("the ``get_as_columns`` keyword has been deprecated and "
-                      "will be removed in an upcoming release, simply refer "
-                      "to the columns you want via the ``columns`` keyword",
-                      DeprecationWarning)
-    if on_attributeerror is not None:
-        warnings.warn("the ``on_attributeerror`` keyword has been deprecated, "
-                      "and will be removed in an upcoming release, it will be "
-                      "ignored for now", DeprecationWarning)
-
     # set default keywords
     if rename is None:
         rename = {}
@@ -323,8 +305,6 @@ def read_table(source, tablename=None, **kwargs):
     # separate keywords for reading and converting from LIGO_LW to Astropy
     read_kw = kwargs  # rename for readability
     convert_kw = {
-        'on_attributeerror': None,  # deprecated
-        'get_as_columns': None,  # deprecated
         'rename': None,
         'use_numpy_dtypes': False,
     }

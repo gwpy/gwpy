@@ -217,14 +217,6 @@ class TestTable(object):
             assert str(exc.value) == ('document must contain exactly '
                                       'one sngl_burst table')
 
-            # -- deprecations
-            # check deprecations print warnings where expected
-
-            with pytest.warns(DeprecationWarning):
-                _read(get_as_columns=True)
-            with pytest.warns(DeprecationWarning):
-                _read(on_attributeerror='anything')
-
     @utils.skip_missing_dependency('glue.ligolw.lsctables')
     def test_read_write_ligolw_property_columns(self):
         table = self.create(100, ['peak', 'snr', 'central_freq'],
