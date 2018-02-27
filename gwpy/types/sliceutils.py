@@ -72,7 +72,6 @@ def slice_axis_attributes(old, oldaxis, new, newaxis, slice_):
     origin = '{}0'.format
     delta = 'd{}'.format
 
-
     # if array has an index set already, use it
     if hasattr(old, '_{}index'.format(oldaxis)):
         setattr(new, index(newaxis), getattr(old, index(oldaxis))[slice_])
