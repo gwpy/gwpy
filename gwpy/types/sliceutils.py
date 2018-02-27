@@ -21,6 +21,8 @@
 These methods are designed for internal use only.
 """
 
+from numbers import Integral
+
 import numpy
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -113,7 +115,7 @@ def null_slice(slice_):
 def as_slice(slice_):
     """Convert an object to a slice, if possible
     """
-    if isinstance(slice_, (int, type(None))):
+    if isinstance(slice_, (Integral, type(None))):
         return slice(0, None, 1)
 
     if isinstance(slice_, (slice, numpy.ndarray)):
