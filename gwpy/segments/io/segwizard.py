@@ -57,24 +57,6 @@ def from_segwizard(source, coalesce=True, gpstype=LIGOTimeGPS, strict=True,
     return segs
 
 
-# DEPRECATED - remove prior to 1.0 release
-def flag_from_segwizard(filename, flag=None, coalesce=True, gpstype=float,
-                        strict=True, nproc=1):
-    # pylint: disable=missing-docstring,too-many-arguments
-    warnings.warn("Reading DataQualityFlags from ASCII files has been "
-                  "deprecated, and will be removed prior to the 1.0 "
-                  "release of GWpy. Please move to using a structured "
-                  "file-format, e.g. HDF5 or JSON", DeprecationWarning)
-    if isinstance(flag, DataQualityFlag):
-        out = flag
-    else:
-        out = DataQualityFlag(str(flag))
-    out.active = from_segwizard(filename, coalesce=coalesce, gpstype=gpstype,
-                                strict=strict, nproc=nproc)
-    out.known = out.active
-    return out
-
-
 # -- write --------------------------------------------------------------------
 
 def to_segwizard(segs, fobj, header=True, coltype=int):
@@ -109,54 +91,6 @@ def to_segwizard(segs, fobj, header=True, coltype=int):
         fobj.close()
 
 
-# DEPRECATED - remove prior to 1.0 release
-def flag_to_segwizard(flag, fobj, header=True, coltype=int):
-    """Write the given `DataQualityFlag` to the file object fobj
-
-    Parameters
-    ----------
-    flag : :class:`~gwpy.segments.flag.DataQualityFlag`
-        data quality flag to print
-    fobj : `file`, `str`
-        open file object, or file path, to write to
-    header : `bool`, optional
-        print header into the file, default: `True`
-    coltype : `type`, optional
-        numerical type in which to cast times before printing
-
-    Raises
-    ------
-    ValueError
-        if the `~DataQualityFlag.known` segments for `flag` do not mirror
-        the `~DataQualityFlag.active` segments. In other words, if recording
-        only the `active` segments would discard information.
-
-    Notes
-    -----
-    In this format, only the
-    :attr:`~gwpy.segments.flag.DataQualityFlag.active` segments are
-    printed
-
-    See Also
-    --------
-    glue.segmentsUtils
-        for definition of the segwizard format, and the to/from functions
-        used in this GWpy module
-    """
-    warnings.warn("Writing DataQualityFlags to ASCII files has been "
-                  "deprecated, and will be removed prior to the 1.0 "
-                  "release of GWpy. Please move to using a structured "
-                  "file-format, e.g. HDF5 or JSON", DeprecationWarning)
-    if flag.known and flag.known != flag.active:
-        raise ValueError("This DataQualityFlag has known segments that do not "
-                         "simply match the active ones, meaning the SegWizard "
-                         "format cannot preserve these data completely. "
-                         "Consider using HDF5 or LIGO_LW XML, otherwise call "
-                         "the write() method of the active SegmentList "
-                         "directly to write just those segments.")
-    to_segwizard(flag.active, fobj, header=header, coltype=coltype)
-
-
 # -- identify -----------------------------------------------------------------
 
 identify_segwizard = identify_factory('txt', 'dat')  # pylint: disable=invalid-name
@@ -166,8 +100,3 @@ identify_segwizard = identify_factory('txt', 'dat')  # pylint: disable=invalid-n
 registry.register_reader('segwizard', SegmentList, from_segwizard)
 registry.register_writer('segwizard', SegmentList, to_segwizard)
 registry.register_identifier('segwizard', SegmentList, identify_segwizard)
-
-# DEPRECATED - remove prior to 1.0 release
-registry.register_reader('segwizard', DataQualityFlag, flag_from_segwizard)
-registry.register_writer('segwizard', DataQualityFlag, flag_to_segwizard)
-registry.register_identifier('segwizard', DataQualityFlag, identify_segwizard)
