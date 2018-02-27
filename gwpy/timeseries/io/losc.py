@@ -400,9 +400,6 @@ def read_losc_hdf5_state(f, path='quality/simple', start=None, end=None,
 # register
 registry.register_reader('hdf5.losc', TimeSeries, read_losc_hdf5)
 registry.register_reader('hdf5.losc', StateVector, read_losc_hdf5_state)
-# DEPRECATED -- remove prior to 1.0 release
-registry.register_reader('losc', TimeSeries, read_losc_hdf5)
-registry.register_reader('losc', StateVector, read_losc_hdf5_state)
 
 
 def read_losc_ascii(fobj):
