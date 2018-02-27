@@ -24,6 +24,16 @@ These methods are designed for internal use only.
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
+def format_nd_slice(item, ndim):
+    """Preformat a getitem argument as an N-tuple
+    """
+    if not isinstance(item, tuple):
+        item = (item,)
+    if len(item) == ndim:
+        return item
+    return item + (None,) * (ndim - len(item))
+
+
 def slice_axis_attributes(old, oldaxis, new, newaxis, slice_):
     """Set axis metadata for ``new`` by slicing an axis of ``old``
 
@@ -56,25 +66,55 @@ def slice_axis_attributes(old, oldaxis, new, newaxis, slice_):
     origin = '{}0'.format
     delta = 'd{}'.format
 
-    # slice using a slice object
-    if isinstance(slice_, slice):
-        # try using index
-        try:
-            # new.xindex = old._yindex[slice]
-            setattr(new, index(newaxis),
-                    getattr(old, '_{}'.format(index(oldaxis)))[slice_])
-        # no index, just set origin and delta
-        except AttributeError:
-            # new.x0 = old.y0 + (slice.start or 0) * old.dy
-            setattr(new, origin(newaxis),
-                    getattr(old, origin(oldaxis)) +
-                    (slice_.start or 0) * getattr(old, delta(oldaxis)))
-            # new.dx = old.dy * (slice.step or 1)
-            setattr(new, delta(newaxis),
-                    getattr(old, delta(oldaxis)) * (slice_.step or 1))
+    if isinstance(slice_, (int, type(None))):
+        slice_ = slice(0, None, 1)
 
-    # slice with an index array (always requires old.{x,y}index)
+    # if array has an index set already, use it
+    if hasattr(old, '_{}index'.format(oldaxis)):
+        setattr(new, index(newaxis), getattr(old, index(oldaxis))[slice_])
+
+    # otherwise if using a slice, use origin and delta properties
+    elif isinstance(slice_, slice):
+        offset = slice_.start or 0
+        step = slice_.step or 1
+
+        dx = getattr(old, delta(oldaxis))
+        x0 = getattr(old, origin(oldaxis))
+
+        # set new.x0 / new.y0
+        setattr(new, origin(newaxis), x0 + offset * dx)
+
+        # set new.dx / new.dy
+        setattr(new, delta(newaxis), dx * step)
+
+    # otherwise slice with an index array
     else:
         setattr(new, index(newaxis), getattr(old, index(oldaxis))[slice_])
 
     return new
+
+
+def primary_slice_axis(obj, slice_):
+    slices = preformat_nd_slice(slice_)
+
+    will_slice = []
+    for i, slc in enumerate(slices):
+        if slice is not None and not isinstance(slc, int):
+            will_slice.append(i)
+
+    if len(will_slice) == 1:
+        return will_slice[0]
+    return
+
+
+def null_slice(slice_):
+    """Returns True if a slice will have no affect
+    """
+    if isinstance(slice_, (int, type(None))):
+        return True
+
+    if not isinstance(slice_, slice):
+        return False
+
+    if slice_ in (slice(None, None, None), slice(0, None, 1)):
+        return True

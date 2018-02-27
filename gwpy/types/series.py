@@ -28,9 +28,9 @@ import numpy
 from astropy.units import (Unit, Quantity, dimensionless_unscaled)
 from astropy.io import registry as io_registry
 
+from . import sliceutils
 from .array import Array
 from .index import Index
-from .utils import slice_axis_attributes
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -483,16 +483,12 @@ class Series(Array):
         return new
 
     def __getitem__(self, item):
-        # if single value, convert to a simple Quantity
-        if isinstance(item, Number):
-            return Quantity(self.value[item], unit=self.unit)
-
-        # let numpy do the actual slicing
         new = super(Series, self).__getitem__(item)
 
-        # if we're slicing, update the x-axis properties (modifies in place)
-        if isinstance(item, (slice, numpy.ndarray)):
-            slice_axis_attributes(self, 'x', new, 'x', item)
+        # slice axis 0 metadata
+        slice_ = sliceutils.format_nd_slice(item, self.ndim)[0]
+        if not sliceutils.null_slice(slice_):
+            sliceutils.slice_axis_attributes(self, 'x', new, 'x', slice_)
 
         return new
 

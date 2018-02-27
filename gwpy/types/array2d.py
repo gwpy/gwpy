@@ -25,9 +25,9 @@ import numpy
 
 from astropy.units import (Unit, Quantity)
 
+from . import sliceutils
 from .series import Series
 from .index import Index
-from .utils import slice_axis_attributes
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -148,55 +148,25 @@ class Array2D(Series):
     def __getitem__(self, item):
         new = super(Array2D, self).__getitem__(item)
 
-        # unwrap item request
-        columnslice = False
-        if isinstance(item, tuple) and len(item) == 2:  # slice both axes
-            x, y = item
-        elif isinstance(item, tuple):  # slice Y-axis
-            x, = item
-            y = None
-            columnslice = True
-        else:   # slice Y-axis
-            x = item
-            y = None
-            columnslice = True
+        # slice axis 1 metadata
+        colslice, rowslice = sliceutils.format_nd_slice(item, self.ndim)
 
-        # format non-slices to null slices
-        if isinstance(x, int) or x is None:
-            columnslice = True
-            x = slice(0, None, 1)
-        if isinstance(y, int) or y is None:
-            y = slice(0, None, 1)
-
-        print('x', x)
-        print('y', y)
-        print(columnslice)
-
-        # -- reformat output --------------------
-
-        # extract a Quantity
-        if numpy.shape(new) == ():
-            return Quantity(new, unit=self.unit)
-
-        # extract a column
-        if new.ndim == 1 and columnslice:
+        # column slice
+        if new.ndim == 1 and isinstance(colslice, int):
             new = new.view(self._columnclass)
             del new.xindex
             new.__metadata_finalize__(self)
-            slice_axis_attributes(self, 'y', new, 'x', y)
-            return new
+            sliceutils.slice_axis_attributes(self, 'y', new, 'x', rowslice)
 
-        # extract a row
-        if new.ndim == 1:
+        # row slice
+        elif new.ndim == 1:
             new = new.view(self._rowclass)
-            new.__metadata_finalize__(self)
-            slice_axis_attributes(self, 'x', new, 'x', x)
-            return new
 
-        # extract an Array2D
-        new = new.view(type(self))
-        slice_axis_attributes(self, 'x', new, 'x', x)
-        slice_axis_attributes(self, 'y', new, 'y', y)
+        # slice axis 1 for Array2D (Series.__getitem__ will have performed
+        #                           column slice already)
+        elif new.ndim > 1 and not sliceutils.null_slice(rowslice):
+            sliceutils.slice_axis_attributes(self, 'y', new, 'y', rowslice)
+
         return new
 
     def __array_finalize__(self, obj):
