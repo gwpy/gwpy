@@ -27,6 +27,7 @@ from astropy.units import (Unit, Quantity)
 
 from .series import Series
 from .index import Index
+from .utils import slice_axis_attributes
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -167,51 +168,35 @@ class Array2D(Series):
         if isinstance(y, int) or y is None:
             y = slice(0, None, 1)
 
+        print('x', x)
+        print('y', y)
+        print(columnslice)
+
         # -- reformat output --------------------
 
         # extract a Quantity
         if numpy.shape(new) == ():
             return Quantity(new, unit=self.unit)
 
-        def _format_axis(old, oldax, new, newax, slice_):
-            """Set axis metadata for ``new`` by slicing an axis of ``old``
-            """
-            # metadata names
-            index = '{}.index'.format
-            origin = '{}0'.format
-            delta = 'd{}'.format
-            try:  # try using index
-                # new.xindex = old._yindex[slice]
-                setattr(new, index(newax),
-                        getattr(old, '_{}'.format(index(oldax)))[slice_])
-            except AttributeError:  # or just set origin and delta
-                # new.x0 = old.y0 + (slice.start or 0) * old.dy
-                setattr(new, origin(newax),
-                        getattr(old, origin(oldax)) +
-                        (slice_.start or 0) * getattr(old, delta(oldax)))
-                # new.dx = old.dy * (slice.step or 1)
-                setattr(new, delta(newax),
-                        getattr(old, delta(oldax)) * (slice_.step or 1))
-
         # extract a column
         if new.ndim == 1 and columnslice:
             new = new.view(self._columnclass)
             del new.xindex
             new.__metadata_finalize__(self)
-            _format_axis(self, 'y', new, 'x', y)
+            slice_axis_attributes(self, 'y', new, 'x', y)
             return new
 
         # extract a row
         if new.ndim == 1:
             new = new.view(self._rowclass)
             new.__metadata_finalize__(self)
-            _format_axis(self, 'x', new, 'x', x)
+            slice_axis_attributes(self, 'x', new, 'x', x)
             return new
 
         # extract an Array2D
         new = new.view(type(self))
-        _format_axis(self, 'x', new, 'x', x)
-        _format_axis(self, 'y', new, 'y', y)
+        slice_axis_attributes(self, 'x', new, 'x', x)
+        slice_axis_attributes(self, 'y', new, 'y', y)
         return new
 
     def __array_finalize__(self, obj):
