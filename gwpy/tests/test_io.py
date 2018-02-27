@@ -35,6 +35,8 @@ import numpy
 
 import pytest
 
+from glue.lal import Cache
+
 from gwpy.io import (cache as io_cache,
                      datafind as io_datafind,
                      gwf as io_gwf,
@@ -203,7 +205,6 @@ class TestIoCache(object):
             from lal.utils import CacheEntry
         except ImportError as e:
             pytest.skip(str(e))
-        from glue.lal import Cache
 
         segs = SegmentList()
         cache = Cache()
@@ -239,7 +240,7 @@ class TestIoCache(object):
             c3 = io_cache.read_cache(f.name)
             assert cache == c3
 
-    @utils.skip_missing_dependency('glue.lal')
+    @utils.skip_missing_dependency('lal.utils')
     def test_is_cache(self):
         # sanity check
         assert io_cache.is_cache(None) is False

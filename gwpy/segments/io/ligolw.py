@@ -105,7 +105,7 @@ def read_ligolw_dict(source, flags=None, gpstype=LIGOTimeGPS, coalesce=False):
 def read_ligolw_flag(source, flag=None, **kwargs):
     """Read a single `DataQualityFlag` from a LIGO_LW XML file
     """
-    return read_ligolw_dict(source, flags=flag, **kwargs).values()[0]
+    return list(read_ligolw_dict(source, flags=flag, **kwargs).values())[0]
 
 
 # -- write --------------------------------------------------------------------
