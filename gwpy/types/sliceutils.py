@@ -94,13 +94,6 @@ def slice_axis_attributes(old, oldaxis, new, newaxis, slice_):
     return new
 
 
-def primary_slice_axis(obj, slice_):
-    slices = preformat_nd_slice(slice_)
-
-    will_slice = []
-    for i, slc in enumerate(slices):
-        if slice is not None and not isinstance(slc, int):
-            will_slice.append(i)
 
     if len(will_slice) == 1:
         return will_slice[0]
