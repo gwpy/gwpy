@@ -413,39 +413,3 @@ for table_class in (Table, EventTable):
     registry.register_reader('ligolw', table_class, read_table)
     registry.register_writer('ligolw', table_class, write_table)
     registry.register_identifier('ligolw', table_class, is_ligolw)
-
-
-# -- DEPRECATED - remove before 1.0 release -----------------------------------
-
-def _ligolw_io_factory(table):
-    """Define a read and write method for the given LIGO_LW table
-
-    This system has been deprecated in favour of the simpler
-    `Table.read(format='ligolw', tablename='...')` syntax.
-    """
-    tablename = table.TableName(table.tableName)
-    wng = ("``format='ligolw.{0}'`` has been deprecated, please "
-           "read using ``format='ligolw', tablename={0}'``".format(tablename))
-
-    def _read_ligolw_table(source, tablename=tablename, **kwargs):
-        warnings.warn(wng, DeprecationWarning)
-        return read_table(source, tablename=tablename, **kwargs)
-
-    def _write_table(tbl, target, tablename=tablename, **kwargs):
-        warnings.warn(wng, DeprecationWarning)
-        return write_table(tbl, target, tablename=tablename, **kwargs)
-
-    return _read_ligolw_table, _write_table
-
-
-for table_ in TableByName.values():
-    # build readers for this table
-    read_, write_, = _ligolw_io_factory(table_)
-
-    # register conversion from LIGO_LW to astropy Table
-    table_.__astropy_table__ = to_astropy_table
-
-    # register table-specific reader for Table and EventTable
-    fmt = 'ligolw.%s' % table_.TableName(table_.tableName)
-    registry.register_reader(fmt, Table, read_)
-    registry.register_writer(fmt, Table, write_)

@@ -221,10 +221,6 @@ class TestTable(object):
             # check deprecations print warnings where expected
 
             with pytest.warns(DeprecationWarning):
-                table.write(f.name, format='ligolw.sngl_burst', overwrite=True)
-            with pytest.warns(DeprecationWarning):
-                _read(format='ligolw.sngl_burst')
-            with pytest.warns(DeprecationWarning):
                 _read(get_as_columns=True)
             with pytest.warns(DeprecationWarning):
                 _read(on_attributeerror='anything')
