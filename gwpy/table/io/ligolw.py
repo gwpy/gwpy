@@ -326,33 +326,8 @@ def read_table(source, tablename=None, **kwargs):
         read_kw['columns'] = columns
     convert_kw['columns'] = columns or read_kw['columns']
 
-    # handle requests for 'time' as a special case - DEPRECATED
     if tablename:
         tableclass = TableByName[ligolw_table.Table.TableName(tablename)]
-        needtime = (convert_kw['columns'] is not None and
-                    'time' in convert_kw['columns'] and
-                    'time' not in tableclass.validcolumns)
-        if needtime:
-            # find name of real column representing 'time'
-            warnings.warn("auto-identification of 'time' column in LIGO_LW "
-                          "documents has been deprecated, please directly "
-                          "reference the columns you want as written in the "
-                          "document(s)", DeprecationWarning)
-            if tablename.endswith('_burst'):
-                tname = 'peak'
-            elif tablename.endswith('_inspiral'):
-                tname = 'end'
-            elif tablename.endswith('_ringdown'):
-                tname = 'start'
-            else:
-                raise ValueError("'time' column requested from a table that "
-                                 "doesn't supply it or have a good proxy "
-                                 "(e.g. 'peak_time')")
-
-            # replace 'time' with get_xxx method name
-            convert_kw['columns'][convert_kw['columns'].index('time')] = tname
-            convert_kw['rename'][tname] = 'time'
-
         # work out if fancy property columns are required
         #     means 'peak_time' and 'peak_time_ns' will get read if 'peak'
         #     is requested

@@ -148,21 +148,14 @@ class TestTable(object):
             utils.assert_table_equal(table, t2, almost_equal=True)
             assert t2.meta.get('tablename', None) == 'sngl_burst'
 
-            # check auto-discovery of 'time' columns works
-            from glue.ligolw.lsctables import LIGOTimeGPS
-            with pytest.warns(DeprecationWarning):
-                t3 = _read(columns=['time'])
-            assert 'time' in t3.columns
-            assert isinstance(t3[0]['time'], LIGOTimeGPS)
-            utils.assert_array_equal(
-                t3['time'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
-
             # check numpy type casting works
-            with pytest.warns(DeprecationWarning):
-                t3 = _read(columns=['time'], use_numpy_dtypes=True)
-            assert t3['time'].dtype == dtype('float64')
+            from glue.ligolw.lsctables import LIGOTimeGPS
+            t3 = _read(columns=['peak'])
+            assert isinstance(t3['peak'][0], LIGOTimeGPS)
+            t3 = _read(columns=['peak'], use_numpy_dtypes=True)
+            assert t3['peak'].dtype == dtype('float64')
             utils.assert_array_equal(
-                t3['time'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
+                t3['peak'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
 
             # check reading multiple tables works
             try:
