@@ -37,7 +37,7 @@ def map_fft_method(func):
     @wraps(func)
     def mapped_method(*args, **kwargs):
         for (scaling, regname) in ((k, v) for k in fft_registry.METHODS for
-                                    v in fft_registry.METHODS[k]):
+                                   v in fft_registry.METHODS[k]):
             if regname.endswith('_{}'.format(name)):
                 api_func = fft_registry.METHODS[scaling][regname]
                 try:
@@ -86,6 +86,8 @@ def welch(timeseries, segmentlength, noverlap=None, **kwargs):
 @map_fft_method
 def bartlett(timeseries, segmentlength, **kwargs):
     pass  # pragma: nocover
+
+
 bartlett.__doc__ = welch.__doc__.replace('mean average',
                                          'zero-overlap mean average')
 
@@ -93,12 +95,16 @@ bartlett.__doc__ = welch.__doc__.replace('mean average',
 @map_fft_method
 def median(timeseries, segmentlength, noverlap=None, **kwargs):
     pass  # pragma: nocover
+
+
 median.__doc__ = welch.__doc__.replace('mean average', 'median average')
 
 
 @map_fft_method
 def median_mean(timeseries, segmentlength, noverlap=None, **kwargs):
     pass  # pragma: nocover
+
+
 median_mean.__doc__ = welch.__doc__.replace('mean average',
                                             'median-mean average')
 

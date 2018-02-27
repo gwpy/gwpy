@@ -332,7 +332,7 @@ class TestSignalFftBasic(object):
             pass
 
         with pytest.raises(RuntimeError) as exc:
-             blah()
+            blah()
         assert str(exc.value).startswith('no underlying API method')
 
         # check that if we only have scipy, we get the same error for

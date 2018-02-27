@@ -348,7 +348,8 @@ def spectrogram(timeseries, method_func, **kwargs):
     # create output spectrogram
     unit = fft_utils.scale_timeseries_unit(
         timeseries.unit, scaling=kwargs.get('scaling', 'density'))
-    out = Spectrogram(numpy.empty((numtimes, numfreqs), dtype=timeseries.dtype),
+    out = Spectrogram(numpy.empty((numtimes, numfreqs),
+                                  dtype=timeseries.dtype),
                       copy=False, dt=nstride * timeseries.dt, t0=timeseries.t0,
                       f0=0, df=sampling/nfft, unit=unit,
                       name=timeseries.name, channel=timeseries.channel)

@@ -19,8 +19,6 @@
 """Mock objects for GWpy tests
 """
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
 import inspect
 
 try:
@@ -34,6 +32,8 @@ import pytest
 
 from gwpy.time import LIGOTimeGPS
 from gwpy.segments import (Segment, SegmentList)
+
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 # -- DQSEGDB calls ------------------------------------------------------------

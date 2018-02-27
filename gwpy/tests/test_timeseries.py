@@ -713,9 +713,11 @@ class TestTimeSeries(TestTimeSeriesBase):
         # check errors with multiple tags
         try:
             with pytest.raises(ValueError) as exc:
-                self.TEST_CLASS.fetch_open_data(LOSC_IFO, 1187008880, 1187008884)
+                self.TEST_CLASS.fetch_open_data(
+                    LOSC_IFO, 1187008880, 1187008884)
             assert str(exc.value).lower().startswith('multiple losc url tags')
-            self.TEST_CLASS.fetch_open_data(LOSC_IFO, 1187008880, 1187008884, tag='CLN')
+            self.TEST_CLASS.fetch_open_data(LOSC_IFO, 1187008880, 1187008884,
+                                            tag='CLN')
         except URLError:
             pass
 
@@ -969,7 +971,8 @@ class TestTimeSeries(TestTimeSeriesBase):
             method = '{}_{}'.format(library, method)
             ctx = null_context
         else:
-            ctx = lambda: pytest.warns(UserWarning)
+            def ctx():
+                return pytest.warns(UserWarning)
 
         def _spectrogram(*args, **kwargs):
             kwargs.setdefault('method', method)
@@ -997,7 +1000,8 @@ class TestTimeSeries(TestTimeSeriesBase):
         with errctx:
             sg = _spectrogram(1)
             assert isinstance(sg, Spectrogram)
-            assert sg.shape == (abs(losc.span), losc.sample_rate.value // 2 + 1)
+            assert sg.shape == (abs(losc.span),
+                                losc.sample_rate.value // 2 + 1)
             assert sg.f0 == 0 * units.Hz
             assert sg.df == 1 * units.Hz
             assert sg.channel is losc.channel
@@ -1219,7 +1223,8 @@ class TestTimeSeries(TestTimeSeriesBase):
 
         asd = losc.asd(.5, .25, method='scipy-welch')
         qsg2 = losc.q_transform(method='scipy-welch', whiten=asd)
-        qsg3 = losc.q_transform(method='scipy-welch', fftlength=.5, overlap=.25)
+        qsg3 = losc.q_transform(method='scipy-welch',
+                                fftlength=.5, overlap=.25)
         utils.assert_quantity_sub_equal(qsg2, qsg3)
 
         # make sure frequency too high presents warning
