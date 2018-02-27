@@ -90,13 +90,9 @@ def to_segwizard(segs, fobj, header=True, coltype=int):
     if close:
         fobj.close()
 
-
-# -- identify -----------------------------------------------------------------
-
-identify_segwizard = identify_factory('txt', 'dat')  # pylint: disable=invalid-name
-
 # -- register -----------------------------------------------------------------
 
 registry.register_reader('segwizard', SegmentList, from_segwizard)
 registry.register_writer('segwizard', SegmentList, to_segwizard)
-registry.register_identifier('segwizard', SegmentList, identify_segwizard)
+registry.register_identifier('segwizard', SegmentList,
+                             identify_factory('txt', 'dat'))
