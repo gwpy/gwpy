@@ -210,8 +210,8 @@ class TestFrequencySeries(TestSeries):
     def test_read_ligolw(self):
         with tempfile.NamedTemporaryFile(mode='w+') as fobj:
             fobj.write(LIGO_LW_ARRAY)
-            array = FrequencySeries.read(fobj, 'psd',
-                                         match={'channel': 'X1:TEST-CHANNEL_1'})
+            array = FrequencySeries.read(
+                fobj, 'psd', match={'channel': 'X1:TEST-CHANNEL_1'})
             utils.assert_array_equal(array, list(range(1, 11)) / units.Hz)
             utils.assert_array_equal(array.frequencies,
                                      list(range(10)) * units.Hz)

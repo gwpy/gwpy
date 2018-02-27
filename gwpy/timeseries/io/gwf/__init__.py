@@ -137,7 +137,8 @@ def get_default_gwf_api():
     Otherwise:
 
     >>> get_default_gwf_api()
-    ImportError: no GWF API available, please install a third-party GWF library (framecpp, lalframe) and try again
+    ImportError: no GWF API available, please install a third-party GWF
+    library (framecpp, lalframe) and try again
     """
     for lib in APIS:
         try:

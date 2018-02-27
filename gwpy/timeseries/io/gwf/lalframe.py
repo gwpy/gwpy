@@ -69,7 +69,7 @@ def open_data_source(source):
 
     # read cache file
     if (isinstance(source, string_types) and
-          source.endswith(('.lcf', '.cache'))):
+            source.endswith(('.lcf', '.cache'))):
         return lalframe.FrStreamCacheOpen(lal.CacheImport(source))
 
     # read glue cache object

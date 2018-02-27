@@ -37,7 +37,7 @@ def map_fft_method(func):
     @wraps(func)
     def mapped_method(*args, **kwargs):
         for (scaling, regname) in ((k, v) for k in fft_registry.METHODS for
-                                    v in fft_registry.METHODS[k]):
+                                   v in fft_registry.METHODS[k]):
             if regname.endswith('_{}'.format(name)):
                 api_func = fft_registry.METHODS[scaling][regname]
                 try:

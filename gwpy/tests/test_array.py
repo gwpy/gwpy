@@ -603,8 +603,9 @@ class TestArray2D(TestSeries):
     @classmethod
     def setup_class(cls, dtype=None):
         numpy.random.seed(SEED)
-        cls.data = (numpy.random.random(100)
-                    * 1e5).astype(dtype=dtype).reshape((20, 5))
+        cls.data = (numpy.random.random(100) * 1e5).astype(
+            dtype=dtype).reshape(
+            (20, 5))
         cls.datasq = cls.data ** 2
 
     # -- test properties ------------------------
