@@ -1085,20 +1085,6 @@ class TestTimeSeries(TestTimeSeriesBase):
         sg2 = _spectrogram(1, fftlength=0.5, nproc=2)
         utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
 
-        # check that `cross` keyword gets deprecated properly
-        # TODO: removed before 1.0 release
-        if method == 'scipy_welch' and window is None:
-            with pytest.warns(DeprecationWarning) as wng:
-                try:
-                    out = _spectrogram(0.5, fftlength=.25, cross=losc)
-                except AttributeError:
-                    return  # scipy is too old
-            assert '`cross` keyword argument has been deprecated' in \
-                wng[0].message.args[0]
-            utils.assert_quantity_sub_equal(
-                out, losc.csd_spectrogram(losc, 0.5, fftlength=.25),
-                almost_equal=True)
-
     def test_spectrogram2(self, losc):
         # test defaults
         sg = losc.spectrogram2(1)
