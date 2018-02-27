@@ -4,3 +4,4 @@ pycodestyle:
     - ez_setup.py
     - versioneer.py
     - gwpy/_version.py
+    - gwpy/utils/sphinx/epydoc.py
