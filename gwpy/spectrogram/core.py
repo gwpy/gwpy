@@ -573,6 +573,17 @@ class Spectrogram(Array2D):
         return out
     _wrap_function.__doc__ = Array2D._wrap_function.__doc__
 
+    # -- other ----------------------------------
+
+    def __getitem__(self, item):
+        out = super(Spectrogram, self).__getitem__(item)
+
+        # set epoch manually, because Spectrogram doesn't store self._epoch
+        if isinstance(out, self._columnclass):
+            out.epoch = self.epoch
+
+        return out
+
 
 class SpectrogramList(TimeSeriesList):
     """Fancy list representing a list of `Spectrogram`

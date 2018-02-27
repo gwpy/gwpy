@@ -188,6 +188,15 @@ class Array(Quantity):
     def __getattr__(self, attr):
         return super(Array, self).__getattribute__(attr)
 
+    def __getitem__(self, item):
+        new = super(Array, self).__getitem__(item)
+
+        # return scalar as a Quantity
+        if numpy.ndim(new) == 0:
+            return Quantity(new, unit=self.unit)
+
+        return new
+
     # -- display --------------------------------
 
     def _repr_helper(self, print_):
