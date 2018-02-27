@@ -26,6 +26,7 @@ import numpy
 from astropy.io import registry as io_registry
 
 from ..types import (Quantity, Array2D)
+from ..types.sliceutils import null_slice
 from ..segments import Segment
 from .core import FrequencySeries
 
@@ -193,12 +194,9 @@ class SpectralVariance(Array2D):
     # -- methods --------------------------------
 
     def __getitem__(self, item):
-        # if not slicing bins, use Array2D.__getitem__
-        if (not isinstance(item, tuple) or
-                item[1] is None or
-                isinstance(item[1], int)):
-            return super(SpectralVariance, self).__getitem__(item)
         # disable slicing bins
+        if not isinstance(item, tuple) or null_slice(item[1]):
+            return super(SpectralVariance, self).__getitem__(item)
         raise NotImplementedError("cannot slice SpectralVariance across bins")
     __getitem__.__doc__ = Array2D.__getitem__.__doc__
 
