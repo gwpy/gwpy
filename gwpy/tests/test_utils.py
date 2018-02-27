@@ -32,7 +32,6 @@ import numpy
 from astropy import units
 
 from gwpy.utils import (shell, mp as utils_mp)
-from gwpy.utils import deps  # deprecated
 
 import utils
 
@@ -66,30 +65,6 @@ def test_which():
     else:
         result = result.rstrip('\n')
     assert shell.which('true') == result
-
-
-def test_import_method_dependency():
-    import subprocess
-    mod = deps.import_method_dependency('subprocess')
-    assert mod is subprocess
-    with pytest.raises(ImportError) as exc:
-        deps.import_method_dependency('blah')
-    if PY2:
-        assert str(exc.value) == ("Cannot import blah required by the "
-                                  "test_import_method_dependency() method: "
-                                  "'No module named blah'")
-    else:
-        assert str(exc.value) == "No module named 'blah'"
-
-
-def test_with_import():
-    @deps.with_import('blah')
-    def with_import_tester():
-        pass
-
-    # FIXME: this should really test the message
-    with pytest.raises(ImportError) as exc:
-        with_import_tester()
 
 
 def test_compat_ordereddict():
