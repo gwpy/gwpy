@@ -102,10 +102,10 @@ class TestArray(object):
         array = self.create()
         utils.assert_array_equal(array.value, self.data)
 
-        # test that copies ensures owndata
-        a = self.TEST_CLASS([1, 2, 3, 4], copy=True)
-        assert a.flags.owndata
-        assert self.TEST_CLASS(a, copy=True).flags.owndata
+        # test that copy=True ensures owndata
+        a = self.create(copy=False)
+        assert self.create(copy=False).flags.owndata is False
+        assert self.create(copy=True).flags.owndata is True
 
         # return array for subclasses to use
         return array
