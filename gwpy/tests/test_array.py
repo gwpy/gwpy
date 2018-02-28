@@ -101,6 +101,13 @@ class TestArray(object):
         # test with some data
         array = self.create()
         utils.assert_array_equal(array.value, self.data)
+
+        # test that copy=True ensures owndata
+        a = self.create(copy=False)
+        assert self.create(copy=False).flags.owndata is False
+        assert self.create(copy=True).flags.owndata is True
+
+        # return array for subclasses to use
         return array
 
     def test_unit(self, array):

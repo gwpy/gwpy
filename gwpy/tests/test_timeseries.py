@@ -331,15 +331,16 @@ class TestTimeSeriesBaseDict(object):
         new = type(instance)()
         for key in instance:
             a = instance[key]
-            new[key] = type(a)([1, 2, 3, 4, 5], x0=a.xspan[1], dx=a.dx,
-                               dtype=a.dtype)
+            new[key] = type(a)([1, 2, 3, 4, 5], x0=a.xspan[1]+a.dx.value,
+                               dx=a.dx, dtype=a.dtype)
         # check error
         with pytest.raises(ValueError):
             instance.append(new)
+
         # check padding works (don't validate too much, that is tested
         # elsewhere)
         b = instance.copy()
-        b.append(new, pad=0)
+        b.append(new, pad=0, gap='pad')
 
     def test_prepend(self, instance):
         # test appending from empty (with and without copy)

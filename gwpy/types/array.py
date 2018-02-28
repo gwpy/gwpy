@@ -105,7 +105,7 @@ class Array(Quantity):
 
     def __new__(cls, value, unit=None,  # Quantity attrs
                 name=None, epoch=None, channel=None,  # new attrs
-                dtype=None, copy=False, subok=True,  # ndarray attrs
+                dtype=None, copy=True, subok=True,  # ndarray attrs
                 order=None, ndmin=0):
         """Create a new `Array`
         """
@@ -119,8 +119,13 @@ class Array(Quantity):
 
         # create new array
         new = super(Array, cls).__new__(cls, value, unit=unit, dtype=dtype,
-                                        copy=copy, order=order, subok=subok,
+                                        copy=False, order=order, subok=subok,
                                         ndmin=ndmin)
+
+        # explicitly copy here to get ownership of the data,
+        # see (astropy/astropy#7244)
+        if copy:
+            new = new.copy()
 
         # set new attributes
         if name is not None:
