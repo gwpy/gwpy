@@ -19,7 +19,8 @@
 
 """Plotting public LIGO data
 
-I would like to study the gravitational wave strain time-series around the time of an interesting simulated signal during the last science run (S6).
+I would like to study the gravitational wave strain time-series around the
+time of an interesting simulated signal during the last science run (S6).
 
 These data are public, so we can load them directly from the web.
 """
