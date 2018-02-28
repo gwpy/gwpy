@@ -76,7 +76,7 @@ ONE_HZ = units.Quantity(1, 'Hz')
 ONE_SECOND = units.Quantity(1, 'second')
 
 TEST_GWF_FILE = os.path.join(os.path.split(__file__)[0], 'data',
-                             'HLV-GW100916-968654552-1.gwf')
+                             'HLV-HW100916-968654552-1.gwf')
 TEST_HDF_FILE = '%s.hdf' % TEST_GWF_FILE[:-4]
 TEST_SEGMENT = Segment(968654552, 968654553)
 
