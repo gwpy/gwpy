@@ -725,7 +725,9 @@ class TimeSeriesBase(Series):
                 out = out.view(StateTimeSeries)
                 out.__metadata_finalize__(orig)
                 out.override_unit('')
-                out.name = '%s %s %s' % (orig.name, op_, value)
+                oname = orig.name if isinstance(orig, type(self)) else orig
+                vname = value.name if isinstance(value, type(self)) else value
+                out.name = '{0!s} {1!s} {2!s}'.format(oname, op_, vname)
             return out
 
     def __array_wrap__(self, obj, context=None):
@@ -740,7 +742,9 @@ class TimeSeriesBase(Series):
                 op_ = ufunc.__name__
             result = obj.view(StateTimeSeries)
             result.override_unit('')
-            result.name = '%s %s %s' % (obj.name, op_, value)
+            oname = obj.name if isinstance(obj, type(self)) else obj
+            vname = value.name if isinstance(value, type(self)) else value
+            result.name = '{0!s} {1!s} {2!s}'.format(oname, op_, vname)
         # otherwise, return a regular TimeSeries
         else:
             result = super(TimeSeriesBase, self).__array_wrap__(
