@@ -57,7 +57,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 os.environ.pop('KRB5_KTNAME', None)
 
 TEST_GWF_FILE = os.path.join(os.path.dirname(__file__), 'data',
-                             'HLV-GW100916-968654552-1.gwf')
+                             'HLV-HW100916-968654552-1.gwf')
 TEST_CHANNELS = [
     'H1:LDAS-STRAIN', 'L1:LDAS-STRAIN', 'V1:h_16384Hz',
 ]
@@ -527,9 +527,9 @@ class TestIoDatafind(object):
                            lambda x: ['L1:LDAS-STRAIN']):
             mock_connection.return_value = connection
             assert io_datafind.find_frametype('L1:LDAS-STRAIN',
-                                              allow_tape=True) == 'GW100916'
+                                              allow_tape=True) == 'HW100916'
             assert io_datafind.find_frametype('L1:LDAS-STRAIN',
-                                              return_all=True) == ['GW100916']
+                                              return_all=True) == ['HW100916']
 
             # test missing channel raises sensible error
             with pytest.raises(ValueError) as exc:
@@ -563,7 +563,7 @@ class TestIoDatafind(object):
                            lambda x: ['L1:LDAS-STRAIN']):
             mock_connection.return_value = connection
             assert io_datafind.find_best_frametype(
-                'L1:LDAS-STRAIN', 968654552, 968654553) == 'GW100916'
+                'L1:LDAS-STRAIN', 968654552, 968654553) == 'HW100916'
 
 
 # -- gwpy.io.kerberos ---------------------------------------------------------

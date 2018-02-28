@@ -32,7 +32,7 @@ event rate on a 1-second stride:
    >>> plot = rate.plot()
    >>> ax = plot.gca()
    >>> ax.set_ylabel('Event rate [Hz]')
-   >>> ax.set_title('LIGO Hanford Observatory event rate for GW100916')
+   >>> ax.set_title('LIGO Hanford Observatory event rate for HW100916')
    >>> plot.show()
 
 This code is a snippet of the example :ref:`gwpy-example-table-rate`.
@@ -59,7 +59,7 @@ signal-to-noise ratio (SNR) above some threshold, for the same table as above.
    >>> plot = rates.plot()
    >>> ax = plot.gca()
    >>> ax.set_ylabel('Event rate [Hz]')
-   >>> ax.set_title('LIGO Hanford Observatory event rate for GW100916')
+   >>> ax.set_title('LIGO Hanford Observatory event rate for HW100916')
    >>> plot.show()
 
 This code is a snippet of the example on :ref:`gwpy-example-table-rate_binned`.
