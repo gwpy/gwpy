@@ -10,6 +10,7 @@
 
    hoff
    variance
+   percentiles
    coherence
    transfer_function
    rayleigh
