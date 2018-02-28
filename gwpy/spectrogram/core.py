@@ -317,6 +317,29 @@ class Spectrogram(Array2D):
 
     def plot(self, **kwargs):
         """Plot the data for this `Spectrogram`
+
+        Parameters
+        ----------
+        **kwargs
+            all keyword arguments are passed along to underlying
+            functions, see below for references
+
+        Returns
+        -------
+        plot : `~gwpy.plotter.SpectrogramPlot`
+            the `Plot` containing the data
+
+        See Also
+        --------
+        matplotlib.pyplot.figure
+            for documentation of keyword arguments used to create the
+            figure
+        matplotlib.figure.Figure.add_subplot
+            for documentation of keyword arguments used to create the
+            axes
+        gwpy.plotter.TimeSeriesAxes.plot_spectrogram
+            for documentation of keyword arguments used in rendering the
+            `Spectrogram` data
         """
         from ..plotter import SpectrogramPlot
         return SpectrogramPlot(self, **kwargs)

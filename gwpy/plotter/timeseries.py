@@ -284,19 +284,22 @@ class TimeSeriesAxes(Axes):
 
         **kwargs
             any other keyword arguments acceptable for
-            :meth:`~matplotlib.Axes.imshow` (if ``imshow=True``),
-            or :meth:`~matplotlib.Axes.pcolormesh` (``imshow=False``)
+            :meth:`~matplotlib.axes.Axes.imshow` (if ``imshow=True``),
+            or :meth:`~matplotlib.axes.Axes.pcolormesh` (``imshow=False``)
 
         Returns
         -------
-        layer : `~matplotlib.collections.QuadMesh`, `~matplotlib.images.Image`
+        layer : `matplotlib.collections.QuadMesh`, `matplotlib.image.AxesImage`
             the layer for this spectrogram
 
         See Also
         --------
         matplotlib.axes.Axes.imshow
+            for a full description of acceptable ``*args`` and ``**kwargs``
+            for ``imshow=True``
         matplotlib.axes.Axes.pcolormesh
             for a full description of acceptable ``*args`` and ``**kwargs``
+            for ``imshow=False``
         """
         # rescue grid settings
         grid = (self.xaxis._gridOnMajor, self.xaxis._gridOnMinor,
