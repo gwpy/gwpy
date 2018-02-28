@@ -1246,6 +1246,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         assert isinstance(comp, StateTimeSeries)
         assert comp.unit is units.Unit('')
         assert comp.name == '%s >= 2.0' % (array.name)
+        assert (array == array).name == '{0} == {0}'.format(array.name)
 
 
 # -- TimeSeriesDict -----------------------------------------------------------
