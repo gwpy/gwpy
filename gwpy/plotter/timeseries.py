@@ -37,17 +37,6 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['TimeSeriesPlot', 'TimeSeriesAxes']
 
 
-def _init_gps_axis(func):
-    """Initialise the epoch of the parent axes after calling this function
-    """
-    def decorated_func(self, tddata, *args, **kwargs):
-        out = func(self, tddata, *args, **kwargs)
-        if 'gps' in self.get_xscale() and self.get_epoch() is None:
-            self.set_xlim(*tddata.xspan)
-        return out
-    return decorated_func
-
-
 class TimeSeriesAxes(SeriesAxes):
     """Custom `Axes` for a `~gwpy.plotter.TimeSeriesPlot`.
     """
@@ -63,6 +52,8 @@ class TimeSeriesAxes(SeriesAxes):
     def draw(self, *args, **kwargs):
         # dynamically set scaling
         if self.get_xscale() == 'auto-gps':
+            if self.get_autoscalex_on():
+                self.autoscale_view(tight=True, scalex=True, scaley=False)
             self.auto_gps_scale()
 
         # dynamically set x-axis label
@@ -131,8 +122,8 @@ class TimeSeriesAxes(SeriesAxes):
             left, right = left
         left = float(to_gps(left))
         right = float(to_gps(right))
-        if 'gps' in self.get_xscale() and self.epoch is None:
-            self.set_epoch(left)
+        if 'gps' in self.get_xscale() and self.get_autoscalex_on():
+            self.xaxis._scale.set_epoch(left)
         super(TimeSeriesAxes, self).set_xlim(left=left, right=right, emit=emit,
                                              auto=auto, **kw)
     set_xlim.__doc__ = SeriesAxes.set_xlim.__doc__
@@ -172,16 +163,15 @@ class TimeSeriesAxes(SeriesAxes):
         # SeriesAxes.plot takes care of everything else
         return super(TimeSeriesAxes, self).plot(*args, **kwargs)
 
-    plot_timeseries = _init_gps_axis(SeriesAxes.plot_series)
+    plot_timeseries = SeriesAxes.plot_series
 
     @auto_refresh
-    @_init_gps_axis
     def plot_timeseries_mmm(self, mean_, min_=None, max_=None, **kwargs):
         warnings.warn('plot_timeseries_mmm has been deprecated, please '
                       'use instead plot_mmm()', DeprecationWarning)
         return self.plot_mmm(mean_, min_=min_, max_=max_, **kwargs)
 
-    plot_spectrogram = _init_gps_axis(SeriesAxes.plot_array2d)
+    plot_spectrogram = SeriesAxes.plot_array2d
 
 
 register_projection(TimeSeriesAxes)
