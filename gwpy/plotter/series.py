@@ -103,6 +103,8 @@ class SeriesAxes(Axes):
         kwargs.setdefault('label', text.to_string(series.name))
         line = self.plot(series.xindex.value, series.value, **kwargs)
 
+        if not self.get_xlabel():
+            self.set_xlabel(text.unit_as_label(series.xunit))
         if not self.get_ylabel():
             self.set_ylabel(text.unit_as_label(series.unit))
 
