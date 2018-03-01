@@ -93,7 +93,3 @@ for pckg in \
 ; do
     apt-get -yqq install $pckg || true
 done
-
-if [ ${PY_XY} -lt 30 ]; then
-    NO_ROOT_NUMPY_TMVA=1 ${PIP} install root_numpy ${PIP_FLAGS}
-fi

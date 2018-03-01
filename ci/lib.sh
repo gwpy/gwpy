@@ -117,6 +117,7 @@ get_environment() {
         "port")
             PY_DIST=python${PY_XY}
             PY_PREFIX=py${PY_XY}
+            PIP="sudo ${PIP}"
             ;;
         "apt-get")
             if [ ${PY_MAJOR_VERSION} == 2 ]; then
