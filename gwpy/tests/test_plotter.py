@@ -587,9 +587,6 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         ax.plot_spectrogram(self.sg, imshow=False)
         coll = ax.collections[0]
         nptest.assert_array_equal(coll.get_array(), self.sg.value.T.flatten())
-        # check GPS axis is set ok
-        assert ax.get_epoch() == self.sg.x0.value
-        assert ax.get_xlim() == tuple(self.sg.xspan)
         # check frequency axis
         if self.use_tex:
             assert ax.get_ylabel() == r'Frequency [$\mathrm{Hz}$]'
