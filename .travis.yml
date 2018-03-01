@@ -8,7 +8,8 @@ env:
 
 matrix:
   include:
-    # simple build
+    # -- simple builds --------------------------
+
     - python: '2.7'
       addons:
         apt:
@@ -72,43 +73,9 @@ matrix:
             - dvipng
             - libhdf5-serial-dev
 
-    # debian 8 build
-    - env: DOCKER_IMAGE="ligo/software:jessie"
-      python: '2.7'
-      sudo: required
-      services:
-        - docker
-    - env: DOCKER_IMAGE="ligo/software:jessie"
-      python: '3.4'
-      sudo: required
-      services:
-        - docker
+    # -- reference OS builds --------------------
 
-    # debian 9 build
-    - env: DOCKER_IMAGE="ligo/software:stretch"
-      python: '2.7'
-      sudo: required
-      services:
-        - docker
-    - env: DOCKER_IMAGE="ligo/software:stretch"
-      python: '3.5'
-      sudo: required
-      services:
-        - docker
-
-    # debian 9 testing build
-    - env: DOCKER_IMAGE="ligo/software:stretch-proposed"
-      python: '2.7'
-      sudo: required
-      services:
-        - docker
-    - env: DOCKER_IMAGE="ligo/software:stretch-proposed"
-      python: '3.5'
-      sudo: required
-      services:
-        - docker
-
-    # sl7 build
+    # EL7
     - env: DOCKER_IMAGE="ligo/software:el7"
       python: '2.7'
       sudo: required
@@ -120,22 +87,57 @@ matrix:
       services:
         - docker
 
-    # macos build
+    # debian 8
+    - env: DOCKER_IMAGE="ligo/software:jessie"
+      python: '2.7'
+      sudo: required
+      services:
+        - docker
+    - env: DOCKER_IMAGE="ligo/software:jessie"
+      python: '3.4'
+      sudo: required
+      services:
+        - docker
+
+    # debian 9
+    - env: DOCKER_IMAGE="ligo/software:stretch"
+      python: '2.7'
+      sudo: required
+      services:
+        - docker
+    - env: DOCKER_IMAGE="ligo/software:stretch"
+      python: '3.5'
+      sudo: required
+      services:
+        - docker
+
+    # macOS
     - os: osx
       env: PYTHON_VERSION='2.7'
       language: minimal
       sudo: required
 
+    # -- full build -----------------------------
+
+    - env: DOCKER_IMAGE="ligo/software:stretch" EXTRAS=true
+      python: '2.7'
+      sudo: required
+      services:
+        - docker
+    - env: DOCKER_IMAGE="ligo/software:stretch" EXTRAS=true
+      python: '3.5'
+      sudo: required
+      services:
+        - docker
+
   allow_failures:
     - env: PIP_FLAGS="--upgrade --pre --quiet"
-    - env: DOCKER_IMAGE="ligo/software:jessie"
-      python: '3.4'
-    - env: DOCKER_IMAGE="ligo/software:stretch"
-      python: '3.5'
-    - env: DOCKER_IMAGE="ligo/software:stretch-proposed"
-      python: '3.5'
     - env: DOCKER_IMAGE="ligo/software:el7"
       python: '3.4'
+    - env: DOCKER_IMAGE="ligo/software:jessie"
+      python: '3.4'
+    - env: DOCKER_IMAGE="ligo/software:stretch" EXTRAS=true
+      python: '3.5'
 
   fast_finish: true
 
