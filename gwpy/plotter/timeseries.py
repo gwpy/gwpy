@@ -37,7 +37,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['TimeSeriesPlot', 'TimeSeriesAxes']
 
 
-def _init_epoch(func):
+def _init_gps_axis(func):
     """Initialise the epoch of the parent axes after calling this function
     """
     def decorated_func(self, tddata, *args, **kwargs):
@@ -172,16 +172,16 @@ class TimeSeriesAxes(SeriesAxes):
         # SeriesAxes.plot takes care of everything else
         return super(TimeSeriesAxes, self).plot(*args, **kwargs)
 
-    plot_timeseries = _init_epoch(SeriesAxes.plot_series)
+    plot_timeseries = _init_gps_axis(SeriesAxes.plot_series)
 
     @auto_refresh
-    @_init_epoch
+    @_init_gps_axis
     def plot_timeseries_mmm(self, mean_, min_=None, max_=None, **kwargs):
         warnings.warn('plot_timeseries_mmm has been deprecated, please '
                       'use instead plot_mmm()', DeprecationWarning)
         return self.plot_mmm(mean_, min_=min_, max_=max_, **kwargs)
 
-    plot_spectrogram = _init_epoch(SeriesAxes.plot_array2d)
+    plot_spectrogram = _init_gps_axis(SeriesAxes.plot_array2d)
 
 
 register_projection(TimeSeriesAxes)
