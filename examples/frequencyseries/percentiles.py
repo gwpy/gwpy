@@ -54,13 +54,13 @@ min_ = sg.percentile(5)
 max_ = sg.percentile(95)
 
 # Finally, we can make plot, using
-# :meth:`~gwpy.plotter.FrequencySeriesAxes.plot_frequencyseries_mmm` to
+# :meth:`~gwpy.plotter.FrequencySeriesAxes.plot_mmm` to
 # display the 5th and 95th percentiles as a shaded region around the median:
 
 from gwpy.plotter import FrequencySeriesPlot
 plot = FrequencySeriesPlot()
 ax = plot.gca()
-ax.plot_spectrum_mmm(median, min_=min_, max_=max_, color='gwpy:ligo-hanford')
+ax.plot_mmm(median, min_=min_, max_=max_, color='gwpy:ligo-hanford')
 ax.set_xscale('log')
 ax.set_yscale('log')
 ax.set_xlim(10, 1500)
