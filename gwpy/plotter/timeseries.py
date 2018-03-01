@@ -42,8 +42,8 @@ def _init_gps_axis(func):
     """
     def decorated_func(self, tddata, *args, **kwargs):
         out = func(self, tddata, *args, **kwargs)
-        if not self.get_epoch():
-            self.set_epoch(tddata.x0)
+        if 'gps' in self.get_xscale() and self.get_epoch() is None:
+            self.set_xlim(*tddata.xspan)
         return out
     return decorated_func
 
