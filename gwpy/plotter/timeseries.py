@@ -52,9 +52,16 @@ class TimeSeriesAxes(SeriesAxes):
     def draw(self, *args, **kwargs):
         # dynamically set scaling
         if self.get_xscale() == 'auto-gps':
-            if self.get_autoscalex_on():
-                self.autoscale_view(tight=True, scalex=True, scaley=False)
             self.auto_gps_scale()
+
+        # dynamically set epoch
+        try:
+            noepoch = self.get_epoch() is None
+        except AttributeError:
+            noepoch = False
+        else:
+            if noepoch:
+                self.set_epoch(round(self.viewLim.x0))
 
         # dynamically set x-axis label
         nolabel = self.get_xlabel() == '_auto'
@@ -62,11 +69,14 @@ class TimeSeriesAxes(SeriesAxes):
             self.auto_gps_label()
 
         # draw
-        super(TimeSeriesAxes, self).draw(*args, **kwargs)
-
-        # reset label
-        if nolabel:
-            self.set_xlabel('_auto')
+        try:
+            super(TimeSeriesAxes, self).draw(*args, **kwargs)
+        finally:
+            # reset
+            if noepoch:
+                self.set_epoch(None)
+            if nolabel:
+                self.set_xlabel('_auto')
 
     draw.__doc__ = SeriesAxes.draw.__doc__
 
@@ -83,16 +93,14 @@ class TimeSeriesAxes(SeriesAxes):
         """
         scale = self.xaxis._scale
         epoch = scale.get_epoch()
+        if epoch is None:
+            return self.set_xlabel('GPS Time')
         if int(epoch) == epoch:
             epoch = int(epoch)
-        if epoch is None:
-            self.set_xlabel('GPS Time')
-        else:
-            unit = scale.get_unit_name()
-            utc = re.sub(r'\.0+', '',
-                         Time(epoch, format='gps', scale='utc').iso)
-            self.set_xlabel('Time [%s] from %s UTC (%s)'
-                            % (unit, utc, repr(epoch)))
+        unit = scale.get_unit_name()
+        utc = re.sub(r'\.0+', '', Time(epoch, format='gps', scale='utc').iso)
+        return self.set_xlabel('Time [%s] from %s UTC (%s)'
+                               % (unit, utc, repr(epoch)))
 
     def auto_gps_scale(self):
         """Automagically set the GPS scale for the time-axis of this plot
@@ -108,7 +116,8 @@ class TimeSeriesAxes(SeriesAxes):
         except AttributeError:
             pass
         else:
-            self.set_xscale(xscale, epoch=to_gps(epoch))
+            epoch = to_gps(epoch) if epoch is not None else None
+            self.set_xscale(xscale, epoch=epoch)
 
     def get_epoch(self):
         """Return the current GPS epoch (t=0)
@@ -122,8 +131,6 @@ class TimeSeriesAxes(SeriesAxes):
             left, right = left
         left = float(to_gps(left))
         right = float(to_gps(right))
-        if 'gps' in self.get_xscale() and self.get_autoscalex_on():
-            self.xaxis._scale.set_epoch(left)
         super(TimeSeriesAxes, self).set_xlim(left=left, right=right, emit=emit,
                                              auto=auto, **kw)
     set_xlim.__doc__ = SeriesAxes.set_xlim.__doc__
@@ -196,16 +203,6 @@ class TimeSeriesPlot(SeriesPlot):
         kwargs.setdefault('figsize', [12, 6])
         super(TimeSeriesPlot, self).__init__(*series, **kwargs)
 
-    def _update_kwargs_from_data(self, kwargs, data):
-        """Add `Axes.__init__` keywords base on input data
-        """
-        super(TimeSeriesPlot, self)._update_kwargs_from_data(kwargs, data)
-        flat = self._get_axes_data(data, flat=True)
-
-        # update epoch
-        if flat:
-            kwargs.setdefault('epoch', min(s.x0 for s in flat))
-
     # -- properties ---------------------------------
 
     @property
@@ -234,13 +231,6 @@ class TimeSeriesPlot(SeriesPlot):
             axes.set_epoch(gps)
 
     # -- methods ------------------------------------
-
-    def add_timeseries(self, timeseries, **kwargs):
-        super(TimeSeriesPlot, self).add_timeseries(timeseries, **kwargs)
-        if self.epoch is None:
-            self.set_epoch(timeseries.epoch)
-
-    add_timeseries.__doc__ = SeriesPlot.add_timeseries.__doc__
 
     def add_state_segments(self, segments, ax=None, height=0.2, pad=0.1,
                            location='bottom', plotargs=dict()):

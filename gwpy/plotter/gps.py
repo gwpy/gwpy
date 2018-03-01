@@ -174,12 +174,12 @@ class GPSTransformBase(GPSMixin, Transform):
         `Decimal` objects to do the transformation, and simple `float`
         otherwise.
         """
-        scale = self.scale
-        epoch = self.epoch
+        scale = self.scale or 1
+        epoch = self.epoch or 0
 
         # handle simple or data transformations with floats
         if any([
-                epoch is None,  # no large additions
+                epoch == 0,  # no large additions
                 scale == 1,  # no multiplications
                 self._parents,  # part of composite transform (from draw())
         ]):
@@ -377,9 +377,7 @@ class GPSScale(GPSMixin, LinearScale):
         if epoch is None and isinstance(axis._scale, GPSScale):
             epoch = axis._scale.get_epoch()
         # otherwise get from current view
-        if epoch is None:
-            epoch = viewlim[0]
-        if unit is None:
+        if unit is None and epoch is not None:
             duration = float(viewlim[1] - (min(viewlim[0], epoch)))
             unit = units.second
             for scale in TIME_UNITS[::-1]:
