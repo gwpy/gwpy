@@ -218,29 +218,11 @@ class SeriesAxes(Axes):
 
         # plot with imshow
         if imshow:
-            extent = tuple(array.xspan) + tuple(array.yspan)
-            # hack out zeroes on a log scale
-            if self.get_xscale() == 'log' and extent[0] == 0.:
-                extent = (1e-300,) + extent[1:]
-            if self.get_yscale() == 'log' and extent[2] == 0.:
-                extent = extent[:2] + (1e-300,) + extent[3:]
-            # set other kwargs
-            kwargs.setdefault('extent', extent)
-            kwargs.setdefault('origin', 'lower')
-            kwargs.setdefault('interpolation', 'none')
-            kwargs.setdefault('aspect', 'auto')
-            # draw
-            layer = self.imshow(array.value.T, **kwargs)
+            layer = self._imshow_array2d(array, **kwargs)
 
         # plot with pcolormesh
         else:
-            x = numpy.concatenate((array.xindex.value,
-                                   [array.xspan[-1]]))
-            y = numpy.concatenate((array.yindex.value,
-                                   [array.yspan[-1]]))
-            xcoord, ycoord = numpy.meshgrid(x, y, copy=False, sparse=True)
-            layer = self.pcolormesh(xcoord, ycoord, array.value.T,
-                                    **kwargs)
+            layer = self._pcolormesh_array2d(array, **kwargs)
 
         # format axes
         if not self.get_ylabel():
@@ -248,6 +230,23 @@ class SeriesAxes(Axes):
 
         return layer
 
+    def _imshow_array2d(self, array, origin='lower', interpolation='none',
+                        aspect='auto', **kwargs):
+        # calculate extent
+        extent = tuple(array.xspan) + tuple(array.yspan)
+        if self.get_xscale() == 'log' and extent[0] == 0.:
+            extent = (1e-300,) + extent[1:]
+        if self.get_yscale() == 'log' and extent[2] == 0.:
+            extent = extent[:2] + (1e-300,) + extent[3:]
+        kwargs.setdefault('extent', extent)
+
+        return self.imshow(array.value.T, **kwargs)
+
+    def _pcolormesh_array2d(self, array, **kwargs):
+        x = numpy.concatenate((array.xindex.value, [array.xspan[-1]]))
+        y = numpy.concatenate((array.yindex.value, [array.yspan[-1]]))
+        xcoord, ycoord = numpy.meshgrid(x, y, copy=False, sparse=True)
+        return self.pcolormesh(xcoord, ycoord, array.value.T, **kwargs)
 
 register_projection(SeriesAxes)
 
