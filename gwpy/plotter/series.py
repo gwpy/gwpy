@@ -210,14 +210,6 @@ class SeriesAxes(Axes):
         matplotlib.axes.Axes.pcolormesh
             for a full description of acceptable ``*args`` and ``**kwargs``
         """
-        # rescue grid settings
-        grid = (
-            self.xaxis._gridOnMajor,
-            self.xaxis._gridOnMinor,
-            self.yaxis._gridOnMajor,
-            self.yaxis._gridOnMinor,
-        )
-
         # allow normalisation as 'log'
         if kwargs.get('norm', None) == 'log':
             vmin = kwargs.get('vmin', None)
@@ -253,18 +245,6 @@ class SeriesAxes(Axes):
         # format axes
         if not self.get_ylabel():
             self.set_ylabel(text.unit_as_label(array.yunit))
-
-        # reset grid
-        if grid[0]:
-            self.xaxis.grid(True, 'major')
-        if grid[1]:
-            self.xaxis.grid(True, 'minor')
-        if grid[2]:
-            self.yaxis.grid(True, 'major')
-        if grid[3]:
-            self.yaxis.grid(True, 'minor')
-
-        print(layer)
 
         return layer
 
