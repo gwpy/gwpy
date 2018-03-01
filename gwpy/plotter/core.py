@@ -1023,29 +1023,21 @@ class Plot(figure.Figure):
         >>> Plot._get_naxes([[1, 2], 3])
         [[1, 2], [3]]
         """
-        # if not given list, default to 1
-        if not iterable(inputs):
-            return [inputs]
-        if not inputs:
-            return []
         # if given a nested list of data, multiple axes are required
-        if any([isinstance(x, (list, tuple, dict)) for x in inputs]):
+        if any(isinstance(x, (list, tuple, dict)) for x in inputs):
             sep = True
+
         # build list of lists
         out = []
-        if not sep:
-            out.append([])
         for x in inputs:
-            # if not sep, each element of inputs is a data set
-            if not sep:
-                out[0].append(x)
-            # otherwise if this element is a list already, that's fine
-            elif isinstance(x, (list, tuple)):
+            if isinstance(x, (list, tuple)):  # new group from iterable
                 out.append(x)
-            elif isinstance(x, dict):
+            elif isinstance(x, dict):  # new group from dict
                 out.append(x.values())
-            else:
+            elif sep or not out:  # new group from dataset
                 out.append([x])
+            else:  # append input to most recent group
+                out[-1].append(x)
 
         if flat:
             return [s for group in out for s in group]
