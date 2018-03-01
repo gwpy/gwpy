@@ -41,6 +41,10 @@ class SeriesAxes(Axes):
     """
     name = 'series'
 
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('xmargin', 0)
+        super(SeriesAxes, self).__init__(*args, **kwargs)
+
     @auto_refresh
     def plot(self, *args, **kwargs):
         """Plot data onto these Axes.
@@ -98,9 +102,6 @@ class SeriesAxes(Axes):
         """
         kwargs.setdefault('label', text.to_string(series.name))
         line = self.plot(series.xindex.value, series.value, **kwargs)
-
-        if len(self.lines) == 1 and series.size:
-            self.set_xlim(*series.xspan)
 
         if not self.get_ylabel():
             self.set_ylabel(text.unit_as_label(series.unit))
