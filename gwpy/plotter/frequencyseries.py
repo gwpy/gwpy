@@ -129,12 +129,6 @@ class FrequencySeriesPlot(SeriesPlot):
     _DefaultAxesClass = FrequencySeriesAxes
 
     def __init__(self, *series, **kwargs):
-        # customise defaults
-        kwargs.setdefault('xscale',
-                          kwargs.pop('logx', True) and 'log' or 'linear')
-        kwargs.setdefault('yscale',
-                          kwargs.pop('logy', True) and 'log' or 'linear')
-
         # generate figures
         super(FrequencySeriesPlot, self).__init__(*series, **kwargs)
 

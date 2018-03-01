@@ -49,14 +49,11 @@ variance = llo.spectral_variance(5, fftlength=2, overlap=1, log=True,
 
 # We can then :meth:`~SpectralVariance.plot` the `SpectralVariance`
 
-plot = variance.plot(norm='log', vmin=.5, cmap='plasma')
-ax = plot.gca()
-ax.grid()
-ax.set_xlim(20, 1500)
-ax.set_ylim(1e-24, 1e-20)
-ax.set_xlabel('Frequency [Hz]')
-ax.set_ylabel(r'[strain/\rtHz]')
-ax.set_title('LIGO-Livingston sensitivity variance')
+plot = variance.plot(norm='log', vmin=.5, cmap='plasma',
+                     xscale='log', xlim=(20, 1500), xlabel='Frequency [Hz]',
+                     yscale='log', ylim=(1e-24, 1e-20),
+                     ylabel=r'[strain/\rtHz]',
+                     title='LIGO-Livingston sensitivity variance')
 plot.show()
 
 # From this we see that in general the sensitivity varies a few parts in 
