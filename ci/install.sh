@@ -52,7 +52,7 @@ if [ ${EXTRAS} ]; then
     # install root_numpy if pyroot is installed for this python version
     _rootpyv=`root-config --python-version 2> /dev/null || true`
     if [[ "${_rootpyv}" == "${PYTHON_VERSION}" ]]; then
-        NO_ROOT_NUMPY_TMVA=1 ${PIP} install root_numpy ${PIP_FLAGS}
+        NO_ROOT_NUMPY_TMVA=1 ${PIP} install root_numpy --quiet ${PIP_FLAGS}
     fi
 fi
 
