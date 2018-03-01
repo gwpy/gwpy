@@ -79,43 +79,6 @@ class FrequencySeriesAxes(SeriesAxes):
         return self.plot_mmm(mean_, min_=min_, max_=max_, **kwargs)
 
     @auto_refresh
-    def plot_frequencyseries(self, spectrum, **kwargs):
-        """Plot a `~gwpy.frequencyseries.FrequencySeries` onto these axes
-
-        Parameters
-        ----------
-        spectrum : `~gwpy.frequencyseries.FrequencySeries`
-            data to plot
-
-        **kwargs
-            any other keyword arguments acceptable for `~matplotlib.Axes.plot`
-
-        Returns
-        -------
-        line : `~matplotlib.lines.Line2D`
-            the newly added line
-
-        See Also
-        --------
-        matplotlib.axes.Axes.plot
-            for a full description of acceptable ``*args`` and ``**kwargs``
-        """
-        kwargs.setdefault('label', text.to_string(spectrum.name))
-        if not kwargs.get('label', True):
-            kwargs.pop('label')
-        line = self.plot(spectrum.frequencies.value, spectrum.value, **kwargs)
-        if len(self.lines) == 1:
-            span = spectrum.xspan
-            if self.get_xscale() == 'log' and not span[0]:
-                span = (spectrum.df.value, span[-1])
-            self.set_xlim(*span)
-        if not self.get_xlabel():
-            self.set_xlabel(text.unit_as_label(spectrum.xunit))
-        if not self.get_ylabel():
-            self.set_ylabel(text.unit_as_label(spectrum.unit))
-        return line
-
-    @auto_refresh
     def plot_variance(self, specvar, norm='log', **kwargs):
         """Plot a `~gwpy.frequencyseries.SpectralVariance`
 
