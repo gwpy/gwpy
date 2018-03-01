@@ -33,7 +33,7 @@ from ..segments import SegmentList
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['SeriesPlot', 'SeriesAxes']
 
-USE_IMSHOW = mpl_version >= '2.0' # imshow respects log scaling in >=2.0
+USE_IMSHOW = mpl_version >= '2.0'  # imshow respects log scaling in >=2.0
 
 
 class SeriesAxes(Axes):
