@@ -1068,10 +1068,9 @@ class Plot(figure.Figure):
         axargs, artistargs : `list` of `dict`
             separated kwarg `dict` for the the axes and the artists
         """
-        separatedargs = []
-        for arglist in [utils.AXES_PARAMS, utils.ARTIST_PARAMS]:
-            separatedargs.append(dict())
+        separatedargs = [dict(), dict()]
+        for i, arglist in enumerate([utils.AXES_PARAMS, utils.ARTIST_PARAMS]):
             for key in arglist:
                 if key in kwargs:
-                    separatedargs[-1][key] = kwargs.pop(key)
+                    separatedargs[i][key] = kwargs.pop(key)
         return separatedargs
