@@ -988,18 +988,18 @@ class Plot(figure.Figure):
         Parameters
         ----------
         inputs : `list` of array-like data sets
-            a list of data arrays, or a list of lists of data sets
+            A list of data arrays, or a list of lists of data sets
 
         sep : `bool`, optional
-            plot each set of data on a separate `Axes`
+            Plot each set of data on a separate `Axes`
 
         flat : `bool`, optional
-            return a flattened list of data objects
+            Return a flattened list of data objects
 
         Returns
         -------
         axesdata : `list` of lists of array-like data
-            a `list` with one element per required `Axes` containing the
+            A `list` with one element per required `Axes` containing the
             array-like data sets for those `Axes`, unless ``flat=True``
             is given.
 
@@ -1011,16 +1011,17 @@ class Plot(figure.Figure):
         - if a `list` of data arrays are given, and `sep=True`, use N `Axes,
           one for each data array
         - if a nested `list` of data arrays are given, ignore `sep` and
-          use one `Axes` for each element in the top list.
+          use one `Axes` for each group of arrays.
 
-        For example:
-
-            >>> Plot._get_naxes([data1, data2], sep=False)
-            [[data1, data2]]
-            >>> Plot._get_naxes([data1, data2], sep=True)
-            [[data1], [data2]]
-            >>> Plot._get_naxes([[data1, data2], data3])
-            [[data1, data2], [data3]]
+        Examples
+        --------
+        >>> from gwpy.plotter import Plot
+        >>> Plot._get_naxes([1, 2], sep=False)
+        [[1, 2]]
+        >>> Plot._get_naxes([1, 2], sep=True)
+        [[1], [2]]
+        >>> Plot._get_naxes([[1, 2], 3])
+        [[1, 2], [3]]
         """
         # if not given list, default to 1
         if not iterable(inputs):
