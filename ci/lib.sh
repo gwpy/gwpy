@@ -99,7 +99,7 @@ install_package() {
 }
 
 get_python_version() {
-    if [ -z ${PYTHON_VERSION} ]; then
+    if [ -z "${PYTHON_VERSION}" ]; then
         PYTHON_VERSION=`python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'`
     fi
     export PYTHON_VERSION
