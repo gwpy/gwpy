@@ -552,7 +552,7 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         nptest.assert_array_equal(line.get_ydata(), self.ts.value)
         # check GPS axis is set ok
         assert ax.viewLim.x0 == self.ts.x0.value
-        assert ax.get_xlim() == tuple(self.ts.span)
+        assert ax.dataLim.x1 == self.ts.span[1]
         self.save_and_close(fig)
 
     def test_plot_mmm(self):
