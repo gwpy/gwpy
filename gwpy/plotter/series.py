@@ -104,8 +104,9 @@ class SeriesAxes(Axes):
         line = self.plot(series.xindex.value, series.value, **kwargs)
 
         # update datalim to include end of final sample
-        self.update_datalim(zip(series.xspan, (0, 0)), updatey=False)
-        self.autoscale_view()
+        if not kwargs.get('linestyle', '-').startswith('steps-'):
+            self.update_datalim(zip(series.xspan, (0, 0)), updatey=False)
+            self.autoscale_view()
 
         # set labels from units
         if not self.get_xlabel():
