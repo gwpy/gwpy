@@ -475,7 +475,7 @@ class TestTimeSeriesPlot(TimeSeriesMixin, TestPlot):
         fig = self.FIGURE_CLASS(self.ts)
         ax = fig.gca()
         assert len(ax.lines) == 1
-        assert fig.get_epoch() == self.ts.x0.value
+        assert fig.get_epoch() is None
         assert fig.get_xlim() == self.ts.span
         # test passing multiple timeseries
         fig = self.FIGURE_CLASS(self.ts, self.ts)
