@@ -39,6 +39,7 @@ from astropy import units
 
 from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.plotter import (FrequencySeriesPlot, FrequencySeriesAxes)
+from gwpy.segments import Segment
 
 import utils
 from test_array import (TestSeries, TestArray2D)
@@ -269,11 +270,13 @@ class TestSpectralVariance(TestArray2D):
         with pytest.raises(AttributeError):
             array.dy = 0
 
-    def test_yunit(self):
-        return NotImplemented
+    def test_yunit(self, array):
+        assert array.unit == array.bins.unit
 
-    def test_yspan(self):
-        return NotImplemented
+    def test_yspan(self, array):
+        yspan = array.yspan
+        assert isinstance(yspan, Segment)
+        assert yspan == (self.bins[0], self.bins[-1])
 
     def test_yindex(self, array):
         utils.assert_array_equal(array.yindex, array.bins[:-1])
