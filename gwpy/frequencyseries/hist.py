@@ -102,10 +102,11 @@ class SpectralVariance(Array2D):
         """
         return self.bins[:-1]
 
+    @property
     def yspan(self):
         """Amplitude range (low, high) spanned by this array
         """
-        return Segment(self.bins[0], self.bins[-1])
+        return Segment(self.bins.value[0], self.bins.value[-1])
 
     @property
     def dy(self):
