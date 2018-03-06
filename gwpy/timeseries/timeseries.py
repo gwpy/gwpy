@@ -1396,12 +1396,6 @@ class TimeSeries(TimeSeriesBase):
         data._unit = self.unit
         return data
 
-    def plot(self, **kwargs):
-        """Plot the data for this TimeSeries.
-        """
-        from ..plotter import TimeSeriesPlot
-        return TimeSeriesPlot(self, **kwargs)
-
     def notch(self, frequency, type='iir', filtfilt=True, **kwargs):
         """Notch out a frequency in this `TimeSeries`.
 

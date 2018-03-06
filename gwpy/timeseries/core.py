@@ -593,7 +593,25 @@ class TimeSeriesBase(Series):
     # -- utilities ------------------------------
 
     def plot(self, **kwargs):
-        """Plot the data for this `TimeSeries`
+        """Plot the data for this timeseries
+
+        All keywords are passed to `~gwpy.plotter.TimeSeriesPlot`
+
+        Returns
+        -------
+        plot : `~gwpy.plotter.TimeSeriesPlot`
+            the newly created figure, with populated Axes.
+
+        See Also
+        --------
+        matplotlib.pyplot.figure
+            for documentation of keyword arguments used to create the
+            figure
+        matplotlib.figure.Figure.add_subplot
+            for documentation of keyword arguments used to create the
+            axes
+        matplotlib.axes.Axes.plot
+            for documentation of keyword arguments used in rendering the data
         """
         from ..plotter import TimeSeriesPlot
         return TimeSeriesPlot(self, **kwargs)
