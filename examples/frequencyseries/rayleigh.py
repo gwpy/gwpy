@@ -50,16 +50,13 @@ rayleigh = gwdata.rayleigh_spectrum(2, 1)
 # strain data and plot both on the same figure:
 
 asd = gwdata.asd(2, 1)
-plot = asd.plot(figsize=(8, 6))
-plot.add_frequencyseries(rayleigh, newax=True, sharex=plot.axes[0])
-asdax, rayax = plot.axes
-asdax.set_xlabel('')
-asdax.set_xlim(30, 1500)
-asdax.set_ylim(5e-24, 1e-21)
-asdax.set_ylabel(r'[strain/\rtHz]')
-rayax.set_ylim(0, 2)
-rayax.set_ylabel('Rayleigh statistic')
-asdax.set_title('Sensitivity of LIGO-Livingston around GW151226', fontsize=20)
+plot = asd.plot(figsize=(8, 6),
+                xscale='log', xlabel='', xlim=(30, 1500),
+                yscale='log', ylabel=r'[strain/\rtHz]', ylim=(5e-24, 1e-21))
+plot.add_frequencyseries(rayleigh, newax=True, sharex=plot.axes[0],
+                         ylim=(0, 2), ylabel='Rayleigh statistic')
+plot.axes[0].set_title('Sensitivity of LIGO-Livingston around GW151226',
+                       fontsize=20)
 plot.show()
 
 # So, we see sharp dips at certain frequencies associated with 'lines' in

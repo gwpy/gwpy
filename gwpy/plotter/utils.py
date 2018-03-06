@@ -34,7 +34,7 @@ FIGURE_PARAMS = [
 ]
 AXES_PARAMS = [
     'projection', 'sharex', 'sharey', 'xlim', 'ylim', 'xlabel', 'ylabel',
-    'xscale', 'yscale', 'title',
+    'xscale', 'yscale', 'title', 'epoch',
 ]
 LINE_PARAMS = [
     'linewidth', 'linestyle', 'color', 'label', 'alpha', 'rasterized',

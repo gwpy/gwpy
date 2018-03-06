@@ -475,7 +475,7 @@ class TestTimeSeriesPlot(TimeSeriesMixin, TestPlot):
         fig = self.FIGURE_CLASS(self.ts)
         ax = fig.gca()
         assert len(ax.lines) == 1
-        assert fig.get_epoch() == self.ts.x0.value
+        assert fig.get_epoch() is None
         assert fig.get_xlim() == self.ts.span
         # test passing multiple timeseries
         fig = self.FIGURE_CLASS(self.ts, self.ts)
@@ -537,7 +537,7 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
     def test_init(self):
         fig, ax = self.new()
         assert isinstance(ax, self.AXES_CLASS)
-        assert ax.get_epoch() == 0
+        assert ax.get_epoch() is None
         assert ax.get_xscale() == 'auto-gps'
         assert ax.get_xlabel() == '_auto'
         self.save_and_close(fig)
@@ -551,21 +551,21 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         nptest.assert_array_equal(line.get_xdata(), self.ts.times.value)
         nptest.assert_array_equal(line.get_ydata(), self.ts.value)
         # check GPS axis is set ok
-        assert ax.get_epoch() == self.ts.x0.value
-        assert ax.get_xlim() == tuple(self.ts.span)
+        assert ax.viewLim.x0 == self.ts.x0.value
+        assert ax.dataLim.x1 == self.ts.span[1]
         self.save_and_close(fig)
 
-    def test_plot_timeseries_mmm(self):
+    def test_plot_mmm(self):
         fig, ax = self.new()
         # test default
-        artists = ax.plot_timeseries_mmm(*self.mmm)
+        artists = ax.plot_mmm(*self.mmm)
         assert len(artists) == 5
         assert len(ax.lines) == 3
         assert len(ax.collections) == 2
         self.save_and_close(fig)
         # test min only
         fig, ax = self.new()
-        artists = ax.plot_timeseries_mmm(self.mmm[0], min_=self.mmm[1])
+        artists = ax.plot_mmm(self.mmm[0], min_=self.mmm[1])
         assert len(artists) == 5
         assert artists[3] is None
         assert artists[4] is None
@@ -574,12 +574,16 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         self.save_and_close(fig)
         # test max only
         fig, ax = self.new()
-        artists = ax.plot_timeseries_mmm(self.mmm[0], max_=self.mmm[2])
+        artists = ax.plot_mmm(self.mmm[0], max_=self.mmm[2])
         assert len(artists) == 5
         assert artists[1] is None
         assert artists[2] is None
         assert len(ax.lines) == 2
         assert len(ax.collections) == 1
+
+    def test_plot_timeseries_mmm(self):
+        with pytest.warns(DeprecationWarning):
+           self.new()[1].plot_timeseries_mmm(*self.mmm)
 
     def test_plot_spectrogram(self):
         fig, ax = self.new()
@@ -587,9 +591,6 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         ax.plot_spectrogram(self.sg, imshow=False)
         coll = ax.collections[0]
         nptest.assert_array_equal(coll.get_array(), self.sg.value.T.flatten())
-        # check GPS axis is set ok
-        assert ax.get_epoch() == self.sg.x0.value
-        assert ax.get_xlim() == tuple(self.sg.xspan)
         # check frequency axis
         if self.use_tex:
             assert ax.get_ylabel() == r'Frequency [$\mathrm{Hz}$]'
@@ -639,17 +640,17 @@ class TestFrequencySeriesAxes(FrequencySeriesMixin, TestAxes):
         nptest.assert_array_equal(line.get_ydata(), self.asd.value)
         self.save_and_close(fig)
 
-    def test_plot_frequencyseries_mmm(self):
+    def test_plot_mmm(self):
         fig, ax = self.new()
         # test defaults
-        artists = ax.plot_frequencyseries_mmm(*self.mmm)
+        artists = ax.plot_mmm(*self.mmm)
         assert len(artists) == 5
         assert len(ax.lines) == 3
         assert len(ax.collections) == 2
         self.save_and_close(fig)
         # test min only
         fig, ax = self.new()
-        artists = ax.plot_frequencyseries_mmm(self.mmm[0], min_=self.mmm[1])
+        artists = ax.plot_mmm(self.mmm[0], min_=self.mmm[1])
         assert len(artists) == 5
         assert artists[3] is None
         assert artists[4] is None
@@ -658,12 +659,16 @@ class TestFrequencySeriesAxes(FrequencySeriesMixin, TestAxes):
         self.save_and_close(fig)
         # test max only
         fig, ax = self.new()
-        artists = ax.plot_frequencyseries_mmm(self.mmm[0], max_=self.mmm[2])
+        artists = ax.plot_mmm(self.mmm[0], max_=self.mmm[2])
         assert len(artists) == 5
         assert artists[1] is None
         assert artists[2] is None
         assert len(ax.lines) == 2
         assert len(ax.collections) == 1
+
+    def test_plot_frequencyseries_mmm(self):
+        with pytest.warns(DeprecationWarning):
+           self.new()[1].plot_frequencyseries_mmm(*self.mmm)
 
 
 # -- Table plotters -----------------------------------------------------------
