@@ -422,8 +422,15 @@ class EventTable(Table):
 
         See Also
         --------
-        gwpy.plotter.EventTablePlot
-            for more details.
+        matplotlib.pyplot.figure
+            for documentation of keyword arguments used to create the
+            figure
+        matplotlib.figure.Figure.add_subplot
+            for documentation of keyword arguments used to create the
+            axes
+        gwpy.plotter.EventTableAxes.plot_table
+            for documentation of keyword arguments used to display the table
+            (calls out to :meth:`~matplotlib.axes.Axes.scatter`)
         """
         from gwpy.plotter import EventTablePlot
         return EventTablePlot(self, x, y, *args, **kwargs)
