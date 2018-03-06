@@ -170,8 +170,7 @@ class TimeSeriesAxes(SeriesAxes):
     @auto_refresh
     def plot_series(self, timeseries, **kwargs):
         out = super(TimeSeriesAxes, self).plot_series(timeseries, **kwargs)
-        if len(self._get_artists()) == 1 and not self.get_epoch():
-            self.set_epoch(timeseries.x0)
+        self._init_epoch_from_array(timeseries)
         return out
 
     plot_series.__doc__ = SeriesAxes.plot_series.__doc__
@@ -185,12 +184,20 @@ class TimeSeriesAxes(SeriesAxes):
 
     def plot_array2d(self, spectrogram, **kwargs):
         out = super(TimeSeriesAxes, self).plot_array2d(spectrogram, **kwargs)
-        if len(self._get_artists()) == 1 and not self.get_epoch():
-            self.set_epoch(spectrogram.x0)
+        self._init_epoch_from_array(spectrogram)
         return out
 
     plot_array2d.__doc__ = SeriesAxes.plot_array2d.__doc__
     plot_spectrogram = SeriesAxes.plot_array2d
+
+    def _init_epoch_from_array(self, array):
+        """Initialise the epoch of this `TimeSeriesAxes` from the `Array`.
+
+        This method only operates if the `Axes` only contains a single artist
+        (line, collection, image) and the epoch is currently not set (`== 0`).
+        """
+        if len(self._get_artists()) == 1 and not self.get_epoch():
+            return self.set_epoch(array.x0)
 
 
 register_projection(TimeSeriesAxes)

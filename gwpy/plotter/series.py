@@ -110,10 +110,7 @@ class SeriesAxes(Axes):
 
         # set default limits (protecting against 0-log)
         if len(self._get_artists()) == 1:
-            span = series.xspan
-            if self.get_xscale() == 'log' and not span[0]:
-                span = (series.xindex.value[1], span[1])
-            self.set_xlim(*span)
+            self._set_lim_from_array(series, 'x')
 
         # set labels from units
         if not self.get_xlabel():
@@ -244,14 +241,8 @@ class SeriesAxes(Axes):
         if not self.get_ylabel():
             self.set_ylabel(text.unit_as_label(array.yunit))
         if len(self._get_artists()) == 1:  # first plotted element
-            xspan = array.xspan
-            if self.get_xscale() == 'log' and xspan[0] == 0.:
-                xspan = array.xindex[1], array.xspan[1]
-            self.set_xlim(*xspan)
-            yspan = array.yspan
-            if self.get_yscale() == 'log' and yspan[0] == 0.:
-                yspan = array.yindex[1], array.yspan[1]
-            self.set_ylim(*yspan)
+            self._set_lim_from_array(array, 'x')
+            self._set_lim_from_array(array, 'y')
 
         return layer
 
@@ -272,6 +263,20 @@ class SeriesAxes(Axes):
         y = numpy.concatenate((array.yindex.value, [array.yspan[-1]]))
         xcoord, ycoord = numpy.meshgrid(x, y, copy=False, sparse=True)
         return self.pcolormesh(xcoord, ycoord, array.value.T, **kwargs)
+
+    def _set_lim_from_array(self, array, axis):
+        """Set the axis limits using the index of an `~gwpy.types.Array`
+        """
+        # get limits from array span
+        span = getattr(array, '{}span'.format(axis))
+        scale = getattr(self, 'get_{}scale'.format(axis))()
+        if scale == 'log' and not span[0]:  # protect log(0)
+            index = getattr(array, '{}index'.format(axis)).value
+            span = index[1], span[1]
+
+        # set limits
+        set_lim = getattr(self, 'set_{}lim'.format(axis))
+        return set_lim(*span)
 
 
 register_projection(SeriesAxes)
