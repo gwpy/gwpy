@@ -168,13 +168,14 @@ class TimeSeriesAxes(SeriesAxes):
         return super(TimeSeriesAxes, self).plot(*args, **kwargs)
 
     @auto_refresh
-    def plot_timeseries(self, timeseries, **kwargs):
+    def plot_series(self, timeseries, **kwargs):
         out = super(TimeSeriesAxes, self).plot_series(timeseries, **kwargs)
-        if not self.get_epoch():
+        if len(self._get_artists()) == 1 and not self.get_epoch():
             self.set_epoch(timeseries.x0)
         return out
 
-    plot_timeseries.__doc__ = SeriesAxes.plot_series.__doc__
+    plot_series.__doc__ = SeriesAxes.plot_series.__doc__
+    plot_timeseries = SeriesAxes.plot_series
 
     @auto_refresh
     def plot_timeseries_mmm(self, mean_, min_=None, max_=None, **kwargs):
@@ -182,13 +183,14 @@ class TimeSeriesAxes(SeriesAxes):
                       'use instead plot_mmm()', DeprecationWarning)
         return self.plot_mmm(mean_, min_=min_, max_=max_, **kwargs)
 
-    def plot_spectrogram(self, spectrogram, **kwargs):
+    def plot_array2d(self, spectrogram, **kwargs):
         out = super(TimeSeriesAxes, self).plot_array2d(spectrogram, **kwargs)
-        if not self.get_epoch():
+        if len(self._get_artists()) == 1 and not self.get_epoch():
             self.set_epoch(spectrogram.x0)
         return out
 
-    plot_spectrogram.__doc__ = SeriesAxes.plot_array2d.__doc__
+    plot_array2d.__doc__ = SeriesAxes.plot_array2d.__doc__
+    plot_spectrogram = SeriesAxes.plot_array2d
 
 register_projection(TimeSeriesAxes)
 
