@@ -264,6 +264,7 @@ class SeriesAxes(Axes):
         xcoord, ycoord = numpy.meshgrid(x, y, copy=False, sparse=True)
         return self.pcolormesh(xcoord, ycoord, array.value.T, **kwargs)
 
+
 register_projection(SeriesAxes)
 
 

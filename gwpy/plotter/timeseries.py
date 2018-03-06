@@ -192,6 +192,7 @@ class TimeSeriesAxes(SeriesAxes):
     plot_array2d.__doc__ = SeriesAxes.plot_array2d.__doc__
     plot_spectrogram = SeriesAxes.plot_array2d
 
+
 register_projection(TimeSeriesAxes)
 
 
