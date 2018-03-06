@@ -332,6 +332,24 @@ class SpectralVariance(Array2D):
 
     def plot(self, **kwargs):
         """Plot this `SpectralVariance`
+
+        All arguments are passed to `~gwpy.plotter.FrequencySeriesPlot`
+
+        Returns
+        -------
+        plot : `~gwpy.plotter.FrequencySeriesPlot`
+            a new `FrequencySeriesPlot` rendering of this `FrequencySeries`
+
+        See Also
+        --------
+        matplotlib.pyplot.figure
+            for documentation of keyword arguments used to create the
+            figure
+        matplotlib.figure.Figure.add_subplot
+            for documentation of keyword arguments used to create the
+            axes
+        gwpy.plotter.FrequencySeriesAxes.plot_variance
+            for documentation of keyword arguments used in rendering the data
         """
         from ..plotter import FrequencySeriesPlot
         return FrequencySeriesPlot(self, **kwargs)
