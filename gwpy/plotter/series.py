@@ -243,6 +243,15 @@ class SeriesAxes(Axes):
         # format axes
         if not self.get_ylabel():
             self.set_ylabel(text.unit_as_label(array.yunit))
+        if len(self._get_artists()) == 1:  # first plotted element
+            xspan = array.xspan
+            if self.get_xscale() == 'log' and xspan[0] == 0.:
+                xspan = array.xindex[1], array.xspan[1]
+            self.set_xlim(*xspan)
+            yspan = array.yspan
+            if self.get_yscale() == 'log' and yspan[0] == 0.:
+                yspan = array.yindex[1], array.yspan[1]
+            self.set_ylim(*yspan)
 
         return layer
 
