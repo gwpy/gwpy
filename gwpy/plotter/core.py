@@ -982,7 +982,7 @@ class Plot(figure.Figure):
     # -- utilities ------------------------------
 
     @staticmethod
-    def _get_axes_data(inputs, sep=False):
+    def _get_axes_data(inputs, sep=False, flat=False):
         """Determine the number of axes from the input args to this `Plot`
 
         Parameters
@@ -993,11 +993,15 @@ class Plot(figure.Figure):
         sep : `bool`, optional
             plot each set of data on a separate `Axes`
 
+        flat : `bool`, optional
+            Return a flattened list of data objects
+
         Returns
         -------
         axesdata : `list` of lists of array-like data
             a `list` with one element per required `Axes` containing the
-            array-like data sets for those `Axes`
+            array-like data sets for those `Axes`, unless ``flat=True``
+            is given.
 
         Notes
         -----
@@ -1041,6 +1045,10 @@ class Plot(figure.Figure):
                 out.append(x.values())
             else:
                 out.append([x])
+
+        if flat:
+            return [s for group in out for s in group]
+
         return out
 
     @staticmethod
