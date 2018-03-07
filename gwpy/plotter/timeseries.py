@@ -74,8 +74,7 @@ class TimeSeriesAxes(SeriesAxes):
 
     draw.__doc__ = SeriesAxes.draw.__doc__
 
-    # -----------------------------------------------
-    # GPS scaling
+    # -- GPS scaling --------------------------------
 
     def set_xscale(self, scale, *args, **kwargs):
         super(TimeSeriesAxes, self).set_xscale(scale, *args, **kwargs)
@@ -133,8 +132,7 @@ class TimeSeriesAxes(SeriesAxes):
                                              auto=auto, **kw)
     set_xlim.__doc__ = SeriesAxes.set_xlim.__doc__
 
-    # -------------------------------------------
-    # GWpy class plotting methods
+    # -- plotting methods -----------------------
 
     @auto_refresh
     def plot(self, *args, **kwargs):
@@ -230,8 +228,7 @@ class TimeSeriesPlot(SeriesPlot):
             if kwargs.get('sharex', None):
                 ax.set_xlabel("")
 
-    # -----------------------------------------------
-    # properties
+    # -- properties ---------------------------------
 
     @property
     def epoch(self):
@@ -258,8 +255,7 @@ class TimeSeriesPlot(SeriesPlot):
         for axes in axeslist:
             axes.set_epoch(gps)
 
-    # -----------------------------------------------
-    # TimeSeriesPlot methods
+    # -- add_ methods -------------------------------
 
     def add_timeseries(self, timeseries, **kwargs):
         super(TimeSeriesPlot, self).add_timeseries(timeseries, **kwargs)

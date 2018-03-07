@@ -81,9 +81,6 @@ class SegmentAxes(TimeSeriesAxes):
         formatter = SegmentFormatter()
         self.yaxis.set_major_formatter(formatter)
 
-    # -------------------------------------------------------------------------
-    # plotting methods
-
     def plot(self, *args, **kwargs):
         """Plot data onto these axes
 
