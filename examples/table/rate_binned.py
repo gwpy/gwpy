@@ -54,8 +54,9 @@ rates = events.binned_event_rates(1, 'snr', [2, 3, 5, 8], operator='>=',
 
 # Finally, we can make a plot:
 plot = rates.plot(label='name')
-plot.set_xlim(968654552, 968654562)
-plot.set_ylabel('Event rate [Hz]')
-plot.set_title('LIGO Hanford Observatory event rate for HW100916')
-plot.add_legend()
+ax = plot.gca()
+ax.set_xlim(968654552, 968654562)
+ax.set_ylabel('Event rate [Hz]')
+ax.set_title('LIGO Hanford Observatory event rate for HW100916')
+ax.legend()
 plot.show()

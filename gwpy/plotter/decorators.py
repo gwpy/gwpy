@@ -19,6 +19,7 @@
 """Decorator for GWpy plotting
 """
 
+import warnings
 from functools import wraps
 
 from matplotlib.figure import Figure
@@ -68,6 +69,10 @@ def axes_method(func):
     def wrapper(figure, *args, **kwargs):
         """Find the relevant `Axes` and call the method
         """
+        warnings.warn('Plot.{0}() is been deprecated, and will be removed in '
+                      'an upcoming release; please update your code to call '
+                      'Axes.{0}() directly'.format(func.__name__),
+                      DeprecationWarning)
         axes = [ax for ax in figure.axes if ax not in figure._coloraxes]
         if not axes:
             raise RuntimeError("No axes found for which '%s' is applicable"
