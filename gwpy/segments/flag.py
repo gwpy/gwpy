@@ -154,8 +154,7 @@ class DataQualityFlag(object):
         self.isgood = isgood
         self.padding = padding
 
-    # -------------------------------------------------------------------------
-    # read-write properties
+    # -- properties -----------------------------
 
     @property
     def name(self):
@@ -354,8 +353,7 @@ class DataQualityFlag(object):
     def padding(self):
         self._padding = (0, 0)
 
-    # -------------------------------------------------------------------------
-    # read-only properties
+    # -- read-only properties -------------------
 
     @property
     def texname(self):
@@ -391,8 +389,7 @@ class DataQualityFlag(object):
         """
         return abs(self.active - self.known) == 0
 
-    # -------------------------------------------------------------------------
-    # classmethods
+    # -- classmethods ---------------------------
 
     @classmethod
     def query(cls, flag, *args, **kwargs):
@@ -678,8 +675,7 @@ class DataQualityFlag(object):
         return cls(name=name, known=[known], category=veto.category,
                    description=veto.comment, padding=pad)
 
-    # -------------------------------------------------------------------------
-    # instance methods
+    # -- methods --------------------------------
 
     def write(self, target, *args, **kwargs):
         """Write this `DataQualityFlag` to file
@@ -1035,8 +1031,7 @@ class DataQualityDict(OrderedDict):
     """
     _EntryClass = DataQualityFlag
 
-    # -----------------------------------------------------------------------
-    # classmethods
+    # -- classmethods ---------------------------
 
     @classmethod
     def query(cls, flags, *args, **kwargs):
@@ -1480,8 +1475,7 @@ class DataQualityDict(OrderedDict):
 
         return segdeftab, segsumtab, segtab
 
-    # -----------------------------------------------------------------------
-    # instance methods
+    # -- methods --------------------------------
 
     def write(self, target, *args, **kwargs):
         """Write this `DataQualityDict` to file

@@ -142,8 +142,7 @@ class Channel(object):
                 except AttributeError:
                     setattr(self, '_%s' % key, val)
 
-    # -------------------------------------------------------------------------
-    # read-write properties
+    # -- properties -----------------------------
 
     @property
     def name(self):
@@ -328,8 +327,7 @@ class Channel(object):
     def frametype(self, ft):
         self._frametype = ft
 
-    # -------------------------------------------------------------------------
-    # read-only properties
+    # -- read-only properties -------------------
 
     @property
     def ifo(self):
@@ -400,8 +398,7 @@ class Channel(object):
             return '%s,%s' % (self.name, self.type)
         return self.name
 
-    # -------------------------------------------------------------------------
-    # classsmethods
+    # -- classmethods ---------------------------
 
     @classmethod
     def query(cls, name, use_kerberos=None, debug=False):
@@ -499,8 +496,7 @@ class Channel(object):
         return cls(name, sample_rate=sample_rate, unit=unit, dtype=dtype,
                    type=ctype)
 
-    # -------------------------------------------------------------------------
-    # methods
+    # -- methods --------------------------------
 
     @classmethod
     def parse_channel_name(cls, name, strict=True):

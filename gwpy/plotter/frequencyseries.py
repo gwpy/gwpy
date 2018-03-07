@@ -41,9 +41,6 @@ class FrequencySeriesAxes(SeriesAxes):
     """
     name = 'frequencyseries'
 
-    # -------------------------------------------
-    # GWpy class plotting methods
-
     @auto_refresh
     def plot(self, *args, **kwargs):
         """Plot data onto these Axes.
