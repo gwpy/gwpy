@@ -51,7 +51,8 @@ rate = events.event_rate(1, start=968654552, end=968654562)
 # `~gwpy.timeseries.TimeSeries`, so we can display this using the
 # :meth:`~gwpy.timeseries.TimeSeries.plot` method of that object:
 plot = rate.plot()
-plot.set_xlim(968654552, 968654562)
-plot.set_ylabel('Event rate [Hz]')
-plot.set_title('LIGO Hanford Observatory event rate for HW100916')
+ax = plot.gca()
+ax.set_xlim(968654552, 968654562)
+ax.set_ylabel('Event rate [Hz]')
+ax.set_title('LIGO Hanford Observatory event rate for HW100916')
 plot.show()
