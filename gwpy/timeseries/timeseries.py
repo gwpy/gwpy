@@ -1525,8 +1525,9 @@ class TimeSeries(TimeSeriesBase):
 
         >>> q = data.q_transform()
         >>> plot = q.plot()
-        >>> plot.set_xlim(-.2, .2)
-        >>> plot.set_epoch(0)
+        >>> ax = plot.gca()
+        >>> ax.set_xlim(-.2, .2)
+        >>> ax.set_epoch(0)
         >>> plot.show()
         """  # nopep8
         from scipy.interpolate import (interp2d, InterpolatedUnivariateSpline)
