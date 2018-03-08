@@ -1614,6 +1614,15 @@ class DataQualityDict(OrderedDict):
     def __sub__(self, other):
         return self.copy().__isub__(other)
 
+    def __ixor__(self, other):
+        for key, value in other.items():
+            if key in self:
+                self[key] ^= value
+        return self
+
+    def __xor__(self, other):
+        return self.copy().__ixor__(other)
+
     def __invert__(self):
         new = self.copy()
         for key, value in new.items():
