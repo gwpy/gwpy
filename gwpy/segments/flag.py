@@ -993,6 +993,18 @@ class DataQualityFlag(object):
     __add__ = __or__
     __iadd__ = __ior__
 
+    def __xor__(self, other):
+        """Find the exclusive OR of this one and ``other``.
+        """
+        return self.copy().__ixor__(other)
+
+    def __ixor__(self, other):
+        """Exclusive OR this flag with ``other`` in-place.
+        """
+        self.known ^= other.known
+        self.active ^= other.active
+        return self
+
     def __invert__(self):
         new = self.copy()
         new.known = ~self.known
