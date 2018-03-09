@@ -1163,8 +1163,8 @@ class TestTimeSeries(TestTimeSeriesBase):
         data = TimeSeries(data, unit='strain', times=t)
         assert data.demod(f).unit == data.unit
         assert len(data.demod(f)) == 10
-        assert all( x <= 1e-4 for x in numpy.abs(data.demod(f).value - amp) )
-        assert all( x <= 1e-4 for x in (numpy.angle(data.demod(f)) - phase) )
+        assert all(x <= 1e-4 for x in numpy.abs(data.demod(f).value - amp))
+        assert all(x <= 1e-4 for x in (numpy.angle(data.demod(f)) - phase))
 
     def test_whiten(self):
         # create noise with a glitch in it at 1000 Hz

@@ -1313,7 +1313,7 @@ class TimeSeries(TimeSeriesBase):
         # mix with a complex oscillator and stride through the TimeSeries,
         # taking the average over each stride
         data = numpy.zeros(nsteps, dtype=complex)
-        mixed = 2 * numpy.exp( 2*numpy.pi*1j*f*self.times.value ) * self.value
+        mixed = 2 * numpy.exp(2*numpy.pi*1j*f*self.times.value) * self.value
         for step in range(nsteps):
             # find step TimeSeries
             idx = int(stridesamp * step)
