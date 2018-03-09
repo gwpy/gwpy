@@ -1290,6 +1290,41 @@ class TimeSeries(TimeSeriesBase):
         return self.__class__(data, channel=self.channel, t0=self.t0,
                               name=name, sample_rate=(1/float(stride)))
 
+    def demod(self, f, stride=1):
+        """Compute the average magnitude and phase of this `TimeSeries`
+           once per stride at a given frequency.
+
+        Parameters
+        ----------
+        f : `float`
+            frequency (Hz) at which to demodulate the signal
+
+        stride : `float`
+            stride (seconds) between calculations
+
+        Returns
+        -------
+        demod : `TimeSeries`
+            a new `TimeSeries` containing magnitude and phase trends
+            (stored as a complex number) with dt=stride
+        """
+        stridesamp = int(stride * self.sample_rate.value)
+        nsteps = int(self.size // stridesamp)
+        # mix with a complex oscillator and stride through the TimeSeries,
+        # taking the average over each stride
+        data = numpy.zeros(nsteps, dtype=complex)
+        mixed = 2 * numpy.exp( 2*numpy.pi*1j*f*self.times.value ) * self.value
+        for step in range(nsteps):
+            # find step TimeSeries
+            idx = int(stridesamp * step)
+            idx_end = idx + stridesamp
+            stepseries = mixed[idx:idx_end]
+            demod_ = numpy.average(stepseries)
+            data[step] = demod_
+        return self.__class__(data, channel=self.channel, t0=self.t0,
+                              name=self.name, sample_rate=(1/float(stride)),
+                              unit=self.unit, dtype=complex)
+
     def whiten(self, fftlength, overlap=0, method='scipy-welch',
                window='hanning', detrend='constant', asd=None, **kwargs):
         """White this `TimeSeries` against its own ASD
