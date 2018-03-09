@@ -1341,8 +1341,10 @@ class TimeSeries(TimeSeriesBase):
             mag = numpy.abs(out)
             phase = numpy.angle(out, deg=deg).view(type(self))
             phase.__metadata_finalize__(out)
-            if deg: phase._unit = 'deg'
-            else: phase._unit = 'rad'
+            if deg:
+                phase._unit = 'deg'
+            else:
+                phase._unit = 'rad'
             return mag, phase
 
     def whiten(self, fftlength, overlap=0, method='scipy-welch',

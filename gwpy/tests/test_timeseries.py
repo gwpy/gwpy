@@ -1162,7 +1162,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         duration, sample_rate, stride = 600, 4096, 60
         t = numpy.linspace(0, duration, duration*sample_rate)
         data = TimeSeries(amp * numpy.cos(2*numpy.pi*f*t - phase),
-                                   unit='', times=t)
+            unit='', times=t)
 
         # test with exp=True
         demod = data.demodulate(f, stride=stride, exp=True)
