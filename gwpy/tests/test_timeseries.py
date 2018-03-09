@@ -1154,6 +1154,18 @@ class TestTimeSeries(TestTimeSeriesBase):
         rms = losc.rms(1.)
         assert rms.sample_rate == 1 * units.Hz
 
+    def test_demod(self):
+        # create a timeseries with two loud lines with different phases
+        # at different frequencies
+        amp, phase, f = 1., 0., 30
+        t = numpy.linspace(0, 10, 10*16384)
+        data = amp * numpy.cos(2*numpy.pi*f*t + phase)
+        data = TimeSeries(data, unit='strain', times=t)
+        assert data.demod(f).unit == data.unit
+        assert len(data.demod(f)) == 10
+        assert all( x <= 1e-4 for x in numpy.abs(data.demod(f).value - amp) )
+        assert all( x <= 1e-4 for x in (numpy.angle(data.demod(f)) - phase) )
+
     def test_whiten(self):
         # create noise with a glitch in it at 1000 Hz
         noise = self.TEST_CLASS(
