@@ -1158,14 +1158,16 @@ class TestTimeSeries(TestTimeSeriesBase):
         # create a timeseries that is simply one loud sinusoidal oscillation
         # at a particular frequency, then demodulate at that frequency and
         # recover the amplitude and phase
-        amp, phase, f = 1., 0., 30
-        t = numpy.linspace(0, 10, 10*16384)
-        data = amp * numpy.cos(2*numpy.pi*f*t + phase)
-        data = TimeSeries(data, unit='strain', times=t)
-        assert data.demodulate(f).unit == data.unit
-        assert len(data.demodulate(f)) == 10
-        assert all(x <= 1e-4 for x in numpy.abs(data.demodulate(f).value - amp))
-        assert all(x <= 1e-4 for x in (numpy.angle(data.demodulate(f)) - phase))
+        amp, phase, f = 1., numpy.pi/4, 30
+        duration, sample_rate, stride = 600, 4096, 60
+        t = numpy.linspace(0, duration, duration*sample_rate)
+        data = TimeSeries(amp * numpy.cos(2*numpy.pi*f*t - phase),
+                                   unit='', times=t)
+        demod = data.demodulate(f, stride=stride)
+        assert demod.unit == data.unit
+        assert len(demod) == duration // stride
+        assert_allclose(numpy.abs(demod.value), amp, rtol=1e-5)
+        assert_allclose(numpy.angle(demod.value), phase, rtol=1e-5)
 
     def test_whiten(self):
         # create noise with a glitch in it at 1000 Hz
