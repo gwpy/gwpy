@@ -718,14 +718,15 @@ class TestIoLosc(object):
                 'https://losc.ligo.org/archive/1126257414/1126261510/')
         assert str(exc.value).startswith('Failed to parse LOSC JSON')
 
-    @pytest.mark.parametrize('detector, strict, result', [
-        ('H1', False, ('GW150914', 'O1', 'tenyear')),
-        ('H1', True, ('O1', 'tenyear',)),
-        ('V1', False, ('tenyear',)),
+    @pytest.mark.parametrize('segment, detector, strict, result', [
+        ((1126257414, 1126261510), 'H1', False, ('GW150914', 'O1', 'tenyear')),
+        ((1126250000, 1126270000), 'H1', False, ('O1', 'tenyear', 'GW150914')),
+        ((1126250000, 1126270000), 'H1', True, ('O1', 'tenyear',)),
+        ((1126250000, 1126270000), 'V1', False, ('tenyear',)),
     ])
-    def test_find_datasets(self, detector, strict, result):
+    def test_find_datasets(self, segment, detector, strict, result):
         try:
-            sets = io_losc.find_datasets(1126250000, 1126270000,
+            sets = io_losc.find_datasets(*segment,
                                          detector=detector, strict=strict)
         except (URLError, SSLError) as exc:
             pytest.skip(str(exc))
