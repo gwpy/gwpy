@@ -1290,7 +1290,7 @@ class TimeSeries(TimeSeriesBase):
         return self.__class__(data, channel=self.channel, t0=self.t0,
                               name=name, sample_rate=(1/float(stride)))
 
-    def demod(self, f, stride=1):
+    def demodulate(self, f, stride=1):
         """Compute the average magnitude and phase of this `TimeSeries`
            once per stride at a given frequency.
 
