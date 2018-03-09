@@ -1290,7 +1290,7 @@ class TimeSeries(TimeSeriesBase):
         return self.__class__(data, channel=self.channel, t0=self.t0,
                               name=name, sample_rate=(1/float(stride)))
 
-    def demodulate(self, f, stride=1):
+    def demodulate(self, f, stride=1, exp=False, deg=True):
         """Compute the average magnitude and phase of this `TimeSeries`
            once per stride at a given frequency.
 
@@ -1299,14 +1299,25 @@ class TimeSeries(TimeSeriesBase):
         f : `float`
             frequency (Hz) at which to demodulate the signal
 
-        stride : `float`
-            stride (seconds) between calculations
+        stride : `float`, optional
+            stride (seconds) between calculations, defaults to 1 second
+
+        exp : `bool`, optional
+            return the demodulated magnitude and phase trends as one
+            `TimeSeries` object representing a complex exponential
+
+        deg : `bool`, optional
+            if `exp=False`, calculates the phase in degrees
 
         Returns
         -------
+        mag, phase : `TimeSeries`
+            if `exp=False`, returns a pair of `TimeSeries` objects representing
+            magnitude and phase trends with `dt=stride`
+
         out : `TimeSeries`
-            a new `TimeSeries` containing magnitude and phase trends
-            (stored as a complex number) with dt=stride
+            if `exp=True`, returns a single `TimeSeries` with magnitude and
+            phase trends represented as `mag * exp(1j*phase)` with `dt=stride`
         """
         stridesamp = int(stride * self.sample_rate.value)
         nsteps = int(self.size // stridesamp)
@@ -1324,7 +1335,15 @@ class TimeSeries(TimeSeriesBase):
             stepseries = mixed[idx:idx_end]
             demod_ = numpy.average(stepseries)
             out.value[step] = demod_
-        return out
+        if exp:
+            return out
+        else:
+            mag = numpy.abs(out)
+            phase = numpy.angle(out, deg=deg).view(type(self))
+            phase.__metadata_finalize__(out)
+            if deg: phase._unit = 'deg'
+            else: phase._unit = 'rad'
+            return mag, phase
 
     def whiten(self, fftlength, overlap=0, method='scipy-welch',
                window='hanning', detrend='constant', asd=None, **kwargs):
