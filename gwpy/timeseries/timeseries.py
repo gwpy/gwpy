@@ -1327,7 +1327,7 @@ class TimeSeries(TimeSeriesBase):
         out.__metadata_finalize__(self)
         out.sample_rate = 1/float(stride)
         out._unit = self.unit
-        mixed = 2 * numpy.exp(2*numpy.pi*1j*f*self.times.value) * self.value
+        mixed = 2 * numpy.exp(-2*numpy.pi*1j*f*self.times.value) * self.value
         for step in range(nsteps):
             # find step TimeSeries
             idx = int(stridesamp * step)
