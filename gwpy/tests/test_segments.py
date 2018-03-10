@@ -440,23 +440,23 @@ class TestDataQualityFlag(object):
 
         # and
         x = a & b
-        utils.assert_segmentlist_equal(x.active, [])
-        utils.assert_segmentlist_equal(x.known, KNOWN)
+        utils.assert_segmentlist_equal(x.active, a.active & b.active)
+        utils.assert_segmentlist_equal(x.known, a.known & b.known)
 
         # sub
         x = a - b
-        utils.assert_segmentlist_equal(x.active, a.active)  # no overlap
-        utils.assert_segmentlist_equal(x.known, a.known)
+        utils.assert_segmentlist_equal(x.active, a.active - b.active)
+        utils.assert_segmentlist_equal(x.known, a.known & b.known)
 
         # or
         x = a | b
-        utils.assert_segmentlist_equal(x.active, ACTIVE)
-        utils.assert_segmentlist_equal(x.known, KNOWN)
+        utils.assert_segmentlist_equal(x.active, a.active | b.active)
+        utils.assert_segmentlist_equal(x.known, a.known | b.known)
 
         # invert
         x = ~a
-        utils.assert_segmentlist_equal(x.active, ~a.active)
-        utils.assert_segmentlist_equal(x.known, ~a.known)
+        utils.assert_segmentlist_equal(x.active, a.known & ~a.active)
+        utils.assert_segmentlist_equal(x.known, a.known)
 
     def test_coalesce(self):
         flag = self.create()
