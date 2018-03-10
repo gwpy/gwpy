@@ -456,7 +456,11 @@ class CliProduct(object):
                 % self.min_timeseries)
 
         if len(arg_list.start) > 0:
-            self.start_list = list(set(map(int, arg_list.start)))
+            # uniquify list of start times (preserving order)
+            self.start_list = []
+            for t in map(int, arg_list.start):
+                if t not in self.start_list:
+                    self.start_list.append(t)
         else:
             raise parser.error('No start times specified')
 
