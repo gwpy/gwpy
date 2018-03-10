@@ -976,7 +976,9 @@ class DataQualityFlag(object):
     def __isub__(self, other):
         """Subtract the ``other`` `DataQualityFlag` from this one in-place.
         """
+        self.known &= other.known
         self.active -= other.active
+        self.active &= self.known
         return self
 
     def __or__(self, other):
@@ -996,8 +998,8 @@ class DataQualityFlag(object):
 
     def __invert__(self):
         new = self.copy()
-        new.known = ~self.known
         new.active = ~self.active
+        new.active &= new.known
         return new
 
 
