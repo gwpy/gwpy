@@ -367,7 +367,7 @@ class TimeSeriesBase(Series):
     def fetch_open_data(cls, ifo, start, end, sample_rate=4096,
                         tag=None, version=None,
                         format=None, host='https://losc.ligo.org',
-                        verbose=False, cache=False, **kwargs):
+                        verbose=False, cache=None, **kwargs):
         """Fetch open-access data from the LIGO Open Science Center
 
         Parameters
@@ -414,7 +414,8 @@ class TimeSeriesBase(Series):
 
         cache : `bool`, optional
             save/read a local copy of the remote URL, default: `False`;
-            useful if the same remote data are to be accessed multiple times
+            useful if the same remote data are to be accessed multiple times.
+            Set `GWPY_CACHE=1` in the environment to auto-cache.
 
         **kwargs
             any other keyword arguments are passed to the `TimeSeries.read`
