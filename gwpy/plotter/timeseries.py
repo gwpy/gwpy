@@ -172,7 +172,7 @@ class TimeSeriesAxes(SeriesAxes):
         return out
 
     plot_series.__doc__ = SeriesAxes.plot_series.__doc__
-    plot_timeseries = SeriesAxes.plot_series
+    plot_timeseries = plot_series
 
     @auto_refresh
     def plot_timeseries_mmm(self, mean_, min_=None, max_=None, **kwargs):
@@ -186,7 +186,7 @@ class TimeSeriesAxes(SeriesAxes):
         return out
 
     plot_array2d.__doc__ = SeriesAxes.plot_array2d.__doc__
-    plot_spectrogram = SeriesAxes.plot_array2d
+    plot_spectrogram = plot_array2d
 
     def _init_epoch_from_array(self, array):
         """Initialise the epoch of this `TimeSeriesAxes` from the `Array`.

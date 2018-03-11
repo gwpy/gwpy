@@ -155,13 +155,17 @@ class TestSpectrogram(TestArray2D):
     def test_plot(self, array, imshow):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot(imshow=imshow)
+            ax = plot.gca()
             assert isinstance(plot, TimeSeriesPlot)
-            assert isinstance(plot.gca(), TimeSeriesAxes)
-            assert plot.gca().lines == []
+            assert isinstance(ax, TimeSeriesAxes)
+            assert ax.lines == []
             if imshow:
-                assert len(plot.gca().images) == 1
+                assert len(ax.images) == 1
             else:
-                assert len(plot.gca().collections) == 1
+                assert len(ax.collections) == 1
+            assert ax.get_epoch() == array.x0.value
+            assert ax.get_xlim() == array.xspan
+            assert ax.get_ylim() == array.yspan
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
             plot.close()
