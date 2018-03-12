@@ -1322,18 +1322,18 @@ class TimeSeries(TimeSeriesBase):
         Examples
         --------
         Demodulation is useful when trying to examine steady sinusoidal
-        fluctuations we know are contained within some data. For instance,
+        signals we know to be contained within data. For instance,
         we can download some data from LOSC to look for fluctuations
         in the 60 Hz power line harmonic:
 
         >>> from gwpy.timeseries import TimeSeries
         >>> data = TimeSeries.fetch_open_data('L1', 1131350417, 1131357617)
-        
-        To look at fluctuations we can demodulate the `TimeSeries` at 60 Hz
-        with a stride of once per minute:
+
+        We can demodulate the `TimeSeries` at 60 Hz with a stride of once
+        per minute:
 
         >>> amp, phase = data.demodulate(60, stride=60)
-        
+
         We can then plot these trends to visualize changes in the amplitude
         and phase of the 60 Hz line:
 
