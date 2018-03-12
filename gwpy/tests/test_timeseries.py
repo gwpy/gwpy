@@ -1171,13 +1171,18 @@ class TestTimeSeries(TestTimeSeriesBase):
         utils.assert_allclose(numpy.abs(demod.value), amp, rtol=1e-5)
         utils.assert_allclose(numpy.angle(demod.value), phase, rtol=1e-5)
 
-        # test with exp=False
+        # test with exp=False, deg=True
         mag, ph = data.demodulate(f, stride=stride)
         assert mag.unit == data.unit
         assert len(mag) == len(ph)
         assert ph.unit == 'deg'
         utils.assert_allclose(mag.value, amp, rtol=1e-5)
         utils.assert_allclose(ph.value, numpy.rad2deg(phase), rtol=1e-5)
+
+        # test with exp=False, deg=False
+        mag, ph = data.demodulate(f, stride=stride, deg=False)
+        assert ph.unit == 'rad'
+        utils.assert_allclose(ph.value, phase, rtol=1e-5)
 
     def test_whiten(self):
         # create noise with a glitch in it at 1000 Hz

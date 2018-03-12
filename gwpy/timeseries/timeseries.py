@@ -1328,8 +1328,8 @@ class TimeSeries(TimeSeriesBase):
         out.sample_rate = 1/float(stride)
         out._unit = self.unit
         mixed = 2 * numpy.exp(-2*numpy.pi*1j*f*self.times.value) * self.value
+        # stride through the TimeSeries
         for step in range(nsteps):
-            # find step TimeSeries
             idx = int(stridesamp * step)
             idx_end = idx + stridesamp
             stepseries = mixed[idx:idx_end]
@@ -1337,15 +1337,11 @@ class TimeSeries(TimeSeriesBase):
             out.value[step] = demod_
         if exp:
             return out
-        else:
-            mag = numpy.abs(out)
-            phase = numpy.angle(out, deg=deg).view(type(self))
-            phase.__metadata_finalize__(out)
-            if deg:
-                phase._unit = 'deg'
-            else:
-                phase._unit = 'rad'
-            return mag, phase
+        mag = numpy.abs(out)
+        phase = numpy.angle(out, deg=deg).view(type(self))
+        phase.__metadata_finalize__(out)
+        phase.override_unit('deg' if deg else 'rad')
+        return mag, phase
 
     def whiten(self, fftlength, overlap=0, method='scipy-welch',
                window='hanning', detrend='constant', asd=None, **kwargs):
