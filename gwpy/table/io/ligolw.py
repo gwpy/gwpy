@@ -273,7 +273,14 @@ def table_to_ligolw(table, tablename):
 
     # create new LIGO_LW table
     columns = table.columns.keys()
-    llwtable = lsctables.New(lsctables.TableByName[tablename], columns=columns)
+    cls = lsctables.TableByName[tablename]
+    llwcolumns = list(columns)
+    for col, llwcols in _get_property_columns(cls, columns).items():
+        idx = llwcolumns.index(col)
+        llwcolumns.pop(idx)
+        for name in llwcols[::-1]:
+            llwcolumns.insert(idx, name)
+    llwtable = lsctables.New(cls, columns=llwcolumns)
 
     # map rows across
     for row in table:
