@@ -585,6 +585,15 @@ class TestDataQualityFlag(object):
                 _read_write(autoidentify=True)
             _read_write(autoidentify=True, write_kw={'overwrite': True})
 
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')
+    def test_write_ligolw_attrs(self, flag):
+        from gwpy.io.ligolw import read_table
+        with tempfile.NamedTemporaryFile(suffix='.xml') as f:
+            flag.write(f, format='ligolw', attrs={'process_id': 100})
+            segdeftab = read_table(f, 'segment_definer')
+            assert str(segdeftab[0].process_id) == (
+                'segment_definer:process_id:100')
+
     # -- test queries ---------------------------
 
     @pytest.mark.parametrize('api', ('dqsegdb', 'segdb'))
