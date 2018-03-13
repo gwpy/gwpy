@@ -149,6 +149,25 @@ returns the same `~DataQualityFlag.known` segments, and the inverse `~DataQualit
 
 The new flag represents times when the state of ``a`` was known, but it was not active.
 
+-----------------
+Exclusive OR (``^``)
+-----------------
+::
+
+    >>> a ^ b
+
+returns the intersection of `~DataQualityFlag.known` segments and the exclusive OR of `~DataQualityFlag.active` segment lists, e.g::
+
+    >>> print(a ^ b)
+    <DataQualityFlag(No name,
+                 known=[[0 ... 5)
+                        [10 ... 12)],
+                 active=[[1 ... 3)
+                         [5 ... 7)],
+                 description=None)>
+
+The new flag represents times when the state of both ``a`` and ``b`` are known, but exactly one of the flags was active.
+
 =====================
 The `DataQualityDict`
 =====================
