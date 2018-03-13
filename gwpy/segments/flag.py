@@ -1587,7 +1587,7 @@ class DataQualityDict(OrderedDict):
         Parameters
         ----------
         deep : `bool`, optional, default: `False`
-            perform a deep copy of the original dictionary with a fresh 
+            perform a deep copy of the original dictionary with a fresh
             memory address
 
         Returns
@@ -1597,8 +1597,7 @@ class DataQualityDict(OrderedDict):
         """
         if deep:
             return deepcopy(self)
-        else:
-            return shallowcopy(self)
+        return super(DataQualityDict, self).copy()
 
     def __iand__(self, other):
         for key, value in other.items():
