@@ -243,7 +243,8 @@ class TestTable(object):
                 utils.assert_array_equal(llw.get_peak(), table['peak'])
 
             # read table and assert gpsproperty was repacked properly
-            t2 = self.TABLE.read(f, columns=table.colnames, use_numpy_dtypes=True)
+            t2 = self.TABLE.read(f, columns=table.colnames,
+                                 use_numpy_dtypes=True)
             utils.assert_table_equal(t2, table, almost_equal=True)
 
     @utils.skip_missing_dependency('root_numpy')

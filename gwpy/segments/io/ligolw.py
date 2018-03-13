@@ -134,7 +134,8 @@ def write_ligolw(flags, target, attrs=None, **kwargs):
     """
     if isinstance(flags, DataQualityFlag):
         flags = DataQualityDict({flags.name: flags})
-    return write_tables(target, flags.to_ligolw_tables(**attrs or dict()), **kwargs)
+    return write_tables(target, flags.to_ligolw_tables(**attrs or dict()),
+                        **kwargs)
 
 
 # -- register -----------------------------------------------------------------
