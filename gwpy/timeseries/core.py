@@ -367,7 +367,7 @@ class TimeSeriesBase(Series):
     def fetch_open_data(cls, ifo, start, end, sample_rate=4096,
                         tag=None, version=None,
                         format=None, host='https://losc.ligo.org',
-                        verbose=False, cache=False, **kwargs):
+                        verbose=False, cache=None, **kwargs):
         """Fetch open-access data from the LIGO Open Science Center
 
         Parameters
@@ -414,7 +414,8 @@ class TimeSeriesBase(Series):
 
         cache : `bool`, optional
             save/read a local copy of the remote URL, default: `False`;
-            useful if the same remote data are to be accessed multiple times
+            useful if the same remote data are to be accessed multiple times.
+            Set `GWPY_CACHE=1` in the environment to auto-cache.
 
         **kwargs
             any other keyword arguments are passed to the `TimeSeries.read`
@@ -593,7 +594,25 @@ class TimeSeriesBase(Series):
     # -- utilities ------------------------------
 
     def plot(self, **kwargs):
-        """Plot the data for this `TimeSeries`
+        """Plot the data for this timeseries
+
+        All keywords are passed to `~gwpy.plotter.TimeSeriesPlot`
+
+        Returns
+        -------
+        plot : `~gwpy.plotter.TimeSeriesPlot`
+            the newly created figure, with populated Axes.
+
+        See Also
+        --------
+        matplotlib.pyplot.figure
+            for documentation of keyword arguments used to create the
+            figure
+        matplotlib.figure.Figure.add_subplot
+            for documentation of keyword arguments used to create the
+            axes
+        matplotlib.axes.Axes.plot
+            for documentation of keyword arguments used in rendering the data
         """
         from ..plotter import TimeSeriesPlot
         return TimeSeriesPlot(self, **kwargs)
@@ -652,16 +671,19 @@ class TimeSeriesBase(Series):
         """Convert this `TimeSeries` into a LAL TimeSeries.
         """
         import lal
-        from ..utils.lal import (LAL_TYPE_STR_FROM_NUMPY, to_lal_unit)
-        typestr = LAL_TYPE_STR_FROM_NUMPY[self.dtype.type]
+        from ..utils.lal import (find_typed_function, to_lal_unit)
+
+        # map unit
         try:
             unit = to_lal_unit(self.unit)
-        except ValueError as exc:
-            warnings.warn("%s, defaulting to lal.DimensionlessUnit" % str(exc))
+        except ValueError as e:
+            warnings.warn("%s, defaulting to lal.DimensionlessUnit" % str(e))
             unit = lal.DimensionlessUnit
-        create = getattr(lal, 'Create%sTimeSeries' % typestr.upper())
+
+        # create TimeSeries
+        create = find_typed_function(self.dtype, 'Create', 'TimeSeries')
         lalts = create(self.name, lal.LIGOTimeGPS(self.epoch.gps), 0,
-                       self.dt.value, unit, self.size)
+                       self.dt.value, unit, self.shape[0])
         lalts.data.data = self.value
         return lalts
 
@@ -722,7 +744,9 @@ class TimeSeriesBase(Series):
                 out = out.view(StateTimeSeries)
                 out.__metadata_finalize__(orig)
                 out.override_unit('')
-                out.name = '%s %s %s' % (orig.name, op_, value)
+                oname = orig.name if isinstance(orig, type(self)) else orig
+                vname = value.name if isinstance(value, type(self)) else value
+                out.name = '{0!s} {1!s} {2!s}'.format(oname, op_, vname)
             return out
 
     def __array_wrap__(self, obj, context=None):
@@ -737,7 +761,9 @@ class TimeSeriesBase(Series):
                 op_ = ufunc.__name__
             result = obj.view(StateTimeSeries)
             result.override_unit('')
-            result.name = '%s %s %s' % (obj.name, op_, value)
+            oname = obj.name if isinstance(obj, type(self)) else obj
+            vname = value.name if isinstance(value, type(self)) else value
+            result.name = '{0!s} {1!s} {2!s}'.format(oname, op_, vname)
         # otherwise, return a regular TimeSeries
         else:
             result = super(TimeSeriesBase, self).__array_wrap__(

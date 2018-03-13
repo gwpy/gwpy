@@ -59,5 +59,5 @@ if numpydoc_version < '0.7':
             return lines
         return _str_examples_orig(self)
 
-     # replace the class method
+    # replace the class method
     docscrape_sphinx.SphinxDocString._str_examples = _str_examples

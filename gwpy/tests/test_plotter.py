@@ -198,31 +198,41 @@ class TestPlot(PlottingTestBase):
         fig_set = getattr(fig, 'set_%s' % name)
         ax_get = getattr(ax, 'get_%s' % name)
 
-        assert fig_get() == ax_get()
-        fig_set(args)
-        assert fig_get() == args
-        assert fig_get() == ax_get()
+        # note: @axes_methods is deprecated
+        with pytest.warns(DeprecationWarning):
+            assert fig_get() == ax_get()
+        with pytest.warns(DeprecationWarning):
+            fig_set(args)
+        with pytest.warns(DeprecationWarning):
+            assert fig_get() == args
+        with pytest.warns(DeprecationWarning):
+            assert fig_get() == ax_get()
 
     @pytest.mark.parametrize('axis', ('x', 'y'))
     def test_log(self, axis):
         fig, ax = self.new()
 
         # fig.set_xlim(0.1, 10)
-        getattr(fig, 'set_%slim' % axis)(0.1, 10)
+        with pytest.warns(DeprecationWarning):
+            getattr(fig, 'set_%slim' % axis)(0.1, 10)
 
         # fig.logx = True
-        setattr(fig, 'log%s' % axis, True)
+        with pytest.warns(DeprecationWarning):
+            setattr(fig, 'log%s' % axis, True)
 
         # assert ax.get_xscale() == 'log'
         assert getattr(ax, 'get_%sscale' % axis)() == 'log'
 
         # assert fig.logx is True
-        assert getattr(fig, 'log%s' % axis) is True
+        with pytest.warns(DeprecationWarning):
+            assert getattr(fig, 'log%s' % axis) is True
 
         # fig.logx = False
-        setattr(fig, 'log%s' % axis, False)
+        with pytest.warns(DeprecationWarning):
+            setattr(fig, 'log%s' % axis, False)
         assert getattr(ax, 'get_%sscale' % axis)() == 'linear'
-        assert getattr(fig, 'log%s' % axis) is False
+        with pytest.warns(DeprecationWarning):
+            assert getattr(fig, 'log%s' % axis) is False
 
         self.save_and_close(fig)
 
@@ -469,14 +479,16 @@ class TestTimeSeriesPlot(TimeSeriesMixin, TestPlot):
         # test empty
         fig, ax = self.new()
         assert isinstance(ax, self.AXES_CLASS)
+
         # test passing arguments
         fig = self.FIGURE_CLASS(figsize=[9, 6])
         assert fig.get_figwidth() == 9
         fig = self.FIGURE_CLASS(self.ts)
         ax = fig.gca()
         assert len(ax.lines) == 1
-        assert fig.get_epoch() == self.ts.x0.value
-        assert fig.get_xlim() == self.ts.span
+        assert ax.get_epoch() == self.ts.x0.value
+        assert ax.get_xlim() == self.ts.span
+
         # test passing multiple timeseries
         fig = self.FIGURE_CLASS(self.ts, self.ts)
         assert len(fig.gca().lines) == 2
@@ -485,6 +497,7 @@ class TestTimeSeriesPlot(TimeSeriesMixin, TestPlot):
         for ax in fig.axes:
             assert len(ax.lines) == 1
         assert fig.axes[1]._sharex is fig.axes[0]
+
         # test kwarg parsing
         fig = self.FIGURE_CLASS(self.ts, figsize=[12, 6], rasterized=True)
 

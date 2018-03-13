@@ -137,7 +137,7 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
     else:
         krbenv = None
 
-     # execute command
+    # execute command
     kget = subprocess.Popen(cmd, env=krbenv,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,

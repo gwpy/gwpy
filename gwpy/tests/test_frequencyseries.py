@@ -39,6 +39,7 @@ from astropy import units
 
 from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.plotter import (FrequencySeriesPlot, FrequencySeriesAxes)
+from gwpy.segments import Segment
 
 import utils
 from test_array import (TestSeries, TestArray2D)
@@ -210,8 +211,8 @@ class TestFrequencySeries(TestSeries):
     def test_read_ligolw(self):
         with tempfile.NamedTemporaryFile(mode='w+') as fobj:
             fobj.write(LIGO_LW_ARRAY)
-            array = FrequencySeries.read(fobj, 'psd',
-                                         match={'channel': 'X1:TEST-CHANNEL_1'})
+            array = FrequencySeries.read(
+                fobj, 'psd', match={'channel': 'X1:TEST-CHANNEL_1'})
             utils.assert_array_equal(array, list(range(1, 11)) / units.Hz)
             utils.assert_array_equal(array.frequencies,
                                      list(range(10)) * units.Hz)
@@ -269,14 +270,31 @@ class TestSpectralVariance(TestArray2D):
         with pytest.raises(AttributeError):
             array.dy = 0
 
-    def test_yunit(self):
-        return NotImplemented
+    def test_yunit(self, array):
+        assert array.unit == array.bins.unit
 
-    def test_yspan(self):
-        return NotImplemented
+    def test_yspan(self, array):
+        yspan = array.yspan
+        assert isinstance(yspan, Segment)
+        assert yspan == (self.bins[0], self.bins[-1])
 
     def test_yindex(self, array):
         utils.assert_array_equal(array.yindex, array.bins[:-1])
+
+    # -- test utilities -------------------------
+
+    def test_getitem(self, array):
+        utils.assert_quantity_sub_equal(
+            array[0::2, 0],
+            self.TEST_CLASS._rowclass(
+                array.value[0::2, 0], x0=array.x0, dx=array.dx*2,
+                name=array.name, unit=array.unit, channel=array.channel,
+                epoch=array.epoch,
+            ),
+        )
+        with pytest.raises(NotImplementedError) as exc:
+            array[0, ::2]
+        assert str(exc.value) == 'cannot slice SpectralVariance across bins'
 
     # -- test methods ---------------------------
 

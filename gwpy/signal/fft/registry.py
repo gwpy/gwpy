@@ -89,10 +89,6 @@ def update_doc(obj, scaling='density'):
     """
     header = 'The available methods are:'
 
-    # if __doc__ isn't a string, bail-out now
-    if not isinstance(obj.__doc__, string_types):
-        return
-
     # remove the old format list
     lines = obj.__doc__.splitlines()
     try:
@@ -120,8 +116,6 @@ def update_doc(obj, scaling='density'):
     format_str.extend(['', 'See :ref:`gwpy-signal-fft` for more details'])
 
     lines.extend([' ' * indent + line for line in [header, ''] + format_str])
+
     # and overwrite the docstring
-    try:
-        obj.__doc__ = '\n'.join(lines)
-    except AttributeError:
-        obj.__func__.__doc__ = '\n'.join(lines)
+    obj.__doc__ = '\n'.join(lines)

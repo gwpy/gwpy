@@ -63,8 +63,9 @@ def module_older_than(module, minversion):
 def skip_minimum_version(module, minversion):
     """Returns a mark generator to skip a test if the dependency is too old
     """
-    return pytest.mark.skipif(module_older_than(module, minversion),
-                              reason='requires {} >= {}'.format(module, minversion))
+    return pytest.mark.skipif(
+        module_older_than(module, minversion),
+        reason='requires {} >= {}'.format(module, minversion))
 
 
 # -- assertions ---------------------------------------------------------------

@@ -42,3 +42,19 @@ def null_context():
     """Null context manager
     """
     yield
+
+
+def if_not_none(func, value):
+    """Apply func to value if value is not None
+
+    Examples
+    --------
+    >>> from gwpy.utils.misc import if_not_none
+    >>> if_not_none(int, '1')
+    1
+    >>> if_not_none(int, None)
+    None
+    """
+    if value is None:
+        return
+    return func(value)

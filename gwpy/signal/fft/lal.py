@@ -31,6 +31,7 @@ import warnings
 import numpy
 
 from ...frequencyseries import FrequencySeries
+from ..window import canonical_name
 from .utils import scale_timeseries_unit
 from . import registry as fft_registry
 
@@ -68,10 +69,10 @@ def generate_fft_plan(length, level=None, dtype='float64', forward=True):
         FFT plan of the relevant data type
     """
     import lal
-    from ...utils.lal import LAL_TYPE_STR_FROM_NUMPY
+    from ...utils.lal import (find_typed_function, to_lal_type_str)
 
     # generate key for caching plan
-    laltype = LAL_TYPE_STR_FROM_NUMPY[numpy.dtype(dtype).type]
+    laltype = to_lal_type_str(dtype)
     key = (length, bool(forward), laltype)
 
     # find existing plan
@@ -79,14 +80,14 @@ def generate_fft_plan(length, level=None, dtype='float64', forward=True):
         return LAL_FFTPLANS[key]
     # or create one
     except KeyError:
-        create = getattr(lal, 'Create%sFFTPlan' % laltype)
+        create = find_typed_function(dtype, 'Create', 'FFTPlan')
         if level is None:
             level = LAL_FFTPLAN_LEVEL
         LAL_FFTPLANS[key] = create(length, int(bool(forward)), level)
         return LAL_FFTPLANS[key]
 
 
-def generate_window(length, window=('kaiser', 24), dtype='float64'):
+def generate_window(length, window=None, dtype='float64'):
     """Generate a time-domain window for use in a LAL FFT
 
     Parameters
@@ -108,10 +109,13 @@ def generate_window(length, window=('kaiser', 24), dtype='float64'):
         time-domain window to use for FFT
     """
     import lal
-    from ...utils.lal import LAL_TYPE_STR_FROM_NUMPY
+    from ...utils.lal import (find_typed_function, to_lal_type_str)
+
+    if window is None:
+        window = ('kaiser', 24)
 
     # generate key for caching window
-    laltype = LAL_TYPE_STR_FROM_NUMPY[numpy.dtype(dtype).type]
+    laltype = to_lal_type_str(dtype)
     key = (length, str(window), laltype)
 
     # find existing window
@@ -121,15 +125,30 @@ def generate_window(length, window=('kaiser', 24), dtype='float64'):
     except KeyError:
         # parse window as name and arguments, e.g. ('kaiser', 24)
         if isinstance(window, (list, tuple)):
-            args = window[1:]
-            window = str(window[0])
+            window, beta = window
         else:
-            args = []
-        window = window.title() if window.islower() else window
+            beta = 0
+        window = canonical_name(window)
         # create window
-        create = getattr(lal, 'Create%s%sWindow' % (window, laltype))
-        LAL_WINDOWS[key] = create(length, *args)
+        create = find_typed_function(dtype, 'CreateNamed', 'Window')
+        LAL_WINDOWS[key] = create(window, beta, length)
         return LAL_WINDOWS[key]
+
+
+def window_from_array(array):
+    """Convert a `numpy.ndarray` into a LAL `Window` object
+    """
+    import lal
+    from ...utils.lal import (find_typed_function)
+
+    dtype = array.dtype
+
+    # create sequence
+    seq = find_typed_function(dtype, 'Create', 'Sequence')(array.size)
+    seq.data = array
+
+    # create window from sequence
+    return find_typed_function(dtype, 'Create', 'WindowFromSequence')(seq)
 
 
 # -- spectrumm methods ------------------------------------------------------
@@ -152,10 +171,10 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
     noverlap : `int`
         number of samples to overlap between segments, defaults to 50%.
 
-    window : `tuple`, `str`, optional
-        window parameters to apply to timeseries prior to FFT
+    window : `lal.REAL8Window`, optional
+        window to apply to timeseries prior to FFT
 
-    plan : `REAL8FFTPlan`, optional
+    plan : `lal.REAL8FFTPlan`, optional
         LAL FFT plan to use when generating average spectrum
 
     Returns
@@ -164,7 +183,7 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
         average power `FrequencySeries`
     """
     import lal
-    from ...utils.lal import LAL_TYPE_STR_FROM_NUMPY
+    from ...utils.lal import find_typed_function
 
     # default to 50% overlap
     if noverlap is None:
@@ -174,9 +193,7 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
     # get window
     if window is None:
         window = generate_window(segmentlength, dtype=timeseries.dtype)
-    elif isinstance(window, (tuple, str)):
-        window = generate_window(segmentlength, window=window,
-                                 dtype=timeseries.dtype)
+
     # get FFT plan
     if plan is None:
         plan = generate_fft_plan(segmentlength, dtype=timeseries.dtype)
@@ -200,32 +217,23 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
                       % (size - required))
         timeseries = timeseries[:required]
 
-    laltypestr = LAL_TYPE_STR_FROM_NUMPY[timeseries.dtype.type]
-
     # generate output spectrum
-    try:
-        unit = lal.lalStrainUnit
-    except AttributeError:
-        unit = lal.StrainUnit
-    create = getattr(lal, 'Create%sFrequencySeries' % laltypestr)
+    create = find_typed_function(timeseries.dtype, 'Create', 'FrequencySeries')
     lalfs = create(timeseries.name, lal.LIGOTimeGPS(timeseries.epoch.gps), 0,
-                   1 / segmentlength, unit, int(segmentlength // 2 + 1))
+                   1 / segmentlength, lal.StrainUnit,
+                   int(segmentlength // 2 + 1))
 
-    # calculate medianmean spectrum
-    if re.match(r'median-mean\Z', method, re.I):
-        spec_func = getattr(lal, "%sAverageSpectrumMedianMean" % laltypestr)
-    elif re.match(r'median\Z', method, re.I):
-        spec_func = getattr(lal, "%sAverageSpectrumMedian" % laltypestr)
-    elif re.match(r'welch\Z', method, re.I):
-        spec_func = getattr(lal, "%sAverageSpectrumWelch" % laltypestr)
-    else:
-        raise NotImplementedError("Unrecognised LAL spectrum method %r"
-                                  % method)
+    # find LAL method (e.g. median-mean -> lal.REAL8AverageSpectrumMedianMean)
+    methodname = ''.join(map(str.title, re.split('[-_]', method)))
+    spec_func = find_typed_function(timeseries.dtype, '',
+                                    'AverageSpectrum{}'.format(methodname))
 
+    # calculate spectrum
     spec_func(lalfs, timeseries.to_lal(), segmentlength, stride, window, plan)
 
     # format and return
     spec = FrequencySeries.from_lal(lalfs)
+    spec.name = timeseries.name
     spec.channel = timeseries.channel
     spec.override_unit(scale_timeseries_unit(
         timeseries.unit, scaling='density'))

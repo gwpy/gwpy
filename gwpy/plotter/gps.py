@@ -141,8 +141,7 @@ class GPSMixin(object):
     scale = property(fget=get_scale, doc=get_scale.__doc__)
 
 
-# ---------------------------------------------------------------------------
-# Define GPS transforms
+# -- GPS transforms ---------------------------------------------------------
 
 class GPSTransformBase(GPSMixin, Transform):
     """`Transform` to convert GPS times to time since epoch (and vice-verse)

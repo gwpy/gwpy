@@ -20,9 +20,9 @@
 """
 
 import re
-import numpy
+import warnings
 
-from matplotlib import (pyplot, colors, __version__ as mpl_version)
+from matplotlib import (pyplot, __version__ as mpl_version)
 from matplotlib.projections import register_projection
 from matplotlib.artist import allow_rasterization
 from matplotlib.cbook import iterable
@@ -31,10 +31,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from ..time import (Time, LIGOTimeGPS, to_gps)
 from ..segments import SegmentList
-from . import text
-from .core import Plot
-from .axes import Axes
 from .decorators import auto_refresh
+from .series import (SeriesPlot, SeriesAxes)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['TimeSeriesPlot', 'TimeSeriesAxes']
@@ -45,7 +43,7 @@ else:
     USE_IMSHOW = False
 
 
-class TimeSeriesAxes(Axes):
+class TimeSeriesAxes(SeriesAxes):
     """Custom `Axes` for a `~gwpy.plotter.TimeSeriesPlot`.
     """
     name = 'timeseries'
@@ -74,16 +72,15 @@ class TimeSeriesAxes(Axes):
         if nolabel:
             self.set_xlabel('_auto')
 
-    draw.__doc__ = Axes.draw.__doc__
+    draw.__doc__ = SeriesAxes.draw.__doc__
 
-    # -----------------------------------------------
-    # GPS scaling
+    # -- GPS scaling --------------------------------
 
     def set_xscale(self, scale, *args, **kwargs):
         super(TimeSeriesAxes, self).set_xscale(scale, *args, **kwargs)
         if scale != 'auto-gps' and self.get_xlabel() == '_auto':
             self.set_xlabel('')
-    set_xscale.__doc__ = Axes.set_xscale.__doc__
+    set_xscale.__doc__ = SeriesAxes.set_xscale.__doc__
 
     def auto_gps_label(self):
         """Automatically set the x-axis label based on the current GPS scale
@@ -133,10 +130,9 @@ class TimeSeriesAxes(Axes):
             self.set_epoch(left)
         super(TimeSeriesAxes, self).set_xlim(left=left, right=right, emit=emit,
                                              auto=auto, **kw)
-    set_xlim.__doc__ = Axes.set_xlim.__doc__
+    set_xlim.__doc__ = SeriesAxes.set_xlim.__doc__
 
-    # -------------------------------------------
-    # GWpy class plotting methods
+    # -- plotting methods -----------------------
 
     @auto_refresh
     def plot(self, *args, **kwargs):
@@ -161,202 +157,51 @@ class TimeSeriesAxes(Axes):
         matplotlib.axes.Axes.plot
             for a full description of acceptable ``*args`` and ``**kwargs``
         """
-        from ..timeseries import TimeSeriesBase
+        # plot Spectrogram
         from ..spectrogram import Spectrogram
-        if len(args) == 1 and isinstance(args[0], TimeSeriesBase):
-            return self.plot_timeseries(*args, **kwargs)
-        elif len(args) == 1 and isinstance(args[0], Spectrogram):
+        if len(args) == 1 and isinstance(args[0], Spectrogram):
             return self.plot_spectrogram(*args, **kwargs)
+
+        # SeriesAxes.plot handles TimeSeries
         return super(TimeSeriesAxes, self).plot(*args, **kwargs)
 
     @auto_refresh
-    def plot_timeseries(self, timeseries, **kwargs):
-        """Plot a `~gwpy.timeseries.TimeSeries` onto these
-        axes
+    def plot_series(self, timeseries, **kwargs):
+        out = super(TimeSeriesAxes, self).plot_series(timeseries, **kwargs)
+        self._init_epoch_from_array(timeseries)
+        return out
 
-        Parameters
-        ----------
-        timeseries : `~gwpy.timeseries.TimeSeries`
-            data to plot
-
-        **kwargs
-            any other keyword arguments acceptable for
-            :meth:`~matplotlib.Axes.plot`
-
-        Returns
-        -------
-        line : `~matplotlib.lines.Line2D`
-            the newly added line
-
-        See Also
-        --------
-        matplotlib.axes.Axes.plot
-            for a full description of acceptable ``*args`` and ``**kwargs``
-        """
-        kwargs.setdefault('label', text.to_string(timeseries.name))
-        if not self.epoch:
-            self.set_epoch(timeseries.x0)
-        line = self.plot(timeseries.times.value, timeseries.value, **kwargs)
-        if len(self.lines) == 1 and timeseries.size:
-            self.set_xlim(*timeseries.xspan)
-        if not self.get_ylabel():
-            self.set_ylabel(text.unit_as_label(timeseries.unit))
-        return line
+    plot_series.__doc__ = SeriesAxes.plot_series.__doc__
+    plot_timeseries = plot_series
 
     @auto_refresh
     def plot_timeseries_mmm(self, mean_, min_=None, max_=None, **kwargs):
-        """Plot a `TimeSeries` onto these axes, with shaded regions
+        warnings.warn('plot_timeseries_mmm has been deprecated, please '
+                      'use instead plot_mmm()', DeprecationWarning)
+        return self.plot_mmm(mean_, min_=min_, max_=max_, **kwargs)
 
-        The ``mean_`` `TimeSeries` is plotted normally, while the ``min_``
-        and ``max_`` `TimeSeries` are plotted lightly below and above,
-        with a fill between them and the ``mean_``.
+    def plot_array2d(self, spectrogram, **kwargs):
+        out = super(TimeSeriesAxes, self).plot_array2d(spectrogram, **kwargs)
+        self._init_epoch_from_array(spectrogram)
+        return out
 
-        Parameters
-        ----------
-        mean_ : `~gwpy.timeseries.TimeSeries`
-            data to plot normally
+    plot_array2d.__doc__ = SeriesAxes.plot_array2d.__doc__
+    plot_spectrogram = plot_array2d
 
-        min_ : `~gwpy.timeseries.TimeSeries`
-            first data set to shade to ``mean_``
+    def _init_epoch_from_array(self, array):
+        """Initialise the epoch of this `TimeSeriesAxes` from the `Array`.
 
-        max_ : `~gwpy.timeseries.TimeSeries`
-            second data set to shade to ``mean_``
-
-        **kwargs
-            any other keyword arguments acceptable for
-            :meth:`~matplotlib.Axes.plot`
-
-        Returns
-        -------
-        artists : `tuple`
-            a 5-tuple containing:
-
-            - `~matplotlib.lines.Line2d` for ``mean_``,
-            - `~matplotlib.lines.Line2D` for ``min_``,
-            - `~matplotlib.collections.PolyCollection` for ``min_`` shading,
-            - `~matplotlib.lines.Line2D` for ``max_``, and
-            - `~matplitlib.collections.PolyCollection` for ``max_`` shading
-
-        See Also
-        --------
-        matplotlib.axes.Axes.plot
-            for a full description of acceptable ``*args`` and ``**kwargs``
+        This method only operates if the `Axes` only contains a single artist
+        (line, collection, image) and the epoch is currently not set (`== 0`).
         """
-        # plot mean
-        meanline = self.plot_timeseries(mean_, **kwargs)[0]
-        # plot min and max
-        kwargs.pop('label', None)
-        color = kwargs.pop('color', meanline.get_color())
-        linewidth = kwargs.pop('linewidth', meanline.get_linewidth()) / 2
-        if min_ is not None:
-            minline = self.plot(min_.times.value, min_.value, color=color,
-                                linewidth=linewidth, **kwargs)
-            mincol = self.fill_between(min_.times.value, mean_.value,
-                                       min_.value, alpha=0.1, color=color,
-                                       rasterized=kwargs.get('rasterized'))
-        else:
-            minline = mincol = None
-        if max_ is not None:
-            maxline = self.plot(max_.times.value, max_.value, color=color,
-                                linewidth=linewidth, **kwargs)
-            maxcol = self.fill_between(max_.times.value, mean_.value,
-                                       max_.value, alpha=0.1, color=color,
-                                       rasterized=kwargs.get('rasterized'))
-        else:
-            maxline = maxcol = None
-        return meanline, minline, mincol, maxline, maxcol
-
-    @auto_refresh
-    def plot_spectrogram(self, spectrogram, imshow=USE_IMSHOW, **kwargs):
-        """Plot a `~gwpy.spectrogram.core.Spectrogram` onto
-        these axes
-
-        Parameters
-        ----------
-        spectrogram : `~gwpy.spectrogram.core.Spectrogram`
-            data to plot
-
-        imshow : `bool`, optional
-            if `True`, use :meth:`~matplotlib.axes.Axes.imshow` to render
-            the spectrogram as an image, otherwise use
-            :meth:`~matplotlib.axes.Axes.pcolormesh`, default is `True`
-            with `matplotlib >= 2.0`, otherwise `False`.
-
-        **kwargs
-            any other keyword arguments acceptable for
-            :meth:`~matplotlib.Axes.imshow` (if ``imshow=True``),
-            or :meth:`~matplotlib.Axes.pcolormesh` (``imshow=False``)
-
-        Returns
-        -------
-        layer : `~matplotlib.collections.QuadMesh`, `~matplotlib.images.Image`
-            the layer for this spectrogram
-
-        See Also
-        --------
-        matplotlib.axes.Axes.imshow
-        matplotlib.axes.Axes.pcolormesh
-            for a full description of acceptable ``*args`` and ``**kwargs``
-        """
-        # rescue grid settings
-        grid = (self.xaxis._gridOnMajor, self.xaxis._gridOnMinor,
-                self.yaxis._gridOnMajor, self.yaxis._gridOnMinor)
-
-        # set normalisation
-        norm = kwargs.pop('norm', None)
-        if norm == 'log':
-            vmin = kwargs.get('vmin', None)
-            vmax = kwargs.get('vmax', None)
-            norm = colors.LogNorm(vmin=vmin, vmax=vmax)
-        kwargs['norm'] = norm
-
-        # set epoch if not set
-        if not self.epoch:
-            self.set_epoch(spectrogram.x0)
-
-        # plot with imshow
-        if imshow:
-            extent = tuple(spectrogram.xspan) + tuple(spectrogram.yspan)
-            if extent[2] == 0.:  # hack out zero on frequency axis
-                extent = extent[:2] + (1e-300,) + extent[3:]
-            kwargs.setdefault('extent', extent)
-            kwargs.setdefault('origin', 'lower')
-            kwargs.setdefault('interpolation', 'none')
-            kwargs.setdefault('aspect', 'auto')
-            layer = self.imshow(spectrogram.value.T, **kwargs)
-        # plot with pcolormesh
-        else:
-            x = numpy.concatenate((spectrogram.times.value,
-                                   [spectrogram.span[-1]]))
-            y = numpy.concatenate((spectrogram.frequencies.value,
-                                   [spectrogram.band[-1]]))
-            xcoord, ycoord = numpy.meshgrid(x, y, copy=False, sparse=True)
-            layer = self.pcolormesh(xcoord, ycoord, spectrogram.value.T,
-                                    **kwargs)
-
-        # format axes
-        if len(self.collections) == 1:
-            self.set_xlim(*spectrogram.span)
-            self.set_ylim(*spectrogram.band)
-        if not self.get_ylabel():
-            self.set_ylabel(text.unit_as_label(spectrogram.yunit))
-
-        # reset grid
-        if grid[0]:
-            self.xaxis.grid(True, 'major')
-        if grid[1]:
-            self.xaxis.grid(True, 'minor')
-        if grid[2]:
-            self.yaxis.grid(True, 'major')
-        if grid[3]:
-            self.yaxis.grid(True, 'minor')
-        return layer
+        if len(self._get_artists()) == 1 and not self.get_epoch():
+            return self.set_epoch(array.x0)
 
 
 register_projection(TimeSeriesAxes)
 
 
-class TimeSeriesPlot(Plot):
+class TimeSeriesPlot(SeriesPlot):
     """`Figure` for displaying a `~gwpy.timeseries.TimeSeries`.
 
     Parameters
@@ -374,53 +219,16 @@ class TimeSeriesPlot(Plot):
     def __init__(self, *series, **kwargs):
         """Initialise a new TimeSeriesPlot
         """
-        kwargs.setdefault('projection', self._DefaultAxesClass.name)
         kwargs.setdefault('figsize', [12, 6])
-        # extract custom keyword arguments
-        sep = kwargs.pop('sep', False)
-        epoch = kwargs.pop('epoch', None)
-        sharex = kwargs.pop('sharex', False)
-        sharey = kwargs.pop('sharey', False)
-        # separate keyword arguments
-        axargs, plotargs = self._parse_kwargs(kwargs)
+        super(TimeSeriesPlot, self).__init__(*series, **kwargs)
 
-        # generate figure
-        super(TimeSeriesPlot, self).__init__(**kwargs)
-
-        # plot data
-        axesdata = self._get_axes_data(series, sep=sep)
-        for data in axesdata:
-            ax = self._add_new_axes(**axargs)
-            for series in data:
-                ax.plot(series, **plotargs)
-            if 'sharex' not in axargs and sharex is True:
-                axargs['sharex'] = ax
-            if 'sharey' not in axargs and sharey is True:
-                axargs['sharey'] = ax
-        axargs.pop('sharex', None)
-        axargs.pop('sharey', None)
-        axargs.pop('projection', None)
-
-        # set epoch
-        if self.axes:
-            flatdata = [ts for data in axesdata for ts in data]
-            span = SegmentList([ts.span for ts in flatdata]).extent()
-            for ax in self.axes:
-                for key, val in axargs.items():
-                    getattr(ax, 'set_%s' % key)(val)
-                if epoch is not None:
-                    ax.set_epoch(epoch)
-                else:
-                    ax.set_epoch(span[0])
-                if 'xlim' not in axargs:
-                    ax.set_xlim(*span)
-                if 'label' in plotargs:
-                    ax.legend()
-            for ax in self.axes[:-1]:
+        # set default epoch
+        data = TimeSeriesPlot._get_axes_data(series, flat=True)
+        for ax in self.axes[:-1]:
+            if kwargs.get('sharex', None):
                 ax.set_xlabel("")
 
-    # -----------------------------------------------
-    # properties
+    # -- properties ---------------------------------
 
     @property
     def epoch(self):
@@ -447,8 +255,7 @@ class TimeSeriesPlot(Plot):
         for axes in axeslist:
             axes.set_epoch(gps)
 
-    # -----------------------------------------------
-    # TimeSeriesPlot methods
+    # -- add_ methods -------------------------------
 
     def add_timeseries(self, timeseries, **kwargs):
         super(TimeSeriesPlot, self).add_timeseries(timeseries, **kwargs)

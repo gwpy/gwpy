@@ -99,7 +99,7 @@ install_package() {
 }
 
 get_python_version() {
-    if [ -z ${PYTHON_VERSION} ]; then
+    if [ -z "${PYTHON_VERSION}" ]; then
         PYTHON_VERSION=`python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'`
     fi
     export PYTHON_VERSION
@@ -117,6 +117,7 @@ get_environment() {
         "port")
             PY_DIST=python${PY_XY}
             PY_PREFIX=py${PY_XY}
+            PIP="sudo ${PIP}"
             ;;
         "apt-get")
             if [ ${PY_MAJOR_VERSION} == 2 ]; then

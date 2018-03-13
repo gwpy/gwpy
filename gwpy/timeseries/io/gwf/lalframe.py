@@ -69,7 +69,7 @@ def open_data_source(source):
 
     # read cache file
     if (isinstance(source, string_types) and
-          source.endswith(('.lcf', '.cache'))):
+            source.endswith(('.lcf', '.cache'))):
         return lalframe.FrStreamCacheOpen(lal.CacheImport(source))
 
     # read glue cache object
@@ -153,8 +153,8 @@ def read(source, channels, start=None, end=None, series_class=TimeSeries):
 
 def _read_channel(stream, channel, start, duration):
     dtype = lalframe.FrStreamGetTimeSeriesType(channel, stream)
-    typestr = lalutils.LAL_TYPE_STR[dtype]
-    reader = getattr(lalframe, 'FrStreamRead%sTimeSeries' % typestr)
+    reader = lalutils.find_typed_function(dtype, 'FrStreamRead', 'TimeSeries',
+                                          module=lalframe)
     return reader(stream, channel, start, duration, 0)
 
 
@@ -187,9 +187,8 @@ def write(tsdict, outfile, start=None, end=None,
         lalseries = series.to_lal()
 
         # find adder
-        laltype = lalutils.LAL_TYPE_FROM_NUMPY[series.dtype.type]
-        typestr = lalutils.LAL_TYPE_STR[laltype]
-        add_ = getattr(lalframe, 'FrameAdd%sTimeSeriesProcData' % typestr)
+        add_ = lalutils.find_typed_function(
+            series.dtype, 'FrameAdd', 'TimeSeriesProcData', module=lalframe)
 
         # add time series to frame
         add_(frame, lalseries)

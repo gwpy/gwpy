@@ -231,8 +231,8 @@ def time_to_gps(t):
     gps = t.gps
     # if datetime format has zero microseconds, force int(gps) to remove
     # floating point precision errors from gps
-    if ((isinstance(dt, datetime.datetime) and not dt.microsecond) or
-            type(dt) is datetime.date):  # pylint: disable=unidiomatic-typecheck
+    if type(dt) is datetime.date or (  # pylint: disable=unidiomatic-typecheck
+            isinstance(dt, datetime.datetime) and not dt.microsecond):
         return LIGOTimeGPS(int(gps))
     # use repr() to remove hidden floating point precision problems
     return LIGOTimeGPS(repr(gps))

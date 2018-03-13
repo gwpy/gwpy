@@ -44,6 +44,7 @@ sudo docker run \
     --env DOCKER_IMAGE="${DOCKER_IMAGE}" \
     --env PYTHON_VERSION="${TRAVIS_PYTHON_VERSION}" \
     --env GWPY_PATH="${GWPY_PATH}" \
+    --env EXTRAS="${EXTRAS}" \
     --volume `pwd`:${GWPY_PATH}:rw \
     ${DOCKER_IMAGE}
 

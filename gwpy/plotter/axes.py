@@ -169,6 +169,11 @@ class Axes(_Axes):
         elif self.logy and not log:
             self.set_yscale('linear')
 
+    # -- other properties -----------------------
+
+    def _get_artists(self):
+        return self.lines + self.images + self.collections + self.patches
+
     # -- Axes methods ---------------------------
 
     @auto_refresh
