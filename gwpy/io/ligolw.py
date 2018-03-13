@@ -516,22 +516,20 @@ def to_table_type(val, cls, colname):
     from glue.ligolw.types import (ToNumPyType as numpytypes,
                                    ToPyType as pytypes)
 
-    if val is None:
+    # if nothing to do...
+    if val is None or colname not in cls.validcolumns:
         return val
 
+    llwtype = cls.validcolumns[colname]
+
+    # don't mess with formatted IlwdChar
+    if llwtype == 'ilwd:char':
+        return _to_ilwd(val, cls.tableName, colname)
+    # otherwise map to numpy or python types
     try:
-        llwtype = cls.validcolumns[colname]
+        return numpy.typeDict[numpytypes[llwtype]](val)
     except KeyError:
-        return val
-    else:
-        # don't mess with formatted IlwdChar
-        if llwtype == 'ilwd:char':
-            return _to_ilwd(val, cls.tableName, colname)
-        # otherwise map to numpy or python types
-        try:
-            return numpy.typeDict[numpytypes[llwtype]](val)
-        except KeyError:
-            return pytypes[llwtype](val)
+        return pytypes[llwtype](val)
 
 
 def _to_ilwd(value, tablename, colname):
@@ -540,7 +538,7 @@ def _to_ilwd(value, tablename, colname):
 
     if isinstance(value, IlwdChar) and value.column_name != colname:
         raise ValueError("ilwdchar '{0!s}' doesn't match column "
-                                 "{1!r}".format(value, colname))
+                         "{1!r}".format(value, colname))
     if isinstance(value, IlwdChar):
         return value
     if isinstance(value, int):
