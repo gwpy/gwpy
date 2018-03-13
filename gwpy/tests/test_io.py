@@ -494,6 +494,7 @@ class TestIoLigolw(object):
         (1.0, 'peak_time', numpy.int32(1)),
         (1, 'process_id', 'sngl_burst:process_id:1'),
         (1.0, 'invalidname', 1.0),
+        ('process:process_id:100', 'process_id', 'process:process_id:100'),
     ])
     def test_to_table_type(self, value, name, result):
         from glue.ligolw.lsctables import SnglBurstTable
@@ -504,6 +505,16 @@ class TestIoLigolw(object):
             result = ilwdchar(result)
         assert isinstance(out, type(result))
         assert out == result
+
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
+    def test_to_table_type_ilwd(self):
+        from glue.ligolw.ilwd import ilwdchar
+        from glue.ligolw.lsctables import SnglBurstTable
+        ilwd = ilwdchar('process:process_id:0')
+        with pytest.raises(ValueError) as exc:
+            io_ligolw.to_table_type(ilwd, SnglBurstTable, 'event_id')
+        assert str(exc.value) == ('ilwdchar \'process:process_id:0\' doesn\'t '
+                                  'match column \'event_id\'')
 
 
 # -- gwpy.io.datafind ---------------------------------------------------------
