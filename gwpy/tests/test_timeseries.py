@@ -1154,6 +1154,36 @@ class TestTimeSeries(TestTimeSeriesBase):
         rms = losc.rms(1.)
         assert rms.sample_rate == 1 * units.Hz
 
+    def test_demodulate(self):
+        # create a timeseries that is simply one loud sinusoidal oscillation
+        # at a particular frequency, then demodulate at that frequency and
+        # recover the amplitude and phase
+        amp, phase, f = 1., numpy.pi/4, 30
+        duration, sample_rate, stride = 600, 4096, 60
+        t = numpy.linspace(0, duration, duration*sample_rate)
+        data = TimeSeries(amp * numpy.cos(2*numpy.pi*f*t + phase),
+                          unit='', times=t)
+
+        # test with exp=True
+        demod = data.demodulate(f, stride=stride, exp=True)
+        assert demod.unit == data.unit
+        assert len(demod) == duration // stride
+        utils.assert_allclose(numpy.abs(demod.value), amp, rtol=1e-5)
+        utils.assert_allclose(numpy.angle(demod.value), phase, rtol=1e-5)
+
+        # test with exp=False, deg=True
+        mag, ph = data.demodulate(f, stride=stride)
+        assert mag.unit == data.unit
+        assert len(mag) == len(ph)
+        assert ph.unit == 'deg'
+        utils.assert_allclose(mag.value, amp, rtol=1e-5)
+        utils.assert_allclose(ph.value, numpy.rad2deg(phase), rtol=1e-5)
+
+        # test with exp=False, deg=False
+        mag, ph = data.demodulate(f, stride=stride, deg=False)
+        assert ph.unit == 'rad'
+        utils.assert_allclose(ph.value, phase, rtol=1e-5)
+
     def test_whiten(self):
         # create noise with a glitch in it at 1000 Hz
         noise = self.TEST_CLASS(
