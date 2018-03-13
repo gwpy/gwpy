@@ -488,6 +488,23 @@ class TestIoLigolw(object):
             f.seek(0)
             assert io_ligolw.list_tables(f) == names
 
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
+    @pytest.mark.parametrize('value, name, result', [
+        (None, 'peak_time', None),
+        (1.0, 'peak_time', numpy.int32(1)),
+        (1, 'process_id', 'sngl_burst:process_id:1'),
+        (1.0, 'invalidname', 1.0),
+    ])
+    def test_to_table_type(self, value, name, result):
+        from glue.ligolw.lsctables import SnglBurstTable
+        from glue.ligolw.ilwd import ilwdchar
+        from glue.ligolw._ilwd import ilwdchar as IlwdChar
+        out = io_ligolw.to_table_type(value, SnglBurstTable, name)
+        if isinstance(out, IlwdChar):
+            result = ilwdchar(result)
+        assert isinstance(out, type(result))
+        assert out == result
+
 
 # -- gwpy.io.datafind ---------------------------------------------------------
 

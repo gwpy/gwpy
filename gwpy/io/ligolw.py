@@ -472,6 +472,52 @@ def list_tables(source):
     return tables
 
 
+def to_table_type(val, cls, colname):
+    """Cast a value to the correct type for inclusion in a LIGO_LW table
+
+    This method returns the input unmodified if a type mapping for ``colname``
+    isn't found.
+
+    Parameters
+    ----------
+    val : `object`
+        The input object to convert, of any type
+
+    cls : `type`
+        The sub-class of :class:`~glue.ligolw.table.Table` to map against
+
+    colname : `str`
+        The name of the mapping column
+
+    Returns
+    -------
+    obj : `object`
+        The input ``val`` cast to the correct type
+
+    Examples
+    --------
+    >>> from gwpy.io.ligolw import to_table_type as to_ligolw_type
+    >>> from glue.ligolw.lsctables import SnglBurstTable
+    >>> print(to_ligolw_type(1.0, SnglBurstTable, 'central_freq')))
+    1.0
+    >>> print(to_ligolw_type(1, SnglBurstTable, 'process_id')))
+    sngl_burst:process_id:1
+    """
+    from glue.ligolw.ilwd import get_ilwdchar_class
+    from glue.ligolw.types import ToNumPyType as numpytypes
+
+    if val is None:
+        return None
+    try:
+        llwtype = cls.validcolumns[colname]
+    except KeyError:
+        return val
+    else:
+        if llwtype == 'ilwd:char':
+            return get_ilwdchar_class(cls.tableName, colname)(val)
+        return numpy.typeDict[numpytypes[llwtype]](val)
+
+
 # -- identify -----------------------------------------------------------------
 
 def is_ligolw(origin, filepath, fileobj, *args, **kwargs):
