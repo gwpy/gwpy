@@ -19,7 +19,7 @@ software impact|
 Development status
 ~~~~~~~~~~~~~~~~~~
 
-|Build Status| |Coverage Status| |Code Health| |Maintainability|
+|Build Status dev| |Coverage Status dev| |Code Health dev| |Maintainability|
 
 Installation
 ~~~~~~~~~~~~
@@ -53,11 +53,11 @@ You can test your installation, and its version by
    :target: https://coveralls.io/github/gwpy/gwpy?branch=master
 .. |Code Health| image:: https://landscape.io/github/gwpy/gwpy/master/landscape.svg?style=flat
    :target: https://landscape.io/github/gwpy/gwpy/master
-.. |Build Status| image:: https://travis-ci.org/gwpy/gwpy.svg?branch=develop
+.. |Build Status dev| image:: https://travis-ci.org/gwpy/gwpy.svg?branch=develop
    :target: https://travis-ci.org/gwpy/gwpy
-.. |Coverage Status| image:: https://coveralls.io/repos/github/gwpy/gwpy/badge.svg?branch=develop
+.. |Coverage Status dev| image:: https://coveralls.io/repos/github/gwpy/gwpy/badge.svg?branch=develop
    :target: https://coveralls.io/github/gwpy/gwpy?branch=develop
-.. |Code Health| image:: https://landscape.io/github/gwpy/gwpy/develop/landscape.svg?style=flat
+.. |Code Health dev| image:: https://landscape.io/github/gwpy/gwpy/develop/landscape.svg?style=flat
    :target: https://landscape.io/github/gwpy/gwpy/develop
 .. |Maintainability| image:: https://api.codeclimate.com/v1/badges/2cf14445b3e070133745/maintainability
    :target: https://codeclimate.com/github/gwpy/gwpy/maintainability
