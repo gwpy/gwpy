@@ -181,16 +181,6 @@ deploy:
       tags: true
       python: '2.7'
       repo: gwpy/gwpy
-  - provider: pypi
-    user: duncanmmacleod
-    password: ${PYPI_PASSWD}
-    distributions: bdist_wheel
-    on:
-      condition: -z "${DOCKER_IMAGE}"
-      branch: master
-      tags: true
-      python: '3.6'
-      repo: gwpy/gwpy
 
 notifications:
   slack:
