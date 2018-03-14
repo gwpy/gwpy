@@ -117,7 +117,7 @@ setup(
     provides=['gwpy'],
     version=__version__,
     description="A python package for gravitational-wave astrophysics",
-    long_description=long_description,
+    long_description=longdesc,
     author='Duncan Macleod',
     author_email='duncan.macleod@ligo.org',
     license='GPLv3',
