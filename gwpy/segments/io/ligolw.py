@@ -110,7 +110,7 @@ def read_ligolw_flag(source, flag=None, **kwargs):
 
 # -- write --------------------------------------------------------------------
 
-def write_ligolw(flags, target, **kwargs):
+def write_ligolw(flags, target, attrs=None, **kwargs):
     """Write this `DataQualityFlag` to the given LIGO_LW Document
 
     Parameters
@@ -120,6 +120,9 @@ def write_ligolw(flags, target, **kwargs):
 
     target : `str`, `file`, :class:`~glue.ligolw.ligolw.Document`
         the file or document to write into
+
+    attrs : `dict`, optional
+        extra attributes to write into segment tables
 
     **kwargs
         keyword arguments to use when writing
@@ -131,8 +134,8 @@ def write_ligolw(flags, target, **kwargs):
     """
     if isinstance(flags, DataQualityFlag):
         flags = DataQualityDict({flags.name: flags})
-
-    return write_tables(target, flags.to_ligolw_tables(), **kwargs)
+    return write_tables(target, flags.to_ligolw_tables(**attrs or dict()),
+                        **kwargs)
 
 
 # -- register -----------------------------------------------------------------

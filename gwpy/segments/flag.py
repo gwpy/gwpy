@@ -1419,8 +1419,14 @@ class DataQualityDict(OrderedDict):
 
         return out
 
-    def to_ligolw_tables(self):
+    def to_ligolw_tables(self, **attrs):
         """Convert this `DataQualityDict` into a trio of LIGO_LW segment tables
+
+        Parameters
+        ----------
+        **attrs
+            other attributes to add to all rows in all tables
+            (e.g. ``'process_id'``)
 
         Returns
         -------
@@ -1435,10 +1441,15 @@ class DataQualityDict(OrderedDict):
         """
         from glue.ligolw.lsctables import (SegmentTable, SegmentSumTable,
                                            SegmentDefTable, New as new_table)
+        from ..io.ligolw import to_table_type as to_ligolw_table_type
 
         segdeftab = new_table(SegmentDefTable)
         segsumtab = new_table(SegmentSumTable)
         segtab = new_table(SegmentTable)
+
+        def _write_attrs(table, row):
+            for key, val in attrs.items():
+                setattr(row, key, to_ligolw_table_type(val, table, key))
 
         # write flags to tables
         for flag in self.values():
@@ -1452,6 +1463,7 @@ class DataQualityDict(OrderedDict):
             segdef.comment = flag.description
             segdef.insertion_time = to_gps(datetime.datetime.now()).gpsSeconds
             segdef.segment_def_id = SegmentDefTable.get_next_id()
+            _write_attrs(segdeftab, segdef)
             segdeftab.append(segdef)
 
             # write segment summary (known segments)
@@ -1463,6 +1475,7 @@ class DataQualityDict(OrderedDict):
                 segsum.set(map(LIGOTimeGPS, vseg))
                 segsum.comment = None
                 segsum.segment_sum_id = SegmentSumTable.get_next_id()
+                _write_attrs(segsumtab, segsum)
                 segsumtab.append(segsum)
 
             # write segment table (active segments)
@@ -1473,6 +1486,7 @@ class DataQualityDict(OrderedDict):
                 seg.segment_def_id = segdef.segment_def_id
                 seg.set(map(LIGOTimeGPS, aseg))
                 seg.segment_id = SegmentTable.get_next_id()
+                _write_attrs(segtab, seg)
                 segtab.append(seg)
 
         return segdeftab, segsumtab, segtab
