@@ -79,13 +79,13 @@ Requires:       python%{python3_pkgversion}-glue
 
 %files -n python2-%{srcname}
 %license LICENSE
-%doc README.md
+%doc README.rst
 %{python2_sitelib}/*
 %{_bindir}/gwpy-plot
 
 %files -n python%{python3_pkgversion}-%{srcname}
 %license LICENSE
-%doc README.md
+%doc README.rst
 %{python3_sitelib}/*
 
 # -- changelog ----------------------------------------------------------------
