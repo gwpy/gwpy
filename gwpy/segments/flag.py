@@ -996,6 +996,18 @@ class DataQualityFlag(object):
     __add__ = __or__
     __iadd__ = __ior__
 
+    def __xor__(self, other):
+        """Find the exclusive OR of this one and ``other``.
+        """
+        return self.copy().__ixor__(other)
+
+    def __ixor__(self, other):
+        """Exclusive OR this flag with ``other`` in-place.
+        """
+        self.known &= other.known
+        self.active ^= other.active
+        return self
+
     def __invert__(self):
         new = self.copy()
         new.active = ~self.active
@@ -1583,6 +1595,24 @@ class DataQualityDict(OrderedDict):
                     self[key].active &= segments
         return self
 
+    def copy(self, deep=False):
+        """Build a copy of this dictionary.
+
+        Parameters
+        ----------
+        deep : `bool`, optional, default: `False`
+            perform a deep copy of the original dictionary with a fresh
+            memory address
+
+        Returns
+        -------
+        flag2 : `DataQualityFlag`
+            a copy of the original dictionary
+        """
+        if deep:
+            return deepcopy(self)
+        return super(DataQualityDict, self).copy()
+
     def __iand__(self, other):
         for key, value in other.items():
             if key in self:
@@ -1594,8 +1624,8 @@ class DataQualityDict(OrderedDict):
     def __and__(self, other):
         if (sum(len(s.active) for s in self.values()) <=
                 sum(len(s.active) for s in other.values())):
-            return self.copy().__iand__(other)
-        return other.copy().__iand__(self)
+            return self.copy(deep=True).__iand__(other)
+        return other.copy(deep=True).__iand__(self)
 
     def __ior__(self, other):
         for key, value in other.items():
@@ -1608,8 +1638,8 @@ class DataQualityDict(OrderedDict):
     def __or__(self, other):
         if (sum(len(s.active) for s in self.values()) >=
                 sum(len(s.active) for s in other.values())):
-            return self.copy().__ior__(other)
-        return other.copy().__ior__(self)
+            return self.copy(deep=True).__ior__(other)
+        return other.copy(deep=True).__ior__(self)
 
     __iadd__ = __ior__
     __add__ = __or__
@@ -1621,10 +1651,19 @@ class DataQualityDict(OrderedDict):
         return self
 
     def __sub__(self, other):
-        return self.copy().__isub__(other)
+        return self.copy(deep=True).__isub__(other)
+
+    def __ixor__(self, other):
+        for key, value in other.items():
+            if key in self:
+                self[key] ^= value
+        return self
+
+    def __xor__(self, other):
+        return self.copy(deep=True).__ixor__(other)
 
     def __invert__(self):
-        new = self.copy()
+        new = self.copy(deep=True)
         for key, value in new.items():
             new[key] = ~value
         return new

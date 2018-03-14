@@ -762,9 +762,14 @@ class TestDataQualityDict(object):
                                 instance[keys[0]] - reverse[keys[1]])
 
     def test_sub(self, instance, reverse):
-        a = instance.copy()
+        a = instance.copy(deep=True)
         a -= reverse
         utils.assert_dict_equal(a, instance - reverse, utils.assert_flag_equal)
+
+    def test_xor(self, instance, reverse):
+        a = instance.copy(deep=True)
+        a ^= reverse
+        utils.assert_dict_equal(a, instance ^ reverse, utils.assert_flag_equal)
 
     def test_invert(self, instance):
         inverse = type(instance)()
