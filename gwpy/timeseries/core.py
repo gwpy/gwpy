@@ -593,6 +593,32 @@ class TimeSeriesBase(Series):
 
     # -- utilities ------------------------------
 
+    def shift(self, delta):
+        """Shift this `TimeSeries` forward in time by ``delta``
+
+        This modifies the series in-place.
+
+        Parameters
+        ----------
+        delta : `float`, `~astropy.units.Quantity`, `str`
+            The amount by which to shift (in seconds if `float`), give
+            a negative value to shift backwards in time
+
+        Examples
+        --------
+        >>> from gwpy.timeseries import TimeSeries
+        >>> a = TimeSeries([1, 2, 3, 4, 5], t0=0, dt=1)
+        >>> print(a.t0)
+        0.0 s
+        >>> a.shift(5)
+        >>> print(a.t0)
+        5.0 s
+        >>> a.shift('-1 hour')
+        -3595.0 s
+        """
+        delta = units.Quantity(delta, 's')
+        self.t0 += delta
+
     def plot(self, **kwargs):
         """Plot the data for this timeseries
 
