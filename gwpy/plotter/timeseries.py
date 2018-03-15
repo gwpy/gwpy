@@ -32,6 +32,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from ..time import (Time, LIGOTimeGPS, to_gps)
 from ..segments import SegmentList
 from .decorators import auto_refresh
+from .gps import GPSScale
 from .series import (SeriesPlot, SeriesAxes)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -62,8 +63,10 @@ class TimeSeriesAxes(SeriesAxes):
 
         # dynamically set x-axis label
         nolabel = self.get_xlabel() == '_auto'
-        if nolabel:
+        if nolabel and isinstance(self.xaxis._scale, GPSScale):
             self.auto_gps_label()
+        elif nolabel:
+            self.set_xlabel('')
 
         # draw
         super(TimeSeriesAxes, self).draw(*args, **kwargs)
@@ -78,8 +81,7 @@ class TimeSeriesAxes(SeriesAxes):
 
     def set_xscale(self, scale, *args, **kwargs):
         super(TimeSeriesAxes, self).set_xscale(scale, *args, **kwargs)
-        if scale != 'auto-gps' and self.get_xlabel() == '_auto':
-            self.set_xlabel('')
+
     set_xscale.__doc__ = SeriesAxes.set_xscale.__doc__
 
     def auto_gps_label(self):
