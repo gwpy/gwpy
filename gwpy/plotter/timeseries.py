@@ -78,8 +78,7 @@ class TimeSeriesAxes(SeriesAxes):
 
     def set_xscale(self, scale, *args, **kwargs):
         super(TimeSeriesAxes, self).set_xscale(scale, *args, **kwargs)
-        if scale != 'auto-gps' and self.get_xlabel() == '_auto':
-            self.set_xlabel('')
+
     set_xscale.__doc__ = SeriesAxes.set_xscale.__doc__
 
     def auto_gps_label(self):
