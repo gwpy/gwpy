@@ -65,6 +65,8 @@ class TimeSeriesAxes(SeriesAxes):
         nolabel = self.get_xlabel() == '_auto'
         if nolabel and isinstance(self.xaxis._scale, GPSScale):
             self.auto_gps_label()
+        elif nolabel:
+            self.set_xlabel('')
 
         # draw
         super(TimeSeriesAxes, self).draw(*args, **kwargs)
