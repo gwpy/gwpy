@@ -332,6 +332,7 @@ class TestPlot(PlottingTestBase):
 class TestAxes(PlottingTestBase):
 
     # -- test properties ------------------------
+    # all of these properties are DEPRECATED
 
     @pytest.mark.parametrize('axis', ('x', 'y'))
     def test_label(self, axis):
@@ -342,20 +343,24 @@ class TestAxes(PlottingTestBase):
         get_label = getattr(ax, 'get_%slabel' % axis)
 
         # assert ax.xlabel is ax.xaxis.label
-        assert getattr(ax, label) is axis_obj.label
+        with pytest.warns(DeprecationWarning):
+            assert getattr(ax, label) is axis_obj.label
 
         # ax.xlabel = 'Test label'
-        setattr(ax, label, 'Test label')
+        with pytest.warns(DeprecationWarning):
+            setattr(ax, label, 'Test label')
         # assert ax.get_xlabel() == 'Test label'
         assert get_label() == 'Test label'
 
         # check Text object gets preserved
         t = ax.text(0, 0, 'Test text')
-        setattr(ax, label, t)
+        with pytest.warns(DeprecationWarning):
+            setattr(ax, label, t)
         assert axis_obj.label is t
 
         # check deleter works
-        delattr(ax, label)
+        with pytest.warns(DeprecationWarning):
+            delattr(ax, label)
         assert get_label() == ''
 
     @pytest.mark.parametrize('axis', ('x', 'y'))
@@ -366,12 +371,15 @@ class TestAxes(PlottingTestBase):
         get_lim = getattr(ax, 'get_%slim' % axis)
 
         # check getter/setter
-        setattr(ax, lim, (24, 36))
+        with pytest.warns(DeprecationWarning):
+            setattr(ax, lim, (24, 36))
         assert get_lim() == (24, 36)
-        assert getattr(ax, lim) == get_lim()
+        with pytest.warns(DeprecationWarning):
+            assert getattr(ax, lim) == get_lim()
 
         # check deleter
-        delattr(ax, lim)
+        with pytest.warns(DeprecationWarning):
+            delattr(ax, lim)
 
     @pytest.mark.parametrize('axis', ('x', 'y'))
     def test_log(self, axis):
@@ -381,16 +389,21 @@ class TestAxes(PlottingTestBase):
         set_scale = getattr(ax, 'set_%sscale' % axis)
 
         # check default is not log
-        assert getattr(ax, log) is False
+        with pytest.warns(DeprecationWarning):
+            assert getattr(ax, log) is False
 
         # set log and assert that the scale gets set properly
-        setattr(ax, log, True)
-        assert getattr(ax, log) is True
+        with pytest.warns(DeprecationWarning):
+            setattr(ax, log, True)
+        with pytest.warns(DeprecationWarning):
+            assert getattr(ax, log) is True
         assert get_scale() == 'log'
 
         # set not log and check
-        setattr(ax, log, False)
-        assert getattr(ax, log) is False
+        with pytest.warns(DeprecationWarning):
+            setattr(ax, log, False)
+        with pytest.warns(DeprecationWarning):
+            assert getattr(ax, log) is False
         assert get_scale() == 'linear'
 
     # -- test methods ---------------------------
