@@ -29,13 +29,14 @@ from gzip import GzipFile
 from six import string_types
 from six.moves import StringIO
 
+from glue.lal import Cache
+
 try:
-    from glue.lal import Cache
-except ImportError:  # no lal
-    HAS_CACHE = False
-else:
-    HAS_CACHE = True
     from lal.utils import CacheEntry
+except ImportError:  # no lal
+    HAS_CACHEENTRY = False
+else:
+    HAS_CACHEENTRY = True
     Cache.entry_class = CacheEntry
 
 from ..time import LIGOTimeGPS
@@ -75,8 +76,6 @@ def read_cache(lcf, coltype=LIGOTimeGPS):
         a cache object, representing each line in the file as a
         :class:`~lal.utils.CacheEntry`
     """
-    from glue.lal import Cache  # pylint: disable=redefined-outer-name
-
     # open file
     if not isinstance(lcf, FILE_LIKE):
         with open(lcf, 'r') as fobj:
@@ -95,7 +94,6 @@ def open_cache(*args, **kwargs):  # pylint: disable=missing-docstring
     warnings.warn("gwpy.io.cache.open_cache was renamed read_cache",
                   DeprecationWarning)
     return read_cache(*args, **kwargs)
-open_cache.__doc__ = read_cache.__doc__
 
 
 def write_cache(cache, fobj):
@@ -147,7 +145,7 @@ def is_cache(cache):
             if not c:  # return empty file as False
                 return False
             return True
-    elif HAS_CACHE and isinstance(cache, Cache):
+    elif isinstance(cache, Cache):
         return True
     return False
 
@@ -208,7 +206,7 @@ def file_name(fobj):
         return fobj
     if isinstance(fobj, FILE_LIKE) and not isinstance(fobj, StringIO):
         return fobj.name
-    if HAS_CACHE and isinstance(fobj, CacheEntry):
+    if HAS_CACHEENTRY and isinstance(fobj, CacheEntry):
         return fobj.path
     raise ValueError("Cannot parse file name for %r" % fobj)
 
@@ -299,8 +297,6 @@ def find_contiguous(*caches):
     caches : `iter` of :class:`~glue.lal.Cache`
         an interable yielding each contiguous cache
     """
-    from glue.lal import Cache  # pylint: disable=redefined-outer-name
-
     try:
         flat = flatten(*caches)
     except IndexError:

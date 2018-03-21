@@ -300,13 +300,15 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
             break
 
     # raise exception if nothing found
-    if not match:
-        msg = "Cannot locate channel(s) in any known frametype"
+    missing = set(channels) - set(match.keys())
+    if missing:
+        msg = "Cannot locate the following channel(s) in any known frametype"
         if gpstime:
             msg += " at GPS=%d" % gpstime
+        msg += ":\n    {}".format('\n    '.join(missing))
         if not allow_tape:
-            msg += (" [those files on tape have not been checked, use "
-                    "allow_tape=True to perform a complete search]")
+            msg += ("\n[files on tape have not been checked, use "
+                    "allow_tape=True for a complete search]")
         raise ValueError(msg)
 
     # if matching all types, rank based on coverage, tape, and TOC size

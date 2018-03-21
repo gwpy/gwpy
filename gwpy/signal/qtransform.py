@@ -139,7 +139,6 @@ class QTiling(QObject):
         dq = cumum / nplanes  # pylint: disable=invalid-name
         for i in xrange(nplanes):
             yield self.qrange[0] * exp(2**(1/2.) * dq * (i + .5))
-        raise StopIteration()
 
     def __iter__(self):
         """Iterate over this `QTiling`
@@ -149,7 +148,6 @@ class QTiling(QObject):
         for q in self._iter_qs():
             yield QPlane(q, self.frange, self.duration, self.sampling,
                          mismatch=self.mismatch)
-        raise StopIteration()
 
 
 class QPlane(QBase):
@@ -189,7 +187,6 @@ class QPlane(QBase):
         for freq in self._iter_frequencies():
             yield QTile(self.q, freq, self.duration, self.sampling,
                         mismatch=self.mismatch)
-        raise StopIteration()
 
     def _iter_frequencies(self):
         """Iterate over the frequencies of this `QPlane`
@@ -205,7 +202,6 @@ class QPlane(QBase):
             yield (minf *
                    exp(2 / (2 + self.q**2)**(1/2.) * (i + .5) * fstep) //
                    fstepmin * fstepmin)
-        raise StopIteration()
 
     @property
     def frequencies(self):

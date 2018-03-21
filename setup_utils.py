@@ -21,6 +21,7 @@
 
 from __future__ import print_function
 
+import contextlib
 import datetime
 import glob
 import hashlib
@@ -33,6 +34,7 @@ from distutils.cmd import Command
 from distutils.command.clean import (clean as orig_clean, log, remove_tree)
 from distutils.command.bdist_rpm import bdist_rpm as distutils_bdist_rpm
 from distutils.errors import DistutilsArgError
+from distutils.version import LooseVersion
 
 from setuptools.command.bdist_rpm import bdist_rpm as _bdist_rpm
 from setuptools.command.sdist import sdist as _sdist
@@ -43,6 +45,80 @@ CMDCLASS = versioneer.get_cmdclass()
 SETUP_REQUIRES = {
     'test': ['pytest_runner'],
 }
+
+
+# -- utilities ----------------------------------------------------------------
+
+def in_git_clone():
+    """Returns `True` if the current directory is a git repository
+
+    Logic is 'borrowed' from :func:`git.repo.fun.is_git_dir`
+    """
+    gitdir = '.git'
+    return os.path.isdir(gitdir) and (
+        os.path.isdir(os.path.join(gitdir, 'objects')) and
+        os.path.isdir(os.path.join(gitdir, 'refs')) and
+        os.path.exists(os.path.join(gitdir, 'HEAD'))
+    )
+
+
+def reuse_dist_file(filename):
+    """Returns `True` if a distribution file can be reused
+
+    Otherwise it should be regenerated
+    """
+    # if target file doesn't exist, we must generate it
+    if not os.path.isfile(filename):
+        return False
+
+    # if we can interact with git, we can regenerate it, so we may as well
+    try:
+        import git
+    except ImportError:
+        return True
+    else:
+        try:
+            git.Repo().tags
+        except (TypeError, git.GitError):
+            return True
+        else:
+            return False
+
+
+def get_gitpython_version():
+    """Determine the required version of GitPython
+
+    Because of target systems running very, very old versions of setuptools,
+    we only specify the actual version we need when we need it.
+    """
+    # if not in git clone, it doesn't matter
+    if not in_git_clone():
+        return 'GitPython'
+
+    # otherwise, call out to get the git version
+    try:
+        gitv = subprocess.check_output('git --version', shell=True)
+    except (OSError, IOError, subprocess.CalledProcessError):
+        # no git installation, most likely
+        git_version = '0.0.0'
+    else:
+        if isinstance(gitv, bytes):
+            gitv = gitv.decode('utf-8')
+        git_version = gitv.rstrip().split()[-1]
+
+    # if git>=2.15, we need GitPython>=2.1.8
+    if LooseVersion(git_version) >= '2.15':
+        return 'GitPython>=2.1.8'
+    return 'GitPython'
+
+
+@contextlib.contextmanager
+def temp_directory():
+    temp_dir = tempfile.mkdtemp()
+    try:
+        yield temp_dir
+    finally:
+        shutil.rmtree(temp_dir)
 
 
 # -- custom commands ----------------------------------------------------------
@@ -126,7 +202,7 @@ class changelog(Command):
 
 
 CMDCLASS['changelog'] = changelog
-SETUP_REQUIRES['changelog'] = ('GitPython>=2.1.8',)
+SETUP_REQUIRES['changelog'] = (get_gitpython_version(),)
 
 orig_bdist_rpm = CMDCLASS.pop('bdist_rpm', _bdist_rpm)
 DEFAULT_SPEC_TEMPLATE = os.path.join('etc', 'spec.template')
@@ -140,6 +216,12 @@ class bdist_rpm(orig_bdist_rpm):
         return orig_bdist_rpm.run(self)
 
     def _make_spec_file(self):
+        # return already read specfile
+        specfile = '{}.spec'.format(self.distribution.get_name())
+        if reuse_dist_file(specfile):
+            with open(specfile, 'rb') as specf:
+                return specf.read()
+
         # generate changelog
         changelogcmd = self.distribution.get_command_obj('changelog')
         with tempfile.NamedTemporaryFile(delete=True, mode='w+') as f:
@@ -180,31 +262,30 @@ class sdist(orig_sdist):
     """
     def run(self):
         # generate spec file
-        self.distribution.have_run.pop('bdist_rpm', None)
-        speccmd = self.distribution.get_command_obj('bdist_rpm')
-        self.distribution._set_command_options(speccmd, {
-            'spec_only': ('sdist', True),
-        })
-        self.run_command('bdist_rpm')
         specfile = '{}.spec'.format(self.distribution.get_name())
-        shutil.move(os.path.join('dist', specfile), specfile)
-        log.info('moved {} to {}'.format(
-            os.path.join('dist', specfile), specfile))
+        if not reuse_dist_file(specfile):
+            self.distribution.have_run.pop('bdist_rpm', None)
+            speccmd = self.distribution.get_command_obj('bdist_rpm')
+            self.distribution._set_command_options(speccmd, {
+                'spec_only': ('sdist', True),
+            })
+            self.run_command('bdist_rpm')
+            shutil.move(os.path.join('dist', specfile), specfile)
+            log.info('moved {} to {}'.format(
+                os.path.join('dist', specfile), specfile))
 
         # generate debian/changelog
-        self.distribution.have_run.pop('changelog')
-        changelogcmd = self.distribution.get_command_obj('changelog')
-        self.distribution._set_command_options(changelogcmd, {
-            'format': ('sdist', 'deb'),
-            'output': ('sdist', os.path.join('debian', 'changelog'))})
-        self.run_command('changelog')
+        debianchlog = os.path.join('debian', 'changelog')
+        if not reuse_dist_file(debianchlog):
+            self.distribution.have_run.pop('changelog')
+            changelogcmd = self.distribution.get_command_obj('changelog')
+            self.distribution._set_command_options(changelogcmd, {
+                'format': ('sdist', 'deb'),
+                'output': ('sdist', debianchlog),
+            })
+            self.run_command('changelog')
 
         orig_sdist.run(self)
-
-        # clean up after ourselves
-        if os.path.exists(specfile):
-            log.info('removing %r' % specfile)
-            os.unlink(specfile)
 
 
 CMDCLASS['sdist'] = sdist
@@ -253,6 +334,7 @@ class port(Command):
     """
     description = 'generate a Macports Portfile'
     user_options = [
+        ('tarball=', None, 'the distribution tarball to use'),
         ('version=', None, 'the X.Y.Z package version'),
         ('portfile=', None, 'target output file, default: \'Portfile\''),
         ('template=', None,
@@ -260,6 +342,7 @@ class port(Command):
     ]
 
     def initialize_options(self):
+        self.tarball = None
         self.version = None
         self.portfile = 'Portfile'
         self.template = DEFAULT_PORT_TEMPLATE
@@ -270,32 +353,53 @@ class port(Command):
         with open(self.template, 'r') as t:
             # pylint: disable=attribute-defined-outside-init
             self._template = Template(t.read())
+        if self.version is None and self.tarball is not None:
+            if self.tarball.endswith('.gz'):
+                stub = os.path.splitext(self.tarball[:-3])[0]
+            else:
+                stub = os.path.splitext(self.tarball)[0]
+            self.version = stub.rsplit('-', 1)[-1]
+        elif self.version is None:
+            self.version = self.distribution.get_version()
 
     def run(self):
-        # find dist file
-        dist = os.path.join(
-            'dist',
-            '%s-%s.tar.gz' % (self.distribution.get_name(),
-                              self.distribution.get_version()))
-        # run sdist if needed
-        if not os.path.isfile(dist):
-            self.run_command('sdist')
-        # get checksum digests
-        log.info('reading distribution tarball %r' % dist)
-        with open(dist, 'rb') as fobj:
-            data = fobj.read()
-        log.info('recovered digests:')
-        digest = dict()
-        digest['rmd160'] = self._get_rmd160(dist)
-        for algo in [1, 256]:
-            digest['sha%d' % algo] = self._get_sha(data, algo)
-        for key, val in digest.iteritems():
-            log.info('    %s: %s' % (key, val))
-        # write finished portfile to file
-        with open(self.portfile, 'w') as fport:
-            fport.write(self._template.render(
-                version=self.distribution.get_version(), **digest))
-        log.info('portfile written to %r' % self.portfile)
+        with temp_directory() as tmpd:
+            # download dist file
+            if self.tarball is None:
+                self.tarball = self._download(self.distribution.get_name(),
+                                              self.version, tmpd)
+
+            # get checksum digests
+            log.info('reading distribution tarball %r' % self.tarball)
+            with open(self.tarball, 'rb') as fobj:
+                data = fobj.read()
+            log.info('recovered checksums:')
+            checksum = dict()
+            checksum['rmd160'] = self._get_rmd160(self.tarball)
+            checksum['sha256'] = self._get_sha(data)
+            checksum['size'] = os.path.getsize(self.tarball)
+            for key, val in checksum.iteritems():
+                log.info('    %s: %s' % (key, val))
+
+            # write finished portfile to file
+            with open(self.portfile, 'w') as fport:
+                print(self._template.render(
+                    version=self.version, **checksum),
+                    file=fport)
+            log.info('portfile written to %r' % self.portfile)
+
+    @staticmethod
+    def _download(name, version, targetdir):
+        from pip.commands.download import DownloadCommand
+        dcmd = DownloadCommand()
+        rset = dcmd.run(*dcmd.parse_args([
+            '{}=={}'.format(name, version),
+            '--dest', targetdir, '--no-deps', '--no-binary', ':all:',
+        ]))
+        log.info('downloaded {}'.format(
+            rset.requirements[name].link.url_without_fragment))
+        return os.path.join(
+            targetdir, rset.requirements[name].link.filename)
 
     @staticmethod
     def _get_sha(data, algorithm=256):

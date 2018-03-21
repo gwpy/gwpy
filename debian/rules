@@ -13,6 +13,7 @@ override_dh_auto_install:
 	done
 	for py in $(PY3VERS); do \
 		$$py setup.py install --root=debian/python3-gwpy --no-compile -O0 --install-layout=deb; \
+		$(RM) debian/python3-gwpy/usr/bin/*; \
 	done
 
 override_dh_python2:

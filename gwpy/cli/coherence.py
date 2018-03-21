@@ -28,7 +28,8 @@ __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 
 class Coherence(CliProduct):
-    """Product class for coherence line plots
+    """Plot coherence between a reference time series and one
+    or more other time series
     """
 
     min_timeseries = 2

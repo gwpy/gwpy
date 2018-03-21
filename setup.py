@@ -26,41 +26,57 @@
 from __future__ import print_function
 
 import sys
+from distutils.version import LooseVersion
 
-try:
-    import setuptools  # pylint: disable=unused-import
-except ImportError:
-    import ez_setup
-    ez_setup.use_setuptools()
-finally:
-    from setuptools import (setup, find_packages)
+from setuptools import (setup, find_packages,
+                        __version__ as setuptools_version)
 
 import versioneer
 from setup_utils import (CMDCLASS, get_setup_requires, get_scripts)
 
 __version__ = versioneer.get_version()
 
+PEP_508 = LooseVersion(setuptools_version) >= '36.2'
+
+# read description
+with open('README.rst', 'rb') as f:
+    longdesc = f.read().decode().strip()
+
 # -- dependencies -------------------------------------------------------------
 
 # build dependencies
 setup_requires = get_setup_requires()
 
-# package dependencies
-install_requires = [
-    'numpy>=1.7.1',
-    'scipy>=0.12.1',
-    'matplotlib>=1.2.0',
-    'astropy>=1.1.1',
-    'six>=1.5',
-    'lscsoft-glue>=1.55.2',
-    'python-dateutil',
-]
+# runtime dependencies
+dependencies = {
+    'six': '>= 1.5',
+    'python-dateutil': None,
+    'numpy': '>= 1.7.1',
+    'scipy': '>= 0.12.1',
+    'matplotlib': '>= 1.2.0',
+    'astropy': '>= 1.1.1',
+    'lscsoft-glue': '>= 1.55.2',
+}
+
+# include fancy dependencies
+if PEP_508:
+    # exclude astropy >= 3.0 on python2.7
+    dependencies['astropy '] = "{} ; python_version >= '3'".format(
+        dependencies['astropy'])
+    dependencies['astropy'] += " ; python_version < '3'"
+
+    # exclude matplotlib 2.1.[01] (see matplotlib/matplotlib#10003)
+    dependencies['matplotlib'] += ', !=2.1.0, !=2.1.1'
+
+# unwrap dependencies into simple list
+install_requires = ['{0} {1}'.format(pkg.strip(), ver or '') for
+                    pkg, ver in dependencies.items()]
 
 # test for LAL
 try:
     import lal  # pylint: disable=unused-import
 except ImportError as e:
-    install_requires.append('ligotimegps>=1.1')
+    install_requires.append('ligotimegps >= 1.2.1')
 
 # enum34 required for python < 3.4
 try:
@@ -74,8 +90,9 @@ extras_require = {
     'root': ['root_numpy'],
     'segments': ['dqsegdb'],
     'hacr': ['pymysql'],
-    'docs': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme',
-             'sphinxcontrib-programoutput'],
+    'docs': ['sphinx>=1.6.1', 'numpydoc', 'sphinx-bootstrap-theme>=0.6',
+             'sphinxcontrib-programoutput', 'sphinx-automodapi',
+             'requests'],
 }
 
 # define 'all' as the intersection of all extras
@@ -100,9 +117,7 @@ setup(
     provides=['gwpy'],
     version=__version__,
     description="A python package for gravitational-wave astrophysics",
-    long_description=("GWpy is a collaboration-driven Python package "
-                      "providing tools for studying data from "
-                      "ground-based gravitational-wave detectors"),
+    long_description=longdesc,
     author='Duncan Macleod',
     author_email='duncan.macleod@ligo.org',
     license='GPLv3',

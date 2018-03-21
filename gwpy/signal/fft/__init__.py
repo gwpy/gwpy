@@ -61,7 +61,7 @@ def get_default_fft_api():
 
     >>> from gwpy.signal.fft import get_default_fft_api
     >>> get_default_fft_api()
-    'pycbc'
+    'pycbc.psd'
 
     If you just have a basic installation (from `pip install gwpy`):
 

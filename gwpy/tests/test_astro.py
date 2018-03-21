@@ -71,7 +71,7 @@ else:
 @pytest.fixture(scope='module')
 def psd():
     h5path = os.path.join(os.path.dirname(__file__), 'data',
-                          'HLV-GW100916-968654552-1.hdf')
+                          'HLV-HW100916-968654552-1.hdf')
     try:
         data = TimeSeries.read(h5path, 'L1:LDAS-STRAIN', format='hdf5')
     except ImportError as e:

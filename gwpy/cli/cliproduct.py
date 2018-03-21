@@ -58,6 +58,7 @@ class CliProduct(object):
     """
 
     __metaclass__ = abc.ABCMeta
+    BAD_UNITS = {'*', }
 
     def __init__(self):
 
@@ -455,7 +456,11 @@ class CliProduct(object):
                 % self.min_timeseries)
 
         if len(arg_list.start) > 0:
-            self.start_list = list(set(map(int, arg_list.start)))
+            # uniquify list of start times (preserving order)
+            self.start_list = []
+            for t in map(int, arg_list.start):
+                if t not in self.start_list:
+                    self.start_list.append(t)
         else:
             raise parser.error('No start times specified')
 
@@ -516,6 +521,9 @@ class CliProduct(object):
                     data = TimeSeries.fetch(chan, start, start+self.dur,
                                             verbose=verb)
 
+                if str(data.unit) in self.BAD_UNITS:
+                    data.override_unit('undef')
+
                 if highpass > 0 and lowpass == 0:
                     data = data.highpass(highpass)
                     self.filter += "high pass (%.1f) " % highpass
@@ -546,10 +554,10 @@ class CliProduct(object):
     # -- plotting -------------------------------
 
     def show_plot_info(self):
-        self.log(3, ('X-scale: %s, Y-scale: %s' % (self.plot.get_xscale(),
-                                                   self.plot.get_yscale())))
-        self.log(3, ('X-limits %s, Y-limits %s' % (self.plot.xlim,
-                                                   self.plot.ylim)))
+        self.log(3, ('X-scale: %s, Y-scale: %s' % (self.ax.get_xscale(),
+                                                   self.ax.get_yscale())))
+        self.log(3, ('X-limits %s, Y-limits %s' % (self.ax.get_xlim(),
+                                                   self.ax.get_ylim())))
 
     def config_plot(self, arg_list):
         """Configure global plot parameters
@@ -787,7 +795,7 @@ class CliProduct(object):
             title += spec
 
         title = label_to_latex(title)
-        self.plot.set_title(title, fontsize=12)
+        self.ax.set_title(title, fontsize=12)
         self.log(3, ('Title is: %s' % title))
 
         if args.xlabel:
@@ -795,21 +803,20 @@ class CliProduct(object):
         else:
             xlabel = self.get_xlabel()
         if xlabel:
-            self.plot.set_xlabel(xlabel)
+            self.ax.set_xlabel(xlabel)
             self.log(3, ('X-axis label is: %s' % xlabel))
 
         all_units = set()
         for ts in self.timeseries:
             un = str(ts.unit)
-            if (un != 'undef') & (un != ''):
-                all_units.add(un)
-            else:
-                all_units.add('Counts')
+            all_units.add(un)
 
         if len(all_units) == 1:
-            self.units = all_units.pop()
+            self.units = label_to_latex(all_units.pop())
+        elif len(all_units) > 1:
+            self.units = 'Multiple units'
         else:
-            self.units = 'Counts'
+            self.units = 'undef'
 
         if args.ylabel:
             ylabel = label_to_latex(args.ylabel)
@@ -817,7 +824,7 @@ class CliProduct(object):
             ylabel = self.get_ylabel(args)
 
         if ylabel:
-            self.plot.set_ylabel(ylabel)
+            self.ax.set_ylabel(ylabel)
             self.log(3, ('Y-axis label is: %s' % ylabel))
 
         if not args.nogrid:
@@ -843,7 +850,7 @@ class CliProduct(object):
             unit = xscale.get_unit_name()
             utc = re.sub(r'\.0+', '',
                          Time(epoch, format='gps', scale='utc').iso)
-            self.plot.set_xlabel('Time (%s) from %s (%s)' % (unit, utc, epoch))
+            self.ax.set_xlabel('Time (%s) from %s (%s)' % (unit, utc, epoch))
             self.ax.set_xscale(unit, epoch=epoch)
 
         # if they specified an output file write it

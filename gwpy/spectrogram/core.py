@@ -317,6 +317,29 @@ class Spectrogram(Array2D):
 
     def plot(self, **kwargs):
         """Plot the data for this `Spectrogram`
+
+        Parameters
+        ----------
+        **kwargs
+            all keyword arguments are passed along to underlying
+            functions, see below for references
+
+        Returns
+        -------
+        plot : `~gwpy.plotter.SpectrogramPlot`
+            the `Plot` containing the data
+
+        See Also
+        --------
+        matplotlib.pyplot.figure
+            for documentation of keyword arguments used to create the
+            figure
+        matplotlib.figure.Figure.add_subplot
+            for documentation of keyword arguments used to create the
+            axes
+        gwpy.plotter.TimeSeriesAxes.plot_spectrogram
+            for documentation of keyword arguments used in rendering the
+            `Spectrogram` data
         """
         from ..plotter import SpectrogramPlot
         return SpectrogramPlot(self, **kwargs)
@@ -430,13 +453,14 @@ class Spectrogram(Array2D):
 
         Parameters
         ----------
-        *filt
-            one of:
+        *filt : filter arguments
+            1, 2, 3, or 4 arguments defining the filter to be applied,
 
-            - :class:`scipy.signal.lti`
-            - ``(numerator, denominator)`` polynomials
-            - ``(zeros, poles, gain)``
-            - ``(A, B, C, D)`` 'state-space' representation
+                - an ``Nx1`` `~numpy.ndarray` of FIR coefficients
+                - an ``Nx6`` `~numpy.ndarray` of SOS coefficients
+                - ``(numerator, denominator)`` polynomials
+                - ``(zeros, poles, gain)``
+                - ``(A, B, C, D)`` 'state-space' representation
 
         analog : `bool`, optional
             if `True`, filter definition will be converted from Hertz
@@ -543,12 +567,12 @@ class Spectrogram(Array2D):
         if low is None:
             idx0 = None
         else:
-            idx0 = int((low.value - self.f0.value) // self.df.value)
+            idx0 = int(float(low.value - self.f0.value) // self.df.value)
         # find high index
         if high is None:
             idx1 = None
         else:
-            idx1 = int((high.value - self.f0.value) // self.df.value)
+            idx1 = int(float(high.value - self.f0.value) // self.df.value)
         # crop
         if copy:
             return self[:, idx0:idx1].copy()
@@ -571,6 +595,17 @@ class Spectrogram(Array2D):
         # otherwise return whatever we got back from super (Quantity)
         return out
     _wrap_function.__doc__ = Array2D._wrap_function.__doc__
+
+    # -- other ----------------------------------
+
+    def __getitem__(self, item):
+        out = super(Spectrogram, self).__getitem__(item)
+
+        # set epoch manually, because Spectrogram doesn't store self._epoch
+        if isinstance(out, self._columnclass):
+            out.epoch = self.epoch
+
+        return out
 
 
 class SpectrogramList(TimeSeriesList):

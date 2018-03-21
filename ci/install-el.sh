@@ -28,17 +28,22 @@ yum -y install rpm-build git2u python-jinja2 ${PY_PREFIX}-jinja2
 
 GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
 
-# update setuptools for bdist_rpm
-pip install "setuptools>=25"
+# upgrade setuptools for development builds only to prevent version munging
+if [[ "${GWPY_VERSION}" == *"+"* ]]; then
+    pip install "setuptools>=25"
+fi
+
+# upgrade GitPython (required for git>=2.15.0)
+pip install "GitPython>=2.1.8"
 
 # build the RPM
 python setup.py bdist_rpm
 
 # install the rpm
 if [ ${PY_XY} -lt 30 ]; then
-    GWPY_RPM="dist/python2-gwpy-*.noarch.rpm"
+    GWPY_RPM="dist/python2-gwpy-*.noarch.rpm"  # install python2 only
 else
-    GWPY_RPM="dist/${PY_PREFIX}-gwpy-*.noarch.rpm"
+    GWPY_RPM="dist/python*-gwpy-*.noarch.rpm"  # install both 2 and 3
 fi
 yum -y --nogpgcheck localinstall ${GWPY_RPM}
 
@@ -47,5 +52,13 @@ yum -y install \
     nds2-client-${PY_PREFIX} \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
+    lalsimulation-${PY_PREFIX} \
     h5py \
 || true
+
+# install system-level extras that might use python2- prefix
+if [ ${PY_XY} -lt 30 ]; then
+    yum -y install python2-root
+else
+    yum -y install ${PY_PREFIX}-root
+fi

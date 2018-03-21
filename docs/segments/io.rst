@@ -78,6 +78,10 @@ To replace the segment tables in an existing file, while preserving other tables
 
     >>> f.write('new-table.xml', append=True, overwrite=True)
 
+Extra attributes can be written to the tables via the ``attrs={}`` keyword, all attributes are set for all three of the segment-related tables::
+
+    >>> f.write('new-table.xml', append=True, overwrite=True, attrs={'process_id': 0})
+
 `DataQualityDict`
 -----------------
 

@@ -183,7 +183,11 @@ def read_gwf(framefile, channels, start=None, end=None, ctype=None,
                     pass
                 elif start and dataend < start:  # don't need this frame
                     continue
-            for vect in data.data:  # loop hopefully over single vector
+            for j in range(data.data.size()):
+                # we use range(data.data.size()) to avoid segfault
+                # related to iterating directly over data.data
+                vect = data.data[j]
+
                 # only read FrVect with matching name (or no name set)
                 #    frame spec allows for arbitrary other FrVects
                 #    to hold other information

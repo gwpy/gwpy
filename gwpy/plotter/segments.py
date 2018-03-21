@@ -81,9 +81,6 @@ class SegmentAxes(TimeSeriesAxes):
         formatter = SegmentFormatter()
         self.yaxis.set_major_formatter(formatter)
 
-    # -------------------------------------------------------------------------
-    # plotting methods
-
     def plot(self, *args, **kwargs):
         """Plot data onto these axes
 
@@ -217,7 +214,7 @@ class SegmentAxes(TimeSeriesAxes):
         if y is None:
             y = self.get_next_y()
         # get flag name
-        name = kwargs.pop('label', flag.name)
+        name = kwargs.pop('label', flag.label or flag.name)
 
         # get epoch
         try:
@@ -493,7 +490,7 @@ register_projection(SegmentAxes)
 
 
 class SegmentPlot(TimeSeriesPlot):
-    """`Figure` for displaying a `~gwpy.segments.DataQualityFlag`.
+    """`Plot` for displaying a `~gwpy.segments.DataQualityFlag`
 
     Parameters
     ----------

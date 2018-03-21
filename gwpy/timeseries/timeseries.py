@@ -56,7 +56,7 @@ def _update_doc_with_fft_methods(func):
 # -- TimeSeries ---------------------------------------------------------------
 
 class TimeSeries(TimeSeriesBase):
-    """A time-domain data array
+    """A time-domain data array.
 
     Parameters
     ----------
@@ -130,8 +130,8 @@ class TimeSeries(TimeSeriesBase):
         Parameters
         ----------
         nfft : `int`, optional
-            length of the desired Fourier transform.
-            Input will be cropped or padded to match the desired length.
+            length of the desired Fourier transform, input will be
+            cropped or padded to match the desired length.
             If nfft is not given, the length of the `TimeSeries`
             will be used
 
@@ -368,7 +368,7 @@ class TimeSeries(TimeSeriesBase):
                           overlap=overlap, window=window, **kwargs)
 
     @_update_doc_with_fft_methods
-    def spectrogram(self, stride, fftlength=None, overlap=0,
+    def spectrogram(self, stride, fftlength=None, overlap=None,
                     window='hann', method='scipy-welch', nproc=1, **kwargs):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
@@ -434,7 +434,7 @@ class TimeSeries(TimeSeriesBase):
         # calculate PSD using UI method
         return fft_ui.average_spectrogram(self, method_func, stride,
                                           fftlength=fftlength, overlap=overlap,
-                                          **kwargs)
+                                          window=window, **kwargs)
 
     def spectrogram2(self, fftlength, overlap=0, **kwargs):
         """Calculate the non-averaged power `Spectrogram` of this `TimeSeries`
@@ -958,13 +958,14 @@ class TimeSeries(TimeSeriesBase):
 
         Parameters
         ----------
-        *filt
+        *filt : filter arguments
             1, 2, 3, or 4 arguments defining the filter to be applied,
 
-            - 1: `scipy.signal.lti`, or `numpy.ndarray` of FIR coefficients
-            - 2: ``(numerator, denominator)`` polynomials
-            - 3: ``(zeros, poles, gain)``
-            - 4: ``(A, B, C, D)`` 'state-space' representation
+                - an ``Nx1`` `~numpy.ndarray` of FIR coefficients
+                - an ``Nx6`` `~numpy.ndarray` of SOS coefficients
+                - ``(numerator, denominator)`` polynomials
+                - ``(zeros, poles, gain)``
+                - ``(A, B, C, D)`` 'state-space' representation
 
         filtfilt : `bool`, optional
             filter forward and backwards to preserve phase,
@@ -1004,7 +1005,7 @@ class TimeSeries(TimeSeriesBase):
 
         See also
         --------
-        scipy.signal.sosfilter
+        scipy.signal.sosfilt
             for details on filtering with second-order sections
             (`scipy >= 0.16` only)
 
@@ -1289,6 +1290,81 @@ class TimeSeries(TimeSeriesBase):
         return self.__class__(data, channel=self.channel, t0=self.t0,
                               name=name, sample_rate=(1/float(stride)))
 
+    def demodulate(self, f, stride=1, exp=False, deg=True):
+        """Compute the average magnitude and phase of this `TimeSeries`
+           once per stride at a given frequency.
+
+        Parameters
+        ----------
+        f : `float`
+            frequency (Hz) at which to demodulate the signal
+
+        stride : `float`, optional
+            stride (seconds) between calculations, defaults to 1 second
+
+        exp : `bool`, optional
+            return the demodulated magnitude and phase trends as one
+            `TimeSeries` object representing a complex exponential
+
+        deg : `bool`, optional
+            if `exp=False`, calculates the phase in degrees
+
+        Returns
+        -------
+        mag, phase : `TimeSeries`
+            if `exp=False`, returns a pair of `TimeSeries` objects representing
+            magnitude and phase trends with `dt=stride`
+
+        out : `TimeSeries`
+            if `exp=True`, returns a single `TimeSeries` with magnitude and
+            phase trends represented as `mag * exp(1j*phase)` with `dt=stride`
+
+        Examples
+        --------
+        Demodulation is useful when trying to examine steady sinusoidal
+        signals we know to be contained within data. For instance,
+        we can download some data from LOSC to look at trends of the
+        amplitude and phase of Livingston's calibration line at 331.3 Hz:
+
+        >>> from gwpy.timeseries import TimeSeries
+        >>> data = TimeSeries.fetch_open_data('L1', 1131350417, 1131357617)
+
+        We can demodulate the `TimeSeries` at 331.3 Hz with a stride of once
+        per minute:
+
+        >>> amp, phase = data.demodulate(331.3, stride=60)
+
+        We can then plot these trends to visualize changes in the amplitude
+        and phase of the calibration line:
+
+        >>> from gwpy.plotter import TimeSeriesPlot
+        >>> plot = TimeSeriesPlot(amp, phase, sep=True)
+        >>> plot.show()
+        """
+        stridesamp = int(stride * self.sample_rate.value)
+        nsteps = int(self.size // stridesamp)
+        # mix with a complex oscillator and stride through the TimeSeries,
+        # taking the average over each stride
+        out = numpy.zeros(nsteps, dtype=complex).view(type(self))
+        out.__metadata_finalize__(self)
+        out.sample_rate = 1/float(stride)
+        out._unit = self.unit
+        mixed = 2 * numpy.exp(-2*numpy.pi*1j*f*self.times.value) * self.value
+        # stride through the TimeSeries
+        for step in range(nsteps):
+            idx = int(stridesamp * step)
+            idx_end = idx + stridesamp
+            stepseries = mixed[idx:idx_end]
+            demod_ = numpy.average(stepseries)
+            out.value[step] = demod_
+        if exp:
+            return out
+        mag = numpy.abs(out)
+        phase = numpy.angle(out, deg=deg).view(type(self))
+        phase.__metadata_finalize__(out)
+        phase.override_unit('deg' if deg else 'rad')
+        return mag, phase
+
     def whiten(self, fftlength, overlap=0, method='scipy-welch',
                window='hanning', detrend='constant', asd=None, **kwargs):
         """White this `TimeSeries` against its own ASD
@@ -1395,14 +1471,8 @@ class TimeSeries(TimeSeriesBase):
         data._unit = self.unit
         return data
 
-    def plot(self, **kwargs):
-        """Plot the data for this TimeSeries.
-        """
-        from ..plotter import TimeSeriesPlot
-        return TimeSeriesPlot(self, **kwargs)
-
     def notch(self, frequency, type='iir', filtfilt=True, **kwargs):
-        """Notch out a frequency in a `TimeSeries`
+        """Notch out a frequency in this `TimeSeries`.
 
         Parameters
         ----------
@@ -1524,8 +1594,9 @@ class TimeSeries(TimeSeriesBase):
 
         >>> q = data.q_transform()
         >>> plot = q.plot()
-        >>> plot.set_xlim(-.2, .2)
-        >>> plot.set_epoch(0)
+        >>> ax = plot.gca()
+        >>> ax.set_xlim(-.2, .2)
+        >>> ax.set_epoch(0)
         >>> plot.show()
         """  # nopep8
         from scipy.interpolate import (interp2d, InterpolatedUnivariateSpline)

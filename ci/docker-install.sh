@@ -33,7 +33,7 @@ sudo apt-get update
 sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
 
 # download container
-sudo docker pull ${DOCKER_IMAGE}
+travis_retry sudo timeout 300 docker pull ${DOCKER_IMAGE}
 
 # start container
 sudo docker run \
@@ -44,6 +44,7 @@ sudo docker run \
     --env DOCKER_IMAGE="${DOCKER_IMAGE}" \
     --env PYTHON_VERSION="${TRAVIS_PYTHON_VERSION}" \
     --env GWPY_PATH="${GWPY_PATH}" \
+    --env EXTRAS="${EXTRAS}" \
     --volume `pwd`:${GWPY_PATH}:rw \
     ${DOCKER_IMAGE}
 

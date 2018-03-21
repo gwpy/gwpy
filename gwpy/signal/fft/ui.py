@@ -26,13 +26,15 @@ from __future__ import absolute_import
 
 from functools import wraps
 
+from six import string_types
+
 import numpy
 
 from scipy.signal import get_window
 
 from astropy.units import Quantity
 
-from . import utils as fft_utils
+from . import (utils as fft_utils, get_default_fft_api)
 from ...utils import mp as mp_utils
 from ..window import (canonical_name, recommended_overlap)
 
@@ -70,7 +72,7 @@ def seconds_to_samples(x, rate):
     return int((Quantity(x, 's') * rate).decompose().value)
 
 
-def normalize_fft_params(series, kwargs=None):
+def normalize_fft_params(series, kwargs=None, library=None):
     """Normalize a set of FFT parameters for processing
 
     This method reads the ``fftlength`` and ``overlap`` keyword arguments
@@ -81,6 +83,10 @@ def normalize_fft_params(series, kwargs=None):
     If a ``window`` is given, the ``noverlap`` parameter will be set to the
     recommended overlap for that window type, if ``overlap`` is not given.
 
+    If a ``window`` is given as a `str`, it will be converted to a
+    `numpy.ndarray` containing the correct window (of the correct length),
+    or a `lal.REAL8Window`-type object for `lal` library methods.
+
     Parameters
     ----------
     series : `gwpy.timeseries.TimeSeries`
@@ -89,6 +95,10 @@ def normalize_fft_params(series, kwargs=None):
     kwargs : `dict`
         the dict of keyword arguments passed by the user
 
+    library: `str`, optional
+        the name of the library that provides the FFT methods, e.g.
+        'scipy'
+
     Examples
     --------
     >>> from numpy.random import normal
@@ -96,37 +106,61 @@ def normalize_fft_params(series, kwargs=None):
     >>> from gwpy.signal.fft.ui import normalize_fft_params
     >>> normalize_fft_params(TimeSeries(normal(size=1024), sample_rate=256))
     {'nfft': 1024, 'noverlap': 0}
-    >>> normalize_fft_params(TimeSeries(normal(size=1024), sample_rate=256), {'window': 'hann'})
-    {'nfft': 1024, 'noverlap': 0, 'window': 'hann'}
+    >>> normalize_fft_params(TimeSeries(normal(size=1024), sample_rate=256),
+    ...                      {'window': 'hann'})
+    {'window': array([  0.00000000e+00,   9.41235870e-06, ...,
+         3.76490804e-05,   9.41235870e-06]), 'noverlap': 0, 'nfft': 1024}
     """
     if kwargs is None:
         kwargs = dict()
     samp = series.sample_rate
-    fftlength = kwargs.pop('fftlength', None)
+    fftlength = kwargs.pop('fftlength', None) or series.duration
     overlap = kwargs.pop('overlap', None)
-
-    # get canonical window name
-    if isinstance(kwargs.get('window', None), str):
-        kwargs['window'] = canonical_name(kwargs['window'])
+    window = kwargs.pop('window', None)
 
     # fftlength -> nfft
-    if fftlength is None:
-        fftlength = series.duration
     nfft = seconds_to_samples(fftlength, samp)
 
     # overlap -> noverlap
-    if overlap is None and isinstance(kwargs.get('window', None), str):
-        noverlap = recommended_overlap(kwargs['window'], nfft)
-    elif overlap is None:
-        noverlap = 0
-    else:
-        noverlap = seconds_to_samples(overlap, samp)
+    noverlap = _normalize_overlap(overlap, window, nfft, samp)
+
+    # create window
+    window = _normalize_window(window, nfft, library, series.dtype)
+    # allow FFT methods to use their own defaults
+    if window is not None:
+        kwargs['window'] = window
+
+    # create FFT plan for LAL
+    if library == 'lal' and kwargs.get('plan', None) is None:
+        from .lal import generate_fft_plan
+        kwargs['plan'] = generate_fft_plan(nfft, dtype=series.dtype)
 
     kwargs.update({
         'nfft': nfft,
         'noverlap': noverlap,
     })
     return kwargs
+
+
+def _normalize_overlap(overlap, window, nfft, samp):
+    if overlap is None and isinstance(window, string_types):
+        return recommended_overlap(window, nfft)
+    elif overlap is None:
+        return 0
+    return seconds_to_samples(overlap, samp)
+
+
+def _normalize_window(window, nfft, library, dtype):
+    if library == 'lal' and isinstance(window, numpy.ndarray):
+        from .lal import window_from_array
+        return window_from_array(window)
+    if library == 'lal':
+        from .lal import generate_window
+        return generate_window(nfft, window=window, dtype=dtype)
+    if isinstance(window, string_types):
+        window = canonical_name(window)
+    if isinstance(window, string_types + (tuple,)):
+        return get_window(window, nfft)
 
 
 def set_fft_params(func):
@@ -141,8 +175,9 @@ def set_fft_params(func):
         else:
             data = series
 
-        # extract parameters in seconds, setting recommended default overlap
-        normalize_fft_params(data, kwargs)
+        # normalise FFT parmeters for all libraries
+        library = _fft_library(method_func)
+        normalize_fft_params(data, kwargs=kwargs, library=library)
 
         return func(series, method_func, *args, **kwargs)
 
@@ -189,11 +224,12 @@ def psdn(timeseries, method_func, *args, **kwargs):
     # unpack tuple of timeseries for cross spectrum
     try:
         timeseries, other = timeseries
-        return method_func(timeseries, other, kwargs.pop('nfft'),
-                           *args, **kwargs)
     # or just calculate PSD
     except ValueError:
         return method_func(timeseries, kwargs.pop('nfft'), *args, **kwargs)
+    else:
+        return method_func(timeseries, other, kwargs.pop('nfft'),
+                           *args, **kwargs)
 
 
 def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
@@ -217,10 +253,10 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
     epoch = timeseries.t0.value
     nstride = seconds_to_samples(stride, timeseries.sample_rate)
     kwargs['fftlength'] = kwargs.pop('fftlength', stride) or stride
-    normalize_fft_params(timeseries, kwargs)
+    normalize_fft_params(timeseries, kwargs=kwargs,
+                         library=_fft_library(method_func))
     nfft = kwargs['nfft']
     noverlap = kwargs['noverlap']
-    window = kwargs.pop('window', None)
 
     # sanity check parameters
     if nstride > timeseries.size:
@@ -230,21 +266,6 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
         raise ValueError("fftlength cannot be greater than stride")
     if noverlap >= nfft:
         raise ValueError("overlap must be less than fftlength")
-
-    # generate windows and FFT plans up-front
-    if method_func.__module__.endswith('.lal'):
-        from .lal import (generate_fft_plan, generate_window)
-        if isinstance(window, (str, tuple)):
-            window = generate_window(nfft, window=window,
-                                     dtype=timeseries.dtype)
-        if kwargs.get('plan', None) is None:
-            kwargs['plan'] = generate_fft_plan(nfft, dtype=timeseries.dtype)
-    else:
-        if isinstance(window, (str, tuple)):
-            window = get_window(window, nfft)
-    # don't operate on None, let the method_func work out its own defaults
-    if window is not None:
-        kwargs['window'] = window
 
     # set up single process Spectrogram method
     def _psd(series):
@@ -293,18 +314,12 @@ def spectrogram(timeseries, method_func, **kwargs):
     if noverlap >= nfft:
         raise ValueError("overlap must be less than fftlength")
 
-    # get window once (if given)
-    window = kwargs.pop('window', None) or 'hann'
-    if isinstance(window, (str, tuple)):
-        window = get_window(window, nfft)
-
     # set up single process Spectrogram method
     def _psd(series):
         """Calculate a single PSD for a spectrogram
         """
         try:
-            return method_func(series, nfft=nfft, window=window,
-                               **kwargs)[1]
+            return method_func(series, nfft=nfft, **kwargs)[1]
         except Exception as exc:  # pylint: disable=broad-except
             if nproc == 1:
                 raise
@@ -333,7 +348,8 @@ def spectrogram(timeseries, method_func, **kwargs):
     # create output spectrogram
     unit = fft_utils.scale_timeseries_unit(
         timeseries.unit, scaling=kwargs.get('scaling', 'density'))
-    out = Spectrogram(numpy.empty((numtimes, numfreqs), dtype=timeseries.dtype),
+    out = Spectrogram(numpy.empty((numtimes, numfreqs),
+                                  dtype=timeseries.dtype),
                       copy=False, dt=nstride * timeseries.dt, t0=timeseries.t0,
                       f0=0, df=sampling/nfft, unit=unit,
                       name=timeseries.name, channel=timeseries.channel)
@@ -366,3 +382,10 @@ def _chunk_timeseries(series, nstride, noverlap):
         yield series[x:y]
         x += step
         step = nstride
+
+
+def _fft_library(method_func):
+    mod = method_func.__module__.rsplit('.', 1)[-1]
+    if mod == 'basic':
+        return get_default_fft_api().split('.', 1)[0]
+    return mod

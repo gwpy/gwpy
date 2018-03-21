@@ -25,6 +25,9 @@ import gzip
 import os
 import tempfile
 import sys
+from ssl import SSLError
+
+from six.moves.urllib.error import URLError
 
 from six import PY2
 
@@ -32,12 +35,15 @@ import numpy
 
 import pytest
 
+from glue.lal import Cache
+
 from gwpy.io import (cache as io_cache,
                      datafind as io_datafind,
                      gwf as io_gwf,
                      kerberos as io_kerberos,
-                     nds2 as io_nds2,
                      ligolw as io_ligolw,
+                     losc as io_losc,
+                     nds2 as io_nds2,
                      utils as io_utils)
 from gwpy.segments import (Segment, SegmentList)
 
@@ -51,7 +57,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 os.environ.pop('KRB5_KTNAME', None)
 
 TEST_GWF_FILE = os.path.join(os.path.dirname(__file__), 'data',
-                             'HLV-GW100916-968654552-1.gwf')
+                             'HLV-HW100916-968654552-1.gwf')
 TEST_CHANNELS = [
     'H1:LDAS-STRAIN', 'L1:LDAS-STRAIN', 'V1:h_16384Hz',
 ]
@@ -199,7 +205,6 @@ class TestIoCache(object):
             from lal.utils import CacheEntry
         except ImportError as e:
             pytest.skip(str(e))
-        from glue.lal import Cache
 
         segs = SegmentList()
         cache = Cache()
@@ -235,7 +240,7 @@ class TestIoCache(object):
             c3 = io_cache.read_cache(f.name)
             assert cache == c3
 
-    @utils.skip_missing_dependency('glue.lal')
+    @utils.skip_missing_dependency('lal.utils')
     def test_is_cache(self):
         # sanity check
         assert io_cache.is_cache(None) is False
@@ -483,6 +488,34 @@ class TestIoLigolw(object):
             f.seek(0)
             assert io_ligolw.list_tables(f) == names
 
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
+    @pytest.mark.parametrize('value, name, result', [
+        (None, 'peak_time', None),
+        (1.0, 'peak_time', numpy.int32(1)),
+        (1, 'process_id', 'sngl_burst:process_id:1'),
+        (1.0, 'invalidname', 1.0),
+        ('process:process_id:100', 'process_id', 'process:process_id:100'),
+    ])
+    def test_to_table_type(self, value, name, result):
+        from glue.ligolw.lsctables import SnglBurstTable
+        from glue.ligolw.ilwd import ilwdchar
+        from glue.ligolw._ilwd import ilwdchar as IlwdChar
+        out = io_ligolw.to_table_type(value, SnglBurstTable, name)
+        if isinstance(out, IlwdChar):
+            result = ilwdchar(result)
+        assert isinstance(out, type(result))
+        assert out == result
+
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
+    def test_to_table_type_ilwd(self):
+        from glue.ligolw.ilwd import ilwdchar
+        from glue.ligolw.lsctables import SnglBurstTable
+        ilwd = ilwdchar('process:process_id:0')
+        with pytest.raises(ValueError) as exc:
+            io_ligolw.to_table_type(ilwd, SnglBurstTable, 'event_id')
+        assert str(exc.value) == ('ilwdchar \'process:process_id:0\' doesn\'t '
+                                  'match column \'event_id\'')
+
 
 # -- gwpy.io.datafind ---------------------------------------------------------
 
@@ -522,31 +555,31 @@ class TestIoDatafind(object):
                            lambda x: ['L1:LDAS-STRAIN']):
             mock_connection.return_value = connection
             assert io_datafind.find_frametype('L1:LDAS-STRAIN',
-                                              allow_tape=True) == 'GW100916'
+                                              allow_tape=True) == 'HW100916'
             assert io_datafind.find_frametype('L1:LDAS-STRAIN',
-                                              return_all=True) == ['GW100916']
+                                              return_all=True) == ['HW100916']
+
             # test missing channel raises sensible error
             with pytest.raises(ValueError) as exc:
                 io_datafind.find_frametype('X1:TEST', allow_tape=True)
-            assert str(exc.value) == ('Cannot locate channel(s) in any known '
-                                      'frametype')
+            assert str(exc.value) == (
+                'Cannot locate the following channel(s) '
+                'in any known frametype:\n    X1:TEST')
+
             # test malformed channel name raises sensible error
             with pytest.raises(ValueError) as exc:
                 io_datafind.find_frametype('bad channel name')
             assert str(exc.value) == ('Cannot parse interferometer prefix '
                                       'from channel name \'bad channel name\','
                                       ' cannot proceed with find()')
+
             # test trend sorting ends up with an error
             with pytest.raises(ValueError) as exc:
                 io_datafind.find_frametype('X1:TEST.rms,s-trend',
                                            allow_tape=True)
-            assert str(exc.value) == ('Cannot locate channel(s) '
-                                      'in any known frametype')
             with pytest.raises(ValueError):
                 io_datafind.find_frametype('X1:TEST.rms,m-trend',
                                            allow_tape=True)
-            assert str(exc.value) == ('Cannot locate channel(s) '
-                                      'in any known frametype')
 
     def test_find_best_frametype(self, connection):
         """Test :func:`gwpy.io.datafind.find_best_frametype
@@ -558,7 +591,7 @@ class TestIoDatafind(object):
                            lambda x: ['L1:LDAS-STRAIN']):
             mock_connection.return_value = connection
             assert io_datafind.find_best_frametype(
-                'L1:LDAS-STRAIN', 968654552, 968654553) == 'GW100916'
+                'L1:LDAS-STRAIN', 968654552, 968654553) == 'HW100916'
 
 
 # -- gwpy.io.kerberos ---------------------------------------------------------
@@ -687,3 +720,49 @@ class TestIoUtils(object):
         assert id_func(None, 'test.blah', None) is True
         assert id_func(None, 'test.blah2', None) is True
         assert id_func(None, 'test.blah2x', None) is False
+
+
+# -- gwpy.io.losc -------------------------------------------------------------
+
+class TestIoLosc(object):
+    def test_fetch_json(self):
+        try:
+            jdata = io_losc.fetch_json(
+                'https://losc.ligo.org/archive/1126257414/1126261510/json/')
+        except (URLError, SSLError) as exc:
+            pytest.skip(str(exc))
+        assert sorted(list(jdata.keys())) == ['events', 'runs']
+        assert jdata['events']['GW150914'] == {
+            'DQbits': 7,
+            'GPStime': 1126259462.4,
+            'INJbits': 5,
+            'UTCtime': u'2015-09-14T09:50:45.400000',
+            'detectors': [u'L1', u'H1'],
+            'frametype': u'%s_HOFT_C02',
+        }
+
+        with pytest.raises(ValueError) as exc:
+            io_losc.fetch_json(
+                'https://losc.ligo.org/archive/1126257414/1126261510/')
+        assert str(exc.value).startswith('Failed to parse LOSC JSON')
+
+    @pytest.mark.parametrize('segment, detector, strict, result', [
+        ((1126257414, 1126261510), 'H1', False, ('GW150914', 'O1', 'tenyear')),
+        ((1126250000, 1126270000), 'H1', False, ('O1', 'tenyear', 'GW150914')),
+        ((1126250000, 1126270000), 'H1', True, ('O1', 'tenyear',)),
+        ((1126250000, 1126270000), 'V1', False, ('tenyear',)),
+    ])
+    def test_find_datasets(self, segment, detector, strict, result):
+        try:
+            sets = io_losc.find_datasets(*segment,
+                                         detector=detector, strict=strict)
+        except (URLError, SSLError) as exc:
+            pytest.skip(str(exc))
+        assert sets == result
+
+    def test_event_gps(self):
+        try:
+            gps = io_losc.event_gps('GW170817')
+        except (URLError, SSLError) as exc:
+            pytest.skip(str(exc))
+        assert gps == 1187008882.43

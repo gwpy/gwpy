@@ -20,22 +20,33 @@
 # Build Debian package
 #
 
-# install build dependencies
+# install pip for system python
+apt-get -yq install python-pip
+
+# install build dependencies (should match debian/control)
 apt-get -yq install \
     debhelper \
     dh-python \
     python-all \
+    python3-all \
     python-setuptools \
-    python-pip \
+    python3-setuptools \
     python-git \
-    python-jinja2
-
-# needed to prevent version number munging with versioneer
-pip install "setuptools>33"
+    python-jinja2 \
 
 # get versions
 GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
 GWPY_RELEASE=${GWPY_VERSION%%+*}
+
+# upgrade setuptools for development builds only to prevent version munging
+if [[ "${GWPY_VERSION}" == *"+"* ]]; then
+    pip install "setuptools>=25"
+fi
+
+# upgrade GitPython (required for git>=2.15.0)
+#     since we link the git clone from travis, the dependency is actually
+#     fixed to the version of git on the travis image
+pip install "GitPython>=2.1.8"
 
 # prepare the tarball (sdist generates debian/changelog)
 python setup.py sdist
@@ -48,21 +59,36 @@ tar -xf ../gwpy_${GWPY_RELEASE}.orig.tar.gz --strip-components=1
 dpkg-buildpackage -us -uc
 popd
 
-# print and install the deb
-GWPY_DEB="dist/${PY_PREFIX}-gwpy_${GWPY_RELEASE}-1_all.deb"
-echo "-------------------------------------------------------"
-dpkg --info ${GWPY_DEB}
-echo "-------------------------------------------------------"
-dpkg --install ${GWPY_DEB} || { \
-    apt-get -y -f install;  # install dependencies and package
-    dpkg --install ${GWPY_DEB};  # shouldn't fail
-}
+if [ ${PY_XY} -lt 30 ]; then  # install python2 only
+    PREFICES="python"
+else  # install both 2 and 3
+    PREFICES="python python3"
+fi
+for PREF in ${PREFICES}; do
+    # print and install the deb
+    GWPY_DEB="dist/${PREF}-gwpy_${GWPY_RELEASE}-1_all.deb"
+    echo "-------------------------------------------------------"
+    dpkg --info ${GWPY_DEB}
+    echo "-------------------------------------------------------"
+    dpkg --install ${GWPY_DEB} || { \
+        apt-get -y -f install;  # install dependencies and package
+        dpkg --install ${GWPY_DEB};  # shouldn't fail
+    }
+done
 
 # install system-level extras for the correct python version
 for pckg in \
+    libroot-bindings-python5.34 libroot-tree-treeplayer-dev \
+    libroot-math-physics-dev libroot-graf2d-postscript-dev \
     ${PY_PREFIX}-nds2-client \
+    ${PY_PREFIX}-dqsegdb ${PY_PREFIX}-m2crypto \
+    ${PY_PREFIX}-sqlalchemy \
+    ${PY_PREFIX}-pandas \
+    ${PY_PREFIX}-psycopg2 \
+    ${PY_PREFIX}-pymysql \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
+    lalsimulation-${PY_PREFIX} \
     ${PY_PREFIX}-h5py \
 ; do
     apt-get -yqq install $pckg || true

@@ -28,6 +28,7 @@ import numpy
 from astropy.units import (Unit, Quantity, dimensionless_unscaled)
 from astropy.io import registry as io_registry
 
+from . import sliceutils
 from .array import Array
 from .index import Index
 
@@ -482,23 +483,13 @@ class Series(Array):
         return new
 
     def __getitem__(self, item):
-        # if single value, convert to a simple Quantity
-        if isinstance(item, Number):
-            return Quantity(self.value[item], unit=self.unit)
         new = super(Series, self).__getitem__(item)
-        # if we're slicing, update the x-axis properties
-        if isinstance(item, slice):  # slice
-            try:
-                self._xindex
-            except AttributeError:
-                if item.start:
-                    new.x0 = self.x0 + item.start * self.dx
-                if item.step:
-                    new.dx = self.dx * item.step
-            else:
-                new.xindex = self.xindex[item]
-        elif isinstance(item, numpy.ndarray):  # index array
-            new.xindex = self.xindex[item]
+
+        # slice axis 0 metadata
+        slice_ = sliceutils.format_nd_slice(item, self.ndim)[0]
+        if not sliceutils.null_slice(slice_):
+            sliceutils.slice_axis_attributes(self, 'x', new, 'x', slice_)
+
         return new
 
     def is_contiguous(self, other, tol=1/2.**18):
@@ -808,12 +799,12 @@ class Series(Array):
         if start is None:
             idx0 = None
         else:
-            idx0 = int(float(start - self.xspan[0]) / self.dx.value)
+            idx0 = int(float(start - self.xspan[0]) // self.dx.value)
         # find end index
         if end is None:
             idx1 = None
         else:
-            idx1 = int(float(end - self.xspan[0]) / self.dx.value)
+            idx1 = int(float(end - self.xspan[0]) // self.dx.value)
             if idx1 >= self.size:
                 idx1 = None
         # crop

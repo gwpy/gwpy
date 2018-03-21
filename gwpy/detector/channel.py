@@ -34,11 +34,12 @@ from astropy.io import registry as io_registry
 
 from ..io import (datafind, nds2 as io_nds2)
 from ..time import to_gps
+from ..utils.misc import if_not_none
 from .units import parse_unit
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-re_quote = re.compile(r'^[\s\"\']+|[\s\"\']+$')
+QUOTE_REGEX = re.compile(r'^[\s\"\']+|[\s\"\']+$')
 
 
 class Channel(object):
@@ -81,24 +82,52 @@ class Channel(object):
         r'(?:,(?P<type>([a-z]-)?[a-z]+))?$'  # match channel type
     )
 
-    def __init__(self, name, sample_rate=None, unit=None, frequency_range=None,
-                 safe=None, type=None, dtype=None, frametype=None,
-                 model=None, url=None):
+    def __init__(self, name, **params):
         """Create a new `Channel`
+
+        Parameters
+        ----------
+        name : `str`, `Channel`
+            the name of the new channel, or an existing channel to copy
+
+        **params
+            key, value pairs for attributes of new channel
         """
+        # init properties
+        self._name = None
+        self._ifo = None
+        self._system = None
+        self._subsystem = None
+        self._signal = None
+        self._trend = None
+        self._sample_rate = None
+        self._unit = None
+        self._frequency_range = None
+        self._safe = None
+        self._type = None
+        self._dtype = None
+        self._frametype = None
+        self._model = None
+        self._url = None
+
         # copy existing Channel
         if isinstance(name, Channel):
-            sample_rate = sample_rate or name.sample_rate
-            unit = unit or name.unit
-            frequency_range = frequency_range or name.frequency_range
-            safe = safe or name.safe
-            type = type or name.type
-            dtype = dtype or name.dtype
-            frametype = frametype or name.frametype
-            model = model or name.model
-            url = url or name.url
-            name = str(name)
-        # make a new channel
+            self._init_from_channel(name)
+
+        # parse name into component parts
+        else:
+            self._init_name(name)
+
+        # set metadata
+        for key, value in params.items():
+            setattr(self, key, value)
+
+    def _init_from_channel(self, other):
+        # copy all atrributes from other into self
+        for key, value in vars(other).items():
+            setattr(self, key, copy(value))
+
+    def _init_name(self, name):
         # strip off NDS stuff for 'name'
         # parse name into component parts
         try:
@@ -112,20 +141,8 @@ class Channel(object):
                     setattr(self, key, val)
                 except AttributeError:
                     setattr(self, '_%s' % key, val)
-        # set metadata
-        if type is not None:
-            self.type = type
-        self.sample_rate = sample_rate
-        self.unit = unit
-        self.frequency_range = frequency_range
-        self.safe = safe
-        self.dtype = dtype
-        self.frametype = frametype
-        self.model = model
-        self.url = url
 
-    # -------------------------------------------------------------------------
-    # read-write properties
+    # -- properties -----------------------------
 
     @property
     def name(self):
@@ -170,10 +187,7 @@ class Channel(object):
 
     @unit.setter
     def unit(self, u):
-        if u is None:
-            self._unit = None
-        else:
-            self._unit = parse_unit(u)
+        self._unit = if_not_none(parse_unit, u)
 
     @property
     def frequency_range(self):
@@ -313,8 +327,7 @@ class Channel(object):
     def frametype(self, ft):
         self._frametype = ft
 
-    # -------------------------------------------------------------------------
-    # read-only properties
+    # -- read-only properties -------------------
 
     @property
     def ifo(self):
@@ -385,8 +398,7 @@ class Channel(object):
             return '%s,%s' % (self.name, self.type)
         return self.name
 
-    # -------------------------------------------------------------------------
-    # classsmethods
+    # -- classmethods ---------------------------
 
     @classmethod
     def query(cls, name, use_kerberos=None, debug=False):
@@ -484,8 +496,7 @@ class Channel(object):
         return cls(name, sample_rate=sample_rate, unit=unit, dtype=dtype,
                    type=ctype)
 
-    # -------------------------------------------------------------------------
-    # methods
+    # -- methods --------------------------------
 
     @classmethod
     def parse_channel_name(cls, name, strict=True):
@@ -581,8 +592,7 @@ class Channel(object):
         """Returns a copy of this channel
         """
         new = type(self)(str(self))
-        for key, value in vars(self).items():
-            setattr(new, key, copy(value))
+        new._init_from_channel(self)
         return new
 
     def __str__(self):
@@ -609,10 +619,6 @@ class Channel(object):
         for attr in ['name', 'sample_rate', 'unit', 'url', 'type', 'dtype']:
             hash_ += hash(getattr(self, attr))
         return hash_
-
-
-_re_ifo = re.compile(r"[A-Z]\d:")
-_re_cchar = re.compile(r"[-_]")
 
 
 class ChannelList(list):
@@ -648,6 +654,12 @@ class ChannelList(list):
 
     @classmethod
     def from_names(cls, *names):
+        """Create a new `ChannelList` from a list of names
+
+        The list of names can include comma-separated sets of names,
+        in which case the return will be a flattened list of all parsed
+        channel names.
+        """
         new = cls()
         for namestr in names:
             for name in cls._split_names(namestr):
@@ -659,7 +671,7 @@ class ChannelList(list):
         """Split a comma-separated list of channel names.
         """
         out = []
-        namestr = re_quote.sub('', namestr)
+        namestr = QUOTE_REGEX.sub('', namestr)
         while True:
             namestr = namestr.strip('\' \n')
             if ',' not in namestr:
@@ -737,26 +749,32 @@ class ChannelList(list):
             name = name if name.startswith(r'\A') else r"\A%s" % name
             name = name if name.endswith(r'\Z') else r"%s\Z" % name
         name_regexp = re.compile(name, flags=flags)
-        c = list(self)
+
+        matched = list(self)
+
         if name is not None:
-            c = [entry for entry in c if
-                 name_regexp.search(entry.name) is not None]
+            matched = [entry for entry in matched if
+                       name_regexp.search(entry.name) is not None]
+
         if sample_rate is not None:
             sample_rate = (sample_rate.value if
                            isinstance(sample_rate, units.Quantity) else
                            float(sample_rate))
-            c = [entry for entry in c if entry.sample_rate and
-                 entry.sample_rate.value == sample_rate]
+            matched = [entry for entry in matched if entry.sample_rate and
+                       entry.sample_rate.value == sample_rate]
+
         if sample_range is not None:
-            c = [entry for entry in c if
-                 sample_range[0] <= entry.sample_rate.value <=
-                 sample_range[1]]
+            matched = [entry for entry in matched if
+                       sample_range[0] <= entry.sample_rate.value <=
+                       sample_range[1]]
+
         for attr, val in others.items():
             if val is not None:
-                c = [entry for entry in c if
-                     (hasattr(entry, attr) and getattr(entry, attr) == val)]
+                matched = [entry for entry in matched if
+                           (hasattr(entry, attr) and
+                            getattr(entry, attr) == val)]
 
-        return self.__class__(c)
+        return self.__class__(matched)
 
     @classmethod
     def query(cls, name, use_kerberos=None, debug=False):

@@ -365,8 +365,9 @@ class TimeSeriesBase(Series):
 
     @classmethod
     def fetch_open_data(cls, ifo, start, end, sample_rate=4096,
+                        tag=None, version=None,
                         format=None, host='https://losc.ligo.org',
-                        verbose=False, cache=False, **kwargs):
+                        verbose=False, cache=None, **kwargs):
         """Fetch open-access data from the LIGO Open Science Center
 
         Parameters
@@ -388,6 +389,14 @@ class TimeSeriesBase(Series):
             by LOSC at 4096 Hz, however there may be event-related
             data releases with a 16384 Hz rate, default: `4096`
 
+        tag : `str`, optional
+            file tag, e.g. ``'CLN'`` to select cleaned data, or ``'C00'``
+            for 'raw' calibrated data.
+
+        version : `int`, optional
+            version of files to download, defaults to highest discovered
+            version
+
         format : `str`, optional
             the data format to download and parse, defaults to the most
             efficient option based on third-party libraries available;
@@ -405,7 +414,8 @@ class TimeSeriesBase(Series):
 
         cache : `bool`, optional
             save/read a local copy of the remote URL, default: `False`;
-            useful if the same remote data are to be accessed multiple times
+            useful if the same remote data are to be accessed multiple times.
+            Set `GWPY_CACHE=1` in the environment to auto-cache.
 
         **kwargs
             any other keyword arguments are passed to the `TimeSeries.read`
@@ -414,7 +424,7 @@ class TimeSeriesBase(Series):
         Examples
         --------
         >>> from gwpy.timeseries import (TimeSeries, StateVector)
-        >>> print(TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+        >>> print(TimeSeries.fetch_open_data('H1', 1126259446, 1126259478))
         TimeSeries([  2.17704028e-19,  2.08763900e-19,  2.39681183e-19,
                     ...,   3.55365541e-20,  6.33533516e-20,
                       7.58121195e-20]
@@ -423,7 +433,7 @@ class TimeSeriesBase(Series):
                    dt: 0.000244140625 s,
                    name: Strain,
                    channel: None)
-        >>> print(StateVector.fetch_open_data('H1', 1126259446, 1126259478)
+        >>> print(StateVector.fetch_open_data('H1', 1126259446, 1126259478))
         StateVector([127,127,127,127,127,127,127,127,127,127,127,127,
                      127,127,127,127,127,127,127,127,127,127,127,127,
                      127,127,127,127,127,127,127,127]
@@ -446,13 +456,33 @@ class TimeSeriesBase(Series):
         ``format``-dependent, because they are recorded differently by LOSC
         in different formats.
 
+        For events published in O2 and later, LOSC typically provides
+        multiple data sets containing the original (``'C00'``) and cleaned
+        (``'CLN'``) data.
+        To select both data sets and plot a comparison, for example:
+
+        >>> orig = TimeSeries.fetch_open_data('H1', 1187008870, 1187008896,
+        ...                                   tag='C00')
+        >>> cln = TimeSeries.fetch_open_data('H1', 1187008870, 1187008896,
+        ...                                  tag='CLN')
+        >>> origasd = orig.asd(fftlength=4, overlap=2)
+        >>> clnasd = cln.asd(fftlength=4, overlap=2)
+        >>> plot = origasd.plot(label='Un-cleaned')
+        >>> ax = plot.gca()
+        >>> ax.plot(clnasd, label='Cleaned')
+        >>> ax.set_xlim(10, 1400)
+        >>> ax.set_ylim(1e-24, 1e-20)
+        >>> ax.legend()
+        >>> plot.show()
+
         Notes
         -----
         `StateVector` data are not available in ``txt.gz`` format.
         """
         from .io.losc import fetch_losc_data
         return fetch_losc_data(ifo, start, end, sample_rate=sample_rate,
-                               format=format, verbose=verbose, cache=cache,
+                               tag=tag, version=version, format=format,
+                               verbose=verbose, cache=cache,
                                host=host, cls=cls, **kwargs)
 
     @classmethod
@@ -563,8 +593,52 @@ class TimeSeriesBase(Series):
 
     # -- utilities ------------------------------
 
+    def shift(self, delta):
+        """Shift this `TimeSeries` forward in time by ``delta``
+
+        This modifies the series in-place.
+
+        Parameters
+        ----------
+        delta : `float`, `~astropy.units.Quantity`, `str`
+            The amount by which to shift (in seconds if `float`), give
+            a negative value to shift backwards in time
+
+        Examples
+        --------
+        >>> from gwpy.timeseries import TimeSeries
+        >>> a = TimeSeries([1, 2, 3, 4, 5], t0=0, dt=1)
+        >>> print(a.t0)
+        0.0 s
+        >>> a.shift(5)
+        >>> print(a.t0)
+        5.0 s
+        >>> a.shift('-1 hour')
+        -3595.0 s
+        """
+        delta = units.Quantity(delta, 's')
+        self.t0 += delta
+
     def plot(self, **kwargs):
-        """Plot the data for this `TimeSeries`
+        """Plot the data for this timeseries
+
+        All keywords are passed to `~gwpy.plotter.TimeSeriesPlot`
+
+        Returns
+        -------
+        plot : `~gwpy.plotter.TimeSeriesPlot`
+            the newly created figure, with populated Axes.
+
+        See Also
+        --------
+        matplotlib.pyplot.figure
+            for documentation of keyword arguments used to create the
+            figure
+        matplotlib.figure.Figure.add_subplot
+            for documentation of keyword arguments used to create the
+            axes
+        matplotlib.axes.Axes.plot
+            for documentation of keyword arguments used in rendering the data
         """
         from ..plotter import TimeSeriesPlot
         return TimeSeriesPlot(self, **kwargs)
@@ -623,16 +697,19 @@ class TimeSeriesBase(Series):
         """Convert this `TimeSeries` into a LAL TimeSeries.
         """
         import lal
-        from ..utils.lal import (LAL_TYPE_STR_FROM_NUMPY, to_lal_unit)
-        typestr = LAL_TYPE_STR_FROM_NUMPY[self.dtype.type]
+        from ..utils.lal import (find_typed_function, to_lal_unit)
+
+        # map unit
         try:
             unit = to_lal_unit(self.unit)
-        except ValueError as exc:
-            warnings.warn("%s, defaulting to lal.DimensionlessUnit" % str(exc))
+        except ValueError as e:
+            warnings.warn("%s, defaulting to lal.DimensionlessUnit" % str(e))
             unit = lal.DimensionlessUnit
-        create = getattr(lal, 'Create%sTimeSeries' % typestr.upper())
+
+        # create TimeSeries
+        create = find_typed_function(self.dtype, 'Create', 'TimeSeries')
         lalts = create(self.name, lal.LIGOTimeGPS(self.epoch.gps), 0,
-                       self.dt.value, unit, self.size)
+                       self.dt.value, unit, self.shape[0])
         lalts.data.data = self.value
         return lalts
 
@@ -693,7 +770,9 @@ class TimeSeriesBase(Series):
                 out = out.view(StateTimeSeries)
                 out.__metadata_finalize__(orig)
                 out.override_unit('')
-                out.name = '%s %s %s' % (orig.name, op_, value)
+                oname = orig.name if isinstance(orig, type(self)) else orig
+                vname = value.name if isinstance(value, type(self)) else value
+                out.name = '{0!s} {1!s} {2!s}'.format(oname, op_, vname)
             return out
 
     def __array_wrap__(self, obj, context=None):
@@ -708,7 +787,9 @@ class TimeSeriesBase(Series):
                 op_ = ufunc.__name__
             result = obj.view(StateTimeSeries)
             result.override_unit('')
-            result.name = '%s %s %s' % (obj.name, op_, value)
+            oname = obj.name if isinstance(obj, type(self)) else obj
+            vname = value.name if isinstance(value, type(self)) else value
+            result.name = '{0!s} {1!s} {2!s}'.format(oname, op_, vname)
         # otherwise, return a regular TimeSeries
         else:
             result = super(TimeSeriesBase, self).__array_wrap__(

@@ -28,6 +28,9 @@ __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 
 class Spectrum(CliProduct):
+    """
+    Plot the ASD spectrum of one or more time series
+    """
 
     def get_action(self):
         """Return the string used as "action" on command line.
@@ -48,12 +51,12 @@ class Spectrum(CliProduct):
         """Text for y-axis label
         """
         if args.nology:
-            ylabel = (r'$\mathrm{log_{10}  ASD}$ ' 
-                     r'$\left( \frac{\mathrm{%s}}' 
-                     r'{\sqrt{\mathrm{Hz}}}\right)$' % self.units)
+            ylabel = (r'$\mathrm{log_{10}  ASD}$ '
+                      r'$\left( \frac{\mathrm{%s}}'
+                      r'{\sqrt{\mathrm{Hz}}}\right)$' % self.units)
         else:
-            ylabel = (r'$\mathrm{ASD}$ $\left( \frac{\mathrm{%s}}' 
-                     r'{\sqrt{\mathrm{Hz}}}\right)$' % self.units)
+            ylabel = (r'$\mathrm{ASD}$ $\left( \frac{\mathrm{%s}}'
+                      r'{\sqrt{\mathrm{Hz}}}\right)$' % self.units)
         return ylabel
 
     def get_title(self):

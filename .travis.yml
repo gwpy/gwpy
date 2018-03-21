@@ -8,8 +8,9 @@ env:
 
 matrix:
   include:
-    # simple build
-    - python: 2.7
+    # -- simple builds --------------------------
+
+    - python: '2.7'
       addons:
         apt:
           packages:
@@ -21,7 +22,7 @@ matrix:
             - texlive-fonts-recommended
             - dvipng
             - libhdf5-serial-dev
-    - python: 3.4
+    - python: '3.4'
       addons:
         apt:
           packages:
@@ -33,7 +34,7 @@ matrix:
             - texlive-fonts-recommended
             - dvipng
             - libhdf5-serial-dev
-    - python: 3.5
+    - python: '3.5'
       addons:
         apt:
           packages:
@@ -45,7 +46,7 @@ matrix:
             - texlive-fonts-recommended
             - dvipng
             - libhdf5-serial-dev
-    - python: 3.6
+    - python: '3.6'
       addons:
         apt:
           packages:
@@ -59,7 +60,7 @@ matrix:
             - libhdf5-serial-dev
 
     - env: PIP_FLAGS="--upgrade --pre --quiet"
-      python: 'nightly'
+      python: '3.6'
       addons:
         apt:
           packages:
@@ -72,43 +73,9 @@ matrix:
             - dvipng
             - libhdf5-serial-dev
 
-    # debian 8 build
-    - env: DOCKER_IMAGE="ligo/software:jessie"
-      python: '2.7'
-      sudo: required
-      services:
-        - docker
-    - env: DOCKER_IMAGE="ligo/software:jessie"
-      python: '3.4'
-      sudo: required
-      services:
-        - docker
+    # -- reference OS builds --------------------
 
-    # debian 9 build
-    - env: DOCKER_IMAGE="ligo/software:stretch"
-      python: '2.7'
-      sudo: required
-      services:
-        - docker
-    - env: DOCKER_IMAGE="ligo/software:stretch"
-      python: '3.5'
-      sudo: required
-      services:
-        - docker
-
-    # debian 9 testing build
-    - env: DOCKER_IMAGE="ligo/software:stretch-proposed"
-      python: '2.7'
-      sudo: required
-      services:
-        - docker
-    - env: DOCKER_IMAGE="ligo/software:stretch-proposed"
-      python: '3.5'
-      sudo: required
-      services:
-        - docker
-
-    # sl7 build
+    # EL7
     - env: DOCKER_IMAGE="ligo/software:el7"
       python: '2.7'
       sudo: required
@@ -120,22 +87,57 @@ matrix:
       services:
         - docker
 
-    # macos build
+    # debian 8
+    - env: DOCKER_IMAGE="ligo/software:jessie"
+      python: '2.7'
+      sudo: required
+      services:
+        - docker
+    - env: DOCKER_IMAGE="ligo/software:jessie"
+      python: '3.4'
+      sudo: required
+      services:
+        - docker
+
+    # debian 9
+    - env: DOCKER_IMAGE="ligo/software:stretch"
+      python: '2.7'
+      sudo: required
+      services:
+        - docker
+    - env: DOCKER_IMAGE="ligo/software:stretch"
+      python: '3.5'
+      sudo: required
+      services:
+        - docker
+
+    # macOS
     - os: osx
       env: PYTHON_VERSION='2.7'
       language: minimal
       sudo: required
 
+    # -- full build -----------------------------
+
+    - env: DOCKER_IMAGE="ligo/software:stretch" EXTRAS=true
+      python: '2.7'
+      sudo: required
+      services:
+        - docker
+    - env: DOCKER_IMAGE="ligo/software:stretch" EXTRAS=true
+      python: '3.5'
+      sudo: required
+      services:
+        - docker
+
   allow_failures:
     - env: PIP_FLAGS="--upgrade --pre --quiet"
-    - env: DOCKER_IMAGE="ligo/software:jessie"
-      python: '3.4'
-    - env: DOCKER_IMAGE="ligo/software:stretch"
-      python: '3.5'
-    - env: DOCKER_IMAGE="ligo/software:stretch-proposed"
-      python: '3.5'
     - env: DOCKER_IMAGE="ligo/software:el7"
       python: '3.4'
+    - env: DOCKER_IMAGE="ligo/software:jessie"
+      python: '3.4'
+    - env: DOCKER_IMAGE="ligo/software:stretch" EXTRAS=true
+      python: '3.5'
 
   fast_finish: true
 
@@ -164,24 +166,20 @@ after_success:
   # build and deploy package files
   - . ./ci/deploy.sh
 
+before_deploy:
+  # manual clean up of repository
+  - ci_run "cd ${GWPY_PATH} && git clean -dfX"
+
 deploy:
   - provider: pypi
     user: duncanmmacleod
     password: ${PYPI_PASSWD}
+    distributions: sdist bdist_wheel
     on:
+      condition: -z "${DOCKER_IMAGE}"
       branch: master
       tags: true
-      distributions: sdist bdist_wheel
       python: '2.7'
-      repo: gwpy/gwpy
-  - provider: pypi
-    user: duncanmmacleod
-    password: ${PYPI_PASSWD}
-    on:
-      branch: master
-      tags: true
-      distributions: bdist_wheel
-      python: '3.5'
       repo: gwpy/gwpy
 
 notifications:

@@ -36,7 +36,11 @@ except ImportError:
 
 from gwpy.signal import (filter_design, window)
 from gwpy.signal.fft import (get_default_fft_api,
-                             lal as fft_lal, utils as fft_utils,
+                             basic as fft_basic,
+                             scipy as fft_scipy,
+                             lal as fft_lal,
+                             pycbc as fft_pycbc,
+                             utils as fft_utils,
                              registry as fft_registry, ui as fft_ui)
 from gwpy.timeseries import TimeSeries
 
@@ -269,7 +273,29 @@ class TestSignalFftUI(object):
         ftp = fft_ui.normalize_fft_params(
             TimeSeries(numpy.zeros(1024), sample_rate=256),
             {'window': 'hann'})
-        assert ftp == {'nfft': 1024, 'noverlap': 512, 'window': 'hann'}
+        win = signal.get_window('hann', 1024)
+        assert ftp.pop('nfft') == 1024
+        assert ftp.pop('noverlap') == 512
+        utils.assert_array_equal(ftp.pop('window'), win)
+        assert not ftp
+
+    def test_chunk_timeseries(self):
+        """Test :func:`gwpy.signal.fft.ui._chunk_timeseries`
+        """
+        a = TimeSeries(numpy.arange(400))
+        chunks = list(fft_ui._chunk_timeseries(a, 100, 50))
+        assert chunks == [
+            a[:150], a[75:225], a[175:325], a[275:400],
+        ]
+
+    def test_fft_library(self):
+        """Test :func:`gwpy.signal.fft.ui._fft_library`
+        """
+        assert fft_ui._fft_library(fft_lal.welch) == 'lal'
+        assert fft_ui._fft_library(fft_scipy.welch) == 'scipy'
+        assert fft_ui._fft_library(fft_pycbc.welch) == 'pycbc'
+        assert fft_ui._fft_library(fft_basic.welch) == (
+            get_default_fft_api().split('.', 1)[0])
 
 
 # -- gwpy.signal.fft.utils ----------------------------------------------------
@@ -293,6 +319,29 @@ class TestSignalFftUtils(object):
         assert scale_(None) == units.Unit('Hz^-1')
 
 
+# -- gwpy.signal.fft.basic ----------------------------------------------------
+
+class TestSignalFftBasic(object):
+    def test_map_fft_method(self):
+        """Test :func:`gwpy.signal.fft.basic.map_fft_method`
+        """
+        # check that defining a new method that doesn't map to a
+        # library method raises an exception
+        @fft_basic.map_fft_method
+        def blah(*args, **kwargs):
+            pass
+
+        with pytest.raises(RuntimeError) as exc:
+            blah()
+        assert str(exc.value).startswith('no underlying API method')
+
+        # check that if we only have scipy, we get the same error for
+        # median-mean
+        if get_default_fft_api() == 'scipy':
+            with pytest.raises(RuntimeError):
+                fft_basic.median_mean(None, None)
+
+
 # -- gwpy.signal.fft.lal ------------------------------------------------------
 
 @utils.skip_missing_dependency('lal')
@@ -312,7 +361,7 @@ class TestSignalFftLal(object):
         assert isinstance(w, lal.REAL4Window)
         assert w.sum == 32.31817089602309
         # test errors
-        with pytest.raises(AttributeError):
+        with pytest.raises(ValueError):
             fft_lal.generate_window(128, 'unknown')
         with pytest.raises(AttributeError):
             fft_lal.generate_window(128, dtype=int)

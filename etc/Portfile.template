@@ -1,7 +1,5 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
-# -- basic -------------------------------------------------------------------
-
 PortSystem          1.0
 PortGroup           python 1.0
 PortGroup           github 1.0
@@ -10,7 +8,7 @@ github.setup        gwpy gwpy {{ version }} v
 name                py-gwpy
 
 categories-append   science
-maintainers         {ligo.org:duncan.macleod @duncanmmacleod}
+maintainers         {ligo.org:duncan.macleod @duncanmmacleod} openmaintainer
 
 platforms           darwin
 license             GPL-3
@@ -21,20 +19,16 @@ long_description    GWpy is a collaboration-driven Python package providing \
                     gravitational-wave detectors.
 homepage            https://gwpy.github.io
 
-# -- sources -----------------------------------------------------------------
-
 master_sites        pypi:g/gwpy \
                     https://github.com/gwpy/gwpy/releases/v${version}/
-distname            gwpy-${version}
 
 checksums   rmd160  {{ rmd160 }} \
-            sha256  {{ sha256 }}
-
-# -- python configuration ----------------------------------------------------
+            sha256  {{ sha256 }} \
+            size    {{ size }}
 
 # until glue is available for multiple python versions, we are stuck to
 # python 2.7
-#python.versions     27 34 35 36
+
 python.versions     27
 python.default_version 27
 
@@ -53,8 +47,6 @@ if {${name} ne ${subport}} {
     }
 
     depends_build-append port:py${python.version}-setuptools
-
-    # -- variants -------------------------------
 
     variant nds2 description {Add NDS2 support} {
         depends_lib-append port:py${python.version}-nds2-client

@@ -26,6 +26,7 @@ import numpy
 from astropy.io import registry as io_registry
 
 from ..types import (Quantity, Array2D)
+from ..types.sliceutils import null_slice
 from ..segments import Segment
 from .core import FrequencySeries
 
@@ -101,10 +102,11 @@ class SpectralVariance(Array2D):
         """
         return self.bins[:-1]
 
+    @property
     def yspan(self):
         """Amplitude range (low, high) spanned by this array
         """
-        return Segment(self.bins[0], self.bins[-1])
+        return Segment(self.bins.value[0], self.bins.value[-1])
 
     @property
     def dy(self):
@@ -193,21 +195,10 @@ class SpectralVariance(Array2D):
     # -- methods --------------------------------
 
     def __getitem__(self, item):
-        if isinstance(item, int):
-            out = self.value[item].view(self._columnclass)
-            out.unit = self.unit
-            try:
-                out.xindex = self.yindex
-            except AttributeError:
-                pass
-            return out
-        if isinstance(item, tuple) and item[0] == slice(None, None, None):
-            out = self.value.__getitem__(item).view(self._rowclass)
-            out.xindex = self.xindex
-            return out
-        if isinstance(item, tuple) and len(item) == 2:
-            return self[item[0]][item[1]]
-        return super(SpectralVariance, self).__getitem__(item)
+        # disable slicing bins
+        if not isinstance(item, tuple) or null_slice(item[1]):
+            return super(SpectralVariance, self).__getitem__(item)
+        raise NotImplementedError("cannot slice SpectralVariance across bins")
     __getitem__.__doc__ = Array2D.__getitem__.__doc__
 
     @classmethod
@@ -341,6 +332,24 @@ class SpectralVariance(Array2D):
 
     def plot(self, **kwargs):
         """Plot this `SpectralVariance`
+
+        All arguments are passed to `~gwpy.plotter.FrequencySeriesPlot`
+
+        Returns
+        -------
+        plot : `~gwpy.plotter.FrequencySeriesPlot`
+            a new `FrequencySeriesPlot` rendering of this `FrequencySeries`
+
+        See Also
+        --------
+        matplotlib.pyplot.figure
+            for documentation of keyword arguments used to create the
+            figure
+        matplotlib.figure.Figure.add_subplot
+            for documentation of keyword arguments used to create the
+            axes
+        gwpy.plotter.FrequencySeriesAxes.plot_variance
+            for documentation of keyword arguments used in rendering the data
         """
         from ..plotter import FrequencySeriesPlot
         return FrequencySeriesPlot(self, **kwargs)

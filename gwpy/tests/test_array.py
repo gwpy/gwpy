@@ -39,6 +39,7 @@ from gwpy.time import LIGOTimeGPS
 import utils
 
 warnings.filterwarnings('always', category=units.UnitsWarning)
+warnings.filterwarnings('always', category=UserWarning)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -100,6 +101,13 @@ class TestArray(object):
         # test with some data
         array = self.create()
         utils.assert_array_equal(array.value, self.data)
+
+        # test that copy=True ensures owndata
+        a = self.create(copy=False)
+        assert self.create(copy=False).flags.owndata is False
+        assert self.create(copy=True).flags.owndata is True
+
+        # return array for subclasses to use
         return array
 
     def test_unit(self, array):
@@ -386,9 +394,22 @@ class TestSeries(TestArray):
     # -- test methods ---------------------------
 
     def test_getitem(self, array):
-        assert array[0].value == array.value[0]
-        assert isinstance(array[0], units.Quantity)
-        assert array[0].unit == array.unit
+        # item access
+        utils.assert_quantity_equal(
+            array[0], units.Quantity(array.value[0], array.unit))
+
+        # slice
+        utils.assert_quantity_equal(array[1::2], self.TEST_CLASS(
+            array.value[1::2], x0=array.x0+array.dx, dx=array.dx*2,
+            name=array.name, epoch=array.epoch, unit=array.unit),
+        )
+
+        # index array
+        a = numpy.array([3, 4, 1, 2])
+        utils.assert_quantity_equal(array[a], self.TEST_CLASS(
+            array.value[a], xindex=array.xindex[a],
+            name=array.name, epoch=array.epoch, unit=array.unit),
+        )
 
     def test_zip(self, array):
         z = array.zip()
@@ -401,6 +422,7 @@ class TestSeries(TestArray):
         # check that warnings are printed for out-of-bounds
         with pytest.warns(UserWarning):
             array.crop(array.xspan[0]-1, array.xspan[1])
+        with pytest.warns(UserWarning):
             array.crop(array.xspan[0], array.xspan[1]+1)
 
     def test_is_compatible(self, array):
@@ -588,8 +610,9 @@ class TestArray2D(TestSeries):
     @classmethod
     def setup_class(cls, dtype=None):
         numpy.random.seed(SEED)
-        cls.data = (numpy.random.random(100)
-                    * 1e5).astype(dtype=dtype).reshape((20, 5))
+        cls.data = (numpy.random.random(100) * 1e5).astype(
+            dtype=dtype).reshape(
+            (20, 5))
         cls.datasq = cls.data ** 2
 
     # -- test properties ------------------------
@@ -686,15 +709,45 @@ class TestArray2D(TestSeries):
 
     # -- test methods ---------------------------
 
-    def test_getitem(self, array):
-        array = self.create()
-        assert array[0, 0] == array[0][0]
-        utils.assert_array_equal(array[0].value, array.value[0])
-        assert isinstance(array[0], self.TEST_CLASS._columnclass)
-        assert isinstance(array[0][0], units.Quantity)
-        assert array[0].unit == array.unit
-        assert array[0][0].unit == array.unit
-        assert isinstance(array[:, 0], self.TEST_CLASS._rowclass)
+    @pytest.mark.parametrize('create_kwargs', [
+        {'x0': 0, 'dx': 1, 'y0': 100, 'dy': 2},
+        {'xindex': numpy.arange(20), 'yindex': numpy.linspace(0, 100, 5)},
+        {'x0': 0, 'dx': 1, 'yindex': numpy.linspace(0, 100, 5)},
+        {'xindex': numpy.arange(20), 'y0': 100, 'dy': 2},
+    ])
+    def test_getitem(self, array, create_kwargs):
+        array = self.create(name='test_getitem', **create_kwargs)
+
+        # test element returns as quantity
+        element = array[0, 0]
+        assert element == array[0][0]
+        assert isinstance(element, units.Quantity)
+        utils.assert_quantity_equal(element, array.value[0, 0] * array.unit)
+
+        # test column slice returns as _columnclass
+        utils.assert_quantity_sub_equal(array[2], array[2, :])
+        column = array[0, 0::2]
+        utils.assert_quantity_sub_equal(column, self.TEST_CLASS._columnclass(
+            array.value[0, 0::2], x0=array.y0, dx=array.dy*2, name=array.name,
+            channel=array.channel, unit=array.unit, epoch=array.epoch))
+
+        # test row slice returns as _rowclass
+        row = array[1:10:3, 0]
+        utils.assert_array_equal(row.value, array.value[1:10:3, 0])
+        utils.assert_quantity_sub_equal(row, self.TEST_CLASS._rowclass(
+                array.value[1:10:3, 0],
+                x0=array.x0+array.dx, dx=array.dx*3,
+                name=array.name, channel=array.channel, unit=array.unit),
+            exclude=['epoch'])
+
+        # test dual slice returns type(self) with metadata
+        subarray = array[1:5:2, 1:5:2]
+        utils.assert_quantity_sub_equal(subarray, self.TEST_CLASS(
+                array.value[1:5:2, 1:5:2],
+                x0=array.x0+array.dx, dx=array.dx*2,
+                y0=array.y0+array.dy, dy=array.dy*2,
+                name=array.name, channel=array.channel, unit=array.unit),
+            exclude=['epoch'])
 
     def test_is_compatible(self, array):
         super(TestArray2D, self).test_is_compatible(array)

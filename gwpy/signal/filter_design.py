@@ -240,6 +240,9 @@ def parse_filter(args, analog=False, sample_rate=None):
     # parse IIR filter
     if isinstance(args, LinearTimeInvariant):
         lti = args
+    elif (isinstance(args, numpy.ndarray) and
+            args.ndim == 2 and args.shape[1] == 6):
+        lti = signal.lti(*signal.sos2zpk(args))
     else:
         lti = signal.lti(*args)
 

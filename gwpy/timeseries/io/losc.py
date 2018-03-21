@@ -24,8 +24,6 @@ For more details, see https://losc.ligo.org
 from __future__ import print_function
 
 import os.path
-import sys
-import json
 import re
 
 from six import string_types
@@ -38,19 +36,29 @@ from astropy.utils.data import get_readable_fileobj
 
 from .gwf import get_default_gwf_api
 from .. import (StateVector, TimeSeries)
-from ...io import (hdf5 as io_hdf5, utils as io_utils)
+from ...io import (hdf5 as io_hdf5, utils as io_utils, losc as io_losc)
 from ...io.cache import (cache_segments, file_segment)
 from ...detector.units import parse_unit
 from ...segments import (Segment, SegmentList)
 from ...time import to_gps
 
-# default URL
-LOSC_URL = 'https://losc.ligo.org'
-
 # ASCII parsing globals
 LOSC_ASCII_HEADER_REGEX = re.compile(
     br'\A# starting GPS (?P<epoch>\d+) duration (?P<duration>\d+)\Z')
 LOSC_ASCII_COMMENT = br'#'
+
+# LOSC filename re
+LOSC_URL_RE = re.compile(
+    r"\A((.*/)*(?P<obs>[^/]+)-"
+    r"(?P<ifo>[A-Z][0-9])_LOSC_"
+    r"((?P<tag>[^/]+)_)?"
+    r"(?P<samp>\d+)_"
+    r"(?P<version>V\d+)-"
+    r"(?P<strt>[^/]+)-"
+    r"(?P<dur>[^/\.]+)\."
+    r"(?P<ext>[^/]+))\Z"
+)
+LOSC_VERSION_RE = re.compile(r'V\d+')
 
 
 # -- utilities ----------------------------------------------------------------
@@ -72,7 +80,7 @@ def _parse_formats(formats, cls=TimeSeries):
 
         # prefer HDF5 if h5py available
         try:
-            import h5py
+            import h5py  # pylint: disable=unused-variable
         except ImportError:
             pass
         else:
@@ -84,40 +92,94 @@ def _parse_formats(formats, cls=TimeSeries):
     return [formats]
 
 
+def _download_file(url, cache=None, verbose=False):
+    if cache is None:
+        cache = os.getenv('GWPY_CACHE', 'no').lower() in (
+            '1', 'true', 'yes', 'y',
+        )
+    return get_readable_fileobj(url, cache=cache, show_progress=verbose)
+
+
 # -- JSON handling ------------------------------------------------------------
 
-def _fetch_losc_json(url):
-    with get_readable_fileobj(url, show_progress=False,
-                              encoding='utf-8') as response:
-        data = response.read()
-        try:
-            return json.loads(data)
-        except ValueError as exc:
-            exc.args = ("Failed to parse LOSC JSON from %r: %s"
-                        % (url, str(exc)),)
-            raise
-
-
-def _parse_losc_json(metadata, detector, sample_rate=4096,
-                     format='hdf5', duration=4096):
-    """Parse a list of file URLs from a LOSC metadata packet
+def _match_urls(urls, start, end, tag=None, version=None):
+    """Match LOSC URLs for a given [start, end) interval
     """
-    urls = []
-    for fmd in metadata:  # loop over file metadata dicts
-        # skip over files we don't want
-        if (fmd['detector'] != detector or
-                fmd['sampling_rate'] != sample_rate or
-                fmd['format'] != format or
-                fmd['duration'] != duration):
+    matched = {}
+    matched_tags = set()
+
+    # sort URLs by duration, then start time, then ...
+    urls.sort(key=lambda u:
+              os.path.splitext(os.path.basename(u))[0].split('-')[::-1])
+
+    # format version request
+    if version and not LOSC_VERSION_RE.match(str(version)):
+        version = 'V{}'.format(int(version))
+
+    # loop URLS
+    for url in urls:
+        try:
+            m = _match_url(url, start, end, tag=tag, version=version)
+        except StopIteration:
+            break
+        if m is None:
             continue
-        urls.append(str(fmd['url']))
-    return urls
+
+        mtag, mvers = m
+        matched_tags.add(mtag)
+        matched.setdefault(mvers, [])
+        matched[mvers].append(url)
+
+    # if multiple file tags found, and user didn't specify, error
+    if len(matched_tags) > 1:
+        tags = ', '.join(map(repr, matched_tags))
+        raise ValueError("multiple LOSC URL tags discovered in dataset, "
+                         "please select one of: {}".format(tags))
+
+    # extract highest version
+    try:
+        return matched[max(matched)]
+    except ValueError:  # no matched files
+        return []
+
+
+def _match_url(url, start, end, tag=None, version=None):
+    """Match a URL against requested parameters
+
+    Returns
+    -------
+    None
+        if the URL doesn't match the request
+
+    tag, version : `str`, `int`
+        if the URL matches the request
+
+    Raises
+    ------
+    StopIteration
+        if the start time of the URL is _after_ the end time of the
+        request
+    """
+    reg = LOSC_URL_RE.match(os.path.basename(url)).groupdict()
+    if (tag and reg['tag'] != tag) or (version and reg['version'] != version):
+        return
+
+    # match times
+    gps = int(reg['strt'])
+    if gps >= end:  # too late, stop
+        raise StopIteration
+
+    dur = int(reg['dur'])
+    if gps + dur <= start:  # too early
+        return
+
+    return reg['tag'], int(reg['version'][1:])
 
 
 # -- file discovery -----------------------------------------------------------
 
-def find_losc_urls(detector, start, end, host=LOSC_URL,
-                   sample_rate=4096, format=None):
+def find_losc_urls(detector, start, end, host=io_losc.LOSC_URL,
+                   sample_rate=4096, tag=None, version=None, format=None):
     """Fetch the metadata from LOSC regarding a given GPS interval
     """
     start = int(start)
@@ -125,34 +187,63 @@ def find_losc_urls(detector, start, end, host=LOSC_URL,
     span = SegmentList([Segment(start, end)])
     formats = _parse_formats(format)
 
-    # -- step 1: query the interval
-    url = '%s/archive/%d/%d/json/' % (host, start, end)
-    metadata = _fetch_losc_json(url)
+    metadata = io_losc.fetch_dataset_json(start, end, host=host)
 
-    # -- step 2: try and get data from an event (smaller files)
-    for form in formats:
-        for dstype in ['events', 'runs']:
-            for dataset in metadata[dstype]:
-                # validate IFO is present
-                if detector not in metadata[dstype][dataset]['detectors']:
+    # find dataset that provides required data
+    for dstype in sorted(metadata, key=lambda x: 0 if x == 'events' else 1):
+
+        # work out how to get the event URLS
+        if dstype == 'events':
+            def _get_urls(dataset):
+                return io_losc.fetch_event_json(dataset, host=host)['strain']
+        elif dstype == 'runs':
+            def _get_urls(dataset):
+                return io_losc.fetch_run_json(dataset, detector, start, end,
+                                              host=host)['strain']
+        else:
+            raise ValueError(
+                "Unrecognised LOSC dataset type {!r}".format(dstype))
+
+        # search datasets
+        for dataset in metadata[dstype]:
+            dsmeta = metadata[dstype][dataset]
+
+            # validate IFO is present
+            if detector not in dsmeta['detectors']:
+                continue
+
+            # check GPS for run datasets
+            try:
+                seg = Segment(dsmeta['GPSstart'], dsmeta['GPSend'])
+            except KeyError:  # probably not a 'run' dataset
+                pass
+            else:
+                if not seg.intersects(span[0]):
                     continue
-                # get metadata for this dataset
+
+            # get URL list for this dataset
+            urls = _get_urls(dataset)
+
+            for form in formats:
+                # sieve URLs based on basic parameters,
+                # and match tag and version
+                cache = _match_urls(
+                    [u['url'] for u in io_losc.sieve_urls(
+                        urls, detector=detector,
+                        sampling_rate=sample_rate, format=form)],
+                    start, end, tag=tag, version=version)
+
+                # if event dataset, pick shortest file that covers request
                 if dstype == 'events':
-                    url = '%s/archive/%s/json/' % (host, dataset)
-                else:
-                    url = ('%s/archive/links/%s/%s/%d/%d/json/'
-                           % (host, dataset, detector, start, end))
-                emd = _fetch_losc_json(url)
-                # get cache and sieve for our segment
-                for duration in [32, 4096]:  # try short files for events first
-                    cache = _parse_losc_json(
-                        emd['strain'], detector, sample_rate=sample_rate,
-                        format=form, duration=duration)
-                    cache = [u for u in cache if
-                             file_segment(u).intersects(span[0])]
-                    # if full span covered, return now
-                    if not span - cache_segments(cache):
-                        return cache
+                    for url in cache:
+                        a, b = file_segment(url)
+                        if a <= start and b >= end:
+                            return [url]
+
+                # otherwise if url list covers the full requested interval
+                elif not span - cache_segments(cache):
+                    return cache
+
     raise ValueError("Cannot find a LOSC dataset for %s covering [%d, %d)"
                      % (detector, start, end))
 
@@ -163,7 +254,7 @@ def _fetch_losc_data_file(url, *args, **kwargs):
     """Internal function for fetching a single LOSC file and returning a Series
     """
     cls = kwargs.pop('cls', TimeSeries)
-    cache = kwargs.pop('cache', False)
+    cache = kwargs.pop('cache', None)
     verbose = kwargs.pop('verbose', False)
 
     # match file format
@@ -178,12 +269,14 @@ def _fetch_losc_data_file(url, *args, **kwargs):
     elif ext == '.gwf':
         kwargs.setdefault('format', 'gwf')
 
-    with get_readable_fileobj(url, cache=cache, show_progress=verbose) as rem:
+    with _download_file(url, cache, verbose=verbose) as rem:
         if verbose:
-            print('Reading data... ')
+            print('Reading data...', end=' ')
         try:
             series = cls.read(rem, *args, **kwargs)
         except Exception as exc:
+            if verbose:
+                print('')
             exc.args = ("Failed to read LOSC data from %r: %s"
                         % (url, str(exc)),)
             raise
@@ -200,13 +293,16 @@ def _fetch_losc_data_file(url, *args, **kwargs):
                 except (TypeError, ValueError):  # don't care, bad LOSC
                     pass
 
+            if verbose:
+                print('[Done]')
             return series
 
 
 # -- remote data access (the main event) --------------------------------------
 
-def fetch_losc_data(detector, start, end, host=LOSC_URL, sample_rate=4096,
-                    format=None, cls=TimeSeries, **kwargs):
+def fetch_losc_data(detector, start, end, host=io_losc.LOSC_URL,
+                    sample_rate=4096, tag=None, version=None, format=None,
+                    cls=TimeSeries, **kwargs):
     """Fetch LOSC data for a given detector
 
     This function is for internal purposes only, all users should instead
@@ -222,7 +318,8 @@ def fetch_losc_data(detector, start, end, host=LOSC_URL, sample_rate=4096,
 
     # get cache of URLS
     cache = find_losc_urls(detector, start, end, host=host,
-                           sample_rate=sample_rate, format=formats)
+                           sample_rate=sample_rate, tag=tag, version=version,
+                           format=formats)
     if kwargs.get('verbose', False):
         print("Fetched %d URLs from %s for [%d .. %d)"
               % (len(cache), host, int(start), int(end)))

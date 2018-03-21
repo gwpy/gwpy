@@ -100,12 +100,12 @@ class Plot(figure.Figure):
     # -- Plot methods ---------------------------
 
     def get_auto_refresh(self):
-        """Return this `Plot`s auto-refresh setting
+        """Return the auto-refresh setting for this `Plot`.
         """
         return self._auto_refresh
 
     def set_auto_refresh(self, refresh):
-        """Set this `Plot`s auto-refresh setting
+        """Set the auto-refresh setting for this `Plot`.
 
         With auto_refresh set to `True`, all modifications of the underlying
         `Axes` will trigger the plot to be re-drawn
@@ -156,9 +156,8 @@ class Plot(figure.Figure):
     def save(self, *args, **kwargs):
         """Save the figure to disk.
 
-        All `args` and `kwargs` are passed directly to the savefig
-        method of the underlying `matplotlib.figure.Figure`
-        self.fig.savefig(*args, **kwargs)
+        This method is an alias to :meth:`~matplotlib.figure.Figure.savefig`,
+        all arguments are passed directory to that method.
         """
         self.savefig(*args, **kwargs)
 
@@ -328,6 +327,11 @@ class Plot(figure.Figure):
 
         # make colour bar
         colorbar = self.colorbar(mappable, cax=cax, ax=ax, **kwargs)
+
+        # position ticks
+        if location == 'top':
+            cax.xaxis.tick_top()
+            cax.xaxis.set_label_position('top')
 
         # set label
         if label:
@@ -978,22 +982,26 @@ class Plot(figure.Figure):
     # -- utilities ------------------------------
 
     @staticmethod
-    def _get_axes_data(inputs, sep=False):
+    def _get_axes_data(inputs, sep=False, flat=False):
         """Determine the number of axes from the input args to this `Plot`
 
         Parameters
         ----------
         inputs : `list` of array-like data sets
-            a list of data arrays, or a list of lists of data sets
+            A list of data arrays, or a list of lists of data sets
 
         sep : `bool`, optional
-            plot each set of data on a separate `Axes`
+            Plot each set of data on a separate `Axes`
+
+        flat : `bool`, optional
+            Return a flattened list of data objects
 
         Returns
         -------
         axesdata : `list` of lists of array-like data
-            a `list` with one element per required `Axes` containing the
-            array-like data sets for those `Axes`
+            A `list` with one element per required `Axes` containing the
+            array-like data sets for those `Axes`, unless ``flat=True``
+            is given.
 
         Notes
         -----
@@ -1003,40 +1011,37 @@ class Plot(figure.Figure):
         - if a `list` of data arrays are given, and `sep=True`, use N `Axes,
           one for each data array
         - if a nested `list` of data arrays are given, ignore `sep` and
-          use one `Axes` for each element in the top list.
+          use one `Axes` for each group of arrays.
 
-        For example:
-
-            >>> Plot._get_naxes([data1, data2], sep=False)
-            [[data1, data2]]
-            >>> Plot._get_naxes([data1, data2], sep=True)
-            [[data1], [data2]]
-            >>> Plot._get_naxes([[data1, data2], data3])
-            [[data1, data2], [data3]]
+        Examples
+        --------
+        >>> from gwpy.plotter import Plot
+        >>> Plot._get_naxes([1, 2], sep=False)
+        [[1, 2]]
+        >>> Plot._get_naxes([1, 2], sep=True)
+        [[1], [2]]
+        >>> Plot._get_naxes([[1, 2], 3])
+        [[1, 2], [3]]
         """
-        # if not given list, default to 1
-        if not iterable(inputs):
-            return [inputs]
-        if not inputs:
-            return []
         # if given a nested list of data, multiple axes are required
-        if any([isinstance(x, (list, tuple, dict)) for x in inputs]):
+        if any(isinstance(x, (list, tuple, dict)) for x in inputs):
             sep = True
+
         # build list of lists
         out = []
-        if not sep:
-            out.append([])
         for x in inputs:
-            # if not sep, each element of inputs is a data set
-            if not sep:
-                out[0].append(x)
-            # otherwise if this element is a list already, that's fine
-            elif isinstance(x, (list, tuple)):
+            if isinstance(x, (list, tuple)):  # new group from iterable
                 out.append(x)
-            elif isinstance(x, dict):
+            elif isinstance(x, dict):  # new group from dict
                 out.append(x.values())
-            else:
+            elif sep or not out:  # new group from dataset
                 out.append([x])
+            else:  # append input to most recent group
+                out[-1].append(x)
+
+        if flat:
+            return [s for group in out for s in group]
+
         return out
 
     @staticmethod
@@ -1056,10 +1061,9 @@ class Plot(figure.Figure):
         axargs, artistargs : `list` of `dict`
             separated kwarg `dict` for the the axes and the artists
         """
-        separatedargs = []
-        for arglist in [utils.AXES_PARAMS, utils.ARTIST_PARAMS]:
-            separatedargs.append(dict())
+        separatedargs = [dict(), dict()]
+        for i, arglist in enumerate([utils.AXES_PARAMS, utils.ARTIST_PARAMS]):
             for key in arglist:
                 if key in kwargs:
-                    separatedargs[-1][key] = kwargs.pop(key)
+                    separatedargs[i][key] = kwargs.pop(key)
         return separatedargs

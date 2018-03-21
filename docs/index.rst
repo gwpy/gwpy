@@ -29,6 +29,7 @@ First steps
 
    What is GWpy? <overview>
    How do I install GWpy? <install/index>
+   Citing GWpy <citing>
 
 Working with data
 ~~~~~~~~~~~~~~~~~
@@ -81,6 +82,13 @@ Working with data
    detector/channel
    time/index
    astro/index
+
+**Developer notes**
+
+.. toctree::
+   :maxdepth: 1
+
+   dev/release
 
 .. ----------------------------------------------------------------
 .. other sections (not directly linked, but need for cross-linking)

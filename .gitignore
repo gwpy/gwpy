@@ -39,6 +39,7 @@ pip-delete-this-directory.txt
 /docs/*.inv
 /docs/api/
 /docs/cli/*.png
+/docs/citing.rst
 
 # OS/editor files
 *.swp

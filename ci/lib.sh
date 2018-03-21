@@ -51,6 +51,10 @@ get_os_type() {
     fi
 }
 
+get_debian_version() {
+    cat /etc/debian_version | cut -d\. -f1
+}
+
 get_package_manager() {
     local ostype=`get_os_type`
     if [ $ostype == macos ]; then
@@ -95,7 +99,7 @@ install_package() {
 }
 
 get_python_version() {
-    if [ -z ${PYTHON_VERSION} ]; then
+    if [ -z "${PYTHON_VERSION}" ]; then
         PYTHON_VERSION=`python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'`
     fi
     export PYTHON_VERSION
@@ -108,36 +112,32 @@ get_environment() {
     IFS='.' read PY_MAJOR_VERSION PY_MINOR_VERSION <<< "$pyversion"
     PY_XY="${PY_MAJOR_VERSION}${PY_MINOR_VERSION}"
     PYTHON=python$pyversion
+    PIP="${PYTHON} -m pip"
     case "$pkger" in
         "port")
             PY_DIST=python${PY_XY}
             PY_PREFIX=py${PY_XY}
-            PIP=pip-$pyversion
+            PIP="sudo ${PIP}"
             ;;
         "apt-get")
             if [ ${PY_MAJOR_VERSION} == 2 ]; then
                 PY_DIST=python
                 PY_PREFIX=python
-                PIP=pip
             else
                 PY_DIST=python${PY_MAJOR_VERSION}
                 PY_PREFIX=python${PY_MAJOR_VERSION}
-                PIP=pip${PY_MAJOR_VERSION}
             fi
             ;;
         "yum")
             if [ ${PY_MAJOR_VERSION} == 2 ]; then
                 PY_DIST=python
                 PY_PREFIX=python
-                PIP=pip
             elif [ ${PY_XY} -eq 34 ]; then
                 PY_DIST=python${PY_XY}
                 PY_PREFIX=python${PY_XY}
-                PIP=pip${PY_MAJOR_VERSION}
             else
                 PY_DIST=python${PY_XY}u
                 PY_PREFIX=python${PY_XY}u
-                PIP=pip$pyversion
             fi
             ;;
     esac

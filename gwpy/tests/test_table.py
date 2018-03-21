@@ -22,9 +22,11 @@
 import os.path
 import shutil
 import tempfile
+from ssl import SSLError
 
 from six import PY2
 from six.moves import StringIO
+from six.moves.urllib.error import URLError
 
 import pytest
 
@@ -40,10 +42,12 @@ from astropy.io.ascii import InconsistentTableError
 from astropy.table import vstack
 
 from gwpy.frequencyseries import FrequencySeries
+from gwpy.io import ligolw as io_ligolw
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.table import (Table, EventTable, filters, GravitySpyTable)
 from gwpy.table.filter import filter_table
 from gwpy.table.io.hacr import (HACR_COLUMNS, get_hacr_triggers)
+from gwpy.time import LIGOTimeGPS
 from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
 from gwpy.plotter import (EventTablePlot, EventTableAxes, TimeSeriesPlot,
                           HistogramPlot)
@@ -142,12 +146,6 @@ class TestTable(object):
             utils.assert_table_equal(table, t2, almost_equal=True)
             assert t2.meta.get('tablename', None) == 'sngl_burst'
 
-            # check accessing get_xxx columns works (and pulls in gpscols)
-            t3 = _read(columns=['peak'])
-            assert 'peak' in t3.columns
-            utils.assert_array_equal(
-                t3['peak'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
-
             # check auto-discovery of 'time' columns works
             from glue.ligolw.lsctables import LIGOTimeGPS
             with pytest.warns(DeprecationWarning):
@@ -228,6 +226,26 @@ class TestTable(object):
                 _read(get_as_columns=True)
             with pytest.warns(DeprecationWarning):
                 _read(on_attributeerror='anything')
+
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')
+    def test_read_write_ligolw_property_columns(self):
+        table = self.create(100, ['peak', 'snr', 'central_freq'],
+                            ['f8', 'f4', 'f4'])
+        with tempfile.NamedTemporaryFile(suffix='.xml') as f:
+            # write table
+            table.write(f, format='ligolw', tablename='sngl_burst')
+
+            # read raw ligolw and check gpsproperty was unpacked properly
+            llw = io_ligolw.read_table(f, tablename='sngl_burst')
+            for col in ('peak_time', 'peak_time_ns'):
+                assert col in llw.columnnames
+            with io_ligolw.patch_ligotimegps():
+                utils.assert_array_equal(llw.get_peak(), table['peak'])
+
+            # read table and assert gpsproperty was repacked properly
+            t2 = self.TABLE.read(f, columns=table.colnames,
+                                 use_numpy_dtypes=True)
+            utils.assert_table_equal(t2, table, almost_equal=True)
 
     @utils.skip_missing_dependency('root_numpy')
     def test_read_write_root(self, table):
@@ -524,11 +542,9 @@ class TestGravitySpyTable(TestEventTable):
     TABLE = GravitySpyTable
 
     def test_search(self):
-        from ssl import SSLError
-
         try:
             t2 = self.TABLE.search(uniqueID="8FHTgA8MEu", howmany=1)
-        except SSLError as e:
+        except (URLError, SSLError) as e:
             pytest.skip(str(e))
 
         import json

@@ -193,9 +193,6 @@ def csd(timeseries, other, segmentlength, noverlap=None, **kwargs):
 
 # register
 for func in (rayleigh, csd,):
-    try:
-        fft_registry.register_method(func, scaling='other')
-    except KeyError:
-        pass
+    fft_registry.register_method(func, scaling='other')
     fft_registry.register_method(func, name='scipy-{}'.format(func.__name__),
                                  scaling='other')

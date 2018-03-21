@@ -1,13 +1,20 @@
+# -- gwpy source package ------------------------------------------------------
+
 Source: gwpy
 Maintainer: Duncan Macleod <duncan.macleod@ligo.org>
 Section: python
 Priority: optional
-Build-Depends: python-setuptools (>= 0.6b3),
-               python-all (>= 2.6.6-3),
-               debhelper (>= 7.4.3)
 Standards-Version: 3.9.1
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
+Build-Depends: debhelper (>= 9),
+               dh-python,
+               python-all,
+               python3-all,
+               python-setuptools,
+               python3-setuptools,
+
+# -- python-gwpy --------------------------------------------------------------
 
 Package: python-gwpy
 Architecture: all
@@ -20,7 +27,7 @@ Depends: ${misc:Depends},
          python-scipy (>= 0.12.0),
          python-astropy (>= 1.1.1),
          python-matplotlib (>= 1.2.0),
-         lal-python,
+         lal-python (>= 6.14.0),
          python-glue (>= 1.55.2)
 Recommends: python-h5py (>= 1.3)
 Suggests: python-pymysql,
@@ -35,6 +42,8 @@ Description: A python package for gravitational-wave astrophysics
            gravitational-wave detectors.
  .
 
+# -- python3-gwpy -------------------------------------------------------------
+
 Package: python3-gwpy
 Architecture: all
 Depends: ${misc:Depends},
@@ -45,7 +54,7 @@ Depends: ${misc:Depends},
          python3-scipy (>= 0.12.0),
          python3-astropy (>= 1.1.1),
          python3-matplotlib (>= 1.2.0),
-         lal-python3,
+         lal-python3 (>= 6.14.0),
          python3-glue (>= 1.55.2)
 Recommends: python3-h5py (>= 1.3)
 Suggests: python3-pymysql,

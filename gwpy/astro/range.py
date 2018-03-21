@@ -235,19 +235,19 @@ def burst_range(psd, snr=8, energy=1e-2, fmin=100, fmax=500):
 
     snr : `float`, optional
         the signal-to-noise ratio for which to calculate range,
-        default: `8`
+        default: ``8``
 
     energy : `float`, optional
-        the relative energy output of the GW burst, defaults to 1e-2 for
-        a GRB-like burst
+        the relative energy output of the GW burst, defaults to ``1e-2``
+        for a GRB-like burst
 
     fmin : `float`, optional
         the lower frequency cutoff of the burst range integral,
-        default: `100 Hz`
+        default: ``100 Hz``
 
-    fmax : `float, optional
+    fmax : `float`, optional
         the upper frequency cutoff of the burst range integral,
-        default: `500 Hz`
+        default: ``500 Hz``
 
     Returns
     -------

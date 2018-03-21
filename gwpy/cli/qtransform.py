@@ -30,7 +30,7 @@ from time import time
 
 
 class Qtransform(CliProduct):
-    """Derived class to calculate Q-transform"""
+    """Plot the Q-transform (Omega)"""
     start_time = None
     qxfrm_args = None
     my_ts = None
@@ -103,7 +103,7 @@ class Qtransform(CliProduct):
         self.my_ts = self.timeseries[0]
         self.title2 = ''
 
-        self.qxfrm_args['search'] = self.my_ts.dt.value * len(self.my_ts)
+        self.qxfrm_args['search'] = abs(self.my_ts.span) / 2.
         if args.qrange:
             self.qxfrm_args['qrange'] = (float(args.qrange[0]),
                                          float(args.qrange[1]))
@@ -137,13 +137,11 @@ class Qtransform(CliProduct):
             self.title2 = (' %.0f Hz, ' % cur_fs) + self.title2
 
         prange = self.get_plot_range(args)
-        if prange < self.qxfrm_args['fres'] * 50:
-            prange = self.qxfrm_args['fres'] * 50
         epoch = float(args.epoch)
         self.qxfrm_args['outseg'] = (epoch-prange, epoch+prange)
 
         if self.verbose >= 3:
-            print ('Q-transform args:')
+            print('Q-transform args:')
             pprint(self.qxfrm_args)
 
         self.result = self.my_ts.q_transform(**self.qxfrm_args)

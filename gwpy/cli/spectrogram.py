@@ -28,7 +28,7 @@ __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 
 class Spectrogram(CliProduct):
-    """Derived class to calculate Spectrograms
+    """Plot the spectrogram of a time series
     """
 
     def get_action(self):

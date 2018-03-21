@@ -1,4 +1,14 @@
-engines:
+version: "2"
+
+checks:
+  argument-count:
+    config:
+      threshold: 5
+  file-lines:
+    config:
+      threshold: 500
+
+plugins:
   duplication:
     enabled: true
     config:
@@ -14,6 +24,9 @@ engines:
     enabled: true
   radon:
     enabled: true
+    config:
+      threshold: "C"
+
 ratings:
   paths:
   - "**.py"
@@ -30,3 +43,4 @@ exclude_paths:
 - gwpy/table/rec.py
 - gwpy/table/utils.py
 - gwpy/table/io/ascii.py
+- gwpy/utils/sphinx/epydoc.py

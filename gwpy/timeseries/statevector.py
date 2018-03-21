@@ -576,8 +576,8 @@ class StateVector(TimeSeriesBase):
             value with which to fill gaps in the source data, only used if
             gap is not given, or `gap='pad'` is given
 
-        Example
-        -------
+        Examples
+        --------
         To read the S6 state vector, with names for all the bits::
 
             >>> sv = StateVector.read(
@@ -751,17 +751,17 @@ class StateVector(TimeSeriesBase):
         Parameters
         ----------
         format : `str`, optional, default: ``'segments'``
-            type of plot to make, either 'segments' to plot the
+            The type of plot to make, either 'segments' to plot the
             SegmentList for each bit, or 'timeseries' to plot the raw
             data for this `StateVector`
 
         bits : `list`, optional
-            a list of bit indices or bit names, defaults to
+            A list of bit indices or bit names, defaults to
             `~StateVector.bits`. This argument is ignored if ``format`` is
             not ``'segments'``
 
         **kwargs
-            other keyword arguments to be passed to either
+            Other keyword arguments to be passed to either
             `~gwpy.plotter.segments.SegmentPlot` or
             `~gwpy.plotter.TimeSeriesPlot`, depending
             on ``format``.
@@ -770,6 +770,18 @@ class StateVector(TimeSeriesBase):
         -------
         plot : `~gwpy.plotter.SegmentPlot`, or `~gwpy.plotter.TimeSeriesPlot`
             output plot object, some subclass of `~gwpy.plotter.Plot`
+
+        See Also
+        --------
+        matplotlib.pyplot.figure
+            for documentation of keyword arguments used to create the
+            figure
+        matplotlib.figure.Figure.add_subplot
+            for documentation of keyword arguments used to create the
+            axes
+        gwpy.plotter.SegmentAxes.plot_dqflag
+            for documentation of keyword arguments used in rendering each
+            statevector flag.
         """
         if format == 'timeseries':
             return super(StateVector, self).plot(**kwargs)

@@ -41,7 +41,9 @@ sudo port -N install \
 
 # make Portfile
 cd ${GWPY_PATH}
-$PYTHON setup.py port
+GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
+$PYTHON setup.py sdist
+$PYTHON setup.py port --tarball dist/gwpy-${GWPY_VERSION}.tar.gz
 
 # create mock portfile repo and install
 PORT_REPO=`pwd`/ports
@@ -56,6 +58,7 @@ gsed -i 's|pypi:g/gwpy|file://'`pwd`'/dist/ \\\n                    pypi:g/gwpy|
 sudo gsed -i 's|rsync://rsync.macports|file://'${PORT_REPO}'\nrsync://rsync.macports|' /opt/local/etc/macports/sources.conf
 cd ${PORT_REPO}
 portindex
+cd ${GWPY_PATH}
 
 # set up utility to ping STDOUT every 10 seconds, prevents timeout
 # https://github.com/travis-ci/travis-ci/issues/6591#issuecomment-275804717
@@ -75,6 +78,7 @@ sudo port -N install \
     kerberos5 \
     libframe \
     ${PY_PREFIX}-matplotlib \
+    ${PY_PREFIX}-lalsimulation \
     ${PY_PREFIX}-pymysql \
     ${PY_PREFIX}-sqlalchemy \
     ${PY_PREFIX}-psycopg2 \
@@ -91,3 +95,11 @@ if [ "`port info --version dqsegdb`" == "version: 1.4.0" ]; then
 fi
 
 kill -9 $wvbpid &> /dev/null
+
+# hacky fix for installing NOT mpl 2.1.x
+#     this can be removed as soon as mpl 2.1.2 is released
+MPL_VERSION=$(port -q installed ${PY_PREFIX}-matplotlib | grep active | \
+              awk -F '[\@\_]' '{print $2}')
+if [[ "${MPL_VERSION}" =~ 2.1.[01] ]]; then
+    ${PIP} install "matplotlib >= 1.2.0, != 2.1.0, != 2.1.1"
+fi

@@ -31,6 +31,7 @@ from __future__ import absolute_import
 import datetime
 import json
 import operator
+import os
 import re
 import warnings
 from io import StringIO
@@ -51,6 +52,7 @@ from astropy.utils.data import get_readable_fileobj
 
 from ..io.mp import read_multi as io_read_multi
 from ..time import to_gps, LIGOTimeGPS
+from ..utils.misc import if_not_none
 from .segments import Segment, SegmentList
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -61,6 +63,45 @@ re_IFO_TAG_VERSION = re.compile(
 re_IFO_TAG = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+)\Z")
 re_TAG_VERSION = re.compile(r"\A(?P<tag>[^/]+):(?P<version>\d+)\Z")
 
+DEFAULT_SEGMENT_SERVER = os.getenv('DEFAULT_SEGMENT_SERVER',
+                                   'https://segments.ligo.org')
+
+# -- utilities ----------------------------------------------------------------
+
+
+def _select_query_method(cls, url):
+    """Select the correct query method based on the URL
+
+    Works for `DataQualityFlag` and `DataQualityDict`
+    """
+    if urlparse(url).netloc.startswith('geosegdb.'):  # only DB2 server
+        return cls.query_segdb
+    return cls.query_dqsegdb
+
+
+def _parse_query_segments(args, func):
+    """Parse *args for query_dqsegdb() or query_segdb()
+
+    Returns a SegmentList in all cases
+    """
+    if len(args) == 1 and isinstance(args[0], SegmentList):
+        return args[0]
+    if len(args) == 1 and len(args[0]) == 2:
+        return SegmentList([Segment(to_gps(args[0][0]),
+                                    to_gps(args[0][1]))])
+    try:
+        return SegmentList([Segment(*map(to_gps, args))])
+    except (TypeError, RuntimeError) as exc:
+        msg = ('{0}() takes 2 arguments for start and end GPS times, '
+               'or 1 argument containing a Segment or '
+               'SegmentList'.format(func.__name__))
+        if isinstance(exc, TypeError):
+            exc.args = (msg,)
+            raise
+        raise TypeError(msg)
+
+
+# -- DataQualityFlag ----------------------------------------------------------
 
 class DataQualityFlag(object):
     """A representation of a named set of segments.
@@ -113,8 +154,7 @@ class DataQualityFlag(object):
         self.isgood = isgood
         self.padding = padding
 
-    # -------------------------------------------------------------------------
-    # read-write properties
+    # -- properties -----------------------------
 
     @property
     def name(self):
@@ -181,10 +221,7 @@ class DataQualityFlag(object):
 
     @version.setter
     def version(self, v):
-        if v is None:
-            self._version = None
-        else:
-            self._version = int(v)
+        self._version = int(v) if v is not None else None
 
     @property
     def label(self):
@@ -273,10 +310,7 @@ class DataQualityFlag(object):
 
     @category.setter
     def category(self, cat):
-        if cat is None:
-            self._category = None
-        else:
-            self._category = int(cat)
+        self._category = if_not_none(int, cat)
 
     @property
     def description(self):
@@ -319,8 +353,7 @@ class DataQualityFlag(object):
     def padding(self):
         self._padding = (0, 0)
 
-    # -------------------------------------------------------------------------
-    # read-only properties
+    # -- read-only properties -------------------
 
     @property
     def texname(self):
@@ -356,8 +389,7 @@ class DataQualityFlag(object):
         """
         return abs(self.active - self.known) == 0
 
-    # -------------------------------------------------------------------------
-    # classmethods
+    # -- classmethods ---------------------------
 
     @classmethod
     def query(cls, flag, *args, **kwargs):
@@ -378,8 +410,9 @@ class DataQualityFlag(object):
             defining a number of summary segments
 
         url : `str`, optional
-            URL of the segment database,
-            default: ``'https://segments.ligo.org'``
+            URL of the segment database, defaults to
+            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
+            ``'https://segments.ligo.org'``
 
         See Also
         --------
@@ -394,11 +427,9 @@ class DataQualityFlag(object):
             A new `DataQualityFlag`, with the `known` and `active` lists
             filled appropriately.
         """
-        url = kwargs.get('url', 'https://segments.ligo.org')
-        if 'dqsegdb' in url or re.match('https://[a-z1-9-]+.ligo.org', url):
-            return cls.query_dqsegdb(flag, *args, **kwargs)
-        else:
-            return cls.query_segdb(flag, *args, **kwargs)
+        query_ = _select_query_method(
+            cls, kwargs.get('url', DEFAULT_SEGMENT_SERVER))
+        return query_(flag, *args, **kwargs)
 
     @classmethod
     def query_segdb(cls, flag, *args, **kwargs):
@@ -414,8 +445,10 @@ class DataQualityFlag(object):
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
 
-        url : `str`, optional, default: ``'https://segments.ligo.org'``
-            URL of the segment database
+        url : `str`, optional
+            URL of the segment database, defaults to
+            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
+            ``'https://segments.ligo.org'``
 
         Returns
         -------
@@ -424,13 +457,7 @@ class DataQualityFlag(object):
             filled appropriately.
         """
         # parse arguments
-        if len(args) == 1 and isinstance(args[0], SegmentList):
-            qsegs = args[0]
-        elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList([Segment(to_gps(args[0][0]),
-                                         to_gps(args[0][1]))])
-        else:
-            qsegs = SegmentList([Segment(*map(to_gps, args))])
+        qsegs = _parse_query_segments(args, cls.query_segdb)
 
         # process query
         try:
@@ -464,8 +491,10 @@ class DataQualityFlag(object):
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
 
-        url : `str`, optional, default: ``'https://segments.ligo.org'``
-            URL of the segment database
+        url : `str`, optional
+            URL of the segment database, defaults to
+            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
+            ``'https://segments.ligo.org'``
 
         Returns
         -------
@@ -476,17 +505,11 @@ class DataQualityFlag(object):
         from dqsegdb import apicalls
 
         # parse arguments
-        if len(args) == 1 and isinstance(args[0], SegmentList):
-            qsegs = args[0]
-        elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList([Segment(to_gps(args[0][0]),
-                                         to_gps(args[0][1]))])
-        else:
-            qsegs = SegmentList([Segment(*map(to_gps, args))])
+        qsegs = _parse_query_segments(args, cls.query_dqsegdb)
 
         # get server
         protocol, server = kwargs.pop(
-            'url', 'https://segments.ligo.org').split('://', 1)
+            'url', DEFAULT_SEGMENT_SERVER).split('://', 1)
 
         # parse flag
         out = cls(name=flag)
@@ -534,6 +557,58 @@ class DataQualityFlag(object):
             out.isgood = new.isgood
 
         return out
+
+    @classmethod
+    def fetch_open_data(cls, flag, start, end, **kwargs):
+        """Fetch Open Data timeline segments into a flag.
+
+        flag : `str`
+            the name of the flag to query
+
+        start : `int`, `str`
+            the GPS start time (or parseable date string) to query
+
+        end : `int`, `str`
+            the GPS end time (or parseable date string) to query
+
+        verbose : `bool`, optional
+            show verbose download progress, default: `False`
+
+        timeout : `int`, optional
+            timeout for download (seconds)
+
+        host : `str`, optional
+            URL of LOSC host, default: ``'losc.ligo.org'``
+
+        Returns
+        -------
+        flag : `DataQualityFlag`
+            a new flag with `active` segments filled from Open Data
+
+        Examples
+        --------
+        >>> from gwpy.segments import DataQualityFlag
+        >>> print(DataQualityFlag.fetch_open_data('H1_DATA', 'Jan 1 2010',
+        ...                                       'Jan 2 2010'))"
+        <DataQualityFlag('H1:DATA',
+                         known=[[946339215 ... 946425615)],
+                         active=[[946340946 ... 946351800)
+                                 [946356479 ... 946360620)
+                                 [946362652 ... 946369150)
+                                 [946372854 ... 946382630)
+                                 [946395595 ... 946396751)
+                                 [946400173 ... 946404977)
+                                 [946412312 ... 946413577)
+                                 [946415770 ... 946422986)],
+                         description=None)>
+        """
+        from .io.losc import get_segments
+        start = to_gps(start)
+        end = to_gps(end)
+        known = [(start, end)]
+        active = get_segments(flag, start, end, **kwargs)
+        return cls(flag.replace('_', ':', 1), known=known, active=active,
+                   label=flag)
 
     @classmethod
     def read(cls, source, *args, **kwargs):
@@ -600,8 +675,7 @@ class DataQualityFlag(object):
         return cls(name=name, known=[known], category=veto.category,
                    description=veto.comment, padding=pad)
 
-    # -------------------------------------------------------------------------
-    # instance methods
+    # -- methods --------------------------------
 
     def write(self, target, *args, **kwargs):
         """Write this `DataQualityFlag` to file
@@ -610,7 +684,7 @@ class DataQualityFlag(object):
         -----"""
         return io_registry.write(self, target, *args, **kwargs)
 
-    def populate(self, source='https://segments.ligo.org', segments=None,
+    def populate(self, source=DEFAULT_SEGMENT_SERVER, segments=None,
                  pad=True, **kwargs):
         """Query the segment database for this flag's active segments.
 
@@ -902,7 +976,9 @@ class DataQualityFlag(object):
     def __isub__(self, other):
         """Subtract the ``other`` `DataQualityFlag` from this one in-place.
         """
+        self.known &= other.known
         self.active -= other.active
+        self.active &= self.known
         return self
 
     def __or__(self, other):
@@ -920,10 +996,22 @@ class DataQualityFlag(object):
     __add__ = __or__
     __iadd__ = __ior__
 
+    def __xor__(self, other):
+        """Find the exclusive OR of this one and ``other``.
+        """
+        return self.copy().__ixor__(other)
+
+    def __ixor__(self, other):
+        """Exclusive OR this flag with ``other`` in-place.
+        """
+        self.known &= other.known
+        self.active ^= other.active
+        return self
+
     def __invert__(self):
         new = self.copy()
-        new.known = ~self.known
         new.active = ~self.active
+        new.active &= new.known
         return new
 
 
@@ -957,11 +1045,10 @@ class DataQualityDict(OrderedDict):
     """
     _EntryClass = DataQualityFlag
 
-    # -----------------------------------------------------------------------
-    # classmethods
+    # -- classmethods ---------------------------
 
     @classmethod
-    def query(cls, flag, *args, **kwargs):
+    def query(cls, flags, *args, **kwargs):
         """Query for segments of a set of flags.
 
         This method intelligently selects the `~DataQualityDict.query_segdb`
@@ -978,8 +1065,10 @@ class DataQualityDict(OrderedDict):
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
 
-        url : `str`, optional, default: ``'https://segments.ligo.org'``
-            URL of the segment database
+        url : `str`, optional
+            URL of the segment database, defaults to
+            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
+            ``'https://segments.ligo.org'``
 
         See Also
         --------
@@ -990,14 +1079,12 @@ class DataQualityDict(OrderedDict):
 
         Returns
         -------
-        flag : `DataQualityFlag`
-            A new `DataQualityFlag`, with the `known` and `active` lists
-            filled appropriately.
+        flagdict : `DataQualityDict`
+            A `dict` of `(name, DataQualityFlag)` pairs
         """
-        url = kwargs.get('url', 'https://segments.ligo.org')
-        if 'dqsegdb' in url or re.match('https://[a-z1-9-]+.ligo.org', url):
-            return cls.query_dqsegdb(flag, *args, **kwargs)
-        return cls.query_segdb(flag, *args, **kwargs)
+        query_ = _select_query_method(
+            cls, kwargs.get('url', DEFAULT_SEGMENT_SERVER))
+        return query_(flags, *args, **kwargs)
 
     @classmethod
     def query_segdb(cls, flags, *args, **kwargs):
@@ -1011,8 +1098,10 @@ class DataQualityDict(OrderedDict):
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments.
-        url : `str`, optional, default: ``'https://segments.ligo.org'``
-            URL of the segment database.
+        url : `str`, optional
+            URL of the segment database, defaults to
+            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
+            ``'https://segments.ligo.org'``
 
         Returns
         -------
@@ -1020,19 +1109,10 @@ class DataQualityDict(OrderedDict):
             An ordered `DataQualityDict` of (name, `DataQualityFlag`)
             pairs.
         """
-        # given segmentlist
-        if len(args) == 1 and isinstance(args[0], SegmentList):
-            qsegs = args[0]
-        elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(to_gps(args[0][0]),
-                                        to_gps(args[0][1])))
-        elif len(args) == 2:
-            qsegs = SegmentList([Segment(to_gps(args[0]), to_gps(args[1]))])
-        else:
-            raise ValueError("DataQualityDict.query_segdb must be called with "
-                             "a list of flag names, and either GPS start and "
-                             "stop times, or a SegmentList of query segments")
-        url = kwargs.pop('url', 'https://segments.ligo.org')
+        # parse segments
+        qsegs = _parse_query_segments(args, cls.query_segdb)
+
+        url = kwargs.pop('url', DEFAULT_SEGMENT_SERVER)
         if kwargs.pop('on_error', None) is not None:
             warnings.warn("DataQualityDict.query_segdb doesn't accept the "
                           "on_error keyword argument")
@@ -1114,8 +1194,10 @@ class DataQualityDict(OrderedDict):
             - `'warn'`: print a warning
             - `'ignore'`: move onto the next flag as if nothing happened
 
-        url : `str`, optional, default: ``'https://segments.ligo.org'``
-            URL of the segment database.
+        url : `str`, optional
+            URL of the segment database, defaults to
+            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
+            ``'https://segments.ligo.org'``
 
         Returns
         -------
@@ -1129,11 +1211,14 @@ class DataQualityDict(OrderedDict):
             raise ValueError("on_error must be one of 'raise', 'warn', "
                              "or 'ignore'")
 
+        # parse segments
+        qsegs = _parse_query_segments(args, cls.query_dqsegdb)
+
         # set up threading
         inq = Queue()
         outq = Queue()
         for i in range(len(flags)):
-            t = _QueryDQSegDBThread(inq, outq, *args, **kwargs)
+            t = _QueryDQSegDBThread(inq, outq, qsegs, **kwargs)
             t.setDaemon(True)
             t.start()
         for i, flag in enumerate(flags):
@@ -1346,8 +1431,14 @@ class DataQualityDict(OrderedDict):
 
         return out
 
-    def to_ligolw_tables(self):
+    def to_ligolw_tables(self, **attrs):
         """Convert this `DataQualityDict` into a trio of LIGO_LW segment tables
+
+        Parameters
+        ----------
+        **attrs
+            other attributes to add to all rows in all tables
+            (e.g. ``'process_id'``)
 
         Returns
         -------
@@ -1362,10 +1453,15 @@ class DataQualityDict(OrderedDict):
         """
         from glue.ligolw.lsctables import (SegmentTable, SegmentSumTable,
                                            SegmentDefTable, New as new_table)
+        from ..io.ligolw import to_table_type as to_ligolw_table_type
 
         segdeftab = new_table(SegmentDefTable)
         segsumtab = new_table(SegmentSumTable)
         segtab = new_table(SegmentTable)
+
+        def _write_attrs(table, row):
+            for key, val in attrs.items():
+                setattr(row, key, to_ligolw_table_type(val, table, key))
 
         # write flags to tables
         for flag in self.values():
@@ -1379,17 +1475,19 @@ class DataQualityDict(OrderedDict):
             segdef.comment = flag.description
             segdef.insertion_time = to_gps(datetime.datetime.now()).gpsSeconds
             segdef.segment_def_id = SegmentDefTable.get_next_id()
+            _write_attrs(segdeftab, segdef)
             segdeftab.append(segdef)
 
             # write segment summary (known segments)
             for vseg in flag.known:
                 segsum = segsumtab.RowType()
-                for col in segsumtab.columnnames:  # default all columns to None
+                for col in segsumtab.columnnames:  # default columns to None
                     setattr(segsum, col, None)
                 segsum.segment_def_id = segdef.segment_def_id
                 segsum.set(map(LIGOTimeGPS, vseg))
                 segsum.comment = None
                 segsum.segment_sum_id = SegmentSumTable.get_next_id()
+                _write_attrs(segsumtab, segsum)
                 segsumtab.append(segsum)
 
             # write segment table (active segments)
@@ -1400,12 +1498,12 @@ class DataQualityDict(OrderedDict):
                 seg.segment_def_id = segdef.segment_def_id
                 seg.set(map(LIGOTimeGPS, aseg))
                 seg.segment_id = SegmentTable.get_next_id()
+                _write_attrs(segtab, seg)
                 segtab.append(seg)
 
         return segdeftab, segsumtab, segtab
 
-    # -----------------------------------------------------------------------
-    # instance methods
+    # -- methods --------------------------------
 
     def write(self, target, *args, **kwargs):
         """Write this `DataQualityDict` to file
@@ -1414,7 +1512,7 @@ class DataQualityDict(OrderedDict):
         -----"""
         return io_registry.write(self, target, *args, **kwargs)
 
-    def populate(self, source='https://segments.ligo.org',
+    def populate(self, source=DEFAULT_SEGMENT_SERVER,
                  segments=None, pad=True, on_error='raise', **kwargs):
         """Query the segment database for each flag's active segments.
 
@@ -1497,6 +1595,24 @@ class DataQualityDict(OrderedDict):
                     self[key].active &= segments
         return self
 
+    def copy(self, deep=False):
+        """Build a copy of this dictionary.
+
+        Parameters
+        ----------
+        deep : `bool`, optional, default: `False`
+            perform a deep copy of the original dictionary with a fresh
+            memory address
+
+        Returns
+        -------
+        flag2 : `DataQualityFlag`
+            a copy of the original dictionary
+        """
+        if deep:
+            return deepcopy(self)
+        return super(DataQualityDict, self).copy()
+
     def __iand__(self, other):
         for key, value in other.items():
             if key in self:
@@ -1508,8 +1624,8 @@ class DataQualityDict(OrderedDict):
     def __and__(self, other):
         if (sum(len(s.active) for s in self.values()) <=
                 sum(len(s.active) for s in other.values())):
-            return self.copy().__iand__(other)
-        return other.copy().__iand__(self)
+            return self.copy(deep=True).__iand__(other)
+        return other.copy(deep=True).__iand__(self)
 
     def __ior__(self, other):
         for key, value in other.items():
@@ -1522,8 +1638,8 @@ class DataQualityDict(OrderedDict):
     def __or__(self, other):
         if (sum(len(s.active) for s in self.values()) >=
                 sum(len(s.active) for s in other.values())):
-            return self.copy().__ior__(other)
-        return other.copy().__ior__(self)
+            return self.copy(deep=True).__ior__(other)
+        return other.copy(deep=True).__ior__(self)
 
     __iadd__ = __ior__
     __add__ = __or__
@@ -1535,10 +1651,19 @@ class DataQualityDict(OrderedDict):
         return self
 
     def __sub__(self, other):
-        return self.copy().__isub__(other)
+        return self.copy(deep=True).__isub__(other)
+
+    def __ixor__(self, other):
+        for key, value in other.items():
+            if key in self:
+                self[key] ^= value
+        return self
+
+    def __xor__(self, other):
+        return self.copy(deep=True).__ixor__(other)
 
     def __invert__(self):
-        new = self.copy()
+        new = self.copy(deep=True)
         for key, value in new.items():
             new[key] = ~value
         return new
