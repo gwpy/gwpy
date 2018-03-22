@@ -219,9 +219,7 @@ class GravitySpyTable(EventTable):
             '/search/similarity_search_restful_API'
 
         parts = {
-            'username': 'sbc538',
             'howmany': howmany,
-            'zooid': 0,
             'imageid': uniqueID,
         }
 
