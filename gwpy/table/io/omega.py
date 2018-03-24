@@ -52,7 +52,7 @@ class OmegaHeader(core.BaseHeader):
             raise core.InconsistentTableError(
                 'No column names found in Omega header')
 
-        self.cols = []  #  pylint: disable=attribute-defined-outside-init
+        self.cols = []  # pylint: disable=attribute-defined-outside-init
         for name in self.names:
             col = core.Column(name=name)
             self.cols.append(col)

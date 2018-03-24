@@ -38,6 +38,10 @@ __version__ = versioneer.get_version()
 
 PEP_508 = LooseVersion(setuptools_version) >= '36.2'
 
+# read description
+with open('README.rst', 'rb') as f:
+    longdesc = f.read().decode().strip()
+
 # -- dependencies -------------------------------------------------------------
 
 # build dependencies
@@ -113,9 +117,7 @@ setup(
     provides=['gwpy'],
     version=__version__,
     description="A python package for gravitational-wave astrophysics",
-    long_description=("GWpy is a collaboration-driven Python package "
-                      "providing tools for studying data from "
-                      "ground-based gravitational-wave detectors"),
+    long_description=longdesc,
     author='Duncan Macleod',
     author_email='duncan.macleod@ligo.org',
     license='GPLv3',

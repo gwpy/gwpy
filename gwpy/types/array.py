@@ -37,6 +37,7 @@ from astropy.units import Quantity
 from ..detector import Channel
 from ..detector.units import parse_unit
 from ..time import (Time, to_gps)
+from ..utils.misc import if_not_none
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -104,7 +105,7 @@ class Array(Quantity):
 
     def __new__(cls, value, unit=None,  # Quantity attrs
                 name=None, epoch=None, channel=None,  # new attrs
-                dtype=None, copy=False, subok=True,  # ndarray attrs
+                dtype=None, copy=True, subok=True,  # ndarray attrs
                 order=None, ndmin=0):
         """Create a new `Array`
         """
@@ -118,8 +119,13 @@ class Array(Quantity):
 
         # create new array
         new = super(Array, cls).__new__(cls, value, unit=unit, dtype=dtype,
-                                        copy=copy, order=order, subok=subok,
+                                        copy=False, order=order, subok=subok,
                                         ndmin=ndmin)
+
+        # explicitly copy here to get ownership of the data,
+        # see (astropy/astropy#7244)
+        if copy:
+            new = new.copy()
 
         # set new attributes
         if name is not None:
@@ -187,7 +193,59 @@ class Array(Quantity):
     def __getattr__(self, attr):
         return super(Array, self).__getattribute__(attr)
 
+    def __getitem__(self, item):
+        new = super(Array, self).__getitem__(item)
+
+        # return scalar as a Quantity
+        if numpy.ndim(new) == 0:
+            return Quantity(new, unit=self.unit)
+
+        return new
+
     # -- display --------------------------------
+
+    def _repr_helper(self, print_):
+        if print_ is repr:
+            opstr = '='
+        else:
+            opstr = ': '
+
+        # get prefix and suffix
+        prefix = '{}('.format(type(self).__name__)
+        suffix = ')'
+        if print_ is repr:
+            prefix = '<{}'.format(prefix)
+            suffix += '>'
+
+        indent = ' ' * len(prefix)
+
+        # format value
+        arrstr = numpy.array2string(self.view(numpy.ndarray), separator=', ',
+                                    prefix=prefix)
+
+        # format unit
+        metadata = [('unit', print_(self.unit) or 'dimensionless')]
+
+        # format other metadata
+        try:
+            attrs = self._print_slots
+        except AttributeError:
+            attrs = self._metadata_slots
+        for key in attrs:
+            try:
+                val = getattr(self, key)
+            except (AttributeError, KeyError):
+                val = None
+            thisindent = indent + ' ' * (len(key) + len(opstr))
+            metadata.append((
+                key.lstrip('_'),
+                print_(val).replace('\n', '\n{}'.format(thisindent)),
+            ))
+        metadata = (',\n{}'.format(indent)).join(
+            '{0}{1}{2}'.format(key, opstr, value) for key, value in metadata)
+
+        return "{0}{1}\n{2}{3}{4}".format(
+            prefix, arrstr, indent, metadata, suffix)
 
     def __repr__(self):
         """Return a representation of this object
@@ -195,26 +253,7 @@ class Array(Quantity):
         This just represents each of the metadata objects appropriately
         after the core data array
         """
-        prefixstr = '<%s(' % self.__class__.__name__
-        indent = ' '*len(prefixstr)
-        arrstr = numpy.array2string(self.view(numpy.ndarray), separator=',',
-                                    prefix=prefixstr)
-        metadatarepr = ['unit=%s' % repr(self.unit)]
-        try:
-            attrs = self._print_slots
-        except AttributeError:
-            attrs = self._metadata_slots
-        for key in attrs:
-            try:
-                val = getattr(self, key)
-            except (AttributeError, KeyError):
-                val = None
-            mindent = ' ' * (len(key) + 1)
-            rval = repr(val).replace('\n', '\n%s' % (indent+mindent))
-            metadatarepr.append('%s=%s' % (key.strip('_'), rval))
-        metadata = (',\n%s' % indent).join(metadatarepr)
-        return "{0}{1}\n{2}{3})>".format(
-            prefixstr, arrstr, indent, metadata)
+        return self._repr_helper(repr)
 
     def __str__(self):
         """Return a printable string format representation of this object
@@ -222,26 +261,7 @@ class Array(Quantity):
         This just prints each of the metadata objects appropriately
         after the core data array
         """
-        prefixstr = '%s(' % self.__class__.__name__
-        indent = ' '*len(prefixstr)
-        arrstr = numpy.array2string(self.view(numpy.ndarray), separator=',',
-                                    prefix=prefixstr)
-        metadatarepr = ['unit: %s' % repr(self.unit)]
-        try:
-            attrs = self._print_slots
-        except AttributeError:
-            attrs = self._metadata_slots
-        for key in attrs:
-            try:
-                val = getattr(self, key)
-            except (AttributeError, KeyError):
-                val = None
-            mindent = ' ' * (len(key) + 2)
-            rval = str(val).replace('\n', '\n%s' % (indent+mindent))
-            metadatarepr.append('%s: %s' % (key.strip('_'), rval))
-        metadata = (',\n%s' % indent).join(metadatarepr)
-        return "{0}{1}\n{2}{3})".format(
-            prefixstr, arrstr, indent, metadata)
+        return self._repr_helper(str)
 
     # -- Pickle helpers -------------------------
 
@@ -270,10 +290,7 @@ class Array(Quantity):
 
     @name.setter
     def name(self, val):
-        if val is None:
-            self._name = None
-        else:
-            self._name = str(val)
+        self._name = if_not_none(str, val)
 
     @name.deleter
     def name(self):

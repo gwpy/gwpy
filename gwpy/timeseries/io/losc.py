@@ -92,6 +92,14 @@ def _parse_formats(formats, cls=TimeSeries):
     return [formats]
 
 
+def _download_file(url, cache=None, verbose=False):
+    if cache is None:
+        cache = os.getenv('GWPY_CACHE', 'no').lower() in (
+            '1', 'true', 'yes', 'y',
+        )
+    return get_readable_fileobj(url, cache=cache, show_progress=verbose)
+
+
 # -- JSON handling ------------------------------------------------------------
 
 def _match_urls(urls, start, end, tag=None, version=None):
@@ -246,7 +254,7 @@ def _fetch_losc_data_file(url, *args, **kwargs):
     """Internal function for fetching a single LOSC file and returning a Series
     """
     cls = kwargs.pop('cls', TimeSeries)
-    cache = kwargs.pop('cache', False)
+    cache = kwargs.pop('cache', None)
     verbose = kwargs.pop('verbose', False)
 
     # match file format
@@ -261,7 +269,7 @@ def _fetch_losc_data_file(url, *args, **kwargs):
     elif ext == '.gwf':
         kwargs.setdefault('format', 'gwf')
 
-    with get_readable_fileobj(url, cache=cache, show_progress=verbose) as rem:
+    with _download_file(url, cache, verbose=verbose) as rem:
         if verbose:
             print('Reading data...', end=' ')
         try:

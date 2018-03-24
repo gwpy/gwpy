@@ -33,7 +33,7 @@ Requires:       numpy
 Requires:       scipy
 Requires:       python-matplotlib
 Requires:       python-astropy
-Requires:       lal-python
+Requires:       lal-python >= 6.14.0
 Requires:       glue
 
 %{?python_provide:%python_provide python2-%{srcname}}
@@ -52,7 +52,7 @@ Requires:       python%{python3_pkgversion}-numpy
 Requires:       python%{python3_pkgversion}-scipy
 Requires:       python%{python3_pkgversion}-matplotlib
 Requires:       python%{python3_pkgversion}-astropy
-Requires:       lal-python%{python3_pkgversion}
+Requires:       lal-python%{python3_pkgversion} >= 6.14.0
 Requires:       python%{python3_pkgversion}-glue
 
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{srcname}}
@@ -79,13 +79,13 @@ Requires:       python%{python3_pkgversion}-glue
 
 %files -n python2-%{srcname}
 %license LICENSE
-%doc README.md
+%doc README.rst
 %{python2_sitelib}/*
 %{_bindir}/gwpy-plot
 
 %files -n python%{python3_pkgversion}-%{srcname}
 %license LICENSE
-%doc README.md
+%doc README.rst
 %{python3_sitelib}/*
 
 # -- changelog ----------------------------------------------------------------

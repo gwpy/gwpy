@@ -24,6 +24,7 @@ cd ${GWPY_PATH}
 
 . ci/lib.sh
 
+get_python_version 1> /dev/null
 get_environment
 
 set -x
@@ -37,12 +38,23 @@ elif [ -n "${DOCKER_IMAGE}" ]; then  # debian
     . ci/install-debian.sh
 else  # simple pip build
     ${PIP} install . ${PIP_FLAGS}
+    EXTRAS=true
 fi
 
-# install python extras
+# upgrade pip (mainly to get `pip list --format` below)
 ${PIP} install --upgrade pip
-${PIP} install --quiet ${PIP_FLAGS} "setuptools>=36.2"
-${PIP} install -r requirements-dev.txt --quiet ${PIP_FLAGS}
+
+# install python extras for full tests
+if [ ${EXTRAS} ]; then
+    ${PIP} install --quiet ${PIP_FLAGS} "setuptools>=36.2"
+    ${PIP} install -r requirements-dev.txt --quiet ${PIP_FLAGS}
+
+    # install root_numpy if pyroot is installed for this python version
+    _rootpyv=`root-config --python-version 2> /dev/null || true`
+    if [[ "${_rootpyv}" == "${PYTHON_VERSION}" ]]; then
+        NO_ROOT_NUMPY_TMVA=1 ${PIP} install root_numpy --quiet ${PIP_FLAGS}
+    fi
+fi
 
 set +x
 

@@ -472,6 +472,80 @@ def list_tables(source):
     return tables
 
 
+def to_table_type(val, cls, colname):
+    """Cast a value to the correct type for inclusion in a LIGO_LW table
+
+    This method returns the input unmodified if a type mapping for ``colname``
+    isn't found.
+
+    Parameters
+    ----------
+    val : `object`
+        The input object to convert, of any type
+
+    cls : `type`
+        The sub-class of :class:`~glue.ligolw.table.Table` to map against
+
+    colname : `str`
+        The name of the mapping column
+
+    Returns
+    -------
+    obj : `object`
+        The input ``val`` cast to the correct type
+
+    Examples
+    --------
+    >>> from gwpy.io.ligolw import to_table_type as to_ligolw_type
+    >>> from glue.ligolw.lsctables import SnglBurstTable
+    >>> print(to_ligolw_type(1.0, SnglBurstTable, 'central_freq')))
+    1.0
+
+    ID integers are converted to fancy ILWD objects
+
+    >>> print(to_ligolw_type(1, SnglBurstTable, 'process_id')))
+    sngl_burst:process_id:1
+
+    Formatted fancy ILWD objects are left untouched:
+
+    >>> from glue.ligolw.ilwd import ilwdchar
+    >>> pid = ilwdchar('process:process_id:0')
+    >>> print(to_ligolw_type(pid, SnglBurstTable, 'process_id')))
+    process:process_id:1
+    """
+    from glue.ligolw.types import (ToNumPyType as numpytypes,
+                                   ToPyType as pytypes)
+
+    # if nothing to do...
+    if val is None or colname not in cls.validcolumns:
+        return val
+
+    llwtype = cls.validcolumns[colname]
+
+    # don't mess with formatted IlwdChar
+    if llwtype == 'ilwd:char':
+        return _to_ilwd(val, cls.tableName, colname)
+    # otherwise map to numpy or python types
+    try:
+        return numpy.typeDict[numpytypes[llwtype]](val)
+    except KeyError:
+        return pytypes[llwtype](val)
+
+
+def _to_ilwd(value, tablename, colname):
+    from glue.ligolw.ilwd import (ilwdchar, get_ilwdchar_class)
+    from glue.ligolw._ilwd import ilwdchar as IlwdChar
+
+    if isinstance(value, IlwdChar) and value.column_name != colname:
+        raise ValueError("ilwdchar '{0!s}' doesn't match column "
+                         "{1!r}".format(value, colname))
+    if isinstance(value, IlwdChar):
+        return value
+    if isinstance(value, int):
+        return get_ilwdchar_class(tablename, colname)(value)
+    return ilwdchar(value)
+
+
 # -- identify -----------------------------------------------------------------
 
 def is_ligolw(origin, filepath, fileobj, *args, **kwargs):

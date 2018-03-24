@@ -198,31 +198,41 @@ class TestPlot(PlottingTestBase):
         fig_set = getattr(fig, 'set_%s' % name)
         ax_get = getattr(ax, 'get_%s' % name)
 
-        assert fig_get() == ax_get()
-        fig_set(args)
-        assert fig_get() == args
-        assert fig_get() == ax_get()
+        # note: @axes_methods is deprecated
+        with pytest.warns(DeprecationWarning):
+            assert fig_get() == ax_get()
+        with pytest.warns(DeprecationWarning):
+            fig_set(args)
+        with pytest.warns(DeprecationWarning):
+            assert fig_get() == args
+        with pytest.warns(DeprecationWarning):
+            assert fig_get() == ax_get()
 
     @pytest.mark.parametrize('axis', ('x', 'y'))
     def test_log(self, axis):
         fig, ax = self.new()
 
         # fig.set_xlim(0.1, 10)
-        getattr(fig, 'set_%slim' % axis)(0.1, 10)
+        with pytest.warns(DeprecationWarning):
+            getattr(fig, 'set_%slim' % axis)(0.1, 10)
 
         # fig.logx = True
-        setattr(fig, 'log%s' % axis, True)
+        with pytest.warns(DeprecationWarning):
+            setattr(fig, 'log%s' % axis, True)
 
         # assert ax.get_xscale() == 'log'
         assert getattr(ax, 'get_%sscale' % axis)() == 'log'
 
         # assert fig.logx is True
-        assert getattr(fig, 'log%s' % axis) is True
+        with pytest.warns(DeprecationWarning):
+            assert getattr(fig, 'log%s' % axis) is True
 
         # fig.logx = False
-        setattr(fig, 'log%s' % axis, False)
+        with pytest.warns(DeprecationWarning):
+            setattr(fig, 'log%s' % axis, False)
         assert getattr(ax, 'get_%sscale' % axis)() == 'linear'
-        assert getattr(fig, 'log%s' % axis) is False
+        with pytest.warns(DeprecationWarning):
+            assert getattr(fig, 'log%s' % axis) is False
 
         self.save_and_close(fig)
 
@@ -322,6 +332,7 @@ class TestPlot(PlottingTestBase):
 class TestAxes(PlottingTestBase):
 
     # -- test properties ------------------------
+    # all of these properties are DEPRECATED
 
     @pytest.mark.parametrize('axis', ('x', 'y'))
     def test_label(self, axis):
@@ -332,20 +343,24 @@ class TestAxes(PlottingTestBase):
         get_label = getattr(ax, 'get_%slabel' % axis)
 
         # assert ax.xlabel is ax.xaxis.label
-        assert getattr(ax, label) is axis_obj.label
+        with pytest.warns(DeprecationWarning):
+            assert getattr(ax, label) is axis_obj.label
 
         # ax.xlabel = 'Test label'
-        setattr(ax, label, 'Test label')
+        with pytest.warns(DeprecationWarning):
+            setattr(ax, label, 'Test label')
         # assert ax.get_xlabel() == 'Test label'
         assert get_label() == 'Test label'
 
         # check Text object gets preserved
         t = ax.text(0, 0, 'Test text')
-        setattr(ax, label, t)
+        with pytest.warns(DeprecationWarning):
+            setattr(ax, label, t)
         assert axis_obj.label is t
 
         # check deleter works
-        delattr(ax, label)
+        with pytest.warns(DeprecationWarning):
+            delattr(ax, label)
         assert get_label() == ''
 
     @pytest.mark.parametrize('axis', ('x', 'y'))
@@ -356,12 +371,15 @@ class TestAxes(PlottingTestBase):
         get_lim = getattr(ax, 'get_%slim' % axis)
 
         # check getter/setter
-        setattr(ax, lim, (24, 36))
+        with pytest.warns(DeprecationWarning):
+            setattr(ax, lim, (24, 36))
         assert get_lim() == (24, 36)
-        assert getattr(ax, lim) == get_lim()
+        with pytest.warns(DeprecationWarning):
+            assert getattr(ax, lim) == get_lim()
 
         # check deleter
-        delattr(ax, lim)
+        with pytest.warns(DeprecationWarning):
+            delattr(ax, lim)
 
     @pytest.mark.parametrize('axis', ('x', 'y'))
     def test_log(self, axis):
@@ -371,16 +389,21 @@ class TestAxes(PlottingTestBase):
         set_scale = getattr(ax, 'set_%sscale' % axis)
 
         # check default is not log
-        assert getattr(ax, log) is False
+        with pytest.warns(DeprecationWarning):
+            assert getattr(ax, log) is False
 
         # set log and assert that the scale gets set properly
-        setattr(ax, log, True)
-        assert getattr(ax, log) is True
+        with pytest.warns(DeprecationWarning):
+            setattr(ax, log, True)
+        with pytest.warns(DeprecationWarning):
+            assert getattr(ax, log) is True
         assert get_scale() == 'log'
 
         # set not log and check
-        setattr(ax, log, False)
-        assert getattr(ax, log) is False
+        with pytest.warns(DeprecationWarning):
+            setattr(ax, log, False)
+        with pytest.warns(DeprecationWarning):
+            assert getattr(ax, log) is False
         assert get_scale() == 'linear'
 
     # -- test methods ---------------------------
@@ -469,14 +492,16 @@ class TestTimeSeriesPlot(TimeSeriesMixin, TestPlot):
         # test empty
         fig, ax = self.new()
         assert isinstance(ax, self.AXES_CLASS)
+
         # test passing arguments
         fig = self.FIGURE_CLASS(figsize=[9, 6])
         assert fig.get_figwidth() == 9
         fig = self.FIGURE_CLASS(self.ts)
         ax = fig.gca()
         assert len(ax.lines) == 1
-        assert fig.get_epoch() == self.ts.x0.value
-        assert fig.get_xlim() == self.ts.span
+        assert ax.get_epoch() == self.ts.x0.value
+        assert ax.get_xlim() == self.ts.span
+
         # test passing multiple timeseries
         fig = self.FIGURE_CLASS(self.ts, self.ts)
         assert len(fig.gca().lines) == 2
@@ -485,6 +510,7 @@ class TestTimeSeriesPlot(TimeSeriesMixin, TestPlot):
         for ax in fig.axes:
             assert len(ax.lines) == 1
         assert fig.axes[1]._sharex is fig.axes[0]
+
         # test kwarg parsing
         fig = self.FIGURE_CLASS(self.ts, figsize=[12, 6], rasterized=True)
 

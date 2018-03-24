@@ -440,23 +440,23 @@ class TestDataQualityFlag(object):
 
         # and
         x = a & b
-        utils.assert_segmentlist_equal(x.active, [])
-        utils.assert_segmentlist_equal(x.known, KNOWN)
+        utils.assert_segmentlist_equal(x.active, a.active & b.active)
+        utils.assert_segmentlist_equal(x.known, a.known & b.known)
 
         # sub
         x = a - b
-        utils.assert_segmentlist_equal(x.active, a.active)  # no overlap
-        utils.assert_segmentlist_equal(x.known, a.known)
+        utils.assert_segmentlist_equal(x.active, a.active - b.active)
+        utils.assert_segmentlist_equal(x.known, a.known & b.known)
 
         # or
         x = a | b
-        utils.assert_segmentlist_equal(x.active, ACTIVE)
-        utils.assert_segmentlist_equal(x.known, KNOWN)
+        utils.assert_segmentlist_equal(x.active, a.active | b.active)
+        utils.assert_segmentlist_equal(x.known, a.known | b.known)
 
         # invert
         x = ~a
-        utils.assert_segmentlist_equal(x.active, ~a.active)
-        utils.assert_segmentlist_equal(x.known, ~a.known)
+        utils.assert_segmentlist_equal(x.active, a.known & ~a.active)
+        utils.assert_segmentlist_equal(x.known, a.known)
 
     def test_coalesce(self):
         flag = self.create()
@@ -585,6 +585,16 @@ class TestDataQualityFlag(object):
                 _read_write(autoidentify=True)
             _read_write(autoidentify=True, write_kw={'overwrite': True})
 
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')
+    def test_write_ligolw_attrs(self, flag):
+        from gwpy.io.ligolw import read_table
+        with tempfile.NamedTemporaryFile(suffix='.xml') as f:
+            flag.write(f, format='ligolw',
+                       attrs={'process_id': 'process:process_id:100'})
+            segdeftab = read_table(f, 'segment_definer')
+            assert str(segdeftab[0].process_id) == (
+                'process:process_id:100')
+
     # -- test queries ---------------------------
 
     @pytest.mark.parametrize('api', ('dqsegdb', 'segdb'))
@@ -623,6 +633,11 @@ class TestDataQualityFlag(object):
                               QUERY_FLAGS[0], SegmentList([(0, 10)]))
         utils.assert_flag_equal(result, result2)
 
+        with pytest.raises(TypeError):
+            self.TEST_CLASS.query_segdb(QUERY_FLAGS[0], 1, 2, 3)
+        with pytest.raises(TypeError):
+            self.TEST_CLASS.query_segdb(QUERY_FLAGS[0], (1, 2, 3))
+
     @pytest.mark.parametrize('name, flag', [
         (QUERY_FLAGS[0], QUERY_FLAGS[0]),  # regular query
         (QUERY_FLAGS[0].rsplit(':', 1)[0], QUERY_FLAGS[0]),  # versionless
@@ -650,6 +665,11 @@ class TestDataQualityFlag(object):
             query_dqsegdb(self.TEST_CLASS.query_dqsegdb,
                           'X1:GWPY-TEST:0', 0, 10)
         assert str(exc.value) == 'HTTP Error 404: Not found [X1:GWPY-TEST:0]'
+
+        with pytest.raises(TypeError):
+            self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS[0], 1, 2, 3)
+        with pytest.raises(TypeError):
+            self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS[0], (1, 2, 3))
 
     def test_query_dqsegdb_multi(self):
         segs = SegmentList([Segment(0, 2), Segment(8, 10)])
@@ -742,9 +762,14 @@ class TestDataQualityDict(object):
                                 instance[keys[0]] - reverse[keys[1]])
 
     def test_sub(self, instance, reverse):
-        a = instance.copy()
+        a = instance.copy(deep=True)
         a -= reverse
         utils.assert_dict_equal(a, instance - reverse, utils.assert_flag_equal)
+
+    def test_xor(self, instance, reverse):
+        a = instance.copy(deep=True)
+        a ^= reverse
+        utils.assert_dict_equal(a, instance ^ reverse, utils.assert_flag_equal)
 
     def test_invert(self, instance):
         inverse = type(instance)()

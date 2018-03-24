@@ -101,8 +101,5 @@ kill -9 $wvbpid &> /dev/null
 MPL_VERSION=$(port -q installed ${PY_PREFIX}-matplotlib | grep active | \
               awk -F '[\@\_]' '{print $2}')
 if [[ "${MPL_VERSION}" =~ 2.1.[01] ]]; then
-    sudo $PIP install "matplotlib >= 1.2.0, != 2.1.0, != 2.1.1"
+    ${PIP} install "matplotlib >= 1.2.0, != 2.1.0, != 2.1.1"
 fi
-
-# install python extras with sudo
-sudo ${PIP} install -r requirements-dev.txt ${PIP_FLAGS}

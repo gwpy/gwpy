@@ -317,6 +317,29 @@ class Spectrogram(Array2D):
 
     def plot(self, **kwargs):
         """Plot the data for this `Spectrogram`
+
+        Parameters
+        ----------
+        **kwargs
+            all keyword arguments are passed along to underlying
+            functions, see below for references
+
+        Returns
+        -------
+        plot : `~gwpy.plotter.SpectrogramPlot`
+            the `Plot` containing the data
+
+        See Also
+        --------
+        matplotlib.pyplot.figure
+            for documentation of keyword arguments used to create the
+            figure
+        matplotlib.figure.Figure.add_subplot
+            for documentation of keyword arguments used to create the
+            axes
+        gwpy.plotter.TimeSeriesAxes.plot_spectrogram
+            for documentation of keyword arguments used in rendering the
+            `Spectrogram` data
         """
         from ..plotter import SpectrogramPlot
         return SpectrogramPlot(self, **kwargs)
@@ -572,6 +595,17 @@ class Spectrogram(Array2D):
         # otherwise return whatever we got back from super (Quantity)
         return out
     _wrap_function.__doc__ = Array2D._wrap_function.__doc__
+
+    # -- other ----------------------------------
+
+    def __getitem__(self, item):
+        out = super(Spectrogram, self).__getitem__(item)
+
+        # set epoch manually, because Spectrogram doesn't store self._epoch
+        if isinstance(out, self._columnclass):
+            out.epoch = self.epoch
+
+        return out
 
 
 class SpectrogramList(TimeSeriesList):

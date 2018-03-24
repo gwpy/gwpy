@@ -22,10 +22,12 @@ For more details, see https://losc.ligo.org
 """
 
 import json
+from collections import namedtuple
+from operator import attrgetter
 
 from astropy.utils.data import get_readable_fileobj
 
-from ..segments import Segment
+from ..segments import (Segment, SegmentList)
 from ..time import to_gps
 
 # default URL
@@ -248,6 +250,8 @@ def find_datasets(start, end, detector=None, strict=False, host=LOSC_URL):
     span = Segment(start, end)
     jdata = fetch_dataset_json(start, end, host=host)
 
+    Dataset = namedtuple('Dataset', ('name', 'span', 'gap'))
+
     # extract epochs
     epochs = []
     for epochtype in jdata:
@@ -265,12 +269,13 @@ def find_datasets(start, end, detector=None, strict=False, host=LOSC_URL):
 
             # match segment against request
             try:
-                coverage = abs(epochseg & span)
+                coverage = span & epochseg
             except (ValueError, TypeError):
                 continue
-            if strict and coverage != abs(span):
+            gap = abs(SegmentList([span]) - SegmentList([epochseg]))
+            if strict and gap:
                 continue
-            epochs.append((epoch, coverage, abs(epochseg)))
+            epochs.append(Dataset(epoch, abs(epochseg), gap))
 
     # sort epochs by coverage
-    return list(zip(*sorted(epochs, key=lambda x: (x[1], x[2]))))[0]
+    return list(zip(*sorted(epochs, key=attrgetter('gap', 'span'))))[0]

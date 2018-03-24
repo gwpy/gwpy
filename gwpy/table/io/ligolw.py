@@ -32,7 +32,8 @@ except ImportError:
 from ...io import registry
 from ...io.ligolw import (is_ligolw, read_table as read_ligolw_table,
                           write_tables as write_ligolw_tables,
-                          patch_ligotimegps)
+                          patch_ligotimegps,
+                          to_table_type as to_ligolw_table_type)
 from .. import (Table, EventTable)
 from .utils import read_with_selection
 
@@ -269,24 +270,24 @@ def table_to_ligolw(table, tablename):
     """Convert a `astropy.table.Table` to a :class:`glue.ligolw.table.Table`
     """
     from glue.ligolw import (lsctables, types)
-    from glue.ligolw.ilwd import get_ilwdchar_class
 
     # create new LIGO_LW table
     columns = table.columns.keys()
-    llwtable = lsctables.New(lsctables.TableByName[tablename], columns=columns)
+    cls = lsctables.TableByName[tablename]
+    llwcolumns = list(columns)
+    for col, llwcols in _get_property_columns(cls, columns).items():
+        idx = llwcolumns.index(col)
+        llwcolumns.pop(idx)
+        for name in llwcols[::-1]:
+            llwcolumns.insert(idx, name)
+    llwtable = lsctables.New(cls, columns=llwcolumns)
 
     # map rows across
     for row in table:
         llwrow = llwtable.RowType()
         for name in columns:
-            llwtype = llwtable.validcolumns[name]
-            if row[name] is None:
-                val = None
-            elif llwtype == 'ilwd:char':
-                val = get_ilwdchar_class(tablename, name)(row[name])
-            else:
-                val = types.ToPyType[llwtype](row[name])
-            setattr(llwrow, name, val)
+            setattr(llwrow, name,
+                    to_ligolw_table_type(row[name], llwtable, name))
         llwtable.append(llwrow)
 
     return llwtable

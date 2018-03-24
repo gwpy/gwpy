@@ -62,6 +62,3 @@ if [ ${PY_XY} -lt 30 ]; then
 else
     yum -y install ${PY_PREFIX}-root
 fi
-
-# install root_numpy
-NO_ROOT_NUMPY_TMVA=1 ${PIP} install root_numpy ${PIP_FLAGS}

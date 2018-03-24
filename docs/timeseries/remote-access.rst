@@ -53,6 +53,14 @@ You can then trivially plot these data:
 
 For more details on plotting a `TimeSeries`, see :ref:`gwpy-timeseries-plot`.
 
+.. note::
+
+   :meth:`TimeSeries.fetch_open_data` accepts the keyword `cache`, which,
+   wnen set to `True` will store the downloaded data so that repeated requests
+   for a given URL result in only one download.
+   The ``GWPY_CACHE`` environment variable can be set (``GWPY_CACHE=1``)
+   to automatically set `cache=True` for all open data downloads.
+
 .. _gwpy-timeseries-remote-nds2:
 
 =============================

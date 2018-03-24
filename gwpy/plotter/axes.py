@@ -29,6 +29,7 @@ from matplotlib.projections import register_projection
 
 from .decorators import auto_refresh
 from . import html
+from ..utils.decorators import deprecated_property
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['Axes']
@@ -53,7 +54,7 @@ class Axes(_Axes):
     # -- text properties ------------------------
 
     # x-axis label
-    @property
+    @deprecated_property
     def xlabel(self):
         """Label for the x-axis
 
@@ -75,7 +76,7 @@ class Axes(_Axes):
         self.set_xlabel("")
 
     # y-axis label
-    @property
+    @deprecated_property
     def ylabel(self):
         """Label for the y-axis
 
@@ -98,7 +99,7 @@ class Axes(_Axes):
 
     # -- limit properties -----------------------
 
-    @property
+    @deprecated_property
     def xlim(self):
         """Limits for the x-axis
 
@@ -117,7 +118,7 @@ class Axes(_Axes):
         self.relim()
         self.autoscale_view(scalex=True, scaley=False)
 
-    @property
+    @deprecated_property
     def ylim(self):
         """Limits for the y-axis
 
@@ -137,7 +138,7 @@ class Axes(_Axes):
 
     # -- scale properties -----------------------
 
-    @property
+    @deprecated_property
     def logx(self):
         """Display the x-axis with a logarithmic scale
 
@@ -153,7 +154,7 @@ class Axes(_Axes):
         elif self.logx and not log:
             self.set_xscale('linear')
 
-    @property
+    @deprecated_property
     def logy(self):
         """Display the y-axis with a logarithmic scale
 
@@ -168,6 +169,11 @@ class Axes(_Axes):
             self.set_yscale('log')
         elif self.logy and not log:
             self.set_yscale('linear')
+
+    # -- other properties -----------------------
+
+    def _get_artists(self):
+        return self.lines + self.images + self.collections + self.patches
 
     # -- Axes methods ---------------------------
 

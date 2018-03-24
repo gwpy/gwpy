@@ -157,29 +157,6 @@ def test_detector_units(name):
     assert units.Unit(name)
 
 
-@utils.skip_missing_dependency('lal')
-def test_lal_units():
-    import lal
-    from gwpy.utils.lal import (to_lal_unit as to_, from_lal_unit as from_)
-
-    # test to LAL
-    lalu = to_('meter')
-    assert lalu == lal.MeterUnit
-
-    # test from LAL
-    a = from_(lalu)
-    assert a == units.meter
-
-    # test compound
-    assert from_(to_('N')) == units.Newton
-
-    # test error
-    with pytest.raises(ValueError):
-        to_('blah')
-    with pytest.raises(TypeError):
-        from_('blah')
-
-
 # -----------------------------------------------------------------------------
 #
 #   gwpy.detector.channel
@@ -488,7 +465,7 @@ class TestChannelList(object):
     @classmethod
     @pytest.fixture()
     def instance(cls):
-        return cls.TEST_CLASS([cls.ENTRY_CLASS(n, s) for
+        return cls.TEST_CLASS([cls.ENTRY_CLASS(n, sample_rate=s) for
                                n, s in zip(cls.NAMES, cls.SAMPLE_RATES)])
 
     def test_from_names(self):

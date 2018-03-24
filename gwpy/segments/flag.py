@@ -52,6 +52,7 @@ from astropy.utils.data import get_readable_fileobj
 
 from ..io.mp import read_multi as io_read_multi
 from ..time import to_gps, LIGOTimeGPS
+from ..utils.misc import if_not_none
 from .segments import Segment, SegmentList
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -76,6 +77,28 @@ def _select_query_method(cls, url):
     if urlparse(url).netloc.startswith('geosegdb.'):  # only DB2 server
         return cls.query_segdb
     return cls.query_dqsegdb
+
+
+def _parse_query_segments(args, func):
+    """Parse *args for query_dqsegdb() or query_segdb()
+
+    Returns a SegmentList in all cases
+    """
+    if len(args) == 1 and isinstance(args[0], SegmentList):
+        return args[0]
+    if len(args) == 1 and len(args[0]) == 2:
+        return SegmentList([Segment(to_gps(args[0][0]),
+                                    to_gps(args[0][1]))])
+    try:
+        return SegmentList([Segment(*map(to_gps, args))])
+    except (TypeError, RuntimeError) as exc:
+        msg = ('{0}() takes 2 arguments for start and end GPS times, '
+               'or 1 argument containing a Segment or '
+               'SegmentList'.format(func.__name__))
+        if isinstance(exc, TypeError):
+            exc.args = (msg,)
+            raise
+        raise TypeError(msg)
 
 
 # -- DataQualityFlag ----------------------------------------------------------
@@ -131,8 +154,7 @@ class DataQualityFlag(object):
         self.isgood = isgood
         self.padding = padding
 
-    # -------------------------------------------------------------------------
-    # read-write properties
+    # -- properties -----------------------------
 
     @property
     def name(self):
@@ -199,10 +221,7 @@ class DataQualityFlag(object):
 
     @version.setter
     def version(self, v):
-        if v is None:
-            self._version = None
-        else:
-            self._version = int(v)
+        self._version = int(v) if v is not None else None
 
     @property
     def label(self):
@@ -291,10 +310,7 @@ class DataQualityFlag(object):
 
     @category.setter
     def category(self, cat):
-        if cat is None:
-            self._category = None
-        else:
-            self._category = int(cat)
+        self._category = if_not_none(int, cat)
 
     @property
     def description(self):
@@ -337,8 +353,7 @@ class DataQualityFlag(object):
     def padding(self):
         self._padding = (0, 0)
 
-    # -------------------------------------------------------------------------
-    # read-only properties
+    # -- read-only properties -------------------
 
     @property
     def texname(self):
@@ -374,8 +389,7 @@ class DataQualityFlag(object):
         """
         return abs(self.active - self.known) == 0
 
-    # -------------------------------------------------------------------------
-    # classmethods
+    # -- classmethods ---------------------------
 
     @classmethod
     def query(cls, flag, *args, **kwargs):
@@ -443,13 +457,7 @@ class DataQualityFlag(object):
             filled appropriately.
         """
         # parse arguments
-        if len(args) == 1 and isinstance(args[0], SegmentList):
-            qsegs = args[0]
-        elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList([Segment(to_gps(args[0][0]),
-                                         to_gps(args[0][1]))])
-        else:
-            qsegs = SegmentList([Segment(*map(to_gps, args))])
+        qsegs = _parse_query_segments(args, cls.query_segdb)
 
         # process query
         try:
@@ -497,13 +505,7 @@ class DataQualityFlag(object):
         from dqsegdb import apicalls
 
         # parse arguments
-        if len(args) == 1 and isinstance(args[0], SegmentList):
-            qsegs = args[0]
-        elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList([Segment(to_gps(args[0][0]),
-                                         to_gps(args[0][1]))])
-        else:
-            qsegs = SegmentList([Segment(*map(to_gps, args))])
+        qsegs = _parse_query_segments(args, cls.query_dqsegdb)
 
         # get server
         protocol, server = kwargs.pop(
@@ -673,8 +675,7 @@ class DataQualityFlag(object):
         return cls(name=name, known=[known], category=veto.category,
                    description=veto.comment, padding=pad)
 
-    # -------------------------------------------------------------------------
-    # instance methods
+    # -- methods --------------------------------
 
     def write(self, target, *args, **kwargs):
         """Write this `DataQualityFlag` to file
@@ -975,7 +976,9 @@ class DataQualityFlag(object):
     def __isub__(self, other):
         """Subtract the ``other`` `DataQualityFlag` from this one in-place.
         """
+        self.known &= other.known
         self.active -= other.active
+        self.active &= self.known
         return self
 
     def __or__(self, other):
@@ -993,10 +996,22 @@ class DataQualityFlag(object):
     __add__ = __or__
     __iadd__ = __ior__
 
+    def __xor__(self, other):
+        """Find the exclusive OR of this one and ``other``.
+        """
+        return self.copy().__ixor__(other)
+
+    def __ixor__(self, other):
+        """Exclusive OR this flag with ``other`` in-place.
+        """
+        self.known &= other.known
+        self.active ^= other.active
+        return self
+
     def __invert__(self):
         new = self.copy()
-        new.known = ~self.known
         new.active = ~self.active
+        new.active &= new.known
         return new
 
 
@@ -1030,8 +1045,7 @@ class DataQualityDict(OrderedDict):
     """
     _EntryClass = DataQualityFlag
 
-    # -----------------------------------------------------------------------
-    # classmethods
+    # -- classmethods ---------------------------
 
     @classmethod
     def query(cls, flags, *args, **kwargs):
@@ -1095,18 +1109,9 @@ class DataQualityDict(OrderedDict):
             An ordered `DataQualityDict` of (name, `DataQualityFlag`)
             pairs.
         """
-        # given segmentlist
-        if len(args) == 1 and isinstance(args[0], SegmentList):
-            qsegs = args[0]
-        elif len(args) == 1 and len(args[0]) == 2:
-            qsegs = SegmentList(Segment(to_gps(args[0][0]),
-                                        to_gps(args[0][1])))
-        elif len(args) == 2:
-            qsegs = SegmentList([Segment(to_gps(args[0]), to_gps(args[1]))])
-        else:
-            raise ValueError("DataQualityDict.query_segdb must be called with "
-                             "a list of flag names, and either GPS start and "
-                             "stop times, or a SegmentList of query segments")
+        # parse segments
+        qsegs = _parse_query_segments(args, cls.query_segdb)
+
         url = kwargs.pop('url', DEFAULT_SEGMENT_SERVER)
         if kwargs.pop('on_error', None) is not None:
             warnings.warn("DataQualityDict.query_segdb doesn't accept the "
@@ -1206,11 +1211,14 @@ class DataQualityDict(OrderedDict):
             raise ValueError("on_error must be one of 'raise', 'warn', "
                              "or 'ignore'")
 
+        # parse segments
+        qsegs = _parse_query_segments(args, cls.query_dqsegdb)
+
         # set up threading
         inq = Queue()
         outq = Queue()
         for i in range(len(flags)):
-            t = _QueryDQSegDBThread(inq, outq, *args, **kwargs)
+            t = _QueryDQSegDBThread(inq, outq, qsegs, **kwargs)
             t.setDaemon(True)
             t.start()
         for i, flag in enumerate(flags):
@@ -1423,8 +1431,14 @@ class DataQualityDict(OrderedDict):
 
         return out
 
-    def to_ligolw_tables(self):
+    def to_ligolw_tables(self, **attrs):
         """Convert this `DataQualityDict` into a trio of LIGO_LW segment tables
+
+        Parameters
+        ----------
+        **attrs
+            other attributes to add to all rows in all tables
+            (e.g. ``'process_id'``)
 
         Returns
         -------
@@ -1439,10 +1453,15 @@ class DataQualityDict(OrderedDict):
         """
         from glue.ligolw.lsctables import (SegmentTable, SegmentSumTable,
                                            SegmentDefTable, New as new_table)
+        from ..io.ligolw import to_table_type as to_ligolw_table_type
 
         segdeftab = new_table(SegmentDefTable)
         segsumtab = new_table(SegmentSumTable)
         segtab = new_table(SegmentTable)
+
+        def _write_attrs(table, row):
+            for key, val in attrs.items():
+                setattr(row, key, to_ligolw_table_type(val, table, key))
 
         # write flags to tables
         for flag in self.values():
@@ -1456,17 +1475,19 @@ class DataQualityDict(OrderedDict):
             segdef.comment = flag.description
             segdef.insertion_time = to_gps(datetime.datetime.now()).gpsSeconds
             segdef.segment_def_id = SegmentDefTable.get_next_id()
+            _write_attrs(segdeftab, segdef)
             segdeftab.append(segdef)
 
             # write segment summary (known segments)
             for vseg in flag.known:
                 segsum = segsumtab.RowType()
-                for col in segsumtab.columnnames:  # default all columns to None
+                for col in segsumtab.columnnames:  # default columns to None
                     setattr(segsum, col, None)
                 segsum.segment_def_id = segdef.segment_def_id
                 segsum.set(map(LIGOTimeGPS, vseg))
                 segsum.comment = None
                 segsum.segment_sum_id = SegmentSumTable.get_next_id()
+                _write_attrs(segsumtab, segsum)
                 segsumtab.append(segsum)
 
             # write segment table (active segments)
@@ -1477,12 +1498,12 @@ class DataQualityDict(OrderedDict):
                 seg.segment_def_id = segdef.segment_def_id
                 seg.set(map(LIGOTimeGPS, aseg))
                 seg.segment_id = SegmentTable.get_next_id()
+                _write_attrs(segtab, seg)
                 segtab.append(seg)
 
         return segdeftab, segsumtab, segtab
 
-    # -----------------------------------------------------------------------
-    # instance methods
+    # -- methods --------------------------------
 
     def write(self, target, *args, **kwargs):
         """Write this `DataQualityDict` to file
@@ -1574,6 +1595,24 @@ class DataQualityDict(OrderedDict):
                     self[key].active &= segments
         return self
 
+    def copy(self, deep=False):
+        """Build a copy of this dictionary.
+
+        Parameters
+        ----------
+        deep : `bool`, optional, default: `False`
+            perform a deep copy of the original dictionary with a fresh
+            memory address
+
+        Returns
+        -------
+        flag2 : `DataQualityFlag`
+            a copy of the original dictionary
+        """
+        if deep:
+            return deepcopy(self)
+        return super(DataQualityDict, self).copy()
+
     def __iand__(self, other):
         for key, value in other.items():
             if key in self:
@@ -1585,8 +1624,8 @@ class DataQualityDict(OrderedDict):
     def __and__(self, other):
         if (sum(len(s.active) for s in self.values()) <=
                 sum(len(s.active) for s in other.values())):
-            return self.copy().__iand__(other)
-        return other.copy().__iand__(self)
+            return self.copy(deep=True).__iand__(other)
+        return other.copy(deep=True).__iand__(self)
 
     def __ior__(self, other):
         for key, value in other.items():
@@ -1599,8 +1638,8 @@ class DataQualityDict(OrderedDict):
     def __or__(self, other):
         if (sum(len(s.active) for s in self.values()) >=
                 sum(len(s.active) for s in other.values())):
-            return self.copy().__ior__(other)
-        return other.copy().__ior__(self)
+            return self.copy(deep=True).__ior__(other)
+        return other.copy(deep=True).__ior__(self)
 
     __iadd__ = __ior__
     __add__ = __or__
@@ -1612,10 +1651,19 @@ class DataQualityDict(OrderedDict):
         return self
 
     def __sub__(self, other):
-        return self.copy().__isub__(other)
+        return self.copy(deep=True).__isub__(other)
+
+    def __ixor__(self, other):
+        for key, value in other.items():
+            if key in self:
+                self[key] ^= value
+        return self
+
+    def __xor__(self, other):
+        return self.copy(deep=True).__ixor__(other)
 
     def __invert__(self):
-        new = self.copy()
+        new = self.copy(deep=True)
         for key, value in new.items():
             new[key] = ~value
         return new
