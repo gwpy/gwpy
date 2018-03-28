@@ -1382,6 +1382,32 @@ class TimeSeries(TimeSeriesBase):
 
         Examples
         --------
+        It can often be useful to add a simulated signal to some data
+        stream. For example, we like to quantify our sensitivity to
+        gravitational wave signals by injecting simulated ones into otherwise
+        quiet stretches of data. To see this, we can download some data
+        from LOSC:
+
+        >>> from gwpy.timeseries import TimeSeries
+        >>> strain = TimeSeries.fetch_open_data('H1', 1131350417, 1131350467)
+
+        These data are reasonably quiet, but we can also grab a simulation
+        of what we expect a binary black hole waveform to look like and add
+        it to our strain data:
+
+        >>> import numpy, urllib2
+        >>> source = 'https://losc.ligo.org/s/events/GW150914/P150914/'
+        >>> filename = 'fig2-unfiltered-waveform-H.txt'
+        >>> download = urllib2.urlopen('%s/%s' % (source, filename))
+        >>> t, h = numpy.recfromtxt(download, skip_header=1, unpack=True)
+        >>> h *= 1e-21
+
+        We will need to store this as a `TimeSeries` and downsample to 4096 Hz:
+        >>> waveform = TimeSeries(h, t0=1131350417, sample_rate=16384)
+        >>> waveform = waveform.resample(strain.sample_rate.value)
+
+        Finally, we can add this simulation to our strain data:
+        >>> injected = strain.add(waveform)
 
         Notes
         -----
