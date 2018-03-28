@@ -1292,7 +1292,7 @@ class TimeSeries(TimeSeriesBase):
 
     def demodulate(self, f, stride=1, exp=False, deg=True):
         """Compute the average magnitude and phase of this `TimeSeries`
-           once per stride at a given frequency.
+        once per stride at a given frequency.
 
         Parameters
         ----------
@@ -1364,6 +1364,54 @@ class TimeSeries(TimeSeriesBase):
         phase.__metadata_finalize__(out)
         phase.override_unit('deg' if deg else 'rad')
         return mag, phase
+
+    def add(self, other):
+        """Add two `TimeSeries` with the same sample rate along their
+        shared time samples.
+
+        Parameters
+        ----------
+        other : `TimeSeries`
+            a `TimeSeries` whose time samples are a subset of `self.times`
+            and whose sample rate is `self.sample_rate`
+
+        Returns
+        -------
+        out : `TimeSeries`
+            the sum of `self` and `other` along their shared time samples
+
+        Examples
+        --------
+
+        Notes
+        -----
+        This method requires that `other` have the same sampling rate as
+        `self` and will raise a `ValueError` if the sample rates disagree.
+        If `other` has time samples that do not intersect with those of
+        `self`, then the method will simply return a copy of `self`.
+
+        Users who wish to taper or window their `TimeSeries` should do so
+        before passing it to the `add` method. Tapering can be useful to
+        avoid introducing spectral leakage if, for example, `other` is a
+        waveform that is only estimated above some cutoff frequency. See
+        :func:`scipy.signal.get_window` for details on window formats.
+        """
+        if self.sample_rate.to('Hertz') != other.sample_rate.to('Hertz'):
+            raise ValueError('TimeSeries must have the same sampling rate')
+        # check that time samples overlap
+        t1 = self.times.value
+        t2 = other.times.value
+        tcommon = numpy.intersect1d(t1, t2)
+        if len(tcommon) == 0:
+            warn('since the TimeSeries do not have overlapping time samples, '
+                 'the original TimeSeries will be returned')
+        # add the TimeSeries along their overlaping samples
+        out = self
+        for t in tcommon:
+            ind1 = numpy.nonzero(t1 == t)
+            ind2 = numpy.nonzero(t2 == t)
+            out.value[ind1] += other.value[ind2]
+        return out
 
     def whiten(self, fftlength, overlap=0, method='scipy-welch',
                window='hanning', detrend='constant', asd=None, **kwargs):

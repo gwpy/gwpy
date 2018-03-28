@@ -1199,6 +1199,22 @@ class TestTimeSeries(TestTimeSeriesBase):
         assert ph.unit == 'rad'
         utils.assert_allclose(ph.value, phase, rtol=1e-5)
 
+    def test_add(self):
+        # create a timeseries out of an array of zeros
+        duration, sample_rate = 1, 4096
+        data = TimeSeries(numpy.zeros(duration*sample_rate), t0=0,
+                          sample_rate=sample_rate, unit='')
+
+        # create a second timeseries to add to the first
+        waveform = numpy.cos(2*numpy.pi*30*data.times.value)
+        waveform = TimeSeries(waveform, times=data.times.value)
+
+        # test that we recover this waveform when we add it to data
+        new_data = data.add(waveform)
+        assert new_data.unit == data.unit
+        assert len(new_data) == len(data)
+        utils.assert_allclose(new_data.value, waveform.value)
+
     def test_whiten(self):
         # create noise with a glitch in it at 1000 Hz
         noise = self.TEST_CLASS(
