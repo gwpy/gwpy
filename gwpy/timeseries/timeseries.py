@@ -1338,7 +1338,7 @@ class TimeSeries(TimeSeriesBase):
         and phase of the calibration line:
 
         >>> from gwpy.plotter import TimeSeriesPlot
-        >>> plot = TimeSeriesPlot(amp, phase, sep=True)
+        >>> plot = TimeSeriesPlot(amp, phase, sep=True, sharex=True)
         >>> plot.show()
         """
         stridesamp = int(stride * self.sample_rate.value)
