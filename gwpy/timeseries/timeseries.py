@@ -1413,10 +1413,14 @@ class TimeSeries(TimeSeriesBase):
 
         Notes
         -----
-        This method requires that `other` have the same sampling rate as
-        `self` and will raise a `ValueError` if the sample rates disagree.
-        If `other` has time samples that do not intersect with those of
-        `self`, then the method will simply return a copy of `self`.
+        This method requires that `self` and `other` have consistent units
+        and sample rates, and will raise a `ValueError` if either disagree.
+
+        If `other` has no intersecting time samples with those of `self`,
+        then the method will return a copy of `self`. If `other` has time
+        samples that extend past either the start or end of `self`, then
+        the method will add the `TimeSeries` only along their intersecting
+        time samples.
 
         Users who wish to taper or window their `TimeSeries` should do so
         before passing it to the `add` method. Tapering can be useful to
@@ -1424,8 +1428,7 @@ class TimeSeries(TimeSeriesBase):
         waveform that is only estimated above some cutoff frequency. See
         :func:`scipy.signal.get_window` for details on window formats.
         """
-        if self.sample_rate.to('Hertz') != other.sample_rate.to('Hertz'):
-            raise ValueError('TimeSeries must have the same sample rate')
+        self.is_compatible(other)
         # check that time samples overlap
         t1 = self.times.value
         t2 = other.times.value
