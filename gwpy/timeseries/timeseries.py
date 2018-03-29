@@ -1432,7 +1432,7 @@ class TimeSeries(TimeSeriesBase):
             warn('since the TimeSeries do not have overlapping time samples, '
                  'the original TimeSeries will be returned')
         # add the TimeSeries along their overlaping samples
-        out = self
+        out = self.copy()
         ind1, = numpy.in1d(t1, t2).nonzero()
         ind2, = numpy.in1d(t2, t1).nonzero()
         out.value[ind1] += other.value[ind2]

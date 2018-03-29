@@ -1210,13 +1210,15 @@ class TestTimeSeries(TestTimeSeriesBase):
         waveform = numpy.cos(2*numpy.pi*30*w_times)
         waveform = TimeSeries(waveform, times=w_times)
 
-        # test that we recover this waveform when we add it to data
+        # test that we recover this waveform when we add it to data,
+        # and that the operation does not change the original data
         new_data = data.add(waveform)
         assert new_data.unit == data.unit
         assert len(new_data) == len(data)
         ind, = new_data.value.nonzero()
         assert len(ind) == len(waveform)
         utils.assert_allclose(new_data.value[ind], waveform.value)
+        utils.assert_allclose(data.value, numpy.zeros(duration*sample_rate))
 
     def test_whiten(self):
         # create noise with a glitch in it at 1000 Hz
