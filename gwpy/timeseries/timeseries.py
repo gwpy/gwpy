@@ -1366,19 +1366,18 @@ class TimeSeries(TimeSeriesBase):
         return mag, phase
 
     def add(self, other):
-        """Add two `TimeSeries` with the same sample rate along their
-        shared time samples.
+        """Add two compatible `TimeSeries` along their shared time samples.
 
         Parameters
         ----------
         other : `TimeSeries`
-            a `TimeSeries` whose time samples are a subset of `self.times`
-            and whose sample rate is `self.sample_rate`
+            a `TimeSeries` whose time samples intersect with `self.times`
+            and whose unit and sample rate are compatible with those of `self`
 
         Returns
         -------
         out : `TimeSeries`
-            the sum of `self` and `other` along their shared time samples
+            the sum of `self` and `other` along their intersecting time samples
 
         Examples
         --------
