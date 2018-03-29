@@ -1433,10 +1433,9 @@ class TimeSeries(TimeSeriesBase):
                  'the original TimeSeries will be returned')
         # add the TimeSeries along their overlaping samples
         out = self
-        for t in tcommon:
-            ind1 = numpy.nonzero(t1 == t)
-            ind2 = numpy.nonzero(t2 == t)
-            out.value[ind1] += other.value[ind2]
+        ind1, = numpy.in1d(t1, t2).nonzero()
+        ind2, = numpy.in1d(t2, t1).nonzero()
+        out.value[ind1] += other.value[ind2]
         return out
 
     def whiten(self, fftlength, overlap=0, method='scipy-welch',
