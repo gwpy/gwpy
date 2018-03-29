@@ -1382,32 +1382,34 @@ class TimeSeries(TimeSeriesBase):
 
         Examples
         --------
-        It can often be useful to add a simulated signal to some data
-        stream. For example, we like to quantify our sensitivity to
-        gravitational wave signals by injecting simulated ones into otherwise
-        quiet stretches of data. To see this, we can download some data
-        from LOSC:
+        It can often be useful to add a known signal to a data stream. For an
+        example of this, we can first prepare one second of Gaussian noise:
 
+        >>> from numpy import random
         >>> from gwpy.timeseries import TimeSeries
-        >>> strain = TimeSeries.fetch_open_data('H1', 1131350417, 1131350467)
+        >>> noise = TimeSeries(random.normal(scale=.1, size=16384),
+                               sample_rate=16384)
 
-        These data are reasonably quiet, but we can also grab a simulation
-        of what we expect a binary black hole waveform to look like and add
-        it to our strain data:
+        Next, we can download a simulation of the GW150914 waveform from LOSC:
 
-        >>> import numpy, urllib2
+        >>> from astropy.utils.data import get_readable_fileobj
         >>> source = 'https://losc.ligo.org/s/events/GW150914/P150914/'
-        >>> filename = 'fig2-unfiltered-waveform-H.txt'
-        >>> download = urllib2.urlopen('%s/%s' % (source, filename))
-        >>> t, h = numpy.recfromtxt(download, skip_header=1, unpack=True)
-        >>> h *= 1e-21
+        >>> url = '%s/fig2-unfiltered-waveform-H.txt' % source
+        >>> with get_readable_fileobj(url) as f:
+        >>>     signal = TimeSeries.read(f, format='txt')
+        >>> signal.t0 = .5 # make sure this overlaps with noise time samples
 
-        We will need to store this as a `TimeSeries` and downsample to 4096 Hz:
-        >>> waveform = TimeSeries(h, t0=1131350417, sample_rate=16384)
-        >>> waveform = waveform.resample(strain.sample_rate.value)
+        Since the time samples overlap, we can add this to our noise data:
 
-        Finally, we can add this simulation to our strain data:
-        >>> injected = strain.add(waveform)
+        >>> data = noise.add(signal)
+
+        Finally, we can visualize each step of this process in the time domain:
+
+        >>> from gwpy.plotter import TimeSeriesPlot
+        >>> plot = TimeSeriesPlot(noise, signal, data, sep=True,
+                                  sharex=True, sharey=True)
+        >>> plot.set_epoch(0)
+        >>> plot.show()
 
         Notes
         -----
