@@ -1423,7 +1423,7 @@ class TimeSeries(TimeSeriesBase):
         :func:`scipy.signal.get_window` for details on window formats.
         """
         if self.sample_rate.to('Hertz') != other.sample_rate.to('Hertz'):
-            raise ValueError('TimeSeries must have the same sampling rate')
+            raise ValueError('TimeSeries must have the same sample rate')
         # check that time samples overlap
         t1 = self.times.value
         t2 = other.times.value
