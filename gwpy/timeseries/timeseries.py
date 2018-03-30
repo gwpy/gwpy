@@ -1428,7 +1428,7 @@ class TimeSeries(TimeSeriesBase):
         :func:`scipy.signal.get_window` for details on window formats.
         """
         self.is_compatible(other)
-        # add the TimeSeries along their overlaping samples
+        # add the TimeSeries along their intersecting samples
         t1 = self.times.value
         t2 = other.times.value
         out = self.copy()
