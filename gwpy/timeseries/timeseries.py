@@ -1416,10 +1416,10 @@ class TimeSeries(TimeSeriesBase):
         and sample rates, and will raise a `ValueError` if either is
         incompatible.
 
-        If `other` has no intersecting time samples with those of `self`,
-        then the method will return a copy of `self`. If `other` has time
-        samples that extend past the start or end of `self`, this method
-        will still add the `TimeSeries` along their intersecting time samples.
+        If `other.times` and `self.times` do not intersect, this method will
+        return a copy of `self`. If `other.times` extends past the start or
+        end of `self.times`, this method will still add the `TimeSeries`
+        along their intersecting time samples.
 
         Users who wish to taper or window their `TimeSeries` should do so
         before passing it to the `add` method. Tapering can be used to
