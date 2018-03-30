@@ -1387,7 +1387,7 @@ class TimeSeries(TimeSeriesBase):
         >>> from numpy import random
         >>> from gwpy.timeseries import TimeSeries
         >>> noise = TimeSeries(random.normal(scale=.1, size=16384),
-                               sample_rate=16384)
+        >>>                    sample_rate=16384)
 
         Next, we can download a simulation of the GW150914 waveform from LOSC:
 
@@ -1396,7 +1396,7 @@ class TimeSeries(TimeSeriesBase):
         >>> url = '%s/fig2-unfiltered-waveform-H.txt' % source
         >>> with get_readable_fileobj(url) as f:
         >>>     signal = TimeSeries.read(f, format='txt')
-        >>> signal.t0 = .5 # make sure this overlaps with noise time samples
+        >>> signal.t0 = .5 # make sure this intersects with noise time samples
 
         Since the time samples overlap, we can add this to our noise data:
 
@@ -1406,36 +1406,31 @@ class TimeSeries(TimeSeriesBase):
 
         >>> from gwpy.plotter import TimeSeriesPlot
         >>> plot = TimeSeriesPlot(noise, signal, data, sep=True,
-                                  sharex=True, sharey=True)
+        >>>                       sharex=True, sharey=True)
         >>> plot.set_epoch(0)
         >>> plot.show()
 
         Notes
         -----
         This method requires that `self` and `other` have consistent units
-        and sample rates, and will raise a `ValueError` if either disagree.
+        and sample rates, and will raise a `ValueError` if either is
+        incompatible.
 
         If `other` has no intersecting time samples with those of `self`,
         then the method will return a copy of `self`. If `other` has time
-        samples that extend past either the start or end of `self`, then
-        the method will add the `TimeSeries` only along their intersecting
-        time samples.
+        samples that extend past the start or end of `self`, this method
+        will still add the `TimeSeries` along their intersecting time samples.
 
         Users who wish to taper or window their `TimeSeries` should do so
-        before passing it to the `add` method. Tapering can be useful to
-        avoid introducing spectral leakage if, for example, `other` is a
-        waveform that is only estimated above some cutoff frequency. See
+        before passing it to the `add` method. Tapering can be used to
+        avoid spectral leakage when `other` is a waveform that does not
+        smoothly go to zero at its boundaries. See
         :func:`scipy.signal.get_window` for details on window formats.
         """
         self.is_compatible(other)
-        # check that time samples overlap
+        # add the TimeSeries along their overlaping samples
         t1 = self.times.value
         t2 = other.times.value
-        tcommon = numpy.intersect1d(t1, t2)
-        if len(tcommon) == 0:
-            warn('since the TimeSeries do not have overlapping time samples, '
-                 'the original TimeSeries will be returned')
-        # add the TimeSeries along their overlaping samples
         out = self.copy()
         ind1, = numpy.in1d(t1, t2).nonzero()
         ind2, = numpy.in1d(t2, t1).nonzero()
