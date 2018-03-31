@@ -1390,7 +1390,7 @@ class TimeSeries(TimeSeriesBase):
 
         >>> import numpy
         >>> from gwpy.timeseries import TimeSeries
-        >>> series = TimeSeries(np.ones(16384), sample_rate=16384)
+        >>> series = TimeSeries(numpy.ones(16384), sample_rate=16384)
         >>> tapered = series.taper()
 
         We can plot it to see how the ends now vary smoothly from 0 to 1:
@@ -1408,7 +1408,7 @@ class TimeSeries(TimeSeriesBase):
         from scipy.special import expit
         out = self.copy()
         # build a Planck tapering window
-        window = np.ones(self.size)
+        window = numpy.ones(self.size)
         nsteps = int(tau * self.sample_rate.value)
         t = self.times.value - self.t0.value
         z = tau * (1./t[1:nsteps] + 1./(t[1:nsteps] - tau))
