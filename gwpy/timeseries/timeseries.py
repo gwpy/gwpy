@@ -1365,6 +1365,61 @@ class TimeSeries(TimeSeriesBase):
         phase.override_unit('deg' if deg else 'rad')
         return mag, phase
 
+    def taper(self, tau=.05, side='leftright'):
+        """Taper the ends of this `TimeSeries` smoothly to zero.
+
+        Parameters
+        ----------
+        tau : `float`, optional
+            the timescale in seconds over which to taper, must be less than
+            half of `self.duration`
+
+        side : `str`, optional
+            the side of the `TimeSeries` to taper, must be one of `'left'`,
+            `'right'`, or `'leftright'`
+
+        Returns
+        -------
+        out : `TimeSeries`
+            a copy of `self` tapered at one or both ends
+
+        Examples
+        --------
+        To see the effect of the Planck-taper window, we can taper a
+        flat `TimeSeries` at both ends:
+
+        >>> import numpy
+        >>> from gwpy.timeseries import TimeSeries
+        >>> series = TimeSeries(np.ones(16384), sample_rate=16384)
+        >>> tapered = series.taper()
+
+        We can plot it to see how the ends now vary smoothly from 0 to 1:
+
+        >>> plot = tapered.plot()
+        >>> plot.show()
+
+        Notes
+        -----
+        The :meth:`TimeSeries.taper` applies a Planck-taper window in the time
+        domain, which is often used in gravitational wave astronomy to
+        analyze signals whose phase information must be preserved.
+        See :func:`scipy.signal.get_window` for other common window formats.
+        """
+        from scipy.special import expit
+        out = self.copy()
+        # build a Planck tapering window
+        window = np.ones(self.size)
+        nsteps = int(tau * self.sample_rate.value)
+        t = self.times.value - self.t0.value
+        z = tau * (1./t[1:nsteps] + 1./(t[1:nsteps] - tau))
+        if 'left' in side:
+            window[0] = 0
+            window[1:nsteps] = expit(-z)
+        if 'right' in side:
+            window[::-1][0] = 0
+            window[::-1][1:nsteps] = expit(-z)
+        return out * window
+
     def add(self, other):
         """Add two compatible `TimeSeries` along their shared time samples.
 
