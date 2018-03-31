@@ -1418,18 +1418,17 @@ class TimeSeries(TimeSeriesBase):
             raise ValueError('side must be one of left, right, or leftright')
         from scipy.special import expit
         out = self.copy()
-        # build a Planck tapering window
-        window = numpy.ones(self.size)
+        # apply a Planck tapering window
         nsteps = int(tau * self.sample_rate.value)
-        t = self.times.value - self.t0.value
-        z = tau * (1./t[1:nsteps] + 1./(t[1:nsteps] - tau))
+        t = self.times.value[1:nsteps] - self.t0.value
+        z = tau * (1./t + 1./(t - tau))
         if 'left' in side:
-            window[0] = 0
-            window[1:nsteps] = expit(-z)
+            out[0] *= 0
+            out[1:nsteps] *= expit(-z)
         if 'right' in side:
-            window[::-1][0] = 0
-            window[::-1][1:nsteps] = expit(-z)
-        return out * window
+            out[::-1][0] *= 0
+            out[::-1][1:nsteps] *= expit(-z)
+        return out
 
     def add(self, other):
         """Add two compatible `TimeSeries` along their shared time samples.
