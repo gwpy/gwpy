@@ -1220,8 +1220,7 @@ class TestTimeSeries(TestTimeSeriesBase):
 
         # create a second timeseries to inject into the first
         w_times = data.times.value[:2048]
-        waveform = numpy.cos(2*numpy.pi*30*w_times)
-        waveform = TimeSeries(waveform, times=w_times)
+        waveform = TimeSeries(numpy.cos(2*numpy.pi*30*w_times), times=w_times)
 
         # test that we recover this waveform when we add it to data,
         # and that the operation does not change the original data
@@ -1229,7 +1228,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         assert new_data.unit == data.unit
         assert new_data.size == data.size
         ind, = new_data.value.nonzero()
-        assert len(ind) == len(waveform)
+        assert len(ind) == waveform.size
         utils.assert_allclose(new_data.value[ind], waveform.value)
         utils.assert_allclose(data.value, numpy.zeros(duration*sample_rate))
 
