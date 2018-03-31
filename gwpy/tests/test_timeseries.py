@@ -1201,7 +1201,7 @@ class TestTimeSeries(TestTimeSeriesBase):
 
     def test_taper(self):
         # create a flat timeseries, then taper it
-        data = TimeSeries(np.ones(16384), sample_rate=16384, unit='')
+        data = TimeSeries(numpy.ones(16384), sample_rate=16384, unit='')
         tapered = data.taper()
 
         # check that the tapered timeseries goes to zero at its ends,
@@ -1210,7 +1210,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         assert tapered[-1].value == 0
         assert tapered.unit == data.unit
         assert tapered.size == data.size
-        utils.assert_allclose(data.value, np.ones(16384))
+        utils.assert_allclose(data.value, numpy.ones(16384))
 
     def test_add(self):
         # create a timeseries out of an array of zeros
