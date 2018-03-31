@@ -1182,14 +1182,14 @@ class TestTimeSeries(TestTimeSeriesBase):
         # test with exp=True
         demod = data.demodulate(f, stride=stride, exp=True)
         assert demod.unit == data.unit
-        assert len(demod) == duration // stride
+        assert demod.size == duration // stride
         utils.assert_allclose(numpy.abs(demod.value), amp, rtol=1e-5)
         utils.assert_allclose(numpy.angle(demod.value), phase, rtol=1e-5)
 
         # test with exp=False, deg=True
         mag, ph = data.demodulate(f, stride=stride)
         assert mag.unit == data.unit
-        assert len(mag) == len(ph)
+        assert mag.size == ph.size
         assert ph.unit == 'deg'
         utils.assert_allclose(mag.value, amp, rtol=1e-5)
         utils.assert_allclose(ph.value, numpy.rad2deg(phase), rtol=1e-5)
@@ -1198,6 +1198,19 @@ class TestTimeSeries(TestTimeSeriesBase):
         mag, ph = data.demodulate(f, stride=stride, deg=False)
         assert ph.unit == 'rad'
         utils.assert_allclose(ph.value, phase, rtol=1e-5)
+
+    def test_taper(self):
+        # create a flat timeseries, then taper it
+        data = TimeSeries(np.ones(16384), sample_rate=16384, unit='')
+        tapered = data.taper()
+
+        # check that the tapered timeseries goes to zero at its ends,
+        # and that the operation does not change the original data
+        assert tapered[0].value == 0
+        assert tapered[-1].value == 0
+        assert tapered.unit == data.unit
+        assert tapered.size == data.size
+        utils.assert_allclose(data.value, np.ones(16384))
 
     def test_add(self):
         # create a timeseries out of an array of zeros
@@ -1214,7 +1227,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         # and that the operation does not change the original data
         new_data = data.add(waveform)
         assert new_data.unit == data.unit
-        assert len(new_data) == len(data)
+        assert new_data.size == data.size
         ind, = new_data.value.nonzero()
         assert len(ind) == len(waveform)
         utils.assert_allclose(new_data.value[ind], waveform.value)
