@@ -1413,9 +1413,10 @@ class TimeSeries(TimeSeriesBase):
         """
         # check window properties
         if tau >= 0.5 * self.duration.value:
-            raise ValueError('cannot taper more than half of a TimeSeries')
+            raise ValueError("cannot taper more than half of a TimeSeries")
         if side not in ('left', 'right', 'leftright'):
-            raise ValueError('side must be one of left, right, or leftright')
+            raise ValueError("side must be one of 'left', 'right', "
+                             "or 'leftright'")
         from scipy.special import expit
         out = self.copy()
         # apply a Planck tapering window
