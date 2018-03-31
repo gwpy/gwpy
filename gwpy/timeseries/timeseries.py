@@ -1383,6 +1383,12 @@ class TimeSeries(TimeSeriesBase):
         out : `TimeSeries`
             a copy of `self` tapered at one or both ends
 
+        Raises
+        ------
+        ValueError
+            if `tau` is longer than `self.duration/2` or if `side` is not
+            one of `'left'`, `'right'`, or `'leftright'`
+
         Examples
         --------
         To see the effect of the Planck-taper window, we can taper a
@@ -1405,6 +1411,11 @@ class TimeSeries(TimeSeriesBase):
         analyze signals whose phase information must be preserved.
         See :func:`scipy.signal.get_window` for other common window formats.
         """
+        # check window properties
+        if tau >= 0.5 * self.duration.value:
+            raise ValueError('cannot taper more than half of a TimeSeries')
+        if side not in ('left', 'right', 'leftright'):
+            raise ValueError('side must be one of left, right, or leftright')
         from scipy.special import expit
         out = self.copy()
         # build a Planck tapering window
