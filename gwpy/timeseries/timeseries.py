@@ -1436,28 +1436,28 @@ class TimeSeries(TimeSeriesBase):
 
         Examples
         --------
-        It can often be useful to add a known signal to a data stream. For an
-        example of this, we can first prepare one second of Gaussian noise:
+        It can often be useful to add a known signal to a data stream. For
+        example, we can prepare one second of Gaussian noise:
 
         >>> from numpy import random
         >>> from gwpy.timeseries import TimeSeries
         >>> noise = TimeSeries(random.normal(scale=.1, size=16384),
         >>>                    sample_rate=16384)
 
-        Next, we can download a simulation of the GW150914 waveform from LOSC:
+        Then we can download a simulation of the GW150914 waveform from LOSC:
 
         >>> from astropy.utils.data import get_readable_fileobj
         >>> source = 'https://losc.ligo.org/s/events/GW150914/P150914/'
         >>> url = '%s/fig2-unfiltered-waveform-H.txt' % source
         >>> with get_readable_fileobj(url) as f:
-        >>>     signal = TimeSeries.read(f, format='txt')
+        >>>     signal = TimeSeries.read(f, format='txt').taper()
         >>> signal.t0 = .5 # make sure this intersects with noise time samples
 
         Since the time samples overlap, we can add this to our noise data:
 
         >>> data = noise.add(signal)
 
-        Finally, we can visualize each step of this process in the time domain:
+        Finally, we can visualize the full process in the time domain:
 
         >>> from gwpy.plotter import TimeSeriesPlot
         >>> plot = TimeSeriesPlot(noise, signal, data, sep=True,
@@ -1467,20 +1467,18 @@ class TimeSeries(TimeSeriesBase):
 
         Notes
         -----
-        This method requires that `self` and `other` have consistent units
-        and sample rates, and will raise a `ValueError` if either is
-        incompatible.
+        The :meth:`TimeSeries.add` requires that `self` and `other` have
+        consistent units and sample rates. It will raise a `ValueError` if
+        either is incompatible.
 
         If `other.times` and `self.times` do not intersect, this method will
-        return a copy of `self`. If `other.times` extends past the start or
-        end of `self.times`, this method will still add the `TimeSeries`
-        along their intersecting time samples.
+        return a copy of `self`. However, if `other.times` extends past the
+        start or end of `self.times`, this method will still add the
+        `TimeSeries` along their intersecting time samples.
 
         Users who wish to taper or window their `TimeSeries` should do so
-        before passing it to the `add` method. Tapering can be used to
-        avoid spectral leakage when `other` is a waveform that does not
-        smoothly go to zero at its boundaries. See
-        :func:`scipy.signal.get_window` for details on window formats.
+        before passing it to the `add` method. See the :meth:`TimeSeries.taper`
+        for more information.
         """
         self.is_compatible(other)
         # add the TimeSeries along their intersecting samples
