@@ -1430,7 +1430,7 @@ class TimeSeries(TimeSeriesBase):
             out[::-1][1:nsteps] *= expit(-z)
         return out
 
-    def add(self, other):
+    def inject(self, other):
         """Add two compatible `TimeSeries` along their shared time samples.
 
         Parameters
@@ -1446,7 +1446,7 @@ class TimeSeries(TimeSeriesBase):
 
         Examples
         --------
-        It can often be useful to add a known signal to a data stream. For
+        It can often be useful to inject a known signal into a data stream. For
         example, we can prepare one second of Gaussian noise:
 
         >>> from numpy import random
@@ -1465,9 +1465,9 @@ class TimeSeries(TimeSeriesBase):
 
         Note, since this simulation cuts off before a certain time, it is
         important to taper its ends to zero to avoid ringing artifacts.
-        Since the time samples overlap, we can add this to our noise data:
+        Since the time samples overlap, we can inject this to our noise data:
 
-        >>> data = noise.add(signal)
+        >>> data = noise.inject(signal)
 
         Finally, we can visualize the full process in the time domain:
 
@@ -1479,7 +1479,7 @@ class TimeSeries(TimeSeriesBase):
 
         Notes
         -----
-        The :meth:`TimeSeries.add` requires that `self` and `other` have
+        The :meth:`TimeSeries.inject` requires that `self` and `other` have
         consistent units and sample rates. It will raise a `ValueError` if
         either is incompatible.
 
@@ -1489,7 +1489,7 @@ class TimeSeries(TimeSeriesBase):
         `TimeSeries` along their intersecting time samples.
 
         Users who wish to taper or window their `TimeSeries` should do so
-        before passing it to the `add` method. See the :meth:`TimeSeries.taper`
+        before passing it to this method. See the :meth:`TimeSeries.taper`
         for more information.
         """
         self.is_compatible(other)

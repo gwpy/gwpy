@@ -1212,20 +1212,20 @@ class TestTimeSeries(TestTimeSeriesBase):
         assert tapered.size == data.size
         utils.assert_allclose(data.value, numpy.ones(16384))
 
-    def test_add(self):
+    def test_inject(self):
         # create a timeseries out of an array of zeros
         duration, sample_rate = 1, 4096
         data = TimeSeries(numpy.zeros(duration*sample_rate), t0=0,
                           sample_rate=sample_rate, unit='')
 
-        # create a second timeseries to add to the first
+        # create a second timeseries to inject into the first
         w_times = data.times.value[:2048]
         waveform = numpy.cos(2*numpy.pi*30*w_times)
         waveform = TimeSeries(waveform, times=w_times)
 
         # test that we recover this waveform when we add it to data,
         # and that the operation does not change the original data
-        new_data = data.add(waveform)
+        new_data = data.inject(waveform)
         assert new_data.unit == data.unit
         assert new_data.size == data.size
         ind, = new_data.value.nonzero()
