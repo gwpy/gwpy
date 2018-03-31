@@ -1463,6 +1463,8 @@ class TimeSeries(TimeSeriesBase):
         >>>     signal = TimeSeries.read(f, format='txt').taper()
         >>> signal.t0 = .5 # make sure this intersects with noise time samples
 
+        Note, since this simulation cuts off before a certain time, it is
+        important to taper its ends to zero to avoid ringing artifacts.
         Since the time samples overlap, we can add this to our noise data:
 
         >>> data = noise.add(signal)
