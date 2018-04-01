@@ -19,9 +19,13 @@
 """Utilities for signal-processing with windows
 """
 
+import numpy
+
 from math import ceil
 
 from scipy.signal import windows as scipy_windows
+
+from scipy.special import expit
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -121,3 +125,67 @@ def recommended_overlap(name, nfft=None):
     if nfft:
         return int(ceil(nfft * rov))
     return rov
+
+
+# -- Planck taper window ------------------------------------------------------
+# source: https://arxiv.org/abs/1003.2939
+
+
+def planck(N, nleft=None, nright=None):
+    """Return a Planck taper window.
+
+    Parameters
+    ----------
+    N : `int`
+        Number of points in the output window. If zero, an empty array is
+        returned.
+
+    nleft : `int`, optional
+        Number of points to taper on the left, must be less than `N/2`
+
+    nright : `int`, optional
+        Number of points to taper on the right, must be less than `N/2`
+
+    Returns
+    -------
+    w : `ndarray`
+        The window, with the maximum value normalized to 1 and at least one
+        end tapered smoothly to 0.
+
+    Raises
+    ------
+    ValueError
+        If at least one of `nleft` or `nright` is not specified, or if either
+        `nleft` or `nright` is greater than `N/2`
+
+    Examples
+    --------
+    To taper 0.1 seconds off of both ends of one second of data sampled at
+    16384 Hz:
+
+    >>> from gwpy.signal.window import planck
+    >>> w = planck(16384, nleft=1638, nright=1638)
+
+    Notes
+    -----
+    For more information about the Planck taper window, see
+    https://arxiv.org/abs/1003.2939
+    """
+    if not nleft and not nright:
+        raise ValueError('must supply a left or right taper length')
+    if nleft > N/2 or nright > N/2:
+        raise ValueError('cannot taper more than half of the full window '
+                         'on either side')
+    # construct a Planck taper window
+    w = numpy.ones(N)
+    if nleft:
+        w[0] *= 0
+        zleft = numpy.array([nleft * (1./k + 1./(k-nleft))
+                            for k in range(1, nleft)])
+        w[1:nleft] *= expit(-zleft)
+    if nright:
+        w[::-1][0] *= 0
+        zright = numpy.array([nright * (1./k + 1./(k-nright))
+                             for k in range(1, nright)])
+        w[::-1][1:nright] *= expit(-zright)
+    return w

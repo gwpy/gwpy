@@ -35,7 +35,7 @@ from ..segments import Segment
 from ..signal import filter_design
 from ..signal.filter import sosfiltfilt
 from ..signal.fft import (registry as fft_registry, ui as fft_ui)
-from ..signal.window import recommended_overlap
+from ..signal.window import recommended_overlap, planck
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
 
@@ -1365,15 +1365,11 @@ class TimeSeries(TimeSeriesBase):
         phase.override_unit('deg' if deg else 'rad')
         return mag, phase
 
-    def taper(self, tau=.05, side='leftright'):
+    def taper(self, side='leftright'):
         """Taper the ends of this `TimeSeries` smoothly to zero.
 
         Parameters
         ----------
-        tau : `float`, optional
-            the timescale in seconds over which to taper, must be less than
-            half of `self.duration`
-
         side : `str`, optional
             the side of the `TimeSeries` to taper, must be one of `'left'`,
             `'right'`, or `'leftright'`
@@ -1386,50 +1382,51 @@ class TimeSeries(TimeSeriesBase):
         Raises
         ------
         ValueError
-            if `tau` is longer than `self.duration/2` or if `side` is not
-            one of `'left'`, `'right'`, or `'leftright'`
+            if `side` is not one of `('left', 'right', 'leftright')`
 
         Examples
         --------
         To see the effect of the Planck-taper window, we can taper a
-        flat `TimeSeries` at both ends:
+        sinusoidal `TimeSeries` at both ends:
 
         >>> import numpy
         >>> from gwpy.timeseries import TimeSeries
-        >>> series = TimeSeries(numpy.ones(16384), sample_rate=16384)
+        >>> t = numpy.linspace(0, 1, 2048)
+        >>> series = TimeSeries(numpy.cos(10.5*numpy.pi*t), times=t)
         >>> tapered = series.taper()
 
         We can plot it to see how the ends now vary smoothly from 0 to 1:
 
-        >>> plot = tapered.plot()
+        >>> from gwpy.plotter import TimeSeriesPlot
+        >>> plot = TimeSeriesPlot(series, tapered, sep=True, sharex=True)
         >>> plot.show()
 
         Notes
         -----
-        The :meth:`TimeSeries.taper` applies a Planck-taper window in the time
-        domain, which is often used in gravitational wave astronomy to
-        analyze signals whose phase information must be preserved.
-        See :func:`scipy.signal.get_window` for other common window formats.
+        The :meth:`TimeSeries.taper` automatically tapers from the second
+        stationary point (local maximum or minimum) on the specified side
+        of the input. See :func:`gwpy.signal.window.planck` for the generic
+        Planck taper window, and see :func:`scipy.signal.get_window` for
+        other common window formats.
         """
         # check window properties
-        if tau >= 0.5 * self.duration.value:
-            raise ValueError("cannot taper more than half of a TimeSeries")
         if side not in ('left', 'right', 'leftright'):
             raise ValueError("side must be one of 'left', 'right', "
                              "or 'leftright'")
-        from scipy.special import expit
         out = self.copy()
-        # apply a Planck tapering window
-        nsteps = int(tau * self.sample_rate.value)
-        t = self.times.value[1:nsteps] - self.t0.value
-        z = tau * (1./t + 1./(t - tau))
+        # identify the second stationary point away from each boundary,
+        # else default to half the TimeSeries width
+        nleft, nright = None, None
+        mini, = signal.argrelmin(out.value)
+        maxi, = signal.argrelmax(out.value)
         if 'left' in side:
-            out[0] *= 0
-            out[1:nsteps] *= expit(-z)
+            nleft = max(mini[0], maxi[0])
+            nleft = min(nleft, self.size/2)
         if 'right' in side:
-            out[::-1][0] *= 0
-            out[::-1][1:nsteps] *= expit(-z)
-        return out
+            nright = out.size - min(mini[-1], maxi[-1])
+            nright = min(nright, self.size/2)
+        w = planck(out.size, nleft=nleft, nright=nright)
+        return out * w
 
     def inject(self, other):
         """Add two compatible `TimeSeries` along their shared time samples.
