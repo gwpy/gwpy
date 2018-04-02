@@ -1405,9 +1405,13 @@ class TimeSeries(TimeSeriesBase):
         -----
         The :meth:`TimeSeries.taper` automatically tapers from the second
         stationary point (local maximum or minimum) on the specified side
-        of the input. See :func:`gwpy.signal.window.planck` for the generic
-        Planck taper window, and see :func:`scipy.signal.get_window` for
-        other common window formats.
+        of the input. However, the method will never taper more than half
+        the full width of the `TimeSeries`, and will fail if there are no
+        stationary points.
+
+        See :func:`gwpy.signal.window.planck` for the generic Planck taper
+        window, and see :func:`scipy.signal.get_window` for other common
+        window formats.
         """
         # check window properties
         if side not in ('left', 'right', 'leftright'):
@@ -1416,7 +1420,7 @@ class TimeSeries(TimeSeriesBase):
         out = self.copy()
         # identify the second stationary point away from each boundary,
         # else default to half the TimeSeries width
-        nleft, nright = None, None
+        nleft, nright = 0, 0
         mini, = signal.argrelmin(out.value)
         maxi, = signal.argrelmax(out.value)
         if 'left' in side:
@@ -1425,8 +1429,8 @@ class TimeSeries(TimeSeriesBase):
         if 'right' in side:
             nright = out.size - min(mini[-1], maxi[-1])
             nright = min(nright, self.size/2)
-        w = planck(out.size, nleft=nleft, nright=nright)
-        return out * w
+        out *= planck(out.size, nleft=nleft, nright=nright)
+        return out
 
     def inject(self, other):
         """Add two compatible `TimeSeries` along their shared time samples.
