@@ -131,32 +131,25 @@ def recommended_overlap(name, nfft=None):
 # source: https://arxiv.org/abs/1003.2939
 
 
-def planck(N, nleft=None, nright=None):
+def planck(N, nleft=0, nright=0):
     """Return a Planck taper window.
 
     Parameters
     ----------
     N : `int`
-        Number of points in the output window. If zero, an empty array is
-        returned.
+        Number of points in the output window
 
     nleft : `int`, optional
-        Number of points to taper on the left, must be less than `N/2`
+        Number of points to taper on the left, should be less than `N/2`
 
     nright : `int`, optional
-        Number of points to taper on the right, must be less than `N/2`
+        Number of points to taper on the right, should be less than `N/2`
 
     Returns
     -------
     w : `ndarray`
         The window, with the maximum value normalized to 1 and at least one
         end tapered smoothly to 0.
-
-    Raises
-    ------
-    ValueError
-        If at least one of `nleft` or `nright` is not specified, or if either
-        `nleft` or `nright` is greater than `N/2`
 
     Examples
     --------
@@ -171,13 +164,6 @@ def planck(N, nleft=None, nright=None):
     For more information about the Planck taper window, see
     https://arxiv.org/abs/1003.2939
     """
-    if not nleft and not nright:
-        raise ValueError('must supply a left or right taper length')
-    if nleft < 1 or nright < 1:
-        raise ValueError('taper lengths must be positive')
-    if nleft > N/2 or nright > N/2:
-        raise ValueError('cannot taper more than half of the full window '
-                         'on either side')
     # construct a Planck taper window
     w = numpy.ones(N)
     if nleft:
