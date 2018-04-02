@@ -161,10 +161,10 @@ def planck(N, nleft=None, nright=None):
     Examples
     --------
     To taper 0.1 seconds off of both ends of one second of data sampled at
-    16384 Hz:
+    2048 Hz:
 
     >>> from gwpy.signal.window import planck
-    >>> w = planck(16384, nleft=1638, nright=1638)
+    >>> w = planck(2048, nleft=205, nright=205)
 
     Notes
     -----
@@ -173,6 +173,8 @@ def planck(N, nleft=None, nright=None):
     """
     if not nleft and not nright:
         raise ValueError('must supply a left or right taper length')
+    if nleft < 1 or nright < 1:
+        raise ValueError('taper lengths must be positive')
     if nleft > N/2 or nright > N/2:
         raise ValueError('cannot taper more than half of the full window '
                          'on either side')
@@ -184,8 +186,8 @@ def planck(N, nleft=None, nright=None):
                             for k in range(1, nleft)])
         w[1:nleft] *= expit(-zleft)
     if nright:
-        w[::-1][0] *= 0
-        zright = numpy.array([nright * (1./k + 1./(k-nright))
-                             for k in range(1, nright)])
-        w[::-1][1:nright] *= expit(-zright)
+        w[N-1] *= 0
+        zright = numpy.array([-nright * (1./(k-nright) + 1./k)
+                            for k in range(1, nright)])
+        w[N-nright:N-1] *= expit(-zright)
     return w
