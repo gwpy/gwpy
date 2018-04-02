@@ -188,6 +188,6 @@ def planck(N, nleft=None, nright=None):
     if nright:
         w[N-1] *= 0
         zright = numpy.array([-nright * (1./(k-nright) + 1./k)
-                            for k in range(1, nright)])
+                             for k in range(1, nright)])
         w[N-nright:N-1] *= expit(-zright)
     return w
