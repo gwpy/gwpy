@@ -137,13 +137,13 @@ def planck(N, nleft=0, nright=0):
     Parameters
     ----------
     N : `int`
-        Number of points in the output window
+        Number of samples in the output window
 
     nleft : `int`, optional
-        Number of points to taper on the left, should be less than `N/2`
+        Number of samples to taper on the left, should be less than `N/2`
 
     nright : `int`, optional
-        Number of points to taper on the right, should be less than `N/2`
+        Number of samples to taper on the right, should be less than `N/2`
 
     Returns
     -------
@@ -153,8 +153,7 @@ def planck(N, nleft=0, nright=0):
 
     Examples
     --------
-    To taper 0.1 seconds off of both ends of one second of data sampled at
-    2048 Hz:
+    To taper 0.1 seconds on both ends of one second of data sampled at 2048 Hz:
 
     >>> from gwpy.signal.window import planck
     >>> w = planck(2048, nleft=205, nright=205)
