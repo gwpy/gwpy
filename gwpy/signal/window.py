@@ -159,10 +159,16 @@ def planck(N, nleft=0, nright=0):
     >>> from gwpy.signal.window import planck
     >>> w = planck(2048, nleft=205, nright=205)
 
-    Notes
-    -----
-    For more information about the Planck taper window, see
-    https://arxiv.org/abs/1003.2939
+    References
+    ----------
+    .. [1] McKechan, D.J.A., Robinson, C., and Sathyaprakash, B.S. (April
+           2010). "A tapering window for time-domain templates and simulated
+           signals in the detection of gravitational waves from coalescing
+           compact binaries". Classical and Quantum Gravity 27 (8).
+           :doi:`10.1088/0264-9381/27/8/084020`
+
+    .. [2] Wikipedia, "Window function",
+           https://en.wikipedia.org/wiki/Window_function#Planck-taper_window
     """
     # construct a Planck taper window
     w = numpy.ones(N)
