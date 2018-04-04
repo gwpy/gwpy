@@ -1503,11 +1503,11 @@ class TimeSeries(TimeSeriesBase):
         ot0 = other.t0.to(self.t0.unit)
         idx = ((ot0 - self.t0) / self.dt).value
         if not idx.is_integer():
-            warn('TimeSeries have overlapping segments but do not share time '
-                 'stamps, returning a copy of the original TimeSeries')
+            warn('TimeSeries have overlapping segments but their time stamps '
+                 'are offset. Returning a copy of the original TimeSeries.')
             return self.copy()
         # add the TimeSeries along their shared samples
-        slice_ = slice(idx, idx + other.size)
+        slice_ = slice(int(idx), int(idx) + other.size)
         out = self.copy()
         out.value[slice_] += other.value
         return out
