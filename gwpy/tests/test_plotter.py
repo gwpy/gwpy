@@ -589,6 +589,22 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         assert len(ax.lines) == 3
         assert len(ax.collections) == 2
         self.save_and_close(fig)
+
+        # test with labels
+        fig, ax = self.new()
+        minname = self.mmm[1].name
+        maxname = self.mmm[2].name
+        self.mmm[1].name = 'min'
+        self.mmm[2].name = 'max'
+        try:
+            ax.plot_mmm(*self.mmm, label='test')
+            leg = ax.legend()
+            assert len(leg.get_lines()) == 1
+        finally:
+            self.mmm[1].name = minname
+            self.mmm[2].name = maxname
+        self.save_and_close(fig)
+
         # test min only
         fig, ax = self.new()
         artists = ax.plot_mmm(self.mmm[0], min_=self.mmm[1])
@@ -598,6 +614,7 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         assert len(ax.lines) == 2
         assert len(ax.collections) == 1
         self.save_and_close(fig)
+
         # test max only
         fig, ax = self.new()
         artists = ax.plot_mmm(self.mmm[0], max_=self.mmm[2])
@@ -679,6 +696,22 @@ class TestFrequencySeriesAxes(FrequencySeriesMixin, TestAxes):
         assert len(ax.lines) == 3
         assert len(ax.collections) == 2
         self.save_and_close(fig)
+
+        # test with labels
+        fig, ax = self.new()
+        minname = self.mmm[1].name
+        maxname = self.mmm[2].name
+        self.mmm[1].name = 'min'
+        self.mmm[2].name = 'max'
+        try:
+            ax.plot_mmm(*self.mmm, label='test')
+            leg = ax.legend()
+            assert len(leg.get_lines()) == 1
+        finally:
+            self.mmm[1].name = minname
+            self.mmm[2].name = maxname
+        self.save_and_close(fig)
+
         # test min only
         fig, ax = self.new()
         artists = ax.plot_mmm(self.mmm[0], min_=self.mmm[1])
@@ -688,6 +721,7 @@ class TestFrequencySeriesAxes(FrequencySeriesMixin, TestAxes):
         assert len(ax.lines) == 2
         assert len(ax.collections) == 1
         self.save_and_close(fig)
+
         # test max only
         fig, ax = self.new()
         artists = ax.plot_mmm(self.mmm[0], max_=self.mmm[2])

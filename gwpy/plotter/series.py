@@ -163,7 +163,7 @@ class SeriesAxes(Axes):
         meanline = self.plot_series(mean_, **kwargs)[0]
 
         # modify keywords for shading
-        kwargs.pop('label', None)
+        kwargs['label'] = None
         color = kwargs.pop('color', meanline.get_color())
         linewidth = kwargs.pop('linewidth', meanline.get_linewidth()) / 2
 
