@@ -1438,7 +1438,7 @@ class TimeSeries(TimeSeriesBase):
         Parameters
         ----------
         other : `TimeSeries`
-            a `TimeSeries` whose time samples intersect with `self.times`
+            a `TimeSeries` whose set of time samples overlap with `self.times`
             and whose unit and sample rate are compatible with those of `self`
 
         Returns
@@ -1494,14 +1494,22 @@ class TimeSeries(TimeSeriesBase):
         before passing it to this method. See the :meth:`TimeSeries.taper`
         for more information.
         """
+        # check TimeSeries compatibility
         self.is_compatible(other)
-        # add the TimeSeries along their intersecting samples
-        t1 = self.times.value
-        t2 = other.times.value
+        if other.span[0] < self.span[0]:
+            other = other.crop(start=self.span[0])
+        if other.span[1] > self.span[1]:
+            other = other.crop(end=self.span[1])
+        ot0 = other.t0.to(self.t0.unit)
+        idx = ((ot0 - self.t0) / self.dt).value
+        if not idx.is_integer():
+            warn('TimeSeries have overlapping segments but do not share time '
+                 'stamps, returning a copy of the original TimeSeries')
+            return self.copy()
+        # add the TimeSeries along their shared samples
+        slice_ = slice(idx, idx + other.size)
         out = self.copy()
-        ind1, = numpy.in1d(t1, t2).nonzero()
-        ind2, = numpy.in1d(t2, t1).nonzero()
-        out.value[ind1] += other.value[ind2]
+        out.value[slice_] += other.value
         return out
 
     def whiten(self, fftlength, overlap=0, method='scipy-welch',
