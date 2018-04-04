@@ -33,6 +33,7 @@ from matplotlib import (use, rc_context, __version__ as mpl_version)
 use('agg')  # nopep8
 from matplotlib import (pyplot, rcParams)
 from matplotlib.legend import Legend
+from matplotlib.lines import Line2D
 from matplotlib.colors import (LogNorm, ColorConverter)
 from matplotlib.collections import (PathCollection, PatchCollection,
                                     PolyCollection)
@@ -581,31 +582,55 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         assert ax.get_xlim() == tuple(self.ts.span)
         self.save_and_close(fig)
 
-    def test_plot_timeseries_mmm(self):
+    def test_plot_mmm(self):
         fig, ax = self.new()
         # test default
-        artists = ax.plot_timeseries_mmm(*self.mmm)
-        assert len(artists) == 5
+        a, b, c, d, e = ax.plot_mmm(*self.mmm)
+        for line in (a, b, d):
+            assert isinstance(line, Line2D)
+        for coll in (c, e):
+            assert isinstance(coll, PolyCollection)
         assert len(ax.lines) == 3
         assert len(ax.collections) == 2
         self.save_and_close(fig)
+
+        # test with labels
+        fig, ax = self.new()
+        minname = self.mmm[1].name
+        maxname = self.mmm[2].name
+        self.mmm[1].name = 'min'
+        self.mmm[2].name = 'max'
+        try:
+            ax.plot_mmm(*self.mmm, label='test')
+            leg = ax.legend()
+            assert len(leg.get_lines()) == 1
+        finally:
+            self.mmm[1].name = minname
+            self.mmm[2].name = maxname
+        self.save_and_close(fig)
+
         # test min only
         fig, ax = self.new()
-        artists = ax.plot_timeseries_mmm(self.mmm[0], min_=self.mmm[1])
-        assert len(artists) == 5
-        assert artists[3] is None
-        assert artists[4] is None
+        a, b, c, d, e = ax.plot_mmm(self.mmm[0], min_=self.mmm[1])
+        assert d is None
+        assert e is None
         assert len(ax.lines) == 2
         assert len(ax.collections) == 1
         self.save_and_close(fig)
+
         # test max only
         fig, ax = self.new()
-        artists = ax.plot_timeseries_mmm(self.mmm[0], max_=self.mmm[2])
-        assert len(artists) == 5
-        assert artists[1] is None
-        assert artists[2] is None
+        a, b, c, d, e = ax.plot_mmm(self.mmm[0], max_=self.mmm[2])
+        assert b is None
+        assert c is None
         assert len(ax.lines) == 2
         assert len(ax.collections) == 1
+
+    def test_plot_timeseries_mmm(self):
+        fig, ax = self.new()
+        with pytest.warns(DeprecationWarning):
+            ax.plot_timeseries_mmm(*self.mmm)
+        self.save_and_close(fig)
 
     def test_plot_spectrogram(self):
         fig, ax = self.new()
@@ -665,31 +690,56 @@ class TestFrequencySeriesAxes(FrequencySeriesMixin, TestAxes):
         nptest.assert_array_equal(line.get_ydata(), self.asd.value)
         self.save_and_close(fig)
 
-    def test_plot_frequencyseries_mmm(self):
+    def test_plot_mmm(self):
         fig, ax = self.new()
         # test defaults
-        artists = ax.plot_frequencyseries_mmm(*self.mmm)
-        assert len(artists) == 5
+        a, b, c, d, e = ax.plot_mmm(*self.mmm)
+        for line in (a, b, d):
+            assert isinstance(line, Line2D)
+        for coll in (c, e):
+            assert isinstance(coll, PolyCollection)
         assert len(ax.lines) == 3
         assert len(ax.collections) == 2
         self.save_and_close(fig)
+
+        # test with labels
+        fig, ax = self.new()
+        minname = self.mmm[1].name
+        maxname = self.mmm[2].name
+        self.mmm[1].name = 'min'
+        self.mmm[2].name = 'max'
+        try:
+            ax.plot_mmm(*self.mmm, label='test')
+            leg = ax.legend()
+            assert len(leg.get_lines()) == 1
+        finally:
+            self.mmm[1].name = minname
+            self.mmm[2].name = maxname
+        self.save_and_close(fig)
+
         # test min only
         fig, ax = self.new()
-        artists = ax.plot_frequencyseries_mmm(self.mmm[0], min_=self.mmm[1])
-        assert len(artists) == 5
-        assert artists[3] is None
-        assert artists[4] is None
+        a, b, c, d, e = ax.plot_mmm(self.mmm[0], min_=self.mmm[1])
+        assert d is None
+        assert e is None
         assert len(ax.lines) == 2
         assert len(ax.collections) == 1
         self.save_and_close(fig)
+
         # test max only
         fig, ax = self.new()
-        artists = ax.plot_frequencyseries_mmm(self.mmm[0], max_=self.mmm[2])
-        assert len(artists) == 5
-        assert artists[1] is None
-        assert artists[2] is None
+        a, b, c, d, e = ax.plot_mmm(self.mmm[0], max_=self.mmm[2])
+        assert b is None
+        assert c is None
         assert len(ax.lines) == 2
         assert len(ax.collections) == 1
+        self.save_and_close(fig)
+
+    def test_plot_frequencyseries_mmm(self):
+        fig, ax = self.new()
+        with pytest.warns(DeprecationWarning):
+            ax.plot_frequencyseries_mmm(*self.mmm)
+        self.save_and_close(fig)
 
 
 # -- Table plotters -----------------------------------------------------------
@@ -895,7 +945,16 @@ class HistogramMixin(object):
 
 
 class TestHistogramPlot(HistogramMixin, TestPlot):
-    pass
+    def test_init(self):
+        super(TestHistogramPlot, self).test_init()
+
+        # test with data
+        bins = [1, 2, 5]
+        plot = self.FIGURE_CLASS([1, 2, 3, 4, 5], bins=bins)
+        assert len(plot.axes) == 1
+        ax = plot.gca()
+        assert len(ax.containers) == 1
+        assert len(ax.containers[0].patches) == len(bins) - 1
 
 
 class TestHistogramAxes(HistogramMixin, TestAxes):
