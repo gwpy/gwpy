@@ -941,7 +941,16 @@ class HistogramMixin(object):
 
 
 class TestHistogramPlot(HistogramMixin, TestPlot):
-    pass
+    def test_init(self):
+        super(TestHistogramPlot, self).test_init()
+
+        # test with data
+        bins = [1, 2, 5]
+        plot = self.FIGURE_CLASS([1, 2, 3, 4, 5], bins=bins)
+        assert len(plot.axes) == 1
+        ax = plot.gca()
+        assert len(ax.containers) == 1
+        assert len(ax.containers[0].patches) == len(bins) - 1
 
 
 class TestHistogramAxes(HistogramMixin, TestAxes):
