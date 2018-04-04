@@ -1467,7 +1467,7 @@ class TimeSeries(TimeSeriesBase):
 
         Note, since this simulation cuts off before a certain time, it is
         important to taper its ends to zero to avoid ringing artifacts.
-        Since the time samples overlap, we can inject this to our noise data:
+        Since the time samples overlap, we can inject this into our noise data:
 
         >>> data = noise.inject(signal)
 
