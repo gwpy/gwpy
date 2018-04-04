@@ -140,8 +140,7 @@ class SeriesAxes(Axes):
             second data set to shade to ``mean_``
 
         alpha : `float`, `None`, optional
-            value for alpha channel for min and max lines and shading,
-            default: ``0.1``
+            value for alpha channel for shading, default: ``0.1``
 
         **kwargs
             any other keyword arguments acceptable for
@@ -170,7 +169,6 @@ class SeriesAxes(Axes):
         # modify keywords for shading
         kwargs.update({
             'label': '',
-            'alpha': alpha,
         })
         color = kwargs.pop('color', meanline.get_color())
         linewidth = kwargs.pop('linewidth', meanline.get_linewidth()) / 2
