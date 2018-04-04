@@ -174,8 +174,8 @@ class SeriesAxes(Axes):
         linewidth = kwargs.pop('linewidth', meanline.get_linewidth()) / 2
 
         def _plot_shade(series):
-            line = self.plot(series, color=color, linewidth=linewidth,
-                             **kwargs)
+            line, = self.plot(series, color=color, linewidth=linewidth,
+                              **kwargs)
             coll = self.fill_between(series.xindex.value, series.value,
                                      mean_.value, alpha=alpha, color=color,
                                      rasterized=kwargs.get('rasterized'))
