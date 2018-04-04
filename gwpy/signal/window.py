@@ -56,6 +56,8 @@ def canonical_name(name):
     >>> canonical_name('ksr')
     'kaiser'
     """
+    if name == 'planck':  # make sure to handle the Planck window function
+        return 'planck'
     try:  # use equivalence introduced in scipy 0.16.0
         # pylint: disable=protected-access
         return scipy_windows._win_equiv[name.lower()].__name__
@@ -83,7 +85,8 @@ ROV = {
     'hann': .5,
     'hamming': .5,
     'nuttall': .656,
-    'triang': .5
+    'triang': .5,
+    'planck': .01
 }
 
 
