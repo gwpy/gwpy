@@ -169,7 +169,7 @@ class SeriesAxes(Axes):
 
         # modify keywords for shading
         kwargs.update({
-            'label': None,
+            'label': '',
             'alpha': alpha,
         })
         color = kwargs.pop('color', meanline.get_color())
