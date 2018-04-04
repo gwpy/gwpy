@@ -121,7 +121,7 @@ class SeriesAxes(Axes):
         return line
 
     @auto_refresh
-    def plot_mmm(self, mean_, min_=None, max_=None, **kwargs):
+    def plot_mmm(self, mean_, min_=None, max_=None, alpha=.1, **kwargs):
         """Plot a `Series` onto these axes, with shaded regions
 
         The ``mean_`` `Series` is plotted normally, while the ``min_``
@@ -139,9 +139,14 @@ class SeriesAxes(Axes):
         max_ : `~gwpy.types.Series`
             second data set to shade to ``mean_``
 
+        alpha : `float`, `None`, optional
+            value for alpha channel for min and max lines and shading,
+            default: ``0.1``
+
         **kwargs
             any other keyword arguments acceptable for
-            :meth:`~matplotlib.Axes.plot`
+            :meth:`~matplotlib.Axes.plot`, only used to draw the
+            lines
 
         Returns
         -------
@@ -163,7 +168,10 @@ class SeriesAxes(Axes):
         meanline = self.plot_series(mean_, **kwargs)[0]
 
         # modify keywords for shading
-        kwargs.pop('label', None)
+        kwargs.update({
+            'label': '',
+            'alpha': alpha,
+        })
         color = kwargs.pop('color', meanline.get_color())
         linewidth = kwargs.pop('linewidth', meanline.get_linewidth()) / 2
 
@@ -171,7 +179,7 @@ class SeriesAxes(Axes):
             line = self.plot(series, color=color, linewidth=linewidth,
                              **kwargs)
             coll = self.fill_between(series.xindex.value, series.value,
-                                     mean_.value, alpha=.1, color=color,
+                                     mean_.value, alpha=alpha, color=color,
                                      rasterized=kwargs.get('rasterized'))
             return line, coll
 

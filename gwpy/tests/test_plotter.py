@@ -581,31 +581,54 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         assert ax.get_xlim() == tuple(self.ts.span)
         self.save_and_close(fig)
 
-    def test_plot_timeseries_mmm(self):
+    def test_plot_mmm(self):
         fig, ax = self.new()
         # test default
-        artists = ax.plot_timeseries_mmm(*self.mmm)
+        artists = ax.plot_mmm(*self.mmm)
         assert len(artists) == 5
         assert len(ax.lines) == 3
         assert len(ax.collections) == 2
         self.save_and_close(fig)
+
+        # test with labels
+        fig, ax = self.new()
+        minname = self.mmm[1].name
+        maxname = self.mmm[2].name
+        self.mmm[1].name = 'min'
+        self.mmm[2].name = 'max'
+        try:
+            ax.plot_mmm(*self.mmm, label='test')
+            leg = ax.legend()
+            assert len(leg.get_lines()) == 1
+        finally:
+            self.mmm[1].name = minname
+            self.mmm[2].name = maxname
+        self.save_and_close(fig)
+
         # test min only
         fig, ax = self.new()
-        artists = ax.plot_timeseries_mmm(self.mmm[0], min_=self.mmm[1])
+        artists = ax.plot_mmm(self.mmm[0], min_=self.mmm[1])
         assert len(artists) == 5
         assert artists[3] is None
         assert artists[4] is None
         assert len(ax.lines) == 2
         assert len(ax.collections) == 1
         self.save_and_close(fig)
+
         # test max only
         fig, ax = self.new()
-        artists = ax.plot_timeseries_mmm(self.mmm[0], max_=self.mmm[2])
+        artists = ax.plot_mmm(self.mmm[0], max_=self.mmm[2])
         assert len(artists) == 5
         assert artists[1] is None
         assert artists[2] is None
         assert len(ax.lines) == 2
         assert len(ax.collections) == 1
+
+    def test_plot_timeseries_mmm(self):
+        fig, ax = self.new()
+        with pytest.warns(DeprecationWarning):
+            ax.plot_timeseries_mmm(*self.mmm)
+        self.save_and_close(fig)
 
     def test_plot_spectrogram(self):
         fig, ax = self.new()
@@ -665,31 +688,54 @@ class TestFrequencySeriesAxes(FrequencySeriesMixin, TestAxes):
         nptest.assert_array_equal(line.get_ydata(), self.asd.value)
         self.save_and_close(fig)
 
-    def test_plot_frequencyseries_mmm(self):
+    def test_plot_mmm(self):
         fig, ax = self.new()
         # test defaults
-        artists = ax.plot_frequencyseries_mmm(*self.mmm)
+        artists = ax.plot_mmm(*self.mmm)
         assert len(artists) == 5
         assert len(ax.lines) == 3
         assert len(ax.collections) == 2
         self.save_and_close(fig)
+
+        # test with labels
+        fig, ax = self.new()
+        minname = self.mmm[1].name
+        maxname = self.mmm[2].name
+        self.mmm[1].name = 'min'
+        self.mmm[2].name = 'max'
+        try:
+            ax.plot_mmm(*self.mmm, label='test')
+            leg = ax.legend()
+            assert len(leg.get_lines()) == 1
+        finally:
+            self.mmm[1].name = minname
+            self.mmm[2].name = maxname
+        self.save_and_close(fig)
+
         # test min only
         fig, ax = self.new()
-        artists = ax.plot_frequencyseries_mmm(self.mmm[0], min_=self.mmm[1])
+        artists = ax.plot_mmm(self.mmm[0], min_=self.mmm[1])
         assert len(artists) == 5
         assert artists[3] is None
         assert artists[4] is None
         assert len(ax.lines) == 2
         assert len(ax.collections) == 1
         self.save_and_close(fig)
+
         # test max only
         fig, ax = self.new()
-        artists = ax.plot_frequencyseries_mmm(self.mmm[0], max_=self.mmm[2])
+        artists = ax.plot_mmm(self.mmm[0], max_=self.mmm[2])
         assert len(artists) == 5
         assert artists[1] is None
         assert artists[2] is None
         assert len(ax.lines) == 2
         assert len(ax.collections) == 1
+
+    def test_plot_frequencyseries_mmm(self):
+        fig, ax = self.new()
+        with pytest.warns(DeprecationWarning):
+            ax.plot_frequencyseries_mmm(*self.mmm)
+        self.save_and_close(fig)
 
 
 # -- Table plotters -----------------------------------------------------------
