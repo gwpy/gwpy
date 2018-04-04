@@ -56,7 +56,7 @@ def canonical_name(name):
     >>> canonical_name('ksr')
     'kaiser'
     """
-    if name == 'planck':  # make sure to handle the Planck window function
+    if name.lower() == 'planck':  # make sure to handle the Planck window
         return 'planck'
     try:  # use equivalence introduced in scipy 0.16.0
         # pylint: disable=protected-access
