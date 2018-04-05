@@ -1446,6 +1446,11 @@ class TimeSeries(TimeSeriesBase):
         out : `TimeSeries`
             the sum of `self` and `other` along their intersecting time samples
 
+        Returns
+        -------
+        ValueError
+            if `self` and `other` have incompatible units or sample rates
+
         Examples
         --------
         It can often be useful to inject a known signal into a data stream. For
@@ -1481,10 +1486,6 @@ class TimeSeries(TimeSeriesBase):
 
         Notes
         -----
-        The :meth:`TimeSeries.inject` requires that `self` and `other` have
-        consistent units and sample rates. It will raise a `ValueError` if
-        either is incompatible.
-
         If `other.times` and `self.times` do not intersect, this method will
         return a copy of `self`. However, if `other.times` extends past the
         start or end of `self.times`, this method will still add the
@@ -1493,6 +1494,8 @@ class TimeSeries(TimeSeriesBase):
         Users who wish to taper or window their `TimeSeries` should do so
         before passing it to this method. See the :meth:`TimeSeries.taper`
         for more information.
+
+        For frequency domain injections, see :meth:`FrequencySeries.inject`
         """
         # check TimeSeries compatibility
         self.is_compatible(other)
