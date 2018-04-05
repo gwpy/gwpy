@@ -46,10 +46,20 @@ IMAGE_PARAMS = [
     'imshow', 'cmap', 'vmin', 'vmax', 'norm', 'rasterized', 'extent',
     'origin', 'interpolation', 'aspect',
 ]
-ARTIST_PARAMS = set(LINE_PARAMS + COLLECTION_PARAMS + IMAGE_PARAMS)
+HIST_PARAMS = [
+    'bins', 'range', 'normed', 'weights', 'cumulative', 'bottom',
+    'histtype', 'align', 'orientation', 'rwidth', 'log', 'color',
+    'label', 'stacked', 'logbins',
+]
 LEGEND_PARAMS = [
     'loc', 'borderaxespad', 'ncol',
 ]
+ARTIST_PARAMS = set(itertools.chain.from_iterable([
+    LINE_PARAMS,
+    COLLECTION_PARAMS,
+    IMAGE_PARAMS,
+    HIST_PARAMS,
+]))
 
 
 def color_cycle(colors=None):

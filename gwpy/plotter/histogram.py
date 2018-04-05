@@ -186,23 +186,20 @@ class HistogramPlot(Plot):
     def __init__(self, *data, **kwargs):
         """Generate a new `HistogramPlot` from some ``data``.
         """
-        # extract histogram arguments
-        histargs = dict()
-        for key in ['bins', 'range', 'normed', 'weights', 'cumulative',
-                    'bottom', 'histtype', 'align', 'orientation', 'rwidth',
-                    'log', 'color', 'label', 'stacked', 'logbins']:
-            try:
-                histargs[key] = kwargs.pop(key)
-            except KeyError:
-                pass
+        # separate keyword arguments
+        axargs, histargs = self._parse_kwargs(kwargs)
+
         # generate Figure
         super(HistogramPlot, self).__init__(**kwargs)
-        # plot data
+
+        # create axes
         if data:
-            ax = self.gca()
+            ax = self.gca(**axargs)
             data = list(data)
         else:
             ax = None
+
+        # plot data
         while data:
             dataset = data.pop(0)
             if isinstance(dataset, Series):
@@ -212,6 +209,7 @@ class HistogramPlot(Plot):
                 ax.hist_table(dataset, column, **histargs)
             else:
                 ax.hist(dataset, **histargs)
+
         if ax and histargs.get('logbins', False):
             if histargs.get('orientation', 'vertical') == 'vertical':
                 ax.set_xscale('log')
