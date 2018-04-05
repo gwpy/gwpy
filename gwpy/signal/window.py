@@ -85,8 +85,7 @@ ROV = {
     'hann': .5,
     'hamming': .5,
     'nuttall': .656,
-    'triang': .5,
-    'planck': .01
+    'triang': .5
 }
 
 
