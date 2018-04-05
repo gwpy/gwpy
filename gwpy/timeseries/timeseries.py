@@ -1495,7 +1495,7 @@ class TimeSeries(TimeSeriesBase):
         before passing it to this method. See the :meth:`TimeSeries.taper`
         for more information.
 
-        For frequency domain injections, see :meth:`FrequencySeries.inject`
+        For frequency domain injections, see :meth:`FrequencySeries.inject`.
         """
         # check TimeSeries compatibility
         self.is_compatible(other)
