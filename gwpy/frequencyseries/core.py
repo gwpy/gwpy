@@ -314,6 +314,78 @@ class FrequencySeries(Series):
                       "arguments", DeprecationWarning)
         return self.filter(*args, **kwargs)
 
+    def inject(self, other):
+        """Add two compatible `FrequencySeries` along their shared samples.
+
+        Parameters
+        ----------
+        other : `FrequencySeries`
+            a `FrequencySeries` whose set of samples is a subset of
+            `self.frequencies`
+
+        Returns
+        -------
+        out : `FrequencySeries`
+            the sum of `self` and `other` along their intersecting samples
+
+        Raises
+        ------
+        ValueError
+            If `other.df` or `other.unit` are different from `self.df` or
+            `self.unit`, or if `other.span` is not a subset of `self.span`
+
+        Examples
+        --------
+        Prepare one second of Gaussian noise in the time domain:
+
+        >>> from numpy import random
+        >>> from gwpy.timeseries import TimeSeries
+        >>> noise = TimeSeries(random.normal(scale=.1, size=16384),
+        >>>                    sample_rate=16384)
+
+        To inject a signal in the frequency domain, we need to take an FFT:
+
+        >>> noisefd = noise.fft()
+
+        We can now easily inject a sinusoid at 30 Hz:
+
+        >>> import numpy
+        >>> from gwpy.frequencyseries import FrequencySeries
+        >>> signal = FrequencySeries(numpy.array([1.]), f0=30, df=noisefd.df)
+        >>> injectedfd = noisefd.inject(signal)
+
+        Finally, we can visualize in the time domain:
+
+        >>> from gwpy.plotter import TimeSeriesPlot
+        >>> injected = injectedfd.ifft()
+        >>> plot = TimeSeriesPlot(noise, injected, sep=True, sharex=True,
+        >>>                       sharey=True)
+        >>> plot.show()
+
+        Notes
+        -----
+        If `other.frequencies` and `self.frequencies` do not intersect, this
+        method will return a copy of `self`.
+
+        For time domain injections, see :meth:`TimeSeries.inject`.
+        """
+        # check FrequencySeries compatibility
+        self.is_compatible(other)
+        of0 = other.f0.to(self.f0.unit)
+        idx = ((of0 - self.f0) / self.df).value
+        if idx < 0 or idx > self.size - other.size:
+            raise ValueError('FrequencySeries must have consistent domains')
+        if not idx.is_integer():
+            warnings.warn('FrequencySeries have overlapping domains but their '
+                          'samples are offset. A copy of the original will be '
+                          'returned.')
+            return self.copy()
+        # add the FrequencySeries along their shared samples
+        slice_ = slice(int(idx), int(idx) + other.size)
+        out = self.copy()
+        out.value[slice_] += other.value
+        return out
+
     @classmethod
     def from_lal(cls, lalfs, copy=True):
         """Generate a new `FrequencySeries` from a LAL `FrequencySeries` of any type
