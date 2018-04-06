@@ -1446,8 +1446,8 @@ class TimeSeries(TimeSeriesBase):
         out : `TimeSeries`
             the sum of `self` and `other` along their intersecting time samples
 
-        Returns
-        -------
+        Raises
+        ------
         ValueError
             if `self` and `other` have incompatible units or sample rates
 
@@ -1487,8 +1487,8 @@ class TimeSeries(TimeSeriesBase):
         Notes
         -----
         If `other.times` and `self.times` do not intersect, this method will
-        return a copy of `self`. However, if `other.times` extends past the
-        start or end of `self.times`, this method will still add the
+        return a copy of `self`. However, even if `other.times` extends past
+        the start or end of `self.times`, this method will still add the
         `TimeSeries` along their intersecting time samples.
 
         Users who wish to taper or window their `TimeSeries` should do so
