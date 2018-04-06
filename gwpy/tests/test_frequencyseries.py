@@ -134,6 +134,13 @@ class TestFrequencySeries(TestSeries):
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
 
+    def test_ifft(self):
+        # construct a TimeSeries, then check that it is unchanged by
+        # the operation TimeSeries.fft().ifft()
+        from gwpy.timeseries import TimeSeries
+        timeseries = TimeSeries([1.0, 0.0, -1.0, 0.0], sample_rate=1.0)
+        assert timeseries.fft().ifft() == timeseries
+
     def test_filter(self, array):
         a2 = array.filter([100], [1], 1e-2)
         assert isinstance(a2, type(array))
