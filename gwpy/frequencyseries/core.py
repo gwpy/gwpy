@@ -331,7 +331,7 @@ class FrequencySeries(Series):
         Raises
         ------
         ValueError
-            If `self` and `other` have incompatible units or sample intervals,
+            if `self` and `other` have incompatible units or sample intervals,
             or if `other.xspan` is not a subset of `self.xspan`
 
         Examples
@@ -340,25 +340,32 @@ class FrequencySeries(Series):
 
         >>> from numpy import random
         >>> from gwpy.timeseries import TimeSeries
-        >>> noise = TimeSeries(random.normal(scale=.1, size=16384),
-        >>>                    sample_rate=16384)
+        >>> noise = TimeSeries(random.normal(scale=.1, size=1024),
+        >>>                    sample_rate=1024)
 
         To inject a signal in the frequency domain, we need to take an FFT:
 
         >>> noisefd = noise.fft()
 
-        We can now easily inject a sinusoid at 30 Hz:
+        We can now easily inject a loud sinusoid at, say, 30 Hz:
 
         >>> import numpy
         >>> from gwpy.frequencyseries import FrequencySeries
         >>> signal = FrequencySeries(numpy.array([1.]), f0=30, df=noisefd.df)
-        >>> injectedfd = noisefd.inject(signal)
+        >>> injfd = noisefd.inject(signal)
 
-        Finally, we can visualize in the time domain:
+        We can then visualize the injection in the frequency domain:
+
+        >>> from gwpy.plotter import FrequencySeriesPlot
+        >>> plot = FrequencySeriesPlot(numpy.abs(noisefd), numpy.abs(injfd),
+        >>>                            sep=True, sharex=True, sharey=True)
+        >>> plot.show()
+
+        We can also visualize the injection back in the time domain:
 
         >>> from gwpy.plotter import TimeSeriesPlot
-        >>> injected = injectedfd.ifft()
-        >>> plot = TimeSeriesPlot(noise, injected, sep=True, sharex=True,
+        >>> inj = injfd.ifft()
+        >>> plot = TimeSeriesPlot(noise, inj, sep=True, sharex=True,
         >>>                       sharey=True)
         >>> plot.show()
 
