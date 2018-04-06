@@ -331,8 +331,8 @@ class FrequencySeries(Series):
         Raises
         ------
         ValueError
-            If `other.df` or `other.unit` are different from `self.df` or
-            `self.unit`, or if `other.span` is not a subset of `self.span`
+            If `self` and `other` have incompatible units or sample intervals,
+            or if `other.xspan` is not a subset of `self.xspan`
 
         Examples
         --------
