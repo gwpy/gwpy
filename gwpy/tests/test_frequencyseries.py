@@ -159,7 +159,7 @@ class TestFrequencySeries(TestSeries):
 
     def test_inject(self):
         # create a timeseries out of an array of zeros
-        df, nyquist = 1., 2048
+        df, nyquist = 1, 2048
         data = FrequencySeries(numpy.zeros(df*nyquist + 1), f0=0,
                                df=df, unit='')
 
