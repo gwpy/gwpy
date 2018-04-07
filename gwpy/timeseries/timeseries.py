@@ -35,7 +35,7 @@ from ..segments import Segment
 from ..signal import filter_design
 from ..signal.filter import sosfiltfilt
 from ..signal.fft import (registry as fft_registry, ui as fft_ui)
-from ..signal.window import recommended_overlap, planck
+from ..signal.window import (recommended_overlap, planck)
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
 
@@ -1439,7 +1439,6 @@ class TimeSeries(TimeSeriesBase):
         ----------
         other : `TimeSeries`
             a `TimeSeries` whose set of time samples overlap with `self.times`
-            and whose unit and sample rate are compatible with those of `self`
 
         Returns
         -------
@@ -1453,8 +1452,7 @@ class TimeSeries(TimeSeriesBase):
 
         Examples
         --------
-        It can often be useful to inject a known signal into a data stream. For
-        example, we can prepare one second of Gaussian noise:
+        We can prepare one second of Gaussian noise:
 
         >>> from numpy import random
         >>> from gwpy.timeseries import TimeSeries
