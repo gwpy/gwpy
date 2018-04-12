@@ -25,7 +25,7 @@ from math import floor
 
 import numpy
 
-from astropy.units import (Unit, Quantity, dimensionless_unscaled)
+from astropy.units import (Unit, Quantity, second, dimensionless_unscaled)
 from astropy.io import registry as io_registry
 
 from . import sliceutils
@@ -847,3 +847,53 @@ class Series(Array):
         # finally move the starting index based on the amount of left-padding
         new.x0 -= self.dx * pad_width[0]
         return new
+
+    def inject(self, other):
+        """Add two compatible `Series` along their shared x samples.
+
+        Parameters
+        ----------
+        other : `Series`
+            a `Series` whose set of x samples overlap with `self.xindex`
+
+        Returns
+        -------
+        out : `Series`
+            the sum of `self` and `other` along their intersecting x samples
+
+        Raises
+        ------
+        ValueError
+            if `self` and `other` have incompatible units or sample intervals
+
+        Notes
+        -----
+        If `other.xindex` and `self.xindex` do not intersect, this method will
+        return a copy of `self`. If the series have uniformly offset indices,
+        this method will raise a warning.
+
+        If `self.xindex` represents a set of timestamps, then `other` will be
+        cropped before adding to `self`.
+
+        Users who wish to taper or window their `Series` should do so before
+        passing it to this method. See :meth:`TimeSeries.taper` and
+        :func:`gwpy.signal.window.planck` for more information.
+        """
+        # check Series compatibility
+        self.is_compatible(other)
+        if self.xunit == second:
+            if other.xspan[0] < self.xspan[0]:
+                other = other.crop(start=self.xspan[0])
+            if other.xspan[1] > self.xspan[1]:
+                other = other.crop(end=self.xspan[1])
+        ox0 = other.x0.to(self.x0.unit)
+        idx = ((ox0 - self.x0) / self.dx).value
+        if not idx.is_integer():
+            warn('Series have overlapping xspan but their axis samples are '
+                 'uniformly offset. Returning a copy of the original Series.')
+            return self.copy()
+        # add the Series along their shared samples
+        slice_ = slice(int(idx), int(idx) + other.size)
+        out = self.copy()
+        out.value[slice_] += other.value
+        return out
