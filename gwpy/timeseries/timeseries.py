@@ -35,7 +35,7 @@ from ..segments import Segment
 from ..signal import filter_design
 from ..signal.filter import sosfiltfilt
 from ..signal.fft import (registry as fft_registry, ui as fft_ui)
-from ..signal.window import recommended_overlap
+from ..signal.window import (recommended_overlap, planck)
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
 
@@ -1292,7 +1292,7 @@ class TimeSeries(TimeSeriesBase):
 
     def demodulate(self, f, stride=1, exp=False, deg=True):
         """Compute the average magnitude and phase of this `TimeSeries`
-           once per stride at a given frequency.
+        once per stride at a given frequency.
 
         Parameters
         ----------
@@ -1338,7 +1338,7 @@ class TimeSeries(TimeSeriesBase):
         and phase of the calibration line:
 
         >>> from gwpy.plotter import TimeSeriesPlot
-        >>> plot = TimeSeriesPlot(amp, phase, sep=True)
+        >>> plot = TimeSeriesPlot(amp, phase, sep=True, sharex=True)
         >>> plot.show()
         """
         stridesamp = int(stride * self.sample_rate.value)
@@ -1364,6 +1364,154 @@ class TimeSeries(TimeSeriesBase):
         phase.__metadata_finalize__(out)
         phase.override_unit('deg' if deg else 'rad')
         return mag, phase
+
+    def taper(self, side='leftright'):
+        """Taper the ends of this `TimeSeries` smoothly to zero.
+
+        Parameters
+        ----------
+        side : `str`, optional
+            the side of the `TimeSeries` to taper, must be one of `'left'`,
+            `'right'`, or `'leftright'`
+
+        Returns
+        -------
+        out : `TimeSeries`
+            a copy of `self` tapered at one or both ends
+
+        Raises
+        ------
+        ValueError
+            if `side` is not one of `('left', 'right', 'leftright')`
+
+        Examples
+        --------
+        To see the effect of the Planck-taper window, we can taper a
+        sinusoidal `TimeSeries` at both ends:
+
+        >>> import numpy
+        >>> from gwpy.timeseries import TimeSeries
+        >>> t = numpy.linspace(0, 1, 2048)
+        >>> series = TimeSeries(numpy.cos(10.5*numpy.pi*t), times=t)
+        >>> tapered = series.taper()
+
+        We can plot it to see how the ends now vary smoothly from 0 to 1:
+
+        >>> from gwpy.plotter import TimeSeriesPlot
+        >>> plot = TimeSeriesPlot(series, tapered, sep=True, sharex=True)
+        >>> plot.show()
+
+        Notes
+        -----
+        The :meth:`TimeSeries.taper` automatically tapers from the second
+        stationary point (local maximum or minimum) on the specified side
+        of the input. However, the method will never taper more than half
+        the full width of the `TimeSeries`, and will fail if there are no
+        stationary points.
+
+        See :func:`gwpy.signal.window.planck` for the generic Planck taper
+        window, and see :func:`scipy.signal.get_window` for other common
+        window formats.
+        """
+        # check window properties
+        if side not in ('left', 'right', 'leftright'):
+            raise ValueError("side must be one of 'left', 'right', "
+                             "or 'leftright'")
+        out = self.copy()
+        # identify the second stationary point away from each boundary,
+        # else default to half the TimeSeries width
+        nleft, nright = 0, 0
+        mini, = signal.argrelmin(out.value)
+        maxi, = signal.argrelmax(out.value)
+        if 'left' in side:
+            nleft = max(mini[0], maxi[0])
+            nleft = min(nleft, self.size/2)
+        if 'right' in side:
+            nright = out.size - min(mini[-1], maxi[-1])
+            nright = min(nright, self.size/2)
+        out *= planck(out.size, nleft=nleft, nright=nright)
+        return out
+
+    def inject(self, other):
+        """Add two compatible `TimeSeries` along their shared time samples.
+
+        Parameters
+        ----------
+        other : `TimeSeries`
+            a `TimeSeries` whose set of time samples overlap with `self.times`
+
+        Returns
+        -------
+        out : `TimeSeries`
+            the sum of `self` and `other` along their intersecting time samples
+
+        Raises
+        ------
+        ValueError
+            if `self` and `other` have incompatible units or sample rates
+
+        Examples
+        --------
+        We can prepare one second of Gaussian noise:
+
+        >>> from numpy import random
+        >>> from gwpy.timeseries import TimeSeries
+        >>> noise = TimeSeries(random.normal(scale=.1, size=16384),
+        >>>                    sample_rate=16384)
+
+        Then we can download a simulation of the GW150914 waveform from LOSC:
+
+        >>> from astropy.utils.data import get_readable_fileobj
+        >>> source = 'https://losc.ligo.org/s/events/GW150914/P150914/'
+        >>> url = '%s/fig2-unfiltered-waveform-H.txt' % source
+        >>> with get_readable_fileobj(url) as f:
+        >>>     signal = TimeSeries.read(f, format='txt').taper()
+        >>> signal.t0 = .5 # make sure this intersects with noise time samples
+
+        Note, since this simulation cuts off before a certain time, it is
+        important to taper its ends to zero to avoid ringing artifacts.
+        Since the time samples overlap, we can inject this into our noise data:
+
+        >>> data = noise.inject(signal)
+
+        Finally, we can visualize the full process in the time domain:
+
+        >>> from gwpy.plotter import TimeSeriesPlot
+        >>> plot = TimeSeriesPlot(noise, signal, data, sep=True,
+        >>>                       sharex=True, sharey=True)
+        >>> plot.set_epoch(0)
+        >>> plot.show()
+
+        Notes
+        -----
+        If `other.times` and `self.times` do not intersect, this method will
+        return a copy of `self`. However, even if `other.times` extends past
+        the start or end of `self.times`, this method will still add the
+        `TimeSeries` along their intersecting time samples.
+
+        Users who wish to taper or window their `TimeSeries` should do so
+        before passing it to this method. See the :meth:`TimeSeries.taper`
+        for more information.
+
+        For frequency domain injections, see :meth:`FrequencySeries.inject`.
+        """
+        # check TimeSeries compatibility
+        self.is_compatible(other)
+        if other.span[0] < self.span[0]:
+            other = other.crop(start=self.span[0])
+        if other.span[1] > self.span[1]:
+            other = other.crop(end=self.span[1])
+        ot0 = other.t0.to(self.t0.unit)
+        idx = ((ot0 - self.t0) / self.dt).value
+        if not idx.is_integer():
+            warn('TimeSeries have overlapping segments but their time stamps '
+                 'are offset. Returning a copy of the original TimeSeries.')
+            return self.copy()
+        # add the TimeSeries along their shared samples
+        slice_ = slice(int(idx), int(idx) + other.size)
+        out = self.copy()
+        out.value[slice_] += other.value
+        return out
 
     def whiten(self, fftlength, overlap=0, method='scipy-welch',
                window='hanning', detrend='constant', asd=None, **kwargs):
