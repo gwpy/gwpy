@@ -22,11 +22,12 @@
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.timeseries.io import cache as tio_cache
 
-from utils import assert_segmentlist_equal
+from utils import (assert_segmentlist_equal, skip_missing_dependency)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
+@skip_missing_dependency('lal.utils')
 def test_get_mp_cache_segments():
     """Test `gwpy.timeseries.io.cache.get_mp_cache_segments`
     """
