@@ -19,9 +19,13 @@
 """Utilities for signal-processing with windows
 """
 
+import numpy
+
 from math import ceil
 
 from scipy.signal import windows as scipy_windows
+
+from scipy.special import expit
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -52,6 +56,8 @@ def canonical_name(name):
     >>> canonical_name('ksr')
     'kaiser'
     """
+    if name.lower() == 'planck':  # make sure to handle the Planck window
+        return 'planck'
     try:  # use equivalence introduced in scipy 0.16.0
         # pylint: disable=protected-access
         return scipy_windows._win_equiv[name.lower()].__name__
@@ -121,3 +127,60 @@ def recommended_overlap(name, nfft=None):
     if nfft:
         return int(ceil(nfft * rov))
     return rov
+
+
+# -- Planck taper window ------------------------------------------------------
+# source: https://arxiv.org/abs/1003.2939
+
+
+def planck(N, nleft=0, nright=0):
+    """Return a Planck taper window.
+
+    Parameters
+    ----------
+    N : `int`
+        Number of samples in the output window
+
+    nleft : `int`, optional
+        Number of samples to taper on the left, should be less than `N/2`
+
+    nright : `int`, optional
+        Number of samples to taper on the right, should be less than `N/2`
+
+    Returns
+    -------
+    w : `ndarray`
+        The window, with the maximum value normalized to 1 and at least one
+        end tapered smoothly to 0.
+
+    Examples
+    --------
+    To taper 0.1 seconds on both ends of one second of data sampled at 2048 Hz:
+
+    >>> from gwpy.signal.window import planck
+    >>> w = planck(2048, nleft=205, nright=205)
+
+    References
+    ----------
+    .. [1] McKechan, D.J.A., Robinson, C., and Sathyaprakash, B.S. (April
+           2010). "A tapering window for time-domain templates and simulated
+           signals in the detection of gravitational waves from coalescing
+           compact binaries". Classical and Quantum Gravity 27 (8).
+           :doi:`10.1088/0264-9381/27/8/084020`
+
+    .. [2] Wikipedia, "Window function",
+           https://en.wikipedia.org/wiki/Window_function#Planck-taper_window
+    """
+    # construct a Planck taper window
+    w = numpy.ones(N)
+    if nleft:
+        w[0] *= 0
+        zleft = numpy.array([nleft * (1./k + 1./(k-nleft))
+                            for k in range(1, nleft)])
+        w[1:nleft] *= expit(-zleft)
+    if nright:
+        w[N-1] *= 0
+        zright = numpy.array([-nright * (1./(k-nright) + 1./k)
+                             for k in range(1, nright)])
+        w[N-nright:N-1] *= expit(-zright)
+    return w
