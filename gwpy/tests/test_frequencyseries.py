@@ -37,6 +37,7 @@ use('agg')  # nopep8
 
 from astropy import units
 
+from gwpy.timeseries import TimeSeries
 from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.plotter import (FrequencySeriesPlot, FrequencySeriesAxes)
 from gwpy.segments import Segment
@@ -133,6 +134,13 @@ class TestFrequencySeries(TestSeries):
             utils.assert_array_equal(line.get_ydata(), array.value)
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
+
+    def test_ifft(self):
+        # construct a TimeSeries, then check that it is unchanged by
+        # the operation TimeSeries.fft().ifft()
+        ts = TimeSeries([1.0, 0.0, -1.0, 0.0], sample_rate=1.0)
+        assert ts.fft().ifft() == ts
+        utils.assert_allclose(ts.fft().ifft().value, ts.value)
 
     def test_filter(self, array):
         a2 = array.filter([100], [1], 1e-2)
