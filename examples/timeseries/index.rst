@@ -15,3 +15,4 @@
    statevector
    qscan
    pycbc-snr
+   inject
