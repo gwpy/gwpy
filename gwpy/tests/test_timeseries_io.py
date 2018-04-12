@@ -62,6 +62,5 @@ def test_get_mp_cache_segments():
     mpsegs = tio_cache.get_mp_cache_segments(cache, 4, Segment(0, 30))
     assert_segmentlist_equal(
         mpsegs,
-        SegmentList([s for seg in segments for
-                     s in segmentlist_range(seg[0], seg[1], 5)]),
+        SegmentList(map(Segment, [(0, 6), (6, 10), (20, 26), (26, 30)]))
     )
