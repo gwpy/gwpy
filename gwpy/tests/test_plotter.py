@@ -583,7 +583,7 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
     def test_init(self):
         fig, ax = self.new()
         assert isinstance(ax, self.AXES_CLASS)
-        assert ax.get_epoch() == 0
+        assert ax.get_epoch() is None
         assert ax.get_xscale() == 'auto-gps'
         assert ax.get_xlabel() == '_auto'
         self.save_and_close(fig)
