@@ -25,6 +25,8 @@ display these tables in x-y format, with optional colouring.
 from __future__ import division
 
 import re
+from collections import OrderedDict
+
 from six import string_types
 
 import numpy
@@ -672,11 +674,7 @@ def _loudest_text(row, columns):
     """Format the text for `EventTableAxes.add_loudest`
     """
     coltxt = []
-    for i, col in enumerate(columns):
-        # ignore null and duplicates
-        if not col or col in columns[:i]:
-            continue
-
+    for col in OrderedDict.fromkeys(columns):  # unique list of cols
         # format column name
         colstr = get_column_string(col)
 

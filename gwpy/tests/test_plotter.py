@@ -850,7 +850,12 @@ class TestEventTableAxes(EventTableMixin, TestAxes):
         tpos = ax.title.get_position()
 
         # call function
-        coll, text = ax.add_loudest(table, 'snr', 'time', 'frequency', 'test')
+        coll, text = ax.add_loudest(
+            table, 'snr',  # table, rank
+            'time', 'frequency',  # x, y
+            'test',  # extra columns to print
+            'time',  # duplicate (shouldn't get printed)
+        )
 
         # check marker was placed at the right point
         utils.assert_array_equal(coll.get_offsets(), [(t, f)])
