@@ -882,11 +882,10 @@ class Series(Array):
         """
         # check Series compatibility
         self.is_compatible(other)
-        if self.xunit == second:
-            if other.xspan[0] < self.xspan[0]:
-                other = other.crop(start=self.xspan[0])
-            if other.xspan[1] > self.xspan[1]:
-                other = other.crop(end=self.xspan[1])
+        if (self.xunit == second) and (other.xspan[0] < self.xspan[0]):
+            other = other.crop(start=self.xspan[0])
+        if (self.xunit == second) and (other.xspan[1] > self.xspan[1]):
+            other = other.crop(end=self.xspan[1])
         ox0 = other.x0.to(self.x0.unit)
         idx = ((ox0 - self.x0) / self.dx).value
         if not idx.is_integer():
