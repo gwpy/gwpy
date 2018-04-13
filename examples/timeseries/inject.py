@@ -50,10 +50,13 @@ signal.t0 = .5  # make sure this intersects with noise time samples
 
 # Note, since this simulation cuts off before a certain time, it is
 # important to taper its ends to zero to avoid ringing artifacts.
+# We can accomplish this using the
+# :meth:`~gwpy.timeseries.TimeSeries.taper` method.
 
 signal = signal.taper()
 
-# Since the time samples overlap, we can inject this into our noise data:
+# Since the time samples overlap, we can inject this into our noise data
+# using :meth:`~gwpy.types.series.Series.inject`:
 
 data = noise.inject(signal)
 

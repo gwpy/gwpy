@@ -45,7 +45,7 @@ noise = TimeSeries(random.normal(scale=.1, size=1024), sample_rate=1024)
 noisefd = noise.fft()
 
 # We can now easily inject a loud sinusoid of unit amplitude at, say,
-# 30 Hz:
+# 30 Hz. To do this, we use :meth:`~gwpy.types.series.Series.inject`.
 
 import numpy
 from gwpy.frequencyseries import FrequencySeries
