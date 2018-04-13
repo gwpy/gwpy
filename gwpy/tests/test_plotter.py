@@ -62,6 +62,7 @@ from gwpy.plotter.tex import (float_to_latex, label_to_latex,
 from gwpy.plotter.table import get_column_string
 
 import utils
+from mocks import mock
 
 # ignore matplotlib complaining about GUIs
 warnings.filterwarnings(
@@ -586,6 +587,41 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         assert ax.get_xscale() == 'auto-gps'
         assert ax.get_xlabel() == '_auto'
         self.save_and_close(fig)
+
+    def test_auto_gps(self):
+        fig, ax = self.new()
+        ax.plot(10, 20)
+
+        # assert defaults are in place
+        assert ax.get_xlabel() == '_auto'
+        assert ax.get_xscale() == 'auto-gps'
+        assert ax.get_epoch() is None
+
+        # check that, when we render the image, we auto-set the X-axis label
+        # using an auto-determined epoch, and then replace it
+        with mock.patch.object(self.AXES_CLASS, 'set_xlabel') as mocker:
+            fig.canvas.draw()
+            mocker.assert_has_calls([
+                mock.call('Time [seconds] from 1980-01-06 00:00:10 UTC (10)'),
+                mock.call('_auto'),
+            ])
+
+        # and assert that the defaults remain in place
+        assert ax.get_xlabel() == '_auto'
+        assert ax.get_xscale() == 'auto-gps'
+        assert ax.get_epoch() is None
+
+    def test_auto_gps_fixed(self):
+        fig, ax = self.new()
+        ax.plot(10, 2)
+        ax.set_epoch(100)
+        with mock.patch.object(self.AXES_CLASS, 'set_xlabel') as mocker:
+            fig.canvas.draw()
+            mocker.assert_has_calls([
+                mock.call('Time [seconds] from 1980-01-06 00:01:40 UTC (100)'),
+                mock.call('_auto'),
+            ])
+        assert ax.get_epoch() == 100
 
     def test_plot_timeseries(self):
         fig, ax = self.new()
