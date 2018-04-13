@@ -1409,7 +1409,7 @@ class TimeSeries(TimeSeriesBase):
         the full width of the `TimeSeries`, and will fail if there are no
         stationary points.
 
-        See :func:`gwpy.signal.window.planck` for the generic Planck taper
+        See :func:`~gwpy.signal.window.planck` for the generic Planck taper
         window, and see :func:`scipy.signal.get_window` for other common
         window formats.
         """

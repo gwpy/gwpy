@@ -849,22 +849,22 @@ class Series(Array):
         return new
 
     def inject(self, other):
-        """Add two compatible `Series` along their shared x samples.
+        """Add two compatible `Series` along their shared x-axis values.
 
         Parameters
         ----------
         other : `Series`
-            a `Series` whose set of x samples overlap with `self.xindex`
+            a `Series` whose xindex intersects with `self.xindex`
 
         Returns
         -------
         out : `Series`
-            the sum of `self` and `other` along their intersecting x samples
+            the sum of `self` and `other` along their shared x-axis values
 
         Raises
         ------
         ValueError
-            if `self` and `other` have incompatible units or sample intervals
+            if `self` and `other` have incompatible units or xindex intervals
 
         Notes
         -----
@@ -872,12 +872,13 @@ class Series(Array):
         return a copy of `self`. If the series have uniformly offset indices,
         this method will raise a warning.
 
-        If `self.xindex` represents a set of timestamps, then `other` will be
-        cropped before adding to `self`.
+        If `self.xindex` is an array of timestamps, and if `other.xspan` is
+        not a subset of `self.xspan`, then `other` will be cropped before
+        being adding to `self`.
 
         Users who wish to taper or window their `Series` should do so before
         passing it to this method. See :meth:`TimeSeries.taper` and
-        :func:`gwpy.signal.window.planck` for more information.
+        :func:`~gwpy.signal.window.planck` for more information.
         """
         # check Series compatibility
         self.is_compatible(other)
@@ -889,7 +890,7 @@ class Series(Array):
         ox0 = other.x0.to(self.x0.unit)
         idx = ((ox0 - self.x0) / self.dx).value
         if not idx.is_integer():
-            warn('Series have overlapping xspan but their axis samples are '
+            warn('Series have overlapping xspan but their x-axis values are '
                  'uniformly offset. Returning a copy of the original Series.')
             return self.copy()
         # add the Series along their shared samples
