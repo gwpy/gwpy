@@ -58,7 +58,7 @@ from gwpy.plotter.html import (map_data, map_artist)
 from gwpy.plotter.log import CombinedLogFormatterMathtext
 from gwpy.plotter.text import (to_string, unit_as_label)
 from gwpy.plotter.tex import (float_to_latex, label_to_latex,
-                              unit_to_latex)
+                              unit_to_latex, HAS_TEX)
 from gwpy.plotter.table import get_column_string
 
 import utils
@@ -84,6 +84,24 @@ else:
         COLOR0 = COLOR_CONVERTER.to_rgba('b')
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+
+@pytest.fixture(scope='function', params=[
+    pytest.param(False, id='usetex'),
+    pytest.param(True, id='no-tex', marks=pytest.mark.skipif(
+        not HAS_TEX, reason='no latex')),
+])
+def usetex(request):
+    """Fixture to test plotting function with and without `usetex`
+
+    Returns
+    -------
+    usetex : `bool`
+        the value of the `text.usetex` rcParams settings
+    """
+    use_ = request.param
+    with rc_context(rc={'text.usetex': use_}):
+        yield use_
 
 
 class PlottingTestBase(object):
@@ -796,9 +814,6 @@ class TestEventTableAxes(EventTableMixin, TestAxes):
         c = ax.plot_table(table, 'time', 'frequency', 'snr',
                           size_by='snr')
         nptest.assert_array_equal(c.get_array(), snrs)
-        # test add_loudest
-        ax.set_title('title')
-        ax.add_loudest(table, 'snr', 'time', 'frequency')
 
     def test_plot_tiles(self, table):
         fig, ax = self.new()
@@ -827,6 +842,53 @@ class TestEventTableAxes(EventTableMixin, TestAxes):
             assert get_column_string('reduced_chisq') == r'Reduced $\chi^2$'
             assert get_column_string('flow') == r'f$_{\mbox{\small low}}$'
             assert get_column_string('end_time_ns') == r'End Time $(ns)$'
+
+    def test_add_loudest(self, usetex, table):
+        table.add_column(table.Column(data=['test'] * len(table), name='test'))
+        loudest = table[table['snr'].argmax()]
+        t, f, s = loudest['time'], loudest['frequency'], loudest['snr']
+
+        # make plot
+        fig, ax = self.new()
+        ax.scatter(table['time'], table['frequency'])
+        tpos = ax.title.get_position()
+
+        # call function
+        coll, text = ax.add_loudest(
+            table, 'snr',  # table, rank
+            'time', 'frequency',  # x, y
+            'test',  # extra columns to print
+            'time',  # duplicate (shouldn't get printed)
+        )
+
+        # check marker was placed at the right point
+        utils.assert_array_equal(coll.get_offsets(), [(t, f)])
+
+        # check text
+        result = ('Loudest event: Time = {0}, Frequency = {1}, SNR = {2}, '
+                  'Test = test'.format(
+                      *('{0:.2f}'.format(x) for x in (t, f, s))))
+
+        assert text.get_text() == result
+        assert text.get_position() == (.5, 1.)
+
+        # assert title got moved
+        assert ax.title.get_position() == (tpos[0], tpos[1] + .05)
+
+        # -- with more kwargs
+
+        _, t = ax.add_loudest(table, 'snr', 'time', 'frequency',
+                              position=(0., 0.), ha='left', va='top')
+        assert t.get_position() == (0., 0.)
+
+        # assert title doesn't get moved again if we specify position
+        assert ax.title.get_position() == (tpos[0], tpos[1] + .05)
+
+        # assert kw handling
+        assert t.get_horizontalalignment() == 'left'
+        assert t.get_verticalalignment() == 'top'
+
+        self.save_and_close(fig)
 
 
 # -- Segment plotter ----------------------------------------------------------
