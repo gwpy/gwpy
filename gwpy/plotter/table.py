@@ -32,11 +32,9 @@ from matplotlib import (collections, pyplot)
 from matplotlib.projections import register_projection
 
 from ..table import Table
-from ..time import LIGOTimeGPS
 from .core import Plot
 from .timeseries import (TimeSeriesAxes, TimeSeriesPlot)
 from .frequencyseries import FrequencySeriesPlot
-from .tex import float_to_latex
 
 __all__ = ['EventTableAxes', 'EventTablePlot']
 
@@ -291,40 +289,41 @@ class EventTableAxes(TimeSeriesAxes):
         text : `~matplotlib.text.Text`
             the text added to these `Axes` with loudest event parameters
         """
-        ylim = self.get_ylim()
+        # get loudest row
         idx = table[rank].argmax()
         row = table[idx]
-        disp = "Loudest event:"
-        columns = [x, y, rank] + list(columns)
-        scat = []
-        for i, column in enumerate(columns):
-            if not column or column in columns[:i]:
-                continue
-            if i:
-                disp += ','
-            val = row[column]
-            if i < 2:
-                scat.append([float(val)])
-            column = get_column_string(column)
-            if pyplot.rcParams['text.usetex'] and column.endswith('Time'):
-                disp += (r" %s$= %s$" % (column, LIGOTimeGPS(float(val))))
-            elif pyplot.rcParams['text.usetex']:
-                disp += (r" %s$=$ %s" % (column, float_to_latex(val, '%.3g')))
-            else:
-                disp += " %s = %.2g" % (column, val)
-        disp = disp.rstrip(',')
-        pos = kwargs.pop('position', [0.5, 1.00])
-        kwargs.setdefault('transform', self.axes.transAxes)
-        kwargs.setdefault('verticalalignment', 'bottom')
-        kwargs.setdefault('horizontalalignment', 'center')
-        args = pos + [disp]
-        coll = self.scatter(*scat, marker='*', zorder=1000, facecolor='gold',
+
+        # mark loudest row with star
+        coll = self.scatter([float(row[x])], [float(row[y])],
+                            marker='*', zorder=1000, facecolor='gold',
                             edgecolor='black', s=200)
-        text = self.text(*args, **kwargs)
-        if self.get_title():
-            pos = self.title.get_position()
-            self.title.set_position((pos[0], pos[1] + 0.05))
-        self.set_ylim(*ylim)
+
+        # get text
+        columns = [x, y, rank] + list(columns)
+        loudtext = _loudest_text(row, columns)
+
+        # get position for new text
+        try:
+            pos = kwargs.pop('position')
+        except KeyError:  # user didn't specify, set default and shunt title
+            pos = [0.5, 1.00]
+            tpos = self.title.get_position()
+            self.title.set_position((tpos[0], tpos[1] + 0.05))
+
+        # parse text kwargs
+        text_kw = {  # defaults
+            'transform': self.axes.transAxes,
+            'verticalalignment': 'bottom',
+            'horizontalalignment': 'center',
+        }
+        text_kw.update(kwargs)
+        if 'ha' in text_kw:  # handle short versions or alignment params
+            text_kw['horizontalalignment'] = text_kw.pop('ha')
+        if 'va' in text_kw:
+            text_kw['verticalalignment'] = text_kw.pop('va')
+
+        # add text
+        text = self.text(pos[0], pos[1], loudtext, **text_kw)
 
         return coll, text
 
@@ -667,3 +666,26 @@ def get_column_string(column):
             # escape underscore
             words[i] = re.sub(r'(?<!\\)_', r'\_', words[i])
     return ' '.join(words)
+
+
+def _loudest_text(row, columns):
+    """Format the text for `EventTableAxes.add_loudest`
+    """
+    coltxt = []
+    for i, col in enumerate(columns):
+        # ignore null and duplicates
+        if not col or col in columns[:i]:
+            continue
+
+        # format column name
+        colstr = get_column_string(col)
+
+        # format row value
+        try:
+            valstr = '{0:.2f}'.format(row[col]).rstrip('.0')
+        except ValueError:  # not float()able
+            valstr = str(row[col])
+
+        coltxt.append('{col} = {val}'.format(col=colstr, val=valstr))
+
+    return 'Loudest event: {0}'.format(', '.join(coltxt))
