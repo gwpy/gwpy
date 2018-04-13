@@ -59,9 +59,10 @@ class TimeSeriesAxes(SeriesAxes):
     @allow_rasterization
     def draw(self, *args, **kwargs):
         autogps = self.get_xscale() == 'auto-gps'
+        _xlabel = self.get_xlabel()
+
         if autogps:  # dynamically set epoch and x-axis label
             _epoch = self.xaxis._scale.get_epoch()
-            _xlabel = self.get_xlabel()
 
             if _epoch is None:
                 if self.get_autoscalex_on():
@@ -74,13 +75,17 @@ class TimeSeriesAxes(SeriesAxes):
             if _xlabel == '_auto' or (
                     _xlabel and self.geometry() == (1, 1, 1)):
                 self.auto_gps_label()
+        elif _xlabel == '_auto':
+            self.set_xlabel('')
 
         try:
             return super(TimeSeriesAxes, self).draw(*args, **kwargs)
         finally:
             if autogps:  # reset
                 self.set_xscale('auto-gps', epoch=_epoch)
-                self.set_xlabel(_xlabel)
+                self.stale = False
+            self.set_xlabel(_xlabel)
+            self.xaxis.stale = False
 
     draw.__doc__ = SeriesAxes.draw.__doc__
 
