@@ -279,17 +279,17 @@ class EventTableAxes(TimeSeriesAxes):
         y : `str`
             name of column to display on the Y-axis
 
-        color : `str`, optional
-            name of column by which to colour the data
-
         **kwargs
             any other arguments applicable to
             :meth:`~matplotlib.axes.Axes.text`
 
         Returns
         -------
-        out : `tuple`
-            (`collection`, `text`) tuple of items added to the `Axes`
+        collection : `~matplotlib.collections.PolyCollection`
+            the collection returned by :meth:`~matplotlib.axes.Axesscatter`
+            when marking the loudest event
+        text : `~matplotlib.text.Text`
+            the text added to these `Axes` with loudest event parameters
         """
         ylim = self.get_ylim()
         idx = table[rank].argmax()
@@ -318,13 +318,15 @@ class EventTableAxes(TimeSeriesAxes):
         kwargs.setdefault('verticalalignment', 'bottom')
         kwargs.setdefault('horizontalalignment', 'center')
         args = pos + [disp]
-        self.scatter(*scat, marker='*', zorder=1000, facecolor='gold',
-                     edgecolor='black', s=200)
-        self.text(*args, **kwargs)
+        coll = self.scatter(*scat, marker='*', zorder=1000, facecolor='gold',
+                            edgecolor='black', s=200)
+        text = self.text(*args, **kwargs)
         if self.get_title():
             pos = self.title.get_position()
             self.title.set_position((pos[0], pos[1] + 0.05))
         self.set_ylim(*ylim)
+
+        return coll, text
 
 
 register_projection(EventTableAxes)
