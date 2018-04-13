@@ -20,14 +20,15 @@
 
 """Inject a known signal into a `FrequencySeries`
 
-It can often be useful to add some known signal to an inherently random
-or noisy timeseries. For example, one might want to examine what
+It can often be useful to add some known signal to inherently random
+or noisy data. For example, one might want to investigate what
 would happen if a binary black hole merger signal occured at or near
 the time of a glitch. In LIGO data analysis, this procedure is referred
 to as an _injection_.
 
-In the example below, we will create a stream of random, white Gaussian
-noise, then inject a loud, steady sinuosoid.
+In the example below we will create a stream of random, white Gaussian
+noise, then inject a loud, steady sinuosoid. We will do this in the
+frequency domain because it is much easier to model a sinusoid there.
 """
 
 __author__ = "Alex Urban <alexander.urban@ligo.org>"
@@ -43,26 +44,29 @@ noise = TimeSeries(random.normal(scale=.1, size=1024), sample_rate=1024)
 
 noisefd = noise.fft()
 
-# We can now easily inject a loud sinusoid at, say, 30 Hz:
+# We can now easily inject a loud sinusoid of unit amplitude at, say,
+# 30 Hz:
 
 import numpy
 from gwpy.frequencyseries import FrequencySeries
 signal = FrequencySeries(numpy.array([1.]), f0=30, df=noisefd.df)
 injfd = noisefd.inject(signal)
 
-# We can then visualize the injection in the frequency domain:
+# We can then visualize the data before and after injection in the frequency
+# domain:
 
 from gwpy.plotter import FrequencySeriesPlot
 plot = FrequencySeriesPlot(numpy.abs(noisefd), numpy.abs(injfd), sep=True,
                            sharex=True, sharey=True)
 plot.show()
 
-# Finally, for completeness we can visualize the injection in the time domain:
+# Finally, for completeness we can visualize the effect before and after
+# injection back in the time domain:
 
 from gwpy.plotter import TimeSeriesPlot
 inj = injfd.ifft()
 plot = TimeSeriesPlot(noise, inj, sep=True, sharex=True, sharey=True)
 plot.show()
 
-# We can also see why sinusoids are easier to inject in the time domain:
-# they only require changing one data point.
+# We can see why sinusoids are easier to inject in the frequency domain:
+# they only require adding at a single frequency.
