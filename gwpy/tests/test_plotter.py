@@ -58,7 +58,7 @@ from gwpy.plotter.html import (map_data, map_artist)
 from gwpy.plotter.log import CombinedLogFormatterMathtext
 from gwpy.plotter.text import (to_string, unit_as_label)
 from gwpy.plotter.tex import (float_to_latex, label_to_latex,
-                              unit_to_latex, has_tex)
+                              unit_to_latex, HAS_TEX)
 from gwpy.plotter.table import get_column_string
 
 import utils
@@ -89,7 +89,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 @pytest.fixture(scope='function', params=[
     pytest.param(False, id='usetex'),
     pytest.param(True, id='no-tex', marks=pytest.mark.skipif(
-        not has_tex, reason='no latex')),
+        not HAS_TEX, reason='no latex')),
 ])
 def usetex(request):
     """Fixture to test plotting function with and without `usetex`

@@ -37,21 +37,19 @@ MACROS = [
 def has_tex():
     """Returns whether tex is installed on this system
 
+    Checks for ``latex``, ``pdflatex``, and ``dvipng`` on the path.
+
     Returns
     -------
-    True
-        if ``pdflatex`` and ``dvipng`` executables are found on the path
-    False
-        otherwise
+    hastex : `bool`
+        `True` if all required executables are found on the path, otherwise
+        `False`
     """
-    try:
-        which('pdflatex')
-    except ValueError:
-        return False
-    try:
-        which('dvipng')
-    except ValueError:
-        return False
+    for exe in ('latex', 'pdflatex', 'dvipng'):
+        try:
+            which(exe)
+        except ValueError:
+            return False
     return True
 
 
