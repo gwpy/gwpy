@@ -105,6 +105,15 @@ def usetex(request):
         yield use_
 
 
+def no_usetex(func):
+    """Decorate a test function with `'text.usetex'=False` in `rcParams`
+    """
+    def decorated_func(*args, **kwargs):
+        with rc_context(rc={'text.usetex': False}):
+            return func(*args, **kwargs)
+    return func
+
+
 class PlottingTestBase(object):
     FIGURE_CLASS = Plot
     AXES_CLASS = Axes
@@ -588,6 +597,7 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         assert ax.get_xlabel() == '_auto'
         self.save_and_close(fig)
 
+    @no_usetex
     def test_auto_gps(self):
         fig, ax = self.new()
         ax.plot(10, 20)
@@ -611,6 +621,7 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         assert ax.get_xscale() == 'auto-gps'
         assert ax.get_epoch() is None
 
+    @no_usetex
     def test_auto_gps_fixed(self):
         fig, ax = self.new()
         ax.plot(10, 2)
