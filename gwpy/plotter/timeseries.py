@@ -72,8 +72,7 @@ class TimeSeriesAxes(SeriesAxes):
                     not isinf(x)))
                 self.set_xscale('auto-gps', epoch=epoch)
 
-            if _xlabel == '_auto' or (
-                    _xlabel and self.geometry() == (1, 1, 1)):
+        if autogps and _xlabel == '_auto':
                 self.auto_gps_label()
         elif _xlabel == '_auto':
             self.set_xlabel('')
