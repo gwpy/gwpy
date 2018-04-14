@@ -597,8 +597,20 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         assert ax.get_xlabel() == '_auto'
         self.save_and_close(fig)
 
-    @no_usetex
-    def test_auto_gps(self):
+    def test_auto_gps(self, usetex):
+        def _check_draw(fig, xlabel):
+            """Check that the draw() operation works
+            """
+            # if using latex, don't mock set_xlabel, because that leaves the
+            # label as _auto, which freaks latex out
+            if rcParams['text.usetex']:
+                fig.canvas.draw()  # will fail if _auto isn't replaced properly
+                return
+            with mock.patch.object(self.AXES_CLASS, 'set_xlabel') as mocker:
+                fig.canvas.draw()
+                mocker.assert_has_calls([mock.call(xlabel),
+                                         mock.call('_auto')])
+
         fig, ax = self.new()
         ax.plot(10, 20)
 
@@ -609,29 +621,16 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
 
         # check that, when we render the image, we auto-set the X-axis label
         # using an auto-determined epoch, and then replace it
-        with mock.patch.object(self.AXES_CLASS, 'set_xlabel') as mocker:
-            fig.canvas.draw()
-            mocker.assert_has_calls([
-                mock.call('Time [seconds] from 1980-01-06 00:00:10 UTC (10)'),
-                mock.call('_auto'),
-            ])
+        _check_draw(fig, 'Time [seconds] from 1980-01-06 00:00:10 UTC (10)')
 
         # and assert that the defaults remain in place
         assert ax.get_xlabel() == '_auto'
         assert ax.get_xscale() == 'auto-gps'
         assert ax.get_epoch() is None
 
-    @no_usetex
-    def test_auto_gps_fixed(self):
-        fig, ax = self.new()
-        ax.plot(10, 2)
+        # set epoch manually, and check that it gets set
         ax.set_epoch(100)
-        with mock.patch.object(self.AXES_CLASS, 'set_xlabel') as mocker:
-            fig.canvas.draw()
-            mocker.assert_has_calls([
-                mock.call('Time [seconds] from 1980-01-06 00:01:40 UTC (100)'),
-                mock.call('_auto'),
-            ])
+        _check_draw(fig, 'Time [seconds] from 1980-01-06 00:01:40 UTC (100)')
         assert ax.get_epoch() == 100
 
     def test_plot_timeseries(self):
