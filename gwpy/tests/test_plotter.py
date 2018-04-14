@@ -111,7 +111,7 @@ def no_usetex(func):
     def decorated_func(*args, **kwargs):
         with rc_context(rc={'text.usetex': False}):
             return func(*args, **kwargs)
-    return func
+    return decorated_func
 
 
 class PlottingTestBase(object):
