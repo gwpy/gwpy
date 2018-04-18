@@ -21,6 +21,7 @@
 
 import subprocess
 from importlib import import_module
+from math import sqrt
 
 from six import PY2
 
@@ -30,7 +31,7 @@ import numpy
 
 from astropy import units
 
-from gwpy.utils import shell
+from gwpy.utils import (shell, mp as utils_mp)
 from gwpy.utils import deps  # deprecated
 
 import utils
@@ -150,3 +151,35 @@ class TestUtilsLal(object):
     def test_to_lal_ligotimegps(self):
         assert self.utils_lal.to_lal_ligotimegps(123.456) == (
             self.lal.LIGOTimeGPS(123, 456000000))
+
+
+# -- gwpy.utils.mp ------------------------------------------------------------
+
+class TestUtilsMp(object):
+
+    @pytest.mark.parametrize('verbose', [False, True, 'Test'])
+    @pytest.mark.parametrize('nproc', [1, 2])
+    def test_multiprocess_with_queues(self, capsys, nproc, verbose):
+        inputs = [1, 4, 9, 16, 25]
+        out = utils_mp.multiprocess_with_queues(
+            nproc, sqrt, inputs, verbose=verbose,
+        )
+        assert out == [1, 2, 3, 4, 5]
+
+        # assert progress bar prints correctly
+        cap = capsys.readouterr()
+        if verbose is True:
+            assert cap.out.startswith('\rProcessing: ')
+        elif verbose is False:
+            assert cap.out == ''
+        else:
+            assert cap.out.startswith('\r{}: '.format(verbose))
+
+        with pytest.raises(ValueError):
+            utils_mp.multiprocess_with_queues(nproc, sqrt, [-1],
+                                              verbose=verbose)
+
+    def test_multiprocess_with_queues_raise(self):
+        with pytest.warns(DeprecationWarning):
+            utils_mp.multiprocess_with_queues(1, sqrt, [1],
+                                              raise_exceptions=True)

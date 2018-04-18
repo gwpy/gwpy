@@ -35,6 +35,7 @@ Requires:       python-matplotlib
 Requires:       python-astropy
 Requires:       lal-python >= 6.14.0
 Requires:       glue
+Requires:       python2-tqdm
 
 %{?python_provide:%python_provide python2-%{srcname}}
 
@@ -54,6 +55,7 @@ Requires:       python%{python3_pkgversion}-matplotlib
 Requires:       python%{python3_pkgversion}-astropy
 Requires:       lal-python%{python3_pkgversion} >= 6.14.0
 Requires:       python%{python3_pkgversion}-glue
+Requires:       python%{python3_pkgversion}-tqdm
 
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{srcname}}
 
