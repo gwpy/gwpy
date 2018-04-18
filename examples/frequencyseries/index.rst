@@ -14,3 +14,4 @@
    coherence
    transfer_function
    rayleigh
+   inject
