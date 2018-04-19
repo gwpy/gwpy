@@ -23,7 +23,10 @@ import numpy
 
 from math import ceil
 
-from scipy.signal import windows as scipy_windows
+try:  # scipy 1.1.0rc1
+    from scipy.signal.windows import windows as scipy_windows
+except ImportError:  # scipy <= 1.0.x
+    from scipy.signal import windows as scipy_windows
 
 from scipy.special import expit
 
