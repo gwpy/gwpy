@@ -41,7 +41,9 @@ if {${name} ne ${subport}} {
                         port:py${python.version}-matplotlib \
                         port:py${python.version}-astropy \
                         port:py${python.version}-lal \
-                        port:glue
+                        port:glue \
+                        port:py${python.version}-tqdm
+
     if {${python.version} < 34} {
         depends_lib-append port:py${python.version}-enum34
     }
