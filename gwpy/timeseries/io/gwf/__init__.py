@@ -205,14 +205,6 @@ def register_gwf_api(library):
             GPS end time of required data, defaults to end of data found;
             any input parseable by `~gwpy.time.to_gps` is fine
 
-        dtype : `numpy.dtype`, `str`, `type`, or `dict`, optional
-            desired numeric data type for returned data, or
-            `dict` of ``(channel, dtype)`` pairs
-
-        resample : `float`, `dict`, optional
-            desired output sample rate for all returned data, or
-            `dict` of ``(channel, rate)`` pairs
-
         pad : `float`, optional
             value with which to fill gaps in the source data, if not
             given gaps will result in an exception being raised
@@ -232,9 +224,17 @@ def register_gwf_api(library):
         if end:
             end = float(to_gps(end))
 
-        # parse output format kwargs
+        # parse output format kwargs -- DEPRECATED
+        if resample is not None:
+            warnings.warn('the resample keyword for is deprecated, instead '
+                          'you should manually resample after reading',
+                          DeprecationWarning)
         if not isinstance(resample, dict):
             resample = dict((c, resample) for c in channels)
+        if resample is not None:
+            warnings.warn('the dtype keyword for is deprecated, instead '
+                          'you should manually call astype() after reading',
+                          DeprecationWarning)
         if not isinstance(dtype, dict):
             dtype = dict((c, dtype) for c in channels)
 
@@ -269,7 +269,7 @@ def register_gwf_api(library):
                                 series_class=series_class, **kwargs),
                        gap=gap, pad=pad, copy=False)
 
-        # apply resampling and dtype-casting
+        # apply resampling and dtype-casting -- DEPRECATED
         for name in out:
             if (resample.get(name) and
                     resample[name] != out[name].sample_rate.value):
