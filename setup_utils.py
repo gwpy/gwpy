@@ -34,7 +34,7 @@ from distutils.cmd import Command
 from distutils.command.clean import (clean as orig_clean, log, remove_tree)
 from distutils.command.bdist_rpm import bdist_rpm as distutils_bdist_rpm
 from distutils.errors import DistutilsArgError
-from distutils.version import LooseVersion
+from distutils.version import (LooseVersion, StrictVersion)
 
 from setuptools.command.bdist_rpm import bdist_rpm as _bdist_rpm
 from setuptools.command.sdist import sdist as _sdist
@@ -144,7 +144,7 @@ class changelog(Command):
             raise DistutilsArgError(
                 "--format should be one of {!r}".format(self.FORMATS))
         if self.start_tag:
-            self.start_tag = self.start_tag.lstrip('v')
+            self.start_tag = self._tag_version(self.start_tag)
 
     def format_changelog_entry(self, tag):
         log.debug('    parsing changelog entry for {}'.format(tag))
@@ -178,11 +178,15 @@ class changelog(Command):
                     name, version, message,
                     tagger.name, tagger.email, dstr, tz))
 
+    @staticmethod
+    def _tag_version(tag):
+        return StrictVersion(str(tag).lstrip('v'))
+
     def get_git_tags(self):
         import git
         repo = git.Repo()
         tags = repo.tags
-        tags.reverse()
+        tags.sort(key=self._tag_version, reverse=True)
         log.debug('found {} git tags'.format(len(tags)))
         return tags
 
@@ -190,7 +194,7 @@ class changelog(Command):
         log.info('creating changelog')
         lines = []
         for tag in self.get_git_tags():
-            if self.start_tag and tag.name.lstrip('v') < self.start_tag:
+            if self.start_tag and self._tag_version(tag) < self.start_tag:
                 log.debug('reached start tag ({}), stopping'.format(
                     self.start_tag))
                 break
