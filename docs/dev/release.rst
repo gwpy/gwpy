@@ -49,6 +49,16 @@ Step-by-step
       second prompt is the tag message, please complete this to include the
       release notes for this release.
 
+   .. note::
+
+      If ypu want to GPG sign the merge commit and the tag:
+
+      .. code-block:: bash
+
+          $ git commit --amend --gpg-sign  # sign merge commit
+          $ git tag --sign v1.0.0 --force  # regenerate tag
+
+
 #. **Draft a release on GitHub**
 
    * Go to https://github.com/gwpy/gwpy/releases/new
