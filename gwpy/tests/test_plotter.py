@@ -33,6 +33,7 @@ from matplotlib import (use, rc_context, __version__ as mpl_version)
 use('agg')  # nopep8
 from matplotlib import (pyplot, rcParams)
 from matplotlib.legend import Legend
+from matplotlib.lines import Line2D
 from matplotlib.colors import (LogNorm, ColorConverter)
 from matplotlib.collections import (PathCollection, PatchCollection,
                                     PolyCollection)
@@ -57,7 +58,7 @@ from gwpy.plotter.html import (map_data, map_artist)
 from gwpy.plotter.log import CombinedLogFormatterMathtext
 from gwpy.plotter.text import (to_string, unit_as_label)
 from gwpy.plotter.tex import (float_to_latex, label_to_latex,
-                              unit_to_latex)
+                              unit_to_latex, HAS_TEX)
 from gwpy.plotter.table import get_column_string
 
 import utils
@@ -83,6 +84,24 @@ else:
         COLOR0 = COLOR_CONVERTER.to_rgba('b')
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+
+@pytest.fixture(scope='function', params=[
+    pytest.param(False, id='usetex'),
+    pytest.param(True, id='no-tex', marks=pytest.mark.skipif(
+        not HAS_TEX, reason='no latex')),
+])
+def usetex(request):
+    """Fixture to test plotting function with and without `usetex`
+
+    Returns
+    -------
+    usetex : `bool`
+        the value of the `text.usetex` rcParams settings
+    """
+    use_ = request.param
+    with rc_context(rc={'text.usetex': use_}):
+        yield use_
 
 
 class PlottingTestBase(object):
@@ -581,31 +600,55 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         assert ax.get_xlim() == tuple(self.ts.span)
         self.save_and_close(fig)
 
-    def test_plot_timeseries_mmm(self):
+    def test_plot_mmm(self):
         fig, ax = self.new()
         # test default
-        artists = ax.plot_timeseries_mmm(*self.mmm)
-        assert len(artists) == 5
+        a, b, c, d, e = ax.plot_mmm(*self.mmm)
+        for line in (a, b, d):
+            assert isinstance(line, Line2D)
+        for coll in (c, e):
+            assert isinstance(coll, PolyCollection)
         assert len(ax.lines) == 3
         assert len(ax.collections) == 2
         self.save_and_close(fig)
+
+        # test with labels
+        fig, ax = self.new()
+        minname = self.mmm[1].name
+        maxname = self.mmm[2].name
+        self.mmm[1].name = 'min'
+        self.mmm[2].name = 'max'
+        try:
+            ax.plot_mmm(*self.mmm, label='test')
+            leg = ax.legend()
+            assert len(leg.get_lines()) == 1
+        finally:
+            self.mmm[1].name = minname
+            self.mmm[2].name = maxname
+        self.save_and_close(fig)
+
         # test min only
         fig, ax = self.new()
-        artists = ax.plot_timeseries_mmm(self.mmm[0], min_=self.mmm[1])
-        assert len(artists) == 5
-        assert artists[3] is None
-        assert artists[4] is None
+        a, b, c, d, e = ax.plot_mmm(self.mmm[0], min_=self.mmm[1])
+        assert d is None
+        assert e is None
         assert len(ax.lines) == 2
         assert len(ax.collections) == 1
         self.save_and_close(fig)
+
         # test max only
         fig, ax = self.new()
-        artists = ax.plot_timeseries_mmm(self.mmm[0], max_=self.mmm[2])
-        assert len(artists) == 5
-        assert artists[1] is None
-        assert artists[2] is None
+        a, b, c, d, e = ax.plot_mmm(self.mmm[0], max_=self.mmm[2])
+        assert b is None
+        assert c is None
         assert len(ax.lines) == 2
         assert len(ax.collections) == 1
+
+    def test_plot_timeseries_mmm(self):
+        fig, ax = self.new()
+        with pytest.warns(DeprecationWarning):
+            ax.plot_timeseries_mmm(*self.mmm)
+        self.save_and_close(fig)
 
     def test_plot_spectrogram(self):
         fig, ax = self.new()
@@ -665,31 +708,56 @@ class TestFrequencySeriesAxes(FrequencySeriesMixin, TestAxes):
         nptest.assert_array_equal(line.get_ydata(), self.asd.value)
         self.save_and_close(fig)
 
-    def test_plot_frequencyseries_mmm(self):
+    def test_plot_mmm(self):
         fig, ax = self.new()
         # test defaults
-        artists = ax.plot_frequencyseries_mmm(*self.mmm)
-        assert len(artists) == 5
+        a, b, c, d, e = ax.plot_mmm(*self.mmm)
+        for line in (a, b, d):
+            assert isinstance(line, Line2D)
+        for coll in (c, e):
+            assert isinstance(coll, PolyCollection)
         assert len(ax.lines) == 3
         assert len(ax.collections) == 2
         self.save_and_close(fig)
+
+        # test with labels
+        fig, ax = self.new()
+        minname = self.mmm[1].name
+        maxname = self.mmm[2].name
+        self.mmm[1].name = 'min'
+        self.mmm[2].name = 'max'
+        try:
+            ax.plot_mmm(*self.mmm, label='test')
+            leg = ax.legend()
+            assert len(leg.get_lines()) == 1
+        finally:
+            self.mmm[1].name = minname
+            self.mmm[2].name = maxname
+        self.save_and_close(fig)
+
         # test min only
         fig, ax = self.new()
-        artists = ax.plot_frequencyseries_mmm(self.mmm[0], min_=self.mmm[1])
-        assert len(artists) == 5
-        assert artists[3] is None
-        assert artists[4] is None
+        a, b, c, d, e = ax.plot_mmm(self.mmm[0], min_=self.mmm[1])
+        assert d is None
+        assert e is None
         assert len(ax.lines) == 2
         assert len(ax.collections) == 1
         self.save_and_close(fig)
+
         # test max only
         fig, ax = self.new()
-        artists = ax.plot_frequencyseries_mmm(self.mmm[0], max_=self.mmm[2])
-        assert len(artists) == 5
-        assert artists[1] is None
-        assert artists[2] is None
+        a, b, c, d, e = ax.plot_mmm(self.mmm[0], max_=self.mmm[2])
+        assert b is None
+        assert c is None
         assert len(ax.lines) == 2
         assert len(ax.collections) == 1
+        self.save_and_close(fig)
+
+    def test_plot_frequencyseries_mmm(self):
+        fig, ax = self.new()
+        with pytest.warns(DeprecationWarning):
+            ax.plot_frequencyseries_mmm(*self.mmm)
+        self.save_and_close(fig)
 
 
 # -- Table plotters -----------------------------------------------------------
@@ -746,9 +814,6 @@ class TestEventTableAxes(EventTableMixin, TestAxes):
         c = ax.plot_table(table, 'time', 'frequency', 'snr',
                           size_by='snr')
         nptest.assert_array_equal(c.get_array(), snrs)
-        # test add_loudest
-        ax.set_title('title')
-        ax.add_loudest(table, 'snr', 'time', 'frequency')
 
     def test_plot_tiles(self, table):
         fig, ax = self.new()
@@ -777,6 +842,53 @@ class TestEventTableAxes(EventTableMixin, TestAxes):
             assert get_column_string('reduced_chisq') == r'Reduced $\chi^2$'
             assert get_column_string('flow') == r'f$_{\mbox{\small low}}$'
             assert get_column_string('end_time_ns') == r'End Time $(ns)$'
+
+    def test_add_loudest(self, usetex, table):
+        table.add_column(table.Column(data=['test'] * len(table), name='test'))
+        loudest = table[table['snr'].argmax()]
+        t, f, s = loudest['time'], loudest['frequency'], loudest['snr']
+
+        # make plot
+        fig, ax = self.new()
+        ax.scatter(table['time'], table['frequency'])
+        tpos = ax.title.get_position()
+
+        # call function
+        coll, text = ax.add_loudest(
+            table, 'snr',  # table, rank
+            'time', 'frequency',  # x, y
+            'test',  # extra columns to print
+            'time',  # duplicate (shouldn't get printed)
+        )
+
+        # check marker was placed at the right point
+        utils.assert_array_equal(coll.get_offsets(), [(t, f)])
+
+        # check text
+        result = ('Loudest event: Time = {0}, Frequency = {1}, SNR = {2}, '
+                  'Test = test'.format(
+                      *('{0:.2f}'.format(x) for x in (t, f, s))))
+
+        assert text.get_text() == result
+        assert text.get_position() == (.5, 1.)
+
+        # assert title got moved
+        assert ax.title.get_position() == (tpos[0], tpos[1] + .05)
+
+        # -- with more kwargs
+
+        _, t = ax.add_loudest(table, 'snr', 'time', 'frequency',
+                              position=(0., 0.), ha='left', va='top')
+        assert t.get_position() == (0., 0.)
+
+        # assert title doesn't get moved again if we specify position
+        assert ax.title.get_position() == (tpos[0], tpos[1] + .05)
+
+        # assert kw handling
+        assert t.get_horizontalalignment() == 'left'
+        assert t.get_verticalalignment() == 'top'
+
+        self.save_and_close(fig)
 
 
 # -- Segment plotter ----------------------------------------------------------
@@ -895,7 +1007,16 @@ class HistogramMixin(object):
 
 
 class TestHistogramPlot(HistogramMixin, TestPlot):
-    pass
+    def test_init(self):
+        super(TestHistogramPlot, self).test_init()
+
+        # test with data
+        bins = [1, 2, 5]
+        plot = self.FIGURE_CLASS([1, 2, 3, 4, 5], bins=bins)
+        assert len(plot.axes) == 1
+        ax = plot.gca()
+        assert len(ax.containers) == 1
+        assert len(ax.containers[0].patches) == len(bins) - 1
 
 
 class TestHistogramAxes(HistogramMixin, TestAxes):

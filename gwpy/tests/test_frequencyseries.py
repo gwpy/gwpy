@@ -37,6 +37,7 @@ use('agg')  # nopep8
 
 from astropy import units
 
+from gwpy.timeseries import TimeSeries
 from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.plotter import (FrequencySeriesPlot, FrequencySeriesAxes)
 from gwpy.segments import Segment
@@ -134,6 +135,13 @@ class TestFrequencySeries(TestSeries):
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
 
+    def test_ifft(self):
+        # construct a TimeSeries, then check that it is unchanged by
+        # the operation TimeSeries.fft().ifft()
+        ts = TimeSeries([1.0, 0.0, -1.0, 0.0], sample_rate=1.0)
+        assert ts.fft().ifft() == ts
+        utils.assert_allclose(ts.fft().ifft().value, ts.value)
+
     def test_filter(self, array):
         a2 = array.filter([100], [1], 1e-2)
         assert isinstance(a2, type(array))
@@ -148,6 +156,27 @@ class TestFrequencySeries(TestSeries):
         a2 = array.zpk([100], [1], 1e-2)
         assert isinstance(a2, type(array))
         utils.assert_quantity_equal(a2.frequencies, array.frequencies)
+
+    def test_inject(self):
+        # create a timeseries out of an array of zeros
+        df, nyquist = 1, 2048
+        data = FrequencySeries(numpy.zeros(df*nyquist + 1), f0=0,
+                               df=df, unit='')
+
+        # create a second timeseries to inject into the first
+        w_nyquist = 1024
+        sig = FrequencySeries(numpy.ones(df*w_nyquist + 1), f0=0,
+                              df=df, unit='')
+
+        # test that we recover this waveform when we add it to data,
+        # and that the operation does not change the original data
+        new_data = data.inject(sig)
+        assert new_data.unit == data.unit
+        assert new_data.size == data.size
+        ind, = new_data.value.nonzero()
+        assert len(ind) == sig.size
+        utils.assert_allclose(new_data.value[ind], sig.value)
+        utils.assert_allclose(data.value, numpy.zeros(df*nyquist + 1))
 
     @utils.skip_missing_dependency('lal')
     def test_to_from_lal(self, array):

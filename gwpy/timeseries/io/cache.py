@@ -26,7 +26,7 @@ from six import string_types
 from astropy.io.registry import read as io_read
 
 from ...io.registry import get_read_format
-from ...io.cache import (read_cache, cache_segments, FILE_LIKE)
+from ...io.cache import (read_cache, cache_segments, file_segment, FILE_LIKE)
 from ...segments import (Segment, SegmentList)
 from ...utils.mp import multiprocess_with_queues
 from ..core import TimeSeriesBaseList
@@ -164,31 +164,48 @@ def get_mp_cache_segments(cache, nproc, span, overlap=0):
     """
     # no data
     if not cache:
-        nproc = 1
         return [(None, None)]
+
+    # minimum 1 file per process
+    numf = len(cache)
+    nproc = min(nproc, numf)
 
     # single process
     if nproc == 1:
         return SegmentList([span])
 
-    # actual multiprocessing
-    numf = len(cache)
-    nproc = min(nproc, numf)
-    fperproc = int(ceil(numf / nproc))
+    # -- actual multiprocessing
+
+    datasegs = cache_segments(cache) & SegmentList([span])
+    secsperproc = abs(datasegs) / float(nproc)
+
+    # copy cache and sort by start time
+    cache = type(cache)(cache)
+    cache.sort(key=lambda e: e.segment[0])
+
     segs = SegmentList()
-    # loop over data segments
-    for seg in cache_segments(cache) & SegmentList([span]):
+
+    for seg in datasegs:
+        # get files only for this data segment
         subcache = cache.sieve(segment=(seg.protract(overlap) & span))
-        numf2 = len(subcache)
-        # if seg is small, process in one
-        if numf2 <= fperproc:
-            segs.append(seg)
-        # otherwise split into chunks
-        else:
-            j = numf2 / fperproc  # nproc to use here
-            dur = ceil(abs(seg) / j)  # time to include in proc
-            start, end = seg
-            while start + dur <= end:
-                segs.append(Segment(start, start + dur))
-                start += dur
+
+        def pop_segment():
+            return file_segment(subcache.pop(0)) & span
+
+        # build process segment by looping through files in order
+        while subcache:
+            # create new seg by adding file durations until big enough
+            newseg = pop_segment()
+            while subcache and abs(newseg) < secsperproc:
+                newseg += pop_segment()
+
+            # if one file remains and it's shorter than a full segment,
+            # add it to the current proces group; this should prevent
+            # trying to read less than one sample from a GWF file, for example
+            if (len(subcache) == 1 and
+                    abs(cache_segments(subcache)) < secsperproc):
+                newseg += pop_segment()
+
+            segs.append(newseg)
+
     return segs
