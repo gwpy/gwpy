@@ -131,24 +131,27 @@ def to_gps(t, *args, **kwargs):
     >>> to_gps(Time(57754, format='mjd'))
     LIGOTimeGPS(1167264018, 0)
     """
-    if isinstance(t, Time) or args or kwargs:
-        return _time_to_gps(t, *args, **kwargs)
+    # -- convert input to Time, or something we can pass to LIGOTimeGPS
 
-    if isinstance(t, str):
-        return _str_to_gps(t)
+    if isinstance(t, str):  # str -> datetime.datetime
+        t = _str_to_datetime(t)
 
-    if isinstance(t, (tuple, list)):
-        return _datetime_to_gps(datetime.datetime(*t))
+    if isinstance(t, (tuple, list)):  # tuple -> datetime.datetime
+        t = datetime.datetime(*t)
 
-    if isinstance(t, datetime.date):
-        return _datetime_to_gps(t)
+    if isinstance(t, datetime.date):  # datetime.datetime -> Time
+        t = _datetime_to_time(t)
 
-    if isinstance(t, Quantity):
+    if isinstance(t, Quantity):  # Quantity -> float
         t = t.to('second').value
 
-    if isinstance(t, Decimal):
-        return LIGOTimeGPS(str(t))
+    if isinstance(t, Decimal):  # Decimal -> str
+        t = str(t)
 
+    # -- convert to LIGOTimeGPS
+
+    if isinstance(t, Time):
+        return _time_to_gps(t, *args, **kwargs)
     try:
         return LIGOTimeGPS(t)
     except (TypeError, ValueError):
@@ -215,19 +218,11 @@ def _str_to_datetime(datestr):
         raise
 
 
-def _datetime_to_gps(dtm):
-    """Convert `datetime.datetime` to `LIGOTimeGPS`
-    """
+def _datetime_to_time(dtm):
     # astropy.time.Time requires datetime.datetime
     if not isinstance(dtm, datetime.datetime):
         dtm = datetime.datetime.combine(dtm, datetime.time.min)
-    return _time_to_gps(Time(dtm, scale='utc'))
-
-
-def _str_to_gps(datestr):
-    """Convert `str` to `LIGOTimeGPS`
-    """
-    return _datetime_to_gps(_str_to_datetime(datestr))
+    return Time(dtm, scale='utc')
 
 
 def _time_to_gps(t):
