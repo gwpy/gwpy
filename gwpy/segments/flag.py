@@ -829,11 +829,15 @@ class DataQualityFlag(object):
             padded out to integer boundaries.
         """
         def _round(seg):
-            if contract and abs(seg) < 1:
+            if contract:  # round inwards
+                a = ceil(seg[0])
+                b = floor(seg[1])
+            else:  # round outwards
+                a = floor(seg[0])
+                b = ceil(seg[1])
+            if a >= b:  # if segment is too short, return 'null' segment
                 return type(seg)(0, 0)  # will get coalesced away
-            if contract:
-                return type(seg)(ceil(seg[0]), floor(seg[1]))
-            return type(seg)(floor(seg[0]), ceil(seg[1]))
+            return type(seg)(a, b)
 
         new = self.copy()
         new.active = type(new.active)(map(_round, new.active))
