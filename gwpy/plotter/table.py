@@ -25,6 +25,7 @@ display these tables in x-y format, with optional colouring.
 from __future__ import division
 
 import re
+import warnings
 from collections import OrderedDict
 
 from six import string_types
@@ -104,9 +105,19 @@ class EventTableAxes(TimeSeriesAxes):
         -------
         collection
         """
-        if size_by is not None and size_by_log is not None:
+        # warn about deprecated keywords
+        if size_by is not None:  # pragma: no cover
+            warnings.warn('the size_by keyword has been deprecated and will '
+                          'be removed in a future release', DeprecationWarning)
+        if size_by_log is not None:  # pragma: no cover
+            warnings.warn('the size_by_log keyword has been deprecated and '
+                          'will be removed in a future release',
+                          DeprecationWarning)
+
+        if size_by is not None and size_by_log is not None:  # pragma: no cover
             raise ValueError("size_by_color and size_by_log_color are "
                              "mutually exclusive options, please select one")
+
         # get x-y data
         xdata = table[x]
         ydata = table[y]
@@ -115,16 +126,16 @@ class EventTableAxes(TimeSeriesAxes):
         sizecol = size_by or size_by_log or (size_range and color)
         if color:
             cdata = table[color]
-        if sizecol:
+        if sizecol:  # pragma: no cover
             sdata = table[sizecol]
-        if color and sizecol:
+        if color and sizecol:  # pragma: no cover
             zipped = list(zip(xdata, ydata, cdata, sdata))
             zipped.sort(key=lambda row: row[2])
             try:
                 xdata, ydata, cdata, sdata = map(numpy.asarray, zip(*zipped))
             except ValueError:
                 pass
-        elif sizecol:
+        elif sizecol:  # pragma: no cover
             zipped = list(zip(xdata, ydata, sdata))
             zipped.sort(key=lambda row: row[-1])
             try:
@@ -140,7 +151,7 @@ class EventTableAxes(TimeSeriesAxes):
                 pass
 
         # work out sizing
-        if sizecol:
+        if sizecol:  # pragma: no cover
             if size_range is None and sdata.size:
                 size_range = [sdata.min(), sdata.max()]
             if size_range:
