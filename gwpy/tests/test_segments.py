@@ -477,9 +477,13 @@ class TestDataQualityFlag(object):
         utils.assert_segmentlist_equal(flag.known, KNOWN)
         utils.assert_segmentlist_equal(flag.active, ACTIVE)
 
-    def test_round(self):
-        flag = self.create(active=ACTIVE_CONTRACTED)
-        r = flag.round()
+    @pytest.mark.parametrize('contract, active', [
+        (False, ACTIVE_CONTRACTED),
+        (True, ACTIVE_PROTRACTED),
+    ])
+    def test_round(self, contract, active):
+        flag = self.create(active=active)
+        r = flag.round(contract=contract)
         utils.assert_segmentlist_equal(r.known, KNOWN)
         utils.assert_segmentlist_equal(r.active, KNOWNACTIVE)
 

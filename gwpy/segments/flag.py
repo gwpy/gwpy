@@ -812,22 +812,36 @@ class DataQualityFlag(object):
         new.active = [(s[0]+start, s[1]+end) for s in self.active]
         return new
 
-    def round(self):
+    def round(self, contract=False):
         """Round this flag to integer segments.
+
+        Parameters
+        ----------
+        contract : `bool`, optional
+            if `False` (default) expand each segment to the containing
+            integer boundaries, otherwise contract each segment to the
+            contained boundaries
 
         Returns
         -------
         roundedflag : `DataQualityFlag`
             A copy of the original flag with the `active` and `known` segments
-            padded out to the enclosing integer boundaries.
+            padded out to integer boundaries.
         """
+        def _round(seg):
+            if contract:  # round inwards
+                a = ceil(seg[0])
+                b = floor(seg[1])
+            else:  # round outwards
+                a = floor(seg[0])
+                b = ceil(seg[1])
+            if a >= b:  # if segment is too short, return 'null' segment
+                return type(seg)(0, 0)  # will get coalesced away
+            return type(seg)(a, b)
+
         new = self.copy()
-        new.active = self._ListClass([self._EntryClass(int(floor(s[0])),
-                                                       int(ceil(s[1]))) for
-                                      s in new.active])
-        new.known = self._ListClass([self._EntryClass(int(floor(s[0])),
-                                                      int(ceil(s[1]))) for
-                                     s in new.known])
+        new.active = type(new.active)(map(_round, new.active))
+        new.known = type(new.known)(map(_round, new.known))
         return new.coalesce()
 
     def coalesce(self):
