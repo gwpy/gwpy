@@ -188,34 +188,47 @@ def from_gps(gps):
 
 
 # -- utilities ----------------------------------------------------------------
+# special case strings
+
+def _now():
+    return datetime.datetime.utcnow().replace(microsecond=0)
+
+
+def _today():
+    return datetime.date.today()
+
+def _today_delta(**delta):
+    return _today() + datetime.timedelta(**delta)
+
+
+def _tomorrow():
+    return _today_delta(days=1)
+
+
+def _yesterday():
+    return _today_delta(days=-1)
+
+
+DATE_STRINGS = {
+    'now': _now,
+    'today': _today,
+    'tomorrow': _tomorrow,
+    'yesterday': _yesterday,
+}
+
 
 def _str_to_datetime(datestr):
     """Convert `str` to `datetime.datetime`.
     """
-    datestrl = str(datestr).lower()
-
-    # handle special cases
-    if datestrl == 'now':
-        return datetime.datetime.utcnow().replace(microsecond=0)
-
-    if datestrl == 'today':
-        return datetime.date.today()
-
-    if datestrl == 'tomorrow':
-        today = datetime.date.today()
-        return today + datetime.timedelta(days=1)
-
-    if datestrl == 'yesterday':
-        today = datetime.date.today()
-        return today - datetime.timedelta(days=1)
-
-    # any other string
-    try:
-        return dateparser.parse(datestr)
-    except (ValueError, TypeError) as exc:
-        exc.args = ("Cannot parse date string {0!r}: {1}".format(
-            datestr, exc.args[0]),)
-        raise
+    try:  # try known string
+        return DATE_STRINGS[str(datestr).lower()]()
+    except KeyError:  # any other string
+        try:
+            return dateparser.parse(datestr)
+        except (ValueError, TypeError) as exc:
+            exc.args = ("Cannot parse date string {0!r}: {1}".format(
+                datestr, exc.args[0]),)
+            raise
 
 
 def _datetime_to_time(dtm):
