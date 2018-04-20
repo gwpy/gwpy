@@ -197,6 +197,7 @@ def _now():
 def _today():
     return datetime.date.today()
 
+
 def _today_delta(**delta):
     return _today() + datetime.timedelta(**delta)
 
