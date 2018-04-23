@@ -253,16 +253,6 @@ class CliProduct(object):
         parser.add_argument('--overlap', default='0.5',
                             help='Overlap as fraction [0-1), default=0.5')
 
-    def arg_freq2(self, parser):
-        """Parameters for FFT based plots, with Coherencegram defaults
-        """
-        self.is_freq_plot = True
-        parser.add_argument('--secpfft', default='0.5',
-                            help='length of fft in seconds '
-                                 'for each calculation, default=0.5')
-        parser.add_argument('--overlap', default='0.9',
-                            help='Overlap as fraction [0-1), default=0.9')
-
     def arg_plot(self, parser):
         """Add arguments common to all plots
         """

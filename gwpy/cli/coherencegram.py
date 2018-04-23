@@ -42,12 +42,22 @@ class Coherencegram(CliProduct):
         """Set up the argument list for this product
         """
         self.arg_chan2(parser)
-        self.arg_freq2(parser)
+        self.arg_freq(parser)
         self.arg_ax_linx(parser)
         self.arg_ax_ylf(parser)
         self.arg_ax_intlin(parser)
         self.arg_imag(parser)
         self.arg_plot(parser)
+
+    def arg_freq(self, parser):
+        """Parameters for FFT based plots, with Coherencegram defaults
+        """
+        self.is_freq_plot = True
+        parser.add_argument('--secpfft', default='0.5',
+                            help='length of fft in seconds '
+                                 'for each calculation, default=0.5')
+        parser.add_argument('--overlap', default='0.9',
+                            help='Overlap as fraction [0-1), default=0.9')
 
     def get_max_datasets(self):
         """Coherencegram only handles 1 set of 2 at a time
