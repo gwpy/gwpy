@@ -199,34 +199,6 @@ class CliProduct(object):
     # parser in groups.  Individual products use these to maximize
     # consistency.
 
-    def arg_qxform(self, parser):
-        """Q transform is a bit different"""
-        parser.add_argument('--chan',
-                            required=True, help='Channel name.')
-        parser.add_argument('--gps', required=True,
-                            help='Event time (float)')
-        parser.add_argument('--outdir', required=True,
-                            help='Directory for output images')
-        parser.add_argument('--search', help='Seconds analyzed',
-                            default='64')
-        parser.add_argument('--sample_freq', help='Downsample freq',
-                            default=2048)
-        parser.add_argument('--plot', nargs='*',
-                            help='One or more times to plot')
-        parser.add_argument('--frange', nargs=2, help='Frequency ' +
-                            'range to plot')
-        parser.add_argument('--erange', nargs=2, help='Normalized ' +
-                            'energy range')
-        parser.add_argument('--srange', nargs=2, help='Search ' +
-                            'frequency range')
-        parser.add_argument('--qrange', nargs=2, help='Search Q ' +
-                            'range')
-
-        parser.add_argument('--nowhiten', action='store_true',
-                            help='do not whiten input ' +
-                            'before transform')
-        self.arg_datasoure(parser)
-
     def arg_datasoure(self, parser):
         parser.add_argument('-c', '--framecache',
                             help='use .gwf files in cache not NDS2,' +
