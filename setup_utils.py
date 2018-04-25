@@ -104,7 +104,7 @@ def get_gitpython_version():
     else:
         if isinstance(gitv, bytes):
             gitv = gitv.decode('utf-8')
-        git_version = gitv.rstrip().split()[-1]
+        git_version = gitv.strip().split()[2]
 
     # if git>=2.15, we need GitPython>=2.1.8
     if LooseVersion(git_version) >= '2.15':
