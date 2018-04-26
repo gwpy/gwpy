@@ -19,116 +19,76 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""Time Series plots
+"""The timeseries CLI product
 """
 
-from .cliproduct import CliProduct
+from .cliproduct import TimeDomainProduct
+from ..plotter import TimeSeriesPlot
+from ..plotter.tex import label_to_latex
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 
-class TimeSeries(CliProduct):
+class TimeSeries(TimeDomainProduct):
+    """Plot one or more time series
     """
-    Plot one or more time series
-    """
+    action = 'timeseries'
 
-    def get_action(self):
-        """Return the string used as "action" on command line.
-        """
-        return 'timeseries'
-
-    def init_cli(self, parser):
-        """Set up the argument list for this product
-        """
-        self.arg_chan1(parser)
-        self.arg_ax_linx(parser)
-        self.arg_ax_liny(parser)
-        self.arg_plot(parser)
-
-    def get_ylabel(self, args):
+    def get_ylabel(self):
         """Text for y-axis label,  check if channel defines it
         """
-        ret = self.units
+        units = self.units
+        if len(units) == 1 and str(units[0]) == '':  # dimensionless
+            return ''
+        if len(units) == 1 and self.usetex:
+            return units[0].to_string('latex')
+        elif len(units) == 1:
+            return units[0].to_string()
+        elif len(units) > 1:
+            return 'Multiple units'
 
-        return ret
-
-    def get_title(self):
+    def get_suptitle(self):
         """Start of default super title, first channel is appended to it
         """
-        return 'Time series: '
+        return 'Time series: {0}'.format(self.chan_list[0])
 
-    def gen_plot(self, args):
+    def get_title(self):
+        suffix = super(TimeSeries, self).get_title()
+        fs = {ts.sample_rate for ts in self.timeseries}
+        fss = '({0})'.format('), ('.join(map(str, fs)))
+        return ', '.join([
+            'Fs: {0}'.format(fss),
+            'duration: {0}'.format(self.duration),
+            suffix,
+        ])
+
+    def make_plot(self):
         """Generate the plot from time series and arguments
         """
-        self.max_size = 16384. * 6400.  # that works on my mac
-        self.yscale_factor = 1.0
+        plot = TimeSeriesPlot(figsize=self.figsize, dpi=self.dpi)
+        ax = plot.gca()
 
-        from gwpy.plotter.tex import label_to_latex
-        from numpy import min as npmin
-        from numpy import max as npmax
+        for ts in self.timeseries:
+            label = ts.channel.name
+            if self.usetex:
+                label = label_to_latex(label)
+            ax.plot(ts, label=label)
 
-        if self.timeseries[0].size <= self.max_size:
-            self.plot = self.timeseries[0].plot()
-        else:
-            self.plot = self.timeseries[0].plot(linestyle='None', marker='.')
-        self.ymin = self.timeseries[0].min().value
-        self.ymax = self.timeseries[0].max().value
-        self.xmin = self.timeseries[0].times.value.min()
-        self.xmax = self.timeseries[0].times.value.max()
+        return plot
 
-        if len(self.timeseries) > 1:
-            for idx in range(1, len(self.timeseries)):
-                chname = self.timeseries[idx].channel.name
-                lbl = label_to_latex(chname)
-                if self.timeseries[idx].size <= self.max_size:
-                    self.plot.add_timeseries(self.timeseries[idx], label=lbl)
-                else:
-                    self.plot.add_timeseries(self.timeseries[idx], label=lbl,
-                                             linestyle='None', marker='.')
-                self.ymin = min(self.ymin, self.timeseries[idx].min().value)
-                self.ymax = max(self.ymax, self.timeseries[idx].max().value)
-                self.xmin = min(self.xmin,
-                                self.timeseries[idx].times.value.min())
-                self.xmax = max(self.xmax,
-                                self.timeseries[idx].times.value.max())
-        # if they chose to set the range of the x-axis find the range of y
-        strt = self.xmin
-        stop = self.xmax
-        # a bit weird but global ymax will be >= any value in
-        # the range same for ymin
-        new_ymin = self.ymax
-        new_ymax = self.ymin
+    def scale_axes_from_data(self):
+        """Restrict data limits for Y-axis based on what you can see
+        """
+        # get tight limits for X-axis
+        if self.args.xmin is None:
+            self.args.xmin = min(ts.xspan[0] for ts in self.timeseries)
+        if self.args.xmax is None:
+            self.args.xmax = max(ts.xspan[1] for ts in self.timeseries)
 
-        if args.xmin:
-            strt = float(args.xmin)
-        if args.xmax:
-            stop = float(args.xmax)
-        if strt != self.xmin or stop != self.xmax:
-            for idx in range(0, len(self.timeseries)):
-                x0 = self.timeseries[idx].x0.value
-                dt = self.timeseries[idx].dt.value
-                if strt < 1e8:
-                    strt += x0
-                if stop < 1e8:
-                    stop += x0
-                b = int(max(0, (strt - x0) / dt))
-
-                e = int(min(self.xmax, (stop - x0) / dt))
-
-                if e >= self.timeseries[idx].size:
-                    e = self.timeseries[idx].size - 1
-                new_ymin = min(new_ymin,
-                               npmin(self.timeseries[idx].value[b:e]))
-                new_ymax = max(new_ymax,
-                               npmax(self.timeseries[idx].value[b:e]))
-            self.ymin = new_ymin
-            self.ymax = new_ymax
-        if self.yscale_factor > 1:
-            self.log(2, ('Scaling y-limits, original: %f, %f)' %
-                         (self.ymin, self.ymax)))
-            yrange = self.ymax - self.ymin
-            mid = (self.ymax + self.ymin) / 2.
-            self.ymax = mid + yrange / (2 * self.yscale_factor)
-            self.ymin = mid - yrange / (2 * self.yscale_factor)
-            self.log(2, ('Scaling y-limits, new: %f, %f)' %
-                         (self.ymin, self.ymax)))
+        # autoscale view for Y-axis
+        cropped = [ts.crop(self.args.xmin, self.args.xmax) for
+                   ts in self.timeseries]
+        ymin = min(ts.value.min() for ts in cropped)
+        ymax = max(ts.value.max() for ts in cropped)
+        self.plot.gca().yaxis.set_data_interval(ymin, ymax, ignore=True)
+        self.plot.gca().autoscale_view(scalex=False)

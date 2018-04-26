@@ -21,9 +21,15 @@ import inspect
 import os.path
 import re
 import glob
+import subprocess
+from string import Template
+
+from six.moves.configparser import (ConfigParser, NoOptionError)
 
 from matplotlib import use
 use('agg')
+
+from sphinx.util import logging
 
 import sphinx_bootstrap_theme
 
@@ -33,6 +39,7 @@ from gwpy.plotter import (GWPY_PLOT_PARAMS)
 
 GWPY_VERSION = gwpy_version.get_versions()
 
+SPHINX_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # -- General configuration ------------------------------------------------
 
@@ -60,6 +67,7 @@ extensions = [
     'sphinx.ext.linkcode',
     'sphinx.ext.ifconfig',
     'sphinx_automodapi.automodapi',
+    'sphinxcontrib.programoutput',
     'numpydoc',
     'matplotlib.sphinxext.plot_directive',
     #'sphinxcontrib.doxylink',
@@ -360,12 +368,88 @@ def linkcode_resolve(domain, info):
             % (GWPY_VERSION['full-revisionid'], fn, linespec))
 
 
-# -- setup --------------------------------------------------------------------
+# -- build CLI examples -------------------------------------------------------
+
+CLI_TEMPLATE = Template("""
+.. _gwpy-cli-example-${tag}:
+
+${titleunderline}
+${title}
+${titleunderline}
+
+.. code:: sh
+
+   $$ ${command}
+
+.. image:: ${png}
+   :align: center
+   :alt: ${title}
+""")
+
+
+def _build_cli_example(config, section, outdir, logger):
+    raw = config.get(section, 'command')
+    try:
+        title = config.get(section, 'title')
+    except NoOptionError:
+        title = ' '.join(map(str.title, section.split('-')))
+
+    outf = os.path.join(outdir, '{0}.png'.format(section))
+
+    cmd = 'gwpy-plot {0}'.format(raw)  # exclude --out for display
+    cmds = cmd.replace(' --', ' \\\n       --')  # split onto multiple lines
+    cmdo = '{0} --out {1}'.format(cmd, outf)  # include --out for actual run
+
+    rst = CLI_TEMPLATE.substitute(
+        title=title, titleunderline='#'*len(title),
+        tag=section, png=outf[len(SPHINX_DIR):], command=cmds)
+
+    # only write RST if new or changed
+    rstfile = outf.replace('.png', '.rst')
+    new = (not os.path.isfile(rstfile) or
+           not os.path.isfile(outf) or
+           open(rstfile, 'r').read() != rst)
+    if new:
+        with open(rstfile, 'w') as f:
+            f.write(rst)
+        logger.debug('[cli] wrote {0}'.format(rstfile))
+        return rstfile, cmdo
+    return rstfile, None
+
+
+def build_cli_examples(_):
+    logger = logging.getLogger('cli-examples')
+
+    clidir = os.path.join(SPHINX_DIR, 'cli')
+    exini = os.path.join(clidir, 'examples.ini')
+    exdir = os.path.join(clidir, 'examples')
+    if not os.path.isdir(exdir):
+        os.makedirs(exdir)
+
+    config = ConfigParser()
+    config.read(exini)
+
+    rsts = []
+    for sect in config.sections():
+        rst, cmd = _build_cli_example(config, sect, exdir, logger)
+        if cmd:
+            logger.info('[cli] running example {0!r}'.format(sect))
+            subprocess.check_call(cmd, shell=True)
+            logger.debug('[cli] wrote {0}'.format(cmd.split()[-1]))
+        rsts.append(rst)
+
+    with open(os.path.join(exdir, 'examples.rst'), 'w') as f:
+        f.write('.. toctree::\n   :glob:\n\n')
+        for rst in rsts:
+            f.write('   {0}\n'.format(rst[len(SPHINX_DIR):]))
+
+
+# -- add css and js files -----------------------------------------------------
 
 CSS_DIR = os.path.join(html_static_path[0], 'css')
 JS_DIR = os.path.join(html_static_path[0], 'js')
 
-def setup(app):
+def setup_static_content(app):
     # add stylesheets
     for cssf in glob.glob(os.path.join(CSS_DIR, '*.css')):
         app.add_stylesheet(cssf.split(os.path.sep, 1)[1])
@@ -373,3 +457,10 @@ def setup(app):
     # add custom javascript
     for jsf in glob.glob(os.path.join(JS_DIR, '*.js')):
         app.add_javascript(jsf.split(os.path.sep, 1)[1])
+
+
+# -- setup --------------------------------------------------------------------
+
+def setup(app):
+    setup_static_content(app)
+    app.connect('builder-inited', build_cli_examples)

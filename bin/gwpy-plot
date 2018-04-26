@@ -16,57 +16,56 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
-#
-"""Command line interface to GWpy plotting functions
-"""
-import time
-prog_start = time.time()    # verbose enough times major ops
 
+"""Generate plots of GW observatory data using GWpy
+"""
+
+import time
+
+import os
 import sys
 from importlib import import_module
-import argparse
-import os
+from argparse import (ArgumentParser, ArgumentDefaultsHelpFormatter)
+
+from matplotlib import use
+
 from gwpy import __version__
 
-__author__ = 'joseph areeda'
-__email__ = 'joseph.areeda@ligo.org'
+__author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
+PROG_START = time.time()    # verbose enough times major ops
 
-VERBOSE = 3     # 0 = errors only, 1 = Warnings, 2 = INFO, >2 DEBUG >=5 ALL
+INTERACTIVE = hasattr(sys, 'ps1')
 
-if sys.version < '2.7':
-    raise ImportError("Python versions older than 2.7 are not supported.")
-
-
-# ---needed to generate help messages---
-class CliHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('indent_increment', 4)
-        super(CliHelpFormatter, self).__init__(*args, **kwargs)
-# ----
-
-# Products are classes that implement a specific plot
-# This is a list of those class names, module names
-# This is the only list of all products
 PRODUCTS = [
-        'TimeSeries',
-        'Coherence',
-        'Spectrum',
-        'Spectrogram',
-        'Coherencegram',
-        'Qtransform'
+    'TimeSeries',
+    'Spectrum',
+    'Spectrogram',
+    'Coherence',
+    'Coherencegram',
+    'Qtransform'
 ]
 
-parser = argparse.ArgumentParser(formatter_class=CliHelpFormatter,
-                                 description=__doc__, prog='gwpy-plot')
+# -- init command line --------------------------------------------------------
+
+class _ArgumentParser(ArgumentParser):
+    def __init__(self, *args, **kwargs):
+        super(_ArgumentParser, self).__init__(*args, **kwargs)
+        self._positionals.title = 'Positional arguments'
+        self._optionals.title = 'Help options'
+
+
+parser = _ArgumentParser(
+    description=__doc__, formatter_class=ArgumentDefaultsHelpFormatter)
+parser.add_argument('-V', '--version', action='version',
+                    version=__version__)
 
 # set the argument parser to act as the parent
-parentparser = argparse.ArgumentParser(add_help=False)
-
-# These arguments apply to all commands
+parentparser = _ArgumentParser(add_help=False)
+parentparser._optionals.title = 'Verbosity options'
 parentparser.add_argument('-v', '--verbose', action='count', default=1,
                           help='increase verbose output')
-parentparser.add_argument('-s', '--silent', default=False,
+parentparser.add_argument('-s', '--silent', action='store_true',
                           help='show only fatal errors')
 
 # subparsers are dependent on which action is chosen
@@ -75,7 +74,6 @@ subparsers = parser.add_subparsers(
     description='Select one of the following actions:')
 
 # dictionary for subparsers
-sp = dict()
 actions = dict()
 
 # -------------------------
@@ -85,81 +83,47 @@ actions = dict()
 for product in PRODUCTS:
     mod_name = product.lower()
     mod = import_module('gwpy.cli.%s' % mod_name)
-    class_ = getattr(mod, product)
-    prod = class_()
+    product_class = getattr(mod, product)
 
     # the action is the command line argument for which lot which class to call
-    action = prod.get_action()
-    sp[product] = subparsers.add_parser(action, help=prod.__doc__,
-                                        parents=[parentparser])
+    action = product_class.action
+    subparser = subparsers.add_parser(
+        action, help=product_class.__doc__.strip().split('\n')[0],
+        parents=[parentparser],
+        formatter_class=ArgumentDefaultsHelpFormatter)
+
     # the operation is the name of the action
-    sp[product].set_defaults(func=action)
-    prod.init_cli(sp[product])
-    actions[action] = prod
-# -----------------------------------------------------------------------------
-# Run
+    product_class.init_cli(subparser)
+    actions[action] = product_class
 
-if __name__ == '__main__':
-    try:
-        # if we're launched with minimum or no environment
-        # variables make some guesses
-        if len(os.getenv('HOME', '')) == 0:
-            os.environ['HOME'] = '/tmp/'
+# -- run ----------------------------------------------------------------------
 
-        # if launched from a terminal with no display
-        if len(os.getenv('DISPLAY', '')) == 0:
-            import matplotlib
-            matplotlib.use('Agg')
+# if launched from a terminal with no display
+if len(os.getenv('DISPLAY', '')) == 0:
+    use('Agg')
 
-        # parse the command line
-        args = parser.parse_args()
-        if args.silent:
-            VERBOSE = 0
-        else:
-            VERBOSE = args.verbose
-        if not args.mode:
-            raise RuntimeError("Must specify action. "
-                               "Please try again with --help.")
-        prod = actions[args.func]
-        prod.log(2, ('%s called' % args.func))
+# parse the command line and create a product object
+args = parser.parse_args()
+prod = actions[args.mode](args)
+prod.log(2, ('{0} created'.format(prod.action)))
 
-        # apply custom styling
-        if args.style:
-            from matplotlib import pyplot
-            pyplot.style.use(args.style)
+# log how long it took us to get here
+setup_time = time.time() - PROG_START
+prod.log(2, 'Setup time %.1f sec' % setup_time)
 
-        # Products get a chance to massage args
-        # eg: q-transform takes gps & search to provide
-        #     start, duration and epoch, xmin...
-        prod.post_arg(args)
+# -- generate the plot
+prod.run()
 
-        setup_time = time.time() - prog_start
-        prod.log(2, 'Setup time %.1f sec' % setup_time)
+# overload the current namespace for interactive (i)python users
+if INTERACTIVE:
+    # import pyplot so that user has access to it
+    from matplotlib import pyplot as plt  # pylint: disable=unused-import
+    plot = prod.plot
+    # pull raw data and plotted results from product for their use
+    timeseries = prod.timeseries
+    result = prod.result
+    print('Raw data is in "timeseries", plotted data is in "result"')
+    ax = plot.gca()
 
-        # generate the plot
-        result_code = prod.makePlot(args, parser)
-
-        # If they requested interactive mode and run from ipython
-        # this makes it easier
-        if prod.is_interactive:
-            # import pyplot so that user has access to it
-            from matplotlib import pyplot as plt  # pylint: disable=unused-import
-            plot = prod.plot
-            # pull raw data and plotted results from product for their use
-            timeseries = prod.timeseries
-            result = prod.result
-            print('Raw data is in "timeseries", plotted data is in "result"')
-            ax = plot.gca()
-        run_time = time.time() - prog_start
-        prod.log(1, 'Program run time: %.1f' % run_time)
-        if result_code > 0:
-            sys.exit(result_code)
-    except:
-        # standard exception reporting wasn't working
-        typ, msg, trcbk = sys.exc_info()
-        import traceback
-
-        if 'SystemExit' not in str(typ):
-            traceback.print_tb(trcbk)
-            print ('Error: %s, %s' % (typ, msg))
-        sys.exit(3)
+run_time = time.time() - PROG_START
+prod.log(1, 'Program run time: %.1f' % run_time)

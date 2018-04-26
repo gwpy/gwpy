@@ -19,29 +19,27 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""Base class for cli plot products, common code for arguments, data transfer,
-plot annotation:
-
-Abstract methods (must be overridden by actual products):
-    get_action()     - return the string used as "action" in command line
-    init_cli(parser) - set up the argument list for this product
-
-Implemented methods (used by multiple products):
-    arg_chan(parser) - add definition of a list TimeSeries objects
-    arg_freq(parser) - add parameters for fft based plots
-    arg_time(parser) - add parameters for time based plots
-    arg_plot(parser) - add plot annotations (labels, legends..)
+"""Base class for CLI (`gwpy-plot`) products.
 """
 
 import abc
-import math
-import sys
+import os.path
 import re
 import time
+from collections import OrderedDict
+from functools import wraps
 
-from dateutil.parser import parser
+from matplotlib import (rcParams, pyplot, style)
 
-from ..timeseries import TimeSeries
+from astropy.time import Time
+from astropy.units import Quantity
+
+from ..signal import filter_design
+from ..signal.window import recommended_overlap
+from ..time import to_gps
+from ..timeseries import TimeSeriesDict
+from ..plotter.gps import GPSTransform
+from ..plotter.tex import label_to_latex
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
@@ -50,141 +48,174 @@ try:
 except ImportError:  # mpl < 1.5
     DEFAULT_CMAP = 'YlOrRd'
 else:
-    DEFAULT_CMAP = 'viridis'
+    DEFAULT_CMAP = viridis.name
 
+BAD_UNITS = {'*', }
+
+
+# -- utilities ----------------------------------------------------------------
+
+def timer(func):
+    """Time a method and print its duration after return
+    """
+    name = func.__name__
+
+    @wraps(func)
+    def timed_func(self, *args, **kwargs):
+        t = time.time()
+        out = func(self, *args, **kwargs)
+        e = time.time()
+        self.log(2, '{0} took {1:.1f} sec'.format(name, e - t))
+        return out
+
+    return timed_func
+
+
+def to_float(unit):
+    """Factory to build a converter from quantity string to float
+
+    Examples
+    --------
+    >>> conv = to_float('Hz')
+    >>> conv('4 mHz')
+    >>> 0.004
+    """
+    def converter(x):
+        return Quantity(x, unit).value
+
+    return converter
+
+to_hz = to_float('Hz')
+to_s = to_float('s')
+
+
+def unique(list_):
+    """Returns a unique version of the input list preserving order
+
+    Examples
+    --------
+    >>> unique(['b', 'c', 'a', 'a', 'd', 'e', 'd', 'a'])
+    ['b', 'c', 'a', 'd', 'e']
+    """
+    return list(OrderedDict.fromkeys(list_).keys())
+
+
+# -- base product class -------------------------------------------------------
 
 class CliProduct(object):
     """Base class for all cli plot products
+
+    Parameters
+    ----------
+    args : `argparse.Namespace`
+        Command-line arguments as parsed using
+        :meth:`~argparse.ArgumentParser.parse_args`
+
+    Notes
+    -----
+    This object has two main entry points,
+
+    - `CliProduct.init_cli` - which adds arguments and argument groups to
+       an `~argparse.ArgumentParser`
+    - `CliProduct.run` - executes the arguments to product one or more plots
+
+    So, the basic usage is follows::
+
+    >>> import argparse
+    >>> parser = argparse.ArgumentParser()
+    >>> from gwpy.cli import CliProduct
+    >>> CliProduct.init_cli(parser)
+    >>> product = CliProduct(parser.parse_args())
+    >>> product.run()
+
+    The key methods for subclassing are
+
+    - `CliProduct.action` - property defines 'name' for command-line subcommand
+    - `CliProduct._finalize_arguments` - this is called from `__init__`
+      to set defaults arguments for products that weren't set from the command
+      line
+    - `CliProduct.make_plot` - post-processes timeseries data and generates
+      one figure
     """
-
     __metaclass__ = abc.ABCMeta
-    BAD_UNITS = {'*', }
 
-    def __init__(self):
+    MIN_CHANNELS = 1
+    MIN_DATASETS = 1
+    MAX_DATASETS = 1e100
 
-        self.min_timeseries = 1     # datasets needed for this product
-        self.xaxis_type = 'uk'      # scaling hints, set by individual actions
-        self.xaxis_is_freq = False  # x is going to be frequency or time
-        self.yaxis_type = 'uk'      # x and y axis types must be set
-        self.iaxis_type = None      # intensity axis (colors) may be missing
-        self.scaleText = None       # text label of colorbar
-        self.chan_list = []         # list of channel names
-        self.start_list = []        # list of start times as GPS seconds
-        self.dur = 0                # one duration in secs for all start times
-        self.timeseries = []        # time series objects after transfer
-        self.time_groups = []       # lists of indexes into time series,
-        self.minMax = []
-        self.verbose = 1
-        self.secpfft = 1
-        self.overlap = 0.5
-        # describe the actual plotted limits
-        self.result = 0          # spectrum, or coherence what is plotted
-        self.fmin = 0
-        self.fmax = 1
-        self.ymin = 0
-        self.ymax = 0
-        self.xmin = 0
-        self.xmax = 0
-        self.imin = 0
-        self.imax = 0
-        # image geometry
-        self.width = 0
-        self.height = 0
-        self.xinch = 12
-        self.yinch = 7.68
-        self.dpi = 100
+    def __init__(self, args):
+        self._finalize_arguments(args)  # post-process args
 
-        self.is_freq_plot = False
-        self.n_datasets = 0
-        self.filter = ''        # string for annotation if we filtered data
-        self.plot = 0           # plot object
-        self.ax = 0             # current axis object from plot
-        self.plot_num = 0       #
+        #: input argument Namespace
+        self.args = args
 
-        # custom labeling
-        self.title = None
-        self.title2 = None
-        self.units = "Counts"
+        #: verbosity
+        self.verbose = 0 if args.silent else args.verbose
 
-        # just for error messaging. we need full refactoring
-        self.parser = None
+        if args.style:  # apply custom styling
+            style.use(args.style)
+
+        #: the current figure object
+        self.plot = None
+
+        #: figure number
+        self.plot_num = 0
+
+        #: start times for data sets
+        self.start_list = unique(map(int, args.start))
+
+        #: duration of each time segment
+        self.duration = args.duration
+
+        #: channels to load
+        self.chan_list = unique(c for clist in args.chan for c in clist)
+
+        # total number of datasets that _should_ be acquired
+        self.n_datasets = len(self.chan_list) * len(self.start_list)
+
+        #: list of input data series (populated by get_data())
+        self.timeseries = []
+
+        #: dots-per-inch for figure
+        self.dpi = args.dpi
+        #: width and height in pixels
+        self.width, self.height = map(float, self.args.geometry.split('x', 1))
+        #: figure size in inches
+        self.figsize = (self.width / self.dpi, self.height / self.dpi)
+
+        # please leave this last
+        self._validate_arguments()
 
     # -- abstract methods ------------------------
 
+    # each of these must be provided by all sub-classes
+
+    @property
     @abc.abstractmethod
-    def get_action(self):
+    def action(self):
         """Return the string used as "action" on command line.
         """
         return
 
     @abc.abstractmethod
-    def init_cli(self, parser):
-        """Set up the argument list for this product
-        """
-        return
-
-    def post_arg(self, args):
-        """After  argument parsing products can derive other args"""
-        self.verbose = args.verbose
-        return
-
-    @abc.abstractmethod
-    def gen_plot(self, args):
+    def make_plot(self):
         """Generate the plot from time series and arguments
         """
         return
 
-    @abc.abstractmethod
-    def get_ylabel(self, args):
-        """Text for y-axis label
-        """
-        return
+    # -- properties -----------------------------
 
-    @abc.abstractmethod
-    def get_title(self):
-        """Start of default super title, first channel is appended to it
-        """
-        return
+    @property
+    def ax(self):
+        return self.plot.gca()
 
-    # -- defaults -------------------------------
+    @property
+    def units(self):
+        return unique(ts.unit for ts in self.timeseries)
 
-    def get_min_datasets(self):
-        """Override if plot requires more than 1 dataset.
-        eg: coherence requires 2
-        """
-        return 1
-
-    def get_max_datasets(self):
-        """Override if plot has a maximum number of datasets.
-        eg: spectrogram only handles 1
-        """
-        return 16  # arbitrary max
-
-    def is_image(self):
-        """Override if plot is image type, eg: spectrogram
-        """
-        return False
-
-    def freq_is_y(self):
-        """Override if frequency is on y-axis like spectrogram
-        """
-        return False
-
-    def get_xlabel(self):
-        """Override if you have a better label.
-        default is to usw gwpy's default label
-        """
-        return ''
-
-    def get_color_label(self):
-        """All products with a color bar should override this
-        """
-        return 'action does not label color bar (it should)'
-
-    def get_sup_title(self):
-        """Override if default lacks critical info
-        """
-        return self.get_title() + self.timeseries[0].channel.name
+    @property
+    def usetex(self):
+        return rcParams['text.usetex']
 
     # -- utilities ------------------------------
 
@@ -195,703 +226,553 @@ class CliProduct(object):
             print(msg)
         return
 
-    # ------Argparse methods.  These methods add parameters to the
-    # parser in groups.  Individual products use these to maximize
-    # consistency.
+    # -- argument parsing -----------------------
 
-    def arg_datasoure(self, parser):
-        parser.add_argument('-c', '--framecache',
-                            help='use .gwf files in cache not NDS2,' +
-                            ' default use NDS2')
-        parser.add_argument('-n', '--nds2-server', metavar='HOSTNAME',
-                            help='name of nds2 server to use, default is to '
-                            'try all of them')
+    # each method below is a classmethod so that the command-line
+    # for a product can be set up without having to create an instance
+    # of the class
 
-    def arg_chan(self, parser):
-        """Allow user to specify list of channel names,
-        list of start gps times and single duration
+    @classmethod
+    def init_cli(cls, parser):
+        """Set up the argument list for this product
         """
-        parser.add_argument('--start', nargs='+',
-                            help='Starting GPS times(required)')
-        parser.add_argument('--duration', default=10,
-                            help='Duration (seconds) [10]')
-        self.arg_datasoure(parser)
+        cls.init_data_options(parser)
+        cls.init_plot_options(parser)
 
-        parser.add_argument('--highpass',
-                            help='frequency for high pass filter, '
-                                 'default no filter')
-        parser.add_argument('--lowpass',
-                            help='frequency for low pass filter, '
-                                 'default no filter')
-
-    def arg_chan1(self, parser):
-        # list of channel names when only 1 is required
-        parser.add_argument('--chan', nargs='+', action='append',
-                            required=True, help='One or more channel names.')
-        self.arg_chan(parser)
-
-    def arg_chan2(self, parser):
-        """list of channel names when at least 2 are required
+    @classmethod
+    def init_data_options(cls, parser):
+        """Set up data input and signal processing options
         """
-        parser.add_argument('--chan', nargs='+', action='append',
-                            required=True,
-                            help='Two or more channels or times, first '
-                                 'one is compared to all the others')
-        parser.add_argument('--ref',
-                            help='Reference channel against which '
-                                 'others will be compared')
+        cls.arg_channels(parser)
+        cls.arg_data(parser)
+        cls.arg_signal(parser)
 
-        self.arg_chan(parser)
-
-    def arg_freq(self, parser):
-        """Parameters for FFT based plots, with Spectral defaults
+    @classmethod
+    def init_plot_options(cls, parser):
+        """Set up plotting options
         """
-        self.is_freq_plot = True
-        parser.add_argument('--secpfft', default='1.0',
-                            help='length of fft in seconds '
-                                 'for each calculation, default = 1.0')
-        parser.add_argument('--overlap', default='0.5',
-                            help='Overlap as fraction [0-1), default=0.5')
+        cls.arg_plot(parser)
+        cls.arg_xaxis(parser)
+        cls.arg_yaxis(parser)
 
-    def arg_plot(self, parser):
+    # -- data options
+
+    @classmethod
+    def arg_channels(cls, parser):
+        group = parser.add_argument_group(
+            'Data options', 'What data to load')
+        group.add_argument('--chan', type=str, nargs='+', action='append',
+                           required=True, help='channels to load')
+        group.add_argument('--start', type=to_gps, nargs='+',
+                           help='Starting GPS times (required)')
+        group.add_argument('--duration', type=to_s, default=10,
+                           help='Duration (seconds) [10]')
+        return group
+
+    @classmethod
+    def arg_data(cls, parser):
+        group = parser.add_argument_group(
+            'Data source options', 'Where to get the data')
+        meg = group.add_mutually_exclusive_group()
+        meg.add_argument('-c', '--framecache', type=os.path.abspath,
+                         help='read data from cache')
+        meg.add_argument('-n', '--nds2-server', metavar='HOSTNAME',
+                         help='name of nds2 server to use, default is to '
+                         'try all of them')
+        meg.add_argument('--frametype', help='GWF frametype to read from')
+        return group
+
+    @classmethod
+    def arg_signal(cls, parser):
+        group = parser.add_argument_group(
+            'Signal processing options',
+            'What to do with the data before plotting'
+        )
+        group.add_argument('--highpass', type=to_hz,
+                           help='Frequency for highpass filter')
+        group.add_argument('--lowpass', type=to_hz,
+                           help='Frequency for lowpass filter')
+        group.add_argument('--notch', type=to_hz, nargs='*',
+                           help='Frequency for notch (can give multiple)')
+        return group
+
+    @classmethod
+    def arg_fft(cls, parser):
+        group = parser.add_argument_group('Fourier transform options')
+        group.add_argument('--secpfft', type=float, default=1.,
+                           help='length of FFT in seconds')
+        group.add_argument('--overlap', type=float,
+                           help='overlap as fraction of FFT length [0-1)')
+        group.add_argument('--window', type=str, default='hann',
+                           help='window function to use when overlapping FFTs')
+        return group
+
+    # -- plot options
+
+    @classmethod
+    def arg_plot(cls, parser):
         """Add arguments common to all plots
         """
-        parser.add_argument('-g', '--geometry', default='1200x600',
-                            help='size of resulting image WxH, '
-                                 'default: %(default)s')
-        parser.add_argument('--interactive', action='store_true',
-                            help='when running from ipython '
-                                 'allows experimentation')
-        parser.add_argument('--title', action='append',
-                            help='One or more title lines')
-        parser.add_argument('--suptitle',
-                            help='1st title line (larger than the others)')
-        parser.add_argument('--xlabel', help='x axis text')
-        parser.add_argument('--ylabel', help='y axis text')
-        parser.add_argument('--out',
-                            help='output filename, type=ext (png, pdf, '
-                                 'jpg), default=gwpy.png')
+        group = parser.add_argument_group('Plot options')
+        group.add_argument('-g', '--geometry', default='1200x600',
+                           metavar='WxH', help='size of resulting image')
+        group.add_argument('--dpi', type=int, default=rcParams['figure.dpi'],
+                           help='dots-per-inch for figure')
+        group.add_argument('--interactive', action='store_true',
+                           help='when running from ipython '
+                                'allows experimentation')
+        group.add_argument('--title', action='append',
+                           help='One or more title lines')
+        group.add_argument('--suptitle',
+                           help='1st title line (larger than the others)')
+        group.add_argument('--out',
+                           help='output filename, type=ext (png, pdf, '
+                                'jpg), default=gwpy.png')
         # legends match input files in position are displayed if specified.
-        parser.add_argument('--legend', nargs='*', action='append',
-                            help='strings to match data files')
-        parser.add_argument('--nolegend', action='store_true',
-                            help='do not display legend')
-        parser.add_argument('--nogrid', action='store_true',
-                            help='do not display grid lines')
+        group.add_argument('--legend', nargs='*', action='append',
+                           help='strings to match data files')
+        group.add_argument('--nolegend', action='store_true',
+                           help='do not display legend')
+        group.add_argument('--nogrid', action='store_true',
+                           help='do not display grid lines')
         # allow custom styling with a style file
-        parser.add_argument(
+        group.add_argument(
             '--style', metavar='FILE',
             help='path to custom matplotlib style sheet, see '
                  'http://matplotlib.org/users/style_sheets.html#style-sheets '
                  'for details of how to write one')
+        return group
 
-    def arg_ax_x(self, parser):
-        """X-axis is called X. Do not call this
-        one call arg_ax_linx or arg_ax_logx
+    @classmethod
+    def arg_xaxis(cls, parser):
+        """Setup options for X-axis
         """
-        parser.add_argument('--xmin', help='min value for X-axis')
-        parser.add_argument('--xmax', help='max value for X-axis')
+        return cls._arg_axis('x', parser)
 
-    def arg_ax_linx(self, parser):
-        """X-axis is called X and defaults to linear
+    @classmethod
+    def arg_yaxis(cls, parser):
+        """Setup options for Y-axis
         """
-        self.xaxis_type = 'linx'
-        parser.add_argument('--logx', action='store_true',
-                            help='make X-axis logarithmic, default=linear')
-        parser.add_argument('--epoch',
-                            help='center X axis on this GPS time. '
-                                 'Incompatible with logx')
-        self.arg_ax_x(parser)
+        return cls._arg_axis('y', parser)
 
-    def arg_ax_logx(self, parser):
-        """X-axis is called X and defaults to logarithmic
-        """
-        self.xaxis_type = 'logx'
-        parser.add_argument('--nologx', action='store_true',
-                            help='make X-axis linear, default=logarithmic')
-        self.arg_ax_x(parser)
+    @classmethod
+    def _arg_axis(cls, axis, parser):
+        name = '{}-axis'.format(axis.upper())
+        group = parser.add_argument_group('{0} options'.format(name))
+        group.add_argument('--{0}label'.format(axis),
+                           help='{0} label'.format(name))
+        group.add_argument('--{0}min'.format(axis), type=float,
+                           help='min value for {0}'.format(name))
+        group.add_argument('--{0}max'.format(axis), type=float,
+                           help='max value for {0}'.format(name))
+        group.add_argument('--{0}scale'.format(axis), type=str,
+                           help='scale for {0}'.format(name))
+        return group
 
-    def arg_ax_lf(self, parser):
-        """One of this  axis is frequency and logarthmic
+    def _finalize_arguments(self, args):
+        """Sanity-check and set defaults for arguments
         """
-        parser.add_argument('--nologf', action='store_true',
-                            help='make frequency axis linear, '
-                                 'default=logarithmic')
-        parser.add_argument('--fmin', help='min value for frequency axis')
-        parser.add_argument('--fmax', help='max value for frequency axis')
+        # this method is called by __init__ (after command-line arguments
+        # have been parsed)
 
-    def arg_ax_int(self, parser):
-        """Images have an intensity axis
-        """
-        parser.add_argument('--imin',
-                            help='min pixel value in resulting image')
-        parser.add_argument('--imax',
-                            help='max pixek value in resulting image')
-        parser.add_argument('--cmap', default=DEFAULT_CMAP,
-                            help='Colormap. See '
-                            'https://matplotlib.org/examples/color/'
-                            'colormaps_reference.html for options')
+        if args.out is None:
+            args.out = "gwpy.png"
 
-    def arg_ax_intlin(self, parser):
-        """Intensity (colors) default to linear
+    def _validate_arguments(self):
+        """Sanity check arguments and raise errors if required
         """
-        self.iaxis = 'lini'
-        parser.add_argument('--logcolors', action='store_true',
-                            help='set intensity scale of image '
-                                 'to logarithmic, default=linear')
-        self.arg_ax_int(parser)
-
-    def arg_ax_intlog(self, parser):
-        """Intensity (colors) default to log
-        """
-        self.iaxis = "logi"
-        parser.add_argument('--lincolors', action='store_true',
-                            help='set intensity scale of image to linear, '
-                                 'default=logarithmic')
-        self.arg_ax_int(parser)
-
-    def arg_ax_xlf(self, parser):
-        """X-axis is called F and defaults to log
-        """
-        self.xaxis_type = 'logf'
-        self.arg_ax_lf(parser)
-
-    def arg_ax_ylf(self, parser):
-        """Y-axis is called Frequency and defaults to log
-        """
-        self.yaxis_type = 'logf'
-        self.arg_ax_lf(parser)
-
-    def arg_ax_y(self, parser):
-        """Y-axis limits.  Do not call this one
-        use arg_ax_liny or arg_ax_logy
-        """
-        parser.add_argument('--ymin', help='fix min value for yaxis'
-                                           ' defaults to min of data')
-        parser.add_argument('--ymax', help='max value for y-axis '
-                                           'default to max of data')
-
-    def arg_ax_liny(self, parser):
-        """Y-axis is called Y and defaults to linear
-        """
-        self.yaxis_type = 'liny'
-        parser.add_argument('--logy', action='store_true',
-                            help='make Y-axis logarithmic, default=linear')
-        self.arg_ax_y(parser)
-
-    def arg_ax_logy(self, parser):
-        """Y-axis is called Y and defaults to log
-        """
-        self.yaxis_type = 'logy'
-        parser.add_argument('--nology', action='store_true',
-                            help='make Y-axis linear, default=logarthmic')
-        self.arg_ax_y(parser)
-
-    def arg_imag(self, parser):
-        """Add arguments for image based plots like spectrograms
-        """
-        parser.add_argument('--nopct', action='store_true',
-                            help='up and lo are pixel values, '
-                                 'default=percentile if not normalized')
-        parser.add_argument('--nocolorbar', action='store_true',
-                            help='hide the color bar')
-        parser.add_argument('--norm', action='store_true',
-                            help='Display the ratio of each fequency '
-                                 'bin to the mean of that frequency')
+        # validate number of data sets requested
+        if len(self.chan_list) < self.MIN_CHANNELS:
+            raise ValueError('this product requires at least {0} '
+                             'channels'.format(self.MIN_CHANNELS))
+        if self.n_datasets < self.MIN_DATASETS:
+            raise ValueError(
+                '%d datasets are required for this plot but only %d are '
+                'supplied' % (self.MIN_DATASETS, self.n_datasets)
+            )
+        if self.n_datasets > self.MAX_DATASETS:
+            raise ValueError(
+                'A maximum of %d datasets allowed for this plot but %d '
+                'specified' % (self.MAX_DATASETS, self.n_datasets)
+            )
 
     # -- data transfer --------------------------
 
-    def getTimeSeries(self, arg_list):
-        """Verify and interpret arguments to get all
-        TimeSeries objects defined
+    @timer
+    def get_data(self):
+        """Get all the data
+
+        This method populates the `timeseries` list attribute
         """
-
-        # retrieve channel data from NDS as a TimeSeries
-        for chans in arg_list.chan:
-            for chan in chans:
-                if chan not in self.chan_list:
-                    self.chan_list.append(chan)
-
-        if len(self.chan_list) < self.min_timeseries:
-            parser.error(
-                'A minimum of %d channels must be specified for this product'
-                % self.min_timeseries)
-
-        if len(arg_list.start) > 0:
-            # uniquify list of start times (preserving order)
-            self.start_list = []
-            for t in map(int, arg_list.start):
-                if t not in self.start_list:
-                    self.start_list.append(t)
-        else:
-            raise parser.error('No start times specified')
-
-        # Verify the number of datasets specified is valid for this plot
-        self.n_datasets = len(self.chan_list) * len(self.start_list)
-        if self.n_datasets < self.get_min_datasets():
-            raise parser.error(
-                '%d datasets are required for this plot but only %d are '
-                'supplied' % (self.get_min_datasets(), self.n_datasets))
-
-        if self.n_datasets > self.get_max_datasets():
-            raise parser.error(
-                'A maximum of %d datasets allowed for this plot but %d '
-                'specified' % (self.get_max_datasets(), self.n_datasets))
-
-        if arg_list.duration:
-            self.dur = int(arg_list.duration)
-        else:
-            self.dur = 10
+        self.log(2, '---- Loading data -----')
 
         verb = self.verbose > 1
+        args = self.args
 
         # determine how we're supposed get our data
-        source = 'NDS2'
-        frame_cache = False
-
-        if arg_list.framecache:
-            source = 'frames'
-            frame_cache = arg_list.framecache
-
-        # set up filter parameters for all channels
-        highpass = 0
-        if arg_list.highpass:
-            highpass = float(arg_list.highpass)
-
-        lowpass = 0
-        if arg_list.lowpass:
-            lowpass = float(arg_list.lowpass)
+        source = 'cache' if args.framecache is not None else 'nds2'
 
         # Get the data from NDS or Frames
-        # time_groups is a list of timeseries index grouped by
-        # start time for coherence like plots
-        self.time_groups = []
         for start in self.start_list:
-            time_group = []
-            for chan in self.chan_list:
-                if verb:
-                    print('Fetching %s %d, %d using %s'
-                          % (chan, start, self.dur, source))
-                if frame_cache:
-                    data = TimeSeries.read(frame_cache, chan, start=start,
-                                           end=start+self.dur)
-                elif arg_list.nds2_server:
-                    data = TimeSeries.fetch(chan, start, start+self.dur,
-                                            verbose=verb,
-                                            host=arg_list.nds2_server)
-                else:
-                    data = TimeSeries.fetch(chan, start, start+self.dur,
-                                            verbose=verb)
+            end = start + self.duration
+            if source == 'nds2':
+                tsd = TimeSeriesDict.get(self.chan_list, start, end,
+                                         verbose=verb, host=args.nds2_server,
+                                         frametype=args.frametype)
+            else:
+                tsd = TimeSeriesDict.read(args.framecache, self.chan_list,
+                                          start=start, end=end)
 
-                if str(data.unit) in self.BAD_UNITS:
+            for data in tsd.values():
+                if str(data.unit) in BAD_UNITS:
                     data.override_unit('undef')
 
-                if highpass > 0 and lowpass == 0:
-                    data = data.highpass(highpass)
-                    self.filter += "high pass (%.1f) " % highpass
-                elif lowpass > 0 and highpass == 0:
-                    data = data.lowpass(lowpass)
-                    self.filter += "low pass (%.1f) " % lowpass
-                elif lowpass > 0 and highpass > 0:
-                    data = data.bandpass(highpass, lowpass)
-                    self.filter = "band pass (%.1f-%.1f)" % (highpass, lowpass)
+                data = self._filter_timeseries(
+                    data, highpass=args.highpass, lowpass=args.lowpass,
+                    notch=args.notch)
+
+                if data.dtype.kind == 'f':  # cast single to double
+                    data = data.astype('float64', order='A', copy=False)
+
                 self.timeseries.append(data)
-                time_group.append(len(self.timeseries)-1)
-            self.time_groups.append(time_group)
 
         # report what we have if they asked for it
         self.log(3, ('Channels: %s' % self.chan_list))
-        self.log(3, ('Start times: %s, duration' % self.start_list, self.dur))
+        self.log(3, ('Start times: %s, duration %s' % (
+            self.start_list, self.duration)))
         self.log(3, ('Number of time series: %d' % len(self.timeseries)))
 
-        if len(self.timeseries) != self.n_datasets:
-            self.log(0, ('%d datasets requested but only %d transfered' %
-                         (self.n_datasets, len(self.timeseries))))
-            if len(self.timeseries) > self.get_min_datasets():
-                self.log(0, 'Proceeding with the data that was transferred.')
-            else:
-                self.log(0, 'Not enough data for requested plot.')
-                sys.exit(2)
+    @staticmethod
+    def _filter_timeseries(data, highpass=None, lowpass=None, notch=None):
+        """Apply highpass, lowpass, and notch filters to some data
+        """
+        # catch nothing to do
+        if all(x is None for x in (highpass, lowpass, notch)):
+            return data
+
+        # build ZPK
+        zpks = []
+        if highpass is not None and lowpass is not None:
+            zpks.append(filter_design.bandpass(highpass, lowpass,
+                                               data.sample_rate))
+        elif highpass is not None:
+            zpks.append(filter_design.highpass(highpass, data.sample_rate))
+        elif lowpass is not None:
+            zpks.append(filter_design.lowpass(lowpass, data.sample_rate))
+        for f in notch:
+            zpks.append(filter_design.notch(f, data.sample_rate))
+        zpk = filter_design.concatenate_zpks(*zpks)
+
+        # apply forward-backward (zero-phase) filter
+        return data.filter(*zpk, filtfilt=True)
 
     # -- plotting -------------------------------
 
-    def show_plot_info(self):
-        self.log(3, ('X-scale: %s, Y-scale: %s' % (self.ax.get_xscale(),
-                                                   self.ax.get_yscale())))
-        self.log(3, ('X-limits %s, Y-limits %s' % (self.ax.get_xlim(),
-                                                   self.ax.get_ylim())))
-
-    def config_plot(self, arg_list):
-        """Configure global plot parameters
+    def get_xlabel(self):
+        """Default X-axis label for plot
         """
-        from matplotlib import rcParams
-
-        # determine image dimensions (geometry)
-        self.width = 1600
-        self.height = 900
-        if arg_list.geometry:
-            try:
-                self.width, self.height = map(float,
-                                              arg_list.geometry.split('x', 1))
-                self.height = max(self.height, 500)
-            except (TypeError, ValueError) as e:
-                e.args = ('Cannot parse --geometry as WxH, e.g. 1200x600',)
-                raise
-
-        self.dpi = rcParams['figure.dpi']
-        self.xinch = self.width / self.dpi
-        self.yinch = self.height / self.dpi
-        rcParams['figure.figsize'] = (self.xinch, self.yinch)
-
-    def setup_xaxis(self, arg_list):
-        """Handle scale and limits of X-axis by type
-        """
-        xmin = 0        # these will be set by x min, max or f min, max
-        xmax = 1
-        scale = 'linear'
-        epoch = None
-
-        if self.xaxis_type == 'linx' or self.xaxis_type == 'logx':
-            # handle time on X-axis
-            xmin = self.xmin
-            xmax = self.xmax
-            if arg_list.xmin:
-                al_xmin = float(arg_list.xmin)
-                if self.xaxis_is_freq:
-                    xmin = al_xmin      # frequency specified
-                elif al_xmin <= 1e8:
-                    xmin = self.xmin + al_xmin     # time specified as
-                    # seconds relative to start GPS
-                else:
-                    xmin = al_xmin     # absolute GPS
-            if arg_list.xmax:
-                al_xmax = float(arg_list.xmax)
-                if self.xaxis_is_freq:
-                    xmax = al_xmax
-                elif al_xmax <= 9e8:
-                    xmax = self.xmin + al_xmax
-                else:
-                    xmax = al_xmax
-
-            if self.xaxis_type == 'linx':
-                if arg_list.epoch:
-                    epoch = float(arg_list.epoch)
-
-                scale = 'auto-gps'
-
-                if epoch:
-                    # note zero is also false
-                    if epoch > 0 and epoch < 1e8:
-                        epoch += self.xmin       # specified as seconds
-                        self.ax.set_epoch(epoch)
-                    elif epoch == 0:
-                        scale = 'gps'
-                        self.ax.set_epoch(0)
-                    else:
-                        scale = 'auto-gps'
-                        self.ax.set_epoch(epoch)
-
-                if arg_list.logx:
-                    scale = 'log'
-                elif not (self.get_xlabel() or arg_list.xlabel):
-                    # duplicate default label except use parens not brackets
-                    scale = self.ax.get_xscale()
-                    if scale == 'auto-gps':
-                        epoch = self.ax.get_epoch()
-                        if epoch is None:
-                            arg_list.xlabel = 'GPS Time'
-                if self.ax.get_xscale() == 'gps':
-                    for l in self.ax.xaxis.get_ticklabels():
-                        l.set_rotation(25)
-                        l.set_ha('right')
-            elif self.xaxis_type == 'logx':
-                if arg_list.nologx:
-                    scale = 'linear'
-                else:
-                    scale = 'log'
-        elif self.xaxis_type == 'logf':
-            # Handle frequency on the X-axis
-            xmin = self.fmin
-            xmax = self.fmax
-
-            scale = 'log'
-            if arg_list.nologf:
-                scale = 'linear'
-            if arg_list.fmin:
-                xmin = float(arg_list.fmin)
-            if arg_list.fmax:
-                xmax = float(arg_list.fmax)
-        else:
-            raise AssertionError('X-axis type [%s] is unknown' %
-                                 self.xaxis_type)
-
-        if scale:
-            self.ax.set_xscale(scale)
-        if epoch:
-            self.ax.set_epoch(epoch)
-        self.ax.set_xlim(xmin, xmax)
-
-        self.log(2, 'X-min: %.3f, Epoch: %s, X-max: %.3f, Scale: %s' %
-                 (xmin, epoch, xmax, scale))
-
-    def setup_yaxis(self, arg_list):
-        "Set scale and limits of y-axis by type"
-        ymin = self.ymin
-        ymax = self.ymax
-        scale = 'linear'
-
-        if self.yaxis_type == 'logf':
-            # Handle frequency on the Y-axis
-            ymin = self.fmin
-            ymax = self.fmax
-            scale = 'log'
-            if arg_list.nologf:
-                scale = 'linear'
-            if arg_list.fmin:
-                ymin = float(arg_list.fmin)
-            if arg_list.fmax:
-                ymax = float(arg_list.fmax)
-        elif self.yaxis_type == 'liny' or self.yaxis_type == 'logy':
-            # Handle everything but frequency on Y-axis
-            if self.yaxis_type == 'liny':
-                scale = 'linear'
-                if arg_list.logy:
-                    scale = 'log'
-            elif self.yaxis_type == 'logy':
-                scale = 'log'
-                if arg_list.nology:
-                    scale = 'linear'
-            if arg_list.ymin:
-                ymin = float(arg_list.ymin)
-            if arg_list.ymax:
-                ymax = float(arg_list.ymax)
-        else:
-            raise AssertionError('Y-axis type is unknown')
-
-        # modify axis
-        self.ax.set_yscale(scale)
-        self.ax.set_ylim(ymin, ymax)
-        self.log(3, ('Y-axis limits are [ %f, %f], scale: %s' %
-                     (ymin, ymax, scale)))
-
-    def setup_iaxis(self, arg_list):
-        """set the limits and scale of the colorbar (intensity axis)
-        :param arg_list: global arguments
-        :return: none
-        """
-
-        if self.iaxis_type not in [None, 'lin1', 'log1']:
-            raise AssertionError('Unknown intensity axis scale')
         return
 
-    def annotate_save_plot(self, args):
-        """After the derived class generated a plot
-        object finish the process
+    def get_ylabel(self):
+        """Default Y-axis label for plot
         """
-        from astropy.time import Time
-        from gwpy.plotter.tex import label_to_latex
-        import matplotlib
+        return
 
-        self.ax = self.plot.gca()
-        # set up axes
-        self.setup_xaxis(args)
-        self.setup_yaxis(args)
-        self.setup_iaxis(args)
+    def get_title(self):
+        """Default title for plot
+        """
+        highpass = self.args.highpass
+        lowpass = self.args.lowpass
+        notch = self.args.notch
+        filt = ''
+        if highpass and lowpass:
+            filt += "band pass (%.1f-%.1f)" % (highpass, lowpass)
+        elif highpass:
+            filt += "high pass (%.1f) " % highpass
+        elif lowpass:
+            filt += "low pass (%.1f) " % lowpass
+        if notch:
+            filt += ', notch ({0})'.format(', '.join(map(str, notch)))
+        return filt
 
-        if self.is_image():
-            if args.nocolorbar:
-                self.plot.add_colorbar(visible=False)
-            else:
-                self.plot.add_colorbar(label=self.get_color_label())
+    def get_suptitle(self):
+        """Default super-title for plot
+        """
+        return self.timeseries[0].channel.name
+
+    def set_plot_properties(self):
+        """Finalize figure object and show() or save()
+        """
+        self.set_axes_properties()
+        self.set_legend()
+        self.set_title(self.args.title)
+        self.set_suptitle(self.args.suptitle)
+        self.set_grid(self.args.nogrid)
+
+    def set_axes_properties(self):
+        """Set properties for each axis (scale, limits, label)
+        """
+        self.scale_axes_from_data()
+        self.set_xaxis_properties()
+        self.set_yaxis_properties()
+
+    def scale_axes_from_data(self):
+        """Auto-scale the view based on visible data
+        """
+        pass
+
+    def _set_axis_properties(self, axis):
+        """Generic method to set properties for X/Y axis
+        """
+        def _get(p):
+            return getattr(self.ax, 'get_{0}{1}'.format(axis, p))()
+
+        def _set(p, *args, **kwargs):
+            return getattr(self.ax, 'set_{0}{1}'.format(axis, p))(
+                *args, **kwargs)
+
+        scale = getattr(self.args, '{}scale'.format(axis))
+        label = getattr(self.args, '{}label'.format(axis))
+        min_ = getattr(self.args, '{}min'.format(axis))
+        max_ = getattr(self.args, '{}max'.format(axis))
+
+        # parse limits
+        if scale == 'auto-gps' and (
+                min_ is not None and
+                max_ is not None and
+                max_ < 1e8):
+            limits = (min_, min_ + max_)
         else:
-            self.plot.add_colorbar(visible=False)
+            limits = (min_, max_)
 
-        # image plots don't have legends
-        if not self.is_image():
-            leg = self.ax.legend(prop={'size': 10})
-            # if only one series is plotted hide legend
-            if self.n_datasets == 1 and leg:
-                try:
-                    leg.remove()
-                except NotImplementedError:
-                    leg.set_visible(False)
+        # set limits
+        if limits[0] is not None or limits[1] is not None:
+            _set('lim', *limits)
 
-        # add titles
-        title = ''
-        if args.title:
-            for t in args.title:
-                if len(title) > 0:
-                    title += "\n"
-                title += t
-        # info on the processing
-        start = self.start_list[0]
-        startGPS = Time(start, format='gps', scale='utc')
-        timeStr = "%s - %10d (%ds)" % (startGPS.iso, start, self.dur)
+        # set scale
+        if scale:
+            _set('scale', scale)
 
-        # list the different sample rates available in all time series
-        fs_set = set()
+        # reset scale with epoch if using GPSTransform
+        if isinstance(getattr(self.ax, '{}axis'.format(axis)).get_transform(),
+                      GPSTransform):
+            _set('scale', scale, epoch=self.args.epoch)
 
-        for idx in range(0, len(self.timeseries)):
-            fs = self.timeseries[idx].sample_rate
-            fs_set.add(fs)
+        # set label
+        if label is None:
+            label = getattr(self, 'get_{}label'.format(axis))()
+        if label:
+            if self.usetex:
+                label = label_to_latex(label)
+            _set('label', label)
 
-        fs_str = ''
-        for fs in fs_set:
-            if len(fs_str) > 0:
-                fs_str += ', '
-            fs_str += '(%s)' % fs
+        # log
+        limits = _get('lim')
+        scale = _get('scale')
+        label = _get('label')
+        self.log(2, '{0}-axis parameters | scale: {1} | '
+                    'limits: {2[0]!s} - {2[1]!s}'.format(
+                        axis.upper(), scale, limits))
+        self.log(3, ('{0}-axis label: {1}'.format(axis.upper(), label)))
 
-        if self.is_freq_plot:
-            spec = r'%s, Fs=%s, secpfft=%.1f (bw=%.3f), overlap=%.2f' %  \
-                    (timeStr, fs_str, self.secpfft, 1/self.secpfft,
-                     self.overlap)
-        else:
-            xdur = self.xmax - self.xmin
-            spec = r'Fs=%s, duration: %.1f' % (fs_str, xdur)
-        spec += ", " + self.filter
-        if len(title) > 0:
-            title += "\n"
-        if self.title2:
-            title += self.title2
-        else:
-            title += spec
+    def set_xaxis_properties(self):
+        """Set properties for X-axis
+        """
+        self._set_axis_properties('x')
 
-        title = label_to_latex(title)
-        self.ax.set_title(title, fontsize=12)
-        self.log(3, ('Title is: %s' % title))
+    def set_yaxis_properties(self):
+        """Set properties for X-axis
+        """
+        self._set_axis_properties('y')
 
-        if args.xlabel:
-            xlabel = label_to_latex(args.xlabel)
-        else:
-            xlabel = self.get_xlabel()
-        if xlabel:
-            self.ax.set_xlabel(xlabel)
-            self.log(3, ('X-axis label is: %s' % xlabel))
+    def set_legend(self):
+        leg = self.ax.legend(prop={'size': 10})
+        if self.n_datasets == 1 and leg:
+            try:
+                leg.remove()
+            except NotImplementedError:
+                leg.set_visible(False)
+        return leg
 
-        all_units = set()
-        for ts in self.timeseries:
-            un = str(ts.unit)
-            all_units.add(un)
+    def set_title(self, title):
+        if title is None:
+            title = self.get_title().rstrip(', ')
+        if self.usetex:
+            title = label_to_latex(title)
+        if title:
+            self.ax.set_title(title, fontsize=12)
+            self.log(3, ('Title is: %s' % title))
 
-        if len(all_units) == 1:
-            self.units = label_to_latex(all_units.pop())
-        elif len(all_units) > 1:
-            self.units = 'Multiple units'
-        else:
-            self.units = 'undef'
+    def set_suptitle(self, suptitle):
+        if not suptitle:
+            suptitle = self.get_suptitle()
+        if self.usetex:
+            suptitle = label_to_latex(suptitle)
+        self.plot.suptitle(suptitle, fontsize=18)
+        self.log(3, ('Super title is: %s' % suptitle))
 
-        if args.ylabel:
-            ylabel = label_to_latex(args.ylabel)
-        else:
-            ylabel = self.get_ylabel(args)
+    def set_grid(self, b):
+        self.ax.grid(b=b, which='major', color='k', linestyle='solid')
+        self.ax.grid(b=b, which='minor', color='0.06', linestyle='dotted')
 
-        if ylabel:
-            self.ax.set_ylabel(ylabel)
-            self.log(3, ('Y-axis label is: %s' % ylabel))
+    def save(self, outfile):
+        self.plot.savefig(outfile, edgecolor='white', bbox_inches='tight')
+        self.log(3, ('wrote %s' % outfile))
 
-        if not args.nogrid:
-            self.ax.grid(b=True, which='major', color='k', linestyle='solid')
-            self.ax.grid(b=True, which='minor', color='0.06',
-                         linestyle='dotted')
+    def has_more_plots(self):
+        """override if product needs multiple annotate and saves"""
+        if self.plot_num == 0:
+            return True
+        return False
 
-        # info on the channel
-        if args.suptitle:
-            sup_title = args.suptitle
-        else:
-            sup_title = self.get_sup_title()
-        sup_title = label_to_latex(sup_title)
-        self.plot.suptitle(sup_title, fontsize=18)
-
-        self.log(3, ('Super title is: %s' % sup_title))
-        self.show_plot_info()
-
-        # change the label for GPS time so Josh is happy
-        if self.ax.get_xscale() == 'auto-gps':
-            xscale = self.ax.xaxis._scale
-            epoch = xscale.get_epoch()
-            unit = xscale.get_unit_name()
-            utc = re.sub(r'\.0+', '',
-                         Time(epoch, format='gps', scale='utc').iso)
-            self.ax.set_xlabel('Time (%s) from %s (%s)' % (unit, utc, epoch))
-            self.ax.set_xscale(unit, epoch=epoch)
-
-        # if they specified an output file write it
-        # save the figure. Note type depends on extension of
-        # output filename (png, jpg, pdf)
-        if args.out:
-            out_file = args.out
-        elif 'outdir' in args:
-            out_file = args.outdir + '/gwpy.png'
-        else:
-            out_file = "./gwpy.png"
-
-        self.log(3, ('xinch: %.2f, yinch: %.2f, dpi: %d' %
-                     (self.xinch, self.yinch, self.dpi)))
-
-        self.fig = matplotlib.pyplot.gcf()
-        self.fig.set_size_inches(self.xinch, self.yinch)
-        self.plot.savefig(out_file, edgecolor='white',
-                          figsize=[self.xinch, self.yinch],
-                          dpi=self.dpi, bbox_inches='tight')
-        self.log(3, ('wrote %s' % out_file))
+    @timer
+    def _make_plot(self):
+        """Override when product needs multiple saves
+        """
+        self.plot = self.make_plot()
 
     # -- the one that does all the work ---------
 
-    def makePlot(self, args, parser):
-        """Make the plot, all actions are generally the same at this level
+    def run(self):
+        """Make the plot
         """
-        tstart = time.time()
-        self.parser = parser
-
-        if args.silent:
-            self.verbose = 0
-        else:
-            self.verbose = args.verbose
-
         self.log(3, ('Verbosity level: %d' % self.verbose))
 
-        if self.verbose > 2:
-            print('Arguments:')
-            for key in sorted(args.__dict__):
-                print('%s = %s' % (key, args.__dict__[key]))
+        self.log(3, 'Arguments:')
+        argsd = vars(self.args)
+        for key in sorted(argsd):
+            self.log(3, '{0:>15s} = {1}'.format(key, argsd[key]))
 
-        self.getTimeSeries(args)
+        # grab the data
+        self.get_data()
 
-        step_time = time.time() - tstart
-        tstart = time.time()
-        self.log(2, 'Get timseries took %.1f sec' % step_time)
+        # for each plot
+        while self.has_more_plots():
+            self._make_plot()
+            self.set_plot_properties()
+            if self.args.interactive:
+                self.log(3, 'Interactive manipulation of '
+                            'image should be available.')
+                pyplot.show(self.plot)
+            else:
+                self.save(self.args.out)
+            self.plot_num += 1
 
-        self.config_plot(args)
 
-        # this one is in the derived class
-        self.gen_plot(args)
-        step_time = time.time() - tstart
-        tstart = time.time()
-        self.log(2, 'Generate plot took %.1f sec' % step_time)
+# -- extensions ---------------------------------------------------------------
 
-        self.annotate_save_plot(args)
+class ImageProduct(CliProduct):
+    MAX_DATASETS = 1
 
-        while self.has_more_plots(args):
-            self.prep_next_plot(args)
-            self.annotate_save_plot(args)
+    @classmethod
+    def init_plot_options(cls, parser):
+        super(ImageProduct, cls).init_plot_options(parser)
+        cls.arg_color_axis(parser)
 
-        step_time = time.time() - tstart
-        tstart = time.time()
-        self.log(2, 'Annotate and save took %.1f sec' % step_time)
+    @classmethod
+    def arg_color_axis(self, parser):
+        group = parser.add_argument_group('Colour axis options')
+        group.add_argument('--imin', type=float,
+                           help='minimum value for colorbar')
+        group.add_argument('--imax', type=float,
+                           help='maximum value for colorbar')
+        group.add_argument('--cmap',
+                           help='Colormap. See '
+                                'https://matplotlib.org/examples/color/'
+                                'colormaps_reference.html for options')
+        group.add_argument('--color-scale', choices=('log', 'linear'),
+                           help='scale for colorbar')
+        group.add_argument('--norm', nargs='?', const='median',
+                           choices=('median', 'mean'), metavar='NORM',
+                           help='normalise each pixel against average in '
+                                'that frequency bin')
+        group.add_argument('--nocolorbar', action='store_true',
+                           help='hide the colour bar')
 
-        self.is_interactive = False
-        if args.interactive:
-            self.log(3, 'Interactive manipulation of '
-                        'image should be available.')
-            self.plot.show()
-            self.is_interactive = True
+    def _finalize_arguments(self, args):
+        if args.cmap is None:
+            args.cmap = DEFAULT_CMAP
+        return super(ImageProduct, self)._finalize_arguments(args)
 
-    def has_more_plots(self, args):
-        """override if product needs multiple annotate and saves"""
-        return False
+    def get_color_label():
+        return None
 
-    def prep_next_plot(self, args):
-        """Override when product needs multiple saves
-        """
-        raise NotImplementedError('prep_next_plot must be overriden '
-                                  'if has_more_plots returns true')
+    def set_axes_properties(self):
+        super(ImageProduct, self).set_axes_properties()
+        self.set_colorbar()
+
+    def set_colorbar(self):
+        args = self.args
+        if args.nocolorbar:
+            self.plot.add_colorbar(visible=False)
+
+        else:
+            self.plot.add_colorbar(label=self.get_color_label())
+
+    def set_legend(self):
+        return  # image plots don't have legends
+
+
+class FFTMixin(object):
+    """Mixin for `CliProduct` class that will perform FFTs
+
+    This just adds FFT-based command line options
+    """
+    @classmethod
+    def init_data_options(cls, parser):
+        super(FFTMixin, cls).init_data_options(parser)
+        cls.arg_fft(parser)
+
+    def _finalize_arguments(self, args):
+        if args.overlap is None:
+            try:
+                args.overlap = recommended_overlap(args.window)
+            except ValueError:
+                args.overlap = .5
+        return super(FFTMixin, self)._finalize_arguments(args)
+
+
+class TimeDomainProduct(CliProduct):
+    """`CliProduct` with time on the X-axis
+    """
+    @classmethod
+    def arg_xaxis(cls, parser):
+        group = super(TimeDomainProduct, cls).arg_xaxis(parser)
+        group.add_argument('--epoch', type=to_gps,
+                           help='center X axis on this GPS time')
+        return group
+
+    def _finalize_arguments(self, args):
+        if args.xscale is None:  # set default x-axis scale
+            args.xscale = 'auto-gps'
+        if args.epoch is None and args.xmin is not None:
+            args.epoch = args.xmin
+        elif args.epoch is None:
+            args.epoch = args.start[0]
+        if args.xmin is None:
+            args.xmin = min(args.start)
+        if args.xmax is None:
+            args.xmax = max(args.start) + args.duration
+        return super(TimeDomainProduct, self)._finalize_arguments(args)
+
+    def get_xlabel(self):
+        trans = self.ax.xaxis.get_transform()
+        if isinstance(trans, GPSTransform):
+            epoch = trans.get_epoch()
+            unit = trans.get_unit_name()
+            utc = re.sub(r'\.0+', '',
+                         Time(epoch, format='gps', scale='utc').iso)
+            return 'Time ({unit}) from {utc} ({gps})'.format(
+                unit=unit, gps=epoch, utc=utc)
+
+
+class FrequencyDomainProduct(CliProduct):
+    """`CliProduct` with frequency on the X-axis
+    """
+    def _finalize_arguments(self, args):
+        if args.xscale is None:  # default frequency scale
+            args.xscale = 'log'
+        super(FrequencyDomainProduct, self)._finalize_arguments(args)
+
+    def get_xlabel(self):
+        return 'Frequency (Hz)'
