@@ -79,7 +79,7 @@ def table_from_file(source, ifo=None, columns=None, loudest=False,
 
     # parse default columns
     if columns is None:
-        columns = set(source.keys()) - META_COLUMNS
+        columns = _get_columns(source)
 
     # set up meta dict
     meta = {'ifo': ifo}
@@ -126,6 +126,24 @@ def _find_table_group(h5file, ifo=None):
     except KeyError as exc:
         exc.args = ("No group for ifo %r in PyCBC live HDF5 file" % ifo,)
         raise
+
+
+def _get_columns(h5group):
+    """Find valid column names from a PyCBC HDF5 Group
+
+    Returns a `set` of names.
+    """
+    import h5py
+
+    columns = set()
+    for name in sorted(h5group):
+        if (not isinstance(h5group[name], h5py.Dataset) or
+                name == 'template_boundaries'):
+            continue
+        if name.endswith('_template') and name[:-9] in columns:
+            continue
+        columns.add(name)
+    return columns - META_COLUMNS
 
 
 def _get_extended_metadata(h5group):
