@@ -1328,6 +1328,29 @@ class TestTimeSeries(TestTimeSeriesBase):
         assert comp.name == '%s >= 2.0' % (array.name)
         assert (array == array).name == '{0} == {0}'.format(array.name)
 
+    def test_coherence(self):
+        try:
+            tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+            tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
+        except URLError as exc:
+            pytest.skip(str(exc))
+        coh = tsh.coherence(tsl, fftlength=1.0)
+        assert coh.df == 1 * units.Hz
+        assert coh.frequencies[coh.argmax()] == 60 * units.Hz
+
+    def test_coherence_spectrogram(self):
+        try:
+            tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+            tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
+        except URLError as exc:
+            pytest.skip(str(exc))
+        cohsg = tsh.coherence_spectrogram(tsl, 4, fftlength=1.0)
+        assert cohsg.t0 == tsh.t0
+        assert cohsg.dt == 4 * units.second
+        assert cohsg.df == 1 * units.Hz
+        tmax, fmax = numpy.unravel_index(cohsg.argmax(), cohsg.shape)
+        assert cohsg.frequencies[fmax] == 60 * units.Hz
+
 
 # -- TimeSeriesDict -----------------------------------------------------------
 
