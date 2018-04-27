@@ -38,10 +38,10 @@ class Coherencegram(Spectrogram):
         if args.color_scale is None:
             args.color_scale = 'linear'
         if args.color_scale == 'linear':
-            if args.imin:
-                args.imin = 0
-            if not args.imax:
-                args.imax = 1.05
+            if args.imin is None:
+                args.imin = 0.
+            if args.imax is None:
+                args.imax = 1.
         if args.cmap is None:
             args.cmap = 'plasma'
         return super(Coherencegram, self)._finalize_arguments(args)
@@ -59,16 +59,20 @@ class Coherencegram(Spectrogram):
     def get_color_label(self):
         return 'Coherence'
 
+    def get_stride(self):
+        fftlength = float(self.args.secpfft)
+        overlap = self.args.overlap  # fractional overlap
+        return max(self.duration / (self.width * 0.8),
+                   fftlength * (1 + (1-overlap)*32),
+                   fftlength * 2)
+
     def get_spectrogram(self):
         args = self.args
         fftlength = float(args.secpfft)
         overlap = args.overlap  # fractional overlap
+        stride = self.get_stride()
         self.log(2, "Calculating coherence spectrogram, "
                     "secpfft: %s, overlap: %s" % (fftlength, overlap))
-
-        stride = max(self.duration / (self.width * 0.8),
-                     fftlength + (1-overlap)*32,
-                     fftlength * 2)
 
         if overlap is not None:  # overlap in seconds
             overlap *= fftlength

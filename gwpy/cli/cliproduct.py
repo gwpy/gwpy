@@ -318,9 +318,9 @@ class CliProduct(object):
                            help='One or more title lines')
         group.add_argument('--suptitle',
                            help='1st title line (larger than the others)')
-        group.add_argument('--out',
-                           help='output filename, type=ext (png, pdf, '
-                                'jpg), default=gwpy.png')
+        group.add_argument('--out', default='gwpy.png',
+                           help='output filename')
+
         # legends match input files in position are displayed if specified.
         group.add_argument('--legend', nargs='*', action='append',
                            help='strings to match data files')
@@ -328,6 +328,7 @@ class CliProduct(object):
                            help='do not display legend')
         group.add_argument('--nogrid', action='store_true',
                            help='do not display grid lines')
+
         # allow custom styling with a style file
         group.add_argument(
             '--style', metavar='FILE',
@@ -452,7 +453,7 @@ class CliProduct(object):
             zpks.append(filter_design.highpass(highpass, data.sample_rate))
         elif lowpass is not None:
             zpks.append(filter_design.lowpass(lowpass, data.sample_rate))
-        for f in notch:
+        for f in notch or []:
             zpks.append(filter_design.notch(f, data.sample_rate))
         zpk = filter_design.concatenate_zpks(*zpks)
 
@@ -738,14 +739,12 @@ class TimeDomainProduct(CliProduct):
     def _finalize_arguments(self, args):
         if args.xscale is None:  # set default x-axis scale
             args.xscale = 'auto-gps'
-        if args.epoch is None and args.xmin is not None:
-            args.epoch = args.xmin
-        elif args.epoch is None:
-            args.epoch = args.start[0]
         if args.xmin is None:
-            args.xmin = min(args.start)
+            args.xmin = float(min(args.start))
+        if args.epoch is None:
+            args.epoch = args.xmin
         if args.xmax is None:
-            args.xmax = max(args.start) + args.duration
+            args.xmax = float(max(args.start)) + args.duration
         return super(TimeDomainProduct, self)._finalize_arguments(args)
 
     def get_xlabel(self):

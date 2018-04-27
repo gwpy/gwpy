@@ -32,6 +32,12 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
     """
     action = 'spectrogram'
 
+    def __init__(self, *args, **kwargs):
+        super(Spectrogram, self).__init__(*args, **kwargs)
+
+        #: attribute to hold calculated Spectrogram data array
+        self.result = None
+
     def _finalize_arguments(self, args):
         if args.yscale is None:
             args.yscale = 'log'
@@ -64,6 +70,20 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         elif len(self.units) == 1:
             return 'ASD ({0})'.format(self.units[0].to_string('generic'))
 
+    def get_stride(self):
+        """Calculate the stride for the spectrogram
+
+        This method returns the stride as a `float`, or `None` to indicate
+        selected usage of `TimeSeries.spectrogram2`.
+        """
+        fftlength = float(self.args.secpfft)
+        overlap = fftlength * self.args.overlap
+        stride = fftlength - overlap
+        nfft = self.duration / stride  # number of FFTs
+        ffps = int(nfft / (self.width * 0.8))  # FFTs per second
+        if ffps > 3:
+            return max(2 * fftlength, ffps * stride + fftlength - 1)
+
     def get_spectrogram(self):
         """Calculate the spectrogram to be plotted
 
@@ -79,24 +99,20 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         self.log(2, "Calculating spectrogram secpfft: %s, overlap: %s" %
                         (fftlength, overlap))
 
-        stride = fftlength - overlap
-        nfft = self.duration / stride  # number of FFTs
-        ffps = int(nfft / (self.width * 0.8))  # FFTs per second
+        stride = self.get_stride()
 
-        # based on the number of FFT calculations per pixel
-        # in output image choose between
-        # high time resolution (spectrogram2) and high SNR (spectrogram)
-        if ffps > 3:
-            stride = max(2 * fftlength, ffps * stride + fftlength - 1)
+        if stride:
             specgram = self.timeseries[0].spectrogram(
                 stride, fftlength=fftlength, overlap=overlap,
                 window=args.window)
+            nfft = stride * (stride // (fftlength - overlap))
             self.log(3, 'Spectrogram calc, stride: %s, fftlength: %s, '
                         'overlap: %sf, #fft: %d' % (stride, fftlength,
                                                     overlap, nfft))
         else:
             specgram = self.timeseries[0].spectrogram2(
                 fftlength=fftlength, overlap=overlap, window=args.window)
+            nfft = specgram.shape[0]
             self.log(3, 'HR-Spectrogram calc, fftlength: %s, overlap: %s, '
                         '#fft: %d' % (fftlength, overlap, nfft))
 
