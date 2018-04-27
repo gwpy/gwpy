@@ -30,6 +30,7 @@ from argparse import (ArgumentParser, ArgumentDefaultsHelpFormatter)
 from matplotlib import use
 
 from gwpy import __version__
+from gwpy.cli import PRODUCTS
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
@@ -37,14 +38,6 @@ PROG_START = time.time()    # verbose enough times major ops
 
 INTERACTIVE = hasattr(sys, 'ps1')
 
-PRODUCTS = [
-    'TimeSeries',
-    'Spectrum',
-    'Spectrogram',
-    'Coherence',
-    'Coherencegram',
-    'Qtransform'
-]
 
 # -- init command line --------------------------------------------------------
 
@@ -81,20 +74,16 @@ actions = dict()
 
 # Add the subparsers for each plot product
 for product in PRODUCTS:
-    mod_name = product.lower()
-    mod = import_module('gwpy.cli.%s' % mod_name)
-    product_class = getattr(mod, product)
+    product_class = PRODUCTS[product]
 
     # the action is the command line argument for which lot which class to call
-    action = product_class.action
     subparser = subparsers.add_parser(
-        action, help=product_class.__doc__.strip().split('\n')[0],
+        product, help=product_class.__doc__.strip().split('\n')[0],
         parents=[parentparser],
         formatter_class=ArgumentDefaultsHelpFormatter)
 
-    # the operation is the name of the action
     product_class.init_cli(subparser)
-    actions[action] = product_class
+    actions[product] = product_class
 
 # -- run ----------------------------------------------------------------------
 

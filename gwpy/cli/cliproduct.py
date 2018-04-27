@@ -143,6 +143,8 @@ class CliProduct(object):
     MIN_DATASETS = 1
     MAX_DATASETS = 1e100
 
+    action = None
+
     def __init__(self, args):
         self._finalize_arguments(args)  # post-process args
 
@@ -187,15 +189,6 @@ class CliProduct(object):
         self._validate_arguments()
 
     # -- abstract methods ------------------------
-
-    # each of these must be provided by all sub-classes
-
-    @property
-    @abc.abstractmethod
-    def action(self):
-        """Return the string used as "action" on command line.
-        """
-        return
 
     @abc.abstractmethod
     def make_plot(self):
