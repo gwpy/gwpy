@@ -71,7 +71,7 @@ class Coherencegram(Spectrogram):
                      fftlength * 2)
 
         if overlap is not None:  # overlap in seconds
-             overlap *= fftlength
+            overlap *= fftlength
 
         return self.timeseries[0].coherence_spectrogram(
             self.timeseries[1], stride, fftlength=fftlength, overlap=overlap,

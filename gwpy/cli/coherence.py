@@ -79,7 +79,7 @@ class Coherence(Spectrum):
         self.log(2, "Calculating spectrum secpfft: %s, overlap: %s" %
                  (fftlength, overlap))
         if overlap is not None:
-             overlap *= fftlength
+            overlap *= fftlength
 
         ref = args.ref or self.timeseries[0].channel.name
         self.ref_chan_name = ref

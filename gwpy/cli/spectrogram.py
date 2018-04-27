@@ -77,7 +77,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         fftlength = float(args.secpfft)
         overlap = fftlength * args.overlap
         self.log(2, "Calculating spectrogram secpfft: %s, overlap: %s" %
-            (fftlength, overlap))
+                        (fftlength, overlap))
 
         stride = fftlength - overlap
         nfft = self.duration / stride  # number of FFTs
@@ -93,7 +93,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
                 window=args.window)
             self.log(3, 'Spectrogram calc, stride: %s, fftlength: %s, '
                         'overlap: %sf, #fft: %d' % (stride, fftlength,
-                                                     overlap, nfft))
+                                                    overlap, nfft))
         else:
             specgram = self.timeseries[0].spectrogram2(
                 fftlength=fftlength, overlap=overlap, window=args.window)
