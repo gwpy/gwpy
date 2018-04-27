@@ -58,10 +58,10 @@ def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
     if overlap is None:
         overlap = 0
 
-    stride = int(stride * sampling)
+    nstride = int(stride * sampling)
 
     # get size of spectrogram
-    nsteps = int(ts1.size // stride)
+    nsteps = int(ts1.size // nstride)
     nfreqs = int(fftlength * sampling // 2 + 1)
 
     # generate output spectrogram
@@ -74,8 +74,8 @@ def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
     # stride through TimeSeries, recording PSDs as columns of spectrogram
     for step in range(nsteps):
         # find step TimeSeries
-        idx = stride * step
-        idx_end = idx + stride
+        idx = nstride * step
+        idx_end = idx + nstride
         stepseries1 = ts1[idx:idx_end]
         stepseries2 = ts2[idx:idx_end]
         stepcoh = stepseries1.coherence(stepseries2, fftlength=fftlength,
