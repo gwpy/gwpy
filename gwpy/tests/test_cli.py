@@ -250,6 +250,7 @@ class _TestCliProduct(object):
                                  params.get('ymax', ymax))
         assert ax.get_ylabel() == params.get('ylabel', plotprod.get_ylabel())
 
+    @utils.skip_missing_dependency('nds2')
     def test_run(self, prod):
         conn, _ = mock_nds2_connection()
         with mock.patch('nds2.connection') as mocker, \
@@ -431,6 +432,7 @@ class TestCliQtransform(TestCliSpectrogram):
         assert prod.get_suptitle() == 'Q-transform: {0}'.format(
             prod.chan_list[0])
 
+    @utils.skip_missing_dependency('nds2')
     def test_run(self, prod):
         conn, _ = mock_nds2_connection()
         outf = 'X1-TEST_CHANNEL-5.0-0.5.png'
