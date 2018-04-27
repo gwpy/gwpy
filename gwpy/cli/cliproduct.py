@@ -29,7 +29,7 @@ import time
 from collections import OrderedDict
 from functools import wraps
 
-from matplotlib import (rcParams, pyplot, style)
+from matplotlib import (rcParams, pyplot)
 
 from astropy.time import Time
 from astropy.units import Quantity
@@ -155,7 +155,14 @@ class CliProduct(object):
         self.verbose = 0 if args.silent else args.verbose
 
         if args.style:  # apply custom styling
-            style.use(args.style)
+            try:
+                from matplotlib import style
+            except ImportError:
+                from matplotlib import __version__ as mpl_version
+                warnings.warn('--style can only be used with matplotlib >= '
+                              '1.4.0, you have {0}'.format(mpl_version))
+            else:
+                style.use(args.style)
 
         #: the current figure object
         self.plot = None
