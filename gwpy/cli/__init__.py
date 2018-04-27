@@ -22,7 +22,6 @@ The `gwpy.cli` module provides methods and functionality to power the
 `gwpy-plot` command-line executable (distributed with GWpy).
 """
 
-from abc import ABCMeta as _ABCMeta
 from collections import OrderedDict as _od
 
 from .timeseries import TimeSeries
