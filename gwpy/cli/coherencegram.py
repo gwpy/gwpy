@@ -22,6 +22,13 @@
 """Coherence spectrogram
 """
 
+try:
+    from matplotlib.cm import plasma
+except ImportError:
+    DEFAULT_CMAP = None
+else:
+    DEFAULT_CMAP = plasma.name
+
 from .spectrogram import Spectrogram
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
@@ -43,7 +50,7 @@ class Coherencegram(Spectrogram):
             if args.imax is None:
                 args.imax = 1.
         if args.cmap is None:
-            args.cmap = 'plasma'
+            args.cmap = DEFAULT_CMAP
         return super(Coherencegram, self)._finalize_arguments(args)
 
     def get_ylabel(self):
