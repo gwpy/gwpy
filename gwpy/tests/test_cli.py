@@ -389,7 +389,8 @@ class TestCliCoherencegram(TestCliSpectrogram):
     TEST_ARGS = TestCliCoherence.TEST_ARGS
 
     def test_finalize_arguments(self, prod):
-        assert prod.args.cmap == 'plasma'
+        from gwpy.cli.coherencegram import DEFAULT_CMAP as DEFAULT_COH_CMAP
+        assert prod.args.cmap == DEFAULT_COH_CMAP or cliproduct.DEFAULT_CMAP
         assert prod.args.color_scale == 'linear'
         assert prod.args.imin == 0.
         assert prod.args.imax == 1.
