@@ -164,7 +164,7 @@ class GravitySpyTable(EventTable):
         def get_image(url):
             name = url[3] + '_' + url[4] + '_spectrogram_' + url[5] + '.png'
             outfile = os.path.join(url[6], url[1], url[2], name)
-            with open(outfile, 'w') as fout:
+            with open(outfile, 'wb') as fout:
                 fout.write(urlopen(url[0]).read())
 
         # calculate maximum number of processes
