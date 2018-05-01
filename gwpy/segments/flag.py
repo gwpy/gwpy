@@ -345,13 +345,13 @@ class DataQualityFlag(object):
     @padding.setter
     def padding(self, pad):
         if pad is None:
-            self._padding = (0, 0)
+            self._padding = (float(0), float(0))
         else:
-            self._padding = (pad[0], pad[1])
+            self._padding = (float(pad[0]), float(pad[1]))
 
     @padding.deleter
     def padding(self):
-        self._padding = (0, 0)
+        self._padding = (float(0), float(0))
 
     # -- read-only properties -------------------
 
