@@ -32,7 +32,9 @@ def read(cls, source, *args, **kwargs):
     # if reading a cache, read it now and sieve
     if io_cache.is_cache(source):
         from .cache import preformat_cache
-        source = preformat_cache(source, *args[1:], **kwargs)
+        source = preformat_cache(source, *args[1:],
+                                 start=kwargs.get('start'),
+                                 end=kwargs.get('end'))
 
     # get join arguments
     gap = kwargs.pop('gap', 'raise')

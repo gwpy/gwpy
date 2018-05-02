@@ -27,7 +27,7 @@ from ...segments import Segment
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def preformat_cache(cache, start=None, end=None, **kwargs):
+def preformat_cache(cache, start=None, end=None):
     """Preprocess a :class:`~glue.lal.Cache` for reading
 
     - read the cache from the file (if necessary)
@@ -46,10 +46,6 @@ def preformat_cache(cache, start=None, end=None, **kwargs):
     end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS end time of required data, defaults to end of data found;
         any input parseable by `~gwpy.time.to_gps` is fine
-
-    **kwargs
-        other keyword arguments
-
 
     Returns
     -------
