@@ -47,9 +47,15 @@ TOMORROW = 1126310417
 YESTERDAY = 1126137617
 
 
+def _is_error_type(obj):
+    if isinstance(obj, (list, tuple)):
+        return all(map(_is_error_type, obj))
+    return isinstance(obj, type) and issubclass(obj, Exception)
+
+
 def _test_with_errors(func, in_, out):
     # assert error
-    if isinstance(out, type) and issubclass(out, Exception):
+    if _is_error_type(out):
         with pytest.raises(out):
             func(in_)
     # assert not error
@@ -78,7 +84,7 @@ def _test_with_errors(func, in_, out):
     ('tomorrow', TOMORROW),
     ('yesterday', YESTERDAY),
     (Quantity(1, 'm'), UnitConversionError),
-    ('random string', ValueError),
+    ('random string', (ValueError, TypeError)),
 ])
 def test_to_gps(in_, out):
     """Test :func:`gwpy.time.to_gps`
