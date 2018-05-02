@@ -239,12 +239,15 @@ def _datetime_to_time(dtm):
     return Time(dtm, scale='utc')
 
 
-def _time_to_gps(t):
+def _time_to_gps(time):
     """Convert a `Time` into `LIGOTimeGPS`.
+
+    This method uses `datetime.datetime` underneath, which restricts
+    to microsecond precision by design. This should probably be fixed...
 
     Parameters
     ----------
-    t : `~astropy.time.Time`
+    time : `~astropy.time.Time`
         formatted `Time` object to convert
 
     Returns
@@ -252,7 +255,7 @@ def _time_to_gps(t):
     gps : `LIGOTimeGPS`
         Nano-second precision `LIGOTimeGPS` time
     """
-    t = t.utc
-    dt = t.datetime
+    time = time.utc
+    dt = time.datetime
     micro = dt.microsecond if isinstance(dt, datetime.datetime) else 0
-    return LIGOTimeGPS(int(t.gps), int(micro*1e3))
+    return LIGOTimeGPS(int(time.gps), int(micro*1e3))
