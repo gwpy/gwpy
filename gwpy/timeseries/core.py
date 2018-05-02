@@ -53,8 +53,7 @@ from astropy.io import registry as io_registry
 
 from ..types import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
-from ..io import (datafind, cache as io_cache)
-from ..io.mp import read_multi as io_read_multi
+from ..io import datafind
 from ..time import (Time, LIGOTimeGPS, to_gps)
 from ..utils import gprint
 
