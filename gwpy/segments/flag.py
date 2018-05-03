@@ -345,9 +345,9 @@ class DataQualityFlag(object):
     @padding.setter
     def padding(self, pad):
         if pad is None:
-            self._padding = (float(0), float(0))
+            self._padding = (0., 0.)
         else:
-            self._padding = (float(pad[0]), float(pad[1]))
+            self._padding = tuple([0. if p == None else float(p) for p in pad])
 
     @padding.deleter
     def padding(self):
