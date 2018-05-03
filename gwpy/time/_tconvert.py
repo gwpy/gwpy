@@ -256,6 +256,6 @@ def _time_to_gps(time):
         Nano-second precision `LIGOTimeGPS` time
     """
     time = time.utc
-    dt = time.datetime
-    micro = dt.microsecond if isinstance(dt, datetime.datetime) else 0
+    date = time.datetime
+    micro = date.microsecond if isinstance(date, datetime.datetime) else 0
     return LIGOTimeGPS(int(time.gps), int(micro*1e3))
