@@ -84,21 +84,25 @@ def _parse_query_segments(args, func):
 
     Returns a SegmentList in all cases
     """
+    # user passed SegmentList
     if len(args) == 1 and isinstance(args[0], SegmentList):
         return args[0]
-    if len(args) == 1 and len(args[0]) == 2:
-        return SegmentList([Segment(to_gps(args[0][0]),
-                                    to_gps(args[0][1]))])
+
+    # otherwise unpack two arguments as a segment
+    if len(args) == 1:
+        args = args[0]
+
+    # if not two arguments, panic
     try:
-        return SegmentList([Segment(*map(to_gps, args))])
-    except (TypeError, RuntimeError) as exc:
-        msg = ('{0}() takes 2 arguments for start and end GPS times, '
-               'or 1 argument containing a Segment or '
-               'SegmentList'.format(func.__name__))
-        if isinstance(exc, TypeError):
-            exc.args = (msg,)
-            raise
-        raise TypeError(msg)
+        start, end = args
+    except ValueError as exc:
+        exc.args = ('{0}() takes 2 arguments for start and end GPS time, '
+                    'or 1 argument containing a Segment or SegmentList'.format(
+                        func.__name__),)
+        raise
+
+    # return list with one Segment
+    return SegmentList([Segment(to_gps(start), to_gps(end))])
 
 
 # -- DataQualityFlag ----------------------------------------------------------
