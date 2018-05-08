@@ -158,5 +158,9 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
                     out.append({chan: series}, pad=pad, gap=gap)
                 count += buffer_.length / buffer_.channel.sample_rate
                 bar.update(count)
+            # sometimes NDS2 returns no data at all
+            if not count and gap != 'pad':
+                raise RuntimeError("no data received from {0} for {1}".format(
+                    connection.get_host(), seg))
 
     return out
