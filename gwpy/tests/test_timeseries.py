@@ -752,6 +752,26 @@ class TestTimeSeries(TestTimeSeriesBase):
                                         connection=nds_connection)
         utils.assert_quantity_sub_equal(ts, ts2, exclude=['channel'])
 
+    @utils.skip_missing_dependency('nds2')
+    def test_fetch_empty_iterate_error(self):
+        # test that the correct error is raised if nds2.connection.iterate
+        # yields no buffers (and no errors)
+
+        # mock connection with no data
+        nds_connection = mocks.nds2_connection()
+
+        def find_channels(name, *args, **kwargs):
+            return [mocks.nds2_channel(name, 128, '')]
+
+        nds_connection.find_channels = find_channels
+
+        # run fetch and assert error
+        with mock.patch('nds2.connection') as mock_connection:
+            mock_connection.return_value = nds_connection
+            with pytest.raises(RuntimeError) as exc:
+                self.TEST_CLASS.fetch('L1:TEST', 0, 1, host='nds.gwpy')
+            assert 'no data received' in str(exc)
+
     @utils.skip_missing_dependency('glue.datafind')
     @utils.skip_missing_dependency('LDAStools.frameCPP')
     @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
