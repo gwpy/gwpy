@@ -402,8 +402,10 @@ def _build_cli_example(config, section, outdir, logger):
 
     outf = os.path.join(outdir, '{0}.png'.format(section))
 
+    # build command-line strings for display and subprocess call
     cmd = 'gwpy-plot {0}'.format(raw)  # exclude --out for display
-    cmds = cmd.replace(' --', ' \\\n       --')  # split onto multiple lines
+    cmds = (cmd + ' --interactive').replace(
+        ' --', r' \n       --')  # split onto multiple lines
     cmdo = '{0} --out {1}'.format(cmd, outf)  # include --out for actual run
 
     rst = CLI_TEMPLATE.substitute(
