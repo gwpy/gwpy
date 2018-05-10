@@ -89,13 +89,13 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
         plot = FrequencySeriesPlot(figsize=self.figsize, dpi=self.dpi)
         ax = plot.gca()
 
-        for ts in self.timeseries:
-            asd = ts.asd(fftlength=fftlength, overlap=overlap)
+        for series in self.timeseries:
+            asd = series.asd(fftlength=fftlength, overlap=overlap)
             self.spectra.append(asd)
 
-            label = ts.channel.name
+            label = series.channel.name
             if len(self.start_list) > 1:
-                label += ', {0}'.format(ts.epoch.gps)
+                label += ', {0}'.format(series.epoch.gps)
             if self.usetex:
                 label = label_to_latex(label)
 
