@@ -92,6 +92,8 @@ class Qtransform(Spectrogram):
 
     @classmethod
     def arg_qxform(cls, parser):
+        """Add an `~argparse.ArgumentGroup` for Q-transform options
+        """
         group = parser.add_argument_group('Q-transform options')
         group.add_argument('--plot', nargs='+', type=float, default=[.5],
                            help='One or more times to plot')
@@ -139,31 +141,34 @@ class Qtransform(Spectrogram):
         return 'Q-transform: {0}'.format(self.chan_list[0])
 
     def get_title(self):
-        def ff(x):  # float format
+        """Default title for plot
+        """
+        def fformat(x):  # float format
             if isinstance(x, (list, tuple)):
-                return '[{0}]'.format(', '.join(map(ff, x)))
+                return '[{0}]'.format(', '.join(map(fformat, x)))
             if isinstance(x, Quantity):
                 x = x.value
             return '{0:.2f}'.format(x)
 
-        bits = [('Q', ff(self.result.q))]
+        bits = [('Q', fformat(self.result.q))]
         if self.qxfrm_args.get('qrange'):
-            bits.append(('q-range', ff(self.qxfrm_args['qrange'])))
+            bits.append(('q-range', fformat(self.qxfrm_args['qrange'])))
         if self.qxfrm_args['whiten']:
             bits.append(('whitened',))
         bits.extend([
-            ('calc f-range', ff(self.result.yspan)),
-            ('calc e-range', ff((self.result.min(), self.result.max()))),
+            ('calc f-range', fformat(self.result.yspan)),
+            ('calc e-range', fformat((self.result.min(), self.result.max()))),
         ])
         return ', '.join(['='.join(bit) for bit in bits])
 
     def get_spectrogram(self):
         args = self.args
 
-        ts = self.timeseries[0]
         gps = self.qxfrm_args['gps']
         outseg = Segment(gps, gps).protract(args.plot[self.plot_num])
-        qtrans = ts.q_transform(outseg=outseg, **self.qxfrm_args)
+        qtrans = self.timeseries[0].q_transform(
+            outseg=outseg,
+            **self.qxfrm_args)
 
         if args.ymin is None:  # set before Spectrogram.make_plot tries to set
             args.ymin = qtrans.yspan[0]
@@ -175,7 +180,7 @@ class Qtransform(Spectrogram):
         """
         return self.plot_num < len(self.args.plot)
 
-    def save(self, outdir):
+    def save(self, outdir):  # pylint: disable=arguments-differ
         cname = re.sub('[-_:]', '_', self.timeseries[0].channel.name).replace(
             '_', '-', 1)
         png = '{0}-{1}-{2}.png'.format(cname, float(self.args.gps),
