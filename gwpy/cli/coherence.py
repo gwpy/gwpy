@@ -37,6 +37,12 @@ class Coherence(Spectrum):
     """
     action = 'coherence'
 
+    MIN_DATASETS = 2
+
+    def __init__(self, *args, **kwargs):
+        super(Coherence, self).__init__(*args, **kwargs)
+        self.ref_chan = self.args.ref or self.chan_list[0]
+
     @classmethod
     def arg_channels(cls, parser):
         group = super(Coherence, cls).arg_channels(parser)
@@ -59,15 +65,10 @@ class Coherence(Spectrum):
         """
         return 'Coherence'
 
-    def get_min_datasets(self):
-        """Coherence requires 2 datasets for the calculation
-        """
-        return 2
-
     def get_sup_title(self):
         """Override if default lacks critical info
         """
-        return self.get_title() + self.ref_chan_name
+        return self.get_title() + self.ref_chan
 
     def make_plot(self):
         """Generate the coherence plot from all time series
@@ -81,20 +82,17 @@ class Coherence(Spectrum):
         if overlap is not None:
             overlap *= fftlength
 
-        ref = args.ref or self.timeseries[0].channel.name
-        self.ref_chan_name = ref
-
-        self.log(3, 'Reference channel: ' + ref)
+        self.log(3, 'Reference channel: ' + self.ref_chan)
 
         # group data by segment
         groups = OrderedDict()
-        for ts in self.timeseries:
-            seg = ts.span
+        for series in self.timeseries:
+            seg = series.span
             try:
-                groups[seg][ts.channel.name] = ts
+                groups[seg][series.channel.name] = series
             except KeyError:
                 groups[seg] = OrderedDict()
-                groups[seg][ts.channel.name] = ts
+                groups[seg][series.channel.name] = series
 
         # -- plot
 
@@ -104,15 +102,15 @@ class Coherence(Spectrum):
 
         # calculate coherence
         for seg in groups:
-            refts = groups[seg].pop(ref)
+            refts = groups[seg].pop(self.ref_chan)
             for name in groups[seg]:
-                ts = groups[seg][name]
-                coh = ts.coherence(refts, fftlength=fftlength,
-                                   overlap=overlap, window=args.window)
+                series = groups[seg][name]
+                coh = series.coherence(refts, fftlength=fftlength,
+                                       overlap=overlap, window=args.window)
 
                 label = name
                 if len(self.start_list) > 1:
-                    label += ', {0}'.format(ts.epoch.gps)
+                    label += ', {0}'.format(series.epoch.gps)
                 if self.usetex:
                     label = label_to_latex(label)
 
@@ -124,8 +122,10 @@ class Coherence(Spectrum):
 
         return plot
 
-    def add_legend(self):
-        leg = super(Coherence, self).add_legend()
+    def set_legend(self):
+        """Create a legend for this product
+        """
+        leg = super(Coherence, self).set_legend()
         if leg is not None:
             leg.set_title('Coherence with:')
         return leg
