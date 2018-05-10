@@ -442,6 +442,7 @@ def build_cli_examples(_):
         rst, cmd = _build_cli_example(config, sect, exdir, logger)
         if cmd:
             logger.info('[cli] running example {0!r}'.format(sect))
+            logger.debug('[cli] $ {0}'.format(cmd))
             subprocess.check_call(cmd, shell=True)
             logger.debug('[cli] wrote {0}'.format(cmd.split()[-1]))
         rsts.append(rst)
