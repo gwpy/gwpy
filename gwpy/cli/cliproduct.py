@@ -26,10 +26,17 @@ import abc
 import os.path
 import re
 import time
+import warnings
 from collections import OrderedDict
 from functools import wraps
 
+from six import add_metaclass
+
 from matplotlib import (rcParams, pyplot)
+try:
+    from matplotlib.cm import viridis as DEFAULT_CMAP
+except ImportError:
+    from matplotlib.cm import YlOrRd as DEFAULT_CMAP
 
 from astropy.time import Time
 from astropy.units import Quantity
@@ -43,13 +50,6 @@ from ..plotter.tex import label_to_latex
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
-try:
-    from matplotlib.cm import viridis
-except ImportError:  # mpl < 1.5
-    DEFAULT_CMAP = 'YlOrRd'
-else:
-    DEFAULT_CMAP = viridis.name
-
 BAD_UNITS = {'*', }
 
 
@@ -61,11 +61,10 @@ def timer(func):
     name = func.__name__
 
     @wraps(func)
-    def timed_func(self, *args, **kwargs):
-        t = time.time()
+    def timed_func(self, *args, **kwargs):  # pylint: disable=missing-docstring
+        _start = time.time()
         out = func(self, *args, **kwargs)
-        e = time.time()
-        self.log(2, '{0} took {1:.1f} sec'.format(name, e - t))
+        self.log(2, '{0} took {1:.1f} sec'.format(name, time.time() - _start))
         return out
 
     return timed_func
@@ -81,12 +80,15 @@ def to_float(unit):
     >>> 0.004
     """
     def converter(x):
+        """Convert the input to a `float` in %s
+        """
         return Quantity(x, unit).value
 
+    converter.__doc__ %= str(unit)  # pylint: disable=no-member
     return converter
 
-to_hz = to_float('Hz')
-to_s = to_float('s')
+to_hz = to_float('Hz')  # pylint: disable=invalid-name
+to_s = to_float('s')  # pylint: disable=invalid-name
 
 
 def unique(list_):
@@ -102,6 +104,7 @@ def unique(list_):
 
 # -- base product class -------------------------------------------------------
 
+@add_metaclass(abc.ABCMeta)
 class CliProduct(object):
     """Base class for all cli plot products
 
@@ -137,7 +140,6 @@ class CliProduct(object):
     - `CliProduct.make_plot` - post-processes timeseries data and generates
       one figure
     """
-    __metaclass__ = abc.ABCMeta
 
     MIN_CHANNELS = 1
     MIN_DATASETS = 1
@@ -206,15 +208,21 @@ class CliProduct(object):
     # -- properties -----------------------------
 
     @property
-    def ax(self):
+    def ax(self):  # pylint: disable=invalid-name
+        """The current `~matplotlib.axes.Axes` of this product's plot
+        """
         return self.plot.gca()
 
     @property
     def units(self):
+        """The (unique) list of data units for this product
+        """
         return unique(ts.unit for ts in self.timeseries)
 
     @property
     def usetex(self):
+        """Switch denoting whether LaTeX will be used or not
+        """
         return rcParams['text.usetex']
 
     # -- utilities ------------------------------
@@ -259,6 +267,8 @@ class CliProduct(object):
 
     @classmethod
     def arg_channels(cls, parser):
+        """Add an `~argparse.ArgumentGroup` for channel options
+        """
         group = parser.add_argument_group(
             'Data options', 'What data to load')
         group.add_argument('--chan', type=str, nargs='+', action='append',
@@ -271,6 +281,8 @@ class CliProduct(object):
 
     @classmethod
     def arg_data(cls, parser):
+        """Add an `~argparse.ArgumentGroup` for data options
+        """
         group = parser.add_argument_group(
             'Data source options', 'Where to get the data')
         meg = group.add_mutually_exclusive_group()
@@ -284,6 +296,8 @@ class CliProduct(object):
 
     @classmethod
     def arg_signal(cls, parser):
+        """Add an `~argparse.ArgumentGroup` for signal-processing options
+        """
         group = parser.add_argument_group(
             'Signal processing options',
             'What to do with the data before plotting'
@@ -296,22 +310,11 @@ class CliProduct(object):
                            help='Frequency for notch (can give multiple)')
         return group
 
-    @classmethod
-    def arg_fft(cls, parser):
-        group = parser.add_argument_group('Fourier transform options')
-        group.add_argument('--secpfft', type=float, default=1.,
-                           help='length of FFT in seconds')
-        group.add_argument('--overlap', type=float,
-                           help='overlap as fraction of FFT length [0-1)')
-        group.add_argument('--window', type=str, default='hann',
-                           help='window function to use when overlapping FFTs')
-        return group
-
     # -- plot options
 
     @classmethod
     def arg_plot(cls, parser):
-        """Add arguments common to all plots
+        """Add an `~argparse.ArgumentGroup` for basic plot options
         """
         group = parser.add_argument_group('Plot options')
         group.add_argument('-g', '--geometry', default='1200x600',
@@ -346,13 +349,13 @@ class CliProduct(object):
 
     @classmethod
     def arg_xaxis(cls, parser):
-        """Setup options for X-axis
+        """Add an `~argparse.ArgumentGroup` for X-axis options.
         """
         return cls._arg_axis('x', parser)
 
     @classmethod
     def arg_yaxis(cls, parser):
-        """Setup options for Y-axis
+        """Add an `~argparse.ArgumentGroup` for Y-axis options.
         """
         return cls._arg_axis('y', parser)
 
@@ -371,6 +374,7 @@ class CliProduct(object):
         return group
 
     def _finalize_arguments(self, args):
+        # pylint: disable=no-self-use
         """Sanity-check and set defaults for arguments
         """
         # this method is called by __init__ (after command-line arguments
@@ -460,8 +464,8 @@ class CliProduct(object):
             zpks.append(filter_design.highpass(highpass, data.sample_rate))
         elif lowpass is not None:
             zpks.append(filter_design.lowpass(lowpass, data.sample_rate))
-        for f in notch or []:
-            zpks.append(filter_design.notch(f, data.sample_rate))
+        for freq in notch or []:
+            zpks.append(filter_design.notch(freq, data.sample_rate))
         zpk = filter_design.concatenate_zpks(*zpks)
 
         # apply forward-backward (zero-phase) filter
@@ -469,12 +473,14 @@ class CliProduct(object):
 
     # -- plotting -------------------------------
 
-    def get_xlabel(self):
+    @staticmethod
+    def get_xlabel():
         """Default X-axis label for plot
         """
         return
 
-    def get_ylabel(self):
+    @staticmethod
+    def get_ylabel():
         """Default Y-axis label for plot
         """
         return
@@ -525,11 +531,11 @@ class CliProduct(object):
     def _set_axis_properties(self, axis):
         """Generic method to set properties for X/Y axis
         """
-        def _get(p):
-            return getattr(self.ax, 'get_{0}{1}'.format(axis, p))()
+        def _get(param):
+            return getattr(self.ax, 'get_{0}{1}'.format(axis, param))()
 
-        def _set(p, *args, **kwargs):
-            return getattr(self.ax, 'set_{0}{1}'.format(axis, p))(
+        def _set(param, *args, **kwargs):
+            return getattr(self.ax, 'set_{0}{1}'.format(axis, param))(
                 *args, **kwargs)
 
         scale = getattr(self.args, '{}scale'.format(axis))
@@ -587,6 +593,8 @@ class CliProduct(object):
         self._set_axis_properties('y')
 
     def set_legend(self):
+        """Create a legend for this product (if applicable)
+        """
         leg = self.ax.legend(prop={'size': 10})
         if self.n_datasets == 1 and leg:
             try:
@@ -596,6 +604,11 @@ class CliProduct(object):
         return leg
 
     def set_title(self, title):
+        """Set the title for this plot.
+
+        The `Axes.title` actually serves at the sub-title for the plot,
+        typically giving processing parameters and information.
+        """
         if title is None:
             title = self.get_title().rstrip(', ')
         if self.usetex:
@@ -605,6 +618,8 @@ class CliProduct(object):
             self.log(3, ('Title is: %s' % title))
 
     def set_suptitle(self, suptitle):
+        """Set the super title for this plot.
+        """
         if not suptitle:
             suptitle = self.get_suptitle()
         if self.usetex:
@@ -612,16 +627,21 @@ class CliProduct(object):
         self.plot.suptitle(suptitle, fontsize=18)
         self.log(3, ('Super title is: %s' % suptitle))
 
-    def set_grid(self, b):
-        self.ax.grid(b=b, which='major', color='k', linestyle='solid')
-        self.ax.grid(b=b, which='minor', color='0.06', linestyle='dotted')
+    def set_grid(self, enable):
+        """Set the grid parameters for this plot.
+        """
+        self.ax.grid(b=enable, which='major', color='k', linestyle='solid')
+        self.ax.grid(b=enable, which='minor', color='0.06', linestyle='dotted')
 
     def save(self, outfile):
+        """Save this product to the target `outfile`.
+        """
         self.plot.savefig(outfile, edgecolor='white', bbox_inches='tight')
         self.log(3, ('wrote %s' % outfile))
 
     def has_more_plots(self):
-        """override if product needs multiple annotate and saves"""
+        """Determine whether this product has more plots to be created.
+        """
         if self.plot_num == 0:
             return True
         return False
@@ -635,7 +655,7 @@ class CliProduct(object):
     # -- the one that does all the work ---------
 
     def run(self):
-        """Make the plot
+        """Make the plot.
         """
         self.log(3, ('Verbosity level: %d' % self.verbose))
 
@@ -662,7 +682,10 @@ class CliProduct(object):
 
 # -- extensions ---------------------------------------------------------------
 
+@add_metaclass(abc.ABCMeta)
 class ImageProduct(CliProduct):
+    """Base class for all x/y/color plots
+    """
     MAX_DATASETS = 1
 
     @classmethod
@@ -671,7 +694,9 @@ class ImageProduct(CliProduct):
         cls.arg_color_axis(parser)
 
     @classmethod
-    def arg_color_axis(self, parser):
+    def arg_color_axis(cls, parser):
+        """Add an `~argparse.ArgumentGroup` for colour-axis options.
+        """
         group = parser.add_argument_group('Colour axis options')
         group.add_argument('--imin', type=float,
                            help='minimum value for colorbar')
@@ -692,17 +717,25 @@ class ImageProduct(CliProduct):
 
     def _finalize_arguments(self, args):
         if args.cmap is None:
-            args.cmap = DEFAULT_CMAP
+            args.cmap = DEFAULT_CMAP.name
         return super(ImageProduct, self)._finalize_arguments(args)
 
+    @staticmethod
     def get_color_label():
+        """Returns the default colorbar label
+        """
         return None
 
     def set_axes_properties(self):
+        """Set properties for each axis (scale, limits, label) and create
+        a colorbar.
+        """
         super(ImageProduct, self).set_axes_properties()
         self.set_colorbar()
 
     def set_colorbar(self):
+        """Create a colorbar for this product
+        """
         args = self.args
         if args.nocolorbar:
             self.plot.add_colorbar(visible=False)
@@ -711,9 +744,12 @@ class ImageProduct(CliProduct):
             self.plot.add_colorbar(label=self.get_color_label())
 
     def set_legend(self):
+        """This method does nothing, since image plots don't have legends
+        """
         return  # image plots don't have legends
 
 
+@add_metaclass(abc.ABCMeta)
 class FFTMixin(object):
     """Mixin for `CliProduct` class that will perform FFTs
 
@@ -721,8 +757,23 @@ class FFTMixin(object):
     """
     @classmethod
     def init_data_options(cls, parser):
+        """Set up data input and signal processing options including FFTs
+        """
         super(FFTMixin, cls).init_data_options(parser)
         cls.arg_fft(parser)
+
+    @classmethod
+    def arg_fft(cls, parser):
+        """Add an `~argparse.ArgumentGroup` for FFT options
+        """
+        group = parser.add_argument_group('Fourier transform options')
+        group.add_argument('--secpfft', type=float, default=1.,
+                           help='length of FFT in seconds')
+        group.add_argument('--overlap', type=float,
+                           help='overlap as fraction of FFT length [0-1)')
+        group.add_argument('--window', type=str, default='hann',
+                           help='window function to use when overlapping FFTs')
+        return group
 
     def _finalize_arguments(self, args):
         if args.overlap is None:
@@ -733,11 +784,17 @@ class FFTMixin(object):
         return super(FFTMixin, self)._finalize_arguments(args)
 
 
+@add_metaclass(abc.ABCMeta)
 class TimeDomainProduct(CliProduct):
     """`CliProduct` with time on the X-axis
     """
     @classmethod
     def arg_xaxis(cls, parser):
+        """Add an `~argparse.ArgumentGroup` for X-axis options.
+
+        This method includes the standard X-axis options, as well as a new
+        ``--epoch`` option for the time axis.
+        """
         group = super(TimeDomainProduct, cls).arg_xaxis(parser)
         group.add_argument('--epoch', type=to_gps,
                            help='center X axis on this GPS time')
@@ -755,6 +812,8 @@ class TimeDomainProduct(CliProduct):
         return super(TimeDomainProduct, self)._finalize_arguments(args)
 
     def get_xlabel(self):
+        """Default X-axis label for plot
+        """
         trans = self.ax.xaxis.get_transform()
         if isinstance(trans, GPSTransform):
             epoch = trans.get_epoch()
@@ -763,8 +822,10 @@ class TimeDomainProduct(CliProduct):
                          Time(epoch, format='gps', scale='utc').iso)
             return 'Time ({unit}) from {utc} ({gps})'.format(
                 unit=unit, gps=epoch, utc=utc)
+        return ''
 
 
+@add_metaclass(abc.ABCMeta)
 class FrequencyDomainProduct(CliProduct):
     """`CliProduct` with frequency on the X-axis
     """
@@ -774,4 +835,6 @@ class FrequencyDomainProduct(CliProduct):
         super(FrequencyDomainProduct, self)._finalize_arguments(args)
 
     def get_xlabel(self):
+        """Default X-axis label for plot
+        """
         return 'Frequency (Hz)'
