@@ -61,9 +61,11 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
     def get_suptitle(self):
         return 'Spectrogram: {0}'.format(self.chan_list[0])
 
-    def get_color_label(self):  # pylint: disable=method-hidden
+    def get_color_label(self):
         """Text for colorbar label
         """
+        if self.args.norm:
+            return 'Normalized to {}'.format(self.args.norm)
         if len(self.units) == 1 and self.usetex:
             return r'ASD $\left({0}\right)$'.format(
                 self.units[0].to_string('latex').strip('$'))
@@ -131,7 +133,6 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         # apply normalisation
         if args.norm:
             specgram = specgram.ratio(args.norm)
-            self.get_color_label = lambda: 'Normalized to {}'.format(args.norm)
 
         self.result = specgram
 
