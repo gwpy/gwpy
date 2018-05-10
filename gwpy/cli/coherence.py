@@ -65,10 +65,10 @@ class Coherence(Spectrum):
         """
         return 'Coherence'
 
-    def get_sup_title(self):
-        """Override if default lacks critical info
+    def get_suptitle(self):
+        """Start of default super title, first channel is appended to it
         """
-        return self.get_title() + self.ref_chan
+        return 'Coherence: {0}'.format(self.ref_chan)
 
     def make_plot(self):
         """Generate the coherence plot from all time series
