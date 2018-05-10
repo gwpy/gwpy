@@ -64,6 +64,8 @@ class Coherencegram(Spectrogram):
         return "Coherence spectrogram: {0} vs {1}".format(*self.chan_list)
 
     def get_color_label(self):
+        if self.args.norm:
+            return 'Normalized to {}'.format(self.args.norm)
         return 'Coherence'
 
     def get_stride(self):
