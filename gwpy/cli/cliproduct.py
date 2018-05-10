@@ -802,7 +802,7 @@ class TimeDomainProduct(CliProduct):
         return group
 
     def _finalize_arguments(self, args):
-        starts = map(float, (gps for gpsl in args.start for gps in gpsl))
+        starts = [float(gps) for gpsl in args.start for gps in gpsl]
         if args.xscale is None:  # set default x-axis scale
             args.xscale = 'auto-gps'
         if args.xmin is None:
