@@ -131,49 +131,31 @@ def to_gps(t, *args, **kwargs):
     >>> to_gps(Time(57754, format='mjd'))
     LIGOTimeGPS(1167264018, 0)
     """
-    # allow Time conversion to override type-checking
-    if args or kwargs:
-        return Time(t, *args, **kwargs).utc.gps
-    # if lal.LIGOTimeGPS, just return it
-    if isinstance(t, LIGOTimeGPS):
-        return t
-    # if Decimal, cast to LIGOTimeGPS and return
-    if isinstance(t, Decimal):
-        return LIGOTimeGPS(str(t))
+    # -- convert input to Time, or something we can pass to LIGOTimeGPS
 
-    # or convert numeric string to float (e.g. '123.456')
-    try:
-        t = float(t)
-    except (TypeError, ValueError):
-        pass
-    # or convert str into datetime.datetime
-    if isinstance(t, str):
-        t = str_to_datetime(t)
-    # or convert tuple into datetime.datetime
-    elif isinstance(t, (tuple, list)):
+    if isinstance(t, str):  # str -> datetime.datetime
+        t = _str_to_datetime(t)
+
+    if isinstance(t, (tuple, list)):  # tuple -> datetime.datetime
         t = datetime.datetime(*t)
-    # and then into lal.LIGOTimeGPS or Time
-    if isinstance(t, datetime.date):
-        # try and use LAL, it's more reliable (possibly)
-        try:
-            from lal import UTCToGPS
-        except ImportError:
-            if not isinstance(t, datetime.datetime):
-                t = datetime.datetime.combine(t, datetime.time.min)
-            t = Time(t, scale='utc')
-        else:
-            gps = to_gps(UTCToGPS(t.timetuple()))
-            if hasattr(t, 'microsecond'):
-                return gps + t.microsecond * 1e-6
-            return gps
-    # and then into LIGOTimeGPS
-    if isinstance(t, Time):
-        return time_to_gps(t)
-    # extract quantity to a float in seconds
-    if isinstance(t, Quantity):
+
+    if isinstance(t, datetime.date):  # datetime.datetime -> Time
+        t = _datetime_to_time(t)
+
+    if isinstance(t, Quantity):  # Quantity -> float
         t = t.to('second').value
-    # if all else fails...
-    return LIGOTimeGPS(t)
+
+    if isinstance(t, Decimal):  # Decimal -> str
+        t = str(t)
+
+    # -- convert to LIGOTimeGPS
+
+    if isinstance(t, Time):
+        return _time_to_gps(t, *args, **kwargs)
+    try:
+        return LIGOTimeGPS(t)
+    except (TypeError, ValueError):
+        return LIGOTimeGPS(float(t))
 
 
 def from_gps(gps):
@@ -198,27 +180,74 @@ def from_gps(gps):
     """
     try:
         gps = LIGOTimeGPS(gps)
-    except (ValueError, TypeError):
+    except (ValueError, TypeError, RuntimeError):
         gps = LIGOTimeGPS(float(gps))
-    try:
-        from lal import GPSToUTC
-    except ImportError:
-        date = Time(gps.gpsSeconds, gps.gpsNanoSeconds * 1e-9,
-                    format='gps', scale='utc').datetime
-    else:
-        date = datetime.datetime(*GPSToUTC(gps.gpsSeconds)[:6])
-        date += datetime.timedelta(seconds=gps.gpsNanoSeconds * 1e-9)
-    if float(gps).is_integer():
-        return date.replace(microsecond=0)
-    return date
+    sec, nano = gps.gpsSeconds, gps.gpsNanoSeconds
+    date = Time(sec, format='gps', scale='utc').datetime
+    return date + datetime.timedelta(microseconds=nano*1e-3)
 
 
-def time_to_gps(t):
+# -- utilities ----------------------------------------------------------------
+# special case strings
+
+def _now():
+    return datetime.datetime.utcnow().replace(microsecond=0)
+
+
+def _today():
+    return datetime.date.today()
+
+
+def _today_delta(**delta):
+    return _today() + datetime.timedelta(**delta)
+
+
+def _tomorrow():
+    return _today_delta(days=1)
+
+
+def _yesterday():
+    return _today_delta(days=-1)
+
+
+DATE_STRINGS = {
+    'now': _now,
+    'today': _today,
+    'tomorrow': _tomorrow,
+    'yesterday': _yesterday,
+}
+
+
+def _str_to_datetime(datestr):
+    """Convert `str` to `datetime.datetime`.
+    """
+    try:  # try known string
+        return DATE_STRINGS[str(datestr).lower()]()
+    except KeyError:  # any other string
+        try:
+            return dateparser.parse(datestr)
+        except (ValueError, TypeError) as exc:
+            exc.args = ("Cannot parse date string {0!r}: {1}".format(
+                datestr, exc.args[0]),)
+            raise
+
+
+def _datetime_to_time(dtm):
+    # astropy.time.Time requires datetime.datetime
+    if not isinstance(dtm, datetime.datetime):
+        dtm = datetime.datetime.combine(dtm, datetime.time.min)
+    return Time(dtm, scale='utc')
+
+
+def _time_to_gps(time):
     """Convert a `Time` into `LIGOTimeGPS`.
+
+    This method uses `datetime.datetime` underneath, which restricts
+    to microsecond precision by design. This should probably be fixed...
 
     Parameters
     ----------
-    t : `~astropy.time.Time`
+    time : `~astropy.time.Time`
         formatted `Time` object to convert
 
     Returns
@@ -226,58 +255,7 @@ def time_to_gps(t):
     gps : `LIGOTimeGPS`
         Nano-second precision `LIGOTimeGPS` time
     """
-    t = t.utc
-    dt = t.datetime
-    gps = t.gps
-    # if datetime format has zero microseconds, force int(gps) to remove
-    # floating point precision errors from gps
-    if type(dt) is datetime.date or (  # pylint: disable=unidiomatic-typecheck
-            isinstance(dt, datetime.datetime) and not dt.microsecond):
-        return LIGOTimeGPS(int(gps))
-    # use repr() to remove hidden floating point precision problems
-    return LIGOTimeGPS(repr(gps))
-
-
-def str_to_datetime(datestr):
-    """Convert a `str` representing a datetime into a `datetime.datetime`.
-
-    Parameters
-    ----------
-    datestr : `str`
-        date-like string parseable by :meth:`dateutil.parser.parse`, or
-        one of the following special cases
-
-            - ``'now'`` : second precision for current time
-            - ``'today'``
-            - ``'tomorrow'``
-            - ``'yesterday'``
-
-    Returns
-    -------
-    date : `datetime.datetime`
-        `datetime.datetime` version of the input ``datestr``
-
-    Raises
-    ------
-    TypeError
-        if ``datestr`` cannot be parsed by :meth:`dateutil.parser.parse`.
-    """
-    datestr = str(datestr).lower()
-    if datestr == 'now':
-        date = datetime.datetime.utcnow().replace(microsecond=0)
-    elif datestr == 'today':
-        date = datetime.date.today()
-    elif datestr == 'tomorrow':
-        today = datetime.date.today()
-        date = today + datetime.timedelta(days=1)
-    elif datestr == "yesterday":
-        today = datetime.date.today()
-        date = today - datetime.timedelta(days=1)
-    else:
-        try:
-            date = dateparser.parse(datestr)
-        except (ValueError, TypeError) as exc:
-            exc.args = ("Cannot parse date string %r: %s"
-                        % (datestr, exc.args[0]),)
-            raise
-    return date
+    time = time.utc
+    date = time.datetime
+    micro = date.microsecond if isinstance(date, datetime.datetime) else 0
+    return LIGOTimeGPS(int(time.gps), int(micro*1e3))
