@@ -377,6 +377,8 @@ ${titleunderline}
 ${title}
 ${titleunderline}
 
+${description}
+
 .. code:: sh
 
    $$ ${command}
@@ -393,6 +395,10 @@ def _build_cli_example(config, section, outdir, logger):
         title = config.get(section, 'title')
     except NoOptionError:
         title = ' '.join(map(str.title, section.split('-')))
+    try:
+        desc = config.get(section, 'description')
+    except NoOptionError:
+        desc = ''
 
     outf = os.path.join(outdir, '{0}.png'.format(section))
 
@@ -401,7 +407,7 @@ def _build_cli_example(config, section, outdir, logger):
     cmdo = '{0} --out {1}'.format(cmd, outf)  # include --out for actual run
 
     rst = CLI_TEMPLATE.substitute(
-        title=title, titleunderline='#'*len(title),
+        title=title, titleunderline='#'*len(title), description=desc,
         tag=section, png=outf[len(SPHINX_DIR):], command=cmds)
 
     # only write RST if new or changed
