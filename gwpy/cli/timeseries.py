@@ -46,6 +46,7 @@ class TimeSeries(TimeDomainProduct):
             return units[0].to_string()
         elif len(units) > 1:
             return 'Multiple units'
+        return super(TimeSeries, self).get_ylabel()
 
     def get_suptitle(self):
         """Start of default super title, first channel is appended to it
@@ -54,8 +55,8 @@ class TimeSeries(TimeDomainProduct):
 
     def get_title(self):
         suffix = super(TimeSeries, self).get_title()
-        fs = {ts.sample_rate for ts in self.timeseries}
-        fss = '({0})'.format('), ('.join(map(str, fs)))
+        rates = {ts.sample_rate for ts in self.timeseries}
+        fss = '({0})'.format('), ('.join(map(str, rates)))
         return ', '.join([
             'Fs: {0}'.format(fss),
             'duration: {0}'.format(self.duration),
@@ -68,11 +69,11 @@ class TimeSeries(TimeDomainProduct):
         plot = TimeSeriesPlot(figsize=self.figsize, dpi=self.dpi)
         ax = plot.gca()
 
-        for ts in self.timeseries:
-            label = ts.channel.name
+        for series in self.timeseries:
+            label = series.channel.name
             if self.usetex:
                 label = label_to_latex(label)
-            ax.plot(ts, label=label)
+            ax.plot(series, label=label)
 
         return plot
 
