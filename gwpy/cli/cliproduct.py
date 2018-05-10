@@ -173,7 +173,8 @@ class CliProduct(object):
         self.plot_num = 0
 
         #: start times for data sets
-        self.start_list = unique(map(int, args.start))
+        self.start_list = unique(
+            map(int, (gps for gpsl in args.start for gps in gpsl)))
 
         #: duration of each time segment
         self.duration = args.duration
@@ -273,7 +274,7 @@ class CliProduct(object):
             'Data options', 'What data to load')
         group.add_argument('--chan', type=str, nargs='+', action='append',
                            required=True, help='channels to load')
-        group.add_argument('--start', type=to_gps, nargs='+',
+        group.add_argument('--start', type=to_gps, nargs='+', action='append',
                            help='Starting GPS times (required)')
         group.add_argument('--duration', type=to_s, default=10,
                            help='Duration (seconds) [10]')
@@ -801,14 +802,15 @@ class TimeDomainProduct(CliProduct):
         return group
 
     def _finalize_arguments(self, args):
+        starts = map(float, (gps for gpsl in args.start for gps in gpsl))
         if args.xscale is None:  # set default x-axis scale
             args.xscale = 'auto-gps'
         if args.xmin is None:
-            args.xmin = float(min(args.start))
+            args.xmin = min(starts)
         if args.epoch is None:
             args.epoch = args.xmin
         if args.xmax is None:
-            args.xmax = float(max(args.start)) + args.duration
+            args.xmax = max(starts) + args.duration
         return super(TimeDomainProduct, self)._finalize_arguments(args)
 
     def get_xlabel(self):
