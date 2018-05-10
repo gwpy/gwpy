@@ -61,7 +61,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
     def get_suptitle(self):
         return 'Spectrogram: {0}'.format(self.chan_list[0])
 
-    def get_color_label(self):
+    def get_color_label(self):  # pylint: disable=method-hidden
         """Text for colorbar label
         """
         if len(self.units) == 1 and self.usetex:
@@ -69,6 +69,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
                 self.units[0].to_string('latex').strip('$'))
         elif len(self.units) == 1:
             return 'ASD ({0})'.format(self.units[0].to_string('generic'))
+        return super(Spectrogram, self).get_color_label()
 
     def get_stride(self):
         """Calculate the stride for the spectrogram
@@ -83,6 +84,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         ffps = int(nfft / (self.width * 0.8))  # FFTs per second
         if ffps > 3:
             return max(2 * fftlength, ffps * stride + fftlength - 1)
+        return None  # do not use strided spectrogram
 
     def get_spectrogram(self):
         """Calculate the spectrogram to be plotted
@@ -97,7 +99,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         fftlength = float(args.secpfft)
         overlap = fftlength * args.overlap
         self.log(2, "Calculating spectrogram secpfft: %s, overlap: %s" %
-                        (fftlength, overlap))
+                 (fftlength, overlap))
 
         stride = self.get_stride()
 
@@ -121,8 +123,6 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
     def make_plot(self):
         """Generate the plot from time series and arguments
         """
-        from numpy import percentile
-
         args = self.args
 
         # create 'raw' spectrogram
@@ -160,7 +160,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
 
         specgram = self.result.crop(
             args.xmin, args.xmax).crop_frequencies(
-            args.ymin, args.ymax)
+                args.ymin, args.ymax)
 
         # auto scale colours
         from numpy import percentile
