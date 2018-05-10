@@ -23,11 +23,9 @@
 """
 
 try:
-    from matplotlib.cm import plasma
+    from matplotlib.cm import plasma as DEFAULT_CMAP
 except ImportError:
     DEFAULT_CMAP = None
-else:
-    DEFAULT_CMAP = plasma.name
 
 from .spectrogram import Spectrogram
 
@@ -49,8 +47,8 @@ class Coherencegram(Spectrogram):
                 args.imin = 0.
             if args.imax is None:
                 args.imax = 1.
-        if args.cmap is None:
-            args.cmap = DEFAULT_CMAP
+        if args.cmap is None and DEFAULT_CMAP is not None:
+            args.cmap = DEFAULT_CMAP.name
         return super(Coherencegram, self)._finalize_arguments(args)
 
     def get_ylabel(self):

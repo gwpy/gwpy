@@ -280,7 +280,7 @@ class _TestImageProduct(_TestCliProduct):
 
     def test_finalize_arguments(self, prod):
         # finalize_arguments() called by __init__
-        assert prod.args.cmap == cliproduct.DEFAULT_CMAP
+        assert prod.args.cmap == cliproduct.DEFAULT_CMAP.name
 
     @pytest.mark.parametrize('visible', [False, True])
     def test_set_plot_properties(self, plotprod, visible):
@@ -381,6 +381,11 @@ class TestCliCoherence(TestCliSpectrum):
 
     def test_init(self, prod):
         assert prod.chan_list == ['X1:TEST-CHANNEL', 'Y1:TEST-CHANNEL']
+        assert prod.ref_chan == prod.chan_list[0]
+
+    def test_get_suptitle(self, prod):
+        assert prod.get_suptitle() == 'Coherence: {0}'.format(
+            prod.chan_list[0])
 
 
 class TestCliCoherencegram(TestCliSpectrogram):
@@ -390,7 +395,10 @@ class TestCliCoherencegram(TestCliSpectrogram):
 
     def test_finalize_arguments(self, prod):
         from gwpy.cli.coherencegram import DEFAULT_CMAP as DEFAULT_COH_CMAP
-        assert prod.args.cmap == DEFAULT_COH_CMAP or cliproduct.DEFAULT_CMAP
+        if DEFAULT_COH_CMAP is None:
+            assert prod.args.cmap == cliproduct.DEFAULT_CMAP
+        else:
+            assert prod.args.cmap == DEFAULT_COH_CMAP.name
         assert prod.args.color_scale == 'linear'
         assert prod.args.imin == 0.
         assert prod.args.imax == 1.

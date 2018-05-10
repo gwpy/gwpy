@@ -109,7 +109,7 @@ class Qtransform(Spectrogram):
         gps = args.gps
         search = args.search
 
-        args.start = [int(gps - search/2)]
+        args.start = [[int(gps - search/2)]]
         if args.epoch is None:
             args.epoch = args.gps
         args.duration = search
