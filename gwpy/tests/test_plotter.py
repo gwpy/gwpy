@@ -808,11 +808,11 @@ class TestEventTableAxes(EventTableMixin, TestAxes):
         assert shape[0] == len(table)
         nptest.assert_array_equal(c.get_array(), snrs)
         # test with size_by
-        c = ax.plot_table(table, 'time', 'frequency',
-                          size_by='snr')
+        with pytest.warns(DeprecationWarning):
+            c = ax.plot_table(table, 'time', 'frequency', size_by='snr')
         # test with color and size_by
-        c = ax.plot_table(table, 'time', 'frequency', 'snr',
-                          size_by='snr')
+        with pytest.warns(DeprecationWarning):
+            c = ax.plot_table(table, 'time', 'frequency', 'snr', size_by='snr')
         nptest.assert_array_equal(c.get_array(), snrs)
 
     def test_plot_tiles(self, table):
