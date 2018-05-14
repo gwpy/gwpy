@@ -231,7 +231,7 @@ def register_gwf_api(library):
                           DeprecationWarning)
         if not isinstance(resample, dict):
             resample = dict((c, resample) for c in channels)
-        if resample is not None:
+        if dtype is not None:
             warnings.warn('the dtype keyword for is deprecated, instead '
                           'you should manually call astype() after reading',
                           DeprecationWarning)
