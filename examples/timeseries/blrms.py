@@ -49,8 +49,8 @@ llo = TimeSeriesDict.get([c % 'L1' for c in channels],
                          'Feb 13 2015 16:00', 'Feb 14 2015 04:00')
 
 # Next we can plot the data, with a separate `~gwpy.plotter.Axes` for each
-# instrument:
-plot = TimeSeriesPlot(lho, llo)
+# instrument (but with the linked X-axes):
+plot = TimeSeriesPlot(lho, llo, sharex=True)
 ax1, ax2 = plot.axes
 for ifo, ax in zip(('Hanford', 'Livingston'), (ax1, ax2)):
     ax.legend(['X', 'Y', 'Z'])

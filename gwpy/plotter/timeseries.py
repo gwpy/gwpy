@@ -21,6 +21,7 @@
 
 import re
 import warnings
+from math import isinf
 
 from matplotlib import (pyplot, __version__ as mpl_version)
 from matplotlib.projections import register_projection
@@ -57,32 +58,37 @@ class TimeSeriesAxes(SeriesAxes):
 
     @allow_rasterization
     def draw(self, *args, **kwargs):
-        # dynamically set scaling
-        if self.get_xscale() == 'auto-gps':
-            self.auto_gps_scale()
+        autogps = self.get_xscale() == 'auto-gps'
+        _xlabel = self.get_xlabel()
 
-        # dynamically set x-axis label
-        nolabel = self.get_xlabel() == '_auto'
-        if nolabel and isinstance(self.xaxis._scale, GPSScale):
-            self.auto_gps_label()
-        elif nolabel:
+        if autogps:  # dynamically set epoch and x-axis label
+            _epoch = self.xaxis._scale.get_epoch()
+
+            if _epoch is None:
+                if self.get_autoscalex_on():
+                    self.autoscale_view(tight=None, scaley=False)
+                epoch = round(max(
+                    x for x in (self.dataLim.x0, self.viewLim.x0) if
+                    not isinf(x)))
+                self.set_xscale('auto-gps', epoch=epoch)
+
+        if autogps and _xlabel == '_auto':
+                self.auto_gps_label()
+        elif _xlabel == '_auto':
             self.set_xlabel('')
 
-        # draw
-        super(TimeSeriesAxes, self).draw(*args, **kwargs)
-
-        # reset label
-        if nolabel:
-            self.set_xlabel('_auto')
+        try:
+            return super(TimeSeriesAxes, self).draw(*args, **kwargs)
+        finally:
+            if autogps:  # reset
+                self.set_xscale('auto-gps', epoch=_epoch)
+                self.stale = False
+            self.set_xlabel(_xlabel)
+            self.xaxis.stale = False
 
     draw.__doc__ = SeriesAxes.draw.__doc__
 
     # -- GPS scaling --------------------------------
-
-    def set_xscale(self, scale, *args, **kwargs):
-        super(TimeSeriesAxes, self).set_xscale(scale, *args, **kwargs)
-
-    set_xscale.__doc__ = SeriesAxes.set_xscale.__doc__
 
     def auto_gps_label(self):
         """Automatically set the x-axis label based on the current GPS scale
@@ -100,12 +106,6 @@ class TimeSeriesAxes(SeriesAxes):
             self.set_xlabel('Time [%s] from %s UTC (%s)'
                             % (unit, utc, repr(epoch)))
 
-    def auto_gps_scale(self):
-        """Automagically set the GPS scale for the time-axis of this plot
-        based on the current view limits
-        """
-        self.set_xscale('auto-gps', epoch=self.get_epoch())
-
     def set_epoch(self, epoch):
         """Set the GPS epoch (t=0) for these axes
         """
@@ -114,7 +114,9 @@ class TimeSeriesAxes(SeriesAxes):
         except AttributeError:
             pass
         else:
-            self.set_xscale(xscale, epoch=to_gps(epoch))
+            if epoch is not None:
+                epoch = to_gps(epoch)
+            self.set_xscale(xscale, epoch=epoch)
 
     def get_epoch(self):
         """Return the current GPS epoch (t=0)
@@ -128,8 +130,6 @@ class TimeSeriesAxes(SeriesAxes):
             left, right = left
         left = float(to_gps(left))
         right = float(to_gps(right))
-        if 'gps' in self.get_xscale() and self.epoch is None:
-            self.set_epoch(left)
         super(TimeSeriesAxes, self).set_xlim(left=left, right=right, emit=emit,
                                              auto=auto, **kw)
     set_xlim.__doc__ = SeriesAxes.set_xlim.__doc__

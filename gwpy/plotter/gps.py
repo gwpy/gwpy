@@ -173,12 +173,12 @@ class GPSTransformBase(GPSMixin, Transform):
         `Decimal` objects to do the transformation, and simple `float`
         otherwise.
         """
-        scale = self.scale
-        epoch = self.epoch
+        scale = self.scale or 1
+        epoch = self.epoch or 0
 
         # handle simple or data transformations with floats
         if any([
-                epoch is None,  # no large additions
+                epoch == 0,  # no large additions
                 scale == 1,  # no multiplications
                 self._parents,  # part of composite transform (from draw())
         ]):
@@ -329,8 +329,8 @@ class GPSAutoMinorLocator(GPSLocatorMixin, ticker.AutoMinorLocator):
 
         if majorlocs.size:
             epoch = majorlocs[0]
-            tmin = numpy.ceil((vmin - epoch) / minorstep) * minorstep
-            tmax = numpy.floor((vmax - epoch) / minorstep) * minorstep
+            tmin = numpy.floor((vmin - epoch) / minorstep) * minorstep
+            tmax = numpy.ceil((vmax - epoch) / minorstep) * minorstep
             locs = numpy.arange(tmin, tmax, minorstep) + epoch
             cond = numpy.abs((locs - epoch) % majorstep) > minorstep / 10.0
             locs = locs.compress(cond)
@@ -373,16 +373,19 @@ class GPSScale(GPSMixin, LinearScale):
             epoch = epoch.utc.gps
         elif isinstance(epoch, units.Quantity):
             epoch = epoch.value
-        if epoch is None and isinstance(axis._scale, GPSScale):
-            epoch = axis._scale.get_epoch()
         # otherwise get from current view
-        if epoch is None:
-            epoch = viewlim[0]
         if unit is None:
-            duration = float(viewlim[1] - (min(viewlim[0], epoch)))
+            duration = float(viewlim[1] - viewlim[0])
             unit = units.second
             for scale in TIME_UNITS[::-1]:
-                if duration >= scale.decompose().scale * 4:
+                base = scale.decompose().scale
+                # for large durations, prefer smaller units
+                if scale > units.second:
+                    base *= 4
+                # for smaller durations, prefer larger units
+                else:
+                    base *= 0.001
+                if duration >= base:
                     unit = scale
                     break
         super(GPSScale, self).__init__(unit=unit, epoch=epoch)

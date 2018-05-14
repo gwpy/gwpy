@@ -62,6 +62,7 @@ from gwpy.plotter.tex import (float_to_latex, label_to_latex,
 from gwpy.plotter.table import get_column_string
 
 import utils
+from mocks import mock
 
 # ignore matplotlib complaining about GUIs
 warnings.filterwarnings(
@@ -102,6 +103,15 @@ def usetex(request):
     use_ = request.param
     with rc_context(rc={'text.usetex': use_}):
         yield use_
+
+
+def no_usetex(func):
+    """Decorate a test function with `'text.usetex'=False` in `rcParams`
+    """
+    def decorated_func(*args, **kwargs):
+        with rc_context(rc={'text.usetex': False}):
+            return func(*args, **kwargs)
+    return decorated_func
 
 
 class PlottingTestBase(object):
@@ -582,10 +592,46 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
     def test_init(self):
         fig, ax = self.new()
         assert isinstance(ax, self.AXES_CLASS)
-        assert ax.get_epoch() == 0
+        assert ax.get_epoch() is None
         assert ax.get_xscale() == 'auto-gps'
         assert ax.get_xlabel() == '_auto'
         self.save_and_close(fig)
+
+    def test_auto_gps(self, usetex):
+        def _check_draw(fig, xlabel):
+            """Check that the draw() operation works
+            """
+            # if using latex, don't mock set_xlabel, because that leaves the
+            # label as _auto, which freaks latex out
+            if rcParams['text.usetex']:
+                fig.canvas.draw()  # will fail if _auto isn't replaced properly
+                return
+            with mock.patch.object(self.AXES_CLASS, 'set_xlabel') as mocker:
+                fig.canvas.draw()
+                mocker.assert_has_calls([mock.call(xlabel),
+                                         mock.call('_auto')])
+
+        fig, ax = self.new()
+        ax.plot(10, 20)
+
+        # assert defaults are in place
+        assert ax.get_xlabel() == '_auto'
+        assert ax.get_xscale() == 'auto-gps'
+        assert ax.get_epoch() is None
+
+        # check that, when we render the image, we auto-set the X-axis label
+        # using an auto-determined epoch, and then replace it
+        _check_draw(fig, 'Time [seconds] from 1980-01-06 00:00:10 UTC (10)')
+
+        # and assert that the defaults remain in place
+        assert ax.get_xlabel() == '_auto'
+        assert ax.get_xscale() == 'auto-gps'
+        assert ax.get_epoch() is None
+
+        # set epoch manually, and check that it gets set
+        ax.set_epoch(100)
+        _check_draw(fig, 'Time [seconds] from 1980-01-06 00:01:40 UTC (100)')
+        assert ax.get_epoch() == 100
 
     def test_plot_timeseries(self):
         fig, ax = self.new()
