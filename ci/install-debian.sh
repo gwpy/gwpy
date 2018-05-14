@@ -30,6 +30,7 @@ Package: *
 Pin: release n=jessie-proposed
 Pin-Priority: 100
 EOF
+    apt-get update -yqq
 fi
 
 # install pip for system python
