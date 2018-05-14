@@ -84,6 +84,7 @@ for PREF in ${PREFICES}; do
     echo "-------------------------------------------------------"
     dpkg --install ${GWPY_DEB} || { \
         apt-get -y -f install;  # install dependencies and package
+        apt-get -yq install ${PREF}-tqdm;  # install tqdm from backports
         dpkg --install ${GWPY_DEB};  # shouldn't fail
     }
 done
