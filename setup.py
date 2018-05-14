@@ -56,6 +56,7 @@ dependencies = {
     'matplotlib': '>= 1.2.0',
     'astropy': '>= 1.1.1',
     'lscsoft-glue': '>= 1.55.2',
+    'tqdm': '>= 4.10.0',
 }
 
 # include fancy dependencies

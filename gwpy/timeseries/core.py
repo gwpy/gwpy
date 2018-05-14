@@ -1229,7 +1229,7 @@ class TimeSeriesBaseDict(OrderedDict):
         out = cls()
         for frametype, clist in frametypes.items():
             if verbose:
-                verbose = "Reading {} frames:".format(frametype)
+                verbose = "Reading {} frames".format(frametype)
             # parse as a ChannelList
             channellist = ChannelList.from_names(*clist)
             # strip trend tags from channel names

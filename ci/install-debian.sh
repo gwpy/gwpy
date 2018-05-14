@@ -20,6 +20,19 @@
 # Build Debian package
 #
 
+# enable lscsoft jessie-proposed (first required for python-tqdm gwpy/gwpy#735)
+if [[ `cat /etc/debian_version` == "8."* ]]; then
+    cat << EOF > /etc/apt/sources.list.d/lscsoft-proposed.list
+deb http://software.ligo.org/lscsoft/debian jessie-proposed contrib
+EOF
+    cat << EOF > /etc/apt/preferences.d/lscsoft-proposed.pref
+Package: *
+Pin: release n=jessie-proposed
+Pin-Priority: 100
+EOF
+    apt-get update -yqq
+fi
+
 # install pip for system python
 apt-get -yq install python-pip
 
@@ -72,6 +85,7 @@ for PREF in ${PREFICES}; do
     echo "-------------------------------------------------------"
     dpkg --install ${GWPY_DEB} || { \
         apt-get -y -f install;  # install dependencies and package
+        apt-get -yq install ${PREF}-tqdm;  # install tqdm from backports
         dpkg --install ${GWPY_DEB};  # shouldn't fail
     }
 done

@@ -182,7 +182,7 @@ class GravitySpyTable(EventTable):
 
         # read files
         output = mp_utils.multiprocess_with_queues(
-            nproc, _download_single_image, images, raise_exceptions=False)
+            nproc, _download_single_image, images)
 
         # raise exceptions (from multiprocessing, single process raises inline)
         for f, x in output:

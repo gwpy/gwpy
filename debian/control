@@ -28,7 +28,8 @@ Depends: ${misc:Depends},
          python-astropy (>= 1.1.1),
          python-matplotlib (>= 1.2.0),
          lal-python (>= 6.14.0),
-         python-glue (>= 1.55.2)
+         python-glue (>= 1.55.2),
+         python-tqdm (>= 4.10.0)
 Recommends: python-h5py (>= 1.3)
 Suggests: python-pymysql,
           python-dqsegdb,
@@ -55,7 +56,8 @@ Depends: ${misc:Depends},
          python3-astropy (>= 1.1.1),
          python3-matplotlib (>= 1.2.0),
          lal-python3 (>= 6.14.0),
-         python3-glue (>= 1.55.2)
+         python3-glue (>= 1.55.2),
+         python3-tqdm (>= 4.10.0)
 Recommends: python3-h5py (>= 1.3)
 Suggests: python3-pymysql,
           python3-dqsegdb,
