@@ -25,7 +25,6 @@ from six.moves import reduce
 
 from astropy.io import registry as io_registry
 
-from ...time import LIGOTimeGPS
 from ...io.ligolw import (is_xml, build_content_handler, read_ligolw,
                           write_tables, patch_ligotimegps)
 from ...segments import (DataQualityFlag, DataQualityDict)
@@ -63,14 +62,12 @@ def read_ligolw_dict(source, names=None, coalesce=False, **kwargs):
         list of names to read or `None` to read all into a single
         `DataQualityFlag`.
 
-    gpstype : `type`, `callable`, optional
-        class to use for GPS times in returned objects, can be a function
-        to convert GPS time to something else, default is
-        `~gwpy.time.LIGOTimeGPS`
-
     coalesce : `bool`, optional
         if `True`, coalesce all parsed `DataQualityFlag` objects before
         returning, default: `False`
+
+    **kwargs
+        other keywords are passed to :meth:`DataQualityDict.from_ligolw_tables`
 
     Returns
     -------
