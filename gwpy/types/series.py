@@ -678,8 +678,18 @@ class Series(Array):
                     self.xindex.resize((s[0],), refcheck=False)
                 except ValueError as exc:
                     if 'cannot resize' in str(exc):
-                        self.xindex = self.xindex.copy()
-                        self.xindex.resize((s[0],))
+                        pass  # we'll try again with a copy
+                try:
+                    self.xindex = self.xindex.copy()
+                    self.xindex.resize((s[0],))
+                except ValueError as exc2:
+                    # astropy.units.Quantity cannot be resized because
+                    # it does not own its own data, which breaks t-axis
+                    # resizing.
+                    if 'cannot resize' in str(exc2):
+                        new_xindex = self.xindex.value.copy()
+                        new_xindex.resize((s[0],))
+                        self.xindex = Quantity(new_xindex, self.xindex.unit)
                     else:
                         raise
             else:
