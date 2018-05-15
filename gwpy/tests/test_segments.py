@@ -864,6 +864,36 @@ class TestDataQualityDict(object):
             _read_write(autoidentify=True)
         _read_write(autoidentify=True, write_kw={'overwrite': True})
 
+    @utils.skip_missing_dependency('h5py')
+    def test_read_on_missing(self, instance):
+        import h5py
+        with h5py.File('test', driver='core', backing_store=False) as h5f:
+            instance.write(h5f)
+            names = ['randomname']
+
+            def _read(**kwargs):
+                return self.TEST_CLASS.read(h5f, names=names, format='hdf5',
+                                            **kwargs)
+
+            # check on_missing='error' (default) raises ValueError
+            with pytest.raises(ValueError) as exc:
+                _read()
+            assert str(exc.value) == ('\'randomname\' not found in any input '
+                                      'file')
+
+            # check on_missing='warn' prints warning
+            with pytest.warns(UserWarning):
+                _read(on_missing='warn')
+
+            # check on_missing='ignore' does nothing
+            with pytest.warns(None) as record:
+                _read(on_missing='ignore')
+            assert not record.list
+
+            # check on_missing=<anything else> raises exception
+            with pytest.raises(ValueError) as exc:
+                _read(on_missing='blah')
+
     # -- test queries ---------------------------
 
     @pytest.mark.parametrize('api', ('dqsegdb', 'segdb'))
