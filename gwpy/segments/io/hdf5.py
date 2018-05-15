@@ -121,7 +121,7 @@ def read_hdf5_segmentlist(h5f, path=None, gpstype=LIGOTimeGPS, **kwargs):
 
 
 @io_hdf5.with_read_hdf5
-def read_hdf5_dict(h5f, names=None, path=None, **kwargs):
+def read_hdf5_dict(h5f, names=None, path=None, on_missing='error', **kwargs):
     """Read a `DataQualityDict` from an HDF5 file
     """
     if path:
@@ -145,7 +145,16 @@ def read_hdf5_dict(h5f, names=None, path=None, **kwargs):
     # read data
     out = DataQualityDict()
     for name in names:
-        out[name] = read_hdf5_flag(h5f, name, **kwargs)
+        try:
+            out[name] = read_hdf5_flag(h5f, name, **kwargs)
+        except KeyError as exc:
+            if on_missing == 'ignore':
+                pass
+            elif on_missing == 'warn':
+                warnings.warn(str(exc))
+            else:
+                raise ValueError('no H5Group found for flag '
+                                 '{0!r}'.format(name))
 
     return out
 

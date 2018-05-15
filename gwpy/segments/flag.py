@@ -622,8 +622,8 @@ class DataQualityFlag(object):
         filename : `str`
             path of file to read
 
-        flag : `str`, optional, default: read all segments
-            name of flag to read from file.
+        name : `str`, optional
+            name of flag to read from file, otherwise read all segments.
 
         format : `str`, optional
             source format identifier. If not given, the format will be
@@ -652,6 +652,11 @@ class DataQualityFlag(object):
 
         Notes
         -----"""
+        if 'flag' in kwargs:  # pragma: no cover
+            warnings.warn('\'flag\' keyword was renamed \'name\', this '
+                          'warning will result in an error in the future')
+            kwargs.setdefault('name', kwargs.pop('flags'))
+
         def _combine(flags):
             return reduce(operator.or_, flags)
 
@@ -1261,7 +1266,7 @@ class DataQualityDict(OrderedDict):
         return new
 
     @classmethod
-    def read(cls, source, flags=None, format=None, **kwargs):
+    def read(cls, source, names=None, format=None, **kwargs):
         """Read segments from file into a `DataQualityDict`
 
         Parameters
@@ -1274,8 +1279,8 @@ class DataQualityDict(OrderedDict):
             detected if possible. See below for list of acceptable
             formats.
 
-        flags : `list`, optional, default: read all flags found
-            list of flags to read, by default all flags are read separately.
+        names : `list`, optional, default: read all names found
+            list of names to read, by default all names are read separately.
 
         coalesce : `bool`, optional, default: `True`
             coalesce all `SegmentLists` before returning.
@@ -1295,11 +1300,28 @@ class DataQualityDict(OrderedDict):
 
         Notes
         -----"""
-        def _combine(flags):
-            return reduce(operator.or_, flags)
+        on_missing = kwargs.pop('on_missing', 'error')
 
-        return io_read_multi(_combine, cls, source, flags=flags, format=format,
-                             **kwargs)
+        if 'flags' in kwargs:  # pragma: no cover
+            warnings.warn('\'flags\' keyword was renamed \'names\', this '
+                          'warning will result in an error in the future')
+            names = kwargs.pop('flags')
+
+        def _combine(inputs):
+            out = reduce(operator.or_, inputs)
+            missing = set(names or []) - set(out.keys())
+            for name in missing:  # validate all requested names are found
+                msg = '{!r} not found in any input file'.format(name)
+                if on_missing == 'ignore':
+                    continue
+                if on_missing == 'warn':
+                    warnings.warn(msg)
+                else:
+                    raise ValueError(msg)
+            return out
+
+        return io_read_multi(_combine, cls, source, names=names, format=format,
+                             on_missing='ignore', **kwargs)
 
     @classmethod
     def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None,
@@ -1375,7 +1397,8 @@ class DataQualityDict(OrderedDict):
 
     @classmethod
     def from_ligolw_tables(cls, segmentdeftable, segmentsumtable,
-                           segmenttable, names=None, gpstype=LIGOTimeGPS):
+                           segmenttable, names=None, gpstype=LIGOTimeGPS,
+                           on_missing='error'):
         """Build a `DataQualityDict` from a set of LIGO_LW segment tables
 
         Parameters
@@ -1396,6 +1419,14 @@ class DataQualityDict(OrderedDict):
             class to use for GPS times in returned objects, can be a function
             to convert GPS time to something else, default is
             `~gwpy.time.LIGOTimeGPS`
+
+        on_missing : `str`, optional
+            action to take when a one or more ``names`` are not found in
+            the ``segment_definer`` table, one of
+
+            - ``'ignore'`` : do nothing
+            - ``'warn'`` : print a warning
+            - ``error'`` : raise a `ValueError`
 
         Returns
         -------
@@ -1423,11 +1454,14 @@ class DataQualityDict(OrderedDict):
                     id_[name] = [row.segment_def_id]
 
         # verify all requested flags were found
-        if names is not None:
-            for flag in names:
-                if flag not in out:
-                    raise ValueError("No segment definition found for flag=%r "
-                                     "in file." % flag)
+        for flag in names or []:
+            if flag not in out and on_missing != 'ignore':
+                msg = ("no segment definition found for flag={0!r} in "
+                       "file".format(flag))
+                if on_missing == 'warn':
+                    warnings.warn(msg)
+                else:
+                    raise ValueError(msg)
 
         # read segment summary table as 'known'
         for row in segmentsumtable:
