@@ -142,14 +142,10 @@ def is_cache(cache):
     """
     if isinstance(cache, string_types + FILE_LIKE):
         try:
-            c = read_cache(cache)
+            return bool(len(read_cache(cache)))
         except (TypeError, ValueError, UnicodeDecodeError, ImportError):
             # failed to parse cache
             return False
-        else:
-            if not c:  # return empty file as False
-                return False
-            return True
     if HAS_CACHE and isinstance(cache, Cache):
         return True
     if (isinstance(cache, (list, tuple)) and cache and
@@ -164,7 +160,7 @@ def is_cache_entry(path):
         return True
     try:
         file_segment(path)
-    except (ValueError, AttributeError):
+    except (ValueError, TypeError, AttributeError):
         return False
     return True
 
