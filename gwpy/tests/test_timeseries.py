@@ -24,6 +24,7 @@ import os
 import pytest
 import tempfile
 from itertools import (chain, product)
+from ssl import SSLError
 
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.error import URLError
@@ -36,7 +37,6 @@ try:
     from numpy import shares_memory
 except ImportError:  # old numpy
     from numpy import may_share_memory as shares_memory
-
 
 from scipy import signal
 
@@ -109,6 +109,8 @@ LOSC_GW150914_DQ_BITS = {
         'BURST_CAT3',
     ],
 }
+
+LOSC_FETCH_ERROR = (URLError, SSLError)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -542,7 +544,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         try:
             return self.TEST_CLASS.fetch_open_data(
                 LOSC_IFO, *LOSC_GW150914_SEGMENT)
-        except URLError as e:
+        except LOSC_FETCH_ERROR as e:
             pytest.skip(str(e))
 
     @pytest.fixture(scope='class')
@@ -550,7 +552,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         try:
             return self.TEST_CLASS.fetch_open_data(
                 LOSC_IFO, *LOSC_GW150914_SEGMENT, sample_rate=16384)
-        except URLError as e:
+        except LOSC_FETCH_ERROR as e:
             pytest.skip(str(e))
 
     # -- test class functionality ---------------
@@ -709,7 +711,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         try:
             ts = self.TEST_CLASS.fetch_open_data(
                 LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, verbose=True)
-        except URLError as e:
+        except LOSC_FETCH_ERROR as e:
             pytest.skip(str(e))
         utils.assert_quantity_sub_equal(ts, losc, exclude=['name', 'unit'])
 
@@ -732,7 +734,7 @@ class TestTimeSeries(TestTimeSeriesBase):
             assert str(exc.value).lower().startswith('multiple losc url tags')
             self.TEST_CLASS.fetch_open_data(LOSC_IFO, 1187008880, 1187008884,
                                             tag='CLN')
-        except URLError:
+        except LOSC_FETCH_ERROR:
             pass
 
     @utils.skip_missing_dependency('nds2')
@@ -1350,7 +1352,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         try:
             tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
             tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
-        except URLError as exc:
+        except LOSC_FETCH_ERROR as exc:
             pytest.skip(str(exc))
         coh = tsh.coherence(tsl, fftlength=1.0)
         assert coh.df == 1 * units.Hz
@@ -1360,7 +1362,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         try:
             tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
             tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
-        except URLError as exc:
+        except LOSC_FETCH_ERROR as exc:
             pytest.skip(str(exc))
         cohsg = tsh.coherence_spectrogram(tsl, 4, fftlength=1.0)
         assert cohsg.t0 == tsh.t0
@@ -1633,7 +1635,7 @@ class TestStateVector(TestTimeSeriesBase):
         try:
             sv = self.TEST_CLASS.fetch_open_data(
                 LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, version=1)
-        except URLError as e:
+        except LOSC_FETCH_ERROR as e:
             pytest.skip(str(e))
         utils.assert_quantity_sub_equal(
             sv,
