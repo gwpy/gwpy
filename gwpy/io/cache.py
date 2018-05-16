@@ -19,25 +19,30 @@
 """Input/Output utilities for LAL Cache files.
 """
 
-from __future__ import division
+from __future__ import (division, print_function)
 
 import os.path
 import tempfile
 import warnings
+from collections import OrderedDict
 from gzip import GzipFile
 
 from six import string_types
 from six.moves import StringIO
 
-from glue.lal import Cache
-
 try:
     from lal.utils import CacheEntry
-except ImportError:  # no lal
+except ImportError:
     HAS_CACHEENTRY = False
 else:
     HAS_CACHEENTRY = True
-    Cache.entry_class = CacheEntry
+
+try:
+    from glue.lal import Cache
+except ImportError:
+    HAS_CACHE = False
+else:
+    HAS_CACHE = True
 
 from ..time import LIGOTimeGPS
 
@@ -45,67 +50,67 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # build list of file-like types
 try:  # python2.x
-    FILE_LIKE = [file, GzipFile]
+    FILE_LIKE = (file, GzipFile, tempfile._TemporaryFileWrapper)
 except NameError:  # python3.x
     from io import IOBase
-    FILE_LIKE = [IOBase, GzipFile]
-try:  # protect against private member being removed
-    # pylint: disable=protected-access
-    FILE_LIKE.append(tempfile._TemporaryFileWrapper)
-except AttributeError:
-    pass
-FILE_LIKE = tuple(FILE_LIKE)
+    FILE_LIKE = (IOBase, GzipFile, tempfile._TemporaryFileWrapper)
 
 
 # -- cache I/O ----------------------------------------------------------------
 
 def read_cache(lcf, coltype=LIGOTimeGPS):
-    """Read a LAL-format cache file into memory as a `Cache`
+    """Read a LAL-format cache file
 
     Parameters
     ----------
     lcf : `str`, `file`
-        input file or file path to read
+        Input file or file path to read
 
     coltype : `LIGOTimeGPS`, `int`, optional
-        `type` for GPS times
+        Type for GPS times
 
     Returns
     -------
-    cache : :class:`glue.lal.Cache`
-        a cache object, representing each line in the file as a
-        :class:`~lal.utils.CacheEntry`
+    cache : `list` of :class:`lal.utils.CacheEntry`
+
+    Notes
+    -----
+    This method requires |lal|_.
     """
     # open file
     if not isinstance(lcf, FILE_LIKE):
         with open(lcf, 'r') as fobj:
             return read_cache(fobj, coltype=coltype)
 
+    from lal.utils import CacheEntry
+
     # read file
-    out = Cache()
+    out = []
+    append = out.append
     for line in lcf:
         if isinstance(line, bytes):
             line = line.decode('utf-8')
-        out.append(out.entry_class(line, coltype=coltype))
+        append(CacheEntry(line, coltype=coltype))
     return out
 
 
-def open_cache(*args, **kwargs):  # pylint: disable=missing-docstring
+def open_cache(*args, **kwargs):  # pragma: no cover
+    # pylint: disable=missing-docstring
     warnings.warn("gwpy.io.cache.open_cache was renamed read_cache",
                   DeprecationWarning)
     return read_cache(*args, **kwargs)
 
 
 def write_cache(cache, fobj):
-    """Write a :cache:`~glue.lal.Cache` to a file
+    """Write a `list` of cache entries to a file
 
     Parameters
     ----------
-    cache : :class:`glue.lal.Cache`
-        the cache to write
+    cache : `list` of :class:`lal.utils.CacheEntry`
+        The cache to write
 
     fobj : `file`, `str`
-        the open file object, or file path to write to
+        The open file object, or file path to write to.
     """
     # open file
     if isinstance(fobj, string_types):
@@ -113,12 +118,11 @@ def write_cache(cache, fobj):
             return write_cache(cache, fobj2)
 
     # write file
-    for entry in cache:
-        line = '%s\n' % entry
+    for line in map(str, cache):
         try:
-            fobj.write(line)
-        except TypeError:
-            fobj.write(line.encode('utf-8'))
+            print(line, file=fobj)
+        except TypeError:  # python3 'wb' mode
+            print(line.encode('utf-8'), file=fobj)
 
 
 def is_cache(cache):
@@ -126,8 +130,8 @@ def is_cache(cache):
 
     Parameters
     ----------
-    cache : `str`, `file`, :class:`~glue.lal.Cache`
-        object to detect as cache
+    cache : `str`, `file`, `list`
+        Object to detect as cache
 
     Returns
     -------
@@ -145,10 +149,23 @@ def is_cache(cache):
             if not c:  # return empty file as False
                 return False
             return True
-    elif isinstance(cache, Cache):
+    if HAS_CACHE and isinstance(cache, Cache):
         return True
+    if (isinstance(cache, (list, tuple)) and cache and
+            all(map(is_cache_entry, cache))):
+        return True
+
     return False
 
+
+def is_cache_entry(path):
+    if HAS_CACHEENTRY and isinstance(path, CacheEntry):
+        return True
+    try:
+        file_segment(path)
+    except (ValueError, AttributeError):
+        return False
+    return True
 
 # -- cache manipulation -------------------------------------------------------
 
@@ -163,9 +180,8 @@ def file_list(flist):
 
         - `str` representing a single file path (or comma-separated collection)
         - open `file` or `~gzip.GzipFile` object
-        - `~lal.utils.CacheEntry`
-        - :class:`~glue.lal.Cache` object or `str` with `.cache` or
-          `.lcf` extension
+        - :class:`~lal.utils.CacheEntry`
+        - `str` with ``.cache`` or ``.lcf`` extension
         - simple `list` or `tuple` of `str` paths
 
     Returns
@@ -180,7 +196,7 @@ def file_list(flist):
     """
     # open a cache file and return list of paths
     if isinstance(flist, string_types) and flist.endswith(('.cache', '.lcf')):
-        return read_cache(flist).pfnlist()
+        return [e.path for e in read_cache(flist)]
 
     # separate comma-separate list of names
     if isinstance(flist, string_types):
@@ -216,7 +232,7 @@ def file_segment(filename):
 
     Parameters
     ---------
-    filename : `str`, `~lal.utils.CacheEntry`
+    filename : `str`, :class:`~lal.utils.CacheEntry`
         the path name of a file
 
     Returns
@@ -230,34 +246,35 @@ def file_segment(filename):
     a filenaming convention that includes documenting the GPS start integer
     and integer duration of a file, see that document for more details.
     """
-    try:  # filename object provides its own segment information
-        return filename.segment
-    except AttributeError:  # otherwise parse from T050017 spec
-        from ..segments import Segment
+    from ..segments import Segment
+    try:  # CacheEntry
+        return Segment(filename.segment)
+    except AttributeError:  # file path (str)
         base = os.path.basename(filename)
         try:
             _, _, start, end = base.split('-')
         except ValueError as exc:
-            exc.args = ('Failed to parse %r as LIGO-T050017-compatible '
-                        'filename' % filename,)
+            exc.args = ('Failed to parse {0!r} as LIGO-T050017-compatible '
+                        'filename'.format(base),)
             raise
         start = float(start)
-        end = int(end.split('.')[0])
+        end = float(end.split('.')[0])
         return Segment(start, start+end)
 
 
 def cache_segments(*caches):
-    """Build a `SegmentList` of data availability for these `Caches`
+    """Returns the segments of data covered by entries in the cache(s).
 
     Parameters
     ----------
-    *cache : :class:`~glue.lal.Cache`, `list`
-        one of more `Cache` objects (or simple `list`)
+    *caches : `list`
+        One or more lists of file paths
+        (`str` or :class:`~lal.utils.CacheEntry`).
 
     Returns
     -------
     segments : `~gwpy.segments.SegmentList`
-        a list of segments for when data should be available
+        A list of segments for when data should be available
     """
     from ..segments import SegmentList
     out = SegmentList()
@@ -267,39 +284,51 @@ def cache_segments(*caches):
 
 
 def flatten(*caches):
-    """Flatten a list of :class:`Caches <glue.lal.Cache>` into a single cache
+    """Flatten a nested list of cache entries
 
     Parameters
     ----------
-    *caches
-        one or more :class:`~glue.lal.Cache` objects
+    *caches : `list`
+        One or more lists of file paths
+        (`str` or :class:`~lal.utils.CacheEntry`).
 
     Returns
     -------
-    flat : :class:`~glue.lal.Cache`
-        a single cache containing the unique set of entries across
-        each input
+    flat : `list`
+        A flat `list` containing the unique set of entries across
+        each input.
     """
-    cache_type = type(caches[0])
-    return cache_type([e for c in caches for e in c]).unique()
+    return list(OrderedDict.fromkeys(e for c in caches for e in c))
 
 
 def find_contiguous(*caches):
-    """Separate one or more caches into sets of contiguous caches
+    """Separate one or more cache entry lists into time-contiguous sub-lists
 
     Parameters
     ----------
-    *caches
-        one or more :class:`~glue.lal.Cache` objects
+    *caches : `list`
+        One or more lists of file paths
+        (`str` or :class:`~lal.utils.CacheEntry`).
 
     Returns
     -------
-    caches : `iter` of :class:`~glue.lal.Cache`
+    caches : `iter` of `list`
         an interable yielding each contiguous cache
     """
-    try:
-        flat = flatten(*caches)
-    except IndexError:
-        flat = Cache()
+    flat = flatten(*caches)
     for segment in cache_segments(flat):
-        yield flat.sieve(segment=segment)
+        yield sieve(flat, segment=segment)
+
+
+def sieve(cache, segment=None):
+    """Filter the cache to find those entries that overlap ``segment``
+
+    Parameters
+    ----------
+    cache : `list`
+        Input list of file paths
+
+    segment : `~gwpy.segments.Segment`
+        The ``[start, stop)`` interval to match against.
+    """
+    return [e for e in cache if segment.intersects(file_segment(e))]

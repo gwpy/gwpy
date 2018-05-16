@@ -21,7 +21,7 @@
 
 from six import string_types
 
-from ...io.cache import (read_cache, FILE_LIKE)
+from ...io.cache import (FILE_LIKE, read_cache, sieve)
 from ...segments import Segment
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -64,4 +64,4 @@ def preformat_cache(cache, start=None, end=None):
     if end is None:  # end time of latest file
         end = cache[-1].segment[-1]
 
-    return cache.sieve(segment=Segment(start, end))  # sieve
+    return sieve(cache, segment=Segment(start, end))  # sieve
