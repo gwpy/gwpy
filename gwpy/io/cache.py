@@ -19,7 +19,7 @@
 """Input/Output utilities for LAL Cache files.
 """
 
-from __future__ import (division, print_function)
+from __future__ import division
 
 import os.path
 import tempfile
@@ -118,11 +118,12 @@ def write_cache(cache, fobj):
             return write_cache(cache, fobj2)
 
     # write file
-    for line in map(str, cache):
+    for entry in cache:
+        line = '{0}\n'.format(entry)
         try:
-            print(line, file=fobj)
-        except TypeError:  # python3 'wb' mode
-            print(line.encode('utf-8'), file=fobj)
+            fobj.write(line)
+        except TypeError as exc:  # python3 'wb' mode
+            fobj.write(line.encode('utf-8'))
 
 
 def is_cache(cache):
