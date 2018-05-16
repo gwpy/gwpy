@@ -21,7 +21,7 @@
 
 from six import string_types
 
-from ...io.cache import (FILE_LIKE, read_cache, sieve)
+from ...io.cache import (FILE_LIKE, read_cache, file_segment, sieve)
 from ...segments import Segment
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -55,7 +55,7 @@ def preformat_cache(cache, start=None, end=None):
     if isinstance(cache, FILE_LIKE + string_types):  # open cache file
         cache = read_cache(cache)
     cache = type(cache)(cache)  # copy cache
-    cache.sort(key=lambda e: e.segment)  # sort
+    cache.sort(key=file_segment)  # sort
 
     # get timing
     if start is None:  # start time of earliest file
