@@ -59,8 +59,8 @@ def preformat_cache(cache, start=None, end=None):
 
     # get timing
     if start is None:  # start time of earliest file
-        start = cache[0].segment[0]
+        start = file_segment(cache[0])[0]
     if end is None:  # end time of latest file
-        end = cache[-1].segment[-1]
+        end = file_segment(cache[-1])[-1]
 
     return sieve(cache, segment=Segment(start, end))  # sieve
