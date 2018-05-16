@@ -84,8 +84,12 @@ class EventTable(Table):
 
         Parameters
         ----------
-        source : `str`, `list`, :class:`~glue.lal.Cache`
-            file or list of files from which to read events
+        source : `str`, `list`
+            Source of data, any of the following:
+
+            - `str` path of single data file,
+            - `str` path of LAL-format cache file,
+            - `list` of paths.
 
         *args
             other positional arguments will be passed directly to the

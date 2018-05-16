@@ -186,8 +186,8 @@ def filter_empty_files(files, ifo=None):
 
     Parameters
     ----------
-    files : `list` of `str`, :class:`~glue.lal.Cache`
-        a list of file paths to test
+    files : `list`
+        A list of file paths to test.
 
     ifo : `str`, optional
         prefix for the interferometer of interest (e.g. ``'L1'``),
