@@ -167,6 +167,7 @@ def is_cache_entry(path):
         return False
     return True
 
+
 # -- cache manipulation -------------------------------------------------------
 
 def file_list(flist):

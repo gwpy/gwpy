@@ -244,9 +244,9 @@ def register_gwf_api(library):
 
         # read cache file up-front
         if (isinstance(source, string_types) and
-                    source.endswith(('.lcf', '.cache'))) or (
-                isinstance(source, io_cache.FILE_LIKE) and
-                source.name.endswith(('.lcf', '.cache'))):
+                source.endswith(('.lcf', '.cache'))) or (
+                    isinstance(source, io_cache.FILE_LIKE) and
+                    source.name.endswith(('.lcf', '.cache'))):
             source = io_cache.read_cache(source)
         # separate cache into contiguous segments
         if io_cache.is_cache(source):
