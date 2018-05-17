@@ -36,6 +36,7 @@ Requires:       numpy
 Requires:       scipy
 Requires:       python-matplotlib
 Requires:       python-astropy
+Requires:       python-h5py
 Requires:       lal-python >= 6.14.0
 Requires:       glue
 Requires:       python2-tqdm
@@ -56,6 +57,7 @@ Requires:       python%{python3_pkgversion}-numpy
 Requires:       python%{python3_pkgversion}-scipy
 Requires:       python%{python3_pkgversion}-matplotlib
 Requires:       python%{python3_pkgversion}-astropy
+Requires:       python%{python3_pkgversion}-h5py
 Requires:       lal-python%{python3_pkgversion} >= 6.14.0
 Requires:       python%{python3_pkgversion}-glue
 Requires:       python%{python3_pkgversion}-tqdm

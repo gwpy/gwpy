@@ -55,6 +55,7 @@ dependencies = {
     'scipy': '>= 0.12.1',
     'matplotlib': '>= 1.2.0',
     'astropy': '>= 1.1.1',
+    'h5py': '>= 1.3',
     'lscsoft-glue': '>= 1.55.2',
     'tqdm': '>= 4.10.0',
 }
@@ -87,7 +88,6 @@ except ImportError:
 
 # define extras
 extras_require = {
-    'hdf5': ['h5py>=1.3'],
     'root': ['root_numpy'],
     'segments': ['dqsegdb'],
     'hacr': ['pymysql'],

@@ -26,6 +26,7 @@ Those dependencies are:
 - |scipy|_
 - |matplotlib|_
 - |astropy|_
+- |h5py|_
 - :mod:`glue`
 - |ligotimegps|_ (if |lal|_ is not already installed)
 

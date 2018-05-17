@@ -660,7 +660,6 @@ class TestTimeSeries(TestTimeSeriesBase):
                     comb, array.append(a2, inplace=False),
                     exclude=['channel'])
 
-    @utils.skip_missing_dependency('h5py')
     @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
     @pytest.mark.parametrize('channel', [
         None,
@@ -710,7 +709,7 @@ class TestTimeSeries(TestTimeSeriesBase):
 
     @pytest.mark.parametrize('format', [
         None,
-        pytest.param('hdf5', marks=utils.skip_missing_dependency('h5py')),
+        'hdf5',
     ])
     def test_fetch_open_data(self, losc, format):
         try:
@@ -1393,7 +1392,6 @@ class TestTimeSeriesDict(TestTimeSeriesBaseDict):
                 utils.assert_quantity_sub_equal(new[key], instance[key],
                                                 exclude=['channel'])
 
-    @utils.skip_missing_dependency('h5py')
     def test_read_write_hdf5(self, instance):
         with tempfile.NamedTemporaryFile(suffix='.hdf5') as f:
             instance.write(f.name, overwrite=True)
@@ -1632,7 +1630,7 @@ class TestStateVector(TestTimeSeriesBase):
     # -- data access ----------------------------
 
     @pytest.mark.parametrize('format', [
-        pytest.param('hdf5', marks=utils.skip_missing_dependency('h5py')),
+        'hdf5',
         pytest.param(  # only frameCPP actually reads units properly
             'gwf', marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
     ])
