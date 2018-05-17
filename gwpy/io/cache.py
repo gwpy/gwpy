@@ -121,7 +121,7 @@ def write_cache(cache, fobj):
     # open file
     if isinstance(fobj, string_types):
         with open(fobj, 'w') as fobj2:
-            write_cache(cache, fobj2)
+            return write_cache(cache, fobj2)
 
     # write file
     for entry in cache:
