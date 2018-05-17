@@ -38,15 +38,12 @@ from six import string_types
 
 import numpy
 
-from astropy.io.registry import (get_formats, get_reader, get_writer)
-
-from glue.lal import Cache
+from astropy.io.registry import (get_reader, get_writer)
 
 from ....segments import Segment
 from ....time import to_gps
 from ....io.gwf import identify_gwf
-from ....io.cache import (FILE_LIKE, read_cache as read_cache_file,
-                          find_contiguous)
+from ....io import cache as io_cache
 from ....io.registry import (register_reader,
                              register_writer,
                              register_identifier)
@@ -143,7 +140,7 @@ def get_default_gwf_api():
     for lib in APIS:
         try:
             import_gwf_library(lib)
-        except ImportError as e:
+        except ImportError:
             continue
         else:
             return lib
@@ -188,11 +185,12 @@ def register_gwf_api(library):
 
         Parameters
         ----------
-        source : `str`, :class:`glue.lal.Cache`, `list`
-            data source object, one of:
+        source : `str`, `list`
+            Source of data, any of the following:
 
-            - `str` : frame file path
-            - :class:`glue.lal.Cache`, `list` : contiguous list of frame paths
+            - `str` path of single data file,
+            - `str` path of LAL-format cache file,
+            - `list` of paths.
 
         channels : `list`
             list of channel names (or `Channel` objects) to read from frame.
@@ -247,14 +245,14 @@ def register_gwf_api(library):
         # read cache file up-front
         if (isinstance(source, string_types) and
                 source.endswith(('.lcf', '.cache'))) or (
-                    isinstance(source, FILE_LIKE) and
+                    isinstance(source, io_cache.FILE_LIKE) and
                     source.name.endswith(('.lcf', '.cache'))):
-            source = read_cache_file(source)
+            source = io_cache.read_cache(source)
         # separate cache into contiguous segments
-        if isinstance(source, Cache):
+        if io_cache.is_cache(source):
             if start is not None and end is not None:
-                source = source.sieve(segment=Segment(start, end))
-            source = list(find_contiguous(source))
+                source = io_cache.sieve(source, segment=Segment(start, end))
+            source = list(io_cache.find_contiguous(source))
         # convert everything else into a list if needed
         if not isinstance(source, (list, tuple)):
             source = [source]

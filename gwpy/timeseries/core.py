@@ -235,12 +235,12 @@ class TimeSeriesBase(Series):
 
         Parameters
         ----------
-        source : `str`, :class:`~glue.lal.Cache`
-            source of data, any of the following:
+        source : `str`, `list`
+            Source of data, any of the following:
 
-            - `str` path of single data file
-            - `str` path of LAL-format cache file
-            - :class:`~glue.lal.Cache` describing one or more data files,
+            - `str` path of single data file,
+            - `str` path of LAL-format cache file,
+            - `list` of paths.
 
         name : `str`, `~gwpy.detector.Channel`
             the name of the channel to read, or a `Channel` object.
@@ -261,12 +261,6 @@ class TimeSeriesBase(Series):
         nproc : `int`, optional
             number of parallel processes to use, serial process by
             default.
-
-            .. note::
-
-               Parallel frame reading, via the ``nproc`` keyword argument,
-               is only available when giving a :class:`~glue.lal.Cache` of
-               frames, or using the ``format='cache'`` keyword argument.
 
         gap : `str`, optional
             how to handle gaps in the cache, one of
@@ -844,9 +838,12 @@ class TimeSeriesBaseDict(OrderedDict):
 
         Parameters
         ----------
-        source : `str`, :class:`~glue.lal.Cache`
-            a single file path `str`, or a :class:`~glue.lal.Cache` containing
-            a contiguous list of files.
+        source : `str`, `list`
+            Source of data, any of the following:
+
+            - `str` path of single data file,
+            - `str` path of LAL-format cache file,
+            - `list` of paths.
 
         channels : `~gwpy.detector.channel.ChannelList`, `list`
             a list of channels to read from the source.
@@ -867,12 +864,6 @@ class TimeSeriesBaseDict(OrderedDict):
         nproc : `int`, optional
             number of parallel processes to use, serial process by
             default.
-
-            .. note::
-
-               Parallel frame reading, via the ``nproc`` keyword argument,
-               is only available when giving a :class:`~glue.lal.Cache` of
-               frames, or using the ``format='cache'`` keyword argument.
 
         gap : `str`, optional
             how to handle gaps in the cache, one of
