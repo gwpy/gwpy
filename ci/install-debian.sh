@@ -21,7 +21,7 @@
 #
 
 # enable lscsoft jessie-proposed (first required for python-tqdm gwpy/gwpy#735)
-if [[ `cat /etc/debian_version` == "8."* ]]; then
+if [ "${OS_VERSION}" -eq 8 ]; then
     cat << EOF > /etc/apt/sources.list.d/lscsoft-proposed.list
 deb http://software.ligo.org/lscsoft/debian jessie-proposed contrib
 EOF
@@ -48,7 +48,7 @@ apt-get -yq install \
     python-jinja2 \
 
 # get versions
-GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
+GWPY_VERSION=$(python setup.py --version)
 GWPY_RELEASE=${GWPY_VERSION%%+*}
 
 # upgrade setuptools for development builds only to prevent version munging
@@ -107,3 +107,9 @@ for pckg in \
 ; do
     apt-get -yqq install $pckg || true
 done
+
+# HACK: fix missing file from ldas-tools-framecpp
+if [ -d /usr/lib/$PYTHON/dist-packages/LDAStools/ -a \
+     ! -f /usr/lib/$PYTHON/dist-packages/LDAStools/__init__.py ]; then
+    touch /usr/lib/$PYTHON/dist-packages/LDAStools/__init__.py
+fi

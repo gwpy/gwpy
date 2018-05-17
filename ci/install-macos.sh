@@ -41,18 +41,18 @@ sudo port -N install \
 
 # make Portfile
 cd ${GWPY_PATH}
-GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
+GWPY_VERSION=$(python setup.py --version)
 $PYTHON setup.py sdist
 $PYTHON setup.py port --tarball dist/gwpy-${GWPY_VERSION}.tar.gz
 
 # create mock portfile repo and install
-PORT_REPO=`pwd`/ports
+PORT_REPO=$(pwd)/ports
 GWPY_PORT_PATH=${PORT_REPO}/python/py-gwpy
 mkdir -p ${GWPY_PORT_PATH}
 cp Portfile ${GWPY_PORT_PATH}/
 
 # munge Portfile for local install
-gsed -i 's|pypi:g/gwpy|file://'`pwd`'/dist/ \\\n                    pypi:g/gwpy|' ${GWPY_PORT_PATH}/Portfile
+gsed -i 's|pypi:g/gwpy|file://'$(pwd)'/dist/ \\\n                    pypi:g/gwpy|' ${GWPY_PORT_PATH}/Portfile
 
 # add local port repo to sources
 sudo gsed -i 's|rsync://rsync.macports|file://'${PORT_REPO}'\nrsync://rsync.macports|' /opt/local/etc/macports/sources.conf
@@ -90,7 +90,7 @@ sudo port -N install \
     ${PY_PREFIX}-beautifulsoup4
 
 # install m2cyrpto if needed
-if [ "`port info --version dqsegdb`" == "version: 1.4.0" ]; then
+if [ "$(port info --version dqsegdb)" == "version: 1.4.0" ]; then
     sudo port -N install ${PY_PREFIX}-m2crypto
 fi
 

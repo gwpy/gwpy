@@ -20,35 +20,51 @@
 # Build RedHat (Enterprise Linux) packages
 #
 
-# update system
-yum clean all
-yum makecache
-yum -y update
-yum -y install rpm-build git2u python-jinja2 ${PY_PREFIX}-jinja2
+# get python3 version
+. ci/lib.sh
+PYTHON3_VERSION=$(get_python3_version)
+PY3XY=${PYTHON3_VERSION/./}
 
-GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
+# update system
+yum -yq update
+
+# install sdist dependencies
+yum -yq install \
+    rpm-build \
+    git \
+    python2-pip \
+    python-jinja2 \
+    GitPython
+
+# install build dependencies
+yum -yq install \
+    python-rpm-macros \
+    epel-rpm-macros \
+    python3-rpm-macros \
+    python2-setuptools \
+    python${PY3XY}-setuptools
+
+GWPY_VERSION=$(python setup.py --version)
 
 # upgrade setuptools for development builds only to prevent version munging
 if [[ "${GWPY_VERSION}" == *"+"* ]]; then
     pip install "setuptools>=25"
 fi
 
-# upgrade GitPython (required for git>=2.15.0)
-pip install "GitPython>=2.1.8"
-
-# build the RPM
-python setup.py bdist_rpm
+# build the RPM using tarball
+python setup.py sdist
+rpmbuild --define "_rpmdir $(pwd)/dist" -tb dist/gwpy-*.tar.gz
 
 # install the rpm
 if [ ${PY_XY} -lt 30 ]; then
-    GWPY_RPM="dist/python2-gwpy-*.noarch.rpm"  # install python2 only
+    GWPY_RPM="dist/noarch/python2-gwpy-*.noarch.rpm"  # install python2 only
 else
-    GWPY_RPM="dist/python*-gwpy-*.noarch.rpm"  # install both 2 and 3
+    GWPY_RPM="dist/noarch/python*-gwpy-*.noarch.rpm"  # install both 2 and 3
 fi
-yum -y --nogpgcheck localinstall ${GWPY_RPM}
+yum -yq --nogpgcheck localinstall ${GWPY_RPM}
 
 # install system-level extras
-yum -y install \
+yum -yq install \
     nds2-client-${PY_PREFIX} \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
@@ -56,9 +72,15 @@ yum -y install \
     h5py \
 || true
 
+# HACK: fix missing file from ldas-tools-framecpp
+if [ -d /usr/lib64/$PYTHON/site-packages/LDAStools -a \
+     ! -f /usr/lib64/$PYTHON/site-packages/LDAStools/__init__.py ]; then
+    touch /usr/lib64/$PYTHON/site-packages/LDAStools/__init__.py
+fi
+
 # install system-level extras that might use python2- prefix
 if [ ${PY_XY} -lt 30 ]; then
-    yum -y install python2-root
+    yum -yq install python2-root
 else
-    yum -y install ${PY_PREFIX}-root
+    yum -yq install ${PY_PREFIX}-root
 fi
