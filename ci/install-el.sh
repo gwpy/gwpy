@@ -39,6 +39,7 @@ yum -yq install \
 # install build dependencies
 yum -yq install \
     python-rpm-macros \
+    epel-rpm-macros \
     python3-rpm-macros \
     python2-setuptools \
     python${PY3XY}-setuptools
