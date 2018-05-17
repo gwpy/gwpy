@@ -72,6 +72,11 @@ yum -yq install \
     h5py \
 || true
 
+# HACK: fix missing file from ldas-tools-framecpp
+if [ ! -f /usr/lib64/$PYTHON/site-packages/LDAStools/__init__.py ]; then
+    touch /usr/lib64/$PYTHON/site-packages/LDAStools/__init__.py
+fi
+
 # install system-level extras that might use python2- prefix
 if [ ${PY_XY} -lt 30 ]; then
     yum -yq install python2-root

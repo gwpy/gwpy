@@ -107,3 +107,8 @@ for pckg in \
 ; do
     apt-get -yqq install $pckg || true
 done
+
+# HACK: fix missing file from ldas-tools-framecpp
+if [ ! -f /usr/lib/$PYTHON/dist-packages/LDAStools/__init__.py ]; then
+    touch /usr/lib/$PYTHON/dist-packages/LDAStools/__init__.py
+fi
