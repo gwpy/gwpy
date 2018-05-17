@@ -49,7 +49,7 @@ if [ ${EXTRAS} ]; then
     ${PIP} install -r requirements-dev.txt --quiet ${PIP_FLAGS}
 
     # install root_numpy if pyroot is installed for this python version
-    _rootpyv=`root-config --python-version 2> /dev/null || true`
+    _rootpyv=$(root-config --python-version 2> /dev/null || true)
     if [[ "${_rootpyv}" == "${PYTHON_VERSION}" ]]; then
         NO_ROOT_NUMPY_TMVA=1 ${PIP} install root_numpy --quiet ${PIP_FLAGS}
     fi
@@ -58,7 +58,7 @@ fi
 set +x
 
 cd /tmp
-_gwpyloc=`${PYTHON} -c 'import gwpy; print(gwpy.__file__)'`
+_gwpyloc=$(${PYTHON} -c 'import gwpy; print(gwpy.__file__)')
 echo "------------------------------------------------------------------------"
 echo
 echo "GWpy installed to $_gwpyloc"

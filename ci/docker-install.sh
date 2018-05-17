@@ -45,7 +45,7 @@ sudo docker run \
     --env PYTHON_VERSION="${TRAVIS_PYTHON_VERSION}" \
     --env GWPY_PATH="${GWPY_PATH}" \
     --env EXTRAS="${EXTRAS}" \
-    --volume `pwd`:${GWPY_PATH}:rw \
+    --volume $(pwd):${GWPY_PATH}:rw \
     ${DOCKER_IMAGE}
 
 sleep 5

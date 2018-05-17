@@ -23,7 +23,7 @@
 
 # set path to build directory
 if [ -z "${DOCKER_IMAGE}" ]; then
-    GWPY_PATH=`pwd`
+    GWPY_PATH=$(pwd)
 else
     GWPY_PATH="/gwpy"
 fi
@@ -46,7 +46,7 @@ get_os_type() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         echo $ID
-    elif [[ ${TRAVIS_OS_NAME} == "osx" ]] || [[ "`uname`" == "Darwin" ]]; then
+    elif [[ ${TRAVIS_OS_NAME} == "osx" ]] || [[ "$(uname)" == "Darwin" ]]; then
         echo macos
     fi
 }
@@ -76,7 +76,7 @@ get_package_manager() {
 }
 
 update_package_manager() {
-    local pkger=`get_package_manager`
+    local pkger=$(get_package_manager)
     case "$(get_package_manager)" in
         "port")
             port selfupdate
@@ -93,7 +93,7 @@ update_package_manager() {
 }
 
 install_package() {
-    local pkger=`get_package_manager`
+    local pkger=$(get_package_manager)
     case "$pkger" in
         "port")
             port -N install $@

@@ -21,7 +21,7 @@
 #
 
 # enable lscsoft jessie-proposed (first required for python-tqdm gwpy/gwpy#735)
-if [[ `cat /etc/debian_version` == "8."* ]]; then
+if [ "${OS_VERSION}" -eq 8 ]; then
     cat << EOF > /etc/apt/sources.list.d/lscsoft-proposed.list
 deb http://software.ligo.org/lscsoft/debian jessie-proposed contrib
 EOF
