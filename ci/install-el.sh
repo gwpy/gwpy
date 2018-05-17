@@ -21,10 +21,8 @@
 #
 
 # update system
-yum clean all
-yum makecache
-yum -y update
-yum -y install rpm-build git2u python-jinja2 ${PY_PREFIX}-jinja2
+yum -yq update
+yum -yq install rpm-build git2u python-jinja2 ${PY_PREFIX}-jinja2
 
 GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
 
@@ -36,14 +34,15 @@ fi
 # upgrade GitPython (required for git>=2.15.0)
 pip install "GitPython>=2.1.8"
 
-# build the RPM
-python setup.py bdist_rpm
+# build the RPM using tarball
+python setup.py sdist
+rpmbuild --define "_rpmdir $(pwd)/dist" -tb dist/gwpy-*.tar.gz
 
 # install the rpm
 if [ ${PY_XY} -lt 30 ]; then
-    GWPY_RPM="dist/python2-gwpy-*.noarch.rpm"  # install python2 only
+    GWPY_RPM="dist/noarch/python2-gwpy-*.noarch.rpm"  # install python2 only
 else
-    GWPY_RPM="dist/python*-gwpy-*.noarch.rpm"  # install both 2 and 3
+    GWPY_RPM="dist/noarch/python*-gwpy-*.noarch.rpm"  # install both 2 and 3
 fi
 yum -y --nogpgcheck localinstall ${GWPY_RPM}
 
