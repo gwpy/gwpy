@@ -73,7 +73,8 @@ yum -yq install \
 || true
 
 # HACK: fix missing file from ldas-tools-framecpp
-if [ ! -f /usr/lib64/$PYTHON/site-packages/LDAStools/__init__.py ]; then
+if [ -d /usr/lib64/$PYTHON/site-packages/LDAStools -a \
+     ! -f /usr/lib64/$PYTHON/site-packages/LDAStools/__init__.py ]; then
     touch /usr/lib64/$PYTHON/site-packages/LDAStools/__init__.py
 fi
 

@@ -109,6 +109,7 @@ for pckg in \
 done
 
 # HACK: fix missing file from ldas-tools-framecpp
-if [ ! -f /usr/lib/$PYTHON/dist-packages/LDAStools/__init__.py ]; then
+if [ -d /usr/lib/$PYTHON/dist-packages/LDAStools/ -a \
+     ! -f /usr/lib/$PYTHON/dist-packages/LDAStools/__init__.py ]; then
     touch /usr/lib/$PYTHON/dist-packages/LDAStools/__init__.py
 fi
