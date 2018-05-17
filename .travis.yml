@@ -76,36 +76,36 @@ matrix:
     # -- reference OS builds --------------------
 
     # EL7
-    - env: DOCKER_IMAGE="ligo/software:el7"
+    - env: DOCKER_IMAGE="ligo/base:el7"
       python: '2.7'
       sudo: required
       services:
         - docker
-    - env: DOCKER_IMAGE="ligo/software:el7"
+    - env: DOCKER_IMAGE="ligo/base:el7"
       python: '3.4'
       sudo: required
       services:
         - docker
 
     # debian 8
-    - env: DOCKER_IMAGE="ligo/software:jessie"
+    - env: DOCKER_IMAGE="ligo/base:jessie"
       python: '2.7'
       sudo: required
       services:
         - docker
-    - env: DOCKER_IMAGE="ligo/software:jessie"
+    - env: DOCKER_IMAGE="ligo/base:jessie"
       python: '3.4'
       sudo: required
       services:
         - docker
 
     # debian 9
-    - env: DOCKER_IMAGE="ligo/software:stretch"
+    - env: DOCKER_IMAGE="ligo/base:stretch"
       python: '2.7'
       sudo: required
       services:
         - docker
-    - env: DOCKER_IMAGE="ligo/software:stretch"
+    - env: DOCKER_IMAGE="ligo/base:stretch"
       python: '3.5'
       sudo: required
       services:
@@ -120,12 +120,12 @@ matrix:
 
     # -- full build -----------------------------
 
-    - env: DOCKER_IMAGE="ligo/software:stretch" EXTRAS=true
+    - env: DOCKER_IMAGE="ligo/base:stretch" EXTRAS=true
       python: '2.7'
       sudo: required
       services:
         - docker
-    - env: DOCKER_IMAGE="ligo/software:stretch" EXTRAS=true
+    - env: DOCKER_IMAGE="ligo/base:stretch" EXTRAS=true
       python: '3.5'
       sudo: required
       services:
@@ -133,11 +133,11 @@ matrix:
 
   allow_failures:
     - env: PIP_FLAGS="--upgrade --pre --quiet"
-    - env: DOCKER_IMAGE="ligo/software:el7"
+    - env: DOCKER_IMAGE="ligo/base:el7"
       python: '3.4'
-    - env: DOCKER_IMAGE="ligo/software:jessie"
+    - env: DOCKER_IMAGE="ligo/base:jessie"
       python: '3.4'
-    - env: DOCKER_IMAGE="ligo/software:stretch" EXTRAS=true
+    - env: DOCKER_IMAGE="ligo/base:stretch" EXTRAS=true
       python: '3.5'
 
   fast_finish: true
