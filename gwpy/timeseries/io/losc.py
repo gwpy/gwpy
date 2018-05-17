@@ -66,9 +66,8 @@ LOSC_VERSION_RE = re.compile(r'V\d+')
 def _parse_formats(formats, cls=TimeSeries):
     """Parse ``formats`` into a `list`, handling `None`
     """
-    if formats is None:  # build list of available formats, prizing efficiency
-        # include txt.gz for TimeSeries only (no state info in ASCII)
-        formats = [] if cls is StateVector else ['txt.gz']
+    if formats is None:
+        formats = ['hdf5']
 
         # prefer GWF if API available
         try:
@@ -76,17 +75,7 @@ def _parse_formats(formats, cls=TimeSeries):
         except ImportError:
             pass
         else:
-            formats.insert(0, 'gwf')
-
-        # prefer HDF5 if h5py available
-        try:
-            import h5py  # pylint: disable=unused-variable
-        except ImportError:
-            pass
-        else:
-            formats.insert(0, 'hdf5')
-        return formats
-
+            formats.append(0, 'gwf')
     if isinstance(formats, (list, tuple)):
         return formats
     return [formats]
