@@ -52,13 +52,13 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 try:  # python2.x
     FILE_LIKE = (
         file, GzipFile,
-        tempfile._TemporaryFileWrapper, # pylint: disable=protected-access
+        tempfile._TemporaryFileWrapper,  # pylint: disable=protected-access
     )
 except NameError:  # python3.x
     from io import IOBase
     FILE_LIKE = (
         IOBase, GzipFile,
-        tempfile._TemporaryFileWrapper, # pylint: disable=protected-access
+        tempfile._TemporaryFileWrapper,  # pylint: disable=protected-access
     )
 
 
