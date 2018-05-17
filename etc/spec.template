@@ -14,6 +14,9 @@ URL:            {{ url }}
 Source0:        https://files.pythonhosted.org/packages/source/g/%{srcname}/%{srcname}-%{version}.tar.gz
 
 BuildArch:      noarch
+BuildRequires:  rpm-build
+BuildRequires:  python-rpm-macros
+BuildRequires:  python3-rpm-macros
 BuildRequires:  python2-setuptools
 BuildRequires:  python%{python3_pkgversion}-setuptools
 BuildRequires:  python3-rpm-macros
