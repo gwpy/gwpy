@@ -662,9 +662,14 @@ class TestTimeSeries(TestTimeSeriesBase):
 
     @utils.skip_missing_dependency('h5py')
     @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
-    def test_read_write_hdf5(self, ext):
+    @pytest.mark.parametrize('channel', [
+        None,
+        'test',
+        'X1:TEST-CHANNEL',
+    ])
+    def test_read_write_hdf5(self, ext, channel):
         array = self.create()
-        array.channel = 'X1:TEST-CHANNEL'
+        array.channel = channel
 
         with tempfile.NamedTemporaryFile(suffix='.%s' % ext) as f:
             # check array with no name fails
