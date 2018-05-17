@@ -24,7 +24,6 @@ cd ${GWPY_PATH}
 
 . ci/lib.sh
 
-get_python_version 1> /dev/null
 get_environment
 
 set -x

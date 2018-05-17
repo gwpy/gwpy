@@ -20,9 +20,28 @@
 # Build RedHat (Enterprise Linux) packages
 #
 
+# get python3 version
+. ci/lib.sh
+PYTHON3_VERSION=$(get_python3_version)
+PY3XY=${PYTHON3_VERSION/./}
+
 # update system
 yum -yq update
-yum -yq install rpm-build git2u python-jinja2 ${PY_PREFIX}-jinja2
+
+# install sdist dependencies
+yum -yq install \
+    rpm-build \
+    git \
+    python2-pip \
+    python-jinja2 \
+    GitPython
+
+# install build dependencies
+yum -yq install \
+    python-rpm-macros \
+    python3-rpm-macros \
+    python2-setuptools \
+    python${PY3XY}-setuptools
 
 GWPY_VERSION=$(python setup.py --version)
 
@@ -30,9 +49,6 @@ GWPY_VERSION=$(python setup.py --version)
 if [[ "${GWPY_VERSION}" == *"+"* ]]; then
     pip install "setuptools>=25"
 fi
-
-# upgrade GitPython (required for git>=2.15.0)
-pip install "GitPython>=2.1.8"
 
 # build the RPM using tarball
 python setup.py sdist
