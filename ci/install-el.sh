@@ -69,7 +69,6 @@ yum -yq install \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
     lalsimulation-${PY_PREFIX} \
-    h5py \
 || true
 
 # HACK: fix missing file from ldas-tools-framecpp

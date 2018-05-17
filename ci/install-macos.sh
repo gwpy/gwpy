@@ -71,7 +71,7 @@ set -x
 # install py-gwpy
 # Note: we don't use the +gwf port, because ldas-tools-framecpp takes too
 #       long to compile that the whole job times out in the end
-sudo port -N install ${PY_PREFIX}-gwpy +nds2 +hdf5 +segments
+sudo port -N install ${PY_PREFIX}-gwpy +nds2 +segments
 
 # install extras (see requirements-dev.txt)
 sudo port -N install \

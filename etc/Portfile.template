@@ -40,6 +40,7 @@ if {${name} ne ${subport}} {
                         port:py${python.version}-scipy \
                         port:py${python.version}-matplotlib \
                         port:py${python.version}-astropy \
+                        port:py${python.version}-h5py \
                         port:py${python.version}-lal \
                         port:glue \
                         port:py${python.version}-tqdm
@@ -56,10 +57,6 @@ if {${name} ne ${subport}} {
 
     variant gwf description {Add GWF support} {
         depends_lib-append port:py${python.version}-ldas-tools-framecpp
-    }
-
-    variant hdf5 description {Add HDF5 support} {
-        depends_lib-append port:py${python.version}-h5py
     }
 
     variant segments description {Add DQSEGDB support} {
