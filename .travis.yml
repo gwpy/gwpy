@@ -161,7 +161,7 @@ script:  # run tests
 
 after_success:
   # submit coverage results
-  - pip install coveralls
+  - pip install --quiet coveralls
   - sed -i 's|"'${GWPY_PATH}'|"'`pwd`'|g' .coverage
   - coveralls
 
