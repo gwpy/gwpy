@@ -329,4 +329,4 @@ def sieve(cache, segment=None):
     segment : `~gwpy.segments.Segment`
         The ``[start, stop)`` interval to match against.
     """
-    return [e for e in cache if segment.intersects(file_segment(e))]
+    return type(cache)(e for e in cache if segment.intersects(file_segment(e)))

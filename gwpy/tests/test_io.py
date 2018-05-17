@@ -385,6 +385,15 @@ class TestIoCache(object):
 
         assert not list(io_cache.find_contiguous())
 
+    def test_sieve(self):
+        cache, segs = self.make_cache()
+        sieved = io_cache.sieve(cache, segs[0])
+        assert type(sieved) is type(cache)
+        assert sieved == cache[:1]
+
+        segs.coalesce()
+        assert io_cache.sieve(cache, segs[0]) == cache[:2]
+
 
 # -- gwpy.io.gwf --------------------------------------------------------------
 
