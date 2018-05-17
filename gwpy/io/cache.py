@@ -50,10 +50,16 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # build list of file-like types
 try:  # python2.x
-    FILE_LIKE = (file, GzipFile, tempfile._TemporaryFileWrapper)
+    FILE_LIKE = (
+        file, GzipFile,
+        tempfile._TemporaryFileWrapper, # pylint: disable=protected-access
+    )
 except NameError:  # python3.x
     from io import IOBase
-    FILE_LIKE = (IOBase, GzipFile, tempfile._TemporaryFileWrapper)
+    FILE_LIKE = (
+        IOBase, GzipFile,
+        tempfile._TemporaryFileWrapper, # pylint: disable=protected-access
+    )
 
 
 # -- cache I/O ----------------------------------------------------------------
@@ -77,12 +83,12 @@ def read_cache(lcf, coltype=LIGOTimeGPS):
     -----
     This method requires |lal|_.
     """
+    from lal.utils import CacheEntry  # pylint: disable=redefined-outer-name
+
     # open file
     if not isinstance(lcf, FILE_LIKE):
         with open(lcf, 'r') as fobj:
             return read_cache(fobj, coltype=coltype)
-
-    from lal.utils import CacheEntry
 
     # read file
     out = []
@@ -115,14 +121,14 @@ def write_cache(cache, fobj):
     # open file
     if isinstance(fobj, string_types):
         with open(fobj, 'w') as fobj2:
-            return write_cache(cache, fobj2)
+            write_cache(cache, fobj2)
 
     # write file
     for entry in cache:
         line = '{0}\n'.format(entry)
         try:
             fobj.write(line)
-        except TypeError as exc:  # python3 'wb' mode
+        except TypeError:  # python3 'wb' mode
             fobj.write(line.encode('utf-8'))
 
 
@@ -156,6 +162,21 @@ def is_cache(cache):
 
 
 def is_cache_entry(path):
+    """Returns `True` if ``path`` can be represented as a cache entry
+
+    In practice this just tests whether the input is |LIGO-T050017|_ compliant.
+
+    Parameters
+    ----------
+    path : `str`, :class:`lal.utils.CacheEntry`
+        The input to test
+
+    Returns
+    -------
+    isentry : `bool`
+        `True` if ``path`` is an instance of `CacheEntry`, or can be parsed
+        using |LIGO-T050017|_.
+    """
     if HAS_CACHEENTRY and isinstance(path, CacheEntry):
         return True
     try:
@@ -240,9 +261,9 @@ def file_segment(filename):
 
     Notes
     -----
-    `LIGO-T050017 <https://dcc.ligo.org/LIGO-T050017/public>`_ declares
-    a filenaming convention that includes documenting the GPS start integer
-    and integer duration of a file, see that document for more details.
+    |LIGO-T050017|_ declares a filenaming convention that includes
+    documenting the GPS start integer and integer duration of a file,
+    see that document for more details.
     """
     from ..segments import Segment
     try:  # CacheEntry
