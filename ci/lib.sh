@@ -109,7 +109,7 @@ install_package() {
 
 get_python_version() {
     if [ -z "${PYTHON_VERSION}" ]; then
-        PYTHON_VERSION=$(python -c 'import sys; print(sys.version[:3])))')
+        PYTHON_VERSION=$(python -c 'import sys; print(sys.version[:3])')
     fi
     export PYTHON_VERSION
     echo ${PYTHON_VERSION}
