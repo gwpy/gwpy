@@ -156,31 +156,31 @@ get_environment() {
 
     export PIP="${PYTHON} -m pip"
 
-    case "$pkger" in
-        "port")
+    case "${OS_NAME}${PY_MAJOR_VERSION}" in
+        macos*)  # macports
             PY_DIST="python${PY_XY}"
             PY_PREFIX="py${PY_XY}"
             PIP="sudo ${PIP}"
             ;;
-        "apt-get")
-            if [ ${PY_MAJOR_VERSION} == 2 ]; then
-                PY_DIST="python"
-                PY_PREFIX="python"
-            else
-                PY_DIST="python${PY_MAJOR_VERSION}"
-                PY_PREFIX="python${PY_MAJOR_VERSION}"
-            fi
+        debian2)
+            PY_DIST="python"
+            PY_PREFIX="python"
             ;;
-        "yum")
-            if [ ${PY_MAJOR_VERSION} == 2 ]; then
-                PY_DIST="python"
-                PY_PREFIX="python"
-            elif [ ${PY_XY} -eq 34 ]; then
-                PY_DIST="python${PY_XY}"
-                PY_PREFIX="python${PY_XY}"
-            else
+        debian3)
+            PY_DIST="python${PY_MAJOR_VERSION}"
+            PY_PREFIX="python${PY_MAJOR_VERSION}"
+            ;;
+        centos2|rhel2|fedora2)
+            PY_DIST="python"
+            PY_PREFIX="python"
+            ;;
+        centos3|rhel3|fedora2)
+            if [ "${PYTHON_VERSION}" == "${PYTHON3_VERSION}" ]; then # IUS
                 PY_DIST="python${PY_XY}u"
                 PY_PREFIX="python${PY_XY}u"
+            else  # base repo
+                PY_DIST="python${PY_XY}"
+                PY_PREFIX="python${PY_XY}"
             fi
             ;;
     esac
