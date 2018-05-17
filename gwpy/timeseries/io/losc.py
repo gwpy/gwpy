@@ -75,7 +75,7 @@ def _parse_formats(formats, cls=TimeSeries):
         except ImportError:
             pass
         else:
-            formats.append(0, 'gwf')
+            formats.append('gwf')
     if isinstance(formats, (list, tuple)):
         return formats
     return [formats]
