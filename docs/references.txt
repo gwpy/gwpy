@@ -22,6 +22,9 @@
 .. |lalframe| replace:: `lalframe`
 .. _lalframe: http://software.ligo.org/docs/lalsuite/lalframe/
 
+.. |ligo-segments| replace:: `ligo-segments`
+.. _ligo-segments: https://pypi.org/project/ligo-segments
+
 .. |ligotimegps| replace:: `ligotimegps`
 .. _ligotimegps: https://github.com/lscsoft/ligotimegps/
 

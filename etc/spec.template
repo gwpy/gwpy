@@ -39,6 +39,7 @@ Requires:       python-astropy
 Requires:       h5py
 Requires:       lal-python >= 6.14.0
 Requires:       glue
+Requires:       python2-ligo-segments
 Requires:       python2-tqdm
 
 %{?python_provide:%python_provide python2-%{srcname}}
@@ -60,6 +61,7 @@ Requires:       python%{python3_pkgversion}-astropy
 Requires:       python%{python3_pkgversion}-h5py
 Requires:       lal-python%{python3_pkgversion} >= 6.14.0
 Requires:       python%{python3_pkgversion}-glue
+Requires:       python%{python3_pkgversion}-ligo-segments
 Requires:       python%{python3_pkgversion}-tqdm
 
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{srcname}}
