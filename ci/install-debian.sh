@@ -48,7 +48,7 @@ apt-get -yq install \
     python-jinja2 \
 
 # get versions
-GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
+GWPY_VERSION=$(python setup.py --version)
 GWPY_RELEASE=${GWPY_VERSION%%+*}
 
 # upgrade setuptools for development builds only to prevent version munging

@@ -24,7 +24,7 @@
 yum -yq update
 yum -yq install rpm-build git2u python-jinja2 ${PY_PREFIX}-jinja2
 
-GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
+GWPY_VERSION=$(python setup.py --version)
 
 # upgrade setuptools for development builds only to prevent version munging
 if [[ "${GWPY_VERSION}" == *"+"* ]]; then
