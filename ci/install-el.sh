@@ -61,10 +61,10 @@ if [ ${PY_XY} -lt 30 ]; then
 else
     GWPY_RPM="dist/noarch/python*-gwpy-*.noarch.rpm"  # install both 2 and 3
 fi
-yum -y --nogpgcheck localinstall ${GWPY_RPM}
+yum -yq --nogpgcheck localinstall ${GWPY_RPM}
 
 # install system-level extras
-yum -y install \
+yum -yq install \
     nds2-client-${PY_PREFIX} \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
@@ -74,7 +74,7 @@ yum -y install \
 
 # install system-level extras that might use python2- prefix
 if [ ${PY_XY} -lt 30 ]; then
-    yum -y install python2-root
+    yum -yq install python2-root
 else
-    yum -y install ${PY_PREFIX}-root
+    yum -yq install ${PY_PREFIX}-root
 fi
