@@ -79,15 +79,15 @@ update_package_manager() {
     local pkger=$(get_package_manager)
     case "$(get_package_manager)" in
         "port")
-            port selfupdate
+            port -q selfupdate
             ;;
         "apt-get")
             apt-get --yes --quiet update
             ;;
         "yum")
-            yum clean all
-            yum makecache
-            yum -y update
+            yum -q clean all
+            yum -q makecache
+            yum -y -q update
             ;;
     esac
 }
