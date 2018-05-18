@@ -115,12 +115,14 @@ matrix:
     # macOS
     - os: osx
       osx_image: xcode9.2
+      language: minimal
       python: '2.7'
       sudo: required
 
     # macOS
     - os: osx
       osx_image: xcode9.2
+      language: minimal
       python: '3.6'
       sudo: required
 
