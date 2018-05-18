@@ -718,7 +718,8 @@ class TestTimeSeries(TestTimeSeriesBase):
                 LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, verbose=True)
         except LOSC_FETCH_ERROR as e:
             pytest.skip(str(e))
-        utils.assert_quantity_sub_equal(ts, losc, exclude=['name', 'unit'])
+        utils.assert_quantity_sub_equal(ts, losc,
+                                        exclude=['name', 'unit', 'channel'])
 
         # try again with 16384 Hz data
         ts = self.TEST_CLASS.fetch_open_data(
