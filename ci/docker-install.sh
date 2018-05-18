@@ -41,6 +41,7 @@ sudo docker run \
     --interactive \
     --tty \
     --name ${DOCKER_IMAGE##*:} \
+    --env PIP_FLAGS="${PIP_FLAGS}" \
     --env DOCKER_IMAGE="${DOCKER_IMAGE}" \
     --env PYTHON_VERSION="${TRAVIS_PYTHON_VERSION}" \
     --env GWPY_PATH="${GWPY_PATH}" \
