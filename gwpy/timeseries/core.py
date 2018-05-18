@@ -345,7 +345,7 @@ class TimeSeriesBase(Series):
     @classmethod
     def fetch_open_data(cls, ifo, start, end, sample_rate=4096,
                         tag=None, version=None,
-                        format=None, host='https://losc.ligo.org',
+                        format='hdf5', host='https://losc.ligo.org',
                         verbose=False, cache=None, **kwargs):
         """Fetch open-access data from the LIGO Open Science Center
 
@@ -377,12 +377,9 @@ class TimeSeriesBase(Series):
             version
 
         format : `str`, optional
-            the data format to download and parse, defaults to the most
-            efficient option based on third-party libraries available;
-            one of:
+            the data format to download and parse, default: ``'h5py'``
 
-            - ``'txt.gz'`` - requires `numpy`
-            - ``'hdf5'`` - requires |h5py|_
+            - ``'hdf5'``
             - ``'gwf'`` - requires |LDAStools.frameCPP|_
 
         host : `str`, optional
