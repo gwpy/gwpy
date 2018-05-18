@@ -223,8 +223,6 @@ Any other keyword arguments will be passed directly to :func:`root_numpy.array2r
 PyCBC Live (HDF5)
 =================
 
-**Additional dependencies:** |h5py|_
-
 PyCBC Live is a low-latency search for gravitational waves from compact binary coalescences, built from the |pycbc|_ analysis package.
 This search writes files on the LIGO Data Grid (LIGO.ORG-authenticated users only) in HDF5 format, containing tables of events; each column in the table is recorded as a separate HDF5 Dataset.
 

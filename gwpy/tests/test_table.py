@@ -34,6 +34,8 @@ import sqlparse
 
 from numpy import (random, isclose, dtype)
 
+import h5py
+
 from matplotlib import use, rc_context
 use('agg')  # nopep8
 
@@ -429,9 +431,7 @@ class TestEventTable(TestTable):
             assert str(exc.value) == ('No column names found in %s header'
                                       % fmtname)
 
-    @utils.skip_missing_dependency('h5py')
     def test_read_pycbc_live(self):
-        import h5py
         table = self.create(
             100, names=['a', 'b', 'c', 'chisq', 'd', 'e', 'f',
                         'mass1', 'mass2', 'snr'])

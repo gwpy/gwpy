@@ -26,10 +26,10 @@ PYTHON3_VERSION=$(get_python3_version)
 PY3XY=${PYTHON3_VERSION/./}
 
 # update system
-yum -yq update
+yum -y -q update
 
 # install sdist dependencies
-yum -yq install \
+yum -y -q install \
     rpm-build \
     git \
     python2-pip \
@@ -37,7 +37,7 @@ yum -yq install \
     GitPython
 
 # install build dependencies
-yum -yq install \
+yum -y -q install \
     python-rpm-macros \
     epel-rpm-macros \
     python3-rpm-macros \
@@ -52,7 +52,7 @@ if [[ "${GWPY_VERSION}" == *"+"* ]]; then
 fi
 
 # build the RPM using tarball
-python setup.py sdist
+python setup.py --quiet sdist
 rpmbuild --define "_rpmdir $(pwd)/dist" -tb dist/gwpy-*.tar.gz
 
 # install the rpm
@@ -61,15 +61,14 @@ if [ ${PY_XY} -lt 30 ]; then
 else
     GWPY_RPM="dist/noarch/python*-gwpy-*.noarch.rpm"  # install both 2 and 3
 fi
-yum -yq --nogpgcheck localinstall ${GWPY_RPM}
+yum -y -q --nogpgcheck localinstall ${GWPY_RPM}
 
 # install system-level extras
-yum -yq install \
+yum -y -q install \
     nds2-client-${PY_PREFIX} \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
     lalsimulation-${PY_PREFIX} \
-    h5py \
 || true
 
 # HACK: fix missing file from ldas-tools-framecpp
@@ -80,7 +79,7 @@ fi
 
 # install system-level extras that might use python2- prefix
 if [ ${PY_XY} -lt 30 ]; then
-    yum -yq install python2-root
+    yum -y -q install python2-root
 else
-    yum -yq install ${PY_PREFIX}-root
+    yum -y -q install ${PY_PREFIX}-root
 fi
