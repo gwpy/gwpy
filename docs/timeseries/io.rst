@@ -134,8 +134,6 @@ To write data held in any of the :mod:`gwpy.timeseries` classes to a GWF file, s
 HDF5
 ====
 
-**Additional dependencies:** |h5py|_
-
 GWpy allows storing data in HDF5 format files, using a custom specification for storage of metadata.
 
 
