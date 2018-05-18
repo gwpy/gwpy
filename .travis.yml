@@ -115,7 +115,7 @@ matrix:
     # macOS
     - os: osx
       osx_image: xcode9.2
-      pytohn: '2.7'
+      python: '2.7'
       sudo: required
 
     # macOS
