@@ -31,6 +31,8 @@ python.default_version 27
 
 if {${name} ne ${subport}} {
 
+    depends_build-append port:py${python.version}-setuptools
+
     depends_lib-append  port:py${python.version}-six \
                         port:py${python.version}-dateutil \
                         port:py${python.version}-numpy \
@@ -39,7 +41,6 @@ if {${name} ne ${subport}} {
                         port:py${python.version}-astropy \
                         port:py${python.version}-h5py \
                         port:py${python.version}-lal \
-                        port:glue \
                         port:py${python.version}-ligo-segments \
                         port:py${python.version}-tqdm
 
@@ -47,18 +48,17 @@ if {${name} ne ${subport}} {
         depends_lib-append port:py${python.version}-enum34
     }
 
-    depends_build-append port:py${python.version}-setuptools
-
-    variant nds2 description {Add NDS2 support} {
-        depends_lib-append port:py${python.version}-nds2-client
-    }
-
-    variant gwf description {Add GWF support} {
-        depends_lib-append port:py${python.version}-ldas-tools-framecpp
-    }
-
     if {${python.version} == 27} {
-        variant segments description {Add DQSEGDB support} {
+
+        variant nds2 description {Add NDS2 support} {
+            depends_lib-append port:py${python.version}-nds2-client
+        }
+
+        variant gwf description {Add GWF support} {
+            depends_lib-append port:py${python.version}-ldas-tools-framecpp
+        }
+
+        variant dqsegdb description {Add DQSEGDB support} {
             depends_lib-append port:dqsegdb
         }
     }
