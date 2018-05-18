@@ -294,7 +294,7 @@ intersphinx_mapping = {
     'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
     'matplotlib': ('http://matplotlib.org/', None),
     'astropy': ('http://docs.astropy.org/en/stable/', None),
-    'pycbc': ('https://ligo-cbc.github.io/pycbc/latest/html/', None),
+    'pycbc': ('http://pycbc.org/pycbc/latest/html/', None),
     'root_numpy': ('http://scikit-hep.org/root_numpy/', None),
     'h5py': ('http://docs.h5py.org/en/latest/', None),
     'dateutil': ('https://dateutil.readthedocs.io/en/stable/', None),
