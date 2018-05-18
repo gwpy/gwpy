@@ -52,7 +52,7 @@ if [[ "${GWPY_VERSION}" == *"+"* ]]; then
 fi
 
 # build the RPM using tarball
-python setup.py sdist
+python setup.py --quiet sdist
 rpmbuild --define "_rpmdir $(pwd)/dist" -tb dist/gwpy-*.tar.gz
 
 # install the rpm

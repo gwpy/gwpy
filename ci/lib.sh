@@ -96,13 +96,13 @@ install_package() {
     local pkger=$(get_package_manager)
     case "$pkger" in
         "port")
-            port -N install $@
+            port -q install $@
             ;;
         "apt-get")
-            apt-get --yes --quiet install $@
+            apt-get --yes -qq install $@
             ;;
         "yum")
-            yum -y install $@
+            yum -y -q install $@
             ;;
     esac
 }

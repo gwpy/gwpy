@@ -30,14 +30,14 @@ Package: *
 Pin: release n=jessie-proposed
 Pin-Priority: 100
 EOF
-    apt-get update -yqq
+    apt-get -yqq update
 fi
 
 # install pip for system python
-apt-get -yq install python-pip
+apt-get -yqq install python-pip
 
 # install build dependencies (should match debian/control)
-apt-get -yq install \
+apt-get -yqq install \
     debhelper \
     dh-python \
     python-all \
@@ -53,16 +53,16 @@ GWPY_RELEASE=${GWPY_VERSION%%+*}
 
 # upgrade setuptools for development builds only to prevent version munging
 if [[ "${GWPY_VERSION}" == *"+"* ]]; then
-    pip install "setuptools>=25"
+    pip install --quiet "setuptools>=25"
 fi
 
 # upgrade GitPython (required for git>=2.15.0)
 #     since we link the git clone from travis, the dependency is actually
 #     fixed to the version of git on the travis image
-pip install "GitPython>=2.1.8"
+pip install --quiet "GitPython>=2.1.8"
 
 # prepare the tarball (sdist generates debian/changelog)
-python setup.py sdist
+python setup.py --quiet sdist
 
 # make the debian package
 mkdir -p dist/debian

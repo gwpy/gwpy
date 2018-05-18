@@ -29,8 +29,8 @@ fi
 set -x
 
 # update docker itself
-sudo apt-get update
-sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
+sudo apt-get -y -qq update
+sudo apt-get -y -qq -o Dpkg::Options::="--force-confnew" install docker-ce
 
 # download container
 travis_retry sudo timeout 300 docker pull ${DOCKER_IMAGE}

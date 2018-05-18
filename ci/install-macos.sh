@@ -42,7 +42,7 @@ sudo port -N install \
 # make Portfile
 cd ${GWPY_PATH}
 GWPY_VERSION=$(python setup.py --version)
-$PYTHON setup.py sdist
+$PYTHON setup.py --quiet sdist
 $PYTHON setup.py port --tarball dist/gwpy-${GWPY_VERSION}.tar.gz
 
 # create mock portfile repo and install
