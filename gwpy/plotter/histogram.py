@@ -98,7 +98,10 @@ class HistogramAxes(Axes):
                 kwargs['weights'] = numpy.asarray(kwargs['weights'])
         if logbins and (bins is None or isinstance(bins, (float, int))):
             bins = bins or 30
-            range_ = kwargs.pop('range', self.common_limits(x))
+            try:
+                range_ = kwargs.pop('range')
+            except KeyError:
+                range_ = (numpy.min(x), numpy.max(x))
             if range_[1] == range_[0]:
                 kwargs['bins'] = bins
             else:

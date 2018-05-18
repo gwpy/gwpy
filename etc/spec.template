@@ -38,7 +38,6 @@ Requires:       python-matplotlib
 Requires:       python-astropy
 Requires:       h5py
 Requires:       lal-python >= 6.14.0
-Requires:       glue
 Requires:       python2-ligo-segments
 Requires:       python2-tqdm
 
@@ -60,7 +59,6 @@ Requires:       python%{python3_pkgversion}-matplotlib
 Requires:       python%{python3_pkgversion}-astropy
 Requires:       python%{python3_pkgversion}-h5py
 Requires:       lal-python%{python3_pkgversion} >= 6.14.0
-Requires:       python%{python3_pkgversion}-glue
 Requires:       python%{python3_pkgversion}-ligo-segments
 Requires:       python%{python3_pkgversion}-tqdm
 
