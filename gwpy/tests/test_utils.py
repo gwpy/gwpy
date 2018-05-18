@@ -142,9 +142,12 @@ class TestUtilsLal(object):
             self.utils_lal.to_lal_unit('rad/s')
 
     def test_from_lal_unit(self):
-        assert self.utils_lal.from_lal_unit(
-            self.lal.MeterUnit / self.lal.SecondUnit) == (
-            units.Unit('m/s'))
+        try:
+            lalms = self.lal.MeterUnit / self.lal.SecondUnit
+        except TypeError as exc:
+            # see https://git.ligo.org/lscsoft/lalsuite/issues/65
+            pytest.skip(str(exc))
+        assert self.utils_lal.from_lal_unit(lalms) == units.Unit('m/s')
         assert self.utils_lal.from_lal_unit(self.lal.StrainUnit) == (
             units.Unit('strain'))
 
