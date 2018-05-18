@@ -708,8 +708,9 @@ class TestTimeSeries(TestTimeSeriesBase):
     # -- test remote data access ----------------
 
     @pytest.mark.parametrize('format', [
-        None,
         'hdf5',
+        pytest.param(  # only frameCPP actually reads units properly
+            'gwf', marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
     ])
     def test_fetch_open_data(self, losc, format):
         try:
