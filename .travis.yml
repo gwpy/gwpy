@@ -115,8 +115,13 @@ matrix:
     # macOS
     - os: osx
       osx_image: xcode9.2
-      env: PYTHON_VERSION='2.7'
-      language: minimal
+      pytohn: '2.7'
+      sudo: required
+
+    # macOS
+    - os: osx
+      osx_image: xcode9.2
+      python: '3.6'
       sudo: required
 
     # -- full build -----------------------------
