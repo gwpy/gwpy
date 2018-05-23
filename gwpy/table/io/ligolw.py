@@ -364,6 +364,10 @@ def write_table(table, target, tablename=None, **kwargs):
 
 # -- register -----------------------------------------------------------------
 
+for table_ in TableByName.values():
+    # register conversion from LIGO_LW to astropy Table
+    table_.__astropy_table__ = to_astropy_table
+
 for table_class in (Table, EventTable):
     registry.register_reader('ligolw', table_class, read_table)
     registry.register_writer('ligolw', table_class, write_table)
