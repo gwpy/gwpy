@@ -1028,6 +1028,7 @@ class TestHistogramAxes(HistogramMixin, TestAxes):
         fig, ax = self.new()
         ax.hist(self.ts)
 
+    @utils.skip_missing_dependency('glue')
     def test_common_limits(self):
         fig, ax = self.new()
         a = ax.common_limits(self.ts.value)

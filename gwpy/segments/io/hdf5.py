@@ -257,7 +257,7 @@ def write_hdf5_segmentlist(seglist, output, path=None, **kwargs):
 
     Parameters
     ----------
-    seglist : :class:`~glue.segments.segmentlist`
+    seglist : :class:`~ligo.segments.segmentlist`
         data to write
 
     output : `str`, `h5py.File`, `h5py.Group`

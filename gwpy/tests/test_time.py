@@ -31,12 +31,20 @@ from freezegun import freeze_time
 from astropy.time import Time
 from astropy.units import (UnitConversionError, Quantity)
 
-from glue.lal import LIGOTimeGPS as GlueGPS
-
 from gwpy import time
 from gwpy.time import LIGOTimeGPS
 
+try:
+    from glue.lal import LIGOTimeGPS as GlueGPS
+except ImportError:
+    GlueGPS = LIGOTimeGPS
+    HAS_GLUE = False
+else:
+    HAS_GLUE = True
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+skipglue = pytest.mark.skipif(not HAS_GLUE, reason='no module named glue')
 
 GW150914 = LIGOTimeGPS(1126259462, 391000000)
 GW150914_DT = datetime(2015, 9, 14, 9, 50, 45, 391000)
@@ -78,7 +86,8 @@ def _test_with_errors(func, in_, out):
     (Time(57754.0001, format='mjd'), LIGOTimeGPS(1167264026, 640000000)),
     (Quantity(1167264018, 's'), 1167264018),
     (Decimal('1126259462.391000000'), GW150914),
-    (GlueGPS(GW150914.gpsSeconds, GW150914.gpsNanoSeconds), GW150914),
+    pytest.param(GlueGPS(GW150914.gpsSeconds, GW150914.gpsNanoSeconds),
+                 GW150914, marks=skipglue),
     (numpy.int32(NOW), NOW),  # fails with lal-6.18.0
     ('now', NOW),
     ('today', TODAY),
@@ -98,7 +107,8 @@ def test_to_gps(in_, out):
     ('1167264018', datetime(2017, 1, 1)),
     (1126259462.391, datetime(2015, 9, 14, 9, 50, 45, 391000)),
     ('1.13e9', datetime(2015, 10, 27, 16, 53, 3)),
-    (GlueGPS(GW150914.gpsSeconds, GW150914.gpsNanoSeconds), GW150914_DT),
+    pytest.param(GlueGPS(GW150914.gpsSeconds, GW150914.gpsNanoSeconds),
+                 GW150914_DT, marks=skipglue),
     ('test', ValueError),
 ])
 def test_from_gps(in_, out):
@@ -111,7 +121,7 @@ def test_from_gps(in_, out):
     (float(GW150914), GW150914_DT),
     (GW150914, GW150914_DT),
     (GW150914_DT, GW150914),
-    (GlueGPS(float(GW150914)), GW150914_DT),
+    pytest.param(GlueGPS(float(GW150914)), GW150914_DT, marks=skipglue),
     ('now', NOW),
     ('today', TODAY),
     ('tomorrow', TOMORROW),

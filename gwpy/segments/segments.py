@@ -24,7 +24,7 @@ configuration.
 
 from astropy.io import registry as io_registry
 
-from glue.segments import (segment, segmentlist, segmentlistdict)
+from ligo.segments import (segment, segmentlist, segmentlistdict)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Kipp Cannon <kipp.cannon@ligo.org>"

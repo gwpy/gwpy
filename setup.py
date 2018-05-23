@@ -57,6 +57,7 @@ dependencies = {
     'astropy': '>= 1.1.1',
     'h5py': '>= 1.3',
     'lscsoft-glue': '>= 1.55.2',
+    'ligo-segments': '>= 1.0.0',
     'tqdm': '>= 4.10.0',
 }
 
