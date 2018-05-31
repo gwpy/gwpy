@@ -31,7 +31,7 @@ from gwpy import astro
 from gwpy.timeseries import TimeSeries
 from gwpy.frequencyseries import FrequencySeries
 
-import utils
+from . import utils
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

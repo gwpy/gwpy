@@ -62,10 +62,9 @@ from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
 from gwpy.utils.misc import null_context
 from gwpy.signal import filter_design
 
-import mocks
-import utils
-from mocks import mock
-from test_array import TestSeries
+from . import (mocks, utils)
+from .mocks import mock
+from .test_array import TestSeries
 
 SEED = 1
 numpy.random.seed(SEED)

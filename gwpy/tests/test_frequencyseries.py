@@ -42,8 +42,8 @@ from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.plotter import (FrequencySeriesPlot, FrequencySeriesAxes)
 from gwpy.segments import Segment
 
-import utils
-from test_array import (TestSeries, TestArray2D)
+from . import utils
+from .test_array import (TestSeries, TestArray2D)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

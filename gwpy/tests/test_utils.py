@@ -34,7 +34,7 @@ from astropy import units
 from gwpy.utils import (shell, mp as utils_mp)
 from gwpy.utils import deps  # deprecated
 
-import utils
+from . import utils
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

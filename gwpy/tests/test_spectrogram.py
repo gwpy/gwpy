@@ -35,8 +35,8 @@ from astropy import units
 from gwpy.spectrogram import Spectrogram
 from gwpy.plotter import (TimeSeriesPlot, TimeSeriesAxes)
 
-import utils
-from test_array import TestArray2D
+from . import utils
+from .test_array import TestArray2D
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
