@@ -34,7 +34,7 @@ get_environment
 sudo port -N install \
     gsed \
     ${PY_DIST} \
-    ${PR_PREFIX}-setuptools \
+    ${PY_PREFIX}-setuptools \
     ${PY_PREFIX}-pip \
     ${PY_PREFIX}-jinja2 \
     ${PY_PREFIX}-gitpython
