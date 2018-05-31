@@ -361,17 +361,40 @@ class CliProduct(object):
         return cls._arg_axis('y', parser)
 
     @classmethod
-    def _arg_axis(cls, axis, parser):
-        name = '{}-axis'.format(axis.upper())
+    def _arg_axis(cls, axis, parser, **defaults):
+        name = '{} axis'.format(axis.title())
         group = parser.add_argument_group('{0} options'.format(name))
+
+        # label
         group.add_argument('--{0}label'.format(axis),
+                           default=defaults.get('label'),
+                           dest='{0}label'.format(axis),
                            help='{0} label'.format(name))
-        group.add_argument('--{0}min'.format(axis), type=float,
-                           help='min value for {0}'.format(name))
-        group.add_argument('--{0}max'.format(axis), type=float,
-                           help='max value for {0}'.format(name))
-        group.add_argument('--{0}scale'.format(axis), type=str,
-                           help='scale for {0}'.format(name))
+
+        # min and max
+        for extrema in ('min', 'max'):
+            opt = axis + extrema
+            group.add_argument('--{0}'.format(opt), type=float,
+                               default=defaults.get(extrema), dest=opt,
+                               help='{0} value for {1}'.format(extrema, name))
+
+        # scale
+        scaleg = group.add_mutually_exclusive_group()
+        scaleg.add_argument('--{0}scale'.format(axis), type=str,
+                            default=defaults.get('scale'),
+                            dest='{0}scale'.format(axis),
+                            help='scale for {0}'.format(name))
+        if defaults.get('scale') == 'log':
+            scaleg.add_argument('--nolog{0}'.format(axis),
+                                action='store_const',
+                                dest='{0}scale'.format(axis),
+                                const=None, default='log',
+                                help='use logarithmic {0}'.format(name))
+        else:
+            scaleg.add_argument('--log{0}'.format(axis), action='store_const',
+                                dest='{0}scale'.format(axis),
+                                const='log', default=None,
+                                help='use logarithmic {0}'.format(name))
         return group
 
     def _finalize_arguments(self, args):
@@ -776,6 +799,48 @@ class FFTMixin(object):
                            help='window function to use when overlapping FFTs')
         return group
 
+    @classmethod
+    def _arg_faxis(cls, axis, parser, **defaults):
+        defaults.setdefault('scale', 'log')
+        axis = axis.lower()
+        name = '{0} axis'.format(axis.title())
+        group = parser.add_argument_group('{0} options'.format(name))
+
+        # label
+        group.add_argument('--{0}label'.format(axis),
+                           default=defaults.get('label'),
+                           dest='{0}label'.format(axis),
+                           help='{0} label'.format(name))
+
+        # min and max
+        for extrema in ('min', 'max'):
+            meg = group.add_mutually_exclusive_group()
+            for ax_ in (axis, 'f'):
+                meg.add_argument(
+                    '--{0}{1}'.format(ax_, extrema), type=float,
+                    default=defaults.get(extrema),
+                    dest='{0}{1}'.format(axis, extrema),
+                    help='{0} value for {1}'.format(extrema, name))
+
+        # scale
+        scaleg = group.add_mutually_exclusive_group()
+        scaleg.add_argument('--{0}scale'.format(axis), type=str,
+                            default=defaults.get('scale'),
+                            dest='{0}scale'.format(axis),
+                            help='scale for {0}'.format(name))
+        if defaults.get('scale') == 'log':
+            scaleg.add_argument('--nologf', action='store_const',
+                                dest='{0}scale'.format(axis),
+                                const=None, default='log',
+                                help='use linear {0}'.format(name))
+        else:
+            scaleg.add_argument('--logf', action='store_const',
+                                dest='{0}scale'.format(axis),
+                                const='log', default=None,
+                                help='use logarithmic {0}'.format(name))
+
+        return group
+
     def _finalize_arguments(self, args):
         if args.overlap is None:
             try:
@@ -831,11 +896,6 @@ class TimeDomainProduct(CliProduct):
 class FrequencyDomainProduct(CliProduct):
     """`CliProduct` with frequency on the X-axis
     """
-    def _finalize_arguments(self, args):
-        if args.xscale is None:  # default frequency scale
-            args.xscale = 'log'
-        super(FrequencyDomainProduct, self)._finalize_arguments(args)
-
     def get_xlabel(self):
         """Default X-axis label for plot
         """

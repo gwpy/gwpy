@@ -38,9 +38,11 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         #: attribute to hold calculated Spectrogram data array
         self.result = None
 
+    @classmethod
+    def arg_yaxis(cls, parser):
+        return cls._arg_faxis('y', parser)
+
     def _finalize_arguments(self, args):
-        if args.yscale is None:
-            args.yscale = 'log'
         if args.color_scale is None:
             args.color_scale = 'log'
         super(Spectrogram, self)._finalize_arguments(args)

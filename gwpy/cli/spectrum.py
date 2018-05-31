@@ -44,6 +44,16 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
     def units(self):
         return unique(fs.unit for fs in self.spectra)
 
+    @classmethod
+    def arg_xaxis(cls, parser):
+        # use frequency axis on X
+        return cls._arg_faxis('x', parser)
+
+    @classmethod
+    def arg_yaxis(cls, parser):
+        # default log Y-axis
+        return cls._arg_axis('y', parser, scale='log')
+
     def _finalize_arguments(self, args):
         if args.yscale is None:
             args.yscale = 'log'
