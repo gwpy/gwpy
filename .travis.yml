@@ -172,8 +172,8 @@ after_success:
   # submit coverage results
   - |
     if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then
-        which python${TRAVIS_PYTHON_VERSION}
-        sudo -H python${TRAVIS_PYTHON_VERSION} -m pip install coveralls
+        which python${PYTHON_VERSION}
+        sudo -H python${PYTHON_VERSION} -m pip install coveralls
     else
         python -m pip install coveralls
     fi
