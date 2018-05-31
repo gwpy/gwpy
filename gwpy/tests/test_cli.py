@@ -35,9 +35,8 @@ use('agg')  # nopep8
 from gwpy.timeseries import TimeSeries
 
 # local imports
-import mocks
-from mocks import mock
-import utils
+from . import (utils, mocks)
+from .mocks import mock
 
 warnings.filterwarnings(
     'ignore', category=UserWarning, message=".*non-GUI backend.*")

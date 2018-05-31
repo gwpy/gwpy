@@ -38,9 +38,8 @@ from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 from gwpy.time import LIGOTimeGPS
 
-import utils
-import mocks
-from mocks import mock
+from . import (utils, mocks)
+from .mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

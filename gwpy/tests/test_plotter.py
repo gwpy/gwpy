@@ -61,7 +61,7 @@ from gwpy.plotter.tex import (float_to_latex, label_to_latex,
                               unit_to_latex, HAS_TEX)
 from gwpy.plotter.table import get_column_string
 
-import utils
+from . import utils
 
 # ignore matplotlib complaining about GUIs
 warnings.filterwarnings(

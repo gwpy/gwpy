@@ -54,8 +54,8 @@ from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
 from gwpy.plotter import (EventTablePlot, EventTableAxes, TimeSeriesPlot,
                           HistogramPlot)
 
-import utils
-from mocks import mock
+from . import utils
+from .mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
