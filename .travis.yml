@@ -170,7 +170,12 @@ script:  # run tests
 
 after_success:
   # submit coverage results
-  - pip install --quiet coveralls
+  - |
+    if [ -z ${TRAVIS_PYTHON_VERSION+x} ]; then  # macos
+        ${PIP} install --verbose coveralls
+    else  # linux
+        pip install --verbose coveralls
+    fi
   - sed -i 's|"'${GWPY_PATH}'|"'`pwd`'|g' .coverage
   - coveralls
 
