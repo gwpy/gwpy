@@ -10,7 +10,7 @@ pymysql
 lscsoft-glue
 dqsegdb
 https://github.com/ligovirgo/trigfind/archive/v0.4.tar.gz
-pycbc ; python_version == '2.7'
+pycbc != 1.10.0 ; python_version == '2.7'
 git+https://github.com/duncanmmacleod/ligo.org.git
 sqlalchemy
 psycopg2
