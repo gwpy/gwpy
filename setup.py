@@ -128,6 +128,7 @@ setup(
     packages=find_packages(),
     scripts=get_scripts(),
     include_package_data=True,
+    test_suite='gwpy.tests',
 
     # dependencies
     cmdclass=CMDCLASS,
