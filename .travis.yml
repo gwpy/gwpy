@@ -170,8 +170,12 @@ script:  # run tests
 
 after_success:
   # submit coverage results
-  - get_environment  # get ${PIP} variable for travis host
-  - ${PIP} install --verbose coveralls
+  - |
+    if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then
+        sudo python${TRAVIS_PYTHON_VERSION} -m pip install coveralls
+    else
+        python -m pip install coveralls
+    fi
   - sed -i 's|"'${GWPY_PATH}'|"'`pwd`'|g' .coverage
   - coveralls
 
