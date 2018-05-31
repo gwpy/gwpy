@@ -828,16 +828,17 @@ class FFTMixin(object):
                             default=defaults.get('scale'),
                             dest='{0}scale'.format(axis),
                             help='scale for {0}'.format(name))
-        if defaults.get('scale') == 'log':
-            scaleg.add_argument('--nologf', action='store_const',
-                                dest='{0}scale'.format(axis),
-                                const=None, default='log',
-                                help='use linear {0}'.format(name))
-        else:
-            scaleg.add_argument('--logf', action='store_const',
-                                dest='{0}scale'.format(axis),
-                                const='log', default=None,
-                                help='use logarithmic {0}'.format(name))
+        for ax_ in (axis, 'f'):
+            if defaults.get('scale') == 'log':
+                scaleg.add_argument(
+                    '--nolog{0}'.format(ax_), action='store_const',
+                    dest='{0}scale'.format(axis), const=None, default='log',
+                    help='use linear {0}'.format(name))
+            else:
+                scaleg.add_argument(
+                    '--log{0}'.format(ax_), action='store_const',
+                    dest='{0}scale'.format(axis), const='log', default=None,
+                    help='use logarithmic {0}'.format(name))
 
         return group
 
