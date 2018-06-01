@@ -690,7 +690,7 @@ class TestDataQualityFlag(object):
             segs = self.TEST_CLASS.fetch_open_data(
                 'H1_DATA', 946339215, 946368015)
         except (URLError, SSLError) as exc:
-            pytest.skip(str(e))
+            pytest.skip(str(exc))
         assert segs.ifo == 'H1'
         assert segs.name == 'H1:DATA'
         assert segs.label == 'H1_DATA'
