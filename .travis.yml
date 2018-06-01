@@ -170,7 +170,7 @@ script:  # run tests
 
 after_success:
   # submit coverage results
-  - pip install --quiet coveralls
+  - python${PYTHON_VERSION} -m pip install --quiet coveralls
   - sed -i 's|"'${GWPY_PATH}'|"'`pwd`'|g' .coverage
   - coveralls
 
