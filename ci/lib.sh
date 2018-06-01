@@ -160,7 +160,7 @@ get_environment() {
         macos*)  # macports
             PY_DIST="python${PY_XY}"
             PY_PREFIX="py${PY_XY}"
-            PIP="sudo ${PIP}"
+            PIP="sudo -H ${PIP}"
             ;;
         debian2)
             PY_DIST="python"

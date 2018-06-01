@@ -36,7 +36,7 @@ get_python_version  # sets PYTHON_VERSION
 set -ex && trap 'set +xe' RETURN
 
 # install test dependencies
-${PIP} install ${PIP_FLAGS} coverage "setuptools>=17.1" "pytest>=3.1"
+${PIP} install ${PIP_FLAGS} coverage "setuptools>=17.1" "pytest>=3.1" coveralls
 COVERAGE=coverage-${PYTHON_VERSION}
 
 # fix broken glue dependency
