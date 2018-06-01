@@ -169,10 +169,12 @@ script:  # run tests
   - ci_run ". ${GWPY_PATH}/ci/test.sh"
 
 after_success:
-  # submit coverage results
+  # fix paths in coverage file for docker-based runs
+  - [ -z ${DOCKER_IMAGE+x} ] && sed -i 's|"'${GWPY_PATH}'|"'`pwd`'|g' .coverage
+  # install coveralls
   - [[ "${TRAVIS_OS_NAME}" == "osx" ]] && PATH=/opt/local/bin:${PATH}
   - python${PYTHON_VERSION} -m pip install --quiet coveralls
-  - sed -i 's|"'${GWPY_PATH}'|"'`pwd`'|g' .coverage
+  # submit coverage results
   - coveralls
 
   # build and deploy package files
