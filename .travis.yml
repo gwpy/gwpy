@@ -170,9 +170,9 @@ script:  # run tests
 
 after_success:
   # fix paths in coverage file for docker-based runs
-  - [[ -z ${DOCKER_IMAGE+x} ]] && sed -i 's|"'${GWPY_PATH}'|"'`pwd`'|g' .coverage
+  - if [ -z ${DOCKER_IMAGE+x} ]; then sed -i 's|"'${GWPY_PATH}'|"'`pwd`'|g' .coverage; fi
   # install coveralls
-  - [[ "${TRAVIS_OS_NAME}" == "osx" ]] && PATH=/opt/local/bin:${PATH}
+  - if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then PATH=/opt/local/bin:${PATH}; fi
   - python${PYTHON_VERSION} -m pip install --quiet coveralls
   # submit coverage results
   - coveralls
