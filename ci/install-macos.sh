@@ -31,10 +31,10 @@ install_macports
 get_environment
 
 # install basic ports we need
-sudo port -N install \
+sudo port -q install \
     gsed \
     ${PY_DIST} \
-    ${PR_PREFIX}-setuptools \
+    ${PY_PREFIX}-setuptools \
     ${PY_PREFIX}-pip \
     ${PY_PREFIX}-jinja2 \
     ${PY_PREFIX}-gitpython
@@ -71,10 +71,10 @@ set -x
 # install py-gwpy
 # Note: we don't use the +gwf port, because ldas-tools-framecpp takes too
 #       long to compile that the whole job times out in the end
-sudo port -N install ${PY_PREFIX}-gwpy +nds2 +segments
+sudo port -q install ${PY_PREFIX}-gwpy +nds2 +segments
 
 # install extras (see requirements-dev.txt)
-sudo port -N install \
+sudo port -q install \
     kerberos5 \
     libframe \
     ${PY_PREFIX}-matplotlib \
@@ -91,7 +91,7 @@ sudo port -N install \
 
 # install m2cyrpto if needed
 if [ "$(port info --version dqsegdb)" == "version: 1.4.0" ]; then
-    sudo port -N install ${PY_PREFIX}-m2crypto
+    sudo port -q install ${PY_PREFIX}-m2crypto
 fi
 
 kill -9 $wvbpid &> /dev/null

@@ -117,6 +117,7 @@ matrix:
       osx_image: xcode9.2
       language: minimal
       python: '2.7'
+      env: PYTHON_VERSION="2.7"
       sudo: required
 
     # macOS
@@ -124,6 +125,7 @@ matrix:
       osx_image: xcode9.2
       language: minimal
       python: '3.6'
+      env: PYTHON_VERSION="3.6"
       sudo: required
 
     # -- full build -----------------------------
@@ -167,10 +169,22 @@ script:  # run tests
   - ci_run ". ${GWPY_PATH}/ci/test.sh"
 
 after_success:
+  # fix paths in coverage file for docker-based runs
+  - |
+    if [ -z ${DOCKER_IMAGE+x} ]; then
+        sed -i 's|"'${GWPY_PATH}'|"'`pwd`'|g' .coverage;
+    fi
+  # install coveralls
+  - |
+    if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
+        sudo -H /opt/local/bin/python${PYTHON_VERSION} -m pip install --quiet coveralls
+        COVERALLS=$(/opt/local/bin/python${PYTHON_VERSION} -c "import sys; print(sys.prefix)")/bin/coveralls
+    else
+        python${PYTHON_VERSION} -m pip install --quiet coveralls
+        COVERALLS=coveralls
+    fi
   # submit coverage results
-  - pip install --quiet coveralls
-  - sed -i 's|"'${GWPY_PATH}'|"'`pwd`'|g' .coverage
-  - coveralls
+  - $COVERALLS
 
   # build and deploy package files
   - . ./ci/deploy.sh
