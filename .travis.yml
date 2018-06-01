@@ -178,7 +178,7 @@ after_success:
   - |
     if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
         sudo -H /opt/local/bin/python${PYTHON_VERSION} -m pip install --quiet coveralls
-        alias coveralls=$(python -c "import sys; print(sys.prefix)")/bin/coveralls
+        alias coveralls=$(/opt/local/bin/python${PYTHON_VERSION} -c "import sys; print(sys.prefix)")/bin/coveralls
     else
         python${PYTHON_VERSION} -m pip install --quiet coveralls
     fi
