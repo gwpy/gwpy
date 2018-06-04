@@ -360,11 +360,6 @@ def register_gwf_api(library):
     register_writer(fmt, StateVectorDict, write_timeseriesdict)
     register_writer(fmt, StateVector, write_timeseries)
 
-    # register deprecated format - DEPRECATED
-    for container in (TimeSeries, TimeSeriesDict,
-                      StateVector, StateVectorDict):
-        register_library_format(container, library)
-
 
 # -- generic API for 'gwf' format ---------------------------------------------
 
@@ -391,49 +386,6 @@ def register_gwf_format(container):
     register_identifier('gwf', container, identify_gwf)
     register_reader('gwf', container, read_)
     register_writer('gwf', container, write_)
-
-
-# -- DEPRECATED - register old format name ------------------------------------
-
-def register_library_format(container, library):
-    """Register methods for the given library format
-
-    E.g. for lalframe this functions creates methods and registers them
-    for the ``lalframe`` format name.
-
-    This format has been deprecated and will be removed prior to the 1.0
-    release in favour of the ``gwf.<library>`` contention. All this method
-    does is create directes from `format='<library'` to
-    `format=gwf.<library>'`.
-
-    Parameters
-    ----------
-    container : `Series`, `dict`
-        series class or series dict class to register
-
-    library : `str`
-        name of frame library
-    """
-    fmt = 'gwf.%s' % library
-    reader = get_reader(fmt, container)
-    writer = get_writer(fmt, container)
-
-    def read_(*args, **kwargs):
-        warnings.warn("Reading with format=%r is deprecated and will be "
-                      "disabled in an upcoming release, please use "
-                      "format=%r instead" % (library, fmt),
-                      DeprecationWarning)
-        return reader(*args, **kwargs)
-
-    def write_(*args, **kwargs):
-        warnings.warn("Writing with format=%r is deprecated and will be "
-                      "disabled in an upcoming release, please use "
-                      "format=%r instead" % (library, fmt),
-                      DeprecationWarning)
-        return writer(*args, **kwargs)
-
-    register_reader(library, container, read_)
-    register_writer(library, container, write_)
 
 
 # -- register frame API -------------------------------------------------------

@@ -773,31 +773,6 @@ class TimeSeriesBase(Series):
         return result
 
 
-# -- ArrayTimeSeries ----------------------------------------------------------
-
-class ArrayTimeSeries(TimeSeriesBase, Array2D):
-    _default_xunit = TimeSeriesBase._default_xunit
-
-    def __new__(cls, data, times=None, epoch=None, channel=None, unit=None,
-                sample_rate=None, name=None, **kwargs):
-        """Generate a new ArrayTimeSeries.
-        """
-        warnings.warn("The ArrayTimeSeries is deprecated and will be removed "
-                      "before the 1.0 release", DeprecationWarning)
-        # parse Channel input
-        if channel:
-            channel = (channel if isinstance(channel, Channel) else
-                       Channel(channel))
-            name = name or channel.name
-            unit = unit or channel.unit
-            sample_rate = sample_rate or channel.sample_rate
-        # generate TimeSeries
-        new = Array2D.__new__(cls, data, name=name, unit=unit, epoch=epoch,
-                              channel=channel, x0=1/sample_rate,
-                              xindex=times, **kwargs)
-        return new
-
-
 # -- TimeSeriesBaseDict -------------------------------------------------------
 
 def as_series_dict_class(seriesclass):

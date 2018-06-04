@@ -366,18 +366,6 @@ class TestDataQualityFlag(object):
         del flag.padding
         assert flag.padding == (0, 0)
 
-    def test_deprecated_names(self):
-        with pytest.warns(DeprecationWarning):
-            flag = self.TEST_CLASS(NAME, valid=KNOWN)
-        with pytest.raises(ValueError):
-            flag = self.TEST_CLASS(NAME, valid=KNOWN, known=KNOWN)
-        with pytest.warns(DeprecationWarning):
-            flag.valid
-        with pytest.warns(DeprecationWarning):
-            flag.valid = flag.known
-        with pytest.warns(DeprecationWarning):
-            del flag.valid
-
     # -- test methods ---------------------------
 
     def test_parse_name(self):
