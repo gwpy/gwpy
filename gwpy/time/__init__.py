@@ -26,6 +26,8 @@ All other time conversions can be easily completed using the `Time`
 object.
 """
 
+from importlib import import_module
+
 from astropy.time import Time
 
 # try and import LIGOTimeGPS from LAL, otherwise use the pure-python backup
@@ -38,3 +40,15 @@ except ImportError:
 from ._tconvert import (tconvert, to_gps, from_gps)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+# build list of compatible gps types
+gps_types = tuple()
+for _modname in ('lal', 'ligotimegps', 'glue.lal',):
+    try:
+        _mod = import_module(_modname)
+    except ImportError:
+        continue
+    _gps = getattr(_mod, 'LIGOTimeGPS')
+    gps_types = gps_types + (_gps,)
+
+del import_module

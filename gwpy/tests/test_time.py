@@ -21,6 +21,7 @@
 
 from datetime import datetime
 from decimal import Decimal
+from operator import attrgetter
 
 import pytest
 
@@ -131,3 +132,13 @@ def test_tconvert(in_, out):
     """Test :func:`gwpy.time.tconvert`
     """
     _test_with_errors(time.tconvert, in_, out)
+
+
+@pytest.mark.parametrize('gpstype', time.gps_types,
+                         ids=attrgetter('__module__'))
+def test_gps_types(gpstype):
+    assert gpstype.__name__ == 'LIGOTimeGPS'
+    gps = gpstype(123, 456000000)
+    assert gps.gpsSeconds == 123
+    assert gps.gpsNanoSeconds == 456000000
+    assert gps == 123.456
