@@ -54,7 +54,7 @@ from astropy.io import registry as io_registry
 from ..types import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
 from ..io import datafind
-from ..time import (Time, LIGOTimeGPS, to_gps)
+from ..time import (Time, LIGOTimeGPS, gps_types, to_gps)
 from ..utils import gprint
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -73,7 +73,7 @@ _UFUNC_STRING = {
 
 
 def _format_time(gps):
-    if isinstance(gps, LIGOTimeGPS):
+    if isinstance(gps, gps_types):
         return float(gps)
     if isinstance(gps, Time):
         return gps.gps
