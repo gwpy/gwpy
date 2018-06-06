@@ -146,6 +146,9 @@ autosummary_generate = True
 # -- plot_directive -----------------------------
 
 plot_rcparams = GWPY_PLOT_PARAMS
+plot_rcparams.update({
+    'backend': 'agg',
+})
 plot_apply_rcparams = True
 plot_formats = ['png']
 plot_include_source = True
