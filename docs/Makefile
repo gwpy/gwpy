@@ -55,7 +55,7 @@ clean:
 apidoc:
 	sphinx-apidoc -o _generated ../gwpy
 
-html: examples lal.tag lalframe.tag citing.rst
+html: examples lal.tag lalframe.tag
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
@@ -78,6 +78,3 @@ examples/%.rst: ex2rst.py examples/index.rst ../examples/%.py $$(@D)/index.rst
 
 %.tag:
 	-wget --no-check-certificate http://software.ligo.org/docs/lalsuite/$*/$*.tag -O $@ --quiet
-
-citing.rst: zenodo-citations.py
-	python $< 597016 > $@

@@ -33,9 +33,12 @@ from sphinx.util import logging
 
 import sphinx_bootstrap_theme
 
+from sphinx.util import logger
+
 import gwpy
 from gwpy import _version as gwpy_version
 from gwpy.plotter import (GWPY_PLOT_PARAMS)
+from gwpy.utils.sphinx import zenodo
 
 GWPY_VERSION = gwpy_version.get_versions()
 
@@ -456,6 +459,19 @@ def build_cli_examples(_):
             f.write('   {0}\n'.format(rst[len(SPHINX_DIR):]))
 
 
+# -- create citation file -----------------------------------------------------
+
+def write_citing_rst(_):
+    here = os.path.dirname(__file__)
+    with open(os.path.join(here, 'citing.rst.in'), 'r') as fobj:
+        citing = fobj.read()
+    citing += '\n' + zenodo.format_citations(597016)
+    out = os.path.join(here, 'citing.rst')
+    with open(out, 'w') as f:
+        f.write(citing)
+    logger.info('[zenodo] wrote {0}'.format(out))
+
+
 # -- add css and js files -----------------------------------------------------
 
 CSS_DIR = os.path.join(html_static_path[0], 'css')
@@ -475,4 +491,5 @@ def setup_static_content(app):
 
 def setup(app):
     setup_static_content(app)
+    app.connect('builder-inited', write_citing_rst)
     app.connect('builder-inited', build_cli_examples)
