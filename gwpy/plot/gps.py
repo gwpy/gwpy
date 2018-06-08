@@ -63,12 +63,6 @@ def register_gps_scale(scale_class):
     GPS_SCALES[scale_class.name] = scale_class
 
 
-def to_decimal(value):
-    if isinstance(value, gps_types):
-        return Decimal(str(value))
-    return Decimal(repr(value))
-
-
 # -- base mixin for all GPS manipulations -------------------------------------
 
 class GPSMixin(object):
@@ -142,17 +136,19 @@ class GPSMixin(object):
 
     def get_unit_name(self):
         """Returns the name of the unit for this GPS scale
+
+        Note that this returns a simply-pluralised version of the name.
         """
         if not self.unit:
             return None
         name = sorted(self.unit.names, key=len)[-1]
-        if len(name) == 1:
-            return name
-        return '%ss' % name
+        return '%ss' % name  # pluralise
 
     def get_scale(self):
         """The scale (in seconds) of the current GPS unit.
         """
+        if self.unit is None:
+            return 1
         return self.unit.decompose().scale
 
     scale = property(fget=get_scale, doc=get_scale.__doc__)
@@ -219,9 +215,9 @@ class GPSTransformBase(GPSMixin, Transform):
     def _transform_decimal(cls, value, epoch, scale):
         """Transform to/from GPS using `decimal.Decimal` for precision
         """
-        vdec = to_decimal(value)
-        edec = to_decimal(epoch)
-        sdec = to_decimal(scale)
+        vdec = Decimal(repr(value))
+        edec = Decimal(repr(epoch))
+        sdec = Decimal(repr(scale))
 
         # fix rounding errors
         vdecq = vdec.quantize(edec)
@@ -412,11 +408,14 @@ class GPSScale(GPSMixin, LinearScale):
         # round epoch in successive units for large scales
         unit = self.get_unit()
         date = from_gps(epoch)
-        fields = ('second', 'minute', 'hour', 'day', 'year')
+        fields = ('second', 'minute', 'hour', 'day')
         for i, u in enumerate(fields[1:]):
             if unit < units.Unit(u):
                 break
-            date = date.replace(**{fields[i]: 0})
+            if u in ('day',):
+                date = date.replace(**{fields[i]: 1})
+            else:
+                date = date.replace(**{fields[i]: 0})
         return int(to_gps(date))
 
     def _auto_unit(self, axis):
@@ -463,7 +462,8 @@ def _gps_scale_factory(unit):
     class FixedGPSScale(GPSScale):
         """`GPSScale` for a specific GPS time unit
         """
-        name = str('%ss' % unit.long_names[0])
+        name = str('{0}s'.format(unit.long_names[0] if unit.long_names else
+                                 unit.names[0]))
 
         def __init__(self, axis, epoch=None):
             super(FixedGPSScale, self).__init__(axis, epoch=epoch, unit=unit)
@@ -471,6 +471,8 @@ def _gps_scale_factory(unit):
 
 
 for _unit in TIME_UNITS:
+    if _unit is units.kiloyear:  # don't go past 'year' for GPSScale
+        break
     register_gps_scale(_gps_scale_factory(_unit))
 
 # update the docstring for matplotlib scale methods

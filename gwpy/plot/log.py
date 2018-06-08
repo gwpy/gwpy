@@ -96,6 +96,9 @@ class CombinedLogFormatterMathtext(MinorLogFormatterMathtext):
     This is just a swap between the `MinorLogFormatterMathtext` and
     the GWpyLogFormatterMathtext` depending on whether the tick in
     question is a decade (0.1, 1, 10, 100, ...) or not.
+
+    This is useful for things like colorbars, which use a single formatter
+    for all ticks.
     """
     def __call__(self, x, pos=None):
         if is_decade(x, self._base):

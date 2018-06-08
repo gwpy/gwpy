@@ -21,12 +21,17 @@
 
 import warnings
 
+import numpy
+
 from matplotlib.axes import SubplotBase
+from matplotlib.colors import LogNorm
+from matplotlib.ticker import LogLocator
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from .colors import format_norm
+from .log import CombinedLogFormatterMathtext
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -58,6 +63,11 @@ def process_colorbar_kwargs(figure, mappable=None, ax=None, use_axesgrid=True,
     norm, kwargs = format_norm(kwargs, mappable.norm)
     mappable.set_norm(norm)
     mappable.set_cmap(kwargs.setdefault('cmap', mappable.get_cmap()))
+
+    # -- set tick formatting
+
+    if isinstance(norm, LogNorm):
+        kwargs.setdefault('format', CombinedLogFormatterMathtext())
 
     # -- create axes for colorbar (if required)
 

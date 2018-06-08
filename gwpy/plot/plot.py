@@ -35,7 +35,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from . import (colorbar as gcbar, colors as gcolors, utils)
 from .log import CombinedLogFormatterMathtext
 from .rc import (rcParams, MPL_RCPARAMS, get_subplot_params)
-from .axes import Axes
 from .gps import GPS_SCALES
 
 __all__ = ['Plot']
@@ -62,8 +61,6 @@ class Plot(figure.Figure):
     figures from GWpy data objects, and modifying them on-the-fly in
     interactive mode.
     """
-    _DefaultAxesClass = Axes
-
     def __init__(self, *data, **kwargs):
 
         # get default x-axis scale if all axes have the same x-axis units
@@ -238,12 +235,6 @@ class Plot(figure.Figure):
         pyplot.close(self)
 
     # -- axes manipulation ----------------------
-
-    def add_subplot(self, *args, **kwargs):
-        kwargs.setdefault('projection', self._DefaultAxesClass.name)
-        return super(Plot, self).add_subplot(*args, **kwargs)
-
-    add_subplot.__doc__ = figure.Figure.add_subplot.__doc__
 
     def get_axes(self, projection=None):
         """Find all `Axes`, optionally matching the given projection

@@ -37,7 +37,7 @@ try:
 except ImportError:  # matplotlib-1.x
     from matplotlib.axes import _process_plot_var_args
 
-from . import colorbar as gcbar
+from . import (Plot, colorbar as gcbar)
 from .colors import format_norm
 from ..time import (LIGOTimeGPS, to_gps)
 from ..types import (Series, Array2D)
@@ -114,12 +114,12 @@ class Axes(_Axes):
 
     def _fmt_xdata(self, x):
         if self.get_xscale() in GPS_SCALES:
-            return LIGOTimeGPS(x)
+            return str(LIGOTimeGPS(x))
         raise TypeError  # fall back to default
 
     def _fmt_ydata(self, y):
         if self.get_yscale() in GPS_SCALES:
-            return LIGOTimeGPS(y)
+            return str(LIGOTimeGPS(y))
         raise TypeError  # fall back to default
 
     set_xlim = xlim_as_gps(_Axes.set_xlim)
@@ -139,10 +139,13 @@ class Axes(_Axes):
         scale = self.get_xscale()
         return self.set_xscale(scale, epoch=epoch)
 
-    # -- utility methods ------------------------
+    def get_epoch(self):
+        """Return the epoch for the current GPS scale/
 
-    def _get_artists(self):
-        return self.lines + self.images + self.collections + self.patches
+        This method will fail if the current X-axis scale isn't one of
+        the GPS scales. See :ref:`gwpy-plot-gps` for more details.
+        """
+        return self.get_xaxis().get_transform().get_epoch()
 
     # -- overloaded plotting methods ------------
 
@@ -308,7 +311,7 @@ class Axes(_Axes):
 
         return out
 
-    def colorbar(self, mappable=None, fraction=0., **kwargs):
+    def colorbar(self, mappable=None, **kwargs):
         """Add a `~matplotlib.colorbar.Colorbar` to these `Axes`
 
         Parameters
@@ -316,6 +319,12 @@ class Axes(_Axes):
         mappable : matplotlib data collection, optional
             collection against which to map the colouring, default will
             be the last added mappable artist (collection or image)
+
+        fraction : `float`, optional
+            fraction of space to steal from these `Axes` to make space
+            for the new axes, default is ``0.`` if ``use_axesgrid=True``
+            is given (default), otherwise default is ``.15`` to match
+            the upstream matplotlib default.
 
         **kwargs
             other keyword arguments to be passed to the
@@ -331,9 +340,19 @@ class Axes(_Axes):
         Plot.colorbar
         """
         fig = self.get_figure()
+        if kwargs.get('use_axesgrid', True):
+            kwargs.setdefault('fraction', 0.)
+        if kwargs.get('fraction', 0.) == 0.:
+            kwargs.setdefault('use_axesgrid', True)
         mappable, kwargs = gcbar.process_colorbar_kwargs(
-            fig, mappable=mappable, ax=self, fraction=fraction, **kwargs)
-        return fig.colorbar(mappable, use_axesgrid=False, **kwargs)
+            fig, mappable=mappable, ax=self, **kwargs)
+        if isinstance(fig, Plot):
+            # either we have created colorbar Axes using axesgrid1, or
+            # the user already gave use_axesgrid=False, so we forcefully
+            # disable axesgrid here in case fraction == 0., which causes
+            # gridspec colorbars to fail.
+            kwargs['use_axesgrid'] = False
+        return fig.colorbar(mappable, **kwargs)
 
 
 # override default Axes with this one by registering a projection with the

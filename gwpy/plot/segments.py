@@ -20,6 +20,7 @@
 """
 
 import operator
+import warnings
 
 from six import string_types
 from six.moves import reduce
@@ -30,10 +31,8 @@ from matplotlib.ticker import (Formatter, MultipleLocator, NullLocator)
 from matplotlib.projections import register_projection
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
-try:
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-except ImportError:
-    from mpl_toolkits.axes_grid import make_axes_locatable
+
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import ligo.segments
 
@@ -73,6 +72,9 @@ class SegmentAxes(Axes):
     name = 'segments'
 
     def __init__(self, *args, **kwargs):
+        # default to auto-gps scale on the X-axis
+        kwargs.setdefault('xscale', 'auto-gps')
+
         # set labelling format
         kwargs.setdefault('insetlabels', False)
 
@@ -116,7 +118,7 @@ class SegmentAxes(Axes):
         args = list(args)
         while args:
             if isinstance(args[0], DataQualityDict):
-                out.append(self.plot_dqdict(args.pop(0), **kwargs))
+                out.append(self.plot_dict(args.pop(0), **kwargs))
                 continue
             elif isinstance(args[0], DataQualityFlag):
                 out.append(self.plot_flag(args[0], **kwargs))
@@ -130,16 +132,13 @@ class SegmentAxes(Axes):
                 out.append(self.plot_segmentlist(args[0], **kwargs))
                 args.pop(0)
                 continue
-            elif isinstance(args[0], ligo.segments.segment):
-                raise ValueError("Input must be DataQualityFlag, "
-                                 "SegmentListDict, or SegmentList")
             break
         if args:
             out.extend(super(SegmentAxes, self).plot(*args, **kwargs))
         self.autoscale(axis='y')
         return out
 
-    def plot_dqdict(self, flags, label='key', known='x', **kwargs):
+    def plot_dict(self, flags, label='key', known='x', **kwargs):
         """Plot a `~gwpy.segments.DataQualityDict` onto these axes
 
         Parameters
@@ -177,9 +176,16 @@ class SegmentAxes(Axes):
                 lab = flag.name
             elif label.lower() != 'key':
                 lab = label
-            out.append(self.plot(flag, label=to_string(lab), known=known,
-                                 **kwargs))
+            out.append(self.plot_flag(flag, label=to_string(lab), known=known,
+                                      **kwargs))
         return out
+
+    def plot_dqdict(self, *args, **kwargs):
+        warnings.warn('plot_dqdict() was renamed plot_dict; this warning will '
+                      'result in an error in an upcoming release',
+                      DeprecationWarning)
+        return self.plot_dict(*args, **kwargs)
+
 
     def plot_flag(self, flag, y=None, **kwargs):
         """Plot a `~gwpy.segments.DataQualityFlag` onto these axes.
@@ -236,7 +242,7 @@ class SegmentAxes(Axes):
                                      **kwargs)
 
         # make known collection
-        if known not in {None, False}:
+        if known not in (None, False):
             known_kw = {
                 'facecolor': coll.get_facecolor()[0],
                 'collection': 'ignore',
@@ -244,7 +250,7 @@ class SegmentAxes(Axes):
             }
             if isinstance(known, dict):
                 known_kw.update(known)
-            if known == 'fancy':
+            elif known == 'fancy':
                 known_kw.update(height=kwargs.get('height', .8)*.05)
             elif known in HATCHES:
                 known_kw.update(fill=False, hatch=known)
@@ -254,6 +260,11 @@ class SegmentAxes(Axes):
             self.plot_segmentlist(flag.known, y=y, label=name, **known_kw)
 
         return coll  # return active collection
+
+    def plot_dqflag(self, *args, **kwargs):
+        warnings.warn('plot_dqflag() was renamed plot_flag; this warning will '
+                      'result in an error in an upcoming release',
+                      DeprecationWarning)
 
     def plot_segmentlist(self, segmentlist, y=None, height=.8, label=None,
                          collection=True, rasterized=None, **kwargs):
@@ -351,63 +362,6 @@ class SegmentAxes(Axes):
                                                      label=name, **kwargs))
             y += dy
         return collections
-
-    @staticmethod
-    def build_segment(segment, y, height=.8, valign='center', **kwargs):
-        """Build a `~matplotlib.patches.Rectangle` to display
-        a single `~gwpy.segments.Segment`
-
-        Parameters
-        ----------
-        segment : `~gwpy.segments.Segment`
-            ``[start, stop)`` GPS segment
-
-        y : `float`
-            y-axis position for segment
-
-        height : `float`, optional, default: 1
-            height (in y-axis units) for segment
-
-        valign : `str`
-            alignment of segment on y-axis value:
-            `top`, `center`, or `bottom`
-
-        **kwargs
-            any other keyword arguments acceptable for
-            `~matplotlib.patches.Rectangle`
-
-        Returns
-        -------
-        box : `~matplotlib.patches.Rectangle`
-            rectangle patch for segment display
-        """
-        if valign.lower() == 'bottom':
-            y0 = y
-        elif valign.lower() in ['center', 'centre']:
-            y0 = y - height/2.
-        elif valign.lower() == 'top':
-            y0 = y - height
-        else:
-            raise ValueError("valign must be one of 'top', 'center', or "
-                             "'bottom'")
-        width = segment[1] - segment[0]
-        return Rectangle((segment[0], y0), width=width, height=height,
-                         **kwargs)
-
-    def set_xlim(self, *args, **kwargs):
-        out = super(SegmentAxes, self).set_xlim(*args, **kwargs)
-        _xlim = self.get_xlim()
-        try:
-            texts = self.texts
-        except AttributeError:
-            pass
-        else:
-            for txt in texts:
-                # pylint: disable=protected-access
-                if hasattr(txt, '_is_segment_label') and txt._is_segment_label:
-                    txt.set_x(_xlim[0] + (_xlim[1] - _xlim[0]) * 0.01)
-        return out
-    set_xlim.__doc__ = Axes.set_xlim.__doc__
 
     def get_next_y(self):
         """Find the next y-axis value at which a segment list can be placed
