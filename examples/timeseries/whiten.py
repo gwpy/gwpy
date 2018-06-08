@@ -44,8 +44,8 @@ data = TimeSeries.get('H1:ASC-Y_TR_A_NSUM_OUT_DQ', 1123084671, 1123084703)
 white = data.whiten(4, 2)
 
 # and can `~TimeSeries.plot` both the original and whitened data
-plot = data.plot()
-plot.add_timeseries(white, newax=True, sharex=plot.axes[0])
+from gwpy.plot import Plot
+plot = Plot(data, white, separate=True, sharex=True)
 plot.axes[0].set_xlabel('')
 plot.axes[0].set_ylabel('Y-arm power [counts]', fontsize=16)
 plot.axes[1].set_ylabel('Whitened amplitude', fontsize=16)

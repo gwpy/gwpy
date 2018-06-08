@@ -51,14 +51,15 @@ dispasd = displacement.asd(8, 4)
 
 # and plotting:
 
-from gwpy.plotter import FrequencySeriesPlot
-plot = FrequencySeriesPlot(whiteasd, dispasd, sep=True, sharex=True, label=None)
+from gwpy.plot import Plot
+plot = Plot(whiteasd, dispasd, separate=True, sharex=True,
+            xscale='log', yscale='log')
 
 # Here we have passed the two
 # `spectra <gwpy.frequencyseries.FrequencySeries>` in order,
 # then `sep=True` to display them on separate Axes, `sharex=True` to tie
-# the `~matplotlib.axis.XAxis` of each of the `~gwpy.plotter.FrequencySeriesAxes`
-# together, and `label=None` to remove any unwanted legends.
+# the `~matplotlib.axis.XAxis` of each of the `~gwpy.plot.Axes`
+# together.
 #
 # Finally, we prettify our plot with some limits, and some labels:
 plot.text(0.95, 0.05, 'Preliminary', fontsize=40, color='gray', ha='right', rotation=45, va='bottom', alpha=0.5)  # hide
