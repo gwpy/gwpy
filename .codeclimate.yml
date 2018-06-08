@@ -40,3 +40,4 @@ exclude_paths:
 - gwpy/tests/*
 - gwpy/tests/data/*
 - gwpy/utils/sphinx/epydoc.py
+- gwpy/plotter/
