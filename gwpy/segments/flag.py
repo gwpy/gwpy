@@ -870,31 +870,43 @@ class DataQualityFlag(object):
         """
         return deepcopy(self)
 
-    def plot(self, **kwargs):
-        """Plot this flag.
+    def plot(self, figsize=(12, 4), xscale='auto-gps', **kwargs):
+        """Plot this flag on a segments projection.
 
         Parameters
         ----------
         **kwargs
             all keyword arguments are passed to the
-            :class:`~gwpy.plotter.segments.SegmentPlot` constructor.
+            :class:`~gwpy.plot.Plot` constructor.
 
         Returns
         -------
-        plot : `~gwpy.plotter.segments.SegmentPlot`
-            a new `Plot` with this flag displayed on a set of
-            :class:`~gwpy.plotter.segments.SegmentAxes`.
+        figure : `~matplotlib.figure.Figure`
+            the newly created figure, with populated Axes.
+
+        See Also
+        --------
+        matplotlib.pyplot.figure
+            for documentation of keyword arguments used to create the
+            figure
+        matplotlib.figure.Figure.add_subplot
+            for documentation of keyword arguments used to create the
+            axes
+        gwpy.plot.SegmentAxes.plot_segmentlist
+            for documentation of keyword arguments used in rendering the data
         """
         from matplotlib import rcParams
-        from ..plotter import SegmentPlot
-        kwargs.setdefault('epoch', self.known[0][0])
+        from ..plot import Plot
+
         if self.label:
             kwargs.setdefault('label', self.label)
         elif rcParams['text.usetex']:
             kwargs.setdefault('label', self.texname)
         else:
             kwargs.setdefault('label', self.name)
-        return SegmentPlot(self, **kwargs)
+
+        kwargs.update(figsize=figsize, xscale=xscale)
+        return Plot(self, projection='segments', **kwargs)
 
     def _parse_name(self, name):
         """Internal method to parse a `string` name into constituent
@@ -1712,12 +1724,12 @@ class DataQualityDict(OrderedDict):
         return isegs
 
     def plot(self, label='key', **kwargs):
-        """Plot the data for this dict.
+        """Plot this flag on a segments projection.
 
         Parameters
         ----------
         label : `str`, optional
-            labelling system to use, or fixed label for all flags,
+            Labelling system to use, or fixed label for all flags,
             special values include
 
             - ``'key'``: use the key of the `DataQualityDict`,
@@ -1726,26 +1738,36 @@ class DataQualityDict(OrderedDict):
             If anything else, that fixed label will be used for all lines.
 
         **kwargs
-            all other keyword arguments are passed to the plotter as
-            appropriate
+            all keyword arguments are passed to the
+            :class:`~gwpy.plot.Plot` constructor.
+
+        Returns
+        -------
+        figure : `~matplotlib.figure.Figure`
+            the newly created figure, with populated Axes.
 
         See Also
         --------
-        gwpy.plotter.SegmentPlot
-        gwpy.plotter.SegmentAxes
-        gwpy.plotter.SegmentAxes.plot_dqdict
+        matplotlib.pyplot.figure
+            for documentation of keyword arguments used to create the
+            figure
+        matplotlib.figure.Figure.add_subplot
+            for documentation of keyword arguments used to create the
+            axes
+        gwpy.plot.SegmentAxes.plot_segmentlist
+            for documentation of keyword arguments used in rendering the data
         """
-        from ..plotter import SegmentPlot
-        figargs = dict()
-        for key in ['figsize', 'dpi']:
-            if key in kwargs:
-                figargs[key] = kwargs.pop(key)
-        axargs = dict()
-        for key in ['insetlabels']:
-            if key in kwargs:
-                axargs[key] = kwargs.pop(key)
-        plot_ = SegmentPlot(**figargs)
-        ax = plot_.gca(**axargs)
-        ax.plot(self, label=label, **kwargs)
-        ax.autoscale(axis='y')
-        return plot_
+        # make plot
+        from ..plot import Plot
+        plot = Plot(self, projection='segments', **kwargs)
+
+        # update labels
+        artists = [x for ax in plot.axes for x in ax.collections]
+        for key, artist in zip(self, artists):
+            if label.lower() == 'name':
+                lab = self[key].name
+            elif label.lower() != 'key':
+                lab = key
+            artist.set_label(lab)
+
+        return plot

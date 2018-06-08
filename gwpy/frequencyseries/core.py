@@ -186,29 +186,19 @@ class FrequencySeries(Series):
 
     # -- FrequencySeries methods ----------------
 
-    def plot(self, **kwargs):
-        """Plot the data for this `FrequencySeries`
+    def plot(self, xscale='log', **kwargs):
+        # use log y-scale for ASD, PSD
+        u = self.unit
+        try:
+            hzpow = u.powers[u.bases.index(units.Hz)]
+        except ValueError:
+            pass
+        else:
+            if hzpow < 0:
+                kwargs.setdefault('yscale', 'log')
 
-        All arguments are passed to `~gwpy.plotter.FrequencySeriesPlot`
-
-        Returns
-        -------
-        plot : `~gwpy.plotter.FrequencySeriesPlot`
-            a new `FrequencySeriesPlot` rendering of this `FrequencySeries`
-
-        See Also
-        --------
-        matplotlib.pyplot.figure
-            for documentation of keyword arguments used to create the
-            figure
-        matplotlib.figure.Figure.add_subplot
-            for documentation of keyword arguments used to create the
-            axes
-        matplotlib.axes.Axes.plot
-            for documentation of keyword arguments used in rendering the data
-        """
-        from ..plotter import FrequencySeriesPlot
-        return FrequencySeriesPlot(self, **kwargs)
+        kwargs.update(xscale=xscale)
+        return super(FrequencySeries, self).plot(**kwargs)
 
     def ifft(self):
         """Compute the one-dimensional discrete inverse Fourier

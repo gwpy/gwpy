@@ -308,9 +308,9 @@ def lowpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
     >>> from gwpy.signal.filter_design import lowpass
     >>> lp = lowpass(1000, 4096)
 
-    To view the filter, you can use the `~gwpy.plotter.BodePlot`:
+    To view the filter, you can use the `~gwpy.plot.BodePlot`:
 
-    >>> from gwpy.plotter import BodePlot
+    >>> from gwpy.plot import BodePlot
     >>> plot = BodePlot(lp, sample_rate=4096)
     >>> plot.show()
     """
@@ -370,9 +370,9 @@ def highpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
     >>> from gwpy.signal.filter_design import highpass
     >>> hp = highpass(100, 4096)
 
-    To view the filter, you can use the `~gwpy.plotter.BodePlot`:
+    To view the filter, you can use the `~gwpy.plot.BodePlot`:
 
-    >>> from gwpy.plotter import BodePlot
+    >>> from gwpy.plot import BodePlot
     >>> plot = BodePlot(hp, sample_rate=4096)
     >>> plot.show()
     """
@@ -436,9 +436,9 @@ def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
     >>> from gwpy.signal.filter_design import bandpass
     >>> bp = bandpass(100, 1000, 4096)
 
-    To view the filter, you can use the `~gwpy.plotter.BodePlot`:
+    To view the filter, you can use the `~gwpy.plot.BodePlot`:
 
-    >>> from gwpy.plotter import BodePlot
+    >>> from gwpy.plot import BodePlot
     >>> plot = BodePlot(bp, sample_rate=4096)
     >>> plot.show()
     """
@@ -493,9 +493,9 @@ def notch(frequency, sample_rate, type='iir', **kwargs):
     >>> from gwpy.signal.filter_design import notch
     >>> n = notch(100, 4096)
 
-    To view the filter, you can use the `~gwpy.plotter.BodePlot`:
+    To view the filter, you can use the `~gwpy.plot.BodePlot`:
 
-    >>> from gwpy.plotter import BodePlot
+    >>> from gwpy.plot import BodePlot
     >>> plot = BodePlot(n, sample_rate=4096)
     >>> plot.show()
     """
@@ -549,7 +549,7 @@ def concatenate_zpks(*zpks):
 
     Plot the filter:
 
-    >>> from gwpy.plotter import BodePlot
+    >>> from gwpy.plot import BodePlot
     >>> plot = BodePlot(zpk, sample_rate=4096)
     >>> plot.show()
     """

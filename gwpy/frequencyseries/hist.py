@@ -23,6 +23,7 @@ from six.moves import range
 
 import numpy
 
+from astropy import units
 from astropy.io import registry as io_registry
 
 from ..types import (Quantity, Array2D)
@@ -337,26 +338,13 @@ class SpectralVariance(Array2D):
         return FrequencySeries(out, epoch=self.epoch, channel=self.channel,
                                frequencies=self.bins[:-1], name=name)
 
-    def plot(self, **kwargs):
-        """Plot this `SpectralVariance`
-
-        All arguments are passed to `~gwpy.plotter.FrequencySeriesPlot`
-
-        Returns
-        -------
-        plot : `~gwpy.plotter.FrequencySeriesPlot`
-            a new `FrequencySeriesPlot` rendering of this `FrequencySeries`
-
-        See Also
-        --------
-        matplotlib.pyplot.figure
-            for documentation of keyword arguments used to create the
-            figure
-        matplotlib.figure.Figure.add_subplot
-            for documentation of keyword arguments used to create the
-            axes
-        gwpy.plotter.FrequencySeriesAxes.plot_variance
-            for documentation of keyword arguments used in rendering the data
-        """
-        from ..plotter import FrequencySeriesPlot
-        return FrequencySeriesPlot(self, **kwargs)
+    def plot(self, xscale='log', method='pcolormesh', **kwargs):
+        if method == 'imshow':
+            raise TypeError("plotting a {0} with {1}() is not "
+                            "supported".format(type(self).__name__, method))
+        bins = self.bins
+        if (numpy.all(bins > 0) and
+                numpy.allclose(numpy.diff(numpy.log10(bins), n=2), 0)):
+            kwargs.setdefault('yscale', 'log')
+        kwargs.update(method=method, xscale=xscale)
+        return super(SpectralVariance, self).plot(**kwargs)

@@ -779,13 +779,11 @@ class StateVector(TimeSeriesBase):
         """
         if format == 'timeseries':
             return super(StateVector, self).plot(**kwargs)
-        elif format == 'segments':
-            kwargs.setdefault('facecolor', 'green')
-            kwargs.setdefault('edgecolor', 'black')
-            kwargs.setdefault('known', {'facecolor': 'red',
-                                        'edgecolor': 'black'})
-            from ..plotter import SegmentPlot
-            return SegmentPlot(*self.to_dqflags(bits=bits).values(), **kwargs)
+        if format == 'segments':
+            from ..plot import Plot
+            kwargs.setdefault('xscale', 'auto-gps')
+            return Plot(*self.to_dqflags(bits=bits).values(),
+                        projection='segments', **kwargs)
         raise ValueError("'format' argument must be one of: 'timeseries' or "
                          "'segments'")
 
