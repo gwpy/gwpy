@@ -36,7 +36,7 @@ __currentmodule__ = 'gwpy.table'
 from gwpy.table import EventTable
 events = EventTable.read(
     'H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst',
-    columns=['time', 'central_freq', 'bandwidth', 'duration', 'snr'])
+    columns=['peak', 'central_freq', 'bandwidth', 'duration', 'snr'])
 
 # .. note::
 #
@@ -45,7 +45,7 @@ events = EventTable.read(
 
 # We can make a plot of these events as 2-dimensional tiles by specifying
 # the x- and y-axis columns, and the widths in those directions:
-plot = events.plot('time', 'central_freq', 'duration', 'bandwidth',
+plot = events.plot('peak', 'central_freq', 'duration', 'bandwidth',
                    color='snr')
 ax = plot.gca()
 ax.set_yscale('log')

@@ -34,7 +34,7 @@ import numpy
 from matplotlib import (collections, pyplot)
 from matplotlib.projections import register_projection
 
-from ..table import Table
+from ..table import (Table, EventTable)
 from .core import Plot
 from .timeseries import (TimeSeriesAxes, TimeSeriesPlot)
 from .frequencyseries import FrequencySeriesPlot
@@ -369,8 +369,13 @@ class _EventTableMetaPlot(type):
             plotclass = kwargs.pop('base')
         elif a2:
             xcol = a2[0]
+            if isinstance(args[0], EventTable):  # get 'time' column for table
+                try:
+                    tcol = args[0]._get_time_column()
+                except ValueError:
+                    tcol = None
             # initialise figure as a TimeSeriesPlot
-            if re.search(r'time\Z', xcol, re.I):
+            if re.search(r'time\Z', xcol, re.I) or xcol == tcol:
                 plotclass = TimeSeriesPlot
             # or as a FrequencySeriesPlot
             elif re.search(r'(freq\Z|frequency\Z)', xcol, re.I):

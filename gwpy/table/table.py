@@ -29,6 +29,7 @@ from astropy.table import (Table, Column, vstack)
 from astropy.io.registry import write as io_write
 
 from ..io.mp import read_multi as io_read_multi
+from ..time import gps_types
 from .filter import (filter_table, parse_operator)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -75,6 +76,20 @@ class EventTable(Table):
         for details on parameters for creating an `EventTable`
     """
     Column = EventColumn
+
+    # -- utilities ------------------------------
+
+    def _get_time_column(self):
+        if 'time' in self.columns or not self:
+            return 'time'
+        try:
+            time, = [name for name in self.columns if
+                     isinstance(self[name][0], gps_types)]
+        except ValueError as exc:
+            exc.args = ('cannot identify timecolumn for event_rate(), '
+                        'please specify',)
+            raise
+        return time
 
     # -- i/o ------------------------------------
 
@@ -268,7 +283,7 @@ class EventTable(Table):
 
     # -- extensions -----------------------------
 
-    def event_rate(self, stride, start=None, end=None, timecolumn='time'):
+    def event_rate(self, stride, start=None, end=None, timecolumn=None):
         """Calculate the rate `~gwpy.timeseries.TimeSeries` for this `Table`.
 
         Parameters
@@ -283,16 +298,22 @@ class EventTable(Table):
             GPS end time of rate `~gwpy.timeseries.TimeSeries`.
             This value will be rounded up to the nearest sample if needed.
 
-        timecolumn : `str`, optional, default: ``time``
-            name of time-column to use when binning events
+        timecolumn : `str`, optional
+            name of time-column to use when binning events, attempts
+            are made to guess this
 
         Returns
         -------
         rate : `~gwpy.timeseries.TimeSeries`
             a `TimeSeries` of events per second (Hz)
+
+        Raises
+        ------
+        ValueError
+            if the ``timecolumn`` cannot be guessed from the table contents
         """
         from gwpy.timeseries import TimeSeries
-        times = self[timecolumn]
+        times = self[timecolumn or self._get_time_column()]
         if times.dtype is numpy.dtype('O'):  # cast to ufunc-compatible type
             times = times.astype('float64', copy=False)
         if not start:
@@ -308,7 +329,7 @@ class EventTable(Table):
         return out
 
     def binned_event_rates(self, stride, column, bins, operator='>=',
-                           start=None, end=None, timecolumn='time'):
+                           start=None, end=None, timecolumn=None):
         """Calculate an event rate `~gwpy.timeseries.TimeSeriesDict` over
         a number of bins.
 
@@ -358,6 +379,7 @@ class EventTable(Table):
         from gwpy.timeseries import TimeSeriesDict
 
         # work out time boundaries
+        timecolumn = timecolumn or self._get_time_column()
         if not start:
             start = self[timecolumn].min()
         if not end:
