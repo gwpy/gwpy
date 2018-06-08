@@ -71,7 +71,7 @@ Working with data
 .. toctree::
    :maxdepth: 2
 
-   plotter/index
+   plot/index
    cli/index
 
 **Other utilities**

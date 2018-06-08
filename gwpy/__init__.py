@@ -32,6 +32,10 @@ import warnings
 
 from ._version import get_versions
 
+from . import (
+    plot,  # registers gwpy.plot.Axes as default rectilinear axes
+)
+
 # filter out some annoying, but harmless warnings
 warnings.filterwarnings("ignore", "Module (.*) was already import from")
 warnings.filterwarnings("ignore", "The oldnumeric module",

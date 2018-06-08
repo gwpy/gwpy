@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2018)
 #
 # This file is part of GWpy.
 #
@@ -16,40 +16,35 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""DEPRECATED - this module has been replaced by :mod:`gwpy.plot`
-"""
+"""This module provides plotting utilities for visualising GW data
 
-import warnings
+The standard data types (`TimeSeries`, `Table`, `DataQualityFlag`, ...) can
+all be easily visualised using the relevant plotting objects, with
+many configurable parameters both interactive, and in saving to disk.
+"""
 
 from matplotlib import pyplot
 
 # utilities
-from .rc import DEFAULT_PARAMS as GWPY_PLOT_PARAMS
-from . import (  # pylint: disable=unused-import
+from . import (
+    rc,  # updated default parameters
     gps,  # GPS timing scales and formats
     log,  # Logarithimic scaling mods
+    units,  # unit support
 )
 
 # figure and axes extensions
-from .core import Plot
+from .plot import Plot
 from .axes import Axes
-from .timeseries import (TimeSeriesPlot, TimeSeriesAxes)
-from .spectrogram import (SpectrogramPlot)
-from .frequencyseries import (FrequencySeriesPlot, FrequencySeriesAxes)
-from .segments import (SegmentPlot, SegmentAxes)
-from .filter import (BodePlot)
-from .table import (EventTablePlot, EventTableAxes)
-from .histogram import (HistogramPlot, HistogramAxes)
+from .bode import BodePlot
+from .segments import SegmentAxes
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-
 # pyplot.figure replacement
+
 def figure(*args, **kwargs):  # pylint: disable=missing-docstring
     kwargs.setdefault('FigureClass', Plot)
     return pyplot.figure(*args, **kwargs)
+
 figure.__doc__ = pyplot.figure.__doc__
-
-
-warnings.warn('this module was replaced by `gwpy.plot` and will be '
-              'removed in a future release', DeprecationWarning)
