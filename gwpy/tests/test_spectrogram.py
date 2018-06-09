@@ -150,10 +150,10 @@ class TestSpectrogram(TestArray2D):
         with pytest.warns(UserWarning):
             array.crop_frequencies(array.yspan[0], array.yspan[1]+1)
 
-    @pytest.mark.parametrize('imshow', (True, False))
-    def test_plot(self, array, imshow):
+    @pytest.mark.parametrize('method', ('imshow', 'pcolormesh'))
+    def test_plot(self, array, method):
         with rc_context(rc={'text.usetex': False}):
-            plot = array.plot(imshow=imshow)
+            plot = array.plot(method=method)
             ax = plot.gca()
             assert ax.lines == []
             if imshow:
