@@ -1349,6 +1349,8 @@ class TimeSeriesBaseDict(OrderedDict):
                 lab = self[key].name
             elif label.lower() != 'key':
                 lab = key
+            else:
+                lab = label
             artist.set_label(lab)
 
         return plot
