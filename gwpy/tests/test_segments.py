@@ -33,7 +33,7 @@ import h5py
 from matplotlib import use, rc_context
 use('agg')  # nopep8
 
-from gwpy.plotter import (SegmentPlot, SegmentAxes)
+from gwpy.plot import SegmentAxes
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 from gwpy.time import LIGOTimeGPS
@@ -404,7 +404,6 @@ class TestDataQualityFlag(object):
         flag.label = 'Test label'
         with rc_context(rc={'text.usetex': False}):
             plot = flag.plot(figsize=(6.4, 3.8))
-            assert isinstance(plot, SegmentPlot)
             assert isinstance(plot.gca(), SegmentAxes)
             assert plot.gca().get_epoch() == flag.known[0][0]
             assert len(plot.gca().collections) == 2
@@ -786,7 +785,6 @@ class TestDataQualityDict(object):
     def test_plot(self, instance):
         with rc_context(rc={'text.usetex': False}):
             plot = instance.plot(figsize=(6.4, 3.8))
-            assert isinstance(plot, SegmentPlot)
             assert isinstance(plot.gca(), SegmentAxes)
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)

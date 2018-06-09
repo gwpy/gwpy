@@ -297,7 +297,7 @@ class Plot(figure.Figure):
         Examples
         --------
         >>> import numpy
-        >>> from gwpy.plotter import Plot
+        >>> from gwpy.plot import Plot
 
         To plot a simple image and add a colorbar:
 
@@ -381,7 +381,7 @@ class Plot(figure.Figure):
 
         **plotargs
             extra keyword arguments are passed to
-            :meth:`~gwpy.plotter.SegmentAxes.plot`
+            :meth:`~gwpy.plot.SegmentAxes.plot`
         """
         # get axes to anchor against
         if not ax:
@@ -460,7 +460,7 @@ def _group_axes_data(inputs, separate=None, flat=False):
 
     Examples
     --------
-    >>> from gwpy.plotter import Plot
+    >>> from gwpy.plot import Plot
     >>> Plot._group_axes_data([1, 2], separate=False)
     [[1, 2]]
     >>> Plot._group_axes_data([1, 2], separate=True)

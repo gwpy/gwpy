@@ -333,7 +333,7 @@ class Spectrogram(Array2D):
 
         Returns
         -------
-        plot : `~gwpy.plotter.SpectrogramPlot`
+        plot : `~gwpy.plot.Plot`
             the `Plot` containing the data
 
         See Also
@@ -344,7 +344,7 @@ class Spectrogram(Array2D):
         matplotlib.figure.Figure.add_subplot
             for documentation of keyword arguments used to create the
             axes
-        gwpy.plotter.TimeSeriesAxes.plot_spectrogram
+        gwpy.plot.Axes.imshow or gwpy.plot.Axes.pcolormesh
             for documentation of keyword arguments used in rendering the
             `Spectrogram` data
         """

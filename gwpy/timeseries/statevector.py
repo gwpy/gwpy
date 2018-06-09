@@ -756,14 +756,14 @@ class StateVector(TimeSeriesBase):
 
         **kwargs
             Other keyword arguments to be passed to either
-            `~gwpy.plotter.segments.SegmentPlot` or
-            `~gwpy.plotter.TimeSeriesPlot`, depending
+            `~gwpy.plot.SegmentAxes.plot` or
+            `~gwpy.plot.Axes.plot`, depending
             on ``format``.
 
         Returns
         -------
-        plot : `~gwpy.plotter.SegmentPlot`, or `~gwpy.plotter.TimeSeriesPlot`
-            output plot object, some subclass of `~gwpy.plotter.Plot`
+        plot : `~gwpy.plot.Plot`
+            output plot object
 
         See Also
         --------
@@ -773,7 +773,7 @@ class StateVector(TimeSeriesBase):
         matplotlib.figure.Figure.add_subplot
             for documentation of keyword arguments used to create the
             axes
-        gwpy.plotter.SegmentAxes.plot_dqflag
+        gwpy.plot.SegmentAxes.plot_flag
             for documentation of keyword arguments used in rendering each
             statevector flag.
         """

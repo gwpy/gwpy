@@ -38,7 +38,7 @@ from gwpy import cli as gcli
 from gwpy.cli import cliproduct
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.timeseries import TimeSeries
-from gwpy.plotter import Plot
+from gwpy.plot import Plot
 
 # local imports
 from . import (utils, mocks)

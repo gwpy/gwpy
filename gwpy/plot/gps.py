@@ -282,7 +282,7 @@ class GPSAutoLocator(ticker.MaxNLocator):
         and a `scale` (in seconds).
 
         Each of the `epoch` and `scale` keyword arguments should match those
-        passed to the `~gwpy.plotter.GPSFormatter`
+        passed to the `GPSFormatter`
         """
         super(GPSAutoLocator, self).__init__(nbins=nbins, steps=steps,
                                              **kwargs)

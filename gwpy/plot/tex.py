@@ -83,7 +83,7 @@ def float_to_latex(x, format="%.2g"):  # pylint: disable=redefined-builtin
 
     Examples
     --------
-    >>> from gwpy.plotter.tex import float_to_latex
+    >>> from gwpy.plot.tex import float_to_latex
     >>> float_to_latex(1)
     '1'
     >>> float_to_latex(2000)
@@ -128,7 +128,7 @@ def label_to_latex(text):
 
     Examples
     --------
-    >>> from gwpy.plotter.tex import label_to_latex
+    >>> from gwpy.plot.tex import label_to_latex
     >>> label_to_latex('normal text')
     'normal text'
     >>> label_to_latex('$1 + 2 = 3$')

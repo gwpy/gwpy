@@ -39,7 +39,6 @@ from astropy import units
 
 from gwpy.timeseries import TimeSeries
 from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
-from gwpy.plotter import (FrequencySeriesPlot, FrequencySeriesAxes)
 from gwpy.segments import Segment
 
 from . import utils
@@ -127,8 +126,6 @@ class TestFrequencySeries(TestSeries):
     def test_plot(self, array):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot()
-            assert isinstance(plot, FrequencySeriesPlot)
-            assert isinstance(plot.gca(), FrequencySeriesAxes)
             line = plot.gca().lines[0]
             utils.assert_array_equal(line.get_xdata(), array.xindex.value)
             utils.assert_array_equal(line.get_ydata(), array.value)
@@ -341,8 +338,6 @@ class TestSpectralVariance(TestArray2D):
     def test_plot(self, array):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot(yscale='linear')
-            assert isinstance(plot, FrequencySeriesPlot)
-            assert isinstance(plot.gca(), FrequencySeriesAxes)
             assert len(plot.gca().collections) == 1
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)

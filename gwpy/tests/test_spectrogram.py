@@ -33,7 +33,6 @@ use('agg')  # nopep8
 from astropy import units
 
 from gwpy.spectrogram import Spectrogram
-from gwpy.plotter import (TimeSeriesPlot, TimeSeriesAxes)
 
 from . import utils
 from .test_array import TestArray2D
@@ -156,8 +155,6 @@ class TestSpectrogram(TestArray2D):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot(imshow=imshow)
             ax = plot.gca()
-            assert isinstance(plot, TimeSeriesPlot)
-            assert isinstance(ax, TimeSeriesAxes)
             assert ax.lines == []
             if imshow:
                 assert len(ax.images) == 1

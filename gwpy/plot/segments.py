@@ -48,7 +48,7 @@ HATCHES = ['/', '\\', '|', '-', '+', 'x', 'o', 'O', '.', '*']
 
 
 class SegmentAxes(Axes):
-    """Custom `Axes` for a `~gwpy.plotter.SegmentPlot`.
+    """Custom `Axes` to display segments.
 
     This `SegmentAxes` provides custom methods for displaying any of
 

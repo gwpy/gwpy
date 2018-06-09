@@ -1030,8 +1030,8 @@ class TimeSeries(TimeSeriesBase):
         We can plot the original signal, and the filtered version, cutting
         off either end of the filtered data to remove filter-edge artefacts
 
-        >>> from gwpy.plotter import TimeSeriesPlot
-        >>> plot = TimeSeriesPlot(data, filtered[128:-128], sep=True)
+        >>> from gwpy.plot import Plot
+        >>> plot = Plot(data, filtered[128:-128], sep=True)
         >>> plot.show()
         """
         # parse keyword arguments
@@ -1323,8 +1323,8 @@ class TimeSeries(TimeSeriesBase):
         We can then plot these trends to visualize changes in the amplitude
         and phase of the calibration line:
 
-        >>> from gwpy.plotter import TimeSeriesPlot
-        >>> plot = TimeSeriesPlot(amp, phase, sep=True, sharex=True)
+        >>> from gwpy.plot import Plot
+        >>> plot = Plot(amp, phase, separate=True, sharex=True)
         >>> plot.show()
         """
         stridesamp = int(stride * self.sample_rate.value)
@@ -1383,8 +1383,8 @@ class TimeSeries(TimeSeriesBase):
 
         We can plot it to see how the ends now vary smoothly from 0 to 1:
 
-        >>> from gwpy.plotter import TimeSeriesPlot
-        >>> plot = TimeSeriesPlot(series, tapered, sep=True, sharex=True)
+        >>> from gwpy.plot import Plot
+        >>> plot = Plot(series, tapered, separate=True, sharex=True)
         >>> plot.show()
 
         Notes

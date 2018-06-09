@@ -449,7 +449,7 @@ class EventTable(Table):
         matplotlib.figure.Figure.add_subplot
             for documentation of keyword arguments used to create the
             axes
-        gwpy.plotter.Axes.scatter
+        gwpy.plot.Axes.scatter
             for documentation of keyword arguments used to display the table
         """
         from ..plot import Plot
@@ -494,7 +494,7 @@ class EventTable(Table):
         matplotlib.figure.Figure.add_subplot
             for documentation of keyword arguments used to create the
             axes.
-        gwpy.plotter.Axes.hist
+        gwpy.plot.Axes.hist
             for documentation of keyword arguments used to display the
             histogram, if the ``method`` keyword is given, this method
             might not actually be the one used.
