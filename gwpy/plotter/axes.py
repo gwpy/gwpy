@@ -253,6 +253,3 @@ class Axes(_Axes):
         if isinstance(data, Artist):
             return html.map_artist(data, imagefile, **kwargs)
         return html.map_data(data, self, imagefile, **kwargs)
-
-
-register_projection(Axes)

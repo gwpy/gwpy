@@ -26,7 +26,6 @@ from six.moves import reduce
 
 from matplotlib.artist import allow_rasterization
 from matplotlib.ticker import (Formatter, MultipleLocator, NullLocator)
-from matplotlib.projections import register_projection
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 try:
@@ -484,9 +483,6 @@ class SegmentAxes(TimeSeriesAxes):
                     del tick._orig_pos
         return super(SegmentAxes, self).draw(*args, **kwargs)
     draw.__doc__ = TimeSeriesAxes.draw.__doc__
-
-
-register_projection(SegmentAxes)
 
 
 class SegmentPlot(TimeSeriesPlot):
