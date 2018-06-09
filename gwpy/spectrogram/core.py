@@ -348,6 +348,12 @@ class Spectrogram(Array2D):
             for documentation of keyword arguments used in rendering the
             `Spectrogram` data
         """
+        if 'imshow' in kwargs:
+            warnings.warn('the imshow keyword for Spectrogram.plot was '
+                          'removed, please pass method=\'imshow\' instead',
+                          DeprecationWarning)
+            kwargs.setdefault('method', 'imshow' if kwargs.pop('imshow') else
+                                        'pcolormesh')
         kwargs.update(figsize=figsize, xscale=xscale)
         return super(Spectrogram, self).plot(**kwargs)
 
