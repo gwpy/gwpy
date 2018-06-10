@@ -22,4 +22,22 @@ The `gwpy.cli` module provides methods and functionality to power the
 `gwpy-plot` command-line executable (distributed with GWpy).
 """
 
+from collections import OrderedDict as _od
+
+from .timeseries import TimeSeries
+from .spectrum import Spectrum
+from .spectrogram import Spectrogram
+from .coherence import Coherence
+from .coherencegram import Coherencegram
+from .qtransform import Qtransform
+
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
+
+PRODUCTS = _od((x.action, x) for x in (
+    TimeSeries,
+    Spectrum,
+    Spectrogram,
+    Coherence,
+    Coherencegram,
+    Qtransform,
+))

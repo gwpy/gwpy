@@ -22,217 +22,168 @@
 """ Q-transform plots
 """
 
+import os.path
 import re
-from .cliproduct import CliProduct
-import types
-from pprint import pprint
-from time import time
+
+from astropy.units import Quantity
+
+from ..segments import Segment
+from ..time import to_gps
+from .spectrogram import (FFTMixin, Spectrogram)
 
 
-class Qtransform(CliProduct):
+class Qtransform(Spectrogram):
     """Plot the Q-transform (Omega)"""
-    start_time = None
-    qxfrm_args = None
-    my_ts = None
-    title_save = None
+    MAX_DATASETS = 1
+    action = 'qtransform'
 
-    def __init__(self):
-        self.start_time = time()
-        self.qxfrm_args = dict()
-        super(Qtransform, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(Qtransform, self).__init__(*args, **kwargs)
 
-    def get_action(self):
-        """Return the string used as "action" on command line."""
-        return 'qtransform'
+        args = self.args
+        self.qxfrm_args = {
+            'gps': float(args.gps),
+            'search': args.search / 2.,
+            'fres': 0.5,
+            'tres': 0.002,
+            'whiten': not args.nowhiten,
+        }
+        if args.qrange is not None:
+            self.qxfrm_args['qrange'] = args.qrange
+        if args.frange is not None:
+            self.qxfrm_args['frange'] = args.frange
 
-    def init_cli(self, parser):
-        """Set up the argument list for this product"""
+    @classmethod
+    def init_data_options(cls, parser):
+        # call super of FFTMixin to skip setting FFT arguments
+        super(FFTMixin, cls).init_data_options(parser)
+        cls.arg_qxform(parser)
 
-        self.arg_qxform(parser)
-        self.arg_ax_linx(parser)
-        self.arg_ax_ylf(parser)
-        self.arg_ax_intlin(parser)
-        self.arg_imag(parser)
-        self.arg_plot(parser)
-        return
+    @classmethod
+    def arg_channels(cls, parser):
+        group = parser.add_argument_group('Data options', 'What data to load')
+        group.add_argument('--chan', required=True, help='Channel name.')
+        group.add_argument('--gps', type=to_gps, required=True,
+                           help='Central time of transform')
+        group.add_argument('--search', type=float, default=64,
+                           help='Time window around GPS to search')
+        return group
 
-    def post_arg(self, args):
+    @classmethod
+    def arg_signal(cls, parser):
+        group = super(Qtransform, cls).arg_signal(parser)
+        group.add_argument('--sample-freq', type=float, default=2048,
+                           help='Downsample freq')
+
+    @classmethod
+    def arg_plot(cls, parser):
+        group = super(Qtransform, cls).arg_plot(parser)
+
+        # remove --out option
+        outopt = [act for act in group._actions if act.dest == 'out'][0]
+        group._remove_action(outopt)
+
+        # and replace with --outdir
+        group.add_argument('--outdir', default=os.path.curdir, dest='out',
+                           type=os.path.abspath,
+                           help='Directory for output images')
+
+        return group
+
+    @classmethod
+    def arg_qxform(cls, parser):
+        """Add an `~argparse.ArgumentGroup` for Q-transform options
+        """
+        group = parser.add_argument_group('Q-transform options')
+        group.add_argument('--plot', nargs='+', type=float, default=[.5],
+                           help='One or more times to plot')
+        group.add_argument('--frange', nargs=2, help='Frequency range to plot')
+        group.add_argument('--qrange', nargs=2, help='Search Q range')
+        group.add_argument('--nowhiten', action='store_true',
+                           help='do not whiten input before transform')
+
+    def _finalize_arguments(self, args):
         """Derive standard args from our weird ones
         :type args: Namespace with command line arguments
         """
-        event = float(args.gps)
-        search = int(args.search)
+        gps = args.gps
+        search = args.search
 
-        start = int(event - search / 2)
-        epoch = event
-        args.start = [str(start)]
-        args.epoch = ('%.3f' % epoch)
+        args.start = [[int(gps - search/2)]]
+        if args.epoch is None:
+            args.epoch = args.gps
         args.duration = search
-        args.chan = [[args.chan]]
-        args.highpass = None
-        args.lowpass = None
-        self.verbose = args.verbose
 
-    def get_ylabel(self, args):
+        args.chan = [[args.chan]]
+
+        if args.color_scale is None:
+            args.color_scale = 'linear'
+
+        args.overlap = 0  # so that FFTMixin._finalize_arguments doesn't fail
+
+        xmin = args.xmin
+        xmax = args.xmax
+
+        super(Qtransform, self)._finalize_arguments(args)
+
+        # unset defaults from `TimeDomainProduct`
+        args.xmin = xmin
+        args.xmax = xmax
+
+    def get_ylabel(self):
         """Default text for y-axis label"""
         return 'Frequency (Hz)'
 
     def get_color_label(self):
         return 'Normalized energy'
 
-    def get_max_datasets(self):
-        """Q-transform only handles 1 at a time"""
-        return 1
-
-    def is_image(self):
-        """This plot is image type"""
-        return True
-
-    def freq_is_y(self):
-        """This plot puts frequency on the y-axis of the image"""
-        return True
+    def get_suptitle(self):
+        return 'Q-transform: {0}'.format(self.chan_list[0])
 
     def get_title(self):
-        """Start of default super title, first channel is appended to it"""
-        return 'Q-transform: '
-
-    def gen_plot(self, args):
-        """Generate the plot from time series and arguments"""
-        self.is_freq_plot = False   # not fft based
-
-        self.my_ts = self.timeseries[0]
-        self.title2 = ''
-
-        self.qxfrm_args['search'] = abs(self.my_ts.span) / 2.
-        if args.qrange:
-            self.qxfrm_args['qrange'] = (float(args.qrange[0]),
-                                         float(args.qrange[1]))
-            self.title2 += (' q-range [%.1f, %.1f], ' %
-                            (self.qxfrm_args['qrange'][0],
-                             self.qxfrm_args['qrange'][1]))
-        if args.frange:
-            self.qxfrm_args['frange'] = (float(args.frange[0]),
-                                         float(args.frange[1]))
-
-        if args.nowhiten:
-            self.qxfrm_args['whiten'] = False
-            self.title2 += 'not whitened, '
-        else:
-            self.title2 += 'whitened, '
-
-        self.qxfrm_args['gps'] = float(args.gps)
-        self.qxfrm_args['fres'] = 0.5
-        self.qxfrm_args['tres'] = 0.002
-
-        new_fs = float(args.sample_freq)
-        cur_fs = self.my_ts.sample_rate.value
-
-        if cur_fs > new_fs:
-            self.my_ts = self.my_ts.resample(new_fs)
-            self.title2 = (' %.0f resampled to %.0f Hz, ' %
-                           (cur_fs, new_fs)) + self.title2
-            self.log(3, 'Resampled input to %d Hz' % new_fs)
-        else:
-            new_fs = cur_fs
-            self.title2 = (' %.0f Hz, ' % cur_fs) + self.title2
-
-        prange = self.get_plot_range(args)
-        epoch = float(args.epoch)
-        self.qxfrm_args['outseg'] = (epoch-prange, epoch+prange)
-
-        if self.verbose >= 3:
-            print('Q-transform args:')
-            pprint(self.qxfrm_args)
-
-        self.result = self.my_ts.q_transform(**self.qxfrm_args)
-        self.log(2, 'Result shape: %dx%d' %
-                 (self.result.shape[0], self.result.shape[1]))
-
-        self.pltargs = dict()
-        if args.cmap:
-            self.pltargs['cmap'] = args.cmap
-        # weirdness because we allow 2 ways to specify intensity range
-        imin = None
-        imax = None
-        if args.imin:
-            imin = float(args.imin)
-        if args.imax:
-            imax = float(args.imax)
-        if args.erange:
-            imin = float(args.erange[0])
-            imax = float(args.erange[1])
-
-        if imin is not None:
-            self.pltargs['vmin'] = imin
-        if imax:
-            self.pltargs['vmax'] = imax
-
-        if self.verbose >= 3:
-            print('Plot args:')
-            pprint(self.pltargs)
-
-        self.plot = self.result.plot(**self.pltargs)
-        self.scaleText = 'Normalized energy'
-
-        fmax = self.result.frequencies.max().value
-        fmin = self.result.frequencies.min().value
-        self.log(2, 'Frequency range of result: %.2f - %.2f' %
-                 (fmin, fmax))
-        self.title2 += (' calc f-range [%.1f, %.1f], ' %
-                        (fmin, fmax))
-        self.fmin = fmin
-        self.fmax = fmax
-
-        emin = self.result.min()
-        emax = self.result.max()
-        self.title2 += (' calc e-range [%.1f, %.1f] ' %
-                        (emin, emax))
-
-        self.title_save = self.title2
-        self.title2 = (' Q = %.1f ' % self.result.q) + self.title_save
-        self.plot_num = 0
-        self.qx_plot_setup(args)
-
-    def qx_plot_setup(self, args):
-        """Next plot has different display (time) range"""
-        prange = self.get_plot_range(args)
-        epoch = float(args.epoch)
-        args.xmin = ('%.3f' % (epoch - prange / 2))
-        args.xmax = ('%.3f' % (epoch + prange / 2))
-
-        args.out = ('%s/%s-%.3f-%05.2f.png' % (args.outdir,
-                    re.sub(':', '-', self.timeseries[0].channel.name),
-                    float(args.gps), prange))
-        self.qxfrm_args['outseg'] = (epoch-prange, epoch+prange)
-
-    def get_plot_range(self, args):
-        prng = args.plot
-        if isinstance(prng, types.ListType):
-            prange = float(prng[self.plot_num])
-        elif prng:
-            prange = float(prng)
-        else:
-            prange = 0.5
-            args.plot = '0.5'
-
-        return prange
-
-    def has_more_plots(self, args):
-        """any ranges left to plot?"""
-        self.plot_num += 1
-        if not args.plot:
-            ret = False
-        else:
-            ret = self.plot_num < len(args.plot)
-        if not ret:
-            run_time = time() - self.start_time
-            self.log(2, 'Q-transform run time: %.1f  sec' % run_time)
-        return ret
-
-    def prep_next_plot(self, args):
-        """Overridden because we may need multiple saves
+        """Default title for plot
         """
-        self.qx_plot_setup(args)
-        self.result = self.my_ts.q_transform(**self.qxfrm_args)
-        self.plot = self.result.plot(**self.pltargs)
-        self.title2 = (' Q = %.1f ' % self.result.q) + self.title_save
+        def fformat(x):  # float format
+            if isinstance(x, (list, tuple)):
+                return '[{0}]'.format(', '.join(map(fformat, x)))
+            if isinstance(x, Quantity):
+                x = x.value
+            return '{0:.2f}'.format(x)
+
+        bits = [('Q', fformat(self.result.q))]
+        if self.qxfrm_args.get('qrange'):
+            bits.append(('q-range', fformat(self.qxfrm_args['qrange'])))
+        if self.qxfrm_args['whiten']:
+            bits.append(('whitened',))
+        bits.extend([
+            ('calc f-range', fformat(self.result.yspan)),
+            ('calc e-range', fformat((self.result.min(), self.result.max()))),
+        ])
+        return ', '.join(['='.join(bit) for bit in bits])
+
+    def get_spectrogram(self):
+        args = self.args
+
+        gps = self.qxfrm_args['gps']
+        outseg = Segment(gps, gps).protract(args.plot[self.plot_num])
+        qtrans = self.timeseries[0].q_transform(
+            outseg=outseg,
+            **self.qxfrm_args)
+
+        if args.ymin is None:  # set before Spectrogram.make_plot tries to set
+            args.ymin = qtrans.yspan[0]
+
+        return qtrans
+
+    def has_more_plots(self):
+        """any ranges left to plot?
+        """
+        return self.plot_num < len(self.args.plot)
+
+    def save(self, outdir):  # pylint: disable=arguments-differ
+        cname = re.sub('[-_:]', '_', self.timeseries[0].channel.name).replace(
+            '_', '-', 1)
+        png = '{0}-{1}-{2}.png'.format(cname, float(self.args.gps),
+                                       self.args.plot[self.plot_num])
+        outfile = os.path.join(outdir, png)
+        return super(Qtransform, self).save(outfile)

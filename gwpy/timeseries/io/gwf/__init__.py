@@ -38,15 +38,12 @@ from six import string_types
 
 import numpy
 
-from astropy.io.registry import (get_formats, get_reader, get_writer)
-
-from glue.lal import Cache
+from astropy.io.registry import (get_reader, get_writer)
 
 from ....segments import Segment
 from ....time import to_gps
 from ....io.gwf import identify_gwf
-from ....io.cache import (FILE_LIKE, read_cache as read_cache_file,
-                          find_contiguous)
+from ....io import cache as io_cache
 from ....io.registry import (register_reader,
                              register_writer,
                              register_identifier)
@@ -143,7 +140,7 @@ def get_default_gwf_api():
     for lib in APIS:
         try:
             import_gwf_library(lib)
-        except ImportError as e:
+        except ImportError:
             continue
         else:
             return lib
@@ -188,11 +185,12 @@ def register_gwf_api(library):
 
         Parameters
         ----------
-        source : `str`, :class:`glue.lal.Cache`, `list`
-            data source object, one of:
+        source : `str`, `list`
+            Source of data, any of the following:
 
-            - `str` : frame file path
-            - :class:`glue.lal.Cache`, `list` : contiguous list of frame paths
+            - `str` path of single data file,
+            - `str` path of LAL-format cache file,
+            - `list` of paths.
 
         channels : `list`
             list of channel names (or `Channel` objects) to read from frame.
@@ -204,14 +202,6 @@ def register_gwf_api(library):
         end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS end time of required data, defaults to end of data found;
             any input parseable by `~gwpy.time.to_gps` is fine
-
-        dtype : `numpy.dtype`, `str`, `type`, or `dict`, optional
-            desired numeric data type for returned data, or
-            `dict` of ``(channel, dtype)`` pairs
-
-        resample : `float`, `dict`, optional
-            desired output sample rate for all returned data, or
-            `dict` of ``(channel, rate)`` pairs
 
         pad : `float`, optional
             value with which to fill gaps in the source data, if not
@@ -232,9 +222,17 @@ def register_gwf_api(library):
         if end:
             end = float(to_gps(end))
 
-        # parse output format kwargs
+        # parse output format kwargs -- DEPRECATED
+        if resample is not None:
+            warnings.warn('the resample keyword for is deprecated, instead '
+                          'you should manually resample after reading',
+                          DeprecationWarning)
         if not isinstance(resample, dict):
             resample = dict((c, resample) for c in channels)
+        if dtype is not None:
+            warnings.warn('the dtype keyword for is deprecated, instead '
+                          'you should manually call astype() after reading',
+                          DeprecationWarning)
         if not isinstance(dtype, dict):
             dtype = dict((c, dtype) for c in channels)
 
@@ -247,14 +245,14 @@ def register_gwf_api(library):
         # read cache file up-front
         if (isinstance(source, string_types) and
                 source.endswith(('.lcf', '.cache'))) or (
-                    isinstance(source, FILE_LIKE) and
+                    isinstance(source, io_cache.FILE_LIKE) and
                     source.name.endswith(('.lcf', '.cache'))):
-            source = read_cache_file(source)
+            source = io_cache.read_cache(source)
         # separate cache into contiguous segments
-        if isinstance(source, Cache):
+        if io_cache.is_cache(source):
             if start is not None and end is not None:
-                source = source.sieve(segment=Segment(start, end))
-            source = list(find_contiguous(source))
+                source = io_cache.sieve(source, segment=Segment(start, end))
+            source = list(io_cache.find_contiguous(source))
         # convert everything else into a list if needed
         if not isinstance(source, (list, tuple)):
             source = [source]
@@ -269,7 +267,7 @@ def register_gwf_api(library):
                                 series_class=series_class, **kwargs),
                        gap=gap, pad=pad, copy=False)
 
-        # apply resampling and dtype-casting
+        # apply resampling and dtype-casting -- DEPRECATED
         for name in out:
             if (resample.get(name) and
                     resample[name] != out[name].sample_rate.value):
@@ -362,11 +360,6 @@ def register_gwf_api(library):
     register_writer(fmt, StateVectorDict, write_timeseriesdict)
     register_writer(fmt, StateVector, write_timeseries)
 
-    # register deprecated format - DEPRECATED
-    for container in (TimeSeries, TimeSeriesDict,
-                      StateVector, StateVectorDict):
-        register_library_format(container, library)
-
 
 # -- generic API for 'gwf' format ---------------------------------------------
 
@@ -393,49 +386,6 @@ def register_gwf_format(container):
     register_identifier('gwf', container, identify_gwf)
     register_reader('gwf', container, read_)
     register_writer('gwf', container, write_)
-
-
-# -- DEPRECATED - register old format name ------------------------------------
-
-def register_library_format(container, library):
-    """Register methods for the given library format
-
-    E.g. for lalframe this functions creates methods and registers them
-    for the ``lalframe`` format name.
-
-    This format has been deprecated and will be removed prior to the 1.0
-    release in favour of the ``gwf.<library>`` contention. All this method
-    does is create directes from `format='<library'` to
-    `format=gwf.<library>'`.
-
-    Parameters
-    ----------
-    container : `Series`, `dict`
-        series class or series dict class to register
-
-    library : `str`
-        name of frame library
-    """
-    fmt = 'gwf.%s' % library
-    reader = get_reader(fmt, container)
-    writer = get_writer(fmt, container)
-
-    def read_(*args, **kwargs):
-        warnings.warn("Reading with format=%r is deprecated and will be "
-                      "disabled in an upcoming release, please use "
-                      "format=%r instead" % (library, fmt),
-                      DeprecationWarning)
-        return reader(*args, **kwargs)
-
-    def write_(*args, **kwargs):
-        warnings.warn("Writing with format=%r is deprecated and will be "
-                      "disabled in an upcoming release, please use "
-                      "format=%r instead" % (library, fmt),
-                      DeprecationWarning)
-        return writer(*args, **kwargs)
-
-    register_reader(library, container, read_)
-    register_writer(library, container, write_)
 
 
 # -- register frame API -------------------------------------------------------

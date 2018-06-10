@@ -25,6 +25,8 @@ Peter Shawhan.
 import datetime
 from decimal import Decimal
 
+from six import string_types
+
 from dateutil import parser as dateparser
 
 from astropy.units import Quantity
@@ -131,9 +133,16 @@ def to_gps(t, *args, **kwargs):
     >>> to_gps(Time(57754, format='mjd'))
     LIGOTimeGPS(1167264018, 0)
     """
+    # if input is a string of a float, get back to float quickly
+    if isinstance(t, string_types):
+        try:
+            t = float(t)
+        except (TypeError, ValueError):
+            pass
+
     # -- convert input to Time, or something we can pass to LIGOTimeGPS
 
-    if isinstance(t, str):  # str -> datetime.datetime
+    if isinstance(t, string_types):  # str -> datetime.datetime
         t = _str_to_datetime(t)
 
     if isinstance(t, (tuple, list)):  # tuple -> datetime.datetime

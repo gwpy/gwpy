@@ -29,8 +29,8 @@ fi
 set -x
 
 # update docker itself
-sudo apt-get update
-sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
+sudo apt-get -y -qq update
+sudo apt-get -y -qq -o Dpkg::Options::="--force-confnew" install docker-ce
 
 # download container
 travis_retry sudo timeout 300 docker pull ${DOCKER_IMAGE}
@@ -41,11 +41,12 @@ sudo docker run \
     --interactive \
     --tty \
     --name ${DOCKER_IMAGE##*:} \
+    --env PIP_FLAGS="${PIP_FLAGS}" \
     --env DOCKER_IMAGE="${DOCKER_IMAGE}" \
     --env PYTHON_VERSION="${TRAVIS_PYTHON_VERSION}" \
     --env GWPY_PATH="${GWPY_PATH}" \
     --env EXTRAS="${EXTRAS}" \
-    --volume `pwd`:${GWPY_PATH}:rw \
+    --volume $(pwd):${GWPY_PATH}:rw \
     ${DOCKER_IMAGE}
 
 sleep 5

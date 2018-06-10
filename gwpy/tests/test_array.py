@@ -36,7 +36,7 @@ from gwpy.detector import Channel
 from gwpy.segments import Segment
 from gwpy.time import LIGOTimeGPS
 
-import utils
+from . import utils
 
 warnings.filterwarnings('always', category=units.UnitsWarning)
 warnings.filterwarnings('always', category=UserWarning)

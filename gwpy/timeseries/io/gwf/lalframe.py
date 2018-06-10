@@ -31,9 +31,10 @@ from six import string_types
 # to give the user a bit more information
 import lalframe
 import lal
+from lal.utils import CacheEntry
 
-from ....io.cache import (FILE_LIKE, Cache as GlueCache,
-                          CacheEntry as GlueCacheEntry)
+
+from ....io import cache as io_cache
 from ....utils import lal as lalutils
 from ... import TimeSeries
 
@@ -49,22 +50,22 @@ def open_data_source(source):
 
     Parameters
     ----------
-    source : `str`, `file`, `lal.Cache`, :class:`glue.lal.Cache`
-        data source to read
+    source : `str`, `file`, `list`
+        Data source to read.
 
     Returns
     -------
     stream : `lalframe.FrStream`
-        an open `FrStream`
+        An open `FrStream`.
 
     Raises
     ------
     ValueError
-        if the input format cannot be identified
+        If the input format cannot be identified.
     """
-    if isinstance(source, FILE_LIKE):
+    if isinstance(source, io_cache.FILE_LIKE):
         source = source.name
-    if isinstance(source, GlueCacheEntry):
+    if isinstance(source, CacheEntry):
         source = source.path
 
     # read cache file
@@ -73,11 +74,10 @@ def open_data_source(source):
         return lalframe.FrStreamCacheOpen(lal.CacheImport(source))
 
     # read glue cache object
-    if isinstance(source, GlueCache):
+    if isinstance(source, list) and io_cache.is_cache(source):
         cache = lal.Cache()
-        for entry in source:
-            cache = lal.CacheMerge(
-                cache, lal.CacheGlob(*os.path.split(entry.path)))
+        for entry in io_cache.file_list(source):
+            cache = lal.CacheMerge(cache, lal.CacheGlob(*os.path.split(entry)))
         return lalframe.FrStreamCacheOpen(cache)
 
     # read lal cache object

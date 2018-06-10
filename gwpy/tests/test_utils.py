@@ -21,6 +21,7 @@
 
 import subprocess
 from importlib import import_module
+from math import sqrt
 
 from six import PY2
 
@@ -30,10 +31,9 @@ import numpy
 
 from astropy import units
 
-from gwpy.utils import shell
-from gwpy.utils import deps  # deprecated
+from gwpy.utils import (shell, mp as utils_mp)
 
-import utils
+from . import utils
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -65,37 +65,6 @@ def test_which():
     else:
         result = result.rstrip('\n')
     assert shell.which('true') == result
-
-
-def test_import_method_dependency():
-    import subprocess
-    mod = deps.import_method_dependency('subprocess')
-    assert mod is subprocess
-    with pytest.raises(ImportError) as exc:
-        deps.import_method_dependency('blah')
-    if PY2:
-        assert str(exc.value) == ("Cannot import blah required by the "
-                                  "test_import_method_dependency() method: "
-                                  "'No module named blah'")
-    else:
-        assert str(exc.value) == "No module named 'blah'"
-
-
-def test_with_import():
-    @deps.with_import('blah')
-    def with_import_tester():
-        pass
-
-    # FIXME: this should really test the message
-    with pytest.raises(ImportError) as exc:
-        with_import_tester()
-
-
-def test_compat_ordereddict():
-    with pytest.warns(DeprecationWarning):
-        from gwpy.utils.compat import OrderedDict as CompatOrderedDict
-    from collections import OrderedDict
-    assert CompatOrderedDict is OrderedDict
 
 
 # -- gwpy.utils.lal -----------------------------------------------------------
@@ -141,12 +110,47 @@ class TestUtilsLal(object):
             self.utils_lal.to_lal_unit('rad/s')
 
     def test_from_lal_unit(self):
-        assert self.utils_lal.from_lal_unit(
-            self.lal.MeterUnit / self.lal.SecondUnit) == (
-            units.Unit('m/s'))
+        try:
+            lalms = self.lal.MeterUnit / self.lal.SecondUnit
+        except TypeError as exc:
+            # see https://git.ligo.org/lscsoft/lalsuite/issues/65
+            pytest.skip(str(exc))
+        assert self.utils_lal.from_lal_unit(lalms) == units.Unit('m/s')
         assert self.utils_lal.from_lal_unit(self.lal.StrainUnit) == (
             units.Unit('strain'))
 
     def test_to_lal_ligotimegps(self):
         assert self.utils_lal.to_lal_ligotimegps(123.456) == (
             self.lal.LIGOTimeGPS(123, 456000000))
+
+
+# -- gwpy.utils.mp ------------------------------------------------------------
+
+class TestUtilsMp(object):
+
+    @pytest.mark.parametrize('verbose', [False, True, 'Test'])
+    @pytest.mark.parametrize('nproc', [1, 2])
+    def test_multiprocess_with_queues(self, capsys, nproc, verbose):
+        inputs = [1, 4, 9, 16, 25]
+        out = utils_mp.multiprocess_with_queues(
+            nproc, sqrt, inputs, verbose=verbose,
+        )
+        assert out == [1, 2, 3, 4, 5]
+
+        # assert progress bar prints correctly
+        cap = capsys.readouterr()
+        if verbose is True:
+            assert cap.out.startswith('\rProcessing: ')
+        elif verbose is False:
+            assert cap.out == ''
+        else:
+            assert cap.out.startswith('\r{}: '.format(verbose))
+
+        with pytest.raises(ValueError):
+            utils_mp.multiprocess_with_queues(nproc, sqrt, [-1],
+                                              verbose=verbose)
+
+    def test_multiprocess_with_queues_raise(self):
+        with pytest.warns(DeprecationWarning):
+            utils_mp.multiprocess_with_queues(1, sqrt, [1],
+                                              raise_exceptions=True)

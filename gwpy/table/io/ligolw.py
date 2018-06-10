@@ -85,8 +85,7 @@ def _get_property_columns(tabletype, columns):
 # -- conversions --------------------------------------------------------------
 
 def to_astropy_table(llwtable, apytable, copy=False, columns=None,
-                     use_numpy_dtypes=False, rename=None,
-                     on_attributeerror=None, get_as_columns=None):
+                     use_numpy_dtypes=False, rename=None):
     """Convert a :class:`~glue.ligolw.table.Table` to an `~astropy.tableTable`
 
     This method is designed as an internal method to be attached to
@@ -115,28 +114,11 @@ def to_astropy_table(llwtable, apytable, copy=False, columns=None,
         dict of ('old name', 'new name') pairs to rename columns
         from the original LIGO_LW table
 
-    on_attributeerror
-        DEPRECATED, do not use
-
-    get_as_columns
-        DEPRECATED, do not use
-
     Returns
     -------
     table : `EventTable`
         a view of the original data
     """
-    # handle deprecated keywords
-    if get_as_columns is not None:
-        warnings.warn("the ``get_as_columns`` keyword has been deprecated and "
-                      "will be removed in an upcoming release, simply refer "
-                      "to the columns you want via the ``columns`` keyword",
-                      DeprecationWarning)
-    if on_attributeerror is not None:
-        warnings.warn("the ``on_attributeerror`` keyword has been deprecated, "
-                      "and will be removed in an upcoming release, it will be "
-                      "ignored for now", DeprecationWarning)
-
     # set default keywords
     if rename is None:
         rename = {}
@@ -323,8 +305,6 @@ def read_table(source, tablename=None, **kwargs):
     # separate keywords for reading and converting from LIGO_LW to Astropy
     read_kw = kwargs  # rename for readability
     convert_kw = {
-        'on_attributeerror': None,  # deprecated
-        'get_as_columns': None,  # deprecated
         'rename': None,
         'use_numpy_dtypes': False,
     }
@@ -346,33 +326,8 @@ def read_table(source, tablename=None, **kwargs):
         read_kw['columns'] = columns
     convert_kw['columns'] = columns or read_kw['columns']
 
-    # handle requests for 'time' as a special case - DEPRECATED
     if tablename:
         tableclass = TableByName[ligolw_table.Table.TableName(tablename)]
-        needtime = (convert_kw['columns'] is not None and
-                    'time' in convert_kw['columns'] and
-                    'time' not in tableclass.validcolumns)
-        if needtime:
-            # find name of real column representing 'time'
-            warnings.warn("auto-identification of 'time' column in LIGO_LW "
-                          "documents has been deprecated, please directly "
-                          "reference the columns you want as written in the "
-                          "document(s)", DeprecationWarning)
-            if tablename.endswith('_burst'):
-                tname = 'peak'
-            elif tablename.endswith('_inspiral'):
-                tname = 'end'
-            elif tablename.endswith('_ringdown'):
-                tname = 'start'
-            else:
-                raise ValueError("'time' column requested from a table that "
-                                 "doesn't supply it or have a good proxy "
-                                 "(e.g. 'peak_time')")
-
-            # replace 'time' with get_xxx method name
-            convert_kw['columns'][convert_kw['columns'].index('time')] = tname
-            convert_kw['rename'][tname] = 'time'
-
         # work out if fancy property columns are required
         #     means 'peak_time' and 'peak_time_ns' will get read if 'peak'
         #     is requested
@@ -409,43 +364,11 @@ def write_table(table, target, tablename=None, **kwargs):
 
 # -- register -----------------------------------------------------------------
 
+for table_ in TableByName.values():
+    # register conversion from LIGO_LW to astropy Table
+    table_.__astropy_table__ = to_astropy_table
+
 for table_class in (Table, EventTable):
     registry.register_reader('ligolw', table_class, read_table)
     registry.register_writer('ligolw', table_class, write_table)
     registry.register_identifier('ligolw', table_class, is_ligolw)
-
-
-# -- DEPRECATED - remove before 1.0 release -----------------------------------
-
-def _ligolw_io_factory(table):
-    """Define a read and write method for the given LIGO_LW table
-
-    This system has been deprecated in favour of the simpler
-    `Table.read(format='ligolw', tablename='...')` syntax.
-    """
-    tablename = table.TableName(table.tableName)
-    wng = ("``format='ligolw.{0}'`` has been deprecated, please "
-           "read using ``format='ligolw', tablename={0}'``".format(tablename))
-
-    def _read_ligolw_table(source, tablename=tablename, **kwargs):
-        warnings.warn(wng, DeprecationWarning)
-        return read_table(source, tablename=tablename, **kwargs)
-
-    def _write_table(tbl, target, tablename=tablename, **kwargs):
-        warnings.warn(wng, DeprecationWarning)
-        return write_table(tbl, target, tablename=tablename, **kwargs)
-
-    return _read_ligolw_table, _write_table
-
-
-for table_ in TableByName.values():
-    # build readers for this table
-    read_, write_, = _ligolw_io_factory(table_)
-
-    # register conversion from LIGO_LW to astropy Table
-    table_.__astropy_table__ = to_astropy_table
-
-    # register table-specific reader for Table and EventTable
-    fmt = 'ligolw.%s' % table_.TableName(table_.tableName)
-    registry.register_reader(fmt, Table, read_)
-    registry.register_writer(fmt, Table, write_)

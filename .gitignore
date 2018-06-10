@@ -39,6 +39,7 @@ pip-delete-this-directory.txt
 /docs/*.inv
 /docs/api/
 /docs/cli/*.png
+/docs/cli/examples/
 /docs/citing.rst
 
 # OS/editor files
@@ -56,6 +57,7 @@ pip-delete-this-directory.txt
 
 # py.test cache dir
 /.cache
+/.pytest_cache/
 
 # dqsegdb files
 __dqsegdb*.json

@@ -23,7 +23,7 @@
 
 # set path to build directory
 if [ -z "${DOCKER_IMAGE}" ]; then
-    GWPY_PATH=`pwd`
+    GWPY_PATH=$(pwd)
 else
     GWPY_PATH="/gwpy"
 fi
@@ -46,102 +46,145 @@ get_os_type() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         echo $ID
-    elif [[ ${TRAVIS_OS_NAME} == "osx" ]] || [[ "`uname`" == "Darwin" ]]; then
+    elif [[ ${TRAVIS_OS_NAME} == "osx" ]] || [[ "$(uname)" == "Darwin" ]]; then
         echo macos
     fi
 }
 
-get_debian_version() {
-    cat /etc/debian_version | cut -d\. -f1
+get_os_version() {
+    case "$(uname -s)" in
+        Darwin)
+            sw_vers -productVersion
+            ;;
+        *)
+            source /etc/os-release
+            echo ${VERSION_ID}
+    esac
 }
 
 get_package_manager() {
-    local ostype=`get_os_type`
-    if [ $ostype == macos ]; then
-        echo port
-    elif [[ $ostype =~ ^(centos|rhel|fedora)$ ]]; then
-        echo yum
-    else
-        echo apt-get
-    fi
+    case "$(get_os_type)" in
+        macos)
+            echo port
+            ;;
+        centos|rhel|fedora)
+            echo yum
+            ;;
+        *)
+            echo apt-get
+    esac
 }
 
 update_package_manager() {
-    local pkger=`get_package_manager`
-    case "$pkger" in
+    local pkger=$(get_package_manager)
+    case "$(get_package_manager)" in
         "port")
-            port selfupdate
+            port -q selfupdate
             ;;
         "apt-get")
             apt-get --yes --quiet update
             ;;
         "yum")
-            yum clean all
-            yum makecache
-            yum -y update
+            yum -q clean all
+            yum -q makecache
+            yum -y -q update
             ;;
     esac
 }
 
 install_package() {
-    local pkger=`get_package_manager`
+    local pkger=$(get_package_manager)
     case "$pkger" in
         "port")
-            port -N install $@
+            port -q install $@
             ;;
         "apt-get")
-            apt-get --yes --quiet install $@
+            apt-get --yes -qq install $@
             ;;
         "yum")
-            yum -y install $@
+            yum -y -q install $@
             ;;
     esac
 }
 
 get_python_version() {
     if [ -z "${PYTHON_VERSION}" ]; then
-        PYTHON_VERSION=`python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'`
+        PYTHON_VERSION=$(python -c 'import sys; print(sys.version[:3])')
     fi
     export PYTHON_VERSION
     echo ${PYTHON_VERSION}
 }
 
+get_python2_version() {
+    echo '2.7'
+}
+
+get_python3_version() {
+    case "$(get_os_type)$(get_os_version)" in
+        centos7|debian8)
+           echo '3.4'
+           ;;
+        debian9)
+           echo '3.5'
+           ;;
+        debian10|macos*)
+           echo '3.6'
+           ;;
+        macos*)
+           echo '3.6'
+           ;;
+    esac
+}
+
 get_environment() {
-    local pkger=`get_package_manager`
-    local pyversion=`get_python_version`
-    IFS='.' read PY_MAJOR_VERSION PY_MINOR_VERSION <<< "$pyversion"
-    PY_XY="${PY_MAJOR_VERSION}${PY_MINOR_VERSION}"
-    PYTHON=python$pyversion
-    PIP="${PYTHON} -m pip"
-    case "$pkger" in
-        "port")
-            PY_DIST=python${PY_XY}
-            PY_PREFIX=py${PY_XY}
+    local pkger=$(get_package_manager)
+
+    # OS variables
+    export OS_NAME=$(get_os_type)
+    export OS_VERSION=$(get_os_version)
+
+    # PYTHON VARIABLES
+    export PYTHON_VERSION=$(get_python_version)
+    export PYTHON="python${PYTHON_VERSION}"
+    export PYTHON2_VERSION=$(get_python2_version)
+    export PYTHON2="python${PYTHON2_VERSION}"
+    export PYTHON3_VERSION=$(get_python3_version)
+    export PYTHON3="python${PYTHON3_VERSION}"
+
+    IFS='.' read PY_MAJOR_VERSION PY_MINOR_VERSION <<< "${PYTHON_VERSION}"
+    export PY_XY="${PY_MAJOR_VERSION}${PY_MINOR_VERSION}"
+
+    export PIP="${PYTHON} -m pip"
+
+    case "${OS_NAME}${PY_MAJOR_VERSION}" in
+        macos*)  # macports
+            PY_DIST="python${PY_XY}"
+            PY_PREFIX="py${PY_XY}"
             PIP="sudo ${PIP}"
             ;;
-        "apt-get")
-            if [ ${PY_MAJOR_VERSION} == 2 ]; then
-                PY_DIST=python
-                PY_PREFIX=python
-            else
-                PY_DIST=python${PY_MAJOR_VERSION}
-                PY_PREFIX=python${PY_MAJOR_VERSION}
-            fi
+        debian2)
+            PY_DIST="python"
+            PY_PREFIX="python"
             ;;
-        "yum")
-            if [ ${PY_MAJOR_VERSION} == 2 ]; then
-                PY_DIST=python
-                PY_PREFIX=python
-            elif [ ${PY_XY} -eq 34 ]; then
-                PY_DIST=python${PY_XY}
-                PY_PREFIX=python${PY_XY}
-            else
-                PY_DIST=python${PY_XY}u
-                PY_PREFIX=python${PY_XY}u
+        debian3)
+            PY_DIST="python${PY_MAJOR_VERSION}"
+            PY_PREFIX="python${PY_MAJOR_VERSION}"
+            ;;
+        centos2|rhel2|fedora2)
+            PY_DIST="python"
+            PY_PREFIX="python"
+            ;;
+        centos3|rhel3|fedora2)
+            if [ "${PYTHON_VERSION}" == "${PYTHON3_VERSION}" ]; then # IUS
+                PY_DIST="python${PY_XY}u"
+                PY_PREFIX="python${PY_XY}u"
+            else  # base repo
+                PY_DIST="python${PY_XY}"
+                PY_PREFIX="python${PY_XY}"
             fi
             ;;
     esac
-    export PYTHON PY_MAJOR_VERSION PY_MINOR_VERSION PY_XY PY_DIST PY_PREFIX PIP
+    export PY_DIST PY_PREFIX PIP
 }
 
 install_python() {

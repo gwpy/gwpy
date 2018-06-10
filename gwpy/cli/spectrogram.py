@@ -22,163 +22,161 @@
 """ Spectrogram plots
 """
 
-from .cliproduct import CliProduct
+from .cliproduct import (FFTMixin, TimeDomainProduct, ImageProduct, unique)
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 
-class Spectrogram(CliProduct):
+class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
     """Plot the spectrogram of a time series
     """
+    action = 'spectrogram'
 
-    def get_action(self):
-        """Return the string used as "action" on command line.
-        """
-        return 'spectrogram'
+    def __init__(self, *args, **kwargs):
+        super(Spectrogram, self).__init__(*args, **kwargs)
 
-    def init_cli(self, parser):
-        """Set up the argument list for this product
-        """
-        self.arg_chan1(parser)
-        self.arg_freq(parser)
-        self.arg_ax_linx(parser)
-        self.arg_ax_ylf(parser)
-        self.arg_ax_intlog(parser)
-        self.arg_imag(parser)
-        self.arg_plot(parser)
+        #: attribute to hold calculated Spectrogram data array
+        self.result = None
 
-    def get_ylabel(self, args):
+    @classmethod
+    def arg_yaxis(cls, parser):
+        return cls._arg_faxis('y', parser)
+
+    def _finalize_arguments(self, args):
+        if args.color_scale is None:
+            args.color_scale = 'log'
+        super(Spectrogram, self)._finalize_arguments(args)
+
+    @property
+    def units(self):
+        return unique([self.result.unit])
+
+    def get_ylabel(self):
         """Default text for y-axis label
         """
         return 'Frequency (Hz)'
 
-    def get_color_label(self):
-        return self.scaleText
-
-    def get_max_datasets(self):
-        """Spectrogram only handles 1 at a time
-        """
-        return 1
-
-    def is_image(self):
-        """This plot is image type
-        """
-        return True
-
-    def freq_is_y(self):
-        """This plot puts frequency on the y-axis of the image
-        """
-        return True
-
     def get_title(self):
-        """Start of default super title, first channel is appended to it
-        """
-        return 'Spectrogram: '
+        return 'fftlength={0}, overlap={1}'.format(self.args.secpfft,
+                                                   self.args.overlap)
 
-    def gen_plot(self, args):
+    def get_suptitle(self):
+        return 'Spectrogram: {0}'.format(self.chan_list[0])
+
+    def get_color_label(self):
+        """Text for colorbar label
+        """
+        if self.args.norm:
+            return 'Normalized to {}'.format(self.args.norm)
+        if len(self.units) == 1 and self.usetex:
+            return r'ASD $\left({0}\right)$'.format(
+                self.units[0].to_string('latex').strip('$'))
+        elif len(self.units) == 1:
+            return 'ASD ({0})'.format(self.units[0].to_string('generic'))
+        return super(Spectrogram, self).get_color_label()
+
+    def get_stride(self):
+        """Calculate the stride for the spectrogram
+
+        This method returns the stride as a `float`, or `None` to indicate
+        selected usage of `TimeSeries.spectrogram2`.
+        """
+        fftlength = float(self.args.secpfft)
+        overlap = fftlength * self.args.overlap
+        stride = fftlength - overlap
+        nfft = self.duration / stride  # number of FFTs
+        ffps = int(nfft / (self.width * 0.8))  # FFTs per second
+        if ffps > 3:
+            return max(2 * fftlength, ffps * stride + fftlength - 1)
+        return None  # do not use strided spectrogram
+
+    def get_spectrogram(self):
+        """Calculate the spectrogram to be plotted
+
+        This exists as a separate method to allow subclasses to override
+        this and not the entire `get_plot` method, e.g. `Coherencegram`.
+
+        This method should not apply the normalisation from `args.norm`.
+        """
+        args = self.args
+
+        fftlength = float(args.secpfft)
+        overlap = fftlength * args.overlap
+        self.log(2, "Calculating spectrogram secpfft: %s, overlap: %s" %
+                 (fftlength, overlap))
+
+        stride = self.get_stride()
+
+        if stride:
+            specgram = self.timeseries[0].spectrogram(
+                stride, fftlength=fftlength, overlap=overlap,
+                window=args.window)
+            nfft = stride * (stride // (fftlength - overlap))
+            self.log(3, 'Spectrogram calc, stride: %s, fftlength: %s, '
+                        'overlap: %sf, #fft: %d' % (stride, fftlength,
+                                                    overlap, nfft))
+        else:
+            specgram = self.timeseries[0].spectrogram2(
+                fftlength=fftlength, overlap=overlap, window=args.window)
+            nfft = specgram.shape[0]
+            self.log(3, 'HR-Spectrogram calc, fftlength: %s, overlap: %s, '
+                        '#fft: %d' % (fftlength, overlap, nfft))
+
+        return specgram ** (1/2.)   # ASD
+
+    def make_plot(self):
         """Generate the plot from time series and arguments
         """
-        self.is_freq_plot = True
+        args = self.args
 
-        from numpy import percentile
+        # create 'raw' spectrogram
+        specgram = self.get_spectrogram()
 
-        secpfft = 1
-        if args.secpfft:
-            secpfft = float(args.secpfft)
-        ovlp_frac = 0.5
-        if args.overlap:
-            ovlp_frac = float(args.overlap)
-        self.secpfft = secpfft
-        self.overlap = ovlp_frac
-
-        ovlp_sec = secpfft*ovlp_frac
-        nfft = self.dur/(secpfft - ovlp_sec)
-        fft_per_stride = int(nfft/(self.width * 0.8))
-        stride_sec = fft_per_stride * (secpfft - ovlp_sec) + secpfft - 1
-        stride_sec = max(2*secpfft, stride_sec)
-        fs = self.timeseries[0].sample_rate.value
-
-        # based on the number of FFT calculations per pixel
-        # in output image choose between
-        # high time resolution (spectrogram2) and high SNR (spectrogram)
-        if fft_per_stride > 3:
-            specgram = self.timeseries[0].spectrogram(stride_sec,
-                                                      fftlength=secpfft,
-                                                      overlap=ovlp_sec)
-            self.log(3, ('Spectrogram calc, stride: %.2fs, fftlength: %.2f, '
-                         'overlap: %.2f, #fft: %d' %
-                         (stride_sec, secpfft, ovlp_sec, nfft)))
-        else:
-            specgram = self.timeseries[0].spectrogram2(fftlength=secpfft,
-                                                       overlap=ovlp_sec)
-            self.log(3, ('HR-Spectrogram calc, stride: %.2fs, fftlength: %.2f,'
-                         ' overlap: %.2f, #fft: %d' %
-                         (stride_sec, secpfft, ovlp_sec, nfft)))
-        specgram = specgram ** (1/2.)   # ASD
-
-        norm = False
+        # apply normalisation
         if args.norm:
-            specgram = specgram.ratio('median')
-            norm = True
-        # save if we're interactive
+            specgram = specgram.ratio(args.norm)
+
         self.result = specgram
 
-        # set default frequency limits
-        self.fmax = fs / 2.
-        self.fmin = 1 / secpfft
+        # -- update plot defaults
 
-        # default time axis
-        self.xmin = self.timeseries[0].times.value.min()
-        self.xmax = self.timeseries[0].times.value.max()
+        if not args.ymin:
+            args.ymin = 1/args.secpfft if args.yscale == 'log' else 0
 
-        # set intensity (color) limits
-        if args.imin:
-            lo = float(args.imin)
-        elif args.nopct:
-            lo = specgram.min()
-            lo = lo.value
+        norm = 'log' if args.color_scale == 'log' else None
+        # vmin/vmax set in scale_axes_from_data()
+        return specgram.plot(figsize=self.figsize, dpi=self.dpi,
+                             norm=norm, cmap=args.cmap)
+
+    def scale_axes_from_data(self):
+        args = self.args
+
+        # get tight axes limits from time and frequency Axes
+        if args.xmin is None:
+            args.xmin = self.result.xspan[0]
+        if args.xmax is None:
+            args.xmax = self.result.xspan[1]
+        if args.ymin is None:
+            args.ymin = self.result.yspan[0]
+        if args.ymax is None:
+            args.ymax = self.result.yspan[1]
+
+        specgram = self.result.crop(
+            args.xmin, args.xmax).crop_frequencies(
+                args.ymin, args.ymax)
+
+        # auto scale colours
+        from numpy import percentile
+        if args.norm:
+            imin = specgram.value.min()
+            imax = specgram.value.max()
         else:
-            lo = .01
-
-        if norm or args.nopct:
-            imin = lo
-        else:
-            imin = percentile(specgram, lo)
-
-        if args.imax:
-            up = float(args.imax)
-        elif args.nopct:
-            up = specgram.max()
-            up = up.value
-        else:
-            up = 100
-        if args.nopct:
-            imax = up
-        else:
-            imax = percentile(specgram, up)
-
-        self.log(3, 'Intensity (colorbar) limits %.3g - %.3g' %
-                 (imin, imax))
-
-        pltargs = dict()
-        if args.cmap:
-            pltargs['cmap'] = args.cmap
-
-        pltargs['vmin'] = imin
-        pltargs['vmax'] = imax
-
-        if norm:
-            pltargs['norm'] = 'log'
-            self.scaleText = 'Normalized to median'
-        elif args.lincolors:
-            self.scaleText = r'ASD $\left( \frac{\mathrm{Counts}}' \
-                             r'{\sqrt{\mathrm{Hz}}}\right)$'
-        else:
-            pltargs['norm'] = 'log'
-            self.scaleText = r'$ASD \left(\frac{\mathrm{Counts}}' \
-                             r'{\sqrt{\mathrm{Hz}}}\right)$'
-
-        self.plot = specgram.plot(**pltargs)
-        # pass the image limits back to the annotater
-        self.imin = imin
-        self.imax = imax
+            imin = percentile(specgram, .01)
+            imax = percentile(specgram, 100.)
+        imin = args.imin if args.imin is not None else imin
+        imax = args.imax if args.imax is not None else imax
+        try:
+            image = self.ax.images[0]
+        except IndexError:
+            image = self.ax.collections[0]
+        image.set_clim(imin, imax)

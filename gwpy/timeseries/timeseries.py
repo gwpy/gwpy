@@ -413,20 +413,6 @@ class TimeSeries(TimeSeriesBase):
 
         Notes
         -----"""
-        # handle deprecated kwargs - TODO: remove before 1.0 release
-        try:
-            other = kwargs.pop('cross')
-        except KeyError:
-            pass
-        else:
-            warn('the `cross` keyword argument has been deprecated, '
-                 'please use the csd_spectrogram() method directly, this '
-                 'warning will become an error before the 1.0 release',
-                 DeprecationWarning)
-            return self.csd_spectrogram(other, stride, fftlength=fftlength,
-                                        overlap=overlap, window=window,
-                                        nproc=nproc, **kwargs)
-
         # get method
         scaling = kwargs.get('scaling', 'density')
         method_func = fft_registry.get_method(method, scaling=scaling)

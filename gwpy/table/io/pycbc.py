@@ -24,6 +24,8 @@ from os.path import basename
 
 import numpy
 
+import h5py
+
 from ...io.hdf5 import (identify_hdf5, with_read_hdf5)
 from ...io.registry import (register_reader, register_identifier)
 from .. import (Table, EventTable)
@@ -69,8 +71,6 @@ def table_from_file(source, ifo=None, columns=None, loudest=False,
     -------
     table : `~gwpy.table.EventTable`
     """
-    import h5py
-
     # find group
     if isinstance(source, h5py.File):
         source, ifo = _find_table_group(source, ifo=ifo)
@@ -133,8 +133,6 @@ def _get_columns(h5group):
 
     Returns a `set` of names.
     """
-    import h5py
-
     columns = set()
     for name in sorted(h5group):
         if (not isinstance(h5group[name], h5py.Dataset) or
@@ -186,8 +184,8 @@ def filter_empty_files(files, ifo=None):
 
     Parameters
     ----------
-    files : `list` of `str`, :class:`~glue.lal.Cache`
-        a list of file paths to test
+    files : `list`
+        A list of file paths to test.
 
     ifo : `str`, optional
         prefix for the interferometer of interest (e.g. ``'L1'``),

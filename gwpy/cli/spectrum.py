@@ -22,133 +22,113 @@
 """Spectrum plots
 """
 
-from .cliproduct import CliProduct
+from astropy.time import Time
+
+from .cliproduct import (FrequencyDomainProduct, FFTMixin, unique)
+from ..plotter import FrequencySeriesPlot
+from ..plotter.tex import label_to_latex
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 
-class Spectrum(CliProduct):
+class Spectrum(FFTMixin, FrequencyDomainProduct):
+    """Plot the ASD spectrum of one or more time series
     """
-    Plot the ASD spectrum of one or more time series
-    """
+    action = 'spectrum'
 
-    def get_action(self):
-        """Return the string used as "action" on command line.
-        """
-        return 'spectrum'
+    def __init__(self, *args, **kwargs):
+        super(Spectrum, self).__init__(*args, **kwargs)
+        self.spectra = []
 
-    def init_cli(self, parser):
-        """Set up the argument list for this product
-        """
-        self.arg_chan1(parser)
-        self.arg_freq(parser)
-        self.arg_ax_xlf(parser)
-        self.arg_ax_logy(parser)
-        self.arg_plot(parser)
-        self.xaxis_is_freq = True
+    @property
+    def units(self):
+        return unique(fs.unit for fs in self.spectra)
 
-    def get_ylabel(self, args):
+    @classmethod
+    def arg_xaxis(cls, parser):
+        # use frequency axis on X
+        return cls._arg_faxis('x', parser)
+
+    @classmethod
+    def arg_yaxis(cls, parser):
+        # default log Y-axis
+        return cls._arg_axis('y', parser, scale='log')
+
+    def _finalize_arguments(self, args):
+        if args.yscale is None:
+            args.yscale = 'log'
+        super(Spectrum, self)._finalize_arguments(args)
+
+    def get_ylabel(self):
         """Text for y-axis label
         """
-        if args.nology:
-            ylabel = (r'$\mathrm{log_{10}  ASD}$ '
-                      r'$\left( \frac{\mathrm{%s}}'
-                      r'{\sqrt{\mathrm{Hz}}}\right)$' % self.units)
-        else:
-            ylabel = (r'$\mathrm{ASD}$ $\left( \frac{\mathrm{%s}}'
-                      r'{\sqrt{\mathrm{Hz}}}\right)$' % self.units)
-        return ylabel
+        if len(self.units) == 1 and self.usetex:
+            return r'ASD $\left({0}\right)$'.format(
+                self.units[0].to_string('latex').strip('$'))
+        elif len(self.units) == 1:
+            return 'ASD ({0})'.format(self.units[0].to_string('generic'))
+        return 'ASD'
 
-    def get_title(self):
+    def get_suptitle(self):
         """Start of default super title, first channel is appended to it
         """
-        return 'Spectrum: '
+        return 'Spectrum: {0}'.format(self.chan_list[0])
 
-    def get_xlabel(self):
-        xlabel = 'Frequency (Hz)'
-        return xlabel
+    def get_title(self):
+        gps = self.start_list[0]
+        utc = Time(gps, format='gps', scale='utc').iso
+        tstr = '{0} | {1} ({2})'.format(utc, gps, self.duration)
 
-    def freq_is_y(self):
-        """This plot puts frequency on the y-axis of the graph
-        """
-        return False
+        fftstr = 'fftlength={0}, overlap={1}'.format(self.args.secpfft,
+                                                     self.args.overlap)
 
-    def gen_plot(self, arg_list):
+        return ', '.join([tstr, fftstr])
+
+    def make_plot(self):
         """Generate the plot from time series and arguments
         """
-        self.is_freq_plot = True
+        args = self.args
 
-        fftlen = 1.0
-        if arg_list.secpfft:
-            fftlen = float(arg_list.secpfft)
-        self.secpfft = fftlen
-        ovlap = 0.5
-        if arg_list.overlap:
-            ovlap = float(arg_list.overlap)
-        self.overlap = ovlap
+        fftlength = float(args.secpfft)
+        overlap = args.overlap
+        self.log(2, "Calculating spectrum secpfft: {0}, overlap: {1}".format(
+            fftlength, overlap))
+        overlap *= fftlength
 
-        self.log(2, "Calculating spectrum secpfft: %.2f, overlap: %.2f" %
-                 (fftlen, ovlap))
-        spectra = []
+        # create plot
+        plot = FrequencySeriesPlot(figsize=self.figsize, dpi=self.dpi)
+        ax = plot.gca()
 
-        # calculate and plot the first spectrum
-        spectrum = self.timeseries[0].asd(fftlen, fftlen*ovlap)
-        spectra.append(spectrum)
+        for series in self.timeseries:
+            asd = series.asd(fftlength=fftlength, overlap=overlap)
+            self.spectra.append(asd)
 
-        fs = self.timeseries[0].sample_rate.value
-        self.fmin = 1/self.secpfft
-        self.fmax = fs/2
-        self.ymin = spectrum.value.min()
-        self.ymax = spectrum.value.max()
+            label = series.channel.name
+            if len(self.start_list) > 1:
+                label += ', {0}'.format(series.epoch.gps)
+            if self.usetex:
+                label = label_to_latex(label)
 
-        label = self.timeseries[0].channel.name
-        if len(self.start_list) > 1:
-            label += ", %s" % self.timeseries[0].epoch.gps
-        spectrum.name = label
-        self.plot = spectrum.plot()
+            ax.plot(asd, label=label)
 
-        # if we have more time series calculate and add to the first plot
-        if len(self.timeseries) > 1:
-            for idx in range(1, len(self.timeseries)):
-                specb = self.timeseries[idx].asd(fftlen, ovlap*fftlen)
-                spectra.append(specb)
-                fsb = self.timeseries[idx].sample_rate.value
-                self.fmax = max(self.fmax, fsb/2)
-                self.ymin = min(self.ymin, specb.value.min())
-                self.ymax = max(self.ymax, specb.value.max())
+        if args.xscale == 'log' and not args.xmin:
+            args.xmin = 1/fftlength
 
-                label = self.timeseries[idx].channel.name
-                if len(self.start_list) > 1:
-                    label += ", %s" % self.timeseries[idx].epoch.gps
-                specb.name = label
-                self.plot.add_frequencyseries(specb)
-        self.log(2, ('Frequency range: [%f, %f]' % (self.fmin, self.fmax)))
-        # if the specified frequency limits adjust our ymin and ymax values
-        # at this point self.ymin and self.ymax represent the full spectra
-        if arg_list.fmin or arg_list.fmax:
-            import numpy
-            mymin = self.ymax   # guaranteed to be >= anything we look at
-            mymax = self.ymin   # guaranteed to be <= anything we look at
-            myfmin = self.fmin
-            myfmax = self.fmax
-            if arg_list.fmin:
-                myfmin = float(arg_list.fmin)
-            if arg_list.fmax:
-                myfmax = float(arg_list.fmax)
+        return plot
 
-            for idx in range(0, len(spectra)):
-                t = numpy.where(spectra[idx].frequencies.value >= myfmin)
-                if t[0].size:
-                    strt = t[0][0]
-                    t = numpy.where(spectra[idx].frequencies.value >= myfmax)
-                    if t[0].size:
-                        stop = t[0][0]
-                    else:
-                        stop = spectra[idx].frequencies.size - 1
-                    mymin = min(mymin,
-                                numpy.min(spectra[idx].value[strt:stop]))
-                    mymax = max(mymax,
-                                numpy.max(spectra[idx].value[strt:stop]))
+    def scale_axes_from_data(self):
+        """Restrict data limits for Y-axis based on what you can see
+        """
+        # get tight limits for X-axis
+        if self.args.xmin is None:
+            self.args.xmin = min(fs.xspan[0] for fs in self.spectra)
+        if self.args.xmax is None:
+            self.args.xmax = max(fs.xspan[1] for fs in self.spectra)
 
-            self.ymin = mymin
-            self.ymax = mymax
+        # autoscale view for Y-axis
+        cropped = [fs.crop(self.args.xmin, self.args.xmax) for
+                   fs in self.spectra]
+        ymin = min(fs.value.min() for fs in cropped)
+        ymax = max(fs.value.max() for fs in cropped)
+        self.plot.gca().yaxis.set_data_interval(ymin, ymax, ignore=True)
+        self.plot.gca().autoscale_view(scalex=False)

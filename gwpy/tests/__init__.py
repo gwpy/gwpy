@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2018)
 #
 # This file is part of GWpy.
 #
@@ -16,15 +16,5 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Python version compatibilities
+"""Unit tests for GWpy
 """
-
-import warnings
-warnings.warn('The gwpy.utils.compat module has been deprecated and will '
-              'be removed in an upcoming release, all objects provided '
-              'by this module can be found in other libraries.',
-              DeprecationWarning)
-
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-from collections import OrderedDict  # pylint: disable=unused-import

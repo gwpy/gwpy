@@ -39,8 +39,4 @@ exclude_paths:
 - gwpy/_version.py
 - gwpy/tests/*
 - gwpy/tests/data/*
-- gwpy/table/rate.py
-- gwpy/table/rec.py
-- gwpy/table/utils.py
-- gwpy/table/io/ascii.py
 - gwpy/utils/sphinx/epydoc.py

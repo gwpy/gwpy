@@ -24,6 +24,7 @@ import os
 import pytest
 import tempfile
 from itertools import (chain, product)
+from ssl import SSLError
 
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.error import URLError
@@ -37,7 +38,6 @@ try:
 except ImportError:  # old numpy
     from numpy import may_share_memory as shares_memory
 
-
 from scipy import signal
 
 from matplotlib import use, rc_context
@@ -45,8 +45,6 @@ use('agg')  # nopep8
 
 from astropy import units
 from astropy.io.registry import (get_reader, register_reader)
-
-from glue.lal import Cache
 
 from gwpy.detector import Channel
 from gwpy.time import (Time, LIGOTimeGPS)
@@ -64,10 +62,9 @@ from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
 from gwpy.utils.misc import null_context
 from gwpy.signal import filter_design
 
-import mocks
-import utils
-from mocks import mock
-from test_array import TestSeries
+from . import (mocks, utils)
+from .mocks import mock
+from .test_array import TestSeries
 
 SEED = 1
 numpy.random.seed(SEED)
@@ -111,6 +108,8 @@ LOSC_GW150914_DQ_BITS = {
         'BURST_CAT3',
     ],
 }
+
+LOSC_FETCH_ERROR = (URLError, SSLError)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -544,7 +543,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         try:
             return self.TEST_CLASS.fetch_open_data(
                 LOSC_IFO, *LOSC_GW150914_SEGMENT)
-        except URLError as e:
+        except LOSC_FETCH_ERROR as e:
             pytest.skip(str(e))
 
     @pytest.fixture(scope='class')
@@ -552,7 +551,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         try:
             return self.TEST_CLASS.fetch_open_data(
                 LOSC_IFO, *LOSC_GW150914_SEGMENT, sample_rate=16384)
-        except URLError as e:
+        except LOSC_FETCH_ERROR as e:
             pytest.skip(str(e))
 
     # -- test class functionality ---------------
@@ -643,28 +642,27 @@ class TestTimeSeries(TestTimeSeriesBase):
             with pytest.raises((ValueError, RuntimeError)):
                 read_(end=array.span[0]-1)
 
-            # check old format prints a deprecation warning
-            if api:
-                with pytest.warns(DeprecationWarning):
-                    type(array).read(f, array.name, format=api)
-
-            # check reading from cache
+            # check reading from multiple files
             a2 = self.create(name='TEST', t0=array.span[1], dt=array.dx)
             suffix = '-%d-%d.gwf' % (a2.t0.value, a2.duration.value)
             with tempfile.NamedTemporaryFile(prefix='GWpy-',
                                              suffix=suffix) as f2:
                 a2.write(f2.name)
-                cache = Cache.from_urls([f.name, f2.name], coltype=int)
+                cache = [f.name, f2.name]
                 comb = type(array).read(cache, 'TEST', format=fmt, nproc=2)
                 utils.assert_quantity_sub_equal(
                     comb, array.append(a2, inplace=False),
                     exclude=['channel'])
 
-    @utils.skip_missing_dependency('h5py')
     @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
-    def test_read_write_hdf5(self, ext):
+    @pytest.mark.parametrize('channel', [
+        None,
+        'test',
+        'X1:TEST-CHANNEL',
+    ])
+    def test_read_write_hdf5(self, ext, channel):
         array = self.create()
-        array.channel = 'X1:TEST-CHANNEL'
+        array.channel = channel
 
         with tempfile.NamedTemporaryFile(suffix='.%s' % ext) as f:
             # check array with no name fails
@@ -704,16 +702,18 @@ class TestTimeSeries(TestTimeSeriesBase):
     # -- test remote data access ----------------
 
     @pytest.mark.parametrize('format', [
-        None,
-        pytest.param('hdf5', marks=utils.skip_missing_dependency('h5py')),
+        'hdf5',
+        pytest.param(  # only frameCPP actually reads units properly
+            'gwf', marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
     ])
     def test_fetch_open_data(self, losc, format):
         try:
             ts = self.TEST_CLASS.fetch_open_data(
                 LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, verbose=True)
-        except URLError as e:
+        except LOSC_FETCH_ERROR as e:
             pytest.skip(str(e))
-        utils.assert_quantity_sub_equal(ts, losc, exclude=['name', 'unit'])
+        utils.assert_quantity_sub_equal(ts, losc,
+                                        exclude=['name', 'unit', 'channel'])
 
         # try again with 16384 Hz data
         ts = self.TEST_CLASS.fetch_open_data(
@@ -734,7 +734,7 @@ class TestTimeSeries(TestTimeSeriesBase):
             assert str(exc.value).lower().startswith('multiple losc url tags')
             self.TEST_CLASS.fetch_open_data(LOSC_IFO, 1187008880, 1187008884,
                                             tag='CLN')
-        except URLError:
+        except LOSC_FETCH_ERROR:
             pass
 
     @utils.skip_missing_dependency('nds2')
@@ -1079,20 +1079,6 @@ class TestTimeSeries(TestTimeSeriesBase):
         sg2 = _spectrogram(1, fftlength=0.5, nproc=2)
         utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
 
-        # check that `cross` keyword gets deprecated properly
-        # TODO: removed before 1.0 release
-        if method == 'scipy_welch' and window is None:
-            with pytest.warns(DeprecationWarning) as wng:
-                try:
-                    out = _spectrogram(0.5, fftlength=.25, cross=losc)
-                except AttributeError:
-                    return  # scipy is too old
-            assert '`cross` keyword argument has been deprecated' in \
-                wng[0].message.args[0]
-            utils.assert_quantity_sub_equal(
-                out, losc.csd_spectrogram(losc, 0.5, fftlength=.25),
-                almost_equal=True)
-
     def test_spectrogram2(self, losc):
         # test defaults
         sg = losc.spectrogram2(1)
@@ -1352,7 +1338,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         try:
             tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
             tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
-        except URLError as exc:
+        except LOSC_FETCH_ERROR as exc:
             pytest.skip(str(exc))
         coh = tsh.coherence(tsl, fftlength=1.0)
         assert coh.df == 1 * units.Hz
@@ -1362,7 +1348,7 @@ class TestTimeSeries(TestTimeSeriesBase):
         try:
             tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
             tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
-        except URLError as exc:
+        except LOSC_FETCH_ERROR as exc:
             pytest.skip(str(exc))
         cohsg = tsh.coherence_spectrogram(tsl, 4, fftlength=1.0)
         assert cohsg.t0 == tsh.t0
@@ -1388,7 +1374,6 @@ class TestTimeSeriesDict(TestTimeSeriesBaseDict):
                 utils.assert_quantity_sub_equal(new[key], instance[key],
                                                 exclude=['channel'])
 
-    @utils.skip_missing_dependency('h5py')
     def test_read_write_hdf5(self, instance):
         with tempfile.NamedTemporaryFile(suffix='.hdf5') as f:
             instance.write(f.name, overwrite=True)
@@ -1627,7 +1612,7 @@ class TestStateVector(TestTimeSeriesBase):
     # -- data access ----------------------------
 
     @pytest.mark.parametrize('format', [
-        pytest.param('hdf5', marks=utils.skip_missing_dependency('h5py')),
+        'hdf5',
         pytest.param(  # only frameCPP actually reads units properly
             'gwf', marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
     ])
@@ -1635,7 +1620,7 @@ class TestStateVector(TestTimeSeriesBase):
         try:
             sv = self.TEST_CLASS.fetch_open_data(
                 LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, version=1)
-        except URLError as e:
+        except LOSC_FETCH_ERROR as e:
             pytest.skip(str(e))
         utils.assert_quantity_sub_equal(
             sv,

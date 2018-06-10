@@ -35,8 +35,8 @@ from astropy import units
 from gwpy.spectrogram import Spectrogram
 from gwpy.plotter import (TimeSeriesPlot, TimeSeriesAxes)
 
-import utils
-from test_array import TestArray2D
+from . import utils
+from .test_array import TestArray2D
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -196,7 +196,6 @@ class TestSpectrogram(TestArray2D):
         with pytest.raises(TypeError):
             array.filter(lti, blah=1)
 
-    @utils.skip_missing_dependency('h5py')
     def test_read_write_hdf5(self):
         array = self.create(name='X1:TEST')
         utils.test_read_write(array, 'hdf5', write_kw={'overwrite': True})

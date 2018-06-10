@@ -35,8 +35,6 @@ import numpy
 
 import pytest
 
-from glue.lal import Cache
-
 from gwpy.io import (cache as io_cache,
                      datafind as io_datafind,
                      gwf as io_gwf,
@@ -47,9 +45,8 @@ from gwpy.io import (cache as io_cache,
                      utils as io_utils)
 from gwpy.segments import (Segment, SegmentList)
 
-import utils
-import mocks
-from mocks import mock
+from . import (utils, mocks)
+from .mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -207,21 +204,13 @@ class TestIoCache(object):
             pytest.skip(str(e))
 
         segs = SegmentList()
-        cache = Cache()
+        cache = []
         for seg in [(0, 1), (1, 2), (4, 5)]:
             d = seg[1] - seg[0]
             f = 'A-B-%d-%d.tmp' % (seg[0], d)
             cache.append(CacheEntry.from_T050017(f, coltype=int))
             segs.append(Segment(*seg))
         return cache, segs
-
-    @staticmethod
-    def write_cache(cache, f):
-        for entry in cache:
-            try:
-                print(str(entry), file=f)
-            except TypeError:
-                f.write(('%s\n' % str(entry)).encode('utf-8'))
 
     def test_read_write_cache(self):
         cache = self.make_cache()[0]
@@ -240,27 +229,23 @@ class TestIoCache(object):
             c3 = io_cache.read_cache(f.name)
             assert cache == c3
 
+    @pytest.mark.parametrize('input_, result', [
+        (None, False),
+        ([], False),
+        (['A-B-12345-6.txt'], True),
+    ])
+    def test_is_cache(self, input_, result):
+        assert io_cache.is_cache(input_) is result
+
     @utils.skip_missing_dependency('lal.utils')
-    def test_is_cache(self):
-        # sanity check
-        assert io_cache.is_cache(None) is False
+    def test_is_cache_lal(self):
+        cache = [io_cache.CacheEntry.from_T050017('/tmp/A-B-12345-6.txt')]
+        assert io_cache.is_cache(cache)
+        assert not io_cache.is_cache(cache + [None])
 
-        # make sure Cache is returned as True
-        cache = io_cache.Cache()
-        assert io_cache.is_cache(cache) is True
-
-        # check file(path) is return as True if parsed as Cache
-        cache.append(io_cache.CacheEntry.from_T050017('/tmp/A-B-12345-6.txt'))
-        with tempfile.NamedTemporaryFile() as f:
-            # empty file should return False
-            assert io_cache.is_cache(f) is False
-            assert io_cache.is_cache(f.name) is False
-
-            # cache file should return True
-            io_cache.write_cache(cache, f)
-            f.seek(0)
-            assert io_cache.is_cache(f) is True
-            assert io_cache.is_cache(f.name) is True
+    @utils.skip_missing_dependency('glue.lal')
+    def test_is_cache_glue(self):
+        assert io_cache.is_cache(io_cache.Cache())
 
         # check ASCII file gets returned as False
         a = numpy.array([[1, 2], [3, 4]])
@@ -269,19 +254,30 @@ class TestIoCache(object):
             f.seek(0)
             assert io_cache.is_cache(f) is False
 
-        # check HDF5 file gets returned as False
+    @utils.skip_missing_dependency('lal.utils')
+    def test_is_cache_file(self):
+        # check file(path) is return as True if parsed as Cache
+        e = io_cache.CacheEntry.from_T050017('/tmp/A-B-12345-6.txt')
+        with tempfile.NamedTemporaryFile() as f:
+            # empty file should return False
+            assert io_cache.is_cache(f) is False
+            assert io_cache.is_cache(f.name) is False
+
+            # cache file should return True
+            io_cache.write_cache([e], f)
+            f.seek(0)
+            assert io_cache.is_cache(f) is True
+            assert io_cache.is_cache(f.name) is True
+
+    def test_is_cache_entry(self):
+        assert io_cache.is_cache_entry('/tmp/A-B-12345-6.txt')
+        assert not io_cache.is_cache_entry('random-file-name.blah')
         try:
-            import h5py
-        except ImportError:
+            e = io_cache.CacheEntry.from_T050017('/tmp/A-B-12345-6.txt')
+        except AttributeError:
             pass
         else:
-            fp = tempfile.mktemp()
-            try:
-                h5py.File(fp, 'w').close()
-                assert io_cache.is_cache(fp) is False
-            finally:
-                if os.path.isfile(fp):
-                    os.remove(fp)
+            assert io_cache.is_cache_entry(e)
 
     def test_file_list(self):
         cache = self.make_cache()[0]
@@ -297,13 +293,13 @@ class TestIoCache(object):
         with tempfile.NamedTemporaryFile(suffix='.lcf', mode='w') as f:
             io_cache.write_cache(cache, f)
             f.seek(0)
-            assert io_cache.file_list(f.name) == cache.pfnlist()
+            assert io_cache.file_list(f.name) == [e.path for e in cache]
 
         # test comma-separated list -> list
         assert io_cache.file_list('A,B,C,D') == ['A', 'B', 'C', 'D']
 
         # test cache object -> pfnlist
-        assert io_cache.file_list(cache) == cache.pfnlist()
+        assert io_cache.file_list(cache) == [e.path for e in cache]
 
         # test list -> list
         assert io_cache.file_list(['A', 'B', 'C', 'D']) == ['A', 'B', 'C', 'D']
@@ -384,7 +380,18 @@ class TestIoCache(object):
         a, segs = self.make_cache()
         segs.coalesce()
         for i, cache in enumerate(io_cache.find_contiguous(a)):
-            assert cache.to_segmentlistdict()['A'].extent() == segs[i]
+            io_cache.cache_segments(cache).extent() == segs[i]
+
+        assert not list(io_cache.find_contiguous())
+
+    def test_sieve(self):
+        cache, segs = self.make_cache()
+        sieved = io_cache.sieve(cache, segs[0])
+        assert type(sieved) is type(cache)
+        assert sieved == cache[:1]
+
+        segs.coalesce()
+        assert io_cache.sieve(cache, segs[0]) == cache[:2]
 
 
 # -- gwpy.io.gwf --------------------------------------------------------------

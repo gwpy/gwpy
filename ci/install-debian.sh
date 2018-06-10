@@ -20,11 +20,24 @@
 # Build Debian package
 #
 
+# enable lscsoft jessie-proposed (first required for python-tqdm gwpy/gwpy#735)
+if [ "${OS_VERSION}" -eq 8 ]; then
+    cat << EOF > /etc/apt/sources.list.d/lscsoft-proposed.list
+deb http://software.ligo.org/lscsoft/debian jessie-proposed contrib
+EOF
+    cat << EOF > /etc/apt/preferences.d/lscsoft-proposed.pref
+Package: *
+Pin: release n=jessie-proposed
+Pin-Priority: 100
+EOF
+    apt-get -yqq update
+fi
+
 # install pip for system python
-apt-get -yq install python-pip
+apt-get -yqq install python-pip
 
 # install build dependencies (should match debian/control)
-apt-get -yq install \
+apt-get -yqq install \
     debhelper \
     dh-python \
     python-all \
@@ -35,21 +48,21 @@ apt-get -yq install \
     python-jinja2 \
 
 # get versions
-GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
+GWPY_VERSION=$(python setup.py --version)
 GWPY_RELEASE=${GWPY_VERSION%%+*}
 
 # upgrade setuptools for development builds only to prevent version munging
 if [[ "${GWPY_VERSION}" == *"+"* ]]; then
-    pip install "setuptools>=25"
+    pip install --quiet "setuptools>=25"
 fi
 
 # upgrade GitPython (required for git>=2.15.0)
 #     since we link the git clone from travis, the dependency is actually
 #     fixed to the version of git on the travis image
-pip install "GitPython>=2.1.8"
+pip install --quiet "GitPython>=2.1.8"
 
 # prepare the tarball (sdist generates debian/changelog)
-python setup.py sdist
+python setup.py --quiet sdist
 
 # make the debian package
 mkdir -p dist/debian
@@ -72,6 +85,7 @@ for PREF in ${PREFICES}; do
     echo "-------------------------------------------------------"
     dpkg --install ${GWPY_DEB} || { \
         apt-get -y -f install;  # install dependencies and package
+        apt-get -yq install ${PREF}-tqdm;  # install tqdm from backports
         dpkg --install ${GWPY_DEB};  # shouldn't fail
     }
 done
@@ -89,7 +103,12 @@ for pckg in \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
     lalsimulation-${PY_PREFIX} \
-    ${PY_PREFIX}-h5py \
 ; do
     apt-get -yqq install $pckg || true
 done
+
+# HACK: fix missing file from ldas-tools-framecpp
+if [ -d /usr/lib/$PYTHON/dist-packages/LDAStools/ -a \
+     ! -f /usr/lib/$PYTHON/dist-packages/LDAStools/__init__.py ]; then
+    touch /usr/lib/$PYTHON/dist-packages/LDAStools/__init__.py
+fi
