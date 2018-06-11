@@ -21,6 +21,7 @@
 
 import itertools
 import warnings
+from collections import (KeysView, ValuesView)
 
 import numpy
 
@@ -45,6 +46,8 @@ except NameError:
     IPYTHON = False
 else:
     IPYTHON = True
+
+iterable_types = (list, tuple, KeysView, ValuesView,)
 
 
 def interactive_backend():
@@ -471,7 +474,7 @@ def _group_axes_data(inputs, separate=None, flat=False):
     # determine auto-separation
     if separate is None and inputs:
         # if given a nested list of data, multiple axes are required
-        if any(isinstance(x, (list, tuple, dict)) for x in inputs):
+        if any(isinstance(x, iterable_types + (dict,)) for x in inputs):
             separate = True
         # if data are of different types, default to separate
         elif not all(type(x) is type(inputs[0]) for x in inputs):
@@ -484,7 +487,7 @@ def _group_axes_data(inputs, separate=None, flat=False):
             x = list(x.values())
 
         # new group from iterable
-        if isinstance(x, (list, tuple)):
+        if isinstance(x, iterable_types):
             out.append(x)
 
         # dataset starts a new group
