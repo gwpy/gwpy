@@ -48,6 +48,8 @@ DEFAULT_SCATTER_COLOR = 'b' if mpl_version < '2.0' else None
 
 
 def log_norm(func):
+    """Wrap ``func`` to handle custom gwpy keywords for a LogNorm colouring
+    """
     def decorated_func(*args, **kwargs):
         norm, kwargs = format_norm(kwargs)
         kwargs['norm'] = norm
@@ -56,6 +58,8 @@ def log_norm(func):
 
 
 def xlim_as_gps(func):
+    """Wrap ``func`` to handle pass limit inputs through `gwpy.time.to_gps`
+    """
     @wraps(func)
     def wrapped_func(self, left=None, right=None, **kw):
         if right is None and iterable(left):
@@ -216,7 +220,8 @@ class Axes(_Axes):
             extent = extent[:2] + (1e-300,) + extent[3:]
         kwargs.setdefault('extent', extent)
 
-        return self.imshow(array.value.T, **kwargs)
+        return self.imshow(array.value.T, origin=origin, aspect=aspect,
+                           interpolation=interpolation, **kwargs)
 
     @log_norm
     def pcolormesh(self, *args, **kwargs):
@@ -364,8 +369,8 @@ class PlotArgsProcessor(_process_plot_var_args):
         newargs = type(args)()
         for arg in args:
             if isinstance(arg, Series) and arg.ndim == 1:
-                newargs += arg.xindex, arg
+                newargs += (arg.xindex, arg)
             else:
-                newargs += arg,
+                newargs += (arg,)
         return super(PlotArgsProcessor, self)._grab_next_args(
             *newargs, **kwargs)
