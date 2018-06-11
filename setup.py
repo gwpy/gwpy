@@ -94,10 +94,11 @@ extras_require = {
     'docs': ['sphinx>=1.6.1', 'numpydoc', 'sphinx-bootstrap-theme>=0.6',
              'sphinxcontrib-programoutput', 'sphinx-automodapi',
              'requests'],
-    'tests': ['pytest>=3.1', 'pytest-cov', 'freezegun', 'sqlparse', 'bs4',
-              'mock ; python_version < \'3\''],
+    'tests': ['pytest>=3.1', 'pytest-cov', 'freezegun', 'sqlparse', 'bs4'],
 
 }
+if sys.version < '3':
+    extras_require['tests'].append('mock')
 
 # define 'all' as the intersection of all extras
 extras_require['all'] = set(p for extra in extras_require.values()
