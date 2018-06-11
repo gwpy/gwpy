@@ -20,10 +20,7 @@
 # Build system packages
 #
 
-cd ${GWPY_PATH}
-
 . ci/lib.sh
-
 get_environment
 
 set -x
