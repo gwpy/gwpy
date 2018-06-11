@@ -517,7 +517,6 @@ class TestTimeSeriesPlot(TimeSeriesMixin, TestPlot):
         fig = self.FIGURE_CLASS(self.ts)
         ax = fig.gca()
         assert len(ax.lines) == 1
-        assert ax.get_epoch() == self.ts.x0.value
         assert ax.get_xlim() == self.ts.span
 
         # test passing multiple timeseries
@@ -947,7 +946,6 @@ class TestSegmentAxes(SegmentMixin, TestAxes):
         assert numpy.isclose(ax.dataLim.x0, 0.)
         assert numpy.isclose(ax.dataLim.x1, 7.)
         assert len(c.get_paths()) == len(segments)
-        assert ax.get_epoch() == segments[0][0]
         # test y
         p = ax.plot_segmentlist(segments).get_paths()[0].get_extents()
         assert p.y0 + p.height/2. == 1.
