@@ -52,6 +52,7 @@ def test_minor_log_formatter_mathtext(lim, in_, out):
         formatter = ax.yaxis.get_minor_formatter()
         assert isinstance(formatter, plot_log.MinorLogFormatterMathtext)
         assert formatter(in_) == out
+        pyplot.close(fig)
 
 
 @pytest.mark.parametrize('lim, in_, out', [
@@ -68,3 +69,4 @@ def test_minor_log_formatter_mathtext(lim, in_, out):
         ax.yaxis.set_major_formatter(plot_log.CombinedLogFormatterMathtext())
         formatter = ax.yaxis.get_major_formatter()
         assert formatter(in_) == out
+        pyplot.close(fig)

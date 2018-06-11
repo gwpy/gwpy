@@ -36,20 +36,15 @@ from ...segments import (Segment, SegmentList)
 from ...tests import utils
 from ...types import (Series, Array2D)
 from .. import (Plot, Axes, BodePlot)
-from .utils import usetex
+from .utils import (usetex, FigureTestBase)
 
 numpy.random.seed(0)
 
 
 # -- test classes -------------------------------------------------------------
 
-class TestPlot(object):
+class TestPlot(FigureTestBase):
     FIGURE_CLASS = Plot
-
-    @classmethod
-    @pytest.fixture(scope='function')
-    def fig(cls):
-        return pyplot.figure(FigureClass=cls.FIGURE_CLASS)
 
     def test_init(self):
         plot = self.FIGURE_CLASS(figsize=(4, 3), dpi=100)
