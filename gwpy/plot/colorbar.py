@@ -116,8 +116,6 @@ def find_mappable(*axes):
                 return getattr(ax, aset)[-1]
             except (AttributeError, IndexError):
                 continue
-            else:
-                break
     raise ValueError("Cannot determine mappable layer on any axes "
                      "for this colorbar")
 
