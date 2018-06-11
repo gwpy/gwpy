@@ -80,6 +80,7 @@ class TestSegmentAxes(TestAxes):
     def test_plot_dqflag(self, ax, flag):
         with pytest.warns(DeprecationWarning):
             ax.plot_dqflag(flag)
+        assert ax.collections  # make sure it plotted something
 
     def test_plot_dict(self, ax, flag):
         dqd = DataQualityDict()

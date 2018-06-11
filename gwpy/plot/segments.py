@@ -259,6 +259,7 @@ class SegmentAxes(Axes):
         warnings.warn('plot_dqflag() was renamed plot_flag; this warning will '
                       'result in an error in an upcoming release',
                       DeprecationWarning)
+        return self.plot_flag(*args, **kwargs)
 
     def plot_segmentlist(self, segmentlist, y=None, height=.8, label=None,
                          collection=True, rasterized=None, **kwargs):
