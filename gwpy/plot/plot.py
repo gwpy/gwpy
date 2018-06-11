@@ -326,7 +326,7 @@ class Plot(figure.Figure):
         cbar = super(Plot, self).colorbar(mappable, **kwargs)
         self.colorbars.append(cbar)
         if label:  # mpl<1.3 doesn't accept label in Colorbar constructor
-            label.set_label(label)
+            cbar.set_label(label)
 
         # update mappables for this axis
         if emit:
