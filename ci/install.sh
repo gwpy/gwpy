@@ -31,10 +31,6 @@ set -x
 # install for this OS
 if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then  # macports
     . ci/install-macos.sh
-elif [[ ${DOCKER_IMAGE} =~ :el[0-9]+$ ]]; then  # SLX
-    . ci/install-el.sh
-elif [ -n "${DOCKER_IMAGE}" ]; then  # debian
-    . ci/install-debian.sh
 else  # simple pip build
     ${PIP} install . ${PIP_FLAGS}
     EXTRAS=true
