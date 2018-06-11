@@ -26,8 +26,6 @@ from matplotlib import rcParams
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-rUNDERSCORE = re.compile(r'(?<!\\)_(?!.*{)')
-
 # groups of input parameters (for passing to Plot())
 FIGURE_PARAMS = [
     'figsize', 'dpi',
