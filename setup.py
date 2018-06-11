@@ -94,6 +94,9 @@ extras_require = {
     'docs': ['sphinx>=1.6.1', 'numpydoc', 'sphinx-bootstrap-theme>=0.6',
              'sphinxcontrib-programoutput', 'sphinx-automodapi',
              'requests'],
+    'tests': ['pytest>=3.1', 'pytest-cov', 'freezegun', 'sqlparse', 'bs4',
+              'mock ; python_version < \'3\''],
+
 }
 
 # define 'all' as the intersection of all extras
@@ -101,14 +104,7 @@ extras_require['all'] = set(p for extra in extras_require.values()
                             for p in extra)
 
 # test dependencies
-tests_require = [
-    'pytest>=3.1',
-    'freezegun',
-    'sqlparse',
-    'bs4',
-]
-if sys.version < '3':
-    tests_require.append('mock')
+tests_require = extras_require['tests']
 
 # -- run setup ----------------------------------------------------------------
 
