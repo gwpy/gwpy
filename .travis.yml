@@ -12,107 +12,14 @@ matrix:
     # -- simple builds --------------------------
 
     - python: '2.7'
-      addons:
-        apt:
-          packages:
-            - gcc
-            - gfortran
-            - libblas-dev
-            - liblapack-dev
-            - texlive-latex-extra
-            - texlive-fonts-recommended
-            - dvipng
-            - libhdf5-serial-dev
     - python: '3.4'
-      addons:
-        apt:
-          packages:
-            - gcc
-            - gfortran
-            - libblas-dev
-            - liblapack-dev
-            - texlive-latex-extra
-            - texlive-fonts-recommended
-            - dvipng
-            - libhdf5-serial-dev
     - python: '3.5'
-      addons:
-        apt:
-          packages:
-            - gcc
-            - gfortran
-            - libblas-dev
-            - liblapack-dev
-            - texlive-latex-extra
-            - texlive-fonts-recommended
-            - dvipng
-            - libhdf5-serial-dev
     - python: '3.6'
-      addons:
-        apt:
-          packages:
-            - gcc
-            - gfortran
-            - libblas-dev
-            - liblapack-dev
-            - texlive-latex-extra
-            - texlive-fonts-recommended
-            - dvipng
-            - libhdf5-serial-dev
-
     - env: PIP_FLAGS="--upgrade --pre --quiet"
       python: '3.6'
-      addons:
-        apt:
-          packages:
-            - gcc
-            - gfortran
-            - libblas-dev
-            - liblapack-dev
-            - texlive-latex-extra
-            - texlive-fonts-recommended
-            - dvipng
-            - libhdf5-serial-dev
 
-    # -- reference OS builds --------------------
+    # -- macOS ----------------------------------
 
-    # EL7
-    - env: DOCKER_IMAGE="ligo/base:el7"
-      python: '2.7'
-      sudo: required
-      services:
-        - docker
-    - env: DOCKER_IMAGE="ligo/base:el7"
-      python: '3.4'
-      sudo: required
-      services:
-        - docker
-
-    # debian 8
-    - env: DOCKER_IMAGE="ligo/base:jessie"
-      python: '2.7'
-      sudo: required
-      services:
-        - docker
-    - env: DOCKER_IMAGE="ligo/base:jessie"
-      python: '3.4'
-      sudo: required
-      services:
-        - docker
-
-    # debian 9
-    - env: DOCKER_IMAGE="ligo/base:stretch"
-      python: '2.7'
-      sudo: required
-      services:
-        - docker
-    - env: DOCKER_IMAGE="ligo/base:stretch"
-      python: '3.5'
-      sudo: required
-      services:
-        - docker
-
-    # macOS
     - os: osx
       osx_image: xcode9.2
       language: minimal
@@ -128,27 +35,8 @@ matrix:
       env: PYTHON_VERSION="3.6"
       sudo: required
 
-    # -- full build -----------------------------
-
-    - env: DOCKER_IMAGE="ligo/base:stretch" EXTRAS=true
-      python: '2.7'
-      sudo: required
-      services:
-        - docker
-    - env: DOCKER_IMAGE="ligo/base:stretch" EXTRAS=true
-      python: '3.5'
-      sudo: required
-      services:
-        - docker
-
   allow_failures:
     - env: PIP_FLAGS="--upgrade --pre --quiet"
-    - env: DOCKER_IMAGE="ligo/base:el7"
-      python: '3.4'
-    - env: DOCKER_IMAGE="ligo/base:jessie"
-      python: '3.4'
-    - env: DOCKER_IMAGE="ligo/base:stretch" EXTRAS=true
-      python: '3.5'
 
   fast_finish: true
 
@@ -156,24 +44,25 @@ before_install:
   # force unshallow clone (for full history)
   - git fetch --unshallow
 
-  # set up utilities
-  - . ./ci/lib.sh
-
-  # configure docker and system dependencies
-  - . ./ci/docker-install.sh
+  # install macports for macos builds
+  - |
+    if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then
+        . terryfy/travis_tools.sh
+        install_macports
+    fi
 
 install:  # install package
-  - ci_run ". ${GWPY_PATH}/ci/install.sh"
+  - |
+    if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then  # macports
+        . ci/install-macos.sh
+    else  # pip
+        . ci/install.sh
+    fi
 
 script:  # run tests
-  - ci_run ". ${GWPY_PATH}/ci/test.sh"
+  - . ci/test.sh
 
 after_success:
-  # fix paths in coverage file for docker-based runs
-  - |
-    if [ ! -z ${DOCKER_IMAGE+x} ]; then
-        sed -i 's|"'${GWPY_PATH}'|"'`pwd`'|g' .coverage;
-    fi
   # install coveralls
   - |
     if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
@@ -186,12 +75,9 @@ after_success:
   # submit coverage results
   - $COVERALLS
 
-  # build and deploy package files
-  - . ./ci/deploy.sh
-
 before_deploy:
   # manual clean up of repository
-  - ci_run "cd ${GWPY_PATH} && git clean -dfX"
+  - git clean -dfX
 
 deploy:
   - provider: pypi
@@ -199,7 +85,6 @@ deploy:
     password: ${PYPI_PASSWD}
     distributions: sdist bdist_wheel
     on:
-      condition: -z "${DOCKER_IMAGE}"
       branch: master
       tags: true
       python: '2.7'
@@ -210,9 +95,7 @@ notifications:
     secure: jQdoSpwNbUnq0Eo7o6Ko7vuhu58LQdfy8jFKxLUnUjv/GLezK/PPAQCU9SgmyDPh1yD8sb5Xa8UtbNfGtpYdwBAGwZxPHz3oQQAflivFwcF6UP7/NlAB9muSOOnL0QfQyX1I4sIKOkX+gkl+TBciX4v58B8NUU02dDkwDqTLUqQ=
 
 cache:
-  apt: true
   pip: true
-  ccache: true
   directories:
     - /opt/local/var/macports/software
 before_cache:

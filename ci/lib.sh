@@ -21,27 +21,6 @@
 # Can be used outside and inside docker containers
 #
 
-# set path to build directory
-if [ -z "${DOCKER_IMAGE}" ]; then
-    GWPY_PATH=$(pwd)
-else
-    GWPY_PATH="/gwpy"
-fi
-export GWPY_PATH
-
-# -- out-of-container helpers -------------------------------------------------
-
-ci_run() {
-    # run a command normally, or in docker, depending on environment
-    if [ -z "${DOCKER_IMAGE}" ]; then  # execute function normally
-        bash -ec "$@"
-    else  # execute function in docker container
-        docker exec -it ${DOCKER_IMAGE##*:} bash -lec "$@"
-    fi
-}
-
-# -- in-container helpers -----------------------------------------------------
-
 get_os_type() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
@@ -75,38 +54,6 @@ get_package_manager() {
     esac
 }
 
-update_package_manager() {
-    local pkger=$(get_package_manager)
-    case "$(get_package_manager)" in
-        "port")
-            port -q selfupdate
-            ;;
-        "apt-get")
-            apt-get --yes --quiet update
-            ;;
-        "yum")
-            yum -q clean all
-            yum -q makecache
-            yum -y -q update
-            ;;
-    esac
-}
-
-install_package() {
-    local pkger=$(get_package_manager)
-    case "$pkger" in
-        "port")
-            port -q install $@
-            ;;
-        "apt-get")
-            apt-get --yes -qq install $@
-            ;;
-        "yum")
-            yum -y -q install $@
-            ;;
-    esac
-}
-
 get_python_version() {
     if [ -z "${PYTHON_VERSION}" ]; then
         PYTHON_VERSION=$(python -c 'import sys; print(sys.version[:3])')
@@ -127,21 +74,15 @@ get_python3_version() {
         debian9)
            echo '3.5'
            ;;
-        debian10|macos*)
-           echo '3.6'
-           ;;
-        macos*)
+        *)
            echo '3.6'
            ;;
     esac
 }
 
 get_environment() {
-    local pkger=$(get_package_manager)
-
     # OS variables
     export OS_NAME=$(get_os_type)
-    export OS_VERSION=$(get_os_version)
 
     # PYTHON VARIABLES
     export PYTHON_VERSION=$(get_python_version)
@@ -185,11 +126,6 @@ get_environment() {
             ;;
     esac
     export PY_DIST PY_PREFIX PIP
-}
-
-install_python() {
-    get_environment  # <- set python variables
-    install_package ${PY_DIST} ${PY_PREFIX}-pip ${PY_PREFIX}-setuptools
 }
 
 # -- utilities ----------------------------------------------------------------
