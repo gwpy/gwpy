@@ -230,11 +230,9 @@ class Axes(_Axes):
     def _pcolormesh_array2d(self, array, **kwargs):
         """Render an `~gwpy.types.Array2D` using `Axes.pcolormesh`
         """
-        x = numpy.concatenate((array.xindex, array.xspan[-1:]))
-        y = numpy.concatenate((array.yindex, array.yspan[-1:]))
+        x = numpy.concatenate((array.xindex.value, array.xspan[-1:]))
+        y = numpy.concatenate((array.yindex.value, array.yspan[-1:]))
         xcoord, ycoord = numpy.meshgrid(x, y, copy=False, sparse=True)
-        xcoord._unit = array.xindex.unit
-        ycoord._unit = array.yindex.unit
         return self.pcolormesh(xcoord, ycoord, array.value.T, **kwargs)
 
     def plot_mmm(self, data, lower=None, upper=None, **kwargs):
