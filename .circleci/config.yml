@@ -26,11 +26,11 @@ centos-build: &centos-build
   steps:
     - checkout
     - run:
-      name: Build
-      command: bash ci/install-el.sh
+        name: Build
+        command: bash ci/install-el.sh
     - run:
-      name: Test
-      command: pytest --pyargs gwpy
+        name: Test
+        command: pytest --pyargs gwpy
 
 jobs:
   debian:jessie:2.7:
