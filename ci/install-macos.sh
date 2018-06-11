@@ -51,9 +51,9 @@ gsed -i 's|pypi:g/gwpy|file://'$(pwd)'/dist/ \\\n                    pypi:g/gwpy
 
 # add local port repo to sources
 sudo gsed -i 's|rsync://rsync.macports|file://'${PORT_REPO}'\nrsync://rsync.macports|' /opt/local/etc/macports/sources.conf
-cd ${PORT_REPO}
+pushd ${PORT_REPO}
 portindex
-cd ${GWPY_PATH}
+popd
 
 # set up utility to ping STDOUT every 10 seconds, prevents timeout
 # https://github.com/travis-ci/travis-ci/issues/6591#issuecomment-275804717
