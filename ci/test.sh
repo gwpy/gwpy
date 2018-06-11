@@ -34,6 +34,7 @@ get_python_version  # sets PYTHON_VERSION
 set -ex && trap 'set +xe' RETURN
 
 # install test dependencies
-python${PYTHON_VERSION} -m pip install ${PIP_FLAGS} coverage "setuptools>=17.1" "pytest>=3.1"
+python${PYTHON_VERSION} -m pip install ${PIP_FLAGS} .[tests]
 
+# run tests
 python${PYTHON_VERSION} -m pytest --pyargs gwpy --cov=gwpy --cov-config=setup.cfg
