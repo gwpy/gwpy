@@ -30,7 +30,6 @@ from matplotlib import (__version__ as mpl_version, rcParams)
 from matplotlib.artist import allow_rasterization
 from matplotlib.axes import Axes as _Axes
 from matplotlib.cbook import iterable
-from matplotlib.colors import LogNorm
 from matplotlib.projections import register_projection
 try:
     from matplotlib.axes._base import _process_plot_var_args

@@ -29,11 +29,9 @@ from matplotlib import (backends, figure, get_backend, _pylab_helpers)
 from matplotlib.artist import setp
 from matplotlib.backend_bases import FigureManagerBase
 from matplotlib.gridspec import GridSpec
-from matplotlib.ticker import LogLocator
 from matplotlib.projections import get_projection_class
 
-from . import (colorbar as gcbar, colors as gcolors, utils)
-from .log import CombinedLogFormatterMathtext
+from . import (colorbar as gcbar, utils)
 from .rc import (rcParams, MPL_RCPARAMS, get_subplot_params)
 from .gps import GPS_SCALES
 

@@ -19,30 +19,23 @@
 """Plotting utilities for segments
 """
 
-import operator
 import warnings
-
-from six import string_types
-from six.moves import reduce
 
 from matplotlib.artist import allow_rasterization
 from matplotlib.colors import is_color_like
-from matplotlib.ticker import (Formatter, MultipleLocator, NullLocator)
+from matplotlib.ticker import (Formatter, MultipleLocator)
 from matplotlib.projections import register_projection
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-
 import ligo.segments
 
-from ..segments import (Segment, SegmentList, DataQualityFlag, DataQualityDict)
+from ..segments import (Segment, DataQualityFlag, DataQualityDict)
 from .axes import Axes
 from .colors import tint
 from .text import to_string
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__all__ = ['SegmentAxes', 'SegmentPlot']
 
 HATCHES = ['/', '\\', '|', '-', '+', 'x', 'o', 'O', '.', '*']
 

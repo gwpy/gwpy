@@ -34,7 +34,7 @@ from matplotlib.transforms import Transform
 
 from astropy import units
 
-from ..time import (Time, to_gps, from_gps, gps_types)
+from ..time import (to_gps, from_gps)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

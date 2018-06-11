@@ -21,13 +21,10 @@
 
 import warnings
 
-import numpy
-
 from matplotlib import __version__ as mpl_version
 from matplotlib.axes import SubplotBase
 from matplotlib.colors import LogNorm
 from matplotlib.legend import Legend
-from matplotlib.ticker import LogLocator
 
 from .colors import format_norm
 from .log import CombinedLogFormatterMathtext
