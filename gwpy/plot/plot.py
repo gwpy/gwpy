@@ -32,8 +32,6 @@ from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import LogLocator
 from matplotlib.projections import get_projection_class
 
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-
 from . import (colorbar as gcbar, colors as gcolors, utils)
 from .log import CombinedLogFormatterMathtext
 from .rc import (rcParams, MPL_RCPARAMS, get_subplot_params)
@@ -397,6 +395,7 @@ class Plot(figure.Figure):
         if ax.get_axes_locator():
             divider = ax.get_axes_locator()._axes_divider
         else:
+            from mpl_toolkits.axes_grid1 import make_axes_locatable
             divider = make_axes_locatable(ax)
         if location not in {'top', 'bottom'}:
             raise ValueError("Segments can only be positoned at 'top' or "

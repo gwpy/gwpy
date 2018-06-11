@@ -29,9 +29,6 @@ from matplotlib.colors import LogNorm
 from matplotlib.legend import Legend
 from matplotlib.ticker import LogLocator
 
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-
 from .colors import format_norm
 from .log import CombinedLogFormatterMathtext
 
@@ -151,6 +148,7 @@ def make_axes_axesgrid(ax, **kwargs):
 
 
 def _make_axes_div(ax, location='right', fraction=.15, pad=.08, **kwargs):
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
     axes_class = kwargs.pop('axes_class', _get_axes_class(ax))
     divider = make_axes_locatable(ax)
     return divider.append_axes(location, fraction, pad=pad,
@@ -158,6 +156,8 @@ def _make_axes_div(ax, location='right', fraction=.15, pad=.08, **kwargs):
 
 
 def _make_axes_inset(ax, location='right', **kwargs):
+    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
     location = location.lower()
 
     inset_kw = {
