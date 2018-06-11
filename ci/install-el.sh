@@ -20,8 +20,10 @@
 # Build RedHat (Enterprise Linux) packages
 #
 
-# get python3 version
 . ci/lib.sh
+get_environment
+
+# get python3 version
 PYTHON3_VERSION=$(get_python3_version)
 PY3XY=${PYTHON3_VERSION/./}
 
@@ -72,9 +74,9 @@ yum -y -q install \
 || true
 
 # HACK: fix missing file from ldas-tools-framecpp
-if [ -d /usr/lib64/$PYTHON/site-packages/LDAStools -a \
-     ! -f /usr/lib64/$PYTHON/site-packages/LDAStools/__init__.py ]; then
-    touch /usr/lib64/$PYTHON/site-packages/LDAStools/__init__.py
+if [ -d /usr/lib64/${PYTHON}/site-packages/LDAStools -a \
+     ! -f /usr/lib64/${PYTHON}/site-packages/LDAStools/__init__.py ]; then
+    touch /usr/lib64/${PYTHON}/site-packages/LDAStools/__init__.py
 fi
 
 # install system-level extras that might use python2- prefix

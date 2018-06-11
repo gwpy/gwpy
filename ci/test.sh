@@ -20,8 +20,6 @@
 # Run the test suite for GWpy on the current system
 #
 
-cd ${GWPY_PATH}
-
 . ci/lib.sh
 
 # macports PATH doesn't persist from install stage, which is annoying
@@ -36,15 +34,6 @@ get_python_version  # sets PYTHON_VERSION
 set -ex && trap 'set +xe' RETURN
 
 # install test dependencies
-${PIP} install ${PIP_FLAGS} coverage "setuptools>=17.1" "pytest>=3.1"
-COVERAGE=coverage-${PYTHON_VERSION}
+python${PYTHON_VERSION} -m pip install ${PIP_FLAGS} coverage "setuptools>=17.1" "pytest>=3.1"
 
-# fix broken glue dependency
-#     this is required because the LIGO glue package isn't
-#     distributed as lscsoft-glue in system packages,
-#     only in pypi, so once it is, this line should have
-#     no effect
-${PIP} install ${PIP_FLAGS} lscsoft-glue
-
-# run tests
-${COVERAGE} run ./setup.py --quiet test --addopts gwpy/tests/
+python${PYTHON_VERSION} -m pytest --pyargs gwpy --cov=gwpy --cov-config=setup.cfg
