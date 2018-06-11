@@ -23,8 +23,6 @@ all be easily visualised using the relevant plotting objects, with
 many configurable parameters both interactive, and in saving to disk.
 """
 
-from matplotlib import pyplot
-
 # utilities
 from . import (
     rc,  # updated default parameters
@@ -40,13 +38,3 @@ from .bode import BodePlot
 from .segments import SegmentAxes
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
-
-# pyplot.figure replacement
-
-def figure(*args, **kwargs):  # pylint: disable=missing-docstring
-    kwargs.setdefault('FigureClass', Plot)
-    return pyplot.figure(*args, **kwargs)
-
-
-figure.__doc__ = pyplot.figure.__doc__

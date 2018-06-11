@@ -25,7 +25,8 @@ from collections import (KeysView, ValuesView)
 
 import numpy
 
-from matplotlib import (backends, figure, pyplot, _pylab_helpers)
+from matplotlib import (backends, figure, get_backend, _pylab_helpers)
+from matplotlib.artist import setp
 from matplotlib.backend_bases import FigureManagerBase
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import LogLocator
@@ -54,7 +55,7 @@ def interactive_backend():
     """Returns `True` if the current backend is interactive
     """
     from matplotlib.rcsetup import interactive_bk
-    return pyplot.get_backend() in interactive_bk
+    return get_backend() in interactive_bk
 
 
 class Plot(figure.Figure):
@@ -95,7 +96,7 @@ class Plot(figure.Figure):
 
         # add interactivity
         # scraped from pyplot.figure()
-        backend_mod, _, draw_if_interactive, _ = backends.pylab_setup()
+        backend_mod, _, draw_if_interactive, _show = backends.pylab_setup()
         try:
             manager = backend_mod.new_figure_manager_given_figure(1, self)
         except AttributeError:
@@ -106,6 +107,7 @@ class Plot(figure.Figure):
             lambda ev: _pylab_helpers.Gcf.set_active(manager))
         manager._cidgcf = cid
         _pylab_helpers.Gcf.set_active(manager)
+        self._show = _show
         draw_if_interactive()
 
     def _init_axes(self, data, method='plot',
@@ -213,7 +215,7 @@ class Plot(figure.Figure):
         # if told to block, or using an interactive backend,
         # but not using ipython
         if block or (block is None and interactive_backend() and not IPYTHON):
-            return pyplot.show(block=True)
+            return self._show(block=True)
         # otherwise, don't block and just show normally
         return super(Plot, self).show(warn=warn)
 
@@ -228,6 +230,7 @@ class Plot(figure.Figure):
     def close(self):
         """Close the plot and release its memory.
         """
+        from matplotlib.pyplot import close
         for ax in self.axes[::-1]:
             # avoid matplotlib/matplotlib#9970
             ax.set_xscale('linear')
@@ -235,7 +238,7 @@ class Plot(figure.Figure):
             # clear the axes
             ax.cla()
         # close the figure
-        pyplot.close(self)
+        close(self)
 
     # -- axes manipulation ----------------------
 
@@ -409,7 +412,7 @@ class Plot(figure.Figure):
         if axes_kw['sharex'] is ax:
             segax.set_autoscalex_on(ax.get_autoscalex_on())
             segax.set_xlim(*ax.get_xlim())
-            pyplot.setp(ax.get_xticklabels(), visible=False)
+            setp(ax.get_xticklabels(), visible=False)
             ax.set_xlabel("")
 
         # plot segments
