@@ -403,6 +403,9 @@ class Array2D(Series):
         return self.plot(method='pcolormesh', **kwargs)
 
     def plot(self, method=DEFAULT_IMAGE_METHOD, **kwargs):
+        from ..plot import Plot
+        from ..plot.text import default_unit_label
+
         # correct for log scales and zeros
         if kwargs.get('xscale') == 'log' and self.x0.value == 0:
             kwargs.setdefault('xlim', (self.dx.value, self.xspan[1]))
@@ -410,8 +413,13 @@ class Array2D(Series):
             kwargs.setdefault('ylim', (self.dy.value, self.yspan[1]))
 
         # make plot
-        from ..plot import Plot
-        return Plot(self, method=method, **kwargs)
+        plot = Plot(self, method=method, **kwargs)
+
+        # set default labels
+        default_unit_label(plot.gca().xaxis, self.xunit)
+        default_unit_label(plot.gca().yaxis, self.unit)
+
+        return plot
 
     # -- Array2D modifiers ----------------------
     # all of these try to return Quantities rather than simple numbers

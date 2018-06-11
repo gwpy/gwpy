@@ -19,7 +19,6 @@
 """Support for plotting with units
 """
 
-from astropy.visualization.units import quantity_support
 from astropy.units.format import LatexInline
 
 
@@ -38,6 +37,3 @@ class LatexInlineDimensional(LatexInline):
             ptype = cls._latex_escape(unit.physical_type.title())
             return '{0} {1}'.format(ptype, u)
         return u
-
-
-UCI = quantity_support('latex_inline_dimensional')

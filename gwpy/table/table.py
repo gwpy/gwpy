@@ -28,6 +28,7 @@ import numpy
 
 from astropy.table import (Table, Column, vstack)
 from astropy.io.registry import write as io_write
+from astropy.units import Quantity
 
 from ..io.mp import read_multi as io_read_multi
 from ..time import gps_types
@@ -453,6 +454,8 @@ class EventTable(Table):
             for documentation of keyword arguments used to display the table
         """
         from ..plot import Plot
+        from ..plot.tex import label_to_latex
+
         color = kwargs.pop('color', None)
         if color is not None:
             kwargs['c'] = self[color]
@@ -464,7 +467,19 @@ class EventTable(Table):
             if x == tcol:
                 kwargs.setdefault('figsize', (12, 6))
                 kwargs.setdefault('xscale', 'auto-gps')
-        return Plot(self[x], self[y], method='scatter', **kwargs)
+
+        plot = Plot(self[x], self[y], method='scatter', **kwargs)
+
+        # set default labels
+        ax = plot.gca()
+        for axis, column in zip((ax.xaxis, ax.yaxis), (self[x], self[y])):
+            name = r'\texttt{{{0}}}'.format(label_to_latex(column.name))
+            if isinstance(column, Quantity):
+                name += ' [{0}]'.format(column.unit.to_string('latex_inline'))
+            axis.set_label_text(name)
+            axis.isDefault_label = True
+
+        return plot
 
     def hist(self, column, **kwargs):
         """Generate a `HistogramPlot` of this `Table`.

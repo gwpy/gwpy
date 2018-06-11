@@ -41,3 +41,11 @@ def to_string(input_):
     if usetex:
         return tex.label_to_latex(input_)
     return str(input_)
+
+
+def default_unit_label(axis, unit):
+    """Set default label for an axis from a `~astropy.units.Unit`
+    """
+    label = axis.set_label_text(unit.to_string('latex_inline_dimensional'))
+    axis.isDefault_label = True
+    return label.get_text()

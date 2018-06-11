@@ -414,13 +414,20 @@ class Series(Array):
             for documentation of keyword arguments used in rendering the data
         """
         from ..plot import Plot
+        from ..plot.text import default_unit_label
 
         # correct for log scales and zeros
         if kwargs.get('xscale') == 'log' and self.x0.value == 0:
             kwargs.setdefault('xlim', (self.dx.value, self.xspan[1]))
 
         # make plot
-        return Plot(self, method=method, **kwargs)
+        plot = Plot(self, method=method, **kwargs)
+
+        # set default labels
+        default_unit_label(plot.gca().xaxis, self.xunit)
+        default_unit_label(plot.gca().yaxis, self.unit)
+
+        return plot
 
     def step(self, **kwargs):
         """Create a step plot of this series
