@@ -86,6 +86,18 @@ class SegmentAxes(Axes):
         formatter = SegmentFormatter()
         self.yaxis.set_major_formatter(formatter)
 
+    def _plot_method(self, obj):
+        if isinstance(obj, DataQualityDict):
+            return self.plot_dict
+        if isinstance(obj, DataQualityFlag):
+            return self.plot_flag
+        if isinstance(obj, ligo.segments.segmentlistdict):
+            return self.plot_segmentlistdict
+        if isinstance(obj, ligo.segments.segmentlist):
+            return self.plot_segmentlist
+        raise TypeError("no known {0}.plot_xxx method for {1}".format(
+            type(self).__name__, type(obj).__name__))
+
     def plot(self, *args, **kwargs):
         """Plot data onto these axes
 
@@ -117,22 +129,12 @@ class SegmentAxes(Axes):
         out = []
         args = list(args)
         while args:
-            if isinstance(args[0], DataQualityDict):
-                out.append(self.plot_dict(args.pop(0), **kwargs))
-                continue
-            elif isinstance(args[0], DataQualityFlag):
-                out.append(self.plot_flag(args[0], **kwargs))
-                args.pop(0)
-                continue
-            elif isinstance(args[0], ligo.segments.segmentlistdict):
-                out.extend(self.plot_segmentlistdict(args[0], **kwargs))
-                args.pop(0)
-                continue
-            elif isinstance(args[0], ligo.segments.segmentlist):
-                out.append(self.plot_segmentlist(args[0], **kwargs))
-                args.pop(0)
-                continue
-            break
+            try:
+                plotter = self._plot_method(args[0])
+            except TypeError:
+                break
+            out.append(plotter(args[0], **kwargs))
+            args.pop(0)
         if args:
             out.extend(super(SegmentAxes, self).plot(*args, **kwargs))
         self.autoscale(axis='y')
