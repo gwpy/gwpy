@@ -261,7 +261,7 @@ class GPSLocatorMixin(object):
     """
     def __call__(self):
         vmin, vmax = self.axis.get_view_interval()
-        trans = self.axis._scale.get_transform()
+        trans = self.axis.get_transform()
         vmin = trans.transform(vmin)
         vmax = trans.transform(vmax)
         return trans.inverted().transform(self.tick_values(vmin, vmax))
@@ -310,6 +310,8 @@ class GPSAutoLocator(ticker.MaxNLocator):
 
 
 class GPSAutoMinorLocator(GPSLocatorMixin, ticker.AutoMinorLocator):
+    """Find the best position for minor ticks on a given GPS-scaled axis.
+    """
     def __call__(self):
         """Return the locations of the ticks
         """
@@ -360,7 +362,6 @@ class GPSAutoMinorLocator(GPSLocatorMixin, ticker.AutoMinorLocator):
             locs = []
 
         return self.raise_if_exceeds(numpy.array(locs))
-    pass
 
 
 class GPSFormatter(ticker.Formatter):
@@ -368,11 +369,11 @@ class GPSFormatter(ticker.Formatter):
     """
     def __call__(self, t, pos=None):
         # transform using float() to get nicer
-        trans = self.axis._scale.get_transform()
-        f = trans.transform(float(t))
-        if f.is_integer():
-            return int(f)
-        return f
+        trans = self.axis.get_transform()
+        flt = trans.transform(float(t))
+        if flt.is_integer():
+            return int(flt)
+        return flt
 
 
 # -- scales -------------------------------------------------------------------
@@ -418,9 +419,10 @@ class GPSScale(GPSMixin, LinearScale):
                 date = date.replace(**{fields[i]: 0})
         return int(to_gps(date))
 
-    def _auto_unit(self, axis):
-        l, r = sorted(axis.get_view_interval())
-        duration = r - l
+    @staticmethod
+    def _auto_unit(axis):
+        vmin, vmax = sorted(axis.get_view_interval())
+        duration = vmax - vmin
         for scale in TIME_UNITS[::-1]:
             base = scale.decompose().scale
             # for large durations, prefer smaller units
