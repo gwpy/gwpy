@@ -17,7 +17,7 @@ debian-build: &debian-build
     - checkout
     - run:
         name: Build
-        command: bash ci/install-debian.sh
+        command: bash -ex ci/install-debian.sh
     - run:
         name: Test
         command: pytest --pyargs gwpy
@@ -27,7 +27,7 @@ centos-build: &centos-build
     - checkout
     - run:
         name: Build
-        command: bash ci/install-el.sh
+        command: bash -ex ci/install-el.sh
     - run:
         name: Test
         command: pytest --pyargs gwpy
@@ -91,9 +91,9 @@ workflows:
     jobs:
       - python:2.7
       - python:3.6
+      - debian:jessie:2.7
+      - debian:jessie:3.4
       - debian:stretch:2.7
       - debian:stretch:3.5
-      - debian:jessie:2.7
-      - debian:jessie:3.5
       - el7:2.7
       - el7:3.5
