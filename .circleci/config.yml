@@ -84,3 +84,16 @@ jobs:
     <<: *python-build
     docker:
       image: python:3.6
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - python:2.7
+      - python:3.6
+      - debian:stretch:2.7
+      - debian:stretch:3.5
+      - debian:jessie:2.7
+      - debian:jessie:3.5
+      - el7:2.7
+      - el7:3.5
