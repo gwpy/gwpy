@@ -20,18 +20,11 @@
 # Build Debian package
 #
 
-# enable lscsoft jessie-proposed (first required for python-tqdm gwpy/gwpy#735)
-if [ "${OS_VERSION}" -eq 8 ]; then
-    cat << EOF > /etc/apt/sources.list.d/lscsoft-proposed.list
-deb http://software.ligo.org/lscsoft/debian jessie-proposed contrib
-EOF
-    cat << EOF > /etc/apt/preferences.d/lscsoft-proposed.pref
-Package: *
-Pin: release n=jessie-proposed
-Pin-Priority: 100
-EOF
-    apt-get -yqq update
-fi
+source ci/lib.sh
+get_environment
+
+# update package list
+apt-get -yqq update
 
 # install pip for system python
 apt-get -yqq install python-pip
@@ -45,7 +38,7 @@ apt-get -yqq install \
     python-setuptools \
     python3-setuptools \
     python-git \
-    python-jinja2 \
+    python-jinja2
 
 # get versions
 GWPY_VERSION=$(python setup.py --version)
@@ -72,23 +65,15 @@ tar -xf ../gwpy_${GWPY_RELEASE}.orig.tar.gz --strip-components=1
 dpkg-buildpackage -us -uc
 popd
 
-if [ ${PY_XY} -lt 30 ]; then  # install python2 only
-    PREFICES="python"
-else  # install both 2 and 3
-    PREFICES="python python3"
-fi
-for PREF in ${PREFICES}; do
-    # print and install the deb
-    GWPY_DEB="dist/${PREF}-gwpy_${GWPY_RELEASE}-1_all.deb"
-    echo "-------------------------------------------------------"
-    dpkg --info ${GWPY_DEB}
-    echo "-------------------------------------------------------"
-    dpkg --install ${GWPY_DEB} || { \
-        apt-get -y -f install;  # install dependencies and package
-        apt-get -yq install ${PREF}-tqdm;  # install tqdm from backports
-        dpkg --install ${GWPY_DEB};  # shouldn't fail
-    }
-done
+# print and install the deb
+GWPY_DEB="dist/${PY_PREFIX}-gwpy_${GWPY_RELEASE}-1_all.deb"
+echo "-------------------------------------------------------"
+dpkg --info ${GWPY_DEB}
+echo "-------------------------------------------------------"
+dpkg --install ${GWPY_DEB} || { \
+    apt-get -y -f install;  # install dependencies and package
+    dpkg --install ${GWPY_DEB};  # shouldn't fail
+}
 
 # install system-level extras for the correct python version
 for pckg in \
@@ -108,7 +93,7 @@ for pckg in \
 done
 
 # HACK: fix missing file from ldas-tools-framecpp
-if [ -d /usr/lib/$PYTHON/dist-packages/LDAStools/ -a \
-     ! -f /usr/lib/$PYTHON/dist-packages/LDAStools/__init__.py ]; then
-    touch /usr/lib/$PYTHON/dist-packages/LDAStools/__init__.py
+if [ -d /usr/lib/${PYTHON}/dist-packages/LDAStools/ -a \
+     ! -f /usr/lib/${PYTHON}/dist-packages/LDAStools/__init__.py ]; then
+    touch /usr/lib/${PYTHON}/dist-packages/LDAStools/__init__.py
 fi

@@ -20,14 +20,8 @@
 # Build Port for GWpy
 #
 
-git clone https://github.com/MacPython/terryfy.git
-. terryfy/travis_tools.sh
-set -x  # travis_tools.sh sets +x on its way out
-
-export COLUMNS=80  # https://github.com/travis-ci/travis-ci/issues/5407
-install_macports
-
-# get python information
+# get environment information
+. ci/lib.sh
 get_environment
 
 # install basic ports we need
@@ -39,11 +33,12 @@ sudo port -q install \
     ${PY_PREFIX}-jinja2 \
     ${PY_PREFIX}-gitpython
 
+sudo port select --set python ${PY_DIST}  # link `python` to correct version
+
 # make Portfile
-cd ${GWPY_PATH}
 GWPY_VERSION=$(python setup.py --version)
-$PYTHON setup.py --quiet sdist
-$PYTHON setup.py port --tarball dist/gwpy-${GWPY_VERSION}.tar.gz
+python setup.py --quiet sdist
+python setup.py port --tarball dist/gwpy-${GWPY_VERSION}.tar.gz
 
 # create mock portfile repo and install
 PORT_REPO=$(pwd)/ports
@@ -56,9 +51,9 @@ gsed -i 's|pypi:g/gwpy|file://'$(pwd)'/dist/ \\\n                    pypi:g/gwpy
 
 # add local port repo to sources
 sudo gsed -i 's|rsync://rsync.macports|file://'${PORT_REPO}'\nrsync://rsync.macports|' /opt/local/etc/macports/sources.conf
-cd ${PORT_REPO}
+pushd ${PORT_REPO}
 portindex
-cd ${GWPY_PATH}
+popd
 
 # set up utility to ping STDOUT every 10 seconds, prevents timeout
 # https://github.com/travis-ci/travis-ci/issues/6591#issuecomment-275804717
@@ -95,11 +90,3 @@ if [ "$(port info --version dqsegdb)" == "version: 1.4.0" ]; then
 fi
 
 kill -9 $wvbpid &> /dev/null
-
-# hacky fix for installing NOT mpl 2.1.x
-#     this can be removed as soon as mpl 2.1.2 is released
-MPL_VERSION=$(port -q installed ${PY_PREFIX}-matplotlib | grep active | \
-              awk -F '[\@\_]' '{print $2}')
-if [[ "${MPL_VERSION}" =~ 2.1.[01] ]]; then
-    ${PIP} install "matplotlib >= 1.2.0, != 2.1.0, != 2.1.1"
-fi
