@@ -407,8 +407,8 @@ class TestDataQualityFlag(object):
             assert isinstance(plot.gca(), SegmentAxes)
             assert plot.gca().get_epoch() == flag.known[0][0]
             assert len(plot.gca().collections) == 2
-            assert len(plot.gca().collections[0].get_paths()) == len(KNOWN)
-            assert len(plot.gca().collections[1].get_paths()) == len(ACTIVE)
+            assert len(plot.gca().collections[1].get_paths()) == len(KNOWN)
+            assert len(plot.gca().collections[0].get_paths()) == len(ACTIVE)
             assert plot.gca().collections[0].get_label() == flag.label
 
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
