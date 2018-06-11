@@ -455,6 +455,7 @@ class GPSScale(GPSMixin, LinearScale):
 
 register_gps_scale(GPSScale)
 
+
 # register all the astropy time units that have sensible long names
 def _gps_scale_factory(unit):
     """Construct a GPSScale for this unit

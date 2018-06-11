@@ -39,6 +39,7 @@ AXES_PARAMS = [
     'epoch', 'insetlabels',  # special GWpy extras
 ]
 
+
 def color_cycle(colors=None):
     """An infinite iterator of the given (or default) colors
     """

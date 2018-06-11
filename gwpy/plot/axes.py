@@ -109,7 +109,6 @@ class Axes(_Axes):
             for ax in labels:  # reset labels
                 ax.isDefault_label = True
 
-
     # -- auto-gps helpers -----------------------
 
     def _fmt_xdata(self, x):
@@ -172,7 +171,7 @@ class Axes(_Axes):
         # scatter with auto-sorting by colour
         try:
             if c is None:
-               raise ValueError
+                raise ValueError
             c_array = numpy.asanyarray(c, dtype=float)
         except ValueError:  # no colour array
             pass

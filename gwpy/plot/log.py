@@ -119,4 +119,5 @@ class GWpyLogScale(LogScale):
         axis.set_minor_locator(LogLocator(self.base, self.subs))
         axis.set_minor_formatter(MinorLogFormatterMathtext(self.base))
 
+
 register_scale(GWpyLogScale)

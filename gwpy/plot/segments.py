@@ -186,7 +186,6 @@ class SegmentAxes(Axes):
                       DeprecationWarning)
         return self.plot_dict(*args, **kwargs)
 
-
     def plot_flag(self, flag, y=None, **kwargs):
         """Plot a `~gwpy.segments.DataQualityFlag` onto these axes.
 

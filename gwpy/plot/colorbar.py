@@ -106,12 +106,12 @@ def find_mappable(*axes):
     """
     for ax in axes:
         for aset in ('collections', 'images'):
-             try:
-                 return getattr(ax, aset)[-1]
-             except (AttributeError, IndexError):
-                 continue
-             else:
-                 break
+            try:
+                return getattr(ax, aset)[-1]
+            except (AttributeError, IndexError):
+                continue
+            else:
+                break
     raise ValueError("Cannot determine mappable layer on any axes "
                      "for this colorbar")
 
