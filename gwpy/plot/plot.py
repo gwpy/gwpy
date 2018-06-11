@@ -257,7 +257,7 @@ class Plot(figure.Figure):
     # -- colour bars ----------------------------
 
     def colorbar(self, mappable=None, cax=None, ax=None, fraction=None,
-                 emit=True, **kwargs):
+                 label=None, emit=True, **kwargs):
         """Add a colorbar to the current `Plot`
 
         A colorbar must be associated with an `Axes` on this `Plot`,
@@ -325,6 +325,8 @@ class Plot(figure.Figure):
         # generate colour bar
         cbar = super(Plot, self).colorbar(mappable, **kwargs)
         self.colorbars.append(cbar)
+        if label:  # mpl<1.3 doesn't accept label in Colorbar constructor
+            label.set_label(label)
 
         # update mappables for this axis
         if emit:
