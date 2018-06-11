@@ -25,7 +25,7 @@ import pytest
 
 import numpy
 
-from matplotlib import pyplot
+from matplotlib import (__version__ as mpl_version, pyplot)
 
 from astropy.units import Unit
 
@@ -160,7 +160,7 @@ def test_gps_scale(scale):
 
 @pytest.mark.parametrize('scale, unit', [
     (1e-5, 'ms'),
-    (1e-4, 'ms'),
+    (1e-4, 's' if mpl_version < '2.0' else 'ms'),
     (1e-3, 's'),
     (1e-2, 's'),
     (1e-1, 's'),
@@ -178,7 +178,6 @@ def test_auto_gps_scale(scale, unit):
     ax = fig.gca(xscale='auto-gps')
     ax.plot(numpy.arange(1e2) * scale, numpy.arange(1e2))
     xscale = ax.get_xaxis()._scale
-    print(xscale.name, xscale.unit)
     transform = xscale.get_transform()
     assert transform.unit.name == unit
     pyplot.close(fig)

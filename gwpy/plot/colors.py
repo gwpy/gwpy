@@ -19,12 +19,15 @@
 """Colour customisations for visualisation in GWpy
 """
 
+import numpy
+
 from matplotlib import (__version__ as mpl_version, rcParams)
 from matplotlib import colors
 try:
-    from matplotlib.colors import _colors_full_map as color_map
+    from matplotlib.colors import (_colors_full_map as color_map, to_rgb)
 except ImportError:  # mpl < 2
-    from matplotlib.colors import cnames as color_map
+    from matplotlib.colors import (cnames as color_map, ColorConverter)
+    to_rgb = ColorConverter().to_rgb
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -79,9 +82,18 @@ color_map.update({'gwpy:{}'.format(n): c for n, c in GWPY_COLORS.items()})
 # -- colour utilities ---------------------------------------------------------
 
 def tint(c, factor=1.0):
-    h, s, v = colors.rgb_to_hsv(colors.to_rgb(c))
-    v *= factor
-    return colors.hsv_to_rgb((h, s, v))
+    """Tint a color (make it darker), returning a new RGB array
+    """
+    # this method is more complicated than it need be to
+    # support matplotlib-1.x.
+    # for matplotlib-2.x this would just be
+    #     h, s, v = colors.rgb_to_hsv(colors.to_rgb(c))
+    #     v *= factor
+    #     return colors.hsv_to_rgb((h, s, v))
+    rgb = numpy.array(to_rgb(c), ndmin=3)
+    hsv = colors.rgb_to_hsv(rgb)
+    hsv[-1][-1][2] *= factor
+    return colors.hsv_to_rgb(hsv)[-1][-1]
 
 
 def format_norm(kwargs, current=None):

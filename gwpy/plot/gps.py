@@ -189,6 +189,8 @@ class GPSTransformBase(GPSMixin, Transform):
         scale = self.scale or 1
         epoch = self.epoch or 0
 
+        values = numpy.asarray(values)
+
         # handle simple or data transformations with floats
         if any([
                 epoch == 0,  # no large additions
@@ -286,8 +288,6 @@ class GPSAutoLocator(ticker.MaxNLocator):
         """
         super(GPSAutoLocator, self).__init__(nbins=nbins, steps=steps,
                                              **kwargs)
-        if steps is None:
-            self._steps = None
 
     def tick_values(self, vmin, vmax):
         transform = self.axis.get_transform()

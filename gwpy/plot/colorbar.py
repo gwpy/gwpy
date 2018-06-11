@@ -23,8 +23,10 @@ import warnings
 
 import numpy
 
+from matplotlib import __version__ as mpl_version
 from matplotlib.axes import SubplotBase
 from matplotlib.colors import LogNorm
+from matplotlib.legend import Legend
 from matplotlib.ticker import LogLocator
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -34,6 +36,8 @@ from .colors import format_norm
 from .log import CombinedLogFormatterMathtext
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+LOC_CODES = Legend.codes
 
 
 # -- custom colorbar generation -----------------------------------------------
@@ -88,6 +92,8 @@ def process_colorbar_kwargs(figure, mappable=None, ax=None, use_axesgrid=True,
         # create axes if requesting not to resize the parent
         if use_axesgrid:
             cax, kwargs = make_axes_axesgrid(ax, **kwargs)
+    else:
+        kwargs.pop('fraction', None)  # don't need this if already have axes
 
     # pack kwargs
     kwargs.update(ax=ax, cax=cax)
@@ -134,7 +140,8 @@ def _scale_height(value, ax):
 
 def make_axes_axesgrid(ax, **kwargs):
     kwargs.setdefault('location', 'right')
-    kwargs.setdefault('ticklocation', kwargs['location'])
+    if mpl_version >= '1.3.0':
+        kwargs.setdefault('ticklocation', kwargs['location'])
 
     fraction = kwargs.pop('fraction', 0.)
     try:
@@ -179,11 +186,13 @@ def _make_axes_inset(ax, location='right', **kwargs):
         inset_kw['height'] = .12
 
     # set location and anchor position based on location name
+    # NOTE: matplotlib-1.2 requres a location code, and fails on a string
+    #       we can move back to just using strings when we drop mpl-1.2
     inset_kw['loc'], inset_kw['bbox_to_anchor'] = {
-        'left': ('lower right', (-pad, 0., 1., 1.)),
-        'right': ('lower left', (1+pad, 0., 1., 1.)),
-        'bottom': ('upper left', (0., -pad,  1., 1.)),
-        'top': ('lower left', (0., 1+pad, 1., 1.)),
+        'left': (LOC_CODES['lower right'], (-pad, 0., 1., 1.)),
+        'right': (LOC_CODES['lower left'], (1+pad, 0., 1., 1.)),
+        'bottom': (LOC_CODES['upper left'], (0., -pad,  1., 1.)),
+        'top': (LOC_CODES['lower left'], (0., 1+pad, 1., 1.)),
     }[location]
 
     # allow user overrides

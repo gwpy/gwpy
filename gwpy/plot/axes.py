@@ -92,7 +92,7 @@ class Axes(_Axes):
     def draw(self, *args, **kwargs):
         labels = {}
 
-        for ax in self._get_axis_list():
+        for ax in (self.xaxis, self.yaxis):
             if ax.get_scale() in GPS_SCALES and ax.isDefault_label:
                 labels[ax] = ax.get_label_text()
                 trans = ax.get_transform()
@@ -169,6 +169,8 @@ class Axes(_Axes):
 
     def scatter(self, x, y, c=DEFAULT_SCATTER_COLOR, **kwargs):
         # scatter with auto-sorting by colour
+        if c is None and mpl_version < '2.0':
+            c = DEFAULT_SCATTER_COLOR
         try:
             if c is None:
                 raise ValueError
@@ -231,6 +233,8 @@ class Axes(_Axes):
         x = numpy.concatenate((array.xindex, array.xspan[-1:]))
         y = numpy.concatenate((array.yindex, array.yspan[-1:]))
         xcoord, ycoord = numpy.meshgrid(x, y, copy=False, sparse=True)
+        xcoord._unit = array.xindex.unit
+        ycoord._unit = array.yindex.unit
         return self.pcolormesh(xcoord, ycoord, array.value.T, **kwargs)
 
     def plot_mmm(self, data, lower=None, upper=None, **kwargs):
