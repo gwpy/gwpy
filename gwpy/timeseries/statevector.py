@@ -27,6 +27,7 @@ arrays, representing a bit mask of states that combine to make a detailed
 statement of instrumental operation
 """
 
+from functools import wraps
 from math import (ceil, log)
 
 from six.moves import range
@@ -155,6 +156,10 @@ class StateTimeSeries(TimeSeriesBase):
             return new.diff(n-1, axis=axis)
         return new
     diff.__doc__ = TimeSeriesBase.diff.__doc__
+
+    @wraps(numpy.ndarray.all, assigned=('__doc__',))
+    def all(self, axis=None, out=None):
+        return numpy.all(self.value, axis=axis, out=out)
 
     # -- useful methods -------------------------
 
