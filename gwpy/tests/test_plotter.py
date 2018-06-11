@@ -284,7 +284,6 @@ class TestPlot(PlottingTestBase):
 
         fig = self.FIGURE_CLASS()
         fig.add_image(data)
-        assert fig.gca().projection == 'rectilinear'
 
     def test_add_arrays(self):
         ts = TimeSeries([1, 2, 3, 4])
@@ -582,7 +581,6 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
     def test_init(self):
         fig, ax = self.new()
         assert isinstance(ax, self.AXES_CLASS)
-        assert ax.get_epoch() == 0
         assert ax.get_xscale() == 'auto-gps'
         assert ax.get_xlabel() == '_auto'
         self.save_and_close(fig)
@@ -596,7 +594,6 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         nptest.assert_array_equal(line.get_xdata(), self.ts.times.value)
         nptest.assert_array_equal(line.get_ydata(), self.ts.value)
         # check GPS axis is set ok
-        assert ax.get_epoch() == self.ts.x0.value
         assert ax.get_xlim() == tuple(self.ts.span)
         self.save_and_close(fig)
 
@@ -657,7 +654,6 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         coll = ax.collections[0]
         nptest.assert_array_equal(coll.get_array(), self.sg.value.T.flatten())
         # check GPS axis is set ok
-        assert ax.get_epoch() == self.sg.x0.value
         assert ax.get_xlim() == tuple(self.sg.xspan)
         # check frequency axis
         if self.use_tex:

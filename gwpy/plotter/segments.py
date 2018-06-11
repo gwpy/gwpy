@@ -28,6 +28,7 @@ from matplotlib.artist import allow_rasterization
 from matplotlib.ticker import (Formatter, MultipleLocator, NullLocator)
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
+from matplotlib.projections import register_projection
 try:
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 except ImportError:
@@ -66,7 +67,7 @@ class SegmentAxes(TimeSeriesAxes):
     gwpy.plotter.TimeSeriesAxes
         for documentation of other args and kwargs
     """
-    name = 'segments'
+    name = 'gwpy-segments-deprecated'
 
     def __init__(self, *args, **kwargs):
         # set labelling format
@@ -484,6 +485,8 @@ class SegmentAxes(TimeSeriesAxes):
         return super(SegmentAxes, self).draw(*args, **kwargs)
     draw.__doc__ = TimeSeriesAxes.draw.__doc__
 
+register_projection(SegmentAxes)
+
 
 class SegmentPlot(TimeSeriesPlot):
     """`Plot` for displaying a `~gwpy.segments.DataQualityFlag`
@@ -568,7 +571,6 @@ class SegmentPlot(TimeSeriesPlot):
         divider = make_axes_locatable(ax)
         maskax = divider.new_horizontal(size=width, pad=pad,
                                         axes_class=axes_class)
-        maskax.set_xscale('gps')
         maskax.xaxis.set_major_locator(NullLocator())
         maskax.xaxis.set_minor_locator(NullLocator())
         maskax.yaxis.set_minor_locator(NullLocator())
