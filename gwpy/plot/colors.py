@@ -81,7 +81,7 @@ color_map.update({'gwpy:{}'.format(n): c for n, c in GWPY_COLORS.items()})
 
 # -- colour utilities ---------------------------------------------------------
 
-def tint(c, factor=1.0):
+def tint(col, factor=1.0):
     """Tint a color (make it darker), returning a new RGB array
     """
     # this method is more complicated than it need be to
@@ -90,7 +90,7 @@ def tint(c, factor=1.0):
     #     h, s, v = colors.rgb_to_hsv(colors.to_rgb(c))
     #     v *= factor
     #     return colors.hsv_to_rgb((h, s, v))
-    rgb = numpy.array(to_rgb(c), ndmin=3)
+    rgb = numpy.array(to_rgb(col), ndmin=3)
     hsv = colors.rgb_to_hsv(rgb)
     hsv[-1][-1][2] *= factor
     return colors.hsv_to_rgb(hsv)[-1][-1]
