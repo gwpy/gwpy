@@ -228,16 +228,8 @@ class Axes(_Axes):
     def _pcolormesh_array2d(self, array, **kwargs):
         """Render an `~gwpy.types.Array2D` using `Axes.pcolormesh`
         """
-        x = type(array.xindex)(numpy.empty(array.xindex.size+1), array.xunit,
-                               copy=False)
-        numpy.concatenate((array.xindex, [array.xspan[-1]] * array.xunit),
-                          out=x)
-
-        y = type(array.yindex)(numpy.empty(array.yindex.size+1), array.yunit,
-                               copy=False)
-        numpy.concatenate((array.yindex, [array.yspan[-1]] * array.yunit),
-                          out=y)
-
+        x = numpy.concatenate((array.xindex, array.xspan[-1:]))
+        y = numpy.concatenate((array.yindex, array.yspan[-1:]))
         xcoord, ycoord = numpy.meshgrid(x, y, copy=False, sparse=True)
         return self.pcolormesh(xcoord, ycoord, array.value.T, **kwargs)
 
