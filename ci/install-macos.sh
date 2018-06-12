@@ -79,6 +79,7 @@ sudo port -q install \
     ${PY_PREFIX}-psycopg2 \
     ${PY_PREFIX}-pandas \
     ${PY_PREFIX}-pytest \
+    ${PY_PREFIX}-pytest-cov \
     ${PY_PREFIX}-coverage \
     ${PY_PREFIX}-freezegun \
     ${PY_PREFIX}-sqlparse \
