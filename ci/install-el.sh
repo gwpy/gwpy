@@ -65,7 +65,7 @@ else
 fi
 yum -y -q --nogpgcheck localinstall ${GWPY_RPM}
 
-# install system-level extras
+# install system-level extras that use python- prefix
 yum -y -q install \
     nds2-client-${PY_PREFIX} \
     ldas-tools-framecpp-${PY_PREFIX} \
@@ -73,15 +73,21 @@ yum -y -q install \
     lalsimulation-${PY_PREFIX} \
 || true
 
+# install system-level extras that might use python2- prefix
+if [ ${PY_XY} -lt 30 ]; then
+    yum -y -q install \
+        python2-root \
+        python2-freezegun \
+        python2-pytest-cov
+else
+    yum -y -q install \
+        ${PY_PREFIX}-pytest-cov \
+        ${PY_PREFIX}-freezegun \
+        ${PY_PREFIX}-root
+fi
+
 # HACK: fix missing file from ldas-tools-framecpp
 if [ -d /usr/lib64/${PYTHON}/site-packages/LDAStools -a \
      ! -f /usr/lib64/${PYTHON}/site-packages/LDAStools/__init__.py ]; then
     touch /usr/lib64/${PYTHON}/site-packages/LDAStools/__init__.py
-fi
-
-# install system-level extras that might use python2- prefix
-if [ ${PY_XY} -lt 30 ]; then
-    yum -y -q install python2-root
-else
-    yum -y -q install ${PY_PREFIX}-root
 fi
