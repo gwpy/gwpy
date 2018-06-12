@@ -47,4 +47,4 @@ COVERAGE=coverage-${PYTHON_VERSION}
 ${PIP} install ${PIP_FLAGS} lscsoft-glue
 
 # run tests
-${COVERAGE} run ./setup.py --quiet test --addopts gwpy/tests/
+${COVERAGE} run ./setup.py --quiet test
