@@ -56,13 +56,13 @@ before_install:
 install:  # install package
   - |
     if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then  # macports
-        . ci/install-macos.sh
+        bash -ex ci/install-macos.sh
     else  # pip
-        . ci/install.sh
+        bash -ex ci/install.sh
     fi
 
 script:  # run tests
-  - . ci/test.sh
+  - bash -ex ci/test.sh
 
 after_success:
   # install coveralls
