@@ -21,11 +21,12 @@
 
 import pytest
 
-from matplotlib import (pyplot, rc_context)
+from matplotlib import (__version__ as mpl_version, pyplot, rc_context)
 
 from .. import log as plot_log
 
 
+@pytest.mark.xfail(mpl_version == '2.0.0', reason='bugs in matplotlib-2.0.0')
 @pytest.mark.parametrize('in_, out, texout', [
     (0., r'$\mathdefault{0}$', '$0$'),
     (0.1, r'$\mathdefault{0.1}$', '$0.1$'),
