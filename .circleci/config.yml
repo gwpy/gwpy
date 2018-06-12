@@ -1,17 +1,5 @@
 version: 2
 
-python-build: &python-build
-  docker:
-    image: python
-  steps:
-    - checkout
-    - run:
-        name: Test
-        command: |
-          python setup.py test
-          python -m pip install coveralls
-          coveralls || true
-
 debian-build: &debian-build
   steps:
     - checkout
