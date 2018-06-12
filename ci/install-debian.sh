@@ -26,8 +26,8 @@ get_environment
 # update package list
 apt-get -yqq update
 
-# install pip for system python
-apt-get -yqq install python-pip
+# install pip
+apt-get -yqq install python-pip python3-pip
 
 # install build dependencies (should match debian/control)
 apt-get -yqq install \
