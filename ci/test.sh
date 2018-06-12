@@ -22,7 +22,9 @@
 
 . ci/lib.sh
 
-mkdir test && pushd test
+# move to new empty directory (so that tests run on installed code)
+mkdir -p test
+pushd test
 
 get_environment  # sets PIP variables etc
 get_python_version  # sets PYTHON_VERSION
@@ -43,7 +45,7 @@ ${PIP} install ${PIP_FLAGS} \
     "six>1.10.0" \
     "pytest>=3.1" \
     "pytest-cov" \
-    "freezegun" \
+    "freezegun>0.2.3" \
     "sqlparse" \
     "bs4"
 if [ "${PY_MAJOR_VERSION}" -eq 2 ]; then
@@ -51,14 +53,12 @@ if [ "${PY_MAJOR_VERSION}" -eq 2 ]; then
 fi
 
 # print installed packages
-pushd /tmp > /dev/null
 _gwpyloc=$(${PYTHON} -c 'import gwpy; print(gwpy.__file__)')
 echo "------------------------------------------------------------------------"
 echo
 echo "GWpy installed to $_gwpyloc"
 echo
 echo "------------------------------------------------------------------------"
-popd > /dev/null
 
 echo "Dependencies:"
 echo "-------------"
@@ -70,3 +70,5 @@ ${PYTHON} -m pytest --pyargs gwpy --cov=gwpy
 # deploy test results to coveralls
 ${PIP} install ${PIP_FLAGS} coveralls
 coveralls || true
+
+popd > /dev/null  # return to starting directory

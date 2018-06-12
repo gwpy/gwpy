@@ -94,7 +94,8 @@ extras_require = {
     'docs': ['sphinx>=1.6.1', 'numpydoc', 'sphinx-bootstrap-theme>=0.6',
              'sphinxcontrib-programoutput', 'sphinx-automodapi',
              'requests'],
-    'tests': ['pytest>=3.1', 'pytest-cov', 'freezegun', 'sqlparse', 'bs4'],
+    'tests': ['pytest>=3.1', 'pytest-cov', 'freezegun>=0.2.3', 'sqlparse',
+              'bs4'],
 
 }
 if sys.version < '3':
