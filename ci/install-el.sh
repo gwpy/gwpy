@@ -54,14 +54,16 @@ yum -y -q install \
     lalsimulation-${PY_PREFIX} \
 || true  # don't fail on missing packages
 
-# install system-level extras that might use python2- prefix
+# install system-level extras that use python2- prefix
 if [ ${PY_XY} -lt 30 ]; then
     yum -y -q install \
+        python2-pip \
         python2-root \
         python2-freezegun \
         python2-pytest-cov
 else
     yum -y -q install \
+        ${PY_PREFIX}-pip \
         ${PY_PREFIX}-pytest-cov \
         ${PY_PREFIX}-freezegun \
         ${PY_PREFIX}-root
