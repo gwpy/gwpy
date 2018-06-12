@@ -23,7 +23,7 @@
 . ci/lib.sh
 
 # macports PATH doesn't persist from install stage, which is annoying
-if [ $(get_package_manager) == port ]; then
+if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then
     . terryfy/travis_tools.sh
     export PATH=$MACPORTS_PREFIX/bin:$PATH
 fi
@@ -31,10 +31,14 @@ fi
 get_environment  # sets PIP variables etc
 get_python_version  # sets PYTHON_VERSION
 
-set -ex && trap 'set +xe' RETURN
+set -ex
 
 # install test dependencies
 python${PYTHON_VERSION} -m pip install ${PIP_FLAGS} .[tests]
 
 # run tests
 python${PYTHON_VERSION} -m pytest --pyargs gwpy --cov=gwpy --cov-config=setup.cfg
+
+# deploy test results to coveralls
+python${PYTHON_VERSION} -m pip install ${PIP_FLAGS} coveralls
+coveralls || true
