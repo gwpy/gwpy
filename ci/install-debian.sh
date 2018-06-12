@@ -61,7 +61,6 @@ apt-get -yqq install \
     ${PY_PREFIX}-pip \
     ${PY_PREFIX}-sqlalchemy \
     ${PY_PREFIX}-pandas \
-    ${PY_PREFIX}-pymysql \
     ${PY_PREFIX}-psycopg2 \
     lalframe-${PY_PREFIX} \
     lalsimulation-${PY_PREFIX}
@@ -77,6 +76,7 @@ fi
 
 # install LIGO-specific extras that may or may not exist
 for pckg in \
+    ${PY_PREFIX}-pymysql \
     ${PY_PREFIX}-nds2-client \
     ${PY_PREFIX}-dqsegdb ${PY_PREFIX}-m2crypto \
     ldas-tools-framecpp-${PY_PREFIX} \
