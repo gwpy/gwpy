@@ -37,8 +37,10 @@ fi
 
 set -ex
 
-# upgrade pip to some minimal level to understand '.[tests]'
-${PIP} install "pip>=7.0.0"
+# upgrade pip to some minimal level
+# NOTE: need >=7.0.0 to understand '.[tests]'
+#       need >=9.0.0 to understand list --format
+${PIP} install "pip>=9.0.0"
 
 # install test dependencies
 ${PIP} install ${PIP_FLAGS} \
