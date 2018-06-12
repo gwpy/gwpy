@@ -37,7 +37,7 @@ set -ex
 python${PYTHON_VERSION} -m pip install "pip>=7.0.0"
 
 # install test dependencies
-python${PYTHON_VERSION} -m pip install ${PIP_FLAGS} .[tests]
+python${PYTHON_VERSION} -m pip install ${PIP_FLAGS} .[tests] "six>1.10.0"
 
 # run tests
 python${PYTHON_VERSION} -m pytest --pyargs gwpy --cov=gwpy
