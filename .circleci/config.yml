@@ -2,6 +2,7 @@ version: 2
 
 debian-build: &debian-build
   steps:
+    - checkout
     - run:
         name: Build
         command: bash -ex ci/install-debian.sh
@@ -11,6 +12,7 @@ debian-build: &debian-build
 
 centos-build: &centos-build
   steps:
+    - checkout
     - run:
         name: Build
         command: bash -ex ci/install-el.sh
