@@ -30,9 +30,7 @@ apt-get -yqq install \
     python-all \
     python3-all \
     python-setuptools \
-    python3-setuptools \
-    python-git \
-    python-jinja2
+    python3-setuptools
 
 # unwrap tarball
 tar xf *.tar.*

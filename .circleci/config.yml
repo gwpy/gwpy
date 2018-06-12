@@ -31,7 +31,8 @@ jobs:
           command: python setup.py sdist --dist-dir .
       - persist_to_workspace:
           root: .
-          paths: *.tar.*
+          paths:
+            - *.tar.*
 
   debian:jessie:2.7:
     <<: *debian-build
