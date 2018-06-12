@@ -23,45 +23,19 @@
 . ci/lib.sh
 get_environment
 
-# get python3 version
-PYTHON3_VERSION=$(get_python3_version)
-PY3XY=${PYTHON3_VERSION/./}
-
-# update system
-yum -y -q update
-
-# install sdist dependencies
-yum -y -q install \
-    rpm-build \
-    git \
-    python2-pip \
-    python-jinja2 \
-    GitPython
-
 # install build dependencies
-yum -y -q install \
-    python-rpm-macros \
-    epel-rpm-macros \
-    python3-rpm-macros \
-    python2-setuptools \
-    python${PY3XY}-setuptools
+yum -y -q update
+yum -y -q install rpm-build
 
-GWPY_VERSION=$(python setup.py --version)
-
-# upgrade setuptools for development builds only to prevent version munging
-if [[ "${GWPY_VERSION}" == *"+"* ]]; then
-    pip install "setuptools>=25"
-fi
-
-# build the RPM using tarball
-python setup.py --quiet sdist
-rpmbuild --define "_rpmdir $(pwd)/dist" -tb dist/gwpy-*.tar.gz
+# build package
+rpmbuild --define "_rpmdir $(pwd)" -tb gwpy-*.tar.*
+mv noarch/*.rpm .
 
 # install the rpm
 if [ ${PY_XY} -lt 30 ]; then
-    GWPY_RPM="dist/noarch/python2-gwpy-*.noarch.rpm"  # install python2 only
+    GWPY_RPM="python2-gwpy-*.noarch.rpm"  # install python2 only
 else
-    GWPY_RPM="dist/noarch/python*-gwpy-*.noarch.rpm"  # install both 2 and 3
+    GWPY_RPM="${PY_PREFIX}-gwpy-*.noarch.rpm"  # install both 2 and 3
 fi
 yum -y -q --nogpgcheck localinstall ${GWPY_RPM}
 
@@ -71,7 +45,7 @@ yum -y -q install \
     ldas-tools-framecpp-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
     lalsimulation-${PY_PREFIX} \
-|| true
+|| true  # don't fail on missing packages
 
 # install system-level extras that might use python2- prefix
 if [ ${PY_XY} -lt 30 ]; then

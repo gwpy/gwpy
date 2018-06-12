@@ -20,14 +20,8 @@
 # Build Debian package
 #
 
-source ci/lib.sh
+. ci/lib.sh
 get_environment
-
-# update package list
-apt-get -yqq update
-
-# install pip
-apt-get -yqq install python-pip python3-pip
 
 # install build dependencies (should match debian/control)
 apt-get -yqq install \
@@ -40,33 +34,17 @@ apt-get -yqq install \
     python-git \
     python-jinja2
 
-# get versions
-GWPY_VERSION=$(python setup.py --version)
-GWPY_RELEASE=${GWPY_VERSION%%+*}
+# unwrap tarball
+tar xf *.tar.*
+ln -s *.tar.* $(echo *.tar.* | sed 's/\(.*\)-\(.*\).\(tar.*\)/\1_\2.orig.\3/')
+pushd $(find . -type d -maxdepth 1 -name 'gwpy-*')
 
-# upgrade setuptools for development builds only to prevent version munging
-if [[ "${GWPY_VERSION}" == *"+"* ]]; then
-    pip install --quiet "setuptools>=25"
-fi
-
-# upgrade GitPython (required for git>=2.15.0)
-#     since we link the git clone from travis, the dependency is actually
-#     fixed to the version of git on the travis image
-pip install --quiet "GitPython>=2.1.8"
-
-# prepare the tarball (sdist generates debian/changelog)
-python setup.py --quiet sdist
-
-# make the debian package
-mkdir -p dist/debian
-pushd dist/debian
-cp ../gwpy-${GWPY_VERSION}.tar.gz ../gwpy_${GWPY_RELEASE}.orig.tar.gz
-tar -xf ../gwpy_${GWPY_RELEASE}.orig.tar.gz --strip-components=1
+# build debian packages
 dpkg-buildpackage -us -uc
 popd
 
 # print and install the deb
-GWPY_DEB="dist/${PY_PREFIX}-gwpy_${GWPY_RELEASE}-1_all.deb"
+GWPY_DEB="${PY_PREFIX}-gwpy_${GWPY_RELEASE}-1_all.deb"
 echo "-------------------------------------------------------"
 dpkg --info ${GWPY_DEB}
 echo "-------------------------------------------------------"
