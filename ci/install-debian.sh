@@ -24,6 +24,7 @@
 get_environment
 
 # install build dependencies (should match debian/control)
+apt-get -yqq update
 apt-get -yqq install \
     debhelper \
     dh-python \
