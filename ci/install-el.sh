@@ -22,6 +22,7 @@
 
 . ci/lib.sh
 get_environment
+PY3_PREFIX=${PYTHON3_VERSION/./}
 
 # install build dependencies
 yum -y -q update
@@ -30,7 +31,7 @@ yum -y -q install \
     python-rpm-macros \
     python3-rpm-macros \
     python2-setuptools \
-    ${PY_PREFIX}-setuptools
+    ${PY3_PREFIX}-setuptools
 
 # build package
 rpmbuild --define "_rpmdir $(pwd)" -tb gwpy-*.tar.*
