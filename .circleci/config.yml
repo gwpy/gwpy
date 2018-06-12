@@ -70,18 +70,18 @@ workflows:
   build_and_test:
     jobs:
       - sdist
-      - debian:jessie:2.7
+      - debian:jessie:2.7:
           requires:
             - sdist
-      - debian:jessie:3.4
+      - debian:jessie:3.4:
           requires:
             - sdist
-      - debian:stretch:2.7
+      - debian:stretch:2.7:
           requires:
             - sdist
-      - debian:stretch:3.5
+      - debian:stretch:3.5:
           requires:
             - sdist
-      - el7:2.7
+      - el7:2.7:
           requires:
             - sdist
