@@ -23,8 +23,6 @@
 . ci/lib.sh
 get_environment
 
-set -x
-
 # install for this OS
 if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then  # macports
     . ci/install-macos.sh
@@ -47,18 +45,3 @@ if [ ${EXTRAS} ]; then
         NO_ROOT_NUMPY_TMVA=1 ${PIP} install root_numpy --quiet ${PIP_FLAGS}
     fi
 fi
-
-set +x
-
-cd /tmp
-_gwpyloc=$(${PYTHON} -c 'import gwpy; print(gwpy.__file__)')
-echo "------------------------------------------------------------------------"
-echo
-echo "GWpy installed to $_gwpyloc"
-echo
-echo "------------------------------------------------------------------------"
-cd - 1> /dev/null
-
-echo "Dependencies:"
-echo "-------------"
-${PYTHON} -m pip list installed --format=columns

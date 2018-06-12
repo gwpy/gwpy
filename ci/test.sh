@@ -37,7 +37,27 @@ set -ex
 ${PIP} install "pip>=7.0.0"
 
 # install test dependencies
-${PIP} install ${PIP_FLAGS} .[tests] "six>1.10.0"
+${PIP} install ${PIP_FLAGS} \
+    "six>1.10.0" \
+    "pytest>=3.1" \
+    "pytest-cov" \
+    "freezegun" \
+    "sqlparse" \
+    "bs4"
+
+# print installed packages
+pushd /tmp > /dev/null
+_gwpyloc=$(${PYTHON} -c 'import gwpy; print(gwpy.__file__)')
+echo "------------------------------------------------------------------------"
+echo
+echo "GWpy installed to $_gwpyloc"
+echo
+echo "------------------------------------------------------------------------"
+popd > /dev/null
+
+echo "Dependencies:"
+echo "-------------"
+${PYTHON} -m pip list installed --format=columns
 
 # run tests
 ${PYTHON} -m pytest --pyargs gwpy --cov=gwpy
