@@ -22,26 +22,26 @@
 
 . ci/lib.sh
 
+get_environment  # sets PIP variables etc
+get_python_version  # sets PYTHON_VERSION
+
 # macports PATH doesn't persist from install stage, which is annoying
 if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then
     . terryfy/travis_tools.sh
     export PATH=$MACPORTS_PREFIX/bin:$PATH
 fi
 
-get_environment  # sets PIP variables etc
-get_python_version  # sets PYTHON_VERSION
-
 set -ex
 
 # upgrade pip to some minimal level to understand '.[tests]'
-python${PYTHON_VERSION} -m pip install "pip>=7.0.0"
+${PIP} install "pip>=7.0.0"
 
 # install test dependencies
-python${PYTHON_VERSION} -m pip install ${PIP_FLAGS} .[tests] "six>1.10.0"
+${PIP} install ${PIP_FLAGS} .[tests] "six>1.10.0"
 
 # run tests
-python${PYTHON_VERSION} -m pytest --pyargs gwpy --cov=gwpy
+${PYTHON} -m pytest --pyargs gwpy --cov=gwpy
 
 # deploy test results to coveralls
-python${PYTHON_VERSION} -m pip install ${PIP_FLAGS} coveralls
+${PIP} install ${PIP_FLAGS} coveralls
 coveralls || true
