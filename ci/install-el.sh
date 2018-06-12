@@ -22,7 +22,7 @@
 
 . ci/lib.sh
 get_environment
-PY3_PREFIX=${PYTHON3_VERSION/./}
+PY3_PREFIX=${PYTHON3/./}
 
 # install build dependencies
 yum -y -q update
