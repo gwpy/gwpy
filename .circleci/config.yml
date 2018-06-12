@@ -32,7 +32,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - *.tar.*
+            - gwpy-*.tar.*
 
   debian:jessie:2.7:
     <<: *debian-build
