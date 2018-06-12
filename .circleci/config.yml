@@ -11,6 +11,8 @@ debian-build: &debian-build
     - run:
         name: Test
         command: bash -ex ci/test.sh
+    - store_artifacts:
+        path: "*.deb"
 
 centos-build: &centos-build
   steps:
@@ -23,6 +25,8 @@ centos-build: &centos-build
     - run:
         name: Test
         command: bash -ex ci/test.sh
+    - store_artifacts:
+        path: "*.rpm"
 
 jobs:
   sdist:
