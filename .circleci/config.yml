@@ -36,7 +36,7 @@ jobs:
       - checkout
       - run:
           name: Build tarball
-          command: python setup.py sdist --dist-dir .
+          command: python setup.py --quiet sdist --dist-dir .
       - persist_to_workspace:
           root: .
           paths:
