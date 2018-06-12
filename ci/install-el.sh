@@ -29,6 +29,7 @@ yum -y -q update
 yum -y -q install \
     rpm-build \
     python-rpm-macros \
+    python2-rpm-macros \
     python3-rpm-macros \
     python2-setuptools \
     ${PY3_PREFIX}-setuptools
