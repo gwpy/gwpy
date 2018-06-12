@@ -19,7 +19,7 @@
 """Utilities for testing `gwpy.plot`
 """
 
-from six.moves import StringIO
+from io import BytesIO
 
 import pytest
 
@@ -50,7 +50,7 @@ def usetex(request):
 class _Base(object):
     @staticmethod
     def save(fig, format='png'):
-        out = StringIO()
+        out = BytesIO()
         fig.savefig(out, format=format)
         return fig
 
