@@ -191,8 +191,7 @@ def _make_axes_inset(ax, location='right', **kwargs):
     }[location]
 
     # allow user overrides
-    for key in kwargs:
-        if key in inset_kw:
-            inset_kw[key] = kwargs.pop(key)
+    for key in filter(inset_kw.__contains__, kwargs):
+        inset_kw[key] = kwargs.pop(key)
 
     return inset_axes(ax, **inset_kw), kwargs
