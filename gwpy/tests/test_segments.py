@@ -234,6 +234,7 @@ class TestSegmentList(object):
     # -- test I/O -------------------------------
 
     @utils.skip_missing_dependency('lal')
+    @utils.skip_missing_dependency('glue.ligolw')
     def test_read_write_segwizard(self, segmentlist):
         with tempfile.NamedTemporaryFile(suffix='.txt', mode='w') as f:
             # check write/read returns the same list

@@ -1571,6 +1571,7 @@ class TestStateVector(TestTimeSeriesBase):
         assert str(exc.value) == "Bit 'blah' not found in StateVector"
 
     @utils.skip_missing_dependency('lal')
+    @utils.skip_missing_dependency('glue')
     def test_plot(self, array):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot()
