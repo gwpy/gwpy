@@ -63,7 +63,7 @@ yum -y -q install \
 # install LIGO extras for python2 only
 if [ ${PY_XY} -lt 30 ]; then
     yum -y install \
-        nds2-client-python
+        nds2-client-python \
         ldas-tools-framecpp-python \
         lalframe-python \
         lalsimulation-python
