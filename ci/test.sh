@@ -33,11 +33,14 @@ get_python_version  # sets PYTHON_VERSION
 
 set -ex
 
+# upgrade pip to some minimal level to understand '.[tests]'
+python${PYTHON_VERSION} -m pip install "pip>=7.0.0"
+
 # install test dependencies
 python${PYTHON_VERSION} -m pip install ${PIP_FLAGS} .[tests]
 
 # run tests
-python${PYTHON_VERSION} -m pytest --pyargs gwpy --cov=gwpy --cov-config=setup.cfg
+python${PYTHON_VERSION} -m pytest --pyargs gwpy --cov=gwpy
 
 # deploy test results to coveralls
 python${PYTHON_VERSION} -m pip install ${PIP_FLAGS} coveralls
