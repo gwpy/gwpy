@@ -32,9 +32,13 @@ apt-get -yqq install \
     python-setuptools \
     python3-setuptools
 
+# link tarball to debian orig with correct name
+GWPY_VERSION=$(echo *.tar.* | sed 's/\(.*\)-\(.*\).\(tar.*\)/\2/')
+GWPY_RELEASE=${GWPY_VERSION%%+*}
+
 # unwrap tarball
 tar xf *.tar.*
-ln -s *.tar.* $(echo *.tar.* | sed 's/\(.*\)-\(.*\).\(tar.*\)/\1_\2.orig.\3/')
+ln -s *.tar.* $(echo *.tar.* | sed 's/\(.*\)-\(.*\).\(tar.*\)/\1_'${GWPY_RELEASE}'.orig.\3/')
 pushd $(find . -type d -maxdepth 1 -name 'gwpy-*')
 
 # build debian packages
