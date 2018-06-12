@@ -1,5 +1,9 @@
 version: 2
 
+run-tests: &run-tests
+  name: Test
+  command: bash -ex ci/test.sh
+
 debian-build: &debian-build
   steps:
     - checkout
@@ -8,9 +12,7 @@ debian-build: &debian-build
     - run:
         name: Build
         command: bash -ex ci/install-debian.sh
-    - run:
-        name: Test
-        command: bash -ex ci/test.sh
+    - run: *run-tests
     - store_artifacts:
         path: "*.deb"
 
@@ -22,9 +24,7 @@ centos-build: &centos-build
     - run:
         name: Build
         command: bash -ex ci/install-el.sh
-    - run:
-        name: Test
-        command: bash -ex ci/test.sh
+    - run: *run-tests
     - store_artifacts:
         path: "*.rpm"
 
