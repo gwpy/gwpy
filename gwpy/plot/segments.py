@@ -305,7 +305,7 @@ class SegmentAxes(Axes):
 
         if collection:  # map to PatchCollection
             coll = PatchCollection(patches, match_original=patches,
-                                   zorder=kwargs.get('zorder'))
+                                   zorder=kwargs.get('zorder', 1))
             coll.set_rasterized(rasterized)
             coll._ignore = collection == 'ignore'
             coll._ypos = y
