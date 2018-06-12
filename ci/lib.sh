@@ -112,10 +112,10 @@ get_environment() {
             PY_PREFIX="python${PY_MAJOR_VERSION}"
             ;;
         centos2|rhel2|fedora2)
-            PY_DIST="python"
-            PY_PREFIX="python"
+            PY_DIST="python2"
+            PY_PREFIX="python2"
             ;;
-        centos3|rhel3|fedora2)
+        centos3|rhel3|fedora3)
             if [ "${PYTHON_VERSION}" == "${PYTHON3_VERSION}" ]; then  # base
                 PY_DIST="python${PY_XY}"
                 PY_PREFIX="python${PY_XY}"

@@ -20,6 +20,8 @@
 # Build RedHat (Enterprise Linux) packages
 #
 
+# -- prep ---------------------------------------------------------------------
+
 . ci/lib.sh
 get_environment
 PY3_PREFIX=${PYTHON3/./}
@@ -34,7 +36,8 @@ yum -y -q install \
     python2-setuptools \
     ${PY3_PREFIX}-setuptools
 
-# build package
+# -- build --------------------------------------------------------------------
+
 rpmbuild --define "_rpmdir $(pwd)" -tb gwpy-*.tar.*
 mv noarch/*.rpm .
 
@@ -46,27 +49,24 @@ else
 fi
 yum -y -q --nogpgcheck localinstall ${GWPY_RPM}
 
-# install system-level extras that use python- prefix
-yum -y -q install \
-    nds2-client-${PY_PREFIX} \
-    ldas-tools-framecpp-${PY_PREFIX} \
-    lalframe-${PY_PREFIX} \
-    lalsimulation-${PY_PREFIX} \
-|| true  # don't fail on missing packages
+# -- extras -------------------------------------------------------------------
 
-# install system-level extras that use python2- prefix
+# install extras using modern python prefices
+# NOTE: git is needed for coveralls
+yum -y -q install \
+    git \
+    ${PY_PREFIX}-pip \
+    ${PY_PREFIX}-root \
+    ${PY_PREFIX}-freezegun \
+    ${PY_PREFIX}-pytest-cov
+
+# install LIGO extras for python2 only
 if [ ${PY_XY} -lt 30 ]; then
-    yum -y -q install \
-        python2-pip \
-        python2-root \
-        python2-freezegun \
-        python2-pytest-cov
-else
-    yum -y -q install \
-        ${PY_PREFIX}-pip \
-        ${PY_PREFIX}-pytest-cov \
-        ${PY_PREFIX}-freezegun \
-        ${PY_PREFIX}-root
+    yum -y install \
+        nds2-client-python
+        ldas-tools-framecpp-python \
+        lalframe-python \
+        lalsimulation-python
 fi
 
 # HACK: fix missing file from ldas-tools-framecpp
