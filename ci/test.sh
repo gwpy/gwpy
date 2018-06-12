@@ -22,6 +22,8 @@
 
 . ci/lib.sh
 
+mkdir test && pushd test
+
 get_environment  # sets PIP variables etc
 get_python_version  # sets PYTHON_VERSION
 
@@ -44,6 +46,9 @@ ${PIP} install ${PIP_FLAGS} \
     "freezegun" \
     "sqlparse" \
     "bs4"
+if [ "${PY_MAJOR_VERSION}" -eq 2 ]; then
+    ${PIP} install mock
+fi
 
 # print installed packages
 pushd /tmp > /dev/null
