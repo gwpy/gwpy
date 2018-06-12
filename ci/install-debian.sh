@@ -57,7 +57,9 @@ dpkg --install ${GWPY_DEB} || { \
 }
 
 # install extras
+# NOTE: git is needed for coveralls
 apt-get -yqq install \
+    git \
     ${PY_PREFIX}-pip \
     ${PY_PREFIX}-sqlalchemy \
     ${PY_PREFIX}-pandas \
