@@ -19,7 +19,6 @@ BuildRequires:  python-rpm-macros
 BuildRequires:  python3-rpm-macros
 BuildRequires:  python2-setuptools
 BuildRequires:  python%{python3_pkgversion}-setuptools
-BuildRequires:  python3-rpm-macros
 
 %description
 {{ long_description }}

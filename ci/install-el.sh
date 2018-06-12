@@ -25,7 +25,12 @@ get_environment
 
 # install build dependencies
 yum -y -q update
-yum -y -q install rpm-build
+yum -y -q install \
+    rpm-build \
+    python-rpm-macros \
+    python3-rpm-macros \
+    python2-setuptools \
+    ${PY_PREFIX}-setuptools
 
 # build package
 rpmbuild --define "_rpmdir $(pwd)" -tb gwpy-*.tar.*
