@@ -24,7 +24,7 @@
 get_environment
 PY3_PREFIX=${PYTHON3/./}
 
-# install build dependencies
+# install build dependencies (should match etc/spec.template)
 yum -y -q update
 yum -y -q install \
     rpm-build \
