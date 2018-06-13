@@ -150,25 +150,6 @@ class Axes(_Axes):
 
     # -- overloaded plotting methods ------------
 
-    def legend(self, *args, **kwargs):
-        alpha = kwargs.pop("alpha", 0.8)
-        linewidth = kwargs.pop("linewidth", 8)
-
-        # make legend
-        legend = super(Axes, self).legend(*args, **kwargs)
-
-        # update alpha and linewidth for legend elements
-        if legend is not None:
-            lframe = legend.get_frame()
-            lframe.set_alpha(alpha)
-            lframe.set_linewidth(rcParams['axes.linewidth'])
-            for line in legend.get_lines():
-                line.set_linewidth(linewidth)
-
-        return legend
-
-    legend.__doc__ = _Axes.legend.__doc__
-
     def scatter(self, x, y, c=DEFAULT_SCATTER_COLOR, **kwargs):
         # scatter with auto-sorting by colour
         if c is None and mpl_version < '2.0':
@@ -238,6 +219,8 @@ class Axes(_Axes):
         xcoord, ycoord = numpy.meshgrid(x, y, copy=False, sparse=True)
         return self.pcolormesh(xcoord, ycoord, array.value.T, **kwargs)
 
+    # -- new plotting methods -------------------
+
     def plot_mmm(self, data, lower=None, upper=None, **kwargs):
         """Plot a `Series` as a line, with a shaded region around it.
 
@@ -306,6 +289,27 @@ class Axes(_Axes):
             rasterized=kwargs.get('rasterized', True)))
 
         return out
+
+    # -- overloaded auxiliary methods -----------
+
+    def legend(self, *args, **kwargs):
+        alpha = kwargs.pop("alpha", 0.8)
+        linewidth = kwargs.pop("linewidth", 8)
+
+        # make legend
+        legend = super(Axes, self).legend(*args, **kwargs)
+
+        # update alpha and linewidth for legend elements
+        if legend is not None:
+            lframe = legend.get_frame()
+            lframe.set_alpha(alpha)
+            lframe.set_linewidth(rcParams['axes.linewidth'])
+            for line in legend.get_lines():
+                line.set_linewidth(linewidth)
+
+        return legend
+
+    legend.__doc__ = _Axes.legend.__doc__
 
     def colorbar(self, mappable=None, **kwargs):
         """Add a `~matplotlib.colorbar.Colorbar` to these `Axes`
