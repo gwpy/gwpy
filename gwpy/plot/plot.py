@@ -412,15 +412,15 @@ class Plot(figure.Figure):
         if location not in {'top', 'bottom'}:
             raise ValueError("Segments can only be positoned at 'top' or "
                              "'bottom'.")
-        axes_kw = {
-            'pad': pad,
-            'axes_class': get_projection_class('segments'),
-            'sharex': ax if sharex is True else sharex or None,
-        }
-        segax = divider.append_axes(location, height, **axes_kw)
+
+        sharex = ax if sharex is True else sharex or None
+        segax = divider.append_axes(
+             location, height, pad=pad, sharex=sharex,
+             axes_class=get_projection_class('segments'),
+        )
 
         # update anchor axes
-        if axes_kw['sharex'] is ax:
+        if sharex is ax:
             segax.set_autoscalex_on(ax.get_autoscalex_on())
             segax.set_xlim(*ax.get_xlim())
             setp(ax.get_xticklabels(), visible=False)
