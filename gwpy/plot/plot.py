@@ -268,7 +268,7 @@ class Plot(figure.Figure):
 
     # -- colour bars ----------------------------
 
-    def colorbar(self, mappable=None, cax=None, ax=None, fraction=None,
+    def colorbar(self, mappable=None, cax=None, ax=None, fraction=0.,
                  label=None, emit=True, **kwargs):
         """Add a colorbar to the current `Plot`
 
