@@ -93,6 +93,8 @@ def float_to_latex(x, format="%.2g"):  # pylint: disable=redefined-builtin
     >>> float_to_latex(-500)
     r'-5\!\!\times\!\!10^{2}'
     """
+    if x == 0.:
+        return '0'
     base_str = format % x
     if "e" not in base_str:
         return base_str

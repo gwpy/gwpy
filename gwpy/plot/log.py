@@ -46,17 +46,13 @@ class GWpyLogFormatterMathtext(LogFormatterMathtext):
     """
     def __call__(self, x, pos=None):
         usetex = rcParams['text.usetex']
-        if float(x).is_integer():
-            x = int(x)
         if 0.01 <= x < 1000:
-            if usetex:
-                return '$%s$' % x
-            return r'$\mathdefault{%s}$' % x
-        if usetex and abs(x) > 100:
-            return '$%s$' % float_to_latex(x, '%.2e')
+            f = int(x) if float(x).is_integer() else x
+        else:
+            f = float_to_latex(x, '%.2e')
         if usetex:
-            return '$%s$' % float_to_latex(x, '%.2g')
-        return super(GWpyLogFormatterMathtext, self).__call__(x, pos=pos)
+            return '$%s$' % f
+        return r'$\mathdefault{%s}$' % f
 
 
 class MinorLogFormatterMathtext(GWpyLogFormatterMathtext):
