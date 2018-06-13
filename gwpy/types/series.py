@@ -423,8 +423,7 @@ class Series(Array):
         # make plot
         plot = Plot(self, method=method, **kwargs)
 
-        # set default labels
-        default_unit_label(plot.gca().xaxis, self.xunit)
+        # set default y-axis label (xlabel is set by Plot())
         default_unit_label(plot.gca().yaxis, self.unit)
 
         return plot

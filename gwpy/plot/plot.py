@@ -137,6 +137,16 @@ class Plot(figure.Figure):
         gs = GridSpec(nrows, ncols)
         axarr = numpy.empty((nrows, ncols), dtype=object)
 
+        # set default labels
+        defxlabel = 'xlabel' not in kwargs
+        defylabel = 'ylabel' not in kwargs
+        flatdata = [s for group in axes_groups for s in group]
+        for axis in ('x', 'y'):
+            unit = _common_axis_unit(flatdata, axis=axis)
+            if unit:
+                axes_kw.setdefault('{}label'.format(axis),
+                                   unit.to_string('latex_inline_dimensional'))
+
         # create axes for each group and draw each data object
         for group, (row, col) in zip(
                 axes_groups, itertools.product(range(nrows), range(ncols))):
@@ -160,6 +170,8 @@ class Plot(figure.Figure):
                 ax.set_xlabel('')
             if sharey == 'all' and col < ncols - 1:
                 ax.set_ylabel('')
+            ax.xaxis.isDefault_label = defxlabel
+            ax.yaxis.isDefault_label = defylabel
 
         return self.axes
 
@@ -506,15 +518,19 @@ def _group_axes_data(inputs, separate=None, flat=False):
     return out
 
 
-def _parse_xscale(data):
+def _common_axis_unit(data, axis='x'):
     units = set()
+    uname = '{}unit'.format(axis)
     for x in data:
-        if hasattr(x, 'xunit'):
-            units.add(x.xunit)
+        units.add(getattr(x, uname, None))
+    if len(units) == 1:
+        return units.pop()
+    return None
 
-    if len(units) != 1:
-        return
-    unit = units.pop()
 
+def _parse_xscale(data):
+    unit = _common_axis_unit(data, axis='x')
+    if unit is None:
+        return None
     if unit.physical_type == 'time':
         return 'auto-gps'

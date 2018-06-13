@@ -45,7 +45,24 @@ def to_string(input_):
 
 def default_unit_label(axis, unit):
     """Set default label for an axis from a `~astropy.units.Unit`
+
+    If the axis already has a label, this function does nothing.
+
+    Parameters
+    ----------
+    axis : `~matplotlib.axis.Axis`
+        the axis to manipulate
+
+    unit : `~astropy.units.Unit`
+        the unit to use for the label
+
+    Returns
+    -------
+    text : `str`, `None`
+        the text for the new label, if set, otherwise `None`
     """
+    if not axis.isDefault_label:
+        return
     label = axis.set_label_text(unit.to_string('latex_inline_dimensional'))
     axis.isDefault_label = True
     return label.get_text()

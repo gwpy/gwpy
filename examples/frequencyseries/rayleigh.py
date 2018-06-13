@@ -52,9 +52,8 @@ rayleigh = gwdata.rayleigh_spectrum(2, 1)
 from gwpy.plot import Plot
 plot = Plot(gwdata.asd(2, 1), rayleigh, geometry=(2, 1), sharex=True,
             xscale='log', xlim=(30, 1500))
-
 asdax, rayax = plot.axes
-asdax.set_xlabel('')
+
 asdax.set_yscale('log')
 asdax.set_ylim(5e-24, 1e-21)
 asdax.set_ylabel(r'[strain/\rtHz]')
