@@ -29,6 +29,7 @@ from matplotlib import (__version__ as mpl_version, rcParams)
 from matplotlib.artist import allow_rasterization
 from matplotlib.axes import Axes as _Axes
 from matplotlib.cbook import iterable
+from matplotlib.collections import PolyCollection
 from matplotlib.projections import register_projection
 try:
     from matplotlib.axes._base import _process_plot_var_args
@@ -288,6 +289,98 @@ class Axes(_Axes):
             *fill, alpha=alpha, color=kwargs['color'],
             rasterized=kwargs.get('rasterized', True)))
 
+        return out
+
+    def tile(self, x, y, w, h, color=None,
+             anchor='center', edgecolors='face', linewidth=0.8,
+             **kwargs):
+        """Plot rectanguler tiles based onto these `Axes`.
+
+        ``x`` and ``y`` give the anchor point for each tile, with
+        ``w`` and ``h`` giving the extent in the X and Y axis respectively.
+
+        Parameters
+        ----------
+        x, y, w, h : `array_like`, shape (n, )
+            Input data
+
+        color : `array_like`, shape (n, )
+            Array of amplitudes for tile color
+
+        anchor : `str`, optional
+            Anchor point for tiles relative to ``(x, y)`` coordinates, one of
+
+            - ``'center'`` - center tile on ``(x, y)``
+            - ``'ll'`` - ``(x, y)`` defines lower-left corner of tile
+            - ``'lr'`` - ``(x, y)`` defines lower-right corner of tile
+            - ``'ul'`` - ``(x, y)`` defines upper-left corner of tile
+            - ``'ur'`` - ``(x, y)`` defines upper-right corner of tile
+
+        **kwargs
+            Other keywords are passed to
+            :meth:`~matplotlib.collections.PolyCollection`
+
+        Returns
+        -------
+        collection : `~matplotlib.collections.PolyCollection`
+            the collection of tiles drawn
+
+        Examples
+        --------
+        >>> import numpy
+        >>> from matplotlib import pyplot
+        >>> import gwpy.plot  # to get gwpy's Axes
+
+        >>> x = numpy.arange(10)
+        >>> y = numpy.arange(x.size)
+        >>> w = numpy.ones_like(x) * .8
+        >>> h = numpy.ones_like(x) * .8
+
+        >>> fig = pyplot.figure()
+        >>> ax = fig.gca()
+        >>> ax.tile(x, y, w, h, anchor='ll')
+        >>> pyplot.show()
+        """
+        # get color and sort
+        if color is not None and kwargs.get('c_sort', True):
+            sortidx = color.argsort()
+            x = x[sortidx]
+            y = y[sortidx]
+            w = w[sortidx]
+            h = h[sortidx]
+            color = color[sortidx]
+
+        # define how to make a polygon for each tile
+        if anchor == 'll':
+            def _poly(x, y, w, h):
+                return ((x, y), (x, y+h), (x+w, y+h), (x+w, y))
+        elif anchor == 'lr':
+            def _poly(x, y, w, h):
+                return ((x-w, y), (x-w, y+h), (x, y+h), (x, y))
+        elif anchor == 'ul':
+            def _poly(x, y, w, h):
+                return ((x, y-h), (x, y), (x+w, y), (x+w, y-h))
+        elif anchor == 'ur':
+            def _poly(x, y, w, h):
+                return ((x-w, y-h), (x-w, y), (x, y), (x, y-h))
+        elif anchor == 'center':
+            def _poly(x, y, w, h):
+                return ((x-w/2., y-h/2.), (x-w/2., y+h/2.),
+                        (x+w/2., y+h/2.), (x+w/2., y-h/2.))
+        else:
+            raise ValueError("Unrecognised tile anchor {!r}".format(anchor))
+
+        # build collection
+        cmap = kwargs.pop('cmap', rcParams['image.cmap'])
+        coll = PolyCollection((_poly(*tile) for tile in zip(x, y, w, h)),
+                              edgecolors=edgecolors, linewidth=linewidth,
+                              **kwargs)
+        if color is not None:
+            coll.set_array(color)
+            coll.set_cmap(cmap)
+
+        out = self.add_collection(coll)
+        self.autoscale_view()
         return out
 
     # -- overloaded auxiliary methods -----------

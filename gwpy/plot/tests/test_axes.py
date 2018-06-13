@@ -91,6 +91,38 @@ class TestAxes(AxesTestBase):
         utils.assert_array_equal(mesh.get_paths()[-1].vertices[2],
                                  (array.xspan[1], array.yspan[1]))
 
+    def test_tile(self, ax):
+        x = numpy.arange(10)
+        y = numpy.arange(x.size)
+        w = numpy.ones_like(x) * .8
+        h = numpy.ones_like(x) * .8
+
+        # check default tiling (without colour)
+        coll = ax.tile(x, y, w, h, anchor='ll')
+        assert isinstance(coll, PolyCollection)
+        for i, path in enumerate(coll.get_paths()):
+            numpy.testing.assert_array_equal(
+                path.vertices,
+                numpy.asarray([
+                    (x[i], y[i]),
+                    (x[i], y[i] + h[i]),
+                    (x[i] + w[i], y[i] + h[i]),
+                    (x[i] + w[i], y[i]),
+                    (x[i], y[i]),
+                ]),
+            )
+
+        # check colour works with sorting (by default)
+        c = numpy.arange(x.size)
+        coll2 = ax.tile(x, y, w, h, color=c)
+        numpy.testing.assert_array_equal(coll2.get_array(), numpy.sort(c))
+
+        # check anchor parsing
+        for anchor in ('lr', 'ul', 'ur', 'center'):
+            ax.tile(x, y, w, h, anchor=anchor)
+        with pytest.raises(ValueError):
+            ax.tile(x, y, w, h, anchor='blah')
+
     @pytest.mark.parametrize('cb_kw', [
         {'use_axesgrid': True, 'fraction': 0.},
         {'use_axesgrid': True, 'fraction': 0.15},

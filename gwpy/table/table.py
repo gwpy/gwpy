@@ -420,7 +420,7 @@ class EventTable(Table):
                       DeprecationWarning)
         return self.scatter(*args, **kwargs)
 
-    def scatter(self, x, y, *args, **kwargs):
+    def scatter(self, x, y, **kwargs):
         """Make a scatter plot of column ``x`` vs column ``y``.
 
         Parameters
@@ -453,26 +453,74 @@ class EventTable(Table):
         gwpy.plot.Axes.scatter
             for documentation of keyword arguments used to display the table
         """
-        from ..plot import Plot
-        from ..plot.tex import label_to_latex
-
         color = kwargs.pop('color', None)
         if color is not None:
             kwargs['c'] = self[color]
+        return self._plot('scatter', self[x], self[y], **kwargs)
+
+    def tile(self, x, y, w, h, **kwargs):
+        """Make a tile plot of this table.
+
+        Parameters
+        ----------
+        x : `str`
+            name of column defining anchor point on the X-axis
+
+        y : `str`
+            name of column defining anchor point on the Y-axis
+
+        w : `str`
+            name of column defining extent on the X-axis (width)
+
+        h : `str`
+            name of column defining extent on the Y-axis (height)
+
+        color : `str`, optional, default:`None`
+            name of column by which to color markers
+
+        **kwargs
+            any other keyword arguments, see below
+
+        Returns
+        -------
+        plot : `~gwpy.plot.Plot`
+            the newly created figure
+
+        See Also
+        --------
+        matplotlib.pyplot.figure
+            for documentation of keyword arguments used to create the
+            figure
+        matplotlib.figure.Figure.add_subplot
+            for documentation of keyword arguments used to create the
+            axes
+        gwpy.plot.Axes.tile
+            for documentation of keyword arguments used to display the table
+        """
+        color = kwargs.pop('color', None)
+        if color is not None:
+            kwargs['color'] = self[color]
+        return self._plot('tile', self[x], self[y], self[w], self[h], **kwargs)
+
+    def _plot(self, method, *args, **kwargs):
+        from ..plot import Plot
+        from ..plot.tex import label_to_latex
+
         try:
             tcol = self._get_time_column()
         except ValueError:
             pass
         else:
-            if x == tcol:
+            if args[0].name == tcol:  # map X column to GPS axis
                 kwargs.setdefault('figsize', (12, 6))
                 kwargs.setdefault('xscale', 'auto-gps')
 
-        plot = Plot(self[x], self[y], method='scatter', **kwargs)
+        kwargs['method'] = method
+        plot = Plot(*args, **kwargs)
 
         # set default labels
         ax = plot.gca()
-        for axis, column in zip((ax.xaxis, ax.yaxis), (self[x], self[y])):
+        for axis, column in zip((ax.xaxis, ax.yaxis), args[:2]):
             name = r'\texttt{{{0}}}'.format(label_to_latex(column.name))
             if isinstance(column, Quantity):
                 name += ' [{0}]'.format(column.unit.to_string('latex_inline'))
