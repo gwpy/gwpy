@@ -491,7 +491,7 @@ def _group_axes_data(inputs, separate=None, flat=False):
         if any(isinstance(x, iterable_types + (dict,)) for x in inputs):
             separate = True
         # if data are of different types, default to separate
-        elif not all(type(x) is type(inputs[0]) for x in inputs):
+        elif not all(type(x) is type(inputs[0]) for x in inputs):  # nopep8
             separate = True
 
     # build list of lists
