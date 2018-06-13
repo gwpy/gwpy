@@ -248,7 +248,7 @@ class Axes(_Axes):
                 log(hrange[0], logbase), log(hrange[1], logbase),
                 nbins+1, endpoint=True)
 
-        out = super(Axes, self).hist(x, *args, **kwargs)
+        return super(Axes, self).hist(x, *args, **kwargs)
 
     hist.__doc__ = _Axes.hist.__doc__.replace(
         'color :',
