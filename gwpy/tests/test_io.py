@@ -754,9 +754,9 @@ class TestIoLosc(object):
         assert str(exc.value).startswith('Failed to parse LOSC JSON')
 
     @pytest.mark.parametrize('segment, detector, strict, result', [
-        ((1126257414, 1126261510), 'H1', False, ('GW150914', 'O1', 'tenyear')),
-        ((1126250000, 1126270000), 'H1', False, ('O1', 'tenyear', 'GW150914')),
-        ((1126250000, 1126270000), 'H1', True, ('O1', 'tenyear',)),
+        ((1126257414, 1126261510), 'H1', False, ('GW150914', 'O1_16KHZ', 'O1', 'tenyear')),
+        ((1126250000, 1126270000), 'H1', False, ('O1_16KHZ', 'O1', 'tenyear', 'GW150914')),
+        ((1126250000, 1126270000), 'H1', True, ('O1_16KHZ', 'O1', 'tenyear',)),
         ((1126250000, 1126270000), 'V1', False, ('tenyear',)),
     ])
     def test_find_datasets(self, segment, detector, strict, result):
