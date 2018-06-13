@@ -1031,7 +1031,7 @@ class TimeSeries(TimeSeriesBase):
         off either end of the filtered data to remove filter-edge artefacts
 
         >>> from gwpy.plot import Plot
-        >>> plot = Plot(data, filtered[128:-128], sep=True)
+        >>> plot = Plot(data, filtered[128:-128], separate=True)
         >>> plot.show()
         """
         # parse keyword arguments

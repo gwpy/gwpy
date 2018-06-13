@@ -457,8 +457,8 @@ def _group_axes_data(inputs, separate=None, flat=False):
     -----
     The logic for this method is as follows:
 
-    - if a `list` of data arrays are given, and `sep=False`, use 1 `Axes`
-    - if a `list` of data arrays are given, and `sep=True`, use N `Axes,
+    - if a `list` of data arrays are given, and `separate=False`, use 1 `Axes`
+    - if a `list` of data arrays are given, and `separate=True`, use N `Axes,
       one for each data array
     - if a nested `list` of data arrays are given, ignore `sep` and
       use one `Axes` for each group of arrays.
