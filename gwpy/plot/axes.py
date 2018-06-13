@@ -20,6 +20,8 @@
 """
 
 from functools import wraps
+from math import log
+from numbers import Number
 
 import numpy
 
@@ -219,6 +221,41 @@ class Axes(_Axes):
         y = numpy.concatenate((array.yindex.value, array.yspan[-1:]))
         xcoord, ycoord = numpy.meshgrid(x, y, copy=False, sparse=True)
         return self.pcolormesh(xcoord, ycoord, array.value.T, **kwargs)
+
+    def hist(self, x, *args, **kwargs):
+        # re-format weights as array if given as float
+        weights = kwargs.get('weights', None)
+        if isinstance(weights, Number):
+            kwargs['weights'] = numpy.ones_like(x) * weights
+
+        # calculate log-spaced bins on-the-fly
+        if (kwargs.pop('logbins', False) and
+                not iterable(kwargs.get('bins', None))):
+            nbins = kwargs.get('bins', None) or rcParams['hist.bins']
+            # get range
+            hrange = kwargs.pop('range', None)
+            if hrange is None:
+                hrange = numpy.min(x), numpy.max(x)
+            # log-scale the axis and extract the base
+            if kwargs.get('orientation') == 'horizontal':
+                self.set_yscale('log', nonposy='clip')
+                logbase = self.yaxis._scale.base
+            else:
+                self.set_xscale('log', nonposx='clip')
+                logbase = self.xaxis._scale.base
+            # generate the bins
+            kwargs['bins'] = numpy.logspace(
+                log(hrange[0], logbase), log(hrange[1], logbase),
+                nbins+1, endpoint=True)
+
+        out = super(Axes, self).hist(x, *args, **kwargs)
+
+    hist.__doc__ = _Axes.hist.__doc__.replace(
+        'color :',
+        'logbins : boolean, optional\n'
+        '    If ``True``, use logarithmically-spaced histogram bins.\n\n'
+        '    Default is ``False``\n\n'
+        'color :')
 
     # -- new plotting methods -------------------
 

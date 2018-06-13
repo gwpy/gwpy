@@ -91,6 +91,16 @@ class TestAxes(AxesTestBase):
         utils.assert_array_equal(mesh.get_paths()[-1].vertices[2],
                                  (array.xspan[1], array.yspan[1]))
 
+    def test_hist(self, ax):
+        x = numpy.random.random(100) + 1
+        min_ = numpy.min(x)
+        max_ = numpy.max(x)
+        n, bins, patches = ax.hist(x, logbins=True, weights=1.)
+        utils.assert_allclose(
+            bins, numpy.logspace(numpy.log10(min_), numpy.log10(max_),
+                                 rcParams['hist.bins']+1, endpoint=True),
+        )
+
     def test_tile(self, ax):
         x = numpy.arange(10)
         y = numpy.arange(x.size)
@@ -101,7 +111,7 @@ class TestAxes(AxesTestBase):
         coll = ax.tile(x, y, w, h, anchor='ll')
         assert isinstance(coll, PolyCollection)
         for i, path in enumerate(coll.get_paths()):
-            numpy.testing.assert_array_equal(
+            utils.assert_array_equal(
                 path.vertices,
                 numpy.asarray([
                     (x[i], y[i]),
@@ -115,7 +125,7 @@ class TestAxes(AxesTestBase):
         # check colour works with sorting (by default)
         c = numpy.arange(x.size)
         coll2 = ax.tile(x, y, w, h, color=c)
-        numpy.testing.assert_array_equal(coll2.get_array(), numpy.sort(c))
+        utils.assert_array_equal(coll2.get_array(), numpy.sort(c))
 
         # check anchor parsing
         for anchor in ('lr', 'ul', 'ur', 'center'):
