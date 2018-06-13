@@ -58,7 +58,7 @@ high = sg.percentile(95)
 
 from gwpy.plot import Plot
 plot = Plot()
-ax = plot.gca(xscale='log', xlim=(10, 1500),
+ax = plot.gca(xscale='log', xlim=(10, 1500), xlabel='Frequency [Hz]',
               yscale='log', ylim=(3e-24, 2e-20),
               ylabel=r'Strain noise [1/\rtHz]')
 ax.plot_mmm(median, low, high, color='gwpy:ligo-hanford')

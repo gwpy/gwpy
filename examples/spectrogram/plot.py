@@ -48,7 +48,7 @@ specgram = data.spectrogram(2, fftlength=1, overlap=.5) ** (1/2.)
 
 # Finally, we can make a plot using the
 # :meth:`~gwpy.spectrogram.Spectrogram.plot` method
-plot = specgram.plot(norm='log', vmin=5e-24, vmax=1e-19)
+plot = specgram.imshow(norm='log', vmin=5e-24, vmax=1e-19)
 ax = plot.gca()
 ax.set_yscale('log')
 ax.set_ylim(10, 2000)

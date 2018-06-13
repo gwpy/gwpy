@@ -57,7 +57,7 @@ plot = Plot(whiteasd, dispasd, separate=True, sharex=True,
 
 # Here we have passed the two
 # `spectra <gwpy.frequencyseries.FrequencySeries>` in order,
-# then `sep=True` to display them on separate Axes, `sharex=True` to tie
+# then `separate=True` to display them on separate Axes, `sharex=True` to tie
 # the `~matplotlib.axis.XAxis` of each of the `~gwpy.plot.Axes`
 # together.
 #

@@ -43,7 +43,7 @@ plot = data.plot(insetlabels=True)
 ax = plot.gca()
 ax.set_xscale('seconds', epoch=1187008882)
 ax.axvline(1187008882, color='orange', linestyle='--')
-plot.gca().set_title('LIGO-Livingston data quality around GW170817')
+ax.set_title('LIGO-Livingston data quality around GW170817')
 plot.show()
 
 # This plot shows that for a short time exactly overlapping with GW170817

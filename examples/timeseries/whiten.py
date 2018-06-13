@@ -19,6 +19,10 @@
 
 """Whitening a `TimeSeries`
 
+.. warning::
+
+   This examples requires LIGO.ORG credentials for data access.
+
 Most data recorded from a gravitational-wave interferometer carry information
 across a wide band of frequencies, typically up to a few kiloHertz, but
 often it is the case that the low-frequency amplitude dwarfs that of the
