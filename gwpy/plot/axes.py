@@ -19,7 +19,6 @@
 """Extension of `~matplotlib.axes.Axes` for gwpy
 """
 
-import re
 from functools import wraps
 
 import numpy
@@ -101,9 +100,9 @@ class Axes(_Axes):
                 trans = ax.get_transform()
                 epoch = float(trans.get_epoch())
                 unit = trans.get_unit_name()
-                utc = re.sub(r'\.0+', '',
-                             Time(epoch, format='gps', scale='utc').iso)
-                ax.set_label_text('Time [{0!s}] from {1!s} UTC ({2!s})'.format(
+                iso = Time(epoch, format='gps', scale='utc').iso
+                utc = iso.rstrip('0').rstrip('.')
+                ax.set_label_text('Time [{0!s}] from {1!s} UTC ({2!r})'.format(
                     unit, utc, epoch))
 
         try:
