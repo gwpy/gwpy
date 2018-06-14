@@ -113,6 +113,7 @@ channels =
     ('Amp', units.ampere),
     ('MPC', units.megaparsec),
     ('degrees_C', units.Unit('Celsius')),
+    ('DegC', units.Unit('Celsius')),
     ('degrees_F', units.Unit('Fahrenheit')),
 ])
 def test_parse_unit(arg, unit):
