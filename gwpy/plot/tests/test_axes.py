@@ -23,7 +23,7 @@ import pytest
 
 import numpy
 
-from matplotlib import rcParams
+from matplotlib import (rcParams, __version__ as mpl_version)
 from matplotlib.collections import PolyCollection
 from matplotlib.lines import Line2D
 
@@ -101,6 +101,8 @@ class TestAxes(AxesTestBase):
                                  11, endpoint=True),
         )
 
+    @pytest.mark.xfail(mpl_version < '1.4.0',
+                       reason='bugs in matplotlib-1.4.0')
     def test_tile(self, ax):
         x = numpy.arange(10)
         y = numpy.arange(x.size)
