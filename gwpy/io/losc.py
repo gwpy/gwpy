@@ -278,4 +278,4 @@ def find_datasets(start, end, detector=None, strict=False, host=LOSC_URL):
             epochs.append(Dataset(epoch, abs(epochseg), gap))
 
     # sort epochs by coverage
-    return list(zip(*sorted(epochs, key=attrgetter('gap', 'span'))))[0]
+    return list(zip(*sorted(epochs, key=attrgetter('gap', 'span', 'name'))))[0]
