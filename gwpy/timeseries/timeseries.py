@@ -476,49 +476,59 @@ class TimeSeries(TimeSeriesBase):
                                   fftlength=fftlength, overlap=overlap,
                                   **kwargs)
 
-    def fftgram(self, stride):
-        """Calculate the Fourier-gram of this `TimeSeries`.
 
-        At every ``stride``, a single, complex FFT is calculated.
+    def fftgram(self, fftlength, overlap=0, window='hann', **kwargs):
+         """Calculate the Fourier-gram of this `TimeSeries`.
 
-        Parameters
-        ----------
-        stride : `float`
-            number of seconds in single PSD (column of spectrogram)
+         At every ``stride``, a single, complex FFT is calculated.
 
-        Returns
-        -------
-        fftgram : `~gwpy.spectrogram.Spectrogram`
-            a Fourier-gram
-        """
-        from ..spectrogram import Spectrogram
+         Parameters
+         ----------
+         fftlength : `float`
+             number of seconds in single FFT.
 
-        fftlength = stride
-        dt = stride
-        df = 1/fftlength
-        stride *= self.sample_rate.value
-        # get size of Spectrogram
-        nsteps = int(self.size // stride)
-        # get number of frequencies
-        nfreqs = int(fftlength*self.sample_rate.value)
+         overlap : `float`, optional
+             number of seconds of overlap between FFTs, defaults to the
+             recommended overlap for the given window (if given), or 0
 
-        # generate output spectrogram
-        dtype = numpy.complex
-        out = Spectrogram(numpy.zeros((nsteps, nfreqs), dtype=dtype),
-                          name=self.name, t0=self.t0, f0=0, df=df,
-                          dt=dt, copy=False, unit=self.unit, dtype=dtype)
-        # stride through TimeSeries, recording FFTs as columns of Spectrogram
-        for step in range(nsteps):
-            # find step TimeSeries
-            idx = stride * step
-            idx_end = idx + stride
-            stepseries = self[idx:idx_end]
-            # calculated FFT and stack
-            stepfft = stepseries.fft()
-            out[step] = stepfft.value
-            if step == 0:
-                out.frequencies = stepfft.frequencies
-        return out
+         window : `str`, `numpy.ndarray`, optional
+             window function to apply to timeseries prior to FFT,
+             see :func:`scipy.signal.get_window` for details on acceptable
+
+
+         Returns
+         -------
+             a Fourier-gram
+         """
+         from ..spectrogram import Spectrogram
+         from scipy.signal import spectrogram
+
+         noverlap = int(overlap * self.sample_rate.value)
+         nfft = int(fftlength * self.sample_rate.value)
+         nstride = nfft - noverlap
+
+         # get size of Spectrogram
+         ntimes = int((self.size - nstride) / nstride)
+         nfreqs = int(nfft / 2 + 1)
+
+         # generate output spectrogram
+         dtype = numpy.complex
+         out = Spectrogram(numpy.zeros((ntimes, nfreqs), dtype=dtype),
+                           name=self.name, t0=self.t0, f0=0, df=1./fftlength,
+                           dt=overlap, copy=False, unit=self.unit, dtype=dtype)
+
+         [frequencies, times, values] = spectrogram(self,
+                                                    fs=self.sample_rate.value,
+                                                    window=window,
+                                                    nperseg=nfft,
+                                                    noverlap=noverlap,
+                                                    mode='complex')
+
+         # The shape is incorrect for the Spectrogram object
+         for freq_idx in range(frequencies.size):
+             out[:, freq_idx] = values[freq_idx, :]
+
+         return out
 
     @_update_doc_with_fft_methods
     def spectral_variance(self, stride, fftlength=None, overlap=None,
