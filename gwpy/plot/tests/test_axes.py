@@ -95,10 +95,10 @@ class TestAxes(AxesTestBase):
         x = numpy.random.random(100) + 1
         min_ = numpy.min(x)
         max_ = numpy.max(x)
-        n, bins, patches = ax.hist(x, logbins=True, weights=1.)
+        n, bins, patches = ax.hist(x, logbins=True, bins=10, weights=1.)
         utils.assert_allclose(
             bins, numpy.logspace(numpy.log10(min_), numpy.log10(max_),
-                                 rcParams['hist.bins']+1, endpoint=True),
+                                 11, endpoint=True),
         )
 
     def test_tile(self, ax):

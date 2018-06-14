@@ -231,7 +231,7 @@ class Axes(_Axes):
         # calculate log-spaced bins on-the-fly
         if (kwargs.pop('logbins', False) and
                 not iterable(kwargs.get('bins', None))):
-            nbins = kwargs.get('bins', None) or rcParams['hist.bins']
+            nbins = kwargs.get('bins', None) or rcParams.get('hist.bins', 30)
             # get range
             hrange = kwargs.pop('range', None)
             if hrange is None:
