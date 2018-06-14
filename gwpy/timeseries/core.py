@@ -1279,7 +1279,7 @@ class TimeSeriesBaseDict(OrderedDict):
         for key in ('host', 'port', 'connection'):
             val = kwargs.pop(key, None)
             if val is not None:
-                nds_key[key] = val
+                nds_kw[key] = val
 
         # try and find from frames
         if os.getenv('LIGO_DATAFIND_SERVER') and not nds_kw:
