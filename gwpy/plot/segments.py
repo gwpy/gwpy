@@ -450,7 +450,7 @@ class SegmentFormatter(Formatter):
             if t == coll._ypos:  # pylint: disable=protected-access
                 return coll.get_label()
         for patch in self.axis.axes.patches:
-            if not patch.get_label():
+            if not patch.get_label() or patch.get_label() == '_nolegend_':
                 continue
             if t in Segment(*patch.get_bbox().intervaly):
                 return patch.get_label()
