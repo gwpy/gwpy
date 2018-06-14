@@ -1274,15 +1274,15 @@ class TimeSeriesBaseDict(OrderedDict):
             `TimeSeriesBaseDict.find` (for direct GWF file access) or
             `TimeSeriesBaseDict.fetch` for remote NDS2 access
         """
-        try_frames = True
-        # work out whether to use NDS2 or frames
-        if not os.getenv('LIGO_DATAFIND_SERVER'):
-            try_frames = False
-        host = kwargs.get('host', None)
-        if host is not None and host.startswith('nds'):
-            try_frames = False
+        # separate non-None nds2-only keywords here
+        nds_kw = {}
+        for key in ('host', 'port', 'connection'):
+            val = kwargs.pop(key, None)
+            if val is not None:
+                nds_key[key] = val
+
         # try and find from frames
-        if try_frames:
+        if os.getenv('LIGO_DATAFIND_SERVER') and not nds_kw:
             if verbose:
                 gprint("Attempting to access data from frames...")
             try:
@@ -1298,6 +1298,7 @@ class TimeSeriesBaseDict(OrderedDict):
         # remove kwargs for .find()
         for key in ('nproc', 'frametype', 'frametype_match', 'observatory'):
             kwargs.pop(key, None)
+        kwargs.update(nds_kw)  # replace nds keywords
 
         # otherwise fetch from NDS
         try:
