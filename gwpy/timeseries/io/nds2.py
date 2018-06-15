@@ -20,17 +20,14 @@
 """
 
 import operator
-import sys
 import warnings
-from math import ceil
 
-from six.moves import (reduce, StringIO)
-
-from astropy.utils.console import ProgressBarOrSpinner
+from six.moves import reduce
 
 from ...io import nds2 as io_nds2
 from ...segments import (Segment, SegmentList)
 from ...utils import gprint
+from ...utils.progress import progress_bar
 from .. import (TimeSeries)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -147,16 +144,20 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
     out = series_class.DictClass()
     for seg in qsegs:
         duration = seg[1] - seg[0]
-        msg = 'Downloading data ({}-{} | {}s):'.format(
-            seg[1], seg[0], duration)
-        stream = sys.stdout if verbose else StringIO()
-        count = 0
-        with ProgressBarOrSpinner(duration, msg, file=stream) as bar:
+        msg = 'Downloading data'
+        total = 0.
+        with progress_bar(total=duration, desc=msg, unit='s',
+                          disable=not bool(verbose)) as bar:
             for buffers in connection.iterate(int(seg[0]), int(seg[1]), names):
                 for buffer_, chan in zip(buffers, channels):
                     series = series_class.from_nds2_buffer(buffer_)
                     out.append({chan: series}, pad=pad, gap=gap)
-                count += buffer_.length / buffer_.channel.sample_rate
-                bar.update(count)
+                new = buffer_.length / buffer_.channel.sample_rate
+                total += new
+                bar.update(new)
+            # sometimes NDS2 returns no data at all
+            if not total and gap != 'pad':
+                raise RuntimeError("no data received from {0} for {1}".format(
+                    connection.get_host(), seg))
 
     return out

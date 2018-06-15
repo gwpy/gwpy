@@ -104,7 +104,7 @@ def get_gitpython_version():
     else:
         if isinstance(gitv, bytes):
             gitv = gitv.decode('utf-8')
-        git_version = gitv.rstrip().split()[-1]
+        git_version = gitv.strip().split()[2]
 
     # if git>=2.15, we need GitPython>=2.1.8
     if LooseVersion(git_version) >= '2.15':
@@ -382,7 +382,7 @@ class port(Command):
             checksum['rmd160'] = self._get_rmd160(self.tarball)
             checksum['sha256'] = self._get_sha(data)
             checksum['size'] = os.path.getsize(self.tarball)
-            for key, val in checksum.iteritems():
+            for key, val in checksum.items():
                 log.info('    %s: %s' % (key, val))
 
             # write finished portfile to file
@@ -394,7 +394,10 @@ class port(Command):
 
     @staticmethod
     def _download(name, version, targetdir):
-        from pip.commands.download import DownloadCommand
+        try:
+            from pip._internal.commands.download import DownloadCommand
+        except ImportError:  # pip < 10
+            from pip.commands.download import DownloadCommand
         dcmd = DownloadCommand()
         rset = dcmd.run(*dcmd.parse_args([
             '{}=={}'.format(name, version),
@@ -413,6 +416,8 @@ class port(Command):
     @staticmethod
     def _get_rmd160(filename):
         out = subprocess.check_output(['openssl', 'rmd160', filename])
+        if isinstance(out, bytes):
+            out = out.decode('utf-8')
         return out.splitlines()[0].rsplit(' ', 1)[-1]
 
 

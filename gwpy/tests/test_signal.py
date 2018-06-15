@@ -44,7 +44,7 @@ from gwpy.signal.fft import (get_default_fft_api,
                              registry as fft_registry, ui as fft_ui)
 from gwpy.timeseries import TimeSeries
 
-import utils
+from . import utils
 
 ONE_HZ = units.Quantity(1, 'Hz')
 

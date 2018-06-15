@@ -4,7 +4,8 @@ sudo: false
 
 env:
   global:
-    secure: KXq3Kn+i5pDl7ApqYkMKAZlxC7OOLDmiBn46t/JYKyRAchacp1PR84vrwTNj7OfhZek0tlTkKwQtwpFaw6llhYSpB9xl9SsPNmoYsBtZb9zC8z/oRXlXgYudesPSt7cltlt0K21pV9gRflOezRjlJRDoccbw3pe90vYpMdvr7+0=
+    - PIP_FLAGS="--quiet"
+    - secure: KXq3Kn+i5pDl7ApqYkMKAZlxC7OOLDmiBn46t/JYKyRAchacp1PR84vrwTNj7OfhZek0tlTkKwQtwpFaw6llhYSpB9xl9SsPNmoYsBtZb9zC8z/oRXlXgYudesPSt7cltlt0K21pV9gRflOezRjlJRDoccbw3pe90vYpMdvr7+0=
 
 matrix:
   include:
@@ -76,36 +77,36 @@ matrix:
     # -- reference OS builds --------------------
 
     # EL7
-    - env: DOCKER_IMAGE="ligo/software:el7"
+    - env: DOCKER_IMAGE="ligo/base:el7"
       python: '2.7'
       sudo: required
       services:
         - docker
-    - env: DOCKER_IMAGE="ligo/software:el7"
+    - env: DOCKER_IMAGE="ligo/base:el7"
       python: '3.4'
       sudo: required
       services:
         - docker
 
     # debian 8
-    - env: DOCKER_IMAGE="ligo/software:jessie"
+    - env: DOCKER_IMAGE="ligo/base:jessie"
       python: '2.7'
       sudo: required
       services:
         - docker
-    - env: DOCKER_IMAGE="ligo/software:jessie"
+    - env: DOCKER_IMAGE="ligo/base:jessie"
       python: '3.4'
       sudo: required
       services:
         - docker
 
     # debian 9
-    - env: DOCKER_IMAGE="ligo/software:stretch"
+    - env: DOCKER_IMAGE="ligo/base:stretch"
       python: '2.7'
       sudo: required
       services:
         - docker
-    - env: DOCKER_IMAGE="ligo/software:stretch"
+    - env: DOCKER_IMAGE="ligo/base:stretch"
       python: '3.5'
       sudo: required
       services:
@@ -114,18 +115,27 @@ matrix:
     # macOS
     - os: osx
       osx_image: xcode9.2
-      env: PYTHON_VERSION='2.7'
       language: minimal
+      python: '2.7'
+      env: PYTHON_VERSION="2.7"
+      sudo: required
+
+    # macOS
+    - os: osx
+      osx_image: xcode9.2
+      language: minimal
+      python: '3.6'
+      env: PYTHON_VERSION="3.6"
       sudo: required
 
     # -- full build -----------------------------
 
-    - env: DOCKER_IMAGE="ligo/software:stretch" EXTRAS=true
+    - env: DOCKER_IMAGE="ligo/base:stretch" EXTRAS=true
       python: '2.7'
       sudo: required
       services:
         - docker
-    - env: DOCKER_IMAGE="ligo/software:stretch" EXTRAS=true
+    - env: DOCKER_IMAGE="ligo/base:stretch" EXTRAS=true
       python: '3.5'
       sudo: required
       services:
@@ -133,11 +143,11 @@ matrix:
 
   allow_failures:
     - env: PIP_FLAGS="--upgrade --pre --quiet"
-    - env: DOCKER_IMAGE="ligo/software:el7"
+    - env: DOCKER_IMAGE="ligo/base:el7"
       python: '3.4'
-    - env: DOCKER_IMAGE="ligo/software:jessie"
+    - env: DOCKER_IMAGE="ligo/base:jessie"
       python: '3.4'
-    - env: DOCKER_IMAGE="ligo/software:stretch" EXTRAS=true
+    - env: DOCKER_IMAGE="ligo/base:stretch" EXTRAS=true
       python: '3.5'
 
   fast_finish: true
@@ -159,10 +169,22 @@ script:  # run tests
   - ci_run ". ${GWPY_PATH}/ci/test.sh"
 
 after_success:
+  # fix paths in coverage file for docker-based runs
+  - |
+    if [ ! -z ${DOCKER_IMAGE+x} ]; then
+        sed -i 's|"'${GWPY_PATH}'|"'`pwd`'|g' .coverage;
+    fi
+  # install coveralls
+  - |
+    if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
+        sudo -H /opt/local/bin/python${PYTHON_VERSION} -m pip install --quiet coveralls
+        COVERALLS=$(/opt/local/bin/python${PYTHON_VERSION} -c "import sys; print(sys.prefix)")/bin/coveralls
+    else
+        python${PYTHON_VERSION} -m pip install --quiet coveralls
+        COVERALLS=coveralls
+    fi
   # submit coverage results
-  - pip install coveralls
-  - sed -i 's|"'${GWPY_PATH}'|"'`pwd`'|g' .coverage
-  - coveralls
+  - $COVERALLS
 
   # build and deploy package files
   - . ./ci/deploy.sh

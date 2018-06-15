@@ -26,7 +26,8 @@ Those dependencies are:
 - |scipy|_
 - |matplotlib|_
 - |astropy|_
-- :mod:`glue`
+- |h5py|_
+- |ligo-segments|_
 - |ligotimegps|_ (if |lal|_ is not already installed)
 
 See the GWpy ``setup.py`` file for minimum version requirements for each of those packages.

@@ -53,9 +53,8 @@ from astropy.io import registry as io_registry
 
 from ..types import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
-from ..io import (datafind, cache as io_cache)
-from ..io.mp import read_multi as io_read_multi
-from ..time import (Time, LIGOTimeGPS, to_gps)
+from ..io import datafind
+from ..time import (Time, LIGOTimeGPS, gps_types, to_gps)
 from ..utils import gprint
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -74,7 +73,7 @@ _UFUNC_STRING = {
 
 
 def _format_time(gps):
-    if isinstance(gps, LIGOTimeGPS):
+    if isinstance(gps, gps_types):
         return float(gps)
     if isinstance(gps, Time):
         return gps.gps
@@ -236,12 +235,12 @@ class TimeSeriesBase(Series):
 
         Parameters
         ----------
-        source : `str`, :class:`~glue.lal.Cache`
-            source of data, any of the following:
+        source : `str`, `list`
+            Source of data, any of the following:
 
-            - `str` path of single data file
-            - `str` path of LAL-format cache file
-            - :class:`~glue.lal.Cache` describing one or more data files,
+            - `str` path of single data file,
+            - `str` path of LAL-format cache file,
+            - `list` of paths.
 
         name : `str`, `~gwpy.detector.Channel`
             the name of the channel to read, or a `Channel` object.
@@ -263,12 +262,6 @@ class TimeSeriesBase(Series):
             number of parallel processes to use, serial process by
             default.
 
-            .. note::
-
-               Parallel frame reading, via the ``nproc`` keyword argument,
-               is only available when giving a :class:`~glue.lal.Cache` of
-               frames, or using the ``format='cache'`` keyword argument.
-
         gap : `str`, optional
             how to handle gaps in the cache, one of
 
@@ -283,22 +276,8 @@ class TimeSeriesBase(Series):
 
         Notes
         -----"""
-        # if reading a cache, use specialised processor
-        if io_cache.is_cache(source):
-            from .io.cache import read_from_cache
-            kwargs['target'] = cls
-            return read_from_cache(source, *args, **kwargs)
-
-        # -- otherwise --------------------------
-
-        gap = kwargs.pop('gap', 'raise')
-        pad = kwargs.pop('pad', 0.)
-
-        def _join(arrays):
-            list_ = TimeSeriesBaseList(*arrays)
-            return list_.join(pad=pad, gap=gap)
-
-        return io_read_multi(_join, cls, source, *args, **kwargs)
+        from .io.core import read as timeseries_reader
+        return timeseries_reader(cls, source, *args, **kwargs)
 
     def write(self, target, *args, **kwargs):
         """Write this `TimeSeries` to a file
@@ -366,7 +345,7 @@ class TimeSeriesBase(Series):
     @classmethod
     def fetch_open_data(cls, ifo, start, end, sample_rate=4096,
                         tag=None, version=None,
-                        format=None, host='https://losc.ligo.org',
+                        format='hdf5', host='https://losc.ligo.org',
                         verbose=False, cache=None, **kwargs):
         """Fetch open-access data from the LIGO Open Science Center
 
@@ -398,12 +377,9 @@ class TimeSeriesBase(Series):
             version
 
         format : `str`, optional
-            the data format to download and parse, defaults to the most
-            efficient option based on third-party libraries available;
-            one of:
+            the data format to download and parse, default: ``'h5py'``
 
-            - ``'txt.gz'`` - requires `numpy`
-            - ``'hdf5'`` - requires |h5py|_
+            - ``'hdf5'``
             - ``'gwf'`` - requires |LDAStools.frameCPP|_
 
         host : `str`, optional
@@ -797,31 +773,6 @@ class TimeSeriesBase(Series):
         return result
 
 
-# -- ArrayTimeSeries ----------------------------------------------------------
-
-class ArrayTimeSeries(TimeSeriesBase, Array2D):
-    _default_xunit = TimeSeriesBase._default_xunit
-
-    def __new__(cls, data, times=None, epoch=None, channel=None, unit=None,
-                sample_rate=None, name=None, **kwargs):
-        """Generate a new ArrayTimeSeries.
-        """
-        warnings.warn("The ArrayTimeSeries is deprecated and will be removed "
-                      "before the 1.0 release", DeprecationWarning)
-        # parse Channel input
-        if channel:
-            channel = (channel if isinstance(channel, Channel) else
-                       Channel(channel))
-            name = name or channel.name
-            unit = unit or channel.unit
-            sample_rate = sample_rate or channel.sample_rate
-        # generate TimeSeries
-        new = Array2D.__new__(cls, data, name=name, unit=unit, epoch=epoch,
-                              channel=channel, x0=1/sample_rate,
-                              xindex=times, **kwargs)
-        return new
-
-
 # -- TimeSeriesBaseDict -------------------------------------------------------
 
 def as_series_dict_class(seriesclass):
@@ -859,9 +810,12 @@ class TimeSeriesBaseDict(OrderedDict):
 
         Parameters
         ----------
-        source : `str`, :class:`~glue.lal.Cache`
-            a single file path `str`, or a :class:`~glue.lal.Cache` containing
-            a contiguous list of files.
+        source : `str`, `list`
+            Source of data, any of the following:
+
+            - `str` path of single data file,
+            - `str` path of LAL-format cache file,
+            - `list` of paths.
 
         channels : `~gwpy.detector.channel.ChannelList`, `list`
             a list of channels to read from the source.
@@ -883,12 +837,6 @@ class TimeSeriesBaseDict(OrderedDict):
             number of parallel processes to use, serial process by
             default.
 
-            .. note::
-
-               Parallel frame reading, via the ``nproc`` keyword argument,
-               is only available when giving a :class:`~glue.lal.Cache` of
-               frames, or using the ``format='cache'`` keyword argument.
-
         gap : `str`, optional
             how to handle gaps in the cache, one of
 
@@ -909,27 +857,8 @@ class TimeSeriesBaseDict(OrderedDict):
 
         Notes
         -----"""
-        # if reading a cache, use specialised processor
-        if io_cache.is_cache(source):
-            from .io.cache import read_from_cache
-            kwargs['target'] = cls
-            return read_from_cache(source, *args, **kwargs)
-
-        # -- otherwise --------------------------
-
-        gap = kwargs.pop('gap', 'raise')
-        pad = kwargs.pop('pad', 0.)
-
-        def _join(data):
-            out = cls()
-            data = list(data)
-            while data:
-                tsd = data.pop(0)
-                out.append(tsd, gap=gap, pad=pad)
-                del tsd
-            return out
-
-        return io_read_multi(_join, cls, source, *args, **kwargs)
+        from .io.core import read as timeseries_reader
+        return timeseries_reader(cls, source, *args, **kwargs)
 
     def write(self, target, *args, **kwargs):
         """Write this `TimeSeriesDict` to a file
@@ -1263,7 +1192,7 @@ class TimeSeriesBaseDict(OrderedDict):
         out = cls()
         for frametype, clist in frametypes.items():
             if verbose:
-                verbose = "Reading {} frames:".format(frametype)
+                verbose = "Reading {} frames".format(frametype)
             # parse as a ChannelList
             channellist = ChannelList.from_names(*clist)
             # strip trend tags from channel names
@@ -1345,15 +1274,15 @@ class TimeSeriesBaseDict(OrderedDict):
             `TimeSeriesBaseDict.find` (for direct GWF file access) or
             `TimeSeriesBaseDict.fetch` for remote NDS2 access
         """
-        try_frames = True
-        # work out whether to use NDS2 or frames
-        if not os.getenv('LIGO_DATAFIND_SERVER'):
-            try_frames = False
-        host = kwargs.get('host', None)
-        if host is not None and host.startswith('nds'):
-            try_frames = False
+        # separate non-None nds2-only keywords here
+        nds_kw = {}
+        for key in ('host', 'port', 'connection'):
+            val = kwargs.pop(key, None)
+            if val is not None:
+                nds_kw[key] = val
+
         # try and find from frames
-        if try_frames:
+        if os.getenv('LIGO_DATAFIND_SERVER') and not nds_kw:
             if verbose:
                 gprint("Attempting to access data from frames...")
             try:
@@ -1369,6 +1298,7 @@ class TimeSeriesBaseDict(OrderedDict):
         # remove kwargs for .find()
         for key in ('nproc', 'frametype', 'frametype_match', 'observatory'):
             kwargs.pop(key, None)
+        kwargs.update(nds_kw)  # replace nds keywords
 
         # otherwise fetch from NDS
         try:

@@ -53,8 +53,6 @@ See :func:`numpy.savetxt` for keyword argument options.
 HDF5
 ====
 
-**Additional dependencies:** |h5py|_
-
 GWpy allows storing data in HDF5 format files, using a custom specification for storage of metadata.
 
 Reading

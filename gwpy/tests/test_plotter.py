@@ -61,7 +61,7 @@ from gwpy.plotter.tex import (float_to_latex, label_to_latex,
                               unit_to_latex, HAS_TEX)
 from gwpy.plotter.table import get_column_string
 
-import utils
+from . import utils
 
 # ignore matplotlib complaining about GUIs
 warnings.filterwarnings(
@@ -808,11 +808,11 @@ class TestEventTableAxes(EventTableMixin, TestAxes):
         assert shape[0] == len(table)
         nptest.assert_array_equal(c.get_array(), snrs)
         # test with size_by
-        c = ax.plot_table(table, 'time', 'frequency',
-                          size_by='snr')
+        with pytest.warns(DeprecationWarning):
+            c = ax.plot_table(table, 'time', 'frequency', size_by='snr')
         # test with color and size_by
-        c = ax.plot_table(table, 'time', 'frequency', 'snr',
-                          size_by='snr')
+        with pytest.warns(DeprecationWarning):
+            c = ax.plot_table(table, 'time', 'frequency', 'snr', size_by='snr')
         nptest.assert_array_equal(c.get_array(), snrs)
 
     def test_plot_tiles(self, table):
@@ -1028,6 +1028,7 @@ class TestHistogramAxes(HistogramMixin, TestAxes):
         fig, ax = self.new()
         ax.hist(self.ts)
 
+    @utils.skip_missing_dependency('glue')
     def test_common_limits(self):
         fig, ax = self.new()
         a = ax.common_limits(self.ts.value)

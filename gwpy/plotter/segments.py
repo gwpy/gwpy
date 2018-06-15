@@ -34,7 +34,7 @@ try:
 except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
-import glue.segments
+import ligo.segments
 
 from ..segments import (Segment, SegmentList, DataQualityFlag, DataQualityDict)
 from .timeseries import (TimeSeriesPlot, TimeSeriesAxes)
@@ -51,10 +51,10 @@ class SegmentAxes(TimeSeriesAxes):
     This `SegmentAxes` provides custom methods for displaying any of
 
     - `~gwpy.segments.DataQualityFlag`
-    - `~gwpy.segments.Segment` or :class:`glue.segments.segment`
-    - `~gwpy.segments.SegmentList` or :class:`glue.segments.segmentlist`
+    - `~gwpy.segments.Segment` or :class:`ligo.segments.segment`
+    - `~gwpy.segments.SegmentList` or :class:`ligo.segments.segmentlist`
     - `~gwpy.segments.SegmentListDict` or
-      :class:`glue.segments.segmentlistdict`
+      :class:`ligo.segments.segmentlistdict`
 
     Parameters
     ----------
@@ -94,7 +94,7 @@ class SegmentAxes(TimeSeriesAxes):
                 - `~gwpy.segments.SegmentList`
                 - `~gwpy.segments.SegmentListDict`
 
-            or equivalent types upstream from :mod:`glue.segments`
+            or equivalent types upstream from :mod:`ligo.segments`
 
         kwargs
             keyword arguments applicable to `~matplotib.axes.Axes.plot`
@@ -119,15 +119,15 @@ class SegmentAxes(TimeSeriesAxes):
                 out.append(self.plot_dqflag(args[0], **kwargs))
                 args.pop(0)
                 continue
-            elif isinstance(args[0], glue.segments.segmentlistdict):
+            elif isinstance(args[0], ligo.segments.segmentlistdict):
                 out.extend(self.plot_segmentlistdict(args[0], **kwargs))
                 args.pop(0)
                 continue
-            elif isinstance(args[0], glue.segments.segmentlist):
+            elif isinstance(args[0], ligo.segments.segmentlist):
                 out.append(self.plot_segmentlist(args[0], **kwargs))
                 args.pop(0)
                 continue
-            elif isinstance(args[0], glue.segments.segment):
+            elif isinstance(args[0], ligo.segments.segment):
                 raise ValueError("Input must be DataQualityFlag, "
                                  "SegmentListDict, or SegmentList")
             break

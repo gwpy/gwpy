@@ -19,8 +19,7 @@
 """This module provides classes for generating and manipulating
 data segments of the form [gps_start, gps_end).
 
-The core of this module is adapted from the :mod:`Grid LIGO User Environment
-(GLUE) package <glue.segments>`.
+The core of this module is adapted from |ligo-segments|_.
 """
 
 from .segments import (Segment, SegmentList, SegmentListDict)

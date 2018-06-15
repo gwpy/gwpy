@@ -84,21 +84,25 @@ def _parse_query_segments(args, func):
 
     Returns a SegmentList in all cases
     """
+    # user passed SegmentList
     if len(args) == 1 and isinstance(args[0], SegmentList):
         return args[0]
-    if len(args) == 1 and len(args[0]) == 2:
-        return SegmentList([Segment(to_gps(args[0][0]),
-                                    to_gps(args[0][1]))])
+
+    # otherwise unpack two arguments as a segment
+    if len(args) == 1:
+        args = args[0]
+
+    # if not two arguments, panic
     try:
-        return SegmentList([Segment(*map(to_gps, args))])
-    except (TypeError, RuntimeError) as exc:
-        msg = ('{0}() takes 2 arguments for start and end GPS times, '
-               'or 1 argument containing a Segment or '
-               'SegmentList'.format(func.__name__))
-        if isinstance(exc, TypeError):
-            exc.args = (msg,)
-            raise
-        raise TypeError(msg)
+        start, end = args
+    except ValueError as exc:
+        exc.args = ('{0}() takes 2 arguments for start and end GPS time, '
+                    'or 1 argument containing a Segment or SegmentList'.format(
+                        func.__name__),)
+        raise
+
+    # return list with one Segment
+    return SegmentList([Segment(to_gps(start), to_gps(end))])
 
 
 # -- DataQualityFlag ----------------------------------------------------------
@@ -135,18 +139,11 @@ class DataQualityFlag(object):
     _ListClass = SegmentList
 
     def __init__(self, name=None, active=None, known=None, label=None,
-                 category=None, description=None, isgood=True, padding=None,
-                 valid=None):
+                 category=None, description=None, isgood=True, padding=None):
         """Define a new DataQualityFlag.
         """
         self.name = name
-        if valid is not None:
-            if known is not None:
-                raise ValueError("Please give only 'known', and not both "
-                                 "'known' and 'valid'")
-            self.valid = valid
-        else:
-            self.known = known
+        self.known = known
         self.active = active
         self.label = label
         self.category = category
@@ -274,33 +271,6 @@ class DataQualityFlag(object):
         self._known = self._ListClass()
 
     @property
-    def valid(self):
-        """The set of segments during which this flag was
-        known, and its state was well defined.
-        """
-        warnings.warn("The 'valid' property of the DataQualityFlag "
-                      "has been renamed 'known' and will be removed in "
-                      "the near future, please move to using 'known'.",
-                      DeprecationWarning)
-        return self.known
-
-    @valid.setter
-    def valid(self, segmentlist):
-        warnings.warn("The 'valid' property of the DataQualityFlag "
-                      "has been renamed 'known' and will be removed in "
-                      "the near future, please move to using 'known'.",
-                      DeprecationWarning)
-        self.known = segmentlist
-
-    @valid.deleter
-    def valid(self):
-        warnings.warn("The 'valid' property of the DataQualityFlag "
-                      "has been renamed 'known' and will be removed in "
-                      "the near future, please move to using 'known'.",
-                      DeprecationWarning)
-        self._known = self._ListClass()
-
-    @property
     def category(self):
         """Veto category for this flag.
 
@@ -345,13 +315,12 @@ class DataQualityFlag(object):
     @padding.setter
     def padding(self, pad):
         if pad is None:
-            self._padding = (0, 0)
-        else:
-            self._padding = (pad[0], pad[1])
+            pad = (None, None)
+        self._padding = tuple(float(p or 0.) for p in pad)
 
     @padding.deleter
     def padding(self):
-        self._padding = (0, 0)
+        self._padding = (0., 0.)
 
     # -- read-only properties -------------------
 
@@ -619,8 +588,8 @@ class DataQualityFlag(object):
         filename : `str`
             path of file to read
 
-        flag : `str`, optional, default: read all segments
-            name of flag to read from file.
+        name : `str`, optional
+            name of flag to read from file, otherwise read all segments.
 
         format : `str`, optional
             source format identifier. If not given, the format will be
@@ -649,6 +618,11 @@ class DataQualityFlag(object):
 
         Notes
         -----"""
+        if 'flag' in kwargs:  # pragma: no cover
+            warnings.warn('\'flag\' keyword was renamed \'name\', this '
+                          'warning will result in an error in the future')
+            kwargs.setdefault('name', kwargs.pop('flags'))
+
         def _combine(flags):
             return reduce(operator.or_, flags)
 
@@ -708,7 +682,7 @@ class DataQualityFlag(object):
             either a URL for a segment database or a path to a file on disk.
 
         segments : `SegmentList`, optional
-            a list of valid segments during which to query, if not given,
+            a list of segments during which to query, if not given,
             existing known segments for this flag will be used.
 
         pad : `bool`, optional, default: `True`
@@ -812,22 +786,36 @@ class DataQualityFlag(object):
         new.active = [(s[0]+start, s[1]+end) for s in self.active]
         return new
 
-    def round(self):
+    def round(self, contract=False):
         """Round this flag to integer segments.
+
+        Parameters
+        ----------
+        contract : `bool`, optional
+            if `False` (default) expand each segment to the containing
+            integer boundaries, otherwise contract each segment to the
+            contained boundaries
 
         Returns
         -------
         roundedflag : `DataQualityFlag`
             A copy of the original flag with the `active` and `known` segments
-            padded out to the enclosing integer boundaries.
+            padded out to integer boundaries.
         """
+        def _round(seg):
+            if contract:  # round inwards
+                a = ceil(seg[0])
+                b = floor(seg[1])
+            else:  # round outwards
+                a = floor(seg[0])
+                b = ceil(seg[1])
+            if a >= b:  # if segment is too short, return 'null' segment
+                return type(seg)(0, 0)  # will get coalesced away
+            return type(seg)(a, b)
+
         new = self.copy()
-        new.active = self._ListClass([self._EntryClass(int(floor(s[0])),
-                                                       int(ceil(s[1]))) for
-                                      s in new.active])
-        new.known = self._ListClass([self._EntryClass(int(floor(s[0])),
-                                                      int(ceil(s[1]))) for
-                                     s in new.known])
+        new.active = type(new.active)(map(_round, new.active))
+        new.known = type(new.known)(map(_round, new.known))
         return new.coalesce()
 
     def coalesce(self):
@@ -1244,7 +1232,7 @@ class DataQualityDict(OrderedDict):
         return new
 
     @classmethod
-    def read(cls, source, flags=None, format=None, **kwargs):
+    def read(cls, source, names=None, format=None, **kwargs):
         """Read segments from file into a `DataQualityDict`
 
         Parameters
@@ -1257,8 +1245,8 @@ class DataQualityDict(OrderedDict):
             detected if possible. See below for list of acceptable
             formats.
 
-        flags : `list`, optional, default: read all flags found
-            list of flags to read, by default all flags are read separately.
+        names : `list`, optional, default: read all names found
+            list of names to read, by default all names are read separately.
 
         coalesce : `bool`, optional, default: `True`
             coalesce all `SegmentLists` before returning.
@@ -1278,11 +1266,28 @@ class DataQualityDict(OrderedDict):
 
         Notes
         -----"""
-        def _combine(flags):
-            return reduce(operator.or_, flags)
+        on_missing = kwargs.pop('on_missing', 'error')
 
-        return io_read_multi(_combine, cls, source, flags=flags, format=format,
-                             **kwargs)
+        if 'flags' in kwargs:  # pragma: no cover
+            warnings.warn('\'flags\' keyword was renamed \'names\', this '
+                          'warning will result in an error in the future')
+            names = kwargs.pop('flags')
+
+        def _combine(inputs):
+            out = reduce(operator.or_, inputs)
+            missing = set(names or []) - set(out.keys())
+            for name in missing:  # validate all requested names are found
+                msg = '{!r} not found in any input file'.format(name)
+                if on_missing == 'ignore':
+                    continue
+                if on_missing == 'warn':
+                    warnings.warn(msg)
+                else:
+                    raise ValueError(msg)
+            return out
+
+        return io_read_multi(_combine, cls, source, names=names, format=format,
+                             on_missing='ignore', **kwargs)
 
     @classmethod
     def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None,
@@ -1358,7 +1363,8 @@ class DataQualityDict(OrderedDict):
 
     @classmethod
     def from_ligolw_tables(cls, segmentdeftable, segmentsumtable,
-                           segmenttable, names=None, gpstype=LIGOTimeGPS):
+                           segmenttable, names=None, gpstype=LIGOTimeGPS,
+                           on_missing='error'):
         """Build a `DataQualityDict` from a set of LIGO_LW segment tables
 
         Parameters
@@ -1379,6 +1385,14 @@ class DataQualityDict(OrderedDict):
             class to use for GPS times in returned objects, can be a function
             to convert GPS time to something else, default is
             `~gwpy.time.LIGOTimeGPS`
+
+        on_missing : `str`, optional
+            action to take when a one or more ``names`` are not found in
+            the ``segment_definer`` table, one of
+
+            - ``'ignore'`` : do nothing
+            - ``'warn'`` : print a warning
+            - ``error'`` : raise a `ValueError`
 
         Returns
         -------
@@ -1406,11 +1420,14 @@ class DataQualityDict(OrderedDict):
                     id_[name] = [row.segment_def_id]
 
         # verify all requested flags were found
-        if names is not None:
-            for flag in names:
-                if flag not in out:
-                    raise ValueError("No segment definition found for flag=%r "
-                                     "in file." % flag)
+        for flag in names or []:
+            if flag not in out and on_missing != 'ignore':
+                msg = ("no segment definition found for flag={0!r} in "
+                       "file".format(flag))
+                if on_missing == 'warn':
+                    warnings.warn(msg)
+                else:
+                    raise ValueError(msg)
 
         # read segment summary table as 'known'
         for row in segmentsumtable:

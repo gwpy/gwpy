@@ -24,8 +24,6 @@ Method                              Restricted?  Description
 Open data releases
 ==================
 
-**Additional dependencies:** |h5py|_
-
 The `LIGO Open Science Center <https://losc.ligo.org/>`_ hosts a large quantity of open (meaning publicly-available) data from LIGO science runs, including the full strain record for the sixth LIGO science run (S6, 2009-2010) and short extracts of the strain record surrounding published GW observations from Advanced LIGO.
 
 To fetch 32 seconds of strain data around event `GW150914 <http://dx.doi.org/10.1103/PhysRevLett.116.061102>`_, you need to give the prefix of the relevant observatory (``'H1'`` for the LIGO Hanford Observatory, ``'L1'`` for LIGO Livingston), and the start and end times of your query:

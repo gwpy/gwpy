@@ -55,7 +55,9 @@ dependencies = {
     'scipy': '>= 0.12.1',
     'matplotlib': '>= 1.2.0',
     'astropy': '>= 1.1.1',
-    'lscsoft-glue': '>= 1.55.2',
+    'h5py': '>= 1.3',
+    'ligo-segments': '>= 1.0.0',
+    'tqdm': '>= 4.10.0',
 }
 
 # include fancy dependencies
@@ -86,7 +88,6 @@ except ImportError:
 
 # define extras
 extras_require = {
-    'hdf5': ['h5py>=1.3'],
     'root': ['root_numpy'],
     'segments': ['dqsegdb'],
     'hacr': ['pymysql'],
@@ -127,6 +128,7 @@ setup(
     packages=find_packages(),
     scripts=get_scripts(),
     include_package_data=True,
+    test_suite='gwpy.tests',
 
     # dependencies
     cmdclass=CMDCLASS,

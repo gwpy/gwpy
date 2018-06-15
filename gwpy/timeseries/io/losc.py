@@ -34,7 +34,6 @@ from astropy.io import registry
 from astropy.units import Quantity
 from astropy.utils.data import get_readable_fileobj
 
-from .gwf import get_default_gwf_api
 from .. import (StateVector, TimeSeries)
 from ...io import (hdf5 as io_hdf5, utils as io_utils, losc as io_losc)
 from ...io.cache import (cache_segments, file_segment)
@@ -62,35 +61,6 @@ LOSC_VERSION_RE = re.compile(r'V\d+')
 
 
 # -- utilities ----------------------------------------------------------------
-
-def _parse_formats(formats, cls=TimeSeries):
-    """Parse ``formats`` into a `list`, handling `None`
-    """
-    if formats is None:  # build list of available formats, prizing efficiency
-        # include txt.gz for TimeSeries only (no state info in ASCII)
-        formats = [] if cls is StateVector else ['txt.gz']
-
-        # prefer GWF if API available
-        try:
-            get_default_gwf_api()
-        except ImportError:
-            pass
-        else:
-            formats.insert(0, 'gwf')
-
-        # prefer HDF5 if h5py available
-        try:
-            import h5py  # pylint: disable=unused-variable
-        except ImportError:
-            pass
-        else:
-            formats.insert(0, 'hdf5')
-        return formats
-
-    if isinstance(formats, (list, tuple)):
-        return formats
-    return [formats]
-
 
 def _download_file(url, cache=None, verbose=False):
     if cache is None:
@@ -179,13 +149,12 @@ def _match_url(url, start, end, tag=None, version=None):
 # -- file discovery -----------------------------------------------------------
 
 def find_losc_urls(detector, start, end, host=io_losc.LOSC_URL,
-                   sample_rate=4096, tag=None, version=None, format=None):
+                   sample_rate=4096, tag=None, version=None, format='hdf5'):
     """Fetch the metadata from LOSC regarding a given GPS interval
     """
     start = int(start)
     end = int(end)
     span = SegmentList([Segment(start, end)])
-    formats = _parse_formats(format)
 
     metadata = io_losc.fetch_dataset_json(start, end, host=host)
 
@@ -224,25 +193,24 @@ def find_losc_urls(detector, start, end, host=io_losc.LOSC_URL,
             # get URL list for this dataset
             urls = _get_urls(dataset)
 
-            for form in formats:
-                # sieve URLs based on basic parameters,
-                # and match tag and version
-                cache = _match_urls(
-                    [u['url'] for u in io_losc.sieve_urls(
-                        urls, detector=detector,
-                        sampling_rate=sample_rate, format=form)],
-                    start, end, tag=tag, version=version)
+            # sieve URLs based on basic parameters,
+            # and match tag and version
+            cache = _match_urls(
+                [u['url'] for u in io_losc.sieve_urls(
+                    urls, detector=detector,
+                    sampling_rate=sample_rate, format=format)],
+                start, end, tag=tag, version=version)
 
-                # if event dataset, pick shortest file that covers request
-                if dstype == 'events':
-                    for url in cache:
-                        a, b = file_segment(url)
-                        if a <= start and b >= end:
-                            return [url]
+            # if event dataset, pick shortest file that covers request
+            if dstype == 'events':
+                for url in cache:
+                    a, b = file_segment(url)
+                    if a <= start and b >= end:
+                        return [url]
 
-                # otherwise if url list covers the full requested interval
-                elif not span - cache_segments(cache):
-                    return cache
+            # otherwise if url list covers the full requested interval
+            elif not span - cache_segments(cache):
+                return cache
 
     raise ValueError("Cannot find a LOSC dataset for %s covering [%d, %d)"
                      % (detector, start, end))
@@ -301,7 +269,7 @@ def _fetch_losc_data_file(url, *args, **kwargs):
 # -- remote data access (the main event) --------------------------------------
 
 def fetch_losc_data(detector, start, end, host=io_losc.LOSC_URL,
-                    sample_rate=4096, tag=None, version=None, format=None,
+                    sample_rate=4096, tag=None, version=None, format='hdf5',
                     cls=TimeSeries, **kwargs):
     """Fetch LOSC data for a given detector
 
@@ -314,12 +282,11 @@ def fetch_losc_data(detector, start, end, host=io_losc.LOSC_URL,
     start = to_gps(start)
     end = to_gps(end)
     span = Segment(start, end)
-    formats = _parse_formats(format, cls)
 
     # get cache of URLS
     cache = find_losc_urls(detector, start, end, host=host,
                            sample_rate=sample_rate, tag=tag, version=version,
-                           format=formats)
+                           format=format)
     if kwargs.get('verbose', False):
         print("Fetched %d URLs from %s for [%d .. %d)"
               % (len(cache), host, int(start), int(end)))
@@ -433,9 +400,6 @@ def read_losc_hdf5_state(f, path='quality/simple', start=None, end=None,
 # register
 registry.register_reader('hdf5.losc', TimeSeries, read_losc_hdf5)
 registry.register_reader('hdf5.losc', StateVector, read_losc_hdf5_state)
-# DEPRECATED -- remove prior to 1.0 release
-registry.register_reader('losc', TimeSeries, read_losc_hdf5)
-registry.register_reader('losc', StateVector, read_losc_hdf5_state)
 
 
 def read_losc_ascii(fobj):

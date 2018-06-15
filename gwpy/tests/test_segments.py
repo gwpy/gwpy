@@ -28,6 +28,8 @@ from six.moves.urllib.error import (URLError, HTTPError)
 
 import pytest
 
+import h5py
+
 from matplotlib import use, rc_context
 use('agg')  # nopep8
 
@@ -36,9 +38,8 @@ from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 from gwpy.time import LIGOTimeGPS
 
-import utils
-import mocks
-from mocks import mock
+from . import (utils, mocks)
+from .mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -250,7 +251,6 @@ class TestSegmentList(object):
             sl2 = self.TEST_CLASS.read(f.name, gpstype=float)
             assert isinstance(sl2[0][0], float)
 
-    @utils.skip_missing_dependency('h5py')
     @pytest.mark.parametrize('ext', ('.hdf5', '.h5'))
     def test_read_write_hdf5(self, segmentlist, ext):
         tempdir = tempfile.mkdtemp()
@@ -366,18 +366,6 @@ class TestDataQualityFlag(object):
         del flag.padding
         assert flag.padding == (0, 0)
 
-    def test_deprecated_names(self):
-        with pytest.warns(DeprecationWarning):
-            flag = self.TEST_CLASS(NAME, valid=KNOWN)
-        with pytest.raises(ValueError):
-            flag = self.TEST_CLASS(NAME, valid=KNOWN, known=KNOWN)
-        with pytest.warns(DeprecationWarning):
-            flag.valid
-        with pytest.warns(DeprecationWarning):
-            flag.valid = flag.known
-        with pytest.warns(DeprecationWarning):
-            del flag.valid
-
     # -- test methods ---------------------------
 
     def test_parse_name(self):
@@ -477,9 +465,13 @@ class TestDataQualityFlag(object):
         utils.assert_segmentlist_equal(flag.known, KNOWN)
         utils.assert_segmentlist_equal(flag.active, ACTIVE)
 
-    def test_round(self):
-        flag = self.create(active=ACTIVE_CONTRACTED)
-        r = flag.round()
+    @pytest.mark.parametrize('contract, active', [
+        (False, ACTIVE_CONTRACTED),
+        (True, ACTIVE_PROTRACTED),
+    ])
+    def test_round(self, contract, active):
+        flag = self.create(active=active)
+        r = flag.round(contract=contract)
         utils.assert_segmentlist_equal(r.known, KNOWN)
         utils.assert_segmentlist_equal(r.active, KNOWNACTIVE)
 
@@ -633,9 +625,9 @@ class TestDataQualityFlag(object):
                               QUERY_FLAGS[0], SegmentList([(0, 10)]))
         utils.assert_flag_equal(result, result2)
 
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             self.TEST_CLASS.query_segdb(QUERY_FLAGS[0], 1, 2, 3)
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             self.TEST_CLASS.query_segdb(QUERY_FLAGS[0], (1, 2, 3))
 
     @pytest.mark.parametrize('name, flag', [
@@ -666,9 +658,9 @@ class TestDataQualityFlag(object):
                           'X1:GWPY-TEST:0', 0, 10)
         assert str(exc.value) == 'HTTP Error 404: Not found [X1:GWPY-TEST:0]'
 
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS[0], 1, 2, 3)
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS[0], (1, 2, 3))
 
     def test_query_dqsegdb_multi(self):
@@ -686,7 +678,7 @@ class TestDataQualityFlag(object):
             segs = self.TEST_CLASS.fetch_open_data(
                 'H1_DATA', 946339215, 946368015)
         except (URLError, SSLError) as exc:
-            pytest.skip(str(e))
+            pytest.skip(str(exc))
         assert segs.ifo == 'H1'
         assert segs.name == 'H1:DATA'
         assert segs.label == 'H1_DATA'
@@ -859,6 +851,34 @@ class TestDataQualityDict(object):
         with pytest.raises(IOError):
             _read_write(autoidentify=True)
         _read_write(autoidentify=True, write_kw={'overwrite': True})
+
+    def test_read_on_missing(self, instance):
+        with h5py.File('test', driver='core', backing_store=False) as h5f:
+            instance.write(h5f)
+            names = ['randomname']
+
+            def _read(**kwargs):
+                return self.TEST_CLASS.read(h5f, names=names, format='hdf5',
+                                            **kwargs)
+
+            # check on_missing='error' (default) raises ValueError
+            with pytest.raises(ValueError) as exc:
+                _read()
+            assert str(exc.value) == ('\'randomname\' not found in any input '
+                                      'file')
+
+            # check on_missing='warn' prints warning
+            with pytest.warns(UserWarning):
+                _read(on_missing='warn')
+
+            # check on_missing='ignore' does nothing
+            with pytest.warns(None) as record:
+                _read(on_missing='ignore')
+            assert not record.list
+
+            # check on_missing=<anything else> raises exception
+            with pytest.raises(ValueError) as exc:
+                _read(on_missing='blah')
 
     # -- test queries ---------------------------
 

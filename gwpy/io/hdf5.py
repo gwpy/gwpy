@@ -25,6 +25,8 @@ from functools import wraps
 # pylint: disable=unused-import
 from astropy.io.misc.hdf5 import is_hdf5 as identify_hdf5
 
+import h5py
+
 from .cache import FILE_LIKE
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -34,7 +36,6 @@ def open_hdf5(filename, mode='r'):
     """Wrapper to open a :class:`h5py.File` from disk, gracefully
     handling a few corner cases
     """
-    import h5py
     if isinstance(filename, (h5py.Group, h5py.Dataset)):
         return filename
     if isinstance(filename, FILE_LIKE):
@@ -51,7 +52,6 @@ def with_read_hdf5(func):
     @wraps(func)
     def decorated_func(fobj, *args, **kwargs):
         # pylint: disable=missing-docstring
-        import h5py
         if not isinstance(fobj, h5py.HLObject):
             if isinstance(fobj, FILE_LIKE):
                 fobj = fobj.name
@@ -88,7 +88,6 @@ def find_dataset(h5o, path=None):
     KeyError
         if ``path`` is given but is not found within the HDF5 object
     """
-    import h5py
     # find dataset
     if isinstance(h5o, h5py.Dataset):
         return h5o
@@ -118,7 +117,6 @@ def with_write_hdf5(func):
     @wraps(func)
     def decorated_func(obj, fobj, *args, **kwargs):
         # pylint: disable=missing-docstring
-        import h5py
         if not isinstance(fobj, h5py.HLObject):
             append = kwargs.get('append', False)
             overwrite = kwargs.get('overwrite', False)

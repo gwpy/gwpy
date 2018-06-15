@@ -224,15 +224,14 @@ def read_table(source, tablename=None, columns=None, contenthandler=None,
 
     Parameters
     ----------
-    source : `Document`, `file`, `str`, `CacheEntry`, `list`, `Cache`
+    source : `Document`, `file`, `str`, `CacheEntry`, `list`
         object representing one or more files. One of
 
         - a LIGO_LW :class:`~glue.ligolw.ligolw.Document`
         - an open `file`
         - a `str` pointing to a file path on disk
-        - a formatted `~lal.utils.CacheEntry` representing one file
-        - a `list` of `str` file paths
-        - a formatted :class:`~glue.lal.Cache` representing many files
+        - a formatted :class:`~lal.utils.CacheEntry` representing one file
+        - a `list` of `str` file paths or :class:`~lal.utils.CacheEntry`
 
     tablename : `str`
         name of the table to read.

@@ -90,12 +90,11 @@ def read_multi(flatten, cls, source, *args, **kwargs):
 
     # format verbosity
     if verbose is True:
-        verbose = 'Reading ({}):'.format(kwargs['format'])
+        verbose = 'Reading ({})'.format(kwargs['format'])
 
     # read files
     output = mp_utils.multiprocess_with_queues(
-        nproc, _read_single_file, files, raise_exceptions=False,
-        verbose=verbose)
+        nproc, _read_single_file, files, verbose=verbose, unit='files')
 
     # raise exceptions (from multiprocessing, single process raises inline)
     for fobj, exc in output:

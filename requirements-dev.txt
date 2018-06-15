@@ -6,15 +6,17 @@ pykerberos
 pyRXP
 
 # extras
-h5py >= 1.3
 pymysql
+lscsoft-glue
 dqsegdb
 https://github.com/ligovirgo/trigfind/archive/v0.4.tar.gz
-pycbc ; python_version == '2.7'
+ligotimegps
+pycbc != 1.10.0 ; python_version == '2.7'
 git+https://github.com/duncanmmacleod/ligo.org.git
 sqlalchemy
 psycopg2
-pandas
+pandas ; python_version != '3.4'
+pandas < 0.21 ; python_version == '3.4'
 
 # docs
 sphinx >= 1.6.1

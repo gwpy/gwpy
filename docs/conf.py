@@ -21,18 +21,28 @@ import inspect
 import os.path
 import re
 import glob
+import subprocess
+from string import Template
+
+from six.moves.configparser import (ConfigParser, NoOptionError)
 
 from matplotlib import use
 use('agg')
 
+from sphinx.util import logging
+
 import sphinx_bootstrap_theme
+
+from sphinx.util import logger
 
 import gwpy
 from gwpy import _version as gwpy_version
 from gwpy.plotter import (GWPY_PLOT_PARAMS)
+from gwpy.utils.sphinx import zenodo
 
 GWPY_VERSION = gwpy_version.get_versions()
 
+SPHINX_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # -- General configuration ------------------------------------------------
 
@@ -60,6 +70,7 @@ extensions = [
     'sphinx.ext.linkcode',
     'sphinx.ext.ifconfig',
     'sphinx_automodapi.automodapi',
+    'sphinxcontrib.programoutput',
     'numpydoc',
     'matplotlib.sphinxext.plot_directive',
     #'sphinxcontrib.doxylink',
@@ -146,6 +157,9 @@ autosummary_generate = True
 # -- plot_directive -----------------------------
 
 plot_rcparams = GWPY_PLOT_PARAMS
+plot_rcparams.update({
+    'backend': 'agg',
+})
 plot_apply_rcparams = True
 plot_formats = ['png']
 plot_include_source = True
@@ -294,7 +308,7 @@ intersphinx_mapping = {
     'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
     'matplotlib': ('http://matplotlib.org/', None),
     'astropy': ('http://docs.astropy.org/en/stable/', None),
-    'pycbc': ('https://ligo-cbc.github.io/pycbc/latest/html/', None),
+    'pycbc': ('http://pycbc.org/pycbc/latest/html/', None),
     'root_numpy': ('http://scikit-hep.org/root_numpy/', None),
     'h5py': ('http://docs.h5py.org/en/latest/', None),
     'dateutil': ('https://dateutil.readthedocs.io/en/stable/', None),
@@ -360,12 +374,110 @@ def linkcode_resolve(domain, info):
             % (GWPY_VERSION['full-revisionid'], fn, linespec))
 
 
-# -- setup --------------------------------------------------------------------
+# -- build CLI examples -------------------------------------------------------
+
+CLI_TEMPLATE = Template("""
+.. _gwpy-cli-example-${tag}:
+
+${titleunderline}
+${title}
+${titleunderline}
+
+${description}
+
+.. code:: sh
+
+   $$ ${command}
+
+.. image:: ${png}
+   :align: center
+   :alt: ${title}
+""")
+
+
+def _build_cli_example(config, section, outdir, logger):
+    raw = config.get(section, 'command')
+    try:
+        title = config.get(section, 'title')
+    except NoOptionError:
+        title = ' '.join(map(str.title, section.split('-')))
+    try:
+        desc = config.get(section, 'description')
+    except NoOptionError:
+        desc = ''
+
+    outf = os.path.join(outdir, '{0}.png'.format(section))
+
+    # build command-line strings for display and subprocess call
+    cmd = 'gwpy-plot {0}'.format(raw)  # exclude --out for display
+    cmds = (cmd + ' --interactive').replace(
+        ' --', ' \\\n       --')  # split onto multiple lines
+    cmdo = '{0} --out {1}'.format(cmd, outf)  # include --out for actual run
+
+    rst = CLI_TEMPLATE.substitute(
+        title=title, titleunderline='#'*len(title), description=desc,
+        tag=section, png=outf[len(SPHINX_DIR):], command=cmds)
+
+    # only write RST if new or changed
+    rstfile = outf.replace('.png', '.rst')
+    new = (not os.path.isfile(rstfile) or
+           not os.path.isfile(outf) or
+           open(rstfile, 'r').read() != rst)
+    if new:
+        with open(rstfile, 'w') as f:
+            f.write(rst)
+        logger.debug('[cli] wrote {0}'.format(rstfile))
+        return rstfile, cmdo
+    return rstfile, None
+
+
+def build_cli_examples(_):
+    logger = logging.getLogger('cli-examples')
+
+    clidir = os.path.join(SPHINX_DIR, 'cli')
+    exini = os.path.join(clidir, 'examples.ini')
+    exdir = os.path.join(clidir, 'examples')
+    if not os.path.isdir(exdir):
+        os.makedirs(exdir)
+
+    config = ConfigParser()
+    config.read(exini)
+
+    rsts = []
+    for sect in config.sections():
+        rst, cmd = _build_cli_example(config, sect, exdir, logger)
+        if cmd:
+            logger.info('[cli] running example {0!r}'.format(sect))
+            logger.debug('[cli] $ {0}'.format(cmd))
+            subprocess.check_call(cmd, shell=True)
+            logger.debug('[cli] wrote {0}'.format(cmd.split()[-1]))
+        rsts.append(rst)
+
+    with open(os.path.join(exdir, 'examples.rst'), 'w') as f:
+        f.write('.. toctree::\n   :glob:\n\n')
+        for rst in rsts:
+            f.write('   {0}\n'.format(rst[len(SPHINX_DIR):]))
+
+
+# -- create citation file -----------------------------------------------------
+
+def write_citing_rst(_):
+    here = os.path.dirname(__file__)
+    with open(os.path.join(here, 'citing.rst.in'), 'r') as fobj:
+        citing = fobj.read()
+    citing += '\n' + zenodo.format_citations(597016)
+    out = os.path.join(here, 'citing.rst')
+    with open(out, 'w') as f:
+        f.write(citing)
+    logger.info('[zenodo] wrote {0}'.format(out))
+
+
+# -- add css and js files -----------------------------------------------------
 
 CSS_DIR = os.path.join(html_static_path[0], 'css')
 JS_DIR = os.path.join(html_static_path[0], 'js')
 
-def setup(app):
+def setup_static_content(app):
     # add stylesheets
     for cssf in glob.glob(os.path.join(CSS_DIR, '*.css')):
         app.add_stylesheet(cssf.split(os.path.sep, 1)[1])
@@ -373,3 +485,11 @@ def setup(app):
     # add custom javascript
     for jsf in glob.glob(os.path.join(JS_DIR, '*.js')):
         app.add_javascript(jsf.split(os.path.sep, 1)[1])
+
+
+# -- setup --------------------------------------------------------------------
+
+def setup(app):
+    setup_static_content(app)
+    app.connect('builder-inited', write_citing_rst)
+    app.connect('builder-inited', build_cli_examples)

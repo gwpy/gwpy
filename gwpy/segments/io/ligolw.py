@@ -25,7 +25,6 @@ from six.moves import reduce
 
 from astropy.io import registry as io_registry
 
-from ...time import LIGOTimeGPS
 from ...io.ligolw import (is_xml, build_content_handler, read_ligolw,
                           write_tables, patch_ligotimegps)
 from ...segments import (DataQualityFlag, DataQualityDict)
@@ -51,7 +50,7 @@ def segment_content_handler():
 
 # -- read ---------------------------------------------------------------------
 
-def read_ligolw_dict(source, flags=None, gpstype=LIGOTimeGPS, coalesce=False):
+def read_ligolw_dict(source, names=None, coalesce=False, **kwargs):
     """Read segments for the given flag from the LIGO_LW XML file.
 
     Parameters
@@ -59,18 +58,16 @@ def read_ligolw_dict(source, flags=None, gpstype=LIGOTimeGPS, coalesce=False):
     source : `file`, `str`, :class:`~glue.ligolw.ligolw.Document`, `list`
         one (or more) open files or file paths, or LIGO_LW `Document` objects
 
-    flags : `list`, `None`, optional
-        list of flags to read or `None` to read all into a single
+    names : `list`, `None`, optional
+        list of names to read or `None` to read all into a single
         `DataQualityFlag`.
-
-    gpstype : `type`, `callable`, optional
-        class to use for GPS times in returned objects, can be a function
-        to convert GPS time to something else, default is
-        `~gwpy.time.LIGOTimeGPS`
 
     coalesce : `bool`, optional
         if `True`, coalesce all parsed `DataQualityFlag` objects before
         returning, default: `False`
+
+    **kwargs
+        other keywords are passed to :meth:`DataQualityDict.from_ligolw_tables`
 
     Returns
     -------
@@ -91,8 +88,8 @@ def read_ligolw_dict(source, flags=None, gpstype=LIGOTimeGPS, coalesce=False):
 
     # parse tables
     with patch_ligotimegps():
-        out = DataQualityDict.from_ligolw_tables(*tables, names=flags,
-                                                 gpstype=gpstype)
+        out = DataQualityDict.from_ligolw_tables(*tables, names=names,
+                                                 **kwargs)
 
     # coalesce
     if coalesce:
@@ -102,10 +99,11 @@ def read_ligolw_dict(source, flags=None, gpstype=LIGOTimeGPS, coalesce=False):
     return out
 
 
-def read_ligolw_flag(source, flag=None, **kwargs):
+def read_ligolw_flag(source, name=None, **kwargs):
     """Read a single `DataQualityFlag` from a LIGO_LW XML file
     """
-    return list(read_ligolw_dict(source, flags=flag, **kwargs).values())[0]
+    name = [name] if name is not None else None
+    return list(read_ligolw_dict(source, names=name, **kwargs).values())[0]
 
 
 # -- write --------------------------------------------------------------------

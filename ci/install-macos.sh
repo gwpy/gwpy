@@ -31,28 +31,28 @@ install_macports
 get_environment
 
 # install basic ports we need
-sudo port -N install \
+sudo port -q install \
     gsed \
     ${PY_DIST} \
-    ${PR_PREFIX}-setuptools \
+    ${PY_PREFIX}-setuptools \
     ${PY_PREFIX}-pip \
     ${PY_PREFIX}-jinja2 \
     ${PY_PREFIX}-gitpython
 
 # make Portfile
 cd ${GWPY_PATH}
-GWPY_VERSION=`python setup.py version | grep Version | cut -d\  -f2`
-$PYTHON setup.py sdist
+GWPY_VERSION=$(python setup.py --version)
+$PYTHON setup.py --quiet sdist
 $PYTHON setup.py port --tarball dist/gwpy-${GWPY_VERSION}.tar.gz
 
 # create mock portfile repo and install
-PORT_REPO=`pwd`/ports
+PORT_REPO=$(pwd)/ports
 GWPY_PORT_PATH=${PORT_REPO}/python/py-gwpy
 mkdir -p ${GWPY_PORT_PATH}
 cp Portfile ${GWPY_PORT_PATH}/
 
 # munge Portfile for local install
-gsed -i 's|pypi:g/gwpy|file://'`pwd`'/dist/ \\\n                    pypi:g/gwpy|' ${GWPY_PORT_PATH}/Portfile
+gsed -i 's|pypi:g/gwpy|file://'$(pwd)'/dist/ \\\n                    pypi:g/gwpy|' ${GWPY_PORT_PATH}/Portfile
 
 # add local port repo to sources
 sudo gsed -i 's|rsync://rsync.macports|file://'${PORT_REPO}'\nrsync://rsync.macports|' /opt/local/etc/macports/sources.conf
@@ -71,10 +71,10 @@ set -x
 # install py-gwpy
 # Note: we don't use the +gwf port, because ldas-tools-framecpp takes too
 #       long to compile that the whole job times out in the end
-sudo port -N install ${PY_PREFIX}-gwpy +nds2 +hdf5 +segments
+sudo port -q install ${PY_PREFIX}-gwpy +nds2 +segments
 
 # install extras (see requirements-dev.txt)
-sudo port -N install \
+sudo port -q install \
     kerberos5 \
     libframe \
     ${PY_PREFIX}-matplotlib \
@@ -90,8 +90,8 @@ sudo port -N install \
     ${PY_PREFIX}-beautifulsoup4
 
 # install m2cyrpto if needed
-if [ "`port info --version dqsegdb`" == "version: 1.4.0" ]; then
-    sudo port -N install ${PY_PREFIX}-m2crypto
+if [ "$(port info --version dqsegdb)" == "version: 1.4.0" ]; then
+    sudo port -q install ${PY_PREFIX}-m2crypto
 fi
 
 kill -9 $wvbpid &> /dev/null

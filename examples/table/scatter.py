@@ -36,7 +36,7 @@ __currentmodule__ = 'gwpy.table'
 from gwpy.table import EventTable
 events = EventTable.read(
     'H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst',
-    columns=['time', 'central_freq', 'snr'])
+    columns=['peak', 'central_freq', 'snr'])
 
 # .. note::
 #
@@ -45,7 +45,7 @@ events = EventTable.read(
 
 # We can now make a scatter plot by specifying the x- and y-axis columns,
 # and (optionally) the colour:
-plot = events.plot('time', 'central_freq', color='snr')
+plot = events.plot('peak', 'central_freq', color='snr')
 ax = plot.gca()
 ax.set_yscale('log')
 ax.set_ylabel('Frequency [Hz]')

@@ -271,14 +271,9 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
     def _psd(series):
         """Calculate a single PSD for a spectrogram
         """
-        try:
-            psd_ = psdn(series, method_func, *args, **kwargs)
-            del psd_.epoch  # fixes Segmentation fault (no idea why it faults)
-            return psd_
-        except Exception as exc:  # pylint: disable=broad-except
-            if nproc == 1:
-                raise
-            return exc
+        psd_ = psdn(series, method_func, *args, **kwargs)
+        del psd_.epoch  # fixes Segmentation fault (no idea why it faults)
+        return psd_
 
     # define chunks
     tschunks = _chunk_timeseries(timeseries, nstride, noverlap)
@@ -287,8 +282,7 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
         tschunks = zip(tschunks, otherchunks)
 
     # calculate PSDs
-    psds = mp_utils.multiprocess_with_queues(nproc, _psd, tschunks,
-                                             raise_exceptions=True)
+    psds = mp_utils.multiprocess_with_queues(nproc, _psd, tschunks)
 
     # recombobulate PSDs into a spectrogram
     return Spectrogram.from_spectra(*psds, epoch=epoch, dt=stride)
@@ -318,12 +312,7 @@ def spectrogram(timeseries, method_func, **kwargs):
     def _psd(series):
         """Calculate a single PSD for a spectrogram
         """
-        try:
-            return method_func(series, nfft=nfft, **kwargs)[1]
-        except Exception as exc:  # pylint: disable=broad-except
-            if nproc == 1:
-                raise
-            return exc
+        return method_func(series, nfft=nfft, **kwargs)[1]
 
     # define chunks
     chunks = []
@@ -336,8 +325,7 @@ def spectrogram(timeseries, method_func, **kwargs):
     tschunks = (timeseries.value[i:j] for i, j in chunks)
 
     # calculate PSDs with multiprocessing
-    psds = mp_utils.multiprocess_with_queues(nproc, _psd, tschunks,
-                                             raise_exceptions=True)
+    psds = mp_utils.multiprocess_with_queues(nproc, _psd, tschunks)
 
     # convert PSDs to array with spacing for averages
     numtimes = 1 + int((timeseries.size - nstride) / nstride)
