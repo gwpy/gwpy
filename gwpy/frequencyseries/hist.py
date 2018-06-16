@@ -212,7 +212,7 @@ class SpectralVariance(Array2D):
     @classmethod
     def from_spectrogram(cls, *spectrograms, **kwargs):
         """Calculate a new `SpectralVariance` from a
-        :class:`~gwpy.spectrogram.core.Spectrogram`
+        :class:`~gwpy.spectrogram.Spectrogram`
 
         Parameters
         ----------

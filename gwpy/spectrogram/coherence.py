@@ -27,7 +27,7 @@ from math import ceil
 
 from numpy import zeros
 
-from .core import (Spectrogram, SpectrogramList)
+from .spectrogram import (Spectrogram, SpectrogramList)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -35,7 +35,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
                      window=None, **kwargs):
     """Generate a time-frequency coherence
-    :class:`~gwpy.spectrogram.core.Spectrogram` from a pair of
+    :class:`~gwpy.spectrogram.Spectrogram` from a pair of
     :class:`~gwpy.timeseries.TimeSeries`.
 
     For each `stride`, a PSD :class:`~gwpy.frequencyseries.FrequencySeries`
@@ -108,7 +108,7 @@ def from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
 
     Returns
     -------
-    spectrogram : :class:`~gwpy.spectrogram.core.Spectrogram`
+    spectrogram : :class:`~gwpy.spectrogram.Spectrogram`
         time-frequency power spectrogram as generated from the
         input time-series.
     """
