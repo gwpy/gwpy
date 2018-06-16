@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for gwpy.astro
+"""Unit tests for :mod:`gwpy.astro.range`
 """
 
 import os.path
@@ -27,11 +27,10 @@ from scipy import __version__ as scipy_version
 
 from astropy import units
 
-from gwpy import astro
-from gwpy.timeseries import TimeSeries
-from gwpy.frequencyseries import FrequencySeries
-
-from . import utils
+from ... import astro
+from ...tests import utils
+from ...timeseries import TimeSeries
+from ...frequencyseries import FrequencySeries
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -70,8 +69,7 @@ else:
 
 @pytest.fixture(scope='module')
 def psd():
-    h5path = os.path.join(os.path.dirname(__file__), 'data',
-                          'HLV-HW100916-968654552-1.hdf')
+    h5path = os.path.join(utils.TEST_DATA_DIR, 'HLV-HW100916-968654552-1.hdf')
     try:
         data = TimeSeries.read(h5path, 'L1:LDAS-STRAIN', format='hdf5')
     except ImportError as e:

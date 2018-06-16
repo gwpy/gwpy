@@ -34,160 +34,31 @@ try:
 except ImportError:
     pass
 
-from gwpy.signal import (filter_design, window)
-from gwpy.signal.fft import (get_default_fft_api,
-                             basic as fft_basic,
-                             scipy as fft_scipy,
-                             lal as fft_lal,
-                             pycbc as fft_pycbc,
-                             utils as fft_utils,
-                             registry as fft_registry, ui as fft_ui)
-from gwpy.timeseries import TimeSeries
-
-from . import utils
-
-ONE_HZ = units.Quantity(1, 'Hz')
-
-_nyq = 16384 / 2.
-NOTCH_60HZ = signal.iirdesign(
-    (59 / _nyq, 61 / _nyq),
-    (59.9 / _nyq, 60.1 / _nyq),
-    1, 10,
-    analog=False, ftype='ellip', output='zpk',
-)
-
-_nyq = 1024 / 2.
-LOWPASS_IIR_100HZ = signal.iirdesign(
-    100 / _nyq,
-    150 / _nyq,
-    2, 30,
-    analog=False, ftype='cheby1', output='zpk',
-)
-LOWPASS_FIR_100HZ = signal.firwin(
-    30, 100, window='hamming', width=50., nyq=512.,
-)
-
-HIGHPASS_IIR_100HZ = signal.iirdesign(
-    100 / _nyq,
-    100 * 2/3. / _nyq,
-    2, 30,
-    analog=False, ftype='cheby1', output='zpk',
-)
-HIGHPASS_FIR_100HZ = signal.firwin(
-    45, 100, window='hamming', pass_zero=False, width=-100/3., nyq=512.,
-)
-
-BANDPASS_IIR_100HZ_200HZ = signal.iirdesign(
-    (100 / _nyq, 200 / _nyq),
-    (100 * 2/3. / _nyq, 300 / _nyq),
-    2, 30,
-    analog=False, ftype='cheby1', output='zpk',
-)
-BANDPASS_FIR_100HZ_200HZ = signal.firwin(
-    45, (100, 200.), window='hamming', pass_zero=False, nyq=512.,
-)
-
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+from ...tests import utils
+from ...timeseries import TimeSeries
+from ..fft import (get_default_fft_api,
+                   basic as fft_basic,
+                   scipy as fft_scipy,
+                   lal as fft_lal,
+                   pycbc as fft_pycbc,
+                   utils as fft_utils,
+                   registry as fft_registry, ui as fft_ui)
 
 
-# -- gwpy.signal.filter_design ------------------------------------------------
-
-class TestSignalFilterDesign(object):
-    """Tests for :mod:`gwpy.signal.filter_design`
-    """
-    def test_notch_design(self):
-        """Test :func:`gwpy.signal.filter_design.notch`
-        """
-        # test simple notch
-        zpk = filter_design.notch(60, 16384)
-        utils.assert_zpk_equal(zpk, NOTCH_60HZ)
-
-        # test Quantities
-        zpk2 = filter_design.notch(60 * ONE_HZ, 16384 * ONE_HZ)
-        utils.assert_zpk_equal(zpk, zpk2)
-
-        # test FIR notch doesn't work
-        with pytest.raises(NotImplementedError):
-            filter_design.notch(60, 16384, type='fir')
-
-    def test_lowpass(self):
-        iir = filter_design.lowpass(100, 1024)
-        utils.assert_zpk_equal(iir, LOWPASS_IIR_100HZ)
-        fir = filter_design.lowpass(100, 1024, type='fir')
-        utils.assert_allclose(fir, LOWPASS_FIR_100HZ)
-
-    def test_highpass(self):
-        iir = filter_design.highpass(100, 1024)
-        utils.assert_zpk_equal(iir, HIGHPASS_IIR_100HZ)
-        fir = filter_design.highpass(100, 1024, type='fir')
-        utils.assert_allclose(fir, HIGHPASS_FIR_100HZ)
-
-    def test_bandpass(self):
-        iir = filter_design.bandpass(100, 200, 1024)
-        utils.assert_zpk_equal(iir, BANDPASS_IIR_100HZ_200HZ)
-        fir = filter_design.bandpass(100, 200, 1024, type='fir')
-        utils.assert_allclose(fir, BANDPASS_FIR_100HZ_200HZ)
-
-    def test_concatenate_zpks(self):
-        zpk1 = ([1, 2, 3], [4, 5, 6], 1.)
-        zpk2 = ([1, 2, 3, 4], [5, 6, 7, 8], 100)
-        utils.assert_zpk_equal(
-            filter_design.concatenate_zpks(zpk1, zpk2),
-            ([1, 2, 3, 1, 2, 3, 4], [4, 5, 6, 5, 6, 7, 8], 100))
-
-    def test_parse_filter(self):
-        fir = numpy.arange(10)
-        assert filter_design.parse_filter(fir) == ('ba', (fir, [1.]))
-        zpk = ([1, 2, 3], [4, 5, 6], 1.)
-        parsed = filter_design.parse_filter(zpk)
-        assert parsed[0] == 'zpk'
-        utils.assert_zpk_equal(parsed[1], zpk)
-
-
-# -- gwpy.signal.window -------------------------------------------------------
-
-class TestSignalWindow(object):
-    """Tests for :mod:`gwpy.signal.window`
-    """
-    def test_canonical_name(self):
-        """Test :func:`gwpy.signal.window.canonical_name`
-        """
-        assert window.canonical_name('Hanning') == 'hann'
-        with pytest.raises(ValueError) as exc:
-            window.canonical_name('blah')
-        assert str(exc.value) == ('no window function in scipy.signal '
-                                  'equivalent to \'blah\'')
-
-    def test_recommended_overlap(self):
-        """Test :func:`gwpy.signal.window.recommended_overlap`
-        """
-        assert window.recommended_overlap('hann') == .5
-        assert window.recommended_overlap('Hamming') == .5
-        assert window.recommended_overlap('barthann', nfft=128) == 64
-        with pytest.raises(ValueError) as exc:
-            window.recommended_overlap('kaiser')
-        assert str(exc.value) == ('no recommended overlap for \'kaiser\' '
-                                  'window')
-
-
-# -- gwpy.signal.fft ----------------------------------------------------------
-
-class TestSignalFft(object):
-
-    def test_get_default_fft_api(self):
-        api = get_default_fft_api()
-        for lib in ('pycbc.psd', 'lal', 'scipy'):
-            try:
-                import_module(lib)
-            except ImportError:
-                continue
-            assert api == lib
-            return
+def test_get_default_fft_api():
+    api = get_default_fft_api()
+    for lib in ('pycbc.psd', 'lal', 'scipy'):
+        try:
+            import_module(lib)
+        except ImportError:
+            continue
+        assert api == lib
+        return
 
 
 # -- gwpy.signal.fft.registry -------------------------------------------------
 
-class TestSignalFftRegistry(object):
+class TestRegistry(object):
     """Tests for :mod:`gwpy.signal.fft.registry`
     """
     @staticmethod
@@ -255,7 +126,7 @@ class TestSignalFftRegistry(object):
 
 # -- gwpy.signal.fft.ui -------------------------------------------------------
 
-class TestSignalFftUI(object):
+class TestUI(object):
     def test_seconds_to_samples(self):
         """Test :func:`gwpy.signal.fft.ui.seconds_to_samples`
         """
@@ -300,7 +171,7 @@ class TestSignalFftUI(object):
 
 # -- gwpy.signal.fft.utils ----------------------------------------------------
 
-class TestSignalFftUtils(object):
+class TestUtils(object):
     def test_scale_timeseries_unit(self):
         """Test :func:`gwpy.signal.fft.utils.scale_timeseries_units`
         """
@@ -321,7 +192,7 @@ class TestSignalFftUtils(object):
 
 # -- gwpy.signal.fft.basic ----------------------------------------------------
 
-class TestSignalFftBasic(object):
+class TestBasic(object):
     def test_map_fft_method(self):
         """Test :func:`gwpy.signal.fft.basic.map_fft_method`
         """
@@ -345,7 +216,7 @@ class TestSignalFftBasic(object):
 # -- gwpy.signal.fft.lal ------------------------------------------------------
 
 @utils.skip_missing_dependency('lal')
-class TestSignalFftLal(object):
+class TestLal(object):
     def test_generate_window(self):
         """Test :func:`gwpy.signal.fft.lal.generate_window`
         """

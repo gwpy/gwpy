@@ -32,7 +32,7 @@ from ...segments import (Segment, SegmentList, SegmentListDict,
 from ...time import LIGOTimeGPS
 from .. import SegmentAxes
 from ..segments import SegmentRectangle
-from .test_axes import TestAxes
+from .test_axes import TestAxes as _TestAxes
 from .utils import usetex  # pylint: disable=unused-import
 
 # extract color cycle
@@ -48,7 +48,7 @@ else:
         COLOR0 = COLOR_CONVERTER.to_rgba('b')
 
 
-class TestSegmentAxes(TestAxes):
+class TestSegmentAxes(_TestAxes):
     AXES_CLASS = SegmentAxes
 
     @staticmethod

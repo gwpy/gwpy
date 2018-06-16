@@ -32,6 +32,11 @@ from numpy.testing import (assert_array_equal, assert_allclose)
 
 import pytest
 
+# -- useful constants ---------------------------------------------------------
+
+TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
+TEST_GWF_FILE = os.path.join(TEST_DATA_DIR, 'HLV-HW100916-968654552-1.gwf')
+
 
 # -- dependencies -------------------------------------------------------------
 

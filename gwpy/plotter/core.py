@@ -744,7 +744,7 @@ class Plot(figure.Figure):
 
         Parameters
         ----------
-        spectrogram : `~gwpy.spectrogram.core.Spectrogram`
+        spectrogram : `~gwpy.spectrogram.Spectrogram`
             the `Spectrogram` to display
 
         ax : `~gwpy.plotter.Axes`

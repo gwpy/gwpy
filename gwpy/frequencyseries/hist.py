@@ -29,7 +29,7 @@ from astropy.io import registry as io_registry
 from ..types import (Quantity, Array2D)
 from ..types.sliceutils import null_slice
 from ..segments import Segment
-from .core import FrequencySeries
+from . import FrequencySeries
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['SpectralVariance']
@@ -212,7 +212,7 @@ class SpectralVariance(Array2D):
     @classmethod
     def from_spectrogram(cls, *spectrograms, **kwargs):
         """Calculate a new `SpectralVariance` from a
-        :class:`~gwpy.spectrogram.core.Spectrogram`
+        :class:`~gwpy.spectrogram.Spectrogram`
 
         Parameters
         ----------

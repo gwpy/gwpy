@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for spectrogram module
+"""Unit tests for :mod:`gwpy.spectrogram.spectrogram`
 """
 
 import tempfile
@@ -27,28 +27,18 @@ import numpy
 
 from scipy import signal
 
-from matplotlib import (use, rc_context)
-use('agg')  # nopep8
+from matplotlib import rc_context
 
 from astropy import units
 
-from gwpy.spectrogram import Spectrogram
-
-from . import utils
-from .test_array import TestArray2D
+from ...tests import utils
+from ...types.tests.test_array2d import TestArray2D as _TestArray2D
+from .. import Spectrogram
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-# -----------------------------------------------------------------------------
-#
-#     gwpy.spectrogram.core
-#
-# -----------------------------------------------------------------------------
-
-# -- Spectrogram --------------------------------------------------------------
-
-class TestSpectrogram(TestArray2D):
+class TestSpectrogram(_TestArray2D):
     """Tests of `gwpy.spectrogram.Spectrogram`
     """
     TEST_CLASS = Spectrogram

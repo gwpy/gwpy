@@ -32,8 +32,8 @@ from freezegun import freeze_time
 from astropy.time import Time
 from astropy.units import (UnitConversionError, Quantity)
 
-from gwpy import time
-from gwpy.time import LIGOTimeGPS
+from ... import time
+from .. import LIGOTimeGPS
 
 try:
     from glue.lal import LIGOTimeGPS as GlueGPS
