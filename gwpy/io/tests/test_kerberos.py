@@ -42,7 +42,7 @@ KVNO Principal
 
 
 def setup_module():
-    os.environ.pop('KRB5_KTNAME')
+    os.environ.pop('KRB5_KTNAME', None)
 
 
 def teardown_module():
