@@ -36,7 +36,7 @@ if __name__ == '__main__':
 # Before anything else, we import the objects we will need:
 from gwpy.time import tconvert
 from gwpy.timeseries import TimeSeriesDict
-from gwpy.plotter import BodePlot
+from gwpy.plot import BodePlot
 
 # and set the times of our query, and the channels we want:
 start = tconvert('May 27 2014 04:00')
@@ -60,7 +60,7 @@ hpifft = hpi.average_fft(100, 50, window='hamming')
 size = min(gndfft.size, hpifft.size)
 tf = hpifft[:size] / gndfft[:size]
 
-# The `~gwpy.plotter.BodePlot` knows how to separate a complex-valued
+# The `~gwpy.plot.BodePlot` knows how to separate a complex-valued
 # `~gwpy.frequencyseries.FrequencySeries` into magnitude and phase:
 plot = BodePlot(tf)
 plot.maxes.set_title(

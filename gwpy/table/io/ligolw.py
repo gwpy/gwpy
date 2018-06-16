@@ -308,9 +308,8 @@ def read_table(source, tablename=None, **kwargs):
         'rename': None,
         'use_numpy_dtypes': False,
     }
-    for key in convert_kw:
-        if key in kwargs:
-            convert_kw[key] = kwargs.pop(key)
+    for key in filter(kwargs.__contains__, convert_kw):
+        convert_kw[key] = kwargs.pop(key)
     if convert_kw['rename'] is None:
         convert_kw['rename'] = {}
 

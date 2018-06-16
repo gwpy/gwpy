@@ -58,7 +58,6 @@ from gwpy.segments import (Segment, SegmentList,
 from gwpy.frequencyseries import (FrequencySeries, SpectralVariance)
 from gwpy.types import Array2D
 from gwpy.spectrogram import Spectrogram
-from gwpy.plotter import (TimeSeriesPlot, SegmentPlot)
 from gwpy.utils.misc import null_context
 from gwpy.signal import filter_design
 
@@ -217,10 +216,9 @@ class TestTimeSeriesBase(TestSeries):
     def test_plot(self, array):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot()
-            assert isinstance(plot, TimeSeriesPlot)
             line = plot.gca().lines[0]
-            utils.assert_array_equal(line.get_xdata(), array.xindex.value)
-            utils.assert_array_equal(line.get_ydata(), array.value)
+            utils.assert_array_equal(line.get_xdata(), array.xindex)
+            utils.assert_quantity_sub_equal(line.get_ydata(), array)
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
             return plot  # allow subclasses to extend tests
@@ -418,11 +416,11 @@ class TestTimeSeriesBaseDict(object):
     def test_plot(self, instance):
         with rc_context(rc={'text.usetex': False}):
             plot = instance.plot()
-            assert isinstance(plot, TimeSeriesPlot)
             for line, key in zip(plot.gca().lines, instance):
                 utils.assert_array_equal(line.get_xdata(),
-                                         instance[key].xindex.value)
-                utils.assert_array_equal(line.get_ydata(), instance[key].value)
+                                         instance[key].xindex)
+                utils.assert_quantity_sub_equal(line.get_ydata(),
+                                                instance[key])
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
             return plot  # allow subclasses to extend tests
@@ -1574,7 +1572,6 @@ class TestStateVector(TestTimeSeriesBase):
     def test_plot(self, array):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot()
-            assert isinstance(plot, TimeSeriesPlot)
             # make sure there were no lines drawn
             assert plot.gca().lines == []
             # assert one collection for each of known and active segmentlists
@@ -1585,10 +1582,9 @@ class TestStateVector(TestTimeSeriesBase):
 
             # test timeseries plotting as normal
             plot = array.plot(format='timeseries')
-            assert isinstance(plot, TimeSeriesPlot)
             line = plot.gca().lines[0]
-            utils.assert_array_equal(line.get_xdata(), array.xindex.value)
-            utils.assert_array_equal(line.get_ydata(), array.value)
+            utils.assert_array_equal(line.get_xdata(), array.xindex)
+            utils.assert_quantity_sub_equal(line.get_ydata(), array)
             plot.close()
 
     def test_resample(self, array):

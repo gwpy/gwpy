@@ -51,8 +51,6 @@ from gwpy.table.filter import filter_table
 from gwpy.table.io.hacr import (HACR_COLUMNS, get_hacr_triggers)
 from gwpy.time import LIGOTimeGPS
 from gwpy.timeseries import (TimeSeries, TimeSeriesDict)
-from gwpy.plotter import (EventTablePlot, EventTableAxes, TimeSeriesPlot,
-                          HistogramPlot)
 
 from . import utils
 from .mocks import mock
@@ -375,16 +373,12 @@ class TestEventTable(TestTable):
     def test_plot(self, table):
         with rc_context(rc={'text.usetex': False}):
             plot = table.plot('time', 'frequency', color='snr')
-            assert isinstance(plot, EventTablePlot)
-            assert isinstance(plot, TimeSeriesPlot)
-            assert isinstance(plot.gca(), EventTableAxes)
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
 
     def test_hist(self, table):
         with rc_context(rc={'text.usetex': False}):
             plot = table.hist('snr')
-            assert isinstance(plot, HistogramPlot)
             assert len(plot.gca().patches) == 10
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)

@@ -33,7 +33,6 @@ use('agg')  # nopep8
 from astropy import units
 
 from gwpy.spectrogram import Spectrogram
-from gwpy.plotter import (TimeSeriesPlot, TimeSeriesAxes)
 
 from . import utils
 from .test_array import TestArray2D
@@ -151,15 +150,13 @@ class TestSpectrogram(TestArray2D):
         with pytest.warns(UserWarning):
             array.crop_frequencies(array.yspan[0], array.yspan[1]+1)
 
-    @pytest.mark.parametrize('imshow', (True, False))
-    def test_plot(self, array, imshow):
+    @pytest.mark.parametrize('method', ('imshow', 'pcolormesh'))
+    def test_plot(self, array, method):
         with rc_context(rc={'text.usetex': False}):
-            plot = array.plot(imshow=imshow)
+            plot = array.plot(method=method)
             ax = plot.gca()
-            assert isinstance(plot, TimeSeriesPlot)
-            assert isinstance(ax, TimeSeriesAxes)
             assert ax.lines == []
-            if imshow:
+            if method == 'imshow':
                 assert len(ax.images) == 1
             else:
                 assert len(ax.collections) == 1

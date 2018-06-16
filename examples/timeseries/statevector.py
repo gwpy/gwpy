@@ -19,9 +19,12 @@
 
 """Plotting segments for a `StateVector`
 
-I would like to examine the state of the internal seismic isolation system supporting the Fabry-Perot mirror at the end of the Y-arm at LHO, in order to investigate a noise source.
-
-These data are private to the LIGO Scientific Collaboration and the Virgo Collaboration, but collaboration members can use the NDS2 service to download data.
+Confident detection of gravitational-wave signals is critically dependent
+on understaind the quality of the data search.
+Alongside the strain _h(t)_ data, |LOSC|_ also releases a _Data Quality_
+:ref`state vector <gwpy-statevector`>.
+We can use this to check on the quality of the data from the LIGO Livingston
+detector around `GW170817 <https://losc.ligo.org/events/GW170817/>`__.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -30,29 +33,21 @@ __currentmodule__ = 'gwpy.timeseries'
 # First, we can import the `StateVector` class:
 from gwpy.timeseries import StateVector
 
-# Next, we define which bits we want to use, and can then
-# :meth:`~StateVector.get` the data:
-bits = [
-    'Summary state',
-    'State 1 damped',
-    'Stage 1 isolated',
-    'Stage 2 damped',
-    'Stage 2 isolated',
-    'Master switch ON',
-    'Stage 1 WatchDog OK',
-    'Stage 2 WatchDog OK',
-]
-
-data = StateVector.get('L1:ISI-ETMX_ODC_CHANNEL_OUT_DQ', 'May 22 2014 14:00', 'May 22 2014 15:00', bits=bits)
-data = data.astype('uint32')  # hide
-
-# For this example, we wish to :meth:`~StateVector.resample` the data to a
-# much lower rate, to make visualising the state much easier:
-data = data.resample(16)
+# and download the state information surrounding GW170817:
+data = StateVector.fetch_open_data('L1', 1187008882-100, 1187008882+100,
+                                   verbose=True, tag='C00')
 
 # Finally, we make a :meth:`~StateVector.plot`, passing `insetlabels=True` to
 # display the bit names inside the axes:
 plot = data.plot(insetlabels=True)
-plot.gca().set_title('LLO ETMX internal seismic isolation state')
-plot.add_bitmask('0b11101110')
+ax = plot.gca()
+ax.set_xscale('seconds', epoch=1187008882)
+ax.axvline(1187008882, color='orange', linestyle='--')
+ax.set_title('LIGO-Livingston data quality around GW170817')
 plot.show()
+
+# This plot shows that for a short time exactly overlapping with GW170817
+# there was a data quality issue recorded that would negatively impact a
+# search for generic gravitational-wave transients (bursts).
+# For more details on this _glitch_, and on how it was excised, please see
+# `Abbott et al. 2017 <https://doi.org/10.1103/PhysRevLett.119.161101>`__.

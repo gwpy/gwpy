@@ -49,7 +49,7 @@ class Axes(_Axes):
     where ``plot`` is a `~gwpy.plotter.Plot`, and ``'xxx'``
     is the name of the `Axes` you want to add.
     """
-    projection = 'rectilinear'
+    name = 'gwpy-rectilinear-deprecated'
 
     # -- text properties ------------------------
 
@@ -253,6 +253,5 @@ class Axes(_Axes):
         if isinstance(data, Artist):
             return html.map_artist(data, imagefile, **kwargs)
         return html.map_data(data, self, imagefile, **kwargs)
-
 
 register_projection(Axes)

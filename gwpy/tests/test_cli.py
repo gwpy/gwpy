@@ -38,7 +38,7 @@ from gwpy import cli as gcli
 from gwpy.cli import cliproduct
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.timeseries import TimeSeries
-from gwpy.plotter import Plot
+from gwpy.plot import Plot
 
 # local imports
 from . import (utils, mocks)
@@ -269,8 +269,8 @@ class _TestImageProduct(_TestCliProduct):
     @pytest.fixture
     def plotprod(cls, dataprod):
         super(_TestImageProduct, cls).plotprod(dataprod)
-        ax = dataprod.plot.gca(projection='timeseries')
-        ax.plot_spectrogram(dataprod.result)
+        ax = dataprod.plot.gca()
+        ax.pcolormesh(dataprod.result)
         return dataprod
 
     def test_extra_plot_options(self, args):

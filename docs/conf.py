@@ -37,7 +37,7 @@ from sphinx.util import logger
 
 import gwpy
 from gwpy import _version as gwpy_version
-from gwpy.plotter import (GWPY_PLOT_PARAMS)
+from gwpy.plot.rc import DEFAULT_PARAMS as GWPY_PLOT_PARAMS
 from gwpy.utils.sphinx import zenodo
 
 GWPY_VERSION = gwpy_version.get_versions()

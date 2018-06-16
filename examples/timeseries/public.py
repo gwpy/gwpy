@@ -41,6 +41,6 @@ data = TimeSeries.fetch_open_data('L1', 968654552, 968654562)
 # and then we can make a plot:
 plot = data.plot(
     title='LIGO Livingston Observatory data for HW100916',
-    ylabel='Gravitational-wave strain amplitude',
+    ylabel='Strain amplitude',
 )
 plot.show()

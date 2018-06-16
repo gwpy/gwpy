@@ -392,6 +392,49 @@ class Series(Array):
         -----"""
         return io_registry.write(self, target, *args, **kwargs)
 
+    # -- series plotting ------------------------
+
+    def plot(self, method='plot', **kwargs):
+        """Plot the data for this series
+
+        Returns
+        -------
+        figure : `~matplotlib.figure.Figure`
+            the newly created figure, with populated Axes.
+
+        See Also
+        --------
+        matplotlib.pyplot.figure
+            for documentation of keyword arguments used to create the
+            figure
+        matplotlib.figure.Figure.add_subplot
+            for documentation of keyword arguments used to create the
+            axes
+        matplotlib.axes.Axes.plot
+            for documentation of keyword arguments used in rendering the data
+        """
+        from ..plot import Plot
+        from ..plot.text import default_unit_label
+
+        # correct for log scales and zeros
+        if kwargs.get('xscale') == 'log' and self.x0.value == 0:
+            kwargs.setdefault('xlim', (self.dx.value, self.xspan[1]))
+
+        # make plot
+        plot = Plot(self, method=method, **kwargs)
+
+        # set default y-axis label (xlabel is set by Plot())
+        default_unit_label(plot.gca().yaxis, self.unit)
+
+        return plot
+
+    def step(self, **kwargs):
+        """Create a step plot of this series
+        """
+        kwargs.setdefault('linestyle', kwargs.pop('where', 'steps-post'))
+        data = self.append(self.value[-1:], inplace=False)
+        return data.plot(**kwargs)
+
     # -- series methods -------------------------
 
     def value_at(self, x):

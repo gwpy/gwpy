@@ -18,3 +18,6 @@
 
 """Unit tests for GWpy
 """
+
+from matplotlib import use
+use('agg')

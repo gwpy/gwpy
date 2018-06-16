@@ -595,14 +595,13 @@ class TimeSeriesBase(Series):
         delta = units.Quantity(delta, 's')
         self.t0 += delta
 
-    def plot(self, **kwargs):
+    def plot(self, method='plot', figsize=(12, 4), xscale='auto-gps',
+             **kwargs):
         """Plot the data for this timeseries
-
-        All keywords are passed to `~gwpy.plotter.TimeSeriesPlot`
 
         Returns
         -------
-        plot : `~gwpy.plotter.TimeSeriesPlot`
+        figure : `~matplotlib.figure.Figure`
             the newly created figure, with populated Axes.
 
         See Also
@@ -616,8 +615,8 @@ class TimeSeriesBase(Series):
         matplotlib.axes.Axes.plot
             for documentation of keyword arguments used in rendering the data
         """
-        from ..plotter import TimeSeriesPlot
-        return TimeSeriesPlot(self, **kwargs)
+        kwargs.update(figsize=figsize, xscale=xscale)
+        return super(TimeSeriesBase, self).plot(method=method, **kwargs)
 
     @classmethod
     def from_nds2_buffer(cls, buffer_, **metadata):
@@ -1319,7 +1318,8 @@ class TimeSeriesBaseDict(OrderedDict):
                                            verbose=verbose, **kwargs))
                     for c in channels)
 
-    def plot(self, label='key', **kwargs):
+    def plot(self, label='key', method='plot', figsize=(12, 4),
+             xscale='auto-gps', **kwargs):
         """Plot the data for this `TimeSeriesBaseDict`.
 
         Parameters
@@ -1337,20 +1337,24 @@ class TimeSeriesBaseDict(OrderedDict):
             all other keyword arguments are passed to the plotter as
             appropriate
         """
-        from ..plotter import TimeSeriesPlot
-        figargs = dict()
-        for key in ['figsize', 'dpi']:
-            if key in kwargs:
-                figargs[key] = kwargs.pop(key)
-        plot_ = TimeSeriesPlot(**figargs)
-        ax = plot_.gca()
-        for lab, series in self.items():
+        # make plot
+        from ..plot import Plot
+        plot = Plot(self.values(), method=method, label=label, **kwargs)
+
+        # update labels
+        artmap = {'plot': 'lines', 'scatter': 'collections'}
+        artists = [x for ax in plot.axes for
+                   x in getattr(ax, artmap.get(method, 'lines'))]
+        for key, artist in zip(self, artists):
             if label.lower() == 'name':
-                lab = series.name
+                lab = self[key].name
             elif label.lower() != 'key':
+                lab = key
+            else:
                 lab = label
-            ax.plot(series, label=lab, **kwargs)
-        return plot_
+            artist.set_label(lab)
+
+        return plot
 
 
 # -- TimeSeriesBaseList -------------------------------------------------------

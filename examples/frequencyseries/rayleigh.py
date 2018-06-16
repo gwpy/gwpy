@@ -49,16 +49,18 @@ rayleigh = gwdata.rayleigh_spectrum(2, 1)
 # For easy comparison, we can calculate the spectral sensitivity ASD of the
 # strain data and plot both on the same figure:
 
-asd = gwdata.asd(2, 1)
-plot = asd.plot(figsize=(8, 6))
-plot.add_frequencyseries(rayleigh, newax=True, sharex=plot.axes[0])
+from gwpy.plot import Plot
+plot = Plot(gwdata.asd(2, 1), rayleigh, geometry=(2, 1), sharex=True,
+            xscale='log', xlim=(30, 1500))
 asdax, rayax = plot.axes
-asdax.set_xlabel('')
-asdax.set_xlim(30, 1500)
+
+asdax.set_yscale('log')
 asdax.set_ylim(5e-24, 1e-21)
 asdax.set_ylabel(r'[strain/\rtHz]')
+
 rayax.set_ylim(0, 2)
 rayax.set_ylabel('Rayleigh statistic')
+
 asdax.set_title('Sensitivity of LIGO-Livingston around GW151226', fontsize=20)
 plot.show()
 

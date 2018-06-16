@@ -45,8 +45,8 @@ from ..signal import filter_design
 from ..signal.window import recommended_overlap
 from ..time import to_gps
 from ..timeseries import TimeSeriesDict
-from ..plotter.gps import GPSTransform
-from ..plotter.tex import label_to_latex
+from ..plot.gps import (GPS_SCALES, GPSTransform)
+from ..plot.tex import label_to_latex
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
@@ -584,9 +584,8 @@ class CliProduct(object):
         if scale:
             _set('scale', scale)
 
-        # reset scale with epoch if using GPSTransform
-        if isinstance(getattr(self.ax, '{}axis'.format(axis)).get_transform(),
-                      GPSTransform):
+        # reset scale with epoch if using GPS scale
+        if _get('scale') in GPS_SCALES:
             _set('scale', scale, epoch=self.args.epoch)
 
         # set label
@@ -755,17 +754,13 @@ class ImageProduct(CliProduct):
         a colorbar.
         """
         super(ImageProduct, self).set_axes_properties()
-        self.set_colorbar()
+        if not self.args.nocolorbar:
+            self.set_colorbar()
 
     def set_colorbar(self):
         """Create a colorbar for this product
         """
-        args = self.args
-        if args.nocolorbar:
-            self.plot.add_colorbar(visible=False)
-
-        else:
-            self.plot.add_colorbar(label=self.get_color_label())
+        self.ax.colorbar(label=self.get_color_label())
 
     def set_legend(self):
         """This method does nothing, since image plots don't have legends

@@ -19,6 +19,7 @@
 """Extend :mod:`astropy.table` with the `EventTable`
 """
 
+import warnings
 from math import ceil
 
 from six import string_types
@@ -27,6 +28,7 @@ import numpy
 
 from astropy.table import (Table, Column, vstack)
 from astropy.io.registry import write as io_write
+from astropy.units import Quantity
 
 from ..io.mp import read_multi as io_read_multi
 from ..time import gps_types
@@ -410,8 +412,16 @@ class EventTable(Table):
 
         return out
 
-    def plot(self, x, y, *args, **kwargs):
-        """Generate an `EventTablePlot` of this `Table`.
+    def plot(self, *args, **kwargs):
+        """DEPRECATED, use `EventTable.scatter`
+        """
+        warnings.warn('{0}.plot was renamed {0}.scatter and will be removed '
+                      'in an upcoming release'.format(type(self).__name__),
+                      DeprecationWarning)
+        return self.scatter(*args, **kwargs)
+
+    def scatter(self, x, y, **kwargs):
+        """Make a scatter plot of column ``x`` vs column ``y``.
 
         Parameters
         ----------
@@ -421,30 +431,16 @@ class EventTable(Table):
         y : `str`
             name of column defining centre point on the Y-axis
 
-        width : `str`, optional
-            name of column defining width of tile
-
-        height : `str`, optional
-            name of column defining height of tile
-
-            .. note::
-
-               The ``width`` and ``height`` positional arguments should
-               either both be omitted, in which case a scatter plot will
-               be drawn, or both given, in which case a collection of
-               rectangles will be drawn.
-
         color : `str`, optional, default:`None`
             name of column by which to color markers
 
         **kwargs
-            any other arguments applicable to the `Plot` constructor, and
-            the `Table` plotter.
+            any other keyword arguments, see below
 
         Returns
         -------
-        plot : `~gwpy.plotter.EventTablePlot`
-            new plot for displaying tabular data.
+        plot : `~gwpy.plot.Plot`
+            the newly created figure
 
         See Also
         --------
@@ -454,12 +450,84 @@ class EventTable(Table):
         matplotlib.figure.Figure.add_subplot
             for documentation of keyword arguments used to create the
             axes
-        gwpy.plotter.EventTableAxes.plot_table
+        gwpy.plot.Axes.scatter
             for documentation of keyword arguments used to display the table
-            (calls out to :meth:`~matplotlib.axes.Axes.scatter`)
         """
-        from gwpy.plotter import EventTablePlot
-        return EventTablePlot(self, x, y, *args, **kwargs)
+        color = kwargs.pop('color', None)
+        if color is not None:
+            kwargs['c'] = self[color]
+        return self._plot('scatter', self[x], self[y], **kwargs)
+
+    def tile(self, x, y, w, h, **kwargs):
+        """Make a tile plot of this table.
+
+        Parameters
+        ----------
+        x : `str`
+            name of column defining anchor point on the X-axis
+
+        y : `str`
+            name of column defining anchor point on the Y-axis
+
+        w : `str`
+            name of column defining extent on the X-axis (width)
+
+        h : `str`
+            name of column defining extent on the Y-axis (height)
+
+        color : `str`, optional, default:`None`
+            name of column by which to color markers
+
+        **kwargs
+            any other keyword arguments, see below
+
+        Returns
+        -------
+        plot : `~gwpy.plot.Plot`
+            the newly created figure
+
+        See Also
+        --------
+        matplotlib.pyplot.figure
+            for documentation of keyword arguments used to create the
+            figure
+        matplotlib.figure.Figure.add_subplot
+            for documentation of keyword arguments used to create the
+            axes
+        gwpy.plot.Axes.tile
+            for documentation of keyword arguments used to display the table
+        """
+        color = kwargs.pop('color', None)
+        if color is not None:
+            kwargs['color'] = self[color]
+        return self._plot('tile', self[x], self[y], self[w], self[h], **kwargs)
+
+    def _plot(self, method, *args, **kwargs):
+        from ..plot import Plot
+        from ..plot.tex import label_to_latex
+
+        try:
+            tcol = self._get_time_column()
+        except ValueError:
+            pass
+        else:
+            if args[0].name == tcol:  # map X column to GPS axis
+                kwargs.setdefault('figsize', (12, 6))
+                kwargs.setdefault('xscale', 'auto-gps')
+
+        kwargs['method'] = method
+        plot = Plot(*args, **kwargs)
+
+        # set default labels
+        ax = plot.gca()
+        for axis, column in zip((ax.xaxis, ax.yaxis), args[:2]):
+            name = r'\texttt{{{0}}}'.format(label_to_latex(column.name))
+            if isinstance(column, Quantity):
+                name += ' [{0}]'.format(column.unit.to_string('latex_inline'))
+            axis.set_label_text(name)
+            axis.isDefault_label = True
+
+        return plot
 
     def hist(self, column, **kwargs):
         """Generate a `HistogramPlot` of this `Table`.
@@ -467,18 +535,35 @@ class EventTable(Table):
         Parameters
         ----------
         column : `str`
-            name of the column over which to histogram data
+            Name of the column over which to histogram data
+
+        method : `str`, optional
+            Name of `~matplotlib.axes.Axes` method to use to plot the
+            histogram, default: ``'hist'``.
 
         **kwargs
-            any other arguments applicable to the `HistogramPlot`
+            Any other keyword arguments, see below.
 
         Returns
         -------
-        plot : `~gwpy.plotter.HistogramPlot`
-            new plot displaying a histogram of this `Table`.
+        plot : `~gwpy.plot.Plot`
+            The newly created figure.
+
+        See Also
+        --------
+        matplotlib.pyplot.figure
+            for documentation of keyword arguments used to create the
+            figure.
+        matplotlib.figure.Figure.add_subplot
+            for documentation of keyword arguments used to create the
+            axes.
+        gwpy.plot.Axes.hist
+            for documentation of keyword arguments used to display the
+            histogram, if the ``method`` keyword is given, this method
+            might not actually be the one used.
         """
-        from gwpy.plotter import HistogramPlot
-        return HistogramPlot(self, column, **kwargs)
+        from ..plot import Plot
+        return Plot(self[column], method='hist', **kwargs)
 
     def filter(self, *column_filters):
         """Apply one or more column slice filters to this `EventTable`

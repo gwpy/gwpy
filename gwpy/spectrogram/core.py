@@ -322,7 +322,7 @@ class Spectrogram(Array2D):
         out = self / operand
         return out
 
-    def plot(self, **kwargs):
+    def plot(self, figsize=(12, 6), xscale='auto-gps', **kwargs):
         """Plot the data for this `Spectrogram`
 
         Parameters
@@ -333,7 +333,7 @@ class Spectrogram(Array2D):
 
         Returns
         -------
-        plot : `~gwpy.plotter.SpectrogramPlot`
+        plot : `~gwpy.plot.Plot`
             the `Plot` containing the data
 
         See Also
@@ -344,12 +344,18 @@ class Spectrogram(Array2D):
         matplotlib.figure.Figure.add_subplot
             for documentation of keyword arguments used to create the
             axes
-        gwpy.plotter.TimeSeriesAxes.plot_spectrogram
+        gwpy.plot.Axes.imshow or gwpy.plot.Axes.pcolormesh
             for documentation of keyword arguments used in rendering the
             `Spectrogram` data
         """
-        from ..plotter import SpectrogramPlot
-        return SpectrogramPlot(self, **kwargs)
+        if 'imshow' in kwargs:
+            warnings.warn('the imshow keyword for Spectrogram.plot was '
+                          'removed, please pass method=\'imshow\' instead',
+                          DeprecationWarning)
+            kwargs.setdefault('method', 'imshow' if kwargs.pop('imshow') else
+                                        'pcolormesh')
+        kwargs.update(figsize=figsize, xscale=xscale)
+        return super(Spectrogram, self).plot(**kwargs)
 
     @classmethod
     def from_spectra(cls, *spectra, **kwargs):
