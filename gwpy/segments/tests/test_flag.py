@@ -20,7 +20,6 @@
 """
 
 import os.path
-import shutil
 import tempfile
 from ssl import SSLError
 
@@ -30,16 +29,13 @@ import pytest
 
 import h5py
 
-from matplotlib import use, rc_context
-use('agg')  # nopep8
+from matplotlib import rc_context
 
-from gwpy.plot import SegmentAxes
-from gwpy.segments import (Segment, SegmentList,
-                           DataQualityFlag, DataQualityDict)
-from gwpy.time import LIGOTimeGPS
-
-from . import (utils, mocks)
-from .mocks import mock
+from ...plot import SegmentAxes
+from ...segments import (Segment, SegmentList,
+                         DataQualityFlag, DataQualityDict)
+from ...tests import (mocks, utils)
+from ...tests.mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -179,113 +175,6 @@ def query_dqsegdb(query_func, *args, **kwargs):
     except ImportError as e:
         pytest.skip(str(e))
 
-
-# -----------------------------------------------------------------------------
-#
-# gwpy.segments.segments
-#
-# -----------------------------------------------------------------------------
-
-# -- Segment ------------------------------------------------------------------
-
-class TestSegment(object):
-    TEST_CLASS = Segment
-
-    @classmethod
-    @pytest.fixture()
-    def segment(cls):
-        return cls.TEST_CLASS(1, 2)
-
-    def test_start_end(self, segment):
-        assert segment.start == 1.
-        assert segment.end == 2.
-
-    def test_repr(self, segment):
-        assert repr(segment) == 'Segment(1, 2)'
-
-    def test_str(self, segment):
-        assert str(segment) == '[1 ... 2)'
-
-
-# -- SegmentList --------------------------------------------------------------
-
-class TestSegmentList(object):
-    TEST_CLASS = SegmentList
-    ENTRY_CLASS = Segment
-
-    @classmethod
-    def create(cls, *segments):
-        return cls.TEST_CLASS([cls.ENTRY_CLASS(a, b) for a, b in segments])
-
-    @classmethod
-    @pytest.fixture()
-    def segmentlist(cls):
-        return cls.create((1, 2), (3, 4), (4, 6), (8, 10))
-
-    # -- test methods ---------------------------
-
-    def test_coalesce(self):
-        segmentlist = self.create((1, 2), (3, 4), (4, 5))
-        c = segmentlist.coalesce()
-        assert c is segmentlist
-        utils.assert_segmentlist_equal(c, [(1, 2), (3, 5)])
-        assert isinstance(c[0], self.ENTRY_CLASS)
-
-    # -- test I/O -------------------------------
-
-    @utils.skip_missing_dependency('lal')
-    def test_read_write_segwizard(self, segmentlist):
-        with tempfile.NamedTemporaryFile(suffix='.txt', mode='w') as f:
-            # check write/read returns the same list
-            segmentlist.write(f.name)
-            sl2 = self.TEST_CLASS.read(f.name, coalesce=False)
-            utils.assert_segmentlist_equal(sl2, segmentlist)
-            assert isinstance(sl2[0][0], LIGOTimeGPS)
-
-            # check that coalesceing does what its supposed to
-            c = type(segmentlist)(segmentlist).coalesce()
-            sl2 = self.TEST_CLASS.read(f.name, coalesce=True)
-            utils.assert_segmentlist_equal(sl2, c)
-
-            # check gpstype kwarg
-            sl2 = self.TEST_CLASS.read(f.name, gpstype=float)
-            assert isinstance(sl2[0][0], float)
-
-    @pytest.mark.parametrize('ext', ('.hdf5', '.h5'))
-    def test_read_write_hdf5(self, segmentlist, ext):
-        tempdir = tempfile.mkdtemp()
-        try:
-            fp = tempfile.mktemp(suffix=ext, dir=tempdir)
-
-            # check basic write/read with auto-path discovery
-            segmentlist.write(fp, 'test-segmentlist')
-            sl2 = self.TEST_CLASS.read(fp)
-            utils.assert_segmentlist_equal(sl2, segmentlist)
-            assert isinstance(sl2[0][0], LIGOTimeGPS)
-
-            sl2 = self.TEST_CLASS.read(fp, path='test-segmentlist')
-            utils.assert_segmentlist_equal(sl2, segmentlist)
-
-            # check overwrite kwarg
-            with pytest.raises(IOError):
-                segmentlist.write(fp, 'test-segmentlist')
-            segmentlist.write(fp, 'test-segmentlist', overwrite=True)
-
-            # check gpstype kwarg
-            sl2 = self.TEST_CLASS.read(fp, gpstype=float)
-            utils.assert_segmentlist_equal(sl2, segmentlist)
-            assert isinstance(sl2[0][0], float)
-
-        finally:
-            if os.path.isdir(tempdir):
-                shutil.rmtree(tempdir)
-
-
-# -----------------------------------------------------------------------------
-#
-# gwpy.segments.flag
-#
-# -----------------------------------------------------------------------------
 
 # -- DataQualityFlag ----------------------------------------------------------
 

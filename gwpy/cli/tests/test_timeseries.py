@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2018)
 #
 # This file is part of GWpy.
 #
@@ -16,14 +16,23 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Create, manipulate, read, and write spectrum data
+"""Unit tests for :mod:`gwpy.cli.timeseries`
 """
 
-# import objects
-from .frequencyseries import FrequencySeries
-from .hist import SpectralVariance
+from ... import cli
+from .base import (_TestTimeDomainProduct, update_namespace)
 
-# import unified I/O
-from . import io  # pylint: disable=unused-import
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+class TestCliTimeSeries(_TestTimeDomainProduct):
+    TEST_CLASS = cli.TimeSeries
+    ACTION = 'timeseries'
+
+    def test_get_title(self, prod):
+        update_namespace(prod.args, highpass=10, lowpass=100)
+        t = 'Fs: (), duration: {0}, band pass (10.0-100.0)'.format(
+            prod.args.duration)
+        assert prod.get_title() == t
+
+    def test_get_suptitle(self, prod):
+        assert prod.get_suptitle() == 'Time series: {0}'.format(
+            prod.chan_list[0])

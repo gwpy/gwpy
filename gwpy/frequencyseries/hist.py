@@ -29,7 +29,7 @@ from astropy.io import registry as io_registry
 from ..types import (Quantity, Array2D)
 from ..types.sliceutils import null_slice
 from ..segments import Segment
-from .core import FrequencySeries
+from . import FrequencySeries
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['SpectralVariance']

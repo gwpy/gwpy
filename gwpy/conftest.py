@@ -1,5 +1,6 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2018)
 #
 # This file is part of GWpy.
 #
@@ -16,14 +17,20 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Create, manipulate, read, and write spectrum data
+"""Test setup for gwpy
 """
 
-# import objects
-from .frequencyseries import FrequencySeries
-from .hist import SpectralVariance
+import warnings
 
-# import unified I/O
-from . import io  # pylint: disable=unused-import
+import numpy
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+from matplotlib import use
+
+# ignore errors due from pyplot.show() using Agg
+warnings.filterwarnings('ignore', message=".*non-GUI backend.*")
+
+# set random seed to 1 for reproducability
+numpy.random.seed(1)
+
+# force Agg for all tests
+use('agg', warn=False, force=True)

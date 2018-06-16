@@ -16,14 +16,25 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Create, manipulate, read, and write spectrum data
+"""Unit tests for :mod:`gwpy.cli.coherence`
 """
 
-# import objects
-from .frequencyseries import FrequencySeries
-from .hist import SpectralVariance
+from ... import cli
+from .base import _TestCliProduct
+from .test_spectrum import TestCliSpectrum as _TestCliSpectrum
 
-# import unified I/O
-from . import io  # pylint: disable=unused-import
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+class TestCliCoherence(_TestCliSpectrum):
+    TEST_CLASS = cli.Coherence
+    ACTION = 'coherence'
+    TEST_ARGS = _TestCliProduct.TEST_ARGS + [
+        '--chan', 'Y1:TEST-CHANNEL', '--secpfft', '0.25',
+    ]
+
+    def test_init(self, prod):
+        assert prod.chan_list == ['X1:TEST-CHANNEL', 'Y1:TEST-CHANNEL']
+        assert prod.ref_chan == prod.chan_list[0]
+
+    def test_get_suptitle(self, prod):
+        assert prod.get_suptitle() == 'Coherence: {0}'.format(
+            prod.chan_list[0])

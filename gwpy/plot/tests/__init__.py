@@ -18,6 +18,3 @@
 
 """Tests for `gwpy.plot`
 """
-
-from matplotlib import use
-use('agg')  # no interactive plots for tests

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2018)
 #
@@ -17,8 +16,5 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Test setup for gwpy
+"""Tests for :mod:`gwpy.segments`
 """
-
-from matplotlib import use
-use('agg')
