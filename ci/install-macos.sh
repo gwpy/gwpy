@@ -31,7 +31,7 @@ install_macports
 # NOTE: in .travis.yml we set the ${CACHE_DIR} to be under ${HOME} to
 #       prevent permissions problems, so here we put it where we need it
 mkdir -p ${CACHE_DIR}  # just in cache the cache has failed
-sudo cp -rv ${CACHE_DIR}/* /opt/local/var/macports/software/
+sudo cp -vR ${CACHE_DIR}/ /opt/local/var/macports/software/
 
 # get python information
 get_environment
