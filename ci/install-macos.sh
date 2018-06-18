@@ -75,7 +75,7 @@ disown
 set -x
 
 # install py-gwpy
-sudo port -q install ${PY_PREFIX}-gwpy +gwf +nds2 +segments
+sudo port -q install ${PY_PREFIX}-gwpy +nds2 +segments
 
 # install extras (see requirements-dev.txt)
 sudo port -q install \
