@@ -12,7 +12,7 @@ python: &python-build
   docker:
     - image: python
   environment:
-    PYTHON_VERSION: "${CIRCLECI_JOB##*:}"
+    PYTHON_VERSION: ${CIRCLECI_JOB##*:}
   steps:
     - checkout
     - run: *pip-build
