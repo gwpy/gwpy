@@ -23,6 +23,8 @@ import itertools
 import warnings
 from collections import (KeysView, ValuesView)
 
+from six.moves import zip_longest
+
 import numpy
 
 from matplotlib import (backends, figure, get_backend, _pylab_helpers)
@@ -148,7 +150,7 @@ class Plot(figure.Figure):
                                    unit.to_string('latex_inline_dimensional'))
 
         # create axes for each group and draw each data object
-        for group, (row, col) in itertools.zip_longest(
+        for group, (row, col) in zip_longest(
                 axes_groups, itertools.product(range(nrows), range(ncols)),
                 fillvalue=[]):
             # create Axes
