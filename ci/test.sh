@@ -20,8 +20,9 @@
 # Run the test suite for GWpy on the current system
 #
 
-cd ${GWPY_PATH}
-
+if [ ! -z ${GWPY_PATH+x} ]; then
+    cd ${GWPY_PATH}
+fi
 . ci/lib.sh
 
 # macports PATH doesn't persist from install stage, which is annoying
