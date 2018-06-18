@@ -500,7 +500,11 @@ class TimeSeries(TimeSeriesBase):
             a Fourier-gram
         """
         from ..spectrogram import Spectrogram
-        from scipy.signal import spectrogram
+        try:
+            from scipy.signal import spectrogram
+        except ImportError:
+            raise ImportError("Must have scipy>=0.16 to utilize "
+                              "this method.")
 
         noverlap = int(overlap * self.sample_rate.value)
         nfft = int(fftlength * self.sample_rate.value)
@@ -524,8 +528,7 @@ class TimeSeries(TimeSeriesBase):
                                                    mode='complex')
 
         # The shape is incorrect for the Spectrogram object
-        for freq_idx in range(frequencies.size):
-            out[:, freq_idx] = values[freq_idx, :]
+        out[:] = values.T
 
         return out
 
