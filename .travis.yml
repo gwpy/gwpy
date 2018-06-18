@@ -223,5 +223,5 @@ before_cache:
   - |
     if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
         mkdir -p ${CACHE_DIR}
-        cp -rv /opt/local/var/macports/software/* ${CACHE_DIR}/
+        cp -vR /opt/local/var/macports/software/ ${CACHE_DIR}/
     fi
