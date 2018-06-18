@@ -124,14 +124,14 @@ class Plot(figure.Figure):
         if geometry is not None and geometry[0] * geometry[1] == len(data):
             separate = True
         axes_groups = _group_axes_data(data, separate=separate)
-        naxes = len(axes_groups)
         if geometry is None:
-            geometry = (naxes, 1)
+            geometry = (len(axes_groups), 1)
         nrows, ncols = geometry
-
-        if nrows * ncols != naxes:
+        if axes_groups and nrows * ncols != len(axes_groups):
+            # mismatching data and geometry
             raise ValueError("cannot group data into {0} axes with a "
-                             "{1}x{2} grid".format(naxes, nrows, ncols))
+                             "{1}x{2} grid".format(len(axes_groups), nrows,
+                                                   ncols))
 
         # create grid spec
         gs = GridSpec(nrows, ncols)
@@ -148,8 +148,9 @@ class Plot(figure.Figure):
                                    unit.to_string('latex_inline_dimensional'))
 
         # create axes for each group and draw each data object
-        for group, (row, col) in zip(
-                axes_groups, itertools.product(range(nrows), range(ncols))):
+        for group, (row, col) in itertools.izip_longest(
+                axes_groups, itertools.product(range(nrows), range(ncols)),
+                fillvalue=[]):
             # create Axes
             shared_with = {"none": None, "all": axarr[0, 0],
                            "row": axarr[row, 0], "col": axarr[0, col]}
@@ -163,7 +164,7 @@ class Plot(figure.Figure):
             if method in ('imshow', 'pcolormesh'):
                 for obj in group:
                     plot_func(obj, **kwargs)
-            else:
+            elif group:
                 plot_func(*group, **kwargs)
 
             if sharex == 'all' and row < nrows - 1:

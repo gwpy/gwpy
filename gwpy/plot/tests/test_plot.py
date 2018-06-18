@@ -51,6 +51,11 @@ class TestPlot(FigureTestBase):
         assert tuple(plot.get_size_inches()) == (4., 3.)
         assert plot.colorbars == []
 
+    def test_init_empty(self):
+        plot = self.FIGURE_CLASS(geometry=(2, 2))
+        assert len(plot.axes) == 4
+        assert plot.axes[-1].get_geometry() == (2, 2, 4)
+
     def test_init_with_data(self):
         a = Series(range(10), dx=.1)
         plot = self.FIGURE_CLASS(a)
