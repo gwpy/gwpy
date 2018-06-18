@@ -5,6 +5,7 @@ sudo: false
 env:
   global:
     - PIP_FLAGS="--quiet"
+    - CACHE_DIR=$([ $TRAVIS_OS_NAME = 'osx' ] && echo "${HOME}/.cache/macports" || echo "")
     - secure: KXq3Kn+i5pDl7ApqYkMKAZlxC7OOLDmiBn46t/JYKyRAchacp1PR84vrwTNj7OfhZek0tlTkKwQtwpFaw6llhYSpB9xl9SsPNmoYsBtZb9zC8z/oRXlXgYudesPSt7cltlt0K21pV9gRflOezRjlJRDoccbw3pe90vYpMdvr7+0=
 
 matrix:
@@ -214,6 +215,13 @@ cache:
   pip: true
   ccache: true
   directories:
-    - /opt/local/var/macports/software
+    - $CACHE_DIR
 before_cache:
+  # remove pip logs
   - rm -f $HOME/.cache/pip/log/debug.log
+  # cache macports destroot
+  - |
+    if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
+        mkdir -p ${CACHE_DIR}
+        cp -rv /opt/local/var/macports/software/* ${CACHE_DIR}/
+    fi
