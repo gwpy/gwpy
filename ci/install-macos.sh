@@ -76,8 +76,8 @@ sudo port -q install ${PY_PREFIX}-gwpy +nds2 +segments
 # install extras (see requirements-dev.txt)
 sudo port -q install \
     kerberos5 \
-    libframe \
     ${PY_PREFIX}-matplotlib \
+    ${PY_PREFIX}-lalframe \
     ${PY_PREFIX}-lalsimulation \
     ${PY_PREFIX}-pymysql \
     ${PY_PREFIX}-sqlalchemy \
