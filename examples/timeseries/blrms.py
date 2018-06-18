@@ -29,7 +29,7 @@ __currentmodule__ = 'gwpy.timeseries'
 # First: we import the objects we need, one for getting the data:
 from gwpy.timeseries import TimeSeriesDict
 # and one for plotting the data:
-from gwpy.plotter import TimeSeriesPlot
+from gwpy.plot import Plot
 
 # Next we define the channels we want, namely the 0.03Hz-1Hz ground motion
 # band-limited RMS channels (1-second average trends).
@@ -48,9 +48,9 @@ lho = TimeSeriesDict.get([c % 'H1' for c in channels],
 llo = TimeSeriesDict.get([c % 'L1' for c in channels],
                          'Feb 13 2015 16:00', 'Feb 14 2015 04:00')
 
-# Next we can plot the data, with a separate `~gwpy.plotter.Axes` for each
+# Next we can plot the data, with a separate `~gwpy.plot.Axes` for each
 # instrument:
-plot = TimeSeriesPlot(lho, llo)
+plot = Plot(lho, llo, figsize=(12, 6), sharex=True)
 ax1, ax2 = plot.axes
 for ifo, ax in zip(('Hanford', 'Livingston'), (ax1, ax2)):
     ax.legend(['X', 'Y', 'Z'])

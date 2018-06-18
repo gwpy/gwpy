@@ -48,7 +48,7 @@ args = parser.parse_args()
 
 ref = '-'.join(os.path.splitext(args.infile)[0].split(os.path.sep)[-2:])
 
-lines = open(args.infile, 'rb').read().splitlines()
+lines = open(args.infile, 'r').read().splitlines()
 output = []
 header = ['.. _gwpy-example-%s:\n' % ref]
 

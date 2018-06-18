@@ -20,7 +20,7 @@
 """
 
 # import objects
-from .core import FrequencySeries
+from .frequencyseries import FrequencySeries
 from .hist import SpectralVariance
 
 # import unified I/O

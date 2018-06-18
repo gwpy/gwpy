@@ -51,13 +51,10 @@ acc = data['H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ']
 coh = hoft.coherence(acc, fftlength=2, overlap=1)
 
 # Finally, we can :meth:`~gwpy.frequencyseries.FrequencySeries.plot` the resulting data:
-plot = coh.plot(figsize=[12, 6], label=None)
-ax = plot.gca()
-ax.set_xlabel('Frequency [Hz]')
-ax.set_ylabel('Coherence')
-ax.set_yscale('linear')
-ax.set_ylim(0, 1)
-ax.set_title('Coherence between PSL periscope motion and LIGO-Hanford strain data')
+plot = coh.plot(
+    xlabel='Frequency [Hz]', xscale='log',
+    ylabel='Coherence', yscale='linear', ylim=(0, 1),
+)
 plot.show()
 
 # We can clearly see the correlation between the periscope motion and the

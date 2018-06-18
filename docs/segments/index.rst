@@ -51,7 +51,7 @@ Combining `DataQualityFlag`\s
 
 `DataQualityFlag`\s can be combined in a number of ways, using the standard python operators, e.g. `&` and `|`.
 
-.. _gwpy-segments-intersection
+.. _gwpy-segments-intersection:
 
 --------------------
 Intersection (``&``)
@@ -76,7 +76,7 @@ returns the intersection of both the `~DataQualityFlag.known` and
 This new flag represents times when both ``a`` and ``b`` were known and
 when both were active.
 
-.. _gwpy-segments-union
+.. _gwpy-segments-union:
 
 -------------
 Union (``|``)
@@ -98,7 +98,7 @@ returns the intersection of both the `~DataQualityFlag.known` and
 This new flag represents times when either ``a`` or ``b`` were known and when
 either was active.
 
-.. _gwpy-segments-sub
+.. _gwpy-segments-sub:
 
 -------------------
 Subtraction (``-``)
@@ -119,7 +119,7 @@ of the `~DataQualityFlag.active` segment lists, e.g.::
 
 The new flag represents times when both ``a`` and ``b`` were *known*, but only ``a`` was active.
 
-.. _gwpy-segments-add
+.. _gwpy-segments-add:
 
 ----------------
 Addition (``+``)
@@ -149,9 +149,9 @@ returns the same `~DataQualityFlag.known` segments, and the inverse `~DataQualit
 
 The new flag represents times when the state of ``a`` was known, but it was not active.
 
------------------
+--------------------
 Exclusive OR (``^``)
------------------
+--------------------
 ::
 
     >>> a ^ b

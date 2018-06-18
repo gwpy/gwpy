@@ -23,6 +23,8 @@ from warnings import warn
 
 import numpy
 
+from matplotlib import __version__ as mpl_version
+
 from astropy.units import (Unit, Quantity)
 
 from . import sliceutils
@@ -30,6 +32,8 @@ from .series import Series
 from .index import Index
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+DEFAULT_IMAGE_METHOD = 'imshow' if mpl_version >= '2.0' else 'pcolormesh'
 
 
 class Array2D(Series):
@@ -391,6 +395,24 @@ class Array2D(Series):
             exc.args = ("Value %r not found in array yindex",)
             raise
         return self[idx, idy]
+
+    def imshow(self, **kwargs):
+        return self.plot(method='imshow', **kwargs)
+
+    def pcolormesh(self, **kwargs):
+        return self.plot(method='pcolormesh', **kwargs)
+
+    def plot(self, method=DEFAULT_IMAGE_METHOD, **kwargs):
+        from ..plot import Plot
+
+        # correct for log scales and zeros
+        if kwargs.get('xscale') == 'log' and self.x0.value == 0:
+            kwargs.setdefault('xlim', (self.dx.value, self.xspan[1]))
+        if kwargs.get('yscale') == 'log' and self.y0.value == 0:
+            kwargs.setdefault('ylim', (self.dy.value, self.yspan[1]))
+
+        # make plot
+        return Plot(self, method=method, **kwargs)
 
     # -- Array2D modifiers ----------------------
     # all of these try to return Quantities rather than simple numbers

@@ -25,8 +25,7 @@ from numbers import Number
 import numpy
 
 from matplotlib import (ticker, docstring)
-from matplotlib.scale import (register_scale, LinearScale,
-                              get_scale_docs, get_scale_names)
+from matplotlib.scale import (LinearScale, get_scale_docs, get_scale_names)
 from matplotlib.transforms import Transform
 
 from astropy import units
@@ -400,16 +399,10 @@ class GPSScale(GPSMixin, LinearScale):
         axis.set_minor_formatter(ticker.NullFormatter())
 
 
-register_scale(GPSScale)
-
-
 class AutoGPSScale(GPSScale):
     """Automagic GPS scaling based on visible data
     """
     name = 'auto-gps'
-
-
-register_scale(AutoGPSScale)
 
 
 # register all the astropy time units that have sensible long names
@@ -425,9 +418,6 @@ def _gps_scale_factory(unit):
             super(FixedGPSScale, self).__init__(axis, epoch=epoch, unit=unit)
     return FixedGPSScale
 
-
-for _unit in TIME_UNITS:
-    register_scale(_gps_scale_factory(_unit))
 
 # update the docstring for matplotlib scale methods
 docstring.interpd.update(

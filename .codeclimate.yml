@@ -3,7 +3,7 @@ version: "2"
 checks:
   argument-count:
     config:
-      threshold: 5
+      threshold: 8
   file-lines:
     config:
       threshold: 500
@@ -32,11 +32,10 @@ ratings:
   - "**.py"
 
 exclude_paths:
-- ez_setup.py
-- versioneer.py
-- docs/*
-- examples/*
-- gwpy/_version.py
-- gwpy/tests/*
-- gwpy/tests/data/*
-- gwpy/utils/sphinx/epydoc.py
+- "versioneer.py"
+- "docs/*"
+- "examples/*"
+- "gwpy/_version.py"
+- "**/tests/"
+- "gwpy/utils/sphinx/epydoc.py"
+- "gwpy/plotter/"

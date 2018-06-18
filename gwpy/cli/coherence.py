@@ -24,8 +24,8 @@
 
 from collections import OrderedDict
 
-from ..plotter import FrequencySeriesPlot
-from ..plotter.tex import label_to_latex
+from ..plot import Plot
+from ..plot.tex import label_to_latex
 from .spectrum import Spectrum
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
@@ -96,7 +96,7 @@ class Coherence(Spectrum):
 
         # -- plot
 
-        plot = FrequencySeriesPlot(figsize=self.figsize, dpi=self.dpi)
+        plot = Plot(figsize=self.figsize, dpi=self.dpi)
         ax = plot.gca()
         self.spectra = []
 

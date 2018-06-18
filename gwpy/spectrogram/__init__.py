@@ -19,7 +19,7 @@
 """Create, manipulate, read, and write spectrogram data
 """
 
-from .core import (Spectrogram, SpectrogramList)
+from .spectrogram import (Spectrogram, SpectrogramList)
 
 from . import io  # register I/O
 

@@ -23,8 +23,8 @@
 """
 
 from .cliproduct import TimeDomainProduct
-from ..plotter import TimeSeriesPlot
-from ..plotter.tex import label_to_latex
+from ..plot import Plot
+from ..plot.tex import label_to_latex
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
@@ -66,8 +66,8 @@ class TimeSeries(TimeDomainProduct):
     def make_plot(self):
         """Generate the plot from time series and arguments
         """
-        plot = TimeSeriesPlot(figsize=self.figsize, dpi=self.dpi)
-        ax = plot.gca()
+        plot = Plot(figsize=self.figsize, dpi=self.dpi)
+        ax = plot.gca(xscale='auto-gps')
 
         for series in self.timeseries:
             label = series.channel.name

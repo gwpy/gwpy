@@ -27,6 +27,7 @@ arrays, representing a bit mask of states that combine to make a detailed
 statement of instrumental operation
 """
 
+from functools import wraps
 from math import (ceil, log)
 
 from six.moves import range
@@ -155,6 +156,10 @@ class StateTimeSeries(TimeSeriesBase):
             return new.diff(n-1, axis=axis)
         return new
     diff.__doc__ = TimeSeriesBase.diff.__doc__
+
+    @wraps(numpy.ndarray.all, assigned=('__doc__',))
+    def all(self, axis=None, out=None):
+        return numpy.all(self.value, axis=axis, out=out)
 
     # -- useful methods -------------------------
 
@@ -756,14 +761,14 @@ class StateVector(TimeSeriesBase):
 
         **kwargs
             Other keyword arguments to be passed to either
-            `~gwpy.plotter.segments.SegmentPlot` or
-            `~gwpy.plotter.TimeSeriesPlot`, depending
+            `~gwpy.plot.SegmentAxes.plot` or
+            `~gwpy.plot.Axes.plot`, depending
             on ``format``.
 
         Returns
         -------
-        plot : `~gwpy.plotter.SegmentPlot`, or `~gwpy.plotter.TimeSeriesPlot`
-            output plot object, some subclass of `~gwpy.plotter.Plot`
+        plot : `~gwpy.plot.Plot`
+            output plot object
 
         See Also
         --------
@@ -773,19 +778,17 @@ class StateVector(TimeSeriesBase):
         matplotlib.figure.Figure.add_subplot
             for documentation of keyword arguments used to create the
             axes
-        gwpy.plotter.SegmentAxes.plot_dqflag
+        gwpy.plot.SegmentAxes.plot_flag
             for documentation of keyword arguments used in rendering each
             statevector flag.
         """
         if format == 'timeseries':
             return super(StateVector, self).plot(**kwargs)
-        elif format == 'segments':
-            kwargs.setdefault('facecolor', 'green')
-            kwargs.setdefault('edgecolor', 'black')
-            kwargs.setdefault('known', {'facecolor': 'red',
-                                        'edgecolor': 'black'})
-            from ..plotter import SegmentPlot
-            return SegmentPlot(*self.to_dqflags(bits=bits).values(), **kwargs)
+        if format == 'segments':
+            from ..plot import Plot
+            kwargs.setdefault('xscale', 'auto-gps')
+            return Plot(*self.to_dqflags(bits=bits).values(),
+                        projection='segments', **kwargs)
         raise ValueError("'format' argument must be one of: 'timeseries' or "
                          "'segments'")
 
