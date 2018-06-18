@@ -11,8 +11,6 @@ run-tests: &run-tests
 python: &python-build
   docker:
     - image: python
-  environment:
-    PYTHON_VERSION: ${CIRCLECI_JOB##*:}
   steps:
     - checkout
     - run: *pip-build
@@ -23,11 +21,15 @@ jobs:
     <<: *python-build
     docker:
       - image: python:2.7
+    environment:
+      PYTHON_VERSION: "2.7"
 
   python:3.6:
     <<: *python-build
     docker:
       - image: python:3.6
+    environment:
+      PYTHON_VERSION: "3.6"
 
 workflows:
   version: 2
