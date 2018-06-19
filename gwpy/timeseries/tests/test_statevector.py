@@ -255,8 +255,8 @@ class TestStateVector(_TestTimeSeriesBase):
             # test timeseries plotting as normal
             plot = array.plot(format='timeseries')
             line = plot.gca().lines[0]
-            utils.assert_array_equal(line.get_xdata(), array.xindex)
-            utils.assert_quantity_sub_equal(line.get_ydata(), array)
+            utils.assert_array_equal(line.get_xdata(), array.xindex.value)
+            utils.assert_array_equal(line.get_ydata(), array.value)
             plot.close()
 
     def test_resample(self, array):

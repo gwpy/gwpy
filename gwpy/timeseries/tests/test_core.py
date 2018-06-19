@@ -145,8 +145,8 @@ class TestTimeSeriesBase(_TestSeries):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot()
             line = plot.gca().lines[0]
-            utils.assert_array_equal(line.get_xdata(), array.xindex)
-            utils.assert_quantity_sub_equal(line.get_ydata(), array)
+            utils.assert_array_equal(line.get_xdata(), array.xindex.value)
+            utils.assert_array_equal(line.get_ydata(), array.value)
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
             return plot  # allow subclasses to extend tests
@@ -346,9 +346,9 @@ class TestTimeSeriesBaseDict(object):
             plot = instance.plot()
             for line, key in zip(plot.gca().lines, instance):
                 utils.assert_array_equal(line.get_xdata(),
-                                         instance[key].xindex)
-                utils.assert_quantity_sub_equal(line.get_ydata(),
-                                                instance[key])
+                                         instance[key].xindex.value)
+                utils.assert_array_equal(line.get_ydata(),
+                                         instance[key].value)
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
             return plot  # allow subclasses to extend tests
