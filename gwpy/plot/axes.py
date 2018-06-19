@@ -223,6 +223,8 @@ class Axes(_Axes):
         return self.pcolormesh(xcoord, ycoord, array.value.T, **kwargs)
 
     def hist(self, x, *args, **kwargs):
+        x = numpy.asarray(x)
+
         # re-format weights as array if given as float
         weights = kwargs.get('weights', None)
         if isinstance(weights, Number):
