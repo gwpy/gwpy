@@ -164,7 +164,7 @@ class TestSeries(_TestArray):
         assert a2.x0 == array.x0
         assert a2.dx == array.dx
 
-        idx = numpy.array([False]*array.size)  # False slice array
+        idx = numpy.array([False]*array.shape[0])  # False slice array
         a3 = array[idx]
         utils.assert_quantity_sub_equal(a2, a3)
 
