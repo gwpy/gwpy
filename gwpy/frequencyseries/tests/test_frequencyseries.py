@@ -116,8 +116,8 @@ class TestFrequencySeries(_TestSeries):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot()
             line = plot.gca().lines[0]
-            utils.assert_array_equal(line.get_xdata(), array.xindex)
-            utils.assert_array_equal(line.get_ydata(), array)
+            utils.assert_array_equal(line.get_xdata(), array.xindex.value)
+            utils.assert_array_equal(line.get_ydata(), array.value)
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
 
