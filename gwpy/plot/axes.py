@@ -314,12 +314,10 @@ class Axes(_Axes):
 
         # plot lower and upper Series
         fill = [data.xindex.value, data.value, data.value]
-        if lower is not None:
-            out.extend(self.plot(lower, **kwargs))
-            fill[1] = lower.value
-        if upper is not None:
-            out.extend(self.plot(upper, **kwargs))
-            fill[2] = upper.value
+        for i, bound in enumerate((lower, upper)):
+            if bound is not None:
+                out.extend(self.plot(bound, **kwargs))
+                fill[i+1] = bound.value
 
         # fill between
         out.append(self.fill_between(
