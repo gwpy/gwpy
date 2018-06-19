@@ -65,8 +65,8 @@ class TestPlot(FigureTestBase):
         assert len(ax.lines) == 1
 
         line = ax.lines[0]
-        utils.assert_quantity_equal(line.get_xdata(), a.xindex)
-        utils.assert_quantity_equal(line.get_ydata(), a)
+        utils.assert_array_equal(line.get_xdata(), a.xindex.value)
+        utils.assert_array_equal(line.get_ydata(), a.value)
 
         plot.close()
 

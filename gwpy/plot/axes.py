@@ -313,13 +313,13 @@ class Axes(_Axes):
         })
 
         # plot lower and upper Series
-        fill = [data.xindex, data, data]
+        fill = [data.xindex.value, data.value, data.value]
         if lower is not None:
             out.extend(self.plot(lower, **kwargs))
-            fill[1] = lower
+            fill[1] = lower.value
         if upper is not None:
             out.extend(self.plot(upper, **kwargs))
-            fill[2] = upper
+            fill[2] = upper.value
 
         # fill between
         out.append(self.fill_between(
@@ -502,7 +502,7 @@ class PlotArgsProcessor(_process_plot_var_args):
         newargs = type(args)()
         for arg in args:
             if isinstance(arg, Series) and arg.ndim == 1:
-                newargs += (arg.xindex, arg)
+                newargs += (arg.xindex.value, arg.value)
             else:
                 newargs += (arg,)
         return super(PlotArgsProcessor, self)._grab_next_args(
