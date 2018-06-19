@@ -77,9 +77,13 @@ def slice_axis_attributes(old, oldaxis, new, newaxis, slice_):
         setattr(new, index(newaxis), getattr(old, index(oldaxis))[slice_])
 
     # otherwise if using a slice, use origin and delta properties
-    elif isinstance(slice_, slice):
-        offset = slice_.start or 0
-        step = slice_.step or 1
+    elif isinstance(slice_, slice) or not slice_.sum():
+        if isinstance(slice_, slice):
+            offset = slice_.start or 0
+            step = slice_.step or 1
+        else:  # empty ndarray slice (so just set attributes)
+            offset = 0
+            step = 1
 
         dx = getattr(old, delta(oldaxis))
         x0 = getattr(old, origin(oldaxis))
