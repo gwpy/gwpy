@@ -29,6 +29,8 @@ import numpy
 from numpy import fft as npfft
 from scipy import signal
 
+from scipy.io import wavfile
+
 from astropy import units
 
 from ..segments import Segment
@@ -1738,6 +1740,111 @@ class TimeSeries(TimeSeriesBase):
                           f0=planes.frange[0], df=fres)
         new.q = peakq
         return new
+
+
+    def fshift(self,shift_size,method='push'):
+        """Frequency shift the spectrum of the Timeseries.
+
+        Parameters
+        ----------
+        shift_size:`float`  
+                size and sign of frequency shift in Hz. 
+        method:'string', optional
+               method to prefrom shift
+               default is push
+               other option is hilbert          
+
+        """
+
+        data = self.value
+        samp_rate = self.sample_rate.value
+ 
+        if (method=='push'):
+            time_length = len(data)/float(samp_rate)
+            df = 1.0/time_length
+            nbins = int(shift_size/df)
+
+            freq_rep = npfft.rfft(data)
+            shifted_freq = numpy.zeros(len(freq_rep),dtype=complex)
+            for i in range(0,len(freq_rep)-1):
+                    if 0<(i-nbins)<len(freq_rep):
+                           shifted_freq[i]=freq_rep[i-nbins]
+            output = npfft.irfft(shifted_freq)
+            out_real = numpy.real(output)
+
+        if (method=='hilbert'):
+            if (fshift < 0):
+                self_high = self.highpass( (shift_size * -1.0) )
+                data = self_high.value
+
+            dt = 1.0/samp_rate
+            N = len(data)
+            t = numpy.arange(0, N)
+            out_real = (signal.hilbert(data)*numpy.exp(2j*numpy.pi*shift_size*dt*t)).real
+
+        out = TimeSeries(out_real,sample_rate=samp_rate)
+        out.__metadata_finalize__(self)
+        out._unit = self.unit
+        del out.times
+
+        return out
+
+    def wavwrite(self,file_name,rate=4096,amp=.1):
+        """Prepares the timeseries for audio and writes 
+        to a .wav file.
+
+        Parameters
+        ----------
+        file_name: `str`
+            name of file to be written.
+        
+        rate: `float`, optional, default=4096
+            rate in Hz of the .wav file.
+        amp: `float`, optional, default=.1
+            maximum amplitude of .wav file.
+        See Also
+        --------
+        scipy.io.wavfile.write
+            for details on the write process. 
+        """
+
+        self_resamp = self.resample(rate)
+        self_normal  = amp * self_resamp.value / (max(abs(self_resamp.value)))
+
+        wavfile.write(file_name,rate,self_normal)
+
+    def time_expand_central_freq(self,factor,central_freq=0.0):
+        """Changes the time length of  a timeseries while preserving
+           a specified frequency. Other frequencies will experience 
+           frequency modulation. 
+
+        Parameters
+        ----------
+        factor: 'float'
+            the factor that the timeseries will be 
+            lengthened in time.
+        central_freq: 'float',optional, default=0.0
+            the specified frequency to preserve during
+            the change in time frame.
+        See Also
+        --------
+        TimeSeries.fshift
+            for details on the frequency shifting  process. 
+        """    
+
+
+        samp_rate = self.sample_rate.value
+        samp_rate_out = samp_rate * 1.0 / factor
+
+        out = self
+        out.sample_rate = samp_rate_out
+        del out.times
+        if central_freq != 0.0:
+            shift_factor = central_freq * (1.0 - 1.0 / factor)
+            out = out.fshift(shift_factor)
+
+        return out
+
 
 
 @as_series_dict_class(TimeSeries)
