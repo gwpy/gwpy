@@ -155,6 +155,22 @@ class TestSeries(_TestArray):
             name=array.name, epoch=array.epoch, unit=array.unit),
         )
 
+    def test_empty_slice(self, array):
+        """Check that we can slice a `Series` into nothing
+
+        This tests against a bug in sliceutils.py.
+        """
+        a2 = array[:0]
+        assert a2.x0 == array.x0
+        assert a2.dx == array.dx
+
+        idx = numpy.array([False]*array.size)  # False slice array
+        a3 = array[idx]
+        utils.assert_quantity_sub_equal(a2, a3)
+
+        a4 = array[idx[:0]]  # empty slice array
+        utils.assert_quantity_sub_equal(a2, a4)
+
     def test_zip(self, array):
         z = array.zip()
         utils.assert_array_equal(
