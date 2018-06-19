@@ -64,6 +64,9 @@ class TestAxes(AxesTestBase):
         # check that c=None works
         ax.scatter(x, y, c=None)
 
+        # check that using non-array data works
+        ax.scatter([1], [1], c=[1])
+
     def test_imshow(self, ax):
         # overloaded imshow call (Array2D)
         array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)

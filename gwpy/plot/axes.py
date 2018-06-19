@@ -167,9 +167,9 @@ class Axes(_Axes):
             c_sort = kwargs.pop('c_sort', True)
             if c_sort:
                 sortidx = c_array.argsort()
-                x = x[sortidx]
-                y = y[sortidx]
-                c = c[sortidx]
+                x = numpy.asarray(x)[sortidx]
+                y = numpy.asarray(y)[sortidx]
+                c = numpy.asarray(c)[sortidx]
 
         return super(Axes, self).scatter(x, y, c=c, **kwargs)
 
