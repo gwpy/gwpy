@@ -1,0 +1,113 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Copyright (C) Andrew Lundgren (2017)
+#
+# This file is part of GWpy.
+#
+# GWpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# GWpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
+#
+"""Command line interface to export a sound file
+"""
+import argparse
+
+from gwpy.timeseries import TimeSeries
+from numpy import roll
+from numpy.fft import rfft, irfft
+from scipy.signal import firwin, hann
+from scipy.io import wavfile
+
+__author__ = 'andrew lundgren'
+__email__ = 'andrew.lundgren@ligo.org'
+
+parser = argparse.ArgumentParser(description=__doc__, prog='gwpy-wav')
+parser.add_argument('-c', '--chan', type=str, required=True,
+                    help='Channel name')
+parser.add_argument('-s', '--start', type=int, required=True,
+                    help='Start GPS time.')
+parser.add_argument('-d', '--duration', type=int, required=True,
+                    help='Duration (sec)')
+parser.add_argument('-w', '--whiten', action='store_true',
+                    help="Whiten the data against its median spectrum. Will "
+                    "also low-pass data at 90 percent of Nyquist to avoid "
+                    "noise from anti-aliasing filters.")
+parser.add_argument('-l', '--flow', type=float, default=20.,
+                    help="Low-frequency cutoff (Hz). Defaults to 20 Hz, "
+                    "which is the lower end of the human hearing range.")
+parser.add_argument('-u', '--fhigh', type=float,
+                    help='High-frequency cutoff (Hz).')
+parser.add_argument('-r', '--change-sample-rate', type=float, default=1.,
+                    help="Multiply sample rate by a factor to speed up "
+                    "the resulting sound.")
+parser.add_argument('-p', '--pitch-shift', type=float,
+                    help='Apply a linear pitch shift (Hz).')
+parser.add_argument('--pad', type=int, default=2,
+                    help="Padding in integer seconds of extra data to request "
+                    "in order to do the filtering. ASD used for whitening "
+                    "is twice this length. Longer values can also make "
+                    "bandpassing more effective.")
+parser.add_argument('-o', '--output', type=str, default='output.wav',
+                    help='Name of output file')
+
+args = parser.parse_args()
+
+# Need to pad time series in order to apply filtering
+# Must be done by getting extra data on both sides
+pad = args.pad
+
+# Get data
+data = TimeSeries.get(args.chan, args.start-pad, args.start+args.duration+pad)
+data = data.detrend()  # Prevent some trouble with numerical ranges
+
+tfilt = 2*pad
+srate = data.sample_rate.value
+nyq = srate/2.
+filt_samps = int(tfilt*srate)
+
+f_min = args.flow
+# Easiest if we always do a little bit of low-passing
+f_max = args.fhigh or 0.99*nyq
+
+
+if args.whiten:
+    # Calculate inverse ASD
+    invasd = 1./data.asd(tfilt, 0.5*tfilt, method='median').value
+    # Zero out invASD to make the high-pass and low-pass
+    f_max = min(f_max, 0.9*nyq)
+    invasd[:int(tfilt*f_min)] = 0.
+    invasd[int(tfilt*f_max):] = 0.
+    # Transform to TD, center the impulse response, and window
+    filt = irfft(invasd)
+    filt = roll(filt, -len(filt)/2)
+    filt = hann(len(filt)) * roll(filt, -len(filt)/2)
+else:
+    # Use FIR filter applied by FFT to apply bandpass
+    filt = firwin(filt_samps, [f_min, f_max], nyq=nyq, pass_zero=False,
+                  window='hann')
+
+filt.resize(len(data))
+fd_data_filtered = abs(rfft(filt))*rfft(data.value)
+
+# Linear pitch-shifting by shifting the FFT'ed data
+# Need to zero out any high-frequency junk that rolls to low frequency
+if args.pitch_shift:
+    shift_idx = int(args.pitch_shift*tfilt)
+    fd_data_filtered = roll(fd_data_filtered, shift_idx)
+    fd_data_filtered[:shift_idx] = 0.
+
+output = irfft(fd_data_filtered)[int(pad*srate):-int(pad*srate)]
+scale = 1./max(abs(output))
+
+output_rate = srate * args.change_sample_rate
+
+wavfile.write(args.output, rate=output_rate, data=scale*output)
