@@ -528,8 +528,8 @@ class TimeSeries(TimeSeriesBase):
                                                 **kwargs)
         out = Spectrogram(sxx.T,
                           name=self.name, unit=self.unit,
-                          xindex = self.t0.value + times,
-                          yindex = frequencies)
+                          xindex=self.t0.value + times,
+                          yindex=frequencies)
 
         return out
 

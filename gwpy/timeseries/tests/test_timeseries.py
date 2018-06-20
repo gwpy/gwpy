@@ -653,9 +653,19 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @utils.skip_minimum_version('scipy', '0.16')
     def test_fftgram(self, losc):
         fgram = losc.fftgram(1)
-        [f, t, sxx] = signal.spectrogram(losc, losc.sample_rate.value,
+        fs = int(losc.sample_rate.value)
+        [f, t, sxx] = signal.spectrogram(losc, fs,
                                          window='hann',
-                                         nperseg=int(losc.sample_rate.value),
+                                         nperseg=fs,
+                                         mode='complex')
+        numpy.testing.assert_array_equal(losc.t0.value + t, fgram.xindex.value)
+        numpy.testing.assert_array_equal(f, fgram.yindex.value)
+        numpy.testing.assert_array_equal(sxx.T, fgram)
+        fgram = losc.fftgram(1, overlap=0.5)
+        [f, t, sxx] = signal.spectrogram(losc, fs,
+                                         window='hann',
+                                         nperseg=fs,
+                                         noverlap=fs//2,
                                          mode='complex')
         numpy.testing.assert_array_equal(losc.t0.value + t, fgram.xindex.value)
         numpy.testing.assert_array_equal(f, fgram.yindex.value)
