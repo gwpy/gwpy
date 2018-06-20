@@ -376,8 +376,9 @@ class TestEventTable(TestTable):
         # (and no data) if and only if start/end are both given
         t2 = self.create(10, names=['a', 'b'])
         print(t2)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError) as exc:
             t2.event_rate(1)
+        assert 'please give `timecolumn` keyword' in str(exc.value)
         with pytest.raises(ValueError):
             t2.event_rate(1, start=0)
         with pytest.raises(ValueError):
@@ -399,8 +400,9 @@ class TestEventTable(TestTable):
         # check that method can function without explicit time column
         # (and no data) if and only if start/end are both given
         t2 = self.create(0, names=['a', 'b'])
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError) as exc:
             t2.binned_event_rates(1, 'a', (10, 100))
+        assert 'please give `timecolumn` keyword' in str(exc.value)
         with pytest.raises(ValueError):
             t2.binned_event_rates(1, 'a', (10, 100), start=0)
         with pytest.raises(ValueError):

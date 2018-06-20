@@ -54,7 +54,7 @@ def _rates_preprocess(func):
             try:
                 kwargs['timecolumn'] = self._get_time_column()
             except ValueError as exc:
-                exc.args = ('{0}, , please give `timecolumn` '
+                exc.args = ('{0}, please give `timecolumn` '
                             'keyword'.format(exc.args[0]),)
                 raise
         # otherwise use anything (it doesn't matter)
