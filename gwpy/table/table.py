@@ -119,14 +119,26 @@ class EventTable(Table):
     # -- utilities ------------------------------
 
     def _get_time_column(self):
-        if 'time' in self.columns or not self:
+        """Return the name of the 'time' column in this table.
+
+        This method tries the following:
+
+        - look for a column named 'time'
+        - look for a single column with a GPS type (e.g. `LIGOTimeGPS`)
+
+        So, its not foolproof.
+        """
+        if 'time' in self.columns:
             return 'time'
         try:
             time, = [name for name in self.columns if
                      isinstance(self[name][0], gps_types)]
-        except ValueError as exc:
-            exc.args = ('cannot identify timecolumn for event_rate(), '
-                        'please specify',)
+        except (ValueError, IndexError) as exc:
+            msg = ('cannot identify time column for table, no column '
+                   'named \'time\' and none with GPS dtypes')
+            if isinstance(exc, IndexError):
+                raise ValueError(msg)
+            exc.args = (msg,)
             raise
         return time
 
