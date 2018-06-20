@@ -476,7 +476,7 @@ class TimeSeries(TimeSeriesBase):
                                   fftlength=fftlength, overlap=overlap,
                                   **kwargs)
 
-    def fftgram(self, fftlength, overlap=0, window='hann', **kwargs):
+    def fftgram(self, fftlength, overlap=None, window='hann', **kwargs):
         """Calculate the Fourier-gram of this `TimeSeries`.
 
         At every ``stride``, a single, complex FFT is calculated.
@@ -506,29 +506,30 @@ class TimeSeries(TimeSeriesBase):
             raise ImportError("Must have scipy>=0.16 to utilize "
                               "this method.")
 
-        noverlap = int(overlap * self.sample_rate.value)
-        nfft = int(fftlength * self.sample_rate.value)
-        nstride = nfft - noverlap
+        # format lengths
+        if isinstance(fftlength, units.Quantity):
+            fftlength = fftlength.value
 
-        # get size of Spectrogram
-        ntimes = int((self.size - nstride) / nstride)
-        nfreqs = int(nfft / 2 + 1)
+        nfft = int((fftlength * self.sample_rate).decompose().value)
+
+        if not overlap:
+            # use scipy.signal.spectrogram noverlap default
+            noverlap = nfft // 8
+        else:
+            noverlap = int((overlap * self.sample_rate).decompose().value)
 
         # generate output spectrogram
-        dtype = numpy.complex
-        out = Spectrogram(numpy.zeros((ntimes, nfreqs), dtype=dtype),
-                          name=self.name, t0=self.t0, f0=0, df=1./fftlength,
-                          dt=overlap, copy=False, unit=self.unit, dtype=dtype)
-
-        [frequencies, times, values] = spectrogram(self,
-                                                   fs=self.sample_rate.value,
-                                                   window=window,
-                                                   nperseg=nfft,
-                                                   noverlap=noverlap,
-                                                   mode='complex')
-
-        # The shape is incorrect for the Spectrogram object
-        out[:] = values.T
+        [frequencies, times, sxx] = spectrogram(self,
+                                                fs=self.sample_rate.value,
+                                                window=window,
+                                                nperseg=nfft,
+                                                noverlap=noverlap,
+                                                mode='complex',
+                                                **kwargs)
+        out = Spectrogram(sxx.T,
+                          name=self.name, unit=self.unit,
+                          xindex = self.t0.value + times,
+                          yindex = frequencies)
 
         return out
 

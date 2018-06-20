@@ -650,6 +650,17 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # note: bizarre stride length because 4096/100 gets rounded
         assert sg.dt == 0.010009765625 * units.second
 
+    @utils.skip_minimum_version('scipy', '0.16')
+    def test_fftgram(self, losc):
+        fgram = losc.fftgram(1)
+        [f, t, sxx] = signal.spectrogram(losc, losc.sample_rate.value,
+                                         window='hann',
+                                         nperseg=int(losc.sample_rate.value),
+                                         mode='complex')
+        numpy.testing.assert_array_equal(losc.t0.value + t, fgram.xindex.value)
+        numpy.testing.assert_array_equal(f, fgram.yindex.value)
+        numpy.testing.assert_array_equal(sxx.T, fgram)
+
     def test_spectral_variance(self, losc):
         variance = losc.spectral_variance(.5)
         assert isinstance(variance, SpectralVariance)
