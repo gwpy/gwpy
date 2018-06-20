@@ -107,7 +107,7 @@ class TestTable(object):
                 dtp = None
             # use map() to support non-primitive types
             if dtype(dtp).name == 'object':
-                data.append(map(dtp, random.rand(n) * 1000))
+                data.append(list(map(dtp, random.rand(n) * 1000)))
             else:
                 data.append((random.rand(n) * 1000).astype(dtp))
         return cls.TABLE(data, names=names)
