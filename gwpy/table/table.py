@@ -20,6 +20,7 @@
 """
 
 import warnings
+from functools import wraps
 from math import ceil
 
 from six import string_types
@@ -37,6 +38,40 @@ from .filter import (filter_table, parse_operator)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['EventColumn', 'EventTable']
 
+
+# -- utilities ----------------------------------------------------------------
+
+def _rates_preprocess(func):
+    @wraps(func)
+    def wrapped_func(self, *args, **kwargs):
+        timecolumn = kwargs.get('timecolumn')
+        start = kwargs.get('start')
+        end = kwargs.get('end')
+
+        # get timecolumn if we are going to need it
+        if ((timecolumn is None and (start is None or end is None)) or
+                not self.colnames):
+            try:
+                kwargs['timecolumn'] = self._get_time_column()
+            except ValueError as exc:
+                exc.args = ('{0}, , please give `timecolumn` '
+                            'keyword'.format(exc.args[0]),)
+                raise
+        # otherwise use anything (it doesn't matter)
+        kwargs.setdefault('timecolumn', self.colnames[0])
+
+        # set start and end
+        times = self[kwargs['timecolumn']]
+        if start is None:
+            kwargs['start'] = times.min()
+        if end is None:
+            kwargs['end'] = times.max()
+
+        return func(self, *args, **kwargs)
+    return wrapped_func
+
+
+# -- Column -------------------------------------------------------------------
 
 class EventColumn(Column):
     """Custom `Column` that allows filtering with segments
@@ -60,6 +95,8 @@ class EventColumn(Column):
         """
         return self.in_segmentlist(~segmentlist)
 
+
+# -- Table --------------------------------------------------------------------
 
 class EventTable(Table):
     """A container for a table of events
@@ -285,6 +322,7 @@ class EventTable(Table):
 
     # -- extensions -----------------------------
 
+    @_rates_preprocess
     def event_rate(self, stride, start=None, end=None, timecolumn=None):
         """Calculate the rate `~gwpy.timeseries.TimeSeries` for this `Table`.
 
@@ -314,22 +352,19 @@ class EventTable(Table):
         ValueError
             if the ``timecolumn`` cannot be guessed from the table contents
         """
+        # NOTE: decorator sets timecolumn, start, end to non-None values
         from gwpy.timeseries import TimeSeries
-        times = self[timecolumn or self._get_time_column()]
-        if times.dtype is numpy.dtype('O'):  # cast to ufunc-compatible type
-            times = times.astype('float64', copy=False)
-        if not start:
-            start = times.min()
-        if not end:
-            end = times.max()
+        times = self[timecolumn]
+        if times.dtype.name == 'object':  # cast to ufuncable type
+            times = times.astype('longdouble', copy=False)
         nsamp = int(ceil((end - start) / stride))
         timebins = numpy.arange(nsamp + 1) * stride + start
-        # histogram data and return
-        out = TimeSeries(
+        # create histogram
+        return TimeSeries(
             numpy.histogram(times, bins=timebins)[0] / float(stride),
             t0=start, dt=stride, unit='Hz', name='Event rate')
-        return out
 
+    @_rates_preprocess
     def binned_event_rates(self, stride, column, bins, operator='>=',
                            start=None, end=None, timecolumn=None):
         """Calculate an event rate `~gwpy.timeseries.TimeSeriesDict` over
@@ -378,14 +413,9 @@ class EventTable(Table):
             a dict of (bin, `~gwpy.timeseries.TimeSeries`) pairs describing a
             rate of events per second (Hz) for each of the bins.
         """
-        from gwpy.timeseries import TimeSeriesDict
+        # NOTE: decorator sets timecolumn, start, end to non-None values
 
-        # work out time boundaries
-        timecolumn = timecolumn or self._get_time_column()
-        if not start:
-            start = self[timecolumn].min()
-        if not end:
-            end = self[timecolumn].max()
+        from gwpy.timeseries import TimeSeriesDict
 
         # generate column bins
         if not bins:
