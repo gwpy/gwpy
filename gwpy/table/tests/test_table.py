@@ -306,9 +306,15 @@ class TestEventTable(TestTable):
         # check that single GPS column can be identified
         t = self.create(10, ('blah', 'blah2'), dtypes=(float, LIGOTimeGPS))
         assert t._get_time_column() == 'blah2'
-        t.add_column(t['blah2'], name='blah3')
-        with pytest.raises(ValueError):
-            t._get_time_column()
+
+        # check that two GPS columns causes issues
+        try:
+            t.add_column(t['blah2'], name='blah3')
+        except TypeError:  # astropy < 2.0 (or something like that)
+            pass
+        else:
+            with pytest.raises(ValueError):
+                t._get_time_column()
 
     def test_filter(self, table):
         # check simple filter
