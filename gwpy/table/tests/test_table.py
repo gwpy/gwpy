@@ -45,6 +45,7 @@ from ...io import ligolw as io_ligolw
 from ...segments import (Segment, SegmentList)
 from ...tests import utils
 from ...tests.mocks import mock
+from ...time import LIGOTimeGPS
 from ...timeseries import (TimeSeries, TimeSeriesDict)
 from .. import (Table, EventTable, filters)
 from ..filter import filter_table
@@ -101,10 +102,14 @@ class TestTable(object):
         for i, name in enumerate(names):
             random.seed(i)
             if dtypes:
-                dtype = dtypes[i]
+                dtp = dtypes[i]
             else:
-                dtype = None
-            data.append((random.rand(n) * 1000).astype(dtype))
+                dtp = None
+            # use map() to support non-primitive types
+            if dtype(dtp).name == 'object':
+                data.append(list(map(dtp, random.rand(n) * 1000)))
+            else:
+                data.append((random.rand(n) * 1000).astype(dtp))
         return cls.TABLE(data, names=names)
 
     @classmethod
@@ -141,9 +146,9 @@ class TestTable(object):
             assert t2.meta.get('tablename', None) == 'sngl_burst'
 
             # check numpy type casting works
-            from glue.ligolw.lsctables import LIGOTimeGPS
+            from glue.ligolw.lsctables import LIGOTimeGPS as LigolwGPS
             t3 = _read(columns=['peak'])
-            assert isinstance(t3['peak'][0], LIGOTimeGPS)
+            assert isinstance(t3['peak'][0], LigolwGPS)
             t3 = _read(columns=['peak'], use_numpy_dtypes=True)
             assert t3['peak'].dtype == dtype('float64')
             utils.assert_array_equal(
@@ -290,6 +295,27 @@ class TestTable(object):
 class TestEventTable(TestTable):
     TABLE = EventTable
 
+    def test_get_time_column(self, table):
+        with pytest.raises(ValueError) as exc:
+            self.TABLE()._get_time_column()
+        assert str(exc.value).startswith('cannot identify time column')
+
+        # table from fixture has 'time' column
+        assert table._get_time_column() == 'time'
+
+        # check that single GPS column can be identified
+        t = self.create(10, ('blah', 'blah2'), dtypes=(float, LIGOTimeGPS))
+        assert t._get_time_column() == 'blah2'
+
+        # check that two GPS columns causes issues
+        try:
+            t.add_column(t['blah2'], name='blah3')
+        except TypeError:  # astropy < 2.0 (or something like that)
+            pass
+        else:
+            with pytest.raises(ValueError):
+                t._get_time_column()
+
     def test_filter(self, table):
         # check simple filter
         lowf = table.filter('frequency < 100')
@@ -344,13 +370,26 @@ class TestEventTable(TestTable):
 
         # repeat with object dtype
         try:
-            from lal import LIGOTimeGPS
+            from lal import LIGOTimeGPS as LalGps
         except ImportError:
             return
-        lgps = list(map(LIGOTimeGPS, table['time']))
+        lgps = list(map(LalGps, table['time']))
         t2 = type(table)(data=[lgps], names=['time'])
         rate2 = t2.event_rate(1, start=table['time'].min())
         utils.assert_quantity_sub_equal(rate, rate2)
+
+        # check that method can function without explicit time column
+        # (and no data) if and only if start/end are both given
+        t2 = self.create(10, names=['a', 'b'])
+        print(t2)
+        with pytest.raises(ValueError) as exc:
+            t2.event_rate(1)
+        assert 'please give `timecolumn` keyword' in str(exc.value)
+        with pytest.raises(ValueError):
+            t2.event_rate(1, start=0)
+        with pytest.raises(ValueError):
+            t2.event_rate(1, end=1)
+        t2.event_rate(1, start=0, end=10)
 
     def test_binned_event_rates(self, table):
         rates = table.binned_event_rates(100, 'snr', [10, 100],
@@ -363,6 +402,18 @@ class TestEventTable(TestTable):
         assert rates[100].name == 'snr >= 100'
         table.binned_event_rates(100, 'snr', [10, 100], operator='in')
         table.binned_event_rates(100, 'snr', [(0, 10), (10, 100)])
+
+        # check that method can function without explicit time column
+        # (and no data) if and only if start/end are both given
+        t2 = self.create(0, names=['a', 'b'])
+        with pytest.raises(ValueError) as exc:
+            t2.binned_event_rates(1, 'a', (10, 100))
+        assert 'please give `timecolumn` keyword' in str(exc.value)
+        with pytest.raises(ValueError):
+            t2.binned_event_rates(1, 'a', (10, 100), start=0)
+        with pytest.raises(ValueError):
+            t2.binned_event_rates(1, 'a', (10, 100), end=1)
+        t2.binned_event_rates(1, 'a', (10, 100), start=0, end=10)
 
     def test_plot(self, table):
         with rc_context(rc={'text.usetex': False}):

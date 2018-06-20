@@ -167,9 +167,9 @@ class Axes(_Axes):
             c_sort = kwargs.pop('c_sort', True)
             if c_sort:
                 sortidx = c_array.argsort()
-                x = x[sortidx]
-                y = y[sortidx]
-                c = c[sortidx]
+                x = numpy.asarray(x)[sortidx]
+                y = numpy.asarray(y)[sortidx]
+                c = numpy.asarray(c)[sortidx]
 
         return super(Axes, self).scatter(x, y, c=c, **kwargs)
 
@@ -313,13 +313,11 @@ class Axes(_Axes):
         })
 
         # plot lower and upper Series
-        fill = [data.xindex, data, data]
-        if lower is not None:
-            out.extend(self.plot(lower, **kwargs))
-            fill[1] = lower
-        if upper is not None:
-            out.extend(self.plot(upper, **kwargs))
-            fill[2] = upper
+        fill = [data.xindex.value, data.value, data.value]
+        for i, bound in enumerate((lower, upper)):
+            if bound is not None:
+                out.extend(self.plot(bound, **kwargs))
+                fill[i+1] = bound.value
 
         # fill between
         out.append(self.fill_between(
@@ -502,7 +500,7 @@ class PlotArgsProcessor(_process_plot_var_args):
         newargs = type(args)()
         for arg in args:
             if isinstance(arg, Series) and arg.ndim == 1:
-                newargs += (arg.xindex, arg)
+                newargs += (arg.xindex.value, arg.value)
             else:
                 newargs += (arg,)
         return super(PlotArgsProcessor, self)._grab_next_args(
