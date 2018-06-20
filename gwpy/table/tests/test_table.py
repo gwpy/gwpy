@@ -45,6 +45,7 @@ from ...io import ligolw as io_ligolw
 from ...segments import (Segment, SegmentList)
 from ...tests import utils
 from ...tests.mocks import mock
+from ...time import LIGOTimeGPS
 from ...timeseries import (TimeSeries, TimeSeriesDict)
 from .. import (Table, EventTable, filters)
 from ..filter import filter_table
@@ -101,10 +102,14 @@ class TestTable(object):
         for i, name in enumerate(names):
             random.seed(i)
             if dtypes:
-                dtype = dtypes[i]
+                dtp = dtypes[i]
             else:
-                dtype = None
-            data.append((random.rand(n) * 1000).astype(dtype))
+                dtp = None
+            # use map() to support non-primitive types
+            if dtype(dtp).name == 'object':
+                data.append(map(dtp, random.rand(n) * 1000))
+            else:
+                data.append((random.rand(n) * 1000).astype(dtp))
         return cls.TABLE(data, names=names)
 
     @classmethod
@@ -141,9 +146,9 @@ class TestTable(object):
             assert t2.meta.get('tablename', None) == 'sngl_burst'
 
             # check numpy type casting works
-            from glue.ligolw.lsctables import LIGOTimeGPS
+            from glue.ligolw.lsctables import LIGOTimeGPS as LigolwGPS
             t3 = _read(columns=['peak'])
-            assert isinstance(t3['peak'][0], LIGOTimeGPS)
+            assert isinstance(t3['peak'][0], LigolwGPS)
             t3 = _read(columns=['peak'], use_numpy_dtypes=True)
             assert t3['peak'].dtype == dtype('float64')
             utils.assert_array_equal(
@@ -344,10 +349,10 @@ class TestEventTable(TestTable):
 
         # repeat with object dtype
         try:
-            from lal import LIGOTimeGPS
+            from lal import LIGOTimeGPS as LalGps
         except ImportError:
             return
-        lgps = list(map(LIGOTimeGPS, table['time']))
+        lgps = list(map(LalGps, table['time']))
         t2 = type(table)(data=[lgps], names=['time'])
         rate2 = t2.event_rate(1, start=table['time'].min())
         utils.assert_quantity_sub_equal(rate, rate2)
