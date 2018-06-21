@@ -406,6 +406,18 @@ class Plot(figure.Figure):
         if not ax:
             ax = self.gca()
 
+        # set options for new axes
+        axes_kw = {
+            'pad': pad,
+            'add_to_figure': True,
+            'sharex': ax if sharex is True else sharex or None,
+            'axes_class': get_projection_class('segments'),
+        }
+
+        # map X-axis limit from old axes
+        if axes_kw['sharex'] is ax and not ax.get_autoscalex_on():
+            axes_kw['xlim'] = ax.get_xlim()
+
         # add new axes
         if ax.get_axes_locator():
             divider = ax.get_axes_locator()._axes_divider
@@ -415,19 +427,16 @@ class Plot(figure.Figure):
         if location not in {'top', 'bottom'}:
             raise ValueError("Segments can only be positoned at 'top' or "
                              "'bottom'.")
-
-        sharex = ax if sharex is True else sharex or None
-        segax = divider.append_axes(
-             location, height, pad=pad, sharex=sharex,
-             axes_class=get_projection_class('segments'),
-        )
+        segax = divider.append_axes(location, height, **axes_kw)
 
         # update anchor axes
-        if sharex is ax:
-            segax.set_autoscalex_on(ax.get_autoscalex_on())
-            segax.set_xlim(*ax.get_xlim())
-            setp(ax.get_xticklabels(), visible=False)
+        if axes_kw['sharex'] is ax and location == 'bottom':
+            # map label
+            segax.set_xlabel(ax.get_xlabel())
+            segax.xaxis.isDefault_label = ax.xaxis.isDefault_label
             ax.set_xlabel("")
+            # hide ticks on original axes
+            setp(ax.get_xticklabels(), visible=False)
 
         # plot segments
         segax.plot(segments, **plotargs)
