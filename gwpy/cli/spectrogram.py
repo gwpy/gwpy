@@ -176,7 +176,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         imin = args.imin if args.imin is not None else imin
         imax = args.imax if args.imax is not None else imax
         self.log(3,('Colorbar limits set to %f - %f' % (imin, imax)))
-        
+
         try:
             image = self.ax.images[0]
         except IndexError:
