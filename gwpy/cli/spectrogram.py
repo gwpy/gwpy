@@ -177,14 +177,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         imax = args.imax if args.imax is not None else imax
 
         if imin == 0 and args.color_scale == 'log':
-            nt, nf = specgram.shape
-            tmin = imax
-            for t in range(0, nt):
-                for f in range(0, nf):
-                    tmp = specgram[t][f].value
-                    if 0 < tmp < tmin:
-                        tmin = tmp
-            imin = tmin
+            imin = specgram.value[specgram.value > 0].min()
 
         self.log(3, ('Colorbar limits set to %f - %f' % (imin, imax)))
 

@@ -28,7 +28,7 @@ import sys
 from matplotlib import use
 # if launched from a terminal with no display use the right backend
 # this must be done before anyone imports  pylab, matplotlib.pyplot,
-# or matplotlib.backends 
+# or matplotlib.backends
 if len(os.getenv('DISPLAY', '')) == 0:
     use('Agg')
 
