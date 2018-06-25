@@ -110,27 +110,30 @@ def normalize_fft_params(series, kwargs=None, func=None):
     {'window': array([  0.00000000e+00,   9.41235870e-06, ...,
          3.76490804e-05,   9.41235870e-06]), 'noverlap': 0, 'nfft': 1024}
     """
+    # parse keywords
     if kwargs is None:
         kwargs = dict()
     samp = series.sample_rate
     fftlength = kwargs.pop('fftlength', None) or series.duration
     overlap = kwargs.pop('overlap', None)
     window = kwargs.pop('window', None)
-    library = _fft_library(func) if func is not None else None
+
+    # parse function library and name
+    if func is None:
+        method = library = None
+    else:
+        method = func.__name__
+        library = _fft_library(func)
 
     # fftlength -> nfft
     nfft = seconds_to_samples(fftlength, samp)
 
     # overlap -> noverlap
-    if func is not None and func.__name__.endswith('bartlett'):
-        noverlap = 0
-    else:
-        noverlap = _normalize_overlap(overlap, window, nfft, samp)
+    noverlap = _normalize_overlap(overlap, window, nfft, samp, method=method)
 
     # create window
     window = _normalize_window(window, nfft, library, series.dtype)
-    # allow FFT methods to use their own defaults
-    if window is not None:
+    if window is not None:  # allow FFT methods to use their own defaults
         kwargs['window'] = window
 
     # create FFT plan for LAL
@@ -145,10 +148,12 @@ def normalize_fft_params(series, kwargs=None, func=None):
     return kwargs
 
 
-def _normalize_overlap(overlap, window, nfft, samp):
+def _normalize_overlap(overlap, window, nfft, samp, method='welch'):
+    if method == 'bartlett':
+        return 0
     if overlap is None and isinstance(window, string_types):
         return recommended_overlap(window, nfft)
-    elif overlap is None:
+    if overlap is None:
         return 0
     return seconds_to_samples(overlap, samp)
 
