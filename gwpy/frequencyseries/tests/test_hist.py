@@ -111,6 +111,7 @@ class TestSpectralVariance(_TestArray2D):
             assert len(plot.gca().collections) == 1
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
+            plot.close()
 
     def test_value_at(self, array):
         assert array.value_at(5, self.bins[3]) == (

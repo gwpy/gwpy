@@ -116,7 +116,10 @@ class _TestCliProduct(object):
     def prod(cls, args):
         """Returns a `CliProduct`
         """
-        return cls.TEST_CLASS(args)
+        prod = cls.TEST_CLASS(args)
+        yield prod
+        if prod.plot:
+            prod.plot.close()
 
     @classmethod
     @pytest.fixture
@@ -140,8 +143,7 @@ class _TestCliProduct(object):
     @pytest.fixture
     def plotprod(cls, dataprod):
         dataprod.plot = pyplot.figure(FigureClass=Plot)
-        yield dataprod
-        dataprod.plot.close()
+        return dataprod
 
     # -- tests ----------------------------------
 
@@ -262,10 +264,9 @@ class _TestImageProduct(_TestCliProduct):
     @classmethod
     @pytest.fixture
     def plotprod(cls, dataprod):
-        plot = dataprod.plot = pyplot.figure(FigureClass=Plot)
-        plot.gca().pcolormesh(dataprod.result)
-        yield dataprod
-        plot.close()
+        super(_TestImageProduct, cls).plotprod(dataprod)
+        dataprod.plot.gca().pcolormesh(dataprod.result)
+        return dataprod
 
     def test_extra_plot_options(self, args):
         for key in ('nocolorbar', 'cmap', 'imin', 'imax'):

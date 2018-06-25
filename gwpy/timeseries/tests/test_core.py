@@ -149,7 +149,7 @@ class TestTimeSeriesBase(_TestSeries):
             utils.assert_array_equal(line.get_ydata(), array.value)
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
-            return plot  # allow subclasses to extend tests
+            plot.close()
 
     @utils.skip_missing_dependency('nds2')
     def test_from_nds2_buffer(self):
@@ -351,7 +351,7 @@ class TestTimeSeriesBaseDict(object):
                                          instance[key].value)
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
-            return plot  # allow subclasses to extend tests
+            plot.close()
 
 
 # -- TimeSeriesBaseList -------------------------------------------------------

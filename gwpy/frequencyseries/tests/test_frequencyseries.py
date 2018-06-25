@@ -120,6 +120,7 @@ class TestFrequencySeries(_TestSeries):
             utils.assert_array_equal(line.get_ydata(), array.value)
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
+            plot.close()
 
     def test_ifft(self):
         # construct a TimeSeries, then check that it is unchanged by
