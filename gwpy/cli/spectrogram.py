@@ -162,8 +162,8 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
             args.ymax = self.result.yspan[1]
 
         specgram = self.result.crop(
-            args.xmin, args.xmax).crop_frequencies(
-                args.ymin, args.ymax)
+            args.xmin, min(args.xmax, self.result.xspan[1]),
+        ).crop_frequencies(args.ymin, args.ymax)
 
         # auto scale colours
         from numpy import percentile
