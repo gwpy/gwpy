@@ -45,13 +45,14 @@ _, TEMP_PLOT_FILE = tempfile.mkstemp(prefix='GWPY-UNITTEST_', suffix='.png')
 # -- utilities ----------------------------------------------------------------
 
 def _random_data(*shape):
-    random.seed(0)
     return random.rand(*shape)
 
 
 def mock_nds2_connection():
+    random.seed(0)
     xts = TimeSeries(_random_data(10240), t0=0,
                      sample_rate=1024, name='X1:TEST-CHANNEL')
+    random.seed(1)  # use different seed to give coherence something to do
     yts = TimeSeries(_random_data(10240), t0=0,
                      sample_rate=1024, name='Y1:TEST-CHANNEL')
     data = [xts, yts]
@@ -125,11 +126,14 @@ class _TestCliProduct(object):
         dur = prod.duration
         fs = 512
 
+        i = 0
         for start in prod.start_list:
             for chan in prod.chan_list:
+                random.seed(i)
                 ts = TimeSeries(_random_data(int(fs*dur)), t0=start,
                                 sample_rate=512, name=chan)
                 prod.timeseries.append(ts)
+                i += 1
         return prod
 
     @classmethod
@@ -295,8 +299,9 @@ class _TestFrequencyDomainProduct(_TestCliProduct):
     def dataprod(cls, prod):
         super(_TestFrequencyDomainProduct, cls).dataprod(prod)
         fftlength = prod.args.secpfft
-        for ts in prod.timeseries:
+        for i, ts in enumerate(prod.timeseries):
             nsamp = int(fftlength * 512 / 2.) + 1
+            random.seed(i)
             fs = FrequencySeries(_random_data(nsamp), x0=0, dx=1/fftlength,
                                  channel=ts.channel, name=ts.name)
             prod.spectra.append(fs)
