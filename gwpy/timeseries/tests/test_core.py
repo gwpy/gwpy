@@ -321,7 +321,7 @@ class TestTimeSeriesBaseDict(object):
     def test_crop(self, instance):
         """Test :meth:`TimeSeriesBaseDict.crop`
         """
-        a = instance.crop(10, 20)
+        a = instance.copy().crop(10, 20)  # crop() modifies in-place
         for key in a:
             utils.assert_quantity_sub_equal(a[key], instance[key].crop(10, 20))
 
