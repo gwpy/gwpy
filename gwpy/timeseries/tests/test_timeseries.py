@@ -609,7 +609,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest.mark.parametrize('library', [
         pytest.param('lal', marks=utils.skip_missing_dependency('lal')),
-        pytest.param('pycbc', marks=utils.skip_missing_dependency('pycbc')),
+        pytest.param('pycbc',
+                     marks=utils.skip_missing_dependency('pycbc.psd')),
     ])
     def test_spectrogram_median_mean(self, losc, library):
         method = '{0}-median-mean'.format(library)
