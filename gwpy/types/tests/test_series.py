@@ -21,6 +21,7 @@
 
 import os
 import tempfile
+import warnings
 
 import numpy
 
@@ -150,10 +151,13 @@ class TestSeries(_TestArray):
 
         # index array
         a = numpy.array([3, 4, 1, 2])
-        utils.assert_quantity_equal(array[a], self.TEST_CLASS(
-            array.value[a], xindex=array.xindex[a],
-            name=array.name, epoch=array.epoch, unit=array.unit),
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', message='xindex was given',
+                                    category=UserWarning)
+            utils.assert_quantity_equal(array[a], self.TEST_CLASS(
+                array.value[a], xindex=array.xindex[a],
+                name=array.name, epoch=array.epoch, unit=array.unit),
+            )
 
     def test_empty_slice(self, array):
         """Check that we can slice a `Series` into nothing
