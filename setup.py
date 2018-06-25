@@ -39,7 +39,7 @@ __version__ = versioneer.get_version()
 PEP_508 = LooseVersion(setuptools_version) >= '36.2'
 
 # read description
-with open('README.rst', 'rb') as f:
+with open('README.md', 'rb') as f:
     longdesc = f.read().decode().strip()
 
 # -- dependencies -------------------------------------------------------------
@@ -119,6 +119,7 @@ setup(
     version=__version__,
     description="A python package for gravitational-wave astrophysics",
     long_description=longdesc,
+    long_description_content_type='text/markdown',
     author='Duncan Macleod',
     author_email='duncan.macleod@ligo.org',
     license='GPLv3',
