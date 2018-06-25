@@ -20,7 +20,8 @@
 helpful set of major and minor ticks.
 """
 
-from ..plot.log import (  # for backwards compatibility
+# for backwards compatibility
+from ..plot.log import (  # pylint: disable=unused-import
     GWpyLogFormatterMathtext,
     MinorLogFormatterMathtext,
     CombinedLogFormatterMathtext,
