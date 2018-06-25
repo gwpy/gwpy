@@ -149,6 +149,33 @@ def normalize_fft_params(series, kwargs=None, func=None):
 
 
 def _normalize_overlap(overlap, window, nfft, samp, method='welch'):
+    """Normalise an overlap in physical units to a number of samples
+
+    Parameters
+    ----------
+    overlap : `float`, `Quantity`, `None`
+        the overlap in some physical unit (seconds)
+
+    window : `str`
+        the name of the window function that will be used, only used
+        if `overlap=None` is given
+
+    nfft : `int`
+        the number of samples that will be used in the fast Fourier
+        transform
+
+    samp : `Quantity`
+        the sampling rate (Hz) of the data that will be transformed
+
+    method : `str`
+        the name of the averaging method, default: `'welch'`, only
+        used to return `0` for `'bartlett'` averaging
+
+    Returns
+    -------
+    noverlap : `int`
+        the number of samples to be be used for the overlap
+    """
     if method == 'bartlett':
         return 0
     if overlap is None and isinstance(window, string_types):
@@ -159,6 +186,28 @@ def _normalize_overlap(overlap, window, nfft, samp, method='welch'):
 
 
 def _normalize_window(window, nfft, library, dtype):
+    """Normalise a window specification for a PSD calculation
+
+    Parameters
+    ----------
+    window : `str`, `numpy.ndarray`, `None`
+        the input window specification
+
+    nfft : `int`
+        the length of the Fourier transform, in samples
+
+    library : `str`
+        the name of the library that provides the PSD routine
+
+    dtype : `type`
+        the required type of the window array, only used if
+        `library='lal'` is given
+
+    Returns
+    -------
+    window : `numpy.ndarray`, `lal.REAL8Window`
+        a numpy-, or `LAL`-format window array
+    """
     if library == 'lal' and isinstance(window, numpy.ndarray):
         from .lal import window_from_array
         return window_from_array(window)
