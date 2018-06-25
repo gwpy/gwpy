@@ -72,7 +72,7 @@ def seconds_to_samples(x, rate):
     return int((Quantity(x, 's') * rate).decompose().value)
 
 
-def normalize_fft_params(series, kwargs=None, library=None):
+def normalize_fft_params(series, kwargs=None, func=None):
     """Normalize a set of FFT parameters for processing
 
     This method reads the ``fftlength`` and ``overlap`` keyword arguments
@@ -95,9 +95,8 @@ def normalize_fft_params(series, kwargs=None, library=None):
     kwargs : `dict`
         the dict of keyword arguments passed by the user
 
-    library: `str`, optional
-        the name of the library that provides the FFT methods, e.g.
-        'scipy'
+    func : `callable`, optional
+        the FFT method that will be called
 
     Examples
     --------
@@ -117,12 +116,16 @@ def normalize_fft_params(series, kwargs=None, library=None):
     fftlength = kwargs.pop('fftlength', None) or series.duration
     overlap = kwargs.pop('overlap', None)
     window = kwargs.pop('window', None)
+    library = _fft_library(func) if func is not None else None
 
     # fftlength -> nfft
     nfft = seconds_to_samples(fftlength, samp)
 
     # overlap -> noverlap
-    noverlap = _normalize_overlap(overlap, window, nfft, samp)
+    if func is not None and func.__name__.endswith('bartlett'):
+        noverlap = 0
+    else:
+        noverlap = _normalize_overlap(overlap, window, nfft, samp)
 
     # create window
     window = _normalize_window(window, nfft, library, series.dtype)
@@ -176,8 +179,7 @@ def set_fft_params(func):
             data = series
 
         # normalise FFT parmeters for all libraries
-        library = _fft_library(method_func)
-        normalize_fft_params(data, kwargs=kwargs, library=library)
+        normalize_fft_params(data, kwargs=kwargs, func=method_func)
 
         return func(series, method_func, *args, **kwargs)
 
@@ -253,8 +255,7 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
     epoch = timeseries.t0.value
     nstride = seconds_to_samples(stride, timeseries.sample_rate)
     kwargs['fftlength'] = kwargs.pop('fftlength', stride) or stride
-    normalize_fft_params(timeseries, kwargs=kwargs,
-                         library=_fft_library(method_func))
+    normalize_fft_params(timeseries, kwargs=kwargs, func=method_func)
     nfft = kwargs['nfft']
     noverlap = kwargs['noverlap']
 
