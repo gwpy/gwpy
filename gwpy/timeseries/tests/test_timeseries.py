@@ -182,10 +182,12 @@ class TestTimeSeries(_TestTimeSeriesBase):
             utils.assert_quantity_sub_equal(t, array.crop(end=end),
                                             exclude=['channel'])
 
-            # test dtype
-            t = read_(dtype='float32')
+            # test dtype - DEPRECATED
+            with pytest.warns(DeprecationWarning):
+                t = read_(dtype='float32')
             assert t.dtype is numpy.dtype('float32')
-            t = read_(dtype={f.name: 'float64'})
+            with pytest.warns(DeprecationWarning):
+                t = read_(dtype={f.name: 'float64'})
             assert t.dtype is numpy.dtype('float64')
 
             # check errors
