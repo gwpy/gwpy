@@ -43,7 +43,6 @@ from ...spectrogram import Spectrogram
 from ...tests import (mocks, utils)
 from ...tests.mocks import mock
 from ...time import LIGOTimeGPS
-from ...utils.misc import null_context
 from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
 from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
