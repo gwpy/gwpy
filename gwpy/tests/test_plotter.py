@@ -764,7 +764,7 @@ class EventTableMixin(object):
     @classmethod
     def create(cls, n, names, dtypes=None):
         data = []
-        for i, name in enumerate(names):
+        for i in range(len(names)):
             numpy.random.seed(i)
             if dtypes:
                 dtype = dtypes[i]
