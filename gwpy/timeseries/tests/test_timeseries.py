@@ -542,96 +542,85 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # test overlap
         losc.csd(losc, fftlength=0.4, overlap=0.2)
 
-    @pytest.mark.parametrize('library, method', chain(
-        product([None], ['welch', 'bartlett']),
-        product(['scipy'], ['welch', 'bartlett']),
-        product(['pycbc.psd'], ['welch', 'bartlett', 'median', 'median_mean']),
-        product(['lal'], ['welch', 'bartlett', 'median', 'median_mean']),
-    ))
+    @staticmethod
+    def _window_helper(series, fftlength, window='hamming'):
+        nfft = int(series.sample_rate.value * fftlength)
+        return signal.get_window(window, nfft)
+
+    @pytest.mark.parametrize('method', [
+        'scipy-welch', 'scipy-bartlett',
+        'lal-welch', 'lal-bartlett', 'lal-median',
+        'pycbc-welch', 'pycbc-bartlett', 'pycbc-median-mean',
+    ])
     @pytest.mark.parametrize(
         'window', (None, 'hann', ('kaiser', 24), 'array'),
     )
-    def test_spectrogram(self, losc, library, method, window):
-        if library:
-            try:
-                importlib.import_module(library)
-            except ImportError as exc:
+    def test_spectrogram(self, losc, method, window):
+        # generate window for 'array'
+        win = self._window_helper(losc, 1) if window == 'array' else window
+        print(method, window, win)
+
+        # generate spectrogram
+        try:
+            sg = losc.spectrogram(1, method=method, window=win)
+        except ImportError as exc:
+            if method.startswith(('lal', 'pycbc')):
                 pytest.skip(str(exc))
-            library = library.split('.', 1)[0]
-            method = '{}_{}'.format(library, method)
-            ctx = null_context
-        else:
-            def ctx():
-                return pytest.warns(UserWarning)
+            raise
 
-        def _spectrogram(*args, **kwargs):
-            kwargs.setdefault('method', method)
-            if window == 'array':
-                nfft = int(losc.sample_rate.value * (
-                    kwargs.get('fftlength', args[0]) or args[0]))
-                w = signal.get_window('hamming', nfft)
-            else:
-                w = window
-            kwargs.setdefault('window', w)
-            with ctx():
-                try:
-                    return losc.spectrogram(*args, **kwargs)
-                except TypeError as exc:
-                    # catch pycbc window as array error
-                    if str(exc).startswith('unhashable type'):
-                        pytest.skip(str(exc))
-                    raise
+        # validate
+        assert isinstance(sg, Spectrogram)
+        assert sg.shape == (abs(losc.span),
+                            losc.sample_rate.value // 2 + 1)
+        assert sg.f0 == 0 * units.Hz
+        assert sg.df == 1 * units.Hz
+        assert sg.channel is losc.channel
+        assert sg.unit == losc.unit ** 2 / units.Hz
+        assert sg.epoch == losc.epoch
+        assert sg.span == losc.span
 
-        # test defaults
-        if method.endswith('median_mean'):
-            errctx = pytest.raises(ValueError)
-        else:
-            errctx = null_context()
-        with errctx:
-            sg = _spectrogram(1)
-            assert isinstance(sg, Spectrogram)
-            assert sg.shape == (abs(losc.span),
-                                losc.sample_rate.value // 2 + 1)
-            assert sg.f0 == 0 * units.Hz
-            assert sg.df == 1 * units.Hz
-            assert sg.channel is losc.channel
-            assert sg.unit == losc.unit ** 2 / units.Hz
-            assert sg.epoch == losc.epoch
-            assert sg.span == losc.span
-
-            # check the same result as PSD
-            with ctx():
-                if window == 'array':
-                    win = signal.get_window(
-                        'hamming', int(losc.sample_rate.value))
-                else:
-                    win = window
-                n = int(losc.sample_rate.value)
-                overlap = 0
-                if window in {'hann'}:
-                    overlap = .5
-                    n += int(overlap * losc.sample_rate.value)
-                psd = losc[:n].psd(fftlength=1, overlap=overlap,
-                                   method=method, window=win)
-            # FIXME: epoch should not be excluded here (probably)
-            utils.assert_quantity_sub_equal(sg[0], psd, exclude=['epoch'],
-                                            almost_equal=True)
+        # check the first time-bin is the same result as .psd()
+        n = int(losc.sample_rate.value)
+        if window == 'hann' and not method.endswith('bartlett'):
+            n *= 1.5  # default is 50% overlap
+        psd = losc[:int(n)].psd(fftlength=1, method=method, window=win)
+        # FIXME: epoch should not be excluded here (probably)
+        print(psd)
+        print(sg[0])
+        utils.assert_quantity_sub_equal(sg[0], psd, exclude=['epoch'],
+                                        almost_equal=True)
 
         # test fftlength
-        sg = _spectrogram(1, fftlength=0.5)
+        win2 = self._window_helper(losc, .5) if window == 'array' else window
+        sg = losc.spectrogram(1, fftlength=0.5, window=win2)
         assert sg.shape == (abs(losc.span),
                             0.5 * losc.sample_rate.value // 2 + 1)
         assert sg.df == 2 * units.Hertz
         assert sg.dt == 1 * units.second
 
-        # test overlap
+        # test auto-overlap
         if window == 'hann':
-            sg2 = _spectrogram(1, fftlength=0.5, overlap=.25)
+            sg2 = losc.spectrogram(1, fftlength=0.5, overlap=.25,
+                                   window='hann')
             utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
 
         # test multiprocessing
-        sg2 = _spectrogram(1, fftlength=0.5, nproc=2)
+        sg2 = losc.spectrogram(1, fftlength=0.5, nproc=2, window=win)
         utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
+
+    @pytest.mark.parametrize('library', [
+        pytest.param('lal', marks=utils.skip_missing_dependency('lal')),
+        pytest.param('pycbc', marks=utils.skip_missing_dependency('pycbc')),
+    ])
+    def test_spectrogram_median_mean(self, losc, library):
+        method = '{0}-median-mean'.format(library)
+        # median-mean should complain if not given the correct data for an
+        # even number of FFTs
+        with pytest.warns(UserWarning):
+            sg = losc.spectrogram(1.5, fftlength=.5, overlap=0, method=method)
+        # but should still work
+        assert sg.dt == 1.5 * units.second
+        assert sg.df == 2 * units.Hertz
 
     def test_spectrogram2(self, losc):
         # test defaults
