@@ -166,8 +166,8 @@ class TestPlot(PlottingTestBase):
     def test_show(self):
         # no idea how to assert that this worked
         fig = self.FIGURE_CLASS()
-        fig.show(block=True)
-        fig.show(block=False)
+        fig.show(block=True, warn=False)
+        fig.show(block=False, warn=False)
 
     def test_refresh(self):
         # no idea how to assert that this worked
