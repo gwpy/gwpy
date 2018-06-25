@@ -549,7 +549,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @pytest.mark.parametrize('method', [
         'scipy-welch', 'scipy-bartlett',
         'lal-welch', 'lal-bartlett', 'lal-median',
-        'pycbc-welch', 'pycbc-bartlett', 'pycbc-median-mean',
+        'pycbc-welch', 'pycbc-bartlett', 'pycbc-median',
     ])
     @pytest.mark.parametrize(
         'window', (None, 'hann', ('kaiser', 24), 'array'),
@@ -557,7 +557,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_spectrogram(self, losc, method, window):
         # generate window for 'array'
         win = self._window_helper(losc, 1) if window == 'array' else window
-        print(method, window, win)
 
         # generate spectrogram
         try:
@@ -644,7 +643,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_spectral_variance(self, losc):
         variance = losc.spectral_variance(.5)
         assert isinstance(variance, SpectralVariance)
-        print(variance)
         assert variance.x0 == 0 * units.Hz
         assert variance.dx == 2 * units.Hz
         assert variance.max() == 8
