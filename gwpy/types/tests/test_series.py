@@ -366,5 +366,3 @@ class TestSeries(_TestArray):
         finally:
             if os.path.exists(f.name):
                 os.remove(f.name)
-
-
