@@ -613,10 +613,16 @@ class TestTimeSeries(_TestTimeSeriesBase):
     ])
     def test_spectrogram_median_mean(self, losc, library):
         method = '{0}-median-mean'.format(library)
-        # median-mean should complain if not given the correct data for an
-        # even number of FFTs
-        with pytest.warns(UserWarning):
+        # median-mean will fail on pycbc, and warn on LAL, if not given
+        # the correct data for an even number of FFTs
+
+        if library == 'lal':
+            with pytest.warns(UserWarning):
+                sg = losc.spectrogram(1.5, fftlength=.5, overlap=0,
+                                      method=method)
+        else:
             sg = losc.spectrogram(1.5, fftlength=.5, overlap=0, method=method)
+
         # but should still work
         assert sg.dt == 1.5 * units.second
         assert sg.df == 2 * units.Hertz
