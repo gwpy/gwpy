@@ -365,12 +365,16 @@ def spectrogram(timeseries, method_func, **kwargs):
 def _chunk_timeseries(series, nstride, noverlap):
     # define chunks
     x = y = 0
-    step = nstride - int(noverlap // 2.)
+    step = nstride - int(noverlap // 2.)  # the first step is smaller
+    nfft = nstride + noverlap
     while x + nstride <= series.size:
-        y = min(series.size, x + nstride + noverlap)
+        y = x + nfft
+        if y >= series.size:
+            y = series.size  # pin to end of series
+            x = y - nfft  # and work back to get the correct amount of data
         yield series[x:y]
         x += step
-        step = nstride
+        step = nstride  # subsequent steps are the standard size
 
 
 def _fft_library(method_func):
