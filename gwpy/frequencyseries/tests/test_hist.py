@@ -25,8 +25,7 @@ import pytest
 
 import numpy
 
-from matplotlib import (use, rc_context)
-use('agg')  # nopep8
+from matplotlib import rc_context
 
 from astropy import units
 

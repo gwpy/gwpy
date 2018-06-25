@@ -33,9 +33,6 @@ from numpy import (random, isclose, dtype)
 
 import h5py
 
-from matplotlib import use, rc_context
-use('agg')  # nopep8
-
 from astropy import units
 from astropy.io.ascii import InconsistentTableError
 from astropy.table import vstack
