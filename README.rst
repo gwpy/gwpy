@@ -11,8 +11,9 @@ https://gwpy.github.io
 Release status
 ~~~~~~~~~~~~~~
 
-|PyPI version| |DOI| |License| |Supported Python versions| |Research
-software impact|
+|PyPI version| |Macports version|
+
+|DOI| |License| |Supported Python versions| |Research software impact|
 
 |Build Status| |Coverage Status|
 
@@ -39,6 +40,8 @@ You can test your installation, and its version by
 
 .. |PyPI version| image:: https://badge.fury.io/py/gwpy.svg
    :target: http://badge.fury.io/py/gwpy
+.. |Macports version| image:: https://repology.org/badge/version-for-repo/macports/python:gwpy.svg
+   :target: https://www.macports.org/ports.php?by=name&substr=py-gwpy
 .. |DOI| image:: https://zenodo.org/badge/9979119.svg
    :target: https://zenodo.org/badge/latestdoi/9979119
 .. |License| image:: https://img.shields.io/pypi/l/gwpy.svg
