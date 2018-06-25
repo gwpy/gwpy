@@ -166,15 +166,26 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         ).crop_frequencies(args.ymin, args.ymax)
 
         # auto scale colours
-        from numpy import percentile
+        import numpy as np
         if args.norm:
             imin = specgram.value.min()
             imax = specgram.value.max()
         else:
-            imin = percentile(specgram, .01)
-            imax = percentile(specgram, 100.)
+            imin = np.percentile(specgram, 1)
+            imax = np.percentile(specgram, 100)
         imin = args.imin if args.imin is not None else imin
         imax = args.imax if args.imax is not None else imax
+
+        if imin == 0 and args.color_scale == 'log':
+            nt, nf = specgram.shape
+            tmin = imax
+            for t in range(0, nt):
+                for f in range(0, nf):
+                    tmp = specgram[t][f].value
+                    if 0 < tmp < tmin:
+                        tmin = tmp
+            imin = tmin
+
         self.log(3, ('Colorbar limits set to %f - %f' % (imin, imax)))
 
         try:
