@@ -50,7 +50,7 @@ from ..plot.tex import label_to_latex
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
-BAD_UNITS = {'*', }
+BAD_UNITS = {'*', 'Counts.', }
 
 
 # -- utilities ----------------------------------------------------------------
