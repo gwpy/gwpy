@@ -340,7 +340,7 @@ class QTile(QBase):
         norm : `bool`, `str`, optional
             normalize the energy of the output by the median (if `True` or
             ``'median'``) or the ``'mean'``, if `False` the output
-            is the complex `~numpy.fft.ifft` output of the Q-tranform
+            is the energy (power) of the Q-tranform
         epoch : `~gwpy.time.LIGOTimeGPS`, `float`, optional
             the epoch of these data, only used for metadata in the output
             `TimeSeries`, and not requires if the input `fseries` has the
@@ -349,9 +349,8 @@ class QTile(QBase):
         Returns
         -------
         energy : `~gwpy.timeseries.TimeSeries`
-            a `TimeSeries` of the complex energy from the Q-transform of
-            this tile against the data. Basically just the raw output
-            of the :meth:`~numpy.fft.ifft`
+            a `TimeSeries` of the energy from the Q-transform of
+            this tile against the data.
         """
         windowed = fseries[self.get_data_indices()] * self.get_window()
         # pad data, move negative frequencies to the end, and IFFT
@@ -363,21 +362,19 @@ class QTile(QBase):
         tdenergy = npfft.ifft(wenergy)
         cenergy = TimeSeries(tdenergy, x0=epoch,
                              dx=self.duration/tdenergy.size, copy=False)
+        energy = type(cenergy)(
+            cenergy.value.real ** 2. + cenergy.value.imag ** 2.,
+            x0=cenergy.x0, dx=cenergy.dx, copy=False)
+
         if norm:
-            if isinstance(norm, string_types):
-                norm = norm.lower()
-            energy = type(cenergy)(
-                cenergy.value.real ** 2. + cenergy.value.imag ** 2.,
-                x0=cenergy.x0, dx=cenergy.dx, copy=False)
+            norm = norm.lower() if isinstance(norm, string_types) else norm
             if norm in (True, 'median'):
-                meanenergy = energy.median()
+                return energy / energy.median()
             elif norm in ('mean',):
-                meanenergy = energy.mean()
+                return energy / energy.mean()
             else:
                 raise ValueError("Invalid normalisation %r" % norm)
-            return energy / meanenergy
-        else:
-            return cenergy
+        return energy
 
 
 def next_power_of_two(x):

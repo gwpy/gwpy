@@ -336,8 +336,10 @@ class SeriesPlot(Plot):
             return kwargs
 
         # set xlim based on xspans
-        kwargs.setdefault(
-            'xlim', SegmentList([s.xspan for s in flat]).extent())
+        span = SegmentList([s.xspan for s in flat]).extent()
+        if kwargs.get('xscale', 'linear') == 'log':
+            span = span[0] + min(s.dx.value for s in flat), span[1]
+        kwargs.setdefault('xlim', span)
 
     def _init_axes(self, data, sep, axargs, plotargs):
         """Initalise these Axes from the input data and keywords

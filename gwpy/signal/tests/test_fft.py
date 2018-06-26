@@ -156,7 +156,7 @@ class TestUI(object):
         a = TimeSeries(numpy.arange(400))
         chunks = list(fft_ui._chunk_timeseries(a, 100, 50))
         assert chunks == [
-            a[:150], a[75:225], a[175:325], a[275:400],
+            a[:150], a[75:225], a[175:325], a[250:400],
         ]
 
     def test_fft_library(self):
