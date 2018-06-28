@@ -57,28 +57,32 @@ class TestPlot(FigureTestBase):
         assert plot.axes[-1].get_geometry() == (2, 2, 4)
 
     def test_init_with_data(self):
-        a = Series(range(10), dx=.1)
-        plot = self.FIGURE_CLASS(a)
+        # list
+        plot = self.FIGURE_CLASS([1, 2, 3, 4])
         assert len(plot.axes) == 1
-
-        ax = plot.gca()
-        assert len(ax.lines) == 1
-
-        line = ax.lines[0]
-        utils.assert_array_equal(line.get_xdata(), a.xindex.value)
-        utils.assert_array_equal(line.get_ydata(), a.value)
-
+        utils.assert_array_equal(plot.gca().lines[-1].get_ydata(),
+                                 numpy.array([1, 2, 3, 4]))
         plot.close()
 
-        # ----
+        # series
+        a = Series(range(10), dx=.1)
+        plot = self.FIGURE_CLASS(a)
+        ax = plot.gca()
+        line = ax.lines[0]
+        assert len(plot.axes) == 1
+        assert len(ax.lines) == 1
+        utils.assert_array_equal(line.get_xdata(), a.xindex.value)
+        utils.assert_array_equal(line.get_ydata(), a.value)
+        plot.close()
 
+        # two series
         b = Series(range(10), dx=.1)
-
         plot = self.FIGURE_CLASS(a, b)
         assert len(plot.axes) == 1
         assert len(plot.axes[0].lines) == 2
         plot.close()
 
+        # two series on separate axes
         plot = self.FIGURE_CLASS(a, b, separate=True, sharex=True, sharey=True)
         assert len(plot.axes) == 2
         for i, ax in enumerate(plot.axes):
@@ -87,6 +91,7 @@ class TestPlot(FigureTestBase):
         assert plot.axes[1]._sharex is plot.axes[0]
         plot.close()
 
+        # Array2D with imshow
         array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
         plot = self.FIGURE_CLASS(array, method='imshow')
         assert len(plot.axes[0].images) == 1
