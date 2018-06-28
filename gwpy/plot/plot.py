@@ -517,9 +517,9 @@ def _group_axes_data(inputs, separate=None, flat=False):
         #     structures, unless its a list of scalars in which case we
         #     should plot them all as one
         if (
-                isinstance(x, (KeysView, ValuesView)) or (
+                isinstance(x, (KeysView, ValuesView)) or
                 isinstance(x, (list, tuple)) and (
-                    not x or not numpy.isscalar(x[0])))
+                    not x or not numpy.isscalar(x[0]))
         ):
             out.append(x)
 
