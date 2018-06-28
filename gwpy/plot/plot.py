@@ -513,7 +513,10 @@ def _group_axes_data(inputs, separate=None, flat=False):
             x = list(x.values())
 
         # new group from iterable
-        if isinstance(x, iterable_types):
+        # notes: numpy.ndim will return 0 for iterators, so this call just
+        #        checks whether we are passing a list/tuple of numbers,
+        #        which we presume should be plotted as a single thing
+        if isinstance(x, iterable_types) and numpy.ndim(x) != 1:
             out.append(x)
 
         # dataset starts a new group
