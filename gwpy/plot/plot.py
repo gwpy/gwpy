@@ -516,8 +516,8 @@ def _group_axes_data(inputs, separate=None, flat=False):
         #     the iterable is presumed to be a list of independent data
         #     structures, unless its a list of scalars in which case we
         #     should plot them all as one
-        if isinstance(x, iterable_types) and not (
-                len(x) and numpy.isscalar(x[0])):
+        if isinstance(x, iterable_types) and (
+                not len(x) or not numpy.isscalar(x[0])):
             out.append(x)
 
         # dataset starts a new group
