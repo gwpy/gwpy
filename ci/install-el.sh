@@ -70,6 +70,7 @@ yum -y -q install \
     python-sqlparse \
     python-beautifulsoup4 \
     python-sqlalchemy \
+    python-m2crypto \
     glue \
     dqsegdb \
     python-psycopg2 \
