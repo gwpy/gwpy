@@ -552,11 +552,10 @@ class EventTable(Table):
         try:
             tcol = self._get_time_column()
         except ValueError:
-            pass
-        else:
-            if args[0].name == tcol:  # map X column to GPS axis
-                kwargs.setdefault('figsize', (12, 6))
-                kwargs.setdefault('xscale', 'auto-gps')
+            tcol = None
+        if args[0].name == tcol:  # map X column to GPS axis
+            kwargs.setdefault('figsize', (12, 6))
+            kwargs.setdefault('xscale', 'auto-gps')
 
         kwargs['method'] = method
         plot = Plot(*args, **kwargs)
