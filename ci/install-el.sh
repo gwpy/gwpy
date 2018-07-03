@@ -48,7 +48,7 @@ if [[ "${GWPY_VERSION}" == *"+"* ]]; then
     pip install "setuptools>=25"
 fi
 
-# -- build --------------------------------------------------------------------
+# -- build and install --------------------------------------------------------
 
 # build the RPM using tarball
 python setup.py --quiet sdist
@@ -58,16 +58,23 @@ rpmbuild --define "_rpmdir $(pwd)/dist" -tb dist/gwpy-*.tar.gz
 GWPY_RPM="dist/noarch/python2-gwpy-*.noarch.rpm"
 yum -y -q --nogpgcheck localinstall ${GWPY_RPM}
 
-# -- install ------------------------------------------------------------------
+# -- third-party packages -----------------------------------------------------
 
-# install system-level extras that use standard prefix
+# install system-level extras
 yum -y -q install \
     python2-pip \
+    python2-pytest \
+    python-coverage \
+    python2-mock \
     python2-freezegun \
-    python2-root
-
-# install LIGO axtras
-yum -y -q install \
+    python-sqlparse \
+    python-beautifulsoup4 \
+    python-sqlalchemy \
+    glue \
+    dqsegdb \
+    python-psycopg2 \
+    python-pandas \
+    python2-root \
     nds2-client-python \
     ldas-tools-framecpp-python \
     lalframe-python \
