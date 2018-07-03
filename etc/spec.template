@@ -16,10 +16,8 @@ Source0:        https://files.pythonhosted.org/packages/source/g/%{srcname}/%{sr
 BuildArch:      noarch
 BuildRequires:  rpm-build
 BuildRequires:  python-rpm-macros
-BuildRequires:  python3-rpm-macros
+BuildRequires:  python2-rpm-macros
 BuildRequires:  python2-setuptools
-BuildRequires:  python%{python3_pkgversion}-setuptools
-BuildRequires:  python3-rpm-macros
 
 %description
 {{ long_description }}
@@ -46,40 +44,15 @@ Requires:       python2-tqdm
 %description -n python2-%{srcname}
 {{ long_description }}
 
-
-# -- python3x-gwpy ------------------------------------------------------------
-
-%package -n python%{python3_pkgversion}-%{srcname}
-Summary:        %{summary}
-Requires:       python%{python3_pkgversion}-six
-Requires:       python%{python3_pkgversion}-dateutil
-Requires:       python%{python3_pkgversion}-numpy
-Requires:       python%{python3_pkgversion}-scipy
-Requires:       python%{python3_pkgversion}-matplotlib
-Requires:       python%{python3_pkgversion}-astropy
-Requires:       python%{python3_pkgversion}-h5py
-Requires:       lal-python%{python3_pkgversion} >= 6.14.0
-Requires:       python%{python3_pkgversion}-ligo-segments
-Requires:       python%{python3_pkgversion}-tqdm
-
-%{?python_provide:%python_provide python%{python3_pkgversion}-%{srcname}}
-
-%description -n python%{python3_pkgversion}-%{srcname}
-{{ long_description }}
-
 # -- build stages -------------------------------------------------------------
 
 %prep
 %autosetup -n %{srcname}-%{version}
 
 %build
-# build python3 first
-%py3_build
-# so that the scripts come from python2
 %py2_build
 
 %install
-%py3_install
 %py2_install
 
 # -- files --------------------------------------------------------------------
@@ -89,11 +62,6 @@ Requires:       python%{python3_pkgversion}-tqdm
 %doc README.md
 %{python2_sitelib}/*
 %{_bindir}/gwpy-plot
-
-%files -n python%{python3_pkgversion}-%{srcname}
-%license LICENSE
-%doc README.md
-%{python3_sitelib}/*
 
 # -- changelog ----------------------------------------------------------------
 
