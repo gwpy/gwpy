@@ -130,7 +130,7 @@ class SegmentAxes(Axes):
             args.pop(0)
         if args:
             out.extend(super(SegmentAxes, self).plot(*args, **kwargs))
-        self.autoscale(axis='y')
+        self.autoscale(enable=None, axis='both', tight=False)
         return out
 
     def plot_dict(self, flags, label='key', known='x', **kwargs):

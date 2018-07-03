@@ -162,8 +162,8 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
             args.ymax = self.result.yspan[1]
 
         specgram = self.result.crop(
-            args.xmin, args.xmax).crop_frequencies(
-                args.ymin, args.ymax)
+            args.xmin, min(args.xmax, self.result.xspan[1]),
+        ).crop_frequencies(args.ymin, args.ymax)
 
         # auto scale colours
         from numpy import percentile
@@ -175,6 +175,8 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
             imax = percentile(specgram, 100.)
         imin = args.imin if args.imin is not None else imin
         imax = args.imax if args.imax is not None else imax
+        self.log(3, ('Colorbar limits set to %f - %f' % (imin, imax)))
+
         try:
             image = self.ax.images[0]
         except IndexError:

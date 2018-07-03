@@ -86,13 +86,13 @@ Requires:       python%{python3_pkgversion}-tqdm
 
 %files -n python2-%{srcname}
 %license LICENSE
-%doc README.rst
+%doc README.md
 %{python2_sitelib}/*
 %{_bindir}/gwpy-plot
 
 %files -n python%{python3_pkgversion}-%{srcname}
 %license LICENSE
-%doc README.rst
+%doc README.md
 %{python3_sitelib}/*
 
 # -- changelog ----------------------------------------------------------------

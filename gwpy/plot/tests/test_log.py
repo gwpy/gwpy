@@ -62,7 +62,7 @@ def test_minor_log_formatter_mathtext(lim, in_, out):
     ((2, 50), 5, r'$\mathdefault{5}$'),
     ((2, 50), 10, r'$\mathdefault{10}$'),
 ])
-def test_minor_log_formatter_mathtext(lim, in_, out):
+def test_combined_log_formatter_mathtext(lim, in_, out):
     with rc_context(rc={'text.usetex': False}):
         fig = pyplot.figure()
         ax = fig.gca(yscale='log')

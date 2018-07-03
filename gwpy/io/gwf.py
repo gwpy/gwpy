@@ -154,6 +154,8 @@ def create_frame(time=0, duration=None, name='gwpy', run=-1, ifos=None):
 def num_channels(framefile):
     """Find the total number of channels in this framefile
 
+    **Requires:** |LDAStools.frameCPP|_
+
     Parameters
     ----------
     framefile : `str`
@@ -164,16 +166,14 @@ def num_channels(framefile):
     n : `int`
         the total number of channels found in the table of contents for this
         file
-
-    Notes
-    -----
-    This method requires LALFrame or FrameL to run
     """
     return len(get_channel_names(framefile))
 
 
 def get_channel_type(channel, framefile):
-    """Find the channel type in a given frame file
+    """Find the channel type in a given GWF file
+
+    **Requires:** |LDAStools.frameCPP|_
 
     Parameters
     ----------
@@ -193,30 +193,18 @@ def get_channel_type(channel, framefile):
     ValueError
         if the channel is not found in the table-of-contents
     """
-    import lalframe
-
-    name = str(channel)
-    # read frame and table of contents
-    frfile = lalframe.FrameUFrFileOpen(framefile, "r")
-    frtoc = lalframe.FrameUFrTOCRead(frfile)
-    for type_ in ['Sim', 'Proc', 'Adc']:
-        query = getattr(lalframe, 'FrameUFrTOCQuery%sName' % type_)
-        i = 0
-        while True:
-            try:
-                chan = query(frtoc, i)
-            except RuntimeError:
-                break
-            else:
-                if chan == name:
-                    return type_.lower()
-            i += 1
+    channel = str(channel)
+    for name, type_ in _iter_channels(framefile):
+        if channel == name:
+            return type_
     raise ValueError("%s not found in table-of-contents for %s"
-                     % (name, framefile))
+                     % (channel, framefile))
 
 
 def channel_in_frame(channel, framefile):
     """Determine whether a channel is stored in this framefile
+
+    **Requires:** |LDAStools.frameCPP|_
 
     Parameters
     ----------
@@ -242,10 +230,12 @@ def channel_in_frame(channel, framefile):
 def iter_channel_names(framefile):
     """Iterate over the names of channels found in a GWF file
 
+    **Requires:** |LDAStools.frameCPP|_
+
     Parameters
     ----------
     framefile : `str`
-        path of frame file to read
+        path of GWF file to read
 
     Returns
     -------
@@ -253,29 +243,8 @@ def iter_channel_names(framefile):
         an iterator that will loop over the names of channels as read from
         the table of contents of the given GWF file
     """
-    try:
-        out = shell.call(['FrChannels', framefile])[0]
-    except (OSError, shell.CalledProcessError):
-        import lalframe
-        # read frame and table of contents
-        frfile = lalframe.FrameUFrFileOpen(framefile, "r")
-        frtoc = lalframe.FrameUFrTOCRead(frfile)
-        for ctype in ['Sim', 'Proc', 'Adc']:
-            query = getattr(lalframe, 'FrameUFrTOCQuery%sName' % ctype)
-            i = 0
-            while True:
-                try:
-                    yield query(frtoc, i)
-                except RuntimeError:
-                    break
-                i += 1
-    else:
-        for line in iter(out.splitlines()):
-            chan = line.split(None, 1)[0]
-            if isinstance(chan, bytes):
-                yield chan.decode('utf-8')
-            else:
-                yield chan
+    for name, _ in _iter_channels(framefile):
+        yield name
 
 
 def get_channel_names(framefile):
@@ -285,10 +254,12 @@ def get_channel_names(framefile):
 
     >>> list(iter_channel_names(framefile))
 
+    **Requires:** |LDAStools.frameCPP|_
+
     Parameters
     ----------
     framefile : `str`
-        path of frame file to read
+        path of GWF file to read
 
     Returns
     -------
@@ -297,3 +268,23 @@ def get_channel_names(framefile):
         the given GWF file
     """
     return list(iter_channel_names(framefile))
+
+
+def _iter_channels(framefile):
+    """Yields the name and type of each channel in a GWF file TOC
+
+    **Requires:** |LDAStools.frameCPP|_
+
+    Parameters
+    ----------
+    framefile : `str`, `LDAStools.frameCPP.IFrameFStream`
+        path of GWF file, or open file stream, to read
+    """
+    from LDAStools import frameCPP
+    if not isinstance(framefile, frameCPP.IFrameFStream):
+        framefile = frameCPP.IFrameFStream(framefile)
+    toc = framefile.GetTOC()
+    for typename in ('Sim', 'Proc', 'ADC'):
+        typen = typename.lower()
+        for name in getattr(toc, 'Get{0}'.format(typename))():
+            yield name, typen

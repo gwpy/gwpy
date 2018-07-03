@@ -33,9 +33,6 @@ from numpy import (random, isclose, dtype)
 
 import h5py
 
-from matplotlib import use, rc_context
-use('agg')  # nopep8
-
 from astropy import units
 from astropy.io.ascii import InconsistentTableError
 from astropy.table import vstack
@@ -416,17 +413,22 @@ class TestEventTable(TestTable):
         t2.binned_event_rates(1, 'a', (10, 100), start=0, end=10)
 
     def test_plot(self, table):
-        with rc_context(rc={'text.usetex': False}):
+        with pytest.warns(DeprecationWarning):
             plot = table.plot('time', 'frequency', color='snr')
-            with tempfile.NamedTemporaryFile(suffix='.png') as f:
-                plot.save(f.name)
+            plot.close()
+
+    def test_scatter(self, table):
+        plot = table.scatter('time', 'frequency', color='snr')
+        with tempfile.NamedTemporaryFile(suffix='.png') as f:
+            plot.save(f.name)
+        plot.close()
 
     def test_hist(self, table):
-        with rc_context(rc={'text.usetex': False}):
-            plot = table.hist('snr')
-            assert len(plot.gca().patches) == 10
-            with tempfile.NamedTemporaryFile(suffix='.png') as f:
-                plot.save(f.name)
+        plot = table.hist('snr')
+        assert len(plot.gca().patches) == 10
+        with tempfile.NamedTemporaryFile(suffix='.png') as f:
+            plot.save(f.name)
+        plot.close()
 
     def test_get_column(self, table):
         utils.assert_array_equal(table.get_column('snr'), table['snr'])

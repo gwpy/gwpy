@@ -60,7 +60,7 @@ def test_find_frametype(connection):
     with mock.patch('glue.datafind.GWDataFindHTTPConnection') as \
             mock_connection, \
             mock.patch('gwpy.io.datafind.num_channels', lambda x: 1), \
-            mock.patch('gwpy.io.gwf.iter_channel_names',
+            mock.patch('gwpy.io.datafind.iter_channel_names',
                        lambda x: ['L1:LDAS-STRAIN']):
         mock_connection.return_value = connection
         assert io_datafind.find_frametype('L1:LDAS-STRAIN',
@@ -95,7 +95,7 @@ def test_find_best_frametype(connection):
     with mock.patch('glue.datafind.GWDataFindHTTPConnection') as \
             mock_connection, \
             mock.patch('gwpy.io.datafind.num_channels', lambda x: 1), \
-            mock.patch('gwpy.io.gwf.iter_channel_names',
+            mock.patch('gwpy.io.datafind.iter_channel_names',
                        lambda x: ['L1:LDAS-STRAIN']):
         mock_connection.return_value = connection
         assert io_datafind.find_best_frametype(

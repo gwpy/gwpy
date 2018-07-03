@@ -27,7 +27,7 @@ from six.moves import zip_longest
 
 import numpy
 
-from matplotlib import (backends, figure, get_backend, _pylab_helpers)
+from matplotlib import (figure, get_backend, _pylab_helpers)
 from matplotlib.artist import setp
 from matplotlib.backend_bases import FigureManagerBase
 from matplotlib.gridspec import GridSpec
@@ -84,6 +84,11 @@ class Plot(figure.Figure):
         self._init_axes(data, **kwargs)
 
     def _init_figure(self, **kwargs):
+        # we import matplotlib.backends here because it sets the backend
+        # at some point, so we don't want to do that upfront in case users
+        # need to set their own backend
+        from matplotlib.backends import pylab_setup
+
         # add new attributes
         self.colorbars = []
         self._coloraxes = []
@@ -94,7 +99,7 @@ class Plot(figure.Figure):
 
         # add interactivity
         # scraped from pyplot.figure()
-        backend_mod, _, draw_if_interactive, _show = backends.pylab_setup()
+        backend_mod, _, draw_if_interactive, _show = pylab_setup()
         try:
             manager = backend_mod.new_figure_manager_given_figure(1, self)
         except AttributeError:
@@ -140,8 +145,8 @@ class Plot(figure.Figure):
         axarr = numpy.empty((nrows, ncols), dtype=object)
 
         # set default labels
-        defxlabel = 'xlabel' not in kwargs
-        defylabel = 'ylabel' not in kwargs
+        defxlabel = 'xlabel' not in axes_kw
+        defylabel = 'ylabel' not in axes_kw
         flatdata = [s for group in axes_groups for s in group]
         for axis in ('x', 'y'):
             unit = _common_axis_unit(flatdata, axis=axis)
@@ -365,7 +370,7 @@ class Plot(figure.Figure):
 
     # -- extra methods --------------------------
 
-    def add_segments_bar(self, segments, ax=None, height=0.2, pad=0.1,
+    def add_segments_bar(self, segments, ax=None, height=0.14, pad=0.1,
                          sharex=True, location='bottom', **plotargs):
         """Add a segment bar `Plot` indicating state information.
 
@@ -406,6 +411,18 @@ class Plot(figure.Figure):
         if not ax:
             ax = self.gca()
 
+        # set options for new axes
+        axes_kw = {
+            'pad': pad,
+            'add_to_figure': True,
+            'sharex': ax if sharex is True else sharex or None,
+            'axes_class': get_projection_class('segments'),
+        }
+
+        # map X-axis limit from old axes
+        if axes_kw['sharex'] is ax and not ax.get_autoscalex_on():
+            axes_kw['xlim'] = ax.get_xlim()
+
         # add new axes
         if ax.get_axes_locator():
             divider = ax.get_axes_locator()._axes_divider
@@ -415,19 +432,16 @@ class Plot(figure.Figure):
         if location not in {'top', 'bottom'}:
             raise ValueError("Segments can only be positoned at 'top' or "
                              "'bottom'.")
-
-        sharex = ax if sharex is True else sharex or None
-        segax = divider.append_axes(
-             location, height, pad=pad, sharex=sharex,
-             axes_class=get_projection_class('segments'),
-        )
+        segax = divider.append_axes(location, height, **axes_kw)
 
         # update anchor axes
-        if sharex is ax:
-            segax.set_autoscalex_on(ax.get_autoscalex_on())
-            segax.set_xlim(*ax.get_xlim())
-            setp(ax.get_xticklabels(), visible=False)
+        if axes_kw['sharex'] is ax and location == 'bottom':
+            # map label
+            segax.set_xlabel(ax.get_xlabel())
+            segax.xaxis.isDefault_label = ax.xaxis.isDefault_label
             ax.set_xlabel("")
+            # hide ticks on original axes
+            setp(ax.get_xticklabels(), visible=False)
 
         # plot segments
         segax.plot(segments, **plotargs)
@@ -503,8 +517,15 @@ def _group_axes_data(inputs, separate=None, flat=False):
         if isinstance(x, dict):  # unwrap dict
             x = list(x.values())
 
-        # new group from iterable
-        if isinstance(x, iterable_types):
+        # new group from iterable, notes:
+        #     the iterable is presumed to be a list of independent data
+        #     structures, unless its a list of scalars in which case we
+        #     should plot them all as one
+        if (
+                isinstance(x, (KeysView, ValuesView)) or
+                isinstance(x, (list, tuple)) and (
+                    not x or not numpy.isscalar(x[0]))
+        ):
             out.append(x)
 
         # dataset starts a new group

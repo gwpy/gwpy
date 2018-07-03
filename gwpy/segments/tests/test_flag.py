@@ -677,6 +677,7 @@ class TestDataQualityDict(object):
             assert isinstance(plot.gca(), SegmentAxes)
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
+            plot.close()
 
     # -- test I/O -------------------------------
 

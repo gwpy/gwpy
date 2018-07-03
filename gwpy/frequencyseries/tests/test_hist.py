@@ -25,8 +25,7 @@ import pytest
 
 import numpy
 
-from matplotlib import (use, rc_context)
-use('agg')  # nopep8
+from matplotlib import rc_context
 
 from astropy import units
 
@@ -111,6 +110,7 @@ class TestSpectralVariance(_TestArray2D):
             assert len(plot.gca().collections) == 1
             with tempfile.NamedTemporaryFile(suffix='.png') as f:
                 plot.save(f.name)
+            plot.close()
 
     def test_value_at(self, array):
         assert array.value_at(5, self.bins[3]) == (
