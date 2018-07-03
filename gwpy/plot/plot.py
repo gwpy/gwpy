@@ -145,8 +145,8 @@ class Plot(figure.Figure):
         axarr = numpy.empty((nrows, ncols), dtype=object)
 
         # set default labels
-        defxlabel = 'xlabel' not in kwargs
-        defylabel = 'ylabel' not in kwargs
+        defxlabel = 'xlabel' not in axes_kw
+        defylabel = 'ylabel' not in axes_kw
         flatdata = [s for group in axes_groups for s in group]
         for axis in ('x', 'y'):
             unit = _common_axis_unit(flatdata, axis=axis)
