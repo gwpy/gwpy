@@ -38,7 +38,6 @@ set -ex && trap 'set +xe' RETURN
 
 # install test dependencies
 ${PIP} install ${PIP_FLAGS} coverage "setuptools>=17.1" "pytest>=3.1"
-COVERAGE=coverage-${PYTHON_VERSION}
 
 # fix broken glue dependency
 #     this is required because the LIGO glue package isn't
@@ -48,4 +47,4 @@ COVERAGE=coverage-${PYTHON_VERSION}
 ${PIP} install ${PIP_FLAGS} lscsoft-glue
 
 # run tests
-${COVERAGE} run ./setup.py --quiet test
+${PYTHON} -m coverage run ./setup.py --quiet test
