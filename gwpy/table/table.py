@@ -562,12 +562,13 @@ class EventTable(Table):
 
         # set default labels
         ax = plot.gca()
-        for axis, column in zip((ax.xaxis, ax.yaxis), args[:2]):
-            name = r'\texttt{{{0}}}'.format(label_to_latex(column.name))
-            if isinstance(column, Quantity):
-                name += ' [{0}]'.format(column.unit.to_string('latex_inline'))
-            axis.set_label_text(name)
-            axis.isDefault_label = True
+        for axis, col in zip((ax.xaxis, ax.yaxis), args[:2]):
+            if axis.isDefault_label:
+                name = r'\texttt{{{0}}}'.format(label_to_latex(col.name))
+                if isinstance(col, Quantity):
+                    name += ' [{0}]'.format(col.unit.to_string('latex_inline'))
+                axis.set_label_text(name)
+                axis.isDefault_label = True
 
         return plot
 
