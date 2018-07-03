@@ -90,19 +90,38 @@ for PREF in ${PREFICES}; do
     }
 done
 
-# install system-level extras for the correct python version
+# install extras
+apt-get -yqq install \
+    git \
+    ${PY_PREFIX}-pip \
+    ${PY_PREFIX}-pymysql \
+    ${PY_PREFIX}-glue \
+    ${PY_PREFIX}-sqlalchemy \
+    ${PY_PREFIX}-psycopg2 \
+    ${PY_PREFIX}-pandas \
+    ${PY_PREFIX}-pytest \
+    ${PY_PREFIX}-coverage \
+    ${PY_PREFIX}-freezegun \
+    ${PY_PREFIX}-sqlparse \
+    ${PY_PREFIX}-bs4 \
+    lalframe-${PY_PREFIX} \
+    lalsimulation-${PY_PREFIX}
+
+# install extras for python2 only
+if [ "${PY_MAJOR_VERSION}" -eq 2 ]; then
+    apt-get -yqq install \
+        ${PY_PREFIX}-mock \
+        libroot-bindings-python5.34 \
+        libroot-tree-treeplayer-dev \
+        libroot-math-physics-dev \
+        libroot-graf2d-postscript-dev
+fi
+
+# install LIGO-specific extras that may or may not exist
 for pckg in \
-    libroot-bindings-python5.34 libroot-tree-treeplayer-dev \
-    libroot-math-physics-dev libroot-graf2d-postscript-dev \
     ${PY_PREFIX}-nds2-client \
     ${PY_PREFIX}-dqsegdb ${PY_PREFIX}-m2crypto \
-    ${PY_PREFIX}-sqlalchemy \
-    ${PY_PREFIX}-pandas \
-    ${PY_PREFIX}-psycopg2 \
-    ${PY_PREFIX}-pymysql \
     ldas-tools-framecpp-${PY_PREFIX} \
-    lalframe-${PY_PREFIX} \
-    lalsimulation-${PY_PREFIX} \
 ; do
     apt-get -yqq install $pckg || true
 done
