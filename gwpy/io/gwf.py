@@ -243,7 +243,7 @@ def iter_channel_names(framefile):
         an iterator that will loop over the names of channels as read from
         the table of contents of the given GWF file
     """
-    for name, type_ in _iter_channels(framefile):
+    for name, _ in _iter_channels(framefile):
         yield name
 
 
