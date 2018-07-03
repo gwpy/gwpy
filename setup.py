@@ -103,7 +103,7 @@ extras_require['all'] = set(p for extra in extras_require.values()
 # test dependencies
 tests_require = [
     'pytest>=3.1',
-    'freezegun',
+    'freezegun>=0.2.3',
     'sqlparse',
     'beautifulsoup4',
 ]

@@ -37,7 +37,11 @@ get_python_version  # sets PYTHON_VERSION
 set -ex && trap 'set +xe' RETURN
 
 # install test dependencies
-${PIP} install ${PIP_FLAGS} coverage "setuptools>=17.1" "pytest>=3.1"
+${PIP} install ${PIP_FLAGS} \
+    "setuptools>=17.1" \
+    "pytest>=3.1" \
+    "coverage" \
+    "freezegun>=0.2.3"
 
 # run tests
 ${PYTHON} -m coverage run ./setup.py --quiet test
