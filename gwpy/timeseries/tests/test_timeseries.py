@@ -650,22 +650,22 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_fftgram(self, losc):
         fgram = losc.fftgram(1)
         fs = int(losc.sample_rate.value)
-        [f, t, sxx] = signal.spectrogram(losc, fs,
+        f, t, sxx = signal.spectrogram(losc, fs,
                                          window='hann',
                                          nperseg=fs,
                                          mode='complex')
-        numpy.testing.assert_array_equal(losc.t0.value + t, fgram.xindex.value)
-        numpy.testing.assert_array_equal(f, fgram.yindex.value)
-        numpy.testing.assert_array_equal(sxx.T, fgram)
+        utils.assert_array_equal(losc.t0.value + t, fgram.xindex.value)
+        utils.assert_array_equal(f, fgram.yindex.value)
+        utils.assert_array_equal(sxx.T, fgram)
         fgram = losc.fftgram(1, overlap=0.5)
-        [f, t, sxx] = signal.spectrogram(losc, fs,
+        f, t, sxx = signal.spectrogram(losc, fs,
                                          window='hann',
                                          nperseg=fs,
                                          noverlap=fs//2,
                                          mode='complex')
-        numpy.testing.assert_array_equal(losc.t0.value + t, fgram.xindex.value)
-        numpy.testing.assert_array_equal(f, fgram.yindex.value)
-        numpy.testing.assert_array_equal(sxx.T, fgram)
+        utils.assert_array_equal(losc.t0.value + t, fgram.xindex.value)
+        utils.assert_array_equal(f, fgram.yindex.value)
+        utils.assert_array_equal(sxx.T, fgram)
 
     def test_spectral_variance(self, losc):
         variance = losc.spectral_variance(.5)

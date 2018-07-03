@@ -526,12 +526,10 @@ class TimeSeries(TimeSeriesBase):
                                                 noverlap=noverlap,
                                                 mode='complex',
                                                 **kwargs)
-        out = Spectrogram(sxx.T,
-                          name=self.name, unit=self.unit,
-                          xindex=self.t0.value + times,
-                          yindex=frequencies)
-
-        return out
+        return Spectrogram(sxx.T,
+                           name=self.name, unit=self.unit,
+                           xindex=self.t0.value + times,
+                           yindex=frequencies)
 
     @_update_doc_with_fft_methods
     def spectral_variance(self, stride, fftlength=None, overlap=None,
