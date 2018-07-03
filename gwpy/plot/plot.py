@@ -370,7 +370,7 @@ class Plot(figure.Figure):
 
     # -- extra methods --------------------------
 
-    def add_segments_bar(self, segments, ax=None, height=0.2, pad=0.1,
+    def add_segments_bar(self, segments, ax=None, height=0.14, pad=0.1,
                          sharex=True, location='bottom', **plotargs):
         """Add a segment bar `Plot` indicating state information.
 
