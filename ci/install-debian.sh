@@ -20,6 +20,8 @@
 # Build Debian package
 #
 
+# -- prep ---------------------------------------------------------------------
+
 # enable lscsoft jessie-proposed (first required for python-tqdm gwpy/gwpy#735)
 if [ "${OS_VERSION}" -eq 8 ]; then
     cat << EOF > /etc/apt/sources.list.d/lscsoft-proposed.list
@@ -64,6 +66,8 @@ pip install --quiet "GitPython>=2.1.8"
 # prepare the tarball (sdist generates debian/changelog)
 python setup.py --quiet sdist
 
+# -- build and install --------------------------------------------------------
+
 # make the debian package
 mkdir -p dist/debian
 pushd dist/debian
@@ -89,6 +93,8 @@ for PREF in ${PREFICES}; do
         dpkg --install ${GWPY_DEB};  # shouldn't fail
     }
 done
+
+# -- third-party packages -----------------------------------------------------
 
 # install extras
 apt-get -yqq install \
