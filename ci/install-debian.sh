@@ -100,7 +100,6 @@ done
 apt-get -yqq install \
     git \
     ${PY_PREFIX}-pip \
-    ${PY_PREFIX}-pymysql \
     ${PY_PREFIX}-glue \
     ${PY_PREFIX}-sqlalchemy \
     ${PY_PREFIX}-psycopg2 \
@@ -123,8 +122,10 @@ if [ "${PY_MAJOR_VERSION}" -eq 2 ]; then
         libroot-graf2d-postscript-dev
 fi
 
-# install LIGO-specific extras that may or may not exist
+# install other packages that may or may not exist for this
+# debian version, or this python version
 for pckg in \
+    ${PY_PREFIX}-pymysql \
     ${PY_PREFIX}-nds2-client \
     ${PY_PREFIX}-dqsegdb ${PY_PREFIX}-m2crypto \
     ldas-tools-framecpp-${PY_PREFIX} \
