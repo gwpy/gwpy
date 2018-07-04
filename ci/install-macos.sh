@@ -40,7 +40,6 @@ sudo port -q install \
     ${PY_PREFIX}-gitpython
 
 # make Portfile
-cd ${GWPY_PATH}
 GWPY_VERSION=$(python setup.py --version)
 $PYTHON setup.py --quiet sdist
 $PYTHON setup.py port --tarball dist/gwpy-${GWPY_VERSION}.tar.gz
@@ -56,9 +55,9 @@ gsed -i 's|pypi:g/gwpy|file://'$(pwd)'/dist/ \\\n                    pypi:g/gwpy
 
 # add local port repo to sources
 sudo gsed -i 's|rsync://rsync.macports|file://'${PORT_REPO}'\nrsync://rsync.macports|' /opt/local/etc/macports/sources.conf
-cd ${PORT_REPO}
+pushd ${PORT_REPO}
 portindex
-cd ${GWPY_PATH}
+popd
 
 # set up utility to ping STDOUT every 10 seconds, prevents timeout
 # https://github.com/travis-ci/travis-ci/issues/6591#issuecomment-275804717
@@ -76,7 +75,6 @@ sudo port -q install ${PY_PREFIX}-gwpy +nds2 +segments
 # install extras (see requirements-dev.txt)
 sudo port -q install \
     kerberos5 \
-    ${PY_PREFIX}-matplotlib \
     ${PY_PREFIX}-lalsimulation \
     ${PY_PREFIX}-pymysql \
     ${PY_PREFIX}-sqlalchemy \
@@ -88,17 +86,14 @@ sudo port -q install \
     ${PY_PREFIX}-sqlparse \
     ${PY_PREFIX}-beautifulsoup4
 
+# install python2-only extras
+if [ "${PY_MAJOR_VERSION}" -eq 2 ]; then
+    sudo port -q install glue
+fi
+
 # install m2cyrpto if needed
 if [ "$(port info --version dqsegdb)" == "version: 1.4.0" ]; then
     sudo port -q install ${PY_PREFIX}-m2crypto
 fi
 
 kill -9 $wvbpid &> /dev/null
-
-# hacky fix for installing NOT mpl 2.1.x
-#     this can be removed as soon as mpl 2.1.2 is released
-MPL_VERSION=$(port -q installed ${PY_PREFIX}-matplotlib | grep active | \
-              awk -F '[\@\_]' '{print $2}')
-if [[ "${MPL_VERSION}" =~ 2.1.[01] ]]; then
-    ${PIP} install "matplotlib >= 1.2.0, != 2.1.0, != 2.1.1"
-fi

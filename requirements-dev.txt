@@ -1,15 +1,18 @@
-# include core requirements
+# core
 -r requirements.txt
 
-# dependencies for glue
-pykerberos
-pyRXP
+# tests
+-r requirements-test.txt
+
+# docs
+-r requirements-doc.txt
 
 # extras
 pymysql
+pykerberos
+pyRXP
 lscsoft-glue
 dqsegdb
-https://github.com/ligovirgo/trigfind/archive/v0.4.tar.gz
 ligotimegps
 pycbc != 1.10.0 ; python_version == '2.7'
 git+https://github.com/duncanmmacleod/ligo.org.git
@@ -17,19 +20,3 @@ sqlalchemy
 psycopg2
 pandas ; python_version != '3.4'
 pandas < 0.21 ; python_version == '3.4'
-
-# docs
-sphinx >= 1.6.1
-numpydoc
-sphinx-bootstrap-theme >= 0.6
-sphinxcontrib-programoutput
-sphinx-automodapi
-requests
-
-# tests
-pytest >= 3.1
-coveralls
-mock ; python_version < '3'
-freezegun
-sqlparse
-bs4

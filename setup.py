@@ -103,9 +103,9 @@ extras_require['all'] = set(p for extra in extras_require.values()
 # test dependencies
 tests_require = [
     'pytest>=3.1',
-    'freezegun',
-    'sqlparse',
-    'bs4',
+    'freezegun>=0.2.3',
+    'sqlparse>=0.2.0',
+    'beautifulsoup4',
 ]
 if sys.version < '3':
     tests_require.append('mock')

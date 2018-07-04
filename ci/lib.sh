@@ -172,16 +172,11 @@ get_environment() {
             ;;
         centos2|rhel2|fedora2)
             PY_DIST="python"
-            PY_PREFIX="python"
+            PY_PREFIX="python2"
             ;;
         centos3|rhel3|fedora2)
-            if [ "${PYTHON_VERSION}" == "${PYTHON3_VERSION}" ]; then # IUS
-                PY_DIST="python${PY_XY}u"
-                PY_PREFIX="python${PY_XY}u"
-            else  # base repo
-                PY_DIST="python${PY_XY}"
-                PY_PREFIX="python${PY_XY}"
-            fi
+            PY_DIST="python${PY_XY}"
+            PY_PREFIX="python${PY_XY}"
             ;;
     esac
     export PY_DIST PY_PREFIX PIP
