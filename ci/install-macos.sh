@@ -76,9 +76,9 @@ sudo port -q install ${PY_PREFIX}-gwpy +nds2 +segments
 # install extras (see requirements-dev.txt)
 sudo port -q install \
     kerberos5 \
-    ${PY_PREFIX}-matplotlib \
     ${PY_PREFIX}-lalsimulation \
     ${PY_PREFIX}-pymysql \
+    ${PY_PREFIX}-lscsoft-glue \
     ${PY_PREFIX}-sqlalchemy \
     ${PY_PREFIX}-psycopg2 \
     ${PY_PREFIX}-pandas \
