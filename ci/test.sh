@@ -40,7 +40,7 @@ set -ex && trap 'set +xe' RETURN
 ${PIP} install ${PIP_FLAGS} \
     "setuptools>=17.1" \
     "pytest>=3.1" \
-    "coverage" \
+    "coverage>=4.0.0" \
     "freezegun>=0.2.3"
 
 # run tests
