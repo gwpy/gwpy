@@ -21,6 +21,7 @@
 #
 
 . ci/lib.sh
+get_environment
 
 # fix paths in coverage file for docker-based runs
 if [ ! -z ${DOCKER_IMAGE+x} ]; then
