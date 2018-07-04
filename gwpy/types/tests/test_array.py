@@ -20,7 +20,6 @@
 """
 
 import os
-import tempfile
 import pickle
 import warnings
 
@@ -260,28 +259,3 @@ class TestArray(object):
         array.override_unit('blah', parse_strict='silent')
         assert isinstance(array.unit, units.IrreducibleUnit)
         assert str(array.unit) == 'blah'
-
-    # -- test I/O -------------------------------
-
-    def _test_read_write(self, format, extension=None, auto=True, exclude=[],
-                         readkwargs={}, writekwargs={}):
-        """Helper method for testing unified I/O for `Array` instances
-        """
-        if extension is None:
-            extension = format
-        extension = '.%s' % extension.lstrip('.')
-        try:
-            fp = tempfile.mktemp(suffix=extension)
-            self.TEST_ARRAY.write(fp, format=format, **writekwargs)
-            if auto:
-                self.TEST_ARRAY.write(fp, **writekwargs)
-            b = self.TEST_ARRAY.read(fp, self.TEST_ARRAY.name,
-                                     format=format, **readkwargs)
-            if auto:
-                self.TEST_ARRAY.read(fp, self.TEST_ARRAY.name,
-                                     **readkwargs)
-            utils.assert_array_equal(self.TEST_ARRAY, b, exclude=exclude)
-            return b
-        finally:
-            if os.path.exists(fp):
-                os.remove(fp)

@@ -20,7 +20,6 @@
 """
 
 import os
-import tempfile
 import warnings
 
 import numpy
@@ -350,19 +349,3 @@ class TestSeries(_TestArray):
         elif ts1.xunit == units.Hz:
             assert ts1.value_at(1500 * units.milliHertz) == (
                 self.data[3] * ts1.unit)
-
-    # -- test I/O -------------------------------
-
-    def _test_read_write_ascii(self, format='txt'):
-        extension = '.%s' % format.lstrip('.')
-        try:
-            with tempfile.NamedTemporaryFile(suffix=extension, mode='w',
-                                             delete=False) as f:
-                self.TEST_ARRAY.write(f.name, format=format)
-                self.TEST_ARRAY.write(f.name)
-                b = self.TEST_ARRAY.read(f.name, format=format)
-                self.TEST_ARRAY.read(f.name)
-                utils.assert_array_equal(self.TEST_ARRAY.value, b.value)
-        finally:
-            if os.path.exists(f.name):
-                os.remove(f.name)
