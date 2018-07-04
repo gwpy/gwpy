@@ -20,7 +20,6 @@
 """
 
 import os
-import tempfile
 import warnings
 from argparse import ArgumentParser
 
@@ -38,8 +37,6 @@ from ...tests import (utils, mocks)
 from ...tests.mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-_, TEMP_PLOT_FILE = tempfile.mkstemp(prefix='GWPY-UNITTEST_', suffix='.png')
 
 
 # -- utilities ----------------------------------------------------------------
@@ -249,11 +246,11 @@ class _TestCliProduct(object):
     def test_run(self, prod):
         conn, _ = mock_nds2_connection()
         with mock.patch('nds2.connection') as mocker, \
-                tempfile.NamedTemporaryFile(suffix='.png') as f:
+                utils.TemporaryFilename(suffix='.png') as tmp:
             mocker.return_value = conn
-            prod.args.out = f.name
+            prod.args.out = tmp
             prod.run()
-            assert os.path.isfile(f.name)
+            assert os.path.isfile(tmp)
             assert prod.plot_num == 1
             assert not prod.has_more_plots()
 

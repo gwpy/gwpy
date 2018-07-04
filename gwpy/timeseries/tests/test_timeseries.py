@@ -21,7 +21,6 @@
 
 import importlib
 import os.path
-import tempfile
 from itertools import (chain, product)
 from ssl import SSLError
 
@@ -162,11 +161,12 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         # test read keyword arguments
         suffix = '-%d-%d.gwf' % (array.t0.value, array.duration.value)
-        with tempfile.NamedTemporaryFile(prefix='GWpy-', suffix=suffix) as f:
-            array.write(f.name)
+        with utils.TemporaryFilename(prefix='GWpy-', suffix=suffix) as tmp:
+            array.write(tmp)
 
             def read_(**kwargs):
-                return type(array).read(f, array.name, format='gwf', **kwargs)
+                return type(array).read(tmp, array.name, format='gwf',
+                                        **kwargs)
 
             # test start, end
             start, end = array.span.contract(10)
@@ -186,7 +186,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 t = read_(dtype='float32')
             assert t.dtype is numpy.dtype('float32')
             with pytest.warns(DeprecationWarning):
-                t = read_(dtype={f.name: 'float64'})
+                t = read_(dtype={array.name: 'float64'})
             assert t.dtype is numpy.dtype('float64')
 
             # check errors
@@ -198,10 +198,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
             # check reading from multiple files
             a2 = self.create(name='TEST', t0=array.span[1], dt=array.dx)
             suffix = '-%d-%d.gwf' % (a2.t0.value, a2.duration.value)
-            with tempfile.NamedTemporaryFile(prefix='GWpy-',
-                                             suffix=suffix) as f2:
-                a2.write(f2.name)
-                cache = [f.name, f2.name]
+            with utils.TemporaryFilename(prefix='GWpy-',
+                                         suffix=suffix) as tmp2:
+                a2.write(tmp2)
+                cache = [tmp, tmp2]
                 comb = type(array).read(cache, 'TEST', format=fmt, nproc=2)
                 utils.assert_quantity_sub_equal(
                     comb, array.append(a2, inplace=False),
@@ -217,31 +217,31 @@ class TestTimeSeries(_TestTimeSeriesBase):
         array = self.create()
         array.channel = channel
 
-        with tempfile.NamedTemporaryFile(suffix='.%s' % ext) as f:
+        with utils.TemporaryFilename(suffix='.%s' % ext) as tmp:
             # check array with no name fails
             with pytest.raises(ValueError) as exc:
-                array.write(f.name, overwrite=True)
+                array.write(tmp, overwrite=True)
             assert str(exc.value).startswith('Cannot determine HDF5 path')
             array.name = 'TEST'
 
             # write array (with auto-identify)
-            array.write(f.name, overwrite=True)
+            array.write(tmp, overwrite=True)
 
             # check reading gives the same data (with/without auto-identify)
-            ts = type(array).read(f.name, format='hdf5')
+            ts = type(array).read(tmp, format='hdf5')
             utils.assert_quantity_sub_equal(array, ts)
-            ts = type(array).read(f.name)
+            ts = type(array).read(tmp)
             utils.assert_quantity_sub_equal(array, ts)
 
             # check that we can't then write the same data again
             with pytest.raises(IOError):
-                array.write(f.name)
+                array.write(tmp)
             with pytest.raises(RuntimeError):
-                array.write(f.name, append=True)
+                array.write(tmp, append=True)
 
             # check reading with start/end works
             start, end = array.span.contract(25)
-            t = type(array).read(f, start=start, end=end)
+            t = type(array).read(tmp, start=start, end=end)
             utils.assert_quantity_sub_equal(t, array.crop(start, end))
 
     @utils.skip_minimum_version('scipy', '0.13.0')
@@ -935,21 +935,21 @@ class TestTimeSeriesDict(_TestTimeSeriesBaseDict):
 
     @utils.skip_missing_dependency('LDAStools.frameCPP')
     def test_read_write_gwf(self, instance):
-        with tempfile.NamedTemporaryFile(suffix='.gwf') as f:
-            instance.write(f.name)
-            new = self.TEST_CLASS.read(f.name, instance.keys())
+        with utils.TemporaryFilename(suffix='.gwf') as tmp:
+            instance.write(tmp)
+            new = self.TEST_CLASS.read(tmp, instance.keys())
             for key in new:
                 utils.assert_quantity_sub_equal(new[key], instance[key],
                                                 exclude=['channel'])
 
     def test_read_write_hdf5(self, instance):
-        with tempfile.NamedTemporaryFile(suffix='.hdf5') as f:
-            instance.write(f.name, overwrite=True)
-            new = self.TEST_CLASS.read(f.name, instance.keys())
+        with utils.TemporaryFilename(suffix='.hdf5') as tmp:
+            instance.write(tmp, overwrite=True)
+            new = self.TEST_CLASS.read(tmp, instance.keys())
             for key in new:
                 utils.assert_quantity_sub_equal(new[key], instance[key])
             # check auto-detection of names
-            new = self.TEST_CLASS.read(f.name)
+            new = self.TEST_CLASS.read(tmp)
             for key in new:
                 utils.assert_quantity_sub_equal(new[key], instance[key])
 

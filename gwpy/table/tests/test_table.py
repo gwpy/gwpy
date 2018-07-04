@@ -122,20 +122,20 @@ class TestTable(object):
         table = self.create(
             100, ['peak_time', 'peak_time_ns', 'snr', 'central_freq'],
             ['i4', 'i4', 'f4', 'f4'])
-        with tempfile.NamedTemporaryFile(suffix='.{}'.format(ext),
-                                         delete=False) as f:
+        with utils.TemporaryFilename(suffix='.{}'.format(ext)) as tmp:
             def _read(*args, **kwargs):
                 kwargs.setdefault('format', 'ligolw')
                 kwargs.setdefault('tablename', 'sngl_burst')
-                return self.TABLE.read(f, *args, **kwargs)
+                return self.TABLE.read(tmp, *args, **kwargs)
 
             def _write(*args, **kwargs):
                 kwargs.setdefault('format', 'ligolw')
                 kwargs.setdefault('tablename', 'sngl_burst')
-                return table.write(f.name, *args, **kwargs)
+                return table.write(tmp, *args, **kwargs)
 
             # check simple write (using open file descriptor, not file path)
-            table.write(f, format='ligolw', tablename='sngl_burst')
+            with open(tmp, 'w+b') as f:
+                table.write(f, format='ligolw', tablename='sngl_burst')
 
             # check simple read
             t2 = _read()
@@ -153,7 +153,7 @@ class TestTable(object):
 
             # check reading multiple tables works
             try:
-                t3 = self.TABLE.read([f.name, f.name], format='ligolw',
+                t3 = self.TABLE.read([tmp, tmp], format='ligolw',
                                      tablename='sngl_burst')
             except NameError as e:
                 if not PY2:  # ligolw not patched for python3 just yet
@@ -164,7 +164,7 @@ class TestTable(object):
             # check writing to existing file raises IOError
             with pytest.raises(IOError) as exc:
                 _write()
-            assert str(exc.value) == 'File exists: %s' % f.name
+            assert str(exc.value) == 'File exists: %s' % tmp
 
             # check overwrite=True, append=False rewrites table
             try:
@@ -190,14 +190,14 @@ class TestTable(object):
 
             # write another table and check we can still get back the first
             insp = self.create(10, ['end_time', 'snr', 'chisq_dof'])
-            insp.write(f.name, format='ligolw', tablename='sngl_inspiral',
+            insp.write(tmp, format='ligolw', tablename='sngl_inspiral',
                        append=True)
             t3 = _read()
             utils.assert_table_equal(t2, t3)
 
             # write another table with append=False and check the first table
             # is gone
-            insp.write(f.name, format='ligolw', tablename='sngl_inspiral',
+            insp.write(tmp, format='ligolw', tablename='sngl_inspiral',
                        append=False, overwrite=True)
             with pytest.raises(ValueError) as exc:
                 _read()
@@ -226,10 +226,7 @@ class TestTable(object):
 
     @utils.skip_missing_dependency('root_numpy')
     def test_read_write_root(self, table):
-        tempdir = tempfile.mkdtemp()
-        try:
-            fp = tempfile.mktemp(suffix='.root', dir=tempdir)
-
+        with utils.TemporaryFilename(suffix='.root') as fp:
             # check write
             table.write(fp)
 
@@ -258,19 +255,15 @@ class TestTable(object):
                                  ('time', filters.in_segmentlist, segs)),
             )
 
-        finally:
-            if os.path.isdir(tempdir):
-                shutil.rmtree(tempdir)
-
     def test_read_write_gwf(self):
         table = self.create(100, ['time', 'blah', 'frequency'])
         columns = table.dtype.names
-        tempdir = tempfile.mkdtemp()
-        try:
-            fp = tempfile.mktemp(suffix='.gwf', dir=tempdir)
-
+        with utils.TemporaryFilename(suffix='.gwf') as fp:
             # check write
-            table.write(fp, 'test_read_write_gwf')
+            try:
+                table.write(fp, 'test_read_write_gwf')
+            except ImportError as e:
+                pytest.skip(str(e))
 
             # check read gives back same table
             t2 = self.TABLE.read(fp, 'test_read_write_gwf', columns=columns)
@@ -281,12 +274,6 @@ class TestTable(object):
                                  columns=columns, selection='frequency>500')
             utils.assert_table_equal(
                 filter_table(t2, 'frequency>500'), t3)
-
-        except ImportError as e:
-            pytest.skip(str(e))
-        finally:
-            if os.path.isdir(tempdir):
-                shutil.rmtree(tempdir)
 
 
 class TestEventTable(TestTable):
@@ -439,7 +426,6 @@ class TestEventTable(TestTable):
     def test_read_write_ascii(self, table, fmtname):
         fmt = 'ascii.%s' % fmtname.lower()
         with tempfile.NamedTemporaryFile(suffix='.txt', mode='w') as f:
-            print(f.name)
             # check write/read returns the same table
             table.write(f, format=fmt)
             f.seek(0)

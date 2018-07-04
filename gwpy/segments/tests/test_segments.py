@@ -25,7 +25,8 @@ import tempfile
 
 import pytest
 
-from ...tests.utils import (assert_segmentlist_equal, skip_missing_dependency)
+from ...tests.utils import (assert_segmentlist_equal, skip_missing_dependency,
+                            TemporaryFilename)
 from ...time import LIGOTimeGPS
 from .. import (Segment, SegmentList)
 
@@ -79,28 +80,25 @@ class TestSegmentList(object):
 
     @skip_missing_dependency('glue.segmentsUtils')
     def test_read_write_segwizard(self, segmentlist):
-        with tempfile.NamedTemporaryFile(suffix='.txt', mode='w') as f:
+        with TemporaryFilename(suffix='.txt') as tmp:
             # check write/read returns the same list
-            segmentlist.write(f.name)
-            sl2 = self.TEST_CLASS.read(f.name, coalesce=False)
+            segmentlist.write(tmp)
+            sl2 = self.TEST_CLASS.read(tmp, coalesce=False)
             assert_segmentlist_equal(sl2, segmentlist)
             assert isinstance(sl2[0][0], LIGOTimeGPS)
 
             # check that coalesceing does what its supposed to
             c = type(segmentlist)(segmentlist).coalesce()
-            sl2 = self.TEST_CLASS.read(f.name, coalesce=True)
+            sl2 = self.TEST_CLASS.read(tmp, coalesce=True)
             assert_segmentlist_equal(sl2, c)
 
             # check gpstype kwarg
-            sl2 = self.TEST_CLASS.read(f.name, gpstype=float)
+            sl2 = self.TEST_CLASS.read(tmp, gpstype=float)
             assert isinstance(sl2[0][0], float)
 
     @pytest.mark.parametrize('ext', ('.hdf5', '.h5'))
     def test_read_write_hdf5(self, segmentlist, ext):
-        tempdir = tempfile.mkdtemp()
-        try:
-            fp = tempfile.mktemp(suffix=ext, dir=tempdir)
-
+        with TemporaryFilename(suffix=ext) as fp:
             # check basic write/read with auto-path discovery
             segmentlist.write(fp, 'test-segmentlist')
             sl2 = self.TEST_CLASS.read(fp)
@@ -119,7 +117,3 @@ class TestSegmentList(object):
             sl2 = self.TEST_CLASS.read(fp, gpstype=float)
             assert_segmentlist_equal(sl2, segmentlist)
             assert isinstance(sl2[0][0], float)
-
-        finally:
-            if os.path.isdir(tempdir):
-                shutil.rmtree(tempdir)

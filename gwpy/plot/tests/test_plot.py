@@ -20,7 +20,6 @@
 """
 
 import os.path
-import tempfile
 
 from six.moves import StringIO
 
@@ -100,9 +99,9 @@ class TestPlot(FigureTestBase):
         plot.close()
 
     def test_save(self, fig):
-        with tempfile.NamedTemporaryFile(suffix='.png') as f:
-            fig.save(f.name)
-            assert os.path.isfile(f.name)
+        with utils.TemporaryFilename(suffix='.png') as tmp:
+            fig.save(tmp)
+            assert os.path.isfile(tmp)
 
     def test_get_axes(self, fig):
         fig.add_subplot(2, 1, 1, projection='rectilinear')
