@@ -226,19 +226,19 @@ class TestTable(object):
 
     @utils.skip_missing_dependency('root_numpy')
     def test_read_write_root(self, table):
-        with utils.TemporaryFilename(suffix='.root') as fp:
+        with utils.TemporaryFilename(suffix='.root') as tmp:
             # check write
-            table.write(fp)
+            table.write(tmp)
 
             def _read(*args, **kwargs):
-                return type(table).read(fp, *args, **kwargs)
+                return type(table).read(tmp, *args, **kwargs)
 
             # check read gives back same table
             utils.assert_table_equal(table, _read())
 
             # check that reading table from file with multiple trees without
             # specifying fails
-            table.write(fp, treename='test')
+            table.write(tmp, treename='test')
             with pytest.raises(ValueError) as exc:
                 _read()
             assert str(exc.value).startswith('Multiple trees found')
@@ -258,19 +258,19 @@ class TestTable(object):
     def test_read_write_gwf(self):
         table = self.create(100, ['time', 'blah', 'frequency'])
         columns = table.dtype.names
-        with utils.TemporaryFilename(suffix='.gwf') as fp:
+        with utils.TemporaryFilename(suffix='.gwf') as tmp:
             # check write
             try:
-                table.write(fp, 'test_read_write_gwf')
+                table.write(tmp, 'test_read_write_gwf')
             except ImportError as e:
                 pytest.skip(str(e))
 
             # check read gives back same table
-            t2 = self.TABLE.read(fp, 'test_read_write_gwf', columns=columns)
+            t2 = self.TABLE.read(tmp, 'test_read_write_gwf', columns=columns)
             utils.assert_table_equal(table, t2, meta=False, almost_equal=True)
 
             # check selections works
-            t3 = self.TABLE.read(fp, 'test_read_write_gwf',
+            t3 = self.TABLE.read(tmp, 'test_read_write_gwf',
                                  columns=columns, selection='frequency>500')
             utils.assert_table_equal(
                 filter_table(t2, 'frequency>500'), t3)
