@@ -19,7 +19,7 @@
 """Unit test for timeseries module
 """
 
-import tempfile
+from io import BytesIO
 
 import pytest
 
@@ -248,8 +248,7 @@ class TestStateVector(_TestTimeSeriesBase):
             assert plot.gca().lines == []
             # assert one collection for each of known and active segmentlists
             assert len(plot.gca().collections) == len(array.bits) * 2
-            with tempfile.NamedTemporaryFile(suffix='.png') as f:
-                plot.save(f.name)
+            plot.save(BytesIO(), format='png')
             plot.close()
 
             # test timeseries plotting as normal

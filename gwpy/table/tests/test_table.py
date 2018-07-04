@@ -22,6 +22,7 @@
 import os.path
 import shutil
 import tempfile
+from io import BytesIO
 
 from six import PY2
 
@@ -419,15 +420,13 @@ class TestEventTable(TestTable):
 
     def test_scatter(self, table):
         plot = table.scatter('time', 'frequency', color='snr')
-        with tempfile.NamedTemporaryFile(suffix='.png') as f:
-            plot.save(f.name)
+        plot.save(BytesIO(), format='png')
         plot.close()
 
     def test_hist(self, table):
         plot = table.hist('snr')
         assert len(plot.gca().patches) == 10
-        with tempfile.NamedTemporaryFile(suffix='.png') as f:
-            plot.save(f.name)
+        plot.save(BytesIO(), format='png')
         plot.close()
 
     def test_get_column(self, table):

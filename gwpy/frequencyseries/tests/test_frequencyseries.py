@@ -20,6 +20,7 @@
 """
 
 import tempfile
+from io import BytesIO
 
 import pytest
 
@@ -117,8 +118,7 @@ class TestFrequencySeries(_TestSeries):
             line = plot.gca().lines[0]
             utils.assert_array_equal(line.get_xdata(), array.xindex.value)
             utils.assert_array_equal(line.get_ydata(), array.value)
-            with tempfile.NamedTemporaryFile(suffix='.png') as f:
-                plot.save(f.name)
+            plot.save(BytesIO(), format='png')
             plot.close()
 
     def test_ifft(self):

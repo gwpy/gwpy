@@ -19,7 +19,7 @@
 """Unit test for frequencyseries module
 """
 
-import tempfile
+from io import BytesIO
 
 import pytest
 
@@ -108,8 +108,7 @@ class TestSpectralVariance(_TestArray2D):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot(yscale='linear')
             assert len(plot.gca().collections) == 1
-            with tempfile.NamedTemporaryFile(suffix='.png') as f:
-                plot.save(f.name)
+            plot.save(BytesIO(), format='png')
             plot.close()
 
     def test_value_at(self, array):
