@@ -24,7 +24,7 @@
 
 # fix paths in coverage file for docker-based runs
 if [ ! -z ${DOCKER_IMAGE+x} ]; then
-    sed -i 's|"'${GWPY_PATH}'|"'`pwd`'|g' .coverage;
+    sed -i 's|"'${GWPY_PATH}'|"'$(pwd)'|g' .coverage;
 fi
 
 # install coveralls
