@@ -25,6 +25,7 @@ import tempfile
 
 from six import PY2
 
+from ...tests.utils import TemporaryFilename
 from .. import utils as io_utils
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -32,28 +33,21 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 def test_gopen():
     # test simple use
-    try:
-        with tempfile.NamedTemporaryFile(delete=False, mode='w') as f:
+    with TemporaryFilename() as tmp:
+        with open(tmp, 'w') as f:
             f.write('blah blah blah')
         f2 = io_utils.gopen(f.name)
         assert f2.read() == 'blah blah blah'
-    finally:
-        if os.path.isfile(f.name):
-            os.remove(f.name)
 
     # test gzip file (with and without extension)
     for suffix in ('.txt.gz', ''):
-        try:
-            fn = tempfile.mktemp(suffix=suffix)
-            text = 'blah blah blah' if PY2 else b'blah blah blah'
-            with gzip.open(fn, 'wb') as f:
-                f.write(text)
-            f2 = io_utils.gopen(fn, mode='rb')
-            assert isinstance(f2, gzip.GzipFile)
-            assert f2.read() == text
-        finally:
-            if os.path.isfile(fn):
-                os.remove(f.name)
+        with TemporaryFilename(suffix=suffix) as tmp:
+            text = b'blah blah blah'
+            with gzip.open(tmp, 'wb') as fobj:
+                fobj.write(text)
+            fobj2 = io_utils.gopen(tmp, mode='rb')
+            assert isinstance(fobj2, gzip.GzipFile)
+            assert fobj2.read() == text
 
 
 def test_identify_factory():
