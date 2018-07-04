@@ -339,7 +339,6 @@ class TestEventTable(TestTable):
         table.filter(u'snr > 100')
 
     def test_filter_in_segmentlist(self, table):
-        print(table)
         # check filtering on segments works
         segs = SegmentList([Segment(100, 200), Segment(400, 500)])
         inseg = table.filter(('time', filters.in_segmentlist, segs))
@@ -378,7 +377,6 @@ class TestEventTable(TestTable):
         # check that method can function without explicit time column
         # (and no data) if and only if start/end are both given
         t2 = self.create(10, names=['a', 'b'])
-        print(t2)
         with pytest.raises(ValueError) as exc:
             t2.event_rate(1)
         assert 'please give `timecolumn` keyword' in str(exc.value)

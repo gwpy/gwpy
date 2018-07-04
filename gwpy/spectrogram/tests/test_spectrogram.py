@@ -64,7 +64,6 @@ class TestSpectrogram(_TestArray2D):
 
     def test_value_at(self, array):
         super(TestSpectrogram, self).test_value_at(array)
-        print(array)
         v = array.value_at(5000 * units.millisecond,
                            2000 * units.milliHertz)
         assert v == self.data[5][2] * array.unit
