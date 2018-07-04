@@ -17,34 +17,23 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 #
-# Run the test suite for GWpy on the current system
+# Submit coverage data to coveralls.io
 #
 
-if [ ! -z ${GWPY_PATH+x} ]; then
-    cd ${GWPY_PATH}
-fi
 . ci/lib.sh
 
-# macports PATH doesn't persist from install stage, which is annoying
-if [ $(get_package_manager) == port ]; then
-    . terryfy/travis_tools.sh
-    export PATH=$MACPORTS_PREFIX/bin:$PATH
+# fix paths in coverage file for docker-based runs
+if [ ! -z ${DOCKER_IMAGE+x} ]; then
+    sed -i 's|"'${GWPY_PATH}'|"'`pwd`'|g' .coverage;
 fi
 
-get_environment  # sets PIP variables etc
-get_python_version  # sets PYTHON_VERSION
+# install coveralls
+if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
+    PYTHON=/opt/local/bin/python${PYTHON_VERSION}
+    sudo -H ${PYTHON} -m pip install --quiet coveralls
+else
+    ${PIP} install --quiet coveralls
+fi
 
-set -ex && trap 'set +xe' RETURN
-
-# install test dependencies
-${PIP} install ${PIP_FLAGS} \
-    "setuptools>=17.1" \
-    "pytest>=3.1" \
-    "coverage" \
-    "freezegun>=0.2.3"
-
-# run tests
-${PYTHON} -m coverage --source=gwpy run ./setup.py --quiet test
-
-# print coverage
-${PYTHON} -m coverage report
+# submit coverage results (unwrapping path to coveralls from python)
+$(${PYTHON} -c "import sys; print(sys.prefix)")/bin/coveralls
