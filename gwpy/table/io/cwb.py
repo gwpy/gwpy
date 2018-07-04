@@ -65,9 +65,11 @@ class CwbHeader(core.BaseHeader):
         self.names = []
         include_cuts = False
         for line in lines:
-            if not line.startswith('# '):
-                break  # End of header lines
-            elif line.startswith('# -/+'):
+            if not line:  # ignore empty lines in header (windows)
+                continue
+            if not line.startswith('# '):  # end of header lines
+                break
+            if line.startswith('# -/+'):
                 include_cuts = True
             else:
                 match = re_name_def.search(line)
