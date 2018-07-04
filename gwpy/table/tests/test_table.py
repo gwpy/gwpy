@@ -432,10 +432,12 @@ class TestEventTable(TestTable):
             utils.assert_table_equal(table, self.TABLE.read(tmp, format=fmt),
                                      almost_equal=True)
 
-        with tempfile.NamedTemporaryFile(suffix='.txt') as f:
+        with utils.TemporaryFilename(suffix='.txt') as tmp:
+            with open(tmp, 'w') as f:
+                pass  # write empty file
             # assert reading blank file doesn't work with column name error
             with pytest.raises(InconsistentTableError) as exc:
-                self.TABLE.read(f, format=fmt)
+                self.TABLE.read(tmp, format=fmt)
             assert str(exc.value) == ('No column names found in %s header'
                                       % fmtname)
 
