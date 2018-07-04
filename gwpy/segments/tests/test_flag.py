@@ -681,7 +681,7 @@ class TestDataQualityDict(object):
 
     # -- test I/O -------------------------------
 
-    @utils.skip_missing_dependency('lal')
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')
     def test_from_veto_definer_file(self, veto_definer):
         # read veto definer
         vdf = self.TEST_CLASS.from_veto_definer_file(veto_definer)
