@@ -40,7 +40,6 @@ sudo port -q install \
     ${PY_PREFIX}-gitpython
 
 # make Portfile
-cd ${GWPY_PATH}
 GWPY_VERSION=$(python setup.py --version)
 $PYTHON setup.py --quiet sdist
 $PYTHON setup.py port --tarball dist/gwpy-${GWPY_VERSION}.tar.gz
@@ -56,9 +55,9 @@ gsed -i 's|pypi:g/gwpy|file://'$(pwd)'/dist/ \\\n                    pypi:g/gwpy
 
 # add local port repo to sources
 sudo gsed -i 's|rsync://rsync.macports|file://'${PORT_REPO}'\nrsync://rsync.macports|' /opt/local/etc/macports/sources.conf
-cd ${PORT_REPO}
+pushd ${PORT_REPO}
 portindex
-cd ${GWPY_PATH}
+popd
 
 # set up utility to ping STDOUT every 10 seconds, prevents timeout
 # https://github.com/travis-ci/travis-ci/issues/6591#issuecomment-275804717
