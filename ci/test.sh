@@ -44,7 +44,7 @@ ${PIP} install ${PIP_FLAGS} \
     "freezegun>=0.2.3"
 
 # run tests
-${PYTHON} -m coverage --source=gwpy run ./setup.py --quiet test
+${PYTHON} -m coverage run ./setup.py --quiet test
 
 # print coverage
 ${PYTHON} -m coverage report
