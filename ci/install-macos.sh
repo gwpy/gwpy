@@ -78,7 +78,6 @@ sudo port -q install \
     kerberos5 \
     ${PY_PREFIX}-lalsimulation \
     ${PY_PREFIX}-pymysql \
-    ${PY_PREFIX}-lscsoft-glue \
     ${PY_PREFIX}-sqlalchemy \
     ${PY_PREFIX}-psycopg2 \
     ${PY_PREFIX}-pandas \
@@ -87,6 +86,11 @@ sudo port -q install \
     ${PY_PREFIX}-freezegun \
     ${PY_PREFIX}-sqlparse \
     ${PY_PREFIX}-beautifulsoup4
+
+# install python2-only extras
+if [ "${PY_MAJOR_VERSION}" -eq 2 ]; then
+    sudo port -q install glue
+fi
 
 # install m2cyrpto if needed
 if [ "$(port info --version dqsegdb)" == "version: 1.4.0" ]; then
