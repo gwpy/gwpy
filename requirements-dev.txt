@@ -6,6 +6,7 @@ pykerberos
 pyRXP
 
 # extras
+lalsuite
 pymysql
 lscsoft-glue
 dqsegdb

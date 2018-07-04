@@ -27,6 +27,12 @@ set -x  # travis_tools.sh sets +x on its way out
 export COLUMNS=80  # https://github.com/travis-ci/travis-ci/issues/5407
 install_macports
 
+# reset the cache
+# NOTE: in .travis.yml we set the ${CACHE_DIR} to be under ${HOME} to
+#       prevent permissions problems, so here we put it where we need it
+mkdir -p ${CACHE_DIR}  # just in cache the cache has failed
+sudo cp -vR ${CACHE_DIR}/ /opt/local/var/macports/distfiles/
+
 # get python information
 get_environment
 
@@ -69,14 +75,13 @@ disown
 set -x
 
 # install py-gwpy
-# Note: we don't use the +gwf port, because ldas-tools-framecpp takes too
-#       long to compile that the whole job times out in the end
 sudo port -q install ${PY_PREFIX}-gwpy +nds2 +segments
 
 # install extras (see requirements-dev.txt)
 sudo port -q install \
     kerberos5 \
     ${PY_PREFIX}-matplotlib \
+    ${PY_PREFIX}-lalframe \
     ${PY_PREFIX}-lalsimulation \
     ${PY_PREFIX}-pymysql \
     ${PY_PREFIX}-sqlalchemy \
@@ -94,11 +99,3 @@ if [ "$(port info --version dqsegdb)" == "version: 1.4.0" ]; then
 fi
 
 kill -9 $wvbpid &> /dev/null
-
-# hacky fix for installing NOT mpl 2.1.x
-#     this can be removed as soon as mpl 2.1.2 is released
-MPL_VERSION=$(port -q installed ${PY_PREFIX}-matplotlib | grep active | \
-              awk -F '[\@\_]' '{print $2}')
-if [[ "${MPL_VERSION}" =~ 2.1.[01] ]]; then
-    ${PIP} install "matplotlib >= 1.2.0, != 2.1.0, != 2.1.1"
-fi
