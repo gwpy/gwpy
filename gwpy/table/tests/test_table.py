@@ -425,11 +425,11 @@ class TestEventTable(TestTable):
     @pytest.mark.parametrize('fmtname', ('Omega', 'cWB'))
     def test_read_write_ascii(self, table, fmtname):
         fmt = 'ascii.%s' % fmtname.lower()
-        with tempfile.NamedTemporaryFile(suffix='.txt', mode='w') as f:
+        with utils.TemporaryFilename(suffix='.txt') as tmp:
             # check write/read returns the same table
-            table.write(f, format=fmt)
-            f.seek(0)
-            utils.assert_table_equal(table, self.TABLE.read(f, format=fmt),
+            with open(tmp, 'w') as fobj:
+                table.write(fobj, format=fmt)
+            utils.assert_table_equal(table, self.TABLE.read(tmp, format=fmt),
                                      almost_equal=True)
 
         with tempfile.NamedTemporaryFile(suffix='.txt') as f:
