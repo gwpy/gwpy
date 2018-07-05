@@ -87,6 +87,7 @@ def to_float(unit):
     converter.__doc__ %= str(unit)  # pylint: disable=no-member
     return converter
 
+
 to_hz = to_float('Hz')  # pylint: disable=invalid-name
 to_s = to_float('s')  # pylint: disable=invalid-name
 
@@ -230,6 +231,7 @@ class CliProduct(object):
 
     def log(self, level, msg):
         """print log message if verbosity is set high enough
+        :rtype: object
         """
         if self.verbose >= level:
             print(msg)
