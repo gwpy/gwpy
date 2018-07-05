@@ -175,6 +175,10 @@ class Qtransform(Spectrogram):
 
         return qtrans
 
+    def scale_axes_from_data(self):
+        self.args.xmin, self.args.xmax = self.result.xspan
+        return super(Qtransform, self).scale_axes_from_data()
+
     def has_more_plots(self):
         """any ranges left to plot?
         """
