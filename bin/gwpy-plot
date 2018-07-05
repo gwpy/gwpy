@@ -24,16 +24,10 @@ import time
 
 import os
 import sys
-
-from matplotlib import use
-# if launched from a terminal with no display use the right backend
-# this must be done before anyone imports  pylab, matplotlib.pyplot,
-# or matplotlib.backends
-if len(os.getenv('DISPLAY', '')) == 0:
-    use('Agg')
-
 from importlib import import_module
 from argparse import (ArgumentParser, ArgumentDefaultsHelpFormatter)
+
+from matplotlib import use
 
 from gwpy import __version__
 from gwpy.cli import PRODUCTS
@@ -93,6 +87,9 @@ for product in PRODUCTS:
 
 # -- run ----------------------------------------------------------------------
 
+# if launched from a terminal with no display
+if len(os.getenv('DISPLAY', '')) == 0:
+    use('Agg')
 
 # parse the command line and create a product object
 args = parser.parse_args()
