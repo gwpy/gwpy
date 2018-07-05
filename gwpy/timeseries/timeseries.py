@@ -1720,8 +1720,8 @@ class TimeSeries(TimeSeriesBase):
         out.q = peakq
         # interpolate rows
         for i, row in enumerate(norms):
-            row = row.crop(*outseg)
-            interp = InterpolatedUnivariateSpline(row.times.value, row.value)
+            interp = InterpolatedUnivariateSpline(
+                row.times.value, row.value)
             out[:, i] = interp(out.times.value)
 
         # then interpolate the spectrogram to increase the frequency resolution
