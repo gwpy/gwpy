@@ -77,7 +77,7 @@ class TestSegmentList(object):
 
     # -- test I/O -------------------------------
 
-    @skip_missing_dependency('lal')
+    @skip_missing_dependency('glue.segmentsUtils')
     def test_read_write_segwizard(self, segmentlist):
         with tempfile.NamedTemporaryFile(suffix='.txt', mode='w') as f:
             # check write/read returns the same list

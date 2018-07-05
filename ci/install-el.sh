@@ -20,17 +20,15 @@
 # Build RedHat (Enterprise Linux) packages
 #
 
-# get python3 version
+# -- prep ---------------------------------------------------------------------
+
 . ci/lib.sh
-PYTHON3_VERSION=$(get_python3_version)
-PY3XY=${PYTHON3_VERSION/./}
 
 # update system
 yum -y -q update
 
 # install sdist dependencies
 yum -y -q install \
-    rpm-build \
     git \
     python2-pip \
     python-jinja2 \
@@ -38,11 +36,10 @@ yum -y -q install \
 
 # install build dependencies
 yum -y -q install \
+    rpm-build \
     python-rpm-macros \
-    epel-rpm-macros \
-    python3-rpm-macros \
-    python2-setuptools \
-    python${PY3XY}-setuptools
+    python2-rpm-macros \
+    python2-setuptools
 
 GWPY_VERSION=$(python setup.py --version)
 
@@ -51,35 +48,42 @@ if [[ "${GWPY_VERSION}" == *"+"* ]]; then
     pip install "setuptools>=25"
 fi
 
+# -- build and install --------------------------------------------------------
+
 # build the RPM using tarball
 python setup.py --quiet sdist
 rpmbuild --define "_rpmdir $(pwd)/dist" -tb dist/gwpy-*.tar.gz
 
 # install the rpm
-if [ ${PY_XY} -lt 30 ]; then
-    GWPY_RPM="dist/noarch/python2-gwpy-*.noarch.rpm"  # install python2 only
-else
-    GWPY_RPM="dist/noarch/python*-gwpy-*.noarch.rpm"  # install both 2 and 3
-fi
+GWPY_RPM="dist/noarch/python2-gwpy-*.noarch.rpm"
 yum -y -q --nogpgcheck localinstall ${GWPY_RPM}
+
+# -- third-party packages -----------------------------------------------------
 
 # install system-level extras
 yum -y -q install \
-    nds2-client-${PY_PREFIX} \
-    ldas-tools-framecpp-${PY_PREFIX} \
-    lalframe-${PY_PREFIX} \
-    lalsimulation-${PY_PREFIX} \
-|| true
+    python2-pip \
+    python2-pytest \
+    python-coverage \
+    python2-mock \
+    python2-freezegun \
+    python-sqlparse \
+    python-beautifulsoup4 \
+    python-sqlalchemy \
+    python2-PyMySQL \
+    m2crypto \
+    glue \
+    dqsegdb \
+    python-psycopg2 \
+    python-pandas \
+    python2-root \
+    nds2-client-python \
+    ldas-tools-framecpp-python \
+    lalframe-python \
+    lalsimulation-python
 
 # HACK: fix missing file from ldas-tools-framecpp
 if [ -d /usr/lib64/$PYTHON/site-packages/LDAStools -a \
      ! -f /usr/lib64/$PYTHON/site-packages/LDAStools/__init__.py ]; then
     touch /usr/lib64/$PYTHON/site-packages/LDAStools/__init__.py
-fi
-
-# install system-level extras that might use python2- prefix
-if [ ${PY_XY} -lt 30 ]; then
-    yum -y -q install python2-root
-else
-    yum -y -q install ${PY_PREFIX}-root
 fi

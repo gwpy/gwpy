@@ -21,6 +21,7 @@
 
 import warnings
 from functools import wraps
+from operator import attrgetter
 from math import ceil
 
 from six import string_types
@@ -551,21 +552,23 @@ class EventTable(Table):
         try:
             tcol = self._get_time_column()
         except ValueError:
-            pass
-        else:
-            if args[0].name == tcol:  # map X column to GPS axis
-                kwargs.setdefault('figsize', (12, 6))
-                kwargs.setdefault('xscale', 'auto-gps')
+            tcol = None
+        if args[0].name == tcol:  # map X column to GPS axis
+            kwargs.setdefault('figsize', (12, 6))
+            kwargs.setdefault('xscale', 'auto-gps')
 
         kwargs['method'] = method
         plot = Plot(*args, **kwargs)
 
         # set default labels
         ax = plot.gca()
-        for axis, column in zip((ax.xaxis, ax.yaxis), args[:2]):
-            name = r'\texttt{{{0}}}'.format(label_to_latex(column.name))
-            if isinstance(column, Quantity):
-                name += ' [{0}]'.format(column.unit.to_string('latex_inline'))
+        for axis, col in zip(
+                filter(attrgetter('isDefault_label'), (ax.xaxis, ax.yaxis)),
+                args[:2],
+        ):
+            name = r'\texttt{{{0}}}'.format(label_to_latex(col.name))
+            if isinstance(col, Quantity):
+                name += ' [{0}]'.format(col.unit.to_string('latex_inline'))
             axis.set_label_text(name)
             axis.isDefault_label = True
 

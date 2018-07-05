@@ -22,7 +22,6 @@
 import pytest
 
 from ...tests.utils import (TEST_GWF_FILE, skip_missing_dependency)
-from ...tests.mocks import mock
 from .. import gwf as io_gwf
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -32,10 +31,6 @@ TEST_CHANNELS = [
 ]
 
 
-def mock_call(*args, **kwargs):
-    raise OSError("")
-
-
 def test_identify_gwf():
     assert io_gwf.identify_gwf('read', TEST_GWF_FILE, None) is True
     with open(TEST_GWF_FILE, 'rb') as gwff:
@@ -43,41 +38,36 @@ def test_identify_gwf():
     assert not io_gwf.identify_gwf('read', None, None)
 
 
-@skip_missing_dependency('lalframe')
+@skip_missing_dependency('LDAStools.frameCPP')
 def test_iter_channel_names():
     # maybe need something better?
     from types import GeneratorType
     names = io_gwf.iter_channel_names(TEST_GWF_FILE)
     assert isinstance(names, GeneratorType)
     assert list(names) == TEST_CHANNELS
-    with mock.patch('gwpy.utils.shell.call', mock_call):
-        names = io_gwf.iter_channel_names(TEST_GWF_FILE)
-        assert isinstance(names, GeneratorType)
-        assert list(names) == TEST_CHANNELS
 
 
-@skip_missing_dependency('lalframe')
+@skip_missing_dependency('LDAStools.frameCPP')
 def test_get_channel_names():
     assert io_gwf.get_channel_names(TEST_GWF_FILE) == TEST_CHANNELS
 
 
-@skip_missing_dependency('lalframe')
+@skip_missing_dependency('LDAStools.frameCPP')
 def test_num_channels():
     assert io_gwf.num_channels(TEST_GWF_FILE) == 3
 
 
-@skip_missing_dependency('lalframe')
+@skip_missing_dependency('LDAStools.frameCPP')
 def test_get_channel_type():
-    assert io_gwf.get_channel_type('L1:LDAS-STRAIN',
-                                   TEST_GWF_FILE) == 'proc'
+    assert io_gwf.get_channel_type('L1:LDAS-STRAIN', TEST_GWF_FILE) == 'proc'
     with pytest.raises(ValueError) as exc:
         io_gwf.get_channel_type('X1:NOT-IN_FRAME', TEST_GWF_FILE)
-    assert str(exc.value) == ('X1:NOT-IN_FRAME not found in '
-                              'table-of-contents for %s' % TEST_GWF_FILE)
+    assert str(exc.value) == (
+        'X1:NOT-IN_FRAME not found in table-of-contents for {gwf}'.format(
+            gwf=TEST_GWF_FILE))
 
 
-@skip_missing_dependency('lalframe')
+@skip_missing_dependency('LDAStools.frameCPP')
 def test_channel_in_frame():
     assert io_gwf.channel_in_frame('L1:LDAS-STRAIN', TEST_GWF_FILE) is True
-    assert io_gwf.channel_in_frame('X1:NOT-IN_FRAME',
-                                   TEST_GWF_FILE) is False
+    assert io_gwf.channel_in_frame('X1:NOT-IN_FRAME', TEST_GWF_FILE) is False

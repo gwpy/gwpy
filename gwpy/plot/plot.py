@@ -27,7 +27,7 @@ from six.moves import zip_longest
 
 import numpy
 
-from matplotlib import (backends, figure, get_backend, _pylab_helpers)
+from matplotlib import (figure, get_backend, _pylab_helpers)
 from matplotlib.artist import setp
 from matplotlib.backend_bases import FigureManagerBase
 from matplotlib.gridspec import GridSpec
@@ -84,6 +84,11 @@ class Plot(figure.Figure):
         self._init_axes(data, **kwargs)
 
     def _init_figure(self, **kwargs):
+        # we import matplotlib.backends here because it sets the backend
+        # at some point, so we don't want to do that upfront in case users
+        # need to set their own backend
+        from matplotlib.backends import pylab_setup
+
         # add new attributes
         self.colorbars = []
         self._coloraxes = []
@@ -94,7 +99,7 @@ class Plot(figure.Figure):
 
         # add interactivity
         # scraped from pyplot.figure()
-        backend_mod, _, draw_if_interactive, _show = backends.pylab_setup()
+        backend_mod, _, draw_if_interactive, _show = pylab_setup()
         try:
             manager = backend_mod.new_figure_manager_given_figure(1, self)
         except AttributeError:
@@ -140,8 +145,8 @@ class Plot(figure.Figure):
         axarr = numpy.empty((nrows, ncols), dtype=object)
 
         # set default labels
-        defxlabel = 'xlabel' not in kwargs
-        defylabel = 'ylabel' not in kwargs
+        defxlabel = 'xlabel' not in axes_kw
+        defylabel = 'ylabel' not in axes_kw
         flatdata = [s for group in axes_groups for s in group]
         for axis in ('x', 'y'):
             unit = _common_axis_unit(flatdata, axis=axis)
@@ -365,7 +370,7 @@ class Plot(figure.Figure):
 
     # -- extra methods --------------------------
 
-    def add_segments_bar(self, segments, ax=None, height=0.2, pad=0.1,
+    def add_segments_bar(self, segments, ax=None, height=0.14, pad=0.1,
                          sharex=True, location='bottom', **plotargs):
         """Add a segment bar `Plot` indicating state information.
 
