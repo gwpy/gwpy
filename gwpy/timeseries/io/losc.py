@@ -126,8 +126,8 @@ def fetch_losc_data(detector, start, end, cls=TimeSeries, **kwargs):
     cache = get_urls(detector, int(start), int(ceil(end)), **url_kw)
     if kwargs.get('verbose', False):  # get_urls() guarantees len(cache) >= 1
         host = urlparse(cache[0]).netloc
-        print("Fetched {0!d} URLs from {1} for [{2!d} .. {3!d})".format(
-            len(cache), host, int(start), int(end)))
+        print("Fetched {0} URLs from {1} for [{2} .. {3}))".format(
+            len(cache), host, int(start), int(ceil(end))))
 
     # if event dataset, pick shortest file that covers the request
     if len(cache) and 'events' in cache[0]:
@@ -152,7 +152,6 @@ def fetch_losc_data(detector, start, end, cls=TimeSeries, **kwargs):
     kwargs['cls'] = cls
     for url in cache:
         keep = file_segment(url) & span
-        print(url)
         new = _fetch_losc_data_file(url, *args, **kwargs).crop(
             *keep, copy=False)
         if out is None:
