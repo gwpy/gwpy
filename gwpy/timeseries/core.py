@@ -343,6 +343,8 @@ class TimeSeriesBase(Series):
                         verbose=False, cache=None, **kwargs):
         """Fetch open-access data from the LIGO Open Science Center
 
+        **Requires:** |h5py|_, |gwosc|_
+
         Parameters
         ----------
         ifo : `str`

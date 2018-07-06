@@ -571,9 +571,9 @@ class DataQualityFlag(object):
                                  [946415770 ... 946422986)],
                          description=None)>
         """
-        from .io.losc import get_segments
-        start = to_gps(start)
-        end = to_gps(end)
+        from gwosc.timeline import get_segments
+        start = to_gps(start).gpsSeconds
+        end = to_gps(end).gpsSeconds
         known = [(start, end)]
         active = get_segments(flag, start, end, **kwargs)
         return cls(flag.replace('_', ':', 1), known=known, active=active,
