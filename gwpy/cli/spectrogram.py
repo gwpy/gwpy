@@ -39,7 +39,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         #: attribute to hold calculated Spectrogram data array
         self.result = None
         #: We cannot process constant input. Only show message once
-        self.show_error = True
+        self.got_error = True
 
     @classmethod
     def arg_yaxis(cls, parser):
@@ -136,11 +136,11 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         # translate them to English
         inmin = self.timeseries[0].min().value
         if inmin == self.timeseries[0].max().value:
-            if  self.show_error:
+            if  not self.got_error:
                 self.log(1, 'ERROR: Input has constant values [{:g}]. '
                             'Spectrogram-like products cannot process '
                             'them.'.format(inmin))
-            self.show_error = False
+            self.got_error = True
         else:
             # create 'raw' spectrogram
             specgram = self.get_spectrogram()

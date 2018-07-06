@@ -693,7 +693,7 @@ class CliProduct(object):
         self.get_data()
 
         # for each plot
-        show_error = True
+        show_error = True       # control ours separate from product's
         while self.has_more_plots():
             self._make_plot()
             if self.plot:
@@ -708,6 +708,7 @@ class CliProduct(object):
                 # Some plots reject inpput data for reasons like all zeroes
                 self.log(1, 'No plot produced because of data '
                             'validation error.')
+                self.got_error = True
                 show_error = False
             self.plot_num += 1
 
