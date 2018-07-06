@@ -693,15 +693,22 @@ class CliProduct(object):
         self.get_data()
 
         # for each plot
+        show_error = True
         while self.has_more_plots():
             self._make_plot()
-            self.set_plot_properties()
-            if self.args.interactive:
-                self.log(3, 'Interactive manipulation of '
-                            'image should be available.')
-                pyplot.show(self.plot)
-            else:
-                self.save(self.args.out)
+            if self.plot:
+                self.set_plot_properties()
+                if self.args.interactive:
+                    self.log(3, 'Interactive manipulation of '
+                                'image should be available.')
+                    pyplot.show(self.plot)
+                else:
+                    self.save(self.args.out)
+            elif show_error:
+                # Some plots reject inpput data for reasons like all zeroes
+                self.log(1, 'No plot produced because of data '
+                            'validation error.')
+                show_error = False
             self.plot_num += 1
 
 
