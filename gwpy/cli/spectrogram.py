@@ -136,7 +136,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         inmin = self.timeseries[0].min().value
         if inmin == self.timeseries[0].max().value:
             if  not self.got_error:
-                self.log(1, 'ERROR: Input has constant values [{:g}]. '
+                self.log(0, 'ERROR: Input has constant values [{:g}]. '
                             'Spectrogram-like products cannot process '
                             'them.'.format(inmin))
             self.got_error = True
