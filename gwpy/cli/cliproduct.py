@@ -195,6 +195,8 @@ class CliProduct(object):
         self.width, self.height = map(float, self.args.geometry.split('x', 1))
         #: figure size in inches
         self.figsize = (self.width / self.dpi, self.height / self.dpi)
+        #: Flag for data validation (like all zeroes)
+        self.got_error = False
 
         # please leave this last
         self._validate_arguments()

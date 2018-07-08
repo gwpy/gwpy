@@ -38,8 +38,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
 
         #: attribute to hold calculated Spectrogram data array
         self.result = None
-        #: We cannot process constant input. Only show message once
-        self.got_error = True
+
 
     @classmethod
     def arg_yaxis(cls, parser):
@@ -145,21 +144,23 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
             # create 'raw' spectrogram
             specgram = self.get_spectrogram()
 
-            # apply normalisation
-            if args.norm:
-                specgram = specgram.ratio(args.norm)
+            # there may be data that can't be processed
+            if specgram:
+                # apply normalisation
+                if args.norm:
+                    specgram = specgram.ratio(args.norm)
 
-            self.result = specgram
+                self.result = specgram
 
-            # -- update plot defaults
+                # -- update plot defaults
 
-            if not args.ymin:
-                args.ymin = 1/args.secpfft if args.yscale == 'log' else 0
+                if not args.ymin:
+                    args.ymin = 1/args.secpfft if args.yscale == 'log' else 0
 
-            norm = 'log' if args.color_scale == 'log' else None
-            # vmin/vmax set in scale_axes_from_data()
-            return specgram.plot(figsize=self.figsize, dpi=self.dpi,
-                                 norm=norm, cmap=args.cmap)
+                norm = 'log' if args.color_scale == 'log' else None
+                # vmin/vmax set in scale_axes_from_data()
+                return specgram.plot(figsize=self.figsize, dpi=self.dpi,
+                                     norm=norm, cmap=args.cmap)
 
     def scale_axes_from_data(self):
         args = self.args
