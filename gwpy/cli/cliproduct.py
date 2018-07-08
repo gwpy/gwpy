@@ -22,11 +22,13 @@
 """Base class for CLI (`gwpy-plot`) products.
 """
 
+from __future__ import print_function
 import abc
 import os.path
 import re
 import time
 import warnings
+import sys
 from collections import OrderedDict
 from functools import wraps
 
@@ -236,7 +238,11 @@ class CliProduct(object):
         :rtype: object
         """
         if self.verbose >= level:
-            print(msg)
+            if level == 0:
+                # level zero is important if not fatal error
+                print(msg, file=sys.stderr)
+            else:
+                print(msg)
         return
 
     # -- argument parsing -----------------------
@@ -708,7 +714,7 @@ class CliProduct(object):
                     self.save(self.args.out)
             elif show_error:
                 # Some plots reject inpput data for reasons like all zeroes
-                self.log(1, 'No plot produced because of data '
+                self.log(0, 'No plot produced because of data '
                             'validation error.')
                 self.got_error = True
                 show_error = False
