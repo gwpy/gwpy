@@ -76,6 +76,9 @@ class TestSpectralVariance(_TestArray2D):
     def test_yindex(self, array):
         utils.assert_array_equal(array.yindex, array.bins[:-1])
 
+    def test_transpose(self, array):
+        return NotImplemented
+
     # -- test utilities -------------------------
 
     def test_getitem(self, array):
