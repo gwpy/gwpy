@@ -116,7 +116,7 @@ class Array2D(Series):
 
         # create new object
         new = super(Array2D, cls).__new__(cls, data, unit=unit, xindex=xindex,
-                                          x0=x0, dx=dx, **kwargs)
+                                          xunit=xunit, x0=x0, dx=dx, **kwargs)
 
         # set y-axis metadata from yindex
         if yindex is not None:
