@@ -33,7 +33,6 @@ from astropy import units
 
 from ..segments import Segment
 from ..signal import filter_design
-from ..signal.filter import sosfiltfilt
 from ..signal.fft import (registry as fft_registry, ui as fft_ui)
 from ..signal.window import (recommended_overlap, planck)
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
@@ -1008,7 +1007,7 @@ class TimeSeries(TimeSeriesBase):
 
         scipy.signal.sosfiltfilt
             for details on forward-backward filtering with second-order
-            sections (`scipy >= 0.16` only)
+            sections (`scipy >= 0.18` only)
 
         scipy.signal.lfilter
             for details on filtering (without SOS)
@@ -1066,7 +1065,7 @@ class TimeSeries(TimeSeriesBase):
         # perform filter
         kwargs.setdefault('axis', 0)
         if sos is not None and filtfilt:
-            out = sosfiltfilt(sos, self, **kwargs)
+            out = signal.sosfiltfilt(sos, self, **kwargs)
         elif sos is not None:
             out = signal.sosfilt(sos, self, **kwargs)
         elif filtfilt:
