@@ -259,3 +259,10 @@ class TestArray(object):
         array.override_unit('blah', parse_strict='silent')
         assert isinstance(array.unit, units.IrreducibleUnit)
         assert str(array.unit) == 'blah'
+
+    def test_flatten(self, array):
+        flat = array.flatten()
+        assert flat.ndim == 1
+        assert type(flat) is units.Quantity  # pylint: disable=C0123
+        assert flat.shape[0] == numpy.prod(array.shape)
+        utils.assert_quantity_equal(array.flatten('C'), array.T.flatten('F'))
