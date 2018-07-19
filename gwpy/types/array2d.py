@@ -348,6 +348,22 @@ class Array2D(Series):
             y0 = self.y0.to(self.yunit).value
             return Segment(y0, y0+self.shape[1]*dy)
 
+    @property
+    def T(self):
+        trans = self.value.T.view(type(self))
+        trans.__array_finalize__(self)
+        if hasattr(self, '_xindex'):
+            trans.yindex = self.xindex.view()
+        else:
+            trans.y0 = self.x0
+            trans.dy = self.dx
+        if hasattr(self, '_yindex'):
+            trans.xindex = self.yindex.view()
+        else:
+            trans.x0 = self.y0
+            trans.dx = self.dy
+        return trans
+
     # -- Array2D methods ------------------------
 
     def is_compatible(self, other):

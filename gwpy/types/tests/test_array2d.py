@@ -136,6 +136,13 @@ class TestArray2D(_TestSeries):
         series = self.create(yindex=y)
         assert series.yspan == (y[0], y[-1] + y[-1] - y[-2])
 
+    def test_transpose(self, array):
+        trans = array.T
+        utils.assert_array_equal(trans.value, array.value.T)
+        assert trans.unit is array.unit
+        utils.assert_array_equal(trans.xindex, array.yindex)
+        utils.assert_array_equal(trans.yindex, array.xindex)
+
     # -- test methods ---------------------------
 
     @pytest.mark.parametrize('create_kwargs', [
