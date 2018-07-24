@@ -40,8 +40,8 @@ Each `DataQualityFlag` has some key attributes:
 .. autosummary::
 
    ~DataQualityFlag.name
+   ~DataQualityFlag.known
    ~DataQualityFlag.active
-   ~DataQualityFlag.valid
 
 By convention, the :attr:`~DataQualityFlag.name` is typically constructed of three colon-separated components: the :attr:`~DataQualityFlag.ifo`, :attr:`~DataQualityFlag.tag`, and :attr:`~DataQualityFlag.version`, e.g. ``L1:DMT-ANALYSIS_READY:1``.
 

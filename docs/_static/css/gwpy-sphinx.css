@@ -125,6 +125,10 @@ code {
 	padding: 0px
 }
 
+.alert-info code {
+		color: #fccfcf;
+}
+
 /* -- autoclass formatting ------------------------------------------------ */
 
 /* class title */
