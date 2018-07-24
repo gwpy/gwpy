@@ -19,8 +19,8 @@
 """Unit tests for plotter module
 """
 
-import tempfile
 import warnings
+from io import BytesIO
 
 import pytest
 
@@ -121,8 +121,7 @@ class PlottingTestBase(object):
         return rcParams['text.usetex']
 
     def save(self, fig, suffix='.png'):
-        with tempfile.NamedTemporaryFile(suffix=suffix) as f:
-            fig.save(f.name)
+        fig.save(BytesIO(), format=suffix.lstrip('.'))
         return fig
 
     def save_and_close(self, fig, suffix='.png'):

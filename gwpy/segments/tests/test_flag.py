@@ -21,6 +21,7 @@
 
 import os.path
 import tempfile
+from io import BytesIO
 from ssl import SSLError
 
 from six.moves.urllib.error import (URLError, HTTPError)
@@ -300,8 +301,7 @@ class TestDataQualityFlag(object):
             assert len(plot.gca().collections[0].get_paths()) == len(ACTIVE)
             assert plot.gca().collections[0].get_label() == flag.label
 
-            with tempfile.NamedTemporaryFile(suffix='.png') as f:
-                plot.save(f.name)
+            plot.save(BytesIO(), format='png')
             plot.close()
 
         flag.label = None
@@ -675,8 +675,7 @@ class TestDataQualityDict(object):
         with rc_context(rc={'text.usetex': False}):
             plot = instance.plot(figsize=(6.4, 3.8))
             assert isinstance(plot.gca(), SegmentAxes)
-            with tempfile.NamedTemporaryFile(suffix='.png') as f:
-                plot.save(f.name)
+            plot.save(BytesIO(), format='png')
             plot.close()
 
     # -- test I/O -------------------------------

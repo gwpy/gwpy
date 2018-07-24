@@ -20,7 +20,7 @@
 """
 
 import os
-import tempfile
+from io import BytesIO
 
 import pytest
 
@@ -147,8 +147,7 @@ class TestTimeSeriesBase(_TestSeries):
             line = plot.gca().lines[0]
             utils.assert_array_equal(line.get_xdata(), array.xindex.value)
             utils.assert_array_equal(line.get_ydata(), array.value)
-            with tempfile.NamedTemporaryFile(suffix='.png') as f:
-                plot.save(f.name)
+            plot.save(BytesIO(), format='png')
             plot.close()
 
     @utils.skip_missing_dependency('nds2')
@@ -349,8 +348,7 @@ class TestTimeSeriesBaseDict(object):
                                          instance[key].xindex.value)
                 utils.assert_array_equal(line.get_ydata(),
                                          instance[key].value)
-            with tempfile.NamedTemporaryFile(suffix='.png') as f:
-                plot.save(f.name)
+            plot.save(BytesIO(), format='png')
             plot.close()
 
 

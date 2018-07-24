@@ -19,7 +19,7 @@
 """Unit tests for :mod:`gwpy.spectrogram.spectrogram`
 """
 
-import tempfile
+from io import BytesIO
 
 import pytest
 
@@ -153,8 +153,7 @@ class TestSpectrogram(_TestArray2D):
             assert ax.get_epoch() == array.x0.value
             assert ax.get_xlim() == array.xspan
             assert ax.get_ylim() == array.yspan
-            with tempfile.NamedTemporaryFile(suffix='.png') as f:
-                plot.save(f.name)
+            plot.save(BytesIO(), format='png')
             plot.close()
 
     def test_zpk(self, array):
