@@ -20,6 +20,7 @@
 """
 
 import subprocess
+from distutils.spawn import find_executable
 
 import pytest
 
@@ -33,9 +34,7 @@ def test_shell_call():
     assert out == 'This works\n'
     assert err == ''
 
-    out2, err2 = shell.call("echo 'This works'")
-    assert out == out2
-    assert err == err2
+    shell.call("echo 'This works'")
 
     with pytest.raises(OSError):
         shell.call(['this-command-doesnt-exist'])
@@ -48,10 +47,6 @@ def test_shell_call():
 
 
 def test_which():
-    try:
-        result, _ = shell.call('which true')
-    except Exception as e:
-        pytest.skip(str(e))
-    else:
-        result = result.rstrip('\n')
-    assert shell.which('true') == result
+    assert shell.which('python') == find_executable('python')
+    with pytest.raises(ValueError):
+        shell.which('gwpy-no-executable')
