@@ -14,7 +14,7 @@ pyRXP
 lscsoft-glue
 dqsegdb
 ligotimegps
-pycbc != 1.10.0 ; python_version == '2.7'
+pycbc >= 1.10.1 ; python_version == '2.7'
 git+https://github.com/duncanmmacleod/ligo.org.git
 sqlalchemy
 psycopg2
