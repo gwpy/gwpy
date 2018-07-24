@@ -22,7 +22,7 @@ x-axis, y-axis, and optionally colouring:
 
    >>> from gwpy.table import EventTable
    >>> events = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst', columns=['peak', 'central_freq', 'snr'])
-   >>> plot = events.plot('peak', 'central_freq', color='snr')
+   >>> plot = events.scatter('peak', 'central_freq', color='snr')
    >>> ax = plot.gca()
    >>> ax.set_epoch(968654552)
    >>> ax.set_yscale('log')
@@ -43,7 +43,7 @@ These tiles can be plotted in a similar manner to simple triggers.
    :include-source:
 
    >>> events = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst', columns=['peak', 'central_freq', 'snr', 'duration', 'bandwidth'])
-   >>> plot = events.plot('peak', 'central_freq', 'duration', 'bandwidth', color='snr')
+   >>> plot = events.tile('peak', 'central_freq', 'duration', 'bandwidth', color='snr')
    >>> ax = plot.gca()
    >>> ax.set_epoch(968654552)
    >>> ax.set_yscale('log')
