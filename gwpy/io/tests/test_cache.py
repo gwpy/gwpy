@@ -29,7 +29,7 @@ import numpy
 import pytest
 
 from ...segments import (Segment, SegmentList)
-from ...tests.utils import skip_missing_dependency
+from ...tests.utils import (skip_missing_dependency, TemporaryFilename)
 from .. import cache as io_cache
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -65,25 +65,26 @@ def segments():
 
 @pytest.fixture
 def tmpfile():
-    with tempfile.NamedTemporaryFile() as f:
-        yield f
+    with TemporaryFilename() as tmp:
+        yield tmp
 
 
 # -- tests --------------------------------------------------------------------
 
 def test_read_write_cache(cache, tmpfile):
-    io_cache.write_cache(cache, tmpfile)
-    tmpfile.seek(0)
+    with open(tmpfile, 'w') as f:
+        io_cache.write_cache(cache, f)
 
     # read from fileobj
-    c2 = io_cache.read_cache(tmpfile)
+    with open(tmpfile) as f:
+        c2 = io_cache.read_cache(tmpfile)
     assert cache == c2
 
     # write with file name
-    io_cache.write_cache(cache, tmpfile.name)
+    io_cache.write_cache(cache, tmpfile)
 
     # read from file name
-    c3 = io_cache.read_cache(tmpfile.name)
+    c3 = io_cache.read_cache(tmpfile)
     assert cache == c3
 
 

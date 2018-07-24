@@ -21,7 +21,6 @@
 
 import json
 import os.path
-from tempfile import NamedTemporaryFile
 
 import pytest
 
@@ -462,11 +461,10 @@ class TestChannelList(object):
 
     def test_read_write_omega_config(self):
         # write OMEGA_CONFIG to file and read it back
-        try:
-            with NamedTemporaryFile(suffix='.txt', mode='w',
-                                    delete=False) as f:
+        with utils.TemporaryFilename(suffix='.txt') as tmp:
+            with open(tmp, 'w') as f:
                 f.write(OMEGA_CONFIG)
-            cl = self.TEST_CLASS.read(f.name, format='omega-scan')
+            cl = self.TEST_CLASS.read(tmp, format='omega-scan')
             assert len(cl) == 2
             assert cl[0].name == 'L1:GDS-CALIB_STRAIN'
             assert cl[0].sample_rate == 4096 * units.Hertz
@@ -488,29 +486,20 @@ class TestChannelList(object):
             }
             assert cl[1].name == 'L1:PEM-CS_SEIS_LVEA_VERTEX_Z_DQ'
             assert cl[1].frametype == 'L1_R'
-        finally:
-            if os.path.isfile(f.name):
-                os.remove(f.name)
 
-        # write omega config again using ChannelList.write and read it back
-        # and check that the two lists match
-        try:
-            with NamedTemporaryFile(suffix='.txt', delete=False,
-                                    mode='w') as f2:
-                cl.write(f2, format='omega-scan')
-            cl2 = type(cl).read(f2.name, format='omega-scan')
+            # write omega config again using ChannelList.write and read it back
+            # and check that the two lists match
+            with open(tmp, 'w') as f:
+                cl.write(f, format='omega-scan')
+            cl2 = type(cl).read(tmp, format='omega-scan')
             assert cl == cl2
-        finally:
-            if os.path.isfile(f2.name):
-                os.remove(f2.name)
 
     def test_read_write_clf(self):
         # write clf to file and read it back
-        try:
-            with NamedTemporaryFile(suffix='.ini', delete=False,
-                                    mode='w') as f:
+        with utils.TemporaryFilename(suffix='.ini') as tmp:
+            with open(tmp, 'w') as f:
                 f.write(CLF)
-            cl = ChannelList.read(f.name)
+            cl = ChannelList.read(tmp)
             assert len(cl) == 4
             a = cl[0]
             assert a.name == 'H1:GDS-CALIB_STRAIN'
@@ -533,18 +522,10 @@ class TestChannelList(object):
             assert d.name == 'H1:ISI-GND_STS_HAM2_Z_DQ'
             assert d.safe is True
             assert d.params['fidelity'] == 'glitchy'
-        finally:
-            if os.path.isfile(f.name):
-                os.remove(f.name)
-        # write omega config again using ChannelList.write and read it back
-        # and check that the two lists match
-        try:
-            with NamedTemporaryFile(suffix='.ini', delete=False,
-                                    mode='w') as f2:
 
-                cl.write(f2)
-            cl2 = type(cl).read(f2.name)
+            # write omega config again using ChannelList.write and read it back
+            # and check that the two lists match
+            with open(tmp, 'w') as f:
+                cl.write(f)
+            cl2 = type(cl).read(tmp)
             assert cl == cl2
-        finally:
-            if os.path.isfile(f2.name):
-                os.remove(f2.name)

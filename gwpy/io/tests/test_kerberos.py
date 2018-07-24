@@ -21,11 +21,11 @@
 
 import os
 import sys
-import tempfile
 
 import pytest
 
 from ...tests.mocks import mock
+from ...tests.utils import TemporaryFilename
 from .. import kerberos as io_kerberos
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -104,10 +104,10 @@ def test_kinit(raw_input_, getpass, mocked_popen, which, capsys):
         ['/bin/kinit', 'rainer.weiss@LIGO.ORG'], **popen_kwargs)
 
     # test keytab from enviroment found
-    with tempfile.NamedTemporaryFile(suffix='.keytab') as f:
-        io_kerberos.kinit(keytab=f.name)
+    with TemporaryFilename(suffix='.keytab') as tmp:
+        io_kerberos.kinit(keytab=tmp)
         mocked_popen.assert_called_with(
-            ['/bin/kinit', '-k', '-t', f.name, 'albert.einstein@LIGO.ORG'],
+            ['/bin/kinit', '-k', '-t', tmp, 'albert.einstein@LIGO.ORG'],
             **popen_kwargs)
 
     os.environ.pop('KRB5_KTNAME', None)

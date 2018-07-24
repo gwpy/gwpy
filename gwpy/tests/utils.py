@@ -21,6 +21,7 @@
 
 import os.path
 import tempfile
+from contextlib import contextmanager
 from importlib import import_module
 
 from six import PY2
@@ -219,6 +220,29 @@ def assert_zpk_equal(a, b, almost_equal=False):
 
 # -- I/O helpers --------------------------------------------------------------
 
+@contextmanager
+def TemporaryFilename(*args, **kwargs):  # pylint: disable=invalid-name
+    """Create and return a temporary filename
+
+    Calls `tempfile.mktemp` to create a temporary filename, and deletes
+    the named file (if it exists) when the context ends.
+
+    This method **does not create the named file**.
+
+    Examples
+    --------
+    >>> with TemporaryFilename(suffix='.txt') as tmp:
+    ...     print(tmp)
+    '/var/folders/xh/jdrqg2bx3s5f4lkq0rf2903c0000gq/T/tmpnNxivL.txt'
+    """
+    name = tempfile.mktemp(*args, **kwargs)
+    try:
+        yield name
+    finally:
+        if os.path.isfile(name):
+            os.remove(name)
+
+
 def test_read_write(data, format,
                     extension=None, autoidentify=True,
                     read_args=[], read_kw={},
@@ -267,10 +291,7 @@ def test_read_write(data, format,
 
     DataClass = type(data)
 
-    try:
-        # write data to a file
-        fp = tempfile.mktemp(suffix=extension)
-
+    with TemporaryFilename(suffix=extension) as fp:
         try:
             data.write(fp, *write_args, format=format, **write_kw)
         except TypeError as e:
@@ -292,8 +313,3 @@ def test_read_write(data, format,
         if autoidentify:
             new = DataClass.read(fp, *read_args, **read_kw)
             assert_equal(new, data, **assert_kw)
-
-    finally:
-        # make sure and clean up after ourselves
-        if os.path.exists(fp):
-            os.remove(fp)
