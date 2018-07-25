@@ -100,6 +100,7 @@ done
 apt-get -yqq install \
     git \
     ${PY_PREFIX}-pip \
+    libkrb5-dev krb5-user \
     ${PY_PREFIX}-glue \
     ${PY_PREFIX}-sqlalchemy \
     ${PY_PREFIX}-psycopg2 \

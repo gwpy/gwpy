@@ -9,7 +9,6 @@
 
 # extras
 pymysql
-pykerberos
 pyRXP
 lscsoft-glue
 dqsegdb
