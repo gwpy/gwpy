@@ -42,6 +42,9 @@ set -ex
 #       need >=9.0.0 to understand list --format
 ${PIP} install "pip>=9.0.0"
 
+# install test dependencies
+${PIP} install ${PIP_FLAGS} -r requirements-test.txt
+
 # print installed packages
 echo "------------------------------------------------------------------------"
 echo
