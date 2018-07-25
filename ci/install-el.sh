@@ -64,6 +64,7 @@ yum -y -q --nogpgcheck localinstall ${GWPY_RPM}
 yum -y -q install \
     python2-pip \
     python2-pytest \
+    python2-pytest-cov \
     python-coverage \
     python2-mock \
     python2-freezegun \
