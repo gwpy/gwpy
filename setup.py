@@ -63,9 +63,11 @@ dependencies = {
 # include fancy dependencies
 if PEP_508:
     # exclude astropy >= 3.0 on python2.7
-    dependencies['astropy '] = "{} ; python_version >= '3'".format(
-        dependencies['astropy'])
-    dependencies['astropy'] += " ; python_version < '3'"
+    adep = dependencies['astropy']
+    dependencies['astropy'] = (
+        '{0}, < 3.0.0 ; python_version < \'3\''.format(adep))
+    dependencies['astropy '] = (
+        '{0} ; python_version >= \'3\''.format(adep))
 
     # exclude matplotlib 2.1.[01] (see matplotlib/matplotlib#10003)
     dependencies['matplotlib'] += ', !=2.1.0, !=2.1.1'
