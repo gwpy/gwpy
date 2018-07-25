@@ -33,9 +33,7 @@ def format_nd_slice(item, ndim):
     """
     if not isinstance(item, tuple):
         item = (item,)
-    if len(item) == ndim:
-        return item
-    return item + (None,) * (ndim - len(item))
+    return item[:ndim] + (None,) * (ndim - len(item))
 
 
 def slice_axis_attributes(old, oldaxis, new, newaxis, slice_):
@@ -109,6 +107,8 @@ def null_slice(slice_):
     except TypeError:
         return False
 
+    if isinstance(slice_, numpy.ndarray) and numpy.all(slice_):
+        return True
     if isinstance(slice_, slice) and slice_ in (
             slice(None, None, None), slice(0, None, 1)
     ):

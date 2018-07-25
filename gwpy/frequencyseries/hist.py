@@ -144,6 +144,11 @@ class SpectralVariance(Array2D):
                            fdel=Array2D.xindex.__delete__,
                            doc="""Array of frequencies for each sample""")
 
+    @property
+    def T(self):
+        raise NotImplementedError(
+            "transposing a {0} is not supported".format(type(self).__name__))
+
     # -- i/O ------------------------------------
 
     @classmethod

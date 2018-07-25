@@ -116,7 +116,7 @@ class Array2D(Series):
 
         # create new object
         new = super(Array2D, cls).__new__(cls, data, unit=unit, xindex=xindex,
-                                          x0=x0, dx=dx, **kwargs)
+                                          xunit=xunit, x0=x0, dx=dx, **kwargs)
 
         # set y-axis metadata from yindex
         if yindex is not None:
@@ -347,6 +347,22 @@ class Array2D(Series):
         else:
             y0 = self.y0.to(self.yunit).value
             return Segment(y0, y0+self.shape[1]*dy)
+
+    @property
+    def T(self):
+        trans = self.value.T.view(type(self))
+        trans.__array_finalize__(self)
+        if hasattr(self, '_xindex'):
+            trans.yindex = self.xindex.view()
+        else:
+            trans.y0 = self.x0
+            trans.dy = self.dx
+        if hasattr(self, '_yindex'):
+            trans.xindex = self.yindex.view()
+        else:
+            trans.x0 = self.y0
+            trans.dx = self.dy
+        return trans
 
     # -- Array2D methods ------------------------
 

@@ -232,6 +232,11 @@ class StateTimeSeries(TimeSeriesBase):
         else:
             return super(StateTimeSeries, self).__getitem__(item)
 
+    def tolist(self):
+        return self.value.tolist()
+
+    tolist.__doc__ = numpy.ndarray.tolist.__doc__
+
 
 # -- Bits ---------------------------------------------------------------------
 
