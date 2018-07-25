@@ -20,7 +20,9 @@
 # Run the test suite for GWpy on the current system
 #
 
-cd ${GWPY_PATH}
+if [ ! -z ${DOCKER_IMAGE+x} ]; then
+    cd ${GWPY_PATH}
+fi
 
 . ci/lib.sh
 
