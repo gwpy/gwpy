@@ -39,6 +39,11 @@ from .units import parse_unit
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+try:  # python >= 3.7
+    Pattern = re.Pattern
+except AttributeError:  # python < 3.7
+    Pattern = re._pattern_type
+
 QUOTE_REGEX = re.compile(r'^[\s\"\']+|[\s\"\']+$')
 
 
@@ -740,7 +745,7 @@ class ChannelList(list):
             a new `ChannelList` containing the matching channels
         """
         # format name regex
-        if isinstance(name, re._pattern_type):
+        if isinstance(name, Pattern):
             flags = name.flags
             name = name.pattern
         else:
