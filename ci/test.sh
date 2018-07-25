@@ -20,10 +20,14 @@
 # Run the test suite for GWpy on the current system
 #
 
-if [ ! -z ${GWPY_PATH+x} ]; then
-    cd ${GWPY_PATH}
-fi
 . ci/lib.sh
+
+# move to new empty directory (so that tests run on installed code)
+mkdir -p test
+pushd test
+
+get_environment  # sets PIP etc
+get_python_version  # sets PYTHON_VERSION
 
 # macports PATH doesn't persist from install stage, which is annoying
 if [ $(get_package_manager) == port ]; then
@@ -31,16 +35,27 @@ if [ $(get_package_manager) == port ]; then
     export PATH=$MACPORTS_PREFIX/bin:$PATH
 fi
 
-get_environment  # sets PIP variables etc
-get_python_version  # sets PYTHON_VERSION
+set -ex
 
-set -ex && trap 'set +xe' RETURN
+# upgrade pip to some minimal level
+# NOTE: need >=7.0.0 to understand '.[tests]'
+#       need >=9.0.0 to understand list --format
+${PIP} install "pip>=9.0.0"
 
-# install test dependencies
-${PIP} install ${PIP_FLAGS} -r requirements-test.txt
+# print installed packages
+echo "------------------------------------------------------------------------"
+echo
+echo "GWpy installed to $(${PYTHON} -c 'import gwpy; print(gwpy.__file__)')"
+echo
+echo "------------------------------------------------------------------------"
+
+echo "Dependencies:"
+echo "-------------"
+${PYTHON} -m pip list installed --format=columns
 
 # run tests
-${PYTHON} -m coverage run ./setup.py --quiet test
+${PYTHON} -m pytest --pyargs gwpy --cov=gwpy
 
-# print coverage
-${PYTHON} -m coverage report
+popd > /dev/null  # return to starting directory
+
+cp -v test/.coverage .

@@ -40,9 +40,6 @@ else  # simple pip build
     EXTRAS=true
 fi
 
-# upgrade pip (mainly to get `pip list --format` below)
-${PIP} install --upgrade pip
-
 # install python extras for full tests
 if [ ${EXTRAS} ]; then
     ${PIP} install --quiet ${PIP_FLAGS} "setuptools>=36.2"
@@ -56,16 +53,3 @@ if [ ${EXTRAS} ]; then
 fi
 
 set +x
-
-cd /tmp
-_gwpyloc=$(${PYTHON} -c 'import gwpy; print(gwpy.__file__)')
-echo "------------------------------------------------------------------------"
-echo
-echo "GWpy installed to $_gwpyloc"
-echo
-echo "------------------------------------------------------------------------"
-cd - 1> /dev/null
-
-echo "Dependencies:"
-echo "-------------"
-${PYTHON} -m pip list installed --format=columns
