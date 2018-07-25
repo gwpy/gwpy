@@ -22,10 +22,6 @@
 
 . ci/lib.sh
 
-# move to new empty directory (so that tests run on installed code)
-mkdir -p test
-pushd test
-
 get_environment  # sets PIP etc
 get_python_version  # sets PYTHON_VERSION
 
@@ -44,6 +40,10 @@ ${PIP} install "pip>=9.0.0"
 
 # install test dependencies
 ${PIP} install ${PIP_FLAGS} -r requirements-test.txt
+
+# move to new empty directory (so that tests run on installed code)
+mkdir -p test
+pushd test
 
 # print installed packages
 echo "------------------------------------------------------------------------"
