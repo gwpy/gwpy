@@ -63,6 +63,12 @@ ${PYTHON} -m pip list installed --format=columns
 # run tests
 ${PYTHON} -m pytest --pyargs gwpy --cov=gwpy
 
+# fix paths in coverage file for docker-based runs
+if [ ! -z ${DOCKER_IMAGE+x} ]; then
+    _gwpy_path=$(python -c "import gwpy; print(gwpy.__path__[0])")
+    sed -i 's|"'${_gwpy_path}'|"'$(pwd)'|g' .coverage;
+fi
+
 popd > /dev/null  # return to starting directory
 
 cp -v test/.coverage .

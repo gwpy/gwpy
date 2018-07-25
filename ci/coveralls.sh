@@ -23,11 +23,6 @@
 . ci/lib.sh
 get_environment
 
-# fix paths in coverage file for docker-based runs
-if [ ! -z ${DOCKER_IMAGE+x} ]; then
-    sed -i 's|"'${GWPY_PATH}'|"'$(pwd)'|g' .coverage;
-fi
-
 # install coveralls
 if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
     PYTHON=/opt/local/bin/python${PYTHON_VERSION}
