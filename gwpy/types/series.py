@@ -536,7 +536,7 @@ class Series(Array):
         new = super(Series, self).__getitem__(item)
 
         # slice axis 0 metadata
-        slice_ = sliceutils.format_nd_slice(item, self.ndim)[0]
+        slice_, = sliceutils.format_nd_slice(item, 1)
         if not sliceutils.null_slice(slice_):
             sliceutils.slice_axis_attributes(self, 'x', new, 'x', slice_)
 
