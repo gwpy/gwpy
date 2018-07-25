@@ -20,6 +20,8 @@
 # Run the test suite for GWpy on the current system
 #
 
+cd ${GWPY_PATH}
+
 . ci/lib.sh
 
 get_environment  # sets PIP etc
