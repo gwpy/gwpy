@@ -33,3 +33,9 @@ fi
 
 # submit coverage results (unwrapping path to coveralls from python)
 $(${PYTHON} -c "import sys; print(sys.prefix)")/bin/coveralls
+
+# fix paths in coverage file for docker-based runs
+if [ ! -z ${DOCKER_IMAGE+x} ]; then
+    sed -i 's|"gwpy|"'$(pwd)'|g' .coverage;
+fi
+head -c 400 .coverage  # debug
