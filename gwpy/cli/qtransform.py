@@ -99,6 +99,7 @@ class Qtransform(Spectrogram):
                            help='One or more times to plot')
         group.add_argument('--frange', nargs=2, help='Frequency range to plot')
         group.add_argument('--qrange', nargs=2, help='Search Q range')
+
         group.add_argument('--nowhiten', action='store_true',
                            help='do not whiten input before transform')
 
@@ -148,6 +149,9 @@ class Qtransform(Spectrogram):
                 return '[{0}]'.format(', '.join(map(fformat, x)))
             if isinstance(x, Quantity):
                 x = x.value
+            elif isinstance(x, str):
+                x = float(x)
+
             return '{0:.2f}'.format(x)
 
         bits = [('Q', fformat(self.result.q))]

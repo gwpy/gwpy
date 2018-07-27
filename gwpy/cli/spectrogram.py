@@ -22,6 +22,7 @@
 """ Spectrogram plots
 """
 
+from numpy import percentile
 from .cliproduct import (FFTMixin, TimeDomainProduct, ImageProduct, unique)
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
@@ -166,15 +167,18 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         ).crop_frequencies(args.ymin, args.ymax)
 
         # auto scale colours
-        from numpy import percentile
         if args.norm:
             imin = specgram.value.min()
             imax = specgram.value.max()
         else:
-            imin = percentile(specgram, .01)
-            imax = percentile(specgram, 100.)
+            imin = percentile(specgram, 1)
+            imax = percentile(specgram, 100)
         imin = args.imin if args.imin is not None else imin
         imax = args.imax if args.imax is not None else imax
+
+        if imin == 0 and args.color_scale == 'log':
+            imin = specgram.value[specgram.value > 0].min()
+
         self.log(3, ('Colorbar limits set to %f - %f' % (imin, imax)))
 
         try:
