@@ -1692,8 +1692,9 @@ class TimeSeries(TimeSeriesBase):
                 elif overlap is None:
                     overlap = recommended_overlap(window) * fftlength
                 whiten = self.asd(fftlength, overlap, method=method, **asd_kw)
-            # apply whitening
-            wdata = self.whiten(fftlength, overlap, asd=whiten)
+            # apply whitening (with errors on dividing by zero)
+            with numpy.errstate(all='raise'):
+                wdata = self.whiten(fftlength, overlap, asd=whiten)
             fdata = wdata.fft().value
         else:
             fdata = self.fft().value
