@@ -223,6 +223,8 @@ class Axes(_Axes):
         return self.pcolormesh(xcoord, ycoord, array.value.T, **kwargs)
 
     def hist(self, x, *args, **kwargs):
+        x = numpy.asarray(x)
+
         # re-format weights as array if given as float
         weights = kwargs.get('weights', None)
         if isinstance(weights, Number):
@@ -235,7 +237,14 @@ class Axes(_Axes):
             # get range
             hrange = kwargs.pop('range', None)
             if hrange is None:
-                hrange = numpy.min(x), numpy.max(x)
+                try:
+                    hrange = numpy.min(x), numpy.max(x)
+                except ValueError as exc:
+                    if str(exc).startswith('zero-size array'):  # no data
+                        exc.args = ('cannot generate log-spaced histogram '
+                                    'bins for zero-size array, '
+                                    'please pass `bins` or `range` manually',)
+                    raise
             # log-scale the axis and extract the base
             if kwargs.get('orientation') == 'horizontal':
                 self.set_yscale('log', nonposy='clip')

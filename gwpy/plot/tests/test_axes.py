@@ -104,6 +104,17 @@ class TestAxes(AxesTestBase):
                                  11, endpoint=True),
         )
 
+    def test_hist_error(self, ax):
+        """Test that `ax.hist` presents the right error message for empty data
+        """
+        with pytest.raises(ValueError) as exc:
+            ax.hist([], logbins=True)
+        assert str(exc.value).startswith('cannot generate log-spaced '
+                                         'histogram bins')
+        # assert it works if we give the range manually
+        if mpl_version >= '1.5.0':
+            ax.hist([], logbins=True, range=(1, 100))
+
     @pytest.mark.xfail(mpl_version < '1.4.0',
                        reason='bugs in matplotlib-1.4.0')
     def test_tile(self, ax):
