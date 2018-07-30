@@ -112,7 +112,8 @@ class TestAxes(AxesTestBase):
         assert str(exc.value).startswith('cannot generate log-spaced '
                                          'histogram bins')
         # assert it works if we give the range manually
-        ax.hist([], logbins=True, range=(1, 100))
+        if mpl_version >= '1.5.0':
+            ax.hist([], logbins=True, range=(1, 100))
 
     @pytest.mark.xfail(mpl_version < '1.4.0',
                        reason='bugs in matplotlib-1.4.0')
