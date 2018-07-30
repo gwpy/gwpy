@@ -11,6 +11,7 @@
 pymysql
 pyRXP
 lscsoft-glue
+lalsuite
 dqsegdb
 ligotimegps
 pycbc >= 1.10.1 ; python_version == '2.7'
