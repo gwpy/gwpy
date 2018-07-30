@@ -80,7 +80,9 @@ yum -y -q install \
     nds2-client-python \
     ldas-tools-framecpp-python \
     lalframe-python \
-    lalsimulation-python
+    lalsimulation-python \
+    texlive-dvipng-bin texlive-latex-bin-bin \
+    texlive-type1cm texlive-collection-fontsrecommended
 
 # HACK: fix missing file from ldas-tools-framecpp
 if [ -d /usr/lib64/$PYTHON/site-packages/LDAStools -a \
