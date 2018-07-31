@@ -50,7 +50,7 @@ apt-get -yqq install \
     python-jinja2 \
 
 # get versions
-GWPY_VERSION=$(python setup.py --version)
+GWPY_VERSION=$(python -c "import versioneer; print(versioneer.get_version())")
 GWPY_RELEASE=${GWPY_VERSION%%+*}
 
 # upgrade setuptools for development builds only to prevent version munging
