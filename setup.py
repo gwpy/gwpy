@@ -64,11 +64,12 @@ install_requires = [
     'ligotimegps >= 1.2.1',
 ]
 
-# if setuptools is too old and we are building an EL7
-# distribution, empty the install_requires,
-# the spec file will handle dependencies anyway
+# if setuptools is too old and we are building an EL7 or Debian 8
+# distribution, empty the install_requires, the distribution files
+# will handle dependencies anyway
 # NOTE: this probably isn't very robust
-if not PEP_508 and os.getenv('RPM_BUILD_ROOT'):
+if not PEP_508 and (
+        os.getenv('RPM_BUILD_ROOT') or os.getenv('PYBUILD_NAME')):
     install_requires = []
 
 # test dependencies
