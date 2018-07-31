@@ -27,17 +27,17 @@ BuildRequires:  python2-setuptools
 
 %package -n python2-%{srcname}
 Summary:        %{summary}
-Requires:       python-six
+Requires:       python-six >= 1.5
 Requires:       python-dateutil
 Requires:       python-enum34
-Requires:       numpy
-Requires:       scipy
-Requires:       python-matplotlib
-Requires:       python-astropy
-Requires:       h5py
+Requires:       numpy >= 1.7.1
+Requires:       scipy >= 0.12.1
+Requires:       python-matplotlib >= 1.2.0
+Requires:       python-astropy >= 1.1.1
+Requires:       h5py >= 1.3
 Requires:       lal-python >= 6.14.0
-Requires:       python2-ligo-segments
-Requires:       python2-tqdm
+Requires:       python2-ligo-segments >= 1.0.0
+Requires:       python2-tqdm >= 4.10.0
 
 %{?python_provide:%python_provide python2-%{srcname}}
 
