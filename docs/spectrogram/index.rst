@@ -51,11 +51,19 @@ The full set of metadata that can be provided is as follows:
 Calculating a `Spectrogram` from a `~gwpy.timeseries.TimeSeries`
 ================================================================
 
-The time-frequency `Spectrogram` of a `~gwpy.timeseries.TimeSeries` can be calculated using the :meth:`~gwpy.timeseries.TimeSeries.spectrogram`.
+The time-frequency `Spectrogram` of a `~gwpy.timeseries.TimeSeries` can be calculated using the :meth:`~gwpy.timeseries.TimeSeries.spectrogram` method.
 We can extend previous examples of plotting a `~gwpy.timeseries.TimeSeries` with calculation of a `Spectrogram` with a 20-second stride:
 
-.. literalinclude:: spectrogram_plot.py
-   :lines: 1-4
+.. plot::
+   :context: reset
+   :include-source:
+   :nofigs:
+
+   >>> from gwpy.timeseries import TimeSeries
+   >>> gwdata = TimeSeries.fetch('H1:LDAS-STRAIN', 'September 16 2010 06:40',
+   ...                           'September 16 2010 06:50')
+   >>> specgram = gwdata.spectrogram(20, fftlength=8, overlap=4) ** (1/2.)
+
 
 .. _gwpy-spectrogram-plot:
 
@@ -66,8 +74,16 @@ Plotting a `Spectrogram`
 Like the `~gwpy.timeseries.TimeSeries` and `~gwpy.frequencyseries.FrequencySeries`, the `Spectrogram` has a convenient :meth:`~Spectrogram.plot` method, allowing us to view the data.
 We can extend the previous time-series example to include a plot:
 
-.. plot:: spectrogram/spectrogram_plot.py
+.. plot::
+   :context:
    :include-source:
+
+   >>> plot = specgram.plot(norm='log', vmin=1e-23, vmax=1e-19)
+   >>> ax = plot.gca()
+   >>> ax.set_ylim(40, 4000)
+   >>> ax.set_yscale('log')
+   >>> ax.colorbar(label='GW strain ASD [strain/$\sqrt{\mathrm{Hz}}$]')
+   >>> plot.show()
 
 ==========================
 `Spectrogram` applications
