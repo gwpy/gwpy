@@ -33,7 +33,7 @@ from sphinx.util import logging
 
 import sphinx_bootstrap_theme
 
-from sphinx.util import logger
+from numpydoc import docscrape_sphinx
 
 import gwpy
 from gwpy import _version as gwpy_version
@@ -51,9 +51,6 @@ SPHINX_DIR = os.path.abspath(os.path.dirname(__file__))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-
-# local extensions
-from gwpy.utils.sphinx import numpydoc
 
 # extension modules
 # DEVNOTE: please make sure and add 3rd-party dependencies to
@@ -176,15 +173,10 @@ numpydoc_use_blockquotes = True
 # auto-insert plot directive in examples
 numpydoc_use_plots = True
 
-# try and update the plot detection to include .show() calls
-try:  # requires numpydoc >= 0.8
-    from numpydoc import docscrape_sphinx
-    parts = re.split('[\(\)|]', docscrape_sphinx.IMPORT_MATPLOTLIB_RE)[1:-1]
-except AttributeError:
-    pass
-else:
-    parts.extend(('fig.show()', 'plot.show()'))
-    docscrape_sphinx.IMPORT_MATPLOTLIB_RE = r'\b({})\b'.format('|'.join(parts))
+# update the plot detection to include .show() calls
+parts = re.split('[\(\)|]', docscrape_sphinx.IMPORT_MATPLOTLIB_RE)[1:-1]
+parts.extend(('fig.show()', 'plot.show()'))
+docscrape_sphinx.IMPORT_MATPLOTLIB_RE = r'\b({})\b'.format('|'.join(parts))
 
 # -- inhertiance_diagram ------------------------
 
@@ -462,6 +454,7 @@ def build_cli_examples(_):
 # -- create citation file -----------------------------------------------------
 
 def write_citing_rst(_):
+    logger = logging.getLogger('zenodo')
     here = os.path.dirname(__file__)
     with open(os.path.join(here, 'citing.rst.in'), 'r') as fobj:
         citing = fobj.read()
