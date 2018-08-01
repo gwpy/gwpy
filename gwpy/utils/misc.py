@@ -21,14 +21,14 @@
 
 from __future__ import print_function
 
+import sys
 from contextlib import contextmanager
-from sys import stdout
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 def gprint(*values, **kwargs):  # pylint: disable=missing-docstring
-    kwargs.setdefault('file', stdout)
+    kwargs.setdefault('file', sys.stdout)
     file_ = kwargs['file']
     print(*values, **kwargs)
     file_.flush()
