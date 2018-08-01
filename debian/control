@@ -12,7 +12,7 @@ Build-Depends: debhelper (>= 9),
                python-all,
                python3-all,
                python-setuptools,
-               python3-setuptools,
+               python3-setuptools
 
 # -- python-gwpy --------------------------------------------------------------
 
@@ -24,11 +24,11 @@ Depends: ${misc:Depends},
          python-dateutil,
          python-enum34,
          python-numpy (>= 1.7.1),
-         python-scipy (>= 0.12.0),
+         python-scipy (>= 0.12.1),
          python-astropy (>= 1.1.1),
          python-h5py (>= 1.3),
          python-matplotlib (>= 1.2.0),
-         python-ligo-segments,
+         python-ligo-segments (>= 1.0.0),
          lal-python (>= 6.14.0),
          python-tqdm (>= 4.10.0)
 Suggests: python-pymysql,
@@ -37,11 +37,8 @@ Suggests: python-pymysql,
           python-psycopg2,
           python-pandas
 Description: A python package for gravitational-wave astrophysics
- .
-           GWpy is a collaboration-driven `Python <http://www.python.org>`_
-           package providing tools for studying data from ground-based
-           gravitational-wave detectors.
- .
+ GWpy is a collaboration-driven Python package providing tools
+ for studying data from ground-based gravitational-wave detectors.
 
 # -- python3-gwpy -------------------------------------------------------------
 
@@ -65,8 +62,5 @@ Suggests: python3-pymysql,
           python3-psycopg2,
           python3-pandas
 Description: A python package for gravitational-wave astrophysics
- .
-           GWpy is a collaboration-driven `python <http://www.python.org>`_
-           package providing tools for studying data from ground-based
-           gravitational-wave detectors.
- .
+ GWpy is a collaboration-driven Python package providing tools
+ for studying data from ground-based gravitational-wave detectors.

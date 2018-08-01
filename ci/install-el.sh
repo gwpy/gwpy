@@ -41,7 +41,7 @@ yum -y -q install \
     python2-rpm-macros \
     python2-setuptools
 
-GWPY_VERSION=$(python setup.py --version)
+GWPY_VERSION=$(python -c "import versioneer; print(versioneer.get_version())")
 
 # upgrade setuptools for development builds only to prevent version munging
 if [[ "${GWPY_VERSION}" == *"+"* ]]; then

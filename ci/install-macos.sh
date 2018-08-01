@@ -40,7 +40,7 @@ sudo port -q install \
     ${PY_PREFIX}-gitpython
 
 # make Portfile
-GWPY_VERSION=$(python setup.py --version)
+GWPY_VERSION=$($PYTHON setup.py --version)
 $PYTHON setup.py --quiet sdist
 $PYTHON setup.py port --tarball dist/gwpy-${GWPY_VERSION}.tar.gz
 
