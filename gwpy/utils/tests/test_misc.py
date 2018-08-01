@@ -27,6 +27,8 @@ from .. import misc as utils_misc
 
 
 def test_gprint(capsys):
+    """Test for :func:`gwpy.utils.misc.gprint`
+    """
     utils_misc.gprint('test')
     assert capsys.readouterr().out == 'test\n'
     utils_misc.gprint('test', end=' ')
@@ -38,6 +40,8 @@ def test_gprint(capsys):
 
 
 def test_null_context():
+    """Test for :func:`gwpy.utils.misc.null_context`
+    """
     ctx = utils_misc.null_context()
     with ctx:
         print('this should work')
@@ -48,4 +52,6 @@ def test_null_context():
     (str, 1, '1'),
 ])
 def test_if_not_none(func, value, out):
+    """Test for :func:`gwpy.utils.misc.if_not_none`
+    """
     assert utils_misc.if_not_none(func, value) == out
