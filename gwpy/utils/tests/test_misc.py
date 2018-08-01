@@ -19,7 +19,6 @@
 """Tests for :mod:`gwpy.utils.misc`
 """
 
-import contextlib
 import sys
 
 import pytest
@@ -40,7 +39,8 @@ def test_gprint(capsys):
 
 def test_null_context():
     ctx = utils_misc.null_context()
-    assert isinstance(ctx, contextlib.GeneratorContextManager)
+    with ctx:
+        print('this should work')
 
 
 @pytest.mark.parametrize('func, value, out', [
@@ -48,4 +48,4 @@ def test_null_context():
     (str, 1, '1'),
 ])
 def test_if_not_none(func, value, out):
-    assert utils_misc.if_not_none(func, value) is out
+    assert utils_misc.if_not_none(func, value) == out
