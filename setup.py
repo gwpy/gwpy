@@ -95,7 +95,7 @@ setup(
     author='Duncan Macleod',
     author_email='duncan.macleod@ligo.org',
     license='GPLv3',
-    url='https://gwpy.github.io/',
+    url='https://github.com/gwpy/gwpy',
 
     # package content
     packages=find_packages(),
