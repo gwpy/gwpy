@@ -104,5 +104,5 @@ class Coherencegram(Spectrogram):
             ref = 1
             other = 0
         return self.timeseries[ref].coherence_spectrogram(
-            self.timeseries[other], stride, fftlength=fftlength, overlap=overlap,
-            window=args.window)
+            self.timeseries[other], stride, fftlength=fftlength,
+            overlap=overlap, window=args.window)

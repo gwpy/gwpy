@@ -118,4 +118,4 @@ if INTERACTIVE:
 run_time = time.time() - PROG_START
 prod.log(1, 'Program run time: %.1f' % run_time)
 if prod.got_error:
-    sys.exit(2)
+    sys.exit(2)     # make sure when running batch they can test for error
