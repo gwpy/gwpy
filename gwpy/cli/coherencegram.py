@@ -42,6 +42,7 @@ class Coherencegram(Spectrogram):
     def __init__(self, *args, **kwargs):
         super(Coherencegram, self).__init__(*args, **kwargs)
         self.ref_chan = self.args.ref or self.chan_list[0]
+        # deal with channel type (e.g. m-trend)
         if ',' in self.ref_chan:
             self.ref_chan = self.ref_chan.split(',')[0]
 

@@ -149,9 +149,6 @@ class Qtransform(Spectrogram):
                 return '[{0}]'.format(', '.join(map(fformat, x)))
             if isinstance(x, Quantity):
                 x = x.value
-#            elif isinstance(x, str):
-#                x = float(x)
-
             return '{0:.2f}'.format(x)
 
         bits = [('Q', fformat(self.result.q))]
