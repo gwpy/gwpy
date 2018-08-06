@@ -53,7 +53,7 @@ from astropy.io import registry as io_registry
 
 from ..types import (Array2D, Series)
 from ..detector import (Channel, ChannelList)
-from ..io import datafind
+from ..io import datafind as io_datafind
 from ..time import (Time, LIGOTimeGPS, gps_types, to_gps)
 from ..utils import gprint
 
@@ -1145,12 +1145,14 @@ class TimeSeriesBaseDict(OrderedDict):
         **readargs
             any other keyword arguments to be passed to `.read()`
         """
+        import gwdatafind
+
         start = to_gps(start)
         end = to_gps(end)
 
         # -- find frametype(s)
         if frametype is None:
-            matched = datafind.find_best_frametype(
+            matched = io_datafind.find_best_frametype(
                 channels, start, end, frametype_match=frametype_match,
                 allow_tape=allow_tape)
             frametypes = {}
@@ -1187,9 +1189,8 @@ class TimeSeriesBaseDict(OrderedDict):
                     exc.args = "Cannot parse list of IFOs from channel names",
                     raise
             # find frames
-            connection = datafind.connect()
-            cache = connection.find_frame_urls(observatory, frametype, start,
-                                               end, urltype='file')
+            cache = gwdatafind.find_urls(observatory, frametype, start,
+                                         end, urltype='file')
             if not cache:
                 raise RuntimeError("No %s-%s frame files found for [%d, %d)"
                                    % (observatory, frametype, start, end))
