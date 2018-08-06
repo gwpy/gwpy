@@ -106,7 +106,7 @@ def read_gwf(framefile, channels, start=None, end=None, ctype=None,
         end = 0
 
     # open file
-    stream = frameCPP.IFrameFStream(str(framefile))
+    stream = open_gwf(framefile, 'r')
 
     # get number of frames in file
     try:
