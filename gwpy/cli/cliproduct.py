@@ -34,7 +34,7 @@ from functools import wraps
 
 from six import add_metaclass
 
-from matplotlib import (rcParams, pyplot)
+from matplotlib import rcParams
 try:
     from matplotlib.cm import viridis as DEFAULT_CMAP
 except ImportError:
@@ -709,7 +709,7 @@ class CliProduct(object):
                 if self.args.interactive:
                     self.log(3, 'Interactive manipulation of '
                                 'image should be available.')
-                    pyplot.show(self.plot)
+                    self.plot.show()
                 else:
                     self.save(self.args.out)
             elif show_error:
