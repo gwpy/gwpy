@@ -409,19 +409,18 @@ def _find_latest_frame(connection, ifo, frametype, gpstime=None,
         gpstime = int(to_gps(gpstime))
     try:
         if gpstime is None:
-            frame = connection.find_latest(ifo, frametype, urltype='file')[0]
+            path = connection.find_latest(ifo, frametype, urltype='file')[0]
         else:
-            frame = connection.find_urls(ifo, frametype, gpstime,
-                                         gpstime, urltype='file',
-                                         on_gaps='ignore')[0]
+            path = connection.find_urls(ifo, frametype, gpstime, gpstime,
+                                        urltype='file', on_gaps='ignore')[0]
     except (IndexError, RuntimeError):
-        raise RuntimeError("No frames found for {}-{}".format(ifo, frametype))
+        raise RuntimeError("No files found for {}-{}".format(ifo, frametype))
     else:
-        if not os.access(frame.path, os.R_OK):
-            raise IOError("Latest frame file for {}-{} is unreadable: "
-                          "{}".format(ifo, frametype, frame.path))
-        if not allow_tape and on_tape(frame.path):
-            raise IOError("Latest frame file for {}-{} is on tape "
+        if not os.access(path, os.R_OK):
+            raise IOError("Latest file for {}-{} is unreadable: "
+                          "{}".format(ifo, frametype, path))
+        if not allow_tape and on_tape(path):
+            raise IOError("Latest file for {}-{} is on tape "
                           "(pass allow_tape=True to force): "
-                          "{}".format(ifo, frametype, frame.path))
-        return frame.path
+                          "{}".format(ifo, frametype, path))
+        return path
