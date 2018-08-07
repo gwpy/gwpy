@@ -35,6 +35,16 @@ from .. import datafind as io_datafind
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 TEST_GWF_FILE = os.path.join(TEST_DATA_DIR, 'HLV-HW100916-968654552-1.gwf')
+DEFAULT_DATAFIND_SERVER = os.environ.get('LIGO_DATAFIND_SERVER', None)
+
+
+def setup_module():
+    os.environ['LIGO_DATAFIND_SERVER'] = 'test:80'
+
+
+def teardown_module():
+    if DEFAULT_DATAFIND_SERVER:
+        os.environ['LIGO_DATAFIND_SERVER'] = DEFAULT_DATAFIND_SERVER
 
 
 # -- utilities ----------------------------------------------------------------
