@@ -52,7 +52,6 @@ def mock_connection(framefile):
 
 
 @pytest.fixture(scope='class')
-@skip_missing_dependency('gwdatafind')
 def connection():
     with mock.patch('gwdatafind.ui.HTTPConnection',
                     return_value=mock_connection(TEST_GWF_FILE)) as mconn:
@@ -69,6 +68,7 @@ def test_reconnect():
     assert b.port == a.port
 
 
+@skip_missing_dependency('gwdatafind')
 @mock.patch('gwpy.io.datafind.iter_channel_names',
             return_value=['L1:LDAS-STRAIN', 'H1:LDAS-STRAIN'])
 @mock.patch('gwpy.io.datafind.num_channels', return_value=1)
@@ -115,6 +115,7 @@ def test_find_frametype(reconnect, num_channels, iter_channels, connection):
         assert '[files on tape have not been checked' in str(exc.value)
 
 
+@skip_missing_dependency('gwdatafind')
 @mock.patch('gwpy.io.datafind.iter_channel_names',
             return_value=['L1:LDAS-STRAIN'])
 @mock.patch('gwpy.io.datafind.num_channels', return_value=1)
