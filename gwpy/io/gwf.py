@@ -111,6 +111,8 @@ def write_frames(filename, frames, compression=257, compression_level=6):
     compression_level : `int`, optional
         compression level for given scheme
     """
+    from LDAStools import frameCPP
+
     # open stream
     stream = open_gwf(filename, 'w')
 
