@@ -39,6 +39,20 @@ class Coherencegram(Spectrogram):
     MAX_DATASETS = 2
     action = 'coherencegram'
 
+    def __init__(self, *args, **kwargs):
+        super(Coherencegram, self).__init__(*args, **kwargs)
+        self.ref_chan = self.args.ref or self.chan_list[0]
+        # deal with channel type (e.g. m-trend)
+        if ',' in self.ref_chan:
+            self.ref_chan = self.ref_chan.split(',')[0]
+
+    @classmethod
+    def arg_channels(cls, parser):
+        group = super(Coherencegram, cls).arg_channels(parser)
+        group.add_argument('--ref', help='Reference channel against which '
+                                         'others will be compared')
+        return group
+
     def _finalize_arguments(self, args):
         if args.color_scale is None:
             args.color_scale = 'linear'
@@ -84,6 +98,12 @@ class Coherencegram(Spectrogram):
         if overlap is not None:  # overlap in seconds
             overlap *= fftlength
 
-        return self.timeseries[0].coherence_spectrogram(
-            self.timeseries[1], stride, fftlength=fftlength, overlap=overlap,
-            window=args.window)
+        if self.timeseries[0].name == self.ref_chan:
+            ref = 0
+            other = 1
+        else:
+            ref = 1
+            other = 0
+        return self.timeseries[ref].coherence_spectrogram(
+            self.timeseries[other], stride, fftlength=fftlength,
+            overlap=overlap, window=args.window)

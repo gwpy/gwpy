@@ -22,11 +22,13 @@
 """Base class for CLI (`gwpy-plot`) products.
 """
 
+from __future__ import print_function
 import abc
 import os.path
 import re
 import time
 import warnings
+import sys
 from collections import OrderedDict
 from functools import wraps
 
@@ -195,6 +197,8 @@ class CliProduct(object):
         self.width, self.height = map(float, self.args.geometry.split('x', 1))
         #: figure size in inches
         self.figsize = (self.width / self.dpi, self.height / self.dpi)
+        #: Flag for data validation (like all zeroes)
+        self.got_error = False
 
         # please leave this last
         self._validate_arguments()
@@ -234,7 +238,11 @@ class CliProduct(object):
         :rtype: object
         """
         if self.verbose >= level:
-            print(msg)
+            if level == 0:
+                # level zero is important if not fatal error
+                print(msg, file=sys.stderr)
+            else:
+                print(msg)
         return
 
     # -- argument parsing -----------------------
@@ -693,15 +701,23 @@ class CliProduct(object):
         self.get_data()
 
         # for each plot
+        show_error = True       # control ours separate from product's
         while self.has_more_plots():
             self._make_plot()
-            self.set_plot_properties()
-            if self.args.interactive:
-                self.log(3, 'Interactive manipulation of '
-                            'image should be available.')
-                pyplot.show(self.plot)
-            else:
-                self.save(self.args.out)
+            if self.plot:
+                self.set_plot_properties()
+                if self.args.interactive:
+                    self.log(3, 'Interactive manipulation of '
+                                'image should be available.')
+                    pyplot.show(self.plot)
+                else:
+                    self.save(self.args.out)
+            elif show_error:
+                # Some plots reject inpput data for reasons like all zeroes
+                self.log(0, 'No plot produced because of data '
+                            'validation error.')
+                self.got_error = True
+                show_error = False
             self.plot_num += 1
 
 

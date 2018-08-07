@@ -149,9 +149,6 @@ class Qtransform(Spectrogram):
                 return '[{0}]'.format(', '.join(map(fformat, x)))
             if isinstance(x, Quantity):
                 x = x.value
-            elif isinstance(x, str):
-                x = float(x)
-
             return '{0:.2f}'.format(x)
 
         bits = [('Q', fformat(self.result.q))]
@@ -168,14 +165,21 @@ class Qtransform(Spectrogram):
     def get_spectrogram(self):
         args = self.args
 
-        gps = self.qxfrm_args['gps']
-        outseg = Segment(gps, gps).protract(args.plot[self.plot_num])
-        qtrans = self.timeseries[0].q_transform(
-            outseg=outseg,
-            **self.qxfrm_args)
+        asd = self.timeseries[0].asd().value
+        if (asd.min() == 0):
+            self.log(0, 'Input data has a zero in ASD. '
+                     'Q-transform not possible.')
+            self.got_error = True
+            qtrans = None
+        else:
+            gps = self.qxfrm_args['gps']
+            outseg = Segment(gps, gps).protract(args.plot[self.plot_num])
+            qtrans = self.timeseries[0].q_transform(
+                outseg=outseg,
+                **self.qxfrm_args)
 
-        if args.ymin is None:  # set before Spectrogram.make_plot tries to set
-            args.ymin = qtrans.yspan[0]
+            if args.ymin is None:  # set before Spectrogram.make_plot
+                args.ymin = qtrans.yspan[0]
 
         return qtrans
 
