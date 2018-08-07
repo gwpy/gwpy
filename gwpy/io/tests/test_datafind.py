@@ -45,6 +45,8 @@ def setup_module():
 def teardown_module():
     if DEFAULT_DATAFIND_SERVER:
         os.environ['LIGO_DATAFIND_SERVER'] = DEFAULT_DATAFIND_SERVER
+    else:
+        os.environ.pop('LIGO_DATAFIND_SERVER', None)
 
 
 # -- utilities ----------------------------------------------------------------
