@@ -19,8 +19,10 @@
 """Unit tests for :mod:`gwpy.signal.window`
 """
 
+import numpy
 import pytest
 
+from ...tests import utils
 from .. import window
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -42,3 +44,11 @@ def test_recommended_overlap():
         window.recommended_overlap('kaiser')
     assert str(exc.value) == ('no recommended overlap for \'kaiser\' '
                               'window')
+
+
+def test_planck():
+    series = numpy.ones(64)
+    wseries = series * window.planck(64, nleft=5, nright=5)
+    assert wseries[0] == 0
+    assert wseries[-1] == 0
+    utils.assert_allclose(wseries[5:59], series[5:59])

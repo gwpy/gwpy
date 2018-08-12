@@ -22,6 +22,7 @@
 import warnings
 from copy import deepcopy
 
+import numpy
 from numpy import fft as npfft
 from scipy import signal
 
@@ -268,6 +269,39 @@ class FrequencySeries(Series):
             >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
         """
         return self.filter(zeros, poles, gain, analog=analog)
+
+    def interpolate(self, df, left=0, right=0):
+        """Interpolate this `FrequencySeries` to a new resolution.
+
+        Parameters
+        ----------
+        df : `float`
+            desired frequency resolution of the interpolated `FrequencySeries`,
+            in Hz
+
+        left : `float`
+            value to return for f < flow, default: 0
+
+        right : `float`
+            value to return for f > fhigh, default: 0
+
+        Returns
+        -------
+        out : `FrequencySeries`
+            the interpolated version of the input `FrequencySeries`
+
+        See Also
+        --------
+        :func:`numpy.interp`
+            for the underlying 1-D linear interpolation scheme
+        """
+        N = (self.size - 1) * (self.df.decompose().value / df) + 1
+        fsamples = numpy.arange(0, numpy.rint(N)) * df
+        out = numpy.interp(fsamples, self.frequencies.value, self.value,
+                           left=left, right=right).view(type(self))
+        out.__array_finalize__(self)
+        out.df = df
+        return out
 
     def filter(self, *filt, **kwargs):
         """Apply a filter to this `FrequencySeries`.
