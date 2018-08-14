@@ -174,12 +174,16 @@ class Plot(figure.Figure):
             elif group:
                 plot_func(*group, **kwargs)
 
+            # set default axis labels (hide label if shared axis and not
+            #                          bottom left panel)
             if sharex == 'all' and row < nrows - 1:
                 ax.set_xlabel('')
+            else:
+                ax.xaxis.isDefault_label = defxlabel
             if sharey == 'all' and col < ncols - 1:
                 ax.set_ylabel('')
-            ax.xaxis.isDefault_label = defxlabel
-            ax.yaxis.isDefault_label = defylabel
+            else:
+                ax.yaxis.isDefault_label = defylabel
 
         return self.axes
 
