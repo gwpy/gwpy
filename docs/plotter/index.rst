@@ -47,16 +47,6 @@ more complicated plots manually:
     >>> plot.show()
 
 
-=================
-Plot applications
-=================
-
-.. toctree::
-   :titlesonly:
-
-   colors
-   filter
-
 ==========
 Plot types
 ==========

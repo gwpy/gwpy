@@ -29,12 +29,12 @@ to the standard methods available in `~matplotlib.pyplot`:
    >>> plt.plot(data)
    >>> plt.show()
 
-------------------------------
-:meth:`.plot` instance methods
-------------------------------
+----------------------------
+``.plot()`` instance methods
+----------------------------
 
 Each of the data representations provided by `gwpy` also come with a
-:meth:`.plot` method that provides a figure with improved defaults tailored
+``.plot()`` method that provides a figure with improved defaults tailored
 to those data:
 
 .. plot::
@@ -45,7 +45,7 @@ to those data:
    >>> plot = data.plot()
    >>> plot.show()
 
-The :meth:`.plot` methods accept any keywords that can be used to create the
+The ``.plot()`` methods accept any keywords that can be used to create the
 :class:`~matplotlib.figure.Figure` and the :class:`~matplotlib.axes.Axes`,
 and to draw the element itself, e.g:
 
@@ -54,7 +54,7 @@ and to draw the element itself, e.g:
 
    >>> from gwpy.timeseries import TimeSeries
    >>> data = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
-   >>> plot = data.plot(figsize=(8, 4), ylabel='Strain',
+   >>> plot = data.plot(figsize=(8, 4.8), ylabel='Strain',
    ...                  color='gwpy:ligo-livingston')
    >>> plot.show()
 
@@ -76,7 +76,7 @@ By default, a flat set of objects are shown on the same axes:
    >>> hdata = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
    >>> ldata = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
    >>> from gwpy.plot import Plot
-   >>> plot = Plot(hdata, ldata, figsize=(12, 4))
+   >>> plot = Plot(hdata, ldata, figsize=(12, 4.8))
    >>> plot.show()
 
 However, `separate=True` can be given to show each dataset on a separate
@@ -86,8 +86,8 @@ However, `separate=True` can be given to show each dataset on a separate
    :include-source:
    :context:
 
-   plot = Plot(hdata, ldata, figsize=(12, 6), separate=True, sharex=True)
-   plot.show()
+   >>> plot = Plot(hdata, ldata, figsize=(12, 6), separate=True, sharex=True)
+   >>> plot.show()
 
 .. warning::
 
@@ -104,3 +104,12 @@ Plot customisation
 
    gps
    colorbars
+
+=================
+Plot applications
+=================
+
+.. toctree::
+
+   colors
+   filter
