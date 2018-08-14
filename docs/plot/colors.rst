@@ -1,6 +1,6 @@
-.. _currentmodule: gwpy.plotter
+.. _currentmodule: gwpy.plot
 
-.. _gwpy-plotter-colors:
+.. _gwpy-plot-colors:
 
 ################################################
 The Gravitational-Wave Observatory colour scheme
@@ -15,7 +15,7 @@ In order to simplify visual identification of a specific gravitational-wave obse
     import numpy
     from matplotlib import (pyplot, rcParams)
     from matplotlib.colors import to_hex
-    from gwpy.plotter import colors
+    from gwpy.plot import colors
 
     rcParams.update({
         'text.usetex': False,
@@ -56,13 +56,13 @@ For example:
 .. plot::
 
     from gwpy.timeseries import TimeSeries
-    from gwpy.plotter import TimeSeriesPlot
+    from gwpy.plot import Plot
     h1 = TimeSeries.fetch_open_data('H1', 1126259457, 1126259467)
     h1b = h1.bandpass(50, 250).notch(60).notch(120)
     l1 = TimeSeries.fetch_open_data('L1', 1126259457, 1126259467)
     l1b = l1.bandpass(50, 250).notch(60).notch(120)
-    plot = TimeSeriesPlot()
-    ax = plot.gca()
+    plot = Plot(figsize=(12, 4.8))
+    ax = plot.gca(xscale='auto-gps')
     ax.plot(h1b, color='gwpy:ligo-hanford', label='LIGO-Hanford')
     ax.plot(l1b, color='gwpy:ligo-livingston', label='LIGO-Livingston')
     ax.set_epoch(1126259462.427)
@@ -74,12 +74,12 @@ For example:
 
 The above code was adapted from the example :ref:`gwpy-example-signal-gw150914`.
 
-The colours can also be specified using the interferometer prefix (e.g. ``'H1'``) via the `gwpy.plotter.colors.GW_OBSERVATORY_COLORS` object:
+The colours can also be specified using the interferometer prefix (e.g. ``'H1'``) via the `gwpy.plot.colors.GW_OBSERVATORY_COLORS` object:
 
 .. plot::
 
     from matplotlib import pyplot
-    from gwpy.plotter.colors import GW_OBSERVATORY_COLORS
+    from gwpy.plot.colors import GW_OBSERVATORY_COLORS
     fig = pyplot.figure()
     ax = fig.gca()
     ax.plot([1, 2, 3, 4, 5], color=GW_OBSERVATORY_COLORS['L1'])
@@ -87,6 +87,5 @@ The colours can also be specified using the interferometer prefix (e.g. ``'H1'``
 
 .. note::
 
-   The ``'gwpy:<>'`` colours will not be available unless the `gwpy.plotter`
-   module has been imported. This will happen automatically when a plot is
-   made using the integrated `plot()` methods of a GWpy object.
+   The ``'gwpy:<>'`` colours will not be available until `gwpy`
+   has been imported.
