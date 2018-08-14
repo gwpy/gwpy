@@ -26,6 +26,7 @@ many configurable parameters both interactive, and in saving to disk.
 # utilities
 from . import (
     rc,  # updated default parameters
+    colors,  # extra colors
     gps,  # GPS timing scales and formats
     log,  # Logarithimic scaling mods
     units,  # unit support
