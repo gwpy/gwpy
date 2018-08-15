@@ -24,6 +24,7 @@ import warnings
 
 from six.moves import reduce
 
+from ...detector import Channel
 from ...io import nds2 as io_nds2
 from ...segments import (Segment, SegmentList)
 from ...utils import gprint
@@ -107,8 +108,8 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
     ndschannels = io_nds2.find_channels(channels, connection=connection,
                                         type=utype, dtype=udtype, unique=True,
                                         epoch=(start, end))
-    names = ['%s,%s' % (c.name, c.channel_type_to_string(c.channel_type)) for
-             c in ndschannels]
+
+    names = [Channel.from_nds2(c).ndsname for c in ndschannels]
     print_verbose('done', verbose=verbose)
 
     # handle minute trend timing
