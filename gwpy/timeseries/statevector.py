@@ -104,7 +104,7 @@ class StateTimeSeries(TimeSeriesBase):
                 channel=None, name=None, **kwargs):
         """Generate a new StateTimeSeries
         """
-        if 'unit' in kwargs:
+        if kwargs.pop('unit', None) is not None:
             raise TypeError("%s does not accept keyword argument 'unit'"
                             % cls.__name__)
         if isinstance(data, (list, tuple)):
@@ -225,6 +225,12 @@ class StateTimeSeries(TimeSeriesBase):
                                   "TimeSeries, cannot be used with the "
                                   "StateTimeSeries because LAL has no "
                                   "BooleanTimeSeries structure")
+
+    @classmethod
+    @wraps(TimeSeriesBase.from_nds2_buffer)
+    def from_nds2_buffer(cls, buffer, **metadata):
+        metadata.setdefault('unit', None)
+        return super(StateTimeSeries, cls).from_nds2_buffer(buffer, **metadata)
 
     def __getitem__(self, item):
         if isinstance(item, (float, int)):

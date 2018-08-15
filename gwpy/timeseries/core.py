@@ -620,7 +620,9 @@ class TimeSeriesBase(Series):
 
     @classmethod
     def from_nds2_buffer(cls, buffer_, **metadata):
-        """Construct a new `TimeSeries` from an `nds2.buffer` object
+        """Construct a new series from an `nds2.buffer` object
+
+        **Requires:** |nds2|_
 
         Parameters
         ----------
@@ -635,10 +637,6 @@ class TimeSeriesBase(Series):
         timeseries : `TimeSeries`
             a new `TimeSeries` containing the data from the `nds2.buffer`,
             and the appropriate metadata
-
-        Notes
-        -----
-        This classmethod requires the nds2-client package
         """
         # cast as TimeSeries and return
         channel = Channel.from_nds2(buffer_.channel)
@@ -1317,6 +1315,32 @@ class TimeSeriesBaseDict(OrderedDict):
                                            allow_tape=allow_tape,
                                            verbose=verbose, **kwargs))
                     for c in channels)
+
+    @classmethod
+    def from_nds2_buffers(cls, buffers, **metadata):
+        """Construct a new dict from a list of `nds2.buffer` objects
+
+        **Requires:** |nds2|_
+
+        Parameters
+        ----------
+        buffers : `list` of `nds2.buffer`
+            the input NDS2-client buffers to read
+
+        **metadata
+            any other metadata keyword arguments to pass to the `TimeSeries`
+            constructor
+
+        Returns
+        -------
+        dict : `TimeSeriesDict`
+            a new `TimeSeriesDict` containing the data from the given buffers
+        """
+        tsd = cls()
+        for buf in buffers:
+            tsd[buf.channel.name] = tsd.EntryClass.from_nds2_buffer(
+                buf, **metadata)
+        return tsd
 
     def plot(self, label='key', method='plot', figsize=(12, 4),
              xscale='auto-gps', **kwargs):
