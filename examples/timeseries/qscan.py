@@ -58,6 +58,6 @@ ax.colorbar(cmap='viridis', label='Normalized energy')
 plot.show()
 
 # Here we can clearly see the trace of a compact binary coalescence,
-# specifically a binary black hole coalescence!
+# specifically a binary black hole merger!
 # For more details on this result, please see
 # http://www.ligo.org/science/Publication-GW150914/.

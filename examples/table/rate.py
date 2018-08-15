@@ -49,8 +49,8 @@ rate = events.event_rate(1, start=968654552, end=968654562)
 
 # The :meth:`~EventTable.event_rate` method has returned a
 # `~gwpy.timeseries.TimeSeries`, so we can display this using the
-# :meth:`~gwpy.timeseries.TimeSeries.plot` method of that object:
-plot = rate.plot()
+# :meth:`~gwpy.timeseries.TimeSeries.step` method of that object:
+plot = rate.step()
 ax = plot.gca()
 ax.set_xlim(968654552, 968654562)
 ax.set_ylabel('Event rate [Hz]')

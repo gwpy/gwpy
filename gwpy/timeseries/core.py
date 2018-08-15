@@ -1372,13 +1372,40 @@ class TimeSeriesBaseDict(OrderedDict):
         for key, artist in zip(self, artists):
             if label.lower() == 'name':
                 lab = self[key].name
-            elif label.lower() != 'key':
+            elif label.lower() == 'key':
                 lab = key
             else:
                 lab = label
             artist.set_label(lab)
 
         return plot
+
+    def step(self, label='key', figsize=(12, 4), xscale='auto-gps', **kwargs):
+        """Create a step plot of this dict.
+
+        Parameters
+        ----------
+        label : `str`, optional
+            labelling system to use, or fixed label for all elements
+            Special values include
+
+            - ``'key'``: use the key of the `TimeSeriesBaseDict`,
+            - ``'name'``: use the :attr:`~TimeSeries.name` of each element
+
+            If anything else, that fixed label will be used for all lines.
+
+        **kwargs
+            all other keyword arguments are passed to the plotter as
+            appropriate
+        """
+        kwargs.setdefault('linestyle', kwargs.pop('where', 'steps-post'))
+
+        tmp = type(self)()
+        for key, series in self.items():
+            tmp[key] = series.append(series.value[-1:], inplace=False)
+
+        return tmp.plot(label=label, figsize=figsize, xscale=xscale,
+                        **kwargs)
 
 
 # -- TimeSeriesBaseList -------------------------------------------------------

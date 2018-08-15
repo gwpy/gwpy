@@ -21,7 +21,7 @@
 
 .. warning::
 
-   This examples requires LIGO.ORG credentials for data access.
+   This example requires LIGO.ORG credentials for data access.
 
 Most data recorded from a gravitational-wave interferometer carry information
 across a wide band of frequencies, typically up to a few kiloHertz, but
@@ -56,6 +56,3 @@ plot.show()
 
 # Here we see two large spikes that are completely undetected in the raw
 # `TimeSeries`, but are very obvious in the whitened data.
-# We can also see the tapering effects of the whitening filter, meaning that
-# the first and last ~2 seconds of data are corrupted, and should be discarded
-# before further processing.

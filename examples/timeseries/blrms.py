@@ -36,25 +36,24 @@ from gwpy.plot import Plot
 # We do this using string-replacement so we can substitute the interferometer
 # prefix easily when we need to:
 channels = [
-    '%s:ISI-BS_ST1_SENSCOR_GND_STS_X_BLRMS_30M_100M.mean,s-trend',
-    '%s:ISI-BS_ST1_SENSCOR_GND_STS_Y_BLRMS_30M_100M.mean,s-trend',
-    '%s:ISI-BS_ST1_SENSCOR_GND_STS_Z_BLRMS_30M_100M.mean,s-trend',
+    '{ifo}:ISI-BS_ST1_SENSCOR_GND_STS_X_BLRMS_30M_100M.mean,s-trend',
+    '{ifo}:ISI-BS_ST1_SENSCOR_GND_STS_Y_BLRMS_30M_100M.mean,s-trend',
+    '{ifo}:ISI-BS_ST1_SENSCOR_GND_STS_Z_BLRMS_30M_100M.mean,s-trend',
 ]
 
 # At last we can :meth:`~TimeSeriesDict.get` 12 hours of data for each
 # interferometer:
-lho = TimeSeriesDict.get([c % 'H1' for c in channels],
+lho = TimeSeriesDict.get([c.format(ifo='H1') for c in channels],
                          'Feb 13 2015 16:00', 'Feb 14 2015 04:00')
-llo = TimeSeriesDict.get([c % 'L1' for c in channels],
+llo = TimeSeriesDict.get([c.format(ifo='L1') for c in channels],
                          'Feb 13 2015 16:00', 'Feb 14 2015 04:00')
 
 # Next we can plot the data, with a separate `~gwpy.plot.Axes` for each
 # instrument:
-plot = Plot(lho, llo, figsize=(12, 6), sharex=True)
+plot = Plot(lho, llo, figsize=(12, 6), sharex=True, yscale='log')
 ax1, ax2 = plot.axes
 for ifo, ax in zip(('Hanford', 'Livingston'), (ax1, ax2)):
     ax.legend(['X', 'Y', 'Z'])
-    ax.set_yscale('log')
     ax.text(1.01, 0.5, ifo, ha='left', va='center', transform=ax.transAxes,
             fontsize=18)
 ax1.set_ylabel('$1-3$\,Hz motion [nm/s]', y=-0.1)
@@ -62,10 +61,5 @@ ax2.set_ylabel('')
 ax1.set_title('Magnitude 7.1 earthquake impact on LIGO')
 plot.show()
 
-# Here we have also customised the output by manually setting the legend
-# entries, putting the interferometer label on the right-hand side, setting
-# a logarithmic y-axis scale, adding a shared y-axis label on the left-hand
-# side, and setting a title.
-
-# As we can see, the earthquake had a huge impact on the observatories, severly
-# imparing operations for several hours.
+# As we can see, the earthquake had a huge impact on the LIGO observatories,
+# severly imparing operations for several hours.
