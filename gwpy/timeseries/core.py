@@ -622,6 +622,8 @@ class TimeSeriesBase(Series):
     def from_nds2_buffer(cls, buffer_, **metadata):
         """Construct a new `TimeSeries` from an `nds2.buffer` object
 
+        **Requires:** |nds2|_
+
         Parameters
         ----------
         buffer_ : `nds2.buffer`
@@ -635,10 +637,6 @@ class TimeSeriesBase(Series):
         timeseries : `TimeSeries`
             a new `TimeSeries` containing the data from the `nds2.buffer`,
             and the appropriate metadata
-
-        Notes
-        -----
-        This classmethod requires the nds2-client package
         """
         # cast as TimeSeries and return
         channel = Channel.from_nds2(buffer_.channel)
