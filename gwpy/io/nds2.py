@@ -423,6 +423,8 @@ def find_channels(channels, connection=None, host=None, port=None,
     elif sample_rate is None:
         sample_rate = tuple()
 
+    online = Nds2ChannelType.ONLINE.value
+
     # query for channels
     out = []
     for name in _get_nds2_names(channels):
@@ -433,6 +435,12 @@ def find_channels(channels, connection=None, host=None, port=None,
         else:
             ctype = Nds2ChannelType.find(ctype).value
         found = connection.find_channels(name, ctype, dtype, *sample_rate)
+        ctypes = [c.channel_type for c in found]
+        # if two results, remove 'online' copy (if present)
+        #    (if no online channels present, this does nothing)
+        if unique and len(found) == 2:
+            found = [c for c in found if c.channel_type != online]
+        # if not unique result, panic
         if unique and len(found) != 1:
             raise ValueError("unique NDS2 channel match not found for %r"
                              % name)

@@ -43,7 +43,7 @@ def print_verbose(*args, **kwargs):
 def _parse_nds_enum_dict_param(channels, key, value):
     if key == 'type':
         enum = io_nds2.Nds2ChannelType
-        default = enum.any() - enum.ONLINE.value
+        default = enum.any()
     else:
         enum = io_nds2.Nds2DataType
         default = enum.any()
