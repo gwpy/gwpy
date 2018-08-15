@@ -33,7 +33,9 @@ h1month1 = DataQualityFlag.fetch_open_data('H1_DATA', 'Sep 12 2015',
 
 # We can also download the LIGO-Livingston segments from the same period
 # and display them alongside, as well as those segments during which both
-# interferometers were operating at the same time:
+# interferometers were operating at the same time
+# (see :ref:`gwpy-segments-intersection` for more details on this use of the
+# ``&`` operator):
 
 l1month1 = DataQualityFlag.fetch_open_data('L1_DATA', 'Sep 12 2015',
                                            'Oct 12 2015')
