@@ -117,9 +117,6 @@ class TestStateTimeSeries(_TestTimeSeriesBase):
     def test_to_from_lal(self):
         return NotImplemented
 
-    def test_from_nds2_buffer(self):
-        return NotImplemented
-
 
 # -- StateTimeSeriesDict ------------------------------------------------------
 
