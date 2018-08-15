@@ -1316,6 +1316,32 @@ class TimeSeriesBaseDict(OrderedDict):
                                            verbose=verbose, **kwargs))
                     for c in channels)
 
+    @classmethod
+    def from_nds2_buffers(cls, buffers, **metadata):
+        """Construct a new dict from a list of `nds2.buffer` objects
+
+        **Requires:** |nds2|_
+
+        Parameters
+        ----------
+        buffers : `list` of `nds2.buffer`
+            the input NDS2-client buffers to read
+
+        **metadata
+            any other metadata keyword arguments to pass to the `TimeSeries`
+            constructor
+
+        Returns
+        -------
+        dict : `TimeSeriesDict`
+            a new `TimeSeriesDict` containing the data from the given buffers
+        """
+        tsd = cls()
+        for buf in buffers:
+            tsd[buf.channel.name] = tsd.EntryClass.from_nds2_buffer(
+                buf, **metadata)
+        return tsd
+
     def plot(self, label='key', method='plot', figsize=(12, 4),
              xscale='auto-gps', **kwargs):
         """Plot the data for this `TimeSeriesBaseDict`.

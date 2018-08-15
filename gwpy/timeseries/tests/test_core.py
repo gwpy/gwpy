@@ -340,6 +340,23 @@ class TestTimeSeriesBaseDict(object):
     def test_get(self):
         return NotImplemented
 
+    @utils.skip_missing_dependency('nds2')
+    def test_from_nds2_buffers(self):
+        buffers = [
+            mocks.nds2_buffer('X1:TEST', numpy.arange(100), 1000000000,
+                              1, 'm'),
+            mocks.nds2_buffer('X1:TEST2', numpy.arange(100, 200), 1000000100,
+                              1, 'm'),
+        ]
+        a = self.TEST_CLASS.from_nds2_buffers(buffers)
+        assert isinstance(a, self.TEST_CLASS)
+        assert a['X1:TEST'].x0.value == 1000000000
+        assert a['X1:TEST2'].dx.value == 1
+        assert a['X1:TEST2'].x0.value == 1000000100
+
+        a = self.TEST_CLASS.from_nds2_buffers(buffers, sample_rate=.01)
+        assert a['X1:TEST'].dx.value == 100
+
     def test_plot(self, instance):
         with rc_context(rc={'text.usetex': False}):
             plot = instance.plot()
