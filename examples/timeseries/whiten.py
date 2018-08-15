@@ -21,7 +21,7 @@
 
 .. warning::
 
-   This examples requires LIGO.ORG credentials for data access.
+   This example requires LIGO.ORG credentials for data access.
 
 Most data recorded from a gravitational-wave interferometer carry information
 across a wide band of frequencies, typically up to a few kiloHertz, but
