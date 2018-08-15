@@ -74,6 +74,22 @@ BANDPASS_FIR_100HZ_200HZ = signal.firwin(
 )
 
 
+def test_truncate():
+    series = numpy.ones(64)
+
+    # test truncate_transfer
+    trunc1 = filter_design.truncate_transfer(series)
+    assert trunc1[0] == 0
+    assert trunc1[-1] == 0
+    utils.assert_allclose(trunc1[5:59], trunc1[5:59])
+
+    # test truncate_impulse
+    trunc2 = filter_design.truncate_impulse(series, ntaps=10)
+    assert trunc2[0] != 0
+    assert trunc2[-1] != 0
+    utils.assert_allclose(trunc2[5:59], numpy.zeros(54))
+
+
 def test_notch_design():
     # test simple notch
     zpk = filter_design.notch(60, 16384)

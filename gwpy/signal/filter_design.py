@@ -36,6 +36,8 @@ except ImportError:  # scipy < 0.18
 
 from astropy.units import (Unit, Quantity)
 
+from .window import planck
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['lowpass', 'highpass', 'bandpass', 'notch', 'concatenate_zpks']
 
@@ -145,6 +147,74 @@ def is_zpk(zpktup):
         isinstance(zpktup[0], (list, tuple, numpy.ndarray)) and
         isinstance(zpktup[1], (list, tuple, numpy.ndarray)) and
         isinstance(zpktup[2], float))
+
+
+def truncate_transfer(transfer, ncorner=None):
+    """Smoothly zero the edges of a frequency domain transfer function
+
+    Parameters
+    ----------
+    transfer : `numpy.ndarray`
+        transfer function to start from, must have more than five samples
+
+    ncorner : `int`
+        number of extra samples to zero off at low frequency, defaults to 0
+
+    Returns
+    -------
+    out : `numpy.ndarray`
+        the smoothly truncated transfer function
+
+    Notes
+    -----
+    By default, the input transfer function will have five samples tapered
+    off at the left and right boundaries. If `ncorner` is not `None`, then
+    `ncorner` extra samples will be zeroed on the left as a hard highpass
+    filter.
+
+    See :func:`~gwpy.signal.window.planck` for more information.
+    """
+    nsamp = transfer.size
+    ncorner = ncorner if ncorner else 0
+    out = transfer.copy()
+    out[0:ncorner] = 0
+    out[ncorner:nsamp] *= planck(nsamp-ncorner, nleft=5, nright=5)
+    return out
+
+
+def truncate_impulse(impulse, ntaps, window='hanning'):
+    """Smoothly truncate a time domain impulse response
+
+    Parameters
+    ----------
+    impulse : `numpy.ndarray`
+        the impulse response to start from
+
+    ntaps : `int`
+        number of taps in the final filter
+
+    window : `str`, `numpy.ndarray`, optional
+        window function to apply to timeseries prior to FFT,
+        default: ``'hanning'``
+        see :func:`scipy.signal.get_window` for details on acceptable formats
+
+    Returns
+    -------
+    out : `numpy.ndarray`
+        the smoothly truncated impulse response
+
+    See Also
+    --------
+    scipy.signal
+    """
+    out = impulse.copy()
+    trunc_start = int(ntaps / 2)
+    trunc_stop = out.size - trunc_start
+    window = signal.get_window(window, ntaps)
+    out[0:trunc_start] *= window[trunc_start:ntaps]
+    out[trunc_stop:out.size] *= window[0:trunc_start]
+    out[trunc_start:trunc_stop] = 0
+    return out
 
 
 def bilinear_zpk(zeros, poles, gain, fs=1.0, unit='Hz'):

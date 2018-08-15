@@ -146,13 +146,13 @@ class TestFrequencySeries(_TestSeries):
     def test_inject(self):
         # create a timeseries out of an array of zeros
         df, nyquist = 1, 2048
-        data = FrequencySeries(numpy.zeros(df*nyquist + 1), f0=0,
-                               df=df, unit='')
+        nsamp = int(nyquist/df) + 1
+        data = FrequencySeries(numpy.zeros(nsamp), f0=0, df=df, unit='')
 
         # create a second timeseries to inject into the first
         w_nyquist = 1024
-        sig = FrequencySeries(numpy.ones(df*w_nyquist + 1), f0=0,
-                              df=df, unit='')
+        w_nsamp = int(w_nyquist/df) + 1
+        sig = FrequencySeries(numpy.ones(w_nsamp), f0=0, df=df, unit='')
 
         # test that we recover this waveform when we add it to data,
         # and that the operation does not change the original data
@@ -162,7 +162,21 @@ class TestFrequencySeries(_TestSeries):
         ind, = new_data.value.nonzero()
         assert len(ind) == sig.size
         utils.assert_allclose(new_data.value[ind], sig.value)
-        utils.assert_allclose(data.value, numpy.zeros(df*nyquist + 1))
+        utils.assert_allclose(data.value, numpy.zeros(nsamp))
+
+    def test_interpolate(self):
+        # create a simple FrequencySeries
+        df, nyquist = 1, 256
+        nsamp = int(nyquist/df) + 1
+        fseries = FrequencySeries(numpy.ones(nsamp), f0=0, df=df, unit='')
+
+        # create an interpolated FrequencySeries
+        newf = fseries.interpolate(df/2.)
+
+        # check that the interpolated series is what was expected
+        assert newf.unit == fseries.unit
+        assert newf.size == 2*(fseries.size - 1) + 1
+        utils.assert_allclose(newf.value, numpy.ones(2*int(nyquist/df) + 1))
 
     @utils.skip_missing_dependency('lal')
     def test_to_from_lal(self, array):

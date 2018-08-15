@@ -823,7 +823,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         whitened = data.whiten(2, 1)
 
-        assert noise.size == whitened.size
+        assert whitened.size == noise.size - 2*noise.sample_rate.value
         nptest.assert_almost_equal(whitened.mean().value, 0.0, decimal=4)
 
         tmax = whitened.times[whitened.argmax()]
@@ -866,9 +866,9 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # test simple q-transform
         qspecgram = losc.q_transform(method='scipy-welch', fftlength=2)
         assert isinstance(qspecgram, Spectrogram)
-        assert qspecgram.shape == (4000, 2403)
+        assert qspecgram.shape == (2000, 2222)
         assert qspecgram.q == 5.65685424949238
-        nptest.assert_almost_equal(qspecgram.value.max(), 146.61970478954652)
+        nptest.assert_almost_equal(qspecgram.value.max(), 60.77958301153789)
 
         # test whitening args
         asd = losc.asd(2, 1, method='scipy-welch')
@@ -885,7 +885,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         with pytest.warns(UserWarning):
             qspecgram = losc.q_transform(method='scipy-welch',
                                          frange=(0, 10000))
-            nptest.assert_almost_equal(qspecgram.yspan[1], 1291.5316316157107)
+            nptest.assert_almost_equal(qspecgram.yspan[1], 1291.0632632314212)
 
         # test other normalisations work (or don't)
         q2 = losc.q_transform(method='scipy-welch', norm='median')
