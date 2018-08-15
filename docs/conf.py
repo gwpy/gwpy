@@ -21,6 +21,7 @@ import inspect
 import os.path
 import re
 import glob
+import shutil
 import subprocess
 from string import Template
 
@@ -451,6 +452,37 @@ def build_cli_examples(_):
             f.write('   {0}\n'.format(rst[len(SPHINX_DIR):]))
 
 
+# -- examples -----------------------------------------------------------------
+
+def build_examples(_):
+    logger = logging.getLogger('examples')
+    logger.info('[examples] converting examples to RST...')
+
+    srcdir = os.path.join(SPHINX_DIR, os.pardir, 'examples')
+    outdir = os.path.join(SPHINX_DIR, 'examples')
+    ex2rst = os.path.join(SPHINX_DIR, 'ex2rst.py')
+
+    if not os.path.isdir(outdir):
+        os.makedirs(outdir)
+        logger.debug('[examples] created {0}'.format(outdir))
+
+    for exdir in next(os.walk(srcdir))[1]:
+        subdir = os.path.join(outdir, exdir)
+        if not os.path.isdir(subdir):
+            os.makedirs(subdir)
+        # copy index
+        index = os.path.join(subdir, 'index.rst')
+        shutil.copyfile(os.path.join(srcdir, exdir, 'index.rst'), index)
+        logger.debug('[examples] copied {0}'.format(index))
+        # render python script as RST
+        for expy in glob.glob(os.path.join(srcdir, exdir, '*.py')):
+            target = os.path.join(
+                subdir, os.path.basename(expy).replace('.py', '.rst'))
+            subprocess.Popen([sys.executable, ex2rst, expy, target])
+            logger.debug('[examples] wrote {0}'.format(target))
+        logger.info('[examples] converted all in examples/{0}'.format(exdir))
+
+
 # -- create citation file -----------------------------------------------------
 
 def write_citing_rst(_):
@@ -485,4 +517,5 @@ def setup_static_content(app):
 def setup(app):
     setup_static_content(app)
     app.connect('builder-inited', write_citing_rst)
+    app.connect('builder-inited', build_examples)
     app.connect('builder-inited', build_cli_examples)

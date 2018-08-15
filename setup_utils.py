@@ -46,6 +46,26 @@ SETUP_REQUIRES = {
     'test': ['pytest_runner'],
 }
 
+# -- documentation builder ----------------------------------------------------
+
+SETUP_REQUIRES['build_sphinx'] = [  # list should match requirements-doc.txt
+    'sphinx >= 1.6.1',
+    'numpydoc >= 0.8.0',
+    'sphinx-bootstrap-theme >= 0.6',
+    'sphinxcontrib-programoutput',
+    'sphinx-automodapi',
+    'requests',
+]
+if {'build_sphinx'}.intersection(sys.argv):
+    try:
+        from sphinx.setup_command import BuildDoc
+    except ImportError as exc:
+        exc.msg = 'build_sphinx command requires {0}'.format(
+            SETUP_REQUIRES['build_sphinx'][0].replace(' ', ''))
+        exc.args = (exc.msg,)
+        raise
+    CMDCLASS['build_sphinx'] = BuildDoc
+
 
 # -- utilities ----------------------------------------------------------------
 
