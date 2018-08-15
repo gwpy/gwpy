@@ -1734,6 +1734,10 @@ class TimeSeries(TimeSeriesBase):
         if outseg is None:
             outseg = span
 
+        # truncate search window to available data
+        if gps is not None:  # search is only used if gps is given
+            search = Segment(gps-search, gps+search) & span
+
         # generate tiling
         planes = QTiling(abs(span), self.sample_rate.value,
                          qrange=qrange, frange=frange)
@@ -1751,7 +1755,7 @@ class TimeSeries(TimeSeriesBase):
                 if gps is None:
                     peak = ts.value.max()
                 else:
-                    peak = ts.crop(gps-search, gps+search).value.max()
+                    peak = ts.crop(*search).value.max()
                 if peak > peakenergy:
                     peakenergy = peak
                     peakq = plane.q
