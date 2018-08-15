@@ -157,7 +157,8 @@ class TestTimeSeriesBase(_TestSeries):
         a = self.TEST_CLASS.from_nds2_buffer(nds_buffer)
         assert isinstance(a, self.TEST_CLASS)
         utils.assert_array_equal(a.value, self.data)
-        assert a.unit == units.m
+        if not type(a).__name__.startswith('State'):  # states don't have units
+            assert a.unit == units.m
         assert a.t0 == 1000000000 * units.s
         assert a.dt == units.s / self.data.shape[0]
         assert a.name == 'X1:TEST'

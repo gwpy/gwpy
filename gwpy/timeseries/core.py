@@ -620,7 +620,7 @@ class TimeSeriesBase(Series):
 
     @classmethod
     def from_nds2_buffer(cls, buffer_, **metadata):
-        """Construct a new `TimeSeries` from an `nds2.buffer` object
+        """Construct a new series from an `nds2.buffer` object
 
         **Requires:** |nds2|_
 
