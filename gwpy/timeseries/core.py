@@ -1348,7 +1348,7 @@ class TimeSeriesBaseDict(OrderedDict):
         for key, artist in zip(self, artists):
             if label.lower() == 'name':
                 lab = self[key].name
-            elif label.lower() != 'key':
+            elif label.lower() == 'key':
                 lab = key
             else:
                 lab = label
