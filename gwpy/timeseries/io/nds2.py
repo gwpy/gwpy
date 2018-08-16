@@ -144,12 +144,10 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
 
     # query for each segment
     out = series_class.DictClass()
-    for seg in qsegs:
-        duration = seg[1] - seg[0]
-        msg = 'Downloading data'
-        total = 0.
-        with progress_bar(total=duration, desc=msg, unit='s',
-                          disable=not bool(verbose)) as bar:
+    with progress_bar(total=float(abs(qsegs)), desc='Downloading data',
+                      unit='s', disable=not bool(verbose)) as bar:
+        for seg in qsegs:
+            total = 0.
             for buffers in connection.iterate(int(seg[0]), int(seg[1]), names):
                 for buffer_, chan in zip(buffers, channels):
                     series = series_class.from_nds2_buffer(buffer_)
