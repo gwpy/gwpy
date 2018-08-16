@@ -19,6 +19,8 @@
 """NDS2 data query routines for the TimeSeries
 """
 
+from __future__ import division
+
 import operator
 import warnings
 
@@ -124,15 +126,14 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
     span = SegmentList([Segment(start, end)])
     if pad is None:
         qsegs = span
-        gap = None
+        gap = 'raise'
     else:
         print_verbose("Querying for data availability...", end=' ',
                       verbose=verbose)
+        pad = float(pad)
         gap = 'pad'
-        qsegs = io_nds2.get_availability(
-            ndschannels, start, end, connection=connection).intersection()
-        qsegs &= span
-        print_verbose('done\nFound {0} viable segments of data with {1}%% '
+        qsegs = _get_data_segments(ndschannels, start, end, connection) & span
+        print_verbose('done\nFound {0} viable segments of data with {1:.2f}% '
                       'coverage'.format(len(qsegs),
                                         abs(qsegs) / abs(span) * 100),
                       verbose=verbose)
@@ -143,12 +144,10 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
 
     # query for each segment
     out = series_class.DictClass()
-    for seg in qsegs:
-        duration = seg[1] - seg[0]
-        msg = 'Downloading data'
-        total = 0.
-        with progress_bar(total=duration, desc=msg, unit='s',
-                          disable=not bool(verbose)) as bar:
+    with progress_bar(total=float(abs(qsegs)), desc='Downloading data',
+                      unit='s', disable=not bool(verbose)) as bar:
+        for seg in qsegs:
+            total = 0.
             for buffers in connection.iterate(int(seg[0]), int(seg[1]), names):
                 for buffer_, chan in zip(buffers, channels):
                     series = series_class.from_nds2_buffer(buffer_)
@@ -162,3 +161,11 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
                     connection.get_host(), seg))
 
     return out
+
+
+def _get_data_segments(channels, start, end, connection):
+    """Get available data segments for the given channels
+    """
+    allsegs = io_nds2.get_availability(channels, start, end,
+                                       connection=connection)
+    return allsegs.intersection(allsegs.keys())

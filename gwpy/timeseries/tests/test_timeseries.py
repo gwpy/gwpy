@@ -634,16 +634,16 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     def test_spectrogram2(self, losc):
         # test defaults
-        sg = losc.spectrogram2(1)
+        sg = losc.spectrogram2(1, overlap=0)
         utils.assert_quantity_sub_equal(
             sg, losc.spectrogram(1, fftlength=1, overlap=0,
-                                 method='scipy-welch', window='boxcar'))
+                                 method='scipy-welch', window='hann'))
 
         # test fftlength
         sg = losc.spectrogram2(0.5)
-        assert sg.shape == (8, 0.5 * losc.sample_rate.value // 2 + 1)
+        assert sg.shape == (16, 0.5 * losc.sample_rate.value // 2 + 1)
         assert sg.df == 2 * units.Hertz
-        assert sg.dt == 0.5 * units.second
+        assert sg.dt == 0.25 * units.second
         # test overlap
         sg = losc.spectrogram2(fftlength=0.25, overlap=0.24)
         assert sg.shape == (399, 0.25 * losc.sample_rate.value // 2 + 1)
