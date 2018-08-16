@@ -437,7 +437,7 @@ class TimeSeries(TimeSeriesBase):
                                           fftlength=fftlength, overlap=overlap,
                                           window=window, **kwargs)
 
-    def spectrogram2(self, fftlength, overlap=0, **kwargs):
+    def spectrogram2(self, fftlength, overlap=None, window='hann', **kwargs):
         """Calculate the non-averaged power `Spectrogram` of this `TimeSeries`
 
         Parameters
@@ -489,7 +489,7 @@ class TimeSeries(TimeSeriesBase):
         # run
         return fft_ui.spectrogram(self, signal.periodogram,
                                   fftlength=fftlength, overlap=overlap,
-                                  **kwargs)
+                                  window=window, **kwargs)
 
     def fftgram(self, fftlength, overlap=None, window='hann', **kwargs):
         """Calculate the Fourier-gram of this `TimeSeries`.
