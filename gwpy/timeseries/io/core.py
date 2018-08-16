@@ -37,8 +37,8 @@ def read(cls, source, *args, **kwargs):
                                  end=kwargs.get('end'))
 
     # get join arguments
-    gap = kwargs.pop('gap', 'raise')
-    pad = kwargs.pop('pad', 0.)
+    pad = kwargs.pop('pad', None)
+    gap = kwargs.pop('gap', 'raise' if pad is None else 'pad')
     joiner = _join_factory(cls, gap, pad)
 
     # read

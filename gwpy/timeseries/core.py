@@ -262,17 +262,9 @@ class TimeSeriesBase(Series):
             number of parallel processes to use, serial process by
             default.
 
-        gap : `str`, optional
-            how to handle gaps in the cache, one of
-
-            - 'ignore': do nothing, let the undelying reader method handle it
-            - 'warn': do nothing except print a warning to the screen
-            - 'raise': raise an exception upon finding a gap (default)
-            - 'pad': insert a value to fill the gaps
-
         pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
+            value with which to fill gaps in the source data,
+            by default gaps will result in a `ValueError`.
 
         Notes
         -----"""
@@ -484,8 +476,8 @@ class TimeSeriesBase(Series):
             for containing frame types if necessary
 
         pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
+            value with which to fill gaps in the source data,
+            by default gaps will result in a `ValueError`.
 
         nproc : `int`, optional, default: `1`
             number of parallel processes to use, serial process by
@@ -530,8 +522,8 @@ class TimeSeriesBase(Series):
             any input parseable by `~gwpy.time.to_gps` is fine
 
         pad : `float`, optional
-            value with which to fill gaps in the source data, default to
-            'don't fill gaps'
+            value with which to fill gaps in the source data,
+            by default gaps will result in a `ValueError`.
 
         dtype : `numpy.dtype`, `str`, `type`, or `dict`
             numeric data type for returned data, e.g. `numpy.float`, or
@@ -834,17 +826,9 @@ class TimeSeriesBaseDict(OrderedDict):
             number of parallel processes to use, serial process by
             default.
 
-        gap : `str`, optional
-            how to handle gaps in the cache, one of
-
-            - 'ignore': do nothing, let the undelying reader method handle it
-            - 'warn': do nothing except print a warning to the screen
-            - 'raise': raise an exception upon finding a gap (default)
-            - 'pad': insert a value to fill the gaps
-
         pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
+            value with which to fill gaps in the source data,
+            by default gaps will result in a `ValueError`.
 
         Returns
         -------
