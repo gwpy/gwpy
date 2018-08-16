@@ -346,9 +346,16 @@ class Plot(figure.Figure):
     # a new one
 
     def add_subplot(self, *args, **kwargs):
-        kwargs.setdefault('projection', self._DefaultAxesClass.name)
+        if kwargs.setdefault('projection') is None:
+            kwargs['projection'] = self._DefaultAxesClass.name
         return super(Plot, self).add_subplot(*args, **kwargs)
     add_subplot.__doc__ = figure.Figure.add_subplot.__doc__
+
+    def gca(self, *args, **kwargs):
+        if not self.axes and kwargs.setdefault('projection') is None:
+            kwargs['projection'] = self._DefaultAxesClass.name
+        return super(Plot, self).gca(*args, **kwargs)
+    gca.__doc__ = figure.Figure.gca.__doc__
 
     def get_axes(self, projection=None):
         """Find all `Axes`, optionally matching the given projection
@@ -737,7 +744,7 @@ class Plot(figure.Figure):
 
         Parameters
         ----------
-        spectrogram : `~gwpy.spectrogram.core.Spectrogram`
+        spectrogram : `~gwpy.spectrogram.Spectrogram`
             the `Spectrogram` to display
 
         ax : `~gwpy.plotter.Axes`

@@ -63,18 +63,18 @@ for start, end in h1segs.active:
 
 # Finally, we can build a :meth:`~gwpy.spectrogram.Spectrogram.plot`:
 
-from gwpy.plotter import SpectrogramPlot
-plot = SpectrogramPlot()
+from gwpy.plot import Plot
+plot = Plot(figsize=(12, 6))
 ax = plot.gca()
 for specgram in spectrograms:
-    ax.plot(specgram)
-ax.set_epoch('Sep 16 2010')
+    ax.imshow(specgram)
+ax.set_xscale('auto-gps', epoch='Sep 16 2010')
 ax.set_xlim('Sep 16 2010', 'Sep 17 2010')
 ax.set_ylim(40, 2000)
 ax.set_yscale('log')
 ax.set_ylabel('Frequency [Hz]')
 ax.set_title('LIGO-Hanford strain data')
-plot.add_colorbar(cmap='viridis', clim=(1e-23, 1e-19), log=True,
-                  label=r'Strain noise [1/\rtHz]')
-plot.add_state_segments(h1segs, ax=ax)
+ax.colorbar(cmap='viridis', norm='log', clim=(1e-23, 1e-19),
+            label=r'Strain noise [1/\rtHz]')
+plot.add_segments_bar(h1segs)
 plot.show()

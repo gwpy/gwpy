@@ -72,7 +72,7 @@ def seconds_to_samples(x, rate):
     return int((Quantity(x, 's') * rate).decompose().value)
 
 
-def normalize_fft_params(series, kwargs=None, library=None):
+def normalize_fft_params(series, kwargs=None, func=None):
     """Normalize a set of FFT parameters for processing
 
     This method reads the ``fftlength`` and ``overlap`` keyword arguments
@@ -95,9 +95,8 @@ def normalize_fft_params(series, kwargs=None, library=None):
     kwargs : `dict`
         the dict of keyword arguments passed by the user
 
-    library: `str`, optional
-        the name of the library that provides the FFT methods, e.g.
-        'scipy'
+    func : `callable`, optional
+        the FFT method that will be called
 
     Examples
     --------
@@ -111,6 +110,7 @@ def normalize_fft_params(series, kwargs=None, library=None):
     {'window': array([  0.00000000e+00,   9.41235870e-06, ...,
          3.76490804e-05,   9.41235870e-06]), 'noverlap': 0, 'nfft': 1024}
     """
+    # parse keywords
     if kwargs is None:
         kwargs = dict()
     samp = series.sample_rate
@@ -118,16 +118,22 @@ def normalize_fft_params(series, kwargs=None, library=None):
     overlap = kwargs.pop('overlap', None)
     window = kwargs.pop('window', None)
 
+    # parse function library and name
+    if func is None:
+        method = library = None
+    else:
+        method = func.__name__
+        library = _fft_library(func)
+
     # fftlength -> nfft
     nfft = seconds_to_samples(fftlength, samp)
 
     # overlap -> noverlap
-    noverlap = _normalize_overlap(overlap, window, nfft, samp)
+    noverlap = _normalize_overlap(overlap, window, nfft, samp, method=method)
 
     # create window
     window = _normalize_window(window, nfft, library, series.dtype)
-    # allow FFT methods to use their own defaults
-    if window is not None:
+    if window is not None:  # allow FFT methods to use their own defaults
         kwargs['window'] = window
 
     # create FFT plan for LAL
@@ -142,15 +148,66 @@ def normalize_fft_params(series, kwargs=None, library=None):
     return kwargs
 
 
-def _normalize_overlap(overlap, window, nfft, samp):
+def _normalize_overlap(overlap, window, nfft, samp, method='welch'):
+    """Normalise an overlap in physical units to a number of samples
+
+    Parameters
+    ----------
+    overlap : `float`, `Quantity`, `None`
+        the overlap in some physical unit (seconds)
+
+    window : `str`
+        the name of the window function that will be used, only used
+        if `overlap=None` is given
+
+    nfft : `int`
+        the number of samples that will be used in the fast Fourier
+        transform
+
+    samp : `Quantity`
+        the sampling rate (Hz) of the data that will be transformed
+
+    method : `str`
+        the name of the averaging method, default: `'welch'`, only
+        used to return `0` for `'bartlett'` averaging
+
+    Returns
+    -------
+    noverlap : `int`
+        the number of samples to be be used for the overlap
+    """
+    if method == 'bartlett':
+        return 0
     if overlap is None and isinstance(window, string_types):
         return recommended_overlap(window, nfft)
-    elif overlap is None:
+    if overlap is None:
         return 0
     return seconds_to_samples(overlap, samp)
 
 
 def _normalize_window(window, nfft, library, dtype):
+    """Normalise a window specification for a PSD calculation
+
+    Parameters
+    ----------
+    window : `str`, `numpy.ndarray`, `None`
+        the input window specification
+
+    nfft : `int`
+        the length of the Fourier transform, in samples
+
+    library : `str`
+        the name of the library that provides the PSD routine
+
+    dtype : `type`
+        the required type of the window array, only used if
+        `library='lal'` is given
+
+    Returns
+    -------
+    window : `numpy.ndarray`, `lal.REAL8Window`
+        a numpy-, or `LAL`-format window array
+    """
     if library == 'lal' and isinstance(window, numpy.ndarray):
         from .lal import window_from_array
         return window_from_array(window)
@@ -176,8 +233,7 @@ def set_fft_params(func):
             data = series
 
         # normalise FFT parmeters for all libraries
-        library = _fft_library(method_func)
-        normalize_fft_params(data, kwargs=kwargs, library=library)
+        normalize_fft_params(data, kwargs=kwargs, func=method_func)
 
         return func(series, method_func, *args, **kwargs)
 
@@ -253,8 +309,7 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
     epoch = timeseries.t0.value
     nstride = seconds_to_samples(stride, timeseries.sample_rate)
     kwargs['fftlength'] = kwargs.pop('fftlength', stride) or stride
-    normalize_fft_params(timeseries, kwargs=kwargs,
-                         library=_fft_library(method_func))
+    normalize_fft_params(timeseries, kwargs=kwargs, func=method_func)
     nfft = kwargs['nfft']
     noverlap = kwargs['noverlap']
 
@@ -364,12 +419,16 @@ def spectrogram(timeseries, method_func, **kwargs):
 def _chunk_timeseries(series, nstride, noverlap):
     # define chunks
     x = y = 0
-    step = nstride - int(noverlap // 2.)
+    step = nstride - int(noverlap // 2.)  # the first step is smaller
+    nfft = nstride + noverlap
     while x + nstride <= series.size:
-        y = min(series.size, x + nstride + noverlap)
+        y = x + nfft
+        if y >= series.size:
+            y = series.size  # pin to end of series
+            x = y - nfft  # and work back to get the correct amount of data
         yield series[x:y]
         x += step
-        step = nstride
+        step = nstride  # subsequent steps are the standard size
 
 
 def _fft_library(method_func):

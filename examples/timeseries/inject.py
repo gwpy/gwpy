@@ -62,9 +62,9 @@ data = noise.inject(signal)
 
 # Finally, we can visualize the full process in the time domain:
 
-from gwpy.plotter import TimeSeriesPlot
-plot = TimeSeriesPlot(noise, signal, data, sep=True, sharex=True, sharey=True)
-plot.set_epoch(0)
+from gwpy.plot import Plot
+plot = Plot(noise, signal, data, separate=True, sharex=True, sharey=True)
+plot.gca().set_epoch(0)
 plot.show()
 
 # We can clearly see that the loud GW150914-like signal has been layered

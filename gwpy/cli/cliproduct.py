@@ -22,17 +22,19 @@
 """Base class for CLI (`gwpy-plot`) products.
 """
 
+from __future__ import print_function
 import abc
 import os.path
 import re
 import time
 import warnings
+import sys
 from collections import OrderedDict
 from functools import wraps
 
 from six import add_metaclass
 
-from matplotlib import (rcParams, pyplot)
+from matplotlib import rcParams
 try:
     from matplotlib.cm import viridis as DEFAULT_CMAP
 except ImportError:
@@ -45,12 +47,12 @@ from ..signal import filter_design
 from ..signal.window import recommended_overlap
 from ..time import to_gps
 from ..timeseries import TimeSeriesDict
-from ..plotter.gps import GPSTransform
-from ..plotter.tex import label_to_latex
+from ..plot.gps import (GPS_SCALES, GPSTransform)
+from ..plot.tex import label_to_latex
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
-BAD_UNITS = {'*', }
+BAD_UNITS = {'*', 'Counts.', }
 
 
 # -- utilities ----------------------------------------------------------------
@@ -86,6 +88,7 @@ def to_float(unit):
 
     converter.__doc__ %= str(unit)  # pylint: disable=no-member
     return converter
+
 
 to_hz = to_float('Hz')  # pylint: disable=invalid-name
 to_s = to_float('s')  # pylint: disable=invalid-name
@@ -194,6 +197,8 @@ class CliProduct(object):
         self.width, self.height = map(float, self.args.geometry.split('x', 1))
         #: figure size in inches
         self.figsize = (self.width / self.dpi, self.height / self.dpi)
+        #: Flag for data validation (like all zeroes)
+        self.got_error = False
 
         # please leave this last
         self._validate_arguments()
@@ -230,9 +235,14 @@ class CliProduct(object):
 
     def log(self, level, msg):
         """print log message if verbosity is set high enough
+        :rtype: object
         """
         if self.verbose >= level:
-            print(msg)
+            if level == 0:
+                # level zero is important if not fatal error
+                print(msg, file=sys.stderr)
+            else:
+                print(msg)
         return
 
     # -- argument parsing -----------------------
@@ -584,9 +594,8 @@ class CliProduct(object):
         if scale:
             _set('scale', scale)
 
-        # reset scale with epoch if using GPSTransform
-        if isinstance(getattr(self.ax, '{}axis'.format(axis)).get_transform(),
-                      GPSTransform):
+        # reset scale with epoch if using GPS scale
+        if _get('scale') in GPS_SCALES:
             _set('scale', scale, epoch=self.args.epoch)
 
         # set label
@@ -692,15 +701,23 @@ class CliProduct(object):
         self.get_data()
 
         # for each plot
+        show_error = True       # control ours separate from product's
         while self.has_more_plots():
             self._make_plot()
-            self.set_plot_properties()
-            if self.args.interactive:
-                self.log(3, 'Interactive manipulation of '
-                            'image should be available.')
-                pyplot.show(self.plot)
-            else:
-                self.save(self.args.out)
+            if self.plot:
+                self.set_plot_properties()
+                if self.args.interactive:
+                    self.log(3, 'Interactive manipulation of '
+                                'image should be available.')
+                    self.plot.show()
+                else:
+                    self.save(self.args.out)
+            elif show_error:
+                # Some plots reject inpput data for reasons like all zeroes
+                self.log(0, 'No plot produced because of data '
+                            'validation error.')
+                self.got_error = True
+                show_error = False
             self.plot_num += 1
 
 
@@ -755,17 +772,13 @@ class ImageProduct(CliProduct):
         a colorbar.
         """
         super(ImageProduct, self).set_axes_properties()
-        self.set_colorbar()
+        if not self.args.nocolorbar:
+            self.set_colorbar()
 
     def set_colorbar(self):
         """Create a colorbar for this product
         """
-        args = self.args
-        if args.nocolorbar:
-            self.plot.add_colorbar(visible=False)
-
-        else:
-            self.plot.add_colorbar(label=self.get_color_label())
+        self.ax.colorbar(label=self.get_color_label())
 
     def set_legend(self):
         """This method does nothing, since image plots don't have legends

@@ -55,17 +55,17 @@ injfd = noisefd.inject(signal)
 # We can then visualize the data before and after injection in the frequency
 # domain:
 
-from gwpy.plotter import FrequencySeriesPlot
-plot = FrequencySeriesPlot(numpy.abs(noisefd), numpy.abs(injfd), sep=True,
-                           sharex=True, sharey=True)
+from gwpy.plot import Plot
+plot = Plot(numpy.abs(noisefd), numpy.abs(injfd), separate=True,
+            sharex=True, sharey=True, xscale='log', yscale='log')
 plot.show()
 
 # Finally, for completeness we can visualize the effect before and after
 # injection back in the time domain:
 
-from gwpy.plotter import TimeSeriesPlot
 inj = injfd.ifft()
-plot = TimeSeriesPlot(noise, inj, sep=True, sharex=True, sharey=True)
+plot = Plot(noise, inj, separate=True, sharex=True, sharey=True,
+            figsize=(12, 6))
 plot.show()
 
 # We can see why sinusoids are easier to inject in the frequency domain:

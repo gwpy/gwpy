@@ -28,6 +28,11 @@ from importlib import import_module
 from argparse import (ArgumentParser, ArgumentDefaultsHelpFormatter)
 
 from matplotlib import use
+# if launched from a terminal with no display
+# Must be done before modules like pyplot are imported
+if len(os.getenv('DISPLAY', '')) == 0:
+    use('Agg')
+
 
 from gwpy import __version__
 from gwpy.cli import PRODUCTS
@@ -87,10 +92,6 @@ for product in PRODUCTS:
 
 # -- run ----------------------------------------------------------------------
 
-# if launched from a terminal with no display
-if len(os.getenv('DISPLAY', '')) == 0:
-    use('Agg')
-
 # parse the command line and create a product object
 args = parser.parse_args()
 prod = actions[args.mode](args)
@@ -116,3 +117,5 @@ if INTERACTIVE:
 
 run_time = time.time() - PROG_START
 prod.log(1, 'Program run time: %.1f' % run_time)
+if prod.got_error:
+    sys.exit(2)     # make sure when running batch they can test for error

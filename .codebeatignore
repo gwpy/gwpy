@@ -4,3 +4,4 @@ examples/*
 gwpy/_version.py
 gwpy/tests/data/*
 gwpy/utils/sphinx/epydoc.py
+gwpy/plotter/

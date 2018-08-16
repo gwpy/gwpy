@@ -410,6 +410,12 @@ def find_channels(channels, connection=None, host=None, port=None,
     --------
     nds2.connection.find_channels
         for documentation on the underlying query method
+
+    Examples
+    --------
+    >>> from gwpy.io.nds2 import find_channels
+    >>> find_channels(['G1:DER_DATA_H'], host='nds.ligo.caltech.edu')
+    [<G1:DER_DATA_H (16384Hz, RDS, FLOAT64)>]
     """
     # set epoch
     if isinstance(epoch, tuple):
@@ -426,18 +432,72 @@ def find_channels(channels, connection=None, host=None, port=None,
     # query for channels
     out = []
     for name in _get_nds2_names(channels):
-        try:
-            name, ctype = name.rsplit(',', 1)
-        except ValueError:
-            ctype = type
-        else:
-            ctype = Nds2ChannelType.find(ctype).value
-        found = connection.find_channels(name, ctype, dtype, *sample_rate)
-        if unique and len(found) != 1:
-            raise ValueError("unique NDS2 channel match not found for %r"
-                             % name)
-        out.extend(found)
+        out.extend(_find_channel(connection, name, type, dtype, sample_rate,
+                                 unique=unique))
     return out
+
+
+def _find_channel(connection, name, ctype, dtype, sample_rate, unique=False):
+    """Internal method to find a single channel
+
+    Parameters
+    ----------
+    connection : `nds2.connection`, optional
+        open NDS2 connection to use for query
+
+    name : `str`
+        the name of the channel to find
+
+    ctype : `int`
+        the NDS2 channel type to match
+
+    dtype : `int`
+        the NDS2 data type to match
+
+    sample_rate : `tuple`
+        a pre-formatted rate tuple (see `find_channels`)
+
+    unique : `bool`, optional, default: `False`
+        require one (and only one) match per channel
+
+    Returns
+    -------
+    channels : `list` of `nds2.channel`
+        list of NDS2 channel objects, if `unique=True` is given the list
+        is guaranteed to have only one element.
+
+    See also
+    --------
+    nds2.connection.find_channels
+        for documentation on the underlying query method
+    """
+    # parse channel type from name (e.g. 'L1:GDS-CALIB_STRAIN,reduced')
+    try:
+        name, ctype = name.rsplit(',', 1)
+    except ValueError:
+        pass
+    else:
+        ctype = Nds2ChannelType.find(ctype).value
+
+    # query NDS2
+    found = connection.find_channels(name, ctype, dtype, *sample_rate)
+
+    # if don't care about defaults, just return now
+    if not unique:
+        return found
+
+    # if two results, remove 'online' copy (if present)
+    #    (if no online channels present, this does nothing)
+    if len(found) == 2:
+        found = [c for c in found if
+                 c.channel_type != Nds2ChannelType.ONLINE.value]
+
+    # if not unique result, panic
+    if len(found) != 1:
+        raise ValueError("unique NDS2 channel match not found for %r"
+                         % name)
+
+    return found
 
 
 @open_connection

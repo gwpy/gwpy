@@ -20,6 +20,8 @@
 # Build Debian package
 #
 
+# -- prep ---------------------------------------------------------------------
+
 # enable lscsoft jessie-proposed (first required for python-tqdm gwpy/gwpy#735)
 if [ "${OS_VERSION}" -eq 8 ]; then
     cat << EOF > /etc/apt/sources.list.d/lscsoft-proposed.list
@@ -48,7 +50,7 @@ apt-get -yqq install \
     python-jinja2 \
 
 # get versions
-GWPY_VERSION=$(python setup.py --version)
+GWPY_VERSION=$(python -c "import versioneer; print(versioneer.get_version())")
 GWPY_RELEASE=${GWPY_VERSION%%+*}
 
 # upgrade setuptools for development builds only to prevent version munging
@@ -63,6 +65,8 @@ pip install --quiet "GitPython>=2.1.8"
 
 # prepare the tarball (sdist generates debian/changelog)
 python setup.py --quiet sdist
+
+# -- build and install --------------------------------------------------------
 
 # make the debian package
 mkdir -p dist/debian
@@ -90,19 +94,43 @@ for PREF in ${PREFICES}; do
     }
 done
 
-# install system-level extras for the correct python version
+# -- third-party packages -----------------------------------------------------
+
+# install extras
+apt-get -yqq install \
+    git \
+    ${PY_PREFIX}-pip \
+    libkrb5-dev krb5-user \
+    dvipng texlive-latex-base texlive-latex-extra \
+    ${PY_PREFIX}-glue \
+    ${PY_PREFIX}-sqlalchemy \
+    ${PY_PREFIX}-psycopg2 \
+    ${PY_PREFIX}-pandas \
+    ${PY_PREFIX}-pytest \
+    ${PY_PREFIX}-coverage \
+    ${PY_PREFIX}-freezegun \
+    ${PY_PREFIX}-sqlparse \
+    ${PY_PREFIX}-bs4 \
+    lalframe-${PY_PREFIX} \
+    lalsimulation-${PY_PREFIX}
+
+# install extras for python2 only
+if [ "${PY_MAJOR_VERSION}" -eq 2 ]; then
+    apt-get -yqq install \
+        ${PY_PREFIX}-mock \
+        libroot-bindings-python5.34 \
+        libroot-tree-treeplayer-dev \
+        libroot-math-physics-dev \
+        libroot-graf2d-postscript-dev
+fi
+
+# install other packages that may or may not exist for this
+# debian version, or this python version
 for pckg in \
-    libroot-bindings-python5.34 libroot-tree-treeplayer-dev \
-    libroot-math-physics-dev libroot-graf2d-postscript-dev \
+    ${PY_PREFIX}-pymysql \
     ${PY_PREFIX}-nds2-client \
     ${PY_PREFIX}-dqsegdb ${PY_PREFIX}-m2crypto \
-    ${PY_PREFIX}-sqlalchemy \
-    ${PY_PREFIX}-pandas \
-    ${PY_PREFIX}-psycopg2 \
-    ${PY_PREFIX}-pymysql \
     ldas-tools-framecpp-${PY_PREFIX} \
-    lalframe-${PY_PREFIX} \
-    lalsimulation-${PY_PREFIX} \
 ; do
     apt-get -yqq install $pckg || true
 done

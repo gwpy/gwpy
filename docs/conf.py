@@ -21,6 +21,7 @@ import inspect
 import os.path
 import re
 import glob
+import shutil
 import subprocess
 from string import Template
 
@@ -33,11 +34,11 @@ from sphinx.util import logging
 
 import sphinx_bootstrap_theme
 
-from sphinx.util import logger
+from numpydoc import docscrape_sphinx
 
 import gwpy
 from gwpy import _version as gwpy_version
-from gwpy.plotter import (GWPY_PLOT_PARAMS)
+from gwpy.plot.rc import DEFAULT_PARAMS as GWPY_PLOT_PARAMS
 from gwpy.utils.sphinx import zenodo
 
 GWPY_VERSION = gwpy_version.get_versions()
@@ -51,9 +52,6 @@ SPHINX_DIR = os.path.abspath(os.path.dirname(__file__))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-
-# local extensions
-from gwpy.utils.sphinx import numpydoc
 
 # extension modules
 # DEVNOTE: please make sure and add 3rd-party dependencies to
@@ -176,15 +174,10 @@ numpydoc_use_blockquotes = True
 # auto-insert plot directive in examples
 numpydoc_use_plots = True
 
-# try and update the plot detection to include .show() calls
-try:  # requires numpydoc >= 0.8
-    from numpydoc import docscrape_sphinx
-    parts = re.split('[\(\)|]', docscrape_sphinx.IMPORT_MATPLOTLIB_RE)[1:-1]
-except AttributeError:
-    pass
-else:
-    parts.extend(('fig.show()', 'plot.show()'))
-    docscrape_sphinx.IMPORT_MATPLOTLIB_RE = r'\b({})\b'.format('|'.join(parts))
+# update the plot detection to include .show() calls
+parts = re.split('[\(\)|]', docscrape_sphinx.IMPORT_MATPLOTLIB_RE)[1:-1]
+parts.extend(('fig.show()', 'plot.show()'))
+docscrape_sphinx.IMPORT_MATPLOTLIB_RE = r'\b({})\b'.format('|'.join(parts))
 
 # -- inhertiance_diagram ------------------------
 
@@ -459,9 +452,41 @@ def build_cli_examples(_):
             f.write('   {0}\n'.format(rst[len(SPHINX_DIR):]))
 
 
+# -- examples -----------------------------------------------------------------
+
+def build_examples(_):
+    logger = logging.getLogger('examples')
+    logger.info('[examples] converting examples to RST...')
+
+    srcdir = os.path.join(SPHINX_DIR, os.pardir, 'examples')
+    outdir = os.path.join(SPHINX_DIR, 'examples')
+    ex2rst = os.path.join(SPHINX_DIR, 'ex2rst.py')
+
+    if not os.path.isdir(outdir):
+        os.makedirs(outdir)
+        logger.debug('[examples] created {0}'.format(outdir))
+
+    for exdir in next(os.walk(srcdir))[1]:
+        subdir = os.path.join(outdir, exdir)
+        if not os.path.isdir(subdir):
+            os.makedirs(subdir)
+        # copy index
+        index = os.path.join(subdir, 'index.rst')
+        shutil.copyfile(os.path.join(srcdir, exdir, 'index.rst'), index)
+        logger.debug('[examples] copied {0}'.format(index))
+        # render python script as RST
+        for expy in glob.glob(os.path.join(srcdir, exdir, '*.py')):
+            target = os.path.join(
+                subdir, os.path.basename(expy).replace('.py', '.rst'))
+            subprocess.Popen([sys.executable, ex2rst, expy, target])
+            logger.debug('[examples] wrote {0}'.format(target))
+        logger.info('[examples] converted all in examples/{0}'.format(exdir))
+
+
 # -- create citation file -----------------------------------------------------
 
 def write_citing_rst(_):
+    logger = logging.getLogger('zenodo')
     here = os.path.dirname(__file__)
     with open(os.path.join(here, 'citing.rst.in'), 'r') as fobj:
         citing = fobj.read()
@@ -492,4 +517,5 @@ def setup_static_content(app):
 def setup(app):
     setup_static_content(app)
     app.connect('builder-inited', write_citing_rst)
+    app.connect('builder-inited', build_examples)
     app.connect('builder-inited', build_cli_examples)

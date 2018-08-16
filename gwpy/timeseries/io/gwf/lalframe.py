@@ -86,7 +86,7 @@ def open_data_source(source):
 
     # read single file
     if isinstance(source, string_types):
-        return lalframe.FrStreamOpen(*os.path.split(source))
+        return lalframe.FrStreamOpen(*map(str, os.path.split(source)))
 
     raise ValueError("Don't know how to open data source of type %r"
                      % type(source))

@@ -41,12 +41,13 @@ class OmegaHeader(core.BaseHeader):
         re_name_def = re.compile(r'^\s*%\s+(?P<colname>\w+)')
         self.names = []
         for line in lines:
-            if not line.startswith('%'):
-                break  # End of header lines
-            else:
-                match = re_name_def.search(line)
-                if match:
-                    self.names.append(match.group('colname'))
+            if not line:  # ignore empty lines in header (windows)
+                continue
+            if not line.startswith('%'):  # end of header lines
+                break
+            match = re_name_def.search(line)
+            if match:
+                self.names.append(match.group('colname'))
 
         if not self.names:
             raise core.InconsistentTableError(

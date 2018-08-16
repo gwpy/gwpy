@@ -44,7 +44,7 @@ events = EventTable.read(
 #    Here we manually specify the `columns` to read in order to optimise
 #    the `read()` operation to parse only the data we actually need.
 
-# and can generate a new `~gwpy.plotter.HistogramPlot` using the
+# and can generate a new `~gwpy.plot.Plot` using the
 # :meth:`~EventTable.hist` instance method using `weights=1/10.`
 # to convert the counts from the histogram into a rate in Hertz
 

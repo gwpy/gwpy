@@ -24,8 +24,8 @@
 
 from collections import OrderedDict
 
-from ..plotter import FrequencySeriesPlot
-from ..plotter.tex import label_to_latex
+from ..plot import Plot
+from ..plot.tex import label_to_latex
 from .spectrum import Spectrum
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
@@ -42,6 +42,9 @@ class Coherence(Spectrum):
     def __init__(self, *args, **kwargs):
         super(Coherence, self).__init__(*args, **kwargs)
         self.ref_chan = self.args.ref or self.chan_list[0]
+        # deal with channel type appendages
+        if ',' in self.ref_chan:
+            self.ref_chan = self.ref_chan.split(',')[0]
 
     @classmethod
     def arg_channels(cls, parser):
@@ -96,7 +99,7 @@ class Coherence(Spectrum):
 
         # -- plot
 
-        plot = FrequencySeriesPlot(figsize=self.figsize, dpi=self.dpi)
+        plot = Plot(figsize=self.figsize, dpi=self.dpi)
         ax = plot.gca()
         self.spectra = []
 

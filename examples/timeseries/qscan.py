@@ -46,27 +46,18 @@ qspecgram = data.q_transform()
 
 # Now, we can plot the resulting `~gwpy.spectrogram.Spectrogram`, focusing on a
 # specific window around the interesting time
-#
-# .. note::
-#
-#    Using `~gwpy.spectrogram.Spectrogram.crop` is highly recommended at
-#    this stage because rendering the high-resolution spectrogram as it is
-#    done here is very slow (for experts this is because we're using
-#    `~matplotlib.axes.Axes.pcolormesh` and not any sort of image
-#    interpolation, mainly to support both linear and log scaling nicely)
 
-gps = 1126259462.427
-plot = qspecgram.crop(gps-.15, gps+.05).plot(figsize=[8, 4])
+plot = qspecgram.crop(1126259462.2, 1126259462.5).plot(figsize=[8, 4])
 ax = plot.gca()
-ax.set_epoch(gps)
+ax.set_xscale('seconds')
 ax.set_yscale('log')
-ax.set_xlabel('Time [milliseconds]')
 ax.set_ylim(20, 500)
+ax.set_ylabel('Frequency [Hz]')
 ax.grid(True, axis='y', which='both')
-plot.add_colorbar(cmap='viridis', label='Normalized energy')
+ax.colorbar(cmap='viridis', label='Normalized energy')
 plot.show()
 
 # Here we can clearly see the trace of a compact binary coalescence,
-# specifically a binary black hole coalescence!
+# specifically a binary black hole merger!
 # For more details on this result, please see
 # http://www.ligo.org/science/Publication-GW150914/.

@@ -51,10 +51,18 @@ The frequency-spectrum of a :class:`TimeSeries` can be calculated using either o
 
 In this example we expand upon plotting a :class:`~gwpy.timeseries.TimeSeries`, by calculating the amplitude-spectral density of the gravitational-wave strain data from LHO:
 
-.. literalinclude:: spectrum_plot.py
-   :lines: 1-3
+.. plot::
+   :context: reset
+   :include-source:
+   :nofigs:
 
-where the result is an average spectrum calculated using the `Welch method <https://en.wikipedia.org/wiki/Welch_method>`_.
+   >>> from gwpy.timeseries import TimeSeries
+   >>> gwdata = TimeSeries.fetch('H1:LDAS-STRAIN', 'September 16 2010 06:40',
+   ...                           'September 16 2010 06:50')
+   >>> spectrum = gwdata.asd(8, 4)
+
+where the result is an average spectrum calculated using the
+`Welch method <https://en.wikipedia.org/wiki/Welch_method>`_.
 
 =====================================
 Reading/writing frequency-domain data
@@ -76,8 +84,16 @@ Plotting a `FrequencySeries`
 
 Similary to the :class:`~gwpy.timeseries.TimeSeries`, the `FrequencySeries` object comes with its own :meth:`~FrequencySeries.plot` method, which will quickly construct a :class:`~gwpy.plotter.FrequencySeriesPlot`:
 
-.. plot:: spectrum/spectrum_plot.py
+.. plot::
+   :context:
    :include-source:
+
+   >>> plot = spectrum.plot()
+   >>> ax = plot.gca()
+   >>> ax.set_xlim(40, 4000)
+   >>> ax.set_ylabel(r'GW strain ASD [strain$/\sqrt{\mathrm{Hz}}$]')
+   >>> ax.set_ylim(1e-23, 1e-19)
+   >>> plot.show()
 
 ==============================
 `FrequencySeries` applications

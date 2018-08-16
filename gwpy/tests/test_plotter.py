@@ -19,8 +19,8 @@
 """Unit tests for plotter module
 """
 
-import tempfile
 import warnings
+from io import BytesIO
 
 import pytest
 
@@ -121,8 +121,7 @@ class PlottingTestBase(object):
         return rcParams['text.usetex']
 
     def save(self, fig, suffix='.png'):
-        with tempfile.NamedTemporaryFile(suffix=suffix) as f:
-            fig.save(f.name)
+        fig.save(BytesIO(), format=suffix.lstrip('.'))
         return fig
 
     def save_and_close(self, fig, suffix='.png'):
@@ -166,8 +165,8 @@ class TestPlot(PlottingTestBase):
     def test_show(self):
         # no idea how to assert that this worked
         fig = self.FIGURE_CLASS()
-        fig.show(block=True)
-        fig.show(block=False)
+        fig.show(block=True, warn=False)
+        fig.show(block=False, warn=False)
 
     def test_refresh(self):
         # no idea how to assert that this worked
@@ -284,7 +283,6 @@ class TestPlot(PlottingTestBase):
 
         fig = self.FIGURE_CLASS()
         fig.add_image(data)
-        assert fig.gca().projection == 'rectilinear'
 
     def test_add_arrays(self):
         ts = TimeSeries([1, 2, 3, 4])
@@ -518,7 +516,6 @@ class TestTimeSeriesPlot(TimeSeriesMixin, TestPlot):
         fig = self.FIGURE_CLASS(self.ts)
         ax = fig.gca()
         assert len(ax.lines) == 1
-        assert ax.get_epoch() == self.ts.x0.value
         assert ax.get_xlim() == self.ts.span
 
         # test passing multiple timeseries
@@ -582,7 +579,6 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
     def test_init(self):
         fig, ax = self.new()
         assert isinstance(ax, self.AXES_CLASS)
-        assert ax.get_epoch() == 0
         assert ax.get_xscale() == 'auto-gps'
         assert ax.get_xlabel() == '_auto'
         self.save_and_close(fig)
@@ -596,7 +592,6 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         nptest.assert_array_equal(line.get_xdata(), self.ts.times.value)
         nptest.assert_array_equal(line.get_ydata(), self.ts.value)
         # check GPS axis is set ok
-        assert ax.get_epoch() == self.ts.x0.value
         assert ax.get_xlim() == tuple(self.ts.span)
         self.save_and_close(fig)
 
@@ -657,7 +652,6 @@ class TestTimeSeriesAxes(TimeSeriesMixin, TestAxes):
         coll = ax.collections[0]
         nptest.assert_array_equal(coll.get_array(), self.sg.value.T.flatten())
         # check GPS axis is set ok
-        assert ax.get_epoch() == self.sg.x0.value
         assert ax.get_xlim() == tuple(self.sg.xspan)
         # check frequency axis
         if self.use_tex:
@@ -769,7 +763,7 @@ class EventTableMixin(object):
     @classmethod
     def create(cls, n, names, dtypes=None):
         data = []
-        for i, name in enumerate(names):
+        for i in range(len(names)):
             numpy.random.seed(i)
             if dtypes:
                 dtype = dtypes[i]
@@ -951,7 +945,6 @@ class TestSegmentAxes(SegmentMixin, TestAxes):
         assert numpy.isclose(ax.dataLim.x0, 0.)
         assert numpy.isclose(ax.dataLim.x1, 7.)
         assert len(c.get_paths()) == len(segments)
-        assert ax.get_epoch() == segments[0][0]
         # test y
         p = ax.plot_segmentlist(segments).get_paths()[0].get_extents()
         assert p.y0 + p.height/2. == 1.

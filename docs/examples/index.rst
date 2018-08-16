@@ -15,6 +15,8 @@ GWpy examples
 
    spectrogram/index
 
+   segments/index
+
    table/index
 
    miscellaneous/index

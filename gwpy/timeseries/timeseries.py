@@ -33,7 +33,6 @@ from astropy import units
 
 from ..segments import Segment
 from ..signal import filter_design
-from ..signal.filter import sosfiltfilt
 from ..signal.fft import (registry as fft_registry, ui as fft_ui)
 from ..signal.window import (recommended_overlap, planck)
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
@@ -51,6 +50,22 @@ def _update_doc_with_fft_methods(func):
     """
     fft_registry.update_doc(func)
     return func
+
+
+def _fft_length_default(dt):
+    """Choose an appropriate FFT length (in seconds) based on a sample rate
+
+    Parameters
+    ----------
+    dt : `~astropy.units.Quantity`
+        the sampling time interval, in seconds
+
+    Returns
+    -------
+    fftlength : `int`
+        a choice of FFT length, in seconds
+    """
+    return int(max(2, numpy.ceil(2048 * dt.decompose().value)))
 
 
 # -- TimeSeries ---------------------------------------------------------------
@@ -422,7 +437,7 @@ class TimeSeries(TimeSeriesBase):
                                           fftlength=fftlength, overlap=overlap,
                                           window=window, **kwargs)
 
-    def spectrogram2(self, fftlength, overlap=0, **kwargs):
+    def spectrogram2(self, fftlength, overlap=None, window='hann', **kwargs):
         """Calculate the non-averaged power `Spectrogram` of this `TimeSeries`
 
         Parameters
@@ -474,51 +489,62 @@ class TimeSeries(TimeSeriesBase):
         # run
         return fft_ui.spectrogram(self, signal.periodogram,
                                   fftlength=fftlength, overlap=overlap,
-                                  **kwargs)
+                                  window=window, **kwargs)
 
-    def fftgram(self, stride):
+    def fftgram(self, fftlength, overlap=None, window='hann', **kwargs):
         """Calculate the Fourier-gram of this `TimeSeries`.
 
         At every ``stride``, a single, complex FFT is calculated.
 
         Parameters
         ----------
-        stride : `float`
-            number of seconds in single PSD (column of spectrogram)
+        fftlength : `float`
+            number of seconds in single FFT.
+
+        overlap : `float`, optional
+            number of seconds of overlap between FFTs, defaults to the
+            recommended overlap for the given window (if given), or 0
+
+        window : `str`, `numpy.ndarray`, optional
+            window function to apply to timeseries prior to FFT,
+            see :func:`scipy.signal.get_window` for details on acceptable
+
 
         Returns
         -------
-        fftgram : `~gwpy.spectrogram.Spectrogram`
             a Fourier-gram
         """
         from ..spectrogram import Spectrogram
+        try:
+            from scipy.signal import spectrogram
+        except ImportError:
+            raise ImportError("Must have scipy>=0.16 to utilize "
+                              "this method.")
 
-        fftlength = stride
-        dt = stride
-        df = 1/fftlength
-        stride *= self.sample_rate.value
-        # get size of Spectrogram
-        nsteps = int(self.size // stride)
-        # get number of frequencies
-        nfreqs = int(fftlength*self.sample_rate.value)
+        # format lengths
+        if isinstance(fftlength, units.Quantity):
+            fftlength = fftlength.value
+
+        nfft = int((fftlength * self.sample_rate).decompose().value)
+
+        if not overlap:
+            # use scipy.signal.spectrogram noverlap default
+            noverlap = nfft // 8
+        else:
+            noverlap = int((overlap * self.sample_rate).decompose().value)
 
         # generate output spectrogram
-        dtype = numpy.complex
-        out = Spectrogram(numpy.zeros((nsteps, nfreqs), dtype=dtype),
-                          name=self.name, t0=self.t0, f0=0, df=df,
-                          dt=dt, copy=False, unit=self.unit, dtype=dtype)
-        # stride through TimeSeries, recording FFTs as columns of Spectrogram
-        for step in range(nsteps):
-            # find step TimeSeries
-            idx = stride * step
-            idx_end = idx + stride
-            stepseries = self[idx:idx_end]
-            # calculated FFT and stack
-            stepfft = stepseries.fft()
-            out[step] = stepfft.value
-            if step == 0:
-                out.frequencies = stepfft.frequencies
-        return out
+        [frequencies, times, sxx] = spectrogram(self,
+                                                fs=self.sample_rate.value,
+                                                window=window,
+                                                nperseg=nfft,
+                                                noverlap=noverlap,
+                                                mode='complex',
+                                                **kwargs)
+        return Spectrogram(sxx.T,
+                           name=self.name, unit=self.unit,
+                           xindex=self.t0.value + times,
+                           yindex=frequencies)
 
     @_update_doc_with_fft_methods
     def spectral_variance(self, stride, fftlength=None, overlap=None,
@@ -997,7 +1023,7 @@ class TimeSeries(TimeSeriesBase):
 
         scipy.signal.sosfiltfilt
             for details on forward-backward filtering with second-order
-            sections (`scipy >= 0.16` only)
+            sections (`scipy >= 0.18` only)
 
         scipy.signal.lfilter
             for details on filtering (without SOS)
@@ -1030,8 +1056,8 @@ class TimeSeries(TimeSeriesBase):
         We can plot the original signal, and the filtered version, cutting
         off either end of the filtered data to remove filter-edge artefacts
 
-        >>> from gwpy.plotter import TimeSeriesPlot
-        >>> plot = TimeSeriesPlot(data, filtered[128:-128], sep=True)
+        >>> from gwpy.plot import Plot
+        >>> plot = Plot(data, filtered[128:-128], separate=True)
         >>> plot.show()
         """
         # parse keyword arguments
@@ -1055,7 +1081,7 @@ class TimeSeries(TimeSeriesBase):
         # perform filter
         kwargs.setdefault('axis', 0)
         if sos is not None and filtfilt:
-            out = sosfiltfilt(sos, self, **kwargs)
+            out = signal.sosfiltfilt(sos, self, **kwargs)
         elif sos is not None:
             out = signal.sosfilt(sos, self, **kwargs)
         elif filtfilt:
@@ -1323,8 +1349,8 @@ class TimeSeries(TimeSeriesBase):
         We can then plot these trends to visualize changes in the amplitude
         and phase of the calibration line:
 
-        >>> from gwpy.plotter import TimeSeriesPlot
-        >>> plot = TimeSeriesPlot(amp, phase, sep=True, sharex=True)
+        >>> from gwpy.plot import Plot
+        >>> plot = Plot(amp, phase, separate=True, sharex=True)
         >>> plot.show()
         """
         stridesamp = int(stride * self.sample_rate.value)
@@ -1383,8 +1409,8 @@ class TimeSeries(TimeSeriesBase):
 
         We can plot it to see how the ends now vary smoothly from 0 to 1:
 
-        >>> from gwpy.plotter import TimeSeriesPlot
-        >>> plot = TimeSeriesPlot(series, tapered, sep=True, sharex=True)
+        >>> from gwpy.plot import Plot
+        >>> plot = Plot(series, tapered, separate=True, sharex=True)
         >>> plot.show()
 
         Notes
@@ -1418,14 +1444,16 @@ class TimeSeries(TimeSeriesBase):
         out *= planck(out.size, nleft=nleft, nright=nright)
         return out
 
-    def whiten(self, fftlength, overlap=0, method='scipy-welch',
-               window='hanning', detrend='constant', asd=None, **kwargs):
-        """White this `TimeSeries` against its own ASD
+    def whiten(self, fftlength=None, overlap=0, method='scipy-welch',
+               window='hanning', detrend='constant', asd=None,
+               fduration=1, highpass=None, **kwargs):
+        """Whiten this `TimeSeries` using inverse spectrum truncation
 
         Parameters
         ----------
-        fftlength : `float`
-            number of seconds in single FFT
+        fftlength : `float`, optional
+            FFT integration length (in seconds) for ASD estimation,
+            default: choose based on sample rate
 
         overlap : `float`, optional
             number of seconds of overlap between FFTs, defaults to the
@@ -1437,15 +1465,25 @@ class TimeSeries(TimeSeriesBase):
 
         window : `str`, `numpy.ndarray`, optional
             window function to apply to timeseries prior to FFT,
+            default: ``'hanning'``
             see :func:`scipy.signal.get_window` for details on acceptable
             formats
 
         detrend : `str`, optional
             type of detrending to do before FFT (see `~TimeSeries.detrend`
-            for more details)
+            for more details), default: ``'constant'``
 
-        asd : `~gwpy.frequencyseries.FrequencySeries`
-            the amplitude-spectral density using which to whiten the data
+        asd : `~gwpy.frequencyseries.FrequencySeries`, optional
+            the amplitude spectral density using which to whiten the data,
+            overrides other ASD arguments, default: `None`
+
+        fduration : `float`, optional
+            duration (in seconds) of the time-domain FIR whitening filter,
+            defaults to fftlength
+
+        highpass : `float`, optional
+            highpass corner frequency (in Hz) of the FIR whitening filter,
+            default: `None`
 
         **kwargs
             other keyword arguments are passed to the `TimeSeries.asd`
@@ -1466,36 +1504,35 @@ class TimeSeries(TimeSeriesBase):
         scipy.signal
 
         Notes
-        -----"""
+        -----
+        The `window` argument is used in both ASD estimation and FIR filter
+        design.
+
+        Due to filter corruption at the boundaries, a segment of length
+        `fduration` will automatically be cropped from the beginning and
+        end of the output.
+
+        For more on inverse spectrum truncation, see arXiv:gr-qc/0509116.
+        """
         # build whitener
+        fftlength = fftlength if fftlength else _fft_length_default(self.dt)
         if asd is None:
             asd = self.asd(fftlength, overlap=overlap,
                            method=method, window=window, **kwargs)
-        if isinstance(asd, units.Quantity):
-            asd = asd.value
-        invasd = 1. / asd
-        # build window
-        nfft = int((fftlength * self.sample_rate).decompose().value)
-        noverlap = int((overlap * self.sample_rate).decompose().value)
-        # format window
-        if type(window).__module__ == 'lal.lal':
-            window = window.data.data
-        elif not isinstance(window, numpy.ndarray):
-            window = signal.get_window(window, nfft)
-        # create output series
-        nstride = nfft - noverlap
-        nsteps = 1 + int((self.size - nfft) / nstride)
-        out = numpy.zeros(nsteps * nstride + noverlap).view(type(self))
-        out.__metadata_finalize__(self)
-        out._unit = self.unit
-        del out.times
-        # loop over ffts and whiten each one
-        for i in range(nsteps):
-            x = i * nstride
-            y = x + nfft
-            in_ = self[x:y].detrend(detrend) * window
-            out.value[x:y] += npfft.irfft(in_.fft().value * invasd)
-        return out
+        asd = asd.interpolate(1./self.duration.decompose().value)
+        # truncate the edges and apply a hard highpass
+        ncorner = int(highpass / asd.df.decompose().value) if highpass else 0
+        invasd = filter_design.truncate_transfer(1./asd.value, ncorner=ncorner)
+        # truncate and window in the time domain
+        tdw = npfft.irfft(invasd)
+        ntaps = int((fduration * self.sample_rate).decompose().value)
+        tdw = filter_design.truncate_impulse(tdw, ntaps=ntaps, window=window)
+        # filter in the frequency domain, enforcing zero-phase
+        invasd = (self.duration.value/2) * numpy.abs(npfft.rfft(tdw))
+        in_ = self.detrend(detrend)
+        out = type(self)(npfft.irfft(in_.fft().value * invasd))
+        out.__array_finalize__(self)
+        return out.crop(*out.xspan.contract(fduration))
 
     def detrend(self, detrend='constant'):
         """Remove the trend from this `TimeSeries`
@@ -1556,7 +1593,8 @@ class TimeSeries(TimeSeriesBase):
 
     def q_transform(self, qrange=(4, 64), frange=(0, numpy.inf),
                     gps=None, search=.5, tres=.001, fres=.5, norm='median',
-                    outseg=None, whiten=True, **asd_kw):
+                    outseg=None, whiten=True, fduration=1, highpass=None,
+                    **asd_kw):
         """Scan a `TimeSeries` using a multi-Q transform
 
         Parameters
@@ -1594,6 +1632,14 @@ class TimeSeries(TimeSeriesBase):
             boolean switch to enable (`True`) or disable (`False`) data
             whitening, or an ASD `~gwpy.freqencyseries.FrequencySeries`
             with which to whiten the data
+
+        fduration : `float`, optional
+            duration (in seconds) of the time-domain FIR whitening filter,
+            only used if `whiten` is not `False`, defaults to 1 second
+
+        highpass : `float`, optional
+            highpass corner frequency (in Hz) of the FIR whitening filter,
+            used only if `whiten` is not `False`, default: `None`
 
         **asd_kw
             keyword arguments to pass to `TimeSeries.asd` to generate
@@ -1657,24 +1703,15 @@ class TimeSeries(TimeSeriesBase):
         from ..spectrogram import Spectrogram
         from ..signal.qtransform import QTiling
 
-        if outseg is None:
-            outseg = self.span
-
-        # generate tiling
-        planes = QTiling(abs(self.span), self.sample_rate.value,
-                         qrange=qrange, frange=frange)
-
         # condition data
         if whiten:
             if isinstance(whiten, FrequencySeries):
-                fftlength = 1/whiten.df.value
-                overlap = fftlength / 2.
+                fftlength, overlap = (None, None)
             else:
                 method = asd_kw.pop('method', 'scipy_welch')
                 window = asd_kw.pop('window', 'hann')
-                fftlength = asd_kw.pop(
-                    'fftlength',
-                    min(planes.whitening_duration, self.duration.value))
+                fftlength = asd_kw.pop('fftlength',
+                                       _fft_length_default(self.dt))
                 overlap = asd_kw.pop('overlap', None)
                 if overlap is None and fftlength == self.duration.value:
                     method = 'scipy-welch'
@@ -1682,11 +1719,28 @@ class TimeSeries(TimeSeriesBase):
                 elif overlap is None:
                     overlap = recommended_overlap(window) * fftlength
                 whiten = self.asd(fftlength, overlap, method=method, **asd_kw)
-            # apply whitening
-            wdata = self.whiten(fftlength, overlap, asd=whiten)
+            # apply whitening (with errors on dividing by zero)
+            with numpy.errstate(all='raise'):
+                wdata = self.whiten(fftlength, overlap, asd=whiten,
+                                    fduration=fduration, highpass=highpass)
             fdata = wdata.fft().value
+            epoch = wdata.x0
+            span = wdata.span
         else:
             fdata = self.fft().value
+            epoch = self.x0
+            span = self.span
+
+        if outseg is None:
+            outseg = span
+
+        # truncate search window to available data
+        if gps is not None:  # search is only used if gps is given
+            search = Segment(gps-search, gps+search) & span
+
+        # generate tiling
+        planes = QTiling(abs(span), self.sample_rate.value,
+                         qrange=qrange, frange=frange)
 
         # set up results
         peakq = None
@@ -1695,13 +1749,13 @@ class TimeSeries(TimeSeriesBase):
         # Q-transform data for each `(Q, frequency)` tile
         for plane in planes:
             freqs, normenergies = plane.transform(fdata, norm=norm,
-                                                  epoch=self.x0)
+                                                  epoch=epoch)
             # find peak energy in this plane and record if loudest
             for ts in normenergies:
                 if gps is None:
                     peak = ts.value.max()
                 else:
-                    peak = ts.crop(gps-search, gps+search).value.max()
+                    peak = ts.crop(*search).value.max()
                 if peak > peakenergy:
                     peakenergy = peak
                     peakq = plane.q
@@ -1720,8 +1774,8 @@ class TimeSeries(TimeSeriesBase):
         out.q = peakq
         # interpolate rows
         for i, row in enumerate(norms):
-            row = row.crop(*outseg)
-            interp = InterpolatedUnivariateSpline(row.times.value, row.value)
+            interp = InterpolatedUnivariateSpline(
+                row.times.value, row.value)
             out[:, i] = interp(out.times.value)
 
         # then interpolate the spectrogram to increase the frequency resolution

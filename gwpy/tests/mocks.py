@@ -30,6 +30,7 @@ from six.moves.urllib.error import HTTPError
 
 import pytest
 
+from gwpy.detector import Channel
 from gwpy.time import LIGOTimeGPS
 from gwpy.segments import (Segment, SegmentList)
 
@@ -143,7 +144,7 @@ def nds2_channel(name, sample_rate, unit):
     channel.sample_rate = sample_rate
     channel.signal_units = unit
     channel.channel_type = 2
-    channel.channel_type_to_string.return_value = 'raw'
+    channel.channel_type_to_string = nds2.channel.channel_type_to_string
     channel.data_type = 8
     for attr, value in inspect.getmembers(
             nds2.channel, predicate=lambda x: isinstance(x, int)):
@@ -166,9 +167,7 @@ def nds2_connection(host='nds.test.gwpy', port=31200, buffers=[]):
         if not buffers:
             return []
         return [[b for b in buffers if
-                 '%s,%s' % (b.channel.name,
-                            b.channel.channel_type_to_string(b.channel_type))
-                 in names]]
+                 Channel.from_nds2(b.channel).ndsname in names]]
 
     NdsConnection.iterate = iterate
 

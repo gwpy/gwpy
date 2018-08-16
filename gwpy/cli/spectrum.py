@@ -25,8 +25,8 @@
 from astropy.time import Time
 
 from .cliproduct import (FrequencyDomainProduct, FFTMixin, unique)
-from ..plotter import FrequencySeriesPlot
-from ..plotter.tex import label_to_latex
+from ..plot import Plot
+from ..plot.tex import label_to_latex
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
@@ -96,7 +96,7 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
         overlap *= fftlength
 
         # create plot
-        plot = FrequencySeriesPlot(figsize=self.figsize, dpi=self.dpi)
+        plot = Plot(figsize=self.figsize, dpi=self.dpi)
         ax = plot.gca()
 
         for series in self.timeseries:

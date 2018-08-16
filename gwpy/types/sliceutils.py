@@ -33,9 +33,7 @@ def format_nd_slice(item, ndim):
     """
     if not isinstance(item, tuple):
         item = (item,)
-    if len(item) == ndim:
-        return item
-    return item + (None,) * (ndim - len(item))
+    return item[:ndim] + (None,) * (ndim - len(item))
 
 
 def slice_axis_attributes(old, oldaxis, new, newaxis, slice_):
@@ -77,9 +75,13 @@ def slice_axis_attributes(old, oldaxis, new, newaxis, slice_):
         setattr(new, index(newaxis), getattr(old, index(oldaxis))[slice_])
 
     # otherwise if using a slice, use origin and delta properties
-    elif isinstance(slice_, slice):
-        offset = slice_.start or 0
-        step = slice_.step or 1
+    elif isinstance(slice_, slice) or not numpy.sum(slice_):
+        if isinstance(slice_, slice):
+            offset = slice_.start or 0
+            step = slice_.step or 1
+        else:  # empty ndarray slice (so just set attributes)
+            offset = 0
+            step = 1
 
         dx = getattr(old, delta(oldaxis))
         x0 = getattr(old, origin(oldaxis))
@@ -105,6 +107,8 @@ def null_slice(slice_):
     except TypeError:
         return False
 
+    if isinstance(slice_, numpy.ndarray) and numpy.all(slice_):
+        return True
     if isinstance(slice_, slice) and slice_ in (
             slice(None, None, None), slice(0, None, 1)
     ):
@@ -119,5 +123,8 @@ def as_slice(slice_):
 
     if isinstance(slice_, (slice, numpy.ndarray)):
         return slice_
+
+    if isinstance(slice_, (list, tuple)):
+        return tuple(map(as_slice, slice_))
 
     raise TypeError("Cannot format {!r} as slice".format(slice_))

@@ -54,16 +54,16 @@ white = hp.whiten(4, 2).crop(1126259460, 1126259465)
 # calculate our over-dense `~gwpy.spectrogram.Spectrogram`, using a
 # 1/16-second FFT length and high overlap:
 
-specgram = white.spectrogram2(fftlength=1/16., overlap=15/256.)
+specgram = white.spectrogram2(fftlength=1/16., overlap=15/256.) ** (1/2.)
+specgram = specgram.crop_frequencies(20)  # drop everything below highpass
 
 # Finally, we make a plot:
 
-plot = specgram.plot(norm='log', cmap='viridis')
+plot = specgram.plot(norm='log', cmap='viridis', yscale='log')
 ax = plot.gca()
-ax.set_ylim(0, 500)
 ax.set_title('LIGO-Hanford strain data around GW150914')
-ax.set_epoch(1126259462.427)
-ax.set_xlim(1126259462.427-.5, 1126259462.427+.5)
+ax.set_xlim(1126259462, 1126259463)
+ax.colorbar(label=r'Strain ASD [1/\rtHz]')
 plot.show()
 
 # Here we can see the trace of a high-mass binary black hole system,

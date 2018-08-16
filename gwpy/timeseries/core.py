@@ -262,17 +262,9 @@ class TimeSeriesBase(Series):
             number of parallel processes to use, serial process by
             default.
 
-        gap : `str`, optional
-            how to handle gaps in the cache, one of
-
-            - 'ignore': do nothing, let the undelying reader method handle it
-            - 'warn': do nothing except print a warning to the screen
-            - 'raise': raise an exception upon finding a gap (default)
-            - 'pad': insert a value to fill the gaps
-
         pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
+            value with which to fill gaps in the source data,
+            by default gaps will result in a `ValueError`.
 
         Notes
         -----"""
@@ -484,8 +476,8 @@ class TimeSeriesBase(Series):
             for containing frame types if necessary
 
         pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
+            value with which to fill gaps in the source data,
+            by default gaps will result in a `ValueError`.
 
         nproc : `int`, optional, default: `1`
             number of parallel processes to use, serial process by
@@ -530,8 +522,8 @@ class TimeSeriesBase(Series):
             any input parseable by `~gwpy.time.to_gps` is fine
 
         pad : `float`, optional
-            value with which to fill gaps in the source data, default to
-            'don't fill gaps'
+            value with which to fill gaps in the source data,
+            by default gaps will result in a `ValueError`.
 
         dtype : `numpy.dtype`, `str`, `type`, or `dict`
             numeric data type for returned data, e.g. `numpy.float`, or
@@ -595,14 +587,13 @@ class TimeSeriesBase(Series):
         delta = units.Quantity(delta, 's')
         self.t0 += delta
 
-    def plot(self, **kwargs):
+    def plot(self, method='plot', figsize=(12, 4), xscale='auto-gps',
+             **kwargs):
         """Plot the data for this timeseries
-
-        All keywords are passed to `~gwpy.plotter.TimeSeriesPlot`
 
         Returns
         -------
-        plot : `~gwpy.plotter.TimeSeriesPlot`
+        figure : `~matplotlib.figure.Figure`
             the newly created figure, with populated Axes.
 
         See Also
@@ -616,12 +607,14 @@ class TimeSeriesBase(Series):
         matplotlib.axes.Axes.plot
             for documentation of keyword arguments used in rendering the data
         """
-        from ..plotter import TimeSeriesPlot
-        return TimeSeriesPlot(self, **kwargs)
+        kwargs.update(figsize=figsize, xscale=xscale)
+        return super(TimeSeriesBase, self).plot(method=method, **kwargs)
 
     @classmethod
     def from_nds2_buffer(cls, buffer_, **metadata):
-        """Construct a new `TimeSeries` from an `nds2.buffer` object
+        """Construct a new series from an `nds2.buffer` object
+
+        **Requires:** |nds2|_
 
         Parameters
         ----------
@@ -636,10 +629,6 @@ class TimeSeriesBase(Series):
         timeseries : `TimeSeries`
             a new `TimeSeries` containing the data from the `nds2.buffer`,
             and the appropriate metadata
-
-        Notes
-        -----
-        This classmethod requires the nds2-client package
         """
         # cast as TimeSeries and return
         channel = Channel.from_nds2(buffer_.channel)
@@ -837,17 +826,9 @@ class TimeSeriesBaseDict(OrderedDict):
             number of parallel processes to use, serial process by
             default.
 
-        gap : `str`, optional
-            how to handle gaps in the cache, one of
-
-            - 'ignore': do nothing, let the undelying reader method handle it
-            - 'warn': do nothing except print a warning to the screen
-            - 'raise': raise an exception upon finding a gap (default)
-            - 'pad': insert a value to fill the gaps
-
         pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
+            value with which to fill gaps in the source data,
+            by default gaps will result in a `ValueError`.
 
         Returns
         -------
@@ -1319,7 +1300,34 @@ class TimeSeriesBaseDict(OrderedDict):
                                            verbose=verbose, **kwargs))
                     for c in channels)
 
-    def plot(self, label='key', **kwargs):
+    @classmethod
+    def from_nds2_buffers(cls, buffers, **metadata):
+        """Construct a new dict from a list of `nds2.buffer` objects
+
+        **Requires:** |nds2|_
+
+        Parameters
+        ----------
+        buffers : `list` of `nds2.buffer`
+            the input NDS2-client buffers to read
+
+        **metadata
+            any other metadata keyword arguments to pass to the `TimeSeries`
+            constructor
+
+        Returns
+        -------
+        dict : `TimeSeriesDict`
+            a new `TimeSeriesDict` containing the data from the given buffers
+        """
+        tsd = cls()
+        for buf in buffers:
+            tsd[buf.channel.name] = tsd.EntryClass.from_nds2_buffer(
+                buf, **metadata)
+        return tsd
+
+    def plot(self, label='key', method='plot', figsize=(12, 4),
+             xscale='auto-gps', **kwargs):
         """Plot the data for this `TimeSeriesBaseDict`.
 
         Parameters
@@ -1337,20 +1345,51 @@ class TimeSeriesBaseDict(OrderedDict):
             all other keyword arguments are passed to the plotter as
             appropriate
         """
-        from ..plotter import TimeSeriesPlot
-        figargs = dict()
-        for key in ['figsize', 'dpi']:
-            if key in kwargs:
-                figargs[key] = kwargs.pop(key)
-        plot_ = TimeSeriesPlot(**figargs)
-        ax = plot_.gca()
-        for lab, series in self.items():
+        # make plot
+        from ..plot import Plot
+        plot = Plot(self.values(), method=method, label=label, **kwargs)
+
+        # update labels
+        artmap = {'plot': 'lines', 'scatter': 'collections'}
+        artists = [x for ax in plot.axes for
+                   x in getattr(ax, artmap.get(method, 'lines'))]
+        for key, artist in zip(self, artists):
             if label.lower() == 'name':
-                lab = series.name
-            elif label.lower() != 'key':
+                lab = self[key].name
+            elif label.lower() == 'key':
+                lab = key
+            else:
                 lab = label
-            ax.plot(series, label=lab, **kwargs)
-        return plot_
+            artist.set_label(lab)
+
+        return plot
+
+    def step(self, label='key', figsize=(12, 4), xscale='auto-gps', **kwargs):
+        """Create a step plot of this dict.
+
+        Parameters
+        ----------
+        label : `str`, optional
+            labelling system to use, or fixed label for all elements
+            Special values include
+
+            - ``'key'``: use the key of the `TimeSeriesBaseDict`,
+            - ``'name'``: use the :attr:`~TimeSeries.name` of each element
+
+            If anything else, that fixed label will be used for all lines.
+
+        **kwargs
+            all other keyword arguments are passed to the plotter as
+            appropriate
+        """
+        kwargs.setdefault('linestyle', kwargs.pop('where', 'steps-post'))
+
+        tmp = type(self)()
+        for key, series in self.items():
+            tmp[key] = series.append(series.value[-1:], inplace=False)
+
+        return tmp.plot(label=label, figsize=figsize, xscale=xscale,
+                        **kwargs)
 
 
 # -- TimeSeriesBaseList -------------------------------------------------------

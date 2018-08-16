@@ -19,8 +19,8 @@
 """Utilities for calling out to the shell
 """
 
-import os
 import warnings
+from distutils.spawn import find_executable
 from subprocess import (Popen, PIPE, CalledProcessError)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -44,20 +44,10 @@ def which(program):
     ValueError
         if not executable program is found
     """
-    def is_exe(fpath):
-        """Return `True` if the given file path is executable
-        """
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-    absolute = os.path.dirname(program)
-    if absolute and is_exe(program):  # absolute path given, and executable
-        return program
-    elif not absolute:  # relative path given, walk PATH
-        for path in os.environ["PATH"].split(os.pathsep):
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-    raise ValueError("No executable '%s' found in PATH" % program)
+    exe = find_executable(program)
+    if exe is None:
+        raise ValueError("No executable '%s' found in PATH" % program)
+    return exe
 
 
 def call(cmd, stdout=PIPE, stderr=PIPE, on_error='raise', **kwargs):
