@@ -54,9 +54,7 @@ GWPY_VERSION=$(python -c "import versioneer; print(versioneer.get_version())")
 GWPY_RELEASE=${GWPY_VERSION%%+*}
 
 # upgrade setuptools for development builds only to prevent version munging
-if [[ "${GWPY_VERSION}" == *"+"* ]]; then
-    pip install --quiet "setuptools>=25"
-fi
+pip install "setuptools>=25"
 
 # upgrade GitPython (required for git>=2.15.0)
 #     since we link the git clone from travis, the dependency is actually
