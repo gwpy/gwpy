@@ -878,13 +878,13 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # test whitening args
         asd = losc.asd(2, 1, method='scipy-welch')
         qsg2 = losc.q_transform(method='scipy-welch', whiten=asd)
-        utils.assert_quantity_sub_equal(qspecgram, qsg2)
+        utils.assert_quantity_sub_equal(qspecgram, qsg2, almost_equal=True)
 
         asd = losc.asd(.5, .25, method='scipy-welch')
         qsg2 = losc.q_transform(method='scipy-welch', whiten=asd)
         qsg3 = losc.q_transform(method='scipy-welch',
                                 fftlength=.5, overlap=.25)
-        utils.assert_quantity_sub_equal(qsg2, qsg3)
+        utils.assert_quantity_sub_equal(qsg2, qsg3, almost_equal=True)
 
         # make sure frequency too high presents warning
         with pytest.warns(UserWarning):
@@ -894,7 +894,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         # test other normalisations work (or don't)
         q2 = losc.q_transform(method='scipy-welch', norm='median')
-        utils.assert_quantity_sub_equal(qspecgram, q2)
+        utils.assert_quantity_sub_equal(qspecgram, q2, almost_equal=True)
         losc.q_transform(method='scipy-welch', norm='mean')
         losc.q_transform(method='scipy-welch', norm=False)
         with pytest.raises(ValueError):
