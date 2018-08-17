@@ -59,26 +59,33 @@ def identify_factory(*extensions):
 def gopen(name, *args, **kwargs):
     """Open a file handling optional gzipping
 
+    If ``name`` endswith ``'.gz'``, or if the GZIP file signature is
+    found at the beginning of the file, the file will be opened with
+    `gzip.open`, otherwise a regular file will be returned from `open`.
+
     Parameters
     ----------
     name : `str`
-        path (name) of file to open
+        path (name) of file to open.
 
     *args, **kwargs
         other arguments to pass to either `open` for regular files, or
-        `gzip.open` for files with a `name` ending in `.gz`
+        `gzip.open` for gzipped files.
 
     Returns
     -------
     file : `io.TextIoBase`, `file`, `gzip.GzipFile`
         the open file object
     """
-    if name.endswith('.gz'):  # filename declares gzip
+    # filename declares gzip
+    if name.endswith('.gz'):
         return gzip.open(name, *args, **kwargs)
-    else:  # open regular file
-        fobj = open(name, *args, **kwargs)
-        sig = fobj.read(3)
-        fobj.seek(0)
-        if sig == GZIP_SIGNATURE:  # file signature declares gzip
-            return gzip.GzipFile(fileobj=fobj)
-        return fobj
+
+    # open regular file
+    fobj = open(name, *args, **kwargs)
+    sig = fobj.read(3)
+    fobj.seek(0)
+    if sig == GZIP_SIGNATURE:  # file signature declares gzip
+        fobj.close()  # GzipFile won't close orig file when it closes
+        return gzip.open(name, *args, **kwargs)
+    return fobj
