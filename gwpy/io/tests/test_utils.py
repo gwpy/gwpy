@@ -36,8 +36,8 @@ def test_gopen():
     with TemporaryFilename() as tmp:
         with open(tmp, 'w') as f:
             f.write('blah blah blah')
-        f2 = io_utils.gopen(f.name)
-        assert f2.read() == 'blah blah blah'
+        with io_utils.gopen(tmp) as f2:
+            assert f2.read() == 'blah blah blah'
 
     # test gzip file (with and without extension)
     for suffix in ('.txt.gz', ''):
