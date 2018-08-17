@@ -1705,32 +1705,30 @@ class TimeSeries(TimeSeriesBase):
 
         # condition data
         if whiten:
-            if isinstance(whiten, FrequencySeries):
-                fftlength, overlap = (None, None)
-            else:
-                method = asd_kw.pop('method', 'scipy_welch')
+            if not isinstance(whiten, FrequencySeries):
                 window = asd_kw.pop('window', 'hann')
                 fftlength = asd_kw.pop('fftlength',
                                        _fft_length_default(self.dt))
                 overlap = asd_kw.pop('overlap', None)
                 if overlap is None and fftlength == self.duration.value:
-                    method = 'scipy-welch'
+                    asd_kw['method'] = 'scipy-welch'
                     overlap = 0
                 elif overlap is None:
                     overlap = recommended_overlap(window) * fftlength
-                whiten = self.asd(fftlength, overlap, method=method, **asd_kw)
+                whiten = self.asd(fftlength, overlap, window=window, **asd_kw)
             # apply whitening (with errors on dividing by zero)
             with numpy.errstate(all='raise'):
-                wdata = self.whiten(fftlength, overlap, asd=whiten,
-                                    fduration=fduration, highpass=highpass)
-            fdata = wdata.fft().value
-            epoch = wdata.x0
-            span = wdata.span
+                data = self.whiten(asd=whiten, fduration=fduration,
+                                   highpass=highpass)
         else:
-            fdata = self.fft().value
-            epoch = self.x0
-            span = self.span
+            data = self
 
+        # perform FFT to feed into Q-transform
+        fdata = data.fft().value
+
+        # metadata
+        epoch = data.x0
+        span = data.span
         if outseg is None:
             outseg = span
 
