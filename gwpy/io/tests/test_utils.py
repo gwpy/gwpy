@@ -45,9 +45,9 @@ def test_gopen():
             text = b'blah blah blah'
             with gzip.open(tmp, 'wb') as fobj:
                 fobj.write(text)
-            fobj2 = io_utils.gopen(tmp, mode='rb')
-            assert isinstance(fobj2, gzip.GzipFile)
-            assert fobj2.read() == text
+            with io_utils.gopen(tmp, mode='rb') as fobj2:
+                assert isinstance(fobj2, gzip.GzipFile)
+                assert fobj2.read() == text
 
 
 def test_identify_factory():
