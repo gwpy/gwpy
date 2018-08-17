@@ -415,8 +415,11 @@ def on_tape(*files):
         otherwise `False`
     """
     for path in files:
-        if os.stat(path).st_blocks == 0:
-            return True
+        try:
+            if os.stat(path).st_blocks == 0:
+                return True
+        except AttributeError:  # windows doesn't have st_blocks
+            return False
     return False
 
 
