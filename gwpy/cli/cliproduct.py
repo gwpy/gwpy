@@ -893,7 +893,7 @@ class TimeDomainProduct(CliProduct):
         else:
             epoch = float(args.epoch)
             if (epoch < 1e8):
-                args.epoch = LIGOTimeGPS(epoch  + starts[0])
+                args.epoch = LIGOTimeGPS(epoch  + min(starts))
 
         if args.xmax is None:
             args.xmax = max(starts) + args.duration
