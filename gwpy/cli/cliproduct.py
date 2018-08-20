@@ -32,6 +32,7 @@ import sys
 from collections import OrderedDict
 from functools import wraps
 
+from lal._lal import LIGOTimeGPS
 from six import add_metaclass
 
 from matplotlib import rcParams
@@ -877,7 +878,8 @@ class TimeDomainProduct(CliProduct):
         """
         group = super(TimeDomainProduct, cls).arg_xaxis(parser)
         group.add_argument('--epoch', type=to_gps,
-                           help='center X axis on this GPS time')
+                           help='center X axis on this GPS time, may be'
+                                'absolute date/time or delta')
         return group
 
     def _finalize_arguments(self, args):
@@ -888,6 +890,11 @@ class TimeDomainProduct(CliProduct):
             args.xmin = min(starts)
         if args.epoch is None:
             args.epoch = args.xmin
+        else:
+            epoch = float(args.epoch)
+            if (epoch < 1e8):
+                args.epoch = LIGOTimeGPS(epoch  + starts[0])
+
         if args.xmax is None:
             args.xmax = max(starts) + args.duration
         return super(TimeDomainProduct, self)._finalize_arguments(args)
