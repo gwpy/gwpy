@@ -32,7 +32,7 @@ import sys
 from collections import OrderedDict
 from functools import wraps
 
-from lal._lal import LIGOTimeGPS
+from ..time import LIGOTimeGPS
 from six import add_metaclass
 
 from matplotlib import rcParams
