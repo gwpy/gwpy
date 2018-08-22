@@ -891,7 +891,7 @@ class TimeDomainProduct(CliProduct):
         if args.epoch is None:
             args.epoch = args.xmin
         else:
-            epoch = float(args.epoch)
+            epoch = args.epoch
             if (epoch < 1e8):
                 args.epoch = LIGOTimeGPS(epoch + min(starts))
 
