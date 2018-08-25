@@ -32,7 +32,6 @@ import sys
 from collections import OrderedDict
 from functools import wraps
 
-from ..time import LIGOTimeGPS
 from six import add_metaclass
 
 from matplotlib import rcParams
@@ -893,7 +892,7 @@ class TimeDomainProduct(CliProduct):
         else:
             epoch = args.epoch
             if (epoch < 1e8):
-                args.epoch = LIGOTimeGPS(epoch + min(starts))
+                args.epoch = epoch + min(starts)
 
         if args.xmax is None:
             args.xmax = max(starts) + args.duration
