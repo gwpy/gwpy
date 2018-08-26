@@ -25,6 +25,7 @@
 from .cliproduct import TimeDomainProduct
 from ..plot import Plot
 from ..plot.tex import label_to_latex
+from astropy import units
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
@@ -55,7 +56,9 @@ class TimeSeries(TimeDomainProduct):
 
     def get_title(self):
         suffix = super(TimeSeries, self).get_title()
-        rates = {ts.sample_rate for ts in self.timeseries}
+        # limit significant digits for minute trends
+        rates = {int((ts.sample_rate.value + 5e-4) * 1000) / 1000. * units.Hz
+                 for ts in self.timeseries}
         fss = '({0})'.format('), ('.join(map(str, rates)))
         return ', '.join([
             'Fs: {0}'.format(fss),
