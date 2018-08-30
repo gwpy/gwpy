@@ -16,7 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Input/Output utilities for LAL Cache files.
+"""Input/Output utilities for GW Cache files.
+
+A cache file is a specially-formatted ASCII file that contains file paths
+and associated metadata for those files, designed to make identifying
+relevant data, and sieving large file lists, easier for the user.
 """
 
 from __future__ import division
@@ -65,40 +69,72 @@ except NameError:  # python3.x
 
 # -- cache I/O ----------------------------------------------------------------
 
-def read_cache(lcf, coltype=LIGOTimeGPS):
-    """Read a LAL-format cache file
+def read_cache(cachefile, coltype=LIGOTimeGPS):
+    """Read a LAL- for FFL-format cache file as a list of file paths
 
     Parameters
     ----------
-    lcf : `str`, `file`
-        Input file or file path to read
+    cachefile : `str`, `file`
+        Input file or file path to read.
 
     coltype : `LIGOTimeGPS`, `int`, optional
-        Type for GPS times
+        Type for GPS times.
 
     Returns
     -------
-    cache : `list` of :class:`lal.utils.CacheEntry`
+    paths : `list` of `str`
+        A list of file paths as read from the cache file.
 
     Notes
     -----
     This method requires |lal|_.
     """
-    from lal.utils import CacheEntry  # pylint: disable=redefined-outer-name
-
     # open file
-    if not isinstance(lcf, FILE_LIKE):
-        with open(urlparse(lcf).path, 'r') as fobj:
+    if not isinstance(cachefile, FILE_LIKE):
+        with open(urlparse(cachefile).path, 'r') as fobj:
             return read_cache(fobj, coltype=coltype)
 
     # read file
     out = []
     append = out.append
-    for line in lcf:
+    for line in cachefile:
         if isinstance(line, bytes):
             line = line.decode('utf-8')
-        append(CacheEntry(line, coltype=coltype))
+        append(read_cache_entry(line))
     return out
+
+
+def read_cache_entry(line):
+    """Read a file path from a line in a cache file.
+
+    Parameters
+    ----------
+    line : `str`, `bytes`
+        Line of text to parse
+
+    Returns
+    -------
+    path : `str`
+       The file path.
+
+    Raises
+    ------
+    ValueError
+        if the line cannot be parsed successfully
+    """
+    if isinstance(line, bytes):
+        line = line.decode('utf-8')
+    parts = line.rstrip().split()
+
+    if len(parts) == 5:  # LIGO or Virgo-format Cache file
+        try:  # Virgo FFL format includes number in last place
+            float(parts[-1])
+        except ValueError:  # LAL format
+            return parts[-1]
+        return parts[0]
+
+    raise ValueError(
+        "Cannot identify format for cache entry {!r}".format(line.rstrip()))
 
 
 def open_cache(*args, **kwargs):  # pragma: no cover
@@ -215,8 +251,9 @@ def file_list(flist):
         if the input `flist` cannot be interpreted as any of the above inputs
     """
     # open a cache file and return list of paths
-    if isinstance(flist, string_types) and flist.endswith(('.cache', '.lcf')):
-        return [e.path for e in read_cache(flist)]
+    if (isinstance(flist, string_types) and
+            flist.endswith(('.cache', '.lcf', '.ffl'))):
+        return read_cache(flist)
 
     # separate comma-separate list of names
     if isinstance(flist, string_types):
