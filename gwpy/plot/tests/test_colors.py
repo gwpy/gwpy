@@ -57,3 +57,7 @@ def test_format_norm():
     assert norm is n
     assert norm.vmin == 10
     assert norm.vmax == 1000
+
+    # check clim=None is honoured
+    norm, kwargs = plot_colors.format_norm({'clim': None})
+    assert norm.vmin is None and norm.vmax is None
