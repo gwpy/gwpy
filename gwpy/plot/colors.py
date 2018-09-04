@@ -107,7 +107,7 @@ def format_norm(kwargs, current=None):
     norm = kwargs.pop('norm', current) or 'linear'
     vmin = kwargs.pop('vmin', None)
     vmax = kwargs.pop('vmax', None)
-    clim = kwargs.pop('clim', (vmin, vmax))
+    clim = kwargs.pop('clim', (vmin, vmax)) or (None, None)
     clip = kwargs.pop('clip', None)
 
     if norm == 'linear':
