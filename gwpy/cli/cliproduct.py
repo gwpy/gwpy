@@ -892,7 +892,7 @@ class TimeDomainProduct(CliProduct):
         else:
             epoch = args.epoch
             if (epoch < 1e8):
-                args.epoch = epoch + min(starts)
+                args.epoch += min(starts)
 
         if args.xmax is None:
             args.xmax = max(starts) + args.duration
