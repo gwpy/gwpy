@@ -1446,7 +1446,7 @@ class TimeSeries(TimeSeriesBase):
 
     def whiten(self, fftlength=None, overlap=0, method='scipy-welch',
                window='hanning', detrend='constant', asd=None,
-               fduration=1, highpass=None, **kwargs):
+               fduration=2, highpass=None, **kwargs):
         """Whiten this `TimeSeries` using inverse spectrum truncation
 
         Parameters
@@ -1479,7 +1479,7 @@ class TimeSeries(TimeSeriesBase):
 
         fduration : `float`, optional
             duration (in seconds) of the time-domain FIR whitening filter,
-            defaults to fftlength
+            must be no longer than `fftlength`, default: 2 seconds
 
         highpass : `float`, optional
             highpass corner frequency (in Hz) of the FIR whitening filter,
@@ -1499,40 +1499,41 @@ class TimeSeries(TimeSeriesBase):
         --------
         TimeSeries.asd
             for details on the ASD calculation
-        numpy.fft
-            for details on the Fourier transform algorithm used her
-        scipy.signal
+        scipy.signal.fftconvolve
+            for details on the convolution algorithm used here
+        gwpy.signal.filter_design.fir_from_transfer
+            for FIR filter design through spectrum truncation
 
         Notes
         -----
-        The `window` argument is used in both ASD estimation and FIR filter
-        design.
+        The `window` argument is used in ASD estimation, FIR filter design,
+        and in preventing spectral leakage in the output.
 
-        Due to filter corruption at the boundaries, a segment of length
-        `fduration` will automatically be cropped from the beginning and
-        end of the output.
+        Due to filter settle-in, a segment of length `0.5*fduration` will be
+        corrupted at the beginning and end of the output.
 
         For more on inverse spectrum truncation, see arXiv:gr-qc/0509116.
         """
-        # build whitener
+        # compute the ASD
         fftlength = fftlength if fftlength else _fft_length_default(self.dt)
         if asd is None:
             asd = self.asd(fftlength, overlap=overlap,
                            method=method, window=window, **kwargs)
         asd = asd.interpolate(1./self.duration.decompose().value)
-        # truncate the edges and apply a hard highpass
+        # design whitening filter, with highpass if requested
         ncorner = int(highpass / asd.df.decompose().value) if highpass else 0
-        invasd = filter_design.truncate_transfer(1./asd.value, ncorner=ncorner)
-        # truncate and window in the time domain
-        tdw = npfft.irfft(invasd)
         ntaps = int((fduration * self.sample_rate).decompose().value)
-        tdw = filter_design.truncate_impulse(tdw, ntaps=ntaps, window=window)
-        # filter in the frequency domain, enforcing zero-phase
-        invasd = (self.duration.value/2) * numpy.abs(npfft.rfft(tdw))
-        in_ = self.detrend(detrend)
-        out = type(self)(npfft.irfft(in_.fft().value * invasd))
+        tdw = filter_design.fir_from_transfer(1/asd.value, ntaps=ntaps,
+                                              window=window, ncorner=ncorner)
+        # condition the input data and apply the whitening filter
+        in_ = self.copy().detrend(detrend)
+        pad = int(numpy.ceil(tdw.size/2))
+        window = signal.get_window(window, tdw.size)
+        in_[:pad] *= window[:pad]
+        in_[-pad:] *= window[-pad:]
+        out = type(self)(signal.fftconvolve(in_.value, tdw, mode='same'))
         out.__array_finalize__(self)
-        return out.crop(*out.xspan.contract(fduration))
+        return out
 
     def detrend(self, detrend='constant'):
         """Remove the trend from this `TimeSeries`
