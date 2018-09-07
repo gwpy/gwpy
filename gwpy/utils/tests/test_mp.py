@@ -29,10 +29,9 @@ from ..misc import null_context
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-pytestmark = pytest.mark.filterwarnings(
-    'always:multiprocessing is currently not supported on Windws')
 
-
+@pytest.mark.filterwarnings(
+    'always:multiprocessing is currently not supported on Windows')
 @pytest.mark.parametrize('verbose', [False, True, 'Test'])
 @pytest.mark.parametrize('nproc', [1, 2])
 def test_multiprocess_with_queues(capsys, nproc, verbose):
