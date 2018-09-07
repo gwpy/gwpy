@@ -34,7 +34,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 _KTNAME = os.environ.get('KRB5_KTNAME', '_NO KT_')
 
 # mocked klist output
-KLIST = """Keytab name: FILE:/test.keytab
+KLIST = b"""Keytab name: FILE:/test.keytab
 KVNO Principal
 ---- -------------------------------
    1 albert.einstein@LIGO.ORG
@@ -95,7 +95,7 @@ def test_kinit(raw_input_, getpass, mocked_popen, which, capsys):
         'Kerberos ticket generated for albert.einstein@LIGO.ORG\n')
 
     # configure klisting (remove Drever)
-    mock_popen_return(mocked_popen, out=KLIST.rsplit('\n', 1)[0])
+    mock_popen_return(mocked_popen, out=KLIST.rsplit(b'\n', 1)[0])
     os.environ['KRB5_KTNAME'] = '/test.keytab'
 
     # test keytab from environment not found (default) prompts user
