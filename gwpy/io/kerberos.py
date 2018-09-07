@@ -46,7 +46,7 @@ class KerberosError(RuntimeError):
 
 
 def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
-          krb5ccname=None, verbose=False):
+          krb5ccname=None, verbose=None):
     """Initialise a kerberos (krb5) ticket.
 
     This allows authenticated connections to, amongst others, NDS2
@@ -55,18 +55,29 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
     Parameters
     ----------
     username : `str`, optional
-        name of user, will be prompted for if not given
+        name of user, will be prompted for if not given.
+
     password : `str`, optional
         cleartext password of user for given realm, will be prompted for
-        if not given
-    realm : `str`
-        name of realm to authenticate against, defaults to 'LIGO.ORG'
-        if not given or parsed from the keytab
-    exe : `str`
-        path to kinit executable
-    keytab : `str`
+        if not given.
+
+    realm : `str`, optional
+        name of realm to authenticate against, read from keytab if available,
+        defaults to ``'LIGO.ORG'``.
+
+    exe : `str`, optional
+        path to kinit executable.
+
+    keytab : `str`, optional
         path to keytab file. If not given this will be read from the
-        ``KRB5_KTNAME`` environment variable. See notes for more details
+        ``KRB5_KTNAME`` environment variable. See notes for more details.
+
+    krb5ccname : `str`, optional
+        path to Kerberos credentials cache.
+
+    verbose : `bool`, optional
+        print verbose output (if `True`), or not (`False)`; default is `True`
+        if any user-prompting is needed, otherwise `False`.
 
     Notes
     -----
@@ -114,16 +125,21 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
             else:
                 keytab = None
 
+    # set verbose if prompting for input
+    if verbose is None and (
+        username is None or
+        (not keytab and password is None)
+    ):
+        verbose = True
+
     # get credentials
     if realm is None:
         realm = 'LIGO.ORG'
     if username is None:
-        verbose = True
         username = input("Please provide username for the {} kerberos "
                          "realm: ".format(realm))
     identity = '{}@{}'.format(username, realm)
     if not keytab and password is None:
-        verbose = True
         password = getpass.getpass(prompt="Password for {}: ".format(identity),
                                    stream=sys.stdout)
 
@@ -138,13 +154,14 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
         krbenv = None
 
     # execute command
-    kget = subprocess.Popen(cmd, env=krbenv,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
+    kget = subprocess.Popen(cmd, env=krbenv, stdout=subprocess.PIPE,
                             stdin=subprocess.PIPE)
     if not keytab:
-        kget.communicate(password)
+        kget.communicate(password.encode('utf-8'))
     kget.wait()
+    retcode = kget.poll()
+    if retcode:
+        raise subprocess.CalledProcessError(kget.returncode, ' '.join(cmd))
     if verbose:
         print("Kerberos ticket generated for {}".format(identity))
 
@@ -167,6 +184,8 @@ def parse_keytab(keytab):
         raise KerberosError("Cannot read keytab {!r}".format(keytab))
     principals = []
     for line in out.splitlines():
+        if isinstance(line, bytes):
+            line = line.decode('utf-8')
         try:
             num, principal, = re.split(r'\s+', line.strip(' '), 1)
         except ValueError:

@@ -82,8 +82,10 @@ def test_parse_keytab(mocked_popen):
 @mock.patch('getpass.getpass', return_value='test')
 @mock.patch('gwpy.io.kerberos.input', return_value='rainer.weiss')
 def test_kinit(raw_input_, getpass, mocked_popen, which, capsys):
+    mocked_popen.return_value.poll.return_value = 0
+
     # default popen kwargs
-    popen_kwargs = {'stdin': -1, 'stderr': -1, 'stdout': -1, 'env': None}
+    popen_kwargs = {'stdin': -1, 'stdout': -1, 'env': None}
 
     # pass username and password, and kinit exe path
     io_kerberos.kinit(username='albert.einstein', password='test',
