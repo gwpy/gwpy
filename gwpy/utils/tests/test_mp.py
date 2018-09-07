@@ -30,18 +30,26 @@ from ..misc import null_context
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
+def _ctx(nproc):
+    """Returns the correct context in which to run `multiprocess_with_queues`
+
+    On Windows, with ``nproc>1``, a `UserWarning` will be raised by
+    :func:`gwpy.utils.mp.multiprocess_with_queues` because multiprocessing
+    doesn't work.
+    """
+    if nproc > 1 and os.name == 'nt':
+        return pytest.warns(UserWarning)
+    return null_context()
+
+
 @pytest.mark.filterwarnings(
     'always:multiprocessing is currently not supported on Windows')
 @pytest.mark.parametrize('verbose', [False, True, 'Test'])
 @pytest.mark.parametrize('nproc', [1, 2])
 def test_multiprocess_with_queues(capsys, nproc, verbose):
     inputs = [1, 4, 9, 16, 25]
-    if os.name == 'nt' and nproc > 1:
-        ctx = pytest.warns(UserWarning)
-    else:
-        ctx = null_context()
 
-    with ctx:  # on windows, mp prints warning and falls back to nproc=1
+    with _ctx(nproc):  # on windows, mp warns and falls back to nproc=1
         out = utils_mp.multiprocess_with_queues(
             nproc, sqrt, inputs, verbose=verbose,
         )
@@ -56,7 +64,7 @@ def test_multiprocess_with_queues(capsys, nproc, verbose):
     else:
         assert cap.out.startswith('\r{}: '.format(verbose))
 
-    with pytest.raises(ValueError):
+    with _ctx(nproc), pytest.raises(ValueError):
         utils_mp.multiprocess_with_queues(nproc, sqrt, [-1],
                                           verbose=verbose)
 
