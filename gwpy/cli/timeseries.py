@@ -25,7 +25,6 @@
 from .cliproduct import TimeDomainProduct
 from ..plot import Plot
 from ..plot.tex import label_to_latex
-from astropy import units
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
