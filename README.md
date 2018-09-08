@@ -18,12 +18,14 @@ step.
 [![Supported Python versions](https://img.shields.io/pypi/pyversions/gwpy.svg)](https://travis-ci.org/gwpy/gwpy)
 [![Research software impact](http://depsy.org/api/package/pypi/gwpy/badge.svg)](http://depsy.org/package/python/gwpy)
 
-[![Build Status](https://travis-ci.org/gwpy/gwpy.svg?branch=master)](https://travis-ci.org/gwpy/gwpy)
+[![Unix](https://img.shields.io/travis/gwpy/gwpy/master.svg?label=Unix)](https://travis-ci.org/gwpy/gwpy)
+[![Windows](https://img.shields.io/appveyor/ci/gwpy/gwpy/master.svg?label=Windows)](https://ci.appveyor.com/project/gwpy/gwpy/branch/master)
 [![Coverage Status](https://coveralls.io/repos/github/gwpy/gwpy/badge.svg?branch=master)](https://coveralls.io/github/gwpy/gwpy?branch=master)
 
 # Development status
 
-[![Build Status dev](https://travis-ci.org/gwpy/gwpy.svg?branch=develop)](https://travis-ci.org/gwpy/gwpy)
+[![Unix dev](https://img.shields.io/travis/gwpy/gwpy/develop.svg?label=Unix)](https://travis-ci.org/gwpy/gwpy)
+[![Windows dev](https://img.shields.io/appveyor/ci/gwpy/gwpy/develop.svg?label=Windows)](https://ci.appveyor.com/project/gwpy/gwpy/branch/master)
 [![Coverage Status dev](https://coveralls.io/repos/github/gwpy/gwpy/badge.svg?branch=develop)](https://coveralls.io/github/gwpy/gwpy?branch=develop)
 [![Maintainability](https://api.codeclimate.com/v1/badges/2cf14445b3e070133745/maintainability)](https://codeclimate.com/github/gwpy/gwpy/maintainability)
 
