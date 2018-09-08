@@ -152,6 +152,9 @@ class Qtransform(Spectrogram):
             if isinstance(x, Quantity):
                 x = x.value
             elif isinstance(x, str):
+                self.log(0, 'WARNING: fformat called with a string. This has '
+                            'been depricated and may disappear '
+                            'in a future release.')
                 x = float(x)
             return '{0:.2f}'.format(x)
 
