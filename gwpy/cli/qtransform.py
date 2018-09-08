@@ -24,6 +24,7 @@
 
 import os.path
 import re
+import warnings
 
 from astropy.units import Quantity
 
@@ -97,8 +98,10 @@ class Qtransform(Spectrogram):
         group = parser.add_argument_group('Q-transform options')
         group.add_argument('--plot', nargs='+', type=float, default=[.5],
                            help='One or more times to plot')
-        group.add_argument('--frange', nargs=2, help='Frequency range to plot')
-        group.add_argument('--qrange', nargs=2, help='Search Q range')
+        group.add_argument('--frange', nargs=2, type=float,
+                           help='Frequency range to plot')
+        group.add_argument('--qrange', nargs=2, type=float,
+                           help='Search Q range')
 
         group.add_argument('--nowhiten', action='store_true',
                            help='do not whiten input before transform')
@@ -149,6 +152,12 @@ class Qtransform(Spectrogram):
                 return '[{0}]'.format(', '.join(map(fformat, x)))
             if isinstance(x, Quantity):
                 x = x.value
+            elif isinstance(x, str):
+                warnings.warn('WARNING: fformat called with a' +
+                            ' string. This has ' +
+                            'been depricated and may disappear ' +
+                            'in a future release.')
+                x = float(x)
             return '{0:.2f}'.format(x)
 
         bits = [('Q', fformat(self.result.q))]
