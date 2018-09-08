@@ -55,4 +55,7 @@ plot.axes[1].set_ylabel('Whitened amplitude', fontsize=16)
 plot.show()
 
 # Here we see two large spikes that are completely undetected in the raw
-# `TimeSeries`, but are very obvious in the whitened data.
+# `TimeSeries`, but are very obvious in the whitened data. We can also see
+# tapering effects at the boundaries as the whitening filter settles in,
+# meaning that the first and last ~second of data are corrupted and should
+# be discarded before further processing.

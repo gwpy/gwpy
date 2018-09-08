@@ -27,6 +27,7 @@ from math import (pi, log10)
 from six.moves import reduce
 
 import numpy
+from numpy import fft as npfft
 
 from scipy import signal
 try:
@@ -155,10 +156,10 @@ def truncate_transfer(transfer, ncorner=None):
     Parameters
     ----------
     transfer : `numpy.ndarray`
-        transfer function to start from, must have more than five samples
+        transfer function to start from, must have at least ten samples
 
-    ncorner : `int`
-        number of extra samples to zero off at low frequency, defaults to 0
+    ncorner : `int`, optional
+        number of extra samples to zero off at low frequency, default: `None`
 
     Returns
     -------
@@ -194,18 +195,13 @@ def truncate_impulse(impulse, ntaps, window='hanning'):
         number of taps in the final filter
 
     window : `str`, `numpy.ndarray`, optional
-        window function to apply to timeseries prior to FFT,
-        default: ``'hanning'``
+        window function to truncate with, default: ``'hanning'``
         see :func:`scipy.signal.get_window` for details on acceptable formats
 
     Returns
     -------
     out : `numpy.ndarray`
         the smoothly truncated impulse response
-
-    See Also
-    --------
-    scipy.signal
     """
     out = impulse.copy()
     trunc_start = int(ntaps / 2)
@@ -214,6 +210,49 @@ def truncate_impulse(impulse, ntaps, window='hanning'):
     out[0:trunc_start] *= window[trunc_start:ntaps]
     out[trunc_stop:out.size] *= window[0:trunc_start]
     out[trunc_start:trunc_stop] = 0
+    return out
+
+
+def fir_from_transfer(transfer, ntaps, window='hanning', ncorner=None):
+    """Design a Type II FIR filter given an arbitrary transfer function
+
+    Parameters
+    ----------
+    transfer : `numpy.ndarray`
+        transfer function to start from, must have at least ten samples
+
+    ntaps : `int`
+        number of taps in the final filter, must be an even number
+
+    window : `str`, `numpy.ndarray`, optional
+        window function to truncate with, default: ``'hanning'``
+        see :func:`scipy.signal.get_window` for details on acceptable formats
+
+    ncorner : `int`, optional
+        number of extra samples to zero off at low frequency, default: `None`
+
+    Returns
+    -------
+    out : `numpy.ndarray`
+        A time domain FIR filter of length `ntaps`
+
+    Notes
+    -----
+    If `ncorner` is not `None`, then `ncorner` extra samples will be zeroed
+    on the left as a hard highpass filter.
+
+    See Also
+    --------
+    scipy.signal.remez
+        an alternative FIR filter design using the Remez exchange algorithm
+    """
+    # truncate and highpass the transfer function
+    transfer = truncate_transfer(transfer, ncorner=ncorner)
+    # compute and truncate the impulse response
+    impulse = npfft.irfft(transfer)
+    impulse = truncate_impulse(impulse, ntaps=ntaps, window=window)
+    # wrap around and normalise to construct the filter
+    out = numpy.roll(impulse, int(ntaps/2 - 1))[0:ntaps] / impulse.size
     return out
 
 

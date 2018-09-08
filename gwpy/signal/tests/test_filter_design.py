@@ -90,6 +90,19 @@ def test_truncate():
     utils.assert_allclose(trunc2[5:59], numpy.zeros(54))
 
 
+def test_fir_from_transfer():
+    frequencies = numpy.arange(0, 64)
+    fseries = numpy.cos(2*numpy.pi*frequencies)
+
+    # prepare the time domain filter
+    fir = filter_design.fir_from_transfer(fseries, ntaps=10)
+
+    # test the filter
+    assert abs(fir[0] / fir.max()) <= 1e-2
+    assert abs(fir[-1] / fir.max()) <= 1e-2
+    assert fir.size == 10
+
+
 def test_notch_design():
     # test simple notch
     zpk = filter_design.notch(60, 16384)
