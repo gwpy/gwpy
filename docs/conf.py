@@ -112,7 +112,7 @@ release = GWPY_VERSION['version']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', '_templates', '_generated']
+exclude_patterns = ['_build', '_templates', '_generated', 'references.rst']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -126,7 +126,7 @@ default_role = 'obj'
 #add_module_names = True
 
 # Epilog
-rst_epilog = "\n.. include:: /references.txt"
+rst_epilog = "\n.. include:: /references.rst"
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
