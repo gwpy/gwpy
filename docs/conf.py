@@ -23,6 +23,7 @@ import re
 import glob
 import shutil
 import subprocess
+import warnings
 from string import Template
 
 from six.moves.configparser import (ConfigParser, NoOptionError)
@@ -44,6 +45,12 @@ from gwpy.utils.sphinx import zenodo
 GWPY_VERSION = gwpy_version.get_versions()
 
 SPHINX_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# ignore warnings that aren't useful for documentation
+warnings.filterwarnings('ignore', message=".*non-GUI backend.*",
+                        category=UserWarning)
+warnings.filterwarnings('ignore', message='.*gwpy.plot.*',
+                        category=DeprecationWarning)
 
 # -- General configuration ------------------------------------------------
 
