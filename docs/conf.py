@@ -23,6 +23,7 @@ import re
 import glob
 import shutil
 import subprocess
+import warnings
 from string import Template
 
 from six.moves.configparser import (ConfigParser, NoOptionError)
@@ -44,6 +45,12 @@ from gwpy.utils.sphinx import zenodo
 GWPY_VERSION = gwpy_version.get_versions()
 
 SPHINX_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# ignore warnings that aren't useful for documentation
+warnings.filterwarnings('ignore', message=".*non-GUI backend.*",
+                        category=UserWarning)
+warnings.filterwarnings('ignore', message='.*gwpy.plot.*',
+                        category=DeprecationWarning)
 
 # -- General configuration ------------------------------------------------
 
@@ -112,7 +119,7 @@ release = GWPY_VERSION['version']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', '_templates', '_generated']
+exclude_patterns = ['_build', '_templates', '_generated', 'references.rst']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -126,7 +133,7 @@ default_role = 'obj'
 #add_module_names = True
 
 # Epilog
-rst_epilog = "\n.. include:: /references.txt"
+rst_epilog = "\n.. include:: /references.rst"
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.

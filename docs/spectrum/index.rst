@@ -82,7 +82,7 @@ Plotting a `FrequencySeries`
 
 .. currentmodule:: gwpy.frequencyseries
 
-Similary to the :class:`~gwpy.timeseries.TimeSeries`, the `FrequencySeries` object comes with its own :meth:`~FrequencySeries.plot` method, which will quickly construct a :class:`~gwpy.plotter.FrequencySeriesPlot`:
+Similary to the :class:`~gwpy.timeseries.TimeSeries`, the `FrequencySeries` object comes with its own :meth:`~FrequencySeries.plot` method, which will quickly construct a :class:`~gwpy.plot.Plot`:
 
 .. plot::
    :context:

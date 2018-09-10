@@ -8,8 +8,11 @@ Data-discovery on the LIGO Data Grid
 
 .. _gwpy-timeseries-datafind-discovery:
 
+--------------
 Data discovery
 --------------
+
+**Additional dependencies:** |LDAStools.frameCPP|_
 
 The LIGO Data Grid consists of a trio of large-scale high-throughput computing (HTC) facilities operated by the LIGO Laboratory, and serves as the primary host of the data recorded from the observatories.
 
@@ -27,6 +30,7 @@ This method will search through all available data to find the correct files to 
 
 .. _gwpy-timeseries-datafind-frametypes:
 
+----------
 Frametypes
 ----------
 
