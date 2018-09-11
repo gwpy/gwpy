@@ -1594,7 +1594,7 @@ class TimeSeries(TimeSeriesBase):
 
     def q_transform(self, qrange=(4, 64), frange=(0, numpy.inf),
                     gps=None, search=.5, tres=.001, fres=.5, norm='median',
-                    outseg=None, whiten=True, fduration=1, highpass=None,
+                    outseg=None, whiten=True, fduration=2, highpass=None,
                     **asd_kw):
         """Scan a `TimeSeries` using a multi-Q transform
 
@@ -1636,7 +1636,7 @@ class TimeSeries(TimeSeriesBase):
 
         fduration : `float`, optional
             duration (in seconds) of the time-domain FIR whitening filter,
-            only used if `whiten` is not `False`, defaults to 1 second
+            only used if `whiten` is not `False`, defaults to 2 seconds
 
         highpass : `float`, optional
             highpass corner frequency (in Hz) of the FIR whitening filter,

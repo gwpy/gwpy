@@ -873,7 +873,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert isinstance(qspecgram, Spectrogram)
         assert qspecgram.shape == (4000, 2403)
         assert qspecgram.q == 5.65685424949238
-        nptest.assert_almost_equal(qspecgram.value.max(), 86.969865242376287)
+        nptest.assert_almost_equal(qspecgram.value.max(), 156.0411964254892)
 
         # test whitening args
         asd = losc.asd(2, 1, method='scipy-welch')
