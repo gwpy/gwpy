@@ -51,7 +51,7 @@ class TestCliQtransform(_TestCliSpectrogram):
 
     def test_get_title(self, dataprod):
         t = ('Q=45.25, whitened, calc f-range=[36.01, 161.51], '
-             'calc e-range=[-0.10, 16.02]')
+             'calc e-range=[-0.14, 21.18]')
         assert dataprod.get_title() == t
 
     def test_get_suptitle(self, prod):
