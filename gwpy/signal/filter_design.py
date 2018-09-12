@@ -252,7 +252,7 @@ def fir_from_transfer(transfer, ntaps, window='hanning', ncorner=None):
     impulse = npfft.irfft(transfer)
     impulse = truncate_impulse(impulse, ntaps=ntaps, window=window)
     # wrap around and normalise to construct the filter
-    out = numpy.roll(impulse, int(ntaps/2 - 1))[0:ntaps] / impulse.size
+    out = numpy.roll(impulse, int(ntaps/2 - 1))[0:ntaps] * ntaps/2
     return out
 
 
