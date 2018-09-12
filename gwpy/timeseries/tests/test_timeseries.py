@@ -830,6 +830,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         assert whitened.size == noise.size
         nptest.assert_almost_equal(whitened.mean().value, 0.0, decimal=4)
+        nptest.assert_almost_equal(whitened.std().value, 1.0, decimal=4)
 
         tmax = whitened.times[whitened.argmax()]
         nptest.assert_almost_equal(tmax.value, glitchtime)
