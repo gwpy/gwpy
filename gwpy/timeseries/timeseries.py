@@ -1533,7 +1533,7 @@ class TimeSeries(TimeSeriesBase):
         in_[-pad:] *= window[-pad:]
         out = type(self)(signal.fftconvolve(in_.value, tdw, mode='same'))
         out.__array_finalize__(self)
-        return out
+        return out / numpy.std(out.value)
 
     def detrend(self, detrend='constant'):
         """Remove the trend from this `TimeSeries`
