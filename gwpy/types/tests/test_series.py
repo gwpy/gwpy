@@ -349,3 +349,18 @@ class TestSeries(_TestArray):
         elif ts1.xunit == units.Hz:
             assert ts1.value_at(1500 * units.milliHertz) == (
                 self.data[3] * ts1.unit)
+
+    def test_shift(self):
+        a = self.create(xunit='s')
+        x0 = a.x0.copy()
+        a.shift(5)
+        assert a.x0 == x0 + 5 * x0.unit
+
+        a.shift('1 hour')
+        assert a.x0 == x0 + 3605 * x0.unit
+
+        a.shift(-0.007)
+        assert a.x0 == x0 + (3604.993) * x0.unit
+
+        with pytest.raises(ValueError):
+            a.shift('1 Hz')

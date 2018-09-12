@@ -437,6 +437,31 @@ class Series(Array):
 
     # -- series methods -------------------------
 
+    def shift(self, delta):
+        """Shift this `Series` forward on the X-axis by ``delta``
+
+        This modifies the series in-place.
+
+        Parameters
+        ----------
+        delta : `float`, `~astropy.units.Quantity`, `str`
+            The amount by which to shift (in x-axis units if `float`), give
+            a negative value to shift backwards in time
+
+        Examples
+        --------
+        >>> from gwpy.types import Series
+        >>> a = Series([1, 2, 3, 4, 5], x0=0, dx=1, xunit='m')
+        >>> print(a.x0)
+        0.0 m
+        >>> a.shift(5)
+        >>> print(a.x0)
+        5.0 m
+        >>> a.shift('-1 km')
+        -995.0 m
+        """
+        self.x0 = self.x0 + Quantity(delta, self.xunit)
+
     def value_at(self, x):
         """Return the value of this `Series` at the given `xindex` value
 

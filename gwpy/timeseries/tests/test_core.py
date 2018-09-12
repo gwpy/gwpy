@@ -126,21 +126,6 @@ class TestTimeSeriesBase(_TestSeries):
 
     # -- test methods ---------------------------
 
-    def test_shift(self):
-        a = self.create()
-        t0 = a.t0.copy()
-        a.shift(5)
-        assert a.t0 == t0 + 5 * t0.unit
-
-        a.shift('1 hour')
-        assert a.t0 == t0 + 3605 * t0.unit
-
-        a.shift(-0.007)
-        assert a.t0 == t0 + (3604.993) * t0.unit
-
-        with pytest.raises(ValueError):
-            a.shift('1 Hz')
-
     def test_plot(self, array):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot()
