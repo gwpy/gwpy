@@ -351,7 +351,7 @@ class TestSeries(_TestArray):
                 self.data[3] * ts1.unit)
 
     def test_shift(self):
-        a = self.create(xunit='s')
+        a = self.create(x0=0, dx=1, xunit='s')
         x0 = a.x0.copy()
         a.shift(5)
         assert a.x0 == x0 + 5 * x0.unit
