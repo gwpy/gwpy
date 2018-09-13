@@ -43,3 +43,7 @@ You can test your installation, and its version by
 ```
 python -c "import gwpy; print(gwpy.__version__)"
 ```
+
+# License
+
+GWpy is released under the GNU General Public License v3.0 or later, see [here](https://choosealicense.com/licenses/gpl-3.0/) for a description of this license, or see [LICENSE](https://github.com/gwpy/gwpy/blob/master/LICENSE) file for the full text.
