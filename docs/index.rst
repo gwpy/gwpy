@@ -21,6 +21,16 @@ and frequency-domain data produced by the `LIGO <http://www.ligo.org>`_ and
 `Virgo <http://www.ego-gw.it>`_ instruments and their analysis,
 with easy-to-follow tutorials at each step.
 
+.. image:: https://badge.fury.io/py/gwpy.svg
+    :target: https://badge.fury.io/py/gwpy
+    :alt: GWpy PyPI release badge
+.. image:: https://zenodo.org/badge/9979119.svg
+    :target: https://zenodo.org/badge/latestdoi/9979119
+    :alt: GWpy DOI badge
+.. image:: https://img.shields.io/pypi/l/gwpy.svg
+    :target: https://choosealicense.com/licenses/gpl-3.0/
+    :alt: GWpy license badge
+
 First steps
 ~~~~~~~~~~~
 
