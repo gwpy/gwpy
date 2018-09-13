@@ -1493,7 +1493,8 @@ class TimeSeries(TimeSeriesBase):
         Returns
         -------
         out : `TimeSeries`
-            a whitened version of the input data
+            a whitened version of the input data with zero mean and unit
+            variance
 
         See Also
         --------
@@ -1511,6 +1512,9 @@ class TimeSeries(TimeSeriesBase):
 
         Due to filter settle-in, a segment of length `0.5*fduration` will be
         corrupted at the beginning and end of the output.
+
+        The input is detrended to give the whitened `TimeSeries` zero mean,
+        and the output is normalised to give it unit variance.
 
         For more on inverse spectrum truncation, see arXiv:gr-qc/0509116.
         """

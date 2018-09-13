@@ -238,7 +238,7 @@ def fir_from_transfer(transfer, ntaps, window='hanning', ncorner=None):
 
     Notes
     -----
-    The final FIR filter will be consistent with `~numpy` FFT normalisation.
+    The final FIR filter will use `~numpy.fft.rfft` FFT normalisation.
 
     If `ncorner` is not `None`, then `ncorner` extra samples will be zeroed
     on the left as a hard highpass filter.
