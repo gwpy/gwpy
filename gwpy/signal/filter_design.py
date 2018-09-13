@@ -238,6 +238,8 @@ def fir_from_transfer(transfer, ntaps, window='hanning', ncorner=None):
 
     Notes
     -----
+    The final FIR filter will use `~numpy.fft.rfft` FFT normalisation.
+
     If `ncorner` is not `None`, then `ncorner` extra samples will be zeroed
     on the left as a hard highpass filter.
 
@@ -252,7 +254,7 @@ def fir_from_transfer(transfer, ntaps, window='hanning', ncorner=None):
     impulse = npfft.irfft(transfer)
     impulse = truncate_impulse(impulse, ntaps=ntaps, window=window)
     # wrap around and normalise to construct the filter
-    out = numpy.roll(impulse, int(ntaps/2 - 1))[0:ntaps] / impulse.size
+    out = numpy.roll(impulse, int(ntaps/2 - 1))[0:ntaps]
     return out
 
 
