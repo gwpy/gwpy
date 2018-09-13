@@ -94,7 +94,7 @@ setup(
     long_description_content_type='text/markdown',
     author='Duncan Macleod',
     author_email='duncan.macleod@ligo.org',
-    license='GPLv3',
+    license='GPLv3+',
     url='https://github.com/gwpy/gwpy',
 
     # package content
@@ -128,6 +128,7 @@ setup(
         'Operating System :: POSIX',
         'Operating System :: Unix',
         'Operating System :: MacOS',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'License :: OSI Approved :: '
+        'GNU General Public License v3 or later (GPLv3+)',
     ],
 )
