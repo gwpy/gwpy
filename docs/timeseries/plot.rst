@@ -93,13 +93,14 @@ The third method of achieving the same result is by importing and accessing the 
 
 Using the `~gwpy.plot.Plot` directly allows for greater customisation.
 The ``separate=True`` keyword argument can be used to plot each `TimeSeries`
-on its own axes:
+on its own axes, with ``sharex=True`` given to link the time scales for each
+:class:`~matplotlib.axes.Axes`:
 
 .. plot::
    :include-source:
    :context: close-figs
 
-   >>> plot = Plot(l1hoft, h1hoft, separate=True)
+   >>> plot = Plot(l1hoft, h1hoft, separate=True, sharex=True)
    >>> plot.show()
 
 ========================

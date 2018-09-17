@@ -57,8 +57,8 @@ In this example we expand upon plotting a :class:`~gwpy.timeseries.TimeSeries`, 
    :nofigs:
 
    >>> from gwpy.timeseries import TimeSeries
-   >>> gwdata = TimeSeries.fetch('H1:LDAS-STRAIN', 'September 16 2010 06:40',
-   ...                           'September 16 2010 06:50')
+   >>> gwdata = TimeSeries.get('H1:LDAS-STRAIN', 'September 16 2010 06:40',
+   ...                         'September 16 2010 06:50')
    >>> spectrum = gwdata.asd(8, 4)
 
 where the result is an average spectrum calculated using the
@@ -92,7 +92,7 @@ Similary to the :class:`~gwpy.timeseries.TimeSeries`, the `FrequencySeries` obje
    >>> ax = plot.gca()
    >>> ax.set_xlim(40, 4000)
    >>> ax.set_ylabel(r'GW strain ASD [strain$/\sqrt{\mathrm{Hz}}$]')
-   >>> ax.set_ylim(1e-23, 1e-19)
+   >>> ax.set_ylim(1e-23, 3e-20)
    >>> plot.show()
 
 ==============================

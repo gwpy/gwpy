@@ -76,19 +76,19 @@ Which the `StateTimeSeries` represents a single `True`/`False` statement about t
 
 For example, the state of the full laser interferometer was described in Initial LIGO by a combination of separate states, including:
 
-    - operator set to go to 'science mode'
-    - EPICS control system record (conlog) OK
-    - instrument locked in all resonant cavities
-    - no signal injections
-    - no unauthorised excitations
+- operator set to go to 'science mode'
+- EPICS control system record (conlog) OK
+- instrument locked in all resonant cavities
+- no signal injections
+- no unauthorised excitations
 
-Additionall, the higher bits 5-15 were set 'ON' at all times, such that the word ``0xffff`` indicated 'science mode' operation of the instrument.
+Additionally, the higher bits 5-15 were set 'ON' at all times, such that the word ``0xffff`` indicated 'science mode' operation of the instrument.
 
 This `StateVector` can be read from the S6 frames as::
 
     >>> from gwpy.timeseries import StateVector
-    >>> state = StateVector.fetch('H1:IFO-SV_STATE_VECTOR', 968631675, 968632275,
-                                  ['science', 'conlog', 'up', 'no injection', 'no excitation'])
+    >>> state = StateVector.get('H1:IFO-SV_STATE_VECTOR', 968631675, 968632275,
+    ...                         ['science', 'conlog', 'up', 'no injection', 'no excitation'])
     >>> print(state)
     StateVector([65528 65528 65528 ..., 65535 65535 65535],
                 name=H1:IFO-SV_STATE_VECTOR,
