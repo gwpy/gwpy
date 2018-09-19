@@ -68,7 +68,7 @@ For a worked example of how to load data and calculate the Amplitude Spectral De
 Filter design
 =============
 
-The :mod:`gwpy.signal` provides a number of filter design methods which, when combined with the `~gwpy.plotter.BodePlot` visualisation, can be used to create a number of common filters:
+The :mod:`gwpy.signal` provides a number of filter design methods which, when combined with the `~gwpy.plot.BodePlot` visualisation, can be used to create a number of common filters:
 
 .. autosummary::
    :nosignatures:

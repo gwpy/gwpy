@@ -5,126 +5,108 @@ Installation
 ############
 
 
+===============
+Installing GWpy
+===============
+
+.. _gwpy-install-conda:
+
+-----
+Conda
+-----
+
+The recommended way of installing GWpy is with `Conda <https://conda.io>`__:
+
+.. code-block:: bash
+
+   $ conda install -c conda-forge gwpy
+
+
 .. _gwpy-install-pip:
 
-=============
-Quick install
-=============
-
-GWpy can be installed using `pip <//pip.pypa.io/>`_:
+---
+Pip
+---
 
 .. code-block:: bash
 
-   pip install gwpy
+    $ python -m pip install gwpy
 
-This will install GWpy itself and all required dependencies for minimal functionality.
+Supported python versions: 2.7, 3.4+.
 
-Those dependencies are:
 
+.. _gwpy-install-debian:
+
+------------
+Debian Linux
+------------
+
+.. code-block:: bash
+
+    $ apt-get install python3-gwpy
+
+Supported python versions: 2.7 (all), 3.4 (Jessie), 3.5 (Stretch), 3.6 (Buster),
+`click here <https://wiki.ligo.org/DASWG/SoftwareOnDebian>`__ for
+instructions on how to add the required repositories.
+
+
+.. _gwpy-install-el:
+
+----------------
+Scientific Linux
+----------------
+
+.. code-block:: bash
+
+    $ yum install python-gwpy
+
+Supported python versions: 2.7,
+`click here <https://wiki.ligo.org/DASWG/ScientificLinux>`__ for
+instructions on how to add the required yum repositories.
+
+
+.. _gwpy-install-macports:
+
+--------
+Macports
+--------
+
+.. code-block:: bash
+
+    $ port install py37-gwpy
+
+Supported python versions: 2.7, 3.6+.
+
+
+.. _gwpy-install-requirements:
+
+============
+Requirements
+============
+
+GWpy has the following strict requirements:
+
+- `Python <https://python.org>`__ 2.7, or 3.4 or greater
+- |six|_ `>= 1.5.0`
 - |dateutil|_
-- |numpy|_
-- |scipy|_
-- |matplotlib|_
-- |astropy|_
-- |h5py|_
-- |ligo-segments|_
-- |ligotimegps|_ (if |lal|_ is not already installed)
+- |enum34|_ (Python 2.7 only)
+- |numpy|_ `>= 1.7.1`
+- |scipy|_ `>= 0.12.1`
+- |astropy|_ `>= 1.1.1`
+- |h5py|_ `>= 1.3.0`
+- |matplotlib|_ `>= 1.2.0`
+- |ligo-segments|_ `>= 1.0.0`
+- |tqdm|_ `>= 4.10.0`
+- |ligotimegps|_ `>= 1.2.1`
 
-See the GWpy ``setup.py`` file for minimum version requirements for each of those packages.
+All of these will be installed using any of the above install methods.
 
-.. _gwpy-install-extras:
+GWpy also depends on the following other packages for optional features:
 
-=================
-Installing Extras
-=================
-
-Additional (optional) functionality can be installed by specifying one or more of the extra group names, as follows
-
-+--------------+-----------------------------+---------------------------------+
-| Group name   | Purpose                     | Packages included               |
-+==============+=============================+=================================+
-| ``hdf5``     | Reading/writing HDF5 files  | |h5py|_                         |
-|              |                             |                                 |
-|              | Querying for open-access    |                                 |
-|              | LIGO data                   |                                 |
-+--------------+-----------------------------+---------------------------------+
-| ``root``     | Reading/writing ROOT files  | |root_numpy|_                   |
-+--------------+-----------------------------+---------------------------------+
-| ``segments`` | Querying for LIGO           | |dqsegdb|_                      |
-|              | operations and data-quality |                                 |
-|              | segments                    |                                 |
-|              | (requires LIGO.ORG          |                                 |
-|              | credentials)                |                                 |
-+--------------+-----------------------------+---------------------------------+
-| ``hacr``     | Querying for HACR event     | |MySQLdb|_                      |
-|              | files                       |                                 |
-+--------------+-----------------------------+---------------------------------+
-| ``docs``     | Generating package          | |sphinx|_, |numpydoc|_,         |
-|              | documentation               | |sphinx-bootstrap-theme|_,      |
-|              |                             | |sphinxcontrib-programoutput|_, |
-|              |                             | |sphinx-automodapi|_            |
-+--------------+-----------------------------+---------------------------------+
-| ``all``      | All of the above extras     | All of the above                |
-+--------------+-----------------------------+---------------------------------+
-
-Any of these extras can be installed with `pip`:
-
-.. code-block:: bash
-
-   pip install gwpy[all]
-
-.. _gwpy-install-non-python-extras:
-
-=================
-Non-python extras
-=================
-
-GWpy functionality can also be extended with a number of non-python extensions, most of which provide python bindings via `SWIG <//swig.org>`_:
-
-=====================  =====================================
-Package                Purpose
-=====================  =====================================
-|LDAStools.frameCPP|_  Reading/writing GWF files
-|lal|_                 Signal-processing
-|lalframe|_            Reading/writing GWF files
-|nds2|_                Querying for LIGO data over a network
-=====================  =====================================
-
-Each of the above is provided by the LIGO Scientific Collaboration, and can be installed using the recommended package manager for your operating system. See below for useful links provided by the LSC Computing group:
-
-==============  ================  ===========================================
-OS              Package manager   Useful link
-==============  ================  ===========================================
-macOS           MacPorts          https://wiki.ligo.org/DASWG/MacPorts
-Debian/Ubuntu   Apt               https://wiki.ligo.org/DASWG/DebianJessie
-Red Hat/Fedora  Yum               https://wiki.ligo.org/DASWG/ScientificLinux
-==============  ================  ===========================================
-
-.. _gwpy-install-available:
-
-#############################################################
-Available installations for the LIGO Scientific Collaboration
-#############################################################
-
-If you are a member of the LIGO Scientific Collaboration, a `virtualenv <https://virtualenv.pypa.io/en/latest/>`_ is available for you to use on the LIGO Data Grid, providing an isolated environment including GWpy and its dependencies.
-
-How you enter this environment depends on which shell you are using:
-
-**Bash**
-
-.. code-block:: bash
-
-   . ~detchar/opt/gwpysoft/bin/activate
-
-**Csh**
-
-.. code-block:: csh
-
-   . ~detchar/opt/gwpysoft/bin/activate.csh
-
-In either case, once you are finished with your work, if you want to return to your original environment, you can `deactivate` the virtualenv:
-
-.. code-block:: bash
-
-   deactivate
-
+- |dqsegdb|_: to query data from DQSEGDB (see :ref:`gwpy-segments-dqsegdb`)
+- |LDAStools.frameCPP|_ or |lalframe|_: to read/write data in GWF format
+- |LDAStools.frameCPP|_: to enable data discovery in GWF files
+- |lal|_: to power some FFT-based PSD estimation
+- |nds2|_: to provide remote data access for `TimeSeries` (see :ref:`gwpy-timeseries-remote`)
+- |pycbc|_: to power some FFT-based PSD estimation
+- |root_numpy|_: to read/write :class:`~gwpy.table.EventTable` with ROOT format (see :ref:`gwpy-table-io-root`)

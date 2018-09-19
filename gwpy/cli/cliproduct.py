@@ -877,7 +877,8 @@ class TimeDomainProduct(CliProduct):
         """
         group = super(TimeDomainProduct, cls).arg_xaxis(parser)
         group.add_argument('--epoch', type=to_gps,
-                           help='center X axis on this GPS time')
+                           help='center X axis on this GPS time, may be'
+                                'absolute date/time or delta')
         return group
 
     def _finalize_arguments(self, args):
@@ -888,6 +889,9 @@ class TimeDomainProduct(CliProduct):
             args.xmin = min(starts)
         if args.epoch is None:
             args.epoch = args.xmin
+        elif (args.epoch < 1e8):
+                args.epoch += min(starts)
+
         if args.xmax is None:
             args.xmax = max(starts) + args.duration
         return super(TimeDomainProduct, self)._finalize_arguments(args)

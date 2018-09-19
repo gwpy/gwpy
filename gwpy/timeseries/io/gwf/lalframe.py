@@ -175,7 +175,7 @@ def write(tsdict, outfile, start=None, end=None,
     for series in tsdict.values():
         try:
             idx = list(lalutils.LAL_DETECTORS.keys()).index(series.channel.ifo)
-            detectors |= 2**idx
+            detectors |= 1 << 2*idx
         except (KeyError, AttributeError):
             continue
 

@@ -11,7 +11,7 @@ categories-append   science
 maintainers         {ligo.org:duncan.macleod @duncanmmacleod} openmaintainer
 
 platforms           darwin
-license             GPL-3
+license             GPL-3+
 
 description         A python package for gravitational-wave astrophysics
 long_description    GWpy is a collaboration-driven Python package providing \

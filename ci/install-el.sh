@@ -44,9 +44,7 @@ yum -y -q install \
 GWPY_VERSION=$(python -c "import versioneer; print(versioneer.get_version())")
 
 # upgrade setuptools for development builds only to prevent version munging
-if [[ "${GWPY_VERSION}" == *"+"* ]]; then
-    pip install "setuptools>=25"
-fi
+pip install "setuptools>=25"
 
 # -- build and install --------------------------------------------------------
 

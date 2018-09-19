@@ -818,21 +818,22 @@ class TestTimeSeries(_TestTimeSeriesBase):
             numpy.random.normal(loc=1, size=16384 * 10), sample_rate=16384,
             epoch=-5).zpk([], [0], 1)
         glitchtime = 0.5
-        glitch = signal.gausspulse(noise.times.value + glitchtime,
+        glitch = signal.gausspulse(noise.times.value - glitchtime,
                                    bw=100) * 1e-4
         data = noise + glitch
 
         # whiten and test that the max amplitude is recovered at the glitch
         tmax = data.times[data.argmax()]
-        assert not numpy.isclose(tmax.value, -glitchtime)
+        assert not numpy.isclose(tmax.value, glitchtime)
 
         whitened = data.whiten(2, 1)
 
-        assert whitened.size == noise.size - 2*noise.sample_rate.value
+        assert whitened.size == noise.size
         nptest.assert_almost_equal(whitened.mean().value, 0.0, decimal=4)
+        nptest.assert_almost_equal(whitened.std().value, 1.0, decimal=4)
 
         tmax = whitened.times[whitened.argmax()]
-        nptest.assert_almost_equal(tmax.value, -glitchtime)
+        nptest.assert_almost_equal(tmax.value, glitchtime)
 
     def test_detrend(self, losc):
         assert not numpy.isclose(losc.value.mean(), 0.0, atol=1e-21)
@@ -871,30 +872,30 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # test simple q-transform
         qspecgram = losc.q_transform(method='scipy-welch', fftlength=2)
         assert isinstance(qspecgram, Spectrogram)
-        assert qspecgram.shape == (2000, 2222)
+        assert qspecgram.shape == (4000, 2403)
         assert qspecgram.q == 5.65685424949238
-        nptest.assert_almost_equal(qspecgram.value.max(), 60.77958301153789)
+        nptest.assert_almost_equal(qspecgram.value.max(), 156.0411964254892)
 
         # test whitening args
         asd = losc.asd(2, 1, method='scipy-welch')
         qsg2 = losc.q_transform(method='scipy-welch', whiten=asd)
-        utils.assert_quantity_sub_equal(qspecgram, qsg2)
+        utils.assert_quantity_sub_equal(qspecgram, qsg2, almost_equal=True)
 
         asd = losc.asd(.5, .25, method='scipy-welch')
         qsg2 = losc.q_transform(method='scipy-welch', whiten=asd)
         qsg3 = losc.q_transform(method='scipy-welch',
                                 fftlength=.5, overlap=.25)
-        utils.assert_quantity_sub_equal(qsg2, qsg3)
+        utils.assert_quantity_sub_equal(qsg2, qsg3, almost_equal=True)
 
         # make sure frequency too high presents warning
         with pytest.warns(UserWarning):
             qspecgram = losc.q_transform(method='scipy-welch',
                                          frange=(0, 10000))
-            nptest.assert_almost_equal(qspecgram.yspan[1], 1291.0632632314212)
+            nptest.assert_almost_equal(qspecgram.yspan[1], 1291.5316316157107)
 
         # test other normalisations work (or don't)
         q2 = losc.q_transform(method='scipy-welch', norm='median')
-        utils.assert_quantity_sub_equal(qspecgram, q2)
+        utils.assert_quantity_sub_equal(qspecgram, q2, almost_equal=True)
         losc.q_transform(method='scipy-welch', norm='mean')
         losc.q_transform(method='scipy-welch', norm=False)
         with pytest.raises(ValueError):

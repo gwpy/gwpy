@@ -55,7 +55,8 @@ class TimeSeries(TimeDomainProduct):
 
     def get_title(self):
         suffix = super(TimeSeries, self).get_title()
-        rates = {ts.sample_rate for ts in self.timeseries}
+        # limit significant digits for minute trends
+        rates = {ts.sample_rate.round(3) for ts in self.timeseries}
         fss = '({0})'.format('), ('.join(map(str, rates)))
         return ', '.join([
             'Fs: {0}'.format(fss),
