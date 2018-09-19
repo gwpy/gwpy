@@ -20,6 +20,7 @@
 """
 
 import itertools
+import importlib
 import warnings
 from collections import (KeysView, ValuesView)
 
@@ -29,7 +30,6 @@ import numpy
 
 from matplotlib import (figure, get_backend, _pylab_helpers)
 from matplotlib.artist import setp
-from matplotlib.backend_bases import FigureManagerBase
 from matplotlib.gridspec import GridSpec
 from matplotlib.projections import get_projection_class
 
@@ -54,6 +54,14 @@ def interactive_backend():
     """
     from matplotlib.rcsetup import interactive_bk
     return get_backend() in interactive_bk
+
+
+def get_backend_mod(name=None):
+    if name is None:
+        name = get_backend()
+    backend_name = (name[9:] if name.startswith("module://") else
+                    "matplotlib.backends.backend_{}".format(name.lower()))
+    return importlib.import_module(backend_name)
 
 
 class Plot(figure.Figure):
@@ -84,34 +92,30 @@ class Plot(figure.Figure):
         self._init_axes(data, **kwargs)
 
     def _init_figure(self, **kwargs):
-        # we import matplotlib.backends here because it sets the backend
-        # at some point, so we don't want to do that upfront in case users
-        # need to set their own backend
-        from matplotlib.backends import pylab_setup
+        from matplotlib import pyplot
 
         # add new attributes
         self.colorbars = []
         self._coloraxes = []
 
         # create Figure
+        num = kwargs.pop('num', max(pyplot.get_fignums() or {0}) + 1)
         self._parse_subplotpars(kwargs)
         super(Plot, self).__init__(**kwargs)
+        self.number = num
 
-        # add interactivity
-        # scraped from pyplot.figure()
-        backend_mod, _, draw_if_interactive, _show = pylab_setup()
+        # add interactivity (scraped from pyplot.figure())
+        backend_mod = get_backend_mod()
         try:
-            manager = backend_mod.new_figure_manager_given_figure(1, self)
+            manager = backend_mod.new_figure_manager_given_figure(num, self)
         except AttributeError:
             canvas = backend_mod.FigureCanvas(self)
-            manager = FigureManagerBase(canvas, 1)
-        cid = manager.canvas.mpl_connect(
+            manager = backend_mod.FigureManagerBase(canvas, 1)
+        manager._cidgcf = manager.canvas.mpl_connect(
             'button_press_event',
             lambda ev: _pylab_helpers.Gcf.set_active(manager))
-        manager._cidgcf = cid
         _pylab_helpers.Gcf.set_active(manager)
-        self._show = _show
-        draw_if_interactive()
+        pyplot.draw_if_interactive()
 
     def _init_axes(self, data, method='plot',
                    xscale=None, sharex=False, sharey=False,
@@ -211,34 +215,52 @@ class Plot(figure.Figure):
         self.canvas.draw()
 
     def show(self, block=None, warn=True):
-        """Display the current figure (if possible)
+        """Display the current figure (if possible).
+
+        If blocking, this method replicates the behaviour of
+        :func:`matplotlib.pyplot.show()`, otherwise it just calls up to
+        :meth:`~matplotlib.figure.Figure.show`.
+
+        This method also supports repeatedly showing the same figure, even
+        after closing the display window, which isn't supported by
+        `pyplot.show` (AFAIK).
 
         Parameters
         ----------
-        block : `bool`, default: `None`
+        block : `bool`, optional
             open the figure and block until the figure is closed, otherwise
-            open the figure as a detached window. If `block=None`, GWpy
-            will block if using an interactive backend and not in an
-            ipython session.
+            open the figure as a detached window, default: `None`.
+            If `None`, block if using an interactive backend and _not_
+            inside IPython.
 
-        warn : `bool`, default: `True`
-            if `block=False` is given, print a warning if matplotlib is
-            not running in an interactive backend and cannot display the
-            figure.
-
-        Notes
-        -----
-        If blocking is employed, this method calls the
-        :meth:`pyplot.show <matplotlib.pyplot.show>` function, otherwise
-        the :meth:`~matplotlib.figure.Figure.show` method of this
-        `~matplotlib.figure.Figure` is used.
+        warn : `bool`, optional
+            print a warning if matplotlib is not running in an interactive
+            backend and cannot display the figure, default: `True`.
         """
-        # if told to block, or using an interactive backend,
-        # but not using ipython
-        if block or (block is None and interactive_backend() and not IPYTHON):
-            return self._show(block=True)
-        # otherwise, don't block and just show normally
-        return super(Plot, self).show(warn=warn)
+        # this method tries to reproduce the functionality of pyplot.show,
+        # mainly for user convenience. However, as of matplotlib-3.0.0,
+        # pyplot.show() ends up calling _back_ to Plot.show(),
+        # so we have to be careful not to end up in a recursive loop
+        import inspect
+        try:
+            callframe = inspect.currentframe().f_back
+        except AttributeError:
+            pass
+        else:
+            if 'matplotlib' in callframe.f_code.co_filename:
+                block = False
+
+        # render
+        super(Plot, self).show(warn=warn)
+
+        # don't block on ipython with interactive backends
+        if block is None and interactive_backend():
+            block = not IPYTHON
+
+        # block in GUI loop (stolen from mpl.backend_bases._Backend.show)
+        if block:
+            backend_mod = get_backend_mod()
+            backend_mod.Show().mainloop()
 
     def save(self, *args, **kwargs):
         """Save the figure to disk.
