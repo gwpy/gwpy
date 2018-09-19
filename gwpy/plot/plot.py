@@ -57,6 +57,24 @@ def interactive_backend():
 
 
 def get_backend_mod(name=None):
+    """Returns the imported module for the given backend name
+
+    Parameters
+    ----------
+    name : `str`, optional
+        the name of the backend, defaults to the current backend.
+
+    Returns
+    -------
+    backend_mod: `module`
+        the module as returned by :func:`importlib.import_module`
+
+    Examples
+    --------
+    >>> from gwpy.plot.plot import get_backend_mod
+    >>> print(get_backend_mod('agg'))
+    <module 'matplotlib.backends.backend_agg' from ... >
+    """
     if name is None:
         name = get_backend()
     backend_name = (name[9:] if name.startswith("module://") else
