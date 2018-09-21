@@ -193,27 +193,3 @@ def nds2_segment(segment):
     nds2seg.gps_stop = segment[1]
     return nds2seg
 
-
-# -- glue.datafind ------------------------------------------------------------
-
-def mock_find_credential():
-    return '/mock/cert/path', '/mock/key/path'
-
-
-def mock_datafind_connection(framefile):
-    try:
-        from lal.utils import CacheEntry
-    except ImportError as e:
-        pytest.skip(str(e))
-    from glue import datafind
-    ce = CacheEntry.from_T050017(framefile)
-    frametype = ce.description
-    # create mock up of connection object
-    DatafindConnection = mock.create_autospec(
-        datafind.GWDataFindHTTPConnection)
-    DatafindConnection.find_types.return_value = [frametype]
-    DatafindConnection.find_latest.return_value = [ce]
-    DatafindConnection.find_frame_urls.return_value = [ce]
-    DatafindConnection.host = 'mockhost'
-    DatafindConnection.port = 80
-    return DatafindConnection

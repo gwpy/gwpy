@@ -13,6 +13,7 @@ pyRXP
 lscsoft-glue
 lalsuite
 dqsegdb
+gwdatafind
 pycbc >= 1.10.1 ; python_version == '2.7'
 git+https://github.com/duncanmmacleod/ligo.org.git
 sqlalchemy
