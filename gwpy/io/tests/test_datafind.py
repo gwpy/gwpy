@@ -39,7 +39,7 @@ from .. import datafind as io_datafind
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 if six.PY2:
-    OPEN = '__builtins__.open'
+    OPEN = '__builtin__.open'
 else:
     OPEN = 'builtins.open'
 
