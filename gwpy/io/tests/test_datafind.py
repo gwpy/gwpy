@@ -22,17 +22,26 @@
 from __future__ import print_function
 
 import os
+from io import BytesIO
+from itertools import cycle
 
+import six
 from six.moves.http_client import HTTPConnection
 
 import pytest
 
-from ...tests.utils import (skip_missing_dependency, TEST_DATA_DIR)
+from ...tests.utils import (skip_missing_dependency, TEST_DATA_DIR,
+                            TemporaryFilename)
 from ...tests import mocks
 from ...tests.mocks import mock
 from .. import datafind as io_datafind
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+if six.PY2:
+    OPEN = '__builtins__.open'
+else:
+    OPEN = 'builtins.open'
 
 TEST_GWF_FILE = os.path.join(TEST_DATA_DIR, 'HLV-HW100916-968654552-1.gwf')
 DEFAULT_DATAFIND_SERVER = os.environ.get('LIGO_DATAFIND_SERVER', None)
@@ -70,6 +79,135 @@ def connection():
         yield mconn
 
 
+# -- FFL tests ----------------------------------------------------------------
+
+FFL_WALK = [
+    (os.curdir, [], ['test.ffl', 'test2.ffl']),
+]
+
+
+@mock.patch('os.walk', return_value=FFL_WALK)
+class TestFflConnection(object):
+    TEST_CLASS = io_datafind.FflConnection
+
+    @mock.patch('gwpy.io.datafind.FflConnection._read_last_line',
+                return_value='X-TEST-0-1.gwf 0 1 0 0')
+    def test_init(self, mwalk, mreadlast):
+        conn = self.TEST_CLASS()
+        assert conn.paths == {
+            ('X', 'test'): os.path.join(os.curdir, 'test.ffl'),
+            ('X', 'test2'): os.path.join(os.curdir, 'test2.ffl'),
+        }
+
+    @mock.patch.dict(os.environ, {'VIRGODATA': 'virgodata-test'})
+    def test_get_ffl_dir(self, _):
+        assert self.TEST_CLASS._get_ffl_dir() == os.path.join(
+            'virgodata-test', 'ffl')
+
+    def test_is_ffl_file(self, _):
+        assert self.TEST_CLASS._is_ffl_file('test.ffl')
+        assert not self.TEST_CLASS._is_ffl_file('test.ffl2')
+
+    @mock.patch('gwpy.io.datafind.FflConnection._read_last_line',
+                side_effect=[OSError(), 'X-TEST-0-1.gwf 0 1 0 0'])
+    def test_find_paths(self, mwalk, mreadlast):
+        conn = self.TEST_CLASS()  # find_paths() called by __init__()
+        assert conn.paths == {
+            ('X', 'test2'): os.path.join(os.curdir, 'test2.ffl'),
+        }
+
+    @mock.patch(OPEN, return_value=BytesIO(b"""
+/path/to/X-TEST-0-1.gwf 0 1 0 0
+/path/to/X-TEST-1-1.gwf 1 1 0 0
+""".lstrip()))
+    @mock.patch('os.path.getmtime', return_value=1)
+    @mock.patch('gwpy.io.datafind.FflConnection._read_last_line',
+                return_value='X-TEST-0-1.gwf 0 1 0 0')
+    def test_read_ffl_cache(self, mwalk, mreadlast, mgetmtime, mopen):
+        conn = self.TEST_CLASS()
+        cache = list(conn._read_ffl_cache('X', 'test'))
+        assert [c.path for c in cache] == [
+            '/path/to/X-TEST-0-1.gwf',
+            '/path/to/X-TEST-1-1.gwf'
+        ]
+        assert mopen.call_count == 1
+
+        # check that calling the same again is a no-op
+        conn._read_ffl_cache('X', 'test')
+        assert mopen.call_count == 1
+
+    def test_read_last_line(self, _):
+        with TemporaryFilename() as tmp:
+            with open(tmp, 'w') as fobj:
+                print('line1', file=fobj)
+                print('line2', file=fobj)
+            assert self.TEST_CLASS._read_last_line(tmp) == 'line2'
+
+    @mock.patch('gwpy.io.datafind.FflConnection._read_last_line',
+                return_value='X-TEST-0-1.gwf 0 1 0 0')
+    def test_ffl_path(self, mwalk, mreadlast):
+        conn = self.TEST_CLASS()
+        assert conn.ffl_path('X', 'test') == os.path.join(
+            os.curdir, 'test.ffl')
+        conn.paths = {}
+        assert conn.ffl_path('X', 'test') == os.path.join(
+            os.curdir, 'test.ffl')
+
+    @mock.patch('gwpy.io.datafind.FflConnection._get_site_tag',
+                side_effect=cycle([('X', 'test'), ('Y', 'test2')]))
+    def test_find_types(self, mwalk, msitetag):
+
+        conn = self.TEST_CLASS()
+        assert conn.find_types(match=None) == ['test', 'test2']
+        assert conn.find_types('X') == ['test']
+        assert conn.find_types(match='test2') == ['test2']
+
+    @mock.patch(OPEN, return_value=BytesIO(b"""
+/path/to/X-TEST-0-1.gwf 0 1 0 0
+/path/to/X-TEST-1-1.gwf 1 1 0 0
+/path/to/X-TEST-2-1.gwf 2 1 0 0
+""".lstrip()))
+    @mock.patch('os.path.getmtime', return_value=1)
+    @mock.patch('gwpy.io.datafind.FflConnection._get_site_tag',
+                side_effect=cycle([('X', 'test'), ('Y', 'test2')]))
+    def test_find_urls(self, mwalk, msitetag, getmtime, mopen):
+        conn = self.TEST_CLASS()
+        assert conn.find_urls('X', 'test', 0, 2) == [
+            '/path/to/X-TEST-0-1.gwf',
+            '/path/to/X-TEST-1-1.gwf',
+        ]
+        assert conn.find_urls('X', 'test', 0, 2, match='TEST-0') == [
+            '/path/to/X-TEST-0-1.gwf',
+        ]
+
+        # check exceptions or warnings get raised as designed
+        with pytest.raises(RuntimeError):
+            conn.find_urls('X', 'test', 10, 20, on_gaps='raise')
+        with pytest.warns(UserWarning) as rec:
+            conn.find_urls('X', 'test', 10, 20, on_gaps='warn')
+            conn.find_urls('X', 'test', 10, 20, on_gaps='ignore')
+        assert len(rec) == 1
+
+    @mock.patch('gwpy.io.datafind.FflConnection._read_last_line',
+                return_value='/path/to/file.gwf 0 1 0 0')
+    @mock.patch('gwpy.io.datafind.FflConnection._get_site_tag',
+                side_effect=cycle([('X', 'test'), ('Y', 'test2')]))
+    def test_find_latest(self, mwalk, msitetag, mreadlast):
+        conn = self.TEST_CLASS()
+        assert conn.find_latest('X', 'test') == ['/path/to/file.gwf']
+        assert mreadlast.call_count == 1
+        assert conn.find_latest('X', 'test') == ['/path/to/file.gwf']
+        assert mreadlast.call_count == 1  # doesn't call again
+
+        # check exceptions or warnings get raised as designed
+        with pytest.raises(RuntimeError):
+            conn.find_latest('Z', 'test3', on_missing='raise')
+        with pytest.warns(UserWarning) as rec:
+            conn.find_latest('Z', 'test3', on_missing='warn')
+            conn.find_latest('Z', 'test3', on_missing='ignore')
+        assert len(rec) == 1
+
+
 # -- tests --------------------------------------------------------------------
 
 def test_reconnect():
@@ -78,6 +216,12 @@ def test_reconnect():
     assert b is not a
     assert b.host == a.host
     assert b.port == a.port
+
+    with mock.patch('os.walk', return_value=[]):
+        a = io_datafind.FflConnection()
+        b = io_datafind.reconnect(a)
+        assert b is not a
+        assert b.ffldir == a.ffldir
 
 
 @skip_missing_dependency('gwdatafind')
