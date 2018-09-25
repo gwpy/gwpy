@@ -239,9 +239,9 @@ class FflConnection(object):
         # handle no files
         msg = 'No files found'
         if on_missing == 'warn':
-            warnings.warn('No files found')
+            warnings.warn(msg)
             return cache
-        raise RuntimeError('No files found')
+        raise RuntimeError(msg)
 
 
 def reconnect(connection):
