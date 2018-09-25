@@ -32,7 +32,6 @@ import pytest
 
 from ...tests.utils import (skip_missing_dependency, TEST_DATA_DIR,
                             TemporaryFilename)
-from ...tests import mocks
 from ...tests.mocks import mock
 from .. import datafind as io_datafind
 
@@ -44,20 +43,25 @@ else:
     OPEN = 'builtins.open'
 
 TEST_GWF_FILE = os.path.join(TEST_DATA_DIR, 'HLV-HW100916-968654552-1.gwf')
-DEFAULT_ENV = {
-    key: os.getenv(key) for key in ('LIGO_DATAFIND_SERVER', 'VIRGODATA') if
-    key in os.environ}
+
+# -- mock the environment -----------------------------------------------------
+
+MOCK_ENV = None
 
 
 def setup_module():
-    os.environ.update({
+    global MOCK_ENV
+    MOCK_ENV = mock.patch.dict('os.environ', {
         'VIRGODATA': 'tmp',
         'LIGO_DATAFIND_SERVER': 'test:80',
     })
+    MOCK_ENV.start()
 
 
 def teardown_module():
-    os.environ.update(DEFAULT_ENV)
+    global MOCK_ENV
+    if MOCK_ENV is not None:
+        MOCK_ENV.stop()
 
 
 # -- utilities ----------------------------------------------------------------
