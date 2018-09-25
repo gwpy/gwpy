@@ -129,8 +129,8 @@ class FflConnection(object):
                 return line.decode('utf-8')
             return line
 
-    @staticmethod
-    def _read_ffl_file(path):
+    @classmethod
+    def _read_ffl_file(cls, path):
         tag = os.path.splitext(os.path.basename(path))[0]
         with open(path, 'rb') as fobj:
             for line in fobj:
@@ -143,7 +143,7 @@ class FflConnection(object):
                     if os.path.samefile(subpath, path):
                         raise RuntimeError('cyclic reference found '
                                            'in {0}'.format(path))
-                    for entry in self._read_ffl_file(subpath):
+                    for entry in cls._read_ffl_file(subpath):
                         yield entry
                 gps = float(gps)
                 duration = float(duration)
