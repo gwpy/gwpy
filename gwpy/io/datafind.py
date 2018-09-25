@@ -266,30 +266,30 @@ def reconnect(connection):
 
 
 def _type_priority(ifo, ftype, trend=None):
-    # HOFT types typically have small channel lists (so quick search)
-    if HIGH_PRIORITY_TYPE.match(ftype):  # HOFT types are small
-        prio = 1
-    # these types are bogus, or just unhelpful
-    elif LOW_PRIORITY_TYPE.match(ftype):
-        prio = 10
+    _priority = {
+        HIGH_PRIORITY_TYPE: 1,
+        LOW_PRIORITY_TYPE: 10,
+        MINUTE_TREND_TYPE: 10,
+        SECOND_TREND_TYPE: 10,
+        re.compile('[A-Z]\d_C'): 6,
+    }
 
-    # if channel is trend, promote trend type (otherwise demote)
-    elif trend == 'm-trend' and MINUTE_TREND_TYPE.match(ftype):
-        prio = 0
-    elif MINUTE_TREND_TYPE.match(ftype):
-        prio = 10
-    elif trend == 's-trend' and SECOND_TREND_TYPE.match(ftype):
-        prio = 0
-    elif SECOND_TREND_TYPE.match(ftype):
-        prio = 10
+    # default priority
+    prio = 5
 
-    # demote commissioning frames for LIGO
-    elif ftype == '{}_C'.format(ifo):
-        prio = 6
-
-    # otherwise give a middle score
+    for trendname, trend_regex in [
+            ('m-trend', MINUTE_TREND_TYPE),
+            ('s-trend', SECOND_TREND_TYPE),
+    ]:
+        # if looking for a trend channel, prioritise the matching type
+        if trend == trendname and trend_regex.match(ftype):
+            prio = 0
+            break
     else:
-        prio = 5
+        # otherwise rank this type according to priority
+        for reg, prio in _priority.items():
+            if reg.match(ftype):
+                break
 
     # use score and length of name, shorter names are typically better
     return (prio, len(ftype))
