@@ -170,7 +170,7 @@ class TestFflConnection(object):
     def test_find_types(self, mwalk, msitetag):
 
         conn = self.TEST_CLASS()
-        assert conn.find_types(match=None) == ['test', 'test2']
+        assert sorted(conn.find_types(match=None)) == ['test', 'test2']
         assert conn.find_types('X') == ['test']
         assert conn.find_types(match='test2') == ['test2']
 
