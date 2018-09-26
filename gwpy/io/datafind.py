@@ -242,21 +242,21 @@ class FflConnection(object):
         """Return the most recent file of a given type.
         """
         try:
-            cache = self.cache[(site, frametype)][-1:]
+            urls = [self.cache[(site, frametype)][-1].path]
         except KeyError:
             try:
                 path = self.ffl_path(site, frametype)
-                cache = [read_cache_entry(self._read_last_line(path))]
+                urls = [read_cache_entry(self._read_last_line(path))]
             except (KeyError, OSError):
-                cache = []
-        if cache or on_missing == 'ignore':
-            return cache
+                urls = []
+        if urls or on_missing == 'ignore':
+            return urls
 
         # handle no files
         msg = 'No files found'
         if on_missing == 'warn':
             warnings.warn(msg)
-            return cache
+            return urls
         raise RuntimeError(msg)
 
 
