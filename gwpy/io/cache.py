@@ -70,7 +70,7 @@ except NameError:  # python3.x
 # -- cache I/O ----------------------------------------------------------------
 
 def read_cache(cachefile, coltype=LIGOTimeGPS):
-    """Read a LAL- for FFL-format cache file as a list of file paths
+    """Read a LAL- or FFL-format cache file as a list of file paths
 
     Parameters
     ----------
