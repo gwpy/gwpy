@@ -105,10 +105,16 @@ class TestFflConnection(object):
             ('X', 'test2'): os.path.join(os.curdir, 'test2.ffl'),
         }
 
-    @mock.patch.dict(os.environ, {'VIRGODATA': 'virgodata-test'})
     def test_get_ffl_dir(self, _):
-        assert self.TEST_CLASS._get_ffl_dir() == os.path.join(
-            'virgodata-test', 'ffl')
+        with mock.patch.dict(os.environ, {'FFLPATH': 'somepath'}):
+            assert self.TEST_CLASS._get_ffl_dir() == 'somepath'
+        with mock.patch.dict(os.environ, {'VIRGODATA': 'somepath'}):
+            assert self.TEST_CLASS._get_ffl_dir() == (
+                os.path.join('somepath', 'ffl'))
+        with mock.patch.dict(os.environ), pytest.raises(KeyError):
+            os.environ.pop('FFLPATH')
+            os.environ.pop('VIRGODATA')
+            self.TEST_CLASS._get_ffl_dir()
 
     def test_is_ffl_file(self, _):
         assert self.TEST_CLASS._is_ffl_file('test.ffl')

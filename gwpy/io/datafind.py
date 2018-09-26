@@ -23,6 +23,15 @@ Automatic discovery of file paths for both LIGO and Virgo index solutions
 
 The functions in this module are highly reliant on having local access to
 files (either directly, or via NFS, or CVMFS).
+
+Data discovery using the DataFind service requires the `gwdatafind` Python
+package, and either the ``LIGO_DATAFIND_SERVER`` environment variable to be
+set, or the ``host`` keyword must be passed to :func:`find_urls` and friends.
+
+Data discovery using the Virgo FFL system requires the ``FFLPATH`` environment
+variable to point to the directory containing FFL files, **or** the
+``VIRGODATA`` environment variable to point to a directory containing an
+``ffl` subdirectory, which contains FFL files.
 """
 
 import os
@@ -77,7 +86,13 @@ class FflConnection(object):
 
     @staticmethod
     def _get_ffl_dir():
-        return os.path.join(os.environ['VIRGODATA'], 'ffl')
+        if 'FFLPATH' in os.environ:
+            return os.environ['FFLPATH']
+        if 'VIRGODATA' in os.environ:
+            return os.path.join(os.environ['VIRGODATA'], 'ffl')
+        raise KeyError("failed to parse FFTPATH from environment, please set "
+                       "FFLPATH to point to the directory containing FFL "
+                       "files")
 
     @classmethod
     def _is_ffl_file(cls, path):
