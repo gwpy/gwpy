@@ -110,8 +110,9 @@ class FflConnection(object):
                 path = os.path.join(root, name)
                 try:
                     site, tag = self._get_site_tag(path)
-                except (OSError, AttributeError):
+                except (OSError, IOError, AttributeError):
                     # OSError: file is empty (or cannot be read at all)
+                    # IOError: as above on python2
                     # AttributeError: last entry didn't match _SITE_REGEX
                     continue
                 paths[(site, tag)] = path
