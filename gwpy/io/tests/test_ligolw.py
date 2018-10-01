@@ -31,13 +31,13 @@ from .. import ligolw as io_ligolw
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-def new_table(tablename, data, **new_kw):
+def new_table(tablename, data=None, **new_kw):
     from glue.ligolw import lsctables
     from glue.ligolw.table import Table
 
     table = lsctables.New(lsctables.TableByName[Table.TableName(tablename)],
                           **new_kw)
-    for dat in data:
+    for dat in data or list():
         row = table.RowType()
         for key, val in dat.items():
             setattr(row, key, val)
