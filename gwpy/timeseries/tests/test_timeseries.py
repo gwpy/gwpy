@@ -835,6 +835,17 @@ class TestTimeSeries(_TestTimeSeriesBase):
         tmax = whitened.times[whitened.argmax()]
         nptest.assert_almost_equal(tmax.value, glitchtime)
 
+    def test_convolve(self):
+        data = self.TEST_CLASS(
+            signal.hann(1024), sample_rate=512, epoch=-1
+        )
+        filt = numpy.array([1, 0])
+
+        # check that the 'valid' data are unchanged by this filter
+        convolved = data.convolve(filt)
+        assert convolved.size == data.size
+        utils.assert_allclose(convolved.value[1:-1], data.value[1:-1])
+
     def test_detrend(self, losc):
         assert not numpy.isclose(losc.value.mean(), 0.0, atol=1e-21)
         detrended = losc.detrend()

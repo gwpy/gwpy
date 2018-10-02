@@ -1500,8 +1500,8 @@ class TimeSeries(TimeSeriesBase):
         --------
         TimeSeries.asd
             for details on the ASD calculation
-        scipy.signal.fftconvolve
-            for details on the convolution algorithm used here
+        TimeSeries.convolve
+            for details on convolution with the overlap-save method
         gwpy.signal.filter_design.fir_from_transfer
             for FIR filter design through spectrum truncation
 
@@ -1511,7 +1511,8 @@ class TimeSeries(TimeSeriesBase):
         and in preventing spectral leakage in the output.
 
         Due to filter settle-in, a segment of length `0.5*fduration` will be
-        corrupted at the beginning and end of the output.
+        corrupted at the beginning and end of the output. See
+        `~TimeSeries.convolve` for more details.
 
         The input is detrended to give the whitened `TimeSeries` zero mean,
         and the output is normalised to give it unit variance.
@@ -1531,13 +1532,74 @@ class TimeSeries(TimeSeriesBase):
                                               window=window, ncorner=ncorner)
         # condition the input data and apply the whitening filter
         in_ = self.copy().detrend(detrend)
-        pad = int(numpy.ceil(tdw.size/2))
-        window = signal.get_window(window, tdw.size)
-        in_[:pad] *= window[:pad]
-        in_[-pad:] *= window[-pad:]
-        out = type(self)(signal.fftconvolve(in_.value, tdw, mode='same'))
-        out.__array_finalize__(self)
+        out = in_.convolve(tdw, window=window)
         return out / out.value.std()
+
+    def convolve(self, fir, window='hanning'):
+        """Convolve this `TimeSeries` with an FIR filter using the
+           overlap-save method
+
+        Parameters
+        ----------
+        fir : `numpy.ndarray`
+            the time domain filter to convolve with
+
+        window : `str`, optional
+            window function to apply to boundaries, default: ``'hanning'``
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
+
+        Returns
+        -------
+        out : `TimeSeries`
+            the result of the convolution
+
+        See Also
+        --------
+        scipy.signal.fftconvolve
+            for details on the convolution scheme used here
+        TimeSeries.filter
+            for an alternative method designed for short filters
+
+        Notes
+        -----
+        The output `TimeSeries` is the same length and has the same timestamps
+        as the input.
+
+        Due to filter settle-in, a segment half the length of `fir` will be
+        corrupted at the left and right boundaries. To prevent spectral leakage
+        these segments will be windowed before convolving.
+        """
+        pad = int(numpy.ceil(fir.size/2))
+        nfft = min(8*fir.size, self.size)
+        # condition the input data
+        in_ = self.copy()
+        window = signal.get_window(window, fir.size)
+        in_.value[:pad] *= window[:pad]
+        in_.value[-pad:] *= window[-pad:]
+        # if FFT length is long enough, perform only one convolution
+        if nfft >= self.size/2:
+            conv = signal.fftconvolve(in_.value, fir, mode='same')
+        # else use the overlap-save algorithm
+        else:
+            nstep = nfft - 2*pad
+            conv = numpy.zeros(self.size)
+            # handle first chunk separately
+            conv[:nfft-pad] = signal.fftconvolve(in_.value[:nfft], fir,
+                                                 mode='same')[:nfft-pad]
+            # process chunks of length nstep
+            k = nfft - pad
+            while k < self.size - nfft + pad:
+                yk = signal.fftconvolve(in_.value[k-pad:k+nstep+pad], fir,
+                                        mode='same')
+                conv[k:k+yk.size-2*pad] = yk[pad:-pad]
+                k += nstep
+            # handle last chunk separately
+            conv[-nfft+pad:] = signal.fftconvolve(in_.value[-nfft:], fir,
+                                                  mode='same')[-nfft+pad:]
+        out = type(self)(conv)
+        out.__array_finalize__(self)
+        return out
 
     def detrend(self, detrend='constant'):
         """Remove the trend from this `TimeSeries`
