@@ -32,6 +32,8 @@ from astropy.io import registry
 from astropy.units import Quantity
 from astropy.utils.data import get_readable_fileobj
 
+from gwosc.locate import get_urls
+
 from .. import (StateVector, TimeSeries)
 from ...io import hdf5 as io_hdf5
 from ...io.cache import file_segment
@@ -119,8 +121,6 @@ def fetch_losc_data(detector, start, end, cls=TimeSeries, **kwargs):
     use the interface provided by `TimeSeries.fetch_open_data` (and similar
     for `StateVector.fetch_open_data`).
     """
-    from gwosc.locate import get_urls
-
     # format arguments
     start = to_gps(start)
     end = to_gps(end)

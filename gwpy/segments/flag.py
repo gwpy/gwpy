@@ -50,6 +50,8 @@ from numpy import inf
 from astropy.io import registry as io_registry
 from astropy.utils.data import get_readable_fileobj
 
+from gwosc import timeline
+
 from ..io.mp import read_multi as io_read_multi
 from ..time import to_gps, LIGOTimeGPS
 from ..utils.misc import if_not_none
@@ -571,11 +573,10 @@ class DataQualityFlag(object):
                                  [946415770 ... 946422986)],
                          description=None)>
         """
-        from gwosc.timeline import get_segments
         start = to_gps(start).gpsSeconds
         end = to_gps(end).gpsSeconds
         known = [(start, end)]
-        active = get_segments(flag, start, end, **kwargs)
+        active = timeline.get_segments(flag, start, end, **kwargs)
         return cls(flag.replace('_', ':', 1), known=known, active=active,
                    label=flag)
 
