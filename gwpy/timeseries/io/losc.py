@@ -97,6 +97,19 @@ def _fetch_losc_data_file(url, *args, **kwargs):
             return series
 
 
+def _overlapping(files):
+    """Quick method to see if a file list contains overlapping files
+    """
+    segments = set()
+    for path in files:
+        seg = file_segment(path)
+        for s in segments:
+            if seg.intersects(s):
+                return True
+        segments.add(seg)
+    return False
+
+
 # -- remote data access (the main event) --------------------------------------
 
 def fetch_losc_data(detector, start, end, cls=TimeSeries, **kwargs):
@@ -130,7 +143,11 @@ def fetch_losc_data(detector, start, end, cls=TimeSeries, **kwargs):
             len(cache), host, int(start), int(ceil(end))))
 
     # if event dataset, pick shortest file that covers the request
-    if len(cache) and 'events' in cache[0]:
+    # -- this is a bit hacky, and presumes that only an event dataset
+    # -- would be produced with overlapping files.
+    # -- This should probably be improved to use dataset information
+    if len(cache) and _overlapping(cache):
+        cache.sort(key=lambda x: abs(file_segment(x)))
         for url in cache:
             a, b = file_segment(url)
             if a <= start and b >= end:
