@@ -236,8 +236,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
             try:
                 connection = reconnect(connection)
                 path = _find_latest_url(connection, ifo, ftype,
-                                          gpstime=gpstime,
-                                          allow_tape=allow_tape)
+                                        gpstime=gpstime, allow_tape=allow_tape)
             except (RuntimeError, IOError):  # something went wrong
                 continue
 
