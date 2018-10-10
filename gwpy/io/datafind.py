@@ -25,6 +25,8 @@ one or more frametypes that contain data for that channel.
 import os.path
 import re
 
+from six.moves.urllib.parse import urlparse
+
 from ..time import to_gps
 from .cache import cache_segments
 from .gwf import (num_channels, iter_channel_names)
@@ -233,9 +235,8 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
             # find instance of this frametype
             try:
                 connection = reconnect(connection)
-                path = _find_latest_frame(connection, ifo, ftype,
-                                          gpstime=gpstime,
-                                          allow_tape=allow_tape)
+                path = _find_latest_url(connection, ifo, ftype,
+                                        gpstime=gpstime, allow_tape=allow_tape)
             except (RuntimeError, IOError):  # something went wrong
                 continue
 
@@ -400,27 +401,27 @@ def on_tape(*files):
 
 # -- utilities ----------------------------------------------------------------
 
-def _find_latest_frame(connection, ifo, frametype, gpstime=None,
-                       allow_tape=False):
-    """Find the latest framepath for a given frametype
+def _find_latest_url(connection, ifo, frametype, gpstime=None,
+                     allow_tape=False):
+    """Find the latest ``file://` URL for a given frametype
     """
     ifo = ifo[0]
     if gpstime is not None:
         gpstime = int(to_gps(gpstime))
     try:
         if gpstime is None:
-            path = connection.find_latest(ifo, frametype, urltype='file')[0]
+            url = connection.find_latest(ifo, frametype, urltype='file')[0]
         else:
-            path = connection.find_urls(ifo, frametype, gpstime, gpstime,
-                                        urltype='file', on_gaps='ignore')[0]
+            url = connection.find_urls(ifo, frametype, gpstime, gpstime,
+                                       urltype='file', on_gaps='ignore')[0]
     except (IndexError, RuntimeError):
         raise RuntimeError("No files found for {}-{}".format(ifo, frametype))
-    else:
-        if not os.access(path, os.R_OK):
-            raise IOError("Latest file for {}-{} is unreadable: "
-                          "{}".format(ifo, frametype, path))
-        if not allow_tape and on_tape(path):
-            raise IOError("Latest file for {}-{} is on tape "
-                          "(pass allow_tape=True to force): "
-                          "{}".format(ifo, frametype, path))
-        return path
+    path = urlparse(url).path
+    if not os.access(path, os.R_OK):
+        raise IOError("Latest file for {}-{} is unreadable: "
+                      "{}".format(ifo, frametype, path))
+    if not allow_tape and on_tape(path):
+        raise IOError("Latest file for {}-{} is on tape "
+                      "(pass allow_tape=True to force): "
+                      "{}".format(ifo, frametype, path))
+    return url

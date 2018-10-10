@@ -29,6 +29,7 @@ from gzip import GzipFile
 
 from six import string_types
 from six.moves import StringIO
+from six.moves.urllib.parse import urlparse
 
 try:
     from lal.utils import CacheEntry
@@ -87,7 +88,7 @@ def read_cache(lcf, coltype=LIGOTimeGPS):
 
     # open file
     if not isinstance(lcf, FILE_LIKE):
-        with open(lcf, 'r') as fobj:
+        with open(urlparse(lcf).path, 'r') as fobj:
             return read_cache(fobj, coltype=coltype)
 
     # read file
