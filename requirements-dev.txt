@@ -10,7 +10,7 @@
 # extras
 pymysql
 pyRXP
-lscsoft-glue
+lscsoft-glue >= 1.60.0
 lalsuite
 dqsegdb
 gwdatafind
