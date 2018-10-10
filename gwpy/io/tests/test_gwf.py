@@ -19,6 +19,8 @@
 """Unit tests for :mod:`gwpy.io.gwf`
 """
 
+from six.moves.urllib.parse import urljoin
+
 import pytest
 
 from ...tests.utils import (TEST_GWF_FILE, skip_missing_dependency,
@@ -45,6 +47,10 @@ def test_open_gwf():
     assert isinstance(io_gwf.open_gwf(TEST_GWF_FILE), frameCPP.IFrameFStream)
     with TemporaryFilename() as tmp:
         assert isinstance(io_gwf.open_gwf(tmp, mode='w'),
+                          frameCPP.OFrameFStream)
+        # check that we can use a file:// URL as well
+        url = urljoin('file:', tmp)
+        assert isinstance(io_gwf.open_gwf(url, mode='w'),
                           frameCPP.OFrameFStream)
     with pytest.raises(ValueError):
         io_gwf.open_gwf('test', mode='a')
