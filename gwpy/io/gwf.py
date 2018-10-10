@@ -21,6 +21,8 @@
 
 import six
 
+from six.moves.urllib.parse import urlparse
+
 from ..time import to_gps
 from ..utils import shell
 from .cache import read_cache
@@ -87,6 +89,7 @@ def open_gwf(filename, mode='r'):
     if mode not in ('r', 'w'):
         raise ValueError("mode must be either 'r' or 'w'")
     from LDAStools import frameCPP
+    filename = urlparse(filename).path  # strip file://localhost or similar
     if mode == 'r':
         return frameCPP.IFrameFStream(str(filename))
     return frameCPP.OFrameFStream(str(filename))
