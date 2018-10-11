@@ -1447,7 +1447,7 @@ class TimeSeriesBaseList(list):
         del self[i:]
         return self
 
-    def join(self, pad=0.0, gap='raise'):
+    def join(self, pad=None, gap=None):
         """Concatenate all of the elements of this list into a single object
 
         Parameters
@@ -1456,22 +1456,23 @@ class TimeSeriesBaseList(list):
             value with which to pad gaps
 
         gap : `str`, optional, default: `'raise'`
-            what to do in the event of a discontguity in the data, one of
+            what to do if there are gaps in the data, one of
 
-            - 'raise': raise an exception
-            - 'warn': print a warning
-            - 'ignore': append series as if there was no gap
-            - 'pad': pad the gap with a value
+            - ``'raise'`` - raise a `ValueError`
+            - ``'ignore'`` - remove gap and join data
+            - ``'pad'`` - pad gap with zeros
+
+            If `pad` is given and is not `None`, the default is ``'pad'``,
+            otherwise ``'raise'``.
 
         Returns
         -------
-        `TimeSeriesBase`
-             a single `TimeSeriesBase` covering the full span of all entries
-             in this list
+        series : `gwpy.types.TimeSeriesBase` subclass
+             a single series containing all data from each entry in this list
 
         See Also
         --------
-        TimeSeriesBase.append
+        TimeSeries.append
             for details on how the individual series are concatenated together
         """
         if not self:

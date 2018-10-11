@@ -638,7 +638,7 @@ class Series(Array):
                      % (self.dtype, other.dtype))
         return True
 
-    def append(self, other, gap='raise', inplace=True, pad=0, resize=True):
+    def append(self, other, inplace=True, pad=None, gap=None, resize=True):
         """Connect another series onto the end of the current one.
 
         Parameters
@@ -646,37 +646,47 @@ class Series(Array):
         other : `Series`
             another series of the same type to connect to this one
 
-        gap : `str`, optional, default: ``'raise'``
-            action to perform if there's a gap between the other series
-            and this one. One of
-
-                - ``'raise'`` - raise an `Exception`
-                    - ``'ignore'`` - remove gap and join data
-                - ``'pad'`` - pad gap with zeros
-
-        inplace : `bool`, optional, default: `True`
-            perform operation in-place, modifying current `Series`,
-            otherwise copy data and return new `Series`
+        inplace : `bool`, optional
+            perform operation in-place, modifying current series,
+            otherwise copy data and return new series, default: `True`
 
             .. warning::
 
-               inplace append bypasses the reference check in
+               `inplace` append bypasses the reference check in
                `numpy.ndarray.resize`, so be carefully to only use this
                for arrays that haven't been sharing their memory!
 
-        pad : `float`, optional, default: ``0.0``
-            value with which to pad discontiguous series
+        pad : `float`, optional
+            value with which to pad discontiguous series,
+            by default gaps will result in a `ValueError`.
 
-        resize : `bool`, optional, default: `True`
+        gap : `str`, optional
+            action to perform if there's a gap between the other series
+            and this one. One of
+
+            - ``'raise'`` - raise a `ValueError`
+            - ``'ignore'`` - remove gap and join data
+            - ``'pad'`` - pad gap with zeros
+
+            If ``pad`` is given and is not `None`, the default is ``'pad'``,
+            otherwise ``'raise'``. If ``gap='pad'`` is given, the default
+            for ``pad`` is ``0``.
+
+        resize : `bool`, optional
             resize this array to accommodate new data, otherwise shift the
             old data to the left (potentially falling off the start) and
-            put the new data in at the end
+            put the new data in at the end, default: `True`.
 
         Returns
         -------
         series : `Series`
             a new series containing joined data sets
         """
+        if gap is None:
+            gap = 'raise' if pad is None else 'pad'
+        if pad is None and gap == 'pad':
+            pad = 0.
+
         # check metadata
         self.is_compatible(other)
         # make copy if needed
@@ -773,7 +783,7 @@ class Series(Array):
                 self.x0 = self.xindex[0]
         return self
 
-    def prepend(self, other, gap='raise', inplace=True, pad=0, resize=True):
+    def prepend(self, other, inplace=True, pad=None, gap=None, resize=True):
         """Connect another series onto the start of the current one.
 
         Parameters
@@ -781,43 +791,50 @@ class Series(Array):
         other : `Series`
             another series of the same type as this one
 
-        gap : `str`, optional, default: ``'raise'``
-            action to perform if there's a gap between the other series
-            and this one. One of
-
-                - ``'raise'`` - raise an `Exception`
-                - ``'ignore'`` - remove gap and join data
-                - ``'pad'`` - pad gap with zeros
-
-        inplace : `bool`, optional, default: `True`
+        inplace : `bool`, optional
             perform operation in-place, modifying current series,
-            otherwise copy data and return new series
+            otherwise copy data and return new series, default: `True`
 
             .. warning::
 
-               inplace prepend bypasses the reference check in
+               `inplace` prepend bypasses the reference check in
                `numpy.ndarray.resize`, so be carefully to only use this
                for arrays that haven't been sharing their memory!
 
-        pad : `float`, optional, default: ``0.0``
-            value with which to pad discontiguous `Series`
-        resize : `bool`, optional, default: `True`
+        pad : `float`, optional
+            value with which to pad discontiguous series,
+            by default gaps will result in a `ValueError`.
+
+        gap : `str`, optional
+            action to perform if there's a gap between the other series
+            and this one. One of
+
+            - ``'raise'`` - raise a `ValueError`
+            - ``'ignore'`` - remove gap and join data
+            - ``'pad'`` - pad gap with zeros
+
+            If `pad` is given and is not `None`, the default is ``'pad'``,
+            otherwise ``'raise'``.
+
+        resize : `bool`, optional
+            resize this array to accommodate new data, otherwise shift the
+            old data to the left (potentially falling off the start) and
+            put the new data in at the end, default: `True`.
 
         Returns
         -------
         series : `TimeSeries`
             time-series containing joined data sets
         """
-        out = other.append(self, gap=gap, inplace=False,
-                           pad=pad, resize=resize)
+        out = other.append(self, inplace=False, gap=gap, pad=pad,
+                           resize=resize)
         if inplace:
             self.resize(out.shape, refcheck=False)
             self[:] = out[:]
             self.x0 = out.x0.copy()
             del out
             return self
-        else:
-            return out
+        return out
 
     def update(self, other, inplace=True):
         """Update this series by appending new data from an other
