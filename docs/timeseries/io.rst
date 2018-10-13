@@ -86,20 +86,17 @@ The ``start`` and ``end`` keyword arguments can be used to downselect data to a 
 
     >>> data = TimeSeries.read('HLV-HW100916-968654552-1.gwf', 'L1:LDAS-STRAIN', start=968654552.5, end=968654553)
 
-Additionally, the following keyword arguments can be passed to manipulate the data on-the-fly when reading:
+Additionally, the following keyword arguments can be used:
 
-============  =======  ==========================================
-Keyword       Type     Usage
-============  =======  ==========================================
-``resample``  `float`  resample the data to a different number of
-                       samples per second
-``dtype``     `type`   cast the input data to a different data type
-============  =======  ==========================================
-
-For example::
-
-   >>> data = TimeSeries.read('HLV-HW100916-968654552-1.gwf', 'L1:LDAS-STRAIN',
-   ...                        resample=2048)
+============  =======  =======  ==========================================
+Keyword       Type     Default  Usage
+============  =======  =======  ==========================================
+``scaled``    `bool`   `True`   Apply ADC calibration when reading
+``type``      `str`    `None`   `dict` of channel types
+                                (``'ADC'``, ``'Proc'``, or ``'Sim'``) for
+                                each channel to be read. This option
+                                optimises the reading operation.
+============  =======  =======  ==========================================
 
 Reading multiple channels
 -------------------------

@@ -75,7 +75,7 @@ class _Skip(ValueError):
 
 # -- read ---------------------------------------------------------------------
 
-def read(source, channels, start=None, end=None, type=None,
+def read(source, channels, start=None, end=None, scaled=True, type=None,
          series_class=TimeSeries):
     # pylint: disable=redefined-builtin
     """Read a dict of series from one or more GWF files
@@ -99,6 +99,9 @@ def read(source, channels, start=None, end=None, type=None,
     end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS end time of required data, anything parseable by
         :func:`~gwpy.time.to_gps` is fine.
+
+    scaled : `bool`, optional
+        apply slope and bias calibration to ADC data.
 
     type : `dict`, optional
         a `dict` of ``(name, channel-type)`` pairs, where ``channel-type``
@@ -131,8 +134,8 @@ def read(source, channels, start=None, end=None, type=None,
     return out
 
 
-def read_gwf(filename, channels, start=None, end=None, ctype=None,
-             series_class=TimeSeries):
+def read_gwf(filename, channels, start=None, end=None, scaled=True,
+             ctype=None, series_class=TimeSeries):
     """Read a dict of series data from a single GWF file
 
     Parameters
@@ -150,6 +153,9 @@ def read_gwf(filename, channels, start=None, end=None, ctype=None,
     end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS end time of required data, anything parseable by
         :func:`~gwpy.time.to_gps` is fine.
+
+    scaled : `bool`, optional
+        apply slope and bias calibration to ADC data.
 
     type : `dict`, optional
         a `dict` of ``(name, channel-type)`` pairs, where ``channel-type``
@@ -205,7 +211,7 @@ def read_gwf(filename, channels, start=None, end=None, ctype=None,
         for channel in channels:
             try:
                 new = _read_channel(stream, this, str(channel), ctype[channel],
-                                    epoch, start, end,
+                                    epoch, start, end, scaled=scaled,
                                     series_class=series_class)
             except _Skip:  # don't need this frame for this channel
                 continue
@@ -231,13 +237,13 @@ def read_gwf(filename, channels, start=None, end=None, ctype=None,
 
 
 def _read_channel(stream, num, name, ctype, epoch, start, end,
-                  series_class=TimeSeries):
+                  scaled=True, series_class=TimeSeries):
     """Read a channel from a specific frame in a stream
     """
     _reader = getattr(stream, 'ReadFr{0}Data'.format(ctype.title()))
     data = _reader(num, name)
     return read_frdata(data, epoch, start, end, name=name,
-                       series_class=series_class)
+                       scaled=scaled, series_class=series_class)
 
 
 def get_channel_types(stream, channels, ctype=None):
@@ -295,7 +301,8 @@ def _need_frame(frame, start, end):
     return True
 
 
-def read_frdata(frdata, epoch, start, end, name=None, series_class=TimeSeries):
+def read_frdata(frdata, epoch, start, end, name=None, scaled=True,
+                series_class=TimeSeries):
     """Read a series from an `FrData` structure
 
     Parameters
@@ -312,6 +319,9 @@ def read_frdata(frdata, epoch, start, end, name=None, series_class=TimeSeries):
 
     end : `float`
         the GPS end time of the user request
+
+    scaled : `bool`, optional
+        apply slope and bias calibration to ADC data.
 
     name : `str`, optional
         the name of the desired dataset, required to filter out
@@ -341,6 +351,14 @@ def read_frdata(frdata, epoch, start, end, name=None, series_class=TimeSeries):
     if (end and datastart >= end) or (trange and datastart + trange < start):
         raise _Skip()
 
+    # get scaling
+    try:
+        slope = frdata.GetSlope()
+        bias = frdata.GetBias()
+    except AttributeError:  # not FrAdcData
+        slope = None
+        bias = None
+
     out = None
     for j in range(frdata.data.size()):
         # we use range(frdata.data.size()) to avoid segfault
@@ -350,6 +368,16 @@ def read_frdata(frdata, epoch, start, end, name=None, series_class=TimeSeries):
                               name=name, series_class=series_class)
         except _Skip:
             continue
+
+        # apply ADC scaling
+        if slope is not None and scaled:
+            new *= slope
+            new += bias
+        elif slope is not None:
+            # user has deliberately disabled the ADC calibration, so
+            # the stored engineering unit is not valid, revert to 'counts':
+            new.override_unit('counts')
+
         if out is None:
             out = new
         else:
