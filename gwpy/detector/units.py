@@ -119,20 +119,24 @@ def parse_unit(name, parse_strict='warn', format='gwpy'):
     ValueError
         if the unit cannot be parsed and `parse_strict='raise'`
     """
-    if name is None:
-        return None
+    if name is None or isinstance(name, units.UnitBase):
+        return name
 
-    # pylint: disable=unexpected-keyword-arg
-    try:
-        return units.Unit(name, parse_strict='raise')
-    except ValueError as exc:
-        if parse_strict == 'raise' or 'did not parse as unit' not in str(exc):
-            raise
-        # try again using out own lenient parser
-        GWpyFormat.warn = parse_strict != 'silent'  # don't warn if 'silent'
-        return units.Unit(name, parse_strict='silent', format=format)
-    finally:
-        GWpyFormat.warn = True
+    try:  # have we already identified this unit as unrecognised?
+        return UNRECOGNIZED_UNITS[name]
+    except KeyError:  # no, this is new
+        # pylint: disable=unexpected-keyword-arg
+        try:
+            return units.Unit(name, parse_strict='raise')
+        except ValueError as exc:
+            if (parse_strict == 'raise' or
+                    'did not parse as unit' not in str(exc)):
+                raise
+            # try again using out own lenient parser
+            GWpyFormat.warn = parse_strict != 'silent'  # don't warn if 'silent'
+            return units.Unit(name, parse_strict='silent', format=format)
+        finally:
+            GWpyFormat.warn = True
 
 
 # -- custom units -------------------------------------------------------------

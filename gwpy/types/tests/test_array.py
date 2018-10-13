@@ -32,6 +32,7 @@ from astropy.time import Time
 
 from ...detector import Channel
 from ...tests import utils
+from ...tests.mocks import mock
 from ...time import LIGOTimeGPS
 from .. import Array
 
@@ -120,7 +121,9 @@ class TestArray(object):
         assert array.unit is units.m
 
         # test unrecognised units
-        with pytest.warns(units.UnitsWarning):
+        with mock.patch.dict(
+                'gwpy.detector.units.UNRECOGNIZED_UNITS', clear=True), \
+             pytest.warns(units.UnitsWarning):
             array = self.create(unit='blah')
         assert isinstance(array.unit, units.IrreducibleUnit)
         assert str(array.unit) == 'blah'
@@ -250,13 +253,13 @@ class TestArray(object):
 
         # check parse_strict works for each of 'raise' (default), 'warn',
         # and 'silent'
-        with pytest.raises(ValueError):
-            array.override_unit('blah', parse_strict='raise')
-
-        with pytest.warns(units.UnitsWarning):
-            array.override_unit('blah', parse_strict='warn')
-
-        array.override_unit('blah', parse_strict='silent')
+        with mock.patch.dict(
+                'gwpy.detector.units.UNRECOGNIZED_UNITS', clear=True):
+            with pytest.raises(ValueError):
+                array.override_unit('blah', parse_strict='raise')
+            with pytest.warns(units.UnitsWarning):
+                array.override_unit('blah', parse_strict='warn')
+            array.override_unit('blah', parse_strict='silent')
         assert isinstance(array.unit, units.IrreducibleUnit)
         assert str(array.unit) == 'blah'
 
