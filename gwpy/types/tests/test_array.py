@@ -123,7 +123,7 @@ class TestArray(object):
         # test unrecognised units
         with mock.patch.dict(
                 'gwpy.detector.units.UNRECOGNIZED_UNITS', clear=True), \
-             pytest.warns(units.UnitsWarning):
+                pytest.warns(units.UnitsWarning):
             array = self.create(unit='blah')
         assert isinstance(array.unit, units.IrreducibleUnit)
         assert str(array.unit) == 'blah'
