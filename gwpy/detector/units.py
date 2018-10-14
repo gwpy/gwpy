@@ -133,7 +133,7 @@ def parse_unit(name, parse_strict='warn', format='gwpy'):
                     'did not parse as unit' not in str(exc)):
                 raise
             # try again using out own lenient parser
-            GWpyFormat.warn = parse_strict != 'silent'  # don't warn if 'silent'
+            GWpyFormat.warn = parse_strict != 'silent'
             return units.Unit(name, parse_strict='silent', format=format)
         finally:
             GWpyFormat.warn = True
