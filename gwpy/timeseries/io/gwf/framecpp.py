@@ -524,7 +524,8 @@ def append_to_frame(frame, timeseries, type='proc', channelid=0):
     else:
         channel = str(timeseries.name)
 
-    offset = timeseries.t0.value - float(LIGOTimeGPS(*frame.GetGTime()))
+    offset = float(LIGOTimeGPS(timeseries.t0.value) -
+                   LIGOTimeGPS(*frame.GetGTime()))
 
     # create the data container
     if type.lower() == 'adc':
@@ -535,6 +536,7 @@ def append_to_frame(frame, timeseries, type='proc', channelid=0):
             16,  # number of bits in ADC
             timeseries.sample_rate.value,  # sample rate
         )
+        frdata.SetTimeOffset(offset)
         append = frame.AppendFrAdcData
     elif type.lower() == 'proc':
         frdata = frameCPP.FrProcData(
