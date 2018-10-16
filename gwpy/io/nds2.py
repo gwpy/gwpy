@@ -369,7 +369,7 @@ def parse_nds2_enums(func):
 @parse_nds2_enums
 def find_channels(channels, connection=None, host=None, port=None,
                   sample_rate=None, type=Nds2ChannelType.any(),
-                  dtype=Nds2DataType.any(), unique=False, epoch=None):
+                  dtype=Nds2DataType.any(), unique=False, epoch='ALL'):
     # pylint: disable=unused-argument,redefined-builtin
     """Query an NDS2 server for channel information
 
@@ -418,10 +418,10 @@ def find_channels(channels, connection=None, host=None, port=None,
     [<G1:DER_DATA_H (16384Hz, RDS, FLOAT64)>]
     """
     # set epoch
-    if isinstance(epoch, tuple):
+    if isinstance(epoch, tuple):  # gps [start, stop)
         connection.set_epoch(*epoch)
-    elif epoch is not None:
-        connection.set_epoch(epoch)
+    else:  # epoch name (or None -> 'ALL')
+        connection.set_epoch(epoch or 'ALL')
 
     # format sample_rate as tuple for find_channels call
     if isinstance(sample_rate, (int, float)):
