@@ -473,11 +473,15 @@ def _find_channel(connection, name, ctype, dtype, sample_rate, unique=False):
     """
     # parse channel type from name (e.g. 'L1:GDS-CALIB_STRAIN,reduced')
     try:
-        name, ctype = name.rsplit(',', 1)
+        name, ctypestr = name.rsplit(',', 1)
     except ValueError:
         pass
     else:
-        ctype = Nds2ChannelType.find(ctype).value
+        ctype = Nds2ChannelType.find(ctypestr).value
+        # NDS1 stores channels with trend suffix, so we put it back:
+        if connection.get_protocol() == 1 and ctype in (
+               Nds2ChannelType.STREND.value, Nds2ChannelType.MTREND.value):
+            name += ',{0}'.format(ctypestr)
 
     # query NDS2
     found = connection.find_channels(name, ctype, dtype, *sample_rate)
