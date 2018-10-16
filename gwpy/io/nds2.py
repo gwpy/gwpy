@@ -363,9 +363,32 @@ def parse_nds2_enums(func):
     return wrapped_func
 
 
+def reset_epoch(func):
+    """Wrap a function to reset the epoch when finished
+
+    This is useful for functions that wish to use `connection.set_epoch`.
+    """
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):  # pylint: disable=missing-docstring
+        try:
+            connection = kwargs.get('connection')
+        except KeyError:
+            epoch = none
+        else:
+            epoch = connection.current_epoch()
+        try:
+            return func(*args, **kwargs)
+        finally:
+            if epoch is not None:
+                connection.set_epoch(epoch.gps_start, epoch.gps_stop)
+    return wrapped_func
+
+
+
 # -- query methods ------------------------------------------------------------
 
 @open_connection
+@reset_epoch
 @parse_nds2_enums
 def find_channels(channels, connection=None, host=None, port=None,
                   sample_rate=None, type=Nds2ChannelType.any(),
@@ -505,6 +528,7 @@ def _find_channel(connection, name, ctype, dtype, sample_rate, unique=False):
 
 
 @open_connection
+@reset_epoch
 def get_availability(channels, start, end,
                      connection=None, host=None, port=None):
     # pylint: disable=unused-argument
