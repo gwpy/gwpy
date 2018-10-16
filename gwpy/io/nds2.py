@@ -424,6 +424,10 @@ def find_channels(channels, connection=None, host=None, port=None,
     unique : `bool`, optional, default: `False`
         require one (and only one) match per channel
 
+    epoch : `str`, `tuple` of `int`, optional
+        the NDS epoch to restrict to, either the name of a known epoch,
+        or a 2-tuple of GPS ``[start, stop)`` times
+
     Returns
     -------
     channels : `list` of `nds2.channel`
@@ -441,10 +445,9 @@ def find_channels(channels, connection=None, host=None, port=None,
     [<G1:DER_DATA_H (16384Hz, RDS, FLOAT64)>]
     """
     # set epoch
-    if isinstance(epoch, tuple):  # gps [start, stop)
-        connection.set_epoch(*epoch)
-    else:  # epoch name (or None -> 'ALL')
-        connection.set_epoch(epoch or 'ALL')
+    if not isinstance(epoch, tuple):
+        epoch = (epoch or 'All',)
+    connection.set_epoch(*epoch)
 
     # format sample_rate as tuple for find_channels call
     if isinstance(sample_rate, (int, float)):
