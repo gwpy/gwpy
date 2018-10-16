@@ -496,17 +496,9 @@ def _find_channel(connection, name, ctype, dtype, sample_rate, unique=False):
     nds2.connection.find_channels
         for documentation on the underlying query method
     """
-    # parse channel type from name (e.g. 'L1:GDS-CALIB_STRAIN,reduced')
-    try:
-        name, ctypestr = name.rsplit(',', 1)
-    except ValueError:
-        pass
-    else:
-        ctype = Nds2ChannelType.find(ctypestr).value
-        # NDS1 stores channels with trend suffix, so we put it back:
-        if connection.get_protocol() == 1 and ctype in (
-               Nds2ChannelType.STREND.value, Nds2ChannelType.MTREND.value):
-            name += ',{0}'.format(ctypestr)
+    # parse channel type from name,
+    # e.g. 'L1:GDS-CALIB_STRAIN,reduced' -> 'L1:GDS-CALIB_STRAIN', 'reduced'
+    name, ctype = _strip_ctype(name, ctype, connection.get_protocol())
 
     # query NDS2
     found = connection.find_channels(name, ctype, dtype, *sample_rate)
@@ -527,6 +519,28 @@ def _find_channel(connection, name, ctype, dtype, sample_rate, unique=False):
                          % name)
 
     return found
+
+
+def _strip_ctype(name, ctype, protocol=2):
+    """Strip the ctype from a channel name for the given nds server version
+
+    This is needed because NDS1 servers store trend channels _including_
+    the suffix, but not raw channels, and NDS2 doesn't do this.
+    """
+    # parse channel type from name (e.g. 'L1:GDS-CALIB_STRAIN,reduced')
+    try:
+        name, ctypestr = name.rsplit(',', 1)
+    except ValueError:
+        pass
+    else:
+        ctype = Nds2ChannelType.find(ctypestr).value
+        # NDS1 stores channels with trend suffix, so we put it back:
+        if protocol == 1 and ctype in (
+               Nds2ChannelType.STREND.value,
+               Nds2ChannelType.MTREND.value
+        ):
+            name += ',{0}'.format(ctypestr)
+    return name, ctype
 
 
 @open_connection
