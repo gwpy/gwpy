@@ -35,7 +35,8 @@ Requires:       scipy >= 0.12.1
 Requires:       python-matplotlib >= 1.2.0
 Requires:       python-astropy >= 1.1.1
 Requires:       h5py >= 1.3
-Requires:       lal-python >= 6.14.0
+Requires:       python2-ldas-tools-framecpp >= 2.6.0
+Requires:       python2-lal >= 6.14.0
 Requires:       python2-ligo-segments >= 1.0.0
 Requires:       python2-tqdm >= 4.10.0
 
