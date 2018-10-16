@@ -363,13 +363,35 @@ def parse_nds2_enums(func):
     return wrapped_func
 
 
+def reset_epoch(func):
+    """Wrap a function to reset the epoch when finished
+
+    This is useful for functions that wish to use `connection.set_epoch`.
+    """
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):  # pylint: disable=missing-docstring
+        try:
+            connection = kwargs.get('connection')
+        except KeyError:
+            epoch = none
+        else:
+            epoch = connection.current_epoch()
+        try:
+            return func(*args, **kwargs)
+        finally:
+            if epoch is not None:
+                connection.set_epoch(epoch.gps_start, epoch.gps_stop)
+    return wrapped_func
+
+
 # -- query methods ------------------------------------------------------------
 
 @open_connection
+@reset_epoch
 @parse_nds2_enums
 def find_channels(channels, connection=None, host=None, port=None,
                   sample_rate=None, type=Nds2ChannelType.any(),
-                  dtype=Nds2DataType.any(), unique=False, epoch=None):
+                  dtype=Nds2DataType.any(), unique=False, epoch='ALL'):
     # pylint: disable=unused-argument,redefined-builtin
     """Query an NDS2 server for channel information
 
@@ -401,6 +423,10 @@ def find_channels(channels, connection=None, host=None, port=None,
     unique : `bool`, optional, default: `False`
         require one (and only one) match per channel
 
+    epoch : `str`, `tuple` of `int`, optional
+        the NDS epoch to restrict to, either the name of a known epoch,
+        or a 2-tuple of GPS ``[start, stop)`` times
+
     Returns
     -------
     channels : `list` of `nds2.channel`
@@ -418,10 +444,9 @@ def find_channels(channels, connection=None, host=None, port=None,
     [<G1:DER_DATA_H (16384Hz, RDS, FLOAT64)>]
     """
     # set epoch
-    if isinstance(epoch, tuple):
-        connection.set_epoch(*epoch)
-    elif epoch is not None:
-        connection.set_epoch(epoch)
+    if not isinstance(epoch, tuple):
+        epoch = (epoch or 'All',)
+    connection.set_epoch(*epoch)
 
     # format sample_rate as tuple for find_channels call
     if isinstance(sample_rate, (int, float)):
@@ -471,13 +496,9 @@ def _find_channel(connection, name, ctype, dtype, sample_rate, unique=False):
     nds2.connection.find_channels
         for documentation on the underlying query method
     """
-    # parse channel type from name (e.g. 'L1:GDS-CALIB_STRAIN,reduced')
-    try:
-        name, ctype = name.rsplit(',', 1)
-    except ValueError:
-        pass
-    else:
-        ctype = Nds2ChannelType.find(ctype).value
+    # parse channel type from name,
+    # e.g. 'L1:GDS-CALIB_STRAIN,reduced' -> 'L1:GDS-CALIB_STRAIN', 'reduced'
+    name, ctype = _strip_ctype(name, ctype, connection.get_protocol())
 
     # query NDS2
     found = connection.find_channels(name, ctype, dtype, *sample_rate)
@@ -500,7 +521,30 @@ def _find_channel(connection, name, ctype, dtype, sample_rate, unique=False):
     return found
 
 
+def _strip_ctype(name, ctype, protocol=2):
+    """Strip the ctype from a channel name for the given nds server version
+
+    This is needed because NDS1 servers store trend channels _including_
+    the suffix, but not raw channels, and NDS2 doesn't do this.
+    """
+    # parse channel type from name (e.g. 'L1:GDS-CALIB_STRAIN,reduced')
+    try:
+        name, ctypestr = name.rsplit(',', 1)
+    except ValueError:
+        pass
+    else:
+        ctype = Nds2ChannelType.find(ctypestr).value
+        # NDS1 stores channels with trend suffix, so we put it back:
+        if protocol == 1 and ctype in (
+               Nds2ChannelType.STREND.value,
+               Nds2ChannelType.MTREND.value
+        ):
+            name += ',{0}'.format(ctypestr)
+    return name, ctype
+
+
 @open_connection
+@reset_epoch
 def get_availability(channels, start, end,
                      connection=None, host=None, port=None):
     # pylint: disable=unused-argument

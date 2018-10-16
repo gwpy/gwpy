@@ -107,9 +107,10 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
                   verbose=verbose)
     utype = reduce(operator.or_, type.values())  # logical OR of types
     udtype = reduce(operator.or_, dtype.values())
+    epoch = (start, end) if connection.get_protocol() > 1 else None
     ndschannels = io_nds2.find_channels(channels, connection=connection,
-                                        type=utype, dtype=udtype, unique=True,
-                                        epoch=(start, end))
+                                        epoch=epoch, type=utype, dtype=udtype,
+                                        unique=True)
 
     names = [Channel.from_nds2(c).ndsname for c in ndschannels]
     print_verbose('done', verbose=verbose)
@@ -127,6 +128,9 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
     if pad is None:
         qsegs = span
         gap = 'raise'
+    elif connection.get_protocol() == 1:
+        qsegs = span
+        gap = 'pad'
     else:
         print_verbose("Querying for data availability...", end=' ',
                       verbose=verbose)
