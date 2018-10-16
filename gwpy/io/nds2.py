@@ -384,7 +384,6 @@ def reset_epoch(func):
     return wrapped_func
 
 
-
 # -- query methods ------------------------------------------------------------
 
 @open_connection
