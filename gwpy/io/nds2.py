@@ -266,7 +266,11 @@ def host_resolution_order(ifo, env='NDSSERVER', epoch='now',
         try:
             host, port = DEFAULT_HOSTS[difo]
         except KeyError:
-            warnings.warn('No default host found for ifo %r' % ifo)
+            # unknown default NDS2 host for detector, if we don't have
+            # hosts already defined (either by NDSSERVER or similar)
+            # we should warn the user
+            if not hosts:
+                warnings.warn('No default host found for ifo %r' % ifo)
         else:
             if (host, port) not in hosts:
                 hosts.append((host, port))
