@@ -128,8 +128,8 @@ def read(source, channels, start=None, end=None, scaled=True, type=None,
             for name in out:
                 out[name] = numpy.require(out[name], requirements=['O'])
         # read frame
-        out.append(read_gwf(file_, channels, start=start, end=end,
-                            ctype=ctype, series_class=series_class),
+        out.append(read_gwf(file_, channels, start=start, end=end, ctype=ctype,
+                            scaled=scaled, series_class=series_class),
                    copy=False)
     return out
 
@@ -376,7 +376,7 @@ def read_frdata(frdata, epoch, start, end, name=None, scaled=True,
         elif slope is not None:
             # user has deliberately disabled the ADC calibration, so
             # the stored engineering unit is not valid, revert to 'counts':
-            new.override_unit('counts')
+            new.override_unit('count')
 
         if out is None:
             out = new
