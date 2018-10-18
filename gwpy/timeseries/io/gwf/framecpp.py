@@ -194,7 +194,7 @@ def read_gwf(filename, channels, start=None, end=None, scaled=True,
 
         # read frame
         try:
-            frame = stream.ReadFrameN(this)
+            frame = stream.ReadFrameNSubset(this, 0)
         except IndexError:
             if this >= nframes:
                 break
