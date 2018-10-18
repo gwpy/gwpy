@@ -101,13 +101,15 @@ def multiprocess_with_queues(nproc, func, inputs, verbose=False,
                       "removed in a future release, all exceptions will be "
                       "raised if they occur", DeprecationWarning)
 
-    # create progress bar
-    progress_kw.setdefault('disable', not bool(verbose))
-    if not isinstance(verbose, bool):
-        progress_kw['desc'] = str(verbose)
-    if isinstance(inputs, (list, tuple)):
-        progress_kw.setdefault('total', len(inputs))
-    pbar = progress_bar(**progress_kw)
+    # create progress bar for verbose output
+    if bool(verbose):
+        if not isinstance(verbose, bool):
+            progress_kw['desc'] = str(verbose)
+        if isinstance(inputs, (list, tuple)):
+            progress_kw.setdefault('total', len(inputs))
+        pbar = progress_bar(**progress_kw)
+    else:
+        pbar = None
 
     # -------------------------------------------
 
@@ -121,7 +123,7 @@ def multiprocess_with_queues(nproc, func, inputs, verbose=False,
                 raise
             return exc
         finally:
-            if nproc == 1:
+            if pbar and nproc == 1:
                 pbar.update()
 
     # -------------------------------------------
@@ -153,14 +155,16 @@ def multiprocess_with_queues(nproc, func, inputs, verbose=False,
     res = []
     for _ in range(len(sent)):
         x = q_out.get()
-        pbar.update()
+        if pbar:
+            pbar.update()
         res.append(x)
 
     # close processes and unwrap results
     for proc in proclist:
         proc.join()
 
-    pbar.close()
+    if pbar:
+        pbar.close()
 
     # unwrap results in order
     results = [out for _, out in sorted(res, key=itemgetter(0))]
