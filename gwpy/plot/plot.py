@@ -468,6 +468,12 @@ class Plot(figure.Figure):
         if axes_kw['sharex'] is ax and not ax.get_autoscalex_on():
             axes_kw['xlim'] = ax.get_xlim()
 
+        # if axes uses GPS scaling, copy the epoch as well
+        try:
+            axes_kw['epoch'] = ax.get_epoch()
+        except AttributeError:
+            pass
+
         # add new axes
         if ax.get_axes_locator():
             divider = ax.get_axes_locator()._axes_divider
