@@ -316,7 +316,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             # check padding works
             with pytest.warns(UserWarning):
                 ts2 = self.TEST_CLASS.fetch('L1:TEST', *ts.span.protract(10),
-                                            pad=-100.)
+                                            pad=-100., host='anything')
             assert ts2.span == ts.span.protract(10)
             assert ts2[0] == -100. * ts.unit
             assert ts2[10] == ts[0]
