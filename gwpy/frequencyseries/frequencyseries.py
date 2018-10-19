@@ -58,7 +58,8 @@ class FrequencySeries(Series):
 
     frequencies : `array-like`
         the complete array of frequencies indexing the data.
-        This argument takes precedence over `f0` and `df` so should
+        This argument takes precedence over `
+        ` and `df` so should
         be given in place of these if relevant, not alongside
 
     epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
@@ -295,6 +296,7 @@ class FrequencySeries(Series):
         :func:`numpy.interp`
             for the underlying 1-D linear interpolation scheme
         """
+        self.f0 = 0
         N = (self.size - 1) * (self.df.decompose().value / df) + 1
         fsamples = numpy.arange(0, numpy.rint(N)) * df
         out = numpy.interp(fsamples, self.frequencies.value, self.value,
