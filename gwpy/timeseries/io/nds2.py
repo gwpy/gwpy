@@ -26,6 +26,8 @@ import warnings
 
 from six.moves import reduce
 
+from numpy import ones as numpy_ones
+
 from ...detector import Channel
 from ...io import nds2 as io_nds2
 from ...segments import (Segment, SegmentList)
@@ -164,7 +166,44 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
                 raise RuntimeError("no data received from {0} for {1}".format(
                     connection.get_host(), seg))
 
+    # finalise timeseries to make sure each channel has the correct limits
+    # only if user asked to pad gaps
+    if pad is not None:
+        for chan, ndschan in zip(channels, ndschannels):
+            try:
+                ts = out[chan]
+            except KeyError:
+                out[chan] = _create_series(ndschan, pad, start, end,
+                                           series_class=series_class)
+            else:
+                out[chan] = _pad_series(ts, pad, start, end)
+
     return out
+
+
+def _pad_series(ts, pad, start, end):
+    """Pad a timeseries to match the specified [start, end) limits
+
+    To cover a gap in data returned from NDS
+    """
+    span = ts.span
+    pada = max(int((span[0] - start) * ts.sample_rate.value), 0)
+    padb = max(int((end - span[1]) * ts.sample_rate.value), 0)
+    if pada or padb:
+        return ts.pad((pada, padb), mode='constant', constant_values=pad)
+    return ts
+
+
+def _create_series(ndschan, value, start, end, series_class=TimeSeries):
+    """Create a timeseries to cover the specified [start, end) limits
+
+    To cover a gap in data returned from NDS
+    """
+    channel = Channel.from_nds2(ndschan)
+    nsamp = int((end - start) * channel.sample_rate.value)
+    return series_class(numpy_ones(nsamp) * value, t0=start,
+                        sample_rate=channel.sample_rate, unit=channel.unit,
+                        channel=channel)
 
 
 def _get_data_segments(channels, start, end, connection):

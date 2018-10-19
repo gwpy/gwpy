@@ -303,12 +303,25 @@ class TestTimeSeries(_TestTimeSeriesBase):
         with mock.patch('nds2.connection') as mock_connection, \
                 mock.patch('nds2.buffer', nds_buffer):
             mock_connection.return_value = nds_connection
+
             # use verbose=True to hit more lines
             ts2 = self.TEST_CLASS.fetch('L1:TEST', *ts.span, verbose=True)
+            utils.assert_quantity_sub_equal(ts, ts2, exclude=['channel'])
+
             # check open connection works
             ts2 = self.TEST_CLASS.fetch('L1:TEST', *ts.span, verbose=True,
                                         connection=nds_connection)
-        utils.assert_quantity_sub_equal(ts, ts2, exclude=['channel'])
+            utils.assert_quantity_sub_equal(ts, ts2, exclude=['channel'])
+
+            # check padding works
+            with pytest.warns(UserWarning):
+                ts2 = self.TEST_CLASS.fetch('L1:TEST', *ts.span.protract(10),
+                                            pad=-100.)
+            assert ts2.span == ts.span.protract(10)
+            assert ts2[0] == -100. * ts.unit
+            assert ts2[10] == ts[0]
+            assert ts2[-11] == ts[-1]
+            assert ts2[-1] == -100. * ts.unit
 
     @utils.skip_missing_dependency('nds2')
     def test_fetch_empty_iterate_error(self):
