@@ -321,7 +321,9 @@ class TimeSeriesBase(Series):
             open NDS connection to use
 
         verbose : `bool`, optional
-            print verbose output about NDS progress, useful for debugging
+            print verbose output about NDS progress, useful for debugging;
+            if ``verbose`` is specified as a string, this defines the
+            prefix for the progress meter
 
         type : `int`, optional
             NDS2 channel type integer
@@ -491,7 +493,9 @@ class TimeSeriesBase(Series):
             allow reading from frame files on (slow) magnetic tape
 
         verbose : `bool`, optional
-            print verbose output about NDS progress.
+            print verbose output about read progress, if ``verbose``
+            is specified as a string, this defines the prefix for the
+            progress meter
 
         **readargs
             any other keyword arguments to be passed to `.read()`
@@ -541,7 +545,9 @@ class TimeSeriesBase(Series):
             retrieving data from tape if required
 
         verbose : `bool`, optional
-            print verbose output about NDS progress.
+            print verbose output about data access progress, if ``verbose``
+            is specified as a string, this defines the prefix for the
+            progress meter
 
         **kwargs
             other keyword arguments to pass to either
@@ -979,7 +985,9 @@ class TimeSeriesBaseDict(OrderedDict):
             check channels exist in database before asking for data
 
         verbose : `bool`, optional
-            print verbose output about NDS progress.
+            print verbose output about NDS download progress, if ``verbose``
+            is specified as a string, this defines the prefix for the
+            progress meter
 
         connection : `nds2.connection`, optional
             open NDS connection to use.
@@ -1114,7 +1122,9 @@ class TimeSeriesBaseDict(OrderedDict):
             allow reading from frame files on (slow) magnetic tape
 
         verbose : `bool`, optional
-            print verbose output about NDS progress.
+            print verbose output about read progress, if ``verbose``
+            is specified as a string, this defines the prefix for the
+            progress meter
 
         **readargs
             any other keyword arguments to be passed to `.read()`
@@ -1223,7 +1233,9 @@ class TimeSeriesBaseDict(OrderedDict):
             retrieving data from tape if required
 
         verbose : `bool`, optional
-            print verbose output about NDS progress.
+            print verbose output about data access progress, if ``verbose``
+            is specified as a string, this defines the prefix for the
+            progress meter
 
         **kwargs
             other keyword arguments to pass to either
