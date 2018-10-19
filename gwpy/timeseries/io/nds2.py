@@ -39,7 +39,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 def print_verbose(*args, **kwargs):
     """Utility to print something only if verbose=True is given
     """
-    if kwargs.pop('verbose', False):
+    if kwargs.pop('verbose', False) is True:
         gprint(*args, **kwargs)
 
 
@@ -78,9 +78,11 @@ def set_parameter(connection, parameter, value, verbose=False):
             'failed to set {}={!r}: {}'.format(parameter, value, str(exc)),
             io_nds2.NDSWarning)
     else:
-        if verbose:
-            print('    [{}] set {}={!r}'.format(connection.get_host(),
-                                                parameter, value))
+        print_verbose(
+            '    [{}] set {}={!r}'.format(
+                connection.get_host(), parameter, value),
+            verbose=verbose,
+        )
 
 
 @io_nds2.open_connection
@@ -148,7 +150,8 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
 
     # query for each segment
     out = series_class.DictClass()
-    with progress_bar(total=float(abs(qsegs)), desc='Downloading data',
+    desc = verbose if isinstance(verbose, str) else 'Downloading data'
+    with progress_bar(total=float(abs(qsegs)), desc=desc,
                       unit='s', disable=not bool(verbose)) as bar:
         for seg in qsegs:
             total = 0.
