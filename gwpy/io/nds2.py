@@ -553,9 +553,8 @@ def get_availability(channels, start, end,
     Parameters
     ----------
     channels : `list` of `str`
-        list of channel names to query, each name should be of the form
-        ``name,type``, e.g. ``L1:GDS-CALIB_STRAIN,reduced`` in order to
-        match results
+        list of channel names to query; this list is mapped to NDS channel
+        names using :func:`find_channels`.
 
     start : `int`
         GPS start time of query
@@ -578,6 +577,12 @@ def get_availability(channels, start, end,
     segdict : `~gwpy.segments.SegmentListDict`
         dict of ``(name, SegmentList)`` pairs
 
+    Raises
+    ------
+    ValueError
+        if the given channel name cannot be mapped uniquely to a name
+        in the NDS server database.
+
     See also
     --------
     nds2.connection.get_availability
@@ -585,10 +590,15 @@ def get_availability(channels, start, end,
     """
     from ..segments import (Segment, SegmentList, SegmentListDict)
     connection.set_epoch(start, end)
-    names = _get_nds2_names(channels)
+    # map user-given real names to NDS names
+    names = map(_get_nds2_name,
+                find_channels(channels, epoch=(start, end),
+                              connection=connection, unique=True))
+    # query for availability
     result = connection.get_availability(names)
+    # map to segment types
     out = SegmentListDict()
-    for name, result in zip(_get_nds2_names(channels), result):
+    for name, result in zip(channels, result):
         out[name] = SegmentList([Segment(s.gps_start, s.gps_stop) for s in
                                  result.simple_list()])
     return out
