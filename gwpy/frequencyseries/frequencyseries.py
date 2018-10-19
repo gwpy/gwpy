@@ -58,7 +58,7 @@ class FrequencySeries(Series):
 
     frequencies : `array-like`
         the complete array of frequencies indexing the data.
-        This argument takes precedence over `` and `df` so should
+        This argument takes precedence over `f0` and `df` so should
         be given in place of these if relevant, not alongside
 
     epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
