@@ -56,8 +56,10 @@ DEFAULT_HOSTS = OrderedDict([
     ('H0', ('nds.ligo-wa.caltech.edu', 31200)),
     ('L1', ('nds.ligo-la.caltech.edu', 31200)),
     ('L0', ('nds.ligo-la.caltech.edu', 31200)),
+    ('V1', ('nds.ligo.caltech.edu', 31200)),
     ('C1', ('nds40.ligo.caltech.edu', 31200)),
-    ('C0', ('nds40.ligo.caltech.edu', 31200))])
+    ('C0', ('nds40.ligo.caltech.edu', 31200)),
+])
 
 
 # -- enums --------------------------------------------------------------------
