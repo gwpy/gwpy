@@ -126,6 +126,7 @@ def nds2_buffer(channel, data, epoch, sample_rate, unit):
     ndsbuffer = mock.create_autospec(nds2.buffer)
     ndsbuffer.length = len(data)
     ndsbuffer.channel = nds2_channel(channel, sample_rate, unit)
+    ndsbuffer.sample_rate = sample_rate
     ndsbuffer.gps_seconds = epoch.gpsSeconds
     ndsbuffer.gps_nanoseconds = epoch.gpsNanoSeconds
     ndsbuffer.data = data
@@ -175,6 +176,22 @@ def nds2_connection(host='nds.test.gwpy', port=31200, buffers=[]):
         return [b.channel for b in buffers if b.channel.name == name]
 
     NdsConnection.find_channels = find_channels
+
+    def get_availability(names):
+        out = []
+        for buff in buffers:
+            name = '{0.name},{0.type}'.format(Channel.from_nds2(buff.channel))
+            if name not in names:
+                segs = []
+            else:
+                start = buff.gps_seconds + buff.gps_nanoseconds * 1e-9
+                end = start + buff.sample_rate * buff.length
+                segs = [(start, end)]
+            out.append(nds2_availability(name, segs))
+        return out
+
+    NdsConnection.get_availability = get_availability
+
     return NdsConnection
 
 
