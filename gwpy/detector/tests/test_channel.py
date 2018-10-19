@@ -442,13 +442,13 @@ class TestChannelList(object):
 
     @utils.skip_missing_dependency('nds2')
     def test_query_nds2_availability(self):
-        # mock NDS2 query
+        # mock NDS2 connection
         ndsb = mocks.nds2_buffer(self.NAMES[0], [], 0, 64, 'm')
-        availability = [
-            mocks.nds2_availability(self.NAMES[0], [(0, 10), (20, 30)]),
-        ]
         conn = mocks.nds2_connection(buffers=[ndsb])
-        conn.get_availability.return_value = availability
+        # mock availability
+        availability = [mocks.nds2_availability(self.NAMES[0], [(0, 10), (20, 30)])]
+        conn.get_availability = lambda x: availability
+
         with mock.patch('nds2.connection') as ndsc:
             ndsc.return_value = conn
 
