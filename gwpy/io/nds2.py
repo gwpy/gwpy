@@ -56,8 +56,10 @@ DEFAULT_HOSTS = OrderedDict([
     ('H0', ('nds.ligo-wa.caltech.edu', 31200)),
     ('L1', ('nds.ligo-la.caltech.edu', 31200)),
     ('L0', ('nds.ligo-la.caltech.edu', 31200)),
+    ('V1', ('nds.ligo.caltech.edu', 31200)),
     ('C1', ('nds40.ligo.caltech.edu', 31200)),
-    ('C0', ('nds40.ligo.caltech.edu', 31200))])
+    ('C0', ('nds40.ligo.caltech.edu', 31200)),
+])
 
 
 # -- enums --------------------------------------------------------------------
@@ -266,7 +268,11 @@ def host_resolution_order(ifo, env='NDSSERVER', epoch='now',
         try:
             host, port = DEFAULT_HOSTS[difo]
         except KeyError:
-            warnings.warn('No default host found for ifo %r' % ifo)
+            # unknown default NDS2 host for detector, if we don't have
+            # hosts already defined (either by NDSSERVER or similar)
+            # we should warn the user
+            if not hosts:
+                warnings.warn('No default host found for ifo %r' % ifo)
         else:
             if (host, port) not in hosts:
                 hosts.append((host, port))

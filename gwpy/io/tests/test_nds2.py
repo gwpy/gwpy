@@ -125,9 +125,13 @@ def test_nds2_host_order():
                    ('nds.ligo.caltech.edu', 31200)]
 
     # test warnings for unknown IFO
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning) as record:
+        # should produce warning
         hro = io_nds2.host_resolution_order('X1')
         assert hro == [('nds.ligo.caltech.edu', 31200)]
+        # should _not_ produce warning
+        hro = io_nds2.host_resolution_order('X1', env='TESTENV')
+    assert len(record) == 1  # make sure only one warning was emitted
 
 
 @skip_missing_dependency('nds2')
