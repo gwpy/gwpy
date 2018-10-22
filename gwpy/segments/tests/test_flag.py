@@ -101,7 +101,7 @@ KNOWNACTIVE = _as_segmentlist(
 
 # 'active' set contracted by 0.1 seconds
 ACTIVE_CONTRACTED = _as_segmentlist(
-    (1.1, 1.9), (3.1, 3.9))
+    (1.1, 1.9), (3.1, 3.9), (5.1, 6.9))
 
 # 'active' seg protracted by 0.1 seconts
 ACTIVE_PROTRACTED = _as_segmentlist(
@@ -321,8 +321,9 @@ class TestDataQualityFlag(object):
 
         # sub
         x = a - b
-        utils.assert_segmentlist_equal(x.active, a.active - b.active)
         utils.assert_segmentlist_equal(x.known, a.known & b.known)
+        utils.assert_segmentlist_equal(x.active,
+                                       (a.active - b.active) & x.known)
 
         # or
         x = a | b

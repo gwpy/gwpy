@@ -25,6 +25,7 @@ from contextlib import contextmanager
 from importlib import import_module
 
 from six import PY2
+from six.moves import zip_longest
 
 import pytest
 
@@ -177,7 +178,7 @@ def assert_table_equal(a, b, is_copy=True, meta=False, check_types=True,
 def assert_segmentlist_equal(a, b):
     """Assert that two `SegmentList`s contain the same data
     """
-    for aseg, bseg in zip(a, b):
+    for aseg, bseg in zip_longest(a, b):
         assert aseg == bseg
 
 
