@@ -25,8 +25,7 @@ import tempfile
 
 import pytest
 
-from ...tests.utils import (assert_segmentlist_equal, skip_missing_dependency,
-                            TemporaryFilename)
+from ...tests.utils import (assert_segmentlist_equal, TemporaryFilename)
 from ...time import LIGOTimeGPS
 from .. import (Segment, SegmentList)
 
@@ -78,7 +77,6 @@ class TestSegmentList(object):
 
     # -- test I/O -------------------------------
 
-    @skip_missing_dependency('glue.segmentsUtils')
     def test_read_write_segwizard(self, segmentlist):
         with TemporaryFilename(suffix='.txt') as tmp:
             # check write/read returns the same list
