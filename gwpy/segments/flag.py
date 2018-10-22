@@ -604,6 +604,10 @@ class DataQualityFlag(object):
             require segment start and stop times match printed duration,
             only valid for ``format='segwizard'``.
 
+        coalesce : `bool`, optional
+            if `True` coalesce the all segment lists before returning,
+            otherwise return exactly as contained in file(s).
+
         nproc : `int`, optional, default: 1
             number of CPUs to use for parallel reading of multiple files
 
@@ -622,11 +626,20 @@ class DataQualityFlag(object):
             warnings.warn('\'flag\' keyword was renamed \'name\', this '
                           'warning will result in an error in the future')
             kwargs.setdefault('name', kwargs.pop('flags'))
+        coalesce = kwargs.pop('coalesce', False)
 
-        def _combine(flags):
-            return reduce(operator.or_, flags)
+        def combiner(flags):
+            """Combine `DataQualityFlag` from each file into a single object
+            """
+            out = flags[0]
+            for flag in flags[1:]:
+                 out.known += flag.known
+                 out.active += flag.active
+            if coalesce:
+                return out.coalesce()
+            return out
 
-        return io_read_multi(_combine, cls, source, *args, **kwargs)
+        return io_read_multi(combiner, cls, source, *args, **kwargs)
 
     @classmethod
     def from_veto_def(cls, veto):
@@ -1260,8 +1273,9 @@ class DataQualityDict(OrderedDict):
         names : `list`, optional, default: read all names found
             list of names to read, by default all names are read separately.
 
-        coalesce : `bool`, optional, default: `True`
-            coalesce all `SegmentLists` before returning.
+        coalesce : `bool`, optional
+            if `True` coalesce the all segment lists before returning,
+            otherwise return exactly as contained in file(s).
 
         nproc : `int`, optional, default: 1
             number of CPUs to use for parallel reading of multiple files
@@ -1279,16 +1293,20 @@ class DataQualityDict(OrderedDict):
         Notes
         -----"""
         on_missing = kwargs.pop('on_missing', 'error')
+        coalesce = kwargs.pop('coalesce', False)
 
         if 'flags' in kwargs:  # pragma: no cover
             warnings.warn('\'flags\' keyword was renamed \'names\', this '
                           'warning will result in an error in the future')
             names = kwargs.pop('flags')
 
-        def _combine(inputs):
-            out = reduce(operator.or_, inputs)
-            missing = set(names or []) - set(out.keys())
-            for name in missing:  # validate all requested names are found
+        def combiner(inputs):
+            out = cls()
+
+            # check all names are contained
+            required = set(names or [])
+            found = set(name for dqdict in inputs for name in dqdict)
+            for name in required - found:  # validate all names are found once
                 msg = '{!r} not found in any input file'.format(name)
                 if on_missing == 'ignore':
                     continue
@@ -1296,10 +1314,21 @@ class DataQualityDict(OrderedDict):
                     warnings.warn(msg)
                 else:
                     raise ValueError(msg)
+
+            # combine flags
+            for dqdict in inputs:
+                for flag in dqdict:
+                    try:  # repeated occurence
+                        out[flag].known.extend(dqdict[flag].known)
+                        out[flag].active.extend(dqdict[flag].active)
+                    except KeyError:  # first occurence
+                        out[flag] = dqdict[flag]
+            if coalesce:
+                return out.coalesce()
             return out
 
-        return io_read_multi(_combine, cls, source, names=names, format=format,
-                             on_missing='ignore', **kwargs)
+        return io_read_multi(combiner, cls, source, names=names,
+                             format=format, on_missing='ignore', **kwargs)
 
     @classmethod
     def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None,
