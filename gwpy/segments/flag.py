@@ -1541,6 +1541,20 @@ class DataQualityDict(OrderedDict):
         -----"""
         return io_registry.write(self, target, *args, **kwargs)
 
+    def coalesce(self):
+        """Coalesce all segments lists in this `DataQualityDict`.
+
+        **This method modifies this object in-place.**
+
+        Returns
+        -------
+        self
+            a view of this flag, not a copy.
+        """
+        for flag in self:
+            self[flag].coalesce()
+        return self
+
     def populate(self, source=DEFAULT_SEGMENT_SERVER,
                  segments=None, pad=True, on_error='raise', **kwargs):
         """Query the segment database for each flag's active segments.

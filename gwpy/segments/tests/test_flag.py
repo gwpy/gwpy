@@ -856,3 +856,9 @@ class TestDataQualityDict(object):
                 vdf3[flag].known, QUERY_RESULTC[flag].known & span)
             utils.assert_segmentlist_equal(
                 vdf3[flag].active, QUERY_RESULTC[flag].active & span)
+
+    def test_coalesce(self):
+        instance = self.create()
+        instance.coalesce()
+        value = instance['X1:TEST-FLAG:1']
+        utils.assert_segmentlist_equal(value.active, KNOWNACTIVE)
