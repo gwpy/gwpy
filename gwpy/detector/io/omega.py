@@ -174,10 +174,10 @@ def print_omega_channel(channel, file=sys.stdout):
     params.setdefault('alwaysPlotFlag', int(params.pop('important', False)))
     if channel.frametype:
         params.setdefault('frameType', channel.frametype)
-    if channel.sample_rate:
+    if channel.sample_rate is not None:
         params.setdefault('sampleFrequency',
                           channel.sample_rate.to('Hz').value)
-    if channel.frequency_range:
+    if channel.frequency_range is not None:
         low, high = channel.frequency_range.to('Hz').value
         params.setdefault('searchFrequencyRange', (low, high))
     if 'qlow' in params or 'qhigh' in params:

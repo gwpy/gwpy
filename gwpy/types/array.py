@@ -194,6 +194,8 @@ class Array(Quantity):
         return super(Array, self).__getattribute__(attr)
 
     def __getitem__(self, item):
+        if isinstance(item, list):
+            item = tuple(item)
         new = super(Array, self).__getitem__(item)
 
         # return scalar as a Quantity

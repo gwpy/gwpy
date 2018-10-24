@@ -1771,18 +1771,18 @@ class TimeSeries(TimeSeriesBase):
         from ..signal.qtransform import QTiling
 
         # condition data
-        if whiten:
-            if not isinstance(whiten, FrequencySeries):
-                window = asd_kw.pop('window', 'hann')
-                fftlength = asd_kw.pop('fftlength',
-                                       _fft_length_default(self.dt))
-                overlap = asd_kw.pop('overlap', None)
-                if overlap is None and fftlength == self.duration.value:
-                    asd_kw['method'] = 'scipy-welch'
-                    overlap = 0
-                elif overlap is None:
-                    overlap = recommended_overlap(window) * fftlength
-                whiten = self.asd(fftlength, overlap, window=window, **asd_kw)
+        if whiten is True:  # generate ASD dynamically
+            window = asd_kw.pop('window', 'hann')
+            fftlength = asd_kw.pop('fftlength',
+                                   _fft_length_default(self.dt))
+            overlap = asd_kw.pop('overlap', None)
+            if overlap is None and fftlength == self.duration.value:
+                asd_kw['method'] = 'scipy-welch'
+                overlap = 0
+            elif overlap is None:
+                overlap = recommended_overlap(window) * fftlength
+            whiten = self.asd(fftlength, overlap, window=window, **asd_kw)
+        if isinstance(whiten, FrequencySeries):
             # apply whitening (with errors on dividing by zero)
             with numpy.errstate(all='raise'):
                 data = self.whiten(asd=whiten, fduration=fduration,

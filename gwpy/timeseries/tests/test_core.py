@@ -405,7 +405,8 @@ class TestTimeSeriesBaseList(object):
         new = self.ENTRY_CLASS([1, 2, 3, 4, 5])
         a.append(new)
         b.extend([new])
-        assert a == b
+        for i in range(max(map(len, (a, b)))):
+            utils.assert_quantity_sub_equal(a[i], b[i])
 
     def test_coalesce(self):
         a = self.TEST_CLASS()

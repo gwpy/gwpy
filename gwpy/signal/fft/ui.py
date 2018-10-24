@@ -332,7 +332,7 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
 
     # define chunks
     tschunks = _chunk_timeseries(timeseries, nstride, noverlap)
-    if other:
+    if other is not None:
         otherchunks = _chunk_timeseries(other, nstride, noverlap)
         tschunks = zip(tschunks, otherchunks)
 

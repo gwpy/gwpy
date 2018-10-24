@@ -125,7 +125,7 @@ class TestFrequencySeries(_TestSeries):
         # construct a TimeSeries, then check that it is unchanged by
         # the operation TimeSeries.fft().ifft()
         ts = TimeSeries([1.0, 0.0, -1.0, 0.0], sample_rate=1.0)
-        assert ts.fft().ifft() == ts
+        utils.assert_quantity_sub_equal(ts.fft().ifft(), ts)
         utils.assert_allclose(ts.fft().ifft().value, ts.value)
 
     def test_filter(self, array):
