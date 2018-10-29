@@ -804,11 +804,11 @@ class DataQualityFlag(object):
         """
         def _round(seg):
             if contract:  # round inwards
-                a = ceil(seg[0])
-                b = floor(seg[1])
+                a = type(seg[0])(ceil(seg[0]))
+                b = type(seg[1])(floor(seg[1]))
             else:  # round outwards
-                a = floor(seg[0])
-                b = ceil(seg[1])
+                a = type(seg[0])(floor(seg[0]))
+                b = type(seg[1])(ceil(seg[1]))
             if a >= b:  # if segment is too short, return 'null' segment
                 return type(seg)(0, 0)  # will get coalesced away
             return type(seg)(a, b)
