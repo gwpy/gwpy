@@ -3,6 +3,7 @@ environment:
     - MINICONDA: C:\Miniconda-x64
     - MINICONDA: C:\Miniconda35-x64
     - MINICONDA: C:\Miniconda36-x64
+    - MINICONDA: C:\Miniconda37-x64
 install:
   - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
   - conda config --set always_yes yes
