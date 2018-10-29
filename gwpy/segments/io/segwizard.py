@@ -34,7 +34,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # -- read ---------------------------------------------------------------------
 
-def from_segwizard(source, coalesce=True, gpstype=LIGOTimeGPS, strict=True,
+def from_segwizard(source, coalesce=False, gpstype=LIGOTimeGPS, strict=True,
                    nproc=1):
     """Read segments from a segwizard format file into a `SegmentList`
     """
