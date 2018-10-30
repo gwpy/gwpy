@@ -633,8 +633,8 @@ class DataQualityFlag(object):
             """
             out = flags[0]
             for flag in flags[1:]:
-                 out.known += flag.known
-                 out.active += flag.active
+                out.known += flag.known
+                out.active += flag.active
             if coalesce:
                 return out.coalesce()
             return out
