@@ -1,173 +1,134 @@
+# -- init ---------------------------------------
+
+# we use python
 language: python
 
+# use container-based builds
 sudo: false
 
 env:
   global:
-    - PIP_FLAGS="--quiet"
+    # default environment variables
+    - PIP_FLAGS="--quiet"  # install with PIP quietly
+    # https://nedbatchelder.com/blog/201809/coveragepy_50a2_sqlite_storage.html
+    - COVERAGE_STORAGE="json"
+
+    # default operations
+    - INSTALL_CMD="python -m pip install ${PIP_FLAGS} ."
+    - MACPORTS_INSTALL_CMD=". ./ci/install-macports.sh"
+    - TEST_CMD=". ./ci/test.sh"
+
+    # enable slack notifications (I think)
     - secure: KXq3Kn+i5pDl7ApqYkMKAZlxC7OOLDmiBn46t/JYKyRAchacp1PR84vrwTNj7OfhZek0tlTkKwQtwpFaw6llhYSpB9xl9SsPNmoYsBtZb9zC8z/oRXlXgYudesPSt7cltlt0K21pV9gRflOezRjlJRDoccbw3pe90vYpMdvr7+0=
 
+# -- build --------------------------------------
+
+stages:
+  # do some basic sanity checking
+  - name: Basic tests
+  # do the rest
+  - name: Full tests
+  # try distributions
+  - name: Distribution tests
+
 matrix:
+  # bail-out early for failures
+  fast_finish: true
+
   include:
-    # -- simple builds --------------------------
-
-    - python: '2.7'
-      addons:
-        apt:
-          packages:
-            - gcc
-            - gfortran
-            - libblas-dev
-            - liblapack-dev
-            - texlive-latex-extra
-            - texlive-fonts-recommended
-            - dvipng
-            - libhdf5-serial-dev
-    - python: '3.4'
-      addons:
-        apt:
-          packages:
-            - gcc
-            - gfortran
-            - libblas-dev
-            - liblapack-dev
-            - texlive-latex-extra
-            - texlive-fonts-recommended
-            - dvipng
-            - libhdf5-serial-dev
-    - python: '3.5'
-      addons:
-        apt:
-          packages:
-            - gcc
-            - gfortran
-            - libblas-dev
-            - liblapack-dev
-            - texlive-latex-extra
-            - texlive-fonts-recommended
-            - dvipng
-            - libhdf5-serial-dev
+    # lint
     - python: '3.6'
-      addons:
-        apt:
-          packages:
-            - gcc
-            - gfortran
-            - libblas-dev
-            - liblapack-dev
-            - texlive-latex-extra
-            - texlive-fonts-recommended
-            - dvipng
-            - libhdf5-serial-dev
+      stage: Basic tests
+      env: INSTALL_CMD="python -m pip install flake8" TEST_CMD="python -m flake8"
 
-    - env: PIP_FLAGS="--upgrade --pre --quiet"
-      python: '3.6'
-      addons:
-        apt:
-          packages:
-            - gcc
-            - gfortran
-            - libblas-dev
-            - liblapack-dev
-            - texlive-latex-extra
-            - texlive-fonts-recommended
-            - dvipng
-            - libhdf5-serial-dev
+    # basic test on established, recent python version
+    - python: '2.7'
+      stage: Basic tests
+    - python: '3.6'
+      stage: Basic tests
 
-    # -- reference OS builds --------------------
-
-    # EL7
-    - env: DOCKER_IMAGE="ligo/base:el7"
-      python: '2.7'
+    # full tests on other supported python versions
+    - python: '2.7'
+      stage: Full tests
+      env: INSTALL_CMD=". ./ci/install-pip.sh"
+    - python: '3.4'
+      stage: Full tests
+      env: INSTALL_CMD=". ./ci/install-pip.sh"
+    - python: '3.5'
+      stage: Full tests
+      env: INSTALL_CMD=". ./ci/install-pip.sh"
+    - python: '3.6'
+      stage: Full tests
+      env: INSTALL_CMD=". ./ci/install-pip.sh"
+    - python: '3.7'
+      stage: Full tests
+      dist: xenial
       sudo: required
-      services:
-        - docker
+      env: INSTALL_CMD=". ./ci/install-pip.sh"
 
-    # debian 8
-    - env: DOCKER_IMAGE="ligo/base:jessie"
-      python: '2.7'
-      sudo: required
-      services:
-        - docker
+    # test pre-release dependencies
+    - python: '3.6'
+      stage: Full tests
+      env: PIP_FLAGS="--upgrade --pre --quiet" INSTALL_CMD=". ./ci/install-pip.sh"
 
-    # debian 9
-    - env: DOCKER_IMAGE="ligo/base:stretch"
-      python: '2.7'
-      sudo: required
-      services:
-        - docker
-    - env: DOCKER_IMAGE="ligo/base:stretch"
-      python: '3.5'
-      sudo: required
-      services:
-        - docker
+    # conda builds
+    - python: '2.7'
+      stage: Distribution tests
+      env: INSTALL_CMD=". ./ci/install-conda.sh"
+    - python: '3.6'
+      stage: Distribution tests
+      env: INSTALL_CMD=". ./ci/install-conda.sh"
+    # NOTE: osx doesn't support language: python, so we need to use minimal
+    #       and manually specify the PYTHON_VERSION
+    - python: '2.7'
+      os: osx
+      language: minimal
+      stage: Distribution tests
+      env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="2.7"
+    - python: '3.6'
+      os: osx
+      language: minimal
+      stage: Distribution tests
+      env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="3.6"
 
-    # macOS
+    # macports builds
     - os: osx
       osx_image: xcode9.2
       language: minimal
-      python: '2.7'
-      env: PYTHON_VERSION="2.7"
       sudo: required
-
-    # macOS
+      python: '2.7'
+      stage: Distribution tests
+      env: INSTALL_CMD="${MACPORTS_INSTALL_CMD}" PYTHON_VERSION="2.7"
     - os: osx
       osx_image: xcode9.2
       language: minimal
+      sudo: required
       python: '3.6'
-      env: PYTHON_VERSION="3.6"
+      stage: Distribution tests
+      env: INSTALL_CMD="${MACPORTS_INSTALL_CMD}" PYTHON_VERSION="3.6"
+    - os: osx
+      osx_image: xcode9.2
+      language: minimal
       sudo: required
-
-    # -- full build -----------------------------
-
-    - env: DOCKER_IMAGE="ligo/base:stretch" EXTRAS=true
-      python: '2.7'
-      sudo: required
-      services:
-        - docker
-    - env: DOCKER_IMAGE="ligo/base:stretch" EXTRAS=true
-      python: '3.5'
-      sudo: required
-      services:
-        - docker
+      python: '3.7'
+      stage: Distribution tests
+      env: INSTALL_CMD="${MACPORTS_INSTALL_CMD}" PYTHON_VERSION="3.7"
 
   allow_failures:
     - env: PIP_FLAGS="--upgrade --pre --quiet"
-    - env: DOCKER_IMAGE="ligo/base:el7"
-      python: '3.4'
-    - env: DOCKER_IMAGE="ligo/base:jessie"
-      python: '3.4'
-    - env: DOCKER_IMAGE="ligo/base:stretch" EXTRAS=true
-      python: '3.5'
-
-  fast_finish: true
-
-before_install:
-  # force unshallow clone (for full history)
-  - git fetch --unshallow
-
-  # set up utilities
-  - . ./ci/lib.sh
-
-  # configure docker and system dependencies
-  - . ./ci/docker-install.sh
+    - env: INSTALL_CMD="${MACPORTS_INSTALL_CMD}" PYTHON_VERSION="3.7"
 
 install:  # install package
-  - ci_run ". ${GWPY_PATH}/ci/install.sh"
+  - ${INSTALL_CMD}
 
 script:  # run tests
-  - ci_run ". ${GWPY_PATH}/ci/test.sh"
+  - ${TEST_CMD}
 
-after_success:
-  # submit coverage results
+after_success:  # submit coverage results
   - . ./ci/coveralls.sh
 
-  # build and deploy package files
-  - . ./ci/deploy.sh
-
 before_deploy:
-  # manual clean up of repository
-  - ci_run "cd ${GWPY_PATH} && git clean -dfX"
+  - git clean -dfX
 
 deploy:
   - provider: pypi
@@ -191,5 +152,6 @@ cache:
   ccache: true
   directories:
     - /opt/local/var/macports/software
+    - ${HOME}/miniconda
 before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log

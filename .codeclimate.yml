@@ -33,6 +33,7 @@ ratings:
 
 exclude_paths:
 - "versioneer.py"
+- "ci/*"
 - "docs/*"
 - "examples/*"
 - "gwpy/_version.py"
