@@ -12,67 +12,14 @@ matrix:
     # -- simple builds --------------------------
 
     - python: '2.7'
-      addons:
-        apt:
-          packages:
-            - gcc
-            - gfortran
-            - libblas-dev
-            - liblapack-dev
-            - texlive-latex-extra
-            - texlive-fonts-recommended
-            - dvipng
-            - libhdf5-serial-dev
     - python: '3.4'
-      addons:
-        apt:
-          packages:
-            - gcc
-            - gfortran
-            - libblas-dev
-            - liblapack-dev
-            - texlive-latex-extra
-            - texlive-fonts-recommended
-            - dvipng
-            - libhdf5-serial-dev
     - python: '3.5'
-      addons:
-        apt:
-          packages:
-            - gcc
-            - gfortran
-            - libblas-dev
-            - liblapack-dev
-            - texlive-latex-extra
-            - texlive-fonts-recommended
-            - dvipng
-            - libhdf5-serial-dev
     - python: '3.6'
-      addons:
-        apt:
-          packages:
-            - gcc
-            - gfortran
-            - libblas-dev
-            - liblapack-dev
-            - texlive-latex-extra
-            - texlive-fonts-recommended
-            - dvipng
-            - libhdf5-serial-dev
-
+    - python: '3.7'
+      sudo: required
+      dist: xenial
     - env: PIP_FLAGS="--upgrade --pre --quiet"
       python: '3.6'
-      addons:
-        apt:
-          packages:
-            - gcc
-            - gfortran
-            - libblas-dev
-            - liblapack-dev
-            - texlive-latex-extra
-            - texlive-fonts-recommended
-            - dvipng
-            - libhdf5-serial-dev
 
     # -- reference OS builds --------------------
 
