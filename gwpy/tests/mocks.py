@@ -210,4 +210,3 @@ def nds2_segment(segment):
     nds2seg.gps_start = segment[0]
     nds2seg.gps_stop = segment[1]
     return nds2seg
-
