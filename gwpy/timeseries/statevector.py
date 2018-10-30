@@ -94,7 +94,12 @@ def _bool_segments(array, start=0, delta=1, minlen=1):
     array = iter(array)
     i = 0
     while True:
-        if next(array):  # start of new segment
+        try:  # get next value
+            val = next(array)
+        except StopIteration:  # end of array
+            return
+
+        if val:  # start of new segment
             n = 1  # count consecutive True
             try:
                 while next(array):  # run until segment will end
