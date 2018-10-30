@@ -30,7 +30,7 @@ from matplotlib import rc_context
 from astropy import units
 
 from ...detector import Channel
-from ...time import Time
+from ...time import (Time, LIGOTimeGPS)
 from ...tests import utils
 from ...types import Array2D
 from .. import (StateVector, StateVectorDict, StateVectorList,
@@ -104,6 +104,27 @@ class TestStateTimeSeries(_TestTimeSeriesBase):
         a2 = array ** 2
         assert a2.dtype is numpy.dtype(bool)
         utils.assert_array_equal(array.value, a2.value)
+
+    def test_to_dqflag(self, array):
+        flag = array.to_dqflag()
+        utils.assert_segmentlist_equal(
+            flag.active, [(1, 4), (7, 8), (10, 13), (14, 15), (16, 20)],
+        )
+        utils.assert_segmentlist_equal(flag.known, [array.span])
+        assert flag.name == array.name
+        assert flag.label == array.name
+        assert flag.description is None
+
+        flag = array.to_dqflag(minlen=2, dtype=LIGOTimeGPS, name='Test flag',
+                               round=True, label='Label',
+                               description='Description')
+        utils.assert_segmentlist_equal(
+            flag.active, [(1, 4), (10, 13), (16, 20)],
+        )
+        assert isinstance(flag.active[0][0], LIGOTimeGPS)
+        assert flag.name == 'Test flag'
+        assert flag.label == 'Label'
+        assert flag.description == 'Description'
 
     def test_override_unit(self):
         return NotImplemented
@@ -237,7 +258,6 @@ class TestStateVector(_TestTimeSeriesBase):
             array.get_bit_series(['blah'])
         assert str(exc.value) == "Bit 'blah' not found in StateVector"
 
-    @utils.skip_missing_dependency('glue.segmentsUtils')
     def test_plot(self, array):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot()
