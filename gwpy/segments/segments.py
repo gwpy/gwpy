@@ -26,6 +26,8 @@ from astropy.io import registry as io_registry
 
 from ligo.segments import (segment, segmentlist, segmentlistdict)
 
+from ..io.mp import read_multi as io_read_multi
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __all__ = ['Segment', 'SegmentList', 'SegmentListDict']
@@ -138,7 +140,7 @@ class SegmentList(segmentlist):
     # -- i/o ------------------------------------
 
     @classmethod
-    def read(cls, source, format=None, **kwargs):
+    def read(cls, source, format=None, coalesce=False, **kwargs):
         # pylint: disable=redefined-builtin
         """Read segments from file into a `SegmentList`
 
@@ -152,6 +154,14 @@ class SegmentList(segmentlist):
             detected if possible. See below for list of acceptable
             formats.
 
+        coalesce : `bool`, optional
+            if `True` coalesce the segment list before returning,
+            otherwise return exactly as contained in file(s).
+
+        **kwargs
+            other keyword arguments depend on the format, see the online
+            documentation for details (:ref:`gwpy-segments-io`)
+
         Returns
         -------
         segmentlist : `SegmentList`
@@ -159,7 +169,15 @@ class SegmentList(segmentlist):
 
         Notes
         -----"""
-        return io_registry.read(cls, source, format=format, **kwargs)
+        def combiner(listofseglists):
+            """Combine `SegmentList` from each file into a single object
+            """
+            out = cls(seg for seglist in listofseglists for seg in seglist)
+            if coalesce:
+                return out.coalesce()
+            return out
+
+        return io_read_multi(combiner, cls, source, format=format, **kwargs)
 
     def write(self, target, *args, **kwargs):
         """Write this `SegmentList` to a file
