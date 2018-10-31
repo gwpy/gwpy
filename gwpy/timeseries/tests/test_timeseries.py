@@ -43,6 +43,7 @@ from ...spectrogram import Spectrogram
 from ...tests import (mocks, utils)
 from ...tests.mocks import mock
 from ...time import LIGOTimeGPS
+from ...utils.misc import null_context
 from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
 from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
@@ -296,10 +297,12 @@ class TestTimeSeries(_TestTimeSeriesBase):
             pass
 
     @utils.skip_missing_dependency('nds2')
-    def test_fetch(self):
+    @pytest.mark.parametrize('protocol', (1, 2))
+    def test_fetch(self, protocol):
         ts = self.create(name='L1:TEST', t0=1000000000, unit='m')
         nds_buffer = mocks.nds2_buffer_from_timeseries(ts)
-        nds_connection = mocks.nds2_connection(buffers=[nds_buffer])
+        nds_connection = mocks.nds2_connection(buffers=[nds_buffer],
+                                               protocol=protocol)
         with mock.patch('nds2.connection') as mock_connection, \
                 mock.patch('nds2.buffer', nds_buffer):
             mock_connection.return_value = nds_connection
@@ -313,8 +316,9 @@ class TestTimeSeries(_TestTimeSeriesBase):
                                         connection=nds_connection)
             utils.assert_quantity_sub_equal(ts, ts2, exclude=['channel'])
 
-            # check padding works
-            with pytest.warns(UserWarning):
+            # check padding works (with warning for nds2-server connections)
+            ctx = pytest.warns(UserWarning) if protocol > 1 else null_context()
+            with ctx:
                 ts2 = self.TEST_CLASS.fetch('L1:TEST', *ts.span.protract(10),
                                             pad=-100., host='anything')
             assert ts2.span == ts.span.protract(10)
