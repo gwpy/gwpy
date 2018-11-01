@@ -151,13 +151,15 @@ class CliProduct(object):
     action = None
 
     def __init__(self, args):
-        self._finalize_arguments(args)  # post-process args
 
         #: input argument Namespace
         self.args = args
 
         #: verbosity
         self.verbose = 0 if args.silent else args.verbose
+
+        #NB: finalizing may want to log if we're being verbose
+        self._finalize_arguments(args)  # post-process args
 
         if args.style:  # apply custom styling
             try:
