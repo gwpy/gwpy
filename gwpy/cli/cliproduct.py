@@ -158,7 +158,7 @@ class CliProduct(object):
         #: verbosity
         self.verbose = 0 if args.silent else args.verbose
 
-        #NB: finalizing may want to log if we're being verbose
+        # NB: finalizing may want to log if we're being verbose
         self._finalize_arguments(args)  # post-process args
 
         if args.style:  # apply custom styling
