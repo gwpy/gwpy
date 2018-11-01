@@ -832,23 +832,26 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_whiten(self):
         # create noise with a glitch in it at 1000 Hz
         noise = self.TEST_CLASS(
-            numpy.random.normal(loc=1, size=16384 * 10), sample_rate=16384,
-            epoch=-5).zpk([], [0], 1)
+            numpy.random.normal(loc=1, scale=.5, size=16384 * 64),
+            sample_rate=16384, epoch=-32).zpk([], [0], 1)
         glitchtime = 0.5
         glitch = signal.gausspulse(noise.times.value - glitchtime,
                                    bw=100) * 1e-4
         data = noise + glitch
 
-        # whiten and test that the max amplitude is recovered at the glitch
+        # when the input is stationary Gaussian noise, the output should have
+        # zero mean and unit variance
+        whitened = noise.whiten(detrend='linear')
+        assert whitened.size == noise.size
+        nptest.assert_almost_equal(whitened.mean().value, 0.0, decimal=2)
+        nptest.assert_almost_equal(whitened.std().value, 1.0, decimal=2)
+
+        # when a loud signal is present, the max amplitude should be recovered
+        # at the time of that signal
         tmax = data.times[data.argmax()]
         assert not numpy.isclose(tmax.value, glitchtime)
 
-        whitened = data.whiten(2, 1)
-
-        assert whitened.size == noise.size
-        nptest.assert_almost_equal(whitened.mean().value, 0.0, decimal=4)
-        nptest.assert_almost_equal(whitened.std().value, 1.0, decimal=4)
-
+        whitened = data.whiten(detrend='linear')
         tmax = whitened.times[whitened.argmax()]
         nptest.assert_almost_equal(tmax.value, glitchtime)
 
@@ -862,6 +865,30 @@ class TestTimeSeries(_TestTimeSeriesBase):
         convolved = data.convolve(filt)
         assert convolved.size == data.size
         utils.assert_allclose(convolved.value[1:-1], data.value[1:-1])
+
+    def test_correlate(self):
+        # create noise and a glitch template at 1000 Hz
+        noise = self.TEST_CLASS(
+            numpy.random.normal(size=16384 * 64), sample_rate=16384, epoch=-32
+            ).zpk([], [1], 1)
+        glitchtime = -16.5
+        glitch = self.TEST_CLASS(
+            signal.gausspulse(numpy.arange(-1, 1, 1./16384), bw=100),
+            sample_rate=16384, epoch=glitchtime-1)
+
+        # check that, without a signal present, we only see background
+        snr = noise.correlate(glitch, whiten=True)
+        tmax = snr.times[snr.argmax()]
+        assert snr.size == noise.size
+        assert not numpy.isclose(tmax.value, glitchtime)
+        nptest.assert_almost_equal(snr.mean().value, 0.0, decimal=1)
+        nptest.assert_almost_equal(snr.std().value, 1.0, decimal=1)
+
+        # inject and recover the glitch
+        data = noise.inject(glitch * 1e-4)
+        snr = data.correlate(glitch, whiten=True)
+        tmax = snr.times[snr.argmax()]
+        nptest.assert_almost_equal(tmax.value, glitchtime)
 
     def test_detrend(self, losc):
         assert not numpy.isclose(losc.value.mean(), 0.0, atol=1e-21)

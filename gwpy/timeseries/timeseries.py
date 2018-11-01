@@ -1514,8 +1514,9 @@ class TimeSeries(TimeSeriesBase):
         corrupted at the beginning and end of the output. See
         `~TimeSeries.convolve` for more details.
 
-        The input is detrended to give the whitened `TimeSeries` zero mean,
-        and the output is normalised to give it unit variance.
+        The input is detrended and the output normalised such that, if the
+        input is stationary and Gaussian, then the output will have zero mean
+        and unit variance.
 
         For more on inverse spectrum truncation, see arXiv:gr-qc/0509116.
         """
@@ -1533,7 +1534,7 @@ class TimeSeries(TimeSeriesBase):
         # condition the input data and apply the whitening filter
         in_ = self.copy().detrend(detrend)
         out = in_.convolve(tdw, window=window)
-        return out / out.value.std()
+        return out * numpy.sqrt(2 * in_.dt.decompose().value)
 
     def convolve(self, fir, window='hanning'):
         """Convolve this `TimeSeries` with an FIR filter using the
@@ -1600,6 +1601,96 @@ class TimeSeries(TimeSeriesBase):
         out = type(self)(conv)
         out.__array_finalize__(self)
         return out
+
+    def correlate(self, mfilter, window='hanning', detrend='linear',
+                  whiten=False, wduration=2, highpass=None, **asd_kw):
+        """Cross-correlate this `TimeSeries` with another signal
+
+        Parameters
+        ----------
+        mfilter : `TimeSeries`
+            the time domain signal to correlate with
+
+        window : `str`, optional
+            window function to apply to timeseries prior to FFT,
+            default: ``'hanning'``
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
+
+        detrend : `str`, optional
+            type of detrending to do before FFT (see `~TimeSeries.detrend`
+            for more details), default: ``'linear'``
+
+        whiten : `bool`, optional
+            boolean switch to enable (`True`) or disable (`False`) data
+            whitening, default: `False`
+
+        wduration : `float`, optional
+            duration (in seconds) of the time-domain FIR whitening filter,
+            only used if `whiten=True`, defaults to 2 seconds
+
+        highpass : `float`, optional
+            highpass corner frequency (in Hz) of the FIR whitening filter,
+            only used if `whiten=True`, default: `None`
+
+        **asd_kw
+            keyword arguments to pass to `TimeSeries.asd` to generate
+            an ASD, only used if `whiten=True`
+
+        Returns
+        -------
+        snr : `TimeSeries`
+            the correlated signal-to-noise ratio (SNR) timeseries
+
+        See Also
+        --------
+        TimeSeries.asd
+            for details on the ASD calculation
+        TimeSeries.convolve
+            for details on convolution with the overlap-save method
+
+        Notes
+        -----
+        The `window` argument is used in ASD estimation, whitening, and
+        preventing spectral leakage in the output. It is not used to condition
+        the matched-filter, which should be windowed before passing to this
+        method.
+
+        Due to filter settle-in, a segment half the length of `mfilter` will be
+        corrupted at the beginning and end of the output. See
+        `~TimeSeries.convolve` for more details.
+
+        The input and matched-filter will be detrended, and the output will be
+        normalised so that the SNR measures number of standard deviations from
+        the expected mean.
+        """
+        self.is_compatible(mfilter)
+        # condition data
+        if whiten is True:
+            fftlength = asd_kw.pop('fftlength',
+                                   _fft_length_default(self.dt))
+            overlap = asd_kw.pop('overlap', None)
+            if overlap is None:
+                overlap = recommended_overlap(window) * fftlength
+            asd = self.asd(fftlength, overlap, window=window, **asd_kw)
+            # pad the matched-filter to prevent corruption
+            npad = int(wduration * mfilter.sample_rate.decompose().value / 2)
+            mfilter = mfilter.pad(npad)
+            # whiten (with errors on division by zero)
+            with numpy.errstate(all='raise'):
+                in_ = self.whiten(window=window, fduration=wduration, asd=asd,
+                                  highpass=highpass, detrend=detrend)
+                mfilter = mfilter.whiten(window=window, fduration=wduration,
+                                         asd=asd, highpass=highpass,
+                                         detrend=detrend)[npad:-npad]
+        else:
+            in_ = self.detrend(detrend)
+            mfilter = mfilter.detrend(detrend)
+        # compute matched-filter SNR and normalise
+        stdev = numpy.sqrt((mfilter.value**2).sum())
+        snr = in_.convolve(mfilter[::-1], window=window) / stdev
+        snr.__array_finalize__(self)
+        return snr
 
     def detrend(self, detrend='constant'):
         """Remove the trend from this `TimeSeries`
