@@ -597,9 +597,10 @@ def get_availability(channels, start, end,
     from ..segments import (Segment, SegmentList, SegmentListDict)
     connection.set_epoch(start, end)
     # map user-given real names to NDS names
-    names = map(_get_nds2_name,
-                find_channels(channels, epoch=(start, end),
-                              connection=connection, unique=True))
+    names = list(map(
+        _get_nds2_name, find_channels(channels, epoch=(start, end),
+                                      connection=connection, unique=True),
+    ))
     # query for availability
     result = connection.get_availability(names)
     # map to segment types
