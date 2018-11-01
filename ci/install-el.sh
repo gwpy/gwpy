@@ -20,49 +20,57 @@
 # Build RedHat (Enterprise Linux) packages
 #
 
-# -- prep ---------------------------------------------------------------------
+# -- setup --------------------------------------
 
-. ci/lib.sh
+# determine python prefix, even though we only install for python2
 
-# update system
+if [[ "${PYTHON_VERSION}" == "2.7" ]]; then
+    PY_PREFIX="python2"
+else
+    PY_PREFIX="python${PYTHON_VERSION/./}"
+fi
+
+# -- build --------------------------------------
+
+TOPDIR=$(pwd)
+TARBALL="$(pwd)/gwpy-*.tar.*"
+
+mkdir build
+pushd build
+
 yum -y -q update
 
-# install sdist dependencies
-yum -y -q install \
-    git \
-    python2-pip \
-    python-jinja2 \
-    GitPython
-
-# install build dependencies
+# install basic build dependencies
 yum -y -q install \
     rpm-build \
-    python-rpm-macros \
-    python2-rpm-macros \
-    python2-setuptools
+    yum-utils
 
-GWPY_VERSION=$(python -c "import versioneer; print(versioneer.get_version())")
+# build src rpm
+SRPM=$(rpmbuild --define "_topdir ${TOPDIR}" -ts ${TARBALL} | cut -d\  -f2)
 
-# upgrade setuptools for development builds only to prevent version munging
-pip install "setuptools>=25"
+# install BuildRequires
+yum-builddep -y -q ${SRPM}
 
-# -- build and install --------------------------------------------------------
+# build binary rpm(s)
+rpmbuild --define "_topdir ${TOPDIR}" --rebuild ${SRPM}
 
-# build the RPM using tarball
-python setup.py --quiet sdist
-rpmbuild --define "_rpmdir $(pwd)/dist" -tb dist/gwpy-*.tar.gz
+popd
 
-# install the rpm
-GWPY_RPM="dist/noarch/python2-gwpy-*.noarch.rpm"
-yum -y -q --nogpgcheck localinstall ${GWPY_RPM}
+# -- install ------------------------------------
 
-# -- third-party packages -----------------------------------------------------
+RPM="${TOPDIR}/RPMS/noarch/${PY_PREFIX}-gwpy-*.rpm"
+yum -y -q --nogpgcheck localinstall ${RPM}
+
+# -- extras -------------------------------------
+#
+# This is explicitly only set up for python2.7 on RHEL7
+#
 
 # install system-level extras
 yum -y -q install \
     python2-pip \
     python2-pytest \
-    python-coverage \
+    python2-pytest-cov \
     python2-mock \
     python2-freezegun \
     python-sqlparse \
@@ -84,9 +92,9 @@ yum -y -q install \
     texlive-type1cm texlive-collection-fontsrecommended
 
 # HACK: fix missing file from ldas-tools-framecpp
-if [ -d /usr/lib64/$PYTHON/site-packages/LDAStools -a \
-     ! -f /usr/lib64/$PYTHON/site-packages/LDAStools/__init__.py ]; then
-    touch /usr/lib64/$PYTHON/site-packages/LDAStools/__init__.py
+if [ -d /usr/lib64/${PYTHON}/site-packages/LDAStools -a \
+     ! -f /usr/lib64/${PYTHON}/site-packages/LDAStools/__init__.py ]; then
+    touch /usr/lib64/${PYTHON}/site-packages/LDAStools/__init__.py
 fi
 
 # HACK: remove empty dist-info for python2-root

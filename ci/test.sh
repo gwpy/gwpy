@@ -16,31 +16,20 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
+set -ex
+trap 'set +ex' RETURN
+
 #
 # Run the test suite for GWpy on the current system
 #
 
-if [ ! -z ${GWPY_PATH+x} ]; then
-    cd ${GWPY_PATH}
-fi
-. ci/lib.sh
+PYTHON="python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}"
 
-# macports PATH doesn't persist from install stage, which is annoying
-if [ $(get_package_manager) == port ]; then
-    . terryfy/travis_tools.sh
-    export PATH=$MACPORTS_PREFIX/bin:$PATH
-fi
-
-get_environment  # sets PIP variables etc
-get_python_version  # sets PYTHON_VERSION
-
-set -ex && trap 'set +xe' RETURN
+# upgrade setuptools in order to understand environment markers
+${PYTHON} -m pip install "pip>=8.0.0" "setuptools>=20.2.2"
 
 # install test dependencies
-${PIP} install ${PIP_FLAGS} -r requirements-test.txt
+${PYTHON} -m pip install ${PIP_FLAGS} -r requirements-test.txt
 
-# run tests
-${PYTHON} -m coverage run ./setup.py --quiet test
-
-# print coverage
-${PYTHON} -m coverage report
+# run tests with coverage
+${PYTHON} -m pytest --pyargs gwpy --cov=gwpy

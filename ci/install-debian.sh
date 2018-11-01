@@ -20,81 +20,49 @@
 # Build Debian package
 #
 
-# -- prep ---------------------------------------------------------------------
+# -- setup --------------------------------------
 
-# enable lscsoft jessie-proposed (first required for python-tqdm gwpy/gwpy#735)
-if [ "${OS_VERSION}" -eq 8 ]; then
-    cat << EOF > /etc/apt/sources.list.d/lscsoft-proposed.list
-deb http://software.ligo.org/lscsoft/debian jessie-proposed contrib
-EOF
-    cat << EOF > /etc/apt/preferences.d/lscsoft-proposed.pref
-Package: *
-Pin: release n=jessie-proposed
-Pin-Priority: 100
-EOF
-    apt-get -yqq update
+if [[ "${PYTHON_VERSION}" = "2.7" ]]; then
+    PY_PREFIX="python"
+else
+    PY_PREFIX="python3"
 fi
 
-# install pip for system python
-apt-get -yqq install python-pip
+# -- build --------------------------------------
 
-# install build dependencies (should match debian/control)
-apt-get -yqq install \
-    debhelper \
-    dh-python \
-    python-all \
-    python3-all \
-    python-setuptools \
-    python3-setuptools \
-    python-git \
-    python-jinja2 \
+mkdir build
+pushd build
 
-# get versions
-GWPY_VERSION=$(python -c "import versioneer; print(versioneer.get_version())")
-GWPY_RELEASE=${GWPY_VERSION%%+*}
+apt-get -yqq update
 
-# upgrade setuptools for development builds only to prevent version munging
-pip install "setuptools>=25"
+# install basic build dependencies
+apt-get -yqq install dpkg-dev devscripts
 
-# upgrade GitPython (required for git>=2.15.0)
-#     since we link the git clone from travis, the dependency is actually
-#     fixed to the version of git on the travis image
-pip install --quiet "GitPython>=2.1.8"
+# unwrap tarball into build path
+tar -xf ../*.tar.* --strip-components=1
 
-# prepare the tarball (sdist generates debian/changelog)
-python setup.py --quiet sdist
+# install build requires
+mk-build-deps --tool "apt-get -y" --install --remove
 
-# -- build and install --------------------------------------------------------
+# build debian packages
+dpkg-buildpackage -us -uc -b
 
-# make the debian package
-mkdir -p dist/debian
-pushd dist/debian
-cp ../gwpy-${GWPY_VERSION}.tar.gz ../gwpy_${GWPY_RELEASE}.orig.tar.gz
-tar -xf ../gwpy_${GWPY_RELEASE}.orig.tar.gz --strip-components=1
-dpkg-buildpackage -us -uc
 popd
 
-if [ ${PY_XY} -lt 30 ]; then  # install python2 only
-    PREFICES="python"
-else  # install both 2 and 3
-    PREFICES="python python3"
-fi
-for PREF in ${PREFICES}; do
-    # print and install the deb
-    GWPY_DEB="dist/${PREF}-gwpy_${GWPY_RELEASE}-1_all.deb"
-    echo "-------------------------------------------------------"
-    dpkg --info ${GWPY_DEB}
-    echo "-------------------------------------------------------"
-    dpkg --install ${GWPY_DEB} || { \
-        apt-get -y -f install;  # install dependencies and package
-        apt-get -yq install ${PREF}-tqdm;  # install tqdm from backports
-        dpkg --install ${GWPY_DEB};  # shouldn't fail
-    }
-done
+# -- install ------------------------------------
 
-# -- third-party packages -----------------------------------------------------
+# print and install the deb
+GWPY_DEB="${PY_PREFIX}-gwpy_*_all.deb"
+echo "-------------------------------------------------------"
+dpkg --info ${GWPY_DEB}
+echo "-------------------------------------------------------"
+dpkg --install ${GWPY_DEB} || { \
+    apt-get -y -f install;  # install dependencies and package
+    dpkg --install ${GWPY_DEB};  # shouldn't fail
+}
 
 # install extras
+# NOTE: git is needed for coveralls
 apt-get -yqq install \
     git \
     ${PY_PREFIX}-pip \
@@ -105,36 +73,25 @@ apt-get -yqq install \
     ${PY_PREFIX}-psycopg2 \
     ${PY_PREFIX}-pandas \
     ${PY_PREFIX}-pytest \
-    ${PY_PREFIX}-coverage \
+    ${PY_PREFIX}-pytest-cov \
     ${PY_PREFIX}-freezegun \
     ${PY_PREFIX}-sqlparse \
     ${PY_PREFIX}-bs4 \
+    lal-${PY_PREFIX} \
     lalframe-${PY_PREFIX} \
     lalsimulation-${PY_PREFIX}
 
-# install extras for python2 only
-if [ "${PY_MAJOR_VERSION}" -eq 2 ]; then
+# install ROOT for python2 only
+if [ "${PY_PREFIX}" == "python" ]; then
     apt-get -yqq install \
-        ${PY_PREFIX}-mock \
         libroot-bindings-python5.34 \
         libroot-tree-treeplayer-dev \
         libroot-math-physics-dev \
         libroot-graf2d-postscript-dev
 fi
 
-# install other packages that may or may not exist for this
-# debian version, or this python version
-for pckg in \
-    ${PY_PREFIX}-pymysql \
-    ${PY_PREFIX}-nds2-client \
-    ${PY_PREFIX}-dqsegdb ${PY_PREFIX}-m2crypto \
-    ldas-tools-framecpp-${PY_PREFIX} \
-; do
-    apt-get -yqq install $pckg || true
-done
-
 # HACK: fix missing file from ldas-tools-framecpp
-if [ -d /usr/lib/$PYTHON/dist-packages/LDAStools/ -a \
-     ! -f /usr/lib/$PYTHON/dist-packages/LDAStools/__init__.py ]; then
-    touch /usr/lib/$PYTHON/dist-packages/LDAStools/__init__.py
+if [ -d /usr/lib/${PYTHON}/dist-packages/LDAStools/ -a \
+     ! -f /usr/lib/${PYTHON}/dist-packages/LDAStools/__init__.py ]; then
+    touch /usr/lib/${PYTHON}/dist-packages/LDAStools/__init__.py
 fi

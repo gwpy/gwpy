@@ -153,7 +153,7 @@ def nds2_channel(name, sample_rate, unit):
     return channel
 
 
-def nds2_connection(host='nds.test.gwpy', port=31200, buffers=[]):
+def nds2_connection(host='nds.test.gwpy', port=31200, buffers=[], protocol=2):
     import nds2
     NdsConnection = mock.create_autospec(nds2.connection)
     try:
@@ -163,6 +163,7 @@ def nds2_connection(host='nds.test.gwpy', port=31200, buffers=[]):
         pass
     NdsConnection.get_host.return_value = host
     NdsConnection.get_port.return_value = int(port)
+    NdsConnection.get_protocol.return_value = int(protocol)
 
     def iterate(start, end, names):
         if not buffers:
@@ -209,4 +210,3 @@ def nds2_segment(segment):
     nds2seg.gps_start = segment[0]
     nds2seg.gps_stop = segment[1]
     return nds2seg
-

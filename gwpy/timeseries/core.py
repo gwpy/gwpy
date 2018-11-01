@@ -59,7 +59,7 @@ from ..utils import gprint
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-__all__ = ['TimeSeriesBase', 'ArrayTimeSeries', 'TimeSeriesBaseDict']
+__all__ = ['TimeSeriesBase', 'TimeSeriesBaseDict', 'TimeSeriesBaseList']
 
 ASTROPY_2_0 = astropy_version >= '2.0'
 

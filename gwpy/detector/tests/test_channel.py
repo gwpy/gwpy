@@ -71,7 +71,7 @@ OMEGA_CONFIG = """
   plotNormalizedEnergyRange:   [0 25.5]
   alwaysPlotFlag:              0
 }
-"""  # nopep8
+"""
 
 CLF = """
 [group-1]
@@ -87,10 +87,10 @@ fhigh = 60
 qhigh = 60
 frametype = H1_R
 channels =
-	H1:ISI-GND_STS_HAM2_X_DQ 512 safe flat
-	H1:ISI-GND_STS_HAM2_Y_DQ 256 unsafe flat
-	H1:ISI-GND_STS_HAM2_Z_DQ 512 glitchy
-"""  # nopep8
+    H1:ISI-GND_STS_HAM2_X_DQ 512 safe flat
+    H1:ISI-GND_STS_HAM2_Y_DQ 256 unsafe flat
+    H1:ISI-GND_STS_HAM2_Z_DQ 512 glitchy
+"""
 
 
 # -- Channel ------------------------------------------------------------------
@@ -446,7 +446,8 @@ class TestChannelList(object):
         ndsb = mocks.nds2_buffer(self.NAMES[0], [], 0, 64, 'm')
         conn = mocks.nds2_connection(buffers=[ndsb])
         # mock availability
-        availability = [mocks.nds2_availability(self.NAMES[0], [(0, 10), (20, 30)])]
+        availability = [mocks.nds2_availability(self.NAMES[0],
+                                                [(0, 10), (20, 30)])]
         conn.get_availability = lambda x: availability
 
         with mock.patch('nds2.connection') as ndsc:
