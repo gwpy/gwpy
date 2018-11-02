@@ -642,9 +642,6 @@ def find_latest(observatory, frametype, gpstime=None, allow_tape=False,
             "no files found for {}-{}".format(observatory, frametype))
 
     path = urlparse(path).path
-    if not os.access(path, os.R_OK):
-        raise IOError("Latest frame file for {}-{} is unreadable: "
-                      "{}".format(observatory, frametype, path))
     if not allow_tape and on_tape(path):
         raise IOError("Latest frame file for {}-{} is on tape "
                       "(pass allow_tape=True to force): "
