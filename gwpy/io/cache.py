@@ -28,7 +28,7 @@ from __future__ import division
 import os.path
 import tempfile
 import warnings
-from collections import OrderedDict
+from collections import (namedtuple, OrderedDict)
 from gzip import GzipFile
 
 from six import string_types
@@ -49,6 +49,7 @@ except ImportError:
 else:
     HAS_CACHE = True
 
+from ..segments import Segment
 from ..time import LIGOTimeGPS
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -67,9 +68,67 @@ except NameError:  # python3.x
     )
 
 
+class _CacheEntry(namedtuple(
+        '_CacheEntry', ['observatory', 'description', 'segment', 'path'])):
+    """Quick version of lal.utils.CacheEntry for internal purposes only
+
+    Just to allow metadata handling for files that don't follow LIGO-T050017.
+    """
+    def __str__(self):
+        return self.path
+
+    @classmethod
+    def parse(cls, line, gpstype=LIGOTimeGPS):
+        if isinstance(line, bytes):
+            line = line.decode('utf-8')
+
+        # determine format
+        try:
+            a, b, c, d, e = line.strip().split()
+        except ValueError as exc:
+            exc.args = ("Cannot identify format for cache entry {!r}".format(
+                line.rstrip()),)
+            raise
+
+        try:  # Virgo FFL format includes GPS start time in second place
+            start = gpstype(b)
+        except ValueError:  # LAL format
+            start = gpstype(c)
+            end = start + float(d)
+            return cls(a, b, Segment(start, end), e)
+        path = a
+        start = float(b)
+        end = start + float(c)
+        observatory, description = os.path.basename(path).split('-', 2)[:2]
+        return cls(observatory, description, Segment(start, end), path)
+
+
 # -- cache I/O ----------------------------------------------------------------
 
-def read_cache(cachefile, coltype=LIGOTimeGPS):
+def _iter_cache(cachefile, gpstype=LIGOTimeGPS):
+    """Internal method that yields a `_CacheEntry` for each line in the file
+
+    This method supports reading LAL- and (nested) FFL-format cache files.
+    """
+    try:
+        path = os.path.abspath(cachefile.name)
+    except AttributeError:
+        path = None
+    for line in cachefile:
+        try:
+            yield _CacheEntry.parse(line, gpstype=LIGOTimeGPS)
+        except ValueError:
+            # virgo FFL format (seemingly) supports nested FFL files
+            parts = line.split()
+            if len(parts) == 3 and os.path.abspath(parts[0]) != path:
+                with open(parts[0], 'r') as cache2:
+                    for entry in _iter_cache(cache2):
+                        yield entry
+            else:
+                raise
+
+
+def read_cache(cachefile, coltype=LIGOTimeGPS, sort=None, segment=None):
     """Read a LAL- or FFL-format cache file as a list of file paths
 
     Parameters
@@ -79,6 +138,13 @@ def read_cache(cachefile, coltype=LIGOTimeGPS):
 
     coltype : `LIGOTimeGPS`, `int`, optional
         Type for GPS times.
+
+    sort : `callable`, optional
+        A callable key function by which to sort the output list of file paths
+
+    segment : `gwpy.segments.Segment`, optional
+        A GPS `[start, stop)` interval, if given only files overlapping this
+        interval will be returned.
 
     Returns
     -------
@@ -92,16 +158,20 @@ def read_cache(cachefile, coltype=LIGOTimeGPS):
     # open file
     if not isinstance(cachefile, FILE_LIKE):
         with open(urlparse(cachefile).path, 'r') as fobj:
-            return read_cache(fobj, coltype=coltype)
+            return read_cache(fobj, coltype=coltype, sort=sort,
+                              segment=segment)
 
     # read file
-    out = []
-    append = out.append
-    for line in cachefile:
-        if isinstance(line, bytes):
-            line = line.decode('utf-8')
-        append(read_cache_entry(line))
-    return out
+    cache = list(_iter_cache(cachefile, gpstype=coltype))
+
+    # sort and sieve
+    if sort:
+        cache.sort(key=sort)
+    if segment:
+        cache = sieve(cache, segment=segment)
+
+    # read simple paths
+    return [x.path for x in cache]
 
 
 def read_cache_entry(line):
@@ -122,19 +192,7 @@ def read_cache_entry(line):
     ValueError
         if the line cannot be parsed successfully
     """
-    if isinstance(line, bytes):
-        line = line.decode('utf-8')
-    parts = line.rstrip().split()
-
-    if len(parts) == 5:  # LIGO or Virgo-format Cache file
-        try:  # Virgo FFL format includes number in last place
-            float(parts[-1])
-        except ValueError:  # LAL format
-            return parts[-1]
-        return parts[0]
-
-    raise ValueError(
-        "Cannot identify format for cache entry {!r}".format(line.rstrip()))
+    return _CacheEntry.parse(line).path
 
 
 def open_cache(*args, **kwargs):  # pragma: no cover
@@ -303,7 +361,6 @@ def file_segment(filename):
     documenting the GPS start integer and integer duration of a file,
     see that document for more details.
     """
-    from ..segments import Segment
     try:  # CacheEntry
         return Segment(filename.segment)
     except AttributeError:  # file path (str)
