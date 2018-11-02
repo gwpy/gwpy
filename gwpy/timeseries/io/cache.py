@@ -51,16 +51,26 @@ def preformat_cache(cache, start=None, end=None):
     modcache : `list`
         A parsed, sieved list of paths based on the input arguments.
     """
-    # format cache file
-    if isinstance(cache, FILE_LIKE + string_types):  # open cache file
-        cache = read_cache(cache)
-    cache = type(cache)(cache)  # copy cache
-    cache.sort(key=file_segment)  # sort
+    # open cache file
+    if isinstance(cache, FILE_LIKE + string_types):
+        return read_cache(cache, sort=file_segment,
+                          segment=Segment(start, end))
 
-    # get timing
+    # format existing cache file
+    cache = type(cache)(cache)  # copy cache
+
+    # sort cache
+    try:
+        cache.sort(key=file_segment)  # sort
+    except ValueError:
+        # if this failed, then the sieving will also fail, but lets proceed
+        # anyway, since the user didn't actually ask us to do this (but
+        # its a very good idea)
+        return cache
+
+    # sieve cache
     if start is None:  # start time of earliest file
         start = file_segment(cache[0])[0]
     if end is None:  # end time of latest file
         end = file_segment(cache[-1])[-1]
-
-    return sieve(cache, segment=Segment(start, end))  # sieve
+    return sieve(cache, segment=Segment(start, end))
