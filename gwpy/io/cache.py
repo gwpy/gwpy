@@ -49,7 +49,6 @@ except ImportError:
 else:
     HAS_CACHE = True
 
-from ..segments import Segment
 from ..time import LIGOTimeGPS
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -79,6 +78,8 @@ class _CacheEntry(namedtuple(
 
     @classmethod
     def parse(cls, line, gpstype=LIGOTimeGPS):
+        from ..segments import Segment
+
         if isinstance(line, bytes):
             line = line.decode('utf-8')
 
@@ -92,7 +93,7 @@ class _CacheEntry(namedtuple(
 
         try:  # Virgo FFL format includes GPS start time in second place
             start = gpstype(b)
-        except ValueError:  # LAL format
+        except (ValueError, RuntimeError):  # LAL format
             start = gpstype(c)
             end = start + float(d)
             return cls(a, b, Segment(start, end), e)
@@ -361,6 +362,7 @@ def file_segment(filename):
     documenting the GPS start integer and integer duration of a file,
     see that document for more details.
     """
+    from ..segments import Segment
     try:  # CacheEntry
         return Segment(filename.segment)
     except AttributeError:  # file path (str)

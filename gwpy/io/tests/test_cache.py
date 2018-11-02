@@ -86,6 +86,11 @@ def test_read_write_cache(cache, tmpfile):
     c3 = io_cache.read_cache(tmpfile)
     assert cache == c3
 
+    # check sieving and sorting works
+    c4 = io_cache.read_cache(tmpfile, sort=lambda e: -e.segment[0],
+                             segment=Segment(0, 2))
+    assert c4 == cache[1::-1]
+
 
 @pytest.mark.parametrize('input_, result', [
     (None, False),
