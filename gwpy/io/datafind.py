@@ -55,7 +55,7 @@ SECOND_TREND_TYPE = re.compile(r'\A(.*_)?T\Z')  # T or anything ending in _T
 MINUTE_TREND_TYPE = re.compile(r'\A(.*_)?M\Z')  # M or anything ending in _M
 GRB_TYPE = re.compile(r'^(?!.*_GRB\d{6}([A-Z])?$)')
 HIGH_PRIORITY_TYPE = re.compile(
-    r'[A-Z]\d_HOFT_C\d\d(_T\d{7}_v\d)?\Z'  # X1_HOFT_CXY
+    r'\A[A-Z]\d_HOFT_C\d\d(_T\d{7}_v\d)?\Z'  # X1_HOFT_CXY
 )
 LOW_PRIORITY_TYPE = re.compile(
     r'(_GRB\d{6}([A-Z])?\Z|'  # endswith _GRBYYMMDD{A}
@@ -257,33 +257,32 @@ def reconnect(connection):
 
 
 def _type_priority(ifo, ftype, trend=None):
-    _priority = {
-        HIGH_PRIORITY_TYPE: 1,
-        LOW_PRIORITY_TYPE: 10,
-        MINUTE_TREND_TYPE: 10,
-        SECOND_TREND_TYPE: 10,
-        re.compile(r'[A-Z]\d_C'): 6,
-    }
+    """Prioritise the given GWF type based on its name or trend status.
 
-    # default priority
-    prio = 5
-
+    This is essentially an ad-hoc ordering function based on internal knowledge
+    of how LIGO does GWF type naming.
+    """
+    # if looking for a trend channel, prioritise the matching type
     for trendname, trend_regex in [
             ('m-trend', MINUTE_TREND_TYPE),
             ('s-trend', SECOND_TREND_TYPE),
     ]:
-        # if looking for a trend channel, prioritise the matching type
         if trend == trendname and trend_regex.match(ftype):
-            prio = 0
-            break
-    else:
-        # otherwise rank this type according to priority
-        for reg, prio in _priority.items():
-            if reg.match(ftype):
-                break
+            return 0, len(ftype)
 
-    # use score and length of name, shorter names are typically better
-    return (prio, len(ftype))
+    # otherwise rank this type according to priority
+    for reg, prio in {
+            HIGH_PRIORITY_TYPE: 1,
+            re.compile(r'[A-Z]\d_C'): 6,
+            LOW_PRIORITY_TYPE: 10,
+            MINUTE_TREND_TYPE: 10,
+            SECOND_TREND_TYPE: 10,
+    }.items():
+        if reg.search(ftype):
+            print(ftype, reg.pattern)
+            return prio, len(ftype)
+
+    return 5, len(ftype)
 
 
 def on_tape(*files):

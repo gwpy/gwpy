@@ -296,3 +296,18 @@ def test_find_best_frametype(reconnect, num_channels, iter_channels,
 
 def test_on_tape():
     assert io_datafind.on_tape(TEST_GWF_FILE) is False
+
+
+@pytest.mark.parametrize('ifo, ftype, trend, priority', [
+    ('L1', 'L1_HOFT_C00', None, 1),  # hoft
+    ('H1', 'H1_HOFT_C02_T1700406_v3', None, 1),  # cleaned hoft
+    ('H1', 'H1_M', 'm-trend', 0),  # minute trends
+    ('K1', 'K1_T', 's-trend', 0),  # second trends
+    ('K1', 'K1_R', 's-trend', 5),  # raw type when looking for second trend
+    ('K1', 'K1_M', None, 10),  # trend type, but not looking for trend channel
+    ('K1', 'K1_C', None, 6),  # commissioning type
+    ('X1', 'SOMETHING_GRB051103', None, 10),  # low priority type
+    ('X1', 'something else', None, 5),  # other
+])
+def test_type_priority(ifo, ftype, trend, priority):
+    assert io_datafind._type_priority(ifo, ftype, trend=trend)[0] == priority
