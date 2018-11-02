@@ -85,7 +85,9 @@ class _CacheEntry(namedtuple(
 
         # determine format
         try:
-            a, b, c, d, e = line.strip().split()
+            # NOTE: cast to `str` here to avoid unicode on python2.7
+            #       which lal.LIGOTimeGPS doesn't like
+            a, b, c, d, e = map(str, line.strip().split())
         except ValueError as exc:
             exc.args = ("Cannot identify format for cache entry {!r}".format(
                 line.rstrip()),)
