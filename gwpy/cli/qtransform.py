@@ -112,6 +112,11 @@ class Qtransform(Spectrogram):
         """
         gps = args.gps
         search = args.search
+        # ennsure we have enough data for filter settling
+        max_plot = max(args.plot)
+        search = max(search, max_plot * 2 + 6)
+        self.log(3, "Search window: {0:.0f} sec, max plot window {1:.0f}".
+                 format(search, max_plot))
 
         args.start = [[int(gps - search/2)]]
         if args.epoch is None:
@@ -154,9 +159,9 @@ class Qtransform(Spectrogram):
                 x = x.value
             elif isinstance(x, str):
                 warnings.warn('WARNING: fformat called with a' +
-                            ' string. This has ' +
-                            'been depricated and may disappear ' +
-                            'in a future release.')
+                              ' string. This has ' +
+                              'been depricated and may disappear ' +
+                              'in a future release.')
                 x = float(x)
             return '{0:.2f}'.format(x)
 
