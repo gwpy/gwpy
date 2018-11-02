@@ -100,7 +100,11 @@ class _CacheEntry(namedtuple(
         path = a
         start = float(b)
         end = start + float(c)
-        observatory, description = os.path.basename(path).split('-', 2)[:2]
+        try:
+            observatory, description = os.path.splitext(
+                os.path.basename(path))[0].split('-', 2)[:2]
+        except ValueError:
+            return cls(None, None, Segment(start, end), path)
         return cls(observatory, description, Segment(start, end), path)
 
 
