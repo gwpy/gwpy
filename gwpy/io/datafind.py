@@ -127,8 +127,11 @@ class FflConnection(object):
             mtime = 0
         newm = os.path.getmtime(path)
         if newm > mtime:  # read FFL file
+            def _update_metadata(entry):
+                return type(entry)(site, tag, entry.segment, entry.path)
             with open(path, 'r') as fobj:
-                self.cache[key] = newm, list(_iter_cache(fobj))
+                cache = list(map(_update_metadata, _iter_cache(fobj)))
+            self.cache[key] = newm, cache
         return self.cache[key][-1]
 
     @staticmethod
