@@ -45,7 +45,7 @@ from six.moves.urllib.parse import urlparse
 
 from ..segments import (Segment, SegmentList)
 from ..time import to_gps
-from .cache import (cache_segments, read_cache_entry)
+from .cache import (cache_segments, read_cache_entry, _iter_cache, _CacheEntry)
 from .gwf import (num_channels, iter_channel_names)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -65,9 +65,6 @@ LOW_PRIORITY_TYPE = re.compile(
 
 
 # -- utilities ----------------------------------------------------------------
-
-
-CacheEntry = namedtuple('CacheEntry', ['obs', 'tag', 'segment', 'path'])
 
 
 class FflConnection(object):
@@ -130,7 +127,8 @@ class FflConnection(object):
             mtime = 0
         newm = os.path.getmtime(path)
         if newm > mtime:  # read FFL file
-            self.cache[key] = newm, list(self._read_ffl_file(path))
+            with open(path, 'r') as fobj:
+                self.cache[key] = newm, list(_iter_cache(fobj))
         return self.cache[key][-1]
 
     @staticmethod
@@ -144,32 +142,6 @@ class FflConnection(object):
             if isinstance(line, bytes):
                 return line.decode('utf-8')
             return line
-
-    @classmethod
-    def _read_ffl_file(cls, path):
-        tag = os.path.splitext(os.path.basename(path))[0]
-        with open(path, 'rb') as fobj:
-            for line in fobj:
-                if isinstance(line, bytes):
-                    line = line.decode('utf-8')
-                try:
-                    filename, gps, duration, _, _ = line.split()
-                except ValueError:
-                    subpath, start, end = line.split()
-                    if os.path.samefile(subpath, path):
-                        raise RuntimeError('cyclic reference found '
-                                           'in {0}'.format(path))
-                    for entry in cls._read_ffl_file(subpath):
-                        yield entry
-                gps = float(gps)
-                duration = float(duration)
-                obs = os.path.basename(filename).split('-')[0]
-                yield CacheEntry(
-                    obs=obs,
-                    tag=tag,
-                    segment=Segment(gps, gps+duration),
-                    path=filename,
-                )
 
     def _get_site_tag(self, path):
         # tag is just name of file minus extension
@@ -218,7 +190,7 @@ class FflConnection(object):
         """
         span = Segment(gpsstart, gpsend)
         cache = [e for e in self._read_ffl_cache(site, frametype) if
-                 e.obs == site and e.tag == frametype and
+                 e.observatory == site and e.description == frametype and
                  e.segment.intersects(span)]
         urls = [e.path for e in cache]
         missing = SegmentList([span]) - cache_segments(cache)
@@ -287,7 +259,7 @@ def _type_priority(ifo, ftype, trend=None):
         LOW_PRIORITY_TYPE: 10,
         MINUTE_TREND_TYPE: 10,
         SECOND_TREND_TYPE: 10,
-        re.compile('[A-Z]\d_C'): 6,
+        re.compile(r'[A-Z]\d_C'): 6,
     }
 
     # default priority
