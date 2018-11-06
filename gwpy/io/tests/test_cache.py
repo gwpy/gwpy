@@ -21,6 +21,7 @@
 
 from __future__ import print_function
 
+import os.path
 import tempfile
 from copy import deepcopy
 
@@ -45,16 +46,10 @@ SEGMENTS = SegmentList(map(Segment, [
 
 @pytest.fixture
 def cache():
-    try:
-        from lal.utils import CacheEntry
-    except ImportError as e:
-        pytest.skip(str(e))
-
     cache = []
     for seg in SEGMENTS:
         d = seg[1] - seg[0]
-        f = 'A-B-%d-%d.tmp' % (seg[0], d)
-        cache.append(CacheEntry.from_T050017(f, coltype=int))
+        cache.append(os.path.join('tmp', 'A-B-%d-%d.tmp' % (seg[0], d)))
     return cache
 
 
@@ -71,9 +66,13 @@ def tmpfile():
 
 # -- tests --------------------------------------------------------------------
 
+@skip_missing_dependency('lal.utils')
 def test_read_write_cache(cache, tmpfile):
+    from lal.utils import CacheEntry
+    lcache = list(map(CacheEntry.from_T050017, cache))
+
     with open(tmpfile, 'w') as f:
-        io_cache.write_cache(cache, f)
+        io_cache.write_cache(lcache, f)
 
     # read from fileobj
     with open(tmpfile) as f:
@@ -81,11 +80,16 @@ def test_read_write_cache(cache, tmpfile):
     assert cache == c2
 
     # write with file name
-    io_cache.write_cache(cache, tmpfile)
+    io_cache.write_cache(lcache, tmpfile)
 
     # read from file name
     c3 = io_cache.read_cache(tmpfile)
     assert cache == c3
+
+    # check sieving and sorting works
+    c4 = io_cache.read_cache(tmpfile, sort=lambda e: -e.segment[0],
+                             segment=Segment(0, 2))
+    assert c4 == cache[1::-1]
 
 
 @pytest.mark.parametrize('input_, result', [
@@ -150,20 +154,26 @@ def test_file_list(cache):
     with tempfile.NamedTemporaryFile() as f:
         assert io_cache.file_list(f) == [f.name]
 
-    # test CacheEntry -> [CacheEntry.path]
-    assert io_cache.file_list(cache[0]) == [cache[0].path]
+    try:
+        from lal.utils import CacheEntry
+    except ImportError:
+        pass
+    else:
+        # test CacheEntry -> [CacheEntry.path]
+        lcache = list(map(CacheEntry.from_T050017, cache))
+        assert io_cache.file_list(lcache[0]) == [cache[0]]
 
-    # test cache file -> pfnlist()
-    with tempfile.NamedTemporaryFile(suffix='.lcf', mode='w') as f:
-        io_cache.write_cache(cache, f)
-        f.seek(0)
-        assert io_cache.file_list(f.name) == [e.path for e in cache]
+        # test cache object -> pfnlist
+        assert io_cache.file_list(lcache) == cache
+
+        # test cache file -> pfnlist()
+        with tempfile.NamedTemporaryFile(suffix='.lcf', mode='w') as f:
+            io_cache.write_cache(lcache, f)
+            f.seek(0)
+            assert io_cache.file_list(f.name) == cache
 
     # test comma-separated list -> list
     assert io_cache.file_list('A,B,C,D') == ['A', 'B', 'C', 'D']
-
-    # test cache object -> pfnlist
-    assert io_cache.file_list(cache) == [e.path for e in cache]
 
     # test list -> list
     assert io_cache.file_list(['A', 'B', 'C', 'D']) == ['A', 'B', 'C', 'D']
@@ -183,7 +193,13 @@ def test_file_name(cache):
         assert io_cache.file_name(f) == f.name
 
     # check file_name(<CacheEntry>)
-    assert io_cache.file_name(cache[0]) == cache[0].path
+    try:
+        from lal.utils import CacheEntry
+    except ImportError:
+        pass
+    else:
+        assert io_cache.file_name(
+            CacheEntry.from_T050017(cache[0])) == cache[0]
 
     # check that anything else fails
     with pytest.raises(ValueError):
@@ -240,9 +256,7 @@ def test_flatten(cache):
 
     # check two caches get concatenated properly
     a = cache
-    b = deepcopy(cache)
-    for e in b:
-        e.segment = e.segment.shift(10)
+    b = [e.replace('A-B-', 'A-B-1') for e in cache]
     c = a + b
     assert io_cache.flatten(a, b) == c
 
