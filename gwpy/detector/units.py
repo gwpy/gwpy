@@ -174,7 +174,7 @@ units.def_unit(['NONE', 'undef'], namespace=_ns,
                doc='No unit has been defined for these data')
 
 # other dimenionless units
-units.def_unit('strain', namespace=_ns)
+units.def_unit('strain', represents=units.Unit(''), namespace=_ns)
 units.def_unit('coherence', namespace=_ns)
 
 # alias for 'second' but with prefices
