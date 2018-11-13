@@ -92,6 +92,7 @@ Working with data
    detector/channel
    time/index
    astro/index
+   env
 
 **Developer notes**
 

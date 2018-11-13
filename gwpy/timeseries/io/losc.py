@@ -40,6 +40,7 @@ from ...io.cache import (cache_segments, file_segment)
 from ...detector.units import parse_unit
 from ...segments import (Segment, SegmentList)
 from ...time import to_gps
+from ...utils.env import bool_env
 
 # ASCII parsing globals
 LOSC_ASCII_HEADER_REGEX = re.compile(
@@ -64,9 +65,7 @@ LOSC_VERSION_RE = re.compile(r'V\d+')
 
 def _download_file(url, cache=None, verbose=False):
     if cache is None:
-        cache = os.getenv('GWPY_CACHE', 'no').lower() in (
-            '1', 'true', 'yes', 'y',
-        )
+        cache = bool_env('GWPY_CACHE', False)
     return get_readable_fileobj(url, cache=cache, show_progress=verbose)
 
 

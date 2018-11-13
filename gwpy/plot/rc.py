@@ -26,6 +26,7 @@ from matplotlib.figure import SubplotParams
 
 from . import tex
 from .colors import DEFAULT_COLORS
+from ..utils.env import bool_env
 
 # record matplotlib's original rcParams
 MPL_RCPARAMS = rc_params()
@@ -64,10 +65,7 @@ DEFAULT_PARAMS = {
 }
 
 # select tex formatting (or not)
-try:  # allow user to override from environment
-    _USETEX = os.environ['GWPY_USETEX'].lower() in ['1', 'true', 'yes', 'y']
-except KeyError:  # 'or' means default to tex
-    _USETEX = rcParams['text.usetex'] or tex.has_tex()
+_USETEX = bool_env('GWPY_USETEX', rcParams['text.usetex'] or tex.has_tex())
 
 # set latex options
 rcParams['text.latex.preamble'].extend(tex.MACROS)
