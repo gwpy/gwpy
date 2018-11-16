@@ -1,5 +1,5 @@
 # requirements for GWpy tests
-pytest >= 3.1
+pytest >= 3.1, < 4.0a0
 pytest-cov
 mock ; python_version < '3'
 freezegun >= 0.2.3
