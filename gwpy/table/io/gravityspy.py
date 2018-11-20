@@ -92,10 +92,14 @@ def get_gravityspy_triggers(tablename, engine=None, **kwargs):
 
 def get_connection_str(db='gravityspy',
                        host='gravityspy.ciera.northwestern.edu',
-                       user=os.getenv('GRAVITYSPY_DATABASE_USER', None),
-                       passwd=os.getenv('GRAVITYSPY_DATABASE_PASSWD', None)):
+                       user=None,
+                       passwd=None):
     """Create string to pass to create_engine
     """
+    if (not user) or (not passwd):
+        user = os.getenv('GRAVITYSPY_DATABASE_USER', None)
+        passwd = os.getenv('GRAVITYSPY_DATABASE_PASSWD', None)
+
     if (not user) or (not passwd):
         raise ValueError('Remember to either pass '
                          'or export GRAVITYSPY_DATABASE_USER '
