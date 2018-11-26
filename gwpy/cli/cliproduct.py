@@ -34,7 +34,7 @@ from functools import wraps
 
 from six import add_metaclass
 
-from matplotlib import rcParams
+from matplotlib import rcParams, rc
 try:
     from matplotlib.cm import viridis as DEFAULT_CMAP
 except ImportError:
@@ -639,18 +639,20 @@ class CliProduct(object):
         return leg
 
     def set_title(self, title):
-        """Set the title for this plot.
+        """Set the title(s) for this plot.
 
         The `Axes.title` actually serves at the sub-title for the plot,
         typically giving processing parameters and information.
         """
+
         if title is None:
-            title = self.get_title().rstrip(', ')
-        if self.usetex:
-            title = label_to_latex(title)
-        if title:
-            self.ax.set_title(title, fontsize=12)
-            self.log(3, ('Title is: %s' % title))
+            title = [self.get_title().rstrip(', ')]
+        for title_line in title:
+            if self.usetex:
+                title_line = label_to_latex(title_line)
+            if title_line:
+                self.ax.set_title(title_line, fontsize=12)
+                self.log(3, ('Title is: %s' % title_line))
 
     def set_suptitle(self, suptitle):
         """Set the super title for this plot.
@@ -695,9 +697,14 @@ class CliProduct(object):
         self.log(3, ('Verbosity level: %d' % self.verbose))
 
         self.log(3, 'Arguments:')
+        hastex = False
         argsd = vars(self.args)
         for key in sorted(argsd):
             self.log(3, '{0:>15s} = {1}'.format(key, argsd[key]))
+            if isinstance(argsd[key], str):
+                hastex |= '$' in argsd[key]
+        hastex |= self.args.mode == 'spectrum'
+        rc('text', usetex=False)
 
         # grab the data
         self.get_data()
