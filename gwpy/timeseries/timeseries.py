@@ -1315,8 +1315,8 @@ class TimeSeries(TimeSeriesBase):
             stride (seconds) between calculations, defaults to 1 second
 
         exp : `bool`, optional
-            return the demodulated magnitude and phase trends as one
-            `TimeSeries` object representing a complex exponential
+            return the magnitude and phase trends as one `TimeSeries` object
+            representing a complex exponential, default: False
 
         deg : `bool`, optional
             if `exp=False`, calculates the phase in degrees
@@ -1336,46 +1336,46 @@ class TimeSeries(TimeSeriesBase):
         Demodulation is useful when trying to examine steady sinusoidal
         signals we know to be contained within data. For instance,
         we can download some data from LOSC to look at trends of the
-        amplitude and phase of Livingston's calibration line at 331.3 Hz:
+        amplitude and phase of LIGO Livingston's calibration line at 331.3 Hz:
 
         >>> from gwpy.timeseries import TimeSeries
         >>> data = TimeSeries.fetch_open_data('L1', 1131350417, 1131357617)
 
-        We can demodulate the `TimeSeries` at 331.3 Hz with a stride of once
-        per minute:
+        We can demodulate the `TimeSeries` at 331.3 Hz with a stride of one
+        minute:
 
         >>> amp, phase = data.demodulate(331.3, stride=60)
 
-        We can then plot these trends to visualize changes in the amplitude
-        and phase of the calibration line:
+        We can then plot these trends to visualize fluctuations in the
+        amplitude of the calibration line:
 
         >>> from gwpy.plot import Plot
-        >>> plot = Plot(amp, phase, separate=True, sharex=True)
+        >>> plot = Plot(amp)
+        >>> ax = plot.gca()
+        >>> ax.set_ylabel('Strain Amplitude at 331.3 Hz')
         >>> plot.show()
         """
         stridesamp = int(stride * self.sample_rate.value)
         nsteps = int(self.size // stridesamp)
-        # mix with a complex oscillator and stride through the TimeSeries,
+        # stride through the TimeSeries and mix with a local oscillator,
         # taking the average over each stride
-        out = numpy.zeros(nsteps, dtype=complex).view(type(self))
-        out.__metadata_finalize__(self)
-        out.sample_rate = 1/float(stride)
-        out._unit = self.unit
-        mixed = 2 * numpy.exp(-2*numpy.pi*1j*f*self.times.value) * self.value
-        # stride through the TimeSeries
+        out = type(self)(numpy.zeros(nsteps, dtype=complex))
+        out.__array_finalize__(self)
+        out.sample_rate = 1 / float(stride)
+        w = 2 * numpy.pi * f * self.dt.decompose().value
         for step in range(nsteps):
-            idx = int(stridesamp * step)
-            idx_end = idx + stridesamp
-            stepseries = mixed[idx:idx_end]
-            demod_ = numpy.average(stepseries)
-            out.value[step] = demod_
+            istart = int(stridesamp * step)
+            iend = istart + stridesamp
+            idx = numpy.arange(istart, iend)
+            mixed = 2 * numpy.exp(-1j * w * idx) * self.value[idx]
+            out.value[step] = mixed.mean()
         if exp:
             return out
-        mag = numpy.abs(out)
-        phase = numpy.angle(out, deg=deg).view(type(self))
-        phase.__metadata_finalize__(out)
+        mag = out.abs()
+        phase = type(mag)(numpy.angle(out, deg=deg))
+        phase.__array_finalize__(out)
         phase.override_unit('deg' if deg else 'rad')
-        return mag, phase
+        return (mag, phase)
 
     def taper(self, side='leftright'):
         """Taper the ends of this `TimeSeries` smoothly to zero.
