@@ -45,7 +45,6 @@ GWPY_RCPARAMS = RcParams(**{
     'axes.formatter.limits': (-3, 4),
     'axes.formatter.use_mathtext': True,
     # fonts
-    'axes.labelpad': 5,
     'axes.titlesize': 'large',
     'axes.labelsize': 'large',
     'font.family': ['sans-serif'],
@@ -58,19 +57,19 @@ GWPY_RCPARAMS = RcParams(**{
     'font.size': 12,
     # legend (revert to mpl 1.5 formatting in parts)
     'legend.numpoints': 2,
-    'legend.edgecolor': 'inherit',
     'legend.handlelength': 1,
     'legend.fancybox': False,
 })
 
-# remove rcParams for old matplotlib
+# set parameters only supported in matplotlib >= 1.5
 # https://matplotlib.org/1.5.1/users/whats_new.html#configuration-rcparams
-if mpl_version < '1.5':
-    for key in (
-            'axes.labelpad',
-            'legend.edgecolor',
-    ):
-        GWPY_RCPARAMS.pop(key, None)
+try:
+    GWPY_RCPARAMS.update({
+        'axes.labelpad': 5,
+        'legend.edgecolor': 'inherit',
+    })
+except KeyError:  # matplotlib < 1.5
+    pass
 
 # set latex options
 GWPY_TEX_RCPARAMS = RcParams(**{
