@@ -279,7 +279,6 @@ def _type_priority(ifo, ftype, trend=None):
             SECOND_TREND_TYPE: 10,
     }.items():
         if reg.search(ftype):
-            print(ftype, reg.pattern)
             return prio, len(ftype)
 
     return 5, len(ftype)
