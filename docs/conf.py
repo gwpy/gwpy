@@ -28,8 +28,7 @@ from string import Template
 
 from six.moves.configparser import (ConfigParser, NoOptionError)
 
-from matplotlib import use
-use('agg')
+import matplotlib
 
 from sphinx.util import logging
 
@@ -39,8 +38,9 @@ from numpydoc import docscrape_sphinx
 
 import gwpy
 from gwpy import _version as gwpy_version
-from gwpy.plot.rc import DEFAULT_PARAMS as GWPY_PLOT_PARAMS
 from gwpy.utils.sphinx import zenodo
+
+matplotlib.use('agg')
 
 GWPY_VERSION = gwpy_version.get_versions()
 
@@ -161,7 +161,7 @@ autosummary_generate = True
 
 # -- plot_directive -----------------------------
 
-plot_rcparams = GWPY_PLOT_PARAMS
+plot_rcparams = matplotlib.rcParams
 plot_rcparams.update({
     'backend': 'agg',
 })

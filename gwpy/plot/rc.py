@@ -19,13 +19,11 @@
 """Custom default figure configuration
 """
 
-import os
-
-from matplotlib import (rcParams, rc_params, __version__ as mpl_version)
+from matplotlib import (rcParams, rc_params, RcParams,
+                        __version__ as mpl_version)
 from matplotlib.figure import SubplotParams
 
 from . import tex
-from .colors import DEFAULT_COLORS
 from ..utils.env import bool_env
 
 # record matplotlib's original rcParams
@@ -36,62 +34,34 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 # -- custom rc ----------------------------------------------------------------
 
 # set default params
-DEFAULT_PARAMS = {
+GWPY_RCPARAMS = RcParams(**{
     # axes boundary colours
     'axes.edgecolor': 'gray',
     # grid
     'axes.grid': True,
     'axes.axisbelow': False,
-    'grid.linestyle': ':',
     'grid.linewidth': .5,
     # ticks
     'axes.formatter.limits': (-3, 4),
+    'axes.formatter.use_mathtext': True,
     # fonts
     'axes.labelpad': 5,
-    'axes.titlesize': 20,
-    'axes.labelsize': 18,
-    'xtick.labelsize': 16,
-    'ytick.labelsize': 16,
-    'font.sans-serif': ['FreeSans'] + rcParams['font.sans-serif'],
-    # image
-    'image.aspect': 'auto',
-    'image.interpolation': 'nearest',
-    'image.origin': 'lower',
+    'axes.titlesize': 'large',
+    'axes.labelsize': 'large',
+    'font.family': ['sans-serif'],
+    'font.sans-serif': [
+        'FreeSans',
+        'Helvetica Neue',
+        'Helvetica',
+        'Arial',
+    ] + rcParams['font.sans-serif'],
+    'font.size': 12,
     # legend (revert to mpl 1.5 formatting in parts)
     'legend.numpoints': 2,
     'legend.edgecolor': 'inherit',
     'legend.handlelength': 1,
     'legend.fancybox': False,
-}
-
-# select tex formatting (or not)
-_USETEX = bool_env('GWPY_USETEX', rcParams['text.usetex'] or tex.has_tex())
-
-# set latex options
-rcParams['text.latex.preamble'].extend(tex.MACROS)
-if _USETEX:
-    DEFAULT_PARAMS.update({
-        'text.usetex': True,
-        'font.family': 'serif',
-        'axes.labelpad': 4,
-        'axes.labelsize': 20,
-        'axes.titlesize': 24,
-        'xtick.labelsize': 16,
-        'ytick.labelsize': 16,
-    })
-    if mpl_version < '2.0':
-        DEFAULT_PARAMS['font.serif'] = ['Computer Modern']
-
-# build better default colour cycle for matplotlib < 2
-if mpl_version < '2.0':
-    try:
-        from matplotlib import cycler
-    except (ImportError, KeyError):  # mpl < 1.5
-        DEFAULT_PARAMS['axes.color_cycle'] = DEFAULT_COLORS
-    else:  # mpl >= 1.5
-        DEFAULT_PARAMS.update({
-            'axes.prop_cycle': cycler('color', DEFAULT_COLORS),
-        })
+})
 
 # remove rcParams for old matplotlib
 # https://matplotlib.org/1.5.1/users/whats_new.html#configuration-rcparams
@@ -100,10 +70,64 @@ if mpl_version < '1.5':
             'axes.labelpad',
             'legend.edgecolor',
     ):
-        DEFAULT_PARAMS.pop(key, None)
+        GWPY_RCPARAMS.pop(key, None)
 
-# update matplotlib rcParams with new settings
-rcParams.update(DEFAULT_PARAMS)
+# set latex options
+GWPY_TEX_RCPARAMS = RcParams(**{
+    # use latex styling
+    'text.usetex': True,
+    'text.latex.preamble': (
+        rcParams.get('text.latex.preamble', []) + tex.MACROS),
+    # use bigger font for labels (since the font is good)
+    'font.family': 'serif',
+    'font.size': 16,
+    # don't use mathtext for offset
+    'axes.formatter.use_mathtext': False,
+})
+if mpl_version < '2.0':
+    GWPY_TEX_RCPARAMS['font.serif'] = ['Computer Modern']
+
+
+def rc_params(usetex=None):
+    """Returns a new `matplotlib.RcParams` with updated GWpy parameters
+
+    The updated parameters are globally stored as
+    `gwpy.plot.rc.GWPY_RCPARAMS`, with the updated TeX parameters as
+    `gwpy.plot.rc.GWPY_TEX_RCPARAMS`.
+
+    .. note::
+
+       This function doesn't apply the new `RcParams` in any way, just
+       creates something that can be used to set `matplotlib.rcParams`.
+
+    Parameters
+    ----------
+    usetex : `bool`, `None`
+        value to set for `text.usetex`; if `None` determine automatically
+        using the ``GWPY_USETEX`` environment variable, and whether `tex`
+        is available on the system. If `True` is given (or determined)
+        a number of other parameters are updated to improve TeX formatting.
+
+    Examples
+    --------
+    >>> import matplotlib
+    >>> from gwpy.plot.rc import rc_params as gwpy_rc_params()
+    >>> matplotlib.rcParams.update(gwpy_rc_params(usetex=False))
+    """
+    # if user didn't specify to use tex or not, guess based on
+    # the `GWPY_USETEX` environment variable, or whether tex is
+    # installed at all.
+    if usetex is None:
+        usetex = bool_env(
+            'GWPY_USETEX',
+            default=rcParams['text.usetex'] or tex.has_tex())
+
+    # build RcParams from matplotlib.rcParams with GWpy extras
+    rcp = GWPY_RCPARAMS.copy()
+    if usetex:
+        rcp.update(GWPY_TEX_RCPARAMS)
+    return rcp
+
 
 # -- dynamic subplot positioning ----------------------------------------------
 
