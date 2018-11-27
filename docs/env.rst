@@ -29,5 +29,10 @@ The following variables are defined:
 | ``GWPY_CACHE``      | `False` | Whether to cache downloaded files from      |
 |                     |         | GWOSC to prevent repeated downloads         |
 +---------------------+---------+---------------------------------------------+
-| ``GWPY_USETEX``     | `True`  | Whether to use LaTeX when rendering images  |
+| ``GWPY_RCPARAMS``   | `True`  | Whether to update `matplotlib.rcParams`     |
+|                     |         | with custom GWpy defaults for rendering     |
+|                     |         | images                                      |
++---------------------+---------+---------------------------------------------+
+| ``GWPY_USETEX``     | `False` | Whether to use LaTeX when rendering images, |
+|                     |         | only used when ``GWPY_RCPARAMS`` is `True`  |
 +---------------------+---------+---------------------------------------------+
