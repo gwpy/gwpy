@@ -704,7 +704,7 @@ class CliProduct(object):
             if isinstance(argsd[key], str):
                 hastex |= '$' in argsd[key]
         hastex |= self.args.mode == 'spectrum'
-        rc('text', usetex=False)
+        rc('text', usetex=hastex)
 
         # grab the data
         self.get_data()
