@@ -39,4 +39,3 @@ exclude_paths:
 - "gwpy/_version.py"
 - "**/tests/"
 - "gwpy/utils/sphinx/epydoc.py"
-- "gwpy/plotter/"

@@ -108,7 +108,6 @@ Working with data
    :hidden:
 
    examples/index
-   plotter/index
 
 Indices and tables
 ~~~~~~~~~~~~~~~~~~
