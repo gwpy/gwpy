@@ -68,19 +68,24 @@ class TestAxes(AxesTestBase):
         ax.scatter([1], [1], c=[1])
 
     def test_imshow(self, ax):
+        # standard imshow call
+        array = numpy.random.random((10, 10))
+        image2 = ax.imshow(array)
+        utils.assert_array_equal(image2.get_array(), array)
+        assert image2.get_extent() == (-.5, array.shape[0]-.5,
+                                       array.shape[1]-.5, -.5)
+
+    def test_imshow_array2d(self, ax):
         # overloaded imshow call (Array2D)
         array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
         image = ax.imshow(array)
         utils.assert_array_equal(image.get_array(), array.value.T)
         assert image.get_extent() == tuple(array.xspan) + tuple(array.yspan)
 
-        # standard imshow call
-        image2 = ax.imshow(array.value)
-        utils.assert_array_equal(image2.get_array(), array.value)
-        assert image2.get_extent() == (-.5, array.shape[0]-.5,
-                                       -.5, array.shape[1]-.5)
-
-        # with log scale
+        # check log scale uses non-zero boundaries
+        ax.clear()
+        ax.set_xlim(.1, 1)
+        ax.set_ylim(.1, 1)
         ax.set_xscale('log')
         ax.set_yscale('log')
         image = ax.imshow(array)
