@@ -279,7 +279,6 @@ def _type_priority(ifo, ftype, trend=None):
             SECOND_TREND_TYPE: 10,
     }.items():
         if reg.search(ftype):
-            print(ftype, reg.pattern)
             return prio, len(ftype)
 
     return 5, len(ftype)
@@ -332,7 +331,7 @@ def with_connection(func):
 @with_connection
 def find_frametype(channel, gpstime=None, frametype_match=None,
                    host=None, port=None, return_all=False, allow_tape=False,
-                   connection=None, urltype='file', on_gaps='error'):
+                   connection=None, on_gaps='error'):
     """Find the frametype(s) that hold data for a given channel
 
     Parameters
@@ -358,9 +357,6 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     allow_tape : `bool`, optional, default: `False`
         do not test types whose frame files are stored on tape (not on
         spinning disk)
-
-    urltype : `str`, optional
-        scheme of URL to return, default is ``'file'``
 
     on_gaps : `str`, optional
         action to take when gaps are discovered in datafind coverage,
@@ -537,7 +533,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
 
 
 @with_connection
-def find_best_frametype(channel, start, end, urltype='file',
+def find_best_frametype(channel, start, end,
                         frametype_match=None, allow_tape=True,
                         connection=None, host=None, port=None):
     """Intelligently select the best frametype from which to read this channel
@@ -554,9 +550,6 @@ def find_best_frametype(channel, start, end, urltype='file',
     end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
         GPS end time of period of interest,
         any input parseable by `~gwpy.time.to_gps` is fine
-
-    urltype : `str`, optional
-        scheme of URL to return, default is ``'file'``
 
     host : `str`, optional
         name of datafind host to use
@@ -591,15 +584,14 @@ def find_best_frametype(channel, start, end, urltype='file',
     try:
         return find_frametype(channel, gpstime=(start, end),
                               frametype_match=frametype_match,
-                              allow_tape=allow_tape, urltype=urltype,
-                              on_gaps='error', connection=connection,
-                              host=host, port=port)
+                              allow_tape=allow_tape, on_gaps='error',
+                              connection=connection, host=host, port=port)
     except RuntimeError:  # gaps (or something else went wrong)
         ftout = find_frametype(channel, gpstime=(start, end),
                                frametype_match=frametype_match,
                                return_all=True, allow_tape=allow_tape,
-                               urltype=urltype, on_gaps='ignore',
-                               connection=connection, host=host, port=port)
+                               on_gaps='ignore', connection=connection,
+                               host=host, port=port)
         try:
             if isinstance(ftout, dict):
                 return {key: ftout[key][0] for key in ftout}

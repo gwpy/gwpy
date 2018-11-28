@@ -23,13 +23,22 @@ trap 'set +ex' RETURN
 # Run the test suite for GWpy on the current system
 #
 
+# get path to python and pip
 PYTHON="python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}"
+PYTHON_PREFIX=$(${PYTHON} -c "import sys; print(sys.prefix)")
+
+# install with sudo on macports
+if [[ "${PYTHON_PREFIX}" =~ "/opt/local/"* ]]; then
+    PIP="sudo -H ${PYTHON} -m pip"
+else
+    PIP="${PYTHON} -m pip"
+fi
 
 # upgrade setuptools in order to understand environment markers
-${PYTHON} -m pip install "pip>=8.0.0" "setuptools>=20.2.2"
+${PIP} install "pip>=8.0.0" "setuptools>=20.2.2"
 
 # install test dependencies
-${PYTHON} -m pip install ${PIP_FLAGS} -r requirements-test.txt
+${PIP} install ${PIP_FLAGS} -r requirements-test.txt
 
 # run tests with coverage
 ${PYTHON} -m pytest --pyargs gwpy --cov=gwpy
