@@ -95,6 +95,15 @@ def get_connection_str(db='gravityspy',
                        user=None,
                        passwd=None):
     """Create string to pass to create_engine
+
+    Note:
+        If not supplied, user and passwd are
+        resolved by scraping your environement for
+        ``GRAVITYSPY_DATABASE_USER`` and
+        ``GRAVITYSPY_DATABASE_PASSWD``.
+
+        *Both* user and passwd are required otherwise
+        it is ignored.
     """
     if (not user) or (not passwd):
         user = os.getenv('GRAVITYSPY_DATABASE_USER', None)
