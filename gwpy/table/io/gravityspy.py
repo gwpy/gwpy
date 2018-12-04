@@ -96,14 +96,31 @@ def get_connection_str(db='gravityspy',
                        passwd=None):
     """Create string to pass to create_engine
 
-    Note:
-        If not supplied, user and passwd are
-        resolved by scraping your environement for
-        ``GRAVITYSPY_DATABASE_USER`` and
-        ``GRAVITYSPY_DATABASE_PASSWD``.
+    Parameters
+    ----------
+    db : `str`, default: ``gravityspy``
+        The name of the SQL database your connecting to.
 
-        *Both* user and passwd are required otherwise
-        it is ignored.
+    host : `str`, default: ``gravityspy.ciera.northwestern.edu``
+        The name of the server the database you are connecting to
+        lives on.
+
+    db : `str`, default: None
+        Your username for authentication to this database.
+
+    db : `str`, default: None
+        Your password for authentication to this database.
+
+    .. note::
+
+       `user` and `passwd` should be given together, otherwise they will be
+       ignored and values will be resolved from the
+       ``GRAVITYSPY_DATABASE_USER`` and ``GRAVITYSPY_DATABASE_PASSWD``
+       environment variables.
+
+    Returns
+    -------
+    conn_string : A SQLAlchemy engine compliant connection string
     """
     if (not user) or (not passwd):
         user = os.getenv('GRAVITYSPY_DATABASE_USER', None)
