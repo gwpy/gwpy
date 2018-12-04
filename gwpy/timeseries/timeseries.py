@@ -1750,9 +1750,9 @@ class TimeSeries(TimeSeriesBase):
         return self.filter(*zpk, filtfilt=filtfilt)
 
     def q_transform(self, qrange=(4, 64), frange=(0, numpy.inf),
-                    gps=None, search=.5, tres=.001, fres=.5, norm='median',
-                    outseg=None, whiten=True, fduration=2, highpass=None,
-                    **asd_kw):
+                    gps=None, search=.5, tres=.001, fres=.5, logf=False,
+                    norm='median', outseg=None, whiten=True, fduration=2,
+                    highpass=None, **asd_kw):
         """Scan a `TimeSeries` using a multi-Q transform
 
         Parameters
@@ -1773,10 +1773,16 @@ class TimeSeries(TimeSeriesBase):
         tres : `float`, optional
             desired time resolution (seconds) of output `Spectrogram`
 
-        fres : `float`, `None`, optional
+        fres : `float`, `int`, `None`, optional
             desired frequency resolution (Hertz) of output `Spectrogram`,
             give `None` to skip this step and return the original resolution,
             e.g. if you're going to do your own interpolation
+
+        logf : `bool`, optional
+            boolean switch to enable (`True`) or disable (`False`) use of
+            log-sampled frequencies in the output `Spectrogram`,
+            if `True` then `fres` is interpreted as a number of frequency
+            samples, default: `False`
 
         norm : `bool`, `str`, optional
             whether to normalize the returned Q-transform output, or how,
@@ -1825,11 +1831,16 @@ class TimeSeries(TimeSeriesBase):
 
         Notes
         -----
-        It is highly recommended to use the `outseg` keyword argument when
-        only a small window around a given GPS time is of interest. This
+        To optimize plot rendering with `~matplotlib.axes.Axes.pcolormesh`,
+        the output `~gwpy.spectrogram.Spectrogram` can be given a log-sampled
+        frequency axis by passing `logf=True` at runtime. The `fres` argument
+        is then the number of points on the frequency axis. Note, this is
+        incompatible with `~matplotlib.axes.Axes.imshow`.
+
+        It is also highly recommended to use the `outseg` keyword argument
+        when only a small window around a given GPS time is of interest. This
         will speed up this method a little, but can greatly speed up
-        rendering the resulting `~gwpy.spectrogram.Spectrogram` using
-        `~matplotlib.axes.Axes.pcolormesh`.
+        rendering the resulting `Spectrogram` using `pcolormesh`.
 
         If you aren't going to use `pcolormesh` in the end, don't worry.
 
@@ -1924,28 +1935,33 @@ class TimeSeries(TimeSeriesBase):
         ny = frequencies.size
         out = Spectrogram(numpy.zeros((nx, ny)), x0=outseg[0], dx=tres,
                           frequencies=frequencies)
-        # FIXME: bug in Array2D.yindex setting
-        out._yindex = type(out.y0)(frequencies, out.y0.unit)
         # record Q in output
         out.q = peakq
         # interpolate rows
+        xout = numpy.arange(outseg[0], outseg[1], tres)
         for i, row in enumerate(norms):
-            interp = InterpolatedUnivariateSpline(
-                row.times.value, row.value)
-            out[:, i] = interp(out.times.value)
+            xrow = numpy.arange(row.x0.value, (row.x0 + row.duration).value,
+                                row.dx.value)
+            interp = InterpolatedUnivariateSpline(xrow, row.value)
+            out[:, i] = interp(xout)
+
+        if fres is None:
+            return out
 
         # then interpolate the spectrogram to increase the frequency resolution
         # --- this is done because duncan doesn't like interpolated images
         #     because they don't support log scaling
-        if fres is None:  # unless user tells us not to
-            return out
-
-        interp = interp2d(out.times.value, frequencies, out.value.T,
-                          kind='cubic')
-        freqs2 = numpy.arange(planes.frange[0], planes.frange[1], fres)
-        new = Spectrogram(interp(out.times.value, freqs2 + fres/2.).T,
-                          x0=outseg[0], dx=tres,
-                          f0=planes.frange[0], df=fres)
+        interp = interp2d(xout, frequencies, out.value.T, kind='cubic')
+        if not logf:
+            outfreq = numpy.arange(planes.frange[0], planes.frange[1], fres)
+        else:
+            # using `~numpy.logspace` here to support numpy-1.7.1 for EPEL7,
+            # but numpy-1.12.0 introduced the function `~numpy.geomspace`
+            logfmin = numpy.log10(planes.frange[0])
+            logfmax = numpy.log10(planes.frange[1])
+            outfreq = numpy.logspace(logfmin, logfmax, fres)
+        new = Spectrogram(interp(xout, outfreq).T,
+                          x0=outseg[0], dx=tres, frequencies=outfreq)
         new.q = peakq
         return new
 

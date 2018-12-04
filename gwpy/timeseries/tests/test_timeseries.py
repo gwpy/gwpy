@@ -929,7 +929,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert isinstance(qspecgram, Spectrogram)
         assert qspecgram.shape == (4000, 2403)
         assert qspecgram.q == 5.65685424949238
-        nptest.assert_almost_equal(qspecgram.value.max(), 156.0411964254892)
+        nptest.assert_almost_equal(qspecgram.value.max(), 156.43279233248313)
 
         # test whitening args
         asd = losc.asd(2, 1, method='scipy-welch')
@@ -955,6 +955,15 @@ class TestTimeSeries(_TestTimeSeriesBase):
         losc.q_transform(method='scipy-welch', norm=False)
         with pytest.raises(ValueError):
             losc.q_transform(method='scipy-welch', norm='blah')
+
+    def test_q_transform_logf(self, losc):
+        # test q-transform with log frequency spacing
+        qspecgram = losc.q_transform(method='scipy-welch', fftlength=2,
+                                     fres=500, logf=True)
+        assert isinstance(qspecgram, Spectrogram)
+        assert qspecgram.shape == (4000, 500)
+        assert qspecgram.q == 5.65685424949238
+        nptest.assert_almost_equal(qspecgram.value.max(), 156.43222488296405)
 
     def test_boolean_statetimeseries(self, array):
         comp = array >= 2 * array.unit
