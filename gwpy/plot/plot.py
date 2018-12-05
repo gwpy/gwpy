@@ -127,8 +127,12 @@ class Plot(figure.Figure):
         try:
             manager = backend_mod.new_figure_manager_given_figure(num, self)
         except AttributeError:
-            canvas = backend_mod.FigureCanvas(self)
-            manager = backend_mod.FigureManagerBase(canvas, 1)
+            if 'inline' in backend_mod.__name__:
+                canvas = backend_mod.FigureCanvas(self)
+                manager = backend_mod.new_figure_manager(1)
+            else:
+                canvas = backend_mod.FigureCanvas(self)
+                manager = backend_mod.FigureManagerBase(canvas, 1)
         manager._cidgcf = manager.canvas.mpl_connect(
             'button_press_event',
             lambda ev: _pylab_helpers.Gcf.set_active(manager))
