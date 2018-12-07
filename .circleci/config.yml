@@ -42,13 +42,6 @@ jobs:
           paths:
             - gwpy-*.tar.*
 
-  debian:jessie:2.7:
-    <<: *debian-build
-    docker:
-      - image: ligo/base:jessie
-    environment:
-      PYTHON_VERSION: "2.7"
-
   debian:stretch:2.7:
     <<: *debian-build
     docker:
@@ -75,9 +68,6 @@ workflows:
   build_and_test:
     jobs:
       - sdist
-      - debian:jessie:2.7:
-          requires:
-            - sdist
       - debian:stretch:2.7:
           requires:
             - sdist
