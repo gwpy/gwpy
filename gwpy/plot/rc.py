@@ -78,13 +78,18 @@ GWPY_TEX_RCPARAMS = RcParams(**{
     'text.latex.preamble': (
         rcParams.get('text.latex.preamble', []) + tex.MACROS),
     # use bigger font for labels (since the font is good)
-    'font.family': 'serif',
+    'font.family': ['serif'],
     'font.size': 16,
     # don't use mathtext for offset
     'axes.formatter.use_mathtext': False,
 })
 if mpl_version < '2.0':
     GWPY_TEX_RCPARAMS['font.serif'] = ['Computer Modern']
+
+if mpl_version < '1.3':
+    # really old matplotlib stored font.family as a str, not a list
+    GWPY_RCPARAMS['font.family'] = GWPY_RCPARAMS['font.family'][0]
+    GWPY_TEX_RCPARAMS['font.family'] = GWPY_TEX_RCPARAMS['font.family'][0]
 
 
 def rc_params(usetex=None):
