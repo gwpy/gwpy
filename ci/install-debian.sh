@@ -77,9 +77,10 @@ apt-get -yqq install \
     ${PY_PREFIX}-freezegun \
     ${PY_PREFIX}-sqlparse \
     ${PY_PREFIX}-bs4 \
-    lal-${PY_PREFIX} \
-    lalframe-${PY_PREFIX} \
-    lalsimulation-${PY_PREFIX}
+    ${PY_PREFIX}-lal \
+    ${PY_PREFIX}-lalframe \
+    ${PY_PREFIX}-lalsimulation \
+    ${PY_PREFIX}-nds2-client
 
 # install ROOT for python2 only
 if [ "${PY_PREFIX}" == "python" ]; then
@@ -88,10 +89,4 @@ if [ "${PY_PREFIX}" == "python" ]; then
         libroot-tree-treeplayer-dev \
         libroot-math-physics-dev \
         libroot-graf2d-postscript-dev
-fi
-
-# HACK: fix missing file from ldas-tools-framecpp
-if [ -d /usr/lib/${PYTHON}/dist-packages/LDAStools/ -a \
-     ! -f /usr/lib/${PYTHON}/dist-packages/LDAStools/__init__.py ]; then
-    touch /usr/lib/${PYTHON}/dist-packages/LDAStools/__init__.py
 fi
