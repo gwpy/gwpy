@@ -105,10 +105,10 @@ def get_connection_str(db='gravityspy',
         The name of the server the database you are connecting to
         lives on.
 
-    db : `str`, default: None
+    user : `str`, default: `None`
         Your username for authentication to this database.
 
-    db : `str`, default: None
+    passwd : `str`, default: `None`
         Your password for authentication to this database.
 
     .. note::
@@ -120,7 +120,8 @@ def get_connection_str(db='gravityspy',
 
     Returns
     -------
-    conn_string : A SQLAlchemy engine compliant connection string
+    conn_string : `str`
+        A SQLAlchemy engine compliant connection string
     """
     if (not user) or (not passwd):
         user = os.getenv('GRAVITYSPY_DATABASE_USER', None)
