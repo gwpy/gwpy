@@ -270,7 +270,7 @@ class FrequencySeries(Series):
         """
         return self.filter(zeros, poles, gain, analog=analog)
 
-    def interpolate(self, df, left=0, right=0):
+    def interpolate(self, df):
         """Interpolate this `FrequencySeries` to a new resolution.
 
         Parameters
@@ -279,12 +279,6 @@ class FrequencySeries(Series):
             desired frequency resolution of the interpolated `FrequencySeries`,
             in Hz
 
-        left : `float`
-            value to return for f < flow, default: 0
-
-        right : `float`
-            value to return for f > fhigh, default: 0
-
         Returns
         -------
         out : `FrequencySeries`
@@ -292,14 +286,16 @@ class FrequencySeries(Series):
 
         See Also
         --------
-        :func:`numpy.interp`
+        numpy.interp
             for the underlying 1-D linear interpolation scheme
         """
+        f0 = self.f0.decompose().value
         N = (self.size - 1) * (self.df.decompose().value / df) + 1
-        fsamples = numpy.arange(0, numpy.rint(N)) * df
-        out = numpy.interp(fsamples, self.frequencies.value, self.value,
-                           left=left, right=right).view(type(self))
+        fsamples = numpy.arange(0, numpy.rint(N)) * df + f0
+        out = type(self)(numpy.interp(fsamples, self.frequencies.value,
+                                      self.value))
         out.__array_finalize__(self)
+        out.f0 = f0
         out.df = df
         return out
 
