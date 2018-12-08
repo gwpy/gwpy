@@ -1,18 +1,27 @@
 environment:
   matrix:
     - MINICONDA: C:\Miniconda-x64
+      PYTHON_VERSION: 2.7
     - MINICONDA: C:\Miniconda35-x64
+      PYTHON_VERSION: 3.5
     - MINICONDA: C:\Miniconda36-x64
+      PYTHON_VERSION: 3.6
     - MINICONDA: C:\Miniconda37-x64
+      PYTHON_VERSION: 3.7
 install:
+  # configure conda
   - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
   - conda config --set always_yes yes --set changeps1 no
   - conda config --add channels conda-forge
   - conda update --quiet conda pip
   - conda info --all
-  - conda install --only-deps gwpy
+  # create a new environment for gwpy
+  - conda create --name gwpy python=%PYTHON_VERSION%
+  - activate gwpy
   - python ci\\parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
   - conda install --yes --file conda-reqs.txt
+  # print everything we have
+  - conda list
 build_script:
   - python -m pip install .
 test_script:
