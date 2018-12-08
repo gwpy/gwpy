@@ -84,10 +84,10 @@ yum -y -q install \
     python-psycopg2 \
     python-pandas \
     python2-root \
-    nds2-client-python \
-    ldas-tools-framecpp-python \
-    lalframe-python \
-    lalsimulation-python \
+    python2-nds2-client \
+    python2-ldas-tools-framecpp \
+    python2-lalframe \
+    python2-lalsimulation \
     texlive-dvipng-bin texlive-latex-bin-bin \
     texlive-type1cm texlive-collection-fontsrecommended
 
