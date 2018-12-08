@@ -26,7 +26,7 @@ checksums   rmd160  {{ rmd160 }} \
             sha256  {{ sha256 }} \
             size    {{ size }}
 
-python.versions     27 36
+python.versions     27 36 37
 python.default_version 27
 
 if {${name} ne ${subport}} {
