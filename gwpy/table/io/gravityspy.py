@@ -92,10 +92,41 @@ def get_gravityspy_triggers(tablename, engine=None, **kwargs):
 
 def get_connection_str(db='gravityspy',
                        host='gravityspy.ciera.northwestern.edu',
-                       user=os.getenv('GRAVITYSPY_DATABASE_USER', None),
-                       passwd=os.getenv('GRAVITYSPY_DATABASE_PASSWD', None)):
+                       user=None,
+                       passwd=None):
     """Create string to pass to create_engine
+
+    Parameters
+    ----------
+    db : `str`, default: ``gravityspy``
+        The name of the SQL database your connecting to.
+
+    host : `str`, default: ``gravityspy.ciera.northwestern.edu``
+        The name of the server the database you are connecting to
+        lives on.
+
+    user : `str`, default: `None`
+        Your username for authentication to this database.
+
+    passwd : `str`, default: `None`
+        Your password for authentication to this database.
+
+    .. note::
+
+       `user` and `passwd` should be given together, otherwise they will be
+       ignored and values will be resolved from the
+       ``GRAVITYSPY_DATABASE_USER`` and ``GRAVITYSPY_DATABASE_PASSWD``
+       environment variables.
+
+    Returns
+    -------
+    conn_string : `str`
+        A SQLAlchemy engine compliant connection string
     """
+    if (not user) or (not passwd):
+        user = os.getenv('GRAVITYSPY_DATABASE_USER', None)
+        passwd = os.getenv('GRAVITYSPY_DATABASE_PASSWD', None)
+
     if (not user) or (not passwd):
         raise ValueError('Remember to either pass '
                          'or export GRAVITYSPY_DATABASE_USER '
