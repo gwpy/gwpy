@@ -18,6 +18,9 @@
 .. |astropy| replace:: `astropy`
 .. _astropy: http://www.astropy.org/
 
+.. |gwosc| replace:: `gwosc`
+.. _gwosc: http://gwosc.readthedocs.io/en/stable/
+
 .. |h5py| replace:: `h5py`
 .. _h5py: http://docs.h5py.org/en/latest/
 

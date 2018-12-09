@@ -62,6 +62,7 @@ install_requires = [
     'ligo-segments >= 1.0.0',
     'tqdm >= 4.10.0',
     'ligotimegps >= 1.2.1',
+    'gwosc >= 0.3.1',
 ]
 
 # if setuptools is too old and we are building an EL7 or Debian 8
