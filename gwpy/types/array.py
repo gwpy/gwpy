@@ -27,8 +27,10 @@ critical to being able to view data with this class, used when copying and
 transforming instances of the class.
 """
 
-from math import modf
+import copy
 from decimal import Decimal
+from functools import wraps
+from math import modf
 
 import numpy
 
@@ -471,3 +473,12 @@ class Array(Quantity):
         <Quantity [1., 2., 3., 4.] m>
         """
         return super(Array, self).flatten(order=order).view(Quantity)
+
+    @wraps(Quantity.copy)
+    def copy(self, order='C'):
+        out = super(Array, self).copy(order=order)
+        for slot in self._metadata_slots:
+            old = getattr(self, slot, None)
+            if old is not None:
+                setattr(out, slot, copy.copy(old))
+        return out
