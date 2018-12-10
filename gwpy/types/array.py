@@ -476,7 +476,7 @@ class Array(Quantity):
     def copy(self, order='C'):
         out = super(Array, self).copy(order=order)
         for slot in self._metadata_slots:
-            old = getattr(self, slot, None)
+            old = getattr(self, '_{0}'.format(slot), None)
             if old is not None:
                 setattr(out, slot, copy.copy(old))
         return out
