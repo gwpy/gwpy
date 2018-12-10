@@ -546,6 +546,7 @@ class EventTable(Table):
         return self._plot('tile', self[x], self[y], self[w], self[h], **kwargs)
 
     def _plot(self, method, *args, **kwargs):
+        from matplotlib import rcParams
         from ..plot import Plot
         from ..plot.tex import label_to_latex
 
@@ -566,7 +567,9 @@ class EventTable(Table):
                 filter(attrgetter('isDefault_label'), (ax.xaxis, ax.yaxis)),
                 args[:2],
         ):
-            name = r'\texttt{{{0}}}'.format(label_to_latex(col.name))
+            name = col.name
+            if rcParams['text.usetex']:
+                name = r'\texttt{{{0}}}'.format(label_to_latex(col.name))
             if isinstance(col, Quantity):
                 name += ' [{0}]'.format(col.unit.to_string('latex_inline'))
             axis.set_label_text(name)

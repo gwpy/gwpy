@@ -40,8 +40,8 @@ from ...frequencyseries import (FrequencySeries, SpectralVariance)
 from ...segments import Segment
 from ...signal import filter_design
 from ...spectrogram import Spectrogram
-from ...tests import (mocks, utils)
-from ...tests.mocks import mock
+from ...testing import (mocks, utils)
+from ...testing.compat import mock
 from ...time import LIGOTimeGPS
 from ...utils.misc import null_context
 from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
@@ -406,10 +406,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
                                      frametype_match='C01\Z')
         except (ImportError, RuntimeError) as e:
             pytest.skip(str(e))
-        except IOError as exc:
-            if 'reading from stdin' in str(exc):
-                pytest.skip(str(exc))
-            raise
         utils.assert_quantity_sub_equal(ts, losc_16384,
                                         exclude=['name', 'channel', 'unit'])
 

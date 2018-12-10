@@ -33,7 +33,6 @@ from ...time import LIGOTimeGPS
 from .. import SegmentAxes
 from ..segments import SegmentRectangle
 from .test_axes import TestAxes as _TestAxes
-from .utils import usetex  # pylint: disable=unused-import
 
 # extract color cycle
 COLOR_CONVERTER = ColorConverter()
@@ -149,6 +148,11 @@ class TestSegmentAxes(_TestAxes):
         # just check that the LIGOTimeGPS repr is in place
         value = 1234567890.123
         assert ax.format_xdata(value) == str(LIGOTimeGPS(value))
+
+    # -- disable tests from upstream
+
+    def test_imshow(self):
+        return NotImplemented
 
 
 def test_segmentrectangle():

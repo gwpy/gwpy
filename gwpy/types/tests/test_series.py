@@ -29,7 +29,7 @@ import pytest
 from astropy import units
 
 from ...segments import Segment
-from ...tests import utils
+from ...testing import utils
 from .. import (Series, Array2D)
 from .test_array import TestArray as _TestArray
 

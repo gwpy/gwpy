@@ -54,3 +54,34 @@ class deprecated_property(property):  # pylint: disable=invalid-name
             fget = _warn(fget)
 
         super(deprecated_property, self).__init__(fget, fset, fdel, doc)
+
+
+def return_as(returntype):
+    """Decorator to cast return of function as the given type
+
+    Parameters
+    ----------
+    returntype : `type`
+        the desired return type of the decorated function
+    """
+    def decorator(func):
+        # @wraps(func) <- we can't use this as normal because it doesn't work
+        #                 on python < 3 for instance methods,
+        #                 see workaround below
+        def wrapped(*args, **kwargs):
+            result = func(*args, **kwargs)
+            try:
+                return returntype(result)
+            except (TypeError, ValueError) as exc:
+                exc.args = (
+                    'failed to cast return from {0} as {1}: {2}'.format(
+                        func.__name__, returntype.__name__, str(exc)),
+                )
+                raise
+        try:
+            return wraps(func)(wrapped)
+        except AttributeError:  # python < 3.0.0
+            wrapped.__doc__ == func.__doc__
+            return wrapped
+
+    return decorator

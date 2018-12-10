@@ -125,12 +125,14 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
             else:
                 keytab = None
 
-    # set verbose if prompting for input
-    if verbose is None and (
-        username is None or
-        (not keytab and password is None)
+    # refuse to prompt if we can't get an answer
+    if not sys.stdout.isatty() and (
+            username is None or
+            (not keytab and password is None)
     ):
-        verbose = True
+        raise KerberosError("cannot generate kerberos ticket in a "
+                            "non-interactive session, please manually create "
+                            "a ticket, or consider using a keytab file")
 
     # get credentials
     if realm is None:

@@ -127,8 +127,10 @@ class Plot(figure.Figure):
         try:
             manager = backend_mod.new_figure_manager_given_figure(num, self)
         except AttributeError:
-            canvas = backend_mod.FigureCanvas(self)
-            manager = backend_mod.FigureManagerBase(canvas, 1)
+            upstream_mod = importlib.import_module(
+                pyplot.new_figure_manager.__module__)
+            canvas = upstream_mod.FigureCanvasBase(self)
+            manager = upstream_mod.FigureManagerBase(canvas, 1)
         manager._cidgcf = manager.canvas.mpl_connect(
             'button_press_event',
             lambda ev: _pylab_helpers.Gcf.set_active(manager))
@@ -259,6 +261,10 @@ class Plot(figure.Figure):
         # mainly for user convenience. However, as of matplotlib-3.0.0,
         # pyplot.show() ends up calling _back_ to Plot.show(),
         # so we have to be careful not to end up in a recursive loop
+        #
+        # Developer note: if we ever make it pinning to matplotlib >=3.0.0
+        #                 this method can likely be completely removed
+        #
         import inspect
         try:
             callframe = inspect.currentframe().f_back
@@ -278,7 +284,10 @@ class Plot(figure.Figure):
         # block in GUI loop (stolen from mpl.backend_bases._Backend.show)
         if block:
             backend_mod = get_backend_mod()
-            backend_mod.Show().mainloop()
+            try:
+                backend_mod.Show().mainloop()
+            except AttributeError:  # matplotlib < 2.1.0
+                backend_mod.show.mainloop()
 
     def save(self, *args, **kwargs):
         """Save the figure to disk.

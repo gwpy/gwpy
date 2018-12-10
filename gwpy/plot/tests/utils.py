@@ -29,24 +29,7 @@ from ..tex import HAS_TEX
 from .. import Plot
 
 
-@pytest.fixture(scope='function', autouse=True, params=[
-    pytest.param(False, id='no-tex'),
-    pytest.param(True, id='usetex', marks=pytest.mark.skipif(
-        not HAS_TEX, reason='no latex')),
-])
-def usetex(request):
-    """Fixture to test plotting function with and without `usetex`
-
-    Returns
-    -------
-    usetex : `bool`
-        the value of the `text.usetex` rcParams settings
-    """
-    use_ = request.param
-    with rc_context(rc={'text.usetex': use_}):
-        yield use_
-
-
+@pytest.mark.usefixtures("usetex")
 class _Base(object):
     @staticmethod
     def save(fig, format='png'):

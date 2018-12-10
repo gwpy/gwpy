@@ -89,8 +89,8 @@ def set_parameter(connection, parameter, value, verbose=False):
 
 @io_nds2.open_connection
 def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
-          connection=None, host=None, port=None, pad=None, verbose=False,
-          series_class=TimeSeries):
+          connection=None, host=None, port=None, pad=None, scaled=True,
+          verbose=False, series_class=TimeSeries):
     # host and port keywords are used by the decorator only
     # pylint: disable=unused-argument
     """Fetch a dict of data series from NDS2
@@ -159,7 +159,11 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
             total = 0.
             for buffers in connection.iterate(int(seg[0]), int(seg[1]), names):
                 for buffer_, chan in zip(buffers, channels):
-                    series = series_class.from_nds2_buffer(buffer_)
+                    series = series_class.from_nds2_buffer(
+                        buffer_,
+                        scaled=scaled,
+                        copy=chan not in out,  # only copy if first buffer
+                    )
                     out.append({chan: series}, pad=pad, gap=gap)
                 new = buffer_.length / buffer_.channel.sample_rate
                 total += new

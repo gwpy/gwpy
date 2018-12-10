@@ -34,7 +34,7 @@ try:
 except ImportError:
     pass
 
-from ...tests import utils
+from ...testing import utils
 from ...timeseries import TimeSeries
 from ..fft import (get_default_fft_api,
                    basic as fft_basic,

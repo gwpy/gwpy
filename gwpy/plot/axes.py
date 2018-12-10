@@ -52,6 +52,7 @@ DEFAULT_SCATTER_COLOR = 'b' if mpl_version < '2.0' else None
 def log_norm(func):
     """Wrap ``func`` to handle custom gwpy keywords for a LogNorm colouring
     """
+    @wraps(func)
     def decorated_func(*args, **kwargs):
         norm, kwargs = format_norm(kwargs)
         kwargs['norm'] = norm
@@ -182,6 +183,34 @@ class Axes(_Axes):
 
     @log_norm
     def imshow(self, array, **kwargs):
+        """Display an image, i.e. data on a 2D regular raster.
+
+        If ``array`` is a :class:`~gwpy.types.Array2D` (e.g. a
+        :class:`~gwpy.spectrogram.Spectrogram`), then the defaults are
+        _different_ to those in the upstream
+        :meth:`~matplotlib.axes.Axes.imshow` method. Namely, the defaults are
+
+        - ``origin='lower'`` (coordinates start in lower-left corner)
+        - ``aspect='auto'`` (pixels are not forced to be square)
+        - ``interpolation='none'`` (no image interpolation is used)
+
+        In all other usage, the defaults from the upstream matplotlib method
+        are unchanged.
+
+        Parameters
+        ----------
+        array : array-like or PIL image
+            The image data.
+
+        **kwargs
+            All keywords are passed to the inherited
+            :meth:`~matplotlib.axes.Axes.imshow` method.
+
+        See Also
+        --------
+        matplotlib.axes.Axes.imshow
+            for details of the image rendering
+        """
         if isinstance(array, Array2D):
             return self._imshow_array2d(array, **kwargs)
 
@@ -189,12 +218,13 @@ class Axes(_Axes):
         self.autoscale(enable=None, axis='both', tight=None)
         return image
 
-    imshow.__doc__ = _Axes.imshow.__doc__
-
     def _imshow_array2d(self, array, origin='lower', interpolation='none',
                         aspect='auto', **kwargs):
         """Render an `~gwpy.types.Array2D` using `Axes.imshow`
         """
+        # NOTE: If you change the defaults for this method, please update
+        #       the docstring for `imshow` above.
+
         # calculate extent
         extent = tuple(array.xspan) + tuple(array.yspan)
         if self.get_xscale() == 'log' and extent[0] == 0.:
@@ -208,11 +238,22 @@ class Axes(_Axes):
 
     @log_norm
     def pcolormesh(self, *args, **kwargs):
+        """Create a pseudocolor plot with a non-regular rectangular grid.
+
+        When using GWpy, this method can be called with a single argument
+        that is an :class:`~gwpy.types.Array2D`, for which the ``X`` and ``Y``
+        coordinate arrays will be determined from the indexing.
+
+        In all other usage, all ``args`` and ``kwargs`` are passed directly
+        to :meth:`~matplotlib.axes.Axes.pcolormesh`.
+
+        See Also
+        --------
+        matplotlib.axes.Axes.pcolormesh
+        """
         if len(args) == 1 and isinstance(args[0], Array2D):
             return self._pcolormesh_array2d(*args, **kwargs)
         return super(Axes, self).pcolormesh(*args, **kwargs)
-
-    pcolormesh.__doc__ = _Axes.pcolormesh.__doc__
 
     def _pcolormesh_array2d(self, array, **kwargs):
         """Render an `~gwpy.types.Array2D` using `Axes.pcolormesh`

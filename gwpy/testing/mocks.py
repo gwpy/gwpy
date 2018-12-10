@@ -21,18 +21,12 @@
 
 import inspect
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
-
 from six.moves.urllib.error import HTTPError
 
-import pytest
-
-from gwpy.detector import Channel
-from gwpy.time import LIGOTimeGPS
-from gwpy.segments import (Segment, SegmentList)
+from ..detector import Channel
+from ..time import LIGOTimeGPS
+from ..segments import (Segment, SegmentList)
+from .compat import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -120,15 +114,19 @@ def segdb_query_segments(result):
 
 # -- NDS2 ---------------------------------------------------------------------
 
-def nds2_buffer(channel, data, epoch, sample_rate, unit):
+def nds2_buffer(channel, data, epoch, sample_rate, unit,
+                name=None, slope=1, offset=0):
     import nds2
     epoch = LIGOTimeGPS(epoch)
     ndsbuffer = mock.create_autospec(nds2.buffer)
     ndsbuffer.length = len(data)
     ndsbuffer.channel = nds2_channel(channel, sample_rate, unit)
+    ndsbuffer.name = name or ndsbuffer.channel.name
     ndsbuffer.sample_rate = sample_rate
     ndsbuffer.gps_seconds = epoch.gpsSeconds
     ndsbuffer.gps_nanoseconds = epoch.gpsNanoSeconds
+    ndsbuffer.signal_slope = slope
+    ndsbuffer.signal_offset = offset
     ndsbuffer.data = data
     return ndsbuffer
 

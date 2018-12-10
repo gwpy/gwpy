@@ -25,7 +25,7 @@ import tempfile
 
 import pytest
 
-from ...tests.utils import (assert_segmentlist_equal, TemporaryFilename)
+from ...testing.utils import (assert_segmentlist_equal, TemporaryFilename)
 from ...time import LIGOTimeGPS
 from .. import (Segment, SegmentList)
 
@@ -67,6 +67,13 @@ class TestSegmentList(object):
         return cls.create((1, 2), (3, 4), (4, 6), (8, 10))
 
     # -- test methods ---------------------------
+
+    def test_extent(self, segmentlist):
+        """Test `gwpy.segments.SegmentList.extent returns the right type
+        """
+        extent = segmentlist.extent()
+        assert isinstance(extent, self.ENTRY_CLASS)
+        assert extent == Segment(1, 10)
 
     def test_coalesce(self):
         segmentlist = self.create((1, 2), (3, 4), (4, 5))
