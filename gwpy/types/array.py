@@ -29,7 +29,6 @@ transforming instances of the class.
 
 import copy
 from decimal import Decimal
-from functools import wraps
 from math import modf
 
 import numpy
@@ -474,7 +473,6 @@ class Array(Quantity):
         """
         return super(Array, self).flatten(order=order).view(Quantity)
 
-    @wraps(Quantity.copy)
     def copy(self, order='C'):
         out = super(Array, self).copy(order=order)
         for slot in self._metadata_slots:
@@ -482,3 +480,5 @@ class Array(Quantity):
             if old is not None:
                 setattr(out, slot, copy.copy(old))
         return out
+
+    copy.__doc__ = Quantity.copy.__doc__
