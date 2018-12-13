@@ -25,7 +25,7 @@ import tempfile
 
 import pytest
 
-from ...tests.utils import (assert_segmentlist_equal, TemporaryFilename)
+from ...testing.utils import (assert_segmentlist_equal, TemporaryFilename)
 from ...time import LIGOTimeGPS
 from .. import (Segment, SegmentList)
 

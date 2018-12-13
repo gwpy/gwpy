@@ -25,7 +25,7 @@ import pytest
 
 import numpy
 
-from ...tests.utils import (skip_missing_dependency, TemporaryFilename)
+from ...testing.utils import (skip_missing_dependency, TemporaryFilename)
 from .. import ligolw as io_ligolw
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

@@ -31,7 +31,7 @@ from matplotlib import rc_context
 
 from astropy import units
 
-from ...tests import utils
+from ...testing import utils
 from ...types.tests.test_array2d import TestArray2D as _TestArray2D
 from .. import Spectrogram
 

@@ -29,7 +29,7 @@ from matplotlib.lines import Line2D
 
 from ...time import LIGOTimeGPS
 from ...types import (Series, Array2D)
-from ...tests import utils
+from ...testing import utils
 from .. import Axes
 from .utils import (usetex,  # pylint: disable=unused-import
                     AxesTestBase)

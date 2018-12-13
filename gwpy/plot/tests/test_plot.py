@@ -32,7 +32,7 @@ from matplotlib import (pyplot, rc_context)
 from astropy.units import Unit
 
 from ...segments import (Segment, SegmentList)
-from ...tests import utils
+from ...testing import utils
 from ...types import (Series, Array2D)
 from .. import (Plot, Axes, BodePlot)
 from .utils import (usetex, FigureTestBase)

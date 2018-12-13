@@ -22,7 +22,7 @@
 import pytest
 
 from .. import tex as plot_tex
-from ...tests.mocks import mock
+from ...testing.mocks import mock
 
 
 def which_patcher(error=False):

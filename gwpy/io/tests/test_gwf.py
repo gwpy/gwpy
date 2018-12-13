@@ -23,8 +23,8 @@ from six.moves.urllib.parse import urljoin
 
 import pytest
 
-from ...tests.utils import (TEST_GWF_FILE, skip_missing_dependency,
-                            TemporaryFilename)
+from ...testing.utils import (TEST_GWF_FILE, skip_missing_dependency,
+                              TemporaryFilename)
 from .. import gwf as io_gwf
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

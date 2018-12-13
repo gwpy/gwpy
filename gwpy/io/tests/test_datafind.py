@@ -30,9 +30,9 @@ from six.moves.http_client import HTTPConnection
 
 import pytest
 
-from ...tests.utils import (skip_missing_dependency, TEST_DATA_DIR,
-                            TemporaryFilename)
-from ...tests.mocks import mock
+from ...testing.utils import (skip_missing_dependency, TEST_DATA_DIR,
+                              TemporaryFilename)
+from ...testing.mocks import mock
 from .. import datafind as io_datafind
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
