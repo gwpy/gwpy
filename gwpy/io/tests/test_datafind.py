@@ -31,7 +31,7 @@ from six.moves.http_client import HTTPConnection
 import pytest
 
 from ...testing.compat import mock
-from ...testing.utils import (skip_missing_dependency, TEST_DATA_DIR,
+from ...testing.utils import (skip_missing_dependency, TEST_GWF_FILE,
                               TemporaryFilename)
 from .. import datafind as io_datafind
 
@@ -41,8 +41,6 @@ if six.PY2:
     OPEN = '__builtin__.open'
 else:
     OPEN = 'builtins.open'
-
-TEST_GWF_FILE = os.path.join(TEST_DATA_DIR, 'HLV-HW100916-968654552-1.gwf')
 
 # -- mock the environment -----------------------------------------------------
 
