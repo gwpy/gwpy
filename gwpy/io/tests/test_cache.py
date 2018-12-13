@@ -58,12 +58,6 @@ def segments():
     return deepcopy(SEGMENTS)
 
 
-@pytest.fixture
-def tmpfile():
-    with TemporaryFilename() as tmp:
-        yield tmp
-
-
 # -- tests --------------------------------------------------------------------
 
 @skip_missing_dependency('lal.utils')
