@@ -161,7 +161,7 @@ autosummary_generate = True
 
 # -- plot_directive -----------------------------
 
-plot_rcparams = matplotlib.rcParams
+plot_rcparams = dict(matplotlib.rcParams)
 plot_rcparams.update({
     'backend': 'agg',
 })
