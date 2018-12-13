@@ -35,8 +35,8 @@ from matplotlib import rc_context
 from ...plot import SegmentAxes
 from ...segments import (Segment, SegmentList,
                          DataQualityFlag, DataQualityDict)
-from ...tests import (mocks, utils)
-from ...tests.mocks import mock
+from ...testing import (mocks, utils)
+from ...testing.mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

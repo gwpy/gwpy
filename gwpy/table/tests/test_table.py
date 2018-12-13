@@ -41,8 +41,8 @@ from astropy.table import vstack
 from ...frequencyseries import FrequencySeries
 from ...io import ligolw as io_ligolw
 from ...segments import (Segment, SegmentList)
-from ...tests import utils
-from ...tests.mocks import mock
+from ...testing import utils
+from ...testing.mocks import mock
 from ...time import LIGOTimeGPS
 from ...timeseries import (TimeSeries, TimeSeriesDict)
 from .. import (Table, EventTable, filters)

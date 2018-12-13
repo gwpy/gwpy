@@ -31,7 +31,7 @@ from astropy import units
 
 from ...detector import Channel
 from ...time import (Time, LIGOTimeGPS)
-from ...tests import utils
+from ...testing import utils
 from ...types import Array2D
 from .. import (StateVector, StateVectorDict, StateVectorList,
                 StateTimeSeries, StateTimeSeriesDict, Bits)

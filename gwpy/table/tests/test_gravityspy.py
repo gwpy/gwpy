@@ -25,7 +25,7 @@ from six.moves.urllib.error import URLError
 
 import pytest
 
-from ...tests import utils
+from ...testing import utils
 from .. import GravitySpyTable
 from .test_table import TestEventTable as _TestEventTable
 

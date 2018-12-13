@@ -27,7 +27,7 @@ from scipy import signal
 
 from astropy import units
 
-from ...tests import utils
+from ...testing import utils
 from .. import filter_design
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

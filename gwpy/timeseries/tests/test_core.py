@@ -36,7 +36,7 @@ from astropy import units
 
 from ...detector import Channel
 from ...segments import (Segment, SegmentList)
-from ...tests import (mocks, utils)
+from ...testing import (mocks, utils)
 from ...time import Time
 from ...types.tests.test_series import TestSeries as _TestSeries
 from .. import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList)

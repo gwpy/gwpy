@@ -28,7 +28,7 @@ from scipy import __version__ as scipy_version
 from astropy import units
 
 from ... import astro
-from ...tests import utils
+from ...testing import utils
 from ...timeseries import TimeSeries
 from ...frequencyseries import FrequencySeries
 

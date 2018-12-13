@@ -33,8 +33,8 @@ from ...cli import cliproduct
 from ...frequencyseries import FrequencySeries
 from ...timeseries import TimeSeries
 from ...plot import Plot
-from ...tests import (utils, mocks)
-from ...tests.mocks import mock
+from ...testing import (utils, mocks)
+from ...testing.mocks import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

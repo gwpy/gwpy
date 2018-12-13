@@ -24,8 +24,8 @@ import sys
 
 import pytest
 
-from ...tests.mocks import mock
-from ...tests.utils import TemporaryFilename
+from ...testing.mocks import mock
+from ...testing.utils import TemporaryFilename
 from .. import kerberos as io_kerberos
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

@@ -37,7 +37,7 @@ from matplotlib import rc_context
 
 from astropy import units
 
-from ...tests import utils
+from ...testing import utils
 from ...timeseries import TimeSeries
 from ...types.tests.test_series import TestSeries as _TestSeries
 from .. import FrequencySeries
