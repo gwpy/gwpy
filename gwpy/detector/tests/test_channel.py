@@ -30,7 +30,7 @@ from astropy import units
 
 from ...segments import SegmentListDict
 from ...testing import (utils, mocks)
-from ...testing.mocks import mock
+from ...testing.compat import mock
 from .. import (Channel, ChannelList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

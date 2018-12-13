@@ -24,7 +24,7 @@ import os
 import pytest
 
 from ...testing import mocks
-from ...testing.mocks import mock
+from ...testing.compat import mock
 from ...testing.utils import skip_missing_dependency
 from .. import nds2 as io_nds2
 
