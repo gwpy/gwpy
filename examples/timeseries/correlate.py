@@ -62,6 +62,7 @@ plot = snr.crop(1172489782.07, 1172489784.07).plot()
 plot.axes[0].set_epoch(1172489783.07)
 plot.axes[0].set_ylabel('Signal-to-noise ratio', fontsize=16)
 plot.show()
+plot.close()  # hide
 
 # We can clearly see a loud spike (nearly SNR 40!) at GPS second 1172489783.07,
 # which we interpret as evidence that the PSL channel is witnessing the same
@@ -80,6 +81,7 @@ ax.set_ylabel('Frequency [Hz]')
 ax.grid(True, axis='y', which='both')
 ax.colorbar(cmap='viridis', label='Normalized energy', clim=[0, 25])
 plot.show()
+plot.close()  # hide
 
 # and the same for the PSL channel:
 qaux = waux.q_transform(whiten=False, qrange=(93.1, 93.1))
@@ -93,6 +95,7 @@ ax.set_ylabel('Frequency [Hz]')
 ax.grid(True, axis='y', which='both')
 ax.colorbar(cmap='viridis', label='Normalized energy', clim=[0, 25])
 plot.show()
+plot.close()  # hide
 
 # Sure enough, both channels record a clear whistle glitch at this time,
 # although the PSL channel sees it with much greater signal energy relative
