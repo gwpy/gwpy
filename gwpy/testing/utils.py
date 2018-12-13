@@ -32,8 +32,6 @@ import pytest
 import numpy
 from numpy.testing import (assert_array_equal, assert_allclose)
 
-import pytest
-
 # -- useful constants ---------------------------------------------------------
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
