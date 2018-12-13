@@ -35,7 +35,7 @@ from ...segments import (Segment, SegmentList)
 from ...testing import utils
 from ...types import (Series, Array2D)
 from .. import (Plot, Axes, BodePlot)
-from .utils import (usetex, FigureTestBase)
+from .utils import FigureTestBase
 
 numpy.random.seed(0)
 
