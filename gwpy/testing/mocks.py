@@ -23,8 +23,6 @@ import inspect
 
 from six.moves.urllib.error import HTTPError
 
-import pytest
-
 from ..detector import Channel
 from ..time import LIGOTimeGPS
 from ..segments import (Segment, SegmentList)
