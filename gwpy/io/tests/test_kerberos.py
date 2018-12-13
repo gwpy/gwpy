@@ -24,7 +24,7 @@ import sys
 
 import pytest
 
-from ...testing.mocks import mock
+from ...testing.compat import mock
 from ...testing.utils import TemporaryFilename
 from .. import kerberos as io_kerberos
 

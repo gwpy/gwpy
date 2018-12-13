@@ -32,7 +32,7 @@ from astropy.time import Time
 
 from ...detector import Channel
 from ...testing import utils
-from ...testing.mocks import mock
+from ...testing.compat import mock
 from ...time import LIGOTimeGPS
 from .. import Array
 
