@@ -62,11 +62,9 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
     def get_ylabel(self):
         """Text for y-axis label
         """
-        if len(self.units) == 1 and self.usetex:
+        if len(self.units) == 1:
             return r'ASD $\left({0}\right)$'.format(
                 self.units[0].to_string('latex').strip('$'))
-        elif len(self.units) == 1:
-            return 'ASD ({0})'.format(self.units[0].to_string('generic'))
         return 'ASD'
 
     def get_suptitle(self):
