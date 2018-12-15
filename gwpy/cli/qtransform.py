@@ -123,7 +123,7 @@ class Qtransform(Spectrogram):
         try:
             m = re.match('(\\d+)x(\\d+)', args.geometry)
             xpix = float(m.group(1))
-        except:
+        except AttributeError:
             xpix = 1200.
 
         self.args.tres = search / xpix / 2
