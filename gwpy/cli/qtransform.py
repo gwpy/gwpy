@@ -122,7 +122,7 @@ class Qtransform(Spectrogram):
         # make sure we don't create too big interpolations
         xpix = 1200.
         if args.geometry:
-            m = re.match('(\d+)x(\d+)', args.geometry)
+            m = re.match('(\\d+)x(\\d+)', args.geometry)
             if m:
                 xpix = float(m.group(1))
         self.args.tres = search / xpix / 2
