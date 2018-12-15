@@ -46,7 +46,7 @@ class Qtransform(Spectrogram):
             'gps': float(args.gps),
             'search': args.search / 2.,
             'fres': 0.5,
-            'tres': 0.002,
+            'tres': args.tres,
             'whiten': not args.nowhiten,
         }
         if args.qrange is not None:
@@ -112,11 +112,22 @@ class Qtransform(Spectrogram):
         """
         gps = args.gps
         search = args.search
-        # ennsure we have enough data for filter settling
+        # ensure we have enough data for filter settling
         max_plot = max(args.plot)
         search = max(search, max_plot * 2 + 6)
+        args.search = search
         self.log(3, "Search window: {0:.0f} sec, max plot window {1:.0f}".
                  format(search, max_plot))
+
+        # make sure we don't create too big interpolations
+        xpix = 1200.
+        if args.geometry:
+            m = re.match('(\d+)x(\d+)', args.geometry)
+            if m:
+                xpix = float(m.group(1))
+        self.args.tres = search / xpix / 2
+        self.log(3, 'Time resolution (tres) set to {:.4f}'.format(
+                self.args.tres))
 
         args.start = [[int(gps - search/2)]]
         if args.epoch is None:
@@ -188,6 +199,10 @@ class Qtransform(Spectrogram):
         else:
             gps = self.qxfrm_args['gps']
             outseg = Segment(gps, gps).protract(args.plot[self.plot_num])
+            self.log(3, 'Q-transform arguments:')
+            self.log(3, '{0:>15s} = {1}'.format('outseg', outseg))
+            for key in sorted(self.qxfrm_args):
+                self.log(3, '{0:>15s} = {1}'.format(key, self.qxfrm_args[key]))
             qtrans = self.timeseries[0].q_transform(
                 outseg=outseg,
                 **self.qxfrm_args)

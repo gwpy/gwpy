@@ -1931,14 +1931,15 @@ class TimeSeries(TimeSeriesBase):
 
         # build regular Spectrogram from peak-Q data by interpolating each
         # (Q, frequency) `TimeSeries` to have the same time resolution
-        nx = int(abs(Segment(*outseg)) / tres)
+        xout = numpy.arange(outseg[0], outseg[1], tres)
+        nx = xout.size
+
         ny = frequencies.size
         out = Spectrogram(numpy.zeros((nx, ny)), x0=outseg[0], dx=tres,
                           frequencies=frequencies)
         # record Q in output
         out.q = peakq
         # interpolate rows
-        xout = numpy.arange(outseg[0], outseg[1], tres)
         for i, row in enumerate(norms):
             xrow = numpy.arange(row.x0.value, (row.x0 + row.duration).value,
                                 row.dx.value)
