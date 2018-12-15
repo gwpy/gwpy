@@ -150,6 +150,11 @@ class TestSegmentAxes(_TestAxes):
         value = 1234567890.123
         assert ax.format_xdata(value) == str(LIGOTimeGPS(value))
 
+    # -- disable tests from upstream
+
+    def test_imshow(self):
+        return NotImplemented
+
 
 def test_segmentrectangle():
     patch = SegmentRectangle((1.1, 2.4), 10)

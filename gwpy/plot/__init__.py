@@ -23,6 +23,8 @@ all be easily visualised using the relevant plotting objects, with
 many configurable parameters both interactive, and in saving to disk.
 """
 
+import matplotlib
+
 # utilities
 from . import (
     rc,  # updated default parameters
@@ -38,4 +40,11 @@ from .axes import Axes
 from .bode import BodePlot
 from .segments import SegmentAxes
 
+from ..utils.env import bool_env
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+# load our rcParams as default (without latex unless requested)
+if bool_env('GWPY_RCPARAMS', True):
+    matplotlib.rcParams.update(
+        rc.rc_params(usetex=bool_env('GWPY_USETEX', False)))
