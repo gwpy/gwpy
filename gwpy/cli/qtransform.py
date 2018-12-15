@@ -120,11 +120,12 @@ class Qtransform(Spectrogram):
                  format(search, max_plot))
 
         # make sure we don't create too big interpolations
-        try:
-            m = re.match('(\\d+)x(\\d+)', args.geometry)
-            xpix = float(m.group(1))
-        except AttributeError:
-            xpix = 1200.
+
+        xpix = 1200.
+        if args.geometry:
+            m = re.match('(\d+)x(\d+)', args.geometry)
+            if m:
+                xpix = float(m.group(1))
 
         self.args.tres = search / xpix / 2
         self.log(3, 'Time resolution (tres) set to {:.4f}'.format(
